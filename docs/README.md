@@ -10,11 +10,14 @@ ChromaFiler works on Windows 7 through 11.
 
 <img src="screenshot-comparison.png" width="420" alt="Sequence of ChromaFiler windows for each version of Windows">
 
+> **Project status update:**
+> I've switched to Linux, so I'm no longer actively working on this project. Maybe I'll make a Linux version of ChromaFiler someday. For now I use [Caja](https://github.com/mate-desktop/caja) which has decent spatial-mode support.
+
 ## Download
 
 **Check the [Releases](https://github.com/vanjac/chromafiler/releases) page for the latest beta release.** See [installation instructions](https://chroma.zone/chromafiler/docs/Installation.html) for additional information.
 
-ChromaFiler is still in development, so be sure to turn on the [auto update check](https://chroma.zone/chromafiler/docs/Settings.html#updateabout) feature so you'll be notified of new releases.
+Be sure to turn on the [auto update check](https://chroma.zone/chromafiler/docs/Settings.html#updateabout) feature so you'll be notified of new releases.
 
 ## Tutorial
 
@@ -30,10 +33,6 @@ VS Code must be launched from the "x64 Native Tools Command Prompt" (or equivale
 
 - [Everything](https://www.voidtools.com/) by voidtools (recommend installing with folder context menus)
 - [Microsoft PowerToys](https://github.com/microsoft/PowerToys) (see notes on [preview handlers](https://chroma.zone/chromafiler/docs/Preview-Handlers.html))
-
-## Donate
-
-If you find ChromaFiler useful, please consider [donating](https://chroma.zone/donate) to support development.
 
 ## Contact me
 
