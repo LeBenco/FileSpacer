@@ -1,20 +1,25 @@
 #pragma once
 #include <common.h>
+#include "FolderStateStore.h"
 
 #include "COMUtils.h"
-#include "ChainWindow.h"
+#include "TaskbarOwnerWindow.h"
 #include "ProxyIcon.h"
-#include "SettingsDialog.h"
+#include "PathBar.h"
 #include "WinUtils.h"
 #include <cstdint>
+#include <string>
 #include <windows.h>
 #include <shobjidl.h>
 #include <atlbase.h>
 
-namespace chromafiler {
+namespace filespacer {
+
+enum class FolderOpenResult;
 
 class ItemWindow : public WindowImpl, public UnknownImpl {
-    friend ChainWindow;
+    friend TaskbarOwnerWindow;
+    friend FolderOpenResult openFolderWindow(IShellItem *, HMONITOR, int);
     friend ProxyIcon;
 protected:
     static HACCEL accelTable;
@@ -28,17 +33,16 @@ public:
     static void uninit();
 
     static void flashWindow(HWND hwnd);
+    static void expireFolderState(HWND hwnd);
+    static UINT settingsChangedMessage;
 
-    ItemWindow(ItemWindow *parent, IShellItem *item);
+    ItemWindow(IShellItem *item, const std::wstring &identity);
 
-    virtual SIZE requestedSize(); // called if (! persistSizeInParent())
+    virtual SIZE requestedSize();
     virtual RECT requestedRect(HMONITOR preferMonitor); // called for root windows
-    virtual bool persistSizeInParent() const;
 
-    void setScratch(bool scratch);
     void resetViewState(); // call immediately after constructing to reset all view state properties
 
-    bool create(RECT rect, int showCommand);
     void close();
     void setForeground();
 
@@ -54,59 +58,52 @@ protected:
     enum ViewStateIndex {
         STATE_POS, // 0x1
         STATE_SIZE, // 0x2
-        STATE_CHILD_SIZE, // 0x4
         STATE_LAST
     };
     enum UserMessage {
         // WPARAM: 0, LPARAM: 0
         MSG_UPDATE_ICONS = WM_USER,
-        // WPARAM: 0, LPARAM: 0
-        MSG_UPDATE_DEFAULT_STATUS_TEXT,
         // see SHChangeNotification_Lock
-        MSG_SHELL_NOTIFY,
+        MSG_SHELL_NOTIFY = WM_USER + 2, // Keep existing message IDs.
         // WPARAM: 0, LPARAM: 0
         MSG_FLASH_WINDOW,
+        MSG_EXPIRE_FOLDER_STATE,
         MSG_LAST
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
 
-    virtual SIZE defaultSize() const;
-    virtual const wchar_t * propBagName() const;
+    virtual SIZE defaultSize() const = 0;
     virtual const wchar_t * appUserModelID() const;
     virtual bool isFolder() const;
     virtual DWORD windowStyle() const;
     virtual DWORD windowExStyle() const;
     bool useCustomFrame() const override;
-    // a window that stays open and is not shown in taskbar. currently only used by TrayWindow
-    virtual bool paletteWindow() const;
-    virtual bool stickToChild() const; // for windows that override childPos
 
-    virtual bool useDefaultStatusText() const;
-    virtual SettingsPage settingsStartPage() const;
+#if 0 // Deferred until FileSpacer has its own public services.
     virtual const wchar_t * helpURL() const;
+#endif
+
 
     virtual void updateWindowPropStore(IPropertyStore *propStore);
     static void propStoreWriteString(IPropertyStore *propStore,
         const PROPERTYKEY &key, const wchar_t *value);
 
-    CComPtr<IPropertyBag> getPropBag();
+    // A COM reference keeps this object alive, not its native window or view.
+    // External COM/Win32 calls may reenter and change this state before returning.
+    bool isWindowOperational() const { return hwnd != nullptr && !closing; }
+
+    bool loadFolderState();
+    FolderState &getSavedFolderState() { return savedState; }
     void resetViewState(uint32_t mask);
     void persistViewState();
-    virtual void clearViewState(IPropertyBag *bag, uint32_t mask);
-    virtual void writeViewState(IPropertyBag *bag, uint32_t mask);
+    virtual uint32_t captureViewState(uint32_t mask);
+    void stateStorageError();
+    void recordFolderAccess(HRESULT result);
     void viewStateDirty(uint32_t mask);
     void viewStateClean(uint32_t mask);
 
-    bool isScratch();
-    void onModify();
 
     // general window commands
-    void activate();
-    void setRect(RECT rect);
-    void setPos(POINT pos);
-    void setSize(SIZE size);
-    void move(int x, int y);
-    void adjustSize(int *x, int *y);
     virtual RECT windowBody();
 
     // message callbacks
@@ -119,26 +116,24 @@ protected:
     virtual LRESULT onNotify(NMHDR *nmHdr);
     virtual void onActivate(WORD state, HWND prevWindow);
     virtual void onSize(SIZE size);
+    virtual void onSettingsChanged();
     virtual void onPaint(PAINTSTRUCT paint);
 
-    bool hasStatusText();
-    void setStatusText(const wchar_t *text);
+    PathBar pathBar;
+
     static TBBUTTON makeToolbarButton(const wchar_t *text, WORD command, BYTE style,
         BYTE state = TBSTATE_ENABLED);
-    void setToolbarButtonState(WORD command, BYTE state);
     virtual void addToolbarButtons(HWND tb);
+    HWND getCommandToolbar() const { return cmdToolbar; }
+    HWND getQuickAccessToolbar() const { return quickAccessToolbar; }
+    int getNavigationToolbarWidth() const;
     virtual int getToolbarTooltip(WORD command);
 
     virtual void trackContextMenu(POINT pos);
-    int trackContextMenu(POINT pos, HMENU menu); // will modify menu!
+	int trackContextMenu(POINT pos, HMENU menu, HWND owner = nullptr);
 
-    void openChild(IShellItem *childItem);
-    void closeChild();
-    virtual void onChildDetached();
-    SIZE requestedChildSize(); // called if child->persistSizeInParent()
-    virtual POINT childPos(SIZE size);
-    POINT parentPos(SIZE size);
-    void enableChain(bool enabled);
+    void openChild(IShellItem *childItem, bool closeSource);
+    void enableTaskbarOwner(bool enabled);
 
     virtual IDispatch * getShellViewDispatch();
     void onViewReady();
@@ -150,33 +145,30 @@ protected:
 
     CComHeapPtr<wchar_t> title;
 
-    CComPtr<ItemWindow> parent, child;
 
     // for handling delayed context menu messages while open (eg. for Open With menu)
     CComQIPtr<IContextMenu2> contextMenu2;
     CComQIPtr<IContextMenu3> contextMenu3;
 
 private:
+    bool create(RECT rect, int showCommand);
     virtual const wchar_t * className() const;
 
     bool centeredProxy() const; // requires useCustomFrame() == true
 
     void fakeDragMove();
-    void enableTransitions(bool enabled);
-    void windowRectChanged();
+    bool normalWindowRect(RECT *rect) const;
+    void recordGeometry();
     void autoSizeProxy(LONG width);
+    void layoutToolbarRow(int width);
     LRESULT hitTestNCA(POINT cursor);
 
-    void limitChainWindowRect(RECT *rect);
-    void openParent();
-    void clearParent();
-    void detachFromParent(bool closeParent); // updates UI state
-    void onChildResized(SIZE size); // only called if child->persistSizeInParent()
-    void detachAndMove(bool closeParent);
+    void openParent(bool closeSource);
 
-    void setChainPreview(); // left-most non-palette window gets the chain preview
+    void setTaskbarPreview(); // register the folder preview with its taskbar owner
+    void updateTaskbar(); // grouping/pinning changes require a new taskbar owner
 
-    // only (non-palette) windows with no parent OR child are registered
+    // folder windows are registered with the Shell
     void registerShellWindow();
     void unregisterShellWindow();
 
@@ -187,33 +179,37 @@ private:
 
     void openParentMenu();
 
-    void invokeProxyDefaultVerb();
+    void openCaptionMenu(POINT pos);
     void openProxyProperties();
     void openProxyContextMenu();
-    void proxyDrag(POINT offset); // specify offset from icon origin
     void proxyRename(const wchar_t *name);
 
     CComPtr<IShellLink> link;
-    CComPtr<IPropertyBag> propBag;
-    bool scratch = false;
+    std::string stateKey;
+    FolderState savedState;
+    bool stateLoaded = false;
+    bool storageErrorShown = false;
     uint32_t dirtyViewState = 0; // bit field indexed by ViewStateIndex
 
+    std::wstring identityProperty;
+    RECT lastNormalRect = {};
+    bool geometryKnown = false;
+    bool windowLifetime = false;
+
     ProxyIcon proxyIcon;
+    HWND toolbarRebar = nullptr, toolbarHost = nullptr;
     HWND parentToolbar = nullptr, cmdToolbar = nullptr;
-    HWND statusText = nullptr, statusTooltip = nullptr;
+    HWND quickAccessToolbar = nullptr;
     long shellWindowCookie = 0;
     ULONG shellNotifyID = 0;
 
-    CComPtr<ChainWindow> chain;
-    SIZE childSize = {0, 0};
-    POINT moveAccum;
+    CComPtr<TaskbarOwnerWindow> taskbarOwner;
     bool firstActivate = false, closing = false;
 
     SRWLOCK iconLock = SRWLOCK_INIT;
     HICON iconLarge = nullptr, iconSmall = nullptr;
-
-    SRWLOCK defaultStatusTextLock = SRWLOCK_INIT;
-    CComHeapPtr<wchar_t> defaultStatusText;
+    std::wstring taskbarAppID; // UI thread; also used by SHAddToRecentDocs
+    std::wstring taskbarIconResource; // protected by iconLock, like the icons
 
     class IconThread : public StoppableThread {
     public:
@@ -226,16 +222,6 @@ private:
     };
     CComPtr<IconThread> iconThread;
 
-    class StatusTextThread : public StoppableThread {
-    public:
-        StatusTextThread(IShellItem *item, ItemWindow *callbackWindow);
-    protected:
-        void run() override;
-    private:
-        CComHeapPtr<ITEMIDLIST> itemIDList;
-        ItemWindow *callbackWindow;
-    };
-    CComPtr<StatusTextThread> statusTextThread;
 };
 
 } // namespace

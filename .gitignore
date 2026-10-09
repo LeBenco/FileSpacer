@@ -1,4 +1,14 @@
-/build/*
-!/build/empty
+# Build outputs and temporary test fixtures.
+/build/
+
+# Local development settings.
+/.vs/
 /.vscode/settings.json
-/.vs
+
+# MSVC intermediate files, including accidental outputs at the project root.
+*.obj
+*.res
+*.pdb
+*.ilk
+*.idb
+*.pch

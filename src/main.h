@@ -1,11 +1,11 @@
 #pragma once
 #include <common.h>
 
-namespace chromafiler {
+namespace filespacer {
 
-const wchar_t APP_ID[] = L"chroma.file";
+const wchar_t APP_ID[] = L"FileSpacer.FileSpacer";
 
-// app exits when all windows are closed
+// The main STA exits when windows, COM server locks and Shell references end.
 void lockProcess();
 void unlockProcess();
 

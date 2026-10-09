@@ -1,7 +1,7 @@
 #include "WinUtils.h"
 #include <dwmapi.h>
 
-namespace chromafiler {
+namespace filespacer {
 
 RECT windowRect(HWND hwnd) {
     RECT rect = {};

@@ -1,94 +1,146 @@
 #include "CreateItemWindow.h"
 #include "FolderWindow.h"
-#include "ThumbnailView.h"
-#include "PreviewWindow.h"
-#include "TextWindow.h"
-#include "Settings.h"
-#include "ShellUtils.h"
+#include "FolderIdentity.h"
+#include <ctime>
+#include <algorithm>
+#include <vector>
 #include "UIStrings.h"
 #include <Shlguid.h>
 #include <shlobj.h>
 #include <shellapi.h>
+#include <sherrors.h>
 #include <strsafe.h>
-#include <VersionHelpers.h>
 #include <propkey.h>
 
-namespace chromafiler {
+namespace filespacer {
 
-const wchar_t IPreviewHandlerIID[] = L"{8895b1c6-b41f-4c1c-a562-0d564250836f}";
-// Windows TXT Previewer {1531d583-8375-4d3f-b5fb-d23bbd169f22}
-const CLSID TXT_PREVIEWER_CLSID =
-    {0x1531d583, 0x8375, 0x4d3f, {0xb5, 0xfb, 0xd2, 0x3b, 0xbd, 0x16, 0x9f, 0x22}};
+// Serialize lookup + publication, not the lifetime or loading of the folder view.
+static thread_local std::vector<std::wstring> pendingOpens;
 
-bool previewHandlerCLSID(wchar_t *type, CLSID *previewID);
-bool isCFWindow(HWND hwnd);
+class FolderOpenLock {
+public:
+    explicit FolderOpenLock(const std::wstring &property) {
+        std::wstring name = L"Local\\" + property + L".Open";
+        mutex = CreateMutexW(nullptr, FALSE, name.c_str());
+        if (!mutex)
+            return;
+        pendingOpens.push_back(property);
+        registered = true;
+        DWORD wait = WaitForSingleObject(mutex, 0);
+        if (wait == WAIT_OBJECT_0 || wait == WAIT_ABANDONED) {
+            acquired = true;
+        } else if (wait == WAIT_TIMEOUT) {
+            // Keep STA COM/window messages running while another process creates the window.
+            DWORD index = MAXDWORD;
+            SetLastError(ERROR_SUCCESS);
+            HRESULT hr = CoWaitForMultipleHandles(
+                COWAIT_DISPATCH_CALLS | COWAIT_DISPATCH_WINDOW_MESSAGES,
+                10000, 1, &mutex, &index);
+            acquired = SUCCEEDED(hr) && (index == 0 || index == WAIT_ABANDONED_0);
+        }
+    }
+    ~FolderOpenLock() {
+        if (acquired)
+            ReleaseMutex(mutex);
+        if (mutex)
+            CloseHandle(mutex);
+        if (registered)
+            pendingOpens.pop_back();
+    }
+    explicit operator bool() const { return acquired; }
+    FolderOpenLock(const FolderOpenLock &) = delete;
+    FolderOpenLock &operator=(const FolderOpenLock &) = delete;
+private:
+    HANDLE mutex = nullptr;
+    bool acquired = false;
+    bool registered = false;
+};
 
-CComPtr<ItemWindow> createItemWindow(ItemWindow *const parent, IShellItem *const item) {
+struct FolderWindowSearch {
+    const std::wstring &property;
+    HWND window = nullptr;
+};
+
+static BOOL CALLBACK findFolderWindow(HWND window, LPARAM data) {
+    auto &search = *reinterpret_cast<FolderWindowSearch *>(data);
+    wchar_t className[64] = {};
+    if (GetClassNameW(window, className, ARRAYSIZE(className))
+            && lstrcmpW(className, L"FileSpacer Item Window") == 0
+            && GetPropW(window, search.property.c_str())) {
+        search.window = window;
+        SetLastError(ERROR_SUCCESS);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+bool isFolderAccessFailure(HRESULT result) {
+    return FAILED(result) && result != E_ABORT && result != E_OUTOFMEMORY
+        && result != E_INVALIDARG && result != E_NOINTERFACE && result != E_NOTIMPL
+        && result != HRESULT_FROM_WIN32(ERROR_CANCELLED)
+        && result != HRESULT_FROM_WIN32(ERROR_OPERATION_ABORTED)
+        && result != COPYENGINE_E_USER_CANCELLED;
+}
+
+void recordFolderPathFailure(const wchar_t *path, HRESULT result) {
+    if (!path || !*path || !isFolderAccessFailure(result)) return;
+    const std::wstring property = folderWindowProperty(getPathFolderIdentity(path));
+    if (property.empty()) return; // No heuristic lookup of an unavailable local identity.
+    std::string key; // ASCII window-property name.
+    for (wchar_t character : property) key.push_back(static_cast<char>(character));
+    auto store = folderStateStore();
+    bool expired = false;
+    if (!store || !store->recordAccess(key, false, static_cast<int64_t>(std::time(nullptr)), &expired)) {
+        reportFolderStateError(nullptr);
+    } else if (expired) {
+        // A different process can still have this folder open. Its delayed close must not
+        // recreate an expired row; a subsequent successful access can create a new one.
+        FolderWindowSearch search{property};
+        EnumWindows(findFolderWindow, reinterpret_cast<LPARAM>(&search));
+        if (search.window) ItemWindow::expireFolderState(search.window);
+    }
+}
+
+void recordFolderItemFailure(IShellItem *item, HRESULT result) {
+    if (!item || !isFolderAccessFailure(result)) return;
+    CComHeapPtr<wchar_t> path;
+    if (SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH, &path)))
+        recordFolderPathFailure(path, result);
+}
+
+FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCmd) {
+    std::wstring identity = getFolderIdentity(item);
+    std::wstring property = folderWindowProperty(identity);
+    if (property.empty())
+        return FolderOpenResult::Failed;
+    // A mutex is recursive on its owning thread. Reject a reentrant creation too.
+    bool pending = std::find(pendingOpens.begin(), pendingOpens.end(), property) != pendingOpens.end();
+    if (pending)
+        return FolderOpenResult::Pending;
+    FolderOpenLock lock(property);
+    if (!lock)
+        return FolderOpenResult::Failed;
+    FolderWindowSearch search{property};
+    BOOL enumerated = EnumWindows(findFolderWindow, reinterpret_cast<LPARAM>(&search));
+    if (search.window) {
+        HWND owner = GetWindow(search.window, GW_OWNER);
+        if (owner && IsIconic(owner))
+            ShowWindowAsync(owner, SW_RESTORE);
+        ShowWindowAsync(search.window, IsIconic(search.window) ? SW_RESTORE : SW_SHOW);
+        SetForegroundWindow(search.window);
+        ItemWindow::flashWindow(search.window);
+        return FolderOpenResult::Activated;
+    }
+    if (!enumerated)
+        return FolderOpenResult::Failed;
     CComPtr<ItemWindow> window;
-    SFGAOF attr;
-    if (checkHR(item->GetAttributes(SFGAO_FOLDER, &attr)) && (attr & SFGAO_FOLDER)) {
-        window.Attach(new FolderWindow(parent, item));
-        return window;
-    }
-
-    bool previewsEnabled = settings::getPreviewsEnabled();
-    bool textEditorEnabled = settings::getTextEditorEnabled();
-    if (previewsEnabled || textEditorEnabled) {
-        CComQIPtr<IShellItem2> item2(item);
-        CComHeapPtr<wchar_t> type;
-        if (item2 && SUCCEEDED(item2->GetString(PKEY_ItemType, &type))) {
-            CLSID previewID;
-            if (textEditorEnabled && lstrcmp(type, L".") == 0) { // no extension
-                window.Attach(new TextWindow(parent, item));
-                return window;
-            } else if (previewHandlerCLSID(type, &previewID)) {
-                if (textEditorEnabled && previewID == TXT_PREVIEWER_CLSID) {
-                    window.Attach(new TextWindow(parent, item));
-                    return window;
-                } else if (previewsEnabled) {
-                    window.Attach(new PreviewWindow(parent, item, previewID));
-                    return window;
-                }
-            }
-        }
-    }
-    window.Attach(new PreviewWindow(parent, item, CLSID_ThumbnailView, false));
-    return window;
-}
-
-bool previewHandlerCLSID(wchar_t *type, CLSID *previewID) {
-    // https://geelaw.blog/entries/ipreviewhandlerframe-wpf-1-ui-assoc/
-    wchar_t resultGUID[64];
-    DWORD resultLen = _countof(resultGUID);
-    if (FAILED(AssocQueryString(ASSOCF_INIT_DEFAULTTOSTAR | ASSOCF_NOTRUNCATE,
-            ASSOCSTR_SHELLEXTENSION, type, IPreviewHandlerIID, resultGUID, &resultLen)))
-        return false;
-    debugPrintf(L"Found preview handler for %s: %s\n", type, resultGUID);
-    return checkHR(CLSIDFromString(resultGUID, previewID));
-}
-
-bool showItemWindow(IShellItem *const item, IShellWindows *const shellWindows, int showCmd) {
-    CComQIPtr<IPersistIDList> persistIDList(item);
-    if (!persistIDList)
-        return false;
-    CComVariant empty, pidlVar(persistIDList);
-    long lWnd;
-    CComPtr<IDispatch> dispatch; // ignored
-    // TODO: check all windows? special case for text?
-    HRESULT hr = shellWindows->FindWindowSW(
-        &pidlVar, &empty, SWC_BROWSER, &lWnd, 0, &dispatch); // don't require dispatch!
-    checkHR(hr);
-    if (hr == S_OK) {
-        HWND hwnd = (HWND)LongToHandle(lWnd);
-        if (isCFWindow(hwnd)) {
-            debugPrintf(L"Found already-open window\n");
-            SetForegroundWindow(hwnd);
-            ShowWindow(hwnd, showCmd);
-            ItemWindow::flashWindow(hwnd);
-            return true;
-        }
-    }
-    return false;
+    window.Attach(new FolderWindow(item, identity));
+    if (!window->create(window->requestedRect(monitor), showCmd))
+        return FolderOpenResult::Failed;
+    // Preserve foreground activation when a 32-bit Shell client launches this x64 server.
+    if (showCmd == SW_SHOWNORMAL)
+        window->setForeground();
+    return FolderOpenResult::Created;
 }
 
 CComPtr<IShellItem> resolveLink(IShellItem *const linkItem) {
@@ -116,8 +168,10 @@ CComPtr<IShellItem> itemFromPath(wchar_t *path) {
     while (1) {
         CComPtr<IShellItem> item;
         // parse name vs display name https://stackoverflow.com/q/42966489
-        if (checkHR(SHCreateItemFromParsingName(path, nullptr, IID_PPV_ARGS(&item))))
+        HRESULT hr = SHCreateItemFromParsingName(path, nullptr, IID_PPV_ARGS(&item));
+        if (checkHR(hr))
             return item;
+        recordFolderPathFailure(path, hr);
         int result = MessageBox(nullptr, formatString(IDS_CANT_FIND_ITEM, path).get(),
             getString(IDS_ERROR_CAPTION), MB_CANCELTRYCONTINUE | MB_ICONERROR);
         if (result == IDCANCEL) {
@@ -128,28 +182,6 @@ CComPtr<IShellItem> itemFromPath(wchar_t *path) {
                 return item;
         } // else retry
     }
-}
-
-CComPtr<IShellItem> createScratchFile(IShellItem *const folder) {
-    CComPtr<IFileOperation> operation;
-    if (!checkHR(operation.CoCreateInstance(__uuidof(FileOperation))))
-        return nullptr;
-    checkHR(operation->SetOperationFlags(
-        (IsWindows8OrGreater() ? FOFX_ADDUNDORECORD : FOF_ALLOWUNDO) | FOF_RENAMEONCOLLISION));
-    wstr_ptr fileName = settings::getScratchFileName();
-    NewItemSink eventSink;
-    checkHR(operation->NewItem(folder, FILE_ATTRIBUTE_NORMAL, fileName.get(), nullptr, &eventSink));
-    checkHR(operation->PerformOperations());
-    return eventSink.newItem;
-}
-
-bool isCFWindow(HWND hwnd) {
-    wchar_t className[64] = L"";
-    if (!checkLE(GetClassName(hwnd, className, _countof(className))))
-        return false;
-    const wchar_t prefix[] = L"ChromaFile";
-    className[_countof(prefix) - 1] = 0;
-    return lstrcmpi(className, prefix) == 0;
 }
 
 

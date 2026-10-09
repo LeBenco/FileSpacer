@@ -3,14 +3,12 @@
 
 #include <Windows.h>
 #include <Uxtheme.h>
-#include <Shobjidl.h>
-#include <atlbase.h>
 
-namespace chromafiler {
+namespace filespacer {
 
 class ItemWindow;
 
-class ProxyIcon : public IDropSource, public IDropTarget {
+class ProxyIcon {
 public:
     static void init();
     static void initTheme(HTHEME theme);
@@ -19,13 +17,12 @@ public:
 
     ProxyIcon(ItemWindow *outer);
 
-    void create(HWND parent, IShellItem *item, wchar_t *title, int top, int height);
+    void create(HWND parent, wchar_t *title, int top, int height);
     void destroy(); // may be called without create()
 
     bool isToolbarWindow(HWND hwnd) const;
     POINT getMenuPoint(HWND parent);
 
-    void setItem(IShellItem *item);
     void setTitle(wchar_t *title);
     void setIcon(HICON icon); // does not take ownership!
     void setActive(bool active);
@@ -33,27 +30,12 @@ public:
     void autoSize(LONG parentWidth, LONG captionLeft, LONG captionRight);
     void redrawToolbar();
 
-    void dragDrop(IDataObject *dataObject, POINT offset);
     void beginRename();
     bool isRenaming();
 
     bool onControlCommand(HWND controlHwnd, WORD notif);
-    LRESULT onNotify(NMHDR *nmHdr);
+    bool drawTitle(const DRAWITEMSTRUCT *draw);
     void onThemeChanged();
-
-    // IUnknown
-    STDMETHODIMP QueryInterface(REFIID id, void **obj) override;
-    STDMETHODIMP_(ULONG) AddRef() override;
-    STDMETHODIMP_(ULONG) Release() override;
-    // IDropSource
-    STDMETHODIMP QueryContinueDrag(BOOL escapePressed, DWORD keyState) override;
-    STDMETHODIMP GiveFeedback(DWORD effect) override;
-    // IDropTarget
-    STDMETHODIMP DragEnter(IDataObject *dataObject, DWORD keyState, POINTL pt, DWORD *effect)
-        override;
-    STDMETHODIMP DragLeave() override;
-    STDMETHODIMP DragOver(DWORD keyState, POINTL pt, DWORD *effect) override;
-    STDMETHODIMP Drop(IDataObject *dataObject, DWORD keyState, POINTL pt, DWORD *effect) override;
 
 private:
     RECT titleRect();
@@ -61,17 +43,16 @@ private:
     void completeRename();
     void cancelRename();
 
+    static LRESULT CALLBACK captionProc(HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR);
+
     // window subclasses
     static LRESULT CALLBACK renameBoxProc(HWND hwnd, UINT message,
         WPARAM wParam, LPARAM lParam, UINT_PTR subclassID, DWORD_PTR refData);
 
     ItemWindow * const outer;
 
-    HWND toolbar = nullptr, tooltip = nullptr, renameBox = nullptr;
-    HIMAGELIST imageList = nullptr;
-    CComPtr<IDropTarget> dropTarget;
-
-    bool dragging = false;
+    HWND caption = nullptr, toolbar = nullptr, renameBox = nullptr;
+    HICON captionIcon = nullptr; // Borrowed from ItemWindow.
 };
 
 } // namespace

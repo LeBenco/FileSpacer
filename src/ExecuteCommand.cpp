@@ -1,30 +1,27 @@
 #include "ExecuteCommand.h"
 #include "main.h"
 #include "CreateItemWindow.h"
-#include "TextWindow.h"
+#include "ShellUtils.h"
 #include "Update.h"
 
-namespace chromafiler {
+namespace filespacer {
 
-CFExecute::CFExecute(bool text) : text(text) {
+FSExecute::FSExecute() {
     lockProcess();
-    if (text) {
-        debugPrintf(L"Invoked for ChromaText\n");
-    }
 }
 
-CFExecute::~CFExecute() {
+FSExecute::~FSExecute() {
     unlockProcess();
 }
 
-STDMETHODIMP_(ULONG) CFExecute::AddRef() { return UnknownImpl::AddRef(); }
-STDMETHODIMP_(ULONG) CFExecute::Release() { return UnknownImpl::Release(); }
+STDMETHODIMP_(ULONG) FSExecute::AddRef() { return UnknownImpl::AddRef(); }
+STDMETHODIMP_(ULONG) FSExecute::Release() { return UnknownImpl::Release(); }
 
-STDMETHODIMP CFExecute::QueryInterface(REFIID id, void **obj) {
+STDMETHODIMP FSExecute::QueryInterface(REFIID id, void **obj) {
     static const QITAB interfaces[] = {
-        QITABENT(CFExecute, IObjectWithSelection),
-        QITABENT(CFExecute, IExecuteCommand),
-        QITABENT(CFExecute, IDropTarget),
+        QITABENT(FSExecute, IObjectWithSelection),
+        QITABENT(FSExecute, IExecuteCommand),
+        QITABENT(FSExecute, IDropTarget),
         {},
     };
     HRESULT hr = QISearch(this, interfaces, id, obj);
@@ -35,12 +32,12 @@ STDMETHODIMP CFExecute::QueryInterface(REFIID id, void **obj) {
 
 /* IObjectWithSelection */
 
-STDMETHODIMP CFExecute::SetSelection(IShellItemArray *const array) {
+STDMETHODIMP FSExecute::SetSelection(IShellItemArray *const array) {
     selection = array;
     return S_OK;
 }
 
-STDMETHODIMP CFExecute::GetSelection(REFIID id, void **obj) {
+STDMETHODIMP FSExecute::GetSelection(REFIID id, void **obj) {
     if (selection)
         return selection->QueryInterface(id, obj);
     *obj = nullptr;
@@ -49,28 +46,28 @@ STDMETHODIMP CFExecute::GetSelection(REFIID id, void **obj) {
 
 /* IExecuteCommand */
 
-STDMETHODIMP CFExecute::SetKeyState(DWORD) { return S_OK; }
-STDMETHODIMP CFExecute::SetParameters(const wchar_t *) { return S_OK; }
-STDMETHODIMP CFExecute::SetNoShowUI(BOOL) { return S_OK; }
+STDMETHODIMP FSExecute::SetKeyState(DWORD) { return S_OK; }
+STDMETHODIMP FSExecute::SetParameters(const wchar_t *) { return S_OK; }
+STDMETHODIMP FSExecute::SetNoShowUI(BOOL) { return S_OK; }
 
-STDMETHODIMP CFExecute::SetDirectory(const wchar_t *path) {
+STDMETHODIMP FSExecute::SetDirectory(const wchar_t *path) {
     int size = lstrlen(path) + 1;
     workingDir = wstr_ptr(new wchar_t[size]);
     CopyMemory(workingDir.get(), path, size * sizeof(wchar_t));
     return S_OK;
 }
 
-STDMETHODIMP CFExecute::SetPosition(POINT point) {
+STDMETHODIMP FSExecute::SetPosition(POINT point) {
     monitor = MonitorFromPoint(point, MONITOR_DEFAULTTONEAREST);
     return S_OK;
 }
 
-STDMETHODIMP CFExecute::SetShowWindow(int show) {
+STDMETHODIMP FSExecute::SetShowWindow(int show) {
     showCommand = show;
     return S_OK;
 }
 
-STDMETHODIMP CFExecute::Execute() {
+STDMETHODIMP FSExecute::Execute() {
     debugPrintf(L"Invoked with DelegateExecute\n");
     if (!selection) {
         if (!workingDir)
@@ -78,35 +75,33 @@ STDMETHODIMP CFExecute::Execute() {
         // this happens when invoked on background
         CComPtr<IShellItem> item;
         if (checkHR(SHCreateItemFromParsingName(workingDir.get(), nullptr, IID_PPV_ARGS(&item)))) {
-            CComPtr<IShellWindows> shellWindows;
-            checkHR(shellWindows.CoCreateInstance(CLSID_ShellWindows));
-            openItem(item, shellWindows);
+            openItem(item);
         }
     } else {
         HRESULT hr;
         if (FAILED(hr = openArray(selection))) return hr;
     }
-    autoUpdateCheck();
+    // autoUpdateCheck(); // Deferred public update service.
     return S_OK;
 }
 
 /* IDropTarget */
 
-STDMETHODIMP CFExecute::DragEnter(IDataObject *, DWORD, POINTL, DWORD *effect) {
+STDMETHODIMP FSExecute::DragEnter(IDataObject *, DWORD, POINTL, DWORD *effect) {
     *effect &= DROPEFFECT_LINK;
     return S_OK;
 }
 
-STDMETHODIMP CFExecute::DragOver(DWORD, POINTL, DWORD *effect) {
+STDMETHODIMP FSExecute::DragOver(DWORD, POINTL, DWORD *effect) {
     *effect &= DROPEFFECT_LINK;
     return S_OK;
 }
 
-STDMETHODIMP CFExecute::DragLeave() {
+STDMETHODIMP FSExecute::DragLeave() {
     return S_OK;
 }
 
-STDMETHODIMP CFExecute::Drop(IDataObject *const dataObject, DWORD keyState, POINTL pt,
+STDMETHODIMP FSExecute::Drop(IDataObject *const dataObject, DWORD keyState, POINTL pt,
         DWORD *effect) {
     debugPrintf(L"Invoked with DropTarget\n");
     // https://devblogs.microsoft.com/oldnewthing/20130204-00/?p=5363
@@ -119,75 +114,69 @@ STDMETHODIMP CFExecute::Drop(IDataObject *const dataObject, DWORD keyState, POIN
     if (FAILED(hr = openArray(itemArray)))
         return hr;
     *effect &= DROPEFFECT_LINK;
-    autoUpdateCheck();
+    // autoUpdateCheck(); // Deferred public update service.
     return S_OK;
 }
 
-HRESULT CFExecute::openArray(IShellItemArray *const array) {
-    CComPtr<IShellWindows> shellWindows;
-    checkHR(shellWindows.CoCreateInstance(CLSID_ShellWindows));
-
+HRESULT FSExecute::openArray(IShellItemArray *const array) {
     HRESULT hr;
     CComPtr<IEnumShellItems> enumItems;
     if (!checkHR(hr = array->EnumItems(&enumItems)))
         return hr;
     CComPtr<IShellItem> item;
     while (enumItems->Next(1, &item, nullptr) == S_OK) {
-        openItem(item, shellWindows);
+        openItem(item);
         item = nullptr;
     }
     return S_OK;
 }
 
-void CFExecute::openItem(IShellItem *const item, IShellWindows *const shellWindows) {
+void FSExecute::openItem(IShellItem *const item) {
     CComPtr<IShellItem> resolved = resolveLink(item);
-
-    if (shellWindows && showItemWindow(resolved, shellWindows, showCommand))
+    SFGAOF attributes = 0;
+    if (!resolved) return;
+    HRESULT access = resolved->GetAttributes(SFGAO_FOLDER, &attributes);
+    if (!checkHR(access)) {
+        recordFolderItemFailure(resolved, access);
         return;
-
-    CComPtr<ItemWindow> window;
-    if (text) {
-        window.Attach(new TextWindow(nullptr, resolved));
-    } else {
-        window = createItemWindow(nullptr, resolved);
     }
-    window->create(window->requestedRect(monitor), showCommand);
-    // fix issue when invoking 64-bit ChromaFiler from 32-bit app
-    if (showCommand == SW_SHOWNORMAL)
-        window->setForeground();
+    if (!(attributes & SFGAO_FOLDER)) {
+        invokeDefaultVerb(item, nullptr, showCommand);
+        return;
+    }
+
+    openFolderWindow(resolved, monitor, showCommand);
 }
 
 /* Factory */
 
-CFExecuteFactory::CFExecuteFactory(bool text) : text(text) {}
-
-STDMETHODIMP_(ULONG) CFExecuteFactory::AddRef() {
+STDMETHODIMP_(ULONG) FSExecuteFactory::AddRef() {
     return 2;
 }
 
-STDMETHODIMP_(ULONG) CFExecuteFactory::Release() {
+STDMETHODIMP_(ULONG) FSExecuteFactory::Release() {
     return 1;
 }
 
-STDMETHODIMP CFExecuteFactory::QueryInterface(REFIID id, void **obj) {
+STDMETHODIMP FSExecuteFactory::QueryInterface(REFIID id, void **obj) {
     static const QITAB interfaces[] = {
-        QITABENT(CFExecuteFactory, IClassFactory),
+        QITABENT(FSExecuteFactory, IClassFactory),
         {},
     };
     return QISearch(this, interfaces, id, obj);
 }
 
-STDMETHODIMP CFExecuteFactory::CreateInstance(IUnknown *const outer, REFIID id, void **obj) {
+STDMETHODIMP FSExecuteFactory::CreateInstance(IUnknown *const outer, REFIID id, void **obj) {
     *obj = nullptr;
     if (outer)
         return CLASS_E_NOAGGREGATION;
-    CComPtr<CFExecute> ext;
-    ext.Attach(new CFExecute(text));
+    CComPtr<FSExecute> ext;
+    ext.Attach(new FSExecute());
     HRESULT hr = ext->QueryInterface(id, obj);
     return hr;
 }
 
-STDMETHODIMP CFExecuteFactory::LockServer(BOOL lock) {
+STDMETHODIMP FSExecuteFactory::LockServer(BOOL lock) {
     if (lock)
         lockProcess();
     else

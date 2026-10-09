@@ -3,14 +3,15 @@
 
 #include <windows.h>
 
-namespace chromafiler {
+namespace filespacer {
 
 enum SettingsPage {
-    SETTINGS_GENERAL, SETTINGS_TEXT, SETTINGS_TRAY, SETTINGS_BROWSER, SETTINGS_ABOUT,
+    SETTINGS_GENERAL, SETTINGS_DISPLAY, SETTINGS_BROWSER, SETTINGS_ABOUT,
     NUM_SETTINGS_PAGES
 };
 
-void openSettingsDialog(SettingsPage page = SETTINGS_GENERAL);
-bool handleSettingsDialogMessage(MSG *msg);
+void openSettingsDialog(HWND owner, SettingsPage page = SETTINGS_GENERAL);
+// Used by preferences and the welcome dialog.
+void changeDefaultBrowser(HWND owner, bool value);
 
 } // namespace

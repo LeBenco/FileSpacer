@@ -1,27 +1,25 @@
 #include "Settings.h"
 #include <strsafe.h>
-#include "UIStrings.h"
+#include <atlbase.h>
 
-namespace chromafiler {
+namespace filespacer {
 namespace settings {
 
 bool testMode = false;
 
-const wchar_t KEY_SETTINGS_NORMAL[]     = L"Software\\ChromaFiler";
-const wchar_t KEY_SETTINGS_TEST[]       = L"Software\\ChromaFiler\\Test";
-#ifdef CHROMAFILER_DEBUG
+const wchar_t KEY_SETTINGS_NORMAL[]     = L"Software\\FileSpacer";
+const wchar_t KEY_SETTINGS_TEST[]       = L"Software\\FileSpacer\\Test";
+#ifdef FILESPACER_DEBUG
     #define KEY_SETTINGS (testMode ? KEY_SETTINGS_TEST : KEY_SETTINGS_NORMAL)
 #else
     #define KEY_SETTINGS KEY_SETTINGS_NORMAL
 #endif
 
-const wchar_t KEY_STARTUP[]             = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
-const wchar_t VAL_STARTUP[]             = L"ChromaFiler";
-const wchar_t KEY_DIRECTORY_VERB[]      = L"Directory\\shell\\chromafiler";
+const wchar_t KEY_DIRECTORY_VERB[]      = L"Directory\\shell\\filespacer";
 const wchar_t KEY_DIRECTORY_BROWSER[]   = L"Software\\Classes\\Directory\\Shell";
 const wchar_t KEY_COMPRESSED_BROWSER[]  = L"Software\\Classes\\CompressedFolder\\Shell";
 const wchar_t KEY_DRIVE_BROWSER[]       = L"Software\\Classes\\Drive\\Shell";
-const wchar_t DATA_BROWSER_SET[]        = L"chromafiler";
+const wchar_t DATA_BROWSER_SET[]        = L"filespacer";
 const wchar_t DATA_BROWSER_CLEAR[]      = L"none";
 
 // type should be a RRF_RT_* constant
@@ -90,18 +88,6 @@ void setSettingsString(const wchar_t *name, DWORD type, const wchar_t *value) {
         setSettingsValue(valueName L"Height", REG_DWORD, &value.cy, sizeof(value.cy));             \
     }
 
-#define SETTINGS_POINT_VALUE(funcName, valueName, defaultValue) \
-    POINT get##funcName() {                                                                        \
-        POINT value = (defaultValue);                                                              \
-        getSettingsValue(valueName L"X", RRF_RT_DWORD, &value.x, sizeof(value.x));                 \
-        getSettingsValue(valueName L"Y", RRF_RT_DWORD, &value.y, sizeof(value.y));                 \
-        return value;                                                                              \
-    }                                                                                              \
-    void set##funcName(POINT value) {                                                              \
-        setSettingsValue(valueName L"X", REG_DWORD, &value.x, sizeof(value.x));                    \
-        setSettingsValue(valueName L"Y", REG_DWORD, &value.y, sizeof(value.y));                    \
-    }
-
 #define SETTINGS_STRING_VALUE(funcName, regType, valueName, defaultValue) \
     wstr_ptr get##funcName() {                                                                     \
         return getSettingsString((valueName), RRF_RT_REG_SZ, (defaultValue));                      \
@@ -110,100 +96,76 @@ void setSettingsString(const wchar_t *name, DWORD type, const wchar_t *value) {
         setSettingsString((valueName), (regType), value);                                          \
     }
 
-#define SETTINGS_FONT_VALUE(funcName, valueName, defaultValue) \
-    LOGFONT get##funcName() {                                                                      \
-        LOGFONT value = (defaultValue);                                                            \
-        getSettingsValue( /* NOT getSettingsString since lfFaceName has a fixed size */            \
-            valueName L"Face", RRF_RT_REG_SZ, value.lfFaceName, sizeof(value.lfFaceName));         \
-        getSettingsValue(valueName L"Size", REG_DWORD, &value.lfHeight, sizeof(value.lfHeight));   \
-        getSettingsValue(valueName L"Weight", REG_DWORD, &value.lfWeight, sizeof(value.lfWeight)); \
-        DWORD italic = value.lfItalic;                                                             \
-        getSettingsValue(valueName L"Italic", REG_DWORD, &italic, sizeof(italic));                 \
-        value.lfItalic = (BYTE)italic;                                                             \
-        return value;                                                                              \
-    }                                                                                              \
-    void set##funcName(const LOGFONT &value) {                                                     \
-        setSettingsString(valueName L"Face", REG_SZ, value.lfFaceName);                            \
-        setSettingsValue(valueName L"Size", REG_DWORD, &value.lfHeight, sizeof(value.lfHeight));   \
-        setSettingsValue(valueName L"Weight", REG_DWORD, &value.lfWeight, sizeof(value.lfWeight)); \
-        DWORD italic = value.lfItalic;                                                             \
-        setSettingsValue(valueName L"Italic", REG_DWORD, &italic, sizeof(italic));                 \
-    }
-
-
 SETTINGS_DWORD_VALUE(LastOpenedVersion, DWORD, L"LastOpenedVersion", DEFAULT_LAST_OPENED_VERSION)
+#if 0 // Deferred until FileSpacer has its own public services.
 SETTINGS_BOOL_VALUE(UpdateCheckEnabled, L"UpdateCheckEnabled", DEFAULT_UPDATE_CHECK_ENABLED);
 SETTINGS_QWORD_VALUE(LastUpdateCheck, LONGLONG, L"LastUpdateCheck", DEFAULT_LAST_UPDATE_CHECK)
 SETTINGS_QWORD_VALUE(UpdateCheckRate, LONGLONG, L"UpdateCheckRate", DEFAULT_UPDATE_CHECK_RATE)
+#endif
+
 
 SETTINGS_BOOL_VALUE(AdminWarning, L"AdminWarning", DEFAULT_ADMIN_WARNING);
 
 SETTINGS_STRING_VALUE(StartingFolder, REG_EXPAND_SZ, L"StartingFolder", DEFAULT_STARTING_FOLDER)
-SETTINGS_STRING_VALUE(ScratchFolder, REG_EXPAND_SZ, L"ScratchFolder", DEFAULT_SCRATCH_FOLDER)
-SETTINGS_STRING_VALUE(ScratchFileName, REG_SZ, L"ScratchFileName", DEFAULT_SCRATCH_FILE_NAME)
 
-SETTINGS_SIZE_VALUE(ItemWindowSize, L"ItemWindow2", DEFAULT_ITEM_WINDOW_SIZE)
 SETTINGS_SIZE_VALUE(FolderWindowSize, L"FolderWindow2", DEFAULT_FOLDER_WINDOW_SIZE)
 
 SETTINGS_BOOL_VALUE(StatusTextEnabled, L"StatusTextEnabled", DEFAULT_STATUS_TEXT_ENABLED)
 SETTINGS_BOOL_VALUE(ToolbarEnabled, L"ToolbarEnabled", DEFAULT_TOOLBAR_ENABLED)
+SETTINGS_BOOL_VALUE(QuickAccessEnabled, L"QuickAccessEnabled", DEFAULT_QUICK_ACCESS_ENABLED)
+SETTINGS_BOOL_VALUE(PathBarEnabled, L"PathBarEnabled", DEFAULT_PATH_BAR_ENABLED)
+SETTINGS_BOOL_VALUE(RefreshButtonEnabled, L"RefreshButtonEnabled", DEFAULT_REFRESH_BUTTON_ENABLED)
+SETTINGS_BOOL_VALUE(UpButtonEnabled, L"UpButtonEnabled", DEFAULT_UP_BUTTON_ENABLED)
+SETTINGS_BOOL_VALUE(ViewButtonEnabled, L"ViewButtonEnabled", DEFAULT_VIEW_BUTTON_ENABLED)
+SETTINGS_BOOL_VALUE(GroupFolderWindows, L"GroupFolderWindows", DEFAULT_GROUP_FOLDER_WINDOWS)
+SETTINGS_BOOL_VALUE(KeepSourceWindowOpen, L"KeepSourceWindowOpen", DEFAULT_KEEP_SOURCE_WINDOW_OPEN)
+SETTINGS_BOOL_VALUE(KeepSelectionOnActivate, L"KeepSelectionOnActivate", DEFAULT_KEEP_SELECTION_ON_ACTIVATE)
+SETTINGS_BOOL_VALUE(LiveNameSearch, L"LiveNameSearch", DEFAULT_LIVE_NAME_SEARCH)
+SETTINGS_BOOL_VALUE(FullNamesOnSelection, L"FullNamesOnSelection", DEFAULT_FULL_NAMES_ON_SELECTION)
 
-SETTINGS_BOOL_VALUE(PreviewsEnabled, L"PreviewsEnabled", DEFAULT_PREVIEWS_ENABLED)
-
-SETTINGS_DWORD_VALUE(OpenSelectionTime, UINT, L"OpenSelectionTime", DEFAULT_OPEN_SELECTION_TIME)
-SETTINGS_BOOL_VALUE(DeselectOnOpen, L"DeselectOnOpen", DEFAULT_DESELECT_ON_OPEN)
-
-SETTINGS_BOOL_VALUE(TextEditorEnabled, L"TextEditorEnabled2", DEFAULT_TEXT_EDITOR_ENABLED)
-SETTINGS_FONT_VALUE(TextFont, L"TextFont", DEFAULT_TEXT_FONT)
-SETTINGS_DWORD_VALUE(TextTabWidth, int, L"TextTabWidth", DEFAULT_TEXT_TAB_WIDTH)
-SETTINGS_BOOL_VALUE(TextWrap, L"TextWrap", DEFAULT_TEXT_WRAP)
-SETTINGS_BOOL_VALUE(TextAutoIndent, L"TextAutoIndent", DEFAULT_TEXT_AUTO_INDENT)
-SETTINGS_DWORD_VALUE(TextDefaultEncoding, TextEncoding,
-    L"TextDefaultEncoding", DEFAULT_TEXT_ENCODING)
-SETTINGS_BOOL_VALUE(TextAutoEncoding, L"TextAutoEncoding", DEFAULT_TEXT_AUTO_ENCODING)
-SETTINGS_DWORD_VALUE(TextAnsiCodepage, UINT, L"TextAnsiCodepage", DEFAULT_TEXT_ANSI_CODEPAGE)
-SETTINGS_DWORD_VALUE(TextDefaultNewlines, TextNewlines,
-    L"TextDefaultNewlines", DEFAULT_TEXT_NEWLINES)
-SETTINGS_BOOL_VALUE(TextAutoNewlines, L"TextAutoNewlines", DEFAULT_TEXT_AUTO_NEWLINES)
-
-bool getTrayOpenOnStartup() {
-    return !RegGetValue(HKEY_CURRENT_USER, KEY_STARTUP, VAL_STARTUP,
-        RRF_RT_ANY, nullptr, nullptr, nullptr);
+LSTATUS disableFullNamesOnSelection() {
+    const DWORD disabled = 0;
+    return setSettingsValue(L"FullNamesOnSelection", REG_DWORD, &disabled, sizeof(disabled));
 }
 
-void setTrayOpenOnStartup(bool value) {
-    if (value) {
-        if (getTrayOpenOnStartup())
-            return; // don't overwrite existing command
-        wchar_t exePath[MAX_PATH];
-        if (checkLE(GetModuleFileName(nullptr, exePath, _countof(exePath)))) {
-            local_wstr_ptr command = format(L"\"%1\" /tray", exePath);
-            RegSetKeyValue(HKEY_CURRENT_USER, KEY_STARTUP, VAL_STARTUP, REG_EXPAND_SZ,
-                command.get(), (lstrlen(command.get()) + 1) * sizeof(wchar_t));
-        }
-    } else {
-        RegDeleteKeyValue(HKEY_CURRENT_USER, KEY_STARTUP, VAL_STARTUP);
+LSTATUS resetGlobalOptions() {
+    // Delete current/future preference values, preserving version metadata and subkeys
+    // (including the separate Debug /test namespace). Windows associations are elsewhere.
+    HKEY raw = nullptr;
+    LSTATUS status = RegOpenKeyExW(HKEY_CURRENT_USER, KEY_SETTINGS, 0,
+        KEY_QUERY_VALUE | KEY_SET_VALUE, &raw);
+    if (status == ERROR_FILE_NOT_FOUND) return ERROR_SUCCESS;
+    if (status != ERROR_SUCCESS) return status;
+    CRegKey key; key.Attach(raw);
+    DWORD index = 0;
+    for (;;) {
+        wchar_t name[16384]; DWORD length = _countof(name);
+        status = RegEnumValueW(key, index, name, &length, nullptr, nullptr, nullptr, nullptr);
+        if (status == ERROR_NO_MORE_ITEMS) return ERROR_SUCCESS;
+        if (status != ERROR_SUCCESS) return status;
+        if (lstrcmpiW(name, L"LastOpenedVersion") == 0) { ++index; continue; }
+        status = RegDeleteValueW(key, name);
+        if (status != ERROR_SUCCESS) return status;
+        // The next value occupies this index after deletion.
     }
 }
 
-SETTINGS_STRING_VALUE(TrayFolder, REG_EXPAND_SZ, L"TrayFolder", DEFAULT_TRAY_FOLDER)
-SETTINGS_DWORD_VALUE(TrayDPI, int, L"TrayDPI", DEFAULT_TRAY_DPI)
-SETTINGS_POINT_VALUE(TrayPosition, L"Tray", DEFAULT_TRAY_POSITION)
-SETTINGS_SIZE_VALUE(TraySize, L"Tray", DEFAULT_TRAY_SIZE)
-SETTINGS_DWORD_VALUE(TrayDirection, TrayDirection, L"TrayDirection", DEFAULT_TRAY_DIRECTION)
-SETTINGS_BOOL_VALUE(TrayHotKeyEnabled, L"TrayHotKeyEnabled", DEFAULT_TRAY_HOTKEY_ENABLED);
+SETTINGS_BOOL_VALUE(DeselectOnOpen, L"DeselectOnOpen", DEFAULT_DESELECT_ON_OPEN)
 
 bool supportsDefaultBrowser() {
     return !RegGetValue(HKEY_CLASSES_ROOT, KEY_DIRECTORY_VERB, L"",
         RRF_RT_ANY, nullptr, nullptr, nullptr);
 }
 
-void setDefaultBrowser(bool value) {
+DefaultBrowserResult setDefaultBrowser(bool value) {
     const wchar_t *data = value ? DATA_BROWSER_SET : DATA_BROWSER_CLEAR;
     DWORD size = value ? sizeof(DATA_BROWSER_SET) : sizeof(DATA_BROWSER_CLEAR);
-    RegSetKeyValue(HKEY_CURRENT_USER, KEY_DIRECTORY_BROWSER, L"", REG_SZ, data, size);
-    RegSetKeyValue(HKEY_CURRENT_USER, KEY_COMPRESSED_BROWSER, L"", REG_SZ, data, size);
-    RegSetKeyValue(HKEY_CURRENT_USER, KEY_DRIVE_BROWSER, L"", REG_SZ, data, size);
+    DefaultBrowserResult result = {};
+    // Each association is independent; a failure must not skip the remaining writes.
+    result.directory = RegSetKeyValue(HKEY_CURRENT_USER, KEY_DIRECTORY_BROWSER, L"", REG_SZ, data, size);
+    result.compressedFolder = RegSetKeyValue(HKEY_CURRENT_USER, KEY_COMPRESSED_BROWSER, L"", REG_SZ, data, size);
+    result.drive = RegSetKeyValue(HKEY_CURRENT_USER, KEY_DRIVE_BROWSER, L"", REG_SZ, data, size);
+    return result;
 }
 
 }} // namespace

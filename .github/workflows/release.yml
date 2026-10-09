@@ -1,0 +1,62 @@
+name: Publish FileSpacer
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
+    steps:
+      - name: Check out the version to publish
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Inkscape and locate MSVC
+        shell: pwsh
+        run: |
+          choco install inkscape --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'Inkscape installation failed.' }
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 Microsoft.VisualStudio.Component.VC.ATL -property installationPath
+          if ($LASTEXITCODE -ne 0 -or !$vs) { throw 'MSVC x64 with ATL was not found.' }
+          "VS_INSTALL=$vs" >> $env:GITHUB_ENV
+
+      - name: Build Release and the NSIS installer
+        shell: cmd
+        run: |
+          call "%VS_INSTALL%\VC\Auxiliary\Build\vcvars64.bat"
+          if errorlevel 1 exit /b 1
+          nmake.exe /nologo /f Makefile CFG=Release installer "INKSCAPE=%ProgramFiles%\Inkscape\bin\inkscape.com" "MAKENSIS=%ProgramFiles(x86)%\NSIS\makensis.exe"
+
+      - name: Check the release version
+        shell: pwsh
+        run: |
+          $info = (Get-Item 'build/release/FileSpacer.exe').VersionInfo
+          $version = "$($info.ProductMajorPart).$($info.ProductMinorPart).$($info.ProductBuildPart)"
+          if ($info.ProductPrivatePart -ne 0 -or $env:RELEASE_TAG -cne "v$version" -or $info.ProductVersion -ne $version) {
+            throw "Tag $env:RELEASE_TAG does not match the executable version. Update both version definitions in src/resource.h."
+          }
+          if (!(Test-Path 'build/FileSpacer-install.exe' -PathType Leaf)) {
+            throw 'The NSIS installer was not produced.'
+          }
+
+      - name: Publish the release and its installer
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$env:RELEASE_TAG" 'build/FileSpacer-install.exe' --repo "$env:GITHUB_REPOSITORY" --verify-tag --generate-notes
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed.' }

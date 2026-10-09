@@ -6,13 +6,13 @@
 #endif
 #define STRICT
 #define WIN32_LEAN_AND_MEAN
-// target Windows 7
+// target Windows 10
 // https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt
-#define WINVER 0x0601
-#define _WIN32_WINNT 0x0601
+#define WINVER 0x0A00
+#define _WIN32_WINNT 0x0A00
 
 
-#ifdef CHROMAFILER_DEBUG
+#ifdef FILESPACER_DEBUG
 #define debugPrintf wprintf
 // use checkHR instead of SUCCEEDED when you expect the call to succeed
 #define checkHR(hr) logHRESULT((hr), __FILE__, __LINE__, #hr)
@@ -31,17 +31,17 @@ T checkLETemplate(T result, const char *file, int line, const char *expr) {
 #define checkLE(expr) (expr)
 #endif
 
-#ifdef CHROMAFILER_MEMLEAKS
+#ifdef FILESPACER_MEMLEAKS
 // https://docs.microsoft.com/en-us/visualstudio/debugger/finding-memory-leaks-using-the-crt-library
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #include <crtdbg.h>
-namespace chromafiler {
+namespace filespacer {
     extern long MEMLEAK_COUNT;
 }
-#define CHROMAFILER_MEMLEAK_ALLOC InterlockedIncrement(&MEMLEAK_COUNT)
-#define CHROMAFILER_MEMLEAK_FREE InterlockedDecrement(&MEMLEAK_COUNT)
+#define FILESPACER_MEMLEAK_ALLOC InterlockedIncrement(&MEMLEAK_COUNT)
+#define FILESPACER_MEMLEAK_FREE InterlockedDecrement(&MEMLEAK_COUNT)
 #else
-#define CHROMAFILER_MEMLEAK_ALLOC
-#define CHROMAFILER_MEMLEAK_FREE
+#define FILESPACER_MEMLEAK_ALLOC
+#define FILESPACER_MEMLEAK_FREE
 #endif
