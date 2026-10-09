@@ -252,7 +252,12 @@ void ProxyIcon::beginRename() {
                        (ItemWindow::CAPTION_HEIGHT - renameHeight) / 2};
     TITLEBARINFOEX titleBar = {sizeof(titleBar)};
     SendMessage(outer->hwnd, WM_GETTITLEBARINFOEX, 0, (LPARAM)&titleBar);
-    int renameWidth = clientSize(outer->hwnd).cx - rectWidth(titleBar.rgrect[5]) - renamePos.x;
+    int captionButtonsWidth = 0;
+    for (int i = 2; i <= 5; ++i) {
+        if (!(titleBar.rgstate[i] & (STATE_SYSTEM_INVISIBLE | STATE_SYSTEM_OFFSCREEN)))
+            captionButtonsWidth += rectWidth(titleBar.rgrect[i]);
+    }
+    int renameWidth = max(0, clientSize(outer->hwnd).cx - captionButtonsWidth - renamePos.x);
     renamePos = clientToScreen(outer->hwnd, renamePos);
     MoveWindow(renameBox, renamePos.x, renamePos.y, renameWidth, renameHeight, FALSE);
 
@@ -344,3 +349,4 @@ void ProxyIcon::onThemeChanged() {
 }
 
 } // namespace
+
