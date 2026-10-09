@@ -21,7 +21,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Name filter", -1, "Button", BS_GROUPBOX, 7, 96, 286, 28
   CONTROL "Filter while t&yping", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 107, 272, 12
   CONTROL "Taskbar", -1, "Button", BS_GROUPBOX, 7, 128, 286, 51
-  CONTROL "&Group folder windows on the taskbar", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 139, 272, 12
+  CONTROL "&Group folder windows on the taskbar (new windows)", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 139, 272, 12
   CONTROL "Grouping follows your Windows taskbar settings.", -1, "Static", WS_GROUP, 14, 153, 272, 8
   CONTROL "Without grouping, folders can be pinned to the taskbar.", -1, "Static", WS_GROUP, 14, 163, 272, 8
   CONTROL "File Explorer options", -1, "Button", BS_GROUPBOX, 7, 183, 286, 35
