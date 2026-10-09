@@ -3,6 +3,25 @@
 
 namespace filespacer {
 
+std::wstring quoteCommandArgument(const wchar_t *argument) {
+    std::wstring quoted = L"\"";
+    size_t backslashes = 0;
+    for (const wchar_t *next = argument; *next; next++) {
+        if (*next == L'\\') {
+            backslashes++;
+        } else {
+            quoted.append(backslashes * (*next == L'"' ? 2 : 1), L'\\');
+            if (*next == L'"')
+                quoted += L'\\';
+            quoted += *next;
+            backslashes = 0;
+        }
+    }
+    quoted.append(backslashes * 2, L'\\');
+    return quoted + L'"';
+}
+
+
 RECT windowRect(HWND hwnd) {
     RECT rect = {};
     checkLE(GetWindowRect(hwnd, &rect));
