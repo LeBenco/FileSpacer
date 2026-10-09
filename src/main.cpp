@@ -52,7 +52,8 @@ void logLastError(const char *file, int line, const char *expr) {
 }
 #endif
 
-LaunchType createWindowFromCommandLine(int argc, wchar_t **argv, int showCommand);
+LaunchType parseStartingFolder(int argc, wchar_t **argv, wstr_ptr *folder);
+LaunchType createStartingWindow(wchar_t *path, int showCommand);
 DWORD WINAPI checkLastVersion(void *);
 void showWelcomeDialog();
 HRESULT WINAPI welcomeDialogCallback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, LONG_PTR data);
@@ -265,9 +266,20 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     for (int i = 1; i < recoveryArgc; ++i) {
         restarted |= lstrcmpiW(recoveryArgv[i], L"/recovery-restarted") == 0;
     }
+    wstr_ptr startingFolder;
+    const LaunchType requestedLaunch = maintenance ? LAUNCH_FAIL
+        : parseStartingFolder(recoveryArgc, recoveryArgv, &startingFolder);
     LocalFree(recoveryArgv);
     if (maintenance) return maintenanceExit;
-    if (!recovery::start(restarted)) {
+    if (requestedLaunch == LAUNCH_FAIL) return 1;
+    // Resolve relative arguments first. Neither the application nor its recovery
+    // helper may keep a user folder locked as the process working directory.
+    // Set this once, before COM or application worker threads are started.
+    wchar_t workingDirectory[MAX_PATH] = {};
+    const UINT length = GetWindowsDirectoryW(workingDirectory, _countof(workingDirectory));
+    if (!length || length >= _countof(workingDirectory)
+            || !checkLE(SetCurrentDirectoryW(workingDirectory))) return 1;
+    if (!recovery::start(restarted, startingFolder.get())) {
         if (!recovery::hasSettingsAccess()) {
             MessageBoxW(nullptr, getString(IDS_SETTINGS_ACCESS_FAILED), getString(IDS_APP_NAME),
                 MB_OK | MB_ICONERROR);
@@ -358,10 +370,8 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     checkHR(SetCurrentProcessExplicitAppUserModelID(APP_ID));
 
     debugPrintf(L"%s\n", GetCommandLine());
-    int argc;
-    wchar_t **argv = CommandLineToArgvW(GetCommandLine(), &argc);
-    LaunchType type = createWindowFromCommandLine(argc, argv, showCommand);
-    LocalFree(argv);
+    LaunchType type = requestedLaunch == LAUNCH_HEADLESS ? LAUNCH_HEADLESS
+        : createStartingWindow(startingFolder.get(), showCommand);
     const bool runServer = type != LAUNCH_FAIL && type != LAUNCH_FOUND;
 
     FSExecuteFactory executeFactory;
@@ -442,7 +452,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     return exitCode;
 }
 
-LaunchType createWindowFromCommandLine(int argc, wchar_t **argv, int showCommand) {
+LaunchType parseStartingFolder(int argc, wchar_t **argv, wstr_ptr *folder) {
     wstr_ptr pathAlloc;
     wchar_t *path = nullptr;
     for (int i = 1; i < argc; i++) {
@@ -488,6 +498,16 @@ LaunchType createWindowFromCommandLine(int argc, wchar_t **argv, int showCommand
         path = pathAlloc.get();
     }
 
+    if (path == pathAlloc.get()) {
+        *folder = std::move(pathAlloc);
+    } else {
+        folder->reset(new wchar_t[lstrlenW(path) + 1]);
+        lstrcpyW(folder->get(), path);
+    }
+    return LAUNCH_AUTO;
+}
+
+LaunchType createStartingWindow(wchar_t *path, int showCommand) {
     CComPtr<IShellItem> startItem = itemFromPath(path);
     if (!startItem)
         return LAUNCH_FAIL;
