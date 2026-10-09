@@ -377,6 +377,16 @@ bool FolderStateStore::clear(const std::string &key, uint32_t parts) {
     return result(sqlite3_step(raw));
 }
 
+bool FolderStateStore::remove(const std::string &key) {
+    if (!initialized) return false;
+    sqlite3_stmt *raw = nullptr;
+    if (!result(sqlite3_prepare_v2(db, "DELETE FROM folder_state WHERE key=?1",
+            -1, &raw, nullptr))) return false;
+    Statement statement(raw, sqlite3_finalize);
+    if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_STATIC))) return false;
+    return result(sqlite3_step(raw));
+}
+
 bool FolderStateStore::clearAll() {
     return initialized && execute("DELETE FROM folder_state");
 }
