@@ -2,6 +2,7 @@
 #include <common.h>
 
 #include <memory>
+#include <string>
 #include <windows.h>
 
 namespace filespacer {
@@ -11,6 +12,8 @@ template <typename T>
 const T* tempPtr(const T&& x) { return &x; }
 
 using wstr_ptr = std::unique_ptr<wchar_t[]>;
+
+std::wstring quoteCommandArgument(const wchar_t *argument);
 
 /* win32 wrappers that return values directly instead of error codes */
 RECT windowRect(HWND hwnd);
