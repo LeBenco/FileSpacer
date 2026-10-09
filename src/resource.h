@@ -1,8 +1,8 @@
 #pragma once
 #include "dialog.h"
 
-#define FILESPACER_VERSION        0,7,2,0
-#define FILESPACER_VERSION_STRING "0.7.2\0"
+#define FILESPACER_VERSION        1,0,0,0
+#define FILESPACER_VERSION_STRING "1.0.0\0"
 
 #define IDR_RT_MANIFEST1 1 // must be 1 for an exe
 
