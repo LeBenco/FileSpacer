@@ -123,9 +123,6 @@ FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCm
     FolderWindowSearch search{property};
     BOOL enumerated = EnumWindows(findFolderWindow, reinterpret_cast<LPARAM>(&search));
     if (search.window) {
-        HWND owner = GetWindow(search.window, GW_OWNER);
-        if (owner && IsIconic(owner))
-            ShowWindowAsync(owner, SW_RESTORE);
         ShowWindowAsync(search.window, IsIconic(search.window) ? SW_RESTORE : SW_SHOW);
         SetForegroundWindow(search.window);
         ItemWindow::flashWindow(search.window);
