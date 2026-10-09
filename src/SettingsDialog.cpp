@@ -184,8 +184,7 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     settings::setStartingFolder(startingFolder.data());
                 bool groupFolderWindows = !!IsDlgButtonChecked(hwnd, IDC_GROUP_FOLDER_WINDOWS);
                 bool liveNameSearch = !!IsDlgButtonChecked(hwnd, IDC_LIVE_NAME_SEARCH);
-                bool windowSettingsChanged = groupFolderWindows != settings::getGroupFolderWindows()
-                    || liveNameSearch != settings::getLiveNameSearch();
+                bool windowSettingsChanged = liveNameSearch != settings::getLiveNameSearch();
                 settings::setGroupFolderWindows(groupFolderWindows);
                 settings::setKeepSourceWindowOpen(!!IsDlgButtonChecked(hwnd, IDC_KEEP_SOURCE_WINDOW_OPEN));
                 settings::setKeepSelectionOnActivate(
