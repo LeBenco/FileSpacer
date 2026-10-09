@@ -3,7 +3,6 @@
 #include "FolderStateStore.h"
 
 #include "COMUtils.h"
-#include "TaskbarOwnerWindow.h"
 #include "ProxyIcon.h"
 #include "PathBar.h"
 #include "WinUtils.h"
@@ -18,7 +17,6 @@ namespace filespacer {
 enum class FolderOpenResult;
 
 class ItemWindow : public WindowImpl, public UnknownImpl {
-    friend TaskbarOwnerWindow;
     friend FolderOpenResult openFolderWindow(IShellItem *, HMONITOR, int);
     friend ProxyIcon;
 protected:
@@ -133,7 +131,6 @@ protected:
 	int trackContextMenu(POINT pos, HMENU menu, HWND owner = nullptr);
 
     void openChild(IShellItem *childItem, bool closeSource);
-    void enableTaskbarOwner(bool enabled);
 
     virtual IDispatch * getShellViewDispatch();
     void onViewReady();
@@ -165,8 +162,7 @@ private:
 
     void openParent(bool closeSource);
 
-    void setTaskbarPreview(); // register the folder preview with its taskbar owner
-    void updateTaskbar(); // grouping/pinning changes require a new taskbar owner
+    void updateTaskbar(); // Properties belong to the visible folder window.
 
     // folder windows are registered with the Shell
     void registerShellWindow();
@@ -203,9 +199,11 @@ private:
     HWND quickAccessToolbar = nullptr;
     long shellWindowCookie = 0;
     ULONG shellNotifyID = 0;
+    CComHeapPtr<ITEMIDLIST> notifyItemID;
 
-    CComPtr<TaskbarOwnerWindow> taskbarOwner;
     bool firstActivate = false, closing = false;
+    bool taskbarGrouped = false; // Fixed for this HWND; changes apply to new windows.
+    bool taskbarPinningSet = false;
 
     SRWLOCK iconLock = SRWLOCK_INIT;
     HICON iconLarge = nullptr, iconSmall = nullptr;
