@@ -349,7 +349,7 @@ bool ItemWindow::isFolder() const {
 }
 
 DWORD ItemWindow::windowStyle() const {
-    return WS_OVERLAPPEDWINDOW & ~WS_MINIMIZEBOX & ~WS_MAXIMIZEBOX;
+    return WS_OVERLAPPEDWINDOW;
 }
 
 DWORD ItemWindow::windowExStyle() const {
@@ -595,6 +595,7 @@ void ItemWindow::resetViewState(uint32_t mask) {
     savedState.present &= ~mask;
     if (mask & FolderState::View) savedState.view = {};
     if (mask & FolderState::Icons) savedState.icons.clear();
+    if (mask & FolderState::Maximized) savedState.maximized = false;
     viewStateClean(mask);
 }
 
@@ -620,7 +621,7 @@ void ItemWindow::persistViewState() {
 uint32_t ItemWindow::captureViewState(uint32_t mask) {
     RECT rect = {};
     if (!normalWindowRect(&rect)) return 0;
-    const uint32_t captured = mask & (FolderState::Position | FolderState::Size);
+    const uint32_t captured = mask & (FolderState::Position | FolderState::Size | FolderState::Maximized);
     if (captured & FolderState::Position) {
         savedState.x = invScaleDPI(rect.left);
         savedState.y = invScaleDPI(rect.top);
@@ -630,6 +631,8 @@ uint32_t ItemWindow::captureViewState(uint32_t mask) {
         savedState.width = invScaleDPI(size.cx);
         savedState.height = invScaleDPI(size.cy);
     }
+    if (captured & FolderState::Maximized)
+        savedState.maximized = lastMaximized;
     return captured;
 }
 
@@ -645,6 +648,8 @@ bool ItemWindow::create(RECT rect, int showCommand) {
     if (identityProperty.empty() || !checkHR(item->GetDisplayName(SIGDN_NORMALDISPLAY, &title)))
         return false;
     debugPrintf(L"Open %s\n", &*title);
+    const bool restoreMaximized = loadFolderState()
+        && (savedState.present & FolderState::Maximized) && savedState.maximized;
     taskbarOwner.Attach(new TaskbarOwnerWindow(this, showCommand));
     if (!taskbarOwner->getWnd()) {
         taskbarOwner = nullptr;
@@ -658,6 +663,11 @@ bool ItemWindow::create(RECT rect, int showCommand) {
         taskbarOwner = nullptr;
         return false;
     }
+    // Create the normal rectangle first so Windows keeps it for SC_RESTORE,
+    // including when this folder was maximized in a previous session.
+    if (restoreMaximized && (showCommand == SW_SHOWNORMAL || showCommand == SW_SHOW
+            || showCommand == SW_SHOWDEFAULT || showCommand == SW_RESTORE))
+        showCommand = SW_SHOWMAXIMIZED;
     ShowWindow(createHwnd, showCommand);
     return true;
 }
@@ -767,6 +777,11 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             }
             return 0;
         case WM_ACTIVATE:
+            if (useCustomFrame() && compositionEnabled) {
+                // Microsoft custom-frame sample extends on activation, not creation.
+                const MARGINS margins = {0, 0, CAPTION_HEIGHT, 0};
+                checkHR(DwmExtendFrameIntoClientArea(hwnd, &margins));
+            }
             onActivate(LOWORD(wParam), (HWND)lParam);
             return 0;
         case WM_NCACTIVATE: {
@@ -784,15 +799,14 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
         }
         case WM_NCCALCSIZE:
             if (wParam == TRUE && useCustomFrame()) {
-                // allow resizing past the edge of the window by reducing client rect
-                // TODO: revisit this
                 NCCALCSIZE_PARAMS *params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
-                int resizeMargin = windowResizeMargin();
-                params->rgrc[0].left = params->rgrc[0].left + resizeMargin;
-                if (!compositionEnabled)
-                    params->rgrc[0].top = params->rgrc[0].top + resizeMargin;
-                params->rgrc[0].right = params->rgrc[0].right - resizeMargin;
-                params->rgrc[0].bottom = params->rgrc[0].bottom - resizeMargin;
+                const RECT proposed = params->rgrc[0];
+                // Let Windows calculate the resize borders at the current DPI.
+                DefWindowProc(hwnd, message, wParam, lParam);
+                const LONG border = params->rgrc[0].left - proposed.left;
+                // Keep the extended DWM caption in window-relative coordinates,
+                // including the off-screen resize border of a maximized window.
+                params->rgrc[0].top = proposed.top + (compositionEnabled ? 0 : border);
                 return 0;
             }
             break;
@@ -873,6 +887,14 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             onSize(sizeFromLParam(lParam));
             return 0;
         }
+        case WM_SYSCOMMAND:
+            if ((wParam & 0xFFF0) == SC_MINIMIZE) {
+                // Minimize the taskbar owner: Windows hides its owned folder
+                // and shows it again on restore, preserving normal/maximized state.
+                ShowWindow(taskbarOwner->getWnd(), SW_MINIMIZE);
+                return 0;
+            }
+            break;
         case WM_CONTEXTMENU: {
             POINT pos = pointFromLParam(lParam);
             if (pos.x == -1 && pos.y == -1) {
@@ -990,14 +1012,6 @@ void ItemWindow::onCreate() {
 
     HMODULE instance = GetWindowInstance(hwnd);
     if (useCustomFrame()) {
-        MARGINS margins;
-        margins.cxLeftWidth = 0;
-        margins.cxRightWidth = 0;
-        margins.cyTopHeight = CAPTION_HEIGHT;
-        margins.cyBottomHeight = 0;
-        if (compositionEnabled)
-            checkHR(DwmExtendFrameIntoClientArea(hwnd, &margins));
-
         proxyIcon.create(hwnd, title,
             captionTopMargin(), CAPTION_HEIGHT - captionTopMargin());
     }
@@ -1407,6 +1421,11 @@ void ItemWindow::onActivate(WORD state, HWND) {
 }
 
 void ItemWindow::onSize(SIZE size) {
+    if (useCustomFrame() && compositionEnabled && !IsIconic(hwnd)) {
+        // Maximize/restore can resize an already active window without WM_ACTIVATE.
+        const MARGINS margins = {0, 0, CAPTION_HEIGHT, 0};
+        checkHR(DwmExtendFrameIntoClientArea(hwnd, &margins));
+    }
     autoSizeProxy(size.cx);
     layoutToolbarRow(size.cx);
 }
@@ -1524,10 +1543,14 @@ void ItemWindow::layoutToolbarRow(int width) {
 void ItemWindow::autoSizeProxy(LONG width) {
     TITLEBARINFOEX titleBar = {sizeof(titleBar)};
     SendMessage(hwnd, WM_GETTITLEBARINFOEX, 0, (LPARAM)&titleBar);
-    int closeButtonWidth = rectWidth(titleBar.rgrect[5]);
+    int captionButtonsWidth = 0;
+    for (int i = 2; i <= 5; ++i) {
+        if (!(titleBar.rgstate[i] & (STATE_SYSTEM_INVISIBLE | STATE_SYSTEM_OFFSCREEN)))
+            captionButtonsWidth += rectWidth(titleBar.rgrect[i]);
+    }
 
     int left = centeredProxy() && !isFolder() ? PARENT_BUTTON_WIDTH : 0;
-    proxyIcon.autoSize(width, left, closeButtonWidth);
+    proxyIcon.autoSize(width, left, captionButtonsWidth);
 }
 
 bool ItemWindow::normalWindowRect(RECT *rect) const {
@@ -1551,6 +1574,7 @@ bool ItemWindow::normalWindowRect(RECT *rect) const {
 }
 
 void ItemWindow::recordGeometry() {
+    if (IsIconic(hwnd)) return; // A temporary reduction must not replace saved state.
     RECT rect = {};
     if (!normalWindowRect(&rect))
         return;
@@ -1560,6 +1584,10 @@ void ItemWindow::recordGeometry() {
         if (rectWidth(rect) != rectWidth(lastNormalRect) || rectHeight(rect) != rectHeight(lastNormalRect))
             viewStateDirty(1 << STATE_SIZE);
     }
+    const bool maximized = IsZoomed(hwnd) != FALSE;
+    if (maximized != lastMaximized)
+        viewStateDirty(FolderState::Maximized);
+    lastMaximized = maximized;
     lastNormalRect = rect;
     geometryKnown = true;
 }
@@ -1573,7 +1601,7 @@ LRESULT ItemWindow::hitTestNCA(POINT cursor) {
 
     int resizeMargin = windowResizeMargin();
     int captionTop = compositionEnabled ? (screenRect.top + resizeMargin) : screenRect.top;
-    if (cursor.y < captionTop && useCustomFrame()) {
+    if (cursor.y < captionTop && useCustomFrame() && !IsZoomed(hwnd)) {
         // TODO window corners are a bit more complex than this
         if (cursor.x < screenRect.left + resizeMargin)
             return HTTOPLEFT;
@@ -2460,3 +2488,4 @@ void ItemWindow::IconThread::run() {
 }
 
 } // namespace
+
