@@ -49,6 +49,7 @@ public:
     bool recordAccess(const std::string &key, bool success, int64_t when, bool *expired = nullptr);
     bool clear(const std::string &key, uint32_t parts);
     bool clearAll();
+    bool remove(const std::string &key);
     bool move(const std::string &oldKey, const std::string &newKey);
 private:
     bool execute(const char *sql);
