@@ -283,11 +283,9 @@ void ProxyIcon::completeRename() {
     if (lstrcmp(newName, editingName) == 0)
         return; // names are identical, which would cause an unnecessary error message
     if (PathCleanupSpec(nullptr, newName) & (PCS_REPLACEDCHAR | PCS_REMOVEDCHAR)) {
-        outer->enableTaskbarOwner(false);
         checkHR(TaskDialog(outer->hwnd, GetModuleHandle(nullptr),
             MAKEINTRESOURCE(IDS_ERROR_CAPTION), nullptr, MAKEINTRESOURCE(IDS_INVALID_CHARS),
             TDCBF_OK_BUTTON, TD_ERROR_ICON, nullptr));
-        outer->enableTaskbarOwner(true);
         return;
     }
 
