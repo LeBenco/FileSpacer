@@ -24,10 +24,11 @@ struct FolderViewSettings {
 };
 
 struct FolderState {
-    enum Part : uint32_t { Position = 1, Size = 2, View = 4, Icons = 8, All = 15 };
+    enum Part : uint32_t { Position = 1, Size = 2, View = 4, Icons = 8, Maximized = 16, All = 31 };
     int64_t lastSuccessAt = 0, firstFailedAt = 0; // UTC seconds; zero means no known failure.
     uint32_t present = 0;
     int32_t x = 0, y = 0, width = 0, height = 0; // 96-DPI units, signed 32-bit coordinates.
+    bool maximized = false; // Independent of normal geometry; minimized state is never stored.
     FolderViewSettings view;
     std::vector<uint8_t> icons;
 };
@@ -66,3 +67,4 @@ void reportFolderStateError(void *owner);
 #endif
 
 } // namespace
+
