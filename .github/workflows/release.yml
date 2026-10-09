@@ -60,10 +60,14 @@ jobs:
             throw 'The NSIS installer was not produced.'
           }
 
+          $installer = "build/FileSpacer-$version-install.exe"
+          Move-Item -LiteralPath 'build/FileSpacer-install.exe' -Destination $installer
+          "INSTALLER_PATH=$installer" >> $env:GITHUB_ENV
+
       - name: Publish the release and its installer
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$env:RELEASE_TAG" 'build/FileSpacer-install.exe' --repo "$env:GITHUB_REPOSITORY" --verify-tag --generate-notes
+          gh release create "$env:RELEASE_TAG" "$env:INSTALLER_PATH" --repo "$env:GITHUB_REPOSITORY" --verify-tag --generate-notes
           if ($LASTEXITCODE -ne 0) { throw 'Release publication failed.' }
