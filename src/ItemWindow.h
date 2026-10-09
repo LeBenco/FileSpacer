@@ -189,11 +189,12 @@ private:
     FolderState savedState;
     bool stateLoaded = false;
     bool storageErrorShown = false;
-    uint32_t dirtyViewState = 0; // bit field indexed by ViewStateIndex
+    uint32_t dirtyViewState = 0; // FolderState::Part flags
 
     std::wstring identityProperty;
     RECT lastNormalRect = {};
     bool geometryKnown = false;
+    bool lastMaximized = false;
     bool windowLifetime = false;
 
     ProxyIcon proxyIcon;
@@ -225,3 +226,4 @@ private:
 };
 
 } // namespace
+
