@@ -92,9 +92,6 @@ static LOGFONT SYMBOL_LOGFONT = {14, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE,
     ANSI_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
     DEFAULT_PITCH | FF_DONTCARE, L"Segoe MDL2 Assets"};
 
-// these are Windows metrics/colors that are not exposed through the API >:(
-static int WIN10_CXSIZEFRAME = 8; // TODO not correct at higher DPIs
-
 static HFONT statusFont = nullptr;
 static HFONT symbolFont = nullptr;
 static ULONG_PTR navigationGraphicsToken = 0;
@@ -207,7 +204,10 @@ static bool highContrastEnabled() {
 }
 
 static int windowResizeMargin() {
-    return IsThemeActive() ? WIN10_CXSIZEFRAME : GetSystemMetrics(SM_CXSIZEFRAME);
+    // Use the native frame calculation from the DWM custom-frame sample.
+    RECT frame = {};
+    checkLE(AdjustWindowRectEx(&frame, WS_OVERLAPPEDWINDOW & ~WS_CAPTION, FALSE, 0));
+    return -frame.top;
 }
 
 static int captionTopMargin() {
@@ -228,7 +228,6 @@ int ItemWindow::cascadeSize() {
 
 void ItemWindow::init() {
     settingsChangedMessage = checkLE(RegisterWindowMessage(L"FileSpacer.SettingsChanged"));
-    TaskbarOwnerWindow::init();
     ProxyIcon::init();
     PathBar::init();
 
@@ -274,7 +273,6 @@ void ItemWindow::init() {
     TOOLBAR_HEIGHT = scaleDPI(TOOLBAR_HEIGHT);
     TOOLBAR_VERTICAL_PADDING = scaleDPI(TOOLBAR_VERTICAL_PADDING);
     STATUS_TEXT_MARGIN = scaleDPI(STATUS_TEXT_MARGIN);
-    WIN10_CXSIZEFRAME = scaleDPI(WIN10_CXSIZEFRAME);
     SYMBOL_LOGFONT.lfHeight = scaleDPI(SYMBOL_LOGFONT.lfHeight);
 
     if (HTHEME theme = OpenThemeData(nullptr, WINDOW_THEME)) {
@@ -331,6 +329,7 @@ ItemWindow::ItemWindow(IShellItem *const item, const std::wstring &identity)
         : item(item),
           identityProperty(folderWindowProperty(identity)),
           proxyIcon(this) {
+    taskbarGrouped = settings::getGroupFolderWindows();
     // The window property is an ASCII prefix followed by a hexadecimal digest.
     for (wchar_t character : identityProperty)
         stateKey.push_back(static_cast<char>(character));
@@ -371,23 +370,6 @@ const wchar_t * ItemWindow::helpURL() const {
 #endif
 
 
-static std::wstring quoteCommandArgument(const wchar_t *argument) {
-    std::wstring quoted = L"\"";
-    size_t backslashes = 0;
-    for (const wchar_t *next = argument; *next; next++) {
-        if (*next == L'\\') {
-            backslashes++;
-        } else {
-            quoted.append(backslashes * (*next == L'"' ? 2 : 1), L'\\');
-            if (*next == L'"')
-                quoted += L'\\';
-            quoted += *next;
-            backslashes = 0;
-        }
-    }
-    quoted.append(backslashes * 2, L'\\');
-    return quoted + L'"';
-}
 
 static std::wstring folderTaskbarID(const wchar_t *parsingName) {
     // A stable SHA-256 of the Shell parsing name fits the 128-character limit.
@@ -487,7 +469,7 @@ void ItemWindow::updateWindowPropStore(IPropertyStore *const propStore) {
     CComHeapPtr<wchar_t> parsingName;
     wchar_t executable[32768];
     std::wstring id;
-    bool grouped = settings::getGroupFolderWindows();
+    const bool grouped = taskbarGrouped;
     AcquireSRWLockShared(&iconLock);
     std::wstring resource = taskbarIconResource;
     ReleaseSRWLockShared(&iconLock);
@@ -495,15 +477,23 @@ void ItemWindow::updateWindowPropStore(IPropertyStore *const propStore) {
     if (!grouped && checkHR(item->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &parsingName))) {
         id = folderTaskbarID(parsingName);
         DWORD length = checkLE(GetModuleFileNameW(nullptr, executable, _countof(executable)));
-        relaunch = !resource.empty() && !id.empty()
+        relaunch = !id.empty()
             && length > 0 && length < _countof(executable);
+        // The folder icon arrives asynchronously. Use the executable's icon
+        // until then so pinning policy is valid before this window is shown.
+        if (relaunch && resource.empty())
+            resource = std::wstring(executable) + L",0";
     }
 
-    // PreventPinning is fixed before the first explicit ID on this owner window.
+    // Windows fixes PreventPinning before this HWND's first explicit ID.
     // A common application group cannot represent separately pinned folders.
-    PROPVARIANT preventPinning = {VT_BOOL};
-    preventPinning.boolVal = relaunch ? VARIANT_FALSE : VARIANT_TRUE;
-    checkHR(propStore->SetValue(PKEY_AppUserModel_PreventPinning, preventPinning));
+    if (!taskbarPinningSet) {
+        PROPVARIANT preventPinning = {VT_BOOL};
+        preventPinning.boolVal = relaunch ? VARIANT_FALSE : VARIANT_TRUE;
+        taskbarPinningSet = checkHR(propStore->SetValue(
+            PKEY_AppUserModel_PreventPinning, preventPinning));
+        if (!taskbarPinningSet) return;
+    }
     PROPVARIANT empty = {VT_EMPTY};
     if (relaunch) {
         std::wstring command = quoteCommandArgument(executable) + L" "
@@ -524,7 +514,7 @@ void ItemWindow::updateWindowPropStore(IPropertyStore *const propStore) {
             id = APP_ID;
         else if (id.empty())
             id = std::wstring(APP_ID) + L".Window"
-                + std::to_wstring(reinterpret_cast<UINT_PTR>(taskbarOwner->getWnd()));
+                + std::to_wstring(reinterpret_cast<UINT_PTR>(hwnd));
     }
     taskbarAppID = id;
     // Setting ID last tells the taskbar to refresh all relaunch information.
@@ -560,6 +550,7 @@ void ItemWindow::stateStorageError() {
 }
 
 void ItemWindow::recordFolderAccess(HRESULT result) {
+    if (closing) return;
     const bool success = SUCCEEDED(result);
     if (!success && !isFolderAccessFailure(result)) return;
     // A successful access, unlike a delayed save, may recreate an age-expired state.
@@ -650,19 +641,12 @@ bool ItemWindow::create(RECT rect, int showCommand) {
     debugPrintf(L"Open %s\n", &*title);
     const bool restoreMaximized = loadFolderState()
         && (savedState.present & FolderState::Maximized) && savedState.maximized;
-    taskbarOwner.Attach(new TaskbarOwnerWindow(this, showCommand));
-    if (!taskbarOwner->getWnd()) {
-        taskbarOwner = nullptr;
-        return false;
-    }
     HWND createHwnd = checkLE(CreateWindowEx(
         windowExStyle(), className(), title, windowStyle(),
         rect.left, rect.top, rectWidth(rect), rectHeight(rect),
-        taskbarOwner->getWnd(), nullptr, GetModuleHandle(nullptr), (WindowImpl *)this));
-    if (!createHwnd) {
-        taskbarOwner = nullptr;
+        nullptr, nullptr, GetModuleHandle(nullptr), (WindowImpl *)this));
+    if (!createHwnd)
         return false;
-    }
     // Create the normal rectangle first so Windows keeps it for SC_RESTORE,
     // including when this folder was maximized in a previous session.
     if (restoreMaximized && (showCommand == SW_SHOWNORMAL || showCommand == SW_SHOW
@@ -884,17 +868,12 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             break; // pass to DefWindowProc
         }
         case WM_SIZE: {
+            if (wParam == SIZE_MINIMIZED)
+                return 0; // Keep the folder view's layout while temporarily minimized.
+            CComPtr<ItemWindow> keepAlive(this);
             onSize(sizeFromLParam(lParam));
             return 0;
         }
-        case WM_SYSCOMMAND:
-            if ((wParam & 0xFFF0) == SC_MINIMIZE) {
-                // Minimize the taskbar owner: Windows hides its owned folder
-                // and shows it again on restore, preserving normal/maximized state.
-                ShowWindow(taskbarOwner->getWnd(), SW_MINIMIZE);
-                return 0;
-            }
-            break;
         case WM_CONTEXTMENU: {
             POINT pos = pointFromLParam(lParam);
             if (pos.x == -1 && pos.y == -1) {
@@ -940,21 +919,39 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             ITEMIDLIST **idls;
             HANDLE lock = SHChangeNotification_Lock((HANDLE)wParam, (DWORD)lParam, &idls, &event);
             if (lock) {
-                CComPtr<IShellItem> item1, item2;
-                if (idls[0])
-                    checkHR(SHCreateItemFromIDList(idls[0], IID_PPV_ARGS(&item1)));
-                if (idls[1])
-                    checkHR(SHCreateItemFromIDList(idls[1], IID_PPV_ARGS(&item2)));
+                CComHeapPtr<ITEMIDLIST> oldID, newID;
+				if (idls[0])
+					oldID.Attach(reinterpret_cast<ITEMIDLIST *>(ILCloneFull(idls[0])));
+				if (idls[1])
+					newID.Attach(reinterpret_cast<ITEMIDLIST *>(ILCloneFull(idls[1])));
                 SHChangeNotification_Unlock(lock);
-                int compare;
-                // TODO SICHINT_TEST_FILESYSPATH_IF_NOT_EQUAL?
-                if (item1 && checkHR(item1->Compare(item, SICHINT_CANONICAL, &compare))
-                        && compare == 0) {
-                    if ((event & (SHCNE_RENAMEITEM | SHCNE_RENAMEFOLDER)) && item2) {
-                        debugPrintf(L"Item renamed!\n");
-                        itemMoved(item2);
+                // Compare retained PIDLs: constructing an IShellItem for a
+                // deleted path can fail before its deletion is handled.
+                bool matches = oldID && notifyItemID && ILIsEqual(oldID, notifyItemID);
+                if (!matches && oldID && notifyItemID) {
+                    CComPtr<IShellFolder> desktop;
+                    if (SUCCEEDED(SHGetDesktopFolder(&desktop))) {
+                        const HRESULT compared = desktop->CompareIDs(SHCIDS_CANONICALONLY,
+                            oldID, notifyItemID);
+                        matches = SUCCEEDED(compared) && (short)HRESULT_CODE(compared) == 0;
+                    }
+                }
+                if (matches) {
+                    if (event & (SHCNE_DELETE | SHCNE_RMDIR)) {
+                        // Only a confirmed removal deletes state. Prevent close-time
+                        // saves from recreating the deleted row, including reentrant UI.
+                        CComPtr<ItemWindow> keepAlive(this);
+                        closing = true;
+                        const std::string deletedKey = std::move(stateKey);
+                        stateKey.clear();
+                        auto store = folderStateStore();
+                        if (!store || !store->remove(deletedKey)) stateStorageError();
+                        checkLE(DestroyWindow(hwnd));
+                    } else if ((event & (SHCNE_RENAMEITEM | SHCNE_RENAMEFOLDER)) && newID) {
+                        CComPtr<IShellItem> moved;
+                        if (checkHR(SHCreateItemFromIDList(newID, IID_PPV_ARGS(&moved))))
+                            itemMoved(moved);
                     } else {
-                        debugPrintf(L"Resolving item due to shell event\n");
                         resolveItem();
                     }
                 }
@@ -965,7 +962,6 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             AcquireSRWLockExclusive(&iconLock);
             SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)iconLarge);
             SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)iconSmall);
-            taskbarOwner->setIcon(iconSmall, iconLarge);
             proxyIcon.setIcon(iconSmall);
             ReleaseSRWLockExclusive(&iconLock);
             updateTaskbar();
@@ -1006,7 +1002,7 @@ void ItemWindow::onCreate() {
     }
     registerShellNotify();
 
-    setTaskbarPreview();
+    updateTaskbar();
 
     SHAddToRecentDocs(SHARD_APPIDINFO, tempPtr(SHARDAPPIDINFO{item, appUserModelID()}));
 
@@ -1226,8 +1222,16 @@ void ItemWindow::onDestroy() {
     unregisterShellWindow();
     RemovePropW(hwnd, identityProperty.c_str());
 
-    SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, 0); // remove owner
-    taskbarOwner = nullptr;
+    // Release the per-window Shell properties before destroying their HWND.
+    CComPtr<IPropertyStore> propStore;
+    if (checkHR(SHGetPropertyStoreForWindow(hwnd, IID_PPV_ARGS(&propStore)))) {
+        PROPVARIANT empty = {VT_EMPTY};
+        checkHR(propStore->SetValue(PKEY_AppUserModel_ID, empty));
+        checkHR(propStore->SetValue(PKEY_AppUserModel_PreventPinning, empty));
+        checkHR(propStore->SetValue(PKEY_AppUserModel_RelaunchCommand, empty));
+        checkHR(propStore->SetValue(PKEY_AppUserModel_RelaunchDisplayNameResource, empty));
+        checkHR(propStore->SetValue(PKEY_AppUserModel_RelaunchIconResource, empty));
+    }
 
     if (iconThread)
         iconThread->stop();
@@ -1432,35 +1436,8 @@ void ItemWindow::onSize(SIZE size) {
 
 void ItemWindow::updateTaskbar() {
     CComPtr<IPropertyStore> propStore;
-    if (checkHR(SHGetPropertyStoreForWindow(taskbarOwner->getWnd(), IID_PPV_ARGS(&propStore)))) {
-        PROPVARIANT preventPinning = {};
-        if (checkHR(propStore->GetValue(PKEY_AppUserModel_PreventPinning, &preventPinning))) {
-            AcquireSRWLockShared(&iconLock);
-            bool cannotPin = settings::getGroupFolderWindows() || taskbarIconResource.empty();
-            ReleaseSRWLockShared(&iconLock);
-            bool replaceOwner = preventPinning.vt == VT_BOOL
-                && (!!preventPinning.boolVal != cannotPin);
-            checkHR(PropVariantClear(&preventPinning));
-            if (replaceOwner) {
-                // Recreate only the taskbar owner: PreventPinning cannot be
-                // changed after its first ID. Keep the folder view and selection.
-                CComPtr<TaskbarOwnerWindow> previous = taskbarOwner;
-                CComPtr<TaskbarOwnerWindow> replacement;
-                replacement.Attach(new TaskbarOwnerWindow(this));
-                if (replacement->getWnd()) {
-                    previous->setPreview(nullptr);
-                    checkLE(SetWindowLongPtr(hwnd, GWLP_HWNDPARENT,
-                        reinterpret_cast<LONG_PTR>(replacement->getWnd())));
-                    taskbarOwner = replacement;
-                    setTaskbarPreview();
-                    ShowWindow(taskbarOwner->getWnd(), IsIconic(previous->getWnd())
-                        ? SW_SHOWMINNOACTIVE : SW_SHOWNOACTIVATE);
-                }
-            } else {
-                updateWindowPropStore(propStore);
-            }
-        }
-    }
+    if (checkHR(SHGetPropertyStoreForWindow(hwnd, IID_PPV_ARGS(&propStore))))
+        updateWindowPropStore(propStore);
 }
 
 void ItemWindow::onSettingsChanged() {
@@ -1771,24 +1748,6 @@ RECT ItemWindow::requestedRect(HMONITOR preferMonitor) {
 }
 
 
-void ItemWindow::enableTaskbarOwner(bool enabled) {
-    taskbarOwner->setEnabled(enabled);
-}
-
-void ItemWindow::setTaskbarPreview() {
-    // update app user model id
-    CComPtr<IPropertyStore> propStore;
-    if (checkHR(SHGetPropertyStoreForWindow(taskbarOwner->getWnd(), IID_PPV_ARGS(&propStore))))
-        updateWindowPropStore(propStore);
-    // update taskbar preview
-    taskbarOwner->setPreview(hwnd);
-    // update alt-tab
-    taskbarOwner->setText(title);
-    AcquireSRWLockExclusive(&iconLock);
-    taskbarOwner->setIcon(iconSmall, iconLarge);
-    ReleaseSRWLockExclusive(&iconLock);
-}
-
 IDispatch * ItemWindow::getShellViewDispatch() {
     return nullptr;
 }
@@ -1833,6 +1792,8 @@ void ItemWindow::unregisterShellWindow() {
 }
 
 void ItemWindow::registerShellNotify() {
+    notifyItemID.Free();
+    if (!checkHR(SHGetIDListFromObject(item, &notifyItemID))) return;
     CComPtr<IShellItem> parentItem;
     CComHeapPtr<ITEMIDLIST> idList;
     if (SUCCEEDED(item->GetParent(&parentItem))
@@ -1850,6 +1811,7 @@ void ItemWindow::unregisterShellNotify() {
         SHChangeNotifyDeregister(shellNotifyID);
         shellNotifyID = 0;
     }
+    notifyItemID.Free();
 }
 
 bool ItemWindow::resolveItem() {
@@ -1926,7 +1888,6 @@ void ItemWindow::onItemChanged() {
         SetWindowText(hwnd, title);
         proxyIcon.setTitle(title);
         autoSizeProxy(clientSize(hwnd).cx);
-        taskbarOwner->setText(title);
     }
     pathBar.setItem(item);
     if (parentToolbar) {
@@ -2310,10 +2271,6 @@ void ItemWindow::openCaptionMenu(POINT pos) {
         // The selected window may have closed while the popup was open.
         if (GetClassName(target, windowClass, (int)ARRAYSIZE(windowClass))
                 && lstrcmp(windowClass, ITEM_WINDOW_CLASS) == 0) {
-            // The taskbar owner may be minimized instead of the folder window.
-            const HWND owner = GetAncestor(target, GA_ROOTOWNER);
-            if (owner && IsIconic(owner))
-                ShowWindowAsync(owner, SW_RESTORE);
             if (IsIconic(target))
                 ShowWindowAsync(target, SW_RESTORE);
             SetForegroundWindow(target);
