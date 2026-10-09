@@ -46,7 +46,6 @@ ICON_PNGS = \
     $(OUTDIR)\FileSpacer-256.png
 OBJECTS = \
     $(OUTDIR)\COMUtils.obj \
-    $(OUTDIR)\TaskbarOwnerWindow.obj \
     $(OUTDIR)\CreateItemWindow.obj \
     $(OUTDIR)\DPI.obj \
     $(OUTDIR)\ExecuteCommand.obj \
