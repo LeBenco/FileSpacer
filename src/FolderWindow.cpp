@@ -32,6 +32,7 @@ namespace filespacer {
 
 static constexpr int BOTTOM_STATUS_HEIGHT_DIP = 23;
 static constexpr UINT WM_APP_REBUILD_STANDARD_VIEW = WM_APP + 43;
+static constexpr UINT WM_APP_COLLAPSE_LABEL = WM_APP + 44;
 // Coalesce selection notifications before updating the selected item and status.
 static constexpr UINT SELECTION_UPDATE_DELAY_MS = 100;
 
@@ -958,6 +959,11 @@ void FolderWindow::onDestroy() {
             prevCB = nullptr;
         }
     }
+    // Release cached Shell interfaces even if an external COM client keeps
+    // the host object alive after its native window has closed.
+    prevCB.Release();
+    shellView.Release();
+    selected.Release();
     viewReady = false;
     ItemWindow::onDestroy();
     if (browser) {
@@ -1164,6 +1170,8 @@ void FolderWindow::onSettingsChanged() {
 }
 
 void FolderWindow::selectionChanged() {
+    if (fullNamesOnSelection && listView && !labelCollapsePending)
+        labelCollapsePending = PostMessageW(hwnd, WM_APP_COLLAPSE_LABEL, 0, 0) != FALSE;
     updateSelectionOnActivate = false;
     if (GetActiveWindow() != hwnd) { // in background
         // this could happen when dragging a file. don't try to create any windows yet
@@ -1189,6 +1197,27 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
     }
 
     switch (message) {
+        case WM_APP_COLLAPSE_LABEL: {
+            CComPtr<ItemWindow> keepAlive(this);
+            labelCollapsePending = false;
+            if (!fullNamesOnSelection || !listView || !isWindowOperational())
+                return 0;
+            const HWND control = listView;
+            if (recovery::labelView(control) == LV_VIEW_ICON
+                    && isWindowOperational() && listView == control && GetFocus() == control) {
+                const int focused = ListView_GetNextItem(control, -1, LVNI_FOCUSED);
+                if (focused >= 0
+                        && !(ListView_GetItemState(control, focused, LVIS_SELECTED) & LVIS_SELECTED)
+                        && isWindowOperational() && listView == control) {
+                    // Run after the selection notification unwinds, without
+                    // waiting for the selected-item and status update timer.
+                    ListView_SetItemState(control, focused, 0, LVIS_FOCUSED);
+                    if (isWindowOperational() && listView == control)
+                        InvalidateRect(control, nullptr, TRUE);
+                }
+            }
+            return 0;
+        }
         case WM_APP_REBUILD_STANDARD_VIEW: {
             CComPtr<ItemWindow> keepAlive(this);
             if (!isWindowOperational()) return 0;
