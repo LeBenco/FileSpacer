@@ -3,11 +3,13 @@
 
 #include <windows.h>
 
-namespace chromafiler {
+namespace filespacer {
 
 void makeBitmapOpaque(HDC hdc, const RECT &rect);
 HBITMAP iconToPARGB32Bitmap(HICON icon, int width, int height);
-// use alpha channel to composite onto a white background
-void compositeBackground(const BITMAP &bitmap);
+
+// Cached normal/disabled navigation glyph colors sampled from the themed Back button.
+COLORREF getNavigationIconColor(bool disabled, COLORREF background);
+void invalidateNavigationIconColors();
 
 } // namespace

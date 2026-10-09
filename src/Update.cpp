@@ -7,8 +7,9 @@
 #include <Shlwapi.h>
 #include <CommCtrl.h>
 
-namespace chromafiler {
+namespace filespacer {
 
+#if 0 // Deferred until FileSpacer has its own public services.
 const wchar_t UPDATE_URL[] = L"https://chroma.zone/dist/chromafiler-update-release.txt";
 const int MAX_DOWNLOAD_SIZE = 1024;
 
@@ -70,10 +71,10 @@ DWORD WINAPI updateCheckProc(void *) {
     WNDCLASS notifyClass = {};
     notifyClass.lpfnWndProc = notifyWindowProc;
     notifyClass.hInstance = instance;
-    notifyClass.lpszClassName = L"ChromaFile Update Notify";
+    notifyClass.lpszClassName = L"FileSpacer Update Notify";
     if (!checkLE(RegisterClass(&notifyClass)))
         return 0;
-    HWND messageWindow = checkLE(CreateWindow(notifyClass.lpszClassName, L"ChromaFiler", 0,
+    HWND messageWindow = checkLE(CreateWindow(notifyClass.lpszClassName, L"FileSpacer", 0,
         0, 0, 0, 0, HWND_MESSAGE, nullptr, instance, nullptr));
     if (!messageWindow)
         return 0;
@@ -108,7 +109,7 @@ DWORD checkUpdate(UpdateInfo *info) {
     DWORD error = (DWORD)E_FAIL;
 
     // https://learn.microsoft.com/en-us/windows/win32/wininet/http-sessions
-    HINTERNET internet = InternetOpen(L"ChromaFiler/1.0", INTERNET_OPEN_TYPE_PRECONFIG,
+    HINTERNET internet = InternetOpen(L"FileSpacer/1.0", INTERNET_OPEN_TYPE_PRECONFIG,
         nullptr, nullptr, 0);
     if (!checkLE(internet))
         return GetLastError();
@@ -161,7 +162,7 @@ DWORD checkUpdate(UpdateInfo *info) {
         debugPrintf(L"Can't parse update version!\n");
         return (DWORD)E_FAIL;
     }
-    info->isNewer = info->version > makeVersion(CHROMAFILER_VERSION);
+    info->isNewer = info->version > makeVersion(FILESPACER_VERSION);
 
     char *url = data.data() + 14, *urlEnd = StrChrA(url, '\n');
     size_t urlLen = urlEnd ? (urlEnd - url) : lstrlenA(url);
@@ -174,5 +175,7 @@ DWORD checkUpdate(UpdateInfo *info) {
 void openUpdate(const UpdateInfo &info) {
     ShellExecuteA(nullptr, "open", info.url.get(), nullptr, nullptr, SW_SHOWNORMAL);
 }
+#endif
+
 
 } // namespace

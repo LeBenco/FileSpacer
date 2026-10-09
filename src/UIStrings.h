@@ -8,7 +8,7 @@
 #define XSTRINGIFY(X) STRINGIFY(X)
 #define STRINGIFY(X) #X
 
-namespace chromafiler {
+namespace filespacer {
 
 struct LocalDeleter {
     template <typename T>

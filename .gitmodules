@@ -1,3 +1,0 @@
-[submodule "installer/nsis-shortcut-properties"]
-	path = installer/nsis-shortcut-properties
-	url = https://github.com/safing/nsis-shortcut-properties

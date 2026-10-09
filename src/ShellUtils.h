@@ -4,7 +4,9 @@
 #include <atlbase.h>
 #include <ShObjIdl.h>
 
-namespace chromafiler {
+namespace filespacer {
+
+bool invokeDefaultVerb(IShellItem *item, HWND owner, int showCommand);
 
 // not reference counted! allocate on stack!
 class NewItemSink : public IFileOperationProgressSink {

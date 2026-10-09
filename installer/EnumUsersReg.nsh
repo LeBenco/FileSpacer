@@ -1,4 +1,6 @@
 # source: https://nsis.sourceforge.io/EnumUsersReg
+# FileSpacer: also enable SeBackupPrivilege; enumerate UsrClass.dat and _Classes hives.
+# Never load a missing hive (RegLoadKey can otherwise create a file).
 
 !ifndef ___EnumUsersReg___
 !define ___EnumUsersReg___
@@ -9,6 +11,7 @@
 !define TOKEN_ADJUST_PRIVILEGES 0x0020
 
 !define SE_RESTORE_NAME         SeRestorePrivilege
+!define SE_BACKUP_NAME          SeBackupPrivilege
 
 !define SE_PRIVILEGE_ENABLED    0x00000002
 
@@ -25,6 +28,13 @@ System::Call "advapi32::OpenProcessToken(i R0, i ${TOKEN_QUERY}|${TOKEN_ADJUST_P
 ${If} $R0 != 0
   System::Call "advapi32::LookupPrivilegeValue(t n, t '${SE_RESTORE_NAME}', *l .R2) i .R0"
 
+  ${If} $R0 != 0
+    System::Call "*(i 1, l R2, i ${SE_PRIVILEGE_ENABLED}) i .R0"
+    System::Call "advapi32::AdjustTokenPrivileges(i R1, i 0, i R0, i 0, i 0, i 0)"
+    System::Free $R0
+  ${EndIf}
+
+  System::Call "advapi32::LookupPrivilegeValue(t n, t '${SE_BACKUP_NAME}', *l .R2) i .R0"
   ${If} $R0 != 0
     System::Call "*(i 1, l R2, i ${SE_PRIVILEGE_ENABLED}) i .R0"
     System::Call "advapi32::AdjustTokenPrivileges(i R1, i 0, i R0, i 0, i 0, i 0)"
@@ -58,12 +68,14 @@ Pop $0
 
 !macro _EnumUsersReg_Load FILE CALLBACK SUBKEY
 
+${If} ${FileExists} ${FILE}
 GetFullPathName /SHORT $R2 ${FILE}
 System::Call "advapi32::RegLoadKey(i ${HKEY_USERS}, t '${SUBKEY}', t R2) i .R2"
 
 ${If} $R2 == 0
   !insertmacro _EnumUsersReg_InvokeCallback "${CALLBACK}" "${SUBKEY}"
   System::Call "advapi32::RegUnLoadKey(i ${HKEY_USERS}, t '${SUBKEY}')"
+${EndIf}
 ${EndIf}
 
 !macroend
@@ -122,6 +134,7 @@ ${If} $R0 == 0
       ExpandEnvStrings $R1 $R1
 
       !insertmacro _EnumUsersReg_Load "$R1\NTUSER.DAT" $0 $1
+    !insertmacro _EnumUsersReg_Load "$R1\AppData\Local\Microsoft\Windows\UsrClass.dat" $0 $1_Classes
 
       IntOp $R0 $R0 + 1
     ${EndIf}

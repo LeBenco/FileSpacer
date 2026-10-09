@@ -2,6 +2,7 @@
 #include "ItemWindow.h"
 #include "GeomUtils.h"
 #include "WinUtils.h"
+#include "GDIUtils.h"
 #include "DPI.h"
 #include "resource.h"
 #include <windowsx.h>
@@ -11,7 +12,7 @@
 #include <propkey.h>
 #include <VersionHelpers.h>
 
-namespace chromafiler {
+namespace filespacer {
 
 // dimensions
 static SIZE PROXY_PADDING = {7, 3};
@@ -21,11 +22,9 @@ static SIZE PROXY_INFLATE = {4, 1};
 // regular light mode theme uses #999999
 const BYTE INACTIVE_CAPTION_ALPHA = 156;
 
-const BYTE PROXY_BUTTON_STYLE = BTNS_DROPDOWN | BTNS_NOPREFIX;
+const BYTE PROXY_BUTTON_STYLE = BTNS_WHOLEDROPDOWN | BTNS_NOPREFIX;
 
 static HFONT captionFont = nullptr;
-
-static CComPtr<IDropTargetHelper> dropTargetHelper;
 
 void ProxyIcon::init() {
     PROXY_PADDING = scaleDPI(PROXY_PADDING);
@@ -49,112 +48,122 @@ void ProxyIcon::uninit() {
 
 ProxyIcon::ProxyIcon(ItemWindow *const outer) : outer(outer) {}
 
-void ProxyIcon::create(HWND parent, IShellItem *const item, wchar_t *title,
-        int top, int height) {
-    bool layered = IsWindows8OrGreater();
-    toolbar = CreateWindowEx(layered ? WS_EX_LAYERED : 0, TOOLBARCLASSNAME, nullptr,
-        TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_REGISTERDROP
+void ProxyIcon::create(HWND parent, wchar_t *title, int top, int height) {
+    const bool layered = IsWindows8OrGreater();
+    const DWORD exStyle = layered ? WS_EX_LAYERED : 0;
+    caption = checkLE(CreateWindowEx(exStyle, L"STATIC", title,
+        SS_OWNERDRAW | SS_NOPREFIX | WS_VISIBLE | WS_CHILD,
+        0, 0, 0, 0, parent, nullptr, GetModuleHandle(nullptr), nullptr));
+    SetWindowSubclass(caption, captionProc, 0, (DWORD_PTR)this);
+    toolbar = checkLE(CreateWindowEx(exStyle, TOOLBARCLASSNAME, nullptr,
+        TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_TOOLTIPS
             | CCS_NOPARENTALIGN | CCS_NORESIZE | CCS_NODIVIDER | WS_VISIBLE | WS_CHILD,
-        0, 0, 0, 0, parent, nullptr, GetModuleHandle(nullptr), nullptr);
-    if (layered)
-        SetLayeredWindowAttributes(toolbar, 0, INACTIVE_CAPTION_ALPHA, LWA_ALPHA);
-
+        0, 0, 0, 0, parent, nullptr, GetModuleHandle(nullptr), nullptr));
     SendMessage(toolbar, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_DRAWDDARROWS);
     SendMessage(toolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
-    if (captionFont)
+    SendMessage(toolbar, TB_SETBITMAPSIZE, 0, 0);
+    if (captionFont) {
+        SendMessage(caption, WM_SETFONT, (WPARAM)captionFont, FALSE);
         SendMessage(toolbar, WM_SETFONT, (WPARAM)captionFont, FALSE);
+    }
     SendMessage(toolbar, TB_SETPADDING, 0, MAKELPARAM(PROXY_PADDING.cx, PROXY_PADDING.cy));
-
-    TBBUTTON proxyButton = {0, IDM_PROXY_BUTTON, TBSTATE_ENABLED,
-        PROXY_BUTTON_STYLE | BTNS_AUTOSIZE, {}, 0, (INT_PTR)(wchar_t *)title};
-    SendMessage(toolbar, TB_ADDBUTTONS, 1, (LPARAM)&proxyButton);
-
-    SIZE ideal;
+    TBBUTTON menuButton = {I_IMAGENONE, IDM_PROXY_BUTTON, TBSTATE_ENABLED,
+        PROXY_BUTTON_STYLE | BTNS_AUTOSIZE, {}, 0, (INT_PTR)L""};
+    SendMessage(toolbar, TB_ADDBUTTONS, 1, (LPARAM)&menuButton);
+    SIZE ideal = {};
     SendMessage(toolbar, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal);
     if (IsWindows10OrGreater()) {
-        // center vertically
-        int buttonHeight = GET_Y_LPARAM(SendMessage(toolbar, TB_GETBUTTONSIZE, 0, 0));
+        const int buttonHeight = GET_Y_LPARAM(SendMessage(toolbar, TB_GETBUTTONSIZE, 0, 0));
         top += max(0, (height - buttonHeight) / 2);
         height = min(height, buttonHeight);
     }
+    SetWindowPos(caption, nullptr, 0, top, 0, height, SWP_NOZORDER | SWP_NOACTIVATE);
     SetWindowPos(toolbar, nullptr, 0, top, ideal.cx, height, SWP_NOZORDER | SWP_NOACTIVATE);
-
-    // will succeed for folders and EXEs, and fail for regular files
-    // TODO: delay load?
-    item->BindToHandler(nullptr, BHID_SFUIObject, IID_PPV_ARGS(&dropTarget));
-
-    tooltip = checkLE(CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, nullptr,
-        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-        parent, nullptr, GetModuleHandle(nullptr), nullptr));
-    SetWindowPos(tooltip, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    if (captionFont)
-        SendMessage(tooltip, WM_SETFONT, (WPARAM)captionFont, FALSE);
-
-    TOOLINFO toolInfo = {sizeof(toolInfo)};
-    toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS | TTF_TRANSPARENT;
-    toolInfo.hwnd = parent;
-    toolInfo.uId = (UINT_PTR)toolbar;
-    toolInfo.lpszText = title;
-    SendMessage(tooltip, TTM_ADDTOOL, 0, (LPARAM)&toolInfo);
+    setActive(false);
 }
 
 void ProxyIcon::destroy() {
-    if (imageList)
-        checkLE(ImageList_Destroy(imageList));
+    caption = toolbar = renameBox = nullptr;
+    captionIcon = nullptr; // Borrowed from ItemWindow.
 }
 
-bool ProxyIcon::isToolbarWindow(HWND hwnd) const {
-    return toolbar && (hwnd == toolbar);
+bool ProxyIcon::isToolbarWindow(HWND window) const {
+    return toolbar && window == toolbar;
 }
 
 POINT ProxyIcon::getMenuPoint(HWND parent) {
     if (toolbar) {
-        RECT buttonRect;
+        RECT buttonRect = {};
         SendMessage(toolbar, TB_GETRECT, IDM_PROXY_BUTTON, (LPARAM)&buttonRect);
         return clientToScreen(toolbar, {buttonRect.left, buttonRect.bottom});
-    } else {
-        return clientToScreen(parent, {0, 0});
     }
-}
-
-void ProxyIcon::setItem(IShellItem *const item) {
-    if (toolbar) {
-        dropTarget = nullptr;
-        item->BindToHandler(nullptr, BHID_SFUIObject, IID_PPV_ARGS(&dropTarget));
-    }
+    return clientToScreen(parent, {0, 0});
 }
 
 void ProxyIcon::setTitle(wchar_t *title) {
-    if (toolbar) {
-        TBBUTTONINFO buttonInfo = {sizeof(buttonInfo)};
-        buttonInfo.dwMask = TBIF_TEXT;
-        buttonInfo.pszText = title;
-        SendMessage(toolbar, TB_SETBUTTONINFO, IDM_PROXY_BUTTON, (LPARAM)&buttonInfo);
-    }
-    if (tooltip) {
-        TOOLINFO toolInfo = {sizeof(toolInfo)};
-        toolInfo.hwnd = outer->hwnd;
-        toolInfo.uId = (UINT_PTR)toolbar;
-        toolInfo.lpszText = title;
-        SendMessage(tooltip, TTM_UPDATETIPTEXT, 0, (LPARAM)&toolInfo);
-    }
+    if (caption)
+        SetWindowText(caption, title);
 }
 
 void ProxyIcon::setIcon(HICON icon) {
-    if (toolbar) {
-        int iconSize = GetSystemMetrics(SM_CXSMICON);
-        if (imageList)
-            checkLE(ImageList_Destroy(imageList));
-        imageList = ImageList_Create(iconSize, iconSize, ILC_MASK | ILC_COLOR32, 1, 0);
-        ImageList_AddIcon(imageList, icon);
-        SendMessage(toolbar, TB_SETIMAGELIST, 0, (LPARAM)imageList);
+    captionIcon = icon;
+    if (caption)
+        InvalidateRect(caption, nullptr, FALSE);
+}
+
+// The passive label is part of the native caption hit-test area. Windows handles
+// moving, activation and double-click maximization; no simulated dragging is used.
+LRESULT CALLBACK ProxyIcon::captionProc(HWND window, UINT message,
+        WPARAM wParam, LPARAM lParam, UINT_PTR id, DWORD_PTR) {
+    if (message == WM_NCHITTEST)
+        return HTTRANSPARENT;
+    if (message == WM_NCDESTROY)
+        RemoveWindowSubclass(window, captionProc, id);
+    return DefSubclassProc(window, message, wParam, lParam);
+}
+
+bool ProxyIcon::drawTitle(const DRAWITEMSTRUCT *draw) {
+    if (!caption || draw->hwndItem != caption || draw->CtlType != ODT_STATIC)
+        return false;
+    const int saved = SaveDC(draw->hDC);
+    FillRect(draw->hDC, &draw->rcItem, GetSysColorBrush(
+        IsWindows10OrGreater() ? COLOR_WINDOW : COLOR_3DFACE));
+    if (captionFont)
+        SelectObject(draw->hDC, captionFont);
+    SetBkMode(draw->hDC, TRANSPARENT);
+    COLORREF color = GetSysColor(COLOR_BTNTEXT);
+    HTHEME theme = OpenThemeData(toolbar, L"Toolbar");
+    if (theme)
+        GetThemeColor(theme, TP_BUTTON, TS_NORMAL, TMT_TEXTCOLOR, &color);
+    SetTextColor(draw->hDC, color);
+    const int iconSize = GetSystemMetrics(SM_CXSMICON);
+    if (captionIcon)
+        DrawIconEx(draw->hDC, PROXY_PADDING.cx,
+            (rectHeight(draw->rcItem) - iconSize) / 2, captionIcon,
+            iconSize, iconSize, 0, nullptr, DI_NORMAL);
+    RECT text = draw->rcItem;
+    text.left += PROXY_PADDING.cx + iconSize + PROXY_INFLATE.cx;
+    text.right = max(text.left, text.right - PROXY_PADDING.cx);
+    const DWORD flags = DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS;
+    if (theme) {
+        DrawThemeText(theme, draw->hDC, TP_BUTTON, TS_NORMAL, outer->title, -1,
+            flags, 0, &text);
+        CloseThemeData(theme);
+    } else {
+        DrawText(draw->hDC, outer->title, -1, &text, flags);
     }
+    makeBitmapOpaque(draw->hDC, draw->rcItem);
+    RestoreDC(draw->hDC, saved);
+    return true;
 }
 
 void ProxyIcon::setActive(bool active) {
-    if (toolbar && IsWindows8OrGreater())
-        SetLayeredWindowAttributes(toolbar, 0, active ? 255 : INACTIVE_CAPTION_ALPHA, LWA_ALPHA);
+    if (IsWindows8OrGreater()) {
+        if (caption)
+            SetLayeredWindowAttributes(caption, 0, active ? 255 : INACTIVE_CAPTION_ALPHA, LWA_ALPHA);
+        if (toolbar)
+            SetLayeredWindowAttributes(toolbar, 0, active ? 255 : INACTIVE_CAPTION_ALPHA, LWA_ALPHA);
+    }
 }
 
 void ProxyIcon::setPressedState(bool pressed) {
@@ -166,79 +175,54 @@ void ProxyIcon::setPressedState(bool pressed) {
 }
 
 void ProxyIcon::autoSize(LONG parentWidth, LONG captionLeft, LONG captionRight) {
-    if (!toolbar)
+    if (!caption || !toolbar)
         return;
-
-    // turn on autosize to calculate the ideal width
-    TBBUTTONINFO buttonInfo = {sizeof(buttonInfo)};
-    buttonInfo.dwMask = TBIF_STYLE;
-    buttonInfo.fsStyle = PROXY_BUTTON_STYLE | BTNS_AUTOSIZE;
-    SendMessage(toolbar, TB_SETBUTTONINFO, IDM_PROXY_BUTTON, (LPARAM)&buttonInfo);
-    SIZE ideal;
-    SendMessage(toolbar, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal);
-    int actualLeft;
-    if (outer->centeredProxy()) {
-        int idealLeft = (parentWidth - ideal.cx) / 2;
-        actualLeft = max(captionLeft, idealLeft);
-    } else {
-        actualLeft = captionLeft; // cover actual window title/icon
-    }
-    int maxWidth = parentWidth - actualLeft - captionRight;
-    int actualWidth = min(ideal.cx, maxWidth);
-
-    // turn off autosize to set exact width
-    buttonInfo.dwMask = TBIF_STYLE | TBIF_SIZE;
-    buttonInfo.fsStyle = PROXY_BUTTON_STYLE;
-    buttonInfo.cx = (WORD)actualWidth;
-    SendMessage(toolbar, TB_SETBUTTONINFO, IDM_PROXY_BUTTON, (LPARAM)&buttonInfo);
-
+    HDC dc = GetDC(caption);
+    HGDIOBJ previous = captionFont ? SelectObject(dc, captionFont) : nullptr;
+    SIZE textSize = {};
+    GetTextExtentPoint32(dc, outer->title, lstrlen(outer->title), &textSize);
+    if (previous)
+        SelectObject(dc, previous);
+    ReleaseDC(caption, dc);
+    SIZE menuSize = {};
+    SendMessage(toolbar, TB_GETIDEALSIZE, FALSE, (LPARAM)&menuSize);
+    const int idealLabelWidth = 2 * PROXY_PADDING.cx + GetSystemMetrics(SM_CXSMICON)
+        + PROXY_INFLATE.cx + textSize.cx;
+    const int idealWidth = idealLabelWidth + menuSize.cx;
+    const int actualLeft = outer->centeredProxy()
+        ? max((parentWidth - idealWidth) / 2, captionLeft) : captionLeft;
+    const int actualWidth = min(idealWidth, max(0, parentWidth - actualLeft - captionRight));
+    const int labelWidth = max(0, actualWidth - menuSize.cx);
     RECT rect = windowRect(toolbar);
     MapWindowRect(nullptr, outer->hwnd, &rect);
-    SetWindowPos(toolbar, nullptr, actualLeft, rect.top,
-        actualWidth, rectHeight(rect), SWP_NOZORDER | SWP_NOACTIVATE);
-
-    // show/hide tooltip if text truncated
-    if (tooltip)
-        SendMessage(tooltip, TTM_ACTIVATE, ideal.cx > maxWidth, 0);
+    SetWindowPos(caption, nullptr, actualLeft, rect.top, labelWidth, rectHeight(rect),
+        SWP_NOZORDER | SWP_NOACTIVATE);
+    SetWindowPos(toolbar, nullptr, actualLeft + labelWidth, rect.top,
+        min(actualWidth, menuSize.cx), rectHeight(rect), SWP_NOZORDER | SWP_NOACTIVATE);
+    InvalidateRect(caption, nullptr, FALSE);
 }
 
 void ProxyIcon::redrawToolbar() {
+    if (caption)
+        RedrawWindow(caption, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
     if (toolbar)
         RedrawWindow(toolbar, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
-void ProxyIcon::dragDrop(IDataObject *const dataObject, POINT offset) {
-    if (toolbar) {
-        CComPtr<IDragSourceHelper> dragHelper;
-        if (checkHR(dragHelper.CoCreateInstance(CLSID_DragDropHelper)))
-            dragHelper->InitializeFromWindow(toolbar, &offset, dataObject);
-    }
-
-    DWORD okEffects = DROPEFFECT_COPY | DROPEFFECT_LINK | DROPEFFECT_MOVE;
-    DWORD effect;
-    dragging = true;
-    // effect is supposed to be set to DROPEFFECT_MOVE if the target was unable to delete the
-    // original, however the only time I could trigger this was moving a file into a ZIP folder,
-    // which does successfully delete the original, only with a delay. So handling this as intended
-    // would actually break dragging into ZIP folders and cause loss of data!
-    // TODO: get CFSTR_PERFORMEDDROPEFFECT instead?
-    if (DoDragDrop(dataObject, this, okEffects, &effect) == DRAGDROP_S_DROP) {
-        // make sure the item is updated to the new path!
-        // TODO: is this still necessary with SHChangeNotify?
-        outer->resolveItem();
-    }
-    dragging = false;
-}
-
 RECT ProxyIcon::titleRect() {
-    RECT rect;
-    SendMessage(toolbar, TB_GETRECT, IDM_PROXY_BUTTON, (LPARAM)&rect);
-    // hardcoded nonsense
-    SIZE offset = IsThemeActive() ? SIZE{7, 5} : SIZE{3, 2};
-    InflateRect(&rect, -PROXY_INFLATE.cx - offset.cx, -PROXY_INFLATE.cy - offset.cy);
-    int iconSize = GetSystemMetrics(SM_CXSMICON);
-    rect.left += iconSize;
-    MapWindowRect(toolbar, outer->hwnd, &rect);
+    RECT rect = clientRect(caption);
+    rect.left += PROXY_PADDING.cx + GetSystemMetrics(SM_CXSMICON) + PROXY_INFLATE.cx;
+    rect.right = max(rect.left, rect.right - PROXY_PADDING.cx);
+    HDC dc = GetDC(caption);
+    HGDIOBJ previous = captionFont ? SelectObject(dc, captionFont) : nullptr;
+    TEXTMETRIC metrics = {};
+    GetTextMetrics(dc, &metrics);
+    if (previous)
+        SelectObject(dc, previous);
+    ReleaseDC(caption, dc);
+    rect.top += max(0, (rectHeight(rect) - metrics.tmHeight) / 2);
+    rect.bottom = rect.top + metrics.tmHeight;
+    MapWindowRect(caption, outer->hwnd, &rect);
     return rect;
 }
 
@@ -273,12 +257,7 @@ void ProxyIcon::beginRename() {
     MoveWindow(renameBox, renamePos.x, renamePos.y, renameWidth, renameHeight, FALSE);
 
     SendMessage(renameBox, WM_SETTEXT, 0, (LPARAM)&*editingName);
-    wchar_t *ext = PathFindExtension(editingName);
-    if (ext == editingName) { // files that start with a dot
-        Edit_SetSel(renameBox, 0, -1);
-    } else {
-        Edit_SetSel(renameBox, 0, ext - editingName);
-    }
+    Edit_SetSel(renameBox, 0, -1);
     ShowWindow(renameBox, SW_SHOW);
     EnableWindow(toolbar, FALSE);
 }
@@ -299,11 +278,11 @@ void ProxyIcon::completeRename() {
     if (lstrcmp(newName, editingName) == 0)
         return; // names are identical, which would cause an unnecessary error message
     if (PathCleanupSpec(nullptr, newName) & (PCS_REPLACEDCHAR | PCS_REMOVEDCHAR)) {
-        outer->enableChain(false);
+        outer->enableTaskbarOwner(false);
         checkHR(TaskDialog(outer->hwnd, GetModuleHandle(nullptr),
             MAKEINTRESOURCE(IDS_ERROR_CAPTION), nullptr, MAKEINTRESOURCE(IDS_INVALID_CHARS),
             TDCBF_OK_BUTTON, TD_ERROR_ICON, nullptr));
-        outer->enableChain(true);
+        outer->enableTaskbarOwner(true);
         return;
     }
 
@@ -355,170 +334,13 @@ bool ProxyIcon::onControlCommand(HWND controlHwnd, WORD notif) {
     return false;
 }
 
-LRESULT ProxyIcon::onNotify(NMHDR *nmHdr) {
-    if (tooltip && nmHdr->hwndFrom == tooltip && nmHdr->code == TTN_SHOW) {
-        // position tooltip on top of title
-        RECT tooltipRect = titleRect();
-        MapWindowRect(outer->hwnd, nullptr, &tooltipRect);
-        SendMessage(tooltip, TTM_ADJUSTRECT, TRUE, (LPARAM)&tooltipRect);
-        SetWindowPos(tooltip, nullptr, tooltipRect.left, tooltipRect.top, 0, 0,
-            SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-        return TRUE;
-    } else if (isToolbarWindow(nmHdr->hwndFrom) && nmHdr->code == NM_LDOWN) {
-        if (isRenaming())
-            return FALSE; // don't steal focus
-        NMMOUSE *mouse = (NMMOUSE *)nmHdr;
-        POINT screenPos = clientToScreen(toolbar, mouse->pt);
-        if (DragDetect(toolbar, screenPos)) {
-            POINT newCursorPos = {};
-            GetCursorPos(&newCursorPos);
-            // detect click-and-hold
-            // https://devblogs.microsoft.com/oldnewthing/20100304-00/?p=14733
-            RECT dragRect = {screenPos.x, screenPos.y, screenPos.x, screenPos.y};
-            InflateRect(&dragRect, GetSystemMetrics(SM_CXDRAG), GetSystemMetrics(SM_CYDRAG));
-            if (PtInRect(&dragRect, newCursorPos)
-                    || GetKeyState(VK_CONTROL) < 0 || GetKeyState(VK_MENU) < 0) {
-                RECT toolbarRect = windowRect(toolbar);
-                outer->proxyDrag({screenPos.x - toolbarRect.left, screenPos.y - toolbarRect.top});
-            } else {
-                outer->activate(); // wasn't activated due to handling WM_MOUSEACTIVATE
-                outer->fakeDragMove();
-                return TRUE;
-            }
-        } else {
-            outer->activate(); // wasn't activated due to handling WM_MOUSEACTIVATE
-        }
-        return FALSE;
-    } else if (isToolbarWindow(nmHdr->hwndFrom) && nmHdr->code == NM_CLICK) {
-        // actually a double-click, since we captured the mouse in the NM_LDOWN handler (???)
-        if (isRenaming())
-            return FALSE;
-        else if (GetKeyState(VK_MENU) < 0)
-            outer->openProxyProperties();
-        else
-            outer->invokeProxyDefaultVerb();
-        return TRUE;
-    } else if (isToolbarWindow(nmHdr->hwndFrom) && nmHdr->code == NM_RCLICK) {
-        setPressedState(true);
-        outer->openProxyContextMenu();
-        setPressedState(false);
-        return TRUE;
-    } else if (isToolbarWindow(nmHdr->hwndFrom) && nmHdr->code == TBN_GETOBJECT) {
-        NMOBJECTNOTIFY *objNotif = (NMOBJECTNOTIFY *)nmHdr;
-        if (dropTarget || dragging) {
-            objNotif->pObject = (IDropTarget *)this;
-            objNotif->hResult = S_OK;
-            AddRef();
-        } else {
-            objNotif->pObject = nullptr;
-            objNotif->hResult = E_FAIL;
-        }
-        return 0;
-    }
-    return 0;
-}
-
 void ProxyIcon::onThemeChanged() {
+    if (caption && captionFont)
+        PostMessage(caption, WM_SETFONT, (WPARAM)captionFont, TRUE);
     if (toolbar && captionFont)
         PostMessage(toolbar, WM_SETFONT, (WPARAM)captionFont, TRUE);
-    if (tooltip && captionFont)
-        PostMessage(tooltip, WM_SETFONT, (WPARAM)captionFont, TRUE);
     if (renameBox && captionFont)
         PostMessage(renameBox, WM_SETFONT, (WPARAM)captionFont, TRUE);
-}
-
-/* IUnknown */
-
-STDMETHODIMP ProxyIcon::QueryInterface(REFIID id, void **obj) {
-    static const QITAB interfaces[] = {
-        QITABENT(ProxyIcon, IDropSource),
-        QITABENT(ProxyIcon, IDropTarget),
-        {}
-    };
-    return QISearch(this, interfaces, id, obj);
-}
-
-STDMETHODIMP_(ULONG) ProxyIcon::AddRef() { return outer->AddRef(); }
-
-STDMETHODIMP_(ULONG) ProxyIcon::Release() { return outer->Release(); }
-
-/* IDropSource */
-
-STDMETHODIMP ProxyIcon::QueryContinueDrag(BOOL escapePressed, DWORD keyState) {
-    if (escapePressed)
-        return DRAGDROP_S_CANCEL;
-    if (!(keyState & (MK_LBUTTON | MK_RBUTTON)))
-        return DRAGDROP_S_DROP;
-    return S_OK;
-}
-
-STDMETHODIMP ProxyIcon::GiveFeedback(DWORD) {
-    return DRAGDROP_S_USEDEFAULTCURSORS;
-}
-
-/* IDropTarget */
-
-static DWORD getDropEffect(DWORD keyState) {
-    bool ctrl = (keyState & MK_CONTROL), shift = (keyState & MK_SHIFT), alt = (keyState & MK_ALT);
-    if ((ctrl && shift && !alt) || (!ctrl && !shift && alt))
-        return DROPEFFECT_LINK;
-    else if (ctrl && !shift && !alt)
-        return DROPEFFECT_COPY;
-    else
-        return DROPEFFECT_MOVE;
-}
-
-STDMETHODIMP ProxyIcon::DragEnter(IDataObject *const dataObject, DWORD keyState, POINTL pt,
-        DWORD *effect) {
-    if (dragging) {
-        *effect = getDropEffect(keyState); // pretend we can drop so the drag image is visible
-    } else {
-        if (!dropTarget || !checkHR(dropTarget->DragEnter(dataObject, keyState, pt, effect)))
-            return E_FAIL;
-    }
-    POINT point {pt.x, pt.y};
-    if (!dropTargetHelper)
-        checkHR(dropTargetHelper.CoCreateInstance(CLSID_DragDropHelper));
-    if (dropTargetHelper)
-        checkHR(dropTargetHelper->DragEnter(toolbar, dataObject, &point, *effect));
-    return S_OK;
-}
-
-STDMETHODIMP ProxyIcon::DragLeave() {
-    if (!dragging) {
-        if (!dropTarget || !checkHR(dropTarget->DragLeave()))
-            return E_FAIL;
-    }
-    if (dropTargetHelper)
-        checkHR(dropTargetHelper->DragLeave());
-    return S_OK;
-}
-
-STDMETHODIMP ProxyIcon::DragOver(DWORD keyState, POINTL pt, DWORD *effect) {
-    if (dragging) {
-        *effect = getDropEffect(keyState);
-    } else {
-        if (!dropTarget || !checkHR(dropTarget->DragOver(keyState, pt, effect)))
-            return E_FAIL;
-    }
-    POINT point {pt.x, pt.y};
-    if (dropTargetHelper)
-        checkHR(dropTargetHelper->DragOver(&point, *effect));
-    return S_OK;
-}
-
-STDMETHODIMP ProxyIcon::Drop(IDataObject *const dataObject, DWORD keyState, POINTL pt,
-        DWORD *effect) {
-    if (dragging) {
-        *effect = DROPEFFECT_NONE; // can't drop item onto itself
-    } else {
-        if (!dropTarget || !checkHR(dropTarget->Drop(dataObject, keyState, pt, effect)))
-            return E_FAIL;
-    }
-    POINT point {pt.x, pt.y};
-    if (dropTargetHelper)
-        checkHR(dropTargetHelper->Drop(dataObject, &point, *effect));
-    return S_OK;
 }
 
 } // namespace

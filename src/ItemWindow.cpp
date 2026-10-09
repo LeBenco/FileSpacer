@@ -1,14 +1,17 @@
+#define GDIPVER 0x0110 // Enable GDI+ 1.1 declarations.
 #include "ItemWindow.h"
 #include "CreateItemWindow.h"
+#include "FolderIdentity.h"
+#include <ctime>
 #include "main.h"
 #include "GeomUtils.h"
 #include "GDIUtils.h"
 #include "WinUtils.h"
 #include "ShellUtils.h"
 #include "Settings.h"
+#include "SettingsDialog.h"
 #include "DPI.h"
 #include "UIStrings.h"
-#include "Update.h"
 #include <windowsx.h>
 #include <shlobj.h>
 #include <dwmapi.h>
@@ -17,26 +20,71 @@
 #include <propkey.h>
 #include <Propvarutil.h>
 #include <VersionHelpers.h>
+#include <string>
+#include <utility>
+#include <memory>
+#include <type_traits>
+#include <vector>
+#include <cstring>
+#include <wincodec.h>
+#include <shlwapi.h>
+#include <bcrypt.h>
+#include <olectl.h>
+#pragma warning(push)
+#pragma warning(disable: 4458) // Shadowed members in Windows SDK GDI+ headers.
+#include <gdiplus.h>
+#pragma warning(pop)
+#include <cmath>
 
-namespace chromafiler {
+#pragma comment(lib, "Bcrypt.lib")
+#pragma comment(lib, "OleAut32.lib")
+#pragma comment(lib, "Gdiplus.lib")
+#pragma comment(lib, "Windowscodecs.lib")
 
-const wchar_t ITEM_WINDOW_CLASS[] = L"ChromaFiler Item Window";
-const wchar_t TESTPOS_CLASS[] = L"ChromaFiler Test Window";
+namespace filespacer {
+
+const wchar_t ITEM_WINDOW_CLASS[] = L"FileSpacer Item Window";
+const wchar_t TESTPOS_CLASS[] = L"FileSpacer Test Window";
+const wchar_t TOOLBAR_HOST_CLASS[] = L"FileSpacer Toolbar Host";
 const wchar_t WINDOW_THEME[] = L"CompositedWindow::Window";
 const UINT SC_DRAGMOVE = SC_MOVE | 2; // https://stackoverflow.com/a/35880547/11525734
 
-// property bag
-const wchar_t PROP_POS[] = L"Pos";
-const wchar_t PROP_SIZE[] = L"Size";
-const wchar_t PROP_CHILD_SIZE[] = L"ChildSize";
+static HBITMAP captionCommandBitmap(const wchar_t *glyph, int size, COLORREF color);
+
+static LRESULT CALLBACK toolbarHostProc(
+        HWND host, UINT message, WPARAM wParam, LPARAM lParam) {
+    if (message == WM_NCCREATE) {
+        CREATESTRUCT *create = reinterpret_cast<CREATESTRUCT *>(lParam);
+        SetWindowLongPtr(host, GWLP_USERDATA, (LONG_PTR)create->lpCreateParams);
+    }
+
+    HWND owner = (HWND)GetWindowLongPtr(host, GWLP_USERDATA);
+    if (owner) {
+        switch (message) {
+            case WM_NOTIFY:
+            case WM_COMMAND:
+            case WM_CTLCOLORSTATIC:
+                return SendMessage(owner, message, wParam, lParam);
+            case WM_LBUTTONDOWN: {
+                POINT cursor;
+                GetCursorPos(&cursor);
+                if (DragDetect(host, cursor))
+                    SendMessage(owner, WM_SYSCOMMAND, SC_DRAGMOVE, 0);
+                return 0;
+            }
+        }
+    }
+
+    return DefWindowProc(host, message, wParam, lParam);
+}
+
 
 // dimensions
 static int PARENT_BUTTON_WIDTH = 34; // caption only, matches close button width in windows 10
 static int COMP_CAPTION_VMARGIN = 1;
 static int TOOLBAR_HEIGHT = 24;
+static int TOOLBAR_VERTICAL_PADDING = 3;
 static int STATUS_TEXT_MARGIN = 4;
-static int STATUS_TOOLTIP_OFFSET = 2; // TODO not correct at higher DPIs
-static int DETACH_DISTANCE = 32;
 
 int ItemWindow::CAPTION_HEIGHT = 0; // calculated in init()
 
@@ -47,17 +95,110 @@ static LOGFONT SYMBOL_LOGFONT = {14, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE,
 // these are Windows metrics/colors that are not exposed through the API >:(
 static int WIN10_CXSIZEFRAME = 8; // TODO not correct at higher DPIs
 
-static local_wstr_ptr iconResource;
-static HANDLE symbolFontHandle = nullptr;
 static HFONT statusFont = nullptr;
 static HFONT symbolFont = nullptr;
-static HCURSOR rightSideCursor = nullptr;
+static ULONG_PTR navigationGraphicsToken = 0;
+static Gdiplus::GraphicsPath *navigationIconPaths[2] = {};
+static Gdiplus::GraphicsPath *refreshIconHead = nullptr;
+static Gdiplus::RectF navigationIconBounds[2];
+static const float NAVIGATION_STROKE_WIDTHS[] = {3.0f, 3.0f};
+static float navigationIconScale = 0.0f;
+static int refreshButtonWidth = 0;
 
 static BOOL compositionEnabled = FALSE;
 
 HACCEL ItemWindow::accelTable;
+UINT ItemWindow::settingsChangedMessage = 0;
 
 CComPtr<ItemWindow> ItemWindow::activeWindow;
+
+// Lucide arrow-up / rotate-cw (stroke 3, refresh rotated -90 degrees).
+// Draw the refresh head separately with square caps and a miter join.
+// ISC / MIT (Feather arrow-up): see licenses/Lucide-LICENSE.txt.
+static void initNavigationIcons() {
+    navigationIconScale = (float)scaleDPI(16) / 24.0f;
+    Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 0), NAVIGATION_STROKE_WIDTHS[0]);
+    pen.SetLineCap(Gdiplus::LineCapRound, Gdiplus::LineCapRound, Gdiplus::DashCapRound);
+    pen.SetLineJoin(Gdiplus::LineJoinRound);
+    pen.SetMiterLimit(1.0f);
+    for (int i = 0; i < 2; ++i) {
+        Gdiplus::GraphicsPath *path = navigationIconPaths[i] = new Gdiplus::GraphicsPath;
+        if (i == 0) {
+            const Gdiplus::PointF head[] = {{5.0f, 12.0f}, {12.0f, 5.0f}, {19.0f, 12.0f}};
+            path->AddLines(head, (INT)ARRAYSIZE(head));
+            path->StartFigure();
+            path->AddLine(12.0f, 19.0f, 12.0f, 5.0f);
+        } else {
+            // After the -90-degree rotation, the free end starts at 2 o'clock.
+            path->AddArc(3.0f, 3.0f, 18.0f, 18.0f, 60.0f, 210.0f);
+            path->AddBezier(12.0f, 3.0f, 14.52f, 3.0f, 16.93f, 4.0f, 18.74f, 5.74f);
+            path->AddLine(18.74f, 5.74f, 21.0f, 8.0f);
+            refreshIconHead = new Gdiplus::GraphicsPath;
+            const Gdiplus::PointF head[] = {{21.0f, 3.0f}, {21.0f, 8.0f}, {16.0f, 8.0f}};
+            refreshIconHead->AddLines(head, (INT)ARRAYSIZE(head));
+            Gdiplus::Matrix rotation(0.0f, -1.0f, 1.0f, 0.0f, 0.0f, 24.0f);
+            path->Transform(&rotation);
+            refreshIconHead->Transform(&rotation);
+            // The stroked arc's bounds also contain the square head.
+        }
+        pen.SetWidth(NAVIGATION_STROKE_WIDTHS[i]);
+        path->GetBounds(&navigationIconBounds[i], nullptr, &pen);
+    }
+    const int iconWidth = (int)std::ceil(navigationIconBounds[1].Width * navigationIconScale);
+    refreshButtonWidth = (std::max)(TOOLBAR_HEIGHT, iconWidth + scaleDPI(8));
+}
+
+static void setRefreshButtonWidth(HWND toolbar) {
+    if (!navigationGraphicsToken)
+        return;
+    TBBUTTONINFO button = {sizeof(button), TBIF_SIZE};
+    button.cx = (WORD)refreshButtonWidth;
+    SendMessage(toolbar, TB_SETBUTTONINFO, IDM_REFRESH, (LPARAM)&button);
+}
+
+static void drawNavigationIcon(NMTBCUSTOMDRAW *customDraw) {
+    const NMCUSTOMDRAW &draw = customDraw->nmcd;
+    const bool disabled = (draw.uItemState & CDIS_DISABLED) != 0;
+    const int state = disabled ? TS_DISABLED
+        : (draw.uItemState & CDIS_SELECTED) ? TS_PRESSED
+        : (draw.uItemState & CDIS_HOT) ? TS_HOT : TS_NORMAL;
+    HTHEME theme = OpenThemeData(draw.hdr.hwndFrom, L"Toolbar");
+    const COLORREF background = GetSysColor(
+        IsWindows10OrGreater() ? COLOR_WINDOW : COLOR_3DFACE);
+    const COLORREF color = getNavigationIconColor(disabled, background);
+    const int iconIndex = draw.dwItemSpec == IDM_PREV_WINDOW ? 0 : 1;
+    const Gdiplus::RectF &bounds = navigationIconBounds[iconIndex];
+    // TB_GETRECT is the full button rectangle, independent of its empty text.
+    RECT rect = draw.rc;
+    SendMessage(draw.hdr.hwndFrom, TB_GETRECT, draw.dwItemSpec, (LPARAM)&rect);
+    const float scale = navigationIconScale;
+    float x = (float)rect.left + ((float)rectWidth(rect) - bounds.Width * scale) / 2.0f
+        - bounds.X * scale;
+    float y = (float)rect.top + ((float)rectHeight(rect) - bounds.Height * scale) / 2.0f
+        - bounds.Y * scale;
+    if (!theme && state == TS_PRESSED) {
+        x += 1.0f;
+        y += 1.0f;
+    }
+    Gdiplus::Graphics graphics(draw.hdc);
+    graphics.SetSmoothingMode(iconIndex == 1
+        ? Gdiplus::SmoothingModeAntiAlias8x8
+        : Gdiplus::SmoothingModeAntiAlias);
+    Gdiplus::Matrix placement(scale, 0.0f, 0.0f, scale, x, y);
+    graphics.SetTransform(&placement);
+    Gdiplus::Pen pen(Gdiplus::Color(255, GetRValue(color), GetGValue(color), GetBValue(color)),
+        NAVIGATION_STROKE_WIDTHS[iconIndex]);
+    pen.SetLineCap(Gdiplus::LineCapRound, Gdiplus::LineCapRound, Gdiplus::DashCapRound);
+    pen.SetLineJoin(Gdiplus::LineJoinRound);
+    graphics.DrawPath(&pen, navigationIconPaths[iconIndex]);
+    if (iconIndex == 1) {
+        pen.SetLineCap(Gdiplus::LineCapSquare, Gdiplus::LineCapSquare, Gdiplus::DashCapFlat);
+        pen.SetLineJoin(Gdiplus::LineJoinMiter);
+        graphics.DrawPath(&pen, refreshIconHead);
+    }
+    if (theme)
+        CloseThemeData(theme);
+}
 
 static bool highContrastEnabled() {
     HIGHCONTRAST highContrast = {sizeof(highContrast)};
@@ -73,21 +214,12 @@ static int captionTopMargin() {
     return compositionEnabled ? COMP_CAPTION_VMARGIN : 0;
 }
 
-static bool invisibleBorders() {
-    return compositionEnabled && IsWindows10OrGreater() && !highContrastEnabled();
+static int toolbarEdgeHeight() {
+    return GetSystemMetrics(SM_CYBORDER);
 }
 
-static int invisibleBorderDoubleSize(HWND hwnd, int dpi) {
-    if (invisibleBorders()) {
-        // https://stackoverflow.com/q/34139450/11525734
-        RECT wndRect = windowRect(hwnd);
-        RECT frame;
-        if (checkHR(DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS,
-                &frame, sizeof(frame))))
-            return (MulDiv(frame.left, systemDPI, dpi) - wndRect.left)
-                + (wndRect.right - MulDiv(frame.right, systemDPI, dpi)) + 2;
-    }
-    return 0;
+static bool invisibleBorders() {
+    return compositionEnabled && IsWindows10OrGreater() && !highContrastEnabled();
 }
 
 int ItemWindow::cascadeSize() {
@@ -95,8 +227,10 @@ int ItemWindow::cascadeSize() {
 }
 
 void ItemWindow::init() {
-    ChainWindow::init();
+    settingsChangedMessage = checkLE(RegisterWindowMessage(L"FileSpacer.SettingsChanged"));
+    TaskbarOwnerWindow::init();
     ProxyIcon::init();
+    PathBar::init();
 
     HINSTANCE hInstance = GetModuleHandle(nullptr);
 
@@ -117,6 +251,14 @@ void ItemWindow::init() {
     testPosClass.hInstance = hInstance;
     RegisterClass(&testPosClass);
 
+    WNDCLASS toolbarHostClass = {};
+    toolbarHostClass.lpszClassName = TOOLBAR_HOST_CLASS;
+    toolbarHostClass.lpfnWndProc = toolbarHostProc;
+    toolbarHostClass.hInstance = hInstance;
+    toolbarHostClass.hbrBackground =
+        GetSysColorBrush(IsWindows10OrGreater() ? COLOR_WINDOW : COLOR_3DFACE);
+    RegisterClass(&toolbarHostClass);
+
     checkHR(DwmIsCompositionEnabled(&compositionEnabled));
 
     if (compositionEnabled) {
@@ -130,9 +272,8 @@ void ItemWindow::init() {
     PARENT_BUTTON_WIDTH = scaleDPI(PARENT_BUTTON_WIDTH);
     COMP_CAPTION_VMARGIN = scaleDPI(COMP_CAPTION_VMARGIN);
     TOOLBAR_HEIGHT = scaleDPI(TOOLBAR_HEIGHT);
+    TOOLBAR_VERTICAL_PADDING = scaleDPI(TOOLBAR_VERTICAL_PADDING);
     STATUS_TEXT_MARGIN = scaleDPI(STATUS_TEXT_MARGIN);
-    STATUS_TOOLTIP_OFFSET = scaleDPI(STATUS_TOOLTIP_OFFSET);
-    DETACH_DISTANCE = scaleDPI(DETACH_DISTANCE);
     WIN10_CXSIZEFRAME = scaleDPI(WIN10_CXSIZEFRAME);
     SYMBOL_LOGFONT.lfHeight = scaleDPI(SYMBOL_LOGFONT.lfHeight);
 
@@ -149,69 +290,58 @@ void ItemWindow::init() {
         ProxyIcon::initMetrics(metrics);
     }
 
-    if (HRSRC symbolFontResource =
-            checkLE(FindResource(hInstance, MAKEINTRESOURCE(IDR_ICON_FONT), RT_FONT))) {
-        if (HGLOBAL symbolFontAddr = checkLE(LoadResource(hInstance, symbolFontResource))) {
-            DWORD count = 1;
-            symbolFontHandle = (HFONT)AddFontMemResourceEx(symbolFontAddr,
-                SizeofResource(hInstance, symbolFontResource), 0, &count);
-            symbolFont = CreateFontIndirect(&SYMBOL_LOGFONT);
-        }
+    symbolFont = checkLE(CreateFontIndirect(&SYMBOL_LOGFONT));
+    Gdiplus::GdiplusStartupInput graphicsInput;
+    ULONG_PTR graphicsToken = 0;
+    if (checkHR(Gdiplus::GdiplusStartup(&graphicsToken, &graphicsInput, nullptr)
+            == Gdiplus::Ok ? S_OK : E_FAIL)) {
+        navigationGraphicsToken = graphicsToken;
+        initNavigationIcons();
     }
 
-    rightSideCursor = LoadCursor(hInstance, MAKEINTRESOURCE(IDC_RIGHT_SIDE));
 
     accelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDR_ITEM_ACCEL));
-
-    wchar_t exePath[MAX_PATH];
-    if (checkLE(GetModuleFileName(nullptr, exePath, _countof(exePath)))) {
-        iconResource = format(L"%1,-" XSTRINGIFY(IDR_APP_ICON), exePath);
-    }
 }
 
 void ItemWindow::uninit() {
     ProxyIcon::uninit();
     if (symbolFont)
         DeleteFont(symbolFont);
-    if (symbolFontHandle)
-        RemoveFontMemResourceEx(symbolFontHandle);
+    if (navigationGraphicsToken) {
+        for (auto &path : navigationIconPaths) {
+            delete path;
+            path = nullptr;
+        }
+        delete refreshIconHead;
+        refreshIconHead = nullptr;
+        Gdiplus::GdiplusShutdown(navigationGraphicsToken);
+        navigationGraphicsToken = 0;
+    }
 }
 
 void ItemWindow::flashWindow(HWND hwnd) {
     PostMessage(hwnd, MSG_FLASH_WINDOW, 0, 0);
 }
 
-ItemWindow::ItemWindow(ItemWindow *const parent, IShellItem *const item)
-        : parent(parent),
-          item(item),
-          proxyIcon(this) {}
+void ItemWindow::expireFolderState(HWND hwnd) {
+    SendMessage(hwnd, MSG_EXPIRE_FOLDER_STATE, 0, 0);
+}
+
+ItemWindow::ItemWindow(IShellItem *const item, const std::wstring &identity)
+        : item(item),
+          identityProperty(folderWindowProperty(identity)),
+          proxyIcon(this) {
+    // The window property is an ASCII prefix followed by a hexadecimal digest.
+    for (wchar_t character : identityProperty)
+        stateKey.push_back(static_cast<char>(character));
+}
 
 const wchar_t * ItemWindow::className() const {
     return ITEM_WINDOW_CLASS;
 }
 
-void ItemWindow::setScratch(bool value) {
-    scratch = value;
-}
-
-bool ItemWindow::persistSizeInParent() const {
-    return true;
-}
-
-SIZE ItemWindow::defaultSize() const {
-    return scaleDPI(settings::getItemWindowSize());
-}
-
-const wchar_t * ItemWindow::propBagName() const {
-#ifdef CHROMAFILER_DEBUG
-    return settings::testMode ? L"chromafiler_test" : L"chromafiler";
-#else
-    return L"chromafiler";
-#endif
-}
-
 const wchar_t * ItemWindow::appUserModelID() const {
-    return APP_ID;
+    return taskbarAppID.empty() ? APP_ID : taskbarAppID.c_str();
 }
 
 bool ItemWindow::isFolder() const {
@@ -230,40 +360,175 @@ bool ItemWindow::useCustomFrame() const {
     return true;
 }
 
-bool ItemWindow::paletteWindow() const {
-    return false;
-}
-
-bool ItemWindow::stickToChild() const {
-    return true;
-}
-
-bool ItemWindow::useDefaultStatusText() const {
-    return true;
-}
-
 bool ItemWindow::centeredProxy() const {
     return compositionEnabled;
 }
 
-SettingsPage ItemWindow::settingsStartPage() const {
-    return SETTINGS_GENERAL;
-}
-
+#if 0 // Deferred until FileSpacer has its own public services.
 const wchar_t * ItemWindow::helpURL() const {
     return L"https://github.com/vanjac/chromafiler/wiki";
 }
+#endif
+
+
+static std::wstring quoteCommandArgument(const wchar_t *argument) {
+    std::wstring quoted = L"\"";
+    size_t backslashes = 0;
+    for (const wchar_t *next = argument; *next; next++) {
+        if (*next == L'\\') {
+            backslashes++;
+        } else {
+            quoted.append(backslashes * (*next == L'"' ? 2 : 1), L'\\');
+            if (*next == L'"')
+                quoted += L'\\';
+            quoted += *next;
+            backslashes = 0;
+        }
+    }
+    quoted.append(backslashes * 2, L'\\');
+    return quoted + L'"';
+}
+
+static std::wstring folderTaskbarID(const wchar_t *parsingName) {
+    // A stable SHA-256 of the Shell parsing name fits the 128-character limit.
+    // Unlike HWNDs, this identity also matches a later launch of a pinned folder.
+    BCRYPT_ALG_HANDLE algorithm = nullptr;
+    if (!checkHR(HRESULT_FROM_NT(BCryptOpenAlgorithmProvider(
+            &algorithm, BCRYPT_SHA256_ALGORITHM, nullptr, 0))))
+        return {};
+    BCRYPT_HASH_HANDLE hash = nullptr;
+    unsigned char digest[32] = {};
+    bool success = checkHR(HRESULT_FROM_NT(BCryptCreateHash(
+        algorithm, &hash, nullptr, 0, nullptr, 0, 0)));
+    if (success) {
+        success = checkHR(HRESULT_FROM_NT(BCryptHashData(hash,
+            reinterpret_cast<PUCHAR>(const_cast<wchar_t *>(parsingName)),
+            static_cast<ULONG>(lstrlenW(parsingName) * sizeof(wchar_t)), 0)))
+            && checkHR(HRESULT_FROM_NT(BCryptFinishHash(hash, digest, sizeof(digest), 0)));
+        BCryptDestroyHash(hash);
+    }
+    BCryptCloseAlgorithmProvider(algorithm, 0);
+    if (!success)
+        return {};
+    const wchar_t hex[] = L"0123456789ABCDEF";
+    std::wstring id = std::wstring(APP_ID) + L".Folder";
+    for (unsigned char byte : digest) {
+        id += hex[byte >> 4];
+        id += hex[byte & 15];
+    }
+    return id;
+}
+
+static std::wstring folderRelaunchIcon(PCIDLIST_ABSOLUTE pidl, HICON icon) {
+    // Ask the folder's native icon handler, including desktop.ini customizations.
+    // This runs on the existing COM icon thread, never on the UI thread.
+    CComPtr<IShellFolder> folder;
+    PCUITEMID_CHILD childID = nullptr;
+    CComPtr<IExtractIconW> extractor;
+    if (SUCCEEDED(SHBindToParent(pidl, IID_PPV_ARGS(&folder), &childID))
+            && SUCCEEDED(folder->GetUIObjectOf(nullptr, 1, &childID,
+                __uuidof(IExtractIconW), nullptr, reinterpret_cast<void **>(&extractor)))) {
+        wchar_t file[32768];
+        int index = 0;
+        UINT flags = 0;
+        if (extractor->GetIconLocation(GIL_FORSHORTCUT, file, _countof(file),
+                &index, &flags) == S_OK) {
+            if (!(flags & GIL_NOTFILENAME))
+                return std::wstring(file) + L"," + std::to_wstring(index);
+            if (flags & GIL_DONTCACHE)
+                return {}; // respect a handler that forbids caching its image
+        }
+    }
+
+    // Some Shell extensions generate their icons instead of naming a resource.
+    // OLE saves the already Shell-selected HICON as ICO; no manual icon encoder.
+    if (!icon)
+        return {};
+    CComHeapPtr<wchar_t> parsingName, localAppData;
+    if (!checkHR(SHGetNameFromIDList(pidl, SIGDN_DESKTOPABSOLUTEPARSING, &parsingName))
+            || !checkHR(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &localAppData)))
+        return {};
+    std::wstring id = folderTaskbarID(parsingName);
+    if (id.empty())
+        return {};
+    std::wstring directory = std::wstring(localAppData) + L"\\FileSpacer\\FolderIcons";
+    int result = SHCreateDirectoryExW(nullptr, directory.c_str(), nullptr);
+    if (result != ERROR_SUCCESS && result != ERROR_ALREADY_EXISTS)
+        return {};
+    std::wstring file = directory + L"\\" + id + L".ico";
+    std::wstring temporary = file + L"." + std::to_wstring(GetCurrentProcessId())
+        + L"." + std::to_wstring(GetCurrentThreadId()) + L".tmp";
+    PICTDESC description = {};
+    description.cbSizeofstruct = sizeof(description);
+    description.picType = PICTYPE_ICON;
+    description.icon.hicon = icon;
+    CComPtr<IPicture> picture;
+    CComPtr<IStream> stream;
+    if (!checkHR(OleCreatePictureIndirect(&description, __uuidof(IPicture), FALSE,
+            reinterpret_cast<void **>(&picture)))
+            || !checkHR(SHCreateStreamOnFileEx(temporary.c_str(),
+                STGM_CREATE | STGM_WRITE | STGM_SHARE_EXCLUSIVE,
+                FILE_ATTRIBUTE_NORMAL, TRUE, nullptr, &stream)))
+        return {};
+    bool saved = checkHR(picture->SaveAsFile(stream, TRUE, nullptr));
+    stream.Release();
+    if (saved)
+        saved = !!checkLE(MoveFileExW(temporary.c_str(), file.c_str(), MOVEFILE_REPLACE_EXISTING));
+    if (!saved) {
+        DeleteFileW(temporary.c_str());
+        if (GetFileAttributesW(file.c_str()) == INVALID_FILE_ATTRIBUTES)
+            return {};
+    }
+    // Keep this file after closing the window: Windows' pinned shortcut needs it.
+    return file + L",0";
+}
 
 void ItemWindow::updateWindowPropStore(IPropertyStore *const propStore) {
-    // https://learn.microsoft.com/en-us/windows/win32/shell/appids
+    CComHeapPtr<wchar_t> parsingName;
+    wchar_t executable[32768];
+    std::wstring id;
+    bool grouped = settings::getGroupFolderWindows();
+    AcquireSRWLockShared(&iconLock);
+    std::wstring resource = taskbarIconResource;
+    ReleaseSRWLockShared(&iconLock);
+    bool relaunch = false;
+    if (!grouped && checkHR(item->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &parsingName))) {
+        id = folderTaskbarID(parsingName);
+        DWORD length = checkLE(GetModuleFileNameW(nullptr, executable, _countof(executable)));
+        relaunch = !resource.empty() && !id.empty()
+            && length > 0 && length < _countof(executable);
+    }
+
+    // PreventPinning is fixed before the first explicit ID on this owner window.
+    // A common application group cannot represent separately pinned folders.
+    PROPVARIANT preventPinning = {VT_BOOL};
+    preventPinning.boolVal = relaunch ? VARIANT_FALSE : VARIANT_TRUE;
+    checkHR(propStore->SetValue(PKEY_AppUserModel_PreventPinning, preventPinning));
     PROPVARIANT empty = {VT_EMPTY};
-    propStore->SetValue(PKEY_AppUserModel_ID, empty); // use process explicit
-    propStore->SetValue(PKEY_AppUserModel_RelaunchCommand, empty);
-    propStore->SetValue(PKEY_AppUserModel_RelaunchDisplayNameResource, empty);
-    if (iconResource)
-        propStoreWriteString(propStore, PKEY_AppUserModel_RelaunchIconResource, iconResource.get());
-    else
-        propStore->SetValue(PKEY_AppUserModel_RelaunchIconResource, empty);
+    if (relaunch) {
+        std::wstring command = quoteCommandArgument(executable) + L" "
+            + quoteCommandArgument(parsingName);
+#ifdef FILESPACER_DEBUG
+        if (settings::testMode)
+            command += L" /test";
+#endif
+        propStoreWriteString(propStore, PKEY_AppUserModel_RelaunchCommand, command.c_str());
+        // The Shell supplies this dynamic folder name; it is not a UI literal.
+        propStoreWriteString(propStore, PKEY_AppUserModel_RelaunchDisplayNameResource, title);
+        propStoreWriteString(propStore, PKEY_AppUserModel_RelaunchIconResource, resource.c_str());
+    } else {
+        checkHR(propStore->SetValue(PKEY_AppUserModel_RelaunchCommand, empty));
+        checkHR(propStore->SetValue(PKEY_AppUserModel_RelaunchDisplayNameResource, empty));
+        checkHR(propStore->SetValue(PKEY_AppUserModel_RelaunchIconResource, empty));
+        if (grouped)
+            id = APP_ID;
+        else if (id.empty())
+            id = std::wstring(APP_ID) + L".Window"
+                + std::to_wstring(reinterpret_cast<UINT_PTR>(taskbarOwner->getWnd()));
+    }
+    taskbarAppID = id;
+    // Setting ID last tells the taskbar to refresh all relaunch information.
+    propStoreWriteString(propStore, PKEY_AppUserModel_ID, id.c_str());
 }
 
 void ItemWindow::propStoreWriteString(IPropertyStore *const propStore,
@@ -275,68 +540,97 @@ void ItemWindow::propStoreWriteString(IPropertyStore *const propStore,
     }
 }
 
-CComPtr<IPropertyBag> ItemWindow::getPropBag() {
-    // local property bags can be found at:
-    // HKEY_CURRENT_USER\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags
-    if (!propBag) {
-        CComHeapPtr<ITEMIDLIST> idList;
-        if (checkHR(SHGetIDListFromObject(item, &idList))) {
-            checkHR(SHGetViewStatePropertyBag(idList, propBagName(), SHGVSPB_FOLDERNODEFAULTS,
-                IID_PPV_ARGS(&propBag)));
-        }
+bool ItemWindow::loadFolderState() {
+    if (stateLoaded) return true;
+    auto store = folderStateStore();
+    if (!store || !store->read(stateKey, &savedState)) {
+        stateStorageError();
+        return false;
     }
-    return propBag;
+    stateLoaded = true;
+    storageErrorShown = false;
+    return true;
+}
+
+void ItemWindow::stateStorageError() {
+    if (!storageErrorShown) {
+        storageErrorShown = true;
+        reportFolderStateError(hwnd);
+    }
+}
+
+void ItemWindow::recordFolderAccess(HRESULT result) {
+    const bool success = SUCCEEDED(result);
+    if (!success && !isFolderAccessFailure(result)) return;
+    // A successful access, unlike a delayed save, may recreate an age-expired state.
+    if (success && stateKey.empty()) {
+        for (wchar_t character : identityProperty)
+            stateKey.push_back(static_cast<char>(character));
+    }
+    if (stateKey.empty() || !loadFolderState()) return;
+    const int64_t now = static_cast<int64_t>(std::time(nullptr));
+    bool expired = false;
+    auto store = folderStateStore();
+    if (!store || !store->recordAccess(stateKey, success, now, &expired)) {
+        if (!success && !savedState.firstFailedAt) savedState.firstFailedAt = now;
+        stateStorageError();
+        return;
+    }
+    if (success) {
+        savedState.lastSuccessAt = now;
+        savedState.firstFailedAt = 0;
+    } else if (!savedState.firstFailedAt) {
+        savedState.firstFailedAt = now;
+    }
+    if (expired) stateKey.clear();
+    storageErrorShown = false;
 }
 
 void ItemWindow::resetViewState(uint32_t mask) {
-    if (auto bag = getPropBag())
-        clearViewState(bag, mask);
+    auto store = folderStateStore();
+    if (!store || !store->clear(stateKey, mask)) {
+        stateStorageError();
+        return;
+    }
+    savedState.present &= ~mask;
+    if (mask & FolderState::View) savedState.view = {};
+    if (mask & FolderState::Icons) savedState.icons.clear();
+    viewStateClean(mask);
 }
 
 void ItemWindow::resetViewState() {
-    resetViewState(~0u);
+    resetViewState(FolderState::All);
 }
 
 void ItemWindow::persistViewState() {
-    if (dirtyViewState) {
-        debugPrintf(L"Persist view state %x\n", dirtyViewState);
-        if (auto bag = getPropBag())
-            writeViewState(bag, dirtyViewState);
+    if (stateKey.empty()) return; // No identity, or state expired after qualified access failures.
+    if (!loadFolderState()) return; // Do not overwrite state that could not be read.
+    const uint32_t captured = captureViewState(dirtyViewState);
+    if (!captured) return;
+    auto store = folderStateStore();
+    if (store && store->save(stateKey, savedState, captured)) {
+        savedState.present |= captured;
+        viewStateClean(captured);
+        storageErrorShown = false;
+    } else {
+        stateStorageError(); // Failed writes remain dirty for the next event or close.
     }
 }
 
-void ItemWindow::clearViewState(IPropertyBag *const bag, uint32_t mask) {
-    viewStateClean(mask);
-
-    CComVariant empty;
-    if (mask & (1 << STATE_POS))
-        checkHR(bag->Write(PROP_POS, &empty));
-    if (mask & (1 << STATE_SIZE))
-        checkHR(bag->Write(PROP_SIZE, &empty));
-    if (mask & (1 << STATE_CHILD_SIZE))
-        checkHR(bag->Write(PROP_CHILD_SIZE, &empty));
-}
-
-void ItemWindow::writeViewState(IPropertyBag *const bag, uint32_t mask) {
-    viewStateClean(mask);
-
-    RECT rect = windowRect(hwnd);
-    if ((mask & (1 << STATE_POS)) && !parent) {
-        // unlike the tray we don't store the DPI along with unscaled positions
-        // because we don't need to be pixel-perfect
-        CComVariant posVar((unsigned long)MAKELONG(invScaleDPI(rect.left), invScaleDPI(rect.top)));
-        checkHR(bag->Write(PROP_POS, &posVar));
+uint32_t ItemWindow::captureViewState(uint32_t mask) {
+    RECT rect = {};
+    if (!normalWindowRect(&rect)) return 0;
+    const uint32_t captured = mask & (FolderState::Position | FolderState::Size);
+    if (captured & FolderState::Position) {
+        savedState.x = invScaleDPI(rect.left);
+        savedState.y = invScaleDPI(rect.top);
     }
-    if (mask & (1 << STATE_SIZE)) {
+    if (captured & FolderState::Size) {
         SIZE size = rectSize(rect);
-        CComVariant sizeVar((unsigned long)MAKELONG(invScaleDPI(size.cx), invScaleDPI(size.cy)));
-        checkHR(bag->Write(PROP_SIZE, &sizeVar));
+        savedState.width = invScaleDPI(size.cx);
+        savedState.height = invScaleDPI(size.cy);
     }
-    if ((mask & (1 << STATE_CHILD_SIZE)) && !sizeEqual(childSize, {0, 0})) {
-        CComVariant sizeVar((unsigned long)MAKELONG(
-            invScaleDPI(childSize.cx), invScaleDPI(childSize.cy)));
-        checkHR(bag->Write(PROP_CHILD_SIZE, &sizeVar));
-    }
+    return captured;
 }
 
 void ItemWindow::viewStateDirty(uint32_t mask) {
@@ -347,51 +641,24 @@ void ItemWindow::viewStateClean(uint32_t mask) {
     dirtyViewState &= ~mask;
 }
 
-bool ItemWindow::isScratch() {
-    return scratch;
-}
-
-void ItemWindow::onModify() {
-    if (scratch)
-        SHAddToRecentDocs(SHARD_APPIDINFO, tempPtr(SHARDAPPIDINFO{item, appUserModelID()}));
-    scratch = false;
-}
-
 bool ItemWindow::create(RECT rect, int showCommand) {
-    if (!checkHR(item->GetDisplayName(SIGDN_NORMALDISPLAY, &title)))
+    if (identityProperty.empty() || !checkHR(item->GetDisplayName(SIGDN_NORMALDISPLAY, &title)))
         return false;
     debugPrintf(L"Open %s\n", &*title);
-
-    if (parent && !parent->paletteWindow()) {
-        chain = parent->chain;
-    } else if (child) {
-        chain = child->chain;
-        chain->setLeft(this);
-    } else {
-        chain.Attach(new ChainWindow(this, windowStyle() & WS_POPUP, showCommand));
+    taskbarOwner.Attach(new TaskbarOwnerWindow(this, showCommand));
+    if (!taskbarOwner->getWnd()) {
+        taskbarOwner = nullptr;
+        return false;
     }
-
     HWND createHwnd = checkLE(CreateWindowEx(
         windowExStyle(), className(), title, windowStyle(),
         rect.left, rect.top, rectWidth(rect), rectHeight(rect),
-        chain->getWnd(), nullptr, GetModuleHandle(nullptr), (WindowImpl *)this));
-    if (!createHwnd)
+        taskbarOwner->getWnd(), nullptr, GetModuleHandle(nullptr), (WindowImpl *)this));
+    if (!createHwnd) {
+        taskbarOwner = nullptr;
         return false;
-
-    // https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-itaskbarlist2-markfullscreenwindow#remarks
-    if (windowExStyle() & WS_EX_TOPMOST) {
-        checkLE(SetProp(hwnd, L"NonRudeHWND", (HANDLE)TRUE));
-        checkLE(SetProp(chain->getWnd(), L"NonRudeHWND", (HANDLE)TRUE));
     }
-
-    if (parent || child)
-        enableTransitions(false); // disable open/close animation
     ShowWindow(createHwnd, showCommand);
-    if (!(parent || child))
-        enableTransitions(false); // disable close animation
-
-    AddRef(); // keep window alive while open
-    lockProcess();
     return true;
 }
 
@@ -400,46 +667,18 @@ void ItemWindow::close() {
     PostMessage(hwnd, WM_CLOSE, 0, 0);
 }
 
-void ItemWindow::activate() {
-    SetActiveWindow(hwnd);
-}
 
 void ItemWindow::setForeground() {
     SetForegroundWindow(hwnd);
 }
 
-void ItemWindow::setRect(RECT rect) {
-    SetWindowPos(hwnd, nullptr, rect.left, rect.top, rectWidth(rect), rectHeight(rect),
-        SWP_NOZORDER | SWP_NOACTIVATE);
-}
-
-void ItemWindow::setPos(POINT pos) {
-    SetWindowPos(hwnd, nullptr, pos.x, pos.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
-}
-
-void ItemWindow::setSize(SIZE size) {
-    SetWindowPos(hwnd, nullptr, 0, 0, size.cx, size.cy, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
-}
-
-void ItemWindow::move(int x, int y) {
-    RECT rect = windowRect(hwnd);
-    setPos({rect.left + x, rect.top + y});
-}
-
-void ItemWindow::adjustSize(int *x, int *y) {
-    SIZE size = rectSize(windowRect(hwnd));
-    setSize({size.cx + *x, size.cy + *y});
-    SIZE newSize = rectSize(windowRect(hwnd));
-    *x = newSize.cx - size.cx;
-    *y = newSize.cy - size.cy;
-}
 
 RECT ItemWindow::windowBody() {
     RECT rect = clientRect(hwnd);
     if (useCustomFrame())
         rect.top += CAPTION_HEIGHT;
-    if (statusText || cmdToolbar)
-        rect.top += TOOLBAR_HEIGHT;
+    if (toolbarRebar && (GetWindowLongPtr(toolbarRebar, GWL_STYLE) & WS_VISIBLE))
+        rect.top += rectHeight(windowRect(toolbarRebar));
     return rect;
 }
 
@@ -448,24 +687,48 @@ void ItemWindow::fakeDragMove() {
     SendMessage(hwnd, WM_SYSCOMMAND, SC_DRAGMOVE, 0);
 }
 
-void ItemWindow::enableTransitions(bool enabled) {
-    if (compositionEnabled) {
-        checkHR(DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED,
-            tempPtr((BOOL)!enabled), sizeof(BOOL)));
-    }
-}
-
 LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
-    if (contextMenu3) {
-        LRESULT result;
-        if (SUCCEEDED(contextMenu3->HandleMenuMsg2(message, wParam, lParam, &result)))
-            return result;
-    } else if (contextMenu2) {
-        if (SUCCEEDED(contextMenu2->HandleMenuMsg(message, wParam, lParam)))
-            return 0;
+    if (message == WM_DESTROY)
+        closing = true; // Publish closure before any external callback.
+    const bool lifecycle = message == WM_CLOSE || message == WM_DESTROY
+        || message == WM_NCDESTROY;
+    CComPtr<ItemWindow> menuKeepAlive;
+    if (!lifecycle && (contextMenu2 || contextMenu3))
+        menuKeepAlive = this;
+    if (message == WM_EXITSIZEMOVE)
+        persistViewState();
+    if (settingsChangedMessage && message == settingsChangedMessage) {
+        onSettingsChanged();
+        return 0;
     }
+    if (message == WM_DRAWITEM && proxyIcon.drawTitle(
+            reinterpret_cast<DRAWITEMSTRUCT *>(lParam)))
+        return TRUE;
+    // Extensions must not consume the host's close/destruction messages.
+    if (!lifecycle && isWindowOperational()) {
+        CComPtr<IContextMenu3> menu3 = contextMenu3;
+        CComPtr<IContextMenu2> menu2 = contextMenu2;
+        if (menu3 && isWindowOperational()) {
+            LRESULT result = 0;
+            if (SUCCEEDED(menu3->HandleMenuMsg2(message, wParam, lParam, &result)))
+                return result;
+        } else if (menu2 && isWindowOperational()) {
+            if (SUCCEEDED(menu2->HandleMenuMsg(message, wParam, lParam)))
+                return 0;
+        }
+    }
+    if (menuKeepAlive && !isWindowOperational())
+        return 0;
 
     switch (message) {
+        case WM_NCCREATE:
+            // Publish identity before Shell/COM initialization can dispatch another open.
+            if (!SetPropW(hwnd, identityProperty.c_str(), reinterpret_cast<HANDLE>(1)))
+                return FALSE;
+            AddRef(); // keep the object alive from the first native window message
+            lockProcess();
+            windowLifetime = true;
+            break;
         case WM_CREATE:
             onCreate();
             // ensure WM_NCCALCSIZE gets called; necessary for custom frame
@@ -485,19 +748,23 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             onDestroy();
             return 0;
         case WM_NCDESTROY:
+            RemovePropW(hwnd, identityProperty.c_str());
             proxyIcon.destroy();
             // don't need icon lock since icon thread is stopped
             if (iconLarge) {
                 checkLE(DestroyIcon(iconLarge));
-                CHROMAFILER_MEMLEAK_FREE;
+                FILESPACER_MEMLEAK_FREE;
             }
             if (iconSmall) {
                 checkLE(DestroyIcon(iconSmall));
-                CHROMAFILER_MEMLEAK_FREE;
+                FILESPACER_MEMLEAK_FREE;
             }
             hwnd = nullptr;
-            unlockProcess();
-            Release(); // allow window to be deleted
+            if (windowLifetime) {
+                windowLifetime = false;
+                unlockProcess();
+                Release(); // allow window to be deleted
+            }
             return 0;
         case WM_ACTIVATE:
             onActivate(LOWORD(wParam), (HWND)lParam);
@@ -515,13 +782,6 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
                 proxyIcon.redrawToolbar();
             return res;
         }
-        case WM_MOUSEACTIVATE: {
-            POINT cursor;
-            GetCursorPos(&cursor);
-            if (proxyIcon.isToolbarWindow(ChildWindowFromPoint(hwnd, screenToClient(hwnd, cursor))))
-                return MA_NOACTIVATE; // allow dragging without activating
-            break;
-        }
         case WM_NCCALCSIZE:
             if (wParam == TRUE && useCustomFrame()) {
                 // allow resizing past the edge of the window by reducing client rect
@@ -529,9 +789,7 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
                 NCCALCSIZE_PARAMS *params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
                 int resizeMargin = windowResizeMargin();
                 params->rgrc[0].left = params->rgrc[0].left + resizeMargin;
-                if (compositionEnabled)
-                    params->rgrc[0].top = params->rgrc[0].top;
-                else
+                if (!compositionEnabled)
                     params->rgrc[0].top = params->rgrc[0].top + resizeMargin;
                 params->rgrc[0].right = params->rgrc[0].right - resizeMargin;
                 params->rgrc[0].bottom = params->rgrc[0].bottom - resizeMargin;
@@ -544,12 +802,6 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
                 return defHitTest;
             return hitTestNCA(pointFromLParam(lParam));
         }
-        case WM_SETCURSOR:
-            if (LOWORD(lParam) == HTRIGHT && HIWORD(lParam) != 0 && child && stickToChild()) {
-                SetCursor(rightSideCursor);
-                return TRUE;
-            }
-            break;
         case WM_PAINT: {
             PAINTSTRUCT paint;
             BeginPaint(hwnd, &paint);
@@ -557,26 +809,52 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             EndPaint(hwnd, &paint);
             return 0;
         }
+        case WM_SYSCOLORCHANGE:
+        case WM_SETTINGCHANGE:
+            invalidateNavigationIconColors();
+            if (parentToolbar) {
+                if (message == WM_SYSCOLORCHANGE)
+                    SendMessage(parentToolbar, message, wParam, lParam);
+                InvalidateRect(parentToolbar, nullptr, FALSE);
+            }
+            if (cmdToolbar) {
+                if (message == WM_SYSCOLORCHANGE)
+                    SendMessage(cmdToolbar, message, wParam, lParam);
+                InvalidateRect(cmdToolbar, nullptr, FALSE);
+            }
+            break;
         case WM_THEMECHANGED:
+            invalidateNavigationIconColors();
             // TODO: duplicate code, must be kept in sync with onCreate()
             // reset fonts
             proxyIcon.onThemeChanged();
-            if (statusText && statusFont)
-                PostMessage(statusText, WM_SETFONT, (WPARAM)statusFont, TRUE);
-            if (statusTooltip && statusFont)
-                PostMessage(statusTooltip, WM_SETFONT, (WPARAM)statusFont, TRUE);
+            pathBar.setFont(statusFont);
             if (cmdToolbar && symbolFont)
                 PostMessage(cmdToolbar, WM_SETFONT, (WPARAM)symbolFont, TRUE);
+            if (quickAccessToolbar && symbolFont)
+                PostMessage(quickAccessToolbar, WM_SETFONT, (WPARAM)symbolFont, TRUE);
             if (parentToolbar && symbolFont)
                 PostMessage(parentToolbar, WM_SETFONT, (WPARAM)symbolFont, TRUE);
             // reset toolbar button sizes
-            if (cmdToolbar)
-                PostMessage(cmdToolbar, TB_SETBUTTONSIZE, 0,
+            if (cmdToolbar) {
+                SendMessage(cmdToolbar, TB_SETBUTTONSIZE, 0,
+                    MAKELPARAM(TOOLBAR_HEIGHT, TOOLBAR_HEIGHT));
+                setRefreshButtonWidth(cmdToolbar);
+                SIZE ideal = {};
+                if (SendMessage(cmdToolbar, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal))
+                    SetWindowPos(cmdToolbar, nullptr, 0, 0, ideal.cx, TOOLBAR_HEIGHT,
+                        SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+                InvalidateRect(cmdToolbar, nullptr, FALSE);
+            }
+            if (quickAccessToolbar)
+                PostMessage(quickAccessToolbar, TB_SETBUTTONSIZE, 0,
                     MAKELPARAM(TOOLBAR_HEIGHT, TOOLBAR_HEIGHT));
             if (parentToolbar) {
                 SIZE size = rectSize(windowRect(parentToolbar));
                 PostMessage(parentToolbar, TB_SETBUTTONSIZE, 0, MAKELPARAM(size.cx, size.cy));
             }
+            if (toolbarRebar)
+                layoutToolbarRow(clientSize(hwnd).cx);
             break;
         case WM_CTLCOLORSTATIC: { // status text background color
             HDC hdc = (HDC)wParam;
@@ -584,59 +862,12 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             SetBkColor(hdc, GetSysColor(colorI));
             return colorI + 1;
         }
-        case WM_ENTERSIZEMOVE:
-            moveAccum = {0, 0};
-            return 0;
         case WM_WINDOWPOSCHANGED: {
             WINDOWPOS *winPos = (WINDOWPOS *)lParam;
             const auto checkFlags = SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED;
             if ((winPos->flags & checkFlags) != checkFlags)
-                windowRectChanged();
+                recordGeometry();
             break; // pass to DefWindowProc
-        }
-        case WM_MOVING: {
-            // https://www.drdobbs.com/make-it-snappy/184416407
-            RECT *desiredRect = (RECT *)lParam;
-            RECT curRect = windowRect(hwnd);
-            POINT offset = moveAccum;
-            moveAccum.x += desiredRect->left - curRect.left;
-            moveAccum.y += desiredRect->top - curRect.top;
-            if (parent) {
-                int moveAmount = max(abs(moveAccum.x), abs(moveAccum.y));
-                if (moveAmount > DETACH_DISTANCE) {
-                    detachFromParent(GetKeyState(VK_SHIFT) < 0);
-                    OffsetRect(desiredRect, offset.x, offset.y);
-                } else {
-                    *desiredRect = curRect;
-                }
-            } else {
-                viewStateDirty(1 << STATE_POS);
-            }
-            // required for WM_ENTERSIZEMOVE to behave correctly
-            return TRUE;
-        }
-        case WM_SIZING: {
-            RECT *desiredRect = (RECT *)lParam;
-            if (parent && parent->stickToChild()) {
-                RECT curRect = windowRect(hwnd);
-                // constrain top-left corner
-                if (wParam == WMSZ_TOP || wParam == WMSZ_TOPLEFT || wParam == WMSZ_TOPRIGHT) {
-                    int moveY = desiredRect->top - curRect.top;
-                    auto topParent = parent;
-                    while (topParent->parent && topParent->parent->stickToChild())
-                        topParent = topParent->parent;
-                    topParent->move(0, moveY);
-                }
-                if (wParam == WMSZ_LEFT || wParam == WMSZ_TOPLEFT || wParam == WMSZ_BOTTOMLEFT) {
-                    int sizeX = desiredRect->left - curRect.left, sizeY = 0;
-                    parent->adjustSize(&sizeX, &sizeY);
-                    desiredRect->left = curRect.left + sizeX;
-                }
-            }
-            if (parent && persistSizeInParent())
-                parent->onChildResized(rectSize(*desiredRect));
-            viewStateDirty(1 << STATE_SIZE);
-            return TRUE;
         }
         case WM_SIZE: {
             onSize(sizeFromLParam(lParam));
@@ -679,6 +910,9 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
                     return 0;
             }
             break;
+        case MSG_EXPIRE_FOLDER_STATE:
+            stateKey.clear();
+            return 0;
         case MSG_SHELL_NOTIFY: {
             LONG event;
             ITEMIDLIST **idls;
@@ -709,22 +943,14 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             AcquireSRWLockExclusive(&iconLock);
             SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)iconLarge);
             SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)iconSmall);
-            if (!paletteWindow() && (!parent || parent->paletteWindow()))
-                chain->setIcon(iconSmall, iconLarge);
+            taskbarOwner->setIcon(iconSmall, iconLarge);
             proxyIcon.setIcon(iconSmall);
             ReleaseSRWLockExclusive(&iconLock);
+            updateTaskbar();
 
             autoSizeProxy(clientSize(hwnd).cx);
             return 0;
         }
-        case MSG_UPDATE_DEFAULT_STATUS_TEXT:
-            AcquireSRWLockExclusive(&defaultStatusTextLock);
-            if (defaultStatusText) {
-                setStatusText(defaultStatusText);
-                defaultStatusText.Free();
-            }
-            ReleaseSRWLockExclusive(&defaultStatusTextLock);
-            return 0;
         case MSG_FLASH_WINDOW: {
             FLASHWINFO flash = {sizeof(flash), hwnd, FLASHW_ALL, 3, 100};
             FlashWindowEx(&flash);
@@ -736,6 +962,13 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
 }
 
 bool ItemWindow::handleTopLevelMessage(MSG *msg) {
+    // The message loop owns a local reference throughout pretranslation.
+    if (!isWindowOperational())
+        return false;
+    if (pathBar.handleTopLevelMessage(msg))
+        return true;
+    if (!isWindowOperational() || pathBar.hasFocus())
+        return false; // Leave native edit shortcuts to the edit control.
     return !!TranslateAccelerator(hwnd, accelTable, msg);
 }
 
@@ -751,11 +984,9 @@ void ItemWindow::onCreate() {
     }
     registerShellNotify();
 
-    if (!paletteWindow() && (!parent || parent->paletteWindow()))
-        setChainPreview();
+    setTaskbarPreview();
 
-    if (!child && !parent && !paletteWindow() && !isScratch())
-        SHAddToRecentDocs(SHARD_APPIDINFO, tempPtr(SHARDAPPIDINFO{item, appUserModelID()}));
+    SHAddToRecentDocs(SHARD_APPIDINFO, tempPtr(SHARDAPPIDINFO{item, appUserModelID()}));
 
     HMODULE instance = GetWindowInstance(hwnd);
     if (useCustomFrame()) {
@@ -767,114 +998,127 @@ void ItemWindow::onCreate() {
         if (compositionEnabled)
             checkHR(DwmExtendFrameIntoClientArea(hwnd, &margins));
 
-        proxyIcon.create(hwnd, item, title,
+        proxyIcon.create(hwnd, title,
             captionTopMargin(), CAPTION_HEIGHT - captionTopMargin());
     }
 
-    if (useCustomFrame() && settings::getStatusTextEnabled()) {
-        // potentially leave room for parent button
-        int left = (centeredProxy() ? 0 : TOOLBAR_HEIGHT) + STATUS_TEXT_MARGIN;
-        statusText = checkLE(CreateWindow(L"STATIC", nullptr,
-            WS_VISIBLE | WS_CHILD | SS_WORDELLIPSIS | SS_LEFT | SS_CENTERIMAGE | SS_NOPREFIX
-                | SS_NOTIFY, // allows tooltips to work
-            left, useCustomFrame() ? CAPTION_HEIGHT : 0, 0, TOOLBAR_HEIGHT,
-            hwnd, nullptr, instance, nullptr));
-        if (statusFont)
-            SendMessage(statusText, WM_SETFONT, (WPARAM)statusFont, FALSE);
-        if (useDefaultStatusText()) {
-            statusTextThread.Attach(new StatusTextThread(item, this));
-            statusTextThread->start();
-        }
+    // Keep controls available so display settings can change while the window is open.
+    if (useCustomFrame()) {
+        int toolbarBandHeight = TOOLBAR_HEIGHT
+            + 2 * (toolbarEdgeHeight() + TOOLBAR_VERTICAL_PADDING);
 
-        statusTooltip = checkLE(CreateWindow(TOOLTIPS_CLASS, nullptr,
-            WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-            CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        toolbarRebar = checkLE(CreateWindowEx(
+            WS_EX_CONTROLPARENT, REBARCLASSNAME, nullptr,
+            WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS
+                | CCS_NODIVIDER | CCS_NOPARENTALIGN | CCS_NORESIZE
+                | RBS_VARHEIGHT,
+            0, useCustomFrame() ? CAPTION_HEIGHT : 0,
+            clientSize(hwnd).cx, toolbarBandHeight,
             hwnd, nullptr, instance, nullptr));
-        if (statusFont)
-            SendMessage(statusTooltip, WM_SETFONT, (WPARAM)statusFont, FALSE);
-        SendMessage(statusTooltip, TTM_SETMAXTIPWIDTH, 0, 0x7fff); // allow tabs
-        TOOLINFO toolInfo = {sizeof(toolInfo)};
-        toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS | TTF_TRANSPARENT;
-        toolInfo.hwnd = hwnd;
-        toolInfo.uId = (UINT_PTR)statusText;
-        toolInfo.lpszText = L"";
-        SendMessage(statusTooltip, TTM_ADDTOOL, 0, (LPARAM)&toolInfo);
-    }
 
-    if (useCustomFrame() && settings::getToolbarEnabled()) {
+        REBARINFO rebarInfo = {sizeof(rebarInfo)};
+        SendMessage(toolbarRebar, RB_SETBARINFO, 0, (LPARAM)&rebarInfo);
+
+        toolbarHost = checkLE(CreateWindow(
+            TOOLBAR_HOST_CLASS, nullptr,
+            WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+            0, 0, clientSize(hwnd).cx, TOOLBAR_HEIGHT,
+            toolbarRebar, nullptr, instance, hwnd));
+
+        REBARBANDINFO band = {sizeof(band)};
+        band.fMask = RBBIM_STYLE | RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_SIZE;
+        band.fStyle = RBBS_NOGRIPPER;
+        band.hwndChild = toolbarHost;
+        band.cxMinChild = 0;
+        band.cyMinChild = toolbarBandHeight;
+        band.cyChild = toolbarBandHeight;
+        band.cyMaxChild = toolbarBandHeight;
+        band.cx = clientSize(hwnd).cx;
+        SendMessage(toolbarRebar, RB_INSERTBAND, (WPARAM)-1, (LPARAM)&band);
+
         cmdToolbar = checkLE(CreateWindowEx(
-            TBSTYLE_EX_MIXEDBUTTONS, TOOLBARCLASSNAME, nullptr,
-            TBSTYLE_FLAT | TBSTYLE_TOOLTIPS | CCS_NOPARENTALIGN | CCS_NORESIZE | CCS_NODIVIDER
-                | WS_VISIBLE | WS_CHILD,
-            0, useCustomFrame() ? CAPTION_HEIGHT : 0, 0, TOOLBAR_HEIGHT,
-            hwnd, nullptr, instance, nullptr));
+            0, TOOLBARCLASSNAME, nullptr,
+            TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_TOOLTIPS | CCS_NOPARENTALIGN | CCS_NORESIZE | CCS_NODIVIDER
+                | WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN,
+            0, 0, 0, TOOLBAR_HEIGHT,
+            toolbarHost, nullptr, instance, nullptr));
         SendMessage(cmdToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
+        SendMessage(cmdToolbar, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_MIXEDBUTTONS);
         SendMessage(cmdToolbar, TB_SETBUTTONWIDTH, 0, MAKELPARAM(TOOLBAR_HEIGHT, TOOLBAR_HEIGHT));
         SendMessage(cmdToolbar, TB_SETBITMAPSIZE, 0, 0);
         if (symbolFont)
             SendMessage(cmdToolbar, WM_SETFONT, (WPARAM)symbolFont, FALSE);
         addToolbarButtons(cmdToolbar);
         SendMessage(cmdToolbar, TB_SETBUTTONSIZE, 0, MAKELPARAM(TOOLBAR_HEIGHT, TOOLBAR_HEIGHT));
+        setRefreshButtonWidth(cmdToolbar);
         SIZE ideal;
         SendMessage(cmdToolbar, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal);
         SetWindowPos(cmdToolbar, nullptr, 0, 0, ideal.cx, TOOLBAR_HEIGHT,
             SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
     }
 
-    if (useCustomFrame() && (centeredProxy() || statusText || cmdToolbar)) {
+    if (useCustomFrame() && (centeredProxy() || cmdToolbar)) {
         CComPtr<IShellItem> parentItem;
-        bool showParentButton = !parent && SUCCEEDED(item->GetParent(&parentItem));
-        // put button in caption with centered proxy, otherwise in status area
-        int top = centeredProxy() ? captionTopMargin() : (useCustomFrame() ? CAPTION_HEIGHT : 0);
-        int width = centeredProxy() ? PARENT_BUTTON_WIDTH : TOOLBAR_HEIGHT;
-        int height = centeredProxy() ? (CAPTION_HEIGHT - captionTopMargin()) : TOOLBAR_HEIGHT;
-        parentToolbar = CreateWindowEx(TBSTYLE_EX_MIXEDBUTTONS, TOOLBARCLASSNAME, nullptr,
+        bool canOpenParent = SUCCEEDED(item->GetParent(&parentItem));
+        // Folder navigation belongs beside the address bar, even with a centered title.
+        bool parentInCaption = centeredProxy() && !isFolder();
+        int top = parentInCaption ? captionTopMargin() : 0;
+        int width = parentInCaption ? PARENT_BUTTON_WIDTH : TOOLBAR_HEIGHT;
+        int height = parentInCaption ? (CAPTION_HEIGHT - captionTopMargin()) : TOOLBAR_HEIGHT;
+        HWND parentHwnd = parentInCaption ? hwnd : toolbarHost;
+        if (isFolder()) {
+            // Keep the Shell image list separate from the parent's text-only glyph.
+            quickAccessToolbar = checkLE(CreateWindowEx(0, TOOLBARCLASSNAME, nullptr,
+                TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_TOOLTIPS | CCS_NOPARENTALIGN
+                    | CCS_NORESIZE | CCS_NODIVIDER | WS_VISIBLE | WS_CHILD,
+                0, 0, width, height, parentHwnd, nullptr, instance, nullptr));
+            SendMessage(quickAccessToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
+            SendMessage(quickAccessToolbar, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_MIXEDBUTTONS);
+            SendMessage(quickAccessToolbar, TB_SETBUTTONWIDTH, 0, MAKELPARAM(width, width));
+            SendMessage(quickAccessToolbar, TB_SETBITMAPSIZE, 0, 0);
+            if (symbolFont)
+                SendMessage(quickAccessToolbar, WM_SETFONT, (WPARAM)symbolFont, FALSE);
+            TBBUTTON quickAccess = makeToolbarButton(ICON_QUICK_ACCESS,
+                IDM_QUICK_ACCESS, BTNS_DROPDOWN);
+            SendMessage(quickAccessToolbar, TB_ADDBUTTONS, 1, (LPARAM)&quickAccess);
+            SendMessage(quickAccessToolbar, TB_SETBUTTONSIZE, 0, MAKELPARAM(width, height));
+        }
+        parentToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, nullptr,
             TBSTYLE_FLAT | TBSTYLE_TOOLTIPS | CCS_NOPARENTALIGN | CCS_NORESIZE | CCS_NODIVIDER
-                | (showParentButton ? WS_VISIBLE : 0) | WS_CHILD,
-            0, top, width, height, hwnd, nullptr, instance, nullptr);
+                | WS_VISIBLE | WS_CHILD,
+            quickAccessToolbar ? width : 0, top, width, height, parentHwnd,
+                nullptr, instance, nullptr);
         SendMessage(parentToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
         SendMessage(parentToolbar, TB_SETBUTTONWIDTH, 0, MAKELPARAM(width, width));
         SendMessage(parentToolbar, TB_SETBITMAPSIZE, 0, 0);
         if (symbolFont)
             SendMessage(parentToolbar, WM_SETFONT, (WPARAM)symbolFont, FALSE);
-        TBBUTTON parentButton = {I_IMAGENONE, IDM_PREV_WINDOW, TBSTATE_ENABLED,
-            BTNS_SHOWTEXT, {}, 0, (INT_PTR)MDL2_CHEVRON_LEFT_MED};
+        TBBUTTON parentButton = {I_IMAGENONE, IDM_PREV_WINDOW,
+            (BYTE)(canOpenParent ? TBSTATE_ENABLED : 0),
+            BTNS_SHOWTEXT, {}, 0, (INT_PTR)(navigationGraphicsToken ? L"" : ICON_UP_DIR)};
         SendMessage(parentToolbar, TB_ADDBUTTONS, 1, (LPARAM)&parentButton);
         SendMessage(parentToolbar, TB_SETBUTTONSIZE, 0, MAKELPARAM(width, height));
     }
+
+    if (toolbarHost && isFolder())
+        pathBar.create(toolbarHost, hwnd, item, statusFont, symbolFont);
+
+    // The derived window's controls have not been created yet.
+    ItemWindow::onSettingsChanged();
 
     if (!getShellViewDispatch())
         onViewReady();
 }
 
-bool ItemWindow::hasStatusText() {
-    return statusText != nullptr;
-}
-
-void ItemWindow::setStatusText(const wchar_t *text) {
-    if (statusText)
-        SetWindowText(statusText, text);
-    if (statusTooltip) {
-        TOOLINFO toolInfo = {sizeof(toolInfo)};
-        toolInfo.hwnd = hwnd;
-        toolInfo.uId = (UINT_PTR)statusText;
-        toolInfo.lpszText = (wchar_t *)text;
-        SendMessage(statusTooltip, TTM_UPDATETIPTEXT, 0, (LPARAM)&toolInfo);
-    }
-}
-
 TBBUTTON ItemWindow::makeToolbarButton(const wchar_t *text, WORD command, BYTE style, BYTE state) {
+    if (command == IDM_REFRESH && navigationGraphicsToken)
+        text = L""; // The icon is painted after the native button background.
     return {I_IMAGENONE, command, state, (BYTE)(BTNS_SHOWTEXT | style), {}, 0, (INT_PTR)text};
-}
-
-void ItemWindow::setToolbarButtonState(WORD command, BYTE state) {
-    if (cmdToolbar)
-        SendMessage(cmdToolbar, TB_SETSTATE, command, state);
 }
 
 void ItemWindow::addToolbarButtons(HWND tb) {
     TBBUTTON buttons[] = {
-        makeToolbarButton(MDL2_MORE, IDM_CONTEXT_MENU, BTNS_WHOLEDROPDOWN),
+        makeToolbarButton(MDL2_MORE, IDM_CONTEXT_MENU, BTNS_DROPDOWN),
     };
     SendMessage(tb, TB_ADDBUTTONS, _countof(buttons), (LPARAM)buttons);
 }
@@ -890,27 +1134,69 @@ int ItemWindow::getToolbarTooltip(WORD command) {
 }
 
 void ItemWindow::trackContextMenu(POINT pos) {
-    HMENU menu = CreatePopupMenu();
-    trackContextMenu(pos, menu);
-    checkLE(DestroyMenu(menu));
+    CComPtr<ItemWindow> keepAlive(this);
+    if (!isWindowOperational())
+        return;
+    auto destroyMenu = [](HMENU handle) { checkLE(DestroyMenu(handle)); };
+    std::unique_ptr<std::remove_pointer_t<HMENU>, decltype(destroyMenu)>
+        menu(CreatePopupMenu(), destroyMenu);
+    if (menu)
+        trackContextMenu(pos, menu.get(), hwnd);
 }
 
-int ItemWindow::trackContextMenu(POINT pos, HMENU menu) {
-    HMENU common = LoadMenu(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDR_ITEM_MENU));
-    Shell_MergeMenus(menu, common, (UINT)-1, 0, 0xFFFF, MM_ADDSEPARATOR);
-    int cmd = TrackPopupMenuEx(menu, TPM_RIGHTBUTTON | TPM_RETURNCMD, pos.x, pos.y, hwnd, nullptr);
-    onCommand((WORD)cmd);
-    checkLE(DestroyMenu(common));
-    return cmd;
+int ItemWindow::trackContextMenu(POINT pos, HMENU menu, HWND menuOwner) {
+    // Both callers own this object and the supplied menu until we return.
+    if (!isWindowOperational())
+        return 0;
+    auto destroyMenu = [](HMENU handle) { checkLE(DestroyMenu(handle)); };
+    std::unique_ptr<std::remove_pointer_t<HMENU>, decltype(destroyMenu)> common(
+        LoadMenu(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDR_ITEM_MENU)), destroyMenu);
+
+    Shell_MergeMenus(
+        menu,
+        common.get(),
+        (UINT)-1,
+        0,
+        0xFFFF,
+        MM_ADDSEPARATOR);
+    if (!isWindowOperational())
+        return 0;
+    COLORREF iconColor = GetSysColor(COLOR_MENUTEXT);
+    if (HTHEME theme = OpenThemeData(hwnd, L"Menu")) {
+        GetThemeColor(theme, MENU_POPUPITEM, MPI_NORMAL, TMT_TEXTCOLOR, &iconColor);
+        CloseThemeData(theme);
+    }
+    // The caller still owns the menu when this local bitmap is released.
+    auto releaseSettingsIcon = [menu](HBITMAP bitmap) {
+        MENUITEMINFO image = {sizeof(image)};
+        image.fMask = MIIM_BITMAP;
+        checkLE(SetMenuItemInfo(menu, IDM_SETTINGS, FALSE, &image));
+        checkLE(DeleteObject(bitmap));
+    };
+    std::unique_ptr<std::remove_pointer_t<HBITMAP>, decltype(releaseSettingsIcon)> settingsIcon(
+        captionCommandBitmap(MDL2_SETTINGS, GetSystemMetrics(SM_CXSMICON), iconColor),
+        releaseSettingsIcon);
+    if (settingsIcon) {
+        MENUITEMINFO image = {sizeof(image)};
+        image.fMask = MIIM_BITMAP;
+        image.hbmpItem = settingsIcon.get();
+        checkLE(SetMenuItemInfo(menu, IDM_SETTINGS, FALSE, &image));
+    }
+    HWND ownerHwnd = menuOwner ? menuOwner : hwnd;
+    int cmd = TrackPopupMenuEx(
+        menu,
+        TPM_RIGHTBUTTON | TPM_RETURNCMD,
+        pos.x,
+        pos.y,
+        ownerHwnd,
+        nullptr);
+    if (isWindowOperational())
+        onCommand((WORD)cmd);
+    common.reset();
+    return isWindowOperational() ? cmd : 0;
 }
 
 bool ItemWindow::onCloseRequest() {
-    // if the chain is in the foreground make sure it stays in the foreground.
-    // once onDestroy() is called the active window will already be changed, so check here instead
-    if (parent && GetActiveWindow() == hwnd)
-        parent->activate();
-    if (isScratch()) // will be deleted
-        enableTransitions(true);
     return true;
 }
 
@@ -918,53 +1204,26 @@ void ItemWindow::onDestroy() {
     debugPrintf(L"Close %s\n", &*title);
     persistViewState();
 
-    if (!parent)
-        chain->setLeft(child); // "just in case"
-    clearParent();
-    if (child)
-        child->close(); // recursive
-    // child will still have a reference to parent until it handles WM_CLOSE
-    child = nullptr; // onChildDetached will not be called
     if (activeWindow == this)
         activeWindow = nullptr;
 
+    pathBar.destroy();
     unregisterShellNotify();
     unregisterShellWindow();
+    RemovePropW(hwnd, identityProperty.c_str());
 
     SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, 0); // remove owner
-    chain = nullptr; // chain will be destroyed if this is the last window
-
-    if (isScratch()) {
-        debugPrintf(L"Deleting scratch file %s\n", &*title);
-        resetViewState();
-        deleteProxy(); // this is done after unregisterShellNotify()
-    }
+    taskbarOwner = nullptr;
 
     if (iconThread)
         iconThread->stop();
-    if (statusTextThread)
-        statusTextThread->stop();
 }
 
 bool ItemWindow::onCommand(WORD command) {
     switch (command) {
-        case IDM_NEXT_WINDOW:
-            if (child)
-                child->activate();
-            return true;
         case IDM_PREV_WINDOW:
-            if (parent)
-                parent->activate();
-            else
-                openParent();
-            return true;
-        case IDM_DETACH:
-            if (parent)
-                detachAndMove(false);
-            return true;
-        case IDM_CLOSE_PARENT:
-            if (parent)
-                detachAndMove(true);
+            openParent(settings::getKeepSourceWindowOpen()
+                == (GetKeyState(VK_CONTROL) < 0));
             return true;
         case IDM_CLOSE_WINDOW:
             close();
@@ -974,9 +1233,14 @@ bool ItemWindow::onCommand(WORD command) {
                 refresh();
             return true;
         case IDM_PROXY_MENU: {
+            CComPtr<ItemWindow> keepAlive(this);
+            if (!isWindowOperational())
+                return true;
             proxyIcon.setPressedState(true);
-            openProxyContextMenu();
-            proxyIcon.setPressedState(false);
+            if (isWindowOperational())
+                openProxyContextMenu();
+            if (isWindowOperational())
+                proxyIcon.setPressedState(false);
             return true;
         }
         case IDM_RENAME_PROXY:
@@ -986,19 +1250,20 @@ bool ItemWindow::onCommand(WORD command) {
             deleteProxy();
             return true;
         case IDM_PARENT_MENU: {
-            ItemWindow *rootParent = this;
-            while (rootParent->parent)
-                rootParent = rootParent->parent;
-            if (!rootParent->paletteWindow())
-                rootParent->openParentMenu();
+            openParentMenu();
             return true;
         }
+#if 0 // Deferred public help.
         case IDM_HELP:
             ShellExecute(nullptr, L"open", helpURL(), nullptr, nullptr, SW_SHOWNORMAL);
             return true;
-        case IDM_SETTINGS:
-            openSettingsDialog(settingsStartPage());
+#endif
+        case IDM_SETTINGS: {
+            // Maintenance can close this window during the modal dialog.
+            CComPtr<ItemWindow> keepAlive(this);
+            openSettingsDialog(hwnd);
             return true;
+        }
         case IDM_DEBUG_NAMES:
             debugDisplayNames(hwnd, item);
             return true;
@@ -1009,7 +1274,7 @@ bool ItemWindow::onCommand(WORD command) {
 LRESULT ItemWindow::onDropdown(int command, POINT pos) {
     switch (command) {
         case IDM_PROXY_BUTTON:
-            openProxyContextMenu();
+            openCaptionMenu(pos);
             return TBDDRET_DEFAULT;
         case IDM_CONTEXT_MENU:
             trackContextMenu(pos);
@@ -1019,38 +1284,51 @@ LRESULT ItemWindow::onDropdown(int command, POINT pos) {
 }
 
 bool ItemWindow::onControlCommand(HWND controlHwnd, WORD notif) {
-    if (proxyIcon.onControlCommand(controlHwnd, notif)) {
-        return true;
-    } else if (statusText && controlHwnd == statusText && notif == STN_CLICKED) {
-        POINT cursorPos = {};
-        GetCursorPos(&cursorPos);
-        if (DragDetect(hwnd, cursorPos))
-            fakeDragMove();
-        return true;
-    }
-    return false;
+    return proxyIcon.onControlCommand(controlHwnd, notif);
 }
 
 LRESULT ItemWindow::onNotify(NMHDR *nmHdr) {
-    LRESULT proxyRes = proxyIcon.onNotify(nmHdr);
-    if (proxyRes) {
-        return proxyRes;
-    } else if (statusTooltip && nmHdr->hwndFrom == statusTooltip && nmHdr->code == TTN_SHOW) {
-        RECT statusRect = windowRect(statusText);
+    if (pathBar.isWindow(nmHdr->hwndFrom) && nmHdr->code == PathBar::OPEN_ITEM) {
+        auto notification = reinterpret_cast<PathBar::OpenItemNotification *>(nmHdr);
+        openChild(notification->item,
+            settings::getKeepSourceWindowOpen() == notification->control);
+        return 0;
+    }
+    if (toolbarRebar && nmHdr->hwndFrom == toolbarRebar
+            && nmHdr->code == RBN_CHILDSIZE) {
+        NMREBARCHILDSIZE *rebarChildSize = (NMREBARCHILDSIZE *)nmHdr;
+        int margin = toolbarEdgeHeight() + TOOLBAR_VERTICAL_PADDING;
+        rebarChildSize->rcChild.top += margin;
+        rebarChildSize->rcChild.bottom -= margin;
+        return 0;
+    } else if (toolbarRebar && nmHdr->hwndFrom == toolbarRebar
+            && nmHdr->code == NM_CUSTOMDRAW) {
+        NMCUSTOMDRAW *customDraw = (NMCUSTOMDRAW *)nmHdr;
 
-        if (rectWidth(statusRect) > clientSize(statusTooltip).cx) {
-            // text is not truncated so tooltip does not need to be shown. move it offscreen
-            SetWindowPos(statusTooltip, nullptr, -0x8000, -0x8000, 0, 0,
-                SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-            return TRUE;
+        if (customDraw->dwDrawStage == CDDS_PREPAINT)
+            return CDRF_NOTIFYPOSTPAINT;
+
+        if (customDraw->dwDrawStage == CDDS_POSTPAINT) {
+            RECT rect = clientRect(toolbarRebar);
+            int edgeHeight = toolbarEdgeHeight();
+
+            COLORREF borderColor = GetSysColor(COLOR_3DLIGHT);
+            if (HTHEME theme = GetWindowTheme(toolbarRebar))
+                GetThemeColor(theme, RP_BAND, 0, TMT_BORDERCOLORHINT, &borderColor);
+
+            HBRUSH borderBrush = CreateSolidBrush(borderColor);
+
+            RECT topEdge = rect;
+            topEdge.bottom = topEdge.top + edgeHeight;
+            FillRect(customDraw->hdc, &topEdge, borderBrush);
+
+            RECT bottomEdge = rect;
+            bottomEdge.top = bottomEdge.bottom - edgeHeight;
+            FillRect(customDraw->hdc, &bottomEdge, borderBrush);
+
+            DeleteBrush(borderBrush);
+            return CDRF_DODEFAULT;
         }
-        int topY = statusRect.top + (TOOLBAR_HEIGHT - rectHeight(statusRect)) / 2
-            + STATUS_TOOLTIP_OFFSET;
-        SendMessage(statusTooltip, TTM_ADJUSTRECT, TRUE, (LPARAM)&statusRect);
-        OffsetRect(&statusRect, 0, topY - statusRect.top);
-        SetWindowPos(statusTooltip, nullptr, statusRect.left, statusRect.top, 0, 0,
-            SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-        return TRUE;
     } else if (nmHdr->code == TTN_GETDISPINFO) {
         NMTTDISPINFO *dispInfo = (NMTTDISPINFO *)nmHdr;
         if (!(dispInfo->uFlags & TTF_IDISHWND)) {
@@ -1063,28 +1341,54 @@ LRESULT ItemWindow::onNotify(NMHDR *nmHdr) {
         }
     } else if (nmHdr->code == TBN_DROPDOWN) {
         NMTOOLBAR *nmToolbar = (NMTOOLBAR *)nmHdr;
-        POINT menuPos = {nmToolbar->rcButton.left, nmToolbar->rcButton.bottom};
+        RECT buttonRect = {};
+        if (!SendMessage(nmHdr->hwndFrom, TB_GETRECT, nmToolbar->iItem, (LPARAM)&buttonRect))
+            return TBDDRET_NODEFAULT;
+        POINT menuPos = {buttonRect.left, buttonRect.bottom};
         return onDropdown(nmToolbar->iItem, clientToScreen(nmHdr->hwndFrom, menuPos));
-    } else if ((proxyIcon.isToolbarWindow(nmHdr->hwndFrom) || nmHdr->hwndFrom == parentToolbar)
+    } else if ((proxyIcon.isToolbarWindow(nmHdr->hwndFrom)
+            || nmHdr->hwndFrom == parentToolbar || nmHdr->hwndFrom == cmdToolbar)
             && nmHdr->code == NM_CUSTOMDRAW) {
         NMTBCUSTOMDRAW *customDraw = (NMTBCUSTOMDRAW *)nmHdr;
+        const bool navigationToolbar = nmHdr->hwndFrom == parentToolbar
+            || nmHdr->hwndFrom == cmdToolbar;
+        const bool navigationIcon = navigationGraphicsToken
+            && ((nmHdr->hwndFrom == parentToolbar && customDraw->nmcd.dwItemSpec == IDM_PREV_WINDOW)
+                || (nmHdr->hwndFrom == cmdToolbar && customDraw->nmcd.dwItemSpec == IDM_REFRESH));
         if (customDraw->nmcd.dwDrawStage == CDDS_PREPAINT) {
+            LRESULT result = navigationToolbar ? CDRF_NOTIFYITEMDRAW : 0;
+            if (nmHdr->hwndFrom != cmdToolbar)
+                result |= CDRF_NOTIFYPOSTPAINT;
+            return result;
+        } else if (customDraw->nmcd.dwDrawStage == CDDS_ITEMPREPAINT && navigationIcon) {
             return CDRF_NOTIFYPOSTPAINT;
+        } else if (customDraw->nmcd.dwDrawStage == CDDS_ITEMPOSTPAINT && navigationIcon) {
+            drawNavigationIcon(customDraw);
         } else if (customDraw->nmcd.dwDrawStage == CDDS_POSTPAINT) {
             // fix title bar rendering (when not layered)
             makeBitmapOpaque(customDraw->nmcd.hdc, clientRect(nmHdr->hwndFrom));
         }
         return CDRF_DODEFAULT;
     } else if (nmHdr->hwndFrom == parentToolbar && nmHdr->code == NM_LDOWN) {
-        NMMOUSE *mouse = (NMMOUSE *)nmHdr;
-        POINT screenPos = clientToScreen(parentToolbar, mouse->pt);
+        RECT buttonRect = {};
+        const POINT screenPos = pointFromLParam(GetMessagePos());
+        const POINT toolbarPos = screenToClient(parentToolbar, screenPos);
+        if (!SendMessage(parentToolbar, TB_GETRECT, IDM_PREV_WINDOW, (LPARAM)&buttonRect)
+                || !PtInRect(&buttonRect, toolbarPos))
+            return FALSE;
+        if (!SendMessage(parentToolbar, TB_ISBUTTONENABLED, IDM_PREV_WINDOW, 0))
+            return TRUE;
+        const bool closeSource = settings::getKeepSourceWindowOpen()
+            == (GetKeyState(VK_CONTROL) < 0);
         if (DragDetect(hwnd, screenPos)) {
             fakeDragMove();
         } else {
-            onCommand((WORD)mouse->dwItemSpec); // button clicked normally
+            openParent(closeSource);
         }
         return TRUE;
     } else if (nmHdr->hwndFrom == parentToolbar && nmHdr->code == NM_RCLICK) {
+        if (((NMMOUSE *)nmHdr)->dwItemSpec != IDM_PREV_WINDOW)
+            return FALSE;
         openParentMenu();
         return TRUE;
     }
@@ -1092,13 +1396,11 @@ LRESULT ItemWindow::onNotify(NMHDR *nmHdr) {
 }
 
 void ItemWindow::onActivate(WORD state, HWND) {
+    if (state == WA_INACTIVE)
+        persistViewState();
     if (state != WA_INACTIVE) {
         activeWindow = this;
-        if (paletteWindow() && child) {
-            SetWindowPos(child->hwnd, HWND_TOP, 0, 0, 0, 0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-        }
-        if (firstActivate && !parent)
+        if (firstActivate)
             resolveItem();
         firstActivate = true;
     }
@@ -1106,21 +1408,117 @@ void ItemWindow::onActivate(WORD state, HWND) {
 
 void ItemWindow::onSize(SIZE size) {
     autoSizeProxy(size.cx);
+    layoutToolbarRow(size.cx);
+}
 
-    int toolbarLeft = size.cx;
-    if (cmdToolbar) {
-        toolbarLeft = size.cx - clientSize(cmdToolbar).cx;
-        SetWindowPos(cmdToolbar, nullptr, toolbarLeft, useCustomFrame() ? CAPTION_HEIGHT : 0, 0, 0,
+void ItemWindow::updateTaskbar() {
+    CComPtr<IPropertyStore> propStore;
+    if (checkHR(SHGetPropertyStoreForWindow(taskbarOwner->getWnd(), IID_PPV_ARGS(&propStore)))) {
+        PROPVARIANT preventPinning = {};
+        if (checkHR(propStore->GetValue(PKEY_AppUserModel_PreventPinning, &preventPinning))) {
+            AcquireSRWLockShared(&iconLock);
+            bool cannotPin = settings::getGroupFolderWindows() || taskbarIconResource.empty();
+            ReleaseSRWLockShared(&iconLock);
+            bool replaceOwner = preventPinning.vt == VT_BOOL
+                && (!!preventPinning.boolVal != cannotPin);
+            checkHR(PropVariantClear(&preventPinning));
+            if (replaceOwner) {
+                // Recreate only the taskbar owner: PreventPinning cannot be
+                // changed after its first ID. Keep the folder view and selection.
+                CComPtr<TaskbarOwnerWindow> previous = taskbarOwner;
+                CComPtr<TaskbarOwnerWindow> replacement;
+                replacement.Attach(new TaskbarOwnerWindow(this));
+                if (replacement->getWnd()) {
+                    previous->setPreview(nullptr);
+                    checkLE(SetWindowLongPtr(hwnd, GWLP_HWNDPARENT,
+                        reinterpret_cast<LONG_PTR>(replacement->getWnd())));
+                    taskbarOwner = replacement;
+                    setTaskbarPreview();
+                    ShowWindow(taskbarOwner->getWnd(), IsIconic(previous->getWnd())
+                        ? SW_SHOWMINNOACTIVE : SW_SHOWNOACTIVATE);
+                }
+            } else {
+                updateWindowPropStore(propStore);
+            }
+        }
+    }
+}
+
+void ItemWindow::onSettingsChanged() {
+    updateTaskbar();
+    bool toolbarEnabled = settings::getToolbarEnabled();
+    auto showControl = [](HWND control, bool visible) {
+        if (control)
+            checkLE(SetWindowPos(control, nullptr, 0, 0, 0, 0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
+                    | (visible ? SWP_SHOWWINDOW : SWP_HIDEWINDOW)));
+    };
+    pathBar.show(toolbarEnabled && settings::getPathBarEnabled());
+    showControl(quickAccessToolbar, toolbarEnabled && settings::getQuickAccessEnabled());
+    if (parentToolbar && GetParent(parentToolbar) == toolbarHost)
+        showControl(parentToolbar, toolbarEnabled && settings::getUpButtonEnabled());
+    showControl(cmdToolbar, toolbarEnabled);
+    if (isFolder() && cmdToolbar) {
+        SendMessage(cmdToolbar, TB_HIDEBUTTON, IDM_REFRESH,
+            MAKELPARAM(!settings::getRefreshButtonEnabled(), 0));
+        SendMessage(cmdToolbar, TB_HIDEBUTTON, IDM_VIEW_MENU,
+            MAKELPARAM(!settings::getViewButtonEnabled(), 0));
+        SIZE ideal = {};
+        if (SendMessage(cmdToolbar, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal))
+            SetWindowPos(cmdToolbar, nullptr, 0, 0, ideal.cx, clientSize(cmdToolbar).cy,
+                SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+    }
+    showControl(toolbarRebar, toolbarEnabled);
+    onSize(clientSize(hwnd));
+    checkLE(RedrawWindow(hwnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN));
+}
+
+int ItemWindow::getNavigationToolbarWidth() const {
+    int width = 0;
+    const HWND controls[] = {quickAccessToolbar, parentToolbar};
+    for (HWND control : controls) {
+        if (control && GetParent(control) == toolbarHost
+                && (GetWindowLongPtr(control, GWL_STYLE) & WS_VISIBLE))
+            width += clientSize(control).cx;
+    }
+    return width;
+}
+
+void ItemWindow::layoutToolbarRow(int width) {
+    if (!toolbarRebar)
+        return;
+
+    RECT rebarRect = windowRect(toolbarRebar);
+    SetWindowPos(toolbarRebar, nullptr,
+        0, useCustomFrame() ? CAPTION_HEIGHT : 0,
+        width, rectHeight(rebarRect),
+        SWP_NOZORDER | SWP_NOACTIVATE);
+
+    REBARBANDINFO band = {sizeof(band)};
+    band.fMask = RBBIM_SIZE;
+    band.cx = clientSize(toolbarRebar).cx;
+    SendMessage(toolbarRebar, RB_SETBANDINFO, 0, (LPARAM)&band);
+
+    int rebarHeight = (int)SendMessage(toolbarRebar, RB_GETBARHEIGHT, 0, 0);
+    SetWindowPos(toolbarRebar, nullptr,
+        0, useCustomFrame() ? CAPTION_HEIGHT : 0,
+        width, rebarHeight,
+        SWP_NOZORDER | SWP_NOACTIVATE);
+
+    int toolbarLeft = clientSize(toolbarHost).cx;
+    if (cmdToolbar && (GetWindowLongPtr(cmdToolbar, GWL_STYLE) & WS_VISIBLE)) {
+        toolbarLeft -= clientSize(cmdToolbar).cx;
+        SetWindowPos(cmdToolbar, nullptr, toolbarLeft, 0, 0, 0,
             SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
     }
-    if (statusText) {
-        RECT statusRect = windowRect(statusText);
-        MapWindowRect(nullptr, hwnd, &statusRect);
-        SetWindowPos(statusText, nullptr,
-            0, 0, toolbarLeft - STATUS_TEXT_MARGIN - statusRect.left, TOOLBAR_HEIGHT,
-            SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
-        InvalidateRect(statusText, nullptr, FALSE);
-    }
+
+    const int navigationWidth = getNavigationToolbarWidth();
+    if (parentToolbar && GetParent(parentToolbar) == toolbarHost
+            && (GetWindowLongPtr(parentToolbar, GWL_STYLE) & WS_VISIBLE))
+        SetWindowPos(parentToolbar, nullptr, navigationWidth - clientSize(parentToolbar).cx,
+            0, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+    const int pathLeft = STATUS_TEXT_MARGIN + navigationWidth;
+    pathBar.place(pathLeft, toolbarLeft - STATUS_TEXT_MARGIN, TOOLBAR_HEIGHT);
 }
 
 void ItemWindow::autoSizeProxy(LONG width) {
@@ -1128,25 +1526,42 @@ void ItemWindow::autoSizeProxy(LONG width) {
     SendMessage(hwnd, WM_GETTITLEBARINFOEX, 0, (LPARAM)&titleBar);
     int closeButtonWidth = rectWidth(titleBar.rgrect[5]);
 
-    int left = centeredProxy() ? PARENT_BUTTON_WIDTH : 0;
+    int left = centeredProxy() && !isFolder() ? PARENT_BUTTON_WIDTH : 0;
     proxyIcon.autoSize(width, left, closeButtonWidth);
 }
 
-void ItemWindow::windowRectChanged() {
-    if (child)
-        child->setPos(childPos(rectSize(windowRect(child->hwnd))));
-    if (windowStyle() & WS_POPUP) {
-        // unlike overlapped windows, popups do not use the current monitor DPI, instead they use
-        // the DPI of the most recently active overlapped window. this will always be the owner if
-        // it's visible and overlapped. here we move the owner to match the popup's position as it
-        // moves so it uses the correct DPI
-        RECT rect = windowRect(hwnd);
-        // must have visible client area to affect DPI scaling
-        int minHeight = GetSystemMetrics(SM_CYMINTRACK) + 1;
-        if (rectHeight(rect) < minHeight)
-            rect.bottom = rect.top + minHeight;
-        MoveWindow(chain->getWnd(), rect.left, rect.top, rectWidth(rect), rectHeight(rect), FALSE);
+bool ItemWindow::normalWindowRect(RECT *rect) const {
+    if (!IsIconic(hwnd) && !IsZoomed(hwnd))
+        return checkLE(GetWindowRect(hwnd, rect)) != FALSE;
+    WINDOWPLACEMENT placement = {};
+    placement.length = sizeof(placement);
+    if (!checkLE(GetWindowPlacement(hwnd, &placement)))
+        return false;
+    *rect = placement.rcNormalPosition;
+    // WINDOWPLACEMENT uses workspace coordinates for non-tool windows.
+    if (!(GetWindowLongPtr(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW)) {
+        MONITORINFO monitor = {};
+        monitor.cbSize = sizeof(monitor);
+        if (!checkLE(GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &monitor)))
+            return false;
+        OffsetRect(rect, monitor.rcWork.left - monitor.rcMonitor.left,
+            monitor.rcWork.top - monitor.rcMonitor.top);
     }
+    return true;
+}
+
+void ItemWindow::recordGeometry() {
+    RECT rect = {};
+    if (!normalWindowRect(&rect))
+        return;
+    if (geometryKnown) {
+        if (rect.left != lastNormalRect.left || rect.top != lastNormalRect.top)
+            viewStateDirty(1 << STATE_POS);
+        if (rectWidth(rect) != rectWidth(lastNormalRect) || rectHeight(rect) != rectHeight(lastNormalRect))
+            viewStateDirty(1 << STATE_SIZE);
+    }
+    lastNormalRect = rect;
+    geometryKnown = true;
 }
 
 LRESULT ItemWindow::hitTestNCA(POINT cursor) {
@@ -1176,12 +1591,6 @@ LRESULT ItemWindow::hitTestNCA(POINT cursor) {
 }
 
 void ItemWindow::onPaint(PAINTSTRUCT paint) {
-    // on Windows 10+ we set the hbrBackground of the class so this isn't necessary
-    if ((statusText || cmdToolbar) && !IsWindows10OrGreater()) {
-        int top = useCustomFrame() ? CAPTION_HEIGHT : 0;
-        RECT toolbarRect = {0, top, clientSize(hwnd).cx, top + TOOLBAR_HEIGHT};
-        FillRect(paint.hdc, &toolbarRect, (HBRUSH)(COLOR_3DFACE + 1));
-    }
     if (useCustomFrame() && compositionEnabled) {
         // clear alpha channel
         BITMAPINFO bitmapInfo = {{sizeof(BITMAPINFOHEADER), 1, 1, 1, 32, BI_RGB}};
@@ -1192,185 +1601,140 @@ void ItemWindow::onPaint(PAINTSTRUCT paint) {
     }
 }
 
-void ItemWindow::limitChainWindowRect(RECT *rect) {
-    RECT myRect = windowRect(hwnd);
-    HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-    MONITORINFO monitorInfo = {sizeof(monitorInfo)};
-    GetMonitorInfo(monitor, &monitorInfo);
-    LONG maxBottom = max(myRect.bottom, monitorInfo.rcWork.bottom);
-    if (rect->bottom > maxBottom)
-        rect->bottom = maxBottom;
-}
-
-void ItemWindow::openChild(IShellItem *const childItem) {
-    CComPtr<IShellItem> resolved = resolveLink(childItem);
-    if (child) {
-        const int compareFlags = SICHINT_CANONICAL | SICHINT_TEST_FILESYSPATH_IF_NOT_EQUAL;
-        int compare;
-        if (checkHR(child->item->Compare(resolved, compareFlags, &compare)) && compare == 0)
-            return; // already open
-        child->close();
-    }
-    unregisterShellWindow();
-    child = createItemWindow(this, resolved);
-    SIZE size = child->persistSizeInParent() ? requestedChildSize() : child->requestedSize();
-    POINT pos = childPos(size);
-    RECT rect = {pos.x, pos.y, pos.x + size.cx, pos.y + size.cy};
-    if (stickToChild())
-        limitChainWindowRect(&rect);
-    // will flush message queue
-    child->create(rect, SW_SHOWNOACTIVATE);
-    if (paletteWindow())
-        autoUpdateCheck();
-}
-
-void ItemWindow::closeChild() {
-    if (child) {
-        child->close();
-        child = nullptr; // onChildDetached will not be called
-        if (!parent && !paletteWindow())
-            registerShellWindow();
-    }
-}
-
-void ItemWindow::openParent() {
-    CComPtr<IShellItem> parentItem;
-    if (FAILED(item->GetParent(&parentItem)))
+void ItemWindow::openChild(IShellItem *const childItem, bool closeSource) {
+    CComPtr<ItemWindow> keepAlive(this); // a COM wait may dispatch window messages
+    if (!isWindowOperational())
         return;
-    parent = createItemWindow(nullptr, parentItem);
-    parent->child = this;
-
-    unregisterShellWindow();
-    SIZE size = parent->requestedSize();
-    POINT pos = parentPos(size);
-    RECT rect = {pos.x, pos.y, pos.x + size.cx, pos.y + size.cy};
-    if (stickToChild())
-        limitChainWindowRect(&rect);
-    parent->create(rect, SW_SHOWNORMAL);
-    if (parentToolbar)
-        ShowWindow(parentToolbar, SW_HIDE);
-
-    if (persistSizeInParent())
-        parent->onChildResized(rectSize(windowRect(hwnd)));
-    resetViewState(1 << STATE_POS); // forget window position
+    CComPtr<IShellItem> resolved = resolveLink(childItem);
+    SFGAOF attributes = 0;
+    if (!isWindowOperational() || !resolved) return;
+    HRESULT access = resolved->GetAttributes(SFGAO_FOLDER, &attributes);
+    if (!isWindowOperational())
+        return;
+    if (!checkHR(access)) {
+        recordFolderItemFailure(resolved, access);
+        return;
+    }
+    if (!(attributes & SFGAO_FOLDER)) {
+        invokeDefaultVerb(childItem, hwnd, SW_SHOWNORMAL);
+        return;
+    }
+    // A shortcut can point back to the source folder itself.
+    const std::wstring targetProperty = folderWindowProperty(getFolderIdentity(resolved));
+    if (!isWindowOperational())
+        return;
+    if (targetProperty == identityProperty) {
+        ShowWindow(hwnd, IsIconic(hwnd) ? SW_RESTORE : SW_SHOW);
+        if (isWindowOperational())
+            setForeground();
+        return;
+    }
+    HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+    FolderOpenResult result = openFolderWindow(resolved, monitor, SW_SHOWNORMAL);
+    if (isWindowOperational() && closeSource
+            && (result == FolderOpenResult::Created || result == FolderOpenResult::Activated))
+        close();
 }
 
-void ItemWindow::clearParent() {
-    if (parent && parent->child == this) {
-        parent->child = nullptr;
-        parent->onChildDetached();
-    }
-    parent = nullptr;
-}
 
-void ItemWindow::detachFromParent(bool closeParent) {
-    ItemWindow *rootParent = parent;
-    if (!parent->paletteWindow()) {
-        chain.Attach(new ChainWindow(this));
-        for (ItemWindow *next = this; next != nullptr; next = next->child) {
-            SetWindowLongPtr(next->hwnd, GWLP_HWNDPARENT, (LONG_PTR)chain->getWnd());
-            next->chain = chain;
-        }
-        setChainPreview();
-        if (!child)
-            registerShellWindow();
-        ShowWindow(chain->getWnd(), SW_SHOWNORMAL);
-    }
-    clearParent();
-
+void ItemWindow::openParent(bool closeSource) {
+    CComPtr<ItemWindow> keepAlive(this);
+    if (!isWindowOperational())
+        return;
     CComPtr<IShellItem> parentItem;
-    if (parentToolbar && SUCCEEDED(item->GetParent(&parentItem)))
-        ShowWindow(parentToolbar, SW_SHOW);
-    if (closeParent) {
-        while (rootParent->parent && !rootParent->parent->paletteWindow())
-            rootParent = rootParent->parent;
-        if (!rootParent->paletteWindow())
-            rootParent->close();
-    } else if (!rootParent->paletteWindow()) {
-        rootParent->activate(); // no window is focused by default
-    }
-    activate(); // bring this chain to front
-
-    viewStateDirty(1 << STATE_SIZE);
-    SHAddToRecentDocs(SHARD_APPIDINFO, tempPtr(SHARDAPPIDINFO{item, appUserModelID()}));
+    if (SUCCEEDED(item->GetParent(&parentItem)) && isWindowOperational())
+        openChild(parentItem, closeSource);
 }
 
-void ItemWindow::onChildDetached() {}
-
-void ItemWindow::onChildResized(SIZE size) {
-    childSize = size;
-    viewStateDirty(1 << STATE_CHILD_SIZE);
-}
-
-void ItemWindow::detachAndMove(bool closeParent) {
-    ItemWindow *rootParent = this;
-    while (rootParent->parent && !rootParent->parent->paletteWindow())
-        rootParent = rootParent->parent;
-    RECT rootRect = windowRect(rootParent->hwnd);
-
-    detachFromParent(closeParent);
-
-    if (closeParent) {
-        setPos({rootRect.left, rootRect.top});
-    } else {
-        int cascade = cascadeSize();
-        POINT pos = {rootRect.left + cascade, rootRect.top + cascade};
-
-        HMONITOR curMonitor = MonitorFromWindow(rootParent->hwnd, MONITOR_DEFAULTTONEAREST);
-        MONITORINFO monitorInfo = {sizeof(monitorInfo)};
-        GetMonitorInfo(curMonitor, &monitorInfo);
-        if (pos.x + cascade > monitorInfo.rcWork.right)
-            pos.x = monitorInfo.rcWork.left;
-        if (pos.y + cascade > monitorInfo.rcWork.bottom)
-            pos.y = monitorInfo.rcWork.top;
-        setPos(pos);
-    }
-}
 
 SIZE ItemWindow::requestedSize() {
-    if (auto bag = getPropBag()) {
-        VARIANT sizeVar = {VT_UI4};
-        if (SUCCEEDED(bag->Read(PROP_SIZE, &sizeVar, nullptr))) {
-            return scaleDPI(sizeFromLParam(sizeVar.ulVal));
-        }
-    }
+    if (loadFolderState() && (savedState.present & FolderState::Size))
+        return scaleDPI(SIZE{savedState.width, savedState.height});
     return defaultSize();
 }
 
 RECT ItemWindow::requestedRect(HMONITOR preferMonitor) {
     SIZE size = requestedSize();
 
-    MONITORINFO monitorInfo = {sizeof(monitorInfo)};
-    if (preferMonitor)
-        GetMonitorInfo(preferMonitor, &monitorInfo);
+    // First try the position stored for this item.
+    // A stored spatial position takes precedence over the preferred monitor.
+    if (loadFolderState() && (savedState.present & FolderState::Position)) {
+        POINT pos = scaleDPI(POINT{savedState.x, savedState.y});
 
-    if (auto bag = getPropBag()) {
-        VARIANT posVar = {VT_UI4};
-        if (SUCCEEDED(bag->Read(PROP_POS, &posVar, nullptr))) {
-            POINT pos = scaleDPI(pointFromLParam(posVar.ulVal));
-            if (!preferMonitor) {
-                preferMonitor = MonitorFromPoint(pos, MONITOR_DEFAULTTONEAREST);
-                GetMonitorInfo(preferMonitor, &monitorInfo);
-            }
-            int cascade = cascadeSize();
-            if (PtInRect(&monitorInfo.rcWork, pos)
-                    && PtInRect(&monitorInfo.rcWork, {pos.x + cascade, pos.y + cascade})) {
-                return RECT{pos.x, pos.y, pos.x + size.cx, pos.y + size.cy};
+        // Validate the stored position against the monitor on which
+        // the position actually lies, not against the monitor from
+        // which the item is being opened.
+        HMONITOR savedMonitor =
+            MonitorFromPoint(pos, MONITOR_DEFAULTTONULL);
+
+        if (savedMonitor) {
+            MONITORINFO savedMonitorInfo = {sizeof(savedMonitorInfo)};
+
+            if (GetMonitorInfo(savedMonitor, &savedMonitorInfo)) {
+                int cascade = cascadeSize();
+
+                if (PtInRect(&savedMonitorInfo.rcWork, pos)
+                        && PtInRect(
+                            &savedMonitorInfo.rcWork,
+                            {pos.x + cascade, pos.y + cascade})) {
+
+                    return RECT{
+                        pos.x,
+                        pos.y,
+                        pos.x + size.cx,
+                        pos.y + size.cy
+                    };
+                }
             }
         }
     }
+
+    // No valid stored position: choose an initial position.
     RECT rect;
+
     if (!preferMonitor) {
-        rect = RECT{CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT + size.cx, CW_USEDEFAULT + size.cy};
+        rect = RECT{
+            CW_USEDEFAULT,
+            CW_USEDEFAULT,
+            CW_USEDEFAULT + size.cx,
+            CW_USEDEFAULT + size.cy
+        };
     } else {
-        // find a good position for the window on the preferred monitor
-        // https://devblogs.microsoft.com/oldnewthing/20131122-00/?p=2593
+        MONITORINFO monitorInfo = {sizeof(monitorInfo)};
+        GetMonitorInfo(preferMonitor, &monitorInfo);
+
+        // Find a good initial position on the preferred monitor.
         HINSTANCE inst = GetModuleHandle(nullptr);
-        HWND owner = checkLE(CreateWindow(TESTPOS_CLASS, nullptr, WS_OVERLAPPED,
-            monitorInfo.rcWork.left, monitorInfo.rcWork.top, 1, 1, nullptr, nullptr, inst, 0));
-        HWND defWnd = checkLE(CreateWindow(TESTPOS_CLASS, nullptr, WS_OVERLAPPED,
-            CW_USEDEFAULT, CW_USEDEFAULT, size.cx, size.cy, owner, nullptr, inst, 0));
+
+        HWND owner = checkLE(CreateWindow(
+            TESTPOS_CLASS,
+            nullptr,
+            WS_OVERLAPPED,
+            monitorInfo.rcWork.left,
+            monitorInfo.rcWork.top,
+            1,
+            1,
+            nullptr,
+            nullptr,
+            inst,
+            0));
+
+        HWND defWnd = checkLE(CreateWindow(
+            TESTPOS_CLASS,
+            nullptr,
+            WS_OVERLAPPED,
+            CW_USEDEFAULT,
+            CW_USEDEFAULT,
+            size.cx,
+            size.cy,
+            owner,
+            nullptr,
+            inst,
+            0));
+
         rect = windowRect(defWnd);
+
+        checkLE(DestroyWindow(defWnd));
         checkLE(DestroyWindow(owner));
     }
 
@@ -1378,65 +1742,22 @@ RECT ItemWindow::requestedRect(HMONITOR preferMonitor) {
     return rect;
 }
 
-SIZE ItemWindow::requestedChildSize() {
-    if (sizeEqual(childSize, {0, 0})) {
-        if (auto bag = getPropBag()) {
-            VARIANT sizeVar = {VT_UI4};
-            if (SUCCEEDED(bag->Read(PROP_CHILD_SIZE, &sizeVar, nullptr))) {
-                childSize = scaleDPI(sizeFromLParam(sizeVar.ulVal));
-                return childSize;
-            }
-        }
-        childSize = scaleDPI(settings::getItemWindowSize());
-    }
-    return childSize;
+
+void ItemWindow::enableTaskbarOwner(bool enabled) {
+    taskbarOwner->setEnabled(enabled);
 }
 
-POINT ItemWindow::childPos(SIZE size) {
-    HMONITOR curMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-    int curMonitorDPI = monitorDPI(curMonitor);
-
-    // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowrect
-    // GetWindowRect includes the resize margin!
-    RECT rect = windowRect(hwnd);
-    POINT pos = {rect.right - invisibleBorderDoubleSize(hwnd, curMonitorDPI), rect.top};
-
-    RECT childRect = {pos.x, pos.y, pos.x + size.cx, pos.y + size.cy};
-    HMONITOR childMonitor = MonitorFromRect(&childRect, MONITOR_DEFAULTTONEAREST);
-    return pointMulDiv(pos, curMonitorDPI, monitorDPI(childMonitor));
-}
-
-POINT ItemWindow::parentPos(SIZE size) {
-    HMONITOR curMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-    int curMonitorDPI = monitorDPI(curMonitor);
-
-    RECT rect = windowRect(hwnd);
-    POINT pos = {rect.left - size.cx + invisibleBorderDoubleSize(hwnd, curMonitorDPI), rect.top};
-
-    MONITORINFO monitorInfo = {sizeof(monitorInfo)};
-    GetMonitorInfo(curMonitor, &monitorInfo);
-    if (pos.x < monitorInfo.rcWork.left)
-        pos.x = monitorInfo.rcWork.left;
-    if (pos.y + cascadeSize() > monitorInfo.rcWork.bottom)
-        pos.y = monitorInfo.rcWork.bottom - cascadeSize();
-    return pos;
-}
-
-void ItemWindow::enableChain(bool enabled) {
-    chain->setEnabled(enabled);
-}
-
-void ItemWindow::setChainPreview() {
+void ItemWindow::setTaskbarPreview() {
     // update app user model id
     CComPtr<IPropertyStore> propStore;
-    if (checkHR(SHGetPropertyStoreForWindow(chain->getWnd(), IID_PPV_ARGS(&propStore))))
+    if (checkHR(SHGetPropertyStoreForWindow(taskbarOwner->getWnd(), IID_PPV_ARGS(&propStore))))
         updateWindowPropStore(propStore);
     // update taskbar preview
-    chain->setPreview(hwnd);
+    taskbarOwner->setPreview(hwnd);
     // update alt-tab
-    chain->setText(title);
+    taskbarOwner->setText(title);
     AcquireSRWLockExclusive(&iconLock);
-    chain->setIcon(iconSmall, iconLarge);
+    taskbarOwner->setIcon(iconSmall, iconLarge);
     ReleaseSRWLockExclusive(&iconLock);
 }
 
@@ -1453,7 +1774,7 @@ void ItemWindow::onViewReady() {
             CComVariant pidlVar(persistIDList);
             checkHR(shellWindows->OnNavigate(shellWindowCookie, &pidlVar));
         }
-    } else if (!child && !parent && !paletteWindow()) {
+    } else {
         registerShellWindow();
     }
 }
@@ -1506,12 +1827,13 @@ void ItemWindow::unregisterShellNotify() {
 bool ItemWindow::resolveItem() {
     if (closing) // can happen when closing save prompt (window is activated)
         return true;
-    SFGAOF attr;
-    // check if item exists
-    if (SUCCEEDED(item->GetAttributes(SFGAO_VALIDATE, &attr)))
+    SFGAOF attr = 0;
+    // A failed validation establishes an access failure, not a deletion.
+    HRESULT validation = item->GetAttributes(SFGAO_VALIDATE, &attr);
+    if (SUCCEEDED(validation)) {
+        recordFolderAccess(validation);
         return true;
-    resetViewState(); // clear view state of old item
-
+    }
     if (link) {
         checkHR(link->Resolve(nullptr, SLR_NO_UI));
 
@@ -1536,15 +1858,14 @@ bool ItemWindow::resolveItem() {
         }
     }
 
-    debugPrintf(L"Item has been deleted!\n");
-    scratch = false;
-    enableTransitions(true); // emphasize window closing
+    debugPrintf(L"Item could not be accessed!\n");
+    recordFolderAccess(validation);
     close();
     return false;
 }
 
 void ItemWindow::itemMoved(IShellItem *const newItem) {
-    resetViewState(); // clear view state of old item
+    persistViewState();
     item = newItem;
     link = nullptr;
     CComHeapPtr<ITEMIDLIST> idList;
@@ -1557,20 +1878,37 @@ void ItemWindow::itemMoved(IShellItem *const newItem) {
 }
 
 void ItemWindow::onItemChanged() {
+    // Local NTFS identities survive rename/move; path-based identities follow the new path.
+    std::wstring property = folderWindowProperty(getFolderIdentity(item));
+    if (!property.empty() && property != identityProperty
+            && SetPropW(hwnd, property.c_str(), reinterpret_cast<HANDLE>(1))) {
+        std::string newKey;
+        for (wchar_t character : property)
+            newKey.push_back(static_cast<char>(character));
+        auto store = folderStateStore();
+        if (!store || !store->move(stateKey, newKey))
+            stateStorageError();
+        stateKey = newKey;
+        RemovePropW(hwnd, identityProperty.c_str());
+        identityProperty = std::move(property);
+    }
     CComHeapPtr<wchar_t> newTitle;
     if (checkHR(item->GetDisplayName(SIGDN_NORMALDISPLAY, &newTitle))) {
         title = newTitle;
         SetWindowText(hwnd, title);
         proxyIcon.setTitle(title);
         autoSizeProxy(clientSize(hwnd).cx);
-        if (!paletteWindow() && (!parent || parent->paletteWindow()))
-            chain->setText(title);
+        taskbarOwner->setText(title);
     }
-    proxyIcon.setItem(item);
-    propBag = nullptr;
-    resetViewState();
-    if (auto bag = getPropBag())
-        writeViewState(bag, ~0u);
+    pathBar.setItem(item);
+    if (parentToolbar) {
+        CComPtr<IShellItem> parentItem;
+        SendMessage(parentToolbar, TB_ENABLEBUTTON, IDM_PREV_WINDOW,
+            SUCCEEDED(item->GetParent(&parentItem)));
+    }
+    // NTFS retains its database key; path-based identities transfer their row.
+    viewStateDirty(FolderState::All);
+    persistViewState();
 
     unregisterShellNotify();
     registerShellNotify();
@@ -1583,96 +1921,385 @@ void ItemWindow::refresh() {
         iconThread->stop();
     iconThread.Attach(new IconThread(item, this));
     iconThread->start();
-    if (hasStatusText() && useDefaultStatusText()) {
-        if (statusTextThread)
-            statusTextThread->stop();
-        statusTextThread.Attach(new StatusTextThread(item, this));
-        statusTextThread->start();
-    }
 }
 
 void ItemWindow::openParentMenu() {
+    CComPtr<ItemWindow> keepAlive(this);
+    if (!isWindowOperational())
+        return;
     int iconSize = GetSystemMetrics(SM_CXSMICON);
-    HMENU menu = CreatePopupMenu();
+    auto destroyMenu = [](HMENU handle) {
+        for (int i = 0, count = GetMenuItemCount(handle); i < count; i++) {
+            MENUITEMINFO info = {sizeof(info)};
+            info.fMask = MIIM_BITMAP;
+            if (checkLE(GetMenuItemInfo(handle, i, TRUE, &info)) && info.hbmpItem)
+                DeleteBitmap(info.hbmpItem);
+        }
+        checkLE(DestroyMenu(handle));
+    };
+    std::unique_ptr<std::remove_pointer_t<HMENU>, decltype(destroyMenu)>
+        ownedMenu(CreatePopupMenu(), destroyMenu);
+    HMENU menu = ownedMenu.get();
     if (!menu)
         return;
+
     int id = 0;
     CComPtr<IShellItem> curItem = item, parentItem;
-    while (SUCCEEDED(curItem->GetParent(&parentItem))) {
+
+    while (isWindowOperational() && SUCCEEDED(curItem->GetParent(&parentItem))) {
+        if (!isWindowOperational())
+            return;
         curItem = parentItem;
         parentItem = nullptr;
         id++;
+
         CComHeapPtr<wchar_t> name;
+        if (!isWindowOperational())
+            return;
         if (!checkHR(curItem->GetDisplayName(SIGDN_NORMALDISPLAY, &name)))
             continue;
+
+        if (!isWindowOperational())
+            return;
         AppendMenu(menu, MF_STRING, id, name);
+
         SHFILEINFO fileInfo = {};
         CComHeapPtr<ITEMIDLIST> idList;
-        if (checkHR(SHGetIDListFromObject(curItem, &idList))) {
-            checkLE(SHGetFileInfo((wchar_t *)(ITEMIDLIST *)idList, 0, &fileInfo, sizeof(fileInfo),
+
+        if (checkHR(SHGetIDListFromObject(curItem, &idList)) && isWindowOperational()) {
+            checkLE(SHGetFileInfo(
+                (wchar_t *)(ITEMIDLIST *)idList,
+                0,
+                &fileInfo,
+                sizeof(fileInfo),
                 SHGFI_PIDL | SHGFI_ICON | SHGFI_ADDOVERLAYS | SHGFI_SMALLICON));
         }
+
         if (fileInfo.hIcon) {
-            // http://shellrevealed.com:80/blogs/shellblog/archive/2007/02/06/Vista-Style-Menus_2C00_-Part-1-_2D00_-Adding-icons-to-standard-menus.aspx
-            // icon must have alpha channel; SHGetFileInfo doesn't do this
             MENUITEMINFO itemInfo = {sizeof(itemInfo)};
             itemInfo.fMask = MIIM_BITMAP;
-            itemInfo.hbmpItem = iconToPARGB32Bitmap(fileInfo.hIcon, iconSize, iconSize);
+            itemInfo.hbmpItem =
+                iconToPARGB32Bitmap(fileInfo.hIcon, iconSize, iconSize);
+
             DestroyIcon(fileInfo.hIcon);
             SetMenuItemInfo(menu, id, FALSE, &itemInfo);
         }
     }
-    if (id == 0) { // empty
-        checkLE(DestroyMenu(menu));
+
+    if (!isWindowOperational() || id == 0)
         return;
-    }
+
     POINT point;
     LONG_PTR buttonState = 0;
+
     if (parentToolbar) {
         RECT buttonRect;
-        SendMessage(parentToolbar, TB_GETRECT, IDM_PREV_WINDOW, (LPARAM)&buttonRect);
-        point = clientToScreen(parentToolbar, {buttonRect.left, buttonRect.bottom});
-        buttonState = SendMessage(parentToolbar, TB_GETSTATE, IDM_PREV_WINDOW, 0);
-        SendMessage(parentToolbar, TB_SETSTATE, IDM_PREV_WINDOW, buttonState | TBSTATE_PRESSED);
+        SendMessage(
+            parentToolbar,
+            TB_GETRECT,
+            IDM_PREV_WINDOW,
+            (LPARAM)&buttonRect);
+
+        if (!isWindowOperational())
+            return;
+        point = clientToScreen(
+            parentToolbar,
+            {buttonRect.left, buttonRect.bottom});
+
+        buttonState =
+            SendMessage(parentToolbar, TB_GETSTATE, IDM_PREV_WINDOW, 0);
+
+        if (!isWindowOperational())
+            return;
+        SendMessage(
+            parentToolbar,
+            TB_SETSTATE,
+            IDM_PREV_WINDOW,
+            buttonState | TBSTATE_PRESSED);
     } else {
         point = clientToScreen(hwnd, {0, 0});
     }
-    int cmd = TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON,
-        point.x, point.y, hwnd, nullptr);
-    if (parentToolbar)
-        SendMessage(parentToolbar, TB_SETSTATE, IDM_PREV_WINDOW, buttonState);
-    ItemWindow *parentWindow = this;
-    for (int i = 0; i < cmd && parentWindow; i++) {
-        if (!parentWindow->parent)
-            parentWindow->openParent();
-        parentWindow = parentWindow->parent;
+
+    if (!isWindowOperational())
+        return;
+    int cmd = TrackPopupMenuEx(
+        menu,
+        TPM_RETURNCMD | TPM_RIGHTBUTTON,
+        point.x,
+        point.y,
+        hwnd,
+        nullptr);
+
+    const bool closeSource = settings::getKeepSourceWindowOpen()
+        == (GetKeyState(VK_CONTROL) < 0);
+
+    if (isWindowOperational() && parentToolbar) {
+        SendMessage(
+            parentToolbar,
+            TB_SETSTATE,
+            IDM_PREV_WINDOW,
+            buttonState);
     }
 
-    // destroy bitmaps
-    for (int i = 0, count = GetMenuItemCount(menu); i < count; i++) {
-        MENUITEMINFO itemInfo = {sizeof(itemInfo)};
-        itemInfo.fMask = MIIM_BITMAP;
-        if (checkLE(GetMenuItemInfo(menu, i, TRUE, &itemInfo)) && itemInfo.hbmpItem)
-            DeleteBitmap(itemInfo.hbmpItem);
+    // Spatial mode: locate the selected ancestor directly instead of
+    // following window links.
+    if (isWindowOperational() && cmd > 0) {
+        CComPtr<IShellItem> targetItem = item;
+        CComPtr<IShellItem> nextItem;
+
+        bool found = true;
+
+        for (int i = 0; i < cmd; i++) {
+            nextItem = nullptr;
+
+            if (!isWindowOperational() || FAILED(targetItem->GetParent(&nextItem))) {
+                found = false;
+                break;
+            }
+
+            targetItem = nextItem;
+        }
+
+        if (isWindowOperational() && found && targetItem)
+            openChild(targetItem, closeSource);
     }
-    checkLE(DestroyMenu(menu));
+
+
 }
 
-void ItemWindow::invokeProxyDefaultVerb() {
-    CComHeapPtr<ITEMIDLIST> idList;
-    if (checkHR(SHGetIDListFromObject(item, &idList))) {
-        SHELLEXECUTEINFO info = {sizeof(info)};
-        info.fMask = SEE_MASK_INVOKEIDLIST | SEE_MASK_FLAG_LOG_USAGE;
-        info.lpIDList = idList;
-        info.hwnd = hwnd;
-        info.nShow = SW_SHOWNORMAL;
-        checkLE(ShellExecuteEx(&info));
+// This menu uses existing windows and icons, not Shell folder enumeration.
+// Keep the snapshot and its bitmaps local to a single popup.
+static HBITMAP captionCommandBitmap(const wchar_t *glyph, int size, COLORREF color) {
+    if (!navigationGraphicsToken)
+        return nullptr;
+    Gdiplus::Bitmap image(size, size, PixelFormat32bppPARGB);
+    {
+        Gdiplus::Graphics graphics(&image);
+        graphics.Clear(Gdiplus::Color(0, 0, 0, 0));
+        graphics.SetTextRenderingHint(Gdiplus::TextRenderingHintAntiAliasGridFit);
+        Gdiplus::Font font(L"Segoe MDL2 Assets", (Gdiplus::REAL)(size - 2),
+            Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
+        Gdiplus::SolidBrush brush(Gdiplus::Color(255,
+            GetRValue(color), GetGValue(color), GetBValue(color)));
+        Gdiplus::StringFormat format;
+        format.SetAlignment(Gdiplus::StringAlignmentCenter);
+        format.SetLineAlignment(Gdiplus::StringAlignmentCenter);
+        const Gdiplus::RectF rect(0, 0, (Gdiplus::REAL)size, (Gdiplus::REAL)size);
+        if (graphics.DrawString(glyph, -1, &font, rect, &format, &brush) != Gdiplus::Ok)
+            return nullptr;
+    }
+    BITMAPINFO info = {{sizeof(BITMAPINFOHEADER), size, -size, 1, 32, BI_RGB}};
+    void *pixels = nullptr;
+    HBITMAP bitmap = CreateDIBSection(nullptr, &info, DIB_RGB_COLORS, &pixels, nullptr, 0);
+    if (!bitmap)
+        return nullptr;
+    Gdiplus::BitmapData data = {};
+    const Gdiplus::Rect rect(0, 0, size, size);
+    if (image.LockBits(&rect, Gdiplus::ImageLockModeRead, PixelFormat32bppPARGB,
+            &data) != Gdiplus::Ok) {
+        DeleteObject(bitmap);
+        return nullptr;
+    }
+    const size_t stride = (size_t)size * sizeof(DWORD);
+    for (int row = 0; row < size; ++row)
+        std::memcpy(static_cast<BYTE *>(pixels) + row * stride,
+            static_cast<BYTE *>(data.Scan0) + row * data.Stride, stride);
+    image.UnlockBits(&data);
+    return bitmap;
+}
+
+static HBITMAP captionWindowBitmap(IWICImagingFactory *factory, HWND window, int size) {
+    DWORD_PTR value = 0;
+    // A different FileSpacer process can be busy; do not let it block this menu.
+    SendMessageTimeout(window, WM_GETICON, ICON_SMALL2, systemDPI,
+        SMTO_ABORTIFHUNG | SMTO_BLOCK | SMTO_ERRORONEXIT, 100, &value);
+    HICON icon = value ? CopyIcon(reinterpret_cast<HICON>(value)) : nullptr;
+    if (!icon) {
+        SHSTOCKICONINFO stock = {sizeof(stock)};
+        if (SUCCEEDED(SHGetStockIconInfo(SIID_FOLDER, SHGSI_ICON | SHGSI_SMALLICON, &stock)))
+            icon = stock.hIcon;
+    }
+    if (!icon)
+        return nullptr;
+    CComPtr<IWICBitmap> source;
+    HRESULT result = factory->CreateBitmapFromHICON(icon, &source);
+    DestroyIcon(icon);
+    CComPtr<IWICBitmapScaler> scaled;
+    if (SUCCEEDED(result))
+        result = factory->CreateBitmapScaler(&scaled);
+    if (SUCCEEDED(result))
+        result = scaled->Initialize(source, (UINT)size, (UINT)size, WICBitmapInterpolationModeFant);
+    CComPtr<IWICBitmapSource> converted;
+    if (SUCCEEDED(result))
+        result = WICConvertBitmapSource(GUID_WICPixelFormat32bppPBGRA, scaled, &converted);
+    if (FAILED(result))
+        return nullptr;
+    BITMAPINFO info = {{sizeof(BITMAPINFOHEADER), size, -size, 1, 32, BI_RGB}};
+    void *pixels = nullptr;
+    HBITMAP bitmap = CreateDIBSection(nullptr, &info, DIB_RGB_COLORS, &pixels, nullptr, 0);
+    if (!bitmap)
+        return nullptr;
+    const UINT stride = (UINT)((size_t)size * sizeof(DWORD));
+    if (FAILED(converted->CopyPixels(nullptr, stride, stride * (UINT)size,
+            static_cast<BYTE *>(pixels)))) {
+        DeleteObject(bitmap);
+        return nullptr;
+    }
+    return bitmap;
+}
+
+void ItemWindow::openCaptionMenu(POINT pos) {
+    CComPtr<ItemWindow> keepAlive(this);
+    if (!isWindowOperational())
+        return;
+    struct Entry {
+        HWND window;
+        std::wstring title;
+    };
+    std::vector<Entry> entries;
+    EnumWindows([](HWND window, LPARAM data) -> BOOL {
+        if (!IsWindowVisible(window))
+            return TRUE;
+        wchar_t windowClass[64] = {};
+        if (!GetClassName(window, windowClass, (int)ARRAYSIZE(windowClass))
+                || lstrcmp(windowClass, ITEM_WINDOW_CLASS) != 0)
+            return TRUE;
+        const int length = GetWindowTextLength(window);
+        if (!length)
+            return TRUE;
+        std::wstring name((size_t)length + 1, L'\0');
+        const int copied = GetWindowText(window, &name[0], length + 1);
+        if (!copied)
+            return TRUE;
+        name.resize((size_t)copied);
+        reinterpret_cast<std::vector<Entry> *>(data)->push_back({window, std::move(name)});
+        return TRUE;
+    }, reinterpret_cast<LPARAM>(&entries));
+
+    if (!isWindowOperational())
+        return;
+    std::vector<HBITMAP> bitmaps;
+    auto destroyMenu = [&bitmaps](HMENU handle) {
+        DestroyMenu(handle);
+        for (HBITMAP bitmap : bitmaps)
+            DeleteObject(bitmap);
+    };
+    std::unique_ptr<std::remove_pointer_t<HMENU>, decltype(destroyMenu)>
+        ownedMenu(CreatePopupMenu(), destroyMenu);
+    HMENU menu = ownedMenu.get();
+    if (!menu)
+        return;
+    MENUINFO menuInfo = {sizeof(menuInfo)};
+    menuInfo.fMask = MIM_STYLE;
+    menuInfo.dwStyle = MNS_CHECKORBMP;
+    SetMenuInfo(menu, &menuInfo);
+    const int iconSize = GetSystemMetrics(SM_CXSMICON);
+    COLORREF iconColor = GetSysColor(COLOR_MENUTEXT);
+    if (HTHEME theme = OpenThemeData(hwnd, L"Menu")) {
+        GetThemeColor(theme, MENU_POPUPITEM, MPI_NORMAL, TMT_TEXTCOLOR, &iconColor);
+        CloseThemeData(theme);
+    }
+    auto append = [&](UINT command, const wchar_t *name, HBITMAP bitmap, bool enabled) {
+        MENUITEMINFO info = {sizeof(info)};
+        info.fMask = MIIM_ID | MIIM_STRING | MIIM_BITMAP | MIIM_STATE;
+        info.wID = command;
+        info.dwTypeData = const_cast<wchar_t *>(name);
+        info.hbmpItem = bitmap;
+        info.fState = enabled ? MFS_ENABLED : MFS_DISABLED;
+        InsertMenuItem(menu, (UINT)-1, TRUE, &info);
+        if (bitmap)
+            bitmaps.push_back(bitmap);
+    };
+    CComHeapPtr<wchar_t> path;
+    if (FAILED(item->GetDisplayName(SIGDN_FILESYSPATH, &path)) && isWindowOperational())
+        item->GetDisplayName(SIGDN_DESKTOPABSOLUTEEDITING, &path);
+    if (!isWindowOperational())
+        return;
+    SFGAOF attributes = 0;
+    item->GetAttributes(SFGAO_CANRENAME, &attributes);
+    if (!isWindowOperational())
+        return;
+    append(1, getString(IDS_CAPTION_COPY_PATH),
+        captionCommandBitmap(MDL2_COPY_PATH, iconSize, iconColor), path != nullptr);
+    append(2, getString(IDS_CAPTION_RENAME),
+        captionCommandBitmap(MDL2_RENAME, iconSize, iconColor), (attributes & SFGAO_CANRENAME) != 0);
+    append(3, getString(IDS_CAPTION_PROPERTIES),
+        captionCommandBitmap(MDL2_PROPERTIES, iconSize, iconColor), true);
+    if (!entries.empty())
+        AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
+    CComPtr<IWICImagingFactory> factory;
+    factory.CoCreateInstance(CLSID_WICImagingFactory);
+    if (!isWindowOperational())
+        return;
+    for (size_t index = 0; index < entries.size() && isWindowOperational(); ++index) {
+        std::wstring label;
+        for (wchar_t character : entries[index].title) {
+            label += character;
+            if (character == L'&')
+                label += L'&';
+        }
+        HBITMAP bitmap = factory ? captionWindowBitmap(factory, entries[index].window, iconSize)
+            : nullptr;
+        if (!bitmap)
+            bitmap = captionCommandBitmap(MDL2_FOLDER, iconSize, iconColor);
+        append((UINT)index + 4, label.c_str(), bitmap, true);
+    }
+    if (!isWindowOperational())
+        return;
+    const UINT command = TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON,
+        pos.x, pos.y, hwnd, nullptr);
+    ownedMenu.reset();
+    if (!isWindowOperational())
+        return;
+
+    if (command == 1 && path) {
+        const size_t bytes = ((size_t)lstrlen(path) + 1) * sizeof(wchar_t);
+        HGLOBAL memory = GlobalAlloc(GMEM_MOVEABLE, bytes);
+        if (!memory)
+            return;
+        void *text = GlobalLock(memory);
+        if (!text) {
+            GlobalFree(memory);
+            return;
+        }
+        std::memcpy(text, path, bytes);
+        GlobalUnlock(memory);
+        if (OpenClipboard(hwnd)) {
+            if (isWindowOperational() && EmptyClipboard() && isWindowOperational()
+                    && SetClipboardData(CF_UNICODETEXT, memory))
+                memory = nullptr; // The clipboard now owns the allocation.
+            CloseClipboard();
+        }
+        if (memory)
+            GlobalFree(memory);
+    } else if (command == 2) {
+        proxyIcon.beginRename();
+    } else if (command == 3) {
+        openProxyProperties();
+    } else if (command >= 4 && (size_t)(command - 4) < entries.size()) {
+        const HWND target = entries[command - 4].window;
+        wchar_t windowClass[64] = {};
+        // The selected window may have closed while the popup was open.
+        if (GetClassName(target, windowClass, (int)ARRAYSIZE(windowClass))
+                && lstrcmp(windowClass, ITEM_WINDOW_CLASS) == 0) {
+            // The taskbar owner may be minimized instead of the folder window.
+            const HWND owner = GetAncestor(target, GA_ROOTOWNER);
+            if (owner && IsIconic(owner))
+                ShowWindowAsync(owner, SW_RESTORE);
+            if (IsIconic(target))
+                ShowWindowAsync(target, SW_RESTORE);
+            SetForegroundWindow(target);
+        }
+        // Selecting an existing window never navigates or closes the source.
     }
 }
 
 void ItemWindow::openProxyProperties() {
+    // openCaptionMenu owns this object through resolution and invocation.
+    if (!isWindowOperational())
+        return;
     CComHeapPtr<ITEMIDLIST> idList;
-    if (checkHR(SHGetIDListFromObject(item, &idList))) {
+    if (checkHR(SHGetIDListFromObject(item, &idList)) && isWindowOperational()) {
         SHELLEXECUTEINFO info = {sizeof(info)};
         info.fMask = SEE_MASK_INVOKEIDLIST;
         info.lpVerb = L"properties";
@@ -1695,35 +2322,44 @@ void ItemWindow::deleteProxy() {
 }
 
 void ItemWindow::openProxyContextMenu() {
-    // https://devblogs.microsoft.com/oldnewthing/20040920-00/?p=37823 and onward
-    CComPtr<IContextMenu> contextMenu;
-    if (!checkHR(item->BindToHandler(nullptr, BHID_SFUIObject, IID_PPV_ARGS(&contextMenu))))
+    // IDM_PROXY_MENU owns this object through the final button restoration.
+    if (!isWindowOperational())
         return;
-    HMENU popupMenu = CreatePopupMenu();
+    CComPtr<IContextMenu> contextMenu;
+    if (!checkHR(item->BindToHandler(nullptr, BHID_SFUIObject, IID_PPV_ARGS(&contextMenu)))
+            || !isWindowOperational())
+        return;
+    auto destroyMenu = [](HMENU handle) { checkLE(DestroyMenu(handle)); };
+    std::unique_ptr<std::remove_pointer_t<HMENU>, decltype(destroyMenu)>
+        popupMenu(CreatePopupMenu(), destroyMenu);
     if (!popupMenu)
         return;
     UINT contextFlags = CMF_ITEMMENU | (useCustomFrame() ? CMF_CANRENAME : 0);
     if (GetKeyState(VK_SHIFT) < 0)
         contextFlags |= CMF_EXTENDEDVERBS;
-    if (!checkHR(contextMenu->QueryContextMenu(popupMenu, 0, IDM_SHELL_FIRST, IDM_SHELL_LAST,
-            contextFlags))) {
-        checkLE(DestroyMenu(popupMenu));
+    if (!checkHR(contextMenu->QueryContextMenu(popupMenu.get(), 0, IDM_SHELL_FIRST,
+            IDM_SHELL_LAST, contextFlags)) || !isWindowOperational())
         return;
-    }
-    POINT point = proxyIcon.getMenuPoint(hwnd);
     contextMenu2 = contextMenu;
-    contextMenu3 = contextMenu;
-    int cmd = TrackPopupMenuEx(popupMenu, TPM_RETURNCMD | TPM_RIGHTBUTTON,
-        point.x, point.y, hwnd, nullptr);
+    if (isWindowOperational())
+        contextMenu3 = contextMenu;
+    int cmd = 0;
+    POINT point = {};
+    if (isWindowOperational()) {
+        point = proxyIcon.getMenuPoint(hwnd);
+        if (isWindowOperational())
+            cmd = TrackPopupMenuEx(popupMenu.get(), TPM_RETURNCMD | TPM_RIGHTBUTTON,
+                point.x, point.y, hwnd, nullptr);
+    }
     contextMenu2 = nullptr;
     contextMenu3 = nullptr;
-    if (cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) {
+    if (isWindowOperational() && cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) {
         cmd -= IDM_SHELL_FIRST;
-        // https://groups.google.com/g/microsoft.public.win32.programmer.ui/c/PhXQcfhYPHQ
-        wchar_t verb[64];
-        verb[0] = 0; // some handlers may return S_OK without touching the buffer
+        wchar_t verb[64] = {};
         bool hasVerb = checkHR(contextMenu->GetCommandString(cmd, GCS_VERBW, nullptr,
             (char*)verb, _countof(verb)));
+        if (!isWindowOperational())
+            return;
         if (hasVerb && lstrcmpi(verb, L"rename") == 0) {
             proxyIcon.beginRename();
         } else {
@@ -1731,13 +2367,12 @@ void ItemWindow::openProxyContextMenu() {
             contextMenu->InvokeCommand((CMINVOKECOMMANDINFO *)&info);
         }
     }
-    checkLE(DestroyMenu(popupMenu));
 }
 
 CMINVOKECOMMANDINFOEX ItemWindow::makeInvokeInfo(int cmd, POINT point) {
     CMINVOKECOMMANDINFOEX info = {sizeof(info)};
-    // TODO must set a thread reference
-    // see https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-icontextmenu-invokecommand
+    // Main installs the Shell thread reference before creating any windows.
+    // https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-icontextmenu-invokecommand
     info.fMask = CMIC_MASK_UNICODE | CMIC_MASK_PTINVOKE
         | CMIC_MASK_ASYNCOK | CMIC_MASK_FLAG_LOG_USAGE;
     if (GetKeyState(VK_CONTROL) < 0)
@@ -1750,14 +2385,6 @@ CMINVOKECOMMANDINFOEX ItemWindow::makeInvokeInfo(int cmd, POINT point) {
     info.nShow = SW_SHOWNORMAL;
     info.ptInvoke = point;
     return info;
-}
-
-void ItemWindow::proxyDrag(POINT offset) {
-    // https://devblogs.microsoft.com/oldnewthing/20041206-00/?p=37133 and onward
-    CComPtr<IDataObject> dataObject;
-    if (!checkHR(item->BindToHandler(nullptr, BHID_SFUIObject, IID_PPV_ARGS(&dataObject))))
-        return;
-    proxyIcon.dragDrop(dataObject, offset);
 }
 
 void ItemWindow::proxyRename(const wchar_t *name) {
@@ -1793,66 +2420,41 @@ void ItemWindow::IconThread::run() {
             SHGFI_PIDL | SHGFI_ICON | SHGFI_ADDOVERLAYS | SHGFI_SMALLICON));
     }
     HICON hIconSmall = fileInfo.hIcon;
+    fileInfo.hIcon = nullptr;
     checkLE(SHGetFileInfo((wchar_t *)(ITEMIDLIST *)itemIDList, 0, &fileInfo, sizeof(fileInfo),
         SHGFI_PIDL | SHGFI_ICON | SHGFI_ADDOVERLAYS | SHGFI_LARGEICON));
+
+    std::wstring relaunchIcon = folderRelaunchIcon(itemIDList, fileInfo.hIcon);
 
     AcquireSRWLockExclusive(&stopLock);
     if (!isStopped()) {
         AcquireSRWLockExclusive(&callbackWindow->iconLock);
+        callbackWindow->taskbarIconResource = std::move(relaunchIcon);
         if (callbackWindow->iconLarge) {
             checkLE(DestroyIcon(callbackWindow->iconLarge));
-            CHROMAFILER_MEMLEAK_FREE;
+            FILESPACER_MEMLEAK_FREE;
         }
         callbackWindow->iconLarge = fileInfo.hIcon;
         if (fileInfo.hIcon) {
-            CHROMAFILER_MEMLEAK_ALLOC;
+            FILESPACER_MEMLEAK_ALLOC;
         }
     
         if (callbackWindow->iconSmall) {
             checkLE(DestroyIcon(callbackWindow->iconSmall));
-            CHROMAFILER_MEMLEAK_FREE;
+            FILESPACER_MEMLEAK_FREE;
         }
         callbackWindow->iconSmall = hIconSmall;
         if (hIconSmall) {
-            CHROMAFILER_MEMLEAK_ALLOC;
+            FILESPACER_MEMLEAK_ALLOC;
         }
         ReleaseSRWLockExclusive(&callbackWindow->iconLock);
 
         PostMessage(callbackWindow->hwnd, MSG_UPDATE_ICONS, 0, 0);
-    }
-    ReleaseSRWLockExclusive(&stopLock);
-}
-
-ItemWindow::StatusTextThread::StatusTextThread(
-        IShellItem *const item, ItemWindow *const callbackWindow)
-        : callbackWindow(callbackWindow) {
-    checkHR(SHGetIDListFromObject(item, &itemIDList));
-}
-
-void ItemWindow::StatusTextThread::run() {
-    CComPtr<IShellItem> localItem;
-    if (!itemIDList || !checkHR(SHCreateItemFromIDList(itemIDList, IID_PPV_ARGS(&localItem))))
-        return;
-    itemIDList.Free();
-
-    CComPtr<IQueryInfo> queryInfo;
-    if (!checkHR(localItem->BindToHandler(nullptr, BHID_SFUIObject, IID_PPV_ARGS(&queryInfo))))
-        return;
-
-    CComHeapPtr<wchar_t> text;
-    if (!checkHR(queryInfo->GetInfoTip(QITIPF_USESLOWTIP, &text)) || !text)
-        return;
-    for (wchar_t *c = text; *c; c++) {
-        if (*c == '\n')
-            *c = '\t';
-    }
-
-    AcquireSRWLockExclusive(&stopLock);
-    if (!isStopped()) {
-        AcquireSRWLockExclusive(&callbackWindow->defaultStatusTextLock);
-        callbackWindow->defaultStatusText = text; // transfer ownership
-        ReleaseSRWLockExclusive(&callbackWindow->defaultStatusTextLock);
-        PostMessage(callbackWindow->hwnd, MSG_UPDATE_DEFAULT_STATUS_TEXT, 0, 0);
+    } else {
+        if (fileInfo.hIcon)
+            checkLE(DestroyIcon(fileInfo.hIcon));
+        if (hIconSmall)
+            checkLE(DestroyIcon(hIconSmall));
     }
     ReleaseSRWLockExclusive(&stopLock);
 }

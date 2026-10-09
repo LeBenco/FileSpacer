@@ -1,7 +1,8 @@
 #include "UIStrings.h"
 #include "DPI.h"
+#include <cstdarg>
 
-namespace chromafiler {
+namespace filespacer {
 
 const wchar_t * getString(UINT id) {
     // must use /n flag with rc.exe!
@@ -18,7 +19,7 @@ local_wstr_ptr formatArgs(const wchar_t *format, va_list *args) {
 }
 
 local_wstr_ptr format(const wchar_t *format, ...) {
-    va_list args = nullptr;
+    va_list args;
     va_start(args, format);
     local_wstr_ptr str = formatArgs(format, &args);
     va_end(args);
@@ -26,7 +27,7 @@ local_wstr_ptr format(const wchar_t *format, ...) {
 }
 
 local_wstr_ptr formatString(UINT id, ...) {
-    va_list args = nullptr;
+    va_list args;
     va_start(args, id);
     local_wstr_ptr str = formatArgs(getString(id), &args);
     va_end(args);
@@ -59,7 +60,7 @@ local_wstr_ptr getErrorMessage(DWORD error) {
 
 
 void showDebugMessage(HWND owner, const wchar_t *title, const wchar_t *format, ...) {
-    va_list args = nullptr;
+    va_list args;
     va_start(args, format);
     local_wstr_ptr str = formatArgs(format, &args);
     va_end(args);

@@ -1,6 +1,19 @@
 #include "ShellUtils.h"
+#include <shellapi.h>
 
-namespace chromafiler {
+namespace filespacer {
+
+bool invokeDefaultVerb(IShellItem *const item, HWND owner, int showCommand) {
+    CComHeapPtr<ITEMIDLIST> idList;
+    if (!checkHR(SHGetIDListFromObject(item, &idList)))
+        return false;
+    SHELLEXECUTEINFOW info = {sizeof(info)};
+    info.fMask = SEE_MASK_INVOKEIDLIST | SEE_MASK_FLAG_LOG_USAGE | SEE_MASK_NOASYNC;
+    info.lpIDList = idList;
+    info.hwnd = owner;
+    info.nShow = showCommand;
+    return !!checkLE(ShellExecuteExW(&info));
+}
 
 STDMETHODIMP NewItemSink::StartOperations() {return S_OK;}
 STDMETHODIMP NewItemSink::FinishOperations(HRESULT) {return S_OK;}

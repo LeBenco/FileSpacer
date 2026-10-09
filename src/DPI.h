@@ -3,9 +3,7 @@
 
 #include <windows.h>
 
-namespace chromafiler {
-
-// modern DPI scaling methods were added in Windows 10 1607, but we are targeting Windows 7
+namespace filespacer {
 
 extern int systemDPI;
 
@@ -13,7 +11,6 @@ extern int systemDPI;
 const int SHELL_SMALL_ICON = 16;
 
 void initDPI();
-int monitorDPI(HMONITOR monitor);
 
 int scaleDPI(int dp);
 SIZE scaleDPI(SIZE size);
@@ -21,11 +18,5 @@ POINT scaleDPI(POINT p);
 int invScaleDPI(int px);
 SIZE invScaleDPI(SIZE size);
 POINT invScaleDPI(POINT p);
-POINT pointMulDiv(POINT p, int num, int denom);
-SIZE sizeMulDiv(SIZE s, int num, int denom);
-
-// font
-int pointsToPixels(int pt);
-int pixelsToPoints(int px);
 
 } // namespace

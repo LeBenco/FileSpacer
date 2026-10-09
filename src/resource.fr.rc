@@ -1,0 +1,142 @@
+#include <windows.h>
+#include "resource.h"
+
+LANGUAGE LANG_FRENCH, SUBLANG_NEUTRAL
+
+IDR_ITEM_MENU   MENU {
+    MENUITEM    "Paramètres de FileSpacer\tCtrl+,", IDM_SETTINGS
+    //     MENUITEM    "Aide\tF1",                       IDM_HELP // Deferred public help.
+}
+
+STRINGTABLE {
+    IDS_CAPTION_COPY_PATH, "Copier le chemin"
+    IDS_CAPTION_RENAME, "Renommer"
+    IDS_CAPTION_PROPERTIES, "Propriétés"
+
+    IDS_QUICK_ACCESS, "Accès rapide"
+    IDS_QUICK_ACCESS_UNAVAILABLE, "Accès rapide indisponible.\n\nÉtape : %1\nCode : 0x%2!08X!\n\nAppuyez sur Ctrl+C pour copier ce message."
+    IDS_QUICK_ACCESS_EMPTY, "Aucun dossier épinglé"
+    IDS_QUICK_ACCESS_OPEN, "Ouverture de l’accès rapide"
+    IDS_QUICK_ACCESS_KEY, "Recherche de la propriété d’épinglage"
+    IDS_QUICK_ACCESS_ENUM, "Énumération des éléments"
+    IDS_QUICK_ACCESS_READ, "Lecture des éléments"
+    IDS_QUICK_ACCESS_TARGET, "Résolution des dossiers"
+    IDS_QUICK_ACCESS_MENU, "Création du menu"
+
+    IDS_APP_NAME,           "FileSpacer"
+    IDS_PATH_BAR,           "Adresse"
+    IDS_SEARCH_NAME,        "Rechercher par nom"
+    IDS_SEARCH_CUE,         "Rechercher dans : %1"
+    IDS_SEARCH_APPLY,       "Rechercher"
+    IDS_SEARCH_ERROR,       "Impossible d'appliquer le filtre par nom.\n\n%1"
+    IDS_ADDRESS_NOT_FOLDER, "Cette adresse ne correspond pas à un dossier : %1"
+
+    IDS_UNKNOWN_ERROR,      "Erreur inconnue"
+    IDS_ERROR_CAPTION,      "Erreur"
+    IDS_CANT_FIND_ITEM,     "Impossible de trouver l'élément à l'emplacement : %1"
+    IDS_INVALID_CHARS,      "Le nom du fichier ne peut pas contenir les caractères suivants :\n\\ / : * ? "" < > |"
+
+    IDS_SETTINGS_CAPTION,   "Paramètres de FileSpacer"
+#if 0 // Deferred public services.
+    IDS_NO_UPDATE_CAPTION,  "Aucune mise à jour disponible"
+#endif
+#if 0 // Deferred public services.
+    IDS_NO_UPDATE,          "Vous utilisez la dernière version."
+#endif
+#if 0 // Deferred public services.
+    IDS_UPDATE_ERROR,       "Erreur lors de la recherche de mises à jour"
+#endif
+#if 0 // Deferred public services.
+    IDS_UPDATE_NOTIF_TITLE, "Mise à jour de FileSpacer"
+#endif
+#if 0 // Deferred public services.
+    IDS_UPDATE_NOTIF_INFO,  "Une nouvelle version de FileSpacer est disponible. Cliquez sur l'icône violette ci-dessous pour la télécharger."
+#endif
+
+    IDS_OPEN_PARENT_COMMAND,"Ouvrir le dossier parent\n(Alt+Haut)"
+    IDS_MENU_COMMAND,       "Menu..."
+    IDS_REFRESH_COMMAND,    "Actualiser\n(Ctrl+R)"
+    IDS_VIEW_COMMAND,       "Affichage..."
+
+    IDS_FOLDER_STATUS,          "%1!d! éléments"
+    IDS_FOLDER_STATUS_SEL,      "%1!d! éléments    %2!d! sélectionnés"
+    IDS_FOLDER_STATUS_SEL_SIZE, "%1!d! éléments    %2!d! sélectionnés    %3!s!"
+    IDS_FOLDER_ERROR,       "Impossible d'ouvrir le dossier"
+
+    IDS_SUCCESS_CAPTION,    "Opération réussie"
+    IDS_CONFIRM_CAPTION,    "Confirmation"
+    IDS_RESET_FOLDER_STATE_CONFIRM, "Réinitialiser toutes les positions, tailles et options d'affichage mémorisées des dossiers ? Les fenêtres de dossiers de FileSpacer seront fermées et ne seront pas rouvertes automatiquement. Les paramètres de l'application seront conservés."
+    IDS_RESET_FOLDER_STATE_CLOSE_ERROR, "Impossible de fermer toutes les fenêtres de FileSpacer. Une fenêtre a peut-être refusé de se fermer ou ne répond plus. Aucun état mémorisé des dossiers n'a été supprimé. Certaines fenêtres ont peut-être déjà été fermées."
+    IDS_RESET_FOLDER_STATE_STORAGE_ERROR, "Impossible d'ouvrir la base des états de dossiers. Aucun état mémorisé des dossiers n'a été supprimé."
+    IDS_RESET_FOLDER_STATE_DELETE_ERROR, "Impossible de réinitialiser la base des états de dossiers. La suppression n'a pas été validée."
+    IDS_RESET_FOLDER_STATE_SUCCESS, "Les positions, tailles et options d'affichage mémorisées des dossiers ont été réinitialisées. Les paramètres de l'application ont été conservés."
+    IDS_FOLDER_WIDTH_LABEL,   "&Largeur (min : %1!d! px) :"
+    IDS_FOLDER_HEIGHT_LABEL,  "&Hauteur (min : %1!d! px) :"
+    IDS_FOLDER_WIDTH_INVALID, "La largeur doit être un nombre entier d’au moins %1!d! px."
+    IDS_FOLDER_HEIGHT_INVALID,"La hauteur doit être un nombre entier d’au moins %1!d! px."
+    IDS_FOLDER_STATE_ERROR, "FileSpacer n’a pas pu lire ou enregistrer la base des états de dossiers. Vérifiez que le dossier des données locales de l’application est accessible en écriture et que la base est disponible. Les données existantes n’ont pas été réinitialisées."
+    IDS_BROWSER_SET_FAILED, "Impossible de modifier l'explorateur de fichiers par défaut"
+    IDS_BROWSER_DIRECTORY, "Dossiers"
+    IDS_BROWSER_COMPRESSED_FOLDER, "Dossiers compressés (ZIP)"
+    IDS_BROWSER_DRIVE, "Lecteurs"
+    IDS_BROWSER_ASSOCIATION_ERROR, "%1 : %3 (erreur %2!lu!)"
+    IDS_BROWSER_ASSOCIATIONS_FAILED, "Les associations suivantes n’ont pas pu être modifiées :\n\n%1\n\nToute modification réussie a été conservée."
+    IDS_BROWSER_SET,        "FileSpacer est désormais votre explorateur de fichiers par défaut. Vous pouvez annuler ce changement dans les paramètres de FileSpacer."
+    IDS_BROWSER_RESET,      "L'Explorateur de fichiers Windows est de nouveau votre explorateur par défaut."
+    IDS_REQUIRE_CONTEXT,    "FileSpacer doit être installé avec l'option de menu contextuel des dossiers activée pour pouvoir modifier l'explorateur par défaut."
+    IDS_BROWSER_SET_CONFIRM,"FileSpacer remplacera l'Explorateur de fichiers Windows comme programme par défaut pour ouvrir tous les dossiers."
+
+    IDS_WELCOME_HEADER,     "Bienvenue"
+    IDS_WELCOME_BODY,       "Il semble que vous utilisiez FileSpacer pour la première fois."
+#if 0 // Deferred public services.
+    IDS_WELCOME_TUTORIAL,   "&Lire le tutoriel\nRecommandé lors de la première utilisation"
+#endif
+    IDS_WELCOME_BROWSER,    "&Définir comme explorateur par défaut\nRemplacer l'Explorateur de fichiers Windows"
+#if 0 // Deferred public services.
+    IDS_WELCOME_UPDATE,     "Rechercher des &mises à jour chaque semaine"
+#endif
+
+    IDS_ADMIN_WARNING,      "Vous tentez d'exécuter FileSpacer en tant qu'administrateur. Cette utilisation est déconseillée.\n\nVoulez-vous continuer ?"
+    IDS_DONT_ASK,           "Ne plus me demander"
+
+// Deferred donation paragraph:
+// Si vous appréciez FileSpacer, vous pouvez faire un don pour soutenir son développement. Cliquez sur le bouton Faire un don ci-dessus.\r\n
+    IDS_LEGAL_INFO,         "\
+Copyright (c) 2026 LeBenco (modifications FileSpacer)\r\n\
+ChromaFiler d'origine : Copyright (c) 2023 J. van't Hoog\r\n\
+\r\n\
+Licence publique générale GNU v3.0. Aucune garantie.\r\n\
+Vous pouvez redistribuer et modifier ce logiciel selon les termes de la GPL.\r\n\
+Voir LICENSE.txt dans le dossier d'installation et https://www.gnu.org/licenses/gpl-3.0.html\r\n\
+Projet d'origine : https://github.com/vanjac/chromafiler\r\n\
+\r\n\
+Ressources de l'application :\r\n\
+- SQLite 3.53.4 : domaine public ; https://sqlite.org/\r\n\
+- Icônes de navigation Lucide / Feather : ISC / MIT ; https://lucide.dev/license\r\n\
+  Notices complètes : Lucide-LICENSE.txt dans le dossier d'installation.\r\n\
+- Segoe MDL2 Assets : police Microsoft fournie par Windows, non redistribuée.\r\n\
+\r\n\
+Installateur : module LockedList, licence zlib.\r\n\
+Copyright (c) 2013 Afrow Soft Ltd. Voir LockedList-LICENSE.txt.\r\n\
+"
+    IDS_LABEL_INCOMPATIBLE, "L’affichage complet des noms longs à la sélection est une fonctionnalité expérimentale. Il a été désactivé pour cette session car la vue des fichiers ne permet pas de l’utiliser dans les conditions attendues.\n\nMotif : %1\n\nLa désactivation a également été enregistrée dans les préférences si celles-ci étaient accessibles en écriture."
+    IDS_LABEL_NO_OPTIONS, "Windows ne fournit pas le réglage de vue nécessaire."
+    IDS_LABEL_OPTIONS_FAILED, "Windows a refusé le réglage de vue nécessaire."
+    IDS_LABEL_NO_CONTROL, "Le composant d’affichage attendu est absent ou inaccessible."
+    IDS_LABEL_AMBIGUOUS_CONTROL, "Plusieurs composants d’affichage correspondent ; aucun n’a été choisi."
+    IDS_LABEL_INSTALL_FAILED, "Le traitement de l’affichage complet n’a pas pu être installé."
+    IDS_LABEL_REBUILD_FAILED, "La recréation de l’affichage standard a échoué. Fermez ce dossier puis rouvrez-le."
+    IDS_LABEL_CRASH_DISABLED, "FileSpacer a rencontré une erreur grave pendant une opération propre à l’affichage complet des noms longs. Le diagnostic établit un lien étroit avec ce traitement, sans pouvoir garantir la cause initiale de l’erreur.\n\nCette fonctionnalité expérimentale a été désactivée dans les préférences. FileSpacer a été relancé avec l’affichage standard. Un rapport de diagnostic a été conservé dans les données locales de l’application."
+    IDS_RECOVERY_RESTART_FAILED, "L’affichage complet des noms longs a été désactivé, mais la relance automatique de FileSpacer a échoué. Vous pouvez relancer l’application manuellement."
+    IDS_RECOVERY_DISABLE_FAILED, "La désactivation de l’affichage complet des noms longs n’a pas pu être enregistrée. Aucune relance automatique n’a été effectuée. Vérifiez l’accès aux préférences avant de relancer FileSpacer."
+    IDS_RECOVERY_UNAVAILABLE, "La protection contre les erreurs de l’affichage complet des noms longs n’a pas pu être initialisée. FileSpacer utilisera l’affichage standard pour cette session ; vos préférences ont été conservées."
+    IDS_RECOVERY_REPEATED, "FileSpacer a rencontré au moins deux erreurs graves en moins de dix minutes. Si le problème persiste, fermez toutes ses instances puis utilisez l’une des commandes suivantes dans le dossier de l’exécutable :\n\nFileSpacer.exe /reset-options\nRétablit uniquement les options globales par défaut.\n\nFileSpacer.exe /reset-all\nRétablit aussi les positions, tailles et réglages d’affichage mémorisés des dossiers.\n\nCes commandes ne suppriment aucun de vos fichiers et ne modifient pas les associations Windows. Aucune réinitialisation n’a été effectuée automatiquement. La réinitialisation des options réactive les noms longs par défaut ; vous pouvez décocher cette option avant de rouvrir le dossier concerné."
+    IDS_RESET_CLI_ARGUMENTS, "Utilisez une seule commande : /reset-options ou /reset-all, sans chemin de dossier ni autre option. En version Debug, /test peut être ajouté pour ne réinitialiser que les données de test."
+    IDS_RESET_CLI_BUSY, "La réinitialisation n’a pas pu obtenir un accès exclusif aux réglages. Fermez toutes les instances de FileSpacer et vérifiez l’accès au dossier de ses données locales, puis réessayez. Aucun réglage n’a été supprimé."
+    IDS_RESET_CLI_FAILED, "La réinitialisation des options n’a pas pu être terminée : %1\n\nCertaines options ont peut-être déjà été réinitialisées. Si /reset-all a été utilisé, les réglages des dossiers ont déjà été réinitialisés."
+    IDS_RESET_CLI_ALL_DONE, "Les options globales et les positions, tailles et réglages d’affichage mémorisés des dossiers ont été réinitialisés. Vos fichiers et les associations Windows ont été conservés."
+    IDS_RESET_CLI_OPTIONS_DONE, "Les options globales ont été réinitialisées. Les réglages mémorisés des dossiers, vos fichiers et les associations Windows ont été conservés."
+    IDS_RECOVERY_UNATTRIBUTED, "FileSpacer s’est arrêté à la suite d’une erreur grave. Le diagnostic ne permet pas d’attribuer cette erreur à l’affichage complet des noms longs ; cette option et vos autres préférences ont été conservées. Un rapport de diagnostic a été enregistré dans les données locales de l’application."
+    IDS_LABEL_DISABLED_NO_RESTART, "Une nouvelle erreur grave est survenue pendant le traitement expérimental des noms longs. L’option a été désactivée, mais aucune nouvelle relance automatique n’a été effectuée afin d’éviter des redémarrages successifs. Vous pouvez relancer FileSpacer manuellement."
+    IDS_SETTINGS_ACCESS_FAILED, "FileSpacer ne peut pas obtenir l’accès partagé à ses réglages. Une réinitialisation est peut-être en cours, ou le dossier des données locales est inaccessible. Réessayez après la fin de l’opération de maintenance."
+}

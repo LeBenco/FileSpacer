@@ -1,0 +1,143 @@
+#include <windows.h>
+#include "resource.h"
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+IDR_ITEM_MENU   MENU {
+    MENUITEM    "FileSpacer Settings\tCtrl+,", IDM_SETTINGS
+    //     MENUITEM    "Help\tF1",                     IDM_HELP // Deferred public help.
+}
+
+STRINGTABLE {
+    IDS_CAPTION_COPY_PATH, "Copy path"
+    IDS_CAPTION_RENAME, "Rename"
+    IDS_CAPTION_PROPERTIES, "Properties"
+
+    IDS_QUICK_ACCESS, "Quick access"
+    IDS_QUICK_ACCESS_UNAVAILABLE, "Quick access is unavailable.\n\nStep: %1\nCode: 0x%2!08X!\n\nPress Ctrl+C to copy this message."
+    IDS_QUICK_ACCESS_EMPTY, "No pinned folders"
+    IDS_QUICK_ACCESS_OPEN, "Opening Quick access"
+    IDS_QUICK_ACCESS_KEY, "Finding the pinned-folder property"
+    IDS_QUICK_ACCESS_ENUM, "Listing items"
+    IDS_QUICK_ACCESS_READ, "Reading items"
+    IDS_QUICK_ACCESS_TARGET, "Resolving folders"
+    IDS_QUICK_ACCESS_MENU, "Creating the menu"
+
+    IDS_APP_NAME,           "FileSpacer"
+    IDS_PATH_BAR,           "Address"
+    IDS_SEARCH_NAME,        "Search by name"
+    IDS_SEARCH_CUE,         "Search %1"
+    IDS_SEARCH_APPLY,       "Search"
+    IDS_SEARCH_ERROR,       "Unable to apply the name filter.\n\n%1"
+    IDS_ADDRESS_NOT_FOLDER, "This address is not a folder: %1"
+
+    IDS_UNKNOWN_ERROR,      "Unknown error"
+    IDS_ERROR_CAPTION,      "Error"
+    IDS_CANT_FIND_ITEM,     "Unable to find item at path: %1"
+    IDS_INVALID_CHARS,      "File name cannot contain the following characters:\n\\ / : * ? "" < > |"
+
+    IDS_SETTINGS_CAPTION,   "FileSpacer Settings"
+#if 0 // Deferred public services.
+    IDS_NO_UPDATE_CAPTION,  "No updates available"
+#endif
+#if 0 // Deferred public services.
+    IDS_NO_UPDATE,          "You are using the latest version."
+#endif
+#if 0 // Deferred public services.
+    IDS_UPDATE_ERROR,       "Error checking for updates"
+#endif
+#if 0 // Deferred public services.
+    IDS_UPDATE_NOTIF_TITLE, "FileSpacer update"
+#endif
+#if 0 // Deferred public services.
+    IDS_UPDATE_NOTIF_INFO,  "A new version of FileSpacer is available. Click the purple icon below to download."
+#endif
+
+    IDS_OPEN_PARENT_COMMAND,"Open Parent\n(Alt+Up)"
+    IDS_MENU_COMMAND,       "Menu..."
+    IDS_REFRESH_COMMAND,    "Refresh\n(Ctrl+R)"
+    IDS_VIEW_COMMAND,       "View..."
+	
+	IDS_FOLDER_STATUS,          "%1!d! items"
+	IDS_FOLDER_STATUS_SEL,      "%1!d! items    %2!d! selected"
+	IDS_FOLDER_STATUS_SEL_SIZE, "%1!d! items    %2!d! selected    %3!s!"
+    IDS_FOLDER_ERROR,       "Couldn't open folder"
+
+    IDS_SUCCESS_CAPTION,    "Success"
+    IDS_CONFIRM_CAPTION,    "Are you sure?"
+    IDS_RESET_FOLDER_STATE_CONFIRM, "Reset all saved folder positions, sizes and view settings? FileSpacer folder windows will be closed and will not reopen automatically. Application settings will be kept."
+    IDS_RESET_FOLDER_STATE_CLOSE_ERROR, "Unable to close all FileSpacer windows. A window may have refused to close or may not be responding. No saved folder state was deleted. Some windows may already have closed."
+    IDS_RESET_FOLDER_STATE_STORAGE_ERROR, "Unable to open the folder state database. No saved folder state was deleted."
+    IDS_RESET_FOLDER_STATE_DELETE_ERROR, "Unable to reset the folder state database. The deletion was not committed."
+    IDS_RESET_FOLDER_STATE_SUCCESS, "Saved folder positions, sizes and view settings have been reset. Application settings have been kept."
+    IDS_FOLDER_WIDTH_LABEL,   "&Width (min: %1!d! px):"
+    IDS_FOLDER_HEIGHT_LABEL,  "&Height (min: %1!d! px):"
+    IDS_FOLDER_WIDTH_INVALID, "Width must be a whole number of at least %1!d! px."
+    IDS_FOLDER_HEIGHT_INVALID,"Height must be a whole number of at least %1!d! px."
+    IDS_FOLDER_STATE_ERROR, "FileSpacer could not read or save the folder state database. Check that your local application data folder is writable and that the database is available. Existing data has not been reset."
+    IDS_BROWSER_SET_FAILED, "Failed to change the default file browser"
+    IDS_BROWSER_DIRECTORY, "Folders"
+    IDS_BROWSER_COMPRESSED_FOLDER, "Compressed (zipped) folders"
+    IDS_BROWSER_DRIVE, "Drives"
+    IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (error %2!lu!)"
+    IDS_BROWSER_ASSOCIATIONS_FAILED, "The following associations could not be changed:\n\n%1\n\nAny successful changes have been kept."
+    IDS_BROWSER_SET,        "FileSpacer has been set as your default browser. You can revert this change in FileSpacer settings."
+    IDS_BROWSER_RESET,      "File Explorer has been restored as your default browser."
+    IDS_REQUIRE_CONTEXT,    "FileSpacer must be installed with the Folder Context Menu enabled to be able to change the default browser."
+    IDS_BROWSER_SET_CONFIRM,"This will replace Windows File Explorer as the default program for opening all folders."
+
+    IDS_WELCOME_HEADER,     "Welcome"
+    IDS_WELCOME_BODY,       "This appears to be your first time using FileSpacer."
+#if 0 // Deferred public services.
+    IDS_WELCOME_TUTORIAL,   "&Read Tutorial\nRecommended for first-time users"
+#endif
+    IDS_WELCOME_BROWSER,    "&Make default file browser\nReplace File Explorer as your default browser"
+#if 0 // Deferred public services.
+    IDS_WELCOME_UPDATE,     "Check for &updates weekly"
+#endif
+
+    IDS_ADMIN_WARNING,      "You are attempting to run FileSpacer as Administrator. This is not recommended!\n\nContinue anyway?"
+    IDS_DONT_ASK,           "Don't ask again"
+
+// Deferred donation paragraph:
+// If you enjoy FileSpacer, please consider donating to support its development. Click the Donate button above.\r\n
+    IDS_LEGAL_INFO,         "\
+Copyright (c) 2026 LeBenco (FileSpacer modifications)\r\n\
+Original ChromaFiler: Copyright (c) 2023 J. van't Hoog\r\n\
+\r\n\
+GNU General Public License v3.0. No warranty.\r\n\
+You may redistribute and modify this software under the GPL.\r\n\
+See LICENSE.txt in the installation folder and https://www.gnu.org/licenses/gpl-3.0.html\r\n\
+Original project: https://github.com/vanjac/chromafiler\r\n\
+\r\n\
+Application materials:\r\n\
+- SQLite 3.53.4: public domain; https://sqlite.org/\r\n\
+- Lucide / Feather navigation icons: ISC / MIT; https://lucide.dev/license\r\n\
+  Complete notices: Lucide-LICENSE.txt in the installation folder.\r\n\
+- Segoe MDL2 Assets: Microsoft font supplied by Windows; not redistributed.\r\n\
+\r\n\
+Installer: LockedList plug-in, zlib license.\r\n\
+Copyright (c) 2013 Afrow Soft Ltd. See LockedList-LICENSE.txt.\r\n\
+"
+    IDS_LABEL_INCOMPATIBLE, "Showing full file names when selected is an experimental feature. It has been disabled for this session because the file view does not meet its requirements.\n\nReason: %1\n\nThe disabled preference was also saved if the settings were writable."
+    IDS_LABEL_NO_OPTIONS, "Windows does not provide the required view option."
+    IDS_LABEL_OPTIONS_FAILED, "Windows rejected the required view option."
+    IDS_LABEL_NO_CONTROL, "The expected display control is missing or inaccessible."
+    IDS_LABEL_AMBIGUOUS_CONTROL, "Several display controls match; none was selected."
+    IDS_LABEL_INSTALL_FAILED, "The full-name display handler could not be installed."
+    IDS_LABEL_REBUILD_FAILED, "The standard view could not be recreated. Close this folder and reopen it."
+    IDS_LABEL_CRASH_DISABLED, "FileSpacer encountered a serious error during an operation specific to full file-name display. The diagnosis strongly links the error to this operation but cannot establish its initial cause with certainty.\n\nThis experimental feature has been disabled in the settings. FileSpacer has restarted with the standard view. A diagnostic report was saved in the application’s local data."
+    IDS_RECOVERY_RESTART_FAILED, "Full file-name display was disabled, but FileSpacer could not restart automatically. You can start it manually."
+    IDS_RECOVERY_DISABLE_FAILED, "The disabled full-name setting could not be saved. No automatic restart was attempted. Check access to the settings before restarting FileSpacer."
+    IDS_RECOVERY_UNAVAILABLE, "Full-name display error protection could not be initialized. FileSpacer will use the standard view for this session; your preferences were preserved."
+    IDS_RECOVERY_REPEATED, "FileSpacer encountered at least two serious errors within ten minutes. If the problem persists, close all instances and run one of these commands from the executable’s folder:\n\nFileSpacer.exe /reset-options\nRestores only global preferences.\n\nFileSpacer.exe /reset-all\nAlso resets saved folder positions, sizes and display settings.\n\nNeither command deletes your files or changes Windows associations. No reset was performed automatically. Resetting preferences enables full names by default; you can turn that option off before reopening the affected folder."
+    IDS_RESET_CLI_ARGUMENTS, "Use either /reset-options or /reset-all, without a folder path or other options. In Debug, /test may be added to reset only test data."
+    IDS_RESET_CLI_BUSY, "The reset could not obtain exclusive access to the settings. Close all FileSpacer instances and check access to its local data folder, then try again. No settings were deleted."
+    IDS_RESET_CLI_FAILED, "The preference reset could not be completed: %1\n\nSome preferences may already have been reset. If /reset-all was used, folder settings have already been reset."
+    IDS_RESET_CLI_ALL_DONE, "Global preferences and saved folder positions, sizes and display settings were reset. Your files and Windows associations were preserved."
+    IDS_RESET_CLI_OPTIONS_DONE, "Global preferences were reset. Saved folder settings, your files and Windows associations were preserved."
+    IDS_RECOVERY_UNATTRIBUTED, "FileSpacer stopped after a serious error. The diagnosis cannot attribute it to full file-name display; that option and your other preferences were preserved. A diagnostic report was saved in the application’s local data."
+    IDS_LABEL_DISABLED_NO_RESTART, "Another serious error occurred during experimental full-name handling. The option was disabled, but no further automatic restart was attempted to avoid repeated restarts. You can start FileSpacer manually."
+    IDS_SETTINGS_ACCESS_FAILED, "FileSpacer cannot obtain shared access to its settings. A reset may be in progress or the local data folder may be inaccessible. Try again after maintenance finishes."
+}
+

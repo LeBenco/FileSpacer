@@ -4,7 +4,7 @@
 #include <memory>
 #include <windows.h>
 
-namespace chromafiler {
+namespace filespacer {
 
 // https://stackoverflow.com/a/47459319
 template <typename T>

@@ -1,0 +1,87 @@
+#include <windows.h>
+#include <commctrl.h>
+#include "dialog.h"
+
+LANGUAGE LANG_FRENCH, SUBLANG_NEUTRAL
+
+IDD_SETTINGS_GENERAL DIALOGEX DISCARDABLE 0, 0, 300, 261
+STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
+CAPTION "Général"
+FONT 8, "MS Shell Dlg", 400, 0, 0
+{
+  CONTROL "&Dossier de démarrage", -1, "Button", BS_GROUPBOX, 7, 7, 286, 30
+  CONTROL "", IDC_START_FOLDER_PATH, "ComboBoxEx32", CBS_DROPDOWN|WS_TABSTOP|0x00000040, 14, 18, 210, 300
+  CONTROL "&Parcourir...", IDC_START_FOLDER_BROWSE, "Button", WS_TABSTOP, 231, 18, 55, 14
+  CONTROL "Navigation dans les dossiers", -1, "Button", BS_GROUPBOX, 7, 41, 286, 51
+  CONTROL "&Garder la fenêtre ouverte par défaut", IDC_KEEP_SOURCE_WINDOW_OPEN, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 52, 272, 12
+  CONTROL "&Conserver la sélection à l’activation", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 66, 272, 12
+  CONTROL "Lors d’un clic sur le fond d’une fenêtre inactive.", -1, "Static", WS_GROUP, 14, 80, 272, 8
+  CONTROL "Filtre par nom", -1, "Button", BS_GROUPBOX, 7, 96, 286, 28
+  CONTROL "Filtrer pendant la &saisie", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 107, 272, 12
+  CONTROL "Barre des tâches", -1, "Button", BS_GROUPBOX, 7, 128, 286, 51
+  CONTROL "Regrouper les fenêtres dans la barre des &tâches", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 139, 272, 12
+  CONTROL "Le regroupement suit les paramètres de la barre des tâches Windows.", -1, "Static", WS_GROUP, 14, 153, 272, 8
+  CONTROL "Sans regroupement, les dossiers peuvent être épinglés.", -1, "Static", WS_GROUP, 14, 163, 272, 8
+  CONTROL "Options de l’Explorateur de fichiers", -1, "Button", BS_GROUPBOX, 7, 183, 286, 35
+  CONTROL "Certaines options de l’Explorateur de fichiers s’appliquent aussi aux fenêtres de dossiers de FileSpacer.", -1, "Static", WS_GROUP, 14, 194, 210, 16
+  CONTROL "&Options...", IDC_EXPLORER_SETTINGS, "Button", WS_TABSTOP, 231, 194, 55, 14
+  CONTROL "Maintenance", -1, "Button", BS_GROUPBOX, 7, 222, 286, 28
+  CONTROL "&Réinitialiser l’état de tous les dossiers...", IDC_RESET_FOLDER_STATE, "Button", WS_TABSTOP, 14, 233, 220, 14
+}
+
+IDD_SETTINGS_DISPLAY DIALOGEX DISCARDABLE 0, 0, 300, 238
+STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
+CAPTION "Affichage"
+FONT 8, "MS Shell Dlg", 400, 0, 0
+{
+  CONTROL "Éléments de l’interface", -1, "Button", BS_GROUPBOX, 7, 7, 286, 49
+  CONTROL "Afficher la barre d’é&tat", IDC_STATUS_TEXT_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 21, 272, 14
+  CONTROL "Afficher la barre d’&outils", IDC_TOOLBAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 35, 272, 14
+  CONTROL "Éléments de la barre d’outils", -1, "Button", BS_GROUPBOX, 7, 63, 286, 77
+  CONTROL "Afficher l’&accès rapide", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 77, 130, 14
+  CONTROL "Afficher le bouton &Remonter", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 77, 130, 14
+  CONTROL "Afficher la barre de &chemin", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 91, 272, 14
+  CONTROL "Afficher le bouton Act&ualiser", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 105, 130, 14
+  CONTROL "Afficher le bouton A&ffichage", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 105, 130, 14
+  CONTROL "Les éléments ci-dessus sont visibles lorsque la barre d’outils est affichée.", -1, "Static", WS_GROUP, 14, 121, 272, 16
+  CONTROL "Noms des fichiers", -1, "Button", BS_GROUPBOX, 7, 147, 286, 46
+  CONTROL "Afficher les &noms longs en entier à la sélection", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 159, 272, 12
+  CONTROL "Compatibilité variable selon la version de Windows.\nS’applique aux dossiers rouverts.", -1, "Static", WS_GROUP, 14, 173, 272, 16
+  CONTROL "Taille des fenêtres par défaut", -1, "Button", BS_GROUPBOX, 7, 200, 286, 35
+  CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 217, 88, 8
+  CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 214, 35, 14
+  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT_LABEL, "Static", SS_RIGHT|WS_GROUP, 156, 217, 88, 8
+  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 251, 214, 35, 14
+}
+
+IDD_SETTINGS_BROWSER DIALOGEX DISCARDABLE 0, 0, 300, 238
+STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
+CAPTION "Explorateur par défaut"
+FONT 8, "MS Shell Dlg", 400, 0, 0
+{
+  CONTROL "Ouverture des dossiers", -1, "Button", BS_GROUPBOX, 7, 7, 286, 99
+  CONTROL 32516, -1, "Static", SS_ICON, 14, 21, 0, 0
+  CONTROL "Remplacer l'Explorateur de fichiers Windows comme programme par défaut pour ouvrir tous les dossiers.", -1, "Static", WS_GROUP, 42, 22, 244, 24
+  CONTROL "&Définir comme explorateur par défaut", IDC_SET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 56, 272, 14
+  CONTROL "&Rétablir l'Explorateur de fichiers Windows", IDC_RESET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 77, 272, 14
+}
+
+IDD_SETTINGS_ABOUT DIALOGEX DISCARDABLE 0, 0, 300, 238
+STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
+CAPTION "À propos"
+FONT 8, "MS Shell Dlg", 400, 0, 0
+{
+  CONTROL IDR_APP_ICON, -1, "Static", SS_ICON, 7, 7, 0, 0
+  CONTROL "FileSpacer", 12, "Static", SS_NOTIFY|WS_GROUP, 35, 7, 49, 8
+  CONTROL "Version :", -1, "Static", WS_GROUP, 35, 15, 35, 8
+  CONTROL "", IDC_VERSION, "Static", WS_GROUP, 77, 15, 49, 8
+  CONTROL "Par LeBenco", -1, "Static", WS_GROUP, 35, 26, 244, 8
+#if 0 // Deferred public services.
+  CONTROL "&Aide", IDC_HELP_LINK, "Button", WS_TABSTOP, 7, 28, 84, 14
+  CONTROL "&Site web", IDC_WEBSITE_LINK, "Button", WS_TABSTOP, 105, 28, 84, 14
+  CONTROL "Faire un &don", IDC_DONATE_LINK, "Button", WS_TABSTOP, 203, 28, 90, 14
+  CONTROL "&Rechercher des mises à jour", IDC_UPDATES_LINK, "Button", WS_TABSTOP, 7, 49, 133, 14
+  CONTROL "Recherche automatique chaque se&maine", IDC_AUTO_UPDATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 147, 49, 146, 14
+#endif
+  CONTROL "", IDC_LEGAL_INFO, "Edit", ES_MULTILINE|ES_READONLY|WS_VSCROLL|WS_BORDER|WS_TABSTOP, 7, 40, 286, 191
+}

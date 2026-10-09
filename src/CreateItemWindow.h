@@ -4,14 +4,18 @@
 #include "ItemWindow.h"
 #include <ExDisp.h>
 
-namespace chromafiler {
+namespace filespacer {
 
-CComPtr<ItemWindow> createItemWindow(ItemWindow *parent, IShellItem *item);
-bool showItemWindow(IShellItem *item, IShellWindows *shellWindows, int showCmd);
+enum class FolderOpenResult { Failed, Created, Activated, Pending };
+// The only creation path for folder windows; item must have SFGAO_FOLDER.
+FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCmd);
 CComPtr<IShellItem> resolveLink(IShellItem *linkItem);
+// A failed access has a usable result; navigation callbacks alone do not.
+bool isFolderAccessFailure(HRESULT result);
+void recordFolderPathFailure(const wchar_t *path, HRESULT result);
+void recordFolderItemFailure(IShellItem *item, HRESULT result);
 // displays error message if item can't be found
 CComPtr<IShellItem> itemFromPath(wchar_t *path);
-CComPtr<IShellItem> createScratchFile(IShellItem *folder);
 
 void debugDisplayNames(HWND hwnd, IShellItem *item);
 

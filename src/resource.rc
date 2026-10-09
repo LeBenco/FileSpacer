@@ -1,22 +1,22 @@
 #include <windows.h>
 #include "resource.h"
 
-LANGUAGE LANG_ENGLISH, SUBLANG_DEFAULT
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 
 1 VERSIONINFO
-    FILEVERSION     CHROMAFILER_VERSION
-    PRODUCTVERSION  CHROMAFILER_VERSION
+    FILEVERSION     FILESPACER_VERSION
+    PRODUCTVERSION  FILESPACER_VERSION
     FILEOS          VOS_NT_WINDOWS32
     FILETYPE        VFT_APP
 {
     BLOCK "StringFileInfo" {
         BLOCK "040904B0" {
-            VALUE "CompanyName", "chroma zone\0"
-            VALUE "FileDescription", "ChromaFiler\0"
-            VALUE "FileVersion", CHROMAFILER_VERSION_STRING
-            VALUE "LegalCopyright", "Copyright (c) J. van't Hoog\0"
-            VALUE "ProductName", "ChromaFiler\0"
-            VALUE "ProductVersion", CHROMAFILER_VERSION_STRING
+            VALUE "CompanyName", "FileSpacer\0"
+            VALUE "FileDescription", "FileSpacer\0"
+            VALUE "FileVersion", FILESPACER_VERSION_STRING
+            VALUE "LegalCopyright", "Copyright (c) 2026 LeBenco; original ChromaFiler (c) 2023 J. van't Hoog\0"
+            VALUE "ProductName", "FileSpacer\0"
+            VALUE "ProductVersion", FILESPACER_VERSION_STRING
         }
     }
     BLOCK "VarFileInfo" {
@@ -24,24 +24,18 @@ LANGUAGE LANG_ENGLISH, SUBLANG_DEFAULT
     }
 }
 
-IDR_RT_MANIFEST1 RT_MANIFEST "res\\ChromaFiler.exe.manifest"
+IDR_RT_MANIFEST1 RT_MANIFEST "res\\FileSpacer.exe.manifest"
 
-IDR_APP_ICON    ICON    "res\\folder.ico"
+IDR_APP_ICON    ICON    "res\\FileSpacer.ico"
 
-IDC_RIGHT_SIDE  CURSOR  "res\\adwaita\\right_side.cur"
-IDR_ICON_FONT   FONT    "res\\SegMDL2-subset.ttf"
 
 IDR_ITEM_ACCEL  ACCELERATORS {
-    VK_TAB,         IDM_NEXT_WINDOW,    VIRTKEY
-    VK_DOWN,        IDM_NEXT_WINDOW,    VIRTKEY, ALT
-    VK_TAB,         IDM_PREV_WINDOW,    VIRTKEY, SHIFT
     VK_UP,          IDM_PREV_WINDOW,    VIRTKEY, ALT
-    VK_OEM_2,       IDM_DETACH,         VIRTKEY, CONTROL
-    VK_OEM_2,       IDM_CLOSE_PARENT,   VIRTKEY, CONTROL, SHIFT
+    VK_UP,          IDM_PREV_WINDOW,    VIRTKEY, ALT, CONTROL
     "W",            IDM_CLOSE_WINDOW,   VIRTKEY, CONTROL
     VK_F5,          IDM_REFRESH,        VIRTKEY
     "R",            IDM_REFRESH,        VIRTKEY, CONTROL
-    VK_F1,          IDM_HELP,           VIRTKEY
+    // VK_F1,          IDM_HELP,           VIRTKEY // Deferred public help.
     VK_OEM_COMMA,   IDM_SETTINGS,       VIRTKEY, CONTROL
     VK_TAB,         IDM_PARENT_MENU,    VIRTKEY, CONTROL, SHIFT
     VK_F1,          IDM_DEBUG_NAMES,    VIRTKEY, CONTROL
@@ -54,160 +48,9 @@ IDR_ITEM_ACCEL  ACCELERATORS {
     "N",            IDM_NEW_TEXT_FILE,  VIRTKEY, CONTROL
 }
 
-IDR_TEXT_ACCEL  ACCELERATORS {
-    "S",            IDM_SAVE,           VIRTKEY, CONTROL
-    "F",            IDM_FIND,           VIRTKEY, CONTROL
-    VK_F3,          IDM_FIND_NEXT,      VIRTKEY
-    VK_F3,          IDM_FIND_PREV,      VIRTKEY, SHIFT
-    "H",            IDM_REPLACE,        VIRTKEY, CONTROL
-    VK_OEM_PLUS,    IDM_ZOOM_IN,        VIRTKEY, CONTROL
-    VK_OEM_MINUS,   IDM_ZOOM_OUT,       VIRTKEY, CONTROL
-    "0",            IDM_ZOOM_RESET,     VIRTKEY, CONTROL
-    "L",            IDM_LINE_SELECT,    VIRTKEY, CONTROL
-    "W",            IDM_WORD_WRAP,      VIRTKEY, CONTROL, SHIFT
-}
+#pragma code_page(65001)
 
-IDR_ITEM_MENU   MENU {
-    MENUITEM    "ChromaFiler Settings\tCtrl+,", IDM_SETTINGS
-    MENUITEM    "Help\tF1",                     IDM_HELP
-}
-
-IDR_TEXT_MENU   MENU {
-    POPUP "" {
-        // File
-        MENUITEM    "&Save\tCtrl+S",            IDM_SAVE
-        MENUITEM    SEPARATOR
-        // Edit
-        MENUITEM    "&Undo\tCtrl+Z",            IDM_UNDO
-        MENUITEM    "&Redo\tCtrl+Y",            IDM_REDO
-        MENUITEM    SEPARATOR
-        MENUITEM    "Cu&t\tCtrl+X",             IDM_CUT
-        MENUITEM    "&Copy\tCtrl+C",            IDM_COPY
-        MENUITEM    "&Paste\tCtrl+V",           IDM_PASTE
-        MENUITEM    "&Delete\tBksp",            IDM_DELETE
-        MENUITEM    SEPARATOR
-        MENUITEM    "Select &All\tCtrl+A",      IDM_SELECT_ALL
-        MENUITEM    "Select &Lines\tCtrl+L",    IDM_LINE_SELECT
-        MENUITEM    SEPARATOR
-        MENUITEM    "&Find...\tCtrl+F",         IDM_FIND
-        MENUITEM    "Find &Next\tF3",           IDM_FIND_NEXT
-        MENUITEM    "Find Pre&vious\tShift+F3", IDM_FIND_PREV
-        MENUITEM    "R&eplace...\tCtrl+H",      IDM_REPLACE
-        MENUITEM    SEPARATOR
-        // View
-        POPUP "&Zoom" {
-            MENUITEM    "Zoom &In\tCtrl+Plus"           IDM_ZOOM_IN
-            MENUITEM    "Zoom &Out\tCtrl+Minus"         IDM_ZOOM_OUT
-            MENUITEM    "&Restore Default Zoom\tCtrl+0" IDM_ZOOM_RESET
-        }
-        MENUITEM    "&Word Wrap\tCtrl+Shift+W", IDM_WORD_WRAP
-    }
-}
-
-STRINGTABLE {
-    IDS_APP_NAME,           "ChromaFiler"
-
-    IDS_UNKNOWN_ERROR,      "Unknown error"
-    IDS_ERROR_CAPTION,      "Error"
-    IDS_CANT_FIND_ITEM,     "Unable to find item at path: %1"
-    IDS_INVALID_CHARS,      "File name cannot contain the following characters:\n\\ / : * ? "" < > |"
-
-    IDS_CHROMATEXT,         "ChromaText"
-
-    IDS_SETTINGS_CAPTION,   "ChromaFiler Settings"
-    IDS_FONT_NAME,          "%1 %2!d!pt"
-    IDS_NO_UPDATE_CAPTION,  "No updates available"
-    IDS_NO_UPDATE,          "You are using the latest version."
-    IDS_UPDATE_ERROR,       "Error checking for updates"
-    IDS_UPDATE_NOTIF_TITLE, "ChromaFiler update"
-    IDS_UPDATE_NOTIF_INFO,  "A new version of ChromaFiler is available. Click the purple icon below to download."
-
-    IDS_NEWLINES_CRLF,      "Windows (CRLF)"
-    IDS_NEWLINES_LF,        "Unix (LF)"
-    IDS_NEWLINES_CR,        "Classic Mac (CR)"
-
-    IDS_ENCODING_UTF8,      "UTF-8"
-    IDS_ENCODING_UTF8BOM,   "UTF-8 with BOM"
-    IDS_ENCODING_UTF16LE,   "UTF-16 LE"
-    IDS_ENCODING_UTF16BE,   "UTF-16 BE"
-    IDS_ENCODING_ANSI,      "ANSI"
-
-    IDS_OPEN_PARENT_COMMAND,"Open Parent\n(Alt+Up)"
-    IDS_MENU_COMMAND,       "Menu..."
-    IDS_REFRESH_COMMAND,    "Refresh\n(Ctrl+R)"
-    IDS_NEW_ITEM_COMMAND,   "New..."
-    IDS_VIEW_COMMAND,       "View..."
-    IDS_SAVE_COMMAND,       "Save\n(Ctrl+S)"
-    IDS_DELETE_COMMAND,     "Delete file\n(Ctrl+Shift+D)"
-
-    IDS_FOLDER_STATUS,      "%1!d! items"
-    IDS_FOLDER_STATUS_SEL,  "%1!d! items, %2!d! selected"
-    IDS_FOLDER_ERROR,       "Couldn't open folder"
-
-    IDS_TEXT_LOADING,       "Reading file..."
-    IDS_TEXT_STATUS,        "Ln %1!d!, Col %2!d!"
-    IDS_TEXT_STATUS_SEL,    "Ln %1!d!, Col %2!d! (%3!d! selected)"
-    IDS_TEXT_STATUS_REPLACE,"Replaced %1!d! occurrences."
-    IDS_TEXT_CANT_FIND,     "Cannot find text!"
-    IDS_TEXT_UNDO,          "&Undo %1"
-    IDS_TEXT_REDO,          "&Redo %1"
-
-    IDS_TEXT_UNDO_UNKNOWN,  ""
-    IDS_TEXT_UNDO_TYPING,   "typing"
-    IDS_TEXT_UNDO_DELETE,   "delete"
-    IDS_TEXT_UNDO_DRAGDROP, "drag-and-drop"
-    IDS_TEXT_UNDO_CUT,      "cut"
-    IDS_TEXT_UNDO_PASTE,    "paste"
-    IDS_TEXT_UNDO_AUTOTABLE,"table"
-
-    IDS_SAVE_PROMPT,        "Do you want to save changes to %1?"
-    IDS_DELETE_PROMPT,      "Are you sure you want to delete %1?"
-    IDS_UNSAVED_CAPTION,    "Unsaved changes"
-    IDS_SAVE_BUTTON,        "&Save"
-    IDS_DONT_SAVE_BUTTON,   "Do&n't Save"
-    IDS_DELETE_BUTTON,      "&Delete"
-    IDS_SAVE_ERROR,         "Couldn't save"
-
-    IDS_SUCCESS_CAPTION,    "Success"
-    IDS_CONFIRM_CAPTION,    "Are you sure?"
-    IDS_BROWSER_SET_FAILED, "Failed to set default browser"
-    IDS_BROWSER_SET,        "ChromaFiler has been set as your default browser. You can revert this change in ChromaFiler settings."
-    IDS_BROWSER_RESET,      "File Explorer has been restored as your default browser."
-    IDS_REQUIRE_CONTEXT,    "ChromaFiler must be installed with the Folder Context Menu enabled to be able to change the default browser."
-    IDS_BROWSER_SET_CONFIRM,"This will replace Windows File Explorer as the default program for opening all folders."
-
-    IDS_WELCOME_HEADER,     "Welcome"
-    IDS_WELCOME_BODY,       "This appears to be your first time using ChromaFiler."
-    IDS_WELCOME_TUTORIAL,   "&Read Tutorial\nRecommended for first-time users"
-    IDS_WELCOME_TRAY,       "&Enable Tray\nFloating toolbar with quick access to folders"
-    IDS_WELCOME_BROWSER,    "&Make default file browser\nReplace File Explorer as your default browser"
-    IDS_WELCOME_UPDATE,     "Check for &updates weekly"
-
-    IDS_ADMIN_WARNING,      "You are attempting to run ChromaFiler as Administrator. This is not recommended!\n\nContinue anyway?"
-    IDS_DONT_ASK,           "Don't ask again"
-
-    IDS_LEGAL_INFO,         "\
-Copyright (c) 2023 J. van't Hoog\r\n\
-\r\n\
-ChromaFiler is available under the GNU General Public License v3.0.\r\n\
-A copy of the license can be found in the installation folder.\r\n\
-The source code is available at https://github.com/vanjac/chromafiler\r\n\
-\r\n\
-If you enjoy ChromaFiler, please consider donating to support its development. Click the Donate button above.\r\n\
-\r\n\
-This software uses materials from the following sources:\r\n\
-- Segoe MDL2 Assets font\r\n\
-\tMicrosoft\r\n\
-\thttps://aka.ms/SegoeFonts\r\n\
-- Adwaita Icon Theme\r\n\
-\tGNOME Project\r\n\
-\tLicensed under GNU LGPL v3\r\n\
-\thttps://gitlab.gnome.org/GNOME/adwaita-icon-theme\r\n\
-- Material Design Icons\r\n\
-\tPictogrammers\r\n\
-\tLicensed under Apache License 2.0\r\n\
-\thttps://pictogrammers.com/library/mdi/\r\n\
-"
-}
-
-#include "dialog.rc"
+#include "resource.en.rc"
+#include "dialog.en.rc"
+#include "resource.fr.rc"
+#include "dialog.fr.rc"
