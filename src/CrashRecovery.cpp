@@ -1,4 +1,5 @@
 #include "CrashRecovery.h"
+#include "WinUtils.h"
 #include "Settings.h"
 #include "FolderStateStore.h"
 #include "UIStrings.h"
@@ -414,7 +415,7 @@ bool canUseFullNames() {
 bool hasSettingsAccess() { return !!settingsLock; }
 void blockFullNames() { fullNamesBlocked = true; }
 
-bool start(bool restarted) {
+bool start(bool restarted, const wchar_t *folderPath) {
     settingsLock.Attach(lockSettings(false));
     if (!settingsLock) return false;
     SECURITY_ATTRIBUTES security = {sizeof(security), nullptr, TRUE};
@@ -432,9 +433,15 @@ bool start(bool restarted) {
 #ifdef FILESPACER_DEBUG
     crash->test = settings::testMode;
 #endif
-    if (FAILED(StringCchCopyW(crash->command, _countof(crash->command), GetCommandLineW()))) return false;
     wchar_t executable[32768] = {}, command[32768] = {};
     if (!GetModuleFileNameW(nullptr, executable, _countof(executable))) return false;
+    // The working directory is neutral; retain an absolute folder in the restart command.
+    std::wstring restartCommand = quoteCommandArgument(executable) + L" "
+        + (folderPath ? quoteCommandArgument(folderPath) : std::wstring(L"/embedding"));
+#ifdef FILESPACER_DEBUG
+    if (settings::testMode) restartCommand += L" /test";
+#endif
+    if (FAILED(StringCchCopyW(crash->command, _countof(crash->command), restartCommand.c_str()))) return false;
     if (FAILED(StringCchPrintfW(command, _countof(command), L"\"%s\" /recovery-helper %llX %llX %llX %llX",
             executable, reinterpret_cast<DWORD64>(static_cast<HANDLE>(parent)),
             reinterpret_cast<DWORD64>(static_cast<HANDLE>(mapping)),
