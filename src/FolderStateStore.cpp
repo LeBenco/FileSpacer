@@ -104,25 +104,35 @@ FolderStateStore::FolderStateStore(const char *utf8Path) {
             SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nullptr)))
         return;
     sqlite3_busy_timeout(db, 3000); // Short transactions; allow concurrent process startup.
-    sqlite3_stmt *raw = nullptr;
-    if (!result(sqlite3_prepare_v2(db, "PRAGMA user_version", -1, &raw, nullptr))) return;
-    Statement version(raw, sqlite3_finalize);
-    if (!result(sqlite3_step(version.get()))) return;
-    int schema = sqlite3_column_int(version.get(), 0);
-    version.reset();
-    if (schema != 0 && schema != 2) {
-        lastError = "Unsupported FileSpacer database version";
-        return;
-    }
     if (!execute("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;"
             "PRAGMA wal_autocheckpoint=1000; PRAGMA journal_size_limit=8000000;"
-            "BEGIN IMMEDIATE;"
-            "CREATE TABLE IF NOT EXISTS folder_state("
+            "BEGIN IMMEDIATE;")) return;
+    // Read the version after acquiring the write lock: another process may migrate first.
+    sqlite3_stmt *raw = nullptr;
+    if (!result(sqlite3_prepare_v2(db, "PRAGMA user_version", -1, &raw, nullptr))) {
+        finishWrite(false);
+        return;
+    }
+    Statement version(raw, sqlite3_finalize);
+    if (!result(sqlite3_step(version.get()))) {
+        version.reset();
+        finishWrite(false);
+        return;
+    }
+    int schema = sqlite3_column_int(version.get(), 0);
+    version.reset();
+    if (schema != 0 && schema != 2 && schema != 3) {
+        lastError = "Unsupported FileSpacer database version";
+        finishWrite(false);
+        return;
+    }
+    if ((schema == 2 && !execute("ALTER TABLE folder_state ADD COLUMN maximized INTEGER;"))
+            || !execute("CREATE TABLE IF NOT EXISTS folder_state("
             "key TEXT PRIMARY KEY NOT NULL, x INTEGER, y INTEGER, width INTEGER, height INTEGER,"
             "view BLOB, icons BLOB, last_success_at INTEGER NOT NULL DEFAULT 0,"
-            "first_failed_at INTEGER) WITHOUT ROWID;"
+            "first_failed_at INTEGER, maximized INTEGER) WITHOUT ROWID;"
             "CREATE INDEX IF NOT EXISTS folder_state_age ON folder_state(last_success_at);"
-            "PRAGMA user_version=2;")) {
+            "PRAGMA user_version=3;")) {
         finishWrite(false);
         return;
     }
@@ -136,7 +146,7 @@ bool FolderStateStore::read(const std::string &key, FolderState *state) {
     if (!initialized) return false;
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db,
-            "SELECT x,y,width,height,view,icons,last_success_at,first_failed_at "
+            "SELECT x,y,width,height,view,icons,last_success_at,first_failed_at,maximized "
             "FROM folder_state WHERE key=?1", -1, &raw, nullptr)))
         return false;
     Statement statement(raw, sqlite3_finalize);
@@ -147,6 +157,10 @@ bool FolderStateStore::read(const std::string &key, FolderState *state) {
     if (code == SQLITE_ROW) {
         value.lastSuccessAt = sqlite3_column_int64(raw, 6);
         value.firstFailedAt = sqlite3_column_int64(raw, 7);
+        if (sqlite3_column_type(raw, 8) != SQLITE_NULL) {
+            value.present |= FolderState::Maximized;
+            value.maximized = sqlite3_column_int(raw, 8) != 0;
+        }
         if (sqlite3_column_type(raw, 0) != SQLITE_NULL && sqlite3_column_type(raw, 1) != SQLITE_NULL) {
             value.present |= FolderState::Position;
             value.x = sqlite3_column_int(raw, 0); value.y = sqlite3_column_int(raw, 1);
@@ -183,15 +197,16 @@ bool FolderStateStore::save(const std::string &key, const FolderState &state, ui
     const bool success = [&]() {
         sqlite3_stmt *raw = nullptr;
         if (!result(sqlite3_prepare_v2(db,
-            "INSERT INTO folder_state(key,x,y,width,height,view,icons,last_success_at,first_failed_at) "
-            "VALUES(?1,?2,?3,?4,?5,?6,?7,?9,?10) "
+            "INSERT INTO folder_state(key,x,y,width,height,view,icons,last_success_at,first_failed_at,maximized) "
+            "VALUES(?1,?2,?3,?4,?5,?6,?7,?9,?10,?11) "
             "ON CONFLICT(key) DO UPDATE SET "
             "x=CASE WHEN (?8&1)!=0 THEN excluded.x ELSE x END,"
             "y=CASE WHEN (?8&1)!=0 THEN excluded.y ELSE y END,"
             "width=CASE WHEN (?8&2)!=0 THEN excluded.width ELSE width END,"
             "height=CASE WHEN (?8&2)!=0 THEN excluded.height ELSE height END,"
             "view=CASE WHEN (?8&4)!=0 THEN excluded.view ELSE view END,"
-            "icons=CASE WHEN (?8&8)!=0 THEN excluded.icons ELSE icons END", -1, &raw, nullptr)))
+            "icons=CASE WHEN (?8&8)!=0 THEN excluded.icons ELSE icons END,"
+            "maximized=CASE WHEN (?8&16)!=0 THEN excluded.maximized ELSE maximized END", -1, &raw, nullptr)))
             return false;
         Statement statement(raw, sqlite3_finalize);
         if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))) return false;
@@ -214,6 +229,8 @@ bool FolderStateStore::save(const std::string &key, const FolderState &state, ui
         if (!result(sqlite3_bind_int(raw, 8, static_cast<int>(parts)))) return false;
         if (!result(sqlite3_bind_int64(raw, 9, state.lastSuccessAt))) return false;
         if (state.firstFailedAt && !result(sqlite3_bind_int64(raw, 10, state.firstFailedAt))) return false;
+        if ((parts & FolderState::Maximized)
+                && !result(sqlite3_bind_int(raw, 11, state.maximized ? 1 : 0))) return false;
         // An existing row keeps its current access metadata, even if this snapshot is older.
         return result(sqlite3_step(raw));
     }();
@@ -352,7 +369,8 @@ bool FolderStateStore::clear(const std::string &key, uint32_t parts) {
         "width=CASE WHEN (?2&2)!=0 THEN NULL ELSE width END,"
         "height=CASE WHEN (?2&2)!=0 THEN NULL ELSE height END,"
         "view=CASE WHEN (?2&4)!=0 THEN NULL ELSE view END,"
-        "icons=CASE WHEN (?2&8)!=0 THEN NULL ELSE icons END WHERE key=?1", -1, &raw, nullptr))) return false;
+        "icons=CASE WHEN (?2&8)!=0 THEN NULL ELSE icons END,"
+        "maximized=CASE WHEN (?2&16)!=0 THEN NULL ELSE maximized END WHERE key=?1", -1, &raw, nullptr))) return false;
     Statement statement(raw, sqlite3_finalize);
     if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))
             || !result(sqlite3_bind_int(raw, 2, static_cast<int>(parts)))) return false;
@@ -370,7 +388,7 @@ bool FolderStateStore::move(const std::string &oldKey, const std::string &newKey
     sqlite3_stmt *raw = nullptr;
     bool success = result(sqlite3_prepare_v2(db,
         "INSERT OR REPLACE INTO folder_state "
-        "SELECT ?2,x,y,width,height,view,icons,last_success_at,first_failed_at "
+        "SELECT ?2,x,y,width,height,view,icons,last_success_at,first_failed_at,maximized "
         "FROM folder_state WHERE key=?1", -1, &raw, nullptr));
     {
         Statement statement(raw, sqlite3_finalize);
@@ -425,3 +443,4 @@ void reportFolderStateError(void *owner) {
 #endif
 
 } // namespace
+
