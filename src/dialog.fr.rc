@@ -19,7 +19,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Filtre par nom", -1, "Button", BS_GROUPBOX, 7, 96, 286, 28
   CONTROL "Filtrer pendant la &saisie", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 107, 272, 12
   CONTROL "Barre des tâches", -1, "Button", BS_GROUPBOX, 7, 128, 286, 51
-  CONTROL "Regrouper les fenêtres dans la barre des &tâches", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 139, 272, 12
+  CONTROL "Regrouper les fenêtres dans la barre des &tâches (nouvelles fenêtres)", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 139, 272, 12
   CONTROL "Le regroupement suit les paramètres de la barre des tâches Windows.", -1, "Static", WS_GROUP, 14, 153, 272, 8
   CONTROL "Sans regroupement, les dossiers peuvent être épinglés.", -1, "Static", WS_GROUP, 14, 163, 272, 8
   CONTROL "Options de l’Explorateur de fichiers", -1, "Button", BS_GROUPBOX, 7, 183, 286, 35
