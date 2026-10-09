@@ -205,6 +205,7 @@ private:
     };
 
     bool fullNamesOnSelection = false; // Cached for this view; no registry access during painting.
+    bool labelCollapsePending = false;
     HWND listViewOwner = nullptr;
     void listViewCreated();
     void detachListView();
