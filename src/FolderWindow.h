@@ -16,6 +16,7 @@ public:
     static void init();
 
     FolderWindow(IShellItem *item, const std::wstring &identity);
+    void setReopenState(const ClosedWindow &window) { reopeningWindow = window; }
 
     bool handleTopLevelMessage(MSG *msg) override;
 
@@ -162,6 +163,7 @@ protected:
 	bool isFolder() const override;
 
     uint32_t captureViewState(uint32_t mask) override;
+    std::vector<uint8_t> captureReopenViewState() override;
 
     virtual FOLDERSETTINGS folderSettings() const;
     virtual void initDefaultView(IFolderView2 *folderView);
@@ -189,6 +191,8 @@ protected:
     CComPtr<IShellView> shellView;
 
 private:
+    ClosedWindow reopeningWindow;
+    void restoreReopenViewState();
     void placeSearchBox();
     void applyNameFilter(const wchar_t *text);
     int searchShare = 350; // thousandths of the space shared by address and search
