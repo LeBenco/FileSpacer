@@ -1,6 +1,7 @@
 #include "CreateItemWindow.h"
 #include "FolderWindow.h"
 #include "FolderIdentity.h"
+#include "ClosedWindows.h"
 #include <ctime>
 #include <algorithm>
 #include <vector>
@@ -74,6 +75,15 @@ static BOOL CALLBACK findFolderWindow(HWND window, LPARAM data) {
     return TRUE;
 }
 
+bool canReopenClosedWindow(const ClosedWindow &window) {
+    if (!window.sequence || window.key.empty()) return false;
+    // The stored key is the ASCII property published by the spatial window.
+    const std::wstring property(window.key.begin(), window.key.end());
+    FolderWindowSearch search{property};
+    return EnumWindows(findFolderWindow, reinterpret_cast<LPARAM>(&search))
+        && !search.window;
+}
+
 bool isFolderAccessFailure(HRESULT result) {
     return FAILED(result) && result != E_ABORT && result != E_OUTOFMEMORY
         && result != E_INVALIDARG && result != E_NOINTERFACE && result != E_NOTIMPL
@@ -108,7 +118,8 @@ void recordFolderItemFailure(IShellItem *item, HRESULT result) {
         recordFolderPathFailure(path, result);
 }
 
-FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCmd) {
+FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCmd,
+        const ClosedWindow *reopening) {
     std::wstring identity = getFolderIdentity(item);
     std::wstring property = folderWindowProperty(identity);
     if (property.empty())
@@ -130,10 +141,12 @@ FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCm
     }
     if (!enumerated)
         return FolderOpenResult::Failed;
-    CComPtr<ItemWindow> window;
+    CComPtr<FolderWindow> window;
     window.Attach(new FolderWindow(item, identity));
+    if (reopening) window->setReopenState(*reopening);
     if (!window->create(window->requestedRect(monitor), showCmd))
         return FolderOpenResult::Failed;
+    refreshReopenJumpLists();
     // Preserve foreground activation when a 32-bit Shell client launches this x64 server.
     if (showCmd == SW_SHOWNORMAL)
         window->setForeground();
