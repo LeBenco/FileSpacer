@@ -8,6 +8,7 @@
 #include "WinUtils.h"
 #include <cstdint>
 #include <string>
+#include <vector>
 #include <windows.h>
 #include <shobjidl.h>
 #include <atlbase.h>
@@ -17,7 +18,7 @@ namespace filespacer {
 enum class FolderOpenResult;
 
 class ItemWindow : public WindowImpl, public UnknownImpl {
-    friend FolderOpenResult openFolderWindow(IShellItem *, HMONITOR, int);
+    friend FolderOpenResult openFolderWindow(IShellItem *, HMONITOR, int, const ClosedWindow *);
     friend ProxyIcon;
 protected:
     static HACCEL accelTable;
@@ -41,7 +42,7 @@ public:
 
     void resetViewState(); // call immediately after constructing to reset all view state properties
 
-    void close();
+    void close(bool remember = true);
     void setForeground();
 
     // attempt to relocate item if it has been renamed, moved, or deleted
@@ -66,6 +67,7 @@ protected:
         // WPARAM: 0, LPARAM: 0
         MSG_FLASH_WINDOW,
         MSG_EXPIRE_FOLDER_STATE,
+        MSG_CLOSE_AUTOMATIC,
         MSG_LAST
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
@@ -107,6 +109,7 @@ protected:
     // message callbacks
     virtual void onCreate();
     virtual bool onCloseRequest(); // return false to block close (probably a bad idea)
+    virtual std::vector<uint8_t> captureReopenViewState() { return {}; }
     virtual void onDestroy();
     virtual bool onCommand(WORD command);
     virtual LRESULT onDropdown(int command, POINT pos);
@@ -177,6 +180,7 @@ private:
 
     void openParentMenu();
 
+    std::vector<std::wstring> getParentWindowProperties();
     void openCaptionMenu(POINT pos);
     void openProxyProperties();
     void openProxyContextMenu();
@@ -185,6 +189,7 @@ private:
     CComPtr<IShellLink> link;
     std::string stateKey;
     FolderState savedState;
+    ClosedWindow closingWindow;
     bool stateLoaded = false;
     bool storageErrorShown = false;
     uint32_t dirtyViewState = 0; // FolderState::Part flags
