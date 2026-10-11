@@ -33,6 +33,7 @@ IDR_ITEM_ACCEL  ACCELERATORS {
     VK_UP,          IDM_PREV_WINDOW,    VIRTKEY, ALT
     VK_UP,          IDM_PREV_WINDOW,    VIRTKEY, ALT, CONTROL
     "W",            IDM_CLOSE_WINDOW,   VIRTKEY, CONTROL
+    "T",            IDM_REOPEN_WINDOW,  VIRTKEY, CONTROL, SHIFT
     VK_F5,          IDM_REFRESH,        VIRTKEY
     "R",            IDM_REFRESH,        VIRTKEY, CONTROL
     // VK_F1,          IDM_HELP,           VIRTKEY // Deferred public help.
