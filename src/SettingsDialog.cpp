@@ -2,6 +2,7 @@
 #include "Settings.h"
 #include "FolderStateStore.h"
 #include "CreateItemWindow.h"
+#include "ClosedWindows.h"
 #include "Update.h"
 #include "main.h"
 #include "WinUtils.h"
@@ -76,8 +77,9 @@ static void resetAllFolderState(HWND owner) {
         // keeping global application preferences and the old Shell bags untouched.
         auto store = folderStateStore();
         if (!store) return IDS_RESET_FOLDER_STATE_STORAGE_ERROR;
-        return store->clearAll() ? IDS_RESET_FOLDER_STATE_SUCCESS
-            : IDS_RESET_FOLDER_STATE_DELETE_ERROR;
+        if (!store->clearAll()) return IDS_RESET_FOLDER_STATE_DELETE_ERROR;
+        refreshReopenJumpLists();
+        return IDS_RESET_FOLDER_STATE_SUCCESS;
     }();
     EnableWindow(owner, TRUE);
     bool success = result == IDS_RESET_FOLDER_STATE_SUCCESS;
