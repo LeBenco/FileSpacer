@@ -2239,8 +2239,12 @@ STDMETHODIMP FolderWindow::QueryService(
 
 /* ICommDlgBrowser */
 
-// called when double-clicking a file
+// Called when double-clicking an item or pressing Enter.
 STDMETHODIMP FolderWindow::OnDefaultCommand(IShellView *const view) {
+    // Preserve the Shell's native handling of Alt-modified activation.
+    if (GetKeyState(VK_MENU) < 0)
+        return S_FALSE;
+
     const bool closeSource = settings::getKeepSourceWindowOpen()
         == (GetKeyState(VK_CONTROL) < 0);
     CComQIPtr<IFolderView2> folderView(view);
@@ -2274,7 +2278,6 @@ STDMETHODIMP FolderWindow::OnDefaultCommand(IShellView *const view) {
 
     // Keep FileSpacer's original behavior for non-folder items.
     if (!invokingDefaultVerb
-            && GetKeyState(VK_MENU) >= 0
             && settings::getDeselectOnOpen()
             && folderView
             && numSelected == 1) {
