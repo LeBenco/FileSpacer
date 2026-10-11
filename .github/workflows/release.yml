@@ -86,7 +86,7 @@ jobs:
             throw "The CHANGELOG.md section for version $version contains no release entry."
           }
 
-          Write-Host "Release notes for $version:"
+          Write-Host "Release notes for ${version}:"
           Write-Host '----------------------------------------'
           Write-Host $notes
           Write-Host '----------------------------------------'
