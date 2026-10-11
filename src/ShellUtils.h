@@ -3,10 +3,14 @@
 
 #include <atlbase.h>
 #include <ShObjIdl.h>
+#include <string>
 
 namespace filespacer {
 
 bool invokeDefaultVerb(IShellItem *item, HWND owner, int showCommand);
+// Existing taskbar identities and native folder icon locations are also used by Jump Lists.
+std::wstring folderTaskbarID(const wchar_t *parsingName);
+std::wstring folderRelaunchIcon(PCIDLIST_ABSOLUTE pidl, HICON icon);
 
 // not reference counted! allocate on stack!
 class NewItemSink : public IFileOperationProgressSink {
