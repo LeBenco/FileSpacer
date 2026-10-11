@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.6 — 2026-10-11
+
+- Automatically restore open folder windows after an in-app update, preserving their saved positions, sizes and view settings.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.5...v1.0.6)
+
 ## 1.0.5 — 2026-10-11
 
 - Check for updates asynchronously from the About page, with an adaptive installation button and status text.
