@@ -2,7 +2,7 @@
 
 FileSpacer is based on [ChromaFiler](https://github.com/vanjac/chromafiler),
 Copyright (c) 2023 J. van't Hoog, distributed under the GNU General Public License
-v3.0. FileSpacer modifications: Copyright (c) 2026 LeBenco.
+v3.0. FileSpacer modifications: Copyright (c) 2026 Benjamin Cohen Boulakia.
 The complete license is in [LICENSE](LICENSE) in the source tree, or `LICENSE.txt`
 in the installation folder. FileSpacer comes without warranty;
 redistribution and modification are permitted under that license.
