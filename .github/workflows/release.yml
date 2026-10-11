@@ -154,9 +154,13 @@ jobs:
           $updateVersion = ($versionParts | ForEach-Object { $_.ToString('X2') }) -join ''
           $releaseUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/tag/$env:RELEASE_TAG"
 
+          $installerUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$env:RELEASE_TAG/FileSpacer-$version-install.exe"
+          $installerHash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          $installerSize = (Get-Item -LiteralPath $installer).Length
+
           [System.IO.File]::WriteAllText(
             "$env:GITHUB_WORKSPACE/build/FileSpacer-update.txt",
-            "FSUP`n$updateVersion`n$releaseUrl`n",
+            "FSUP`n$updateVersion`n$releaseUrl`n$installerUrl`n$installerHash`n$installerSize`n",
             [System.Text.Encoding]::ASCII
           )
 

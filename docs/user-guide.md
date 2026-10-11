@@ -71,3 +71,22 @@ newer release is found; clicking it opens the release page. Updates are not
 installed automatically.
 
 Public help links and donation links remain disabled.
+
+## Installer une mise à jour
+
+Dans **Paramètres > À propos**, FileSpacer recherche une nouvelle version en
+arrière-plan. Le bouton **Rechercher une nouvelle version** reste accessible
+lorsqu’aucune version plus récente n’est trouvée. Si une mise à jour est disponible,
+il devient **Installer FileSpacer vX.X.X** ; le texte dessous indique l’état.
+
+Le clic sur Installer demande une confirmation : toutes les fenêtres seront
+fermées **après** le téléchargement et sa vérification, puis l’installateur sera
+lancé. Le téléchargement apparaît dans une boîte séparée ; les paramètres se
+ferment et vous pouvez continuer à utiliser vos dossiers. **Annuler** ou la croix
+arrête le téléchargement et laisse les fenêtres de dossiers ouvertes.
+
+En cas d’échec du téléchargement ou de vérification, aucune fenêtre de dossier
+n’est fermée. Si un processus empêche ensuite la fermeture normale, l’installation
+n’est pas lancée ; certaines fenêtres peuvent déjà être fermées. Aucun processus
+n’est arrêté de force. Les anciennes releases dépourvues des informations nécessaires
+à l’installation automatique proposent l’ouverture de leur page GitHub.

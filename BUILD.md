@@ -83,17 +83,76 @@ because its Visual Studio edition differs from the local Build Tools installatio
 
 Update checking downloads the manifest from
 `https://github.com/LeBenco/FileSpacer/releases/latest/download/FileSpacer-update.txt`.
-The workflow generates it from the built executable's version, using ASCII
-without a BOM and LF line endings:
+The workflow generates it from the built executable and the renamed NSIS
+installer, using ASCII without a BOM and LF line endings:
 
 ```text
 FSUP
-01000200
-https://github.com/LeBenco/FileSpacer/releases/tag/v1.0.2
+01000500
+https://github.com/LeBenco/FileSpacer/releases/tag/v1.0.5
+https://github.com/LeBenco/FileSpacer/releases/download/v1.0.5/FileSpacer-1.0.5-install.exe
+<64 lowercase hexadecimal SHA-256 characters>
+<installer length in bytes>
 ```
 
 The eight hexadecimal digits encode the four version components, one byte each
-(major, minor, patch, revision). Each component must be between 0 and 255. The
-last line opens the corresponding release page, not an automatic installer.
+(major, minor, patch, revision). Each component must be between 0 and 255. URLs
+must match the version and this repository. The final two lines are generated
+with `Get-FileHash -Algorithm SHA256` and the installer file length. They must not
+be edited independently of the executable uploaded to the release.
+
+Older clients still read the first three lines and open the release page. The
+new client also accepts old three-line manifests, offering the release page
+when installer metadata is absent. Direct installation needs all six lines.
 GitHub's latest-release URL selects stable releases; prereleases are not offered
 by the updater. A release must contain the manifest for checks to succeed.
+
+### Update interface and lifecycle
+
+Opening Settings > About checks asynchronously. The existing check button becomes
+“Install FileSpacer vX.Y.Z” when installable metadata for a newer version is
+available; otherwise it remains available to check again. A status label reports
+checking, no update, availability or errors. Weekly checks retain their notification.
+
+Installing asks for confirmation that all windows will close after the download.
+Pending Settings changes are applied, then a separate modeless progress dialog
+opens and Settings closes, allowing folder windows to remain usable. Cancel or
+the progress window's close button cancels without closing any folder window.
+Workers keep the process alive until their bounded network operation and cleanup
+finish, even if their dialog has been destroyed.
+
+The client verifies exact byte length and SHA-256 before starting a temporary
+copy of its executable as an installation relay. The relay verifies the file again
+and holds it without write/delete sharing. It requests a cooperative exit of all
+processes using that installed executable, including recovery helpers and
+headless COM servers, and waits at most 60 seconds. Each process closes its own
+windows normally, preserves the existing saves, suspends new COM activations and
+finishes its workers. The application never calls `TerminateProcess`.
+
+A signaled installation gate prevents new application launches during shutdown
+and installation. Failure to shut down leaves setup unstarted and restores COM
+activation for remaining instances; some windows may already have closed. The
+relay launches the existing interactive NSIS installer (including its normal UAC
+prompt) and releases the gate after the installer exits. Cancellation of UAC or
+setup can therefore require reopening FileSpacer manually.
+
+Implementation is contained in `Update.cpp`, `UpdateManifest.cpp` and
+`UpdateInstaller.cpp`. `ProcessLifetime.cpp` is a generic application exit endpoint.
+Settings, main and folder creation only provide small lifecycle/UI hooks. The
+folder-state, navigation, reopen history and Jump List implementations are unchanged.
+Temporary installer data is removed on completion/error/cancellation; the mapped
+relay image is cleaned on a later update check once it is at least 24 hours old.
+
+### Parser regression tests
+
+From an initialized x64 MSVC CMD prompt at the repository root:
+
+```cmd
+if not exist build mkdir build
+cl.exe /nologo /EHsc /W4 /std:c++14 /I src src\UpdateManifest.cpp tests\update_manifest_test.cpp /Fe:build\update-manifest-test.exe
+build\update-manifest-test.exe
+```
+
+The test is also portable C++14 and can run under AddressSanitizer/UBSan. It covers
+legacy and installer manifests, wrong hosts/versions, malformed checksums, size
+limits, truncation and 50,000 deterministic malformed inputs.

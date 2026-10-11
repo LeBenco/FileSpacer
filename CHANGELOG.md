@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.5 — 2026-10-11
+
+- Check for updates asynchronously from the About page, with an adaptive installation button and status text.
+- Download updates in a separate cancellable progress dialog while folder windows remain usable.
+- Verify installer size and SHA-256 before gracefully closing FileSpacer and starting setup.
+- Publish installer download metadata alongside each release.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.4...v1.0.5)
+
 ## 1.0.4 — 2026-10-11
 
 - Add a title-bar command to close open parent-folder windows.

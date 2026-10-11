@@ -57,12 +57,15 @@ OBJECTS = \
     $(OUTDIR)\ItemWindow.obj \
     $(OUTDIR)\PathBar.obj \
     $(OUTDIR)\ProxyIcon.obj \
+    $(OUTDIR)\ProcessLifetime.obj \
 	$(OUTDIR)\SearchBox.obj \
     $(OUTDIR)\Settings.obj \
     $(OUTDIR)\SettingsDialog.obj \
     $(OUTDIR)\ShellUtils.obj \
     $(OUTDIR)\UIStrings.obj \
     $(OUTDIR)\Update.obj \
+    $(OUTDIR)\UpdateManifest.obj \
+    $(OUTDIR)\UpdateInstaller.obj \
     $(OUTDIR)\WinUtils.obj \
 	$(OUTDIR)\CrashRecovery.obj \
     $(OUTDIR)\main.obj
