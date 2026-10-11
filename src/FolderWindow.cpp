@@ -1,5 +1,7 @@
 #include "FolderWindow.h"
 #include "CreateItemWindow.h"
+#include "ClosedWindows.h"
+#include "ShellMenuIcons.h"
 #include "GeomUtils.h"
 #include "GDIUtils.h"
 #include "WinUtils.h"
@@ -199,6 +201,13 @@ bool FolderWindow::isFolder() const {
 bool FolderWindow::handleTopLevelMessage(MSG *msg) {
     if (!isWindowOperational())
         return false;
+    if (msg->message == WM_KEYDOWN && msg->wParam == L'T'
+            && GetKeyState(VK_CONTROL) < 0 && GetKeyState(VK_SHIFT) < 0
+            && GetKeyState(VK_MENU) >= 0) {
+        // This window command also works while editing the address or filter.
+        onCommand(IDM_REOPEN_WINDOW);
+        return true;
+    }
     if (msg->message == WM_KEYDOWN && msg->wParam == L'F'
             && GetKeyState(VK_CONTROL) < 0 && GetKeyState(VK_MENU) >= 0)
         return searchBox.focus();
@@ -936,6 +945,120 @@ bool FolderWindow::readIconPositions(IFolderView *const folderView, IStream *con
     }
     // TODO: auto-position the remaining items to avoid overlap
     return true;
+}
+
+namespace {
+struct ReopenViewHeader {
+    uint32_t version = 1, selected = 0, flags = 0;
+    POINT offset = {};
+};
+constexpr uint32_t REOPEN_ORIGIN = 1, REOPEN_ANCHOR = 2, REOPEN_FOCUS = 4;
+}
+
+std::vector<uint8_t> FolderWindow::captureReopenViewState() {
+    // Closing is already set: use HWND/view identity rather than isWindowOperational.
+    const HWND owner = hwnd, control = listView;
+    CComPtr<IShellView> view = shellView;
+    CComQIPtr<IFolderView> folderView(view);
+    auto valid = [&]() { return hwnd == owner && shellView == view && listView == control; };
+    if (!owner || !folderView) return {};
+    ReopenViewHeader header;
+    int count = 0;
+    if (FAILED(folderView->ItemCount(SVGIO_SELECTION, &count)) || count < 0 || !valid()) return {};
+    header.selected = static_cast<uint32_t>(count);
+    CComHeapPtr<ITEMID_CHILD> anchor, focused;
+    int index = -1;
+    if (SUCCEEDED(folderView->GetFocusedItem(&index)) && index >= 0 && valid()
+            && SUCCEEDED(folderView->Item(index, &focused)) && focused)
+        header.flags |= REOPEN_FOCUS;
+    if (!valid()) return {};
+    if (control) {
+        if (ListView_GetOrigin(control, &header.offset)) {
+            header.flags |= REOPEN_ORIGIN;
+        } else {
+            index = ListView_GetTopIndex(control);
+            RECT bounds = {};
+            if (index >= 0 && ListView_GetItemRect(control, index, &bounds, LVIR_BOUNDS)
+                    && valid() && SUCCEEDED(folderView->Item(index, &anchor)) && anchor) {
+                header.offset = {bounds.left, bounds.top};
+                header.flags |= REOPEN_ANCHOR;
+            }
+        }
+        header.offset = invScaleDPI(header.offset);
+    }
+    if (!valid()) return {};
+    CComPtr<IStream> stream;
+    stream.Attach(SHCreateMemStream(nullptr, 0));
+    if (!stream || FAILED(IStream_Write(stream, &header, sizeof(header)))
+            || ((header.flags & REOPEN_ANCHOR) && FAILED(IStream_WritePidl(stream, anchor)))
+            || ((header.flags & REOPEN_FOCUS) && FAILED(IStream_WritePidl(stream, focused)))) return {};
+    if (count) {
+        CComPtr<IEnumIDList> selectedItems;
+        if (FAILED(folderView->Items(SVGIO_SELECTION, IID_PPV_ARGS(&selectedItems))) || !valid()) return {};
+        for (int i = 0; i < count; ++i) {
+            CComHeapPtr<ITEMID_CHILD> selectedItem;
+            if (selectedItems->Next(1, &selectedItem, nullptr) != S_OK || !valid()
+                    || FAILED(IStream_WritePidl(stream, selectedItem))) return {};
+        }
+    }
+    STATSTG stats = {};
+    LARGE_INTEGER beginning = {};
+    if (FAILED(stream->Stat(&stats, STATFLAG_NONAME)) || stats.cbSize.QuadPart > INT32_MAX
+            || FAILED(stream->Seek(beginning, STREAM_SEEK_SET, nullptr))) return {};
+    std::vector<uint8_t> bytes(static_cast<size_t>(stats.cbSize.QuadPart));
+    if (FAILED(IStream_Read(stream, bytes.data(), static_cast<ULONG>(bytes.size()))) || !valid()) return {};
+    return bytes;
+}
+
+void FolderWindow::restoreReopenViewState() {
+    if (!viewReady || !enumerationComplete || !reopeningWindow.sequence || !isWindowOperational()) return;
+    // Consume once, before calling Shell APIs that can reenter enumeration callbacks.
+    const auto bytes = std::move(reopeningWindow.viewState);
+    reopeningWindow = {};
+    if (bytes.empty()) return;
+    const HWND control = listView;
+    CComPtr<IShellView> view = shellView;
+    CComQIPtr<IFolderView> folderView(view);
+    auto valid = [&]() { return isWindowOperational() && shellView == view && listView == control; };
+    CComPtr<IStream> stream;
+    stream.Attach(SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size())));
+    ReopenViewHeader header;
+    if (!folderView || !stream || FAILED(IStream_Read(stream, &header, sizeof(header)))
+            || header.version != 1 || (header.flags & ~7u) || header.selected > bytes.size() / 2) return;
+    CComHeapPtr<ITEMID_CHILD> anchor, focused;
+    if (((header.flags & REOPEN_ANCHOR) && FAILED(IStream_ReadPidl(stream, &anchor)))
+            || ((header.flags & REOPEN_FOCUS) && FAILED(IStream_ReadPidl(stream, &focused)))) return;
+    std::vector<CComHeapPtr<ITEMID_CHILD>> selectedItems(header.selected);
+    for (auto &selectedItem : selectedItems)
+        if (FAILED(IStream_ReadPidl(stream, &selectedItem))) return;
+
+    // In details/list view, position a stable item rather than a possibly changed row index.
+    const POINT offset = scaleDPI(header.offset);
+    if (control && anchor && valid()
+            && SUCCEEDED(view->SelectItem(anchor, SVSI_FOCUSED | SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS))
+            && valid()) {
+        int index = -1;
+        RECT bounds = {};
+        if (SUCCEEDED(folderView->GetFocusedItem(&index)) && valid() && index >= 0
+                && ListView_GetItemRect(control, index, &bounds, LVIR_BOUNDS) && valid())
+            ListView_Scroll(control, bounds.left - offset.x, bounds.top - offset.y);
+    }
+    if (!valid()) return;
+    view->SelectItem(nullptr, SVSI_DESELECTOTHERS);
+    for (const auto &selectedItem : selectedItems) {
+        if (!valid()) return;
+        view->SelectItem(selectedItem, SVSI_SELECT | SVSI_NOTAKEFOCUS);
+    }
+    if (!valid()) return;
+    if (focused) view->SelectItem(focused, SVSI_FOCUSED | SVSI_NOTAKEFOCUS);
+    else if (control) ListView_SetItemState(control, -1, 0, LVIS_FOCUSED);
+    if (!valid()) return;
+    if (control && (header.flags & REOPEN_ORIGIN)) {
+        POINT origin = {};
+        if (ListView_GetOrigin(control, &origin) && valid())
+            ListView_Scroll(control, offset.x - origin.x, offset.y - origin.y);
+    }
+    if (valid()) updateSelection();
 }
 
 void FolderWindow::onDestroy() {
@@ -1680,143 +1803,6 @@ void FolderWindow::trackContextMenu(POINT pos) {
         scheduleStateSave();
 }
 
-// Owns the icon work for one popup only. The worker never accesses a menu or UI COM object.
-class QuickAccessMenuIcons {
-    struct Icon {
-        UINT command;
-        HBITMAP bitmap;
-    };
-    struct State {
-        SRWLOCK lock = SRWLOCK_INIT;
-        bool cancelled = false;
-        HWND owner = nullptr;
-        HMENU menu = nullptr;
-        UINT message = 0;
-        int iconSize = 0;
-        std::vector<std::wstring> paths;
-        std::vector<Icon> pending;
-        std::vector<HBITMAP> displayed; // UI thread only; freed after the popup is destroyed.
-        ~State() {
-            for (const Icon &icon : pending)
-                DeleteObject(icon.bitmap);
-            for (HBITMAP bitmap : displayed)
-                DeleteObject(bitmap);
-        }
-    };
-    std::shared_ptr<State> state = std::make_shared<State>();
-
-    static DWORD WINAPI load(void *parameter) {
-        std::unique_ptr<std::shared_ptr<State>> parameterOwner(
-            static_cast<std::shared_ptr<State> *>(parameter));
-        const auto work = *parameterOwner;
-        for (size_t index = 0; index < work->paths.size(); ++index) {
-            AcquireSRWLockShared(&work->lock);
-            const bool cancelled = work->cancelled;
-            ReleaseSRWLockShared(&work->lock);
-            if (cancelled)
-                break;
-            CComPtr<IShellItemImageFactory> factory;
-            HBITMAP bitmap = nullptr;
-            if (FAILED(SHCreateItemFromParsingName(work->paths[index].c_str(), nullptr,
-                    IID_PPV_ARGS(&factory)))
-                    || FAILED(factory->GetImage({work->iconSize, work->iconSize},
-                        SIIGBF_ICONONLY, &bitmap))) {
-                // Use a stock icon only after the specific Shell icon failed to load.
-                SHSTOCKICONINFO info = {sizeof(info)};
-                if (SUCCEEDED(SHGetStockIconInfo(SIID_FOLDER,
-                        SHGSI_ICON | SHGSI_SMALLICON, &info))) {
-                    bitmap = iconToPARGB32Bitmap(info.hIcon, work->iconSize, work->iconSize);
-                    DestroyIcon(info.hIcon);
-                }
-            }
-            if (!bitmap)
-                continue;
-            AcquireSRWLockExclusive(&work->lock);
-            if (!work->cancelled) {
-                work->pending.push_back({static_cast<UINT>(index + 1), bitmap});
-                PostMessage(work->owner, work->message, 0, 0);
-                bitmap = nullptr; // State owns it even if posting fails.
-            }
-            ReleaseSRWLockExclusive(&work->lock);
-            if (bitmap)
-                DeleteObject(bitmap);
-        }
-        return 0;
-    }
-
-    static LRESULT CALLBACK receive(HWND owner, UINT message, WPARAM wParam,
-            LPARAM lParam, UINT_PTR id, DWORD_PTR data) {
-        State *work = reinterpret_cast<State *>(data);
-        if (message == WM_NCDESTROY) {
-            AcquireSRWLockExclusive(&work->lock);
-            work->cancelled = true;
-            work->owner = nullptr;
-            ReleaseSRWLockExclusive(&work->lock);
-            RemoveWindowSubclass(owner, receive, id);
-        } else if (message == work->message) {
-            std::vector<Icon> icons;
-            AcquireSRWLockExclusive(&work->lock);
-            icons.swap(work->pending);
-            ReleaseSRWLockExclusive(&work->lock);
-            for (const Icon &icon : icons) {
-                MENUITEMINFO info = {sizeof(info)};
-                info.fMask = MIIM_BITMAP;
-                info.hbmpItem = icon.bitmap;
-                if (SetMenuItemInfo(work->menu, icon.command, FALSE, &info))
-                    work->displayed.push_back(icon.bitmap);
-                else
-                    DeleteObject(icon.bitmap);
-            }
-            if (!icons.empty()) {
-                // Locate the displayed popup using documented menu geometry and identity.
-                RECT rect = {};
-                if (GetMenuItemRect(nullptr, work->menu, 0, &rect)) {
-                    HWND popup = WindowFromPoint({(rect.left + rect.right) / 2,
-                        (rect.top + rect.bottom) / 2});
-                    MENUBARINFO info = {sizeof(info)};
-                    if (popup && GetMenuBarInfo(popup, OBJID_CLIENT, 0, &info)
-                            && info.hMenu == work->menu)
-                        RedrawWindow(popup, nullptr, nullptr,
-                            RDW_INVALIDATE | RDW_NOERASE | RDW_UPDATENOW);
-                }
-            }
-            return 0;
-        }
-        return DefSubclassProc(owner, message, wParam, lParam);
-    }
-
-public:
-    void start(HWND owner, HMENU menu, int iconSize, std::vector<std::wstring> paths) {
-        if (paths.empty())
-            return;
-        state->owner = owner;
-        state->menu = menu;
-        state->iconSize = iconSize;
-        state->paths = std::move(paths);
-        state->message = RegisterWindowMessage(L"FileSpacer.QuickAccessMenuIcons");
-        if (!state->message || !SetWindowSubclass(owner, receive,
-                reinterpret_cast<UINT_PTR>(state.get()), reinterpret_cast<DWORD_PTR>(state.get()))) {
-            state->owner = nullptr;
-            return;
-        }
-        auto parameter = new std::shared_ptr<State>(state);
-        if (!SHCreateThread(load, parameter, CTF_COINIT_STA, nullptr)) {
-            delete parameter;
-            stop();
-        }
-    }
-    void stop() {
-        AcquireSRWLockExclusive(&state->lock);
-        state->cancelled = true;
-        HWND owner = state->owner;
-        state->owner = nullptr;
-        ReleaseSRWLockExclusive(&state->lock);
-        if (owner)
-            RemoveWindowSubclass(owner, receive, reinterpret_cast<UINT_PTR>(state.get()));
-    }
-    ~QuickAccessMenuIcons() { stop(); }
-};
-
 void FolderWindow::openQuickAccessMenu(POINT point) {
     CComPtr<ItemWindow> keepAlive(this);
     if (!isWindowOperational())
@@ -1971,7 +1957,7 @@ void FolderWindow::openQuickAccessMenu(POINT point) {
         result = HRESULT_FROM_WIN32(GetLastError());
     int command = 0;
     bool closeSource = false;
-    QuickAccessMenuIcons icons;
+    ShellMenuIcons icons;
     if (SUCCEEDED(result) && isWindowOperational()) {
         std::vector<std::wstring> paths;
         for (const Entry &entry : entries)
@@ -2348,6 +2334,7 @@ STDMETHODIMP FolderWindow::OnNavigationComplete(PCIDLIST_ABSOLUTE) {
     viewReady = true;
     loadIconPositions();
     scheduleStateSave();
+    restoreReopenViewState();
     onViewReady();
     if (fullNamesFailure && !rebuildStandardView) {
         // Report outside the Shell's synchronous navigation callback.
@@ -2360,6 +2347,12 @@ STDMETHODIMP FolderWindow::OnNavigationFailed(PCIDLIST_ABSOLUTE) {
     // This callback also reports cancellation and has no HRESULT: do not count a failure.
     viewReady = false;
     setStatusText(getString(IDS_FOLDER_ERROR));
+    if (reopeningWindow.sequence) {
+        auto store = folderStateStore();
+        if (!store || !store->returnClosedWindow(reopeningWindow)) reportFolderStateError(hwnd);
+        reopeningWindow = {};
+        refreshReopenJumpLists();
+    }
     return S_OK;
 }
 
@@ -2407,6 +2400,7 @@ STDMETHODIMP FolderWindow::MessageSFVCB(UINT msg, WPARAM wParam, LPARAM lParam) 
         enumerationComplete = true;
         loadIconPositions();
         scheduleStateSave();
+        restoreReopenViewState();
     } else if (msg == SFVM_DIDDRAGDROP) { // sent to source, not target!
         scheduleStateSave(true);
     } else if (msg == SFVM_FSNOTIFY) {
