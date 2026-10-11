@@ -1,8 +1,17 @@
 # Privacy policy
 
-FileSpacer does not include telemetry, analytics, advertising, or an active
-update-checking service. It does not automatically send usage information or
-crash reports to the developer.
+FileSpacer does not include telemetry, analytics, or advertising. It does not
+automatically send usage information or crash reports to the developer.
+
+## Update checks
+
+Manual update checks, and automatic weekly checks if enabled, request the latest
+FileSpacer version manifest from GitHub over HTTPS. Automatic checks are off by
+default. GitHub and its download infrastructure receive the usual connection
+information, including your IP address and a FileSpacer version user agent. The
+request does not contain file paths, folder state, or diagnostic reports.
+An available manual update, or a click on an update notification, opens the
+release page in your default browser; installation remains manual.
 
 ## Local data
 

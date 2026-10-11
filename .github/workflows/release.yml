@@ -56,6 +56,10 @@ jobs:
           if ($info.ProductPrivatePart -ne 0 -or $env:RELEASE_TAG -cne "v$version" -or $info.ProductVersion -ne $version) {
             throw "Tag $env:RELEASE_TAG does not match the executable version. Update both version definitions in src/resource.h."
           }
+          $versionParts = @($info.ProductMajorPart, $info.ProductMinorPart, $info.ProductBuildPart, $info.ProductPrivatePart)
+          if ($versionParts | Where-Object { $_ -lt 0 -or $_ -gt 255 }) {
+            throw 'Update checking requires each version component to fit in one byte.'
+          }
           if (!(Test-Path 'build/FileSpacer-install.exe' -PathType Leaf)) {
             throw 'The NSIS installer was not produced.'
           }
@@ -64,15 +68,19 @@ jobs:
           Move-Item -LiteralPath 'build/FileSpacer-install.exe' -Destination $installer
           "INSTALLER_PATH=$installer" >> $env:GITHUB_ENV
 
-      - name: Publish the release and its installer
+          $updateVersion = ($versionParts | ForEach-Object { $_.ToString('X2') }) -join ''
+          $releaseUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/tag/$env:RELEASE_TAG"
+          [System.IO.File]::WriteAllText("$env:GITHUB_WORKSPACE/build/FileSpacer-update.txt", "FSUP`n$updateVersion`n$releaseUrl`n", [System.Text.Encoding]::ASCII)
+
+      - name: Publish the release, installer and update manifest
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view "$env:RELEASE_TAG" --repo "$env:GITHUB_REPOSITORY" *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload "$env:RELEASE_TAG" "$env:INSTALLER_PATH" --repo "$env:GITHUB_REPOSITORY" --clobber
+            gh release upload "$env:RELEASE_TAG" "$env:INSTALLER_PATH" 'build/FileSpacer-update.txt' --repo "$env:GITHUB_REPOSITORY" --clobber
           } else {
-            gh release create "$env:RELEASE_TAG" "$env:INSTALLER_PATH" --repo "$env:GITHUB_REPOSITORY" --verify-tag --generate-notes
+            gh release create "$env:RELEASE_TAG" "$env:INSTALLER_PATH" 'build/FileSpacer-update.txt' --repo "$env:GITHUB_REPOSITORY" --verify-tag --generate-notes
           }
           if ($LASTEXITCODE -ne 0) { throw 'Release publication failed.' }

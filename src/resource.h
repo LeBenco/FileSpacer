@@ -55,14 +55,14 @@
 // #define IDS_WELCOME_TUTORIAL       220 // Deferred public services.
 #define IDS_WELCOME_BROWSER        222
 #define IDS_CONFIRM_CAPTION        223
-// #define IDS_NO_UPDATE_CAPTION      224 // Deferred public services.
-// #define IDS_NO_UPDATE              225 // Deferred public services.
-// #define IDS_UPDATE_ERROR           226 // Deferred public services.
-// #define IDS_WELCOME_UPDATE         227 // Deferred public services.
+#define IDS_NO_UPDATE_CAPTION      224
+#define IDS_NO_UPDATE              225
+#define IDS_UPDATE_ERROR           226
+#define IDS_WELCOME_UPDATE         227
 #define IDS_OPEN_PARENT_COMMAND    228
 #define IDS_ERROR_CAPTION          230
-// #define IDS_UPDATE_NOTIF_TITLE     233 // Deferred public services.
-// #define IDS_UPDATE_NOTIF_INFO      234 // Deferred public services.
+#define IDS_UPDATE_NOTIF_TITLE     233
+#define IDS_UPDATE_NOTIF_INFO      234
 #define IDS_CANT_FIND_ITEM         235
 #define IDS_FOLDER_STATUS          236
 #define IDS_FOLDER_STATUS_SEL      237

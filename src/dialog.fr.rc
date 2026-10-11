@@ -80,8 +80,8 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Aide", IDC_HELP_LINK, "Button", WS_TABSTOP, 7, 28, 84, 14
   CONTROL "&Site web", IDC_WEBSITE_LINK, "Button", WS_TABSTOP, 105, 28, 84, 14
   CONTROL "Faire un &don", IDC_DONATE_LINK, "Button", WS_TABSTOP, 203, 28, 90, 14
-  CONTROL "&Rechercher des mises à jour", IDC_UPDATES_LINK, "Button", WS_TABSTOP, 7, 49, 133, 14
-  CONTROL "Recherche automatique chaque se&maine", IDC_AUTO_UPDATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 147, 49, 146, 14
 #endif
-  CONTROL "", IDC_LEGAL_INFO, "Edit", ES_MULTILINE|ES_READONLY|WS_VSCROLL|WS_BORDER|WS_TABSTOP, 7, 40, 286, 191
+  CONTROL "&Rechercher des mises à jour", IDC_UPDATES_LINK, "Button", WS_TABSTOP, 7, 40, 133, 14
+  CONTROL "Recherche automatique chaque se&maine", IDC_AUTO_UPDATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 147, 40, 146, 14
+  CONTROL "", IDC_LEGAL_INFO, "Edit", ES_MULTILINE|ES_READONLY|WS_VSCROLL|WS_BORDER|WS_TABSTOP, 7, 61, 286, 170
 }

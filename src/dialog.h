@@ -31,10 +31,10 @@
 #define IDC_RESET_DEFAULT_BROWSER   1302
 
 #define IDD_SETTINGS_ABOUT          106
-// #define IDC_UPDATES_LINK            1401 // Deferred public services.
+#define IDC_UPDATES_LINK            1401
 // #define IDC_HELP_LINK               1402 // Deferred public services.
 // #define IDC_WEBSITE_LINK            1403 // Deferred public services.
-// #define IDC_AUTO_UPDATE             1404 // Deferred public services.
+#define IDC_AUTO_UPDATE             1404
 #define IDC_LEGAL_INFO              1405
 #define IDC_VERSION                 1406
 // #define IDC_DONATE_LINK             1407 // Deferred public services.
