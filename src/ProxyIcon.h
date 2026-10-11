@@ -3,6 +3,7 @@
 
 #include <Windows.h>
 #include <Uxtheme.h>
+#include <commctrl.h>
 
 namespace filespacer {
 
@@ -21,6 +22,8 @@ public:
     void destroy(); // may be called without create()
 
     bool isToolbarWindow(HWND hwnd) const;
+    HWND getMenuOwner() const;
+    bool drawMenuButton(const NMCUSTOMDRAW &draw);
     POINT getMenuPoint(HWND parent);
 
     void setTitle(wchar_t *title);
@@ -43,7 +46,8 @@ private:
     void completeRename();
     void cancelRename();
 
-    static LRESULT CALLBACK captionProc(HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR);
+    static LRESULT CALLBACK captionProc(HWND window, UINT message,
+        WPARAM wParam, LPARAM lParam, UINT_PTR id, DWORD_PTR);
 
     // window subclasses
     static LRESULT CALLBACK renameBoxProc(HWND hwnd, UINT message,
