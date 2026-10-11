@@ -4,6 +4,7 @@
 #include "CreateItemWindow.h"
 #include "ClosedWindows.h"
 #include "Update.h"
+#include "UpdateInstaller.h"
 #include "main.h"
 #include "WinUtils.h"
 #include "UIStrings.h"
@@ -454,6 +455,7 @@ INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 
             SetDlgItemText(hwnd, IDC_VERSION, _T(FILESPACER_VERSION_STRING));
             SetDlgItemText(hwnd, IDC_LEGAL_INFO, getString(IDS_LEGAL_INFO));
+            initUpdateControls(hwnd);
             return TRUE;
         }
         case WM_NOTIFY: {
@@ -481,24 +483,8 @@ INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
             return FALSE;
         }
         case WM_COMMAND:
-            if (LOWORD(wParam) == IDC_UPDATES_LINK && HIWORD(wParam) == BN_CLICKED) {
-                HINSTANCE instance = GetModuleHandle(nullptr);
-                UpdateInfo info;
-                if (DWORD error = checkUpdate(&info)) {
-                    TaskDialog(GetParent(hwnd), instance, MAKEINTRESOURCE(IDS_UPDATE_ERROR),
-                        nullptr, getErrorMessage(error).get(), 0, nullptr, nullptr);
-                    return TRUE;
-                }
-                if (info.isNewer) {
-                    openUpdate(info);
-                } else {
-                    TaskDialog(GetParent(hwnd), instance, MAKEINTRESOURCE(IDS_NO_UPDATE_CAPTION),
-                        nullptr, MAKEINTRESOURCE(IDS_NO_UPDATE), 0, nullptr, nullptr);
-                }
-                return TRUE;
-            }
 #if 0 // Deferred public help, website and donation links.
-            else if (LOWORD(wParam) == IDC_HELP_LINK && HIWORD(wParam) == BN_CLICKED) {
+            if (LOWORD(wParam) == IDC_HELP_LINK && HIWORD(wParam) == BN_CLICKED) {
                 ShellExecute(nullptr, L"open", L"https://github.com/vanjac/chromafiler/wiki",
                     nullptr, nullptr, SW_SHOWNORMAL);
                 return TRUE;
@@ -512,7 +498,7 @@ INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
                 return TRUE;
             }
 #endif
-            else if (LOWORD(wParam) == IDC_AUTO_UPDATE && HIWORD(wParam) == BN_CLICKED) {
+            if (LOWORD(wParam) == IDC_AUTO_UPDATE && HIWORD(wParam) == BN_CLICKED) {
                 PropSheet_Changed(GetParent(hwnd), hwnd);
                 return TRUE;
             } else
@@ -524,6 +510,11 @@ INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
             return FALSE;
     }
     return FALSE;
+}
+
+void requestSettingsDialogClose() {
+    if (settingsDialog)
+        PostMessageW(settingsDialog, PSM_PRESSBUTTON, PSBTN_OK, 0);
 }
 
 void openSettingsDialog(HWND owner, SettingsPage page) {

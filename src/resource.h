@@ -1,8 +1,8 @@
 #pragma once
 #include "dialog.h"
 
-#define FILESPACER_VERSION        1,0,4,0
-#define FILESPACER_VERSION_STRING "1.0.4\0"
+#define FILESPACER_VERSION        1,0,5,0
+#define FILESPACER_VERSION_STRING "1.0.5\0"
 
 #define IDR_RT_MANIFEST1 1 // must be 1 for an exe
 
@@ -145,3 +145,19 @@
 #define IDS_LABEL_DISABLED_NO_RESTART            307
 #define IDS_SETTINGS_ACCESS_FAILED               308
 
+#define IDS_UPDATE_SEARCH_BUTTON               316
+#define IDS_UPDATE_INSTALL_BUTTON              317
+#define IDS_UPDATE_RELEASE_BUTTON              318
+#define IDS_UPDATE_SEARCHING                   319
+#define IDS_UPDATE_AVAILABLE                   320
+#define IDS_UPDATE_DOWNLOADING                 321
+#define IDS_UPDATE_PROGRESS                    322
+#define IDS_UPDATE_CLOSING                     323
+#define IDS_UPDATE_FAILED                      324
+#define IDS_UPDATE_FAILED_DETAIL               325
+#define IDS_UPDATE_LEGACY                      326
+#define IDS_UPDATE_BUSY                        327
+#define IDS_UPDATE_CONFIRM_TITLE               328
+#define IDS_UPDATE_CONFIRM                     329
+#define IDS_UPDATE_RELAY_FAILED                330
+#define IDS_UPDATE_CLOSE_BUTTON                331

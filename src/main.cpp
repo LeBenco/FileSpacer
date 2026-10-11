@@ -7,6 +7,8 @@
 #include "CrashRecovery.h"
 #include "SettingsDialog.h"
 #include "Update.h"
+#include "UpdateInstaller.h"
+#include "ProcessLifetime.h"
 #include "ExecuteCommand.h"
 #include "DPI.h"
 #include "UIStrings.h"
@@ -262,7 +264,8 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     int maintenanceExit = 0, recoveryArgc = 0;
     wchar_t **recoveryArgv = CommandLineToArgvW(GetCommandLineW(), &recoveryArgc);
     if (!recoveryArgv) return 1;
-    const bool maintenance = recovery::handleCommandLine(recoveryArgc, recoveryArgv, &maintenanceExit);
+    const bool maintenance = handleUpdateCommandLine(recoveryArgc, recoveryArgv, &maintenanceExit)
+        || recovery::handleCommandLine(recoveryArgc, recoveryArgv, &maintenanceExit);
     bool restarted = false;
     for (int i = 1; i < recoveryArgc; ++i) {
         restarted |= lstrcmpiW(recoveryArgv[i], L"/recovery-restarted") == 0;
@@ -272,6 +275,8 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         : parseStartingFolder(recoveryArgc, recoveryArgv, &startingFolder);
     LocalFree(recoveryArgv);
     if (maintenance) return maintenanceExit;
+    // Leave immediately so a new launch cannot keep the installed image mapped.
+    if (isUpdateInstallationRunning()) return 0;
     if (requestedLaunch == LAUNCH_FAIL) return 1;
     // Resolve relative arguments first. Neither the application nor its recovery
     // helper may keep a user folder locked as the process working directory.
@@ -321,8 +326,22 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     }
 
     INITCOMMONCONTROLSEX controls = {sizeof(controls)};
-    controls.dwICC = ICC_STANDARD_CLASSES | ICC_BAR_CLASSES | ICC_USEREX_CLASSES;
+    controls.dwICC = ICC_STANDARD_CLASSES | ICC_BAR_CLASSES | ICC_USEREX_CLASSES
+        | ICC_PROGRESS_CLASS;
     InitCommonControlsEx(&controls);
+
+    if (!initProcessLifetime([]() {
+            stopUpdateChecks();
+            closeUpdateDialogs();
+            requestSettingsDialogClose();
+            // Headless COM servers can already have no references to release.
+            SetEvent(processIdleEvent);
+        }, resumeUpdateChecks)) {
+        threadReference.Release();
+        processIdleEvent = nullptr;
+        OleUninitialize();
+        return 1;
+    }
 
     if (settings::getAdminWarning()) {
         TOKEN_ELEVATION elevation = {};
@@ -352,7 +371,8 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
             int result = 0;
             BOOL dontShowAgain = false;
             checkHR(TaskDialogIndirect(&config, &result, nullptr, &dontShowAgain));
-            if (result != IDYES) {
+            if (result != IDYES || isProcessQuitRequested()) {
+                uninitProcessLifetime();
                 threadReference.Release();
                 processIdleEvent = nullptr;
                 OleUninitialize();
@@ -416,6 +436,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
 #ifdef FILESPACER_DEBUG
         ULONGLONG tick = GetTickCount64();
 #endif
+        if (handleUpdateDialogMessage(&msg)) continue;
         {
             // A nested command can close or replace the globally active window.
             CComPtr<ItemWindow> activeWindow = ItemWindow::activeWindow;
@@ -443,7 +464,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         checkLE(CloseHandle(jumpListThread));
         checkLE(CloseHandle(versionThread));
     }
+    stopUpdateChecks();
     waitForUpdateThread();
+    uninitProcessLifetime();
 
     ItemWindow::uninit();
     threadReference.Release();
@@ -578,6 +601,10 @@ void showWelcomeDialog() {
 }
 
 HRESULT WINAPI welcomeDialogCallback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM, LONG_PTR) {
+    if (msg == TDN_CREATED && isProcessQuitRequested()) {
+        PostMessageW(hwnd, WM_CLOSE, 0, 0);
+        return S_OK;
+    }
 #if 0 // Deferred until FileSpacer has its own public services.
     if (msg == TDN_BUTTON_CLICKED && wParam == IDS_WELCOME_TUTORIAL) {
         ShellExecute(nullptr, L"open", L"https://github.com/vanjac/chromafiler/wiki/Tutorial",

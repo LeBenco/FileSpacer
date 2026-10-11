@@ -2,6 +2,7 @@
 #include "FolderWindow.h"
 #include "FolderIdentity.h"
 #include "ClosedWindows.h"
+#include "ProcessLifetime.h"
 #include <ctime>
 #include <algorithm>
 #include <vector>
@@ -120,6 +121,7 @@ void recordFolderItemFailure(IShellItem *item, HRESULT result) {
 
 FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCmd,
         const ClosedWindow *reopening) {
+    if (isProcessQuitRequested()) return FolderOpenResult::Failed;
     std::wstring identity = getFolderIdentity(item);
     std::wstring property = folderWindowProperty(identity);
     if (property.empty())
@@ -141,11 +143,18 @@ FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCm
     }
     if (!enumerated)
         return FolderOpenResult::Failed;
+    if (isProcessQuitRequested()) return FolderOpenResult::Failed;
     CComPtr<FolderWindow> window;
     window.Attach(new FolderWindow(item, identity));
     if (reopening) window->setReopenState(*reopening);
     if (!window->create(window->requestedRect(monitor), showCmd))
         return FolderOpenResult::Failed;
+    if (isProcessQuitRequested()) {
+        HWND created = nullptr;
+        if (SUCCEEDED(window->GetWindow(&created)) && created)
+            PostMessageW(created, WM_CLOSE, 0, 0);
+        return FolderOpenResult::Failed;
+    }
     refreshReopenJumpLists();
     // Preserve foreground activation when a 32-bit Shell client launches this x64 server.
     if (showCmd == SW_SHOWNORMAL)

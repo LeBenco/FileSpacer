@@ -15,11 +15,13 @@ const int MAX_DOWNLOAD_SIZE = 1024;
 
 static UpdateInfo updateInfo;
 static HANDLE updateThread = nullptr;
+static std::atomic_bool stoppingUpdates{false};
+static std::atomic<HWND> notificationWindow{nullptr};
 
 DWORD WINAPI updateCheckProc(void *);
 
 void autoUpdateCheck() {
-    if (settings::getUpdateCheckEnabled()) {
+    if (!stoppingUpdates.load() && settings::getUpdateCheckEnabled()) {
         LONGLONG lastCheck = settings::getLastUpdateCheck();
         LONGLONG interval = settings::getUpdateCheckRate();
         FILETIME fileTime;
@@ -42,6 +44,14 @@ void autoUpdateCheck() {
     }
 }
 
+void stopUpdateChecks() {
+    stoppingUpdates.store(true);
+    HWND window = notificationWindow.load();
+    if (window) PostMessageW(window, WM_CLOSE, 0, 0);
+}
+
+void resumeUpdateChecks() { stoppingUpdates.store(false); }
+
 void waitForUpdateThread() {
     if (updateThread) {
         WaitForSingleObject(updateThread, INFINITE);
@@ -51,6 +61,10 @@ void waitForUpdateThread() {
 }
 
 LRESULT CALLBACK notifyWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    if (message == WM_CLOSE) {
+        PostQuitMessage(0);
+        return 0;
+    }
     if (message == WM_USER) {
         if (LOWORD(lParam) == NIN_BALLOONUSERCLICK) {
             openUpdate(updateInfo);
@@ -65,7 +79,8 @@ LRESULT CALLBACK notifyWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 
 DWORD WINAPI updateCheckProc(void *) {
     debugPrintf(L"Checking for updates...\n");
-    if (checkUpdate(&updateInfo) || !updateInfo.isNewer)
+    if (checkUpdate(&updateInfo, &stoppingUpdates) || !updateInfo.isNewer
+            || stoppingUpdates.load())
         return 0;
     debugPrintf(L"Update available!\n");
 
@@ -82,6 +97,9 @@ DWORD WINAPI updateCheckProc(void *) {
         checkLE(UnregisterClass(notifyClass.lpszClassName, instance));
         return 0;
     }
+
+    notificationWindow.store(messageWindow);
+    if (stoppingUpdates.load()) PostMessageW(messageWindow, WM_CLOSE, 0, 0);
 
     // https://learn.microsoft.com/en-us/windows/win32/shell/notification-area
     NOTIFYICONDATA notify = {sizeof(notify)};
@@ -106,100 +124,60 @@ DWORD WINAPI updateCheckProc(void *) {
     }
     if (notify.hIcon)
         checkLE(DestroyIcon(notify.hIcon));
+    notificationWindow.store(nullptr);
     checkLE(DestroyWindow(messageWindow));
     checkLE(UnregisterClass(notifyClass.lpszClassName, instance));
     return 0;
 }
 
-DWORD checkUpdate(UpdateInfo *info) {
-    std::vector<char> data;
-    DWORD dataSize = 0;
-    DWORD error = (DWORD)E_FAIL;
-
-    // https://learn.microsoft.com/en-us/windows/win32/wininet/http-sessions
-    HINTERNET internet = InternetOpen(L"FileSpacer/" _T(FILESPACER_VERSION_STRING), INTERNET_OPEN_TYPE_PRECONFIG,
-        nullptr, nullptr, 0);
-    if (!checkLE(internet))
-        return GetLastError();
-    HINTERNET connection = InternetOpenUrl(internet, UPDATE_URL, nullptr, 0,
+DWORD checkUpdate(UpdateInfo *info, const std::atomic_bool *cancel) {
+    if (!info) return ERROR_INVALID_PARAMETER;
+    auto cancelled = [cancel]() { return cancel && cancel->load(); };
+    if (cancelled()) return ERROR_CANCELLED;
+    HINTERNET internet = InternetOpenW(L"FileSpacer/" _T(FILESPACER_VERSION_STRING),
+        INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0);
+    if (!internet) return GetLastError();
+    DWORD timeout = 15000;
+    InternetSetOptionW(internet, INTERNET_OPTION_CONNECT_TIMEOUT, &timeout, sizeof(timeout));
+    InternetSetOptionW(internet, INTERNET_OPTION_SEND_TIMEOUT, &timeout, sizeof(timeout));
+    InternetSetOptionW(internet, INTERNET_OPTION_RECEIVE_TIMEOUT, &timeout, sizeof(timeout));
+    HINTERNET connection = InternetOpenUrlW(internet, UPDATE_URL, nullptr, 0,
         INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_NO_COOKIES | INTERNET_FLAG_RELOAD, 0);
-    if (!checkLE(connection)) {
-        error = GetLastError();
-    } else {
-        DWORD status = 0, statusSize = sizeof(status);
-        if (!checkLE(HttpQueryInfo(connection, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER,
-                &status, &statusSize, nullptr))) {
-            error = GetLastError();
-        } else if (status != HTTP_STATUS_OK) {
-            error = status == HTTP_STATUS_NOT_FOUND ? ERROR_FILE_NOT_FOUND
-                : ERROR_HTTP_INVALID_SERVER_RESPONSE;
-        } else {
-            error = 0;
-        }
-        while (!error && dataSize < MAX_DOWNLOAD_SIZE) {
-            DWORD bufferSize, downloadedSize;
-            if (!checkLE(InternetQueryDataAvailable(connection, &bufferSize, 0, 0))) {
-                error = GetLastError();
-                break;
+    DWORD error = connection ? ERROR_SUCCESS : GetLastError();
+    std::string data;
+    if (connection) {
+        DWORD status = 0, size = sizeof(status);
+        if (!HttpQueryInfoW(connection, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER,
+                &status, &size, nullptr)) error = GetLastError();
+        else if (status != HTTP_STATUS_OK) error = status == HTTP_STATUS_NOT_FOUND
+            ? ERROR_FILE_NOT_FOUND : ERROR_HTTP_INVALID_SERVER_RESPONSE;
+        char buffer[256];
+        while (!error) {
+            if (cancelled()) { error = ERROR_CANCELLED; break; }
+            DWORD received = 0;
+            if (!InternetReadFile(connection, buffer, sizeof(buffer), &received)) {
+                error = GetLastError(); break;
             }
-            if (dataSize + bufferSize > MAX_DOWNLOAD_SIZE)
-                bufferSize = MAX_DOWNLOAD_SIZE - dataSize;
-            data.resize(dataSize + bufferSize);
-            if (!checkLE(InternetReadFile(connection, data.data() + dataSize, bufferSize,
-                    &downloadedSize))) {
-                error = GetLastError();
-                break;
+            if (!received) break;
+            if (data.size() + received > MAX_DOWNLOAD_SIZE) {
+                error = ERROR_INVALID_DATA; break;
             }
-            if (downloadedSize == 0)
-                break;
-
-            dataSize += downloadedSize;
-            error = 0;
+            data.append(buffer, received);
         }
-        data.resize(dataSize + 1);
-        data[dataSize] = 0; // null terminator
         InternetCloseHandle(connection);
     }
     InternetCloseHandle(internet);
-
-    if (error)
-        return error;
-    debugPrintf(L"Downloaded content: %S\n", data.data());
-    if (dataSize < 31 || dataSize == MAX_DOWNLOAD_SIZE) {
-        debugPrintf(L"Invalid update data size!\n");
-        return ERROR_INVALID_DATA;
-    }
-    if (memcmp(data.data(), "FSUP\n", 5) || data[13] != '\n') {
-        debugPrintf(L"Update data is missing prefix!\n");
-        return ERROR_INVALID_DATA;
-    }
-    char hexString[11] = "0x";
-    CopyMemory(hexString + 2, data.data() + 5, 8);
-    hexString[10] = 0;
-    int version = 0;
-    if (StrSpnA(hexString + 2, "0123456789abcdefABCDEF") != 8
-            || !StrToIntExA(hexString, STIF_SUPPORT_HEX, &version)) {
-        debugPrintf(L"Can't parse update version!\n");
-        return ERROR_INVALID_DATA;
-    }
-    info->version = static_cast<DWORD>(version);
+    if (cancelled()) return ERROR_CANCELLED;
+    if (error) return error;
+    ReleaseManifest manifest;
+    if (!parseUpdateManifest(data, &manifest)) return ERROR_INVALID_DATA;
+    static_cast<ReleaseManifest &>(*info) = std::move(manifest);
     info->isNewer = info->version > makeVersion(FILESPACER_VERSION);
-
-    char *url = data.data() + 14, *urlEnd = StrChrA(url, '\n');
-    size_t urlLen = urlEnd ? (urlEnd - url) : lstrlenA(url);
-    const char releasePrefix[] = "https://github.com/LeBenco/FileSpacer/releases/tag/";
-    if (urlLen <= sizeof(releasePrefix) - 1
-            || memcmp(url, releasePrefix, sizeof(releasePrefix) - 1)
-            || memchr(url, '\r', urlLen) || memchr(url, '\0', urlLen))
-        return ERROR_INVALID_DATA;
-    info->url = std::unique_ptr<char[]>(new char[urlLen + 1]);
-    CopyMemory(info->url.get(), url, urlLen);
-    info->url[urlLen] = 0;
-    return S_OK;
+    return ERROR_SUCCESS;
 }
 
 void openUpdate(const UpdateInfo &info) {
-    ShellExecuteA(nullptr, "open", info.url.get(), nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteA(nullptr, "open", info.url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 } // namespace

@@ -37,4 +37,7 @@
 #define IDC_AUTO_UPDATE             1404
 #define IDC_LEGAL_INFO              1405
 #define IDC_VERSION                 1406
+#define IDC_UPDATE_STATUS           1408
+#define IDD_UPDATE_PROGRESS         112
+#define IDC_UPDATE_PROGRESS         1409
 // #define IDC_DONATE_LINK             1407 // Deferred public services.
