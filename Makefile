@@ -45,6 +45,7 @@ ICON_PNGS = \
     $(OUTDIR)\FileSpacer-128.png \
     $(OUTDIR)\FileSpacer-256.png
 OBJECTS = \
+    $(OUTDIR)\ClosedWindows.obj \
     $(OUTDIR)\COMUtils.obj \
     $(OUTDIR)\CreateItemWindow.obj \
     $(OUTDIR)\DPI.obj \
