@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.4 — 2026-10-11
+
+- Add a title-bar command to close open parent-folder windows.
+- Reopen closed folders from the title-bar menu, Ctrl+Shift+T or taskbar Jump Lists, restoring their saved view, selection and scroll position.
+- Add Explorer Quick access folders with native Shell icons to taskbar Jump Lists.
+- Show the reopening command only when the last closed folder is not already open, using its name and native icon.
+- Exclude the current window from the title-bar window-switching list.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.3...v1.0.4)
+
 ## 1.0.3 — 2026-10-11
 
 - Restore manual update checks and optional weekly checks using FileSpacer GitHub releases, disabled by default.
