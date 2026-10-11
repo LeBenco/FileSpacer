@@ -121,7 +121,7 @@ FolderStateStore::FolderStateStore(const char *utf8Path) {
     }
     int schema = sqlite3_column_int(version.get(), 0);
     version.reset();
-    if (schema != 0 && schema != 2 && schema != 3) {
+    if (schema != 0 && schema != 2 && schema != 3 && schema != 4) {
         lastError = "Unsupported FileSpacer database version";
         finishWrite(false);
         return;
@@ -132,7 +132,10 @@ FolderStateStore::FolderStateStore(const char *utf8Path) {
             "view BLOB, icons BLOB, last_success_at INTEGER NOT NULL DEFAULT 0,"
             "first_failed_at INTEGER, maximized INTEGER) WITHOUT ROWID;"
             "CREATE INDEX IF NOT EXISTS folder_state_age ON folder_state(last_success_at);"
-            "PRAGMA user_version=3;")) {
+            "CREATE TABLE IF NOT EXISTS closed_windows("
+            "sequence INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL,"
+            "parsing_name TEXT NOT NULL, display_name TEXT NOT NULL, view_state BLOB);"
+            "PRAGMA user_version=4;")) {
         finishWrite(false);
         return;
     }
@@ -304,6 +307,15 @@ bool FolderStateStore::enforceQuota() {
     int fits = withinLimit();
     if (fits != 0) return fits == 1;
 
+    // Discard old undo entries before evicting the normal spatial folder settings.
+    while (fits == 0) {
+        if (!execute("DELETE FROM closed_windows WHERE sequence="
+                "(SELECT min(sequence) FROM closed_windows)")) return false;
+        if (!sqlite3_changes(db)) break;
+        fits = withinLimit();
+    }
+    if (fits != 0) return fits == 1;
+
     raw = nullptr;
     if (!result(sqlite3_prepare_v2(db,
             "SELECT key FROM folder_state ORDER BY last_success_at,key", -1, &raw, nullptr)))
@@ -388,7 +400,88 @@ bool FolderStateStore::remove(const std::string &key) {
 }
 
 bool FolderStateStore::clearAll() {
-    return initialized && execute("DELETE FROM folder_state");
+    if (!initialized || !execute("BEGIN IMMEDIATE")) return false;
+    return finishWrite(execute("DELETE FROM folder_state; DELETE FROM closed_windows;"));
+}
+
+bool FolderStateStore::readClosedWindow(ClosedWindow *window) {
+    sqlite3_stmt *raw = nullptr;
+    if (!result(sqlite3_prepare_v2(db,
+            "SELECT sequence,key,parsing_name,display_name,view_state FROM closed_windows "
+            "ORDER BY sequence DESC LIMIT 1", -1, &raw, nullptr))) return false;
+    Statement statement(raw, sqlite3_finalize);
+    const int code = sqlite3_step(raw);
+    if (!result(code)) return false;
+    ClosedWindow value;
+    if (code == SQLITE_ROW) {
+        value.sequence = sqlite3_column_int64(raw, 0);
+        value.key = reinterpret_cast<const char *>(sqlite3_column_text(raw, 1));
+        value.parsingName = reinterpret_cast<const char *>(sqlite3_column_text(raw, 2));
+        value.displayName = reinterpret_cast<const char *>(sqlite3_column_text(raw, 3));
+        const int size = sqlite3_column_bytes(raw, 4);
+        if (size > 0) {
+            const auto *bytes = static_cast<const uint8_t *>(sqlite3_column_blob(raw, 4));
+            value.viewState.assign(bytes, bytes + size);
+        }
+    }
+    *window = std::move(value);
+    return true;
+}
+
+bool FolderStateStore::lastClosedWindow(ClosedWindow *window) {
+    return initialized && readClosedWindow(window);
+}
+
+bool FolderStateStore::takeClosedWindow(ClosedWindow *window) {
+    if (!initialized || !execute("BEGIN IMMEDIATE")) return false;
+    ClosedWindow value;
+    bool success = readClosedWindow(&value);
+    if (success && value.sequence) {
+        sqlite3_stmt *raw = nullptr;
+        success = result(sqlite3_prepare_v2(db,
+            "DELETE FROM closed_windows WHERE sequence=?1", -1, &raw, nullptr));
+        Statement statement(raw, sqlite3_finalize);
+        if (success) success = result(sqlite3_bind_int64(raw, 1, value.sequence))
+            && result(sqlite3_step(raw));
+    }
+    if (!finishWrite(success)) return false;
+    *window = std::move(value);
+    return true;
+}
+
+bool FolderStateStore::writeClosedWindow(const ClosedWindow &window, bool returning) {
+    if (!initialized || window.key.empty() || window.parsingName.empty()
+            || window.viewState.size() > static_cast<size_t>(INT32_MAX)
+            || !execute("BEGIN IMMEDIATE")) return false;
+    bool success = [&]() {
+        sqlite3_stmt *raw = nullptr;
+        const char *sql = returning
+            ? "INSERT OR IGNORE INTO closed_windows(sequence,key,parsing_name,display_name,view_state) "
+              "VALUES(?5,?1,?2,?3,?4)"
+            : "INSERT OR REPLACE INTO closed_windows(key,parsing_name,display_name,view_state) "
+              "VALUES(?1,?2,?3,?4)";
+        if (!result(sqlite3_prepare_v2(db, sql, -1, &raw, nullptr))) return false;
+        Statement statement(raw, sqlite3_finalize);
+        if (!result(sqlite3_bind_text(raw, 1, window.key.c_str(), -1, SQLITE_TRANSIENT))
+                || !result(sqlite3_bind_text(raw, 2, window.parsingName.c_str(), -1, SQLITE_TRANSIENT))
+                || !result(sqlite3_bind_text(raw, 3, window.displayName.c_str(), -1, SQLITE_TRANSIENT)))
+            return false;
+        if (!window.viewState.empty() && !result(sqlite3_bind_blob(raw, 4,
+                window.viewState.data(), static_cast<int>(window.viewState.size()), SQLITE_TRANSIENT)))
+            return false;
+        if (returning && !result(sqlite3_bind_int64(raw, 5, window.sequence))) return false;
+        return result(sqlite3_step(raw)) && execute("DELETE FROM closed_windows WHERE sequence NOT IN "
+            "(SELECT sequence FROM closed_windows ORDER BY sequence DESC LIMIT 20)");
+    }();
+    return finishWrite(success);
+}
+
+bool FolderStateStore::rememberClosedWindow(const ClosedWindow &window) {
+    return writeClosedWindow(window, false);
+}
+
+bool FolderStateStore::returnClosedWindow(const ClosedWindow &window) {
+    return window.sequence > 0 && writeClosedWindow(window, true);
 }
 
 bool FolderStateStore::move(const std::string &oldKey, const std::string &newKey) {
@@ -418,8 +511,7 @@ bool FolderStateStore::move(const std::string &oldKey, const std::string &newKey
 }
 
 #if defined(_WIN32) && !defined(FILESPACER_STORAGE_TEST)
-namespace {
-std::string databasePath() {
+std::string folderStateDatabasePath() {
     CComHeapPtr<wchar_t> local;
     if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_CREATE, nullptr, &local)))
         return {};
@@ -438,10 +530,9 @@ std::string databasePath() {
     utf8.pop_back();
     return utf8;
 }
-}
 FolderStateStore *folderStateStore() {
     // /test is parsed before the first folder creation. No worker uses this connection.
-    static const std::string path = databasePath();
+    static const std::string path = folderStateDatabasePath();
     static const auto store = path.empty() ? std::unique_ptr<FolderStateStore>{}
         : std::unique_ptr<FolderStateStore>(new FolderStateStore(path.c_str()));
     return store && store->ready() ? store.get() : nullptr;
