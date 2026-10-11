@@ -25,7 +25,7 @@ Windows 10 or later, x64. The interface includes English and French resources. S
 
 ## Nilesoft Shell
 
-Configure `shell.nss` and its imported files in the Nilesoft Shell installation directory.
+Nilesoft Shell themes and menu customizations can be applied to FileSpacer through `shell.nss` and its imported configuration files, using the standard directives to add, modify or remove menu items, with conditions adapted to FileSpacer.
 
 ### Scope system-menu rules
 
