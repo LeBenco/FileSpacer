@@ -12,6 +12,13 @@ STRINGTABLE {
     IDS_CAPTION_COPY_PATH, "Copy path"
     IDS_CAPTION_RENAME, "Rename"
     IDS_CAPTION_PROPERTIES, "Properties"
+    IDS_CAPTION_CLOSE_PARENTS, "Close Parent Windows"
+    IDS_CAPTION_REOPEN_NAMED, "Reopen “%1”\tCtrl+Shift+T"
+    IDS_REOPEN_LAST, "Reopen Last Closed Window"
+    IDS_REOPEN_MENU, "Reopen Last Closed Window\tCtrl+Shift+T"
+    IDS_REOPEN_NAMED, "Reopen “%1”"
+    IDS_REOPEN_EMPTY, "No closed window to reopen."
+    IDS_REOPEN_FAILED, "Unable to reopen this folder:\n%1\n\nIt remains in the closed-window history."
 
     IDS_QUICK_ACCESS, "Quick access"
     IDS_QUICK_ACCESS_UNAVAILABLE, "Quick access is unavailable.\n\nStep: %1\nCode: 0x%2!08X!\n\nPress Ctrl+C to copy this message."
