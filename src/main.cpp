@@ -2,6 +2,7 @@
 #include "FolderWindow.h"
 #include "ShellUtils.h"
 #include "CreateItemWindow.h"
+#include "ClosedWindows.h"
 #include "Settings.h"
 #include "CrashRecovery.h"
 #include "SettingsDialog.h"
@@ -29,7 +30,7 @@ using namespace filespacer;
 
 const wchar_t SHELL_PREFIX[] = L"shell:";
 
-enum LaunchType {LAUNCH_FAIL, LAUNCH_HEADLESS, LAUNCH_AUTO, LAUNCH_FOUND};
+enum LaunchType {LAUNCH_FAIL, LAUNCH_HEADLESS, LAUNCH_AUTO, LAUNCH_FOUND, LAUNCH_REOPEN};
 
 #ifdef FILESPACER_DEBUG
 int main(int, char**) {
@@ -370,8 +371,15 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     checkHR(SetCurrentProcessExplicitAppUserModelID(APP_ID));
 
     debugPrintf(L"%s\n", GetCommandLine());
-    LaunchType type = requestedLaunch == LAUNCH_HEADLESS ? LAUNCH_HEADLESS
-        : createStartingWindow(startingFolder.get(), showCommand);
+    LaunchType type;
+    if (requestedLaunch == LAUNCH_REOPEN) {
+        const FolderOpenResult opened = reopenLastWindow(nullptr);
+        type = opened == FolderOpenResult::Created ? LAUNCH_AUTO
+            : (opened == FolderOpenResult::Activated ? LAUNCH_FOUND : LAUNCH_FAIL);
+    } else {
+        type = requestedLaunch == LAUNCH_HEADLESS ? LAUNCH_HEADLESS
+            : createStartingWindow(startingFolder.get(), showCommand);
+    }
     const bool runServer = type != LAUNCH_FAIL && type != LAUNCH_FOUND;
 
     FSExecuteFactory executeFactory;
@@ -455,12 +463,15 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
 LaunchType parseStartingFolder(int argc, wchar_t **argv, wstr_ptr *folder) {
     wstr_ptr pathAlloc;
     wchar_t *path = nullptr;
+    bool reopen = false;
     for (int i = 1; i < argc; i++) {
         wchar_t *arg = argv[i];
         if (lstrcmpi(arg, L"/embedding") == 0 || lstrcmpi(arg, L"-embedding") == 0) {
             // https://devblogs.microsoft.com/oldnewthing/20100503-00/?p=14183
             debugPrintf(L"Started as local COM server\n");
             return LAUNCH_HEADLESS;
+        } else if (lstrcmpiW(arg, L"/reopen-last") == 0) {
+            reopen = true;
         } else if (lstrcmpiW(arg, L"/recovery-restarted") == 0) {
             // Internal one-shot restart marker, not a folder path.
             continue;
@@ -493,6 +504,7 @@ LaunchType parseStartingFolder(int argc, wchar_t **argv, wstr_ptr *folder) {
         }
     }
 
+    if (reopen) return path ? LAUNCH_FAIL : LAUNCH_REOPEN;
     if (!path) {
         pathAlloc = settings::getStartingFolder();
         path = pathAlloc.get();
@@ -594,15 +606,7 @@ HRESULT WINAPI welcomeDialogCallback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM,
 }
 
 DWORD WINAPI updateJumpList(void *) {
-    CComPtr<ICustomDestinationList> jumpList;
-    if (!checkHR(jumpList.CoCreateInstance(__uuidof(DestinationList))))
-        return 0;
-    checkHR(jumpList->SetAppID(APP_ID));
-    UINT minSlots;
-    CComPtr<IObjectArray> removedDestinations;
-    checkHR(jumpList->BeginList(&minSlots, IID_PPV_ARGS(&removedDestinations)));
-    // previous versions had a jump list, this will clear it
-    checkHR(jumpList->CommitList());
+    updateReopenJumpLists();
     return 0;
 }
 
