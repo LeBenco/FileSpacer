@@ -33,7 +33,13 @@ struct FolderState {
     std::vector<uint8_t> icons;
 };
 
-// One SQLite connection per process, used only by the application's UI thread.
+struct ClosedWindow {
+    int64_t sequence = 0;
+    std::string key, parsingName, displayName; // UTF-8; key is the existing folder identity.
+    std::vector<uint8_t> viewState; // One-shot Shell selection and scroll snapshot.
+};
+
+// The main SQLite connection is UI-only; background readers open their own connection.
 // Short write transactions update only requested parts and enforce the used-page quota.
 class FolderStateStore {
 public:
@@ -51,7 +57,13 @@ public:
     bool clearAll();
     bool remove(const std::string &key);
     bool move(const std::string &oldKey, const std::string &newKey);
+    bool lastClosedWindow(ClosedWindow *window);
+    bool takeClosedWindow(ClosedWindow *window);
+    bool rememberClosedWindow(const ClosedWindow &window);
+    bool returnClosedWindow(const ClosedWindow &window);
 private:
+    bool readClosedWindow(ClosedWindow *window);
+    bool writeClosedWindow(const ClosedWindow &window, bool returning);
     bool execute(const char *sql);
     bool result(int code);
     bool enforceQuota();
@@ -64,6 +76,8 @@ private:
 #ifdef _WIN32
 // Lazy initialization keeps the existing /test mode in a separate database.
 FolderStateStore *folderStateStore();
+// A background reader opens its own connection; it must not use the UI connection.
+std::string folderStateDatabasePath();
 void reportFolderStateError(void *owner);
 #endif
 
