@@ -14,7 +14,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
             VALUE "CompanyName", "FileSpacer\0"
             VALUE "FileDescription", "FileSpacer\0"
             VALUE "FileVersion", FILESPACER_VERSION_STRING
-            VALUE "LegalCopyright", "Copyright (c) 2026 LeBenco; original ChromaFiler (c) 2023 J. van't Hoog\0"
+            VALUE "LegalCopyright", "Copyright (c) 2026 Benco; original ChromaFiler (c) 2023 J. van't Hoog\0"
             VALUE "ProductName", "FileSpacer\0"
             VALUE "ProductVersion", FILESPACER_VERSION_STRING
         }
