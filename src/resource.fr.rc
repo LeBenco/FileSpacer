@@ -12,6 +12,13 @@ STRINGTABLE {
     IDS_CAPTION_COPY_PATH, "Copier le chemin"
     IDS_CAPTION_RENAME, "Renommer"
     IDS_CAPTION_PROPERTIES, "Propriétés"
+    IDS_CAPTION_CLOSE_PARENTS, "Fermer les fenêtres parentes"
+    IDS_CAPTION_REOPEN_NAMED, "Rouvrir « %1 »\tCtrl+Maj+T"
+    IDS_REOPEN_LAST, "Rouvrir la dernière fenêtre fermée"
+    IDS_REOPEN_MENU, "Rouvrir la dernière fenêtre fermée\tCtrl+Maj+T"
+    IDS_REOPEN_NAMED, "Rouvrir « %1 »"
+    IDS_REOPEN_EMPTY, "Aucune fenêtre fermée à rouvrir."
+    IDS_REOPEN_FAILED, "Impossible de rouvrir ce dossier :\n%1\n\nIl reste dans l’historique des fenêtres fermées."
 
     IDS_QUICK_ACCESS, "Accès rapide"
     IDS_QUICK_ACCESS_UNAVAILABLE, "Accès rapide indisponible.\n\nÉtape : %1\nCode : 0x%2!08X!\n\nAppuyez sur Ctrl+C pour copier ce message."
