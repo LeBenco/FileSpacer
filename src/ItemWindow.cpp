@@ -1,6 +1,8 @@
 #define GDIPVER 0x0110 // Enable GDI+ 1.1 declarations.
 #include "ItemWindow.h"
 #include "CreateItemWindow.h"
+#include "ClosedWindows.h"
+#include "ShellMenuIcons.h"
 #include "FolderIdentity.h"
 #include <ctime>
 #include "main.h"
@@ -21,6 +23,7 @@
 #include <Propvarutil.h>
 #include <VersionHelpers.h>
 #include <string>
+#include <algorithm>
 #include <utility>
 #include <memory>
 #include <type_traits>
@@ -387,7 +390,7 @@ const wchar_t * ItemWindow::helpURL() const {
 
 
 
-static std::wstring folderTaskbarID(const wchar_t *parsingName) {
+std::wstring folderTaskbarID(const wchar_t *parsingName) {
     // A stable SHA-256 of the Shell parsing name fits the 128-character limit.
     // Unlike HWNDs, this identity also matches a later launch of a pinned folder.
     BCRYPT_ALG_HANDLE algorithm = nullptr;
@@ -417,7 +420,7 @@ static std::wstring folderTaskbarID(const wchar_t *parsingName) {
     return id;
 }
 
-static std::wstring folderRelaunchIcon(PCIDLIST_ABSOLUTE pidl, HICON icon) {
+std::wstring folderRelaunchIcon(PCIDLIST_ABSOLUTE pidl, HICON icon) {
     // Ask the folder's native icon handler, including desktop.ini customizations.
     // This runs on the existing COM icon thread, never on the UI thread.
     CComPtr<IShellFolder> folder;
@@ -532,6 +535,8 @@ void ItemWindow::updateWindowPropStore(IPropertyStore *const propStore) {
             id = std::wstring(APP_ID) + L".Window"
                 + std::to_wstring(reinterpret_cast<UINT_PTR>(hwnd));
     }
+    if (id != taskbarAppID && id != APP_ID)
+        scheduleReopenJumpList(id);
     taskbarAppID = id;
     // Setting ID last tells the taskbar to refresh all relaunch information.
     propStoreWriteString(propStore, PKEY_AppUserModel_ID, id.c_str());
@@ -672,9 +677,9 @@ bool ItemWindow::create(RECT rect, int showCommand) {
     return true;
 }
 
-void ItemWindow::close() {
+void ItemWindow::close(bool remember) {
     // TODO: remove this method and use Post/Send directly
-    PostMessage(hwnd, WM_CLOSE, 0, 0);
+    PostMessage(hwnd, remember ? WM_CLOSE : MSG_CLOSE_AUTOMATIC, 0, 0);
 }
 
 
@@ -700,7 +705,7 @@ void ItemWindow::fakeDragMove() {
 LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     if (message == WM_DESTROY)
         closing = true; // Publish closure before any external callback.
-    const bool lifecycle = message == WM_CLOSE || message == WM_DESTROY
+    const bool lifecycle = message == WM_CLOSE || message == MSG_CLOSE_AUTOMATIC || message == WM_DESTROY
         || message == WM_NCDESTROY;
     CComPtr<ItemWindow> menuKeepAlive;
     if (!lifecycle && (contextMenu2 || contextMenu3))
@@ -745,7 +750,9 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
             return 0;
-        case WM_CLOSE:
+        case MSG_CLOSE_AUTOMATIC:
+        case WM_CLOSE: {
+            CComPtr<ItemWindow> keepAlive(this);
             if (closing)
                 return 0;
             closing = true;
@@ -753,7 +760,20 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
                 closing = false;
                 return 0; // don't close
             }
+            if (message == WM_CLOSE && hwnd && isFolder()) {
+                const HWND closingHwnd = hwnd;
+                CComPtr<IShellItem> currentItem = item;
+                ClosedWindow snapshot;
+                snapshot.key = stateKey;
+                if (getClosedWindowInfo(currentItem, title, &snapshot) && hwnd == closingHwnd) {
+                    snapshot.viewState = captureReopenViewState();
+                    if (hwnd == closingHwnd) closingWindow = std::move(snapshot);
+                }
+            }
+            if (!hwnd) return 0;
+            message = WM_CLOSE; // Automatic closures use the same native destruction path.
             break; // pass to DefWindowProc
+        }
         case WM_DESTROY:
             onDestroy();
             return 0;
@@ -1251,6 +1271,13 @@ void ItemWindow::onDestroy() {
     unregisterShellNotify();
     unregisterShellWindow();
     RemovePropW(hwnd, identityProperty.c_str());
+    if (!closingWindow.key.empty()) {
+        auto store = folderStateStore();
+        if (!store || !store->rememberClosedWindow(closingWindow))
+            reportFolderStateError(hwnd);
+        closingWindow = {};
+    }
+    refreshReopenJumpLists();
 
     // Release the per-window Shell properties before destroying their HWND.
     CComPtr<IPropertyStore> propStore;
@@ -1275,6 +1302,9 @@ bool ItemWindow::onCommand(WORD command) {
             return true;
         case IDM_CLOSE_WINDOW:
             close();
+            return true;
+        case IDM_REOPEN_WINDOW:
+            reopenLastWindow(hwnd);
             return true;
         case IDM_REFRESH:
             if (resolveItem())
@@ -1455,6 +1485,7 @@ void ItemWindow::onActivate(WORD state, HWND) {
         if (firstActivate)
             resolveItem();
         firstActivate = true;
+        if (isWindowOperational()) refreshReopenJumpLists();
     }
 }
 
@@ -1672,7 +1703,7 @@ void ItemWindow::openChild(IShellItem *const childItem, bool closeSource) {
     FolderOpenResult result = openFolderWindow(resolved, monitor, SW_SHOWNORMAL);
     if (isWindowOperational() && closeSource
             && (result == FolderOpenResult::Created || result == FolderOpenResult::Activated))
-        close();
+        close(false);
 }
 
 
@@ -1884,7 +1915,7 @@ bool ItemWindow::resolveItem() {
 
     debugPrintf(L"Item could not be accessed!\n");
     recordFolderAccess(validation);
-    close();
+    close(false);
     return false;
 }
 
@@ -2090,7 +2121,7 @@ void ItemWindow::openParentMenu() {
 
 }
 
-// This menu uses existing windows and icons, not Shell folder enumeration.
+// Existing windows use their icons; the reopen target's icon is loaded asynchronously.
 // Keep the snapshot and its bitmaps local to a single popup.
 static HBITMAP captionCommandBitmap(const wchar_t *glyph, int size, COLORREF color) {
     if (!navigationGraphicsToken)
@@ -2171,6 +2202,23 @@ static HBITMAP captionWindowBitmap(IWICImagingFactory *factory, HWND window, int
     return bitmap;
 }
 
+std::vector<std::wstring> ItemWindow::getParentWindowProperties() {
+    std::vector<std::wstring> properties;
+    CComPtr<IShellItem> current = item;
+    while (isWindowOperational()) {
+        CComPtr<IShellItem> parent;
+        if (FAILED(current->GetParent(&parent)) || !isWindowOperational())
+            break;
+        std::wstring property = folderWindowProperty(getFolderIdentity(parent));
+        if (!isWindowOperational())
+            return {};
+        if (!property.empty())
+            properties.push_back(std::move(property));
+        current = parent;
+    }
+    return properties;
+}
+
 void ItemWindow::openCaptionMenu(POINT pos) {
     CComPtr<ItemWindow> keepAlive(this);
     if (!isWindowOperational())
@@ -2201,6 +2249,8 @@ void ItemWindow::openCaptionMenu(POINT pos) {
 
     if (!isWindowOperational())
         return;
+    entries.erase(std::remove_if(entries.begin(), entries.end(),
+        [this](const Entry &entry) { return entry.window == hwnd; }), entries.end());
     std::vector<HBITMAP> bitmaps;
     auto destroyMenu = [&bitmaps](HMENU handle) {
         DestroyMenu(handle);
@@ -2212,6 +2262,7 @@ void ItemWindow::openCaptionMenu(POINT pos) {
     HMENU menu = ownedMenu.get();
     if (!menu)
         return;
+    ShellMenuIcons reopenIcons;
     MENUINFO menuInfo = {sizeof(menuInfo)};
     menuInfo.fMask = MIM_STYLE;
     menuInfo.dwStyle = MNS_CHECKORBMP;
@@ -2248,6 +2299,43 @@ void ItemWindow::openCaptionMenu(POINT pos) {
         captionCommandBitmap(MDL2_RENAME, iconSize, iconColor), (attributes & SFGAO_CANRENAME) != 0);
     append(3, getString(IDS_CAPTION_PROPERTIES),
         captionCommandBitmap(MDL2_PROPERTIES, iconSize, iconColor), true);
+    if (isFolder()) {
+        const auto parentProperties = getParentWindowProperties();
+        if (!isWindowOperational())
+            return;
+        bool canCloseParents = false;
+        for (const auto &entry : entries) {
+            if (entry.window != hwnd && std::any_of(parentProperties.begin(), parentProperties.end(),
+                    [&](const std::wstring &property) {
+                        return GetPropW(entry.window, property.c_str()) != nullptr;
+                    })) {
+                canCloseParents = true;
+                break;
+            }
+        }
+        append(4, getString(IDS_CAPTION_CLOSE_PARENTS),
+            captionCommandBitmap(MDL2_CLOSE_PARENTS, iconSize, iconColor), canCloseParents);
+    }
+    ClosedWindow lastClosed;
+    auto store = folderStateStore();
+    if (!store || !store->lastClosedWindow(&lastClosed))
+        reportFolderStateError(hwnd);
+    if (!isWindowOperational()) return;
+    std::wstring reopenLabel = getString(IDS_REOPEN_MENU);
+    if (lastClosed.sequence) {
+        std::wstring name;
+        for (wchar_t character : closedWindowName(lastClosed)) {
+            name += character;
+            if (character == L'&') name += L'&';
+        }
+        reopenLabel = formatString(IDS_CAPTION_REOPEN_NAMED, name.c_str()).get();
+    }
+    const bool canReopen = canReopenClosedWindow(lastClosed);
+    if (canReopen) {
+        append(5, reopenLabel.c_str(), captionCommandBitmap(MDL2_FOLDER, iconSize, iconColor),
+            true);
+        reopenIcons.start(hwnd, menu, iconSize, {closedWindowPath(lastClosed)}, 5);
+    }
     if (!entries.empty())
         AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
     CComPtr<IWICImagingFactory> factory;
@@ -2265,12 +2353,13 @@ void ItemWindow::openCaptionMenu(POINT pos) {
             : nullptr;
         if (!bitmap)
             bitmap = captionCommandBitmap(MDL2_FOLDER, iconSize, iconColor);
-        append((UINT)index + 4, label.c_str(), bitmap, true);
+        append((UINT)index + 6, label.c_str(), bitmap, true);
     }
     if (!isWindowOperational())
         return;
     const UINT command = TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON,
         pos.x, pos.y, proxyIcon.getMenuOwner(), nullptr);
+    reopenIcons.stop();
     ownedMenu.reset();
     if (!isWindowOperational())
         return;
@@ -2299,8 +2388,34 @@ void ItemWindow::openCaptionMenu(POINT pos) {
         proxyIcon.beginRename();
     } else if (command == 3) {
         openProxyProperties();
-    } else if (command >= 4 && (size_t)(command - 4) < entries.size()) {
-        const HWND target = entries[command - 4].window;
+    } else if (command == 4 && isFolder()) {
+        // Resolve the current ancestors again after the popup's nested message loop.
+        const auto parentProperties = getParentWindowProperties();
+        if (!isWindowOperational())
+            return;
+        struct Search {
+            HWND currentWindow;
+            const std::vector<std::wstring> &properties;
+        } search{hwnd, parentProperties};
+        EnumWindows([](HWND window, LPARAM data) -> BOOL {
+            const auto &parents = *reinterpret_cast<const Search *>(data);
+            wchar_t windowClass[64] = {};
+            if (window != parents.currentWindow
+                    && GetClassNameW(window, windowClass, ARRAYSIZE(windowClass))
+                    && lstrcmpW(windowClass, ITEM_WINDOW_CLASS) == 0
+                    && std::any_of(parents.properties.begin(), parents.properties.end(),
+                        [&](const std::wstring &property) {
+                            return GetPropW(window, property.c_str()) != nullptr;
+                        })) {
+                // Use normal close processing, including persistence, across processes.
+                checkLE(PostMessageW(window, WM_CLOSE, 0, 0));
+            }
+            return TRUE;
+        }, reinterpret_cast<LPARAM>(&search));
+    } else if (command == 5) {
+        reopenLastWindow(hwnd);
+    } else if (command >= 6 && (size_t)(command - 6) < entries.size()) {
+        const HWND target = entries[command - 6].window;
         wchar_t windowClass[64] = {};
         // The selected window may have closed while the popup was open.
         if (GetClassName(target, windowClass, (int)ARRAYSIZE(windowClass))
