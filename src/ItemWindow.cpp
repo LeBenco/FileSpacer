@@ -51,6 +51,22 @@ const UINT SC_DRAGMOVE = SC_MOVE | 2; // https://stackoverflow.com/a/35880547/11
 
 static HBITMAP captionCommandBitmap(const wchar_t *glyph, int size, COLORREF color);
 
+static LRESULT CALLBACK toolbarMenuOwnerProc(HWND window, UINT message,
+        WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR owner) {
+    switch (message) {
+        case WM_INITMENUPOPUP:
+        case WM_DRAWITEM:
+        case WM_MEASUREITEM:
+        case WM_MENUCHAR:
+            // Keep delayed Shell submenus and owner-drawn items on the existing host.
+            return SendMessage(reinterpret_cast<HWND>(owner), message, wParam, lParam);
+        case WM_NCDESTROY:
+            RemoveWindowSubclass(window, toolbarMenuOwnerProc, 0);
+            break;
+    }
+    return DefSubclassProc(window, message, wParam, lParam);
+}
+
 static LRESULT CALLBACK toolbarHostProc(
         HWND host, UINT message, WPARAM wParam, LPARAM lParam) {
     if (message == WM_NCCREATE) {
@@ -1035,6 +1051,16 @@ void ItemWindow::onCreate() {
             0, 0, clientSize(hwnd).cx, TOOLBAR_HEIGHT,
             toolbarRebar, nullptr, instance, hwnd));
 
+        // A separate native owner identifies the toolbar application popup.
+        // Its direct parent exposes "FileSpacer Toolbar Host" to NSS rules.
+        toolbarMenuOwner = checkLE(CreateWindowEx(0, L"STATIC", nullptr, WS_CHILD,
+            0, 0, 0, 0, toolbarHost, nullptr, instance, nullptr));
+        if (toolbarMenuOwner && !checkLE(SetWindowSubclass(toolbarMenuOwner,
+                toolbarMenuOwnerProc, 0, reinterpret_cast<DWORD_PTR>(hwnd)))) {
+            DestroyWindow(toolbarMenuOwner);
+            toolbarMenuOwner = nullptr;
+        }
+
         REBARBANDINFO band = {sizeof(band)};
         band.fMask = RBBIM_STYLE | RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_SIZE;
         band.fStyle = RBBS_NOGRIPPER;
@@ -1143,6 +1169,10 @@ int ItemWindow::getToolbarTooltip(WORD command) {
     return 0;
 }
 
+HWND ItemWindow::getToolbarMenuOwner() const {
+    return toolbarMenuOwner;
+}
+
 void ItemWindow::trackContextMenu(POINT pos) {
     CComPtr<ItemWindow> keepAlive(this);
     if (!isWindowOperational())
@@ -1151,7 +1181,7 @@ void ItemWindow::trackContextMenu(POINT pos) {
     std::unique_ptr<std::remove_pointer_t<HMENU>, decltype(destroyMenu)>
         menu(CreatePopupMenu(), destroyMenu);
     if (menu)
-        trackContextMenu(pos, menu.get(), hwnd);
+        trackContextMenu(pos, menu.get(), getToolbarMenuOwner());
 }
 
 int ItemWindow::trackContextMenu(POINT pos, HMENU menu, HWND menuOwner) {
@@ -1373,11 +1403,15 @@ LRESULT ItemWindow::onNotify(NMHDR *nmHdr) {
         const bool navigationIcon = navigationGraphicsToken
             && ((nmHdr->hwndFrom == parentToolbar && customDraw->nmcd.dwItemSpec == IDM_PREV_WINDOW)
                 || (nmHdr->hwndFrom == cmdToolbar && customDraw->nmcd.dwItemSpec == IDM_REFRESH));
+        const bool menuButton = proxyIcon.isToolbarWindow(nmHdr->hwndFrom);
         if (customDraw->nmcd.dwDrawStage == CDDS_PREPAINT) {
-            LRESULT result = navigationToolbar ? CDRF_NOTIFYITEMDRAW : 0;
+            LRESULT result = (navigationToolbar || menuButton) ? CDRF_NOTIFYITEMDRAW : 0;
             if (nmHdr->hwndFrom != cmdToolbar)
                 result |= CDRF_NOTIFYPOSTPAINT;
             return result;
+        } else if (customDraw->nmcd.dwDrawStage == CDDS_ITEMPREPAINT && menuButton
+                && proxyIcon.drawMenuButton(customDraw->nmcd)) {
+            return CDRF_SKIPDEFAULT;
         } else if (customDraw->nmcd.dwDrawStage == CDDS_ITEMPREPAINT && navigationIcon) {
             return CDRF_NOTIFYPOSTPAINT;
         } else if (customDraw->nmcd.dwDrawStage == CDDS_ITEMPOSTPAINT && navigationIcon) {
@@ -2236,7 +2270,7 @@ void ItemWindow::openCaptionMenu(POINT pos) {
     if (!isWindowOperational())
         return;
     const UINT command = TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON,
-        pos.x, pos.y, hwnd, nullptr);
+        pos.x, pos.y, proxyIcon.getMenuOwner(), nullptr);
     ownedMenu.reset();
     if (!isWindowOperational())
         return;
