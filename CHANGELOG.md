@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.3 — 2026-10-11
+
+- Restore manual update checks and optional weekly checks using FileSpacer GitHub releases, disabled by default.
+
+- Publish the update manifest alongside each release installer.
+
+- Preserve native Shell handling of Alt+double-click and Alt+Enter on folders.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.2...v1.0.3)
+
 ## 1.0.2 — 2026-10-11
 
 - Apply Nilesoft Shell themes to the title-bar folder menu independently of file selection, preserving native Shell commands.
