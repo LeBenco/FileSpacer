@@ -33,7 +33,7 @@ VIProductVersion "${PRODUCT_VERSION}.${PRODUCT_VERSION_4}"
 VIAddVersionKey /LANG=1033 "ProductName" "FileSpacer"
 VIAddVersionKey /LANG=1033 "FileDescription" "FileSpacer installer"
 VIAddVersionKey /LANG=1033 "FileVersion" "${PRODUCT_VERSION}"
-VIAddVersionKey /LANG=1033 "LegalCopyright" "Copyright (c) 2026 LeBenco; original ChromaFiler (c) 2023 J. van't Hoog"
+VIAddVersionKey /LANG=1033 "LegalCopyright" "Copyright (c) 2026 Benjamin Cohen Boulakia; original ChromaFiler (c) 2023 J. van't Hoog"
 BrandingText "FileSpacer ${PRODUCT_VERSION} (x64)"
 
 !define MUI_ICON "..\src\res\FileSpacer.ico"
