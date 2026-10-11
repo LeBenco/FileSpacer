@@ -24,6 +24,7 @@ jobs:
     timeout-minutes: 30
     env:
       RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
     steps:
       - name: Check out the version to publish
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -31,14 +32,87 @@ jobs:
           ref: ${{ inputs.tag || github.ref }}
           persist-credentials: false
 
+      - name: Read release notes from CHANGELOG.md
+        shell: pwsh
+        run: |
+          if (!(Test-Path 'CHANGELOG.md' -PathType Leaf)) {
+            throw 'CHANGELOG.md was not found.'
+          }
+
+          $version = $env:RELEASE_TAG -replace '^v', ''
+          $lines = [System.IO.File]::ReadAllLines(
+            (Join-Path $env:GITHUB_WORKSPACE 'CHANGELOG.md')
+          )
+
+          $headingPattern = '^##\s+' + [regex]::Escape($version) + '(?:\s+—|\s*$)'
+          $start = -1
+
+          for ($i = 0; $i -lt $lines.Length; $i++) {
+            if ($lines[$i] -match $headingPattern) {
+              $start = $i + 1
+              break
+            }
+          }
+
+          if ($start -lt 0) {
+            throw "CHANGELOG.md has no section for version $version."
+          }
+
+          $end = $lines.Length
+          for ($i = $start; $i -lt $lines.Length; $i++) {
+            if ($lines[$i] -match '^##\s+') {
+              $end = $i
+              break
+            }
+          }
+
+          $section = @($lines[$start..($end - 1)])
+
+          while ($section.Count -gt 0 -and [string]::IsNullOrWhiteSpace($section[0])) {
+            $section = @($section[1..($section.Count - 1)])
+          }
+
+          while ($section.Count -gt 0 -and [string]::IsNullOrWhiteSpace($section[-1])) {
+            $section = @($section[0..($section.Count - 2)])
+          }
+
+          $notes = $section -join "`n"
+
+          if ([string]::IsNullOrWhiteSpace($notes)) {
+            throw "The CHANGELOG.md section for version $version is empty."
+          }
+
+          if ($notes -notmatch '(?m)^\s*[-*]\s+') {
+            throw "The CHANGELOG.md section for version $version contains no release entry."
+          }
+
+          Write-Host "Release notes for $version:"
+          Write-Host '----------------------------------------'
+          Write-Host $notes
+          Write-Host '----------------------------------------'
+
+          $delimiter = "FILESPACER_NOTES_$([guid]::NewGuid().ToString('N'))"
+          $envBlock = "RELEASE_NOTES<<$delimiter`n$notes`n$delimiter`n"
+
+          [System.IO.File]::AppendAllText(
+            $env:GITHUB_ENV,
+            $envBlock,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+
       - name: Install Inkscape and locate MSVC
         shell: pwsh
         run: |
           choco install inkscape --yes --no-progress
           if ($LASTEXITCODE -ne 0) { throw 'Inkscape installation failed.' }
+
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
           $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 Microsoft.VisualStudio.Component.VC.ATL -property installationPath
-          if ($LASTEXITCODE -ne 0 -or !$vs) { throw 'MSVC x64 with ATL was not found.' }
+
+          if ($LASTEXITCODE -ne 0 -or !$vs) {
+            throw 'MSVC x64 with ATL was not found.'
+          }
+
           "VS_INSTALL=$vs" >> $env:GITHUB_ENV
 
       - name: Build Release and the NSIS installer
@@ -53,13 +127,22 @@ jobs:
         run: |
           $info = (Get-Item 'build/release/FileSpacer.exe').VersionInfo
           $version = "$($info.ProductMajorPart).$($info.ProductMinorPart).$($info.ProductBuildPart)"
+
           if ($info.ProductPrivatePart -ne 0 -or $env:RELEASE_TAG -cne "v$version" -or $info.ProductVersion -ne $version) {
             throw "Tag $env:RELEASE_TAG does not match the executable version. Update both version definitions in src/resource.h."
           }
-          $versionParts = @($info.ProductMajorPart, $info.ProductMinorPart, $info.ProductBuildPart, $info.ProductPrivatePart)
+
+          $versionParts = @(
+            $info.ProductMajorPart,
+            $info.ProductMinorPart,
+            $info.ProductBuildPart,
+            $info.ProductPrivatePart
+          )
+
           if ($versionParts | Where-Object { $_ -lt 0 -or $_ -gt 255 }) {
             throw 'Update checking requires each version component to fit in one byte.'
           }
+
           if (!(Test-Path 'build/FileSpacer-install.exe' -PathType Leaf)) {
             throw 'The NSIS installer was not produced.'
           }
@@ -70,7 +153,12 @@ jobs:
 
           $updateVersion = ($versionParts | ForEach-Object { $_.ToString('X2') }) -join ''
           $releaseUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/tag/$env:RELEASE_TAG"
-          [System.IO.File]::WriteAllText("$env:GITHUB_WORKSPACE/build/FileSpacer-update.txt", "FSUP`n$updateVersion`n$releaseUrl`n", [System.Text.Encoding]::ASCII)
+
+          [System.IO.File]::WriteAllText(
+            "$env:GITHUB_WORKSPACE/build/FileSpacer-update.txt",
+            "FSUP`n$updateVersion`n$releaseUrl`n",
+            [System.Text.Encoding]::ASCII
+          )
 
       - name: Publish the release, installer and update manifest
         shell: pwsh
@@ -78,9 +166,31 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view "$env:RELEASE_TAG" --repo "$env:GITHUB_REPOSITORY" *> $null
+
           if ($LASTEXITCODE -eq 0) {
-            gh release upload "$env:RELEASE_TAG" "$env:INSTALLER_PATH" 'build/FileSpacer-update.txt' --repo "$env:GITHUB_REPOSITORY" --clobber
+            gh release edit "$env:RELEASE_TAG" `
+              --repo "$env:GITHUB_REPOSITORY" `
+              --notes "$env:RELEASE_NOTES"
+
+            if ($LASTEXITCODE -ne 0) {
+              throw 'Release notes update failed.'
+            }
+
+            gh release upload "$env:RELEASE_TAG" `
+              "$env:INSTALLER_PATH" `
+              'build/FileSpacer-update.txt' `
+              --repo "$env:GITHUB_REPOSITORY" `
+              --clobber
           } else {
-            gh release create "$env:RELEASE_TAG" "$env:INSTALLER_PATH" 'build/FileSpacer-update.txt' --repo "$env:GITHUB_REPOSITORY" --verify-tag --generate-notes
+            gh release create "$env:RELEASE_TAG" `
+              "$env:INSTALLER_PATH" `
+              'build/FileSpacer-update.txt' `
+              --repo "$env:GITHUB_REPOSITORY" `
+              --verify-tag `
+              --title "FileSpacer $($env:RELEASE_TAG -replace '^v', '')" `
+              --notes "$env:RELEASE_NOTES"
           }
-          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed.' }
+
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Release publication failed.'
+          }
