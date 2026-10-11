@@ -131,13 +131,33 @@ finishes its workers. The application never calls `TerminateProcess`.
 
 A signaled installation gate prevents new application launches during shutdown
 and installation. Failure to shut down leaves setup unstarted and restores COM
-activation for remaining instances; some windows may already have closed. The
-relay launches the existing interactive NSIS installer (including its normal UAC
-prompt) and releases the gate after the installer exits. Cancellation of UAC or
-setup can therefore require reopening FileSpacer manually.
+activation for remaining instances. Just before each process closes its windows,
+it writes their UTF-8 Shell parsing names to a temporary update-session database.
+This snapshot is separate from the folder-state database and the 20-entry reopen
+history; it includes folders opened during the download and excludes those closed
+before shutdown. A process refuses shutdown if saving its snapshot fails.
+
+The relay launches the existing interactive NSIS installer (including its normal
+UAC prompt), waits for its exit, and releases the startup gate before restarting
+FileSpacer with `/restore-update "<temporary session file>"`. After success it
+uses the installed executable registered in App Paths, including when the update
+was initiated from a local build. If UAC/setup is cancelled or shutdown/setup
+fails, it requests restoration with the original executable instead. Setup exit
+codes 0/1/other mean success/cancellation/error. Cancellation is not an error.
+
+Restoration consumes the session once, opens each folder through the existing
+spatial-window creation path (without adding the configured startup folder), and
+uses its normal saved position, size, maximization and view settings. Already
+open folders are activated without creating duplicates. An unavailable folder
+does not prevent restoring the others; a warning reports the failed count.
+Selection and scroll positions are not part of this temporary path snapshot.
+The temporary session normally disappears after restoration; if restarting fails,
+it remains available until the next stale-relay cleanup. Shutdown failure can
+leave existing windows open; restoration uses the same duplicate checks.
 
 Implementation is contained in `Update.cpp`, `UpdateManifest.cpp` and
-`UpdateInstaller.cpp`. `ProcessLifetime.cpp` is a generic application exit endpoint.
+`UpdateInstaller.cpp`, `UpdateSession.cpp` and `UpdateSessionStore.cpp`.
+`ProcessLifetime.cpp` is a generic application exit/session-save endpoint.
 Settings, main and folder creation only provide small lifecycle/UI hooks. The
 folder-state, navigation, reopen history and Jump List implementations are unchanged.
 Temporary installer data is removed on completion/error/cancellation; the mapped
@@ -156,3 +176,27 @@ build\update-manifest-test.exe
 The test is also portable C++14 and can run under AddressSanitizer/UBSan. It covers
 legacy and installer manifests, wrong hosts/versions, malformed checksums, size
 limits, truncation and 50,000 deterministic malformed inputs.
+
+### Update-session regression tests
+
+From an initialized x64 MSVC CMD prompt at the repository root:
+
+```cmd
+if not exist build mkdir build
+cl.exe /nologo /TC /DSQLITE_OMIT_LOAD_EXTENSION /DSQLITE_DQS=0 /c third_party\sqlite\sqlite3.c /Fo:build\sqlite-session-test.obj
+cl.exe /nologo /EHsc /W4 /std:c++14 /I src /I third_party\sqlite src\UpdateSessionStore.cpp tests\update_session_test.cpp build\sqlite-session-test.obj /Fe:build\update-session-test.exe
+build\update-session-test.exe "%TEMP%\FileSpacer-session-test-%RANDOM%-%RANDOM%.sqlite3"
+```
+
+The portable test uses the bundled SQLite source. It covers more than 20 folders,
+multiple processes, Unicode/long/network/virtual paths, repeated captures,
+empty processes, transaction rollback, malformed databases, and global limits.
+Use a fresh temporary filename; the test removes its database on success.
+
+For the real lifecycle test, compile this change **before** publishing the next
+release; this development does not change the current application version.
+Test successful installation and setup/UAC cancellation with several folder
+windows in separate processes. Also open/close a folder during download, cancel
+a download, try a folder that becomes unavailable before restoration, and check
+that no startup-folder window or duplicate appears. The outgoing binary needs
+this snapshot code; an already installed old client cannot gain it retroactively.

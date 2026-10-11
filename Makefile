@@ -66,6 +66,8 @@ OBJECTS = \
     $(OUTDIR)\Update.obj \
     $(OUTDIR)\UpdateManifest.obj \
     $(OUTDIR)\UpdateInstaller.obj \
+    $(OUTDIR)\UpdateSession.obj \
+    $(OUTDIR)\UpdateSessionStore.obj \
     $(OUTDIR)\WinUtils.obj \
 	$(OUTDIR)\CrashRecovery.obj \
     $(OUTDIR)\main.obj

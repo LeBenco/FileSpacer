@@ -1,5 +1,6 @@
 #include "ProcessLifetime.h"
 #include <atomic>
+#include <algorithm>
 #include <objbase.h>
 
 namespace filespacer {
@@ -8,6 +9,7 @@ std::atomic_bool quitting{false};
 HWND controlWindow = nullptr;
 void (*quitCallback)() = nullptr;
 void (*resumeCallback)() = nullptr;
+bool (*saveSessionCallback)(const wchar_t *) = nullptr;
 
 BOOL CALLBACK closeWindow(HWND window, LPARAM) {
     DWORD process = 0;
@@ -29,9 +31,29 @@ LRESULT CALLBACK controlProc(HWND window, UINT message, WPARAM wParam, LPARAM lP
         }
         return 1;
     }
-    if (message == WM_CLOSE) {
-        if (!quitting.exchange(true)) {
-            CoSuspendClassObjects();
+    bool saved = false;
+    if (message == WM_COPYDATA) {
+        const auto data = reinterpret_cast<const COPYDATASTRUCT *>(lParam);
+        if (!data || data->dwData != PROCESS_SAVE_AND_QUIT || !data->lpData
+                || data->cbData < sizeof(wchar_t) || data->cbData > 65536
+                || data->cbData % sizeof(wchar_t) != 0 || !saveSessionCallback) return FALSE;
+        const auto filename = static_cast<const wchar_t *>(data->lpData);
+        const size_t count = data->cbData / sizeof(wchar_t);
+        if (filename[count - 1] != L'\0'
+                || std::find(filename, filename + count - 1, L'\0') != filename + count - 1
+                || quitting.exchange(true)) return FALSE;
+        CoSuspendClassObjects(); // Capture cannot admit new/reentrant folder opens.
+        try { saved = saveSessionCallback(filename); }
+        catch (...) { saved = false; }
+        if (!saved) {
+            quitting.store(false);
+            CoResumeClassObjects();
+            return FALSE; // A failed save never closes this process's windows.
+        }
+    }
+    if (message == WM_CLOSE || saved) {
+        if (saved || !quitting.exchange(true)) {
+            if (!saved) CoSuspendClassObjects();
             if (quitCallback) quitCallback();
         }
         // Repeated requests also close windows published by an earlier queued call.
@@ -42,9 +64,11 @@ LRESULT CALLBACK controlProc(HWND window, UINT message, WPARAM wParam, LPARAM lP
 }
 } // namespace
 
-bool initProcessLifetime(void (*onQuit)(), void (*onResume)()) {
+bool initProcessLifetime(void (*onQuit)(), void (*onResume)(),
+        bool (*onSaveSession)(const wchar_t *)) {
     quitCallback = onQuit;
     resumeCallback = onResume;
+    saveSessionCallback = onSaveSession;
     WNDCLASSW cls = {};
     cls.hInstance = GetModuleHandleW(nullptr);
     cls.lpfnWndProc = controlProc;
@@ -63,6 +87,7 @@ void uninitProcessLifetime() {
     UnregisterClassW(PROCESS_CONTROL_CLASS, GetModuleHandleW(nullptr));
     quitCallback = nullptr;
     resumeCallback = nullptr;
+    saveSessionCallback = nullptr;
 }
 
 bool isProcessQuitRequested() { return quitting.load(); }
