@@ -11,6 +11,7 @@ enum SettingsPage {
 };
 
 void openSettingsDialog(HWND owner, SettingsPage page = SETTINGS_GENERAL);
+void requestSettingsDialogClose();
 // Used by preferences and the welcome dialog.
 void changeDefaultBrowser(HWND owner, bool value);
 
