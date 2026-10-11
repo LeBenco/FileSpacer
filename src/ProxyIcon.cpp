@@ -91,6 +91,43 @@ bool ProxyIcon::isToolbarWindow(HWND window) const {
     return toolbar && window == toolbar;
 }
 
+HWND ProxyIcon::getMenuOwner() const {
+    return caption ? caption : outer->hwnd;
+}
+
+bool ProxyIcon::drawMenuButton(const NMCUSTOMDRAW &draw) {
+    if (draw.dwItemSpec != IDM_PROXY_BUTTON)
+        return false;
+    HTHEME theme = OpenThemeData(toolbar, L"Toolbar");
+    if (!theme)
+        return false; // Let the control handle classic/high-contrast rendering.
+    const int state = (draw.uItemState & CDIS_DISABLED) ? TS_DISABLED
+        : (draw.uItemState & CDIS_SELECTED) ? TS_PRESSED
+        : (draw.uItemState & CDIS_HOT) ? TS_HOT : TS_NORMAL;
+    SIZE glyphSize = {};
+    // Use the native theme glyph, sized independently of the empty text area.
+    HRESULT result = GetThemePartSize(theme, draw.hdc, TP_DROPDOWNBUTTONGLYPH,
+        state, nullptr, TS_TRUE, &glyphSize);
+    if (SUCCEEDED(result)) {
+        RECT buttonRect = draw.rc;
+        SendMessage(toolbar, TB_GETRECT, IDM_PROXY_BUTTON, (LPARAM)&buttonRect);
+        const LONG left = buttonRect.left + (rectWidth(buttonRect) - glyphSize.cx) / 2;
+        const LONG top = buttonRect.top + (rectHeight(buttonRect) - glyphSize.cy) / 2;
+        const RECT glyphRect = {left, top, left + glyphSize.cx, top + glyphSize.cy};
+        result = DrawThemeBackground(theme, draw.hdc, TP_BUTTON, state, &buttonRect, nullptr);
+        if (SUCCEEDED(result))
+            result = DrawThemeBackground(theme, draw.hdc, TP_DROPDOWNBUTTONGLYPH,
+                state, &glyphRect, nullptr);
+        if (SUCCEEDED(result) && (draw.uItemState & CDIS_FOCUS)) {
+            RECT focusRect = buttonRect;
+            InflateRect(&focusRect, -scaleDPI(2), -scaleDPI(2));
+            DrawFocusRect(draw.hdc, &focusRect);
+        }
+    }
+    CloseThemeData(theme);
+    return SUCCEEDED(result);
+}
+
 POINT ProxyIcon::getMenuPoint(HWND parent) {
     if (toolbar) {
         RECT buttonRect = {};
