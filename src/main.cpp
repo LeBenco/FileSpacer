@@ -8,6 +8,7 @@
 #include "SettingsDialog.h"
 #include "Update.h"
 #include "UpdateInstaller.h"
+#include "UpdateSession.h"
 #include "ProcessLifetime.h"
 #include "ExecuteCommand.h"
 #include "DPI.h"
@@ -32,7 +33,7 @@ using namespace filespacer;
 
 const wchar_t SHELL_PREFIX[] = L"shell:";
 
-enum LaunchType {LAUNCH_FAIL, LAUNCH_HEADLESS, LAUNCH_AUTO, LAUNCH_FOUND, LAUNCH_REOPEN};
+enum LaunchType {LAUNCH_FAIL, LAUNCH_HEADLESS, LAUNCH_AUTO, LAUNCH_FOUND, LAUNCH_REOPEN, LAUNCH_RESTORE_UPDATE};
 
 #ifdef FILESPACER_DEBUG
 int main(int, char**) {
@@ -271,8 +272,11 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         restarted |= lstrcmpiW(recoveryArgv[i], L"/recovery-restarted") == 0;
     }
     wstr_ptr startingFolder;
-    const LaunchType requestedLaunch = maintenance ? LAUNCH_FAIL
-        : parseStartingFolder(recoveryArgc, recoveryArgv, &startingFolder);
+    std::wstring updateSession;
+    if (!maintenance && recoveryArgc == 3 && lstrcmpiW(recoveryArgv[1], L"/restore-update") == 0)
+        updateSession = recoveryArgv[2];
+    const LaunchType requestedLaunch = maintenance ? LAUNCH_FAIL : !updateSession.empty()
+        ? LAUNCH_RESTORE_UPDATE : parseStartingFolder(recoveryArgc, recoveryArgv, &startingFolder);
     LocalFree(recoveryArgv);
     if (maintenance) return maintenanceExit;
     // Leave immediately so a new launch cannot keep the installed image mapped.
@@ -336,7 +340,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
             requestSettingsDialogClose();
             // Headless COM servers can already have no references to release.
             SetEvent(processIdleEvent);
-        }, resumeUpdateChecks)) {
+        }, resumeUpdateChecks, saveUpdateWindows)) {
         threadReference.Release();
         processIdleEvent = nullptr;
         OleUninitialize();
@@ -392,8 +396,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
 
     debugPrintf(L"%s\n", GetCommandLine());
     LaunchType type;
-    if (requestedLaunch == LAUNCH_REOPEN) {
-        const FolderOpenResult opened = reopenLastWindow(nullptr);
+    if (requestedLaunch == LAUNCH_REOPEN || requestedLaunch == LAUNCH_RESTORE_UPDATE) {
+        const FolderOpenResult opened = requestedLaunch == LAUNCH_REOPEN ? reopenLastWindow(nullptr)
+            : restoreUpdateWindows(updateSession.c_str());
         type = opened == FolderOpenResult::Created ? LAUNCH_AUTO
             : (opened == FolderOpenResult::Activated ? LAUNCH_FOUND : LAUNCH_FAIL);
     } else {

@@ -1,5 +1,6 @@
 #include "UpdateInstaller.h"
 #include "Update.h"
+#include "UpdateSession.h"
 #include "ProcessLifetime.h"
 #include "main.h"
 #include "UIStrings.h"
@@ -403,6 +404,7 @@ struct ProcessSnapshot {
     std::vector<HANDLE> handles;
     bool cancelQuit = false;
     ULONGLONG deadline = 0;
+    std::wstring sessionFile;
     ~ProcessSnapshot() { for (HANDLE handle : handles) CloseHandle(handle); }
 };
 
@@ -448,18 +450,30 @@ BOOL CALLBACK requestQuit(HWND window, LPARAM data) {
     if (GetClassNameW(window, name, ARRAYSIZE(name))
             && lstrcmpW(name, PROCESS_CONTROL_CLASS) == 0) {
         DWORD_PTR result = 0;
-        SendMessageTimeoutW(window, snapshot.cancelQuit ? PROCESS_CANCEL_QUIT : WM_CLOSE, 0, 0,
+        if (!snapshot.sessionFile.empty() && !snapshot.cancelQuit) {
+            COPYDATASTRUCT payload = {PROCESS_SAVE_AND_QUIT,
+                static_cast<DWORD>((snapshot.sessionFile.size() + 1) * sizeof(wchar_t)),
+                const_cast<wchar_t *>(snapshot.sessionFile.c_str())};
+            SetLastError(ERROR_SUCCESS);
+            if (!SendMessageTimeoutW(window, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&payload),
+                    SMTO_ABORTIFHUNG | SMTO_BLOCK, 5000, &result) || !result) {
+                const DWORD error = GetLastError();
+                SetLastError(error ? error : ERROR_WRITE_FAULT);
+                return FALSE;
+            }
+        } else SendMessageTimeoutW(window, snapshot.cancelQuit ? PROCESS_CANCEL_QUIT : WM_CLOSE, 0, 0,
             SMTO_ABORTIFHUNG | SMTO_BLOCK, 2000, &result);
     }
     return TRUE;
 }
 
-DWORD closeApplicationProcesses(const wchar_t *target, HANDLE gate) {
+DWORD closeApplicationProcesses(const wchar_t *target, HANDLE gate, const wchar_t *sessionFile) {
     const ULONGLONG deadline = GetTickCount64() + 60000;
     if (!SetEvent(gate)) return GetLastError();
     for (;;) {
         ProcessSnapshot snapshot;
         snapshot.deadline = deadline;
+        snapshot.sessionFile = sessionFile;
         DWORD error = collectProcesses(target, snapshot);
         if (error || snapshot.handles.empty()) return error;
         if (!EnumWindows(requestQuit, reinterpret_cast<LPARAM>(&snapshot))) return GetLastError();
@@ -487,6 +501,22 @@ bool unsignedDecimal(const wchar_t *text, uint64_t maximum, uint64_t &value) {
     return true;
 }
 
+std::wstring installedExecutable(const wchar_t *fallback) {
+    // Setup can be started from a local build; restart the installed application.
+    const HKEY roots[] = {HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
+    for (HKEY root : roots) {
+        CRegKey key;
+        if (key.Open(root, L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\FileSpacer.exe",
+                KEY_READ | KEY_WOW64_64KEY) != ERROR_SUCCESS) continue;
+        wchar_t path[32768] = {};
+        ULONG length = ARRAYSIZE(path);
+        if (key.QueryStringValue(nullptr, path, &length) != ERROR_SUCCESS || !*path) continue;
+        const DWORD attributes = GetFileAttributesW(path);
+        if (attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY)) return path;
+    }
+    return fallback;
+}
+
 DWORD runInstallerRelay(int argc, wchar_t **argv) {
     uint64_t size = 0, gateValue = 0;
     if (argc != 7 || !unsignedDecimal(argv[5], MAX_INSTALLER_SIZE, size) || !size
@@ -507,13 +537,19 @@ DWORD runInstallerRelay(int argc, wchar_t **argv) {
     if (slash == std::wstring::npos) return ERROR_PATH_NOT_FOUND;
     const std::wstring directory = relay.substr(0, slash);
     const std::wstring installer = directory + L"\\FileSpacer-install.exe";
+    const std::wstring sessionFile = directory + L"\\windows.sqlite3";
     if (installer != argv[3] || relay == argv[2]) return ERROR_INVALID_PARAMETER;
     // Hold a read-only handle without write/delete sharing until the installer exits.
     CHandle file(CreateFileW(installer.c_str(), GENERIC_READ, FILE_SHARE_READ,
         nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
     if (file == INVALID_HANDLE_VALUE) { file.Detach(); return GetLastError(); }
     DWORD error = verifyInstaller(file, expected, size);
-    if (!error) error = closeApplicationProcesses(argv[2], gate);
+    bool sessionCreated = false;
+    if (!error) {
+        sessionCreated = createUpdateWindowSession(sessionFile.c_str());
+        if (!sessionCreated) error = ERROR_WRITE_FAULT;
+    }
+    if (!error) error = closeApplicationProcesses(argv[2], gate, sessionFile.c_str());
     if (error) {
         ResetEvent(gate);
         ProcessSnapshot remaining;
@@ -521,6 +557,7 @@ DWORD runInstallerRelay(int argc, wchar_t **argv) {
         if (!collectProcesses(argv[2], remaining))
             EnumWindows(requestQuit, reinterpret_cast<LPARAM>(&remaining));
     }
+    bool installed = false;
     if (!error) {
         HRESULT init = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
         SHELLEXECUTEINFOW execute = {sizeof(execute)};
@@ -532,16 +569,33 @@ DWORD runInstallerRelay(int argc, wchar_t **argv) {
         if (!ShellExecuteExW(&execute)) error = GetLastError();
         else if (!execute.hProcess) error = ERROR_INVALID_HANDLE;
         else {
-            WaitForSingleObject(execute.hProcess, INFINITE);
+            DWORD status = 0;
+            if (WaitForSingleObject(execute.hProcess, INFINITE) != WAIT_OBJECT_0
+                    || !GetExitCodeProcess(execute.hProcess, &status)) error = GetLastError();
+            else if (status == 0) installed = true;
+            else error = status == 1 ? ERROR_CANCELLED : ERROR_INSTALL_FAILURE;
             CloseHandle(execute.hProcess);
         }
         if (SUCCEEDED(init)) CoUninitialize();
+    }
+    // Release the startup gate before relaunching, including UAC/setup cancellation.
+    if (!ResetEvent(gate) && !error) error = GetLastError();
+    if (sessionCreated) {
+        bool hasWindows = false;
+        const DWORD inspectError = inspectUpdateWindowSession(sessionFile.c_str(), &hasWindows);
+        if (inspectError) {
+            if (!error || error == ERROR_CANCELLED) error = inspectError;
+        } else if (hasWindows) {
+            const std::wstring executable = installed ? installedExecutable(argv[2]) : argv[2];
+            const DWORD restartError = launchUpdateSession(executable, sessionFile);
+            if (restartError && (!error || error == ERROR_CANCELLED)) error = restartError;
+        } else DeleteFileW(sessionFile.c_str());
     }
     file.Close();
     DeleteFileW(installer.c_str());
     // Windows keeps our own executable mapped. The directory is reused by nobody;
     // the next update removes stale relay copies after their processes have ended.
-    return error;
+    return error == ERROR_CANCELLED ? ERROR_SUCCESS : error;
 }
 
 void cleanOldRelays() {
@@ -566,8 +620,12 @@ void cleanOldRelays() {
                 || current.QuadPart - created.QuadPart < 24ULL * 60 * 60 * 10000000) continue;
         const std::wstring directory = base + data.cFileName;
         // A live relay's mapped image cannot be deleted; retain its installer too.
-        if (DeleteFileW((directory + L"\\FileSpacerUpdate.exe").c_str())) {
+        if (DeleteFileW((directory + L"\\FileSpacerUpdate.exe").c_str())
+                || GetLastError() == ERROR_FILE_NOT_FOUND) {
             DeleteFileW((directory + L"\\FileSpacer-install.exe").c_str());
+            DeleteFileW((directory + L"\\windows.sqlite3").c_str());
+            DeleteFileW((directory + L"\\windows.sqlite3-journal").c_str());
+            DeleteFileW((directory + L"\\windows.sqlite3.restoring").c_str());
             RemoveDirectoryW(directory.c_str());
         }
     } while (FindNextFileW(find, &data));
