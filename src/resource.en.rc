@@ -102,7 +102,7 @@ STRINGTABLE {
 // Deferred donation paragraph:
 // If you enjoy FileSpacer, please consider donating to support its development. Click the Donate button above.\r\n
     IDS_LEGAL_INFO,         "\
-Copyright (c) 2026 LeBenco (FileSpacer modifications)\r\n\
+Copyright (c) 2026 Benjamin Cohen Boulakia (FileSpacer modifications)\r\n\
 Original ChromaFiler: Copyright (c) 2023 J. van't Hoog\r\n\
 \r\n\
 GNU General Public License v3.0. No warranty.\r\n\
