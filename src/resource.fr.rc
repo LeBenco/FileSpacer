@@ -37,21 +37,11 @@ STRINGTABLE {
     IDS_INVALID_CHARS,      "Le nom du fichier ne peut pas contenir les caractères suivants :\n\\ / : * ? "" < > |"
 
     IDS_SETTINGS_CAPTION,   "Paramètres de FileSpacer"
-#if 0 // Deferred public services.
     IDS_NO_UPDATE_CAPTION,  "Aucune mise à jour disponible"
-#endif
-#if 0 // Deferred public services.
     IDS_NO_UPDATE,          "Vous utilisez la dernière version."
-#endif
-#if 0 // Deferred public services.
     IDS_UPDATE_ERROR,       "Erreur lors de la recherche de mises à jour"
-#endif
-#if 0 // Deferred public services.
     IDS_UPDATE_NOTIF_TITLE, "Mise à jour de FileSpacer"
-#endif
-#if 0 // Deferred public services.
-    IDS_UPDATE_NOTIF_INFO,  "Une nouvelle version de FileSpacer est disponible. Cliquez sur l'icône violette ci-dessous pour la télécharger."
-#endif
+    IDS_UPDATE_NOTIF_INFO,  "Une nouvelle version de FileSpacer est disponible. Cliquez sur cette notification pour ouvrir la page de téléchargement."
 
     IDS_OPEN_PARENT_COMMAND,"Ouvrir le dossier parent\n(Alt+Haut)"
     IDS_MENU_COMMAND,       "Menu..."
@@ -92,9 +82,7 @@ STRINGTABLE {
     IDS_WELCOME_TUTORIAL,   "&Lire le tutoriel\nRecommandé lors de la première utilisation"
 #endif
     IDS_WELCOME_BROWSER,    "&Définir comme explorateur par défaut\nRemplacer l'Explorateur de fichiers Windows"
-#if 0 // Deferred public services.
     IDS_WELCOME_UPDATE,     "Rechercher des &mises à jour chaque semaine"
-#endif
 
     IDS_ADMIN_WARNING,      "Vous tentez d'exécuter FileSpacer en tant qu'administrateur. Cette utilisation est déconseillée.\n\nVoulez-vous continuer ?"
     IDS_DONT_ASK,           "Ne plus me demander"

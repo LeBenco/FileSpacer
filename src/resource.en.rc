@@ -37,21 +37,11 @@ STRINGTABLE {
     IDS_INVALID_CHARS,      "File name cannot contain the following characters:\n\\ / : * ? "" < > |"
 
     IDS_SETTINGS_CAPTION,   "FileSpacer Settings"
-#if 0 // Deferred public services.
     IDS_NO_UPDATE_CAPTION,  "No updates available"
-#endif
-#if 0 // Deferred public services.
     IDS_NO_UPDATE,          "You are using the latest version."
-#endif
-#if 0 // Deferred public services.
     IDS_UPDATE_ERROR,       "Error checking for updates"
-#endif
-#if 0 // Deferred public services.
     IDS_UPDATE_NOTIF_TITLE, "FileSpacer update"
-#endif
-#if 0 // Deferred public services.
-    IDS_UPDATE_NOTIF_INFO,  "A new version of FileSpacer is available. Click the purple icon below to download."
-#endif
+    IDS_UPDATE_NOTIF_INFO,  "A new version of FileSpacer is available. Click this notification to open the download page."
 
     IDS_OPEN_PARENT_COMMAND,"Open Parent\n(Alt+Up)"
     IDS_MENU_COMMAND,       "Menu..."
@@ -92,9 +82,7 @@ STRINGTABLE {
     IDS_WELCOME_TUTORIAL,   "&Read Tutorial\nRecommended for first-time users"
 #endif
     IDS_WELCOME_BROWSER,    "&Make default file browser\nReplace File Explorer as your default browser"
-#if 0 // Deferred public services.
     IDS_WELCOME_UPDATE,     "Check for &updates weekly"
-#endif
 
     IDS_ADMIN_WARNING,      "You are attempting to run FileSpacer as Administrator. This is not recommended!\n\nContinue anyway?"
     IDS_DONT_ASK,           "Don't ask again"

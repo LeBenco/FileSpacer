@@ -27,5 +27,15 @@ The first command resets global preferences. The second also resets saved folder
 state. Neither deletes files or changes Windows associations. Resetting preferences
 also restores the default setting for experimental full-name display.
 
-Automatic update checking, public help links, and donation links remain disabled.
-Their code and resource entries are retained in disabled blocks for later work.
+## Updates
+
+Settings > About > Check for updates checks the latest FileSpacer release on
+GitHub. If a newer version is available, its release page opens in your browser
+so you can download and run the installer.
+
+You can enable automatic weekly checks in the same page or in the first-run
+welcome dialog. This option is off by default. A notification appears when a
+newer release is found; clicking it opens the release page. Updates are not
+installed automatically.
+
+Public help links and donation links remain disabled.

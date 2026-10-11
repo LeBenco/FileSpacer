@@ -6,11 +6,11 @@
 #include <shellapi.h>
 #include <Shlwapi.h>
 #include <CommCtrl.h>
+#include <tchar.h>
 
 namespace filespacer {
 
-#if 0 // Deferred until FileSpacer has its own public services.
-const wchar_t UPDATE_URL[] = L"https://chroma.zone/dist/chromafiler-update-release.txt";
+const wchar_t UPDATE_URL[] = L"https://github.com/LeBenco/FileSpacer/releases/latest/download/FileSpacer-update.txt";
 const int MAX_DOWNLOAD_SIZE = 1024;
 
 static UpdateInfo updateInfo;
@@ -35,8 +35,9 @@ void autoUpdateCheck() {
                     return; // still running!
                 }
             }
-            settings::setLastUpdateCheck(curTime);
-            SHCreateThreadWithHandle(updateCheckProc, nullptr, 0, nullptr, &updateThread);
+            if (checkLE(SHCreateThreadWithHandle(updateCheckProc, nullptr, CTF_COINIT_STA,
+                    nullptr, &updateThread)))
+                settings::setLastUpdateCheck(curTime);
         }
     }
 }
@@ -45,6 +46,7 @@ void waitForUpdateThread() {
     if (updateThread) {
         WaitForSingleObject(updateThread, INFINITE);
         checkLE(CloseHandle(updateThread));
+        updateThread = nullptr;
     }
 }
 
@@ -76,8 +78,10 @@ DWORD WINAPI updateCheckProc(void *) {
         return 0;
     HWND messageWindow = checkLE(CreateWindow(notifyClass.lpszClassName, L"FileSpacer", 0,
         0, 0, 0, 0, HWND_MESSAGE, nullptr, instance, nullptr));
-    if (!messageWindow)
+    if (!messageWindow) {
+        checkLE(UnregisterClass(notifyClass.lpszClassName, instance));
         return 0;
+    }
 
     // https://learn.microsoft.com/en-us/windows/win32/shell/notification-area
     NOTIFYICONDATA notify = {sizeof(notify)};
@@ -89,17 +93,21 @@ DWORD WINAPI updateCheckProc(void *) {
     LoadString(instance, IDS_UPDATE_NOTIF_INFO, notify.szInfo, _countof(notify.szInfo));
     LoadString(instance, IDS_UPDATE_NOTIF_TITLE, notify.szInfoTitle, _countof(notify.szInfoTitle));
     checkHR(LoadIconMetric(instance, MAKEINTRESOURCE(IDR_APP_ICON), LIM_SMALL, &notify.hIcon));
-    if (!checkLE(Shell_NotifyIcon(NIM_ADD, &notify)))
-        return 0;
-    checkLE(Shell_NotifyIcon(NIM_SETVERSION, &notify));
+    if (checkLE(Shell_NotifyIcon(NIM_ADD, &notify))) {
+        checkLE(Shell_NotifyIcon(NIM_SETVERSION, &notify));
 
-    // keep thread running to keep message window open
-    MSG msg;
-    while (GetMessage(&msg, nullptr, 0, 0)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+        // keep thread running to keep message window open
+        MSG msg;
+        while (GetMessage(&msg, nullptr, 0, 0) > 0) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        checkLE(Shell_NotifyIcon(NIM_DELETE, &notify));
     }
-    checkLE(Shell_NotifyIcon(NIM_DELETE, &notify));
+    if (notify.hIcon)
+        checkLE(DestroyIcon(notify.hIcon));
+    checkLE(DestroyWindow(messageWindow));
+    checkLE(UnregisterClass(notifyClass.lpszClassName, instance));
     return 0;
 }
 
@@ -109,7 +117,7 @@ DWORD checkUpdate(UpdateInfo *info) {
     DWORD error = (DWORD)E_FAIL;
 
     // https://learn.microsoft.com/en-us/windows/win32/wininet/http-sessions
-    HINTERNET internet = InternetOpen(L"FileSpacer/1.0", INTERNET_OPEN_TYPE_PRECONFIG,
+    HINTERNET internet = InternetOpen(L"FileSpacer/" _T(FILESPACER_VERSION_STRING), INTERNET_OPEN_TYPE_PRECONFIG,
         nullptr, nullptr, 0);
     if (!checkLE(internet))
         return GetLastError();
@@ -118,7 +126,17 @@ DWORD checkUpdate(UpdateInfo *info) {
     if (!checkLE(connection)) {
         error = GetLastError();
     } else {
-        while (dataSize < MAX_DOWNLOAD_SIZE) {
+        DWORD status = 0, statusSize = sizeof(status);
+        if (!checkLE(HttpQueryInfo(connection, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER,
+                &status, &statusSize, nullptr))) {
+            error = GetLastError();
+        } else if (status != HTTP_STATUS_OK) {
+            error = status == HTTP_STATUS_NOT_FOUND ? ERROR_FILE_NOT_FOUND
+                : ERROR_HTTP_INVALID_SERVER_RESPONSE;
+        } else {
+            error = 0;
+        }
+        while (!error && dataSize < MAX_DOWNLOAD_SIZE) {
             DWORD bufferSize, downloadedSize;
             if (!checkLE(InternetQueryDataAvailable(connection, &bufferSize, 0, 0))) {
                 error = GetLastError();
@@ -147,25 +165,33 @@ DWORD checkUpdate(UpdateInfo *info) {
     if (error)
         return error;
     debugPrintf(L"Downloaded content: %S\n", data.data());
-    if (dataSize < 31) {
-        debugPrintf(L"Update data is too small!\n");
-        return (DWORD)E_FAIL;
+    if (dataSize < 31 || dataSize == MAX_DOWNLOAD_SIZE) {
+        debugPrintf(L"Invalid update data size!\n");
+        return ERROR_INVALID_DATA;
     }
-    if (memcmp(data.data(), "CFUP", 4)) {
+    if (memcmp(data.data(), "FSUP\n", 5) || data[13] != '\n') {
         debugPrintf(L"Update data is missing prefix!\n");
-        return (DWORD)E_FAIL;
+        return ERROR_INVALID_DATA;
     }
     char hexString[11] = "0x";
     CopyMemory(hexString + 2, data.data() + 5, 8);
     hexString[10] = 0;
-    if (!StrToIntExA(hexString, STIF_SUPPORT_HEX, (int *)&info->version)) {
+    int version = 0;
+    if (StrSpnA(hexString + 2, "0123456789abcdefABCDEF") != 8
+            || !StrToIntExA(hexString, STIF_SUPPORT_HEX, &version)) {
         debugPrintf(L"Can't parse update version!\n");
-        return (DWORD)E_FAIL;
+        return ERROR_INVALID_DATA;
     }
+    info->version = static_cast<DWORD>(version);
     info->isNewer = info->version > makeVersion(FILESPACER_VERSION);
 
     char *url = data.data() + 14, *urlEnd = StrChrA(url, '\n');
     size_t urlLen = urlEnd ? (urlEnd - url) : lstrlenA(url);
+    const char releasePrefix[] = "https://github.com/LeBenco/FileSpacer/releases/tag/";
+    if (urlLen <= sizeof(releasePrefix) - 1
+            || memcmp(url, releasePrefix, sizeof(releasePrefix) - 1)
+            || memchr(url, '\r', urlLen) || memchr(url, '\0', urlLen))
+        return ERROR_INVALID_DATA;
     info->url = std::unique_ptr<char[]>(new char[urlLen + 1]);
     CopyMemory(info->url.get(), url, urlLen);
     info->url[urlLen] = 0;
@@ -175,7 +201,5 @@ DWORD checkUpdate(UpdateInfo *info) {
 void openUpdate(const UpdateInfo &info) {
     ShellExecuteA(nullptr, "open", info.url.get(), nullptr, nullptr, SW_SHOWNORMAL);
 }
-#endif
-
 
 } // namespace

@@ -81,7 +81,7 @@ STDMETHODIMP FSExecute::Execute() {
         HRESULT hr;
         if (FAILED(hr = openArray(selection))) return hr;
     }
-    // autoUpdateCheck(); // Deferred public update service.
+    autoUpdateCheck();
     return S_OK;
 }
 
@@ -114,7 +114,7 @@ STDMETHODIMP FSExecute::Drop(IDataObject *const dataObject, DWORD keyState, POIN
     if (FAILED(hr = openArray(itemArray)))
         return hr;
     *effect &= DROPEFFECT_LINK;
-    // autoUpdateCheck(); // Deferred public update service.
+    autoUpdateCheck();
     return S_OK;
 }
 
