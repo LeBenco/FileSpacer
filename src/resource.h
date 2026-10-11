@@ -1,8 +1,8 @@
 #pragma once
 #include "dialog.h"
 
-#define FILESPACER_VERSION        1,0,3,0
-#define FILESPACER_VERSION_STRING "1.0.3\0"
+#define FILESPACER_VERSION        1,0,4,0
+#define FILESPACER_VERSION_STRING "1.0.4\0"
 
 #define IDR_RT_MANIFEST1 1 // must be 1 for an exe
 
@@ -24,6 +24,7 @@
 #define IDM_CONTEXT_MENU    1018
 #define IDM_PROXY_BUTTON    1019
 #define IDM_QUICK_ACCESS    1020
+#define IDM_REOPEN_WINDOW   1021
 
 #define IDM_SHELL_FIRST     0x4000
 #define IDM_SHELL_LAST      0x7FFF
@@ -99,10 +100,18 @@
 #define IDS_CAPTION_COPY_PATH                275
 #define IDS_CAPTION_RENAME                   276
 #define IDS_CAPTION_PROPERTIES               277
+#define IDS_CAPTION_CLOSE_PARENTS            309
+#define IDS_CAPTION_REOPEN_NAMED             310
+#define IDS_REOPEN_LAST                      311
+#define IDS_REOPEN_EMPTY                     312
+#define IDS_REOPEN_FAILED                    313
+#define IDS_REOPEN_MENU                      314
+#define IDS_REOPEN_NAMED                     315
 #define MDL2_COPY_PATH                       L"\uE8C8"
 #define MDL2_RENAME                          L"\uE8AC"
 #define MDL2_PROPERTIES                      L"\uE946"
 #define MDL2_FOLDER                          L"\uE8B7"
+#define MDL2_CLOSE_PARENTS                   L"\uE711"
 
 #define IDS_FOLDER_WIDTH_LABEL               279
 #define IDS_FOLDER_HEIGHT_LABEL              280
