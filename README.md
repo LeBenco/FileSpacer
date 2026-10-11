@@ -1,3 +1,7 @@
+<p align="center">
+    <img  width="400" height="400" alt="FileSpacer" src="https://github.com/user-attachments/assets/b15bf127-741a-4929-9d04-416a6e5cb0ed" />
+</p>
+
 # FileSpacer
 
 FileSpacer is a file manager for Microsoft Windows with a fully spatial interface: folders open in separate windows that retain their position, size, and display settings. By default, opening a folder closes the window it was opened from, avoiding the accumulation of windows and keeping the desktop uncluttered.
