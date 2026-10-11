@@ -77,6 +77,6 @@ See the Nilesoft [configuration reference](https://nilesoft.org/docs/configurati
 
 ## License and privacy
 
-FileSpacer is distributed under the [GNU General Public License v3.0](LICENSE). Copyright (c) 2026 LeBenco, for the FileSpacer modifications. Original ChromaFiler code: Copyright (c) 2023 J. van't Hoog.
+FileSpacer is distributed under the [GNU General Public License v3.0](LICENSE). Copyright (c) 2026 Benco, for the FileSpacer modifications. Original ChromaFiler code: Copyright (c) 2023 J. van't Hoog.
 
 See [third-party notices](THIRD_PARTY_NOTICES.md) and the [privacy policy](docs/privacy-policy.md).
