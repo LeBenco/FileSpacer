@@ -72,9 +72,28 @@ No dependency on `sqlite3.dll` should appear. Windows system DLLs remain require
 
 The release workflow runs only when a new `vX.Y.Z` tag is pushed. It builds Release
 and the NSIS installer on `windows-2022`, verifies the executable version against
-the tag, and publishes `FileSpacer-install.exe` to the fork's GitHub Release.
+the tag, and publishes `FileSpacer-X.Y.Z-install.exe` and `FileSpacer-update.txt`
+to the fork's GitHub Release. The workflow can also be run manually for an
+existing tag.
 Ordinary branch pushes do not build or publish an installer. No custom secret is
 needed; the workflow uses GitHub's automatic token.
 
 The runner locates MSVC with `vswhere` and invokes the same NMAKE targets directly
 because its Visual Studio edition differs from the local Build Tools installation.
+
+Update checking downloads the manifest from
+`https://github.com/LeBenco/FileSpacer/releases/latest/download/FileSpacer-update.txt`.
+The workflow generates it from the built executable's version, using ASCII
+without a BOM and LF line endings:
+
+```text
+FSUP
+01000200
+https://github.com/LeBenco/FileSpacer/releases/tag/v1.0.2
+```
+
+The eight hexadecimal digits encode the four version components, one byte each
+(major, minor, patch, revision). Each component must be between 0 and 255. The
+last line opens the corresponding release page, not an automatic installer.
+GitHub's latest-release URL selects stable releases; prereleases are not offered
+by the updater. A release must contain the manifest for checks to succeed.

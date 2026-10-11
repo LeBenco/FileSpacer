@@ -22,7 +22,7 @@
 #pragma comment(lib, "Gdi32.lib")
 #pragma comment(lib, "UxTheme.lib")
 #pragma comment(lib, "Comctl32.lib")
-// #pragma comment(lib, "Wininet.lib") // Deferred updater only.
+#pragma comment(lib, "Wininet.lib")
 #pragma comment(lib, "Shlwapi.lib")
 
 using namespace filespacer;
@@ -390,7 +390,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         SHCreateThreadWithHandle(checkLastVersion, nullptr, 0, nullptr, &versionThread);
     }
 
-    // autoUpdateCheck(); // Deferred public update service.
+    autoUpdateCheck();
 
     MSG msg = {};
     int exitCode = 0;
@@ -435,7 +435,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         checkLE(CloseHandle(jumpListThread));
         checkLE(CloseHandle(versionThread));
     }
-    // waitForUpdateThread(); // Deferred public update service.
+    waitForUpdateThread();
 
     ItemWindow::uninit();
     threadReference.Release();
@@ -545,7 +545,6 @@ void showWelcomeDialog() {
     TASKDIALOGCONFIG config = {sizeof(config)};
     config.hInstance = GetModuleHandle(nullptr);
     config.dwFlags = TDF_ALLOW_DIALOG_CANCELLATION | TDF_USE_COMMAND_LINKS;
-    // config.dwFlags |= TDF_VERIFICATION_FLAG_CHECKED; // Deferred updater.
     config.dwCommonButtons = TDCBF_CLOSE_BUTTON;
     config.pszWindowTitle = MAKEINTRESOURCE(IDS_APP_NAME);
     config.pszMainIcon = MAKEINTRESOURCE(IDR_APP_ICON);
@@ -557,15 +556,12 @@ void showWelcomeDialog() {
     config.cButtons = _countof(buttons);
     config.pButtons = buttons;
     config.nDefaultButton = IDCLOSE;
-    // config.pszVerificationText = MAKEINTRESOURCE(IDS_WELCOME_UPDATE); // Deferred updater.
+    config.pszVerificationText = MAKEINTRESOURCE(IDS_WELCOME_UPDATE);
     config.pfCallback = welcomeDialogCallback;
 
-#if 0 // Deferred until FileSpacer has its own public services.
     BOOL autoUpdateChecked;
     if (checkHR(TaskDialogIndirect(&config, nullptr, nullptr, &autoUpdateChecked)))
         settings::setUpdateCheckEnabled(autoUpdateChecked);
-#endif
-    checkHR(TaskDialogIndirect(&config, nullptr, nullptr, nullptr));
 
 }
 

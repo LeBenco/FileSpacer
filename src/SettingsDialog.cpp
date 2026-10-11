@@ -447,10 +447,8 @@ INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
     switch (message) {
         case WM_INITDIALOG: {
             SendDlgItemMessage(hwnd, IDC_LEGAL_INFO, EM_SETTABSTOPS, 1, (LPARAM)tempPtr(16u));
-#if 0 // Deferred until FileSpacer has its own public services.
             CheckDlgButton(hwnd, IDC_AUTO_UPDATE,
                 settings::getUpdateCheckEnabled() ? BST_CHECKED : BST_UNCHECKED);
-#endif
 
             SetDlgItemText(hwnd, IDC_VERSION, _T(FILESPACER_VERSION_STRING));
             SetDlgItemText(hwnd, IDC_LEGAL_INFO, getString(IDS_LEGAL_INFO));
@@ -462,13 +460,11 @@ INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
                 SetWindowLongPtr(hwnd, DWLP_MSGRESULT, FALSE);
                 return TRUE;
             } else if (notif->code == PSN_APPLY) {
-#if 0 // Deferred until FileSpacer has its own public services.
                 bool updatesEnabled = !!IsDlgButtonChecked(hwnd, IDC_AUTO_UPDATE);
                 bool enableNow = updatesEnabled && !settings::getUpdateCheckEnabled();
                 settings::setUpdateCheckEnabled(updatesEnabled);
                 if (enableNow)
                     autoUpdateCheck();
-#endif
 
                 SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_NOERROR);
                 return TRUE;
@@ -483,7 +479,6 @@ INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
             return FALSE;
         }
         case WM_COMMAND:
-#if 0 // Deferred until FileSpacer has its own public services.
             if (LOWORD(wParam) == IDC_UPDATES_LINK && HIWORD(wParam) == BN_CLICKED) {
                 HINSTANCE instance = GetModuleHandle(nullptr);
                 UpdateInfo info;
@@ -499,7 +494,9 @@ INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
                         nullptr, MAKEINTRESOURCE(IDS_NO_UPDATE), 0, nullptr, nullptr);
                 }
                 return TRUE;
-            } else if (LOWORD(wParam) == IDC_HELP_LINK && HIWORD(wParam) == BN_CLICKED) {
+            }
+#if 0 // Deferred public help, website and donation links.
+            else if (LOWORD(wParam) == IDC_HELP_LINK && HIWORD(wParam) == BN_CLICKED) {
                 ShellExecute(nullptr, L"open", L"https://github.com/vanjac/chromafiler/wiki",
                     nullptr, nullptr, SW_SHOWNORMAL);
                 return TRUE;
@@ -511,11 +508,12 @@ INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
                 ShellExecute(nullptr, L"open", L"https://chroma.zone/donate",
                     nullptr, nullptr, SW_SHOWNORMAL);
                 return TRUE;
-            } else if (LOWORD(wParam) == IDC_AUTO_UPDATE && HIWORD(wParam) == BN_CLICKED) {
+            }
+#endif
+            else if (LOWORD(wParam) == IDC_AUTO_UPDATE && HIWORD(wParam) == BN_CLICKED) {
                 PropSheet_Changed(GetParent(hwnd), hwnd);
                 return TRUE;
             } else
-#endif
             if (HIWORD(wParam) == CBN_SELCHANGE) {
 
                 SendMessage(GetParent(hwnd), LOWORD(wParam), lParam, (LPARAM)tempPtr(0xDD8AD83Ell)); 

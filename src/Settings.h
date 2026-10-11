@@ -13,12 +13,9 @@ extern bool testMode;
 
 // http://smallvoid.com/article/winnt-shell-keyword.html
 const DWORD     DEFAULT_LAST_OPENED_VERSION = 0;
-#if 0 // Deferred until FileSpacer has its own public services.
 const bool      DEFAULT_UPDATE_CHECK_ENABLED= false;
 const LONGLONG  DEFAULT_LAST_UPDATE_CHECK   = 0;
 const LONGLONG  DEFAULT_UPDATE_CHECK_RATE   = 10000000LL * 60 * 60 * 24 * 7; // 1 week
-#endif
-
 const bool      DEFAULT_ADMIN_WARNING       = true;
 const wchar_t   DEFAULT_STARTING_FOLDER[]   = L"shell:Desktop";
 const SIZE      DEFAULT_FOLDER_WINDOW_SIZE  = {210, 435};
@@ -38,15 +35,12 @@ const bool      DEFAULT_FULL_NAMES_ON_SELECTION = true;
 
 DWORD getLastOpenedVersion();
 void setLastOpenedVersion(DWORD value);
-#if 0 // Deferred until FileSpacer has its own public services.
 bool getUpdateCheckEnabled();
 void setUpdateCheckEnabled(bool value);
 LONGLONG getLastUpdateCheck();
 void setLastUpdateCheck(LONGLONG value);
 LONGLONG getUpdateCheckRate();
 void setUpdateCheckRate(LONGLONG value); // TODO: add to Settings
-#endif
-
 
 bool getAdminWarning();
 void setAdminWarning(bool value);
