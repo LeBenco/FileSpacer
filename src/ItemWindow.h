@@ -128,6 +128,8 @@ protected:
     virtual int getToolbarTooltip(WORD command);
 
     virtual void trackContextMenu(POINT pos);
+
+    HWND getToolbarMenuOwner() const;
 	int trackContextMenu(POINT pos, HMENU menu, HWND owner = nullptr);
 
     void openChild(IShellItem *childItem, bool closeSource);
@@ -195,6 +197,7 @@ private:
 
     ProxyIcon proxyIcon;
     HWND toolbarRebar = nullptr, toolbarHost = nullptr;
+    HWND toolbarMenuOwner = nullptr;
     HWND parentToolbar = nullptr, cmdToolbar = nullptr;
     HWND quickAccessToolbar = nullptr;
     long shellWindowCookie = 0;
