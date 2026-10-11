@@ -1620,10 +1620,13 @@ void FolderWindow::trackContextMenu(POINT pos) {
         contextMenu2 = contextMenu;
         if (isWindowOperational())
             contextMenu3 = contextMenu;
-        HWND menuOwner = hwnd;
-        HWND shellViewHwnd = nullptr;
-        if (isWindowOperational() && SUCCEEDED(view->GetWindow(&shellViewHwnd)) && shellViewHwnd)
-            menuOwner = shellViewHwnd;
+        HWND menuOwner = getToolbarMenuOwner();
+        if (!menuOwner) {
+            menuOwner = hwnd;
+            HWND shellViewHwnd = nullptr;
+            if (isWindowOperational() && SUCCEEDED(view->GetWindow(&shellViewHwnd)) && shellViewHwnd)
+                menuOwner = shellViewHwnd;
+        }
         int cmd = 0;
         if (isWindowOperational()) {
             wchar_t ownerClass[128] = {};
