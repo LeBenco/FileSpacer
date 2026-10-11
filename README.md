@@ -75,6 +75,24 @@ modify(type='*' mode='multiple' where=filespacer_title
 
 See the Nilesoft [configuration reference](https://nilesoft.org/docs/configuration/).
 
+### Recommended menu appearance
+
+Square corners are recommended for the title-bar and toolbar menus to match FileSpacer's buttons. Using the variables above, add this setting to your existing `theme { ... }` block:
+
+```nss
+border.radius = if(
+    process.name == 'FileSpacer' &&
+    (
+        window.parent.name == 'FileSpacer Item Window' ||
+        window.parent.name == 'FileSpacer Toolbar Host'
+    ),
+    0,
+    default
+)
+```
+
+If you already use a custom radius, replace `default` with its previous value.
+
 ## License and privacy
 
 FileSpacer is distributed under the [GNU General Public License v3.0](LICENSE). Copyright (c) 2026 Benjamin Cohen Boulakia, for the FileSpacer modifications. Original ChromaFiler code: Copyright (c) 2023 J. van't Hoog.
