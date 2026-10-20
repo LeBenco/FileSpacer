@@ -11,12 +11,17 @@ namespace filespacer {
 
 class FolderWindow : public ItemWindow, public IServiceProvider, public ICommDlgBrowser2,
         public IExplorerBrowserEvents, public IShellFolderViewCB, public IWebBrowserApp,
-        public IShellBrowser {
+        public IShellBrowser, public IFolderFilter {
 public:
     static void init();
 
     FolderWindow(IShellItem *item, const std::wstring &identity);
     void setReopenState(const ClosedWindow &window) { reopeningWindow = window; }
+    void setSelectionOnOpen(PCUIDLIST_RELATIVE descendant) {
+        // The clone is a fresh, aligned COM allocation; legacy PIDL typedefs
+        // still qualify ILCloneFirst's return pointer as __unaligned.
+        selectionOnOpen.Attach(reinterpret_cast<ITEMID_CHILD *>(ILCloneFirst(descendant)));
+    }
 
     bool handleTopLevelMessage(MSG *msg) override;
 
@@ -88,6 +93,11 @@ public:
     STDMETHODIMP OnViewCreated(IShellView *shellView) override;
     // IShellFolderViewCB
     STDMETHODIMP MessageSFVCB(UINT msg, WPARAM wParam, LPARAM lParam) override;
+    // IFolderFilter (queried on the replacement view callback)
+    STDMETHODIMP GetEnumFlags(IShellFolder *folder, PCIDLIST_ABSOLUTE folderID,
+        HWND *window, DWORD *flags) override;
+    STDMETHODIMP ShouldShow(IShellFolder *folder, PCIDLIST_ABSOLUTE folderID,
+        PCUITEMID_CHILD childID) override;
     // IDispatch
     STDMETHODIMP GetTypeInfoCount(UINT *) override;
     STDMETHODIMP GetTypeInfo(UINT, LCID, ITypeInfo **) override;
@@ -150,7 +160,8 @@ protected:
     };
     enum UserMessage {
         MSG_INITIAL_NAVIGATION = ItemWindow::MSG_LAST,
-        MSG_QUICK_ACCESS_ICON
+        // WM_USER + 7 is the Shell compatibility query for IShellBrowser.
+        MSG_QUICK_ACCESS_ICON = WM_APP + 45
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
 
@@ -192,6 +203,10 @@ protected:
 
 private:
     ClosedWindow reopeningWindow;
+    CComHeapPtr<ITEMID_CHILD> selectionOnOpen;
+    class InitialSelectionCallback;
+    bool initialSelectionEnumerationReady = false;
+    void selectOpenedChild();
     void restoreReopenViewState();
     void placeSearchBox();
     void applyNameFilter(const wchar_t *text);
@@ -263,6 +278,10 @@ private:
     CComPtr<IExplorerBrowser> browser; // will be null if browser can't be initialized!
     DWORD eventsCookie = 0;
     bool initialNavigationPending = false;
+    unsigned navigationDepth = 0;
+    UINT deferredCloseMessage = 0;
+    bool deferredBrowserRebuild = false;
+    HRESULT browseToItem();
     CComPtr<IShellFolderViewCB> prevCB;
 
     CComPtr<IShellItem> selected; // retains the selected shortcut rather than its resolved target

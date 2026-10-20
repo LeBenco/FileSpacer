@@ -120,7 +120,7 @@ void recordFolderItemFailure(IShellItem *item, HRESULT result) {
 }
 
 FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCmd,
-        const ClosedWindow *reopening) {
+        const ClosedWindow *reopening, IShellItem *origin) {
     if (isProcessQuitRequested()) return FolderOpenResult::Failed;
     std::wstring identity = getFolderIdentity(item);
     std::wstring property = folderWindowProperty(identity);
@@ -147,6 +147,18 @@ FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCm
     CComPtr<FolderWindow> window;
     window.Attach(new FolderWindow(item, identity));
     if (reopening) window->setReopenState(*reopening);
+    // Resolve the ancestor's direct child only for a newly created window.
+    // ILFindChild returns B\\C for a navigation from A\\B\\C to A;
+    // setSelectionOnOpen keeps only B, using the Shell's PIDL APIs.
+    if (origin && !reopening) {
+        CComHeapPtr<ITEMIDLIST> destinationID, originID;
+        if (SUCCEEDED(SHGetIDListFromObject(item, &destinationID)) && destinationID
+                && SUCCEEDED(SHGetIDListFromObject(origin, &originID)) && originID) {
+            PCUIDLIST_RELATIVE descendant = ILFindChild(destinationID, originID);
+            if (descendant && !ILIsEmpty(descendant))
+                window->setSelectionOnOpen(descendant);
+        }
+    }
     if (!window->create(window->requestedRect(monitor), showCmd))
         return FolderOpenResult::Failed;
     if (isProcessQuitRequested()) {
