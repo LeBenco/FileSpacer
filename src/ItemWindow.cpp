@@ -1094,12 +1094,15 @@ void ItemWindow::onCreate() {
 
         cmdToolbar = checkLE(CreateWindowEx(
             0, TOOLBARCLASSNAME, nullptr,
-            TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_TOOLTIPS | CCS_NOPARENTALIGN | CCS_NORESIZE | CCS_NODIVIDER
+            TBSTYLE_FLAT | TBSTYLE_TOOLTIPS | CCS_NOPARENTALIGN | CCS_NORESIZE | CCS_NODIVIDER
                 | WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN,
             0, 0, 0, TOOLBAR_HEIGHT,
             toolbarHost, nullptr, instance, nullptr));
         SendMessage(cmdToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
-        SendMessage(cmdToolbar, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_MIXEDBUTTONS);
+        // Use the standard layout and native centering for text-only symbol buttons.
+        SendMessage(cmdToolbar, TB_SETDRAWTEXTFLAGS,
+            DT_CENTER | DT_RIGHT | DT_VCENTER | DT_BOTTOM | DT_SINGLELINE,
+            DT_CENTER | DT_VCENTER | DT_SINGLELINE);
         SendMessage(cmdToolbar, TB_SETBUTTONWIDTH, 0, MAKELPARAM(TOOLBAR_HEIGHT, TOOLBAR_HEIGHT));
         SendMessage(cmdToolbar, TB_SETBITMAPSIZE, 0, 0);
         if (symbolFont)
@@ -1135,7 +1138,7 @@ void ItemWindow::onCreate() {
             if (symbolFont)
                 SendMessage(quickAccessToolbar, WM_SETFONT, (WPARAM)symbolFont, FALSE);
             TBBUTTON quickAccess = makeToolbarButton(ICON_QUICK_ACCESS,
-                IDM_QUICK_ACCESS, BTNS_DROPDOWN);
+                IDM_QUICK_ACCESS, BTNS_DROPDOWN | BTNS_SHOWTEXT);
             SendMessage(quickAccessToolbar, TB_ADDBUTTONS, 1, (LPARAM)&quickAccess);
             SendMessage(quickAccessToolbar, TB_SETBUTTONSIZE, 0, MAKELPARAM(width, height));
         }
@@ -1168,8 +1171,8 @@ void ItemWindow::onCreate() {
 
 TBBUTTON ItemWindow::makeToolbarButton(const wchar_t *text, WORD command, BYTE style, BYTE state) {
     if (command == IDM_REFRESH && navigationGraphicsToken)
-        text = L""; // The icon is painted after the native button background.
-    return {I_IMAGENONE, command, state, (BYTE)(BTNS_SHOWTEXT | style), {}, 0, (INT_PTR)text};
+        text = L""; // The glyph is painted after the native button background.
+    return {I_IMAGENONE, command, state, style, {}, 0, (INT_PTR)text};
 }
 
 void ItemWindow::addToolbarButtons(HWND tb) {
@@ -1369,7 +1372,7 @@ LRESULT ItemWindow::onNotify(NMHDR *nmHdr) {
     if (pathBar.isWindow(nmHdr->hwndFrom) && nmHdr->code == PathBar::OPEN_ITEM) {
         auto notification = reinterpret_cast<PathBar::OpenItemNotification *>(nmHdr);
         openChild(notification->item,
-            settings::getKeepSourceWindowOpen() == notification->control);
+            settings::getKeepSourceWindowOpen() == notification->control, true);
         return 0;
     }
     if (toolbarRebar && nmHdr->hwndFrom == toolbarRebar
@@ -1442,7 +1445,8 @@ LRESULT ItemWindow::onNotify(NMHDR *nmHdr) {
         } else if (customDraw->nmcd.dwDrawStage == CDDS_ITEMPREPAINT && menuButton
                 && proxyIcon.drawMenuButton(customDraw->nmcd)) {
             return CDRF_SKIPDEFAULT;
-        } else if (customDraw->nmcd.dwDrawStage == CDDS_ITEMPREPAINT && navigationIcon) {
+        } else if (customDraw->nmcd.dwDrawStage == CDDS_ITEMPREPAINT
+                && navigationIcon) {
             return CDRF_NOTIFYPOSTPAINT;
         } else if (customDraw->nmcd.dwDrawStage == CDDS_ITEMPOSTPAINT && navigationIcon) {
             drawNavigationIcon(customDraw);
@@ -1671,7 +1675,7 @@ void ItemWindow::onPaint(PAINTSTRUCT paint) {
     }
 }
 
-void ItemWindow::openChild(IShellItem *const childItem, bool closeSource) {
+void ItemWindow::openChild(IShellItem *const childItem, bool closeSource, bool selectOrigin) {
     CComPtr<ItemWindow> keepAlive(this); // a COM wait may dispatch window messages
     if (!isWindowOperational())
         return;
@@ -1700,7 +1704,8 @@ void ItemWindow::openChild(IShellItem *const childItem, bool closeSource) {
         return;
     }
     HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-    FolderOpenResult result = openFolderWindow(resolved, monitor, SW_SHOWNORMAL);
+    FolderOpenResult result = openFolderWindow(resolved, monitor, SW_SHOWNORMAL,
+        nullptr, selectOrigin ? item.p : nullptr);
     if (isWindowOperational() && closeSource
             && (result == FolderOpenResult::Created || result == FolderOpenResult::Activated))
         close(false);
@@ -1713,7 +1718,7 @@ void ItemWindow::openParent(bool closeSource) {
         return;
     CComPtr<IShellItem> parentItem;
     if (SUCCEEDED(item->GetParent(&parentItem)) && isWindowOperational())
-        openChild(parentItem, closeSource);
+        openChild(parentItem, closeSource, true);
 }
 
 
@@ -2115,7 +2120,7 @@ void ItemWindow::openParentMenu() {
         }
 
         if (isWindowOperational() && found && targetItem)
-            openChild(targetItem, closeSource);
+            openChild(targetItem, closeSource, true);
     }
 
 

@@ -18,7 +18,7 @@ namespace filespacer {
 enum class FolderOpenResult;
 
 class ItemWindow : public WindowImpl, public UnknownImpl {
-    friend FolderOpenResult openFolderWindow(IShellItem *, HMONITOR, int, const ClosedWindow *);
+    friend FolderOpenResult openFolderWindow(IShellItem *, HMONITOR, int, const ClosedWindow *, IShellItem *);
     friend ProxyIcon;
 protected:
     static HACCEL accelTable;
@@ -135,7 +135,7 @@ protected:
     HWND getToolbarMenuOwner() const;
 	int trackContextMenu(POINT pos, HMENU menu, HWND owner = nullptr);
 
-    void openChild(IShellItem *childItem, bool closeSource);
+    void openChild(IShellItem *childItem, bool closeSource, bool selectOrigin = false);
 
     virtual IDispatch * getShellViewDispatch();
     void onViewReady();

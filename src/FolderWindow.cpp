@@ -63,15 +63,21 @@ const UINT WM_GETISHELLBROWSER_COMPAT = WM_USER + 7;
 
 static CComHeapPtr<ITEMID_CHILD> hiddenItemIDs[_countof(HIDDEN_ITEM_PARSE_NAMES)];
 
-// One immutable filter per submitted query. The Shell may call it off the UI thread;
-// it owns no window, browser, or apartment-bound Shell object.
+// Install one filter before creating the first view. DefView can retain that
+// interface across Refresh, so publish immutable query snapshots to it.
+// Shell worker threads never access the host window or its COM interfaces.
 class FolderNameFilter final : public IFolderFilter {
 public:
-    explicit FolderNameFilter(const wchar_t *text) : query(text),
-        wildcard(query.find_first_of(L"*?") != std::wstring::npos) {}
+    explicit FolderNameFilter(const wchar_t *text)
+        : query(std::make_shared<const Query>(text)) {}
+
+    void setQuery(const wchar_t *text) {
+        std::atomic_store(&query, std::make_shared<const Query>(text));
+    }
 
     HRESULT initialize() {
-        return CoCreateFreeThreadedMarshaler(this, &marshaler);
+        const HRESULT result = CoCreateFreeThreadedMarshaler(this, &marshaler);
+        return result;
     }
 
     STDMETHODIMP QueryInterface(REFIID id, void **object) override {
@@ -125,6 +131,9 @@ public:
                     return S_FALSE;
             }
         }
+        const auto current = std::atomic_load(&query);
+        if (current->text.empty())
+            return S_OK;
         SFGAOF attributes = SFGAO_FILESYSTEM;
         const bool filesystem = SUCCEEDED(folder->GetAttributesOf(1, &childID, &attributes))
             && (attributes & SFGAO_FILESYSTEM);
@@ -132,25 +141,34 @@ public:
         const SHGDNF flags = filesystem
             ? static_cast<SHGDNF>(SHGDN_INFOLDER | SHGDN_FORPARSING) : SHGDN_INFOLDER;
         HRESULT hr = folder->GetDisplayNameOf(childID, flags, &result);
-        if (FAILED(hr))
+        if (FAILED(hr)) {
             return hr;
+        }
         CComHeapPtr<wchar_t> name;
         hr = StrRetToStr(&result, childID, &name);
-        if (FAILED(hr))
+        if (FAILED(hr)) {
             return hr;
+        }
         // Filesystem names include extensions even when the view hides them.
         const wchar_t *fullName = name;
         const wchar_t *filename = filesystem ? PathFindFileName(fullName) : fullName;
-        if (wildcard)
-            return PathMatchSpecEx(filename, query.c_str(),
+        if (current->wildcard)
+            hr = PathMatchSpecEx(filename, current->text.c_str(),
                 PMSF_NORMAL | PMSF_DONT_STRIP_SPACES);
-        return StrStrIW(filename, query.c_str()) ? S_OK : S_FALSE;
+        else
+            hr = StrStrIW(filename, current->text.c_str()) ? S_OK : S_FALSE;
+        return hr;
     }
 
 private:
+    struct Query {
+        explicit Query(const wchar_t *value) : text(value),
+            wildcard(text.find_first_of(L"*?") != std::wstring::npos) {}
+        const std::wstring text;
+        const bool wildcard;
+    };
     LONG references = 1;
-    const std::wstring query;
-    const bool wildcard;
+    std::shared_ptr<const Query> query;
     CComPtr<IUnknown> marshaler;
 };
 
@@ -201,6 +219,15 @@ bool FolderWindow::isFolder() const {
 bool FolderWindow::handleTopLevelMessage(MSG *msg) {
     if (!isWindowOperational())
         return false;
+    // Cancel the pending initial selection before dispatching user input.
+    if (selectionOnOpen && (msg->hwnd == hwnd || IsChild(hwnd, msg->hwnd))
+            && (msg->message == WM_KEYDOWN || msg->message == WM_SYSKEYDOWN
+                || msg->message == WM_LBUTTONDOWN || msg->message == WM_RBUTTONDOWN
+                || msg->message == WM_MBUTTONDOWN || msg->message == WM_XBUTTONDOWN
+                || msg->message == WM_MOUSEWHEEL || msg->message == WM_MOUSEHWHEEL
+                || msg->message == WM_POINTERDOWN || msg->message == WM_TOUCH)) {
+        selectionOnOpen.Free();
+    }
     if (msg->message == WM_KEYDOWN && msg->wParam == L'T'
             && GetKeyState(VK_CONTROL) < 0 && GetKeyState(VK_SHIFT) < 0
             && GetKeyState(VK_MENU) >= 0) {
@@ -343,6 +370,15 @@ void FolderWindow::onCreate() {
     }
 
     checkHR(IUnknown_SetSite(browser, (IServiceProvider *)this));
+    CComPtr<IFolderFilter> filter;
+    auto concreteFilter = new FolderNameFilter(L"");
+    filter.Attach(concreteFilter);
+    HRESULT filterResult = concreteFilter->initialize();
+    CComQIPtr<IFolderFilterSite> filterSite(browser);
+    if (SUCCEEDED(filterResult))
+        filterResult = filterSite ? filterSite->SetFilter(filter) : E_NOINTERFACE;
+    if (checkHR(filterResult))
+        nameFilter = filter;
     checkHR(browser->Advise(this, &eventsCookie));
     // Start the first navigation only after the window has been shown.
     initialNavigationPending = true;
@@ -419,8 +455,10 @@ FOLDERSETTINGS FolderWindow::folderSettings() const {
 void FolderWindow::initDefaultView(IFolderView2 *const folderView) {
     // FVM_SMALLICON only seems to work if it's also specified with an icon size
     // https://docs.microsoft.com/en-us/windows/win32/menurc/about-icons
-    checkHR(folderView->SetCurrentViewMode(FVM_DETAILS));
-    checkHR(folderView->SetCurrentFolderFlags(FWF_AUTOARRANGE, FWF_AUTOARRANGE));
+    HRESULT result = folderView->SetCurrentViewMode(FVM_DETAILS);
+    checkHR(result);
+    result = folderView->SetCurrentFolderFlags(FWF_AUTOARRANGE, FWF_AUTOARRANGE);
+    checkHR(result);
 }
 
 void FolderWindow::detachListView() {
@@ -770,19 +808,25 @@ FolderViewSettings captureOptions(IFolderView2 *view, const FolderViewSettings &
 }
 
 void restoreOptions(IFolderView2 *view, const FolderViewSettings &state) {
-    if (state.present & FolderViewSettings::Mode)
-        checkHR(view->SetViewModeAndIconSize(static_cast<FOLDERVIEWMODE>(state.mode), state.iconSize));
-    if (state.present & FolderViewSettings::Flags)
-        checkHR(view->SetCurrentFolderFlags(FWF_AUTOARRANGE | FWF_SNAPTOGRID, state.flags));
+    if (state.present & FolderViewSettings::Mode) {
+        const HRESULT result = view->SetViewModeAndIconSize(static_cast<FOLDERVIEWMODE>(state.mode), state.iconSize);
+        checkHR(result);
+    }
+    if (state.present & FolderViewSettings::Flags) {
+        const HRESULT result = view->SetCurrentFolderFlags(FWF_AUTOARRANGE | FWF_SNAPTOGRID, state.flags);
+        checkHR(result);
+    }
     CComQIPtr<IColumnManager> manager(view);
     if (manager && (state.present & FolderViewSettings::Columns) && !state.columns.empty()) {
         std::vector<PROPERTYKEY> keys;
         for (const auto &column : state.columns) keys.push_back(propertyKey(column.key));
-        if (checkHR(manager->SetColumns(keys.data(), static_cast<UINT>(keys.size())))) {
+        const HRESULT result = manager->SetColumns(keys.data(), static_cast<UINT>(keys.size()));
+        if (checkHR(result)) {
             for (const auto &column : state.columns) {
                 CM_COLUMNINFO info = {sizeof(info), CM_MASK_WIDTH};
                 info.uWidth = static_cast<UINT>(scaleDPI(static_cast<int>(column.width)));
-                checkHR(manager->SetColumnInfo(propertyKey(column.key), &info));
+                const HRESULT widthResult = manager->SetColumnInfo(propertyKey(column.key), &info);
+                checkHR(widthResult);
             }
         }
     }
@@ -790,10 +834,13 @@ void restoreOptions(IFolderView2 *view, const FolderViewSettings &state) {
         std::vector<SORTCOLUMN> columns;
         for (const auto &column : state.sort)
             columns.push_back({propertyKey(column.key), static_cast<SORTDIRECTION>(column.direction)});
-        checkHR(view->SetSortColumns(columns.data(), static_cast<int>(columns.size())));
+        const HRESULT result = view->SetSortColumns(columns.data(), static_cast<int>(columns.size()));
+        checkHR(result);
     }
-    if (state.present & FolderViewSettings::Group)
-        checkHR(view->SetGroupBy(propertyKey(state.groupBy), state.groupAscending));
+    if (state.present & FolderViewSettings::Group) {
+        const HRESULT result = view->SetGroupBy(propertyKey(state.groupBy), state.groupAscending);
+        checkHR(result);
+    }
 }
 }
 
@@ -826,8 +873,9 @@ void FolderWindow::setViewState(IFolderView2 *const folderView, const ShellViewS
         items.reserve(static_cast<size_t>(state.numItems));
         for (int i = 0; i < state.numItems; i++)
             items.push_back(state.itemIds[i]);
-        checkHR(folderView->SelectAndPositionItems(static_cast<UINT>(items.size()),
-            items.data(), state.itemPositions.get(), SVSI_NOSTATECHANGE));
+        const HRESULT result = folderView->SelectAndPositionItems(static_cast<UINT>(items.size()),
+            items.data(), state.itemPositions.get(), SVSI_NOSTATECHANGE);
+        checkHR(result);
     }
 }
 
@@ -851,7 +899,7 @@ uint32_t FolderWindow::captureViewState(uint32_t mask) {
         captured |= FolderState::View;
     }
     // A filtered subset must never replace the complete folder's icon positions.
-    if (!nameFilter && (mask & FolderState::Icons) && spatialView(view)) {
+    if (searchText.empty() && (mask & FolderState::Icons) && spatialView(view)) {
         CComPtr<IStream> stream;
         stream.Attach(SHCreateMemStream(nullptr, 0));
         if (stream && writeIconPositions(view, stream)) {
@@ -939,8 +987,9 @@ bool FolderWindow::readIconPositions(IFolderView *const folderView, IStream *con
     while (SUCCEEDED(IStream_ReadPidl(stream, &idList))
             && SUCCEEDED(IStream_Read(stream, &pos, sizeof(pos)))) {
         pos = scaleDPI(pos);
-        checkHR(folderView->SelectAndPositionItems(1, (PCITEMID_CHILD *)&idList.m_pData,
-            &pos, SVSI_NOSTATECHANGE));
+        const HRESULT result = folderView->SelectAndPositionItems(1, (PCITEMID_CHILD *)&idList.m_pData,
+            &pos, SVSI_NOSTATECHANGE);
+        checkHR(result);
         idList.Free();
     }
     // TODO: auto-position the remaining items to avoid overlap
@@ -1010,6 +1059,59 @@ std::vector<uint8_t> FolderWindow::captureReopenViewState() {
     return bytes;
 }
 
+// One callback belongs to one view. Retain the host, but do not retain the
+// view: the view owns this callback and a second view reference would cycle.
+class FolderWindow::InitialSelectionCallback final : public UnknownImpl,
+        public IEnumReadyCallback {
+public:
+    InitialSelectionCallback(FolderWindow *owner, IShellView *source)
+        : window(owner), view(source) {}
+
+    STDMETHODIMP QueryInterface(REFIID id, void **object) override {
+        if (!object) return E_POINTER;
+        *object = nullptr;
+        if (id != IID_IUnknown && id != __uuidof(IEnumReadyCallback))
+            return E_NOINTERFACE;
+        *object = static_cast<IEnumReadyCallback *>(this);
+        AddRef();
+        return S_OK;
+    }
+
+    STDMETHODIMP_(ULONG) AddRef() override { return UnknownImpl::AddRef(); }
+    STDMETHODIMP_(ULONG) Release() override { return UnknownImpl::Release(); }
+
+    STDMETHODIMP EnumReady() override {
+        CComPtr<IEnumReadyCallback> keepAlive(this);
+        CComPtr<FolderWindow> owner;
+        owner.Attach(window.Detach()); // Consume once, before any reentrant Shell call.
+        if (!owner || !owner->isWindowOperational() || owner->shellView.p != view)
+            return S_OK;
+        owner->initialSelectionEnumerationReady = true;
+        owner->selectOpenedChild();
+        return S_OK;
+    }
+
+private:
+    CComPtr<FolderWindow> window;
+    IShellView *view; // Identity comparison only; never dereferenced.
+};
+
+void FolderWindow::selectOpenedChild() {
+    if (!viewReady || !initialSelectionEnumerationReady
+            || !selectionOnOpen || !isWindowOperational()) return;
+    CComPtr<ItemWindow> keepAlive(this);
+    CComPtr<IShellView> view = shellView;
+    CComHeapPtr<ITEMID_CHILD> child;
+    child.Attach(selectionOnOpen.Detach()); // exactly one attempt; no repair of a later loss
+    if (!view) return;
+    const HRESULT result = view->SelectItem(child,
+        SVSI_SELECT | SVSI_DESELECTOTHERS | SVSI_FOCUSED
+            | SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS);
+    if (checkHR(result) && isWindowOperational() && shellView == view) {
+        updateSelection();
+    }
+}
+
 void FolderWindow::restoreReopenViewState() {
     if (!viewReady || !enumerationComplete || !reopeningWindow.sequence || !isWindowOperational()) return;
     // Consume once, before calling Shell APIs that can reenter enumeration callbacks.
@@ -1062,6 +1164,7 @@ void FolderWindow::restoreReopenViewState() {
 }
 
 void FolderWindow::onDestroy() {
+    selectionOnOpen.Free();
     detachListView();
     KillTimer(hwnd, TIMER_SAVE_STATE);
     viewStateDirty(FolderState::Icons);
@@ -1145,37 +1248,33 @@ void FolderWindow::placeSearchBox() {
 }
 
 void FolderWindow::applyNameFilter(const wchar_t *text) {
-    if (searchText == text)
+    if (searchText == text) {
         return;
-    CComQIPtr<IFolderFilterSite> site(browser);
-    HRESULT hr = site ? S_OK : E_NOINTERFACE;
-    CComPtr<IFolderFilter> next;
-    if (SUCCEEDED(hr) && *text) {
-        auto filter = new FolderNameFilter(text);
-        next.Attach(filter);
-        hr = filter->initialize();
     }
+    CComPtr<ItemWindow> keepAlive(this);
+    CComPtr<IFolderFilter> filter = nameFilter;
+    CComPtr<IShellView> view = shellView;
+    if (!isWindowOperational())
+        return;
+    HRESULT hr = filter ? S_OK : E_NOINTERFACE;
     if (SUCCEEDED(hr)) {
-        if (!nameFilter && next)
+        if (searchText.empty() && *text)
             persistViewState(); // Save the complete view before hiding any items.
-        hr = site->SetFilter(next);
-    }
-    if (SUCCEEDED(hr)) {
-        CComPtr<IFolderFilter> previous = nameFilter;
+        if (!isWindowOperational()) return;
         const std::wstring previousText = searchText;
-        nameFilter = next;
+        auto activeFilter = static_cast<FolderNameFilter *>(filter.p);
+        activeFilter->setQuery(text);
         searchText = text;
-        // Leave Shell enumeration, sorting, selection and change notifications native.
-        hr = shellView ? shellView->Refresh() : S_OK;
-        if (FAILED(hr)) {
-            site->SetFilter(previous);
-            nameFilter = previous;
+        // Keep the interface already retained by DefView and refresh natively.
+        hr = view ? view->Refresh() : S_OK;
+        if (FAILED(hr) && isWindowOperational()) {
+            activeFilter->setQuery(previousText.c_str());
             searchText = previousText;
-            if (shellView)
-                shellView->Refresh();
+            if (view)
+                view->Refresh();
         }
     }
-    if (FAILED(hr)) {
+    if (FAILED(hr) && isWindowOperational()) {
         auto error = getErrorMessage(hr);
         auto message = formatString(IDS_SEARCH_ERROR, error.get());
         MessageBox(hwnd, message.get(), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
@@ -1231,6 +1330,7 @@ LRESULT FolderWindow::onDropdown(int command, POINT pos) {
 }
 
 void FolderWindow::onActivate(WORD state, HWND prevWindow) {
+    CComPtr<ItemWindow> keepAlive(this); // Shell calls can reenter dispatch
     if (state == WA_INACTIVE)
         viewStateDirty(FolderState::Icons);
     ItemWindow::onActivate(state, prevWindow);
@@ -1311,10 +1411,36 @@ void FolderWindow::scheduleUpdateSelection() {
     checkLE(SetTimer(hwnd, TIMER_UPDATE_SELECTION, SELECTION_UPDATE_DELAY_MS, nullptr));
 }
 
-LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
-    if (message == WM_GETISHELLBROWSER_COMPAT) {
-        debugPrintf(L"NILESOFT: WM_GETISHELLBROWSER received, hwnd=%p\n", hwnd);
+HRESULT FolderWindow::browseToItem() {
+    CComPtr<ItemWindow> keepAlive(this);
+    CComPtr<IExplorerBrowser> currentBrowser = browser;
+    CComPtr<IShellItem> currentItem = item;
+    if (!isWindowOperational() || !currentBrowser) return E_ABORT;
+    ++navigationDepth;
+    const HRESULT result = currentBrowser->BrowseToObject(currentItem, SBSP_ABSOLUTE);
+    --navigationDepth;
+    if (!navigationDepth && isWindowOperational()) {
+        const UINT closeMessage = deferredCloseMessage;
+        deferredCloseMessage = 0;
+        if (closeMessage)
+            checkLE(PostMessageW(hwnd, closeMessage, 0, 0));
+        else if (deferredBrowserRebuild)
+            checkLE(PostMessageW(hwnd, WM_APP_REBUILD_STANDARD_VIEW, 0, 0));
+        deferredBrowserRebuild = false;
+    }
+    return result;
+}
 
+LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
+    CComPtr<ItemWindow> messageKeepAlive(this);
+    // The synchronous Shell call can dispatch another window message. Closing
+    // the host also destroys its child view, so defer the entire close request.
+    if (navigationDepth && (message == WM_CLOSE || message == MSG_CLOSE_AUTOMATIC)) {
+        if (!deferredCloseMessage || message == WM_CLOSE)
+            deferredCloseMessage = message;
+        return 0;
+    }
+    if (message == WM_GETISHELLBROWSER_COMPAT) {
         return reinterpret_cast<LRESULT>(
             static_cast<IShellBrowser *>(this));
     }
@@ -1348,6 +1474,10 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
                 auto text = formatString(IDS_LABEL_INCOMPATIBLE, getString(fullNamesFailure));
                 fullNamesFailure = 0;
                 MessageBoxW(hwnd, text.get(), getString(IDS_APP_NAME), MB_OK | MB_ICONWARNING);
+                return 0;
+            }
+            if (navigationDepth) {
+                deferredBrowserRebuild = true;
                 return 0;
             }
             if (!rebuildStandardView) return 0;
@@ -1385,8 +1515,9 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
                 CComQIPtr<IFolderFilterSite> site(browser);
                 hr = site ? site->SetFilter(nameFilter) : E_NOINTERFACE;
             }
-            if (SUCCEEDED(hr)) hr = browser->BrowseToObject(item, SBSP_ABSOLUTE);
-            if (SUCCEEDED(hr)) browser->SetOptions(BROWSER_OPTIONS | EBO_NAVIGATEONCE);
+            if (SUCCEEDED(hr)) hr = browseToItem();
+            if (SUCCEEDED(hr) && isWindowOperational())
+                browser->SetOptions(BROWSER_OPTIONS | EBO_NAVIGATEONCE);
             if (!isWindowOperational()) return 0;
             const UINT reason = SUCCEEDED(hr) ? fullNamesFailure : IDS_LABEL_REBUILD_FAILED;
             fullNamesFailure = 0;
@@ -1399,46 +1530,13 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             if (!bitmap)
                 return 0;
             const int iconSize = GetSystemMetrics(SM_CXSMICON);
-            int imageWidth = iconSize;
-            // Bias this icon to the left without cropping or changing its Shell pixels.
-            DIBSECTION source = {};
-            if (GetObject(bitmap, static_cast<int>(sizeof(source)), &source)
-                    == static_cast<int>(sizeof(source))
-                    && source.dsBm.bmBits && source.dsBm.bmBitsPixel == 32
-                    && source.dsBm.bmWidth > 0 && source.dsBm.bmWidth <= iconSize
-                    && source.dsBm.bmHeight > 0 && source.dsBm.bmHeight <= iconSize) {
-                const int paddedWidth = iconSize + 2 * scaleDPI(2);
-                BITMAPINFO bitmapInfo = {{sizeof(BITMAPINFOHEADER), paddedWidth,
-                    -iconSize, 1, 32, BI_RGB}};
-                void *pixels = nullptr;
-                HBITMAP padded = CreateDIBSection(nullptr, &bitmapInfo, DIB_RGB_COLORS,
-                    &pixels, nullptr, 0);
-                if (padded) {
-                    ZeroMemory(pixels, static_cast<size_t>(paddedWidth)
-                        * static_cast<size_t>(iconSize) * sizeof(DWORD));
-                    const int top = (iconSize - source.dsBm.bmHeight) / 2;
-                    for (int y = 0; y < source.dsBm.bmHeight; ++y) {
-                        const int sourceY = source.dsBmih.biHeight < 0
-                            ? y : source.dsBm.bmHeight - 1 - y;
-                        CopyMemory(static_cast<DWORD *>(pixels)
-                                + static_cast<size_t>(y + top) * static_cast<size_t>(paddedWidth),
-                            static_cast<const BYTE *>(source.dsBm.bmBits)
-                                + static_cast<size_t>(sourceY)
-                                    * static_cast<size_t>(source.dsBm.bmWidthBytes),
-                            static_cast<size_t>(source.dsBm.bmWidth) * sizeof(DWORD));
-                    }
-                    DeleteObject(bitmap);
-                    bitmap = padded;
-                    imageWidth = paddedWidth;
-                }
-            }
-            HIMAGELIST images = ImageList_Create(imageWidth, iconSize, ILC_COLOR32, 1, 0);
+            HIMAGELIST images = ImageList_Create(iconSize, iconSize, ILC_COLOR32, 1, 0);
             if (images) {
                 if (ImageList_Add(images, bitmap, nullptr) >= 0) {
                     quickAccessImages = images;
                     const HWND toolbar = getQuickAccessToolbar();
                     const LRESULT buttonSize = SendMessage(toolbar, TB_GETBUTTONSIZE, 0, 0);
-                    SendMessage(toolbar, TB_SETBITMAPSIZE, 0, MAKELPARAM(imageWidth, iconSize));
+                    SendMessage(toolbar, TB_SETBITMAPSIZE, 0, MAKELPARAM(iconSize, iconSize));
                     SendMessage(toolbar, TB_SETIMAGELIST, 0, (LPARAM)images);
                     TBBUTTONINFO buttonInfo = {sizeof(buttonInfo)};
                     buttonInfo.dwMask = TBIF_IMAGE | TBIF_TEXT | TBIF_STYLE;
@@ -1473,17 +1571,21 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             return result;
         }
         case MSG_INITIAL_NAVIGATION: {
+            if (!isWindowOperational() || !browser) return 0;
             // Paint the frame and its controls before entering the synchronous navigation.
             checkLE(RedrawWindow(hwnd, nullptr, nullptr,
                 RDW_INVALIDATE | RDW_FRAME | RDW_UPDATENOW | RDW_ALLCHILDREN));
+            if (!isWindowOperational()) return 0;
             // will call IExplorerBrowserEvents callbacks
             HRESULT hr;
-            if (!checkHR(hr = browser->BrowseToObject(item, SBSP_ABSOLUTE))) {
+            if (!checkHR(hr = browseToItem()) && isWindowOperational()) {
                 recordFolderAccess(hr);
                 if (hasStatusText())
                     setStatusText(getErrorMessage(hr).get());
             }
-            checkHR(browser->SetOptions(BROWSER_OPTIONS | EBO_NAVIGATEONCE));
+            if (!isWindowOperational()) return 0;
+            const HRESULT optionsResult = browser->SetOptions(BROWSER_OPTIONS | EBO_NAVIGATEONCE);
+            checkHR(optionsResult);
             return 0;
         }
         case WM_EXITMENULOOP:
@@ -1651,7 +1753,8 @@ void FolderWindow::onItemChanged() {
         }
         shellView = nullptr;
         checkHR(browser->SetOptions(BROWSER_OPTIONS)); // temporarily enable navigation
-        HRESULT hr = browser->BrowseToObject(item, SBSP_ABSOLUTE);
+        HRESULT hr = browseToItem();
+        if (!isWindowOperational()) return;
         if (!checkHR(hr)) recordFolderAccess(hr);
         checkHR(browser->SetOptions(BROWSER_OPTIONS | EBO_NAVIGATEONCE));
     }
@@ -1752,9 +1855,6 @@ void FolderWindow::trackContextMenu(POINT pos) {
         }
         int cmd = 0;
         if (isWindowOperational()) {
-            wchar_t ownerClass[128] = {};
-            GetClassName(menuOwner, ownerClass, _countof(ownerClass));
-            debugPrintf(L"NILESOFT: context menu owner=%p class=%s\n", menuOwner, ownerClass);
             cmd = ItemWindow::trackContextMenu(pos, menu.get(), menuOwner);
         }
         contextMenu2 = nullptr;
@@ -1989,7 +2089,7 @@ void FolderWindow::openQuickAccessMenu(POINT point) {
             unavailable(IDS_QUICK_ACCESS_TARGET, result);
             return;
         }
-        openChild(target, closeSource);
+        openChild(target, closeSource, true);
     }
 }
 
@@ -2063,6 +2163,7 @@ STDMETHODIMP FolderWindow::QueryInterface(REFIID id, void **obj) {
 		QITABENT(FolderWindow, ICommDlgBrowser2),
 		QITABENT(FolderWindow, IExplorerBrowserEvents),
 		QITABENT(FolderWindow, IShellFolderViewCB),
+		QITABENT(FolderWindow, IFolderFilter),
 		QITABENT(FolderWindow, IDispatch),
 		QITABENT(FolderWindow, IWebBrowser),
 		QITABENT(FolderWindow, IWebBrowserApp),
@@ -2072,8 +2173,6 @@ STDMETHODIMP FolderWindow::QueryInterface(REFIID id, void **obj) {
     HRESULT hr = QISearch(this, interfaces, id, obj);
     if (SUCCEEDED(hr))
         return hr;
-    if (id == __uuidof(IFolderFilter) && prevCB)
-        return prevCB->QueryInterface(id, obj);
     return ItemWindow::QueryInterface(id, obj);
 }
 
@@ -2171,10 +2270,6 @@ STDMETHODIMP FolderWindow::SendControlMsg(
 }
 
 STDMETHODIMP FolderWindow::QueryActiveShellView(IShellView **view) {
-    debugPrintf(
-        L"NILESOFT: QueryActiveShellView called, shellView=%p\n",
-        shellView.p);
-
     if (!view)
         return E_POINTER;
 
@@ -2321,11 +2416,14 @@ STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
 }
 
 STDMETHODIMP FolderWindow::OnNavigationComplete(PCIDLIST_ABSOLUTE) {
+    CComPtr<ItemWindow> keepAlive(this);
     recordFolderAccess(S_OK);
     listViewCreated();
 
-    if (shellView && GetActiveWindow() == hwnd)
-        checkHR(shellView->UIActivate(SVUIA_ACTIVATE_FOCUS));
+    if (shellView && GetActiveWindow() == hwnd) {
+        const HRESULT result = shellView->UIActivate(SVUIA_ACTIVATE_FOCUS);
+        checkHR(result);
+    }
 
     // item count will often be incorrect at this point; see listViewOwnerProc
     if (hasStatusText())
@@ -2336,6 +2434,7 @@ STDMETHODIMP FolderWindow::OnNavigationComplete(PCIDLIST_ABSOLUTE) {
     scheduleStateSave();
     restoreReopenViewState();
     onViewReady();
+    selectOpenedChild();
     if (fullNamesFailure && !rebuildStandardView) {
         // Report outside the Shell's synchronous navigation callback.
         PostMessageW(hwnd, WM_APP_REBUILD_STANDARD_VIEW, 1, 0);
@@ -2346,6 +2445,7 @@ STDMETHODIMP FolderWindow::OnNavigationComplete(PCIDLIST_ABSOLUTE) {
 STDMETHODIMP FolderWindow::OnNavigationFailed(PCIDLIST_ABSOLUTE) {
     // This callback also reports cancellation and has no HRESULT: do not count a failure.
     viewReady = false;
+    selectionOnOpen.Free();
     setStatusText(getString(IDS_FOLDER_ERROR));
     if (reopeningWindow.sequence) {
         auto store = folderStateStore();
@@ -2357,13 +2457,16 @@ STDMETHODIMP FolderWindow::OnNavigationFailed(PCIDLIST_ABSOLUTE) {
 }
 
 STDMETHODIMP FolderWindow::OnViewCreated(IShellView *const view) {
+    CComPtr<ItemWindow> keepAlive(this);
     detachListView();
     shellView = view;
+    initialSelectionEnumerationReady = false;
 
     CComQIPtr<IShellFolderView> sfv(view);
     if (sfv) {
         prevCB = nullptr;
-        checkHR(sfv->SetCallback(this, &prevCB));
+        const HRESULT result = sfv->SetCallback(this, &prevCB);
+        checkHR(result);
     }
 
     restoringState = true;
@@ -2381,12 +2484,30 @@ STDMETHODIMP FolderWindow::OnViewCreated(IShellView *const view) {
     }
     restoringState = false;
 
+    if (selectionOnOpen) {
+        CComPtr<IEnumerableView> enumerableView;
+        HRESULT result = IUnknown_QueryService(view, SID_EnumerableView,
+            IID_PPV_ARGS(&enumerableView));
+        if (SUCCEEDED(result)) {
+            CComPtr<IEnumReadyCallback> callback;
+            callback.Attach(new InitialSelectionCallback(this, view));
+            result = enumerableView->SetEnumReadyCallback(callback);
+        }
+        if (FAILED(result)) {
+            // No timing-based fallback when the native service is unavailable.
+            selectionOnOpen.Free();
+        }
+    }
+
     return S_OK;
 }
 
 /* IShellFolderViewCB */
 
 STDMETHODIMP FolderWindow::MessageSFVCB(UINT msg, WPARAM wParam, LPARAM lParam) {
+    CComPtr<ItemWindow> keepAlive(this);
+    CComPtr<IShellView> view = shellView;
+    CComPtr<IShellFolderViewCB> callback = prevCB;
     if (msg == 17) { // refresh
         if (wParam) { // pre refresh
             enumerationComplete = false;
@@ -2408,9 +2529,26 @@ STDMETHODIMP FolderWindow::MessageSFVCB(UINT msg, WPARAM wParam, LPARAM lParam) 
                 | SHCNE_RENAMEITEM | SHCNE_RENAMEFOLDER))
             scheduleStateSave(true);
     }
-    if (prevCB)
-        return prevCB->MessageSFVCB(msg, wParam, lParam);
-    return E_NOTIMPL;
+    const HRESULT result = callback
+        ? callback->MessageSFVCB(msg, wParam, lParam) : E_NOTIMPL;
+    return result;
+}
+
+/* IFolderFilter */
+
+// DefView obtains its filter from the replacement IShellFolderViewCB.
+// Expose it on the host itself to preserve COM identity, and forward the
+// filtering decisions to the same filter installed on ExplorerBrowser.
+STDMETHODIMP FolderWindow::GetEnumFlags(IShellFolder *folder,
+        PCIDLIST_ABSOLUTE folderID, HWND *window, DWORD *flags) {
+    CComPtr<IFolderFilter> filter = nameFilter;
+    return filter ? filter->GetEnumFlags(folder, folderID, window, flags) : E_UNEXPECTED;
+}
+
+STDMETHODIMP FolderWindow::ShouldShow(IShellFolder *folder,
+        PCIDLIST_ABSOLUTE folderID, PCUITEMID_CHILD childID) {
+    CComPtr<IFolderFilter> filter = nameFilter;
+    return filter ? filter->ShouldShow(folder, folderID, childID) : E_UNEXPECTED;
 }
 
 /* IDispatch */

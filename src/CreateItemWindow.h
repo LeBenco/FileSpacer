@@ -9,7 +9,7 @@ namespace filespacer {
 enum class FolderOpenResult { Failed, Created, Activated, Pending };
 // The only creation path for folder windows; item must have SFGAO_FOLDER.
 FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCmd,
-    const ClosedWindow *reopening = nullptr);
+    const ClosedWindow *reopening = nullptr, IShellItem *origin = nullptr);
 // Only offer the latest history entry when its folder has no live window.
 bool canReopenClosedWindow(const ClosedWindow &window);
 CComPtr<IShellItem> resolveLink(IShellItem *linkItem);
