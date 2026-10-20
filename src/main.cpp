@@ -156,108 +156,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     }
     uiLanguages.append(L"en-US", 6); // Include the language's terminating null.
     uiLanguages.push_back(L'\0'); // Terminate the language list.
-#ifdef FILESPACER_DEBUG
-    if (std::wstring(GetCommandLineW()).find(L"/ui-debug") != std::wstring::npos) {
-        // Temporary diagnostics only; exit before creating application windows.
-        auto languageList = [](BOOL (WINAPI *getLanguages)(DWORD, PULONG, PZZWSTR, PULONG),
-                DWORD flags) -> std::wstring {
-            ULONG count = 0;
-            ULONG size = 0;
-            if (!getLanguages(flags, &count, nullptr, &size))
-                return L"ERROR " + std::to_wstring(GetLastError());
-            if (size < 2)
-                return L"(empty)";
-            std::wstring buffer(size, L'\0');
-            if (!getLanguages(flags, &count, &buffer[0], &size))
-                return L"ERROR " + std::to_wstring(GetLastError());
-            std::wstring result;
-            for (const wchar_t *p = buffer.c_str(); *p; p += lstrlen(p) + 1) {
-                if (!result.empty())
-                    result += L", ";
-                result += p;
-            }
-            return result.empty() ? L"(empty)" : result;
-        };
-        auto hexLanguage = [](WORD language) -> std::wstring {
-            wchar_t text[16] = {};
-            wsprintfW(text, L"0x%04X", static_cast<unsigned int>(language));
-            return text;
-        };
-        std::wstring report = L"FileSpacer UI diagnostics v1\r\n";
-        std::wstring exePath(32768, L'\0');
-        DWORD pathLength = GetModuleFileNameW(nullptr, &exePath[0],
-            static_cast<DWORD>(exePath.size()));
-        exePath.resize(pathLength);
-        report += L"EXE: " + exePath + L"\r\nPID: " + std::to_wstring(GetCurrentProcessId());
-        report += L"\r\nCommand: " + std::wstring(GetCommandLineW());
-        report += L"\r\nUser UI language: " + hexLanguage(GetUserDefaultUILanguage());
-        report += L"\r\nWindows preferences: " + languageList(GetUserPreferredUILanguages, MUI_LANGUAGE_NAME);
-        report += L"\r\nRequested: ";
-        for (const wchar_t *p = uiLanguages.c_str(); *p; p += lstrlen(p) + 1) {
-            report += p;
-            report += L"; ";
-        }
-        BOOL processSet = SetProcessPreferredUILanguages(MUI_LANGUAGE_NAME, uiLanguages.c_str(), nullptr);
-        DWORD processError = processSet ? ERROR_SUCCESS : GetLastError();
-        BOOL threadSet = SetThreadPreferredUILanguages(MUI_LANGUAGE_NAME, uiLanguages.c_str(), nullptr);
-        DWORD threadError = threadSet ? ERROR_SUCCESS : GetLastError();
-        report += L"\r\nSetProcess: " + std::to_wstring(processSet)
-            + L"; error=" + std::to_wstring(processError);
-        report += L"\r\nSetThread: " + std::to_wstring(threadSet)
-            + L"; error=" + std::to_wstring(threadError);
-        report += L"\r\nProcess preferences: " + languageList(GetProcessPreferredUILanguages, MUI_LANGUAGE_NAME);
-        report += L"\r\nThread UI language: " + hexLanguage(GetThreadUILanguage());
-        report += L"\r\nLoader language list: " + languageList(GetThreadPreferredUILanguages,
-            MUI_LANGUAGE_NAME | MUI_MERGE_USER_FALLBACK | MUI_MERGE_SYSTEM_FALLBACK);
-
-        struct ResourceProbe {
-            std::wstring text;
-            HRSRC selected;
-        };
-        auto enumLanguage = [](HMODULE module, LPCWSTR type, LPCWSTR name,
-                WORD language, LONG_PTR param) -> BOOL {
-            ResourceProbe *probe = reinterpret_cast<ResourceProbe *>(param);
-            wchar_t text[16] = {};
-            wsprintfW(text, L"0x%04X", static_cast<unsigned int>(language));
-            probe->text += text;
-            HRSRC explicitResource = FindResourceExW(module, type, name, language);
-            if (explicitResource && explicitResource == probe->selected)
-                probe->text += L" [selected]";
-            probe->text += L"; ";
-            return TRUE;
-        };
-        HMODULE module = GetModuleHandleW(nullptr);
-        const LPCWSTR types[] = {RT_STRING, RT_MENU, RT_DIALOG};
-        const UINT ids[] = {IDS_SETTINGS_CAPTION / 16 + 1, IDR_ITEM_MENU, IDD_SETTINGS_GENERAL};
-        const wchar_t *labels[] = {L"Settings string block", L"Application menu", L"General dialog"};
-        for (int i = 0; i < 3; ++i) {
-            ResourceProbe probe = {};
-            probe.selected = FindResourceW(module, MAKEINTRESOURCEW(ids[i]), types[i]);
-            BOOL found = EnumResourceLanguagesExW(module, types[i], MAKEINTRESOURCEW(ids[i]),
-                enumLanguage, reinterpret_cast<LONG_PTR>(&probe), RESOURCE_ENUM_LN, 0);
-            DWORD error = found ? ERROR_SUCCESS : GetLastError();
-            report += L"\r\n" + std::wstring(labels[i]) + L": " + probe.text;
-            if (!found)
-                report += L"ERROR " + std::to_wstring(error);
-            if (!probe.selected)
-                report += L" (FindResource returned NULL)";
-        }
-        wchar_t caption[512] = {};
-        int loaded = LoadStringW(module, IDS_SETTINGS_CAPTION, caption, 512);
-        report += L"\r\nLoadString(settings): " + std::wstring(caption)
-            + L" (length=" + std::to_wstring(loaded) + L")";
-        HMENU menu = LoadMenuW(module, MAKEINTRESOURCEW(IDR_ITEM_MENU));
-        wchar_t menuText[512] = {};
-        if (menu) {
-            GetMenuStringW(menu, 0, menuText, 512, MF_BYPOSITION);
-            DestroyMenu(menu);
-        }
-        report += L"\r\nLoadMenu(first item): " + std::wstring(menuText);
-        report += L"\r\n\r\nPress Ctrl+C to copy this report, then close this box.";
-        MessageBoxW(nullptr, report.c_str(), L"FileSpacer - UI language diagnostics", MB_OK);
-        return 0;
-    }
-#endif
 
     checkLE(SetProcessPreferredUILanguages(MUI_LANGUAGE_NAME, uiLanguages.c_str(), nullptr));
     checkLE(SetThreadPreferredUILanguages(MUI_LANGUAGE_NAME, uiLanguages.c_str(), nullptr));
@@ -300,8 +198,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         MessageBoxW(nullptr, getString(IDS_RECOVERY_UNAVAILABLE), getString(IDS_APP_NAME),
             MB_OK | MB_ICONWARNING);
     }
-
-    OutputDebugString(L"hiiiii ^w^\n"); // DO NOT REMOVE!!
 
 #ifdef FILESPACER_MEMLEAKS
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
