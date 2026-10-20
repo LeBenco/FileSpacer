@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.7 — 2026-10-20
+
+- Select the originating child folder when opening a parent or ancestor, preserving selection in already-open windows.
+- Fix folder name filtering when submitting, changing or clearing a query.
+- Restore the native Windows Quick access icon and center the Quick access and configuration buttons.
+- Remove temporary diagnostics and use Benco in project credits.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.6...v1.0.7)
+
 ## 1.0.6 — 2026-10-11
 
 - Automatically restore open folder windows after an in-app update, preserving their saved positions, sizes and view settings.
