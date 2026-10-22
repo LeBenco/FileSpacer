@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.8 — 2026-10-22
+
+- Move folder windows with Alt + left drag and resize them with Alt + right drag from the main file area, preserving the file selection.
+- Keep the classic Shell view enabled independently of the selected-item full-name display preference.
+- Apply Nilesoft Shell theming to the view-mode menu.
+- Avoid long shutdown delays caused by passive Shell icon caches while retaining the lifetime references acquired by explicitly invoked Shell commands.
+- Isolate Shell view hosting and extend regression coverage for Alt gestures, menu reentrancy and Shell/STA lifetime.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.7...v1.0.8)
+
 ## 1.0.7 — 2026-10-20
 
 - Select the originating child folder when opening a parent or ancestor, preserving selection in already-open windows.
@@ -85,3 +95,4 @@
 - Provide MSVC/NMAKE build scripts, an NSIS installer, automated GitHub releases and project documentation.
 
 [Release history](https://github.com/LeBenco/FileSpacer/commits/v1.0.0)
+
