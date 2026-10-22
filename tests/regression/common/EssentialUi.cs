@@ -43,6 +43,44 @@ namespace FileSpacerRegression {
         [PreserveSig] int SelectItem(int index, uint flags);
         [PreserveSig] int SelectAndPositionItems(uint count, IntPtr pidls, IntPtr points, uint flags);
     }
+    // IFolderView2 prefix through GetViewModeAndIconSize, in Windows SDK order.
+    [ComImport, Guid("1af3a467-214f-4298-908e-06b03e0b39f9"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface FolderView2 {
+        [PreserveSig] int GetCurrentViewMode(out uint mode);
+        [PreserveSig] int SetCurrentViewMode(uint mode);
+        [PreserveSig] int GetFolder(ref Guid iid, out IntPtr folder);
+        [PreserveSig] int Item(int index, out IntPtr pidl);
+        [PreserveSig] int ItemCount(uint flags, out int count);
+        [PreserveSig] int Items(uint flags, ref Guid iid, out IntPtr items);
+        [PreserveSig] int GetSelectionMarkedItem(out int index);
+        [PreserveSig] int GetFocusedItem(out int index);
+        [PreserveSig] int GetItemPosition(IntPtr pidl, out Point point);
+        [PreserveSig] int GetSpacing(out Point point);
+        [PreserveSig] int GetDefaultSpacing(out Point point);
+        [PreserveSig] int GetAutoArrange();
+        [PreserveSig] int SelectItem(int index, uint flags);
+        [PreserveSig] int SelectAndPositionItems(uint count, IntPtr pidls, IntPtr points, uint flags);
+        [PreserveSig] int SetGroupBy(IntPtr key, int ascending);
+        [PreserveSig] int GetGroupBy(IntPtr key, IntPtr ascending);
+        [PreserveSig] int SetViewProperty(IntPtr pidl, IntPtr key, IntPtr value);
+        [PreserveSig] int GetViewProperty(IntPtr pidl, IntPtr key, IntPtr value);
+        [PreserveSig] int SetTileViewProperties(IntPtr pidl, IntPtr properties);
+        [PreserveSig] int SetExtendedTileViewProperties(IntPtr pidl, IntPtr properties);
+        [PreserveSig] int SetText(uint type, IntPtr text);
+        [PreserveSig] int SetCurrentFolderFlags(uint mask, uint flags);
+        [PreserveSig] int GetCurrentFolderFlags(out uint flags);
+        [PreserveSig] int GetSortColumnCount(out int count);
+        [PreserveSig] int SetSortColumns(IntPtr columns, int count);
+        [PreserveSig] int GetSortColumns(IntPtr columns, int count);
+        [PreserveSig] int GetItem(int index, ref Guid iid, out IntPtr item);
+        [PreserveSig] int GetVisibleItem(int start, int previous, out int index);
+        [PreserveSig] int GetSelectedItem(int start, out int index);
+        [PreserveSig] int GetSelection(int noneImpliesFolder, out IntPtr selection);
+        [PreserveSig] int GetSelectionState(IntPtr pidl, out uint flags);
+        [PreserveSig] int InvokeVerbOnSelection(IntPtr verb);
+        [PreserveSig] int SetViewModeAndIconSize(uint mode, int size);
+        [PreserveSig] int GetViewModeAndIconSize(out uint mode, out int size);
+    }
     [ComImport, Guid("1ac3d9f0-175c-11d1-95be-00609797ea4f"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface PersistFolder {
         [PreserveSig] int GetClassID(out Guid id);
@@ -74,6 +112,8 @@ namespace FileSpacerRegression {
         }
         public int Count { get { int n; Native.Check(view.ItemCount(2,out n)); return n; } }
         public uint Mode { get { uint n; Native.Check(view.GetCurrentViewMode(out n)); return n; } set { Native.Check(view.SetCurrentViewMode(value)); } }
+        public void SetViewModeAndIconSize(uint mode, int size) { Native.Check(((FolderView2)view).SetViewModeAndIconSize(mode,size)); }
+        public int IconSize { get { uint mode; int size; Native.Check(((FolderView2)view).GetViewModeAndIconSize(out mode,out size)); return size; } }
         public IntPtr Window { get { IntPtr window; Native.Check(shellView.GetWindow(out window)); return window; } }
         public Rect Bounds { get { IntPtr window; Native.Check(shellView.GetWindow(out window)); return Native.Bounds(window); } }
         public string[] Selected() {
@@ -101,13 +141,25 @@ namespace FileSpacerRegression {
             }
             names.Sort(StringComparer.OrdinalIgnoreCase); return names.ToArray();
         }
-        public void Select(string name) {
+        public int IndexOf(string name) {
+            for(int i=0,n=Count;i<n;++i) {
+                IntPtr child; Native.Check(view.Item(i,out child));
+                try { if(String.Equals(Name(child),name,StringComparison.OrdinalIgnoreCase)) return i; }
+                finally { Marshal.FreeCoTaskMem(child); }
+            }
+            throw new InvalidOperationException("Item absent from actual Shell view: "+name);
+        }
+        public void Deselect(string name) { Native.Check(view.SelectItem(IndexOf(name),0)); }
+        public void Select(string name) { Select(name,false); }
+        public void Select(string name,bool extendSelection) {
             for(int i=0,n=Count;i<n;++i) {
                 IntPtr child; Native.Check(view.Item(i,out child));
                 bool match;
                 try { match=String.Equals(Name(child),name,StringComparison.OrdinalIgnoreCase); }
                 finally { Marshal.FreeCoTaskMem(child); }
-                if(match) { Native.Check(view.SelectItem(i,29)); return; } // select, deselect others, ensure visible, focus
+                // Extending a fixture selection must not deselect the previous items.
+                // Existing one-argument calls keep select/deselect-others/visible/focus.
+                if(match) { Native.Check(view.SelectItem(i,extendSelection?9u:29u)); return; }
             }
             throw new InvalidOperationException("Item absent from actual Shell view: "+name);
         }
@@ -203,6 +255,13 @@ namespace FileSpacerRegression {
             var list=new List<IntPtr>();
             EnumChildWindows(parent,delegate(IntPtr window,IntPtr data) { if(String.Equals(Class(window),className,StringComparison.OrdinalIgnoreCase)) list.Add(window); return true; },IntPtr.Zero);
             return list.ToArray();
+        }
+        public static string[] DescribeChildren(IntPtr parent) {
+            var result=new List<string>();
+            EnumChildWindows(parent,delegate(IntPtr window,IntPtr data) {
+                result.Add(window.ToInt64()+":"+Class(window)); return true;
+            },IntPtr.Zero);
+            return result.ToArray();
         }
         public static Rect Bounds(IntPtr window) { Rect rect; if(!GetWindowRect(window,out rect)) throw new Win32Exception(); return rect; }
         public static Rect WorkArea(IntPtr window) {

@@ -40,17 +40,19 @@ function Get-UiPreference([string]$Name) {
     $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($script:UiSettingsKey)
     try { return $key.GetValue($Name,$null) } finally { $key.Dispose() }
 }
-function Initialize-Ui([string]$Name) {
+function Initialize-Ui([string]$Name,[switch]$UseApplicationDefaults) {
     Assert-Ui ([Environment]::Is64BitProcess -and $env:OS -eq 'Windows_NT') 'Windows x64 is required.'
     $script:UiPreviousDpi=[FileSpacerRegression.Native]::SetThreadDpiAwarenessContext([IntPtr](-4))
     Assert-Ui ($script:UiPreviousDpi -ne [IntPtr]::Zero) 'Per-monitor DPI context could not be set.'
     $script:UiRoot=Join-Path $env:TEMP ('FileSpacer-'+$Name+'-'+[Guid]::NewGuid().ToString('N'))
     [void](New-Item -ItemType Directory -Path $script:UiRoot)
-    foreach ($name in @('StatusTextEnabled','ToolbarEnabled','QuickAccessEnabled','PathBarEnabled',
-            'RefreshButtonEnabled','UpButtonEnabled','ViewButtonEnabled','KeepSelectionOnActivate')) { Set-UiPreference $name 1 }
-    foreach ($name in @('LiveNameSearch','FullNamesOnSelection')) { Set-UiPreference $name 0 }
-    # These are fixture defaults in the runner's isolated /test namespace.
-    Set-UiPreference 'FolderWindow2Width' 800; Set-UiPreference 'FolderWindow2Height' 500
+    if (!$UseApplicationDefaults) {
+        foreach ($name in @('StatusTextEnabled','ToolbarEnabled','QuickAccessEnabled','PathBarEnabled',
+                'RefreshButtonEnabled','UpButtonEnabled','ViewButtonEnabled','KeepSelectionOnActivate')) { Set-UiPreference $name 1 }
+        foreach ($name in @('LiveNameSearch','FullNamesOnSelection')) { Set-UiPreference $name 0 }
+        # These are fixture defaults in the runner's isolated /test namespace.
+        Set-UiPreference 'FolderWindow2Width' 800; Set-UiPreference 'FolderWindow2Height' 500
+    }
     $script:UiShell=New-Object -ComObject Shell.Application
     $script:UiShellWindows=$script:UiShell.Windows()
 }
