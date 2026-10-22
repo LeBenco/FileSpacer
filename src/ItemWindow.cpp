@@ -2440,7 +2440,7 @@ void ItemWindow::openProxyProperties() {
     CComHeapPtr<ITEMIDLIST> idList;
     if (checkHR(SHGetIDListFromObject(item, &idList)) && isWindowOperational()) {
         SHELLEXECUTEINFO info = {sizeof(info)};
-        info.fMask = SEE_MASK_INVOKEIDLIST;
+        info.fMask = SEE_MASK_INVOKEIDLIST | SEE_MASK_NOASYNC;
         info.lpVerb = L"properties";
         info.lpIDList = idList;
         info.hwnd = hwnd;
@@ -2452,7 +2452,7 @@ void ItemWindow::deleteProxy() {
     CComHeapPtr<ITEMIDLIST> idList;
     if (checkHR(SHGetIDListFromObject(item, &idList))) {
         SHELLEXECUTEINFO info = {sizeof(info)};
-        info.fMask = SEE_MASK_INVOKEIDLIST;
+        info.fMask = SEE_MASK_INVOKEIDLIST | SEE_MASK_NOASYNC;
         info.lpVerb = L"delete";
         info.lpIDList = idList;
         info.hwnd = hwnd;
@@ -2503,14 +2503,14 @@ void ItemWindow::openProxyContextMenu() {
             proxyIcon.beginRename();
         } else {
             auto info = makeInvokeInfo(cmd, point);
-            contextMenu->InvokeCommand((CMINVOKECOMMANDINFO *)&info);
+            checkHR(invokeShellCommand(contextMenu, (CMINVOKECOMMANDINFO *)&info));
         }
     }
 }
 
 CMINVOKECOMMANDINFOEX ItemWindow::makeInvokeInfo(int cmd, POINT point) {
     CMINVOKECOMMANDINFOEX info = {sizeof(info)};
-    // Main installs the Shell thread reference before creating any windows.
+    // invokeShellCommand publishes the thread reference during invocation.
     // https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-icontextmenu-invokecommand
     info.fMask = CMIC_MASK_UNICODE | CMIC_MASK_PTINVOKE
         | CMIC_MASK_ASYNCOK | CMIC_MASK_FLAG_LOG_USAGE;
@@ -2599,4 +2599,3 @@ void ItemWindow::IconThread::run() {
 }
 
 } // namespace
-

@@ -62,6 +62,7 @@ OBJECTS = \
     $(OUTDIR)\Settings.obj \
     $(OUTDIR)\SettingsDialog.obj \
     $(OUTDIR)\ShellUtils.obj \
+    $(OUTDIR)\ShellViewHost.obj \
     $(OUTDIR)\UIStrings.obj \
     $(OUTDIR)\Update.obj \
     $(OUTDIR)\UpdateManifest.obj \
@@ -69,6 +70,7 @@ OBJECTS = \
     $(OUTDIR)\UpdateSession.obj \
     $(OUTDIR)\UpdateSessionStore.obj \
     $(OUTDIR)\WinUtils.obj \
+    $(OUTDIR)\WindowResizeGesture.obj \
 	$(OUTDIR)\CrashRecovery.obj \
     $(OUTDIR)\main.obj
 

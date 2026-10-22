@@ -3,6 +3,8 @@
 
 #include "ItemWindow.h"
 #include "SearchBox.h"
+#include "ShellViewHost.h"
+#include "WindowResizeGesture.h"
 #include <memory>
 #include <ExDisp.h>
 #include <shlobj_core.h>
@@ -228,6 +230,10 @@ private:
     HWND listViewOwner = nullptr;
     void listViewCreated();
     void detachListView();
+    bool handleAltMouseMessage(MSG *msg);
+    bool handleResizeMessage(MSG *msg);
+    WindowResizeGesture resizeGesture;
+    bool suppressAltButtonUp = false;
     void disableFullNames(UINT reason);
     bool rebuildStandardView = false;
     UINT fullNamesFailure = 0;
@@ -275,8 +281,7 @@ private:
     CComPtr<QuickAccessIconThread> quickAccessIconThread;
     HIMAGELIST quickAccessImages = nullptr;
 
-    CComPtr<IExplorerBrowser> browser; // will be null if browser can't be initialized!
-    DWORD eventsCookie = 0;
+    ShellViewHost viewHost;
     bool initialNavigationPending = false;
     unsigned navigationDepth = 0;
     UINT deferredCloseMessage = 0;

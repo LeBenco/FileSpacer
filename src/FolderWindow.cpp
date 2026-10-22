@@ -38,9 +38,6 @@ static constexpr UINT WM_APP_COLLAPSE_LABEL = WM_APP + 44;
 // Coalesce selection notifications before updating the selected item and status.
 static constexpr UINT SELECTION_UPDATE_DELAY_MS = 100;
 
-const EXPLORER_BROWSER_OPTIONS BROWSER_OPTIONS =
-    EBO_NOBORDER | EBO_NOTRAVELLOG | EBO_NOPERSISTVIEWSTATE;
-
 // on the Desktop only
 const wchar_t * const HIDDEN_ITEM_PARSE_NAMES[] = {
     L"::{26EE0668-A00A-44D7-9371-BEB064C98683}", // Control Panel
@@ -217,6 +214,7 @@ bool FolderWindow::isFolder() const {
 }
 
 bool FolderWindow::handleTopLevelMessage(MSG *msg) {
+    CComPtr<ItemWindow> messageKeepAlive(this);
     if (!isWindowOperational())
         return false;
     // Cancel the pending initial selection before dispatching user input.
@@ -228,6 +226,9 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
                 || msg->message == WM_POINTERDOWN || msg->message == WM_TOUCH)) {
         selectionOnOpen.Free();
     }
+    // Own Alt clicks before the Shell sees any part of their mouse sequence.
+    if (handleAltMouseMessage(msg))
+        return true;
     if (msg->message == WM_KEYDOWN && msg->wParam == L'T'
             && GetKeyState(VK_CONTROL) < 0 && GetKeyState(VK_SHIFT) < 0
             && GetKeyState(VK_MENU) >= 0) {
@@ -340,46 +341,18 @@ void FolderWindow::onCreate() {
     browserRect.bottom -= bottomStatusHeight;
     browserRect.bottom += CAPTION_HEIGHT; // initial rect is wrong
 
-    if (!checkHR(browser.CoCreateInstance(__uuidof(ExplorerBrowser))))
+    fullNamesOnSelection = recovery::canUseFullNames() && settings::getFullNamesOnSelection();
+    if (!checkHR(viewHost.initialize(hwnd, browserRect, folderSettings(),
+            static_cast<IServiceProvider *>(this), this)))
         return;
-    checkHR(browser->SetOptions(BROWSER_OPTIONS));
-    const bool requestedFullNames = recovery::canUseFullNames() && settings::getFullNamesOnSelection();
-    CComQIPtr<IFolderViewOptions> options(browser);
-    if (requestedFullNames && !options) {
-        fullNamesFailure = IDS_LABEL_NO_OPTIONS;
-        recovery::blockFullNames();
-        settings::disableFullNamesOnSelection();
-    } else if (options) {
-        const auto customFlags = FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING;
-        const HRESULT hr = options->SetFolderViewOptions(customFlags,
-            requestedFullNames ? customFlags : FVO_DEFAULT);
-        fullNamesOnSelection = SUCCEEDED(hr) && requestedFullNames;
-        if (requestedFullNames && FAILED(hr)) {
-            fullNamesFailure = IDS_LABEL_OPTIONS_FAILED;
-            recovery::blockFullNames();
-            settings::disableFullNamesOnSelection();
-            // A failed option change can be partial. Do not reuse that browser.
-            browser.Release();
-            if (!checkHR(browser.CoCreateInstance(__uuidof(ExplorerBrowser)))) return;
-            checkHR(browser->SetOptions(BROWSER_OPTIONS));
-        }
-    }
-    if (!checkHR(browser->Initialize(hwnd, &browserRect, tempPtr(folderSettings())))) {
-        browser = nullptr;
-        return;
-    }
-
-    checkHR(IUnknown_SetSite(browser, (IServiceProvider *)this));
     CComPtr<IFolderFilter> filter;
     auto concreteFilter = new FolderNameFilter(L"");
     filter.Attach(concreteFilter);
     HRESULT filterResult = concreteFilter->initialize();
-    CComQIPtr<IFolderFilterSite> filterSite(browser);
     if (SUCCEEDED(filterResult))
-        filterResult = filterSite ? filterSite->SetFilter(filter) : E_NOINTERFACE;
+        filterResult = viewHost.setFilter(filter);
     if (checkHR(filterResult))
         nameFilter = filter;
-    checkHR(browser->Advise(this, &eventsCookie));
     // Start the first navigation only after the window has been shown.
     initialNavigationPending = true;
     searchBox.setLiveSearch(settings::getLiveNameSearch());
@@ -462,12 +435,92 @@ void FolderWindow::initDefaultView(IFolderView2 *const folderView) {
 }
 
 void FolderWindow::detachListView() {
+    resizeGesture.cancel();
+    if (resizeGesture.takeCompleted() && isWindowOperational()) persistViewState();
+    if (suppressAltButtonUp && listView && GetCapture() == listView)
+        ReleaseCapture();
+    suppressAltButtonUp = false;
     if (listView)
         RemoveWindowSubclass(listView, listViewSubclassProc, 0);
     if (listViewOwner)
         RemoveWindowSubclass(listViewOwner, listViewOwnerProc, 0);
     listView = nullptr;
     listViewOwner = nullptr;
+}
+
+bool FolderWindow::handleResizeMessage(MSG *msg) {
+    const bool handled = resizeGesture.handleMessage(msg->message, msg->wParam, msg->lParam);
+    if (resizeGesture.takeCompleted() && isWindowOperational()) persistViewState();
+    return handled;
+}
+
+bool FolderWindow::handleAltMouseMessage(MSG *msg) {
+    if (handleResizeMessage(msg)) return true;
+    if (!listView || msg->hwnd != listView)
+        return false; // Headers, scrollbars and edit controls keep their native behavior.
+    if (suppressAltButtonUp) {
+        if (msg->message == WM_MOUSEMOVE)
+            return true;
+        if (msg->message == WM_LBUTTONUP) {
+            suppressAltButtonUp = false;
+            if (GetCapture() == listView)
+                ReleaseCapture();
+            return true;
+        }
+    }
+    if ((msg->message != WM_LBUTTONDOWN && msg->message != WM_LBUTTONDBLCLK
+            && msg->message != WM_RBUTTONDOWN && msg->message != WM_RBUTTONDBLCLK)
+            || GetKeyState(VK_MENU) >= 0 || GetCapture()
+            || SendMessage(listView, LVM_GETEDITCONTROL, 0, 0))
+        return false;
+    LVHITTESTINFO hit = {};
+    hit.pt = {GET_X_LPARAM(msg->lParam), GET_Y_LPARAM(msg->lParam)};
+    const RECT client = clientRect(listView);
+    if (!PtInRect(&client, hit.pt))
+        return false;
+    // Details rows include subitems and empty cells, not only the name/icon.
+    // Hit testing identifies a Properties target; it must not gate window moves.
+    const int index = ListView_GetView(listView) == LV_VIEW_DETAILS
+        ? ListView_SubItemHitTestEx(listView, &hit) : ListView_HitTestEx(listView, &hit);
+    const UINT controls = (LVHT_EX_GROUP & ~LVHT_EX_GROUP_BACKGROUND) | LVHT_EX_FOOTER;
+    if (hit.flags & controls)
+        return false;
+    const HWND control = listView;
+    checkActivationDrag = false;
+    if (msg->message == WM_RBUTTONDOWN || msg->message == WM_RBUTTONDBLCLK) {
+        POINT point = hit.pt;
+        return ClientToScreen(control, &point) && resizeGesture.begin(hwnd, control, point);
+    }
+    if (msg->message == WM_LBUTTONDOWN) {
+        // DragDetect owns the click, including its release when it is not a drag.
+        // Windows supplies the threshold and the native caption-move loop.
+        POINT point = hit.pt;
+        if (ClientToScreen(control, &point) && DragDetect(control, point)
+                && isWindowOperational() && listView == control) {
+            if (GetCapture() == control)
+                ReleaseCapture();
+            SendMessage(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(point.x, point.y));
+        }
+    } else {
+        // WM_LBUTTONDBLCLK is already the second press: Properties wins over a
+        // possible later drag. Do not send an incomplete click to the Shell.
+        suppressAltButtonUp = true;
+        SetCapture(control);
+        CComQIPtr<IFolderView2> view(shellView);
+        CComPtr<IShellItem> target;
+        CComHeapPtr<ITEMIDLIST> id;
+        if (index >= 0 && view && SUCCEEDED(view->GetItem(index, IID_PPV_ARGS(&target)))
+                && SUCCEEDED(SHGetIDListFromObject(target, &id)) && isWindowOperational()) {
+            SHELLEXECUTEINFO info = {};
+            info.cbSize = sizeof(info);
+            info.fMask = SEE_MASK_INVOKEIDLIST | SEE_MASK_NOASYNC;
+            info.hwnd = hwnd;
+            info.lpVerb = L"properties";
+            info.lpIDList = id;
+            ShellExecuteEx(&info);
+        }
+    }
+    return true;
 }
 
 void FolderWindow::listViewCreated() {
@@ -484,27 +537,10 @@ void FolderWindow::listViewCreated() {
         return;
     }
 
-    // Compatibility workaround: the Shell does not expose its internal ListView.
-    // Start from IShellView's public HWND, without assuming private class names or depth.
-    // Accept only one standard ListView on our UI thread; never guess between candidates.
-    struct Candidates { HWND window = nullptr; bool ambiguous = false; } candidates;
-    EnumChildWindows(viewWindow, [](HWND child, LPARAM data) -> BOOL {
-        wchar_t className[32];
-        if (GetClassName(child, className, _countof(className))
-                && lstrcmp(className, WC_LISTVIEW) == 0
-                && GetWindowThreadProcessId(child, nullptr) == GetCurrentThreadId()) {
-            auto &found = *reinterpret_cast<Candidates *>(data);
-            if (found.window) {
-                found.ambiguous = true;
-                return FALSE;
-            }
-            found.window = child;
-        }
-        return TRUE;
-    }, reinterpret_cast<LPARAM>(&candidates));
-    HWND control = candidates.ambiguous ? nullptr : candidates.window;
+    bool ambiguous = false;
+    HWND control = viewHost.findListView(viewWindow, ambiguous);
     if (fullNamesOnSelection && !control) {
-        disableFullNames(candidates.ambiguous ? IDS_LABEL_AMBIGUOUS_CONTROL : IDS_LABEL_NO_CONTROL);
+        disableFullNames(ambiguous ? IDS_LABEL_AMBIGUOUS_CONTROL : IDS_LABEL_NO_CONTROL);
         return;
     }
     HWND owner = control ? GetParent(control) : viewWindow;
@@ -537,29 +573,54 @@ void FolderWindow::disableFullNames(UINT reason) {
 LRESULT CALLBACK FolderWindow::listViewSubclassProc(HWND hwnd, UINT message,
         WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR refData) {
     CComPtr<ItemWindow> keepAlive(reinterpret_cast<FolderWindow *>(refData));
+    MSG resizeMessage = {};
+    resizeMessage.hwnd = hwnd;
+    resizeMessage.message = message;
+    resizeMessage.wParam = wParam;
+    resizeMessage.lParam = lParam;
+    if (reinterpret_cast<FolderWindow *>(refData)->handleResizeMessage(&resizeMessage))
+        return message == WM_SETCURSOR ? TRUE : 0;
     if (message == WM_NCDESTROY) {
         auto window = reinterpret_cast<FolderWindow *>(refData);
         RemoveWindowSubclass(hwnd, listViewSubclassProc, 0);
         if (window->listView == hwnd) {
             window->listView = nullptr;
             window->checkActivationDrag = false;
+            window->suppressAltButtonUp = false;
         }
         return DefSubclassProc(hwnd, message, wParam, lParam);
     }
     if (message == WM_DESTROY
             || !reinterpret_cast<FolderWindow *>(refData)->isWindowOperational())
         return DefSubclassProc(hwnd, message, wParam, lParam);
+    if (message == WM_CANCELMODE || message == WM_CAPTURECHANGED)
+        reinterpret_cast<FolderWindow *>(refData)->suppressAltButtonUp = false;
+    if (message >= WM_MOUSEFIRST && message <= WM_MOUSELAST) {
+        // Also cover dispatch from native modal loops, outside our message loop.
+        MSG msg = {};
+        msg.hwnd = hwnd;
+        msg.message = message;
+        msg.wParam = wParam;
+        msg.lParam = lParam;
+        if (reinterpret_cast<FolderWindow *>(refData)->handleAltMouseMessage(&msg))
+            return 0;
+    }
     if (message == WM_MOUSEACTIVATE || message == WM_CANCELMODE
             || message == WM_KILLFOCUS || message == WM_LBUTTONUP
             || message == WM_LBUTTONDBLCLK || message == WM_RBUTTONDOWN)
         reinterpret_cast<FolderWindow *>(refData)->checkActivationDrag = false;
     if (message == WM_MOUSEACTIVATE && LOWORD(lParam) == HTCLIENT
-            && HIWORD(lParam) == WM_LBUTTONDOWN) {
+            && (HIWORD(lParam) == WM_LBUTTONDOWN || HIWORD(lParam) == WM_RBUTTONDOWN)) {
         FolderWindow *window = (FolderWindow *)refData;
         POINT point = {};
+        // Activating an Alt-drag must not let the Shell alter the selection first.
+        if (GetKeyState(VK_MENU) < 0 && !SendMessage(hwnd, LVM_GETEDITCONTROL, 0, 0)
+                && GetCursorPos(&point) && WindowFromPoint(point) == hwnd)
+            return MA_ACTIVATE;
         // Activate immediately, then distinguish a background click from a
         // selection drag when the original button-down message arrives.
-        if (GetForegroundWindow() != window->hwnd && settings::getKeepSelectionOnActivate()
+        if (HIWORD(lParam) == WM_LBUTTONDOWN
+                && GetForegroundWindow() != window->hwnd && settings::getKeepSelectionOnActivate()
                 && GetCursorPos(&point) && WindowFromPoint(point) == hwnd
                 && ScreenToClient(hwnd, &point) && ListView_GetSelectedCount(hwnd) > 0) {
             LVHITTESTINFO hitTest = {};
@@ -888,9 +949,9 @@ void FolderWindow::scheduleStateSave(bool icons) {
 
 uint32_t FolderWindow::captureViewState(uint32_t mask) {
     uint32_t captured = ItemWindow::captureViewState(mask);
-    if (!browser || !viewReady || restoringState || getSavedFolderState().firstFailedAt) return captured;
+    if (!viewHost || !viewReady || restoringState || getSavedFolderState().firstFailedAt) return captured;
     CComPtr<IFolderView2> view;
-    if (FAILED(browser->GetCurrentView(IID_PPV_ARGS(&view)))) return captured;
+    if (FAILED(viewHost.currentView(IID_PPV_ARGS(&view)))) return captured;
     FolderViewSettings options = captureOptions(view, getSavedFolderState().view);
     if (options.present && (!(getSavedFolderState().present & FolderState::View)
             || !sameView(options, getSavedFolderState().view) || (mask & FolderState::View))) {
@@ -966,9 +1027,9 @@ bool FolderWindow::writeIconPositions(IFolderView *const folderView, IStream *co
 }
 
 void FolderWindow::loadIconPositions() {
-    if (!browser || !loadFolderState() || !(getSavedFolderState().present & FolderState::Icons)) return;
+    if (!viewHost || !loadFolderState() || !(getSavedFolderState().present & FolderState::Icons)) return;
     CComPtr<IFolderView> view;
-    if (SUCCEEDED(browser->GetCurrentView(IID_PPV_ARGS(&view))) && spatialView(view)
+    if (SUCCEEDED(viewHost.currentView(IID_PPV_ARGS(&view))) && spatialView(view)
             && !getSavedFolderState().icons.empty()) {
         CComPtr<IStream> stream;
         stream.Attach(SHCreateMemStream(getSavedFolderState().icons.data(), static_cast<UINT>(getSavedFolderState().icons.size())));
@@ -1164,6 +1225,7 @@ void FolderWindow::restoreReopenViewState() {
 }
 
 void FolderWindow::onDestroy() {
+    resizeGesture.stop();
     selectionOnOpen.Free();
     detachListView();
     KillTimer(hwnd, TIMER_SAVE_STATE);
@@ -1192,12 +1254,7 @@ void FolderWindow::onDestroy() {
     selected.Release();
     viewReady = false;
     ItemWindow::onDestroy();
-    if (browser) {
-        checkHR(browser->Unadvise(eventsCookie));
-        checkHR(IUnknown_SetSite(browser, nullptr));
-        checkHR(browser->Destroy());
-        browser = nullptr;
-    }
+    viewHost.destroy();
     nameFilter.Release();
 }
 
@@ -1369,11 +1426,11 @@ void FolderWindow::onSize(SIZE size) {
         SendMessage(bottomStatusBar, SB_SETPARTS, 1, (LPARAM)parts);
     }
 
-    if (browser) {
+    if (viewHost) {
         RECT browserRect = windowBody();
         browserRect.bottom -= bottomStatusHeight;
 
-        checkHR(browser->SetRect(nullptr, browserRect));
+        checkHR(viewHost.setBounds(browserRect));
 
         CComQIPtr<IFolderView2> folderView(shellView);
         if (folderView)
@@ -1388,7 +1445,7 @@ void FolderWindow::onSettingsChanged() {
                 | (settings::getStatusTextEnabled() ? SWP_SHOWWINDOW : SWP_HIDEWINDOW)));
     ItemWindow::onSettingsChanged();
     searchBox.setLiveSearch(settings::getLiveNameSearch());
-    if (browser && hasStatusText())
+    if (viewHost && hasStatusText())
         updateStatus();
 }
 
@@ -1413,11 +1470,10 @@ void FolderWindow::scheduleUpdateSelection() {
 
 HRESULT FolderWindow::browseToItem() {
     CComPtr<ItemWindow> keepAlive(this);
-    CComPtr<IExplorerBrowser> currentBrowser = browser;
     CComPtr<IShellItem> currentItem = item;
-    if (!isWindowOperational() || !currentBrowser) return E_ABORT;
+    if (!isWindowOperational() || !viewHost) return E_ABORT;
     ++navigationDepth;
-    const HRESULT result = currentBrowser->BrowseToObject(currentItem, SBSP_ABSOLUTE);
+    const HRESULT result = viewHost.navigate(currentItem);
     --navigationDepth;
     if (!navigationDepth && isWindowOperational()) {
         const UINT closeMessage = deferredCloseMessage;
@@ -1433,6 +1489,10 @@ HRESULT FolderWindow::browseToItem() {
 
 LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     CComPtr<ItemWindow> messageKeepAlive(this);
+    if (message == WM_CANCELMODE || (message == WM_ACTIVATEAPP && !wParam)) {
+        resizeGesture.cancel();
+        if (resizeGesture.takeCompleted() && isWindowOperational()) persistViewState();
+    }
     // The synchronous Shell call can dispatch another window message. Closing
     // the host also destroys its child view, so defer the entire close request.
     if (navigationDepth && (message == WM_CLOSE || message == MSG_CLOSE_AUTOMATIC)) {
@@ -1495,29 +1555,16 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             }
             prevCB.Release();
             shellView.Release();
-            if (browser) {
-                browser->Unadvise(eventsCookie);
-                IUnknown_SetSite(browser, nullptr);
-                browser->Destroy();
-                browser.Release();
-            }
-            // Keep the active name filter across the replacement browser.
-            // Recreate the Shell view: changing creation-time options on the existing
-            // browser would not establish that the standard renderer is now in use.
+            viewHost.destroy();
+            // Keep the active name filter across the replacement view host.
             RECT rect = windowBody();
             if (hasStatusText()) rect.bottom -= scaleDPI(BOTTOM_STATUS_HEIGHT_DIP);
-            HRESULT hr = browser.CoCreateInstance(__uuidof(ExplorerBrowser));
-            if (SUCCEEDED(hr)) hr = browser->SetOptions(BROWSER_OPTIONS);
-            if (SUCCEEDED(hr)) hr = browser->Initialize(hwnd, &rect, tempPtr(folderSettings()));
-            if (SUCCEEDED(hr)) hr = IUnknown_SetSite(browser, static_cast<IServiceProvider *>(this));
-            if (SUCCEEDED(hr)) hr = browser->Advise(this, &eventsCookie);
-            if (SUCCEEDED(hr) && nameFilter) {
-                CComQIPtr<IFolderFilterSite> site(browser);
-                hr = site ? site->SetFilter(nameFilter) : E_NOINTERFACE;
-            }
+            HRESULT hr = viewHost.initialize(hwnd, rect, folderSettings(),
+                static_cast<IServiceProvider *>(this), this);
+            if (SUCCEEDED(hr) && nameFilter) hr = viewHost.setFilter(nameFilter);
             if (SUCCEEDED(hr)) hr = browseToItem();
             if (SUCCEEDED(hr) && isWindowOperational())
-                browser->SetOptions(BROWSER_OPTIONS | EBO_NAVIGATEONCE);
+                viewHost.lockNavigation(true);
             if (!isWindowOperational()) return 0;
             const UINT reason = SUCCEEDED(hr) ? fullNamesFailure : IDS_LABEL_REBUILD_FAILED;
             fullNamesFailure = 0;
@@ -1571,7 +1618,7 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             return result;
         }
         case MSG_INITIAL_NAVIGATION: {
-            if (!isWindowOperational() || !browser) return 0;
+            if (!isWindowOperational() || !viewHost) return 0;
             // Paint the frame and its controls before entering the synchronous navigation.
             checkLE(RedrawWindow(hwnd, nullptr, nullptr,
                 RDW_INVALIDATE | RDW_FRAME | RDW_UPDATENOW | RDW_ALLCHILDREN));
@@ -1584,7 +1631,7 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
                     setStatusText(getErrorMessage(hr).get());
             }
             if (!isWindowOperational()) return 0;
-            const HRESULT optionsResult = browser->SetOptions(BROWSER_OPTIONS | EBO_NAVIGATEONCE);
+            const HRESULT optionsResult = viewHost.lockNavigation(true);
             checkHR(optionsResult);
             return 0;
         }
@@ -1610,17 +1657,16 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
 
 void FolderWindow::updateSelection() {
     CComPtr<ItemWindow> keepAlive(this);
-    if (!isWindowOperational() || !browser)
+    if (!isWindowOperational() || !viewHost)
         return;
     if (handlingRButtonDown) {
         selectedWhileHandlingRButtonDown = true;
         return;
     }
 
-    CComPtr<IExplorerBrowser> currentBrowser = browser;
     CComPtr<IFolderView2> folderView;
     if (!isWindowOperational()
-            || FAILED(currentBrowser->GetCurrentView(IID_PPV_ARGS(&folderView)))
+            || FAILED(viewHost.currentView(IID_PPV_ARGS(&folderView)))
             || !isWindowOperational())
         return;
 
@@ -1645,12 +1691,11 @@ void FolderWindow::updateSelection() {
 
 void FolderWindow::updateStatus() {
     CComPtr<ItemWindow> keepAlive(this);
-    if (!isWindowOperational() || !browser)
+    if (!isWindowOperational() || !viewHost)
         return;
-    CComPtr<IExplorerBrowser> currentBrowser = browser;
     CComPtr<IFolderView2> folderView;
     if (!isWindowOperational()
-            || FAILED(currentBrowser->GetCurrentView(IID_PPV_ARGS(&folderView)))
+            || FAILED(viewHost.currentView(IID_PPV_ARGS(&folderView)))
             || !isWindowOperational())
         return;
 
@@ -1738,9 +1783,9 @@ void FolderWindow::onItemChanged() {
     CComHeapPtr<wchar_t> folderName;
     if (SUCCEEDED(item->GetDisplayName(SIGDN_NORMALDISPLAY, &folderName)))
         searchBox.setFolderName(folderName);
-    if (browser) {
+    if (viewHost) {
         CComPtr<IFolderView2> folderView;
-        if (checkHR(browser->GetCurrentView(IID_PPV_ARGS(&folderView)))) {
+        if (checkHR(viewHost.currentView(IID_PPV_ARGS(&folderView)))) {
             storedViewState = std::make_unique<ShellViewState>();
             getViewState(folderView, storedViewState.get());
         }
@@ -1752,11 +1797,11 @@ void FolderWindow::onItemChanged() {
             prevCB = nullptr;
         }
         shellView = nullptr;
-        checkHR(browser->SetOptions(BROWSER_OPTIONS)); // temporarily enable navigation
+        checkHR(viewHost.lockNavigation(false)); // temporarily enable navigation
         HRESULT hr = browseToItem();
         if (!isWindowOperational()) return;
         if (!checkHR(hr)) recordFolderAccess(hr);
-        checkHR(browser->SetOptions(BROWSER_OPTIONS | EBO_NAVIGATEONCE));
+        checkHR(viewHost.lockNavigation(true));
     }
 }
 
@@ -1801,14 +1846,13 @@ void FolderWindow::newItem(const char *verb) {
     auto destroyMenu = [](HMENU handle) { checkLE(DestroyMenu(handle)); };
     std::unique_ptr<std::remove_pointer_t<HMENU>, decltype(destroyMenu)>
         menu(popupMenu, destroyMenu);
-    if (!contextMenu || !isWindowOperational() || !browser)
+    if (!contextMenu || !isWindowOperational() || !viewHost)
         return;
-    CComPtr<IExplorerBrowser> currentBrowser = browser;
     CComPtr<IFolderView2> folderView;
     auto detachSite = [](IContextMenu *handler) { checkHR(IUnknown_SetSite(handler, nullptr)); };
     std::unique_ptr<IContextMenu, decltype(detachSite)> site(nullptr, detachSite);
     // Own the installed site, not an additional reference to the menu handler.
-    if (isWindowOperational() && checkHR(currentBrowser->GetCurrentView(IID_PPV_ARGS(&folderView)))
+    if (isWindowOperational() && checkHR(viewHost.currentView(IID_PPV_ARGS(&folderView)))
             && isWindowOperational()) {
         // Preserve the Shell site's selection/rename support for the new item.
         if (checkHR(IUnknown_SetSite(contextMenu, folderView)))
@@ -1819,7 +1863,7 @@ void FolderWindow::newItem(const char *verb) {
     CMINVOKECOMMANDINFO info = {sizeof(info)};
     info.hwnd = hwnd;
     info.lpVerb = verb;
-    checkHR(contextMenu->InvokeCommand(&info));
+    checkHR(invokeShellCommand(contextMenu, &info));
 }
 
 void FolderWindow::trackContextMenu(POINT pos) {
@@ -1865,7 +1909,7 @@ void FolderWindow::trackContextMenu(POINT pos) {
                 auto info = makeInvokeInfo(cmd - IDM_SHELL_FIRST, pos);
                 CComHeapPtr<wchar_t> path;
                 checkHR(item->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &path));
-                if (!isWindowOperational() || !browser)
+                if (!isWindowOperational() || !viewHost)
                     return;
                 info.lpDirectoryW = path;
                 int pathASize = WideCharToMultiByte(CP_ACP, 0, path, -1, nullptr, 0, nullptr, nullptr);
@@ -1876,21 +1920,20 @@ void FolderWindow::trackContextMenu(POINT pos) {
                         pathA.get(), pathASize, nullptr, nullptr));
                     info.lpDirectory = pathA.get();
                 }
-                CComPtr<IExplorerBrowser> currentBrowser = browser;
                 CComPtr<IFolderView2> folderView;
                 auto detachSite = [](IContextMenu *handler) {
                     checkHR(IUnknown_SetSite(handler, nullptr));
                 };
                 std::unique_ptr<IContextMenu, decltype(detachSite)> site(nullptr, detachSite);
                 if (isWindowOperational()
-                        && checkHR(currentBrowser->GetCurrentView(IID_PPV_ARGS(&folderView)))
+                        && checkHR(viewHost.currentView(IID_PPV_ARGS(&folderView)))
                         && isWindowOperational()) {
                     if (checkHR(IUnknown_SetSite(contextMenu, folderView)))
                         site.reset(contextMenu);
                 }
                 if (isWindowOperational()) {
                     info.hwnd = hwnd;
-                    contextMenu->InvokeCommand((CMINVOKECOMMANDINFO *)&info);
+                    checkHR(invokeShellCommand(contextMenu, (CMINVOKECOMMANDINFO *)&info));
                 }
             };
             invoke();
@@ -2136,20 +2179,19 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
         return;
     int cmd = TrackPopupMenuEx(subMenu, TPM_RETURNCMD | TPM_RIGHTBUTTON,
         point.x, point.y, hwnd, nullptr);
-    if (isWindowOperational() && browser && cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) {
+    if (isWindowOperational() && viewHost && cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) {
         auto info = makeInvokeInfo(cmd - IDM_SHELL_FIRST, point);
-        CComPtr<IExplorerBrowser> currentBrowser = browser;
         CComPtr<IFolderView2> folderView;
         auto detachSite = [](IContextMenu *handler) { checkHR(IUnknown_SetSite(handler, nullptr)); };
         std::unique_ptr<IContextMenu, decltype(detachSite)> site(nullptr, detachSite);
-        if (isWindowOperational() && checkHR(currentBrowser->GetCurrentView(IID_PPV_ARGS(&folderView)))
+        if (isWindowOperational() && checkHR(viewHost.currentView(IID_PPV_ARGS(&folderView)))
                 && isWindowOperational()) {
             if (checkHR(IUnknown_SetSite(contextMenu, folderView)))
                 site.reset(contextMenu);
         }
         if (isWindowOperational()) {
             info.hwnd = hwnd;
-            contextMenu->InvokeCommand((CMINVOKECOMMANDINFO *)&info);
+            checkHR(invokeShellCommand(contextMenu, (CMINVOKECOMMANDINFO *)&info));
         }
     }
 }
