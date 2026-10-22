@@ -78,6 +78,20 @@ existing tag.
 Ordinary branch pushes do not build or publish an installer. No custom secret is
 needed; the workflow uses GitHub's automatic token.
 
+To publish from Git Bash, first update both version definitions in
+`src/resource.h` and add the matching section to `CHANGELOG.md`. Commit all
+source, test and documentation changes on `main`. For example:
+
+```bash
+bash release.sh 1.0.8
+```
+
+The script requires a clean working tree, checks the remote branch and tag,
+previews the changelog section, then asks for confirmation before pushing `main`
+and the annotated tag. The GitHub Actions workflow performs the installer build
+and publication. Check that it succeeds and that the release contains both the
+versioned installer and `FileSpacer-update.txt`.
+
 The runner locates MSVC with `vswhere` and invokes the same NMAKE targets directly
 because its Visual Studio edition differs from the local Build Tools installation.
 
@@ -193,10 +207,10 @@ multiple processes, Unicode/long/network/virtual paths, repeated captures,
 empty processes, transaction rollback, malformed databases, and global limits.
 Use a fresh temporary filename; the test removes its database on success.
 
-For the real lifecycle test, compile this change **before** publishing the next
-release; this development does not change the current application version.
-Test successful installation and setup/UAC cancellation with several folder
+Before publishing a release, test successful installation and setup/UAC
+cancellation with several folder
 windows in separate processes. Also open/close a folder during download, cancel
 a download, try a folder that becomes unavailable before restoration, and check
 that no startup-folder window or duplicate appears. The outgoing binary needs
-this snapshot code; an already installed old client cannot gain it retroactively.
+the snapshot code; an already installed old client cannot gain it retroactively.
+

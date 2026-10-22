@@ -1,6 +1,6 @@
 # FileSpacer — bibliothèque de tests de non-régression
 
-Les jeux restent indépendants et sont regroupés par fonctionnalité dans `cases`. La bibliothèque contient 30 jeux dans 15 groupes. Le nombre de jeux est distinct du nombre d'assertions ou d'interactions.
+Les jeux restent indépendants et sont regroupés par fonctionnalité dans `cases`. Le lanceur indique le nombre de jeux sélectionnés à chaque exécution. Le nombre de jeux est distinct du nombre d'assertions ou d'interactions.
 
 ## Installation et fichiers à conserver
 
@@ -20,11 +20,99 @@ tests.cmd -Pattern "07-fenetres\*"
 tests.cmd -Pattern "12-navigation-spatiale\*"
 tests.cmd -Pattern "13-preferences\*"
 tests.cmd -Pattern "14-disposition\*"
+tests.cmd -Pattern "15-deplacement-alt\*"
+tests.cmd -Pattern "16-redimensionnement-alt\*"
+tests.cmd -Pattern "17-fermeture-interactions\*"
 ```
 
 `tests.cmd` construit l'application avec `build.cmd debug`, initialise MSVC x64 et appelle le lanceur sous Windows PowerShell 5.1. Aucun framework de test supplémentaire n'est requis. Les scénarios internes utilisent C++/MSVC ; les interactions UI utilisent PowerShell et C#/.NET avec Win32 et COM.
 
 Prérequis : Windows 10 x64, dépendances habituelles du build du projet, composants C++/ATL/SDK de Visual Studio 2022 Build Tools, et TEMP sur NTFS pour le jeu spatial. Fermer FileSpacer avant les jeux UI ; laisser un bureau interactif et le clavier disponibles pendant leur exécution.
+
+## Déplacement Alt
+
+Depuis CMD, à la racine du dépôt :
+
+```bat
+tests.cmd -Pattern "15-deplacement-alt\*"
+```
+
+Le groupe contient **32 jeux indépendants**, numérotés de `00` à `31`.
+L'application utilise la vue classique ; l'option des noms complets sur sélection
+agit uniquement sur le dessin des noms. Chaque jeu conserve ses propres résultats
+et journaux.
+
+| Jeux | Contrôle |
+|---|---|
+| `00` | Déplacement depuis un dossier vide, mode initial. |
+| `01`–`06` | Détails, Liste, Icônes, Petites icônes, Mosaïques et Contenu ; noms complets désactivés. |
+| `07` | Départ depuis le fond, sélection simple conservée. |
+| `08` | Départ sur l'icône sélectionnée. |
+| `09` | Sélection multiple sur le fond, avec un troisième élément non sélectionné. |
+| `10` | Départ sur l'icône non sélectionnée ; sélection précédente intacte. |
+| `11` | Départ dans une fenêtre inactive ; activation, sélection conservée et autre fenêtre immobile. |
+| `12` | Alt relâché après l'entrée dans le déplacement ; mouvement poursuivi après ce relâchement. |
+| `13` | Échap après déplacement effectif ; retour à la géométrie d'origine. |
+| `14` | Simple clic Alt sur un élément non sélectionné ; géométrie et sélection inchangées. |
+| `15` | Clic sans Alt ; sélection native de l'élément visé. |
+| `16` | Rectangle sans Alt ; sélection d'un élément initialement non sélectionné. |
+| `17` | Double clic Alt ; propriétés de l'élément visé, sélection inchangée. |
+| `18` | Alt maintenu entre le premier clic et le second appui, suivi d'un mouvement ; les propriétés gagnent. |
+| `19` | En-tête exclu du déplacement de fenêtre. |
+| `20` | Édition de nom exclue ; texte inchangé, puis annulation du renommage. |
+| `21` | Barre d'outils exclue. |
+| `22` | Champ de recherche exclu ; requête inchangée. |
+| `23` | Accès rapide exclu ; menu annulé avant relâchement, aucune fenêtre de dossier supplémentaire. |
+| `24` | Départ sur une icône faisant partie d'une sélection multiple. |
+| `25` | Départ dans une cellule secondaire d'une ligne en Détails. |
+| `26` | Alt relâché après l'appui mais avant le seuil de glissement ; déplacement encore attendu. |
+| `27` | Simple clic Alt sur le fond ; sélection multiple inchangée. |
+| `28` | Bouton de menu exclu ; menu annulé avant toute commande. |
+| `29` | Double clic sans Alt ; ouverture spatiale du sous-dossier. |
+| `30` | Ascenseur natif exclu ; défilement de la liste, fenêtre immobile. |
+| `31` | Glisser-déposer sans Alt ; déplacement réel d'un dossier temporaire dans un autre. |
+
+Les jeux `01`–`06` demandent le mode par `IFolderView2`, vérifient le mode et la
+taille effectivement appliqués, puis contrôlent le déplacement d'un dossier vide.
+Ils ajoutent ensuite un élément dans la même vue, le sélectionnent et rejouent le
+départ sur son icône, avec contrôle de la sélection. La fenêtre est replacée à
+distance des bords entre les deux gestes, après contrôle du premier résultat.
+Icônes utilise 48 pixels, Petites icônes 16 ; les autres modes gardent la taille
+choisie par Windows. Ces jeux désactivent la préférence `FullNamesOnSelection`
+avant l'ouverture du dossier et vérifient qu'elle reste désactivée. Les autres
+scénarios gardent le mode initial et les préférences par défaut de l'application.
+La suite ne constitue pas le produit cartésien de toutes les interactions et de
+tous les modes.
+
+Le fond est repéré dans le rectangle public de la vue Shell. L'identité des
+éléments et leur index sont lus par COM ; le contrôle ListView fournit le
+rectangle de l'icône et son hit-test. Les cellules secondaires, en-têtes,
+ascenseurs, champs et boutons utilisent leurs informations natives. Les tampons
+des messages au-delà de `WM_USER` sont placés dans le processus du contrôle et
+libérés après le retour de l'appel synchrone. Une cible introuvable ou ambiguë
+fait échouer le jeu.
+
+Le helper de saisie positionne le pointeur sans bouton, enfonce Alt, vérifie son
+état Windows, puis enfonce le bouton avant les mouvements. L'entrée dans la boucle
+native de déplacement est observée avec Win32. Les assertions ne supposent aucune
+distance finale exacte après le franchissement du seuil natif. Échap et les zones
+exclues contrôlent aussi la géométrie pendant le geste. Le relâchement d'Alt est
+vérifié par comparaison des positions avant et après ce relâchement.
+
+La sélection est préparée avant les gestes et lue par COM, sans restauration
+corrective. Le transfert sans Alt vérifie le résultat sur disque puis le contenu
+de la vue. Les propriétés sont identifiées par le processus testé, le nom de
+l'élément et le chemin parent exact ; cette identité est revérifiée avant leur
+fermeture. Les menus sont annulés avant le relâchement ; toute fenêtre de dossier
+supplémentaire du processus testé fait échouer le jeu et est enregistrée pour
+nettoyage. Un nettoyage réussi ne transforme jamais un échec en succès.
+
+Chaque jeu produit `alt-gesture.json` : phase, point de départ, mode, classes de
+fenêtres, géométries, sélection et états d'entrée. Les cas de propriétés et
+d'accès rapide ajoutent les observations `windows-*.json` sur les fenêtres du
+processus testé. Ces observations ne changent pas la sélection ni la cible.
+Fermer FileSpacer, laisser souris et clavier libres et disposer d'au moins
+800 × 600 pixels physiques de zone de travail.
 
 ## Découverte et résultats
 
@@ -54,7 +142,7 @@ Les programmes de test compilés utilisent un manifeste UTF-8. Cette option néc
 | `01-stockage-sqlite` | Stockage, accès concurrents, identité spatiale, géométrie et adaptateurs de vue. |
 | `02-retention-quota` | Péremption, reprise, transactions, quota et priorité des fenêtres ouvertes. |
 | `03-menus` | Réentrance et fermeture pendant une commande, libération des ressources. |
-| `04-shell-sta` | Durée de vie, références Shell, événements et appels COM réels. |
+| `04-shell-sta` | 16 cas natifs : enregistrement temporaire, commandes imbriquées, références conservées après retour, événements, threads Shell et appels COM réels. |
 | `05-dimensions` | Validation des dimensions avec les contrôles natifs Windows. |
 | `06-etat-vue` | Restauration complète ou partielle de vue et de positions. |
 | `07-fenetres` | Agrandissement, réduction, réouverture et boutons de titre ; commandes synchrones, asynchrones et fermeture précoce avant disponibilité de la vue Shell. |
@@ -65,6 +153,9 @@ Les programmes de test compilés utilisent un manifeste UTF-8. Cette option néc
 | `12-navigation-spatiale` | Entrée, Alt+Haut, préférence/Ctrl, sélection d'origine et destination déjà ouverte. |
 | `13-preferences` | Propagation aux fenêtres ouvertes de deux processus, Appliquer/Annuler, recherche pendant la saisie, requêtes successives et notifications sous filtre. |
 | `14-disposition` | Configurations représentatives, deux largeurs, absence de chevauchement et espace récupéré au DPI réel. |
+| `15-deplacement-alt` | 32 jeux : déplacement Alt, conservation de sélection, gestes natifs et zones exclues. |
+| `16-redimensionnement-alt` | 18 jeux : redimensionnement Alt droit, curseur, annulation, géométrie et zones exclues. |
+| `17-fermeture-interactions` | Menu contextuel réel puis Alt+F4, sortie normale du processus avant nettoyage. |
 
 Les jeux internes C++ compilent les sources courantes du dépôt. Le groupe `00-banc` vérifie les helpers PowerShell directement. Pour certaines méthodes privées, `common/Prepare-Sources.ps1` extrait les corps des fonctions sans réécrire leur logique ; une signature absente ou ambiguë fait échouer la préparation. Les empreintes des sources utilisées sont enregistrées avec le résultat du jeu. Certains jeux utilisent des doubles pour déclencher des erreurs déterministes ; les jeux UI exercent les fenêtres et contrôles réels.
 
@@ -84,7 +175,7 @@ Après Entrée et Alt+Haut, les quatre jeux de politique de navigation attendent
 
 Le classement `BLOCKED` exige un préalable explicitement signalé, une sortie normale des processus FileSpacer suivis et un rapport `cleanup-complete.json` positif. Une erreur de nettoyage, un rapport absent ou illisible, un crash du processus de test ou un délai global dépassé reste `FAIL`. Un résultat bloqué n'est jamais une validation ni une preuve que FileSpacer est exempt de défaut.
 
-Les tests internes d'adaptateurs et d'état de vue extraient les fonctions courantes et neutralisent seulement `TRACE_SELECTION`, journal d'investigation non inclus dans ces unités. Leur réussite ne valide pas ce journal ni son absence de réentrance. Les jeux UI utilisent l'exécutable réel sans désactiver son diagnostic et contrôlent les sorties des processus suivis. Les tests ne corrigent pas les sources de l'application pour obtenir un succès.
+Les unités internes extraites exercent les fonctions courantes avec leurs doubles d'API ; les jeux UI utilisent l'exécutable réel et contrôlent les sorties des processus suivis. Les tests ne corrigent pas les sources de l'application pour obtenir un succès.
 
 ## Scénarios indépendants de navigation et de préférences
 
@@ -158,3 +249,52 @@ Le détail du résultat conserve la première erreur et ajoute les erreurs de ne
 `07-fenetres/03-FermetureInitiale.ps1` ferme huit fenêtres dès observation du HWND, sans attendre la vue Shell, avec les deux valeurs de `FullNamesOnSelection`. `13-preferences/05-FiltresSuccessifs.ps1` vérifie les noms réellement visibles, notamment entre deux recherches produisant le même nombre de résultats, ainsi que les motifs, l'effacement et les modifications de fichiers sous filtre.
 
 Les assertions de sélection lors de la remontée restent actives. Le défaut connu correspondant est hors périmètre de ce correctif et peut donc encore faire échouer les quatre scénarios concernés. Aucun statut de réussite attendu n'est imposé pour masquer ce défaut.
+
+
+## 16 — Alt + glisser droit : redimensionnement
+
+18 jeux indépendants. `00-Dossier-vide` garde le mode d'affichage initial et
+commence par un dossier vide. Les autres vérifient la multisélection, un départ
+sur un élément non sélectionné, le rétrécissement jusqu'aux limites de Windows,
+Échap, `WM_CANCELMODE`, une fenêtre inactive, Alt relâché avant le seuil, un clic
+sans mouvement, le menu contextuel sans Alt, les exclusions (en-tête, renommage,
+barre d'outils, recherche), un premier clic suivi d'un second glissé en gardant
+Alt, la capture hors du contrôle, la mémorisation de la taille et le mode Icônes.
+
+Le composant d'entrée partagé vérifie Alt puis le bouton droit avant de déplacer
+le pointeur. Les assertions utilisent la géométrie réelle, la capture et le
+curseur système `IDC_SIZENWSE`, ainsi que la sélection COM. Aucun indicateur de
+boucle de redimensionnement native n'est attendu : ce geste applique directement
+`SetWindowPos`. Les cas d'annulation vérifient le retour à la taille de départ,
+la libération de capture et l'absence de menu après le relâchement du bouton.
+Les contrôles exclus peuvent ouvrir un menu natif lors du relâchement. Le banc
+annule ce menu dans ses attentes intermédiaire et finale, sans sélectionner de
+commande. Les vrais redimensionnements continuent d'exiger l'absence de menu,
+la libération de capture et le retour du curseur.
+Le fichier `resize.json` conserve les éléments de diagnostic de chaque jeu.
+
+
+## 17 — Fermeture après un menu contextuel
+
+Un jeu de non-régression ouvre le menu contextuel natif d'un dossier temporaire,
+puis demande la fermeture avec Alt+F4 envoyé par SendInput. Le scénario conserve
+la géométrie et les préférences initiales de sa vue.
+
+Un menu peut consommer la première action pour se fermer : un second Alt+F4
+n'est envoyé qu'après observation de la disparition du menu et si la fenêtre
+existe encore. Aucun réessai supplémentaire n'est effectué. Une préparation ou
+une injection défaillante reste un échec.
+
+Le test contrôle la disparition de la fenêtre et la sortie normale de son
+processus avec le code zéro sous dix secondes, avant toute intervention de
+nettoyage. L'échec initial est conservé même si le nettoyage réussit ensuite.
+`close-interaction.json`, `windows-*.json` et les rapports communs conservent
+le chemin observé et les résultats.
+
+```cmd
+tests.cmd -Pattern "17-fermeture-interactions\*"
+```
+
+Le groupe doit découvrir un seul jeu. Il couvre cette reproduction précise du
+retard de fermeture ; il ne vérifie pas l'achèvement d'une copie ou d'un
+déplacement encore actif après fermeture des fenêtres.
