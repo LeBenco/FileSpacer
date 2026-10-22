@@ -108,18 +108,6 @@ bool getProcessMessage(MSG &msg, int &exitCode) {
 // Each additional Shell reference shares the existing application lifetime count.
 class ShellThreadReference : public UnknownImpl {
 public:
-    bool install() {
-        installed = checkHR(SHSetThreadRef(this));
-        return installed;
-    }
-
-    ~ShellThreadReference() override {
-        // Main releases its initial reference only after all process locks end.
-        // Unregister on that same thread before COM is uninitialized.
-        if (installed)
-            (void)checkHR(SHSetThreadRef(nullptr));
-    }
-
     STDMETHODIMP_(ULONG) AddRef() override {
         lockProcess();
         return UnknownImpl::AddRef();
@@ -131,12 +119,54 @@ public:
             unlockProcess();
         return references;
     }
+};
+
+// Borrowed from main's initial reference, which remains alive until process idle.
+// Accessed only by commands dispatched on the main STA.
+ShellThreadReference *shellCommandReference = nullptr;
+
+class ScopedShellThreadReference {
+public:
+    explicit ScopedShellThreadReference(IUnknown *reference) : current(reference) {
+        result = SHGetThreadRef(&previous);
+        if (SUCCEEDED(result) || result == E_NOINTERFACE) {
+            result = SHSetThreadRef(current);
+            installed = SUCCEEDED(result);
+        }
+    }
+
+    ~ScopedShellThreadReference() {
+        // Unpublishing does not release references already acquired by workers.
+        // Restore on this STA, even when InvokeCommand closes the last window.
+        if (installed && !checkHR(SHSetThreadRef(previous)))
+            std::abort(); // A dangling TLS reference would make teardown unsafe.
+    }
+
+    HRESULT status() const { return result; }
+    ScopedShellThreadReference(const ScopedShellThreadReference &) = delete;
+    ScopedShellThreadReference &operator=(const ScopedShellThreadReference &) = delete;
 
 private:
+    CComPtr<IUnknown> current; // Also keeps an active invocation in the process count.
+    CComPtr<IUnknown> previous;
+    HRESULT result = E_UNEXPECTED;
     bool installed = false;
 };
 
 } // namespace
+
+HRESULT filespacer::invokeShellCommand(IContextMenu *menu, CMINVOKECOMMANDINFO *info) {
+    if (!menu || !info)
+        return E_POINTER;
+    if (!shellCommandReference)
+        return E_UNEXPECTED;
+    // Publish only during explicit invocation, not view creation, icon lookup,
+    // QueryContextMenu or TrackPopupMenu. Nested commands restore their caller.
+    ScopedShellThreadReference reference(shellCommandReference);
+    if (FAILED(reference.status()))
+        return reference.status();
+    return menu->InvokeCommand(info);
+}
 
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     // Try the Windows display language, then fall back to English.
@@ -218,7 +248,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     processIdleEvent = idleEvent;
     CComPtr<ShellThreadReference> threadReference;
     threadReference.Attach(new (std::nothrow) ShellThreadReference());
-    if (!threadReference || !threadReference->install()) {
+    if (!threadReference) {
         threadReference.Release();
         processIdleEvent = nullptr;
         OleUninitialize();
@@ -283,6 +313,8 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         }
     }
 
+    // Do not publish this anchor for passive view/icon-handler caches.
+    shellCommandReference = threadReference;
     initDPI();
     ItemWindow::init();
     FolderWindow::init();
@@ -370,6 +402,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     uninitProcessLifetime();
 
     ItemWindow::uninit();
+    shellCommandReference = nullptr;
     threadReference.Release();
     processIdleEvent = nullptr;
     OleUninitialize();
