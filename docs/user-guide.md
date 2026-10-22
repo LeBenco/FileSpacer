@@ -45,6 +45,25 @@
   sizes, and view settings, keeping global application preferences. It closes
   open FileSpacer folder windows before clearing the database.
 
+## Move and resize folder windows
+
+Hold Alt and start a drag in the main file area, on the background or on an item:
+
+- The left mouse button moves the window.
+- The right mouse button resizes it from its bottom-right corner, keeping the
+  top-left corner fixed. The diagonal resize cursor appears during resizing.
+- The existing file selection is preserved, including when starting on an
+  unselected item. Escape cancels the gesture and restores the initial geometry.
+
+Toolbars, the path and search fields, column headers, scrollbars and rename
+edit controls retain their normal Windows behavior. Alt + double-click on an
+item opens its Properties. Without Alt, the file view handles clicks and drags
+normally. Moving and resizing this way updates the folder's saved geometry.
+
+FileSpacer uses the classic Shell view for all display modes. The full-name
+display preference changes selected-item labels and does not switch the view
+implementation.
+
 ## Command-line maintenance
 
 Close all FileSpacer instances before running either command from its executable
@@ -61,32 +80,23 @@ also restores the default setting for experimental full-name display.
 
 ## Updates
 
-Settings > About > Check for updates checks the latest FileSpacer release on
-GitHub. If a newer version is available, its release page opens in your browser
-so you can download and run the installer.
+Settings > About checks for a new release in the background. When an installable
+update is available, the button becomes Install FileSpacer vX.Y.Z. Installing
+asks for confirmation, downloads and verifies the installer, then closes folder
+windows normally before starting setup. The installer requires your interaction.
 
-You can enable automatic weekly checks in the same page or in the first-run
-welcome dialog. This option is off by default. A notification appears when a
-newer release is found; clicking it opens the release page. Updates are not
-installed automatically.
+The download has its own progress dialog. Cancel or its close button stops the
+download and leaves folder windows open. A download or verification failure
+does not close them. If a process prevents normal shutdown, setup is not started;
+some windows may already have closed. No process is forcibly terminated.
 
-Public help links and donation links remain disabled.
+After installation, FileSpacer reopens the folders that were open when shutdown
+started, with their saved geometry and view settings. Setup or UAC cancellation
+also requests restoration with the original executable. Existing folder windows
+are reused rather than duplicated.
 
-## Installer une mise à jour
+Automatic weekly checks can be enabled on the same page or in the first-run
+welcome dialog. They are off by default and notify you when a newer release is
+available. Older releases without installer metadata offer their GitHub release
+page instead. Updates are never installed without your confirmation.
 
-Dans **Paramètres > À propos**, FileSpacer recherche une nouvelle version en
-arrière-plan. Le bouton **Rechercher une nouvelle version** reste accessible
-lorsqu’aucune version plus récente n’est trouvée. Si une mise à jour est disponible,
-il devient **Installer FileSpacer vX.X.X** ; le texte dessous indique l’état.
-
-Le clic sur Installer demande une confirmation : toutes les fenêtres seront
-fermées **après** le téléchargement et sa vérification, puis l’installateur sera
-lancé. Le téléchargement apparaît dans une boîte séparée ; les paramètres se
-ferment et vous pouvez continuer à utiliser vos dossiers. **Annuler** ou la croix
-arrête le téléchargement et laisse les fenêtres de dossiers ouvertes.
-
-En cas d’échec du téléchargement ou de vérification, aucune fenêtre de dossier
-n’est fermée. Si un processus empêche ensuite la fermeture normale, l’installation
-n’est pas lancée ; certaines fenêtres peuvent déjà être fermées. Aucun processus
-n’est arrêté de force. Les anciennes releases dépourvues des informations nécessaires
-à l’installation automatique proposent l’ouverture de leur page GitHub.

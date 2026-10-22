@@ -14,6 +14,7 @@ Windows File Explorer does not provide all the behaviors needed for a consistent
 - When a folder is deleted, its window closes.
 - Windows' Auto-arrange feature can be turned off, allowing icons to be positioned freely. Their positions are saved with the folder settings and restored the next time the folder is opened.
 - By default, opening a folder closes the source window. This behavior can be reversed in Settings; holding Ctrl reverses it for an individual operation.
+- Hold Alt and drag with the left mouse button in the main file area to move a folder window, or with the right button to resize it, preserving the file selection.
 
 FileSpacer is compatible with [Nilesoft Shell](https://nilesoft.org/) for menu theming and targeted customization.
 
@@ -22,6 +23,8 @@ FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler), cr
 ## Build and use
 
 Windows 10 or later, x64. The interface includes English and French resources. See [BUILD.md](BUILD.md) for the MSVC/NMAKE build and NSIS installer, and the [user guide](docs/user-guide.md) for navigation and maintenance commands.
+
+Run Windows regression tests with `tests.cmd`; see the [test guide](tests/regression/README.md) for individual groups and prerequisites.
 
 ## Nilesoft Shell
 
@@ -102,3 +105,4 @@ If you already use a custom radius, replace `default` with its previous value.
 FileSpacer is distributed under the [GNU General Public License v3.0](LICENSE). Copyright (c) 2026 Benco, for the FileSpacer modifications. Original ChromaFiler code: Copyright (c) 2023 J. van't Hoog.
 
 See [third-party notices](THIRD_PARTY_NOTICES.md) and the [privacy policy](docs/privacy-policy.md).
+
