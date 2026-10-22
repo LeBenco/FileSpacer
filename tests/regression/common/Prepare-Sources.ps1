@@ -86,7 +86,8 @@ switch ($Mode) {
         $private=Get-SourceBlock $source "namespace {`n`nLONG processLockCount"
         $lock=Get-SourceBlock $source 'void lockProcess()'
         $unlock=Get-SourceBlock $source 'void unlockProcess()'
-        Save-Source 'ShellLifetimeProduction.inc' ($private+"`nnamespace filespacer {`n"+$lock+"`n"+$unlock+"`n}")
+        $invoke=Get-SourceBlock $source 'HRESULT filespacer::invokeShellCommand('
+        Save-Source 'ShellLifetimeProduction.inc' ($private+"`n"+$invoke+"`nnamespace filespacer {`n"+$lock+"`n"+$unlock+"`n}")
     }
     'Settings' {
         $source=Read-Source 'SettingsDialog.cpp'; $pieces=@()
@@ -115,3 +116,4 @@ static void setViewState(IFolderView2 *, const ShellViewState &);
     }
 }
 Save-Source 'production-hashes.json' ($hashes | ConvertTo-Json)
+

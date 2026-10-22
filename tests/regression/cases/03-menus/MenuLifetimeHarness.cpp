@@ -153,6 +153,11 @@ struct IContextMenu : Ref {
 };
 using IContextMenu2 = IContextMenu;
 using IContextMenu3 = IContextMenu;
+// The real scoped registration is covered by the native Shell/STA suite.
+// Here keep the existing destruction/reentrancy boundaries at InvokeCommand.
+HRESULT invokeShellCommand(IContextMenu *menu, CMINVOKECOMMANDINFO *info) {
+    return menu->InvokeCommand(info);
+}
 struct IShellView : Ref {
     IShellView() : Ref(Stage::ViewRelease) {}
     HRESULT GetItemObject(int mode, IContextMenu **out) {
@@ -220,17 +225,29 @@ struct ItemWindow : Ref {
     }
     CMINVOKECOMMANDINFOEX makeInvokeInfo(int, POINT) { return {sizeof(CMINVOKECOMMANDINFOEX), hwnd, nullptr, nullptr}; }
 };
+// Stand-in for the new backend boundary. Keep the browser reference across
+// reentrant GetCurrentView just as ShellViewHost::currentView does.
+struct ShellViewHost {
+    CComPtr<IExplorerBrowser> browser;
+    ShellViewHost() { browser.Attach(new IExplorerBrowser); }
+    explicit operator bool() const { return static_cast<bool>(browser); }
+    HRESULT currentView(IFolderView2 **out) {
+        CComPtr<IExplorerBrowser> current = browser;
+        return current ? current->GetCurrentView(out) : E_FAIL;
+    }
+    void destroy() { browser.Release(); }
+};
 struct FolderWindow : ItemWindow {
     CComPtr<IShellView> shellView;
-    CComPtr<IExplorerBrowser> browser;
-    FolderWindow() { shellView.Attach(new IShellView); browser.Attach(new IExplorerBrowser); }
+    ShellViewHost viewHost;
+    FolderWindow() { shellView.Attach(new IShellView); }
     void closeNow() override {
         if (observation.closed) return;
         closing = true;
         hwnd = nullptr;
         observation.closed = true;
         shellView.Release();
-        browser.Release();
+        viewHost.destroy();
         Release();
     }
     void scheduleStateSave() { assert(!observation.closed && !observation.cleared); ++observation.saves; }

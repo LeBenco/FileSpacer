@@ -1,10 +1,12 @@
 #include "COMUtils.h"
 #include <atlbase.h>
+#include <shellapi.h>
 #include <shlwapi.h>
 #include <cstdio>
 #include <cstdlib>
 #include <thread>
 #include <atomic>
+#include <functional>
 
 using namespace filespacer;
 #include "ShellLifetimeProduction.inc"
@@ -25,11 +27,14 @@ public:
         processIdleEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
         require(processIdleEvent != nullptr, "create idle event");
         reference.Attach(new ShellThreadReference());
-        require(reference->install(), "install real Shell thread reference");
-        require(isProcessIdle(), "SHSetThreadRef does not own a counted reference");
+        require(shellCommandReference == nullptr, "no borrowed anchor before fixture");
+        shellCommandReference = reference;
+        requireUnpublished();
+        require(isProcessIdle(), "main anchor alone does not keep the process alive");
     }
     ~Fixture() {
         require(isProcessIdle(), "all external references/locks released");
+        shellCommandReference = nullptr;
         reference.Release();
         IUnknown *missing = nullptr;
         require(SHGetThreadRef(&missing) == E_NOINTERFACE && missing == nullptr,
@@ -42,13 +47,53 @@ public:
     }
     IUnknown *acquire() {
         IUnknown *result = nullptr;
-        require(SUCCEEDED(SHGetThreadRef(&result)) && result != nullptr,
-            "real SHGetThreadRef acquires reference");
+        {
+            ScopedShellThreadReference scope(reference);
+            require(SUCCEEDED(scope.status()), "publish command reference temporarily");
+            require(SUCCEEDED(SHGetThreadRef(&result)) && result != nullptr,
+                "real SHGetThreadRef acquires reference");
+        }
+        requireUnpublished();
         require(!isProcessIdle(), "Shell reference holds the process");
         return result;
     }
+    static void requireUnpublished() {
+        CComPtr<IUnknown> missing;
+        require(SHGetThreadRef(&missing) == E_NOINTERFACE && !missing,
+            "no reference published outside a command");
+    }
 private:
     CComPtr<ShellThreadReference> reference;
+};
+
+// Exercise the real invocation helper with native COM/SHGetThreadRef calls.
+class CommandProbe : public IContextMenu, public UnknownImpl {
+public:
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, void **object) override {
+        if (!object) return E_POINTER;
+        *object = nullptr;
+        if (iid != IID_IUnknown && iid != IID_IContextMenu) return E_NOINTERFACE;
+        *object = static_cast<IContextMenu *>(this);
+        AddRef();
+        return S_OK;
+    }
+    ULONG STDMETHODCALLTYPE AddRef() override { return UnknownImpl::AddRef(); }
+    ULONG STDMETHODCALLTYPE Release() override { return UnknownImpl::Release(); }
+    HRESULT STDMETHODCALLTYPE QueryContextMenu(HMENU, UINT, UINT, UINT, UINT) override { return E_NOTIMPL; }
+    HRESULT STDMETHODCALLTYPE GetCommandString(UINT_PTR, UINT, UINT *, LPSTR, UINT) override { return E_NOTIMPL; }
+    HRESULT STDMETHODCALLTYPE InvokeCommand(CMINVOKECOMMANDINFO *info) override {
+        require(GetCurrentThreadId() == ownerThread, "invoke on creating STA");
+        CComPtr<IUnknown> published;
+        require(SUCCEEDED(SHGetThreadRef(&published)), "command sees a native thread reference");
+        require(published.p == shellCommandReference, "command sees main-owned anchor");
+        require(!isProcessIdle(), "active invocation retains the process");
+        ++calls;
+        return invoke ? invoke(info) : S_OK;
+    }
+    std::function<HRESULT(CMINVOKECOMMANDINFO *)> invoke;
+    int calls = 0;
+private:
+    DWORD ownerThread = GetCurrentThreadId();
 };
 
 // The standard IStream marshaler supplies a real cross-apartment STA call.
@@ -145,6 +190,79 @@ int main() {
     });
     {
         Fixture test;
+        CommandProbe command;
+        CMINVOKECOMMANDINFO info = {sizeof(info)};
+        info.fMask = CMIC_MASK_ASYNCOK;
+        require(invokeShellCommand(&command, &info) == S_OK, "successful invocation result");
+        require(command.calls == 1 && info.fMask == CMIC_MASK_ASYNCOK,
+            "invoke exactly once without altering command flags");
+        Fixture::requireUnpublished();
+        require(isProcessIdle(), "synchronous command releases its temporary lock");
+        command.invoke = [](CMINVOKECOMMANDINFO *) { return E_FAIL; };
+        require(invokeShellCommand(&command, &info) == E_FAIL, "preserve handler failure");
+        Fixture::requireUnpublished();
+        require(isProcessIdle(), "failed command restores publication and lock count");
+    }
+    {
+        Fixture test;
+        CComPtr<UnknownImpl> previous;
+        previous.Attach(new UnknownImpl());
+        require(SUCCEEDED(SHSetThreadRef(previous)), "install a distinct previous reference");
+        CommandProbe outer, inner;
+        CMINVOKECOMMANDINFO info = {sizeof(info)};
+        outer.invoke = [&](CMINVOKECOMMANDINFO *command) {
+            require(invokeShellCommand(&inner, command) == S_OK, "nested invocation succeeds");
+            CComPtr<IUnknown> restored;
+            require(SUCCEEDED(SHGetThreadRef(&restored)) && restored.p == shellCommandReference,
+                "nested invocation restores the outer registration");
+            return E_FAIL;
+        };
+        require(invokeShellCommand(&outer, &info) == E_FAIL, "outer failure preserved");
+        {
+            CComPtr<IUnknown> restored;
+            require(SUCCEEDED(SHGetThreadRef(&restored)) && restored.p == previous.p,
+                "outer invocation restores the distinct original reference");
+        }
+        require(outer.calls == 1 && inner.calls == 1, "both nested commands invoked once");
+        require(SUCCEEDED(SHSetThreadRef(nullptr)), "remove test-owned previous registration");
+        Fixture::requireUnpublished();
+        require(isProcessIdle(), "nested commands balance every acquired reference");
+    }
+    {
+        Fixture test;
+        CommandProbe command;
+        IUnknown *workerReference = nullptr;
+        CMINVOKECOMMANDINFO info = {sizeof(info)};
+        info.fMask = CMIC_MASK_ASYNCOK;
+        lockProcess(); // Simulated last application window.
+        command.invoke = [&](CMINVOKECOMMANDINFO *) {
+            require(SUCCEEDED(SHGetThreadRef(&workerReference)), "asynchronous command takes reference");
+            unlockProcess(); // The command reentrantly closes its owner.
+            require(!isProcessIdle(), "command survives last-window closure");
+            return S_OK;
+        };
+        require(invokeShellCommand(&command, &info) == S_OK, "launch asynchronous command");
+        Fixture::requireUnpublished();
+        require(!isProcessIdle(), "worker still holds STA after return and unpublication");
+        std::thread worker([workerReference] {
+            Fixture::requireUnpublished(); // Publication is local to the invoking STA.
+            workerReference->Release();
+        });
+        pumpUntilIdle();
+        worker.join();
+    }
+    {
+        Fixture test;
+        try {
+            ScopedShellThreadReference scope(shellCommandReference);
+            require(SUCCEEDED(scope.status()), "publish before exceptional unwind");
+            throw 1;
+        } catch (int) {}
+        Fixture::requireUnpublished();
+        require(isProcessIdle(), "scope restores publication during C++ unwinding");
+    }
+    {
+        Fixture test;
         lockProcess(); unlockProcess();
         require(pumpUntilIdle() == 0, "ordinary last-window closure exits");
     }
@@ -233,9 +351,14 @@ int main() {
         require(proceed != nullptr && done != nullptr, "create native job barriers");
         NativeJob job = {window, proceed, done};
         lockProcess();
-        require(SHCreateThreadWithHandle(nativeJob, &job,
-            CTF_THREAD_REF | CTF_COINIT_STA, nullptr, &thread) != FALSE,
-            "Shell creates a real thread retaining the caller reference");
+        {
+            ScopedShellThreadReference scope(shellCommandReference);
+            require(SUCCEEDED(scope.status()), "publish for native worker creation");
+            require(SHCreateThreadWithHandle(nativeJob, &job,
+                CTF_THREAD_REF | CTF_COINIT_STA, nullptr, &thread) != FALSE,
+                "Shell creates a real thread retaining the caller reference");
+        }
+        Fixture::requireUnpublished();
         unlockProcess();
         require(!isProcessIdle(), "native Shell thread keeps STA alive without windows");
         // The sent message releases this extra simulated window/server lock.
@@ -288,3 +411,4 @@ int main() {
     std::printf("PASS: %d native Shell/STA lifetime cases.\n", cases);
     return 0;
 }
+
