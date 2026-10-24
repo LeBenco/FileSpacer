@@ -28,6 +28,7 @@ struct FolderState {
     int64_t lastSuccessAt = 0, firstFailedAt = 0; // UTC seconds; zero means no known failure.
     uint32_t present = 0;
     int32_t x = 0, y = 0, width = 0, height = 0; // 96-DPI units, signed 32-bit coordinates.
+    bool locked = false; // Read-only snapshot; ordinary saves never write the lock.
     bool maximized = false; // Independent of normal geometry; minimized state is never stored.
     FolderViewSettings view;
     std::vector<uint8_t> icons;
@@ -51,6 +52,9 @@ public:
     const std::string &error() const { return lastError; }
     bool read(const std::string &key, FolderState *state);
     bool save(const std::string &key, const FolderState &state, uint32_t parts);
+    // Capture and change the lock in one transaction. Ordinary saves consult the stored lock.
+    bool setLocked(const std::string &key, const FolderState &state, uint32_t parts, bool locked);
+    bool clearLocks();
     // Failure never creates a row. expired is true only after a committed age-based deletion.
     bool recordAccess(const std::string &key, bool success, int64_t when, bool *expired = nullptr);
     bool clear(const std::string &key, uint32_t parts);
@@ -62,6 +66,7 @@ public:
     bool rememberClosedWindow(const ClosedWindow &window);
     bool returnClosedWindow(const ClosedWindow &window);
 private:
+    bool writeState(const std::string &key, const FolderState &state, uint32_t parts, int lockChange);
     bool readClosedWindow(ClosedWindow *window);
     bool writeClosedWindow(const ClosedWindow &window, bool returning);
     bool execute(const char *sql);
