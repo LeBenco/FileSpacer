@@ -6,7 +6,7 @@
 
 LANGUAGE LANG_ENGLISH,SUBLANG_ENGLISH_US
 
-IDD_SETTINGS_GENERAL DIALOGEX DISCARDABLE 0, 0, 300, 261
+IDD_SETTINGS_GENERAL DIALOGEX DISCARDABLE 0, 0, 300, 277
 STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
 CAPTION "General"
 FONT 8, "MS Shell Dlg", 400, 0, 0
@@ -27,6 +27,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "File Explorer options", -1, "Button", BS_GROUPBOX, 7, 183, 286, 35
   CONTROL "Some File Explorer options also affect FileSpacer folder windows.", -1, "Static", WS_GROUP, 14, 194, 210, 16
   CONTROL "&Options...", IDC_EXPLORER_SETTINGS, "Button", WS_TABSTOP, 231, 194, 55, 14
+  CONTROL "Enable window state &locking", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 253, 272, 12
   CONTROL "Maintenance", -1, "Button", BS_GROUPBOX, 7, 222, 286, 28
   CONTROL "&Reset all folder state...", IDC_RESET_FOLDER_STATE, "Button", WS_TABSTOP, 14, 233, 220, 14
 }
