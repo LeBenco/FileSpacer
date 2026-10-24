@@ -220,14 +220,8 @@ private:
     struct ShellViewState {
         FolderViewSettings view;
         std::vector<uint8_t> selection;
-
-        int numItems = 0;
-        std::unique_ptr<CComHeapPtr<ITEMID_CHILD>[]> itemIds;
-        std::unique_ptr<POINT[]> itemPositions;
+        std::vector<uint8_t> icons; // Existing icon-position blob, applied once to the new view.
     };
-
-    static void getViewState(IFolderView2 *folderView, ShellViewState *state);
-    static void setItemPositions(IFolderView2 *folderView, const ShellViewState &state);
 
     void loadIconPositions();
     void scheduleStateSave(bool icons = false);

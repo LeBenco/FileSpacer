@@ -100,28 +100,19 @@ switch ($Mode) {
         Save-Source 'SettingsDisplayProduction.inc' ($pieces -join "`n`n")
     }
     'View' {
-        $source=Read-Source 'FolderWindow.cpp'; $header=Read-Source 'FolderWindow.h'
+        $header=Read-Source 'FolderWindow.h'
         $state=Get-SourceBlock $header '    struct ShellViewState'
         $settings=Read-Source 'ShellViewSettings.cpp'
         $helpers=Get-SourceBlock $settings "namespace {`nFolderViewSettings::Key stateKey"
         foreach ($signature in @('bool sameView(', 'FolderViewSettings captureOptions(', 'HRESULT restoreOptions(')) {
             $helpers+="`n"+(Get-SourceBlock $settings $signature)
         }
-        $capture=Get-SourceBlock $source 'void FolderWindow::getViewState('
-        $restore=Get-SourceBlock $source 'void FolderWindow::setItemPositions('
-        $spatial=Get-SourceBlock $source 'bool FolderWindow::spatialView('
         $prefix=@'
 #include "fake-shell.h"
 class FolderWindow { public:
 '@
-        $declarations=@'
-static void getViewState(IFolderView2 *, ShellViewState *);
-static void setItemPositions(IFolderView2 *, const ShellViewState &);
-static bool spatialView(IFolderView *);
-};
-'@
         $cases=[IO.File]::ReadAllText((Join-Path $CaseDirectory 'ViewStateCases.inc'))
-        Save-Source 'ViewStateTests.cpp' ($prefix+"`n"+$traceDefinition+"`n"+$state+";`n"+$declarations+"`n"+$helpers+"`n"+$capture+"`n"+$spatial+"`n"+$restore+"`n"+$cases)
+        Save-Source 'ViewStateTests.cpp' ($prefix+"`n"+$traceDefinition+"`n"+$state+";`n};`n"+$helpers+"`n"+$cases)
     }
 }
 Save-Source 'production-hashes.json' ($hashes | ConvertTo-Json)
