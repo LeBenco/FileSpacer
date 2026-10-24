@@ -1,4 +1,5 @@
 #include "Settings.h"
+#include "FolderStateStore.h"
 #include <strsafe.h>
 #include <atlbase.h>
 
@@ -121,7 +122,31 @@ SETTINGS_BOOL_VALUE(LiveNameSearch, L"LiveNameSearch", DEFAULT_LIVE_NAME_SEARCH)
 SETTINGS_BOOL_VALUE(FullNamesOnSelection, L"FullNamesOnSelection", DEFAULT_FULL_NAMES_ON_SELECTION)
 
 
+bool getWindowStateLockEnabled() {
+    DWORD value = 0;
+    getSettingsValue(L"WindowStateLockEnabled", RRF_RT_DWORD, &value, sizeof(value));
+    return value != 0;
+}
+
+bool setWindowStateLockEnabled(bool value) {
+    const bool previous = getWindowStateLockEnabled();
+    const DWORD enabled = value ? 1 : 0;
+    if (setSettingsValue(L"WindowStateLockEnabled", REG_DWORD, &enabled, sizeof(enabled)) != ERROR_SUCCESS)
+        return false;
+    if (!value) {
+        auto store = folderStateStore();
+        if (!store || !store->clearLocks()) {
+            const DWORD restore = previous ? 1 : 0;
+            setSettingsValue(L"WindowStateLockEnabled", REG_DWORD, &restore, sizeof(restore));
+            return false;
+        }
+    }
+    return true;
+}
+
+
 LSTATUS resetGlobalOptions() {
+    if (!setWindowStateLockEnabled(false)) return ERROR_WRITE_FAULT;
     // Delete current/future preference values, preserving version metadata and subkeys
     // (including the separate Debug /test namespace). Windows associations are elsewhere.
     HKEY raw = nullptr;
