@@ -1,9 +1,15 @@
 # Changelog
 
-## Unreleased
+## 1.1.2 — 2026-10-25
 
+- Add optional locking of a folder window's saved geometry and view settings from its title menu. Temporary changes remain possible, and individual file icon positions keep saving normally.
+- Show a Small & Flat padlock badge on locked folder icons, with native multi-resolution ICO rendering, DPI scaling and high-contrast colors.
+- Confirm global disabling of window state locking, clear locks for open and closed folders, and resume normal saving across processes.
+- Extend regression coverage for lock transitions, persistence failures, Shell restoration and native badge rendering.
 - Reopening a closed window (Ctrl+Shift+T, Jump List) scrolls Details and List views back to the row that was at the top when the window was closed.
 - Crash diagnostics keep writing a minidump and a report to the application's local data; the attribution to the former full-name rendering, its automatic preference change and restart are removed.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.1...v1.1.2)
 
 ## 1.1.1 — 2026-10-24
 
