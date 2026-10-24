@@ -83,7 +83,7 @@ To publish from Git Bash, first update both version definitions in
 source, test and documentation changes on `main`. For example:
 
 ```bash
-bash release.sh 1.0.8
+bash release.sh 1.1.0
 ```
 
 The script requires a clean working tree, checks the remote branch and tag,
@@ -92,125 +92,26 @@ and the annotated tag. The GitHub Actions workflow performs the installer build
 and publication. Check that it succeeds and that the release contains both the
 versioned installer and `FileSpacer-update.txt`.
 
-The runner locates MSVC with `vswhere` and invokes the same NMAKE targets directly
-because its Visual Studio edition differs from the local Build Tools installation.
+## Regression tests
 
-Update checking downloads the manifest from
-`https://github.com/LeBenco/FileSpacer/releases/latest/download/FileSpacer-update.txt`.
-The workflow generates it from the built executable and the renamed NSIS
-installer, using ASCII without a BOM and LF line endings:
-
-```text
-FSUP
-01000500
-https://github.com/LeBenco/FileSpacer/releases/tag/v1.0.5
-https://github.com/LeBenco/FileSpacer/releases/download/v1.0.5/FileSpacer-1.0.5-install.exe
-<64 lowercase hexadecimal SHA-256 characters>
-<installer length in bytes>
-```
-
-The eight hexadecimal digits encode the four version components, one byte each
-(major, minor, patch, revision). Each component must be between 0 and 255. URLs
-must match the version and this repository. The final two lines are generated
-with `Get-FileHash -Algorithm SHA256` and the installer file length. They must not
-be edited independently of the executable uploaded to the release.
-
-Older clients still read the first three lines and open the release page. The
-new client also accepts old three-line manifests, offering the release page
-when installer metadata is absent. Direct installation needs all six lines.
-GitHub's latest-release URL selects stable releases; prereleases are not offered
-by the updater. A release must contain the manifest for checks to succeed.
-
-### Update interface and lifecycle
-
-Opening Settings > About checks asynchronously. The existing check button becomes
-“Install FileSpacer vX.Y.Z” when installable metadata for a newer version is
-available; otherwise it remains available to check again. A status label reports
-checking, no update, availability or errors. Weekly checks retain their notification.
-
-Installing asks for confirmation that all windows will close after the download.
-Pending Settings changes are applied, then a separate modeless progress dialog
-opens and Settings closes, allowing folder windows to remain usable. Cancel or
-the progress window's close button cancels without closing any folder window.
-Workers keep the process alive until their bounded network operation and cleanup
-finish, even if their dialog has been destroyed.
-
-The client verifies exact byte length and SHA-256 before starting a temporary
-copy of its executable as an installation relay. The relay verifies the file again
-and holds it without write/delete sharing. It requests a cooperative exit of all
-processes using that installed executable, including recovery helpers and
-headless COM servers, and waits at most 60 seconds. Each process closes its own
-windows normally, preserves the existing saves, suspends new COM activations and
-finishes its workers. The application never calls `TerminateProcess`.
-
-A signaled installation gate prevents new application launches during shutdown
-and installation. Failure to shut down leaves setup unstarted and restores COM
-activation for remaining instances. Just before each process closes its windows,
-it writes their UTF-8 Shell parsing names to a temporary update-session database.
-This snapshot is separate from the folder-state database and the 20-entry reopen
-history; it includes folders opened during the download and excludes those closed
-before shutdown. A process refuses shutdown if saving its snapshot fails.
-
-The relay launches the existing interactive NSIS installer (including its normal
-UAC prompt), waits for its exit, and releases the startup gate before restarting
-FileSpacer with `/restore-update "<temporary session file>"`. After success it
-uses the installed executable registered in App Paths, including when the update
-was initiated from a local build. If UAC/setup is cancelled or shutdown/setup
-fails, it requests restoration with the original executable instead. Setup exit
-codes 0/1/other mean success/cancellation/error. Cancellation is not an error.
-
-Restoration consumes the session once, opens each folder through the existing
-spatial-window creation path (without adding the configured startup folder), and
-uses its normal saved position, size, maximization and view settings. Already
-open folders are activated without creating duplicates. An unavailable folder
-does not prevent restoring the others; a warning reports the failed count.
-Selection and scroll positions are not part of this temporary path snapshot.
-The temporary session normally disappears after restoration; if restarting fails,
-it remains available until the next stale-relay cleanup. Shutdown failure can
-leave existing windows open; restoration uses the same duplicate checks.
-
-Implementation is contained in `Update.cpp`, `UpdateManifest.cpp` and
-`UpdateInstaller.cpp`, `UpdateSession.cpp` and `UpdateSessionStore.cpp`.
-`ProcessLifetime.cpp` is a generic application exit/session-save endpoint.
-Settings, main and folder creation only provide small lifecycle/UI hooks. The
-folder-state, navigation, reopen history and Jump List implementations are unchanged.
-Temporary installer data is removed on completion/error/cancellation; the mapped
-relay image is cleaned on a later update check once it is at least 24 hours old.
-
-### Parser regression tests
-
-From an initialized x64 MSVC CMD prompt at the repository root:
+From the project root, close FileSpacer and Control Panel windows, then run:
 
 ```cmd
-if not exist build mkdir build
-cl.exe /nologo /EHsc /W4 /std:c++14 /I src src\UpdateManifest.cpp tests\update_manifest_test.cpp /Fe:build\update-manifest-test.exe
-build\update-manifest-test.exe
+tests.cmd
 ```
 
-The test is also portable C++14 and can run under AddressSanitizer/UBSan. It covers
-legacy and installer manifests, wrong hosts/versions, malformed checksums, size
-limits, truncation and 50,000 deterministic malformed inputs.
+This is the reference regression suite: 96 cases, including one real native
+Shell/SQLite persistence test in the production spatial configuration. It
+uses the same MSVC/NMAKE build above. Do not also run the native launcher
+when the full suite already ran group 18.
 
-### Update-session regression tests
+For a targeted run, use `-Category` or `-Pattern`; see
+[the test guide](tests/regression/README.md). The retained native test can
+also be invoked alone as `test-native-state.cmd --diagnostic`. It uses `/Z7`
+and initializes MSVC x64 itself; no shared compiler PDB is required. The
+exploratory profile comparisons and Control Panel embedding probes have
+been retired. Their sources remain in the migration branch history.
 
-From an initialized x64 MSVC CMD prompt at the repository root:
-
-```cmd
-if not exist build mkdir build
-cl.exe /nologo /TC /DSQLITE_OMIT_LOAD_EXTENSION /DSQLITE_DQS=0 /c third_party\sqlite\sqlite3.c /Fo:build\sqlite-session-test.obj
-cl.exe /nologo /EHsc /W4 /std:c++14 /I src /I third_party\sqlite src\UpdateSessionStore.cpp tests\update_session_test.cpp build\sqlite-session-test.obj /Fe:build\update-session-test.exe
-build\update-session-test.exe "%TEMP%\FileSpacer-session-test-%RANDOM%-%RANDOM%.sqlite3"
-```
-
-The portable test uses the bundled SQLite source. It covers more than 20 folders,
-multiple processes, Unicode/long/network/virtual paths, repeated captures,
-empty processes, transaction rollback, malformed databases, and global limits.
-Use a fresh temporary filename; the test removes its database on success.
-
-Before publishing a release, test successful installation and setup/UAC
-cancellation with several folder
-windows in separate processes. Also open/close a folder during download, cancel
-a download, try a folder that becomes unavailable before restoration, and check
-that no startup-folder window or duplicate appears. The outgoing binary needs
-the snapshot code; an already installed old client cannot gain it retroactively.
-
+Version 1.1.0 uses the public Shell integration described in
+[the architecture note](docs/native-shell-view.md), including the three
+explicitly accepted behavior differences.
