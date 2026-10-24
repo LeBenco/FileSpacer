@@ -19,7 +19,7 @@
   closure is considered; an older entry is not offered instead, and the history
   is retained. The current window stays open. A reopened folder keeps its saved
   geometry and view settings,
-  and restores its selection and focused item once the Shell has loaded it. The focused item can be brought into view; the exact previous scroll offset is not restored.
+  and restores its selection and focused item once the Shell has loaded it. In Details and List views it also scrolls back to the row that was at the top when the window was closed; icon views open at the top as before.
   The menu icon loads in the background, including custom folder icons; a generic
   folder icon is used if the Shell cannot retrieve it.
 - The taskbar icon's Jump List also offers Reopen Last Closed Window, including
@@ -117,8 +117,9 @@ An already-open parent keeps its existing selection.
 The public Shell integration uses Windows' native selected-name rendering.
 FileSpacer's custom opaque full-name rendering is unavailable; its Settings
 control is disabled and labeled accordingly, and the saved preference is
-retained. Exact scroll restoration is also unavailable: reopening a folder
-restores the selection and focus and reveals the focused item.
+retained. Scroll restoration on reopening is anchored on the first displayed
+row in Details and List views; icon views and other layouts open at the top,
+with the selection and focus restored.
 
 With "Preserve selection on activation" enabled (General page), the first click
 on the empty background of an inactive folder window only activates it and keeps
