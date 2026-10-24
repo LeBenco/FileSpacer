@@ -123,26 +123,14 @@
 #define IDS_BROWSER_ASSOCIATION_ERROR        286
 #define IDS_BROWSER_ASSOCIATIONS_FAILED      287
 
-#define IDS_LABEL_INCOMPATIBLE                   288
-#define IDS_LABEL_NO_OPTIONS                     289
-#define IDS_LABEL_OPTIONS_FAILED                 290
-#define IDS_LABEL_NO_CONTROL                     291
-#define IDS_LABEL_AMBIGUOUS_CONTROL              292
-#define IDS_LABEL_INSTALL_FAILED                 293
-#define IDS_LABEL_REBUILD_FAILED                 294
-#define IDS_LABEL_CRASH_DISABLED                 295
-#define IDS_RECOVERY_RESTART_FAILED              296
-#define IDS_RECOVERY_DISABLE_FAILED              297
 #define IDS_RECOVERY_UNAVAILABLE                 298
-#define IDS_RECOVERY_REPEATED                    299
 #define IDS_RESET_CLI_ARGUMENTS                  300
 #define IDS_RESET_CLI_BUSY                       301
 #define IDS_RESET_CLI_FAILED                     302
 #define IDS_RESET_CLI_ALL_DONE                   303
 #define IDS_RESET_CLI_OPTIONS_DONE               304
 
-#define IDS_RECOVERY_UNATTRIBUTED                306
-#define IDS_LABEL_DISABLED_NO_RESTART            307
+#define IDS_RECOVERY_CRASHED                     306
 #define IDS_SETTINGS_ACCESS_FAILED               308
 
 #define IDS_UPDATE_SEARCH_BUTTON               316
