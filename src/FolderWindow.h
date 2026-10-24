@@ -268,6 +268,8 @@ private:
     unsigned navigationDepth = 0;
     UINT deferredCloseMessage = 0;
     HRESULT browseToItem();
+    HRESULT refreshView();
+    void resumeDeferredClose();
 
     CComPtr<IShellItem> selected; // retains the selected shortcut rather than its resolved target
 
