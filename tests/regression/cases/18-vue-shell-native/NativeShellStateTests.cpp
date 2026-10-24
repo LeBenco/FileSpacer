@@ -527,11 +527,24 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
             if (!expect(store.save("populated", geometry, geometry.present), L"save unrelated window geometry")) return false;
             FolderState patch; patch.present = FolderState::View; patch.view = wanted;
             if (!expect(store.save("populated", patch, FolderState::View), L"save the real native view settings only")) return false;
+            FolderState reference = geometry; reference.view = wanted;
+            if (!expect(store.setLocked("populated", reference, geometry.present | FolderState::View, true),
+                    L"capture a locked reference containing every real native view option")) return false;
+            FolderState temporary = reference;
+            temporary.x += 50; temporary.width += 100; temporary.maximized = true;
+            temporary.view.mode = FVM_LIST; temporary.view.iconSize = 64;
+            temporary.view.flags ^= FWF_AUTOARRANGE;
+            temporary.view.columns[0].width += 71;
+            std::swap(temporary.view.columns[0], temporary.view.columns[1]);
+            temporary.view.sort[0].direction = SORT_ASCENDING;
+            temporary.view.groupBy = {}; temporary.view.groupAscending = true;
+            if (!expect(store.save("populated", temporary, geometry.present | FolderState::View),
+                    L"immediate and deferred-style writes cannot replace the locked native reference")) return false;
             if (!expect(store.save("empty", patch, FolderState::View), L"save settings for the empty-folder fixture")) return false;
         } // Close the connection before reading through a new store.
         FolderState restored;
         if (!readStored("populated", restored)) return false;
-        if (!expect(sameView(restored.view, wanted), L"SQLite round trip preserves every captured view field")) return false;
+        if (!expect(restored.locked && sameView(restored.view, wanted), L"SQLite round trip preserves every captured view field")) return false;
         if (!expect(restored.x == 211 && restored.y == 193 && restored.width == 640 && restored.height == 480
                 && !restored.maximized, L"view-only save preserves unrelated window geometry")) return false;
         if (!expect(restored.present == (FolderState::Position | FolderState::Size
@@ -636,6 +649,11 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
             if (!checked(view->QueryInterface(IID_PPV_ARGS(&identity)), L"read replacement COM identity")) return;
             if (!expect(identity != oldViewIdentity, L"restoration targets a genuinely new native view")) return;
             oldViewIdentity.Release();
+            FolderState reference;
+            if (!readStored("populated", reference)) return;
+            FolderStateStore store(database.c_str());
+            if (!expect(store.setLocked("populated", reference, reference.present, false),
+                    L"unlock after every protected setting was restored on a new real Shell view")) return;
             phase = Phase::VerifyRefresh;
             baseline = browser.enumerationSerial();
             if (!checked(view->Refresh(), L"refresh the restored native view")) return;
