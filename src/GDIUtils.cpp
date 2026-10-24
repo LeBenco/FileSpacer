@@ -122,9 +122,18 @@ COLORREF getNavigationIconColor(bool disabled, COLORREF background) {
                 && !(contrast.dwFlags & HCF_HIGHCONTRASTON)) {
             HTHEME theme = OpenThemeData(nullptr, L"Navigation");
             if (theme) {
-                // Aero-like fallback if this theme's image cannot be sampled.
-                navigationIconColors[0] = RGB(128, 128, 128);
-                navigationIconColors[1] = RGB(191, 191, 191);
+                // Image-based themes expose no color property for the Back button:
+                // start from the documented toolbar text colors, then let the sample
+                // of the actual glyph override them when it can be read.
+                HTHEME toolbar = OpenThemeData(nullptr, L"Toolbar");
+                if (toolbar) {
+                    COLORREF color = 0;
+                    if (SUCCEEDED(GetThemeColor(toolbar, TP_BUTTON, TS_NORMAL, TMT_TEXTCOLOR, &color)))
+                        navigationIconColors[0] = color;
+                    if (SUCCEEDED(GetThemeColor(toolbar, TP_BUTTON, TS_DISABLED, TMT_TEXTCOLOR, &color)))
+                        navigationIconColors[1] = color;
+                    CloseThemeData(toolbar);
+                }
                 sampleNavigationIconColor(theme, NAV_BB_NORMAL,
                     background, navigationIconColors[0]);
                 sampleNavigationIconColor(theme, NAV_BB_DISABLED,
