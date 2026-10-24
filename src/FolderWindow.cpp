@@ -115,6 +115,15 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         return true;
     if (!isWindowOperational())
         return false;
+    if (activationClickPending && msg->message >= WM_MOUSEFIRST && msg->message <= WM_MOUSELAST
+            && msg->message != WM_MOUSEMOVE) {
+        // Only the button-down that caused the activation is a candidate.
+        activationClickPending = false;
+        if (msg->message == WM_LBUTTONDOWN && isBackgroundActivationClick(msg))
+            return true;
+        if (!isWindowOperational())
+            return false;
+    }
     if (msg->message == WM_KEYDOWN && msg->wParam == L'T'
             && GetKeyState(VK_CONTROL) < 0 && GetKeyState(VK_SHIFT) < 0
             && GetKeyState(VK_MENU) >= 0) {
@@ -756,6 +765,7 @@ LRESULT FolderWindow::onDropdown(int command, POINT pos) {
 
 void FolderWindow::onActivate(WORD state, HWND prevWindow) {
     CComPtr<ItemWindow> keepAlive(this); // Shell calls can reenter dispatch
+    activationClickPending = state == WA_CLICKACTIVE;
     if (state == WA_INACTIVE) {
         cancelAltGesture();
         viewStateDirty(FolderState::Icons);
@@ -877,6 +887,23 @@ HRESULT FolderWindow::invokeViewCommand(IContextMenu *menu, CMINVOKECOMMANDINFO 
     const HRESULT result = invokeShellCommand(menu, info);
     resumeDeferredClose();
     return result;
+}
+
+// A click that activates this window (WM_ACTIVATE with WA_CLICKACTIVE) is
+// followed by its button-down message, posted to the clicked window only after
+// the activation. When that first message lands on the empty background of the
+// view, the application's own message loop drops it so the native view keeps
+// its selection. Item clicks, other buttons and Alt gestures are not affected.
+bool FolderWindow::isBackgroundActivationClick(const MSG *msg) const {
+    if (!shellView || GetKeyState(VK_MENU) < 0 || GetAsyncKeyState(VK_MENU) < 0
+            || !settings::getKeepSelectionOnActivate())
+        return false;
+    HWND root = nullptr;
+    if (FAILED(shellView->GetWindow(&root)) || !root)
+        return false;
+    if (msg->hwnd != root && !IsChild(root, msg->hwnd))
+        return false;
+    return gestureRoleAt(msg->pt) == ROLE_SYSTEM_LIST;
 }
 
 LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
