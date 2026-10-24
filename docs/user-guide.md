@@ -47,6 +47,31 @@
   sizes, and view settings, keeping global application preferences. It closes
   open FileSpacer folder windows before clearing the database.
 
+## Lock a folder window's saved state
+
+Enable **Settings > General > Enable window state locking** (off by default).
+This makes **Lock window state** available in the menu beside the window title;
+no folder is locked automatically. Locking captures the current normal position,
+size, maximized state and folder view settings, including icon size, sorting,
+grouping and columns. A small padlock badge from the Small & Flat set overlays the bottom-right
+corner of the folder icon. Its embedded multi-resolution ICO scales with DPI on
+all supported Windows versions; high-contrast mode uses the system text color.
+The title's accessible name and its menu button's tooltip explain the lock.
+
+You can still move, resize and change the view of a locked window. Those changes
+remain temporary: reopening the folder restores the captured reference. Individual
+file and subfolder icon positions continue to be saved normally. Selection, focus,
+scrolling, contents, global options and search history retain their usual behavior.
+**Unlock window state** saves the current visible settings without restoring the
+old reference. The lock follows the existing folder identity (including local
+NTFS renames and moves); the normal expiration and storage quota still apply.
+
+Disabling the feature asks for confirmation. Cancel keeps the existing locks;
+confirm permanently removes all locks, including closed folders, while preserving
+other saved state. Open windows in all processes immediately resume normal saving
+without moving. Enabling the feature again does not restore previous locks.
+Resetting all folder state also removes its locks.
+
 ## Move and resize folder windows
 
 Hold Alt and start a drag in the main file area, on the background or on an item:
@@ -60,7 +85,8 @@ Hold Alt and start a drag in the main file area, on the background or on an item
 Toolbars, the path and search fields, column headers, scrollbars and rename
 edit controls retain their normal Windows behavior. Alt + double-click on an
 item opens its Properties. Without Alt, the file view handles clicks and drags
-normally. Moving and resizing this way updates the folder's saved geometry.
+normally. Moving and resizing this way updates the folder's saved geometry,
+unless its window state is locked.
 
 FileSpacer uses the classic Shell view for all display modes. The full-name
 display preference changes selected-item labels and does not switch the view
