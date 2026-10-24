@@ -16,8 +16,8 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Browse...", IDC_START_FOLDER_BROWSE, "Button", WS_TABSTOP, 231, 18, 55, 14
   CONTROL "Folder navigation", -1, "Button", BS_GROUPBOX, 7, 41, 286, 51
   CONTROL "&Keep the window open by default", IDC_KEEP_SOURCE_WINDOW_OPEN, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 52, 272, 12
-  CONTROL "Preserve selection on &activation", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 66, 272, 12
-  CONTROL "On a background click in an inactive window.", -1, "Static", WS_GROUP, 14, 80, 272, 8
+  CONTROL "Preserve selection on &activation", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|WS_DISABLED, 14, 66, 272, 12
+  CONTROL "Unavailable with the current Shell view.", -1, "Static", WS_GROUP, 14, 80, 272, 8
   CONTROL "Name filter", -1, "Button", BS_GROUPBOX, 7, 96, 286, 28
   CONTROL "Filter while t&yping", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 107, 272, 12
   CONTROL "Taskbar", -1, "Button", BS_GROUPBOX, 7, 128, 286, 51
@@ -47,8 +47,8 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Show &View button", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 105, 130, 14
   CONTROL "The elements above are visible when the toolbar is shown.", -1, "Static", WS_GROUP, 14, 121, 272, 16
   CONTROL "File names", -1, "Button", BS_GROUPBOX, 7, 147, 286, 46
-  CONTROL "Show full &names when selected", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 159, 272, 12
-  CONTROL "Compatibility varies between Windows versions.\nChanges apply when folders are reopened.", -1, "Static", WS_GROUP, 14, 173, 272, 16
+  CONTROL "Show full &names when selected", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|WS_DISABLED, 14, 159, 272, 12
+  CONTROL "Unavailable with the current Shell view.\nWindows' native rendering is used.", -1, "Static", WS_GROUP, 14, 173, 272, 16
   CONTROL "Default window size", -1, "Button", BS_GROUPBOX, 7, 200, 286, 35
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 217, 88, 8
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 214, 35, 14
