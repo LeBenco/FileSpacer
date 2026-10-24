@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1 — 2026-10-24
+
+- Restore the selection-preserving activation click: the first click on the empty background of an inactive folder window activates it without clearing the selection (preference re-enabled).
+- Fix a crash when a folder window is closed while the Shell view is refreshing (Refresh command, name filter, Refresh/New verbs).
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.0...v1.1.1)
+
 ## 1.1.0 — 2026-10-24
 
 - Refactor folder views to use Windows Shell implementations through public COM APIs instead of adapting internal Shell controls.
