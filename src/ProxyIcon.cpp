@@ -5,12 +5,18 @@
 #include "GDIUtils.h"
 #include "DPI.h"
 #include "resource.h"
+#include "UIStrings.h"
 #include <windowsx.h>
 #include <shlobj.h>
 #include <vssym32.h>
 #include <strsafe.h>
 #include <propkey.h>
 #include <VersionHelpers.h>
+#include <memory>
+#include <type_traits>
+#include <vector>
+#include <cstdint>
+#include <cstring>
 
 namespace filespacer {
 
@@ -25,6 +31,40 @@ const BYTE INACTIVE_CAPTION_ALPHA = 156;
 const BYTE PROXY_BUTTON_STYLE = BTNS_WHOLEDROPDOWN | BTNS_NOPREFIX;
 
 static HFONT captionFont = nullptr;
+
+// Native ICO loading selects a DPI-sized image on every supported Windows version.
+static bool drawLockBadge(HDC dc, int x, int y, int size, COLORREF color, bool highContrast) {
+    std::unique_ptr<std::remove_pointer_t<HICON>, decltype(&DestroyIcon)> icon(
+        static_cast<HICON>(LoadImage(GetModuleHandle(nullptr),
+            MAKEINTRESOURCE(IDR_LOCK_BADGE_ICON), IMAGE_ICON, size, size, 0)), DestroyIcon);
+    if (!icon) return false;
+    if (highContrast) {
+        // DrawState's monochrome conversion loses alpha-only ICO masks. Preserve
+        // the actual alpha coverage while recoloring the loaded image instead.
+        ICONINFO info = {};
+        if (!GetIconInfo(icon.get(), &info)) return false;
+        using Bitmap = std::unique_ptr<std::remove_pointer_t<HBITMAP>, decltype(&DeleteObject)>;
+        Bitmap mask(info.hbmMask, DeleteObject), source(info.hbmColor, DeleteObject);
+        if (!source) return false;
+        BITMAPINFO format = {{sizeof(BITMAPINFOHEADER), size, -size, 1, 32, BI_RGB}};
+        std::vector<uint32_t> pixels(static_cast<size_t>(size)*size);
+        if (GetDIBits(dc, source.get(), 0, size, pixels.data(), &format, DIB_RGB_COLORS) != size)
+            return false;
+        for (auto &pixel : pixels) {
+            const uint32_t alpha = pixel >> 24;
+            pixel = (alpha << 24) | ((GetRValue(color)*alpha/255) << 16)
+                | ((GetGValue(color)*alpha/255) << 8) | (GetBValue(color)*alpha/255);
+        }
+        void *bits = nullptr;
+        Bitmap colored(CreateDIBSection(dc, &format, DIB_RGB_COLORS, &bits, nullptr, 0), DeleteObject);
+        if (!colored || !bits) return false;
+        std::memcpy(bits, pixels.data(), pixels.size()*sizeof(uint32_t));
+        info.hbmColor = colored.get();
+        icon.reset(CreateIconIndirect(&info));
+        if (!icon) return false;
+    }
+    return !!DrawIconEx(dc, x, y, icon.get(), size, size, 0, nullptr, DI_NORMAL);
+}
 
 void ProxyIcon::init() {
     PROXY_PADDING = scaleDPI(PROXY_PADDING);
@@ -137,9 +177,23 @@ POINT ProxyIcon::getMenuPoint(HWND parent) {
     return clientToScreen(parent, {0, 0});
 }
 
-void ProxyIcon::setTitle(wchar_t *title) {
+void ProxyIcon::setTitle(wchar_t *) {
     if (caption)
-        SetWindowText(caption, title);
+        setLocked(stateLocked);
+}
+
+void ProxyIcon::setLocked(bool locked) {
+    stateLocked = locked;
+    if (caption) {
+        std::wstring description(outer->title.m_pData);
+        if (locked) {
+            description += L" - ";
+            description += getString(IDS_WINDOW_STATE_LOCKED);
+        }
+        // The owner-drawn STATIC retains its native accessible name.
+        SetWindowText(caption, description.c_str());
+        InvalidateRect(caption, nullptr, FALSE);
+    }
 }
 
 void ProxyIcon::setIcon(HICON icon) {
@@ -170,7 +224,11 @@ bool ProxyIcon::drawTitle(const DRAWITEMSTRUCT *draw) {
     SetBkMode(draw->hDC, TRANSPARENT);
     COLORREF color = GetSysColor(COLOR_BTNTEXT);
     HTHEME theme = OpenThemeData(toolbar, L"Toolbar");
-    if (theme)
+    HIGHCONTRAST contrast = {sizeof(contrast)};
+    const bool highContrast = SystemParametersInfo(SPI_GETHIGHCONTRAST, sizeof(contrast), &contrast, 0)
+        && (contrast.dwFlags & HCF_HIGHCONTRASTON);
+    if (highContrast) color = GetSysColor(COLOR_WINDOWTEXT);
+    else if (theme)
         GetThemeColor(theme, TP_BUTTON, TS_NORMAL, TMT_TEXTCOLOR, &color);
     SetTextColor(draw->hDC, color);
     const int iconSize = GetSystemMetrics(SM_CXSMICON);
@@ -180,6 +238,12 @@ bool ProxyIcon::drawTitle(const DRAWITEMSTRUCT *draw) {
             iconSize, iconSize, 0, nullptr, DI_NORMAL);
     RECT text = draw->rcItem;
     text.left += PROXY_PADDING.cx + iconSize + PROXY_INFLATE.cx;
+    if (stateLocked) {
+        const int badgeSize = scaleDPI(11);
+        const int x = PROXY_PADDING.cx + iconSize - badgeSize + scaleDPI(2);
+        const int y = (rectHeight(draw->rcItem) - iconSize)/2 + iconSize - badgeSize + scaleDPI(1);
+        drawLockBadge(draw->hDC, x, y, badgeSize, color, highContrast);
+    }
     text.right = max(text.left, text.right - PROXY_PADDING.cx);
     const DWORD flags = DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS;
     if (theme) {
