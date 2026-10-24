@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Crash diagnostics keep writing a minidump and a report to the application's local data; the attribution to the former full-name rendering, its automatic preference change and restart are removed.
+
 ## 1.1.1 — 2026-10-24
 
 - Restore the selection-preserving activation click: the first click on the empty background of an inactive folder window activates it without clearing the selection (preference re-enabled).
