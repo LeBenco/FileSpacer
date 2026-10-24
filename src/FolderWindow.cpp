@@ -488,40 +488,6 @@ FOLDERSETTINGS FolderWindow::folderSettings() const {
     return settings;
 }
 
-void FolderWindow::getViewState(IFolderView2 *const folderView, ShellViewState *state) {
-    // A fresh snapshot records only settings successfully read from this view.
-    state->view = captureOptions(folderView, {});
-
-    int count = 0;
-    if (!checkHR(folderView->ItemCount(SVGIO_ALLVIEW, &count)) || count <= 0)
-        return;
-    state->itemIds = std::unique_ptr<CComHeapPtr<ITEMID_CHILD>[]>(
-        new CComHeapPtr<ITEMID_CHILD>[count]);
-    state->itemPositions = std::unique_ptr<POINT[]>(new POINT[count]);
-    for (int i = 0; i < count; i++) {
-        CComHeapPtr<ITEMID_CHILD> item;
-        POINT position = {};
-        if (checkHR(folderView->Item(i, &item)) && item
-                && checkHR(folderView->GetItemPosition(item, &position))) {
-            state->itemIds[state->numItems].Attach(item.Detach());
-            state->itemPositions[state->numItems] = position;
-            state->numItems++;
-        }
-    }
-}
-
-void FolderWindow::setItemPositions(IFolderView2 *const folderView, const ShellViewState &state) {
-    if (state.numItems > 0 && spatialView(folderView)) {
-        std::vector<PCUITEMID_CHILD> items;
-        items.reserve(static_cast<size_t>(state.numItems));
-        for (int i = 0; i < state.numItems; i++)
-            items.push_back(state.itemIds[i]);
-        const HRESULT result = folderView->SelectAndPositionItems(static_cast<UINT>(items.size()),
-            items.data(), state.itemPositions.get(), SVSI_POSITIONITEM | SVSI_NOSTATECHANGE);
-        checkHR(result);
-    }
-}
-
 void FolderWindow::scheduleStateSave(bool icons) {
     if (restoringState || !viewReady) return;
     if (icons) viewStateDirty(FolderState::Icons);
@@ -1152,7 +1118,12 @@ void FolderWindow::onItemChanged() {
         CComPtr<IFolderView2> folderView;
         if (checkHR(viewHost.currentView(IID_PPV_ARGS(&folderView)))) {
             auto state = std::make_unique<ShellViewState>();
-            getViewState(folderView, state.get());
+            state->view = captureOptions(folderView, {});
+            if (!current()) return;
+            // The transient snapshot may hold a filtered subset: it is applied once
+            // to the recreated view and never persisted as the folder's placement.
+            if (spatialView(folderView))
+                checkHR(captureIconPositions(folderView, current, enumerationComplete, {}, state->icons));
             if (!current()) return;
             checkHR(captureReopenSelection(source, current, state->selection));
             if (!current()) return;
@@ -1952,7 +1923,8 @@ void FolderWindow::finishViewInitialization() {
             CComQIPtr<IFolderView2> folderView(view);
             if (folderView) {
                 restoringState = true;
-                setItemPositions(folderView, *state);
+                if (!state->icons.empty() && spatialView(folderView))
+                    checkHR(restoreIconPositions(folderView, state->icons, current));
                 if (!current()) return;
                 checkHR(restoreReopenSelection(view, state->selection, current));
                 if (!current()) return;
