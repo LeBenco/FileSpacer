@@ -2,6 +2,8 @@
 #include <atlbase.h>
 #include <shlobj.h>
 #include <shlwapi.h>
+#include <oleacc.h>
+#pragma comment(lib, "Oleacc.lib")
 
 namespace filespacer {
 namespace {
@@ -9,7 +11,7 @@ struct ReopenViewHeader {
     uint32_t version = 1, selected = 0, flags = 0;
     POINT offset = {};
 };
-// Keep the existing blob layout and legacy flags; new captures have no anchor.
+// Existing blob layout: header, optional anchor (first displayed item), optional focus, selection.
 constexpr uint32_t REOPEN_ANCHOR = 2, REOPEN_FOCUS = 4;
 }
 
@@ -37,10 +39,69 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
         if (!current()) return E_ABORT;
         if (SUCCEEDED(result) && focused) header.flags |= REOPEN_FOCUS;
     }
+    // Scroll anchor: the first item whose reported position lies inside the view's
+    // client area. Report and list views answer in client coordinates, so this is
+    // the first displayed row. Views answering in unscrolled layout coordinates
+    // (icons) yield the first item of the folder, which restoring leaves at the
+    // top: the standard behavior, by construction.
+    CComHeapPtr<ITEMID_CHILD> anchor;
+    HWND viewWindow = nullptr;
+    RECT client = {};
+    result = view->GetWindow(&viewWindow);
+    if (!current()) return E_ABORT;
+    if (SUCCEEDED(result) && viewWindow && GetClientRect(viewWindow, &client)
+            && client.right > 0 && client.bottom > 0) {
+        // A column header covers the top of the client area; the rows under it
+        // report non-negative positions but are not displayed. Its height comes
+        // from its public MSAA role, as for the Alt gestures; no header gives 0.
+        LONG topInset = 0;
+        POINT probe = {2, 2};
+        if (ClientToScreen(viewWindow, &probe)) {
+            CComPtr<IAccessible> accessible;
+            CComVariant child, role;
+            result = AccessibleObjectFromPoint(probe, &accessible, &child);
+            if (!current()) return E_ABORT;
+            if (result == S_OK && accessible) {
+                result = accessible->get_accRole(child, &role);
+                if (!current()) return E_ABORT;
+                if (result == S_OK && role.vt == VT_I4 && role.lVal == ROLE_SYSTEM_COLUMNHEADER) {
+                    long left = 0, top = 0, width = 0, height = 0;
+                    result = accessible->accLocation(&left, &top, &width, &height, child);
+                    if (!current()) return E_ABORT;
+                    POINT origin = {};
+                    if (result == S_OK && ClientToScreen(viewWindow, &origin) && top + height > origin.y)
+                        topInset = top + height - origin.y;
+                }
+            }
+        }
+        CComPtr<IEnumIDList> items;
+        result = folderView->Items(SVGIO_ALLVIEW, IID_PPV_ARGS(&items));
+        if (!current()) return E_ABORT;
+        if (SUCCEEDED(result) && items) {
+            for (;;) {
+                CComHeapPtr<ITEMID_CHILD> id;
+                result = items->Next(1, &id, nullptr);
+                if (!current()) return E_ABORT;
+                if (result != S_OK || !id) break;
+                POINT position = {};
+                result = folderView->GetItemPosition(id, &position);
+                if (!current()) return E_ABORT;
+                if (FAILED(result)) break;
+                if (position.x >= 0 && position.x < client.right && position.y >= topInset
+                        && position.y < client.bottom) {
+                    anchor.Attach(id.Detach());
+                    break;
+                }
+            }
+        }
+    }
+    if (anchor) header.flags |= REOPEN_ANCHOR;
     CComPtr<IStream> stream;
     stream.Attach(SHCreateMemStream(nullptr, 0));
     if (!stream) return E_OUTOFMEMORY;
     result = IStream_Write(stream, &header, sizeof(header));
+    if (SUCCEEDED(result) && (header.flags & REOPEN_ANCHOR))
+        result = IStream_WritePidl(stream, anchor);
     if (SUCCEEDED(result) && (header.flags & REOPEN_FOCUS))
         result = IStream_WritePidl(stream, focused);
     if (FAILED(result)) return result;
@@ -115,7 +176,26 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         if (FAILED(value) && SUCCEEDED(restored)) restored = value;
     };
     if (anchor) {
+        // Scrolled to the end first: revealing the anchor from below aligns it at
+        // the top, whatever the row height or the scrollbars. Redraw is paused so
+        // the two moves paint once. Selection and focus below must not scroll away.
+        int count = 0;
+        CComHeapPtr<ITEMID_CHILD> last;
+        result = folderView->ItemCount(SVGIO_ALLVIEW, &count);
+        if (!current()) return E_ABORT;
+        if (SUCCEEDED(result) && count > 0) {
+            result = folderView->Item(count - 1, &last);
+            if (!current()) return E_ABORT;
+        }
+        folderView->SetRedraw(FALSE);
+        if (!current()) return E_ABORT;
+        if (last) {
+            record(view->SelectItem(last, SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS));
+            if (!current()) return E_ABORT;
+        }
         record(view->SelectItem(anchor, SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS));
+        if (!current()) return E_ABORT;
+        folderView->SetRedraw(TRUE);
         if (!current()) return E_ABORT;
     }
     // With no target item, request only the native deselect-all operation.
@@ -133,8 +213,8 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         record(result);
         if (SUCCEEDED(result)) {
             // A focus-only SelectItem otherwise includes SVSI_DESELECT (zero).
-            record(view->SelectItem(focused, (selection & SVSI_SELECT)
-                | SVSI_FOCUSED | SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS));
+            record(view->SelectItem(focused, (selection & SVSI_SELECT) | SVSI_FOCUSED
+                | (anchor ? 0 : SVSI_ENSUREVISIBLE) | SVSI_NOTAKEFOCUS));
             if (!current()) return E_ABORT;
         }
     }

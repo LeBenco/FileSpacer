@@ -288,8 +288,8 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
         if (!expect(selectionBlob.size() >= 20, L"capture retains the existing version-1 header layout")) return false;
         uint32_t header[3] = {};
         std::memcpy(header, selectionBlob.data(), sizeof(header));
-        if (!expect(header[0] == 1 && header[1] == indices.size() && header[2] == 4,
-                L"existing version, selection count and focus flag are preserved without a format migration")) return false;
+        if (!expect(header[0] == 1 && header[1] == indices.size() && (header[2] == 4 || header[2] == 6),
+                L"version, selection count, optional anchor and focus flags are preserved without a format migration")) return false;
         {
             FolderStateStore store(database.c_str());
             ClosedWindow snapshot;
@@ -325,12 +325,26 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
             stream.Attach(SHCreateMemStream(nullptr, 0));
             if (!expect(stream != nullptr, L"create legacy snapshot fixture stream")
                     || !checked(folderView->Item(100, &anchor), L"read real PIDL for the legacy anchor")) return false;
+            // The production blob may start with its own anchor: keep only the saved
+            // focus and selection PIDLs that follow it.
+            CComPtr<IStream> saved;
+            saved.Attach(SHCreateMemStream(selectionBlob.data(), static_cast<UINT>(selectionBlob.size())));
+            CComHeapPtr<ITEMID_CHILD> savedAnchor;
+            ULARGE_INTEGER rest = {};
+            LARGE_INTEGER skip = {};
+            skip.QuadPart = 20;
+            uint32_t savedFlags = 0;
+            std::memcpy(&savedFlags, selectionBlob.data() + 8, sizeof(savedFlags));
+            if (!expect(saved != nullptr, L"reopen the production snapshot")
+                    || !checked(saved->Seek(skip, STREAM_SEEK_SET, nullptr), L"skip the version-1 header")
+                    || ((savedFlags & 2) && !checked(IStream_ReadPidl(saved, &savedAnchor), L"read the production anchor PIDL"))
+                    || !checked(saved->Seek(LARGE_INTEGER{}, STREAM_SEEK_CUR, &rest), L"locate the saved focus and selection PIDLs")) return false;
             auto header = std::vector<uint8_t>(selectionBlob.begin(), selectionBlob.begin() + 20);
             const uint32_t flags = 6;
             std::memcpy(header.data() + 8, &flags, sizeof(flags));
             if (!checked(IStream_Write(stream, header.data(), static_cast<ULONG>(header.size())), L"write original version-1 header")
                     || !checked(IStream_WritePidl(stream, anchor), L"write legacy anchor through the Shell serializer")
-                    || !checked(IStream_Write(stream, selectionBlob.data() + 20, static_cast<ULONG>(selectionBlob.size() - 20)), L"append saved focus and selection PIDLs")) return false;
+                    || !checked(IStream_Write(stream, selectionBlob.data() + rest.QuadPart, static_cast<ULONG>(selectionBlob.size() - rest.QuadPart)), L"append saved focus and selection PIDLs")) return false;
             STATSTG size = {};
             LARGE_INTEGER beginning = {};
             if (!checked(stream->Stat(&size, STATFLAG_NONAME), L"read legacy fixture size")
