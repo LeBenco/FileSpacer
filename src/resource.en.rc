@@ -141,3 +141,11 @@ Copyright (c) 2013 Afrow Soft Ltd. See LockedList-LICENSE.txt.\r\n\
     IDS_SETTINGS_ACCESS_FAILED, "FileSpacer cannot obtain shared access to its settings. A reset may be in progress or the local data folder may be inaccessible. Try again after maintenance finishes."
 }
 
+
+STRINGTABLE
+BEGIN
+  IDS_LOCK_WINDOW_STATE "Lock window state"
+  IDS_UNLOCK_WINDOW_STATE "Unlock window state"
+  IDS_WINDOW_STATE_LOCKED "Window state locked. Layout changes remain temporary."
+  IDS_DISABLE_STATE_LOCK_CONFIRM "Disabling this feature will delete all window state locks. Windows will resume saving their state normally. Do you want to continue?"
+END
