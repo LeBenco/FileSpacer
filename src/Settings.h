@@ -75,7 +75,6 @@ bool getLiveNameSearch();
 void setLiveNameSearch(bool value);
 bool getFullNamesOnSelection();
 void setFullNamesOnSelection(bool value);
-LSTATUS disableFullNamesOnSelection();
 LSTATUS resetGlobalOptions();
 
 bool getDeselectOnOpen();
