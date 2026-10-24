@@ -35,7 +35,7 @@ StoppableThread::StoppableThread() {
 }
 
 StoppableThread::~StoppableThread() {
-    checkLE(CloseHandle(thread));
+    if (thread) checkLE(CloseHandle(thread)); // start() may never have run.
     checkLE(CloseHandle(stopEvent));
 }
 
