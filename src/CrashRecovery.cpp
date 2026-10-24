@@ -211,10 +211,10 @@ bool start() {
 #ifdef FILESPACER_DEBUG
     crash->test = settings::testMode;
 #endif
-    wchar_t executable[32768] = {}, command[32768] = {};
-    if (!GetModuleFileNameW(nullptr, executable, _countof(executable))) return false;
-    if (FAILED(StringCchPrintfW(command, _countof(command), L"\"%s\" /recovery-helper %llX %llX %llX %llX",
-            executable, reinterpret_cast<DWORD64>(static_cast<HANDLE>(parent)),
+    std::vector<wchar_t> executable(32768), command(32768);
+    if (!GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size()))) return false;
+    if (FAILED(StringCchPrintfW(command.data(), command.size(), L"\"%s\" /recovery-helper %llX %llX %llX %llX",
+            executable.data(), reinterpret_cast<DWORD64>(static_cast<HANDLE>(parent)),
             reinterpret_cast<DWORD64>(static_cast<HANDLE>(mapping)),
             reinterpret_cast<DWORD64>(static_cast<HANDLE>(crashEvent)),
             reinterpret_cast<DWORD64>(static_cast<HANDLE>(completedEvent))))) return false;
@@ -228,7 +228,7 @@ bool start() {
         handles, sizeof(handles), nullptr, nullptr);
     STARTUPINFOEXW startup = {}; startup.StartupInfo.cb = sizeof(startup); startup.lpAttributeList = list;
     PROCESS_INFORMATION process = {};
-    if (success) success = !!CreateProcessW(executable, command, nullptr, nullptr, TRUE,
+    if (success) success = !!CreateProcessW(executable.data(), command.data(), nullptr, nullptr, TRUE,
         EXTENDED_STARTUPINFO_PRESENT | CREATE_NO_WINDOW, nullptr, nullptr, &startup.StartupInfo, &process);
     DeleteProcThreadAttributeList(list);
     if (!success) return false;
