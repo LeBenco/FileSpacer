@@ -92,14 +92,14 @@ struct UpdateJob {
 };
 
 DWORD downloadInstaller(UpdateJob &job) {
-    wchar_t temp[32768];
-    DWORD length = GetTempPathW(ARRAYSIZE(temp), temp);
-    if (!length || length >= ARRAYSIZE(temp)) return ERROR_PATH_NOT_FOUND;
+    std::vector<wchar_t> temp(32768);
+    DWORD length = GetTempPathW(static_cast<DWORD>(temp.size()), temp.data());
+    if (!length || length >= temp.size()) return ERROR_PATH_NOT_FOUND;
     GUID guid;
     wchar_t id[40];
     if (FAILED(CoCreateGuid(&guid)) || !StringFromGUID2(guid, id, ARRAYSIZE(id)))
         return ERROR_GEN_FAILURE;
-    job.directory = std::wstring(temp) + L"FileSpacerUpdate-" + id;
+    job.directory = std::wstring(temp.data()) + L"FileSpacerUpdate-" + id;
     if (!CreateDirectoryW(job.directory.c_str(), nullptr)) return GetLastError();
     job.installer = job.directory + L"\\FileSpacer-install.exe";
     job.relay = job.directory + L"\\FileSpacerUpdate.exe";
@@ -423,10 +423,10 @@ DWORD collectProcesses(const wchar_t *target, ProcessSnapshot &result) {
             if (GetLastError() == ERROR_INVALID_PARAMETER) continue; // Already exited.
             return GetLastError();
         }
-        wchar_t path[32768];
-        DWORD length = ARRAYSIZE(path);
-        if (!QueryFullProcessImageNameW(process, 0, path, &length)) return GetLastError();
-        if (CompareStringOrdinal(target, -1, path, -1, TRUE) == CSTR_EQUAL) {
+        std::vector<wchar_t> path(32768);
+        DWORD length = static_cast<DWORD>(path.size());
+        if (!QueryFullProcessImageNameW(process, 0, path.data(), &length)) return GetLastError();
+        if (CompareStringOrdinal(target, -1, path.data(), -1, TRUE) == CSTR_EQUAL) {
             result.ids.push_back(entry.th32ProcessID);
             result.handles.push_back(process.Detach());
         }
@@ -508,11 +508,11 @@ std::wstring installedExecutable(const wchar_t *fallback) {
         CRegKey key;
         if (key.Open(root, L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\FileSpacer.exe",
                 KEY_READ | KEY_WOW64_64KEY) != ERROR_SUCCESS) continue;
-        wchar_t path[32768] = {};
-        ULONG length = ARRAYSIZE(path);
-        if (key.QueryStringValue(nullptr, path, &length) != ERROR_SUCCESS || !*path) continue;
-        const DWORD attributes = GetFileAttributesW(path);
-        if (attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY)) return path;
+        std::vector<wchar_t> path(32768);
+        ULONG length = static_cast<ULONG>(path.size());
+        if (key.QueryStringValue(nullptr, path.data(), &length) != ERROR_SUCCESS || !path[0]) continue;
+        const DWORD attributes = GetFileAttributesW(path.data());
+        if (attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY)) return path.data();
     }
     return fallback;
 }
@@ -599,10 +599,10 @@ DWORD runInstallerRelay(int argc, wchar_t **argv) {
 }
 
 void cleanOldRelays() {
-    wchar_t temp[32768];
-    const DWORD length = GetTempPathW(ARRAYSIZE(temp), temp);
-    if (!length || length >= ARRAYSIZE(temp)) return;
-    const std::wstring base(temp);
+    std::vector<wchar_t> temp(32768);
+    const DWORD length = GetTempPathW(static_cast<DWORD>(temp.size()), temp.data());
+    if (!length || length >= temp.size()) return;
+    const std::wstring base(temp.data());
     WIN32_FIND_DATAW data;
     HANDLE find = FindFirstFileW((base + L"FileSpacerUpdate-{*}").c_str(), &data);
     if (find == INVALID_HANDLE_VALUE) return;
