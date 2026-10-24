@@ -269,6 +269,7 @@ private:
     UINT deferredCloseMessage = 0;
     HRESULT browseToItem();
     HRESULT refreshView();
+    HRESULT invokeViewCommand(IContextMenu *menu, CMINVOKECOMMANDINFO *info);
     void resumeDeferredClose();
 
     CComPtr<IShellItem> selected; // retains the selected shortcut rather than its resolved target
