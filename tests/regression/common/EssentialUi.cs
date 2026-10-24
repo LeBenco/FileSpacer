@@ -282,7 +282,7 @@ namespace FileSpacerRegression {
         [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
         [DllImport("user32.dll")] static extern bool ShowWindow(IntPtr window,int command);
         [DllImport("user32.dll")] static extern bool IsIconic(IntPtr window);
-        [DllImport("user32.dll")] static extern bool IsWindowEnabled(IntPtr window);
+        [DllImport("user32.dll")] public static extern bool IsWindowEnabled(IntPtr window);
         [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(Point point);
         [DllImport("user32.dll",SetLastError=true)] static extern bool SetCursorPos(int x,int y);
         [DllImport("user32.dll",SetLastError=true)] static extern bool GetCursorPos(out Point point);
