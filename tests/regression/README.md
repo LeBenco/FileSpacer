@@ -1,300 +1,132 @@
-# FileSpacer — bibliothèque de tests de non-régression
+# FileSpacer — tests de non-régression
 
-Les jeux restent indépendants et sont regroupés par fonctionnalité dans `cases`. Le lanceur indique le nombre de jeux sélectionnés à chaque exécution. Le nombre de jeux est distinct du nombre d'assertions ou d'interactions.
+## Exécution
 
-## Installation et fichiers à conserver
-
-Pour installer une base complète propre, renommer d'abord l'ancien dossier `tests` en sauvegarde à la racine du dépôt, puis copier le nouveau dossier `tests`. Ne pas placer la sauvegarde sous `tests/regression/cases`, car le lanceur y découvrirait aussi les anciens jeux. Conserver `tests.cmd` à la racine du dépôt. Une livraison partielle remplace seulement les fichiers qu'elle contient ; conserver les autres jeux et vos ajouts. Réintégrer les éventuels ajouts personnels après comparaison avec la sauvegarde.
-
-Dans `tests/regression`, conserver ce README, `Run-Regression.ps1` et tout le contenu de `cases` et `common`. Les fichiers C++, C#, `.inc`, en-têtes, ressources et `common/TestExecutable.manifest` sont des dépendances des jeux. L'archive complète fournit aussi `tests.cmd`, à copier à la racine du dépôt. Les notes de livraison et rapports ponctuels sont fournis hors de `tests`.
-
-## Lancement
-
-Depuis CMD, à la racine du dépôt :
-
-```bat
-tests.cmd
-tests.cmd -Category Internal
-tests.cmd -Category UI
-tests.cmd -Pattern "07-fenetres\*"
-tests.cmd -Pattern "12-navigation-spatiale\*"
-tests.cmd -Pattern "13-preferences\*"
-tests.cmd -Pattern "14-disposition\*"
-tests.cmd -Pattern "15-deplacement-alt\*"
-tests.cmd -Pattern "16-redimensionnement-alt\*"
-tests.cmd -Pattern "17-fermeture-interactions\*"
-```
-
-`tests.cmd` construit l'application avec `build.cmd debug`, initialise MSVC x64 et appelle le lanceur sous Windows PowerShell 5.1. Aucun framework de test supplémentaire n'est requis. Les scénarios internes utilisent C++/MSVC ; les interactions UI utilisent PowerShell et C#/.NET avec Win32 et COM.
-
-Prérequis : Windows 10 x64, dépendances habituelles du build du projet, composants C++/ATL/SDK de Visual Studio 2022 Build Tools, et TEMP sur NTFS pour le jeu spatial. Fermer FileSpacer avant les jeux UI ; laisser un bureau interactif et le clavier disponibles pendant leur exécution.
-
-## Déplacement Alt
-
-Depuis CMD, à la racine du dépôt :
-
-```bat
-tests.cmd -Pattern "15-deplacement-alt\*"
-```
-
-Le groupe contient **32 jeux indépendants**, numérotés de `00` à `31`.
-L'application utilise la vue classique ; l'option des noms complets sur sélection
-agit uniquement sur le dessin des noms. Chaque jeu conserve ses propres résultats
-et journaux.
-
-| Jeux | Contrôle |
-|---|---|
-| `00` | Déplacement depuis un dossier vide, mode initial. |
-| `01`–`06` | Détails, Liste, Icônes, Petites icônes, Mosaïques et Contenu ; noms complets désactivés. |
-| `07` | Départ depuis le fond, sélection simple conservée. |
-| `08` | Départ sur l'icône sélectionnée. |
-| `09` | Sélection multiple sur le fond, avec un troisième élément non sélectionné. |
-| `10` | Départ sur l'icône non sélectionnée ; sélection précédente intacte. |
-| `11` | Départ dans une fenêtre inactive ; activation, sélection conservée et autre fenêtre immobile. |
-| `12` | Alt relâché après l'entrée dans le déplacement ; mouvement poursuivi après ce relâchement. |
-| `13` | Échap après déplacement effectif ; retour à la géométrie d'origine. |
-| `14` | Simple clic Alt sur un élément non sélectionné ; géométrie et sélection inchangées. |
-| `15` | Clic sans Alt ; sélection native de l'élément visé. |
-| `16` | Rectangle sans Alt ; sélection d'un élément initialement non sélectionné. |
-| `17` | Double clic Alt ; propriétés de l'élément visé, sélection inchangée. |
-| `18` | Alt maintenu entre le premier clic et le second appui, suivi d'un mouvement ; les propriétés gagnent. |
-| `19` | En-tête exclu du déplacement de fenêtre. |
-| `20` | Édition de nom exclue ; texte inchangé, puis annulation du renommage. |
-| `21` | Barre d'outils exclue. |
-| `22` | Champ de recherche exclu ; requête inchangée. |
-| `23` | Accès rapide exclu ; menu annulé avant relâchement, aucune fenêtre de dossier supplémentaire. |
-| `24` | Départ sur une icône faisant partie d'une sélection multiple. |
-| `25` | Départ dans une cellule secondaire d'une ligne en Détails. |
-| `26` | Alt relâché après l'appui mais avant le seuil de glissement ; déplacement encore attendu. |
-| `27` | Simple clic Alt sur le fond ; sélection multiple inchangée. |
-| `28` | Bouton de menu exclu ; menu annulé avant toute commande. |
-| `29` | Double clic sans Alt ; ouverture spatiale du sous-dossier. |
-| `30` | Ascenseur natif exclu ; défilement de la liste, fenêtre immobile. |
-| `31` | Glisser-déposer sans Alt ; déplacement réel d'un dossier temporaire dans un autre. |
-
-Les jeux `01`–`06` demandent le mode par `IFolderView2`, vérifient le mode et la
-taille effectivement appliqués, puis contrôlent le déplacement d'un dossier vide.
-Ils ajoutent ensuite un élément dans la même vue, le sélectionnent et rejouent le
-départ sur son icône, avec contrôle de la sélection. La fenêtre est replacée à
-distance des bords entre les deux gestes, après contrôle du premier résultat.
-Icônes utilise 48 pixels, Petites icônes 16 ; les autres modes gardent la taille
-choisie par Windows. Ces jeux désactivent la préférence `FullNamesOnSelection`
-avant l'ouverture du dossier et vérifient qu'elle reste désactivée. Les autres
-scénarios gardent le mode initial et les préférences par défaut de l'application.
-La suite ne constitue pas le produit cartésien de toutes les interactions et de
-tous les modes.
-
-Le fond est repéré dans le rectangle public de la vue Shell. L'identité des
-éléments et leur index sont lus par COM ; le contrôle ListView fournit le
-rectangle de l'icône et son hit-test. Les cellules secondaires, en-têtes,
-ascenseurs, champs et boutons utilisent leurs informations natives. Les tampons
-des messages au-delà de `WM_USER` sont placés dans le processus du contrôle et
-libérés après le retour de l'appel synchrone. Une cible introuvable ou ambiguë
-fait échouer le jeu.
-
-Le helper de saisie positionne le pointeur sans bouton, enfonce Alt, vérifie son
-état Windows, puis enfonce le bouton avant les mouvements. L'entrée dans la boucle
-native de déplacement est observée avec Win32. Les assertions ne supposent aucune
-distance finale exacte après le franchissement du seuil natif. Échap et les zones
-exclues contrôlent aussi la géométrie pendant le geste. Le relâchement d'Alt est
-vérifié par comparaison des positions avant et après ce relâchement.
-
-La sélection est préparée avant les gestes et lue par COM, sans restauration
-corrective. Le transfert sans Alt vérifie le résultat sur disque puis le contenu
-de la vue. Les propriétés sont identifiées par le processus testé, le nom de
-l'élément et le chemin parent exact ; cette identité est revérifiée avant leur
-fermeture. Les menus sont annulés avant le relâchement ; toute fenêtre de dossier
-supplémentaire du processus testé fait échouer le jeu et est enregistrée pour
-nettoyage. Un nettoyage réussi ne transforme jamais un échec en succès.
-
-Chaque jeu produit `alt-gesture.json` : phase, point de départ, mode, classes de
-fenêtres, géométries, sélection et états d'entrée. Les cas de propriétés et
-d'accès rapide ajoutent les observations `windows-*.json` sur les fenêtres du
-processus testé. Ces observations ne changent pas la sélection ni la cible.
-Fermer FileSpacer, laisser souris et clavier libres et disposer d'au moins
-800 × 600 pixels physiques de zone de travail.
-
-## Découverte et résultats
-
-Le lanceur découvre récursivement les fichiers `NN-Nom.ps1` sous `cases`, trie leurs chemins et les exécute séquentiellement. Les helpers de `common` ne sont pas lancés comme des jeux. Chaque jeu dispose de son propre processus PowerShell, ce qui évite les collisions de classes chargées par `Add-Type`.
-
-Les résultats, journaux, programmes compilés et bases temporaires se trouvent dans `build/regression/<date>-<identifiant>`. `results.json` décrit les jeux exécutés ; `summary.json` indique le résultat global et le nombre de jeux attendus/exécutés. Les traces de sélection et les éventuelles traces temporaires de recherche produites par l'application, lorsqu'elles existent pour les processus des jeux UI, sont copiées dans leur dossier `application-traces`.
-
-Les tableaux JSON des rapports sont explicitement énumérés pour obtenir les mêmes enregistrements sous Windows PowerShell 5.1 et PowerShell 7. Les autotests `00-banc` vérifient notamment qu'un rapport de plusieurs sorties normales reste PASS et que chaque sortie anormale apparaît avec son PID et son code.
-
-Le délai maximal par jeu est de 300 secondes, réglable avec `-TimeoutSeconds`. Un échec, un délai dépassé ou un nettoyage nécessaire reste un FAIL. Le lanceur poursuit les jeux suivants après nettoyage, si aucun processus de l’exécutable testé ne reste actif. Il arrête la suite si cette isolation ne peut pas être garantie. Les jeux non exécutés ne sont jamais considérés comme réussis. Le code de sortie est 0 uniquement si tous les jeux sélectionnés ont réussi et si la restauration a réussi ; sinon il est 1, y compris lorsque des jeux sont bloqués.
-
-Après un jeu UI, le lanceur attend jusqu'à cinq secondes la fin normale des processus FileSpacer de l'exécutable Debug testé, notamment des auxiliaires de récupération. Cette attente s'arrête dès qu'ils ont tous terminé. Si des processus persistent, leurs PID, PID parents et lignes de commande, lorsque accessibles, sont consignés dans `leftover-processes.json` avant le nettoyage ; le jeu reste en échec.
-
-## Isolation
-
-Les jeux de l'application utilisent Debug avec `/test`, des dossiers temporaires et le registre `HKCU/Software/FileSpacer/Test`. Le lanceur sauvegarde puis restaure le registre de test et la base SQLite de test, avec ses fichiers WAL/SHM. Les jeux UI doivent passer par ce lanceur pour bénéficier de cette préparation.
-
-Pour isoler aussi les effets sur les documents récents et les listes de raccourcis du Shell, utiliser un profil Windows réservé aux essais ou une VM : `/test` ne sépare pas ces historiques Shell.
-
-Les programmes de test compilés utilisent un manifeste UTF-8. Cette option nécessite Windows 10 version 1903 ou ultérieure ; sur une version antérieure, utiliser des chemins de travail ASCII.
-
-## Couverture
-
-| Groupe | Objet des jeux |
-|---|---|
-| `00-banc` | Conservation des causes initiales, classement FAIL/BLOCKED, collecte de toutes les sorties et diagnostics des processus. |
-| `01-stockage-sqlite` | Stockage, accès concurrents, identité spatiale, géométrie et adaptateurs de vue. |
-| `02-retention-quota` | Péremption, reprise, transactions, quota et priorité des fenêtres ouvertes. |
-| `03-menus` | Réentrance et fermeture pendant une commande, libération des ressources. |
-| `04-shell-sta` | 16 cas natifs : enregistrement temporaire, commandes imbriquées, références conservées après retour, événements, threads Shell et appels COM réels. |
-| `05-dimensions` | Validation des dimensions avec les contrôles natifs Windows. |
-| `06-etat-vue` | Restauration complète ou partielle de vue et de positions. |
-| `07-fenetres` | Agrandissement, réduction, réouverture et boutons de titre ; commandes synchrones, asynchrones et fermeture précoce avant disponibilité de la vue Shell. |
-| `08-suppression` | Suppression du stockage et notifications filesystem/Shell réelles. |
-| `09-historique` | Historique des fenêtres fermées et réouverture ; il ne s'agit pas de l'historique de recherche. |
-| `10-manifeste-maj` | Validation des manifestes de mise à jour. |
-| `11-session-maj` | Instantanés de fenêtres et restauration après mise à jour. |
-| `12-navigation-spatiale` | Entrée, Alt+Haut, préférence/Ctrl, sélection d'origine et destination déjà ouverte. |
-| `13-preferences` | Propagation aux fenêtres ouvertes de deux processus, Appliquer/Annuler, recherche pendant la saisie, requêtes successives et notifications sous filtre. |
-| `14-disposition` | Configurations représentatives, deux largeurs, absence de chevauchement et espace récupéré au DPI réel. |
-| `15-deplacement-alt` | 32 jeux : déplacement Alt, conservation de sélection, gestes natifs et zones exclues. |
-| `16-redimensionnement-alt` | 18 jeux : redimensionnement Alt droit, curseur, annulation, géométrie et zones exclues. |
-| `17-fermeture-interactions` | Menu contextuel réel puis Alt+F4, sortie normale du processus avant nettoyage. |
-
-Les jeux internes C++ compilent les sources courantes du dépôt. Le groupe `00-banc` vérifie les helpers PowerShell directement. Pour certaines méthodes privées, `common/Prepare-Sources.ps1` extrait les corps des fonctions sans réécrire leur logique ; une signature absente ou ambiguë fait échouer la préparation. Les empreintes des sources utilisées sont enregistrées avec le résultat du jeu. Certains jeux utilisent des doubles pour déclencher des erreurs déterministes ; les jeux UI exercent les fenêtres et contrôles réels.
-
-## Ajouter et valider un jeu
-
-Ajouter un fichier `NN-Nom.ps1` dans un groupe existant ou un nouveau sous-répertoire numéroté. La première ligne doit être `# Test-Category: Internal` ou `# Test-Category: UI`, et le script doit accepter `-ProjectRoot`. Une assertion non satisfaite doit lever une exception ou produire un code de sortie non nul.
-
-Valider le nouveau jeu et la fonctionnalité sur Windows, puis lancer toute la suite existante. Après réussite, conserver ce jeu dans la bibliothèque. Le lanceur le découvrira automatiquement sans modification. Cette convention ne constitue pas une promotion automatique ni un workflow CI.
-
-Les échecs de nettoyage doivent rester visibles sans masquer une erreur fonctionnelle antérieure. Une compilation ou une analyse statique réussie ne remplace pas l'exécution des scénarios Win32/COM sous Windows.
-
-## Contrôles contre les faux succès
-
-La disparition d'une fenêtre ne suffit pas à valider la fermeture. Les processus lancés par les jeux UI sont attendus et leur code de sortie doit être nul. Le helper des nouveaux jeux enregistre aussi le processus propriétaire des fenêtres atteintes par navigation, même si celui-ci diffère du lanceur initial. Les jeux historiques de suppression et d'identité spatiale contrôlent maintenant également les sorties finales de leurs processus.
-
-Après Entrée et Alt+Haut, les quatre jeux de politique de navigation attendent le premier plan produit par FileSpacer. Ils n'appellent pas le helper d'activation pour réparer le résultat de la navigation. Le jeu du parent déjà ouvert conserve son contrôle distinct d'activation, de sélection, d'unicité et de positions.
-
-Le classement `BLOCKED` exige un préalable explicitement signalé, une sortie normale des processus FileSpacer suivis et un rapport `cleanup-complete.json` positif. Une erreur de nettoyage, un rapport absent ou illisible, un crash du processus de test ou un délai global dépassé reste `FAIL`. Un résultat bloqué n'est jamais une validation ni une preuve que FileSpacer est exempt de défaut.
-
-Les unités internes extraites exercent les fonctions courantes avec leurs doubles d'API ; les jeux UI utilisent l'exécutable réel et contrôlent les sorties des processus suivis. Les tests ne corrigent pas les sources de l'application pour obtenir un succès.
-
-## Scénarios indépendants de navigation et de préférences
-
-Les quatre combinaisons préférence/Ctrl sont exécutées dans les jeux 01 à 04 de `12-navigation-spatiale`. Le jeu 05 contrôle le parent déjà ouvert. Les assertions historiques sont conservées ; chaque scénario dispose de sa préparation, de son processus PowerShell et de son nettoyage. Un échec dans une combinaison ne bloque plus les suivantes.
-
-Dans `13-preferences` :
-
-- `01-FenetresOuvertes.ps1` conserve les contrôles entre processus, Appliquer/Annuler, la persistance et l’activation de la recherche instantanée avec un texte déjà présent. L’assertion de filtrage reste inchangée.
-- `02-Activation.ps1` vérifie le passage du dialogue au premier plan depuis un propriétaire au premier plan, le retour au propriétaire et une seconde ouverture. Le banc n’active jamais lui-même le dialogue.
-- `03-RecherchePendantSaisie.ps1` contrôle les changements du texte, l’absence de résultat et l’effacement lorsque la recherche instantanée est activée avant l’ouverture.
-- `04-RechercheExplicite.ps1` contrôle le bouton de recherche et le retrait du filtre lorsque la recherche instantanée est désactivée.
-
-Un PASS du contrôle synchrone des fenêtres ne remplace pas celui de `02-CommandesAsynchrones.ps1`, qui utilise `PostMessage(WM_SYSCOMMAND)` et conserve le passage dans la boucle de messages de l’application.
-
-`PRECONDITION` dans le test d’activation signifie que le banc n’a pas pu établir le propriétaire au premier plan. Le scénario n’est pas validé ; cela ne suffit pas à attribuer un défaut à FileSpacer. Une fois ce préalable établi, l’activation du dialogue est une assertion applicative.
-
-Les recherches par messages modifient le vrai contrôle EDIT et interrogent la vraie vue Shell. Elles ne couvrent pas tous les raccourcis ou toutes les interactions clavier. Dans un même jeu, la première assertion en échec arrête ce scénario. Une vérification de syntaxe ou une simulation du lanceur ne valide pas les interactions réelles. Aucun nombre fini de scénarios ne garantit l’absence de tous les bugs.
-
-## Statuts du résumé
-
-- `PASS` : les assertions du jeu ont réussi.
-- `FAIL` : le scénario est en erreur ; le statut ne suffit pas à attribuer la cause à FileSpacer plutôt qu’au banc. La première erreur et les éventuelles erreurs de nettoyage sont affichées.
-- `BLOCKED` : un préalable de préparation du premier plan par le banc n’a pas pu être établi. Le scénario n’est pas validé. Ce statut provient d’un signalement explicite du helper, sans déduction à partir des mots contenus dans le journal.
-- `NotRun` : nombre de jeux sélectionnés qui n’ont pas été lancés, affiché séparément.
-
-Le bilan global est `INCOMPLETE` s’il ne reste que des blocages ou des jeux non exécutés, et `FAIL` s’il existe aussi des échecs ou une erreur du lanceur. Dans les deux cas, le code de sortie reste 1. Un échec de nettoyage ou un crash détecté ne devient pas BLOCKED sous prétexte qu’un préalable avait échoué avant lui.
-
-Ce classement ne modifie aucune assertion fonctionnelle. Le contrôle de passage au premier plan du dialogue de préférences reste une assertion applicative distincte.
-
-## Préparation du premier plan
-
-`Activate-Ui` essaie `SetForegroundWindow`, puis, si nécessaire, essaie de relever la fenêtre sans activation ni changement de géométrie et envoie un clic de titre vérifié avec `SendInput`. La réussite de `SetWindowPos` ne prouve pas que le titre est découvert ; le helper contrôle le point avant toute entrée. Le point doit appartenir à la fenêtre cible selon `WindowFromPoint` et correspondre à `HTCAPTION` selon `WM_NCHITTEST`. Les boutons et autres contrôles sont exclus. Le curseur est déplacé sur ce point ; laisser la souris et le clavier disponibles pendant les tests UI.
-
-Si le banc ne trouve aucun point utilisable ou si les entrées ne sont pas acceptées, le préalable reste BLOCKED avec son diagnostic. Si le clic vérifié a été envoyé mais que la fenêtre ne s’active pas, le jeu reste FAIL. Les touches du scénario ne sont envoyées qu’après vérification effective du premier plan. Le dialogue de préférences n’est jamais activé par ce helper dans le scénario qui contrôle son activation par FileSpacer.
-
-## Positions dans le parent déjà ouvert
-
-Le jeu `12-navigation-spatiale/05-ParentDejaOuvert.ps1` compare les positions visibles des trois éléments du parent avant et après Alt+Haut depuis son enfant. Il continue de contrôler l'activation du parent existant, l'absence de doublon et la conservation de sa sélection. Les jeux 01 à 04 et leurs assertions de sélection restent indépendants.
-
-La mesure utilise les API publiques Windows UI Automation : `AutomationElement.FromHandle` reçoit le HWND de la vue enregistrée, obtenu par `IShellView::GetWindow`, puis les rectangles des éléments `ListItem` sont lus par `BoundingRectangleProperty`. Le processus cible est vérifié. La recherche reste limitée à cette vue. Aucun nom de classe de contrôle interne du Shell n'est supposé et aucune préférence de rendu n'est changée pour rendre une API disponible.
-
-Les positions sont les coins supérieurs gauches des rectangles visibles, en pixels physiques et relativement au rectangle de la vue. Les éléments sont associés par leurs noms affichés, triés indépendamment de l'ordre de parcours UI Automation. Des extensions masquées par le Shell ne perturbent donc pas la comparaison. Seules les positions sont comparées, pas la largeur du libellé sélectionné. Ce contrôle porte sur la disposition visible lors de la réactivation ; il ne démontre pas à lui seul la persistance de positions personnalisées après fermeture.
-
-Chaque relevé exige exactement trois éléments aux noms non vides et distincts, des rectangles valides et des éléments dans la zone visible. Le relevé doit rester identique pendant au moins 300 ms. Les valeurs sont conservées dans `layout-before.json` et `layout-after.json` dans le dossier de résultats du jeu. Une différence de position reste une erreur fonctionnelle, avec les deux relevés dans le diagnostic.
-
-Un fournisseur UI Automation absent, une propriété non prise en charge, un élément manquant, un relevé instable ou un appel sans réponse produit une erreur explicitement préfixée `LAYOUT MEASUREMENT`. Ce n'est jamais un PASS ni une preuve suffisante d'un bug de FileSpacer. Les appels UI Automation utilisent un thread MTA distinct et une attente maximale de cinq secondes par relevé ; les objets UI Automation ne quittent pas ce thread. Les assemblages .NET Framework fournis par Windows sont chargés uniquement pour ce jeu.
-
-L'ancien appel `IFolderView::GetItemPosition` est une API documentée, mais son échec « non implémenté » dans la configuration testée empêchait le scénario d'atteindre la navigation. La documentation officielle consultée ne fournit pas d'explication spécifique de cet échec. Cette nouvelle mesure vérifie le résultat visible sans supposer la disponibilité de cette méthode.
-
-Références Microsoft :
-
-- [IFolderView::GetItemPosition](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifolderview-getitemposition)
-- [AutomationElement.FromHandle](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.automationelement.fromhandle?view=netframework-4.8.1)
-- [BoundingRectangleProperty : coordonnées physiques](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.automationelement.boundingrectangleproperty?view=netframework-4.8.1)
-- [Contrat UI Automation des éléments ListItem](https://learn.microsoft.com/en-us/dotnet/framework/ui-automation/ui-automation-support-for-the-listitem-control-type)
-- [UI Automation et threads MTA](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-threading)
-
-## Préparation des deux fenêtres du jeu 05
-
-Avant la sélection et le relevé initial, le jeu « parent déjà ouvert » place son parent et son enfant côte à côte dans la zone de travail du moniteur du parent. `MonitorFromWindow` et `GetMonitorInfo` fournissent cette zone ; `SetWindowPos` est utilisé avec `SWP_NOZORDER | SWP_NOACTIVATE`. La largeur est adaptée à l'écran, les positions sont vérifiées et le réglage DPI est pris en compte. Cette préparation évite que les deux fenêtres du scénario cachent mutuellement leurs titres. Elle ne s'exécute plus après le relevé initial, ni après Alt+Haut. L'activation de retour reste entièrement produite et vérifiée par le scénario applicatif.
-
-Une impossibilité de préparer deux fenêtres disjointes reste FAIL, car une contrainte de fenêtre de l'application peut aussi être en cause. Un recouvrement par une autre application, un bureau non interactif ou une restriction Windows peut toujours empêcher l'activation : le banc n'annonce alors aucun succès. Si aucun point de titre utilisable n'est trouvé, le diagnostic donne la géométrie, le premier plan et les compteurs de points recouverts ou non reconnus comme titre.
-
-
-## Corrections du 20 octobre 2026
-
-Les codes de sortie sont enregistrés dans `application-exits.json`, avec PID, code signé et représentation hexadécimale. `application-processes.json` permet au lanceur de retrouver les diagnostics même si le jeu dépasse son délai. Les traces disponibles des jeux historiques et récents sont copiées dans `application-traces`; les rapports et minidumps de récupération disponibles sont copiés dans `application-recovery`. Un fichier antérieur au démarrage suivi est ignoré. Les dumps WER externes ne sont pas déplacés.
-
-Le détail du résultat conserve la première erreur et ajoute les erreurs de nettoyage. Un auxiliaire de récupération restant actif ne remplace donc plus le message du crash initial. Tous les processus suivis sont contrôlés, y compris après la première sortie anormale. Le nettoyage du jeu historique de géométrie restaure aussi le contexte DPI et tente la suppression de ses fichiers après un crash.
-
-`07-fenetres/03-FermetureInitiale.ps1` ferme huit fenêtres dès observation du HWND, sans attendre la vue Shell, avec les deux valeurs de `FullNamesOnSelection`. `13-preferences/05-FiltresSuccessifs.ps1` vérifie les noms réellement visibles, notamment entre deux recherches produisant le même nombre de résultats, ainsi que les motifs, l'effacement et les modifications de fichiers sous filtre.
-
-Les assertions de sélection lors de la remontée restent actives. Le défaut connu correspondant est hors périmètre de ce correctif et peut donc encore faire échouer les quatre scénarios concernés. Aucun statut de réussite attendu n'est imposé pour masquer ce défaut.
-
-
-## 16 — Alt + glisser droit : redimensionnement
-
-18 jeux indépendants. `00-Dossier-vide` garde le mode d'affichage initial et
-commence par un dossier vide. Les autres vérifient la multisélection, un départ
-sur un élément non sélectionné, le rétrécissement jusqu'aux limites de Windows,
-Échap, `WM_CANCELMODE`, une fenêtre inactive, Alt relâché avant le seuil, un clic
-sans mouvement, le menu contextuel sans Alt, les exclusions (en-tête, renommage,
-barre d'outils, recherche), un premier clic suivi d'un second glissé en gardant
-Alt, la capture hors du contrôle, la mémorisation de la taille et le mode Icônes.
-
-Le composant d'entrée partagé vérifie Alt puis le bouton droit avant de déplacer
-le pointeur. Les assertions utilisent la géométrie réelle, la capture et le
-curseur système `IDC_SIZENWSE`, ainsi que la sélection COM. Aucun indicateur de
-boucle de redimensionnement native n'est attendu : ce geste applique directement
-`SetWindowPos`. Les cas d'annulation vérifient le retour à la taille de départ,
-la libération de capture et l'absence de menu après le relâchement du bouton.
-Les contrôles exclus peuvent ouvrir un menu natif lors du relâchement. Le banc
-annule ce menu dans ses attentes intermédiaire et finale, sans sélectionner de
-commande. Les vrais redimensionnements continuent d'exiger l'absence de menu,
-la libération de capture et le retour du curseur.
-Le fichier `resize.json` conserve les éléments de diagnostic de chaque jeu.
-
-
-## 17 — Fermeture après un menu contextuel
-
-Un jeu de non-régression ouvre le menu contextuel natif d'un dossier temporaire,
-puis demande la fermeture avec Alt+F4 envoyé par SendInput. Le scénario conserve
-la géométrie et les préférences initiales de sa vue.
-
-Un menu peut consommer la première action pour se fermer : un second Alt+F4
-n'est envoyé qu'après observation de la disparition du menu et si la fenêtre
-existe encore. Aucun réessai supplémentaire n'est effectué. Une préparation ou
-une injection défaillante reste un échec.
-
-Le test contrôle la disparition de la fenêtre et la sortie normale de son
-processus avec le code zéro sous dix secondes, avant toute intervention de
-nettoyage. L'échec initial est conservé même si le nettoyage réussit ensuite.
-`close-interaction.json`, `windows-*.json` et les rapports communs conservent
-le chemin observé et les résultats.
+Depuis CMD à la racine du projet, fermer FileSpacer et les fenêtres du Panneau
+de configuration, puis lancer :
 
 ```cmd
-tests.cmd -Pattern "17-fermeture-interactions\*"
+tests.cmd
 ```
 
-Le groupe doit découvrir un seul jeu. Il couvre cette reproduction précise du
-retard de fermeture ; il ne vérifie pas l'achèvement d'une copie ou d'un
-déplacement encore actif après fermeture des fenêtres.
+Le lanceur construit l'application par `build.cmd debug`, initialise MSVC x64,
+et lance les **96 jeux** indépendants. Ils ne doivent pas être complétés par
+un second passage des mêmes bancs natifs. Chaque jeu possède son processus
+PowerShell et son dossier de résultats sous `build/regression/<date>-<id>`.
+
+Windows 10 x64, les dépendances de [BUILD.md](../../BUILD.md), PowerShell 5.1,
+un bureau interactif et TEMP sur NTFS sont requis. Laisser clavier et souris
+disponibles pendant les jeux UI. Les scripts, C++, C#, `.inc`, headers, ressources
+et manifests sous `tests` sont des dépendances des jeux ; ne pas les dissocier.
+Conserver les exceptions antivirus déjà configurées sur le projet.
+
+Pour sélectionner un périmètre :
+
+```cmd
+tests.cmd -Category Internal
+tests.cmd -Category UI
+tests.cmd -Pattern "12-navigation-spatiale\*"
+tests.cmd -Pattern "1[56]-*"
+tests.cmd -Pattern "18-vue-shell-native\*"
+tests.cmd -Pattern "19-commandes-shell\*"
+tests.cmd -Pattern "20-validation-elargie\05-*"
+```
+
+## Couverture conservée
+
+| Groupe | Jeux | Contrat |
+|---|---:|---|
+| 00-banc | 2 | Rapports, sorties de processus et nettoyage du lanceur. |
+| 01-stockage-sqlite | 4 | Stockage, identités spatiales, adaptateurs et géométrie. |
+| 02-retention-quota | 1 | Conservation et limites des données. |
+| 03-menus | 1 | Réentrance et durée de vie des commandes de menus. |
+| 04-shell-sta | 1 | Références Shell/STA et durée de vie du processus. |
+| 05-dimensions | 1 | Validation des dimensions des préférences. |
+| 06-etat-vue | 1 | Captures partielles et erreurs de restauration. |
+| 07-fenetres | 4 | Géométrie, commandes asynchrones, fermetures initiales/après commande. |
+| 08-suppression | 2 | Stockage et notifications de suppression. |
+| 09-historique | 1 | Historique des fenêtres fermées. |
+| 10-manifeste-maj | 1 | Validation du manifeste de mise à jour. |
+| 11-session-maj | 1 | Conservation de la session pendant une mise à jour. |
+| 12-navigation-spatiale | 6 | Politique Ctrl, parent existant et remontée sans sélection automatique. |
+| 13-preferences | 6 | Apply/Cancel, propagation entre processus, recherche et persistance sous filtre. |
+| 14-disposition | 1 | Visibilité et disposition des contrôles de FileSpacer. |
+| 15-deplacement-alt | 32 | Déplacement, sélection, propriétés et exclusions des gestes Alt. |
+| 16-redimensionnement-alt | 18 | Redimensionnement, annulation, exclusions et géométrie persistante. |
+| 17-fermeture-interactions | 1 | Fermeture après interactions de menus et Alt. |
+| 18-vue-shell-native | 1 | Hôte réel, SQLite, réglages, sélection/focus, positions, filtre, recréation. |
+| 19-commandes-shell | 6 | Création, renommage, suppression, presse-papiers, drag/drop, menus, Unicode. |
+| 20-validation-elargie | 5 | Charge, images/modes, Ce PC, écrans/DPI disponibles, Panneau externe. |
+
+Les 50 jeux Alt restent distincts : ils vérifient des gestes ou zones différents.
+Leur instrumentation peut observer un contrôle Windows ; l'application utilise
+les interfaces publiques du Shell et les rôles MSAA, sans cette dépendance aux
+classes internes. Les états sont préparés puis observés sans sélection corrective.
+
+Les tests internes d'échecs partiels, de stockage et de réentrance sont conservés.
+Le banc réel ne force pas les mêmes erreurs ; ils ne constituent pas des doublons
+de son seul chemin de succès. Aucun de leurs échecs n'est requalifié en PASS.
+
+## Un seul banc natif de production
+
+`18-vue-shell-native/02-Persistance.ps1` compile les sources réelles de l'hôte,
+des réglages, de la sélection, des positions, du filtre, du stockage et SQLite.
+Il conserve les assertions déjà validées : 150 éléments, réglages exacts après
+recréation et refresh, sélection/focus, positions, blobs anciens/tronqués,
+filtrage et destruction/recréation. Les signaux publics conditionnent les étapes ;
+une attente maximale fait échouer, jamais réussir, le test.
+
+Pour enquêter sur ce seul banc sans le runner PowerShell :
+
+```cmd
+test-native-state.cmd --diagnostic
+```
+
+Ce lancement alternatif emploie `/Z7`, sans PDB de compilation partagé. Ne pas
+le rejouer lorsque le groupe 18 vient déjà de passer dans la suite complète.
+
+Les comparaisons des profils exploratoires default/spatial/classic, les sondes
+d'hébergement interne du Panneau et le bilan ponctuel de migration ont été retirés.
+Leur historique reste accessible sur la branche de migration. Les notifications
+normales de Ce PC et l'ouverture externe du Panneau sont toujours testées par
+20/03 et 20/05. Le jeu de fermeture initiale effectue quatre passages avec le
+backend de production ; son ancienne matrice de préférence de rendu inactive
+était redondante.
+
+## Écarts acceptés et préférences
+
+La remontée ne sélectionne plus le dossier d'origine pour des raisons d'ergonomie.
+Les six jeux de navigation conservent cette exigence, la sélection d'un parent
+déjà ouvert et l'ouverture du seul dossier explicitement choisi avec Ctrl.
+
+Les noms complets sélectionnés à fond opaque, la préservation spéciale de la
+sélection au clic d'activation et le défilement exact à la réouverture restent
+absents de 1.1, par décision explicite de l'utilisateur. Les deux options sans
+effet sont désactivées dans les préférences ; 13/01 vérifie cet état. Ces écarts
+ne sont pas comptabilisés comme des fonctionnalités testées et conformes.
+
+Après l'intégration de la préparation 1.1, seul ce jeu modifié est à reprendre :
+
+```cmd
+tests.cmd -Pattern "13-preferences\01-*"
+```
+
+## Résultats et isolation
+
+`results.json`, `summary.json`, les sorties applicatives, codes de sortie et
+preuves par jeu sont conservés. Un processus anormal, un nettoyage nécessaire,
+un compte incorrect ou un dépassement de délai reste FAIL. Le lanceur distingue
+BLOCKED et NOT_RUN ; ils ne valent jamais PASS et rendent le bilan incomplet.
+Les résultats des jeux suivants ne sont pas déduits de ceux déjà exécutés.
+
+Les préférences et la base de test sont sauvegardées/restaurées par le runner.
+Ne pas réinitialiser les données de production pour lancer les tests. Les
+fenêtres du Panneau déjà ouvertes bloquent 20/05 ; seules les fenêtres créées
+et suivies pendant ce jeu sont fermées, jamais le processus Explorer entier.
+La reconnaissance utilise le dossier de la vue Shell active, avec rattachement
+au cadre par `GetAncestor(GA_ROOT)`, sans titre localisé comme preuve d'identité.
+
+Les mesures de charge ne démontrent pas une parité de performances avec une
+autre version sans comparaison dans les mêmes conditions. Les configurations
+non présentes (écrans, DPI, extensions ou versions Windows) ne sont pas déclarées
+validées automatiquement. Voir [l'architecture](../../docs/native-shell-view.md).

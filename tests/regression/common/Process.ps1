@@ -32,7 +32,8 @@ function Complete-RecordedProcess($Job) {
     return [int]$Job.Process.ExitCode
 }
 function Start-TestApplication {
-    param([string]$Executable,[string]$Arguments,[string]$WorkingDirectory='')
+    param([string]$Executable,[string]$Arguments,[string]$WorkingDirectory='',
+        [string]$OutputDirectory='')
     $process=New-Object Diagnostics.Process
     $process.StartInfo.FileName=$Executable
     $process.StartInfo.Arguments=$Arguments
@@ -40,10 +41,26 @@ function Start-TestApplication {
     # Suppress only the Debug console. Do not pass SW_HIDE to the folder window.
     $process.StartInfo.CreateNoWindow=$true
     if ($WorkingDirectory) { $process.StartInfo.WorkingDirectory=$WorkingDirectory }
+    if ($OutputDirectory) {
+        $process.StartInfo.RedirectStandardOutput=$true
+        $process.StartInfo.RedirectStandardError=$true
+        $process.StartInfo.StandardOutputEncoding=[Text.Encoding]::Default
+        $process.StartInfo.StandardErrorEncoding=[Text.Encoding]::Default
+    }
     $startedUtc=[DateTime]::UtcNow
     try {
         if (!$process.Start()) { throw "Cannot start $Executable" }
         $process | Add-Member -NotePropertyName RegressionStartedUtc -NotePropertyValue $startedUtc
+        if ($OutputDirectory) {
+            $recording=[pscustomobject]@{
+                Process=$process
+                Output=$process.StandardOutput.ReadToEndAsync()
+                Error=$process.StandardError.ReadToEndAsync()
+                OutputPath=(Join-Path $OutputDirectory ('application-'+$process.Id+'.stdout.log'))
+                ErrorPath=(Join-Path $OutputDirectory ('application-'+$process.Id+'.stderr.log'))
+            }
+            $process | Add-Member -NotePropertyName RegressionOutput -NotePropertyValue $recording
+        }
         if ($env:FS_REGRESSION_RUN) {
             try {
                 $trackingPath=Join-Path $env:FS_REGRESSION_RUN 'application-processes.json'
@@ -97,6 +114,9 @@ function Complete-TestApplications($Processes) {
                 $hex='0x{0:X8}' -f $code
                 $record.Exited=$true; $record.ExitCode=$code; $record.ExitCodeHex=$hex
                 if ($code -ne 0) { $exitFailures.Add("Application exited with $hex ($code): PID $applicationId") }
+                if ($applicationProcess.PSObject.Properties['RegressionOutput']) {
+                    [void](Complete-RecordedProcess $applicationProcess.RegressionOutput)
+                }
             }
         } catch { $record.Error=$_.Exception.Message; $exitFailures.Add($_.Exception.Message) }
         finally {

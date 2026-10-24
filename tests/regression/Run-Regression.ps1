@@ -2,7 +2,8 @@
     [string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
     [ValidateSet('All','Internal','UI')][string]$Category='All',
     [string]$Pattern='*',
-    [ValidateRange(30,3600)][int]$TimeoutSeconds=300
+    [ValidateRange(30,3600)][int]$TimeoutSeconds=300,
+    [string]$RunDirectory=''
 )
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version 2
@@ -28,7 +29,10 @@ if ($ui -and ![Environment]::UserInteractive) { throw 'UI tests require an inter
 if ($ui -and @(Get-Process -Name FileSpacer -ErrorAction SilentlyContinue).Count) { throw 'Close existing FileSpacer processes before running UI tests.' }
 if ($ui -and !(Test-Path -LiteralPath (Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'))) { throw 'Build the Debug application with build.cmd debug.' }
 
-$run=Join-Path $ProjectRoot ('build\regression\'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'-'+[Guid]::NewGuid().ToString('N'))
+if ($RunDirectory) {
+    $run=[IO.Path]::GetFullPath($RunDirectory)
+    if (Test-Path -LiteralPath $run) { throw 'The requested result directory already exists; previous results will not be overwritten.' }
+} else { $run=Join-Path $ProjectRoot ('build\regression\'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'-'+[Guid]::NewGuid().ToString('N')) }
 [void][IO.Directory]::CreateDirectory($run)
 $results=New-Object Collections.Generic.List[object]
 $testKey='Software\FileSpacer\Test'
