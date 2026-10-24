@@ -83,8 +83,8 @@ namespace FileSpacerRegression {
             else Send(Button(false));
         }
         static void Trace(string stage) {
-            Console.WriteLine("INPUT {0:O}: {1}; foreground={2}, Alt={3}, left={4}, right={5}",
-                DateTime.UtcNow,stage,GetForegroundWindow().ToInt64(),GetAsyncKeyState(0x12)<0,GetAsyncKeyState(1)<0,GetAsyncKeyState(2)<0);
+            Console.WriteLine("INPUT {0:O}: {1}; foreground={2}, Alt={3}, left={4}, right={5}, Ctrl={6}",
+                DateTime.UtcNow,stage,GetForegroundWindow().ToInt64(),GetAsyncKeyState(0x12)<0,GetAsyncKeyState(1)<0,GetAsyncKeyState(2)<0,GetAsyncKeyState(0x11)<0);
         }
         public static void VerifyHeld(bool alt) {
             Trace("before drag motion");
@@ -127,8 +127,8 @@ namespace FileSpacerRegression {
         public static bool Idle(IntPtr window) { var info=Info(window); return info.Capture==IntPtr.Zero && info.MoveSize==IntPtr.Zero; }
         public static string Describe(IntPtr window) {
             var info=Info(window);
-            return String.Format("flags=0x{0:X}, active={1}, focus={2}, capture={3}, moveSize={4}, Alt={5}, left={6}, right={7}",
-                info.Flags,info.Active,info.Focus,info.Capture,info.MoveSize,GetAsyncKeyState(0x12)<0,GetAsyncKeyState(1)<0,GetAsyncKeyState(2)<0);
+            return String.Format("flags=0x{0:X}, active={1}, focus={2}, capture={3}, moveSize={4}, Alt={5}, left={6}, right={7}, Ctrl={8}",
+                info.Flags,info.Active,info.Focus,info.Capture,info.MoveSize,GetAsyncKeyState(0x12)<0,GetAsyncKeyState(1)<0,GetAsyncKeyState(2)<0,GetAsyncKeyState(0x11)<0);
         }
 
         [StructLayout(LayoutKind.Sequential)] struct CursorInfo {
@@ -158,6 +158,10 @@ namespace FileSpacerRegression {
         }
         static List<AutomationElement> Visible(AutomationElement root,ControlType type,string name) {
             Condition condition=new PropertyCondition(AutomationElement.ControlTypeProperty,type);
+            // The native Details view exposes DataItem rows; other layouts
+            // expose ListItem. Both are public UI Automation item types.
+            if(type==ControlType.ListItem) condition=new OrCondition(condition,
+                new PropertyCondition(AutomationElement.ControlTypeProperty,ControlType.DataItem));
             if(name!=null) condition=new AndCondition(condition,new PropertyCondition(AutomationElement.NameProperty,name));
             var result=new List<AutomationElement>();
             foreach(AutomationElement element in root.FindAll(TreeScope.Descendants,condition))
@@ -174,6 +178,18 @@ namespace FileSpacerRegression {
                 var found=Visible(root,ControlType.ListItem,name);
                 if(found.Count!=1) throw new InvalidOperationException("Expected one visible item named "+name+"; found "+found.Count+".");
                 return Clickable(found[0]);
+            });
+        }
+        public static string DescribeView(IntPtr viewWindow) {
+            return ReadView(viewWindow,delegate(AutomationElement root) {
+                var lines=new List<string>();
+                foreach(AutomationElement element in root.FindAll(TreeScope.Subtree,Condition.TrueCondition)) {
+                    var info=element.Current;
+                    lines.Add(String.Format("{0}: name=[{1}], offscreen={2}, bounds={3}",
+                        info.ControlType.ProgrammaticName,info.Name,info.IsOffscreen,info.BoundingRectangle));
+                    if(lines.Count>=100) break;
+                }
+                return String.Join(Environment.NewLine,lines.ToArray());
             });
         }
         public static MousePoint HeaderPoint(IntPtr viewWindow) {

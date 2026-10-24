@@ -19,14 +19,14 @@
         Wait-Ui { [FileSpacerRegression.Native]::GetForegroundWindow() -eq $child } 'child activated by Enter'
         $keep=([bool]$keepDefault -xor $control)
         Wait-Ui { [FileSpacerRegression.Native]::IsWindow($source) -eq $keep } "Enter source kept = $keep" 300
-        if ($keep) { Close-UiFolder $source } # Force a fresh parent for the selection-on-up assertion.
+        if ($keep) { Close-UiFolder $source } # Check navigation into a newly created parent in all four combinations.
         Write-Host "STEP: Alt+Up, KeepSourceWindowOpen=$keepDefault, Ctrl=$control"
         [FileSpacerRegression.Native]::Keys($child,0x26,$control,$true)
         $parent=Track-UiFolder $a
         Wait-Ui { [FileSpacerRegression.Native]::GetForegroundWindow() -eq $parent } 'parent activated by Alt+Up'
         Wait-Ui { [FileSpacerRegression.Native]::IsWindow($child) -eq $keep } "Alt+Up source kept = $keep" 300
-        Assert-UiSelected $parent ([IO.Path]::GetFileName($b))
-        Write-Host "PASS: Enter / Alt+Up, KeepSourceWindowOpen=$keepDefault, Ctrl=$control; origin selection and closure policy."
+        Assert-UiSelected $parent ''
+        Write-Host "PASS: Enter / Alt+Up, KeepSourceWindowOpen=$keepDefault, Ctrl=$control; no automatic selection in the new parent and unchanged closure policy."
         Close-UiFolder $child; Close-UiFolder $parent
     } catch { $testFailure=$_; throw }
     finally { Stop-Ui -Failure $testFailure }

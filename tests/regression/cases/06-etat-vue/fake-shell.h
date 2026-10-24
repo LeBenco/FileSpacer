@@ -19,11 +19,11 @@ constexpr BOOL FALSE = 0;
 bool SUCCEEDED(HRESULT result) { return result >= 0; }
 bool FAILED(HRESULT result) { return result < 0; }
 bool checkHR(HRESULT result) { return SUCCEEDED(result); }
-enum FOLDERVIEWMODE { FVM_DETAILS = 4 };
+enum FOLDERVIEWMODE { FVM_ICON = 1, FVM_LIST = 3, FVM_DETAILS = 4 };
 enum SORTDIRECTION { SORT_ASCENDING = 1 };
 constexpr UINT CM_ENUM_VISIBLE = 1, CM_MASK_WIDTH = 1;
 constexpr DWORD FWF_AUTOARRANGE = 1, FWF_SNAPTOGRID = 4;
-constexpr UINT SVGIO_ALLVIEW = 2, SVSI_NOSTATECHANGE = 0;
+constexpr UINT SVGIO_ALLVIEW = 2, SVSI_POSITIONITEM = 0x80, SVSI_NOSTATECHANGE = 0x80000000u;
 struct POINT { int32_t x, y; };
 struct PROPERTYKEY { std::array<uint8_t, 16> fmtid; uint32_t pid; };
 struct SORTCOLUMN { PROPERTYKEY propkey; SORTDIRECTION direction; };
@@ -69,7 +69,13 @@ struct IColumnManager {
     }
     HRESULT SetColumnInfo(PROPERTYKEY, CM_COLUMNINFO *) { writes.insert("widths"); return S_OK; }
 };
-struct IFolderView2 : IColumnManager {
+struct IFolderView {
+    FOLDERVIEWMODE currentMode = FVM_ICON;
+    bool autoArrange = false, currentModeFails = false;
+    HRESULT GetAutoArrange() { return autoArrange ? S_OK : S_FALSE; }
+    HRESULT GetCurrentViewMode(UINT *value) { *value = currentMode; return currentModeFails ? E_FAIL : S_OK; }
+};
+struct IFolderView2 : IColumnManager, IFolderView {
     bool modeFails = false, flagsFail = false, sortCountFails = false;
     bool sortFails = false, groupFails = false, countItemsFails = false;
     bool noGroup = false;
@@ -78,10 +84,10 @@ struct IFolderView2 : IColumnManager {
     std::vector<int> restoredIds;
     std::vector<POINT> restoredPositions;
     HRESULT GetViewModeAndIconSize(FOLDERVIEWMODE *mode, int *size) {
-        *mode = FVM_DETAILS; *size = 32;
+        *mode = currentMode; *size = 48;
         return modeFails ? E_FAIL : S_OK;
     }
-    HRESULT GetCurrentFolderFlags(DWORD *flags) { *flags = 3; return flagsFail ? E_FAIL : S_OK; }
+    HRESULT GetCurrentFolderFlags(DWORD *flags) { *flags = FWF_SNAPTOGRID | (autoArrange ? FWF_AUTOARRANGE : 0); return flagsFail ? E_FAIL : S_OK; }
     HRESULT GetSortColumnCount(int *count) { *count = 1; return sortCountFails ? E_FAIL : S_OK; }
     HRESULT GetSortColumns(SORTCOLUMN *columns, int) {
         *columns = {{{}, 7}, SORT_ASCENDING};
@@ -103,15 +109,18 @@ struct IFolderView2 : IColumnManager {
         *point = {id->index * 10, id->index * 20};
         return S_OK;
     }
-    HRESULT SetViewModeAndIconSize(FOLDERVIEWMODE, int) { writes.insert("mode"); return S_OK; }
-    HRESULT SetCurrentFolderFlags(DWORD, DWORD) { writes.insert("flags"); return S_OK; }
+    HRESULT SetViewModeAndIconSize(FOLDERVIEWMODE value, int) { currentMode = value; writes.insert("mode"); return S_OK; }
+    HRESULT SetCurrentFolderFlags(DWORD mask, DWORD flags) {
+        if (mask & FWF_AUTOARRANGE) autoArrange = (flags & FWF_AUTOARRANGE) != 0;
+        writes.insert("flags"); return S_OK;
+    }
     HRESULT SetSortColumns(const SORTCOLUMN *, int) { writes.insert("sort"); return S_OK; }
     HRESULT SetGroupBy(PROPERTYKEY key, BOOL ascending) {
         writes.insert(key.pid == 0 && !ascending ? "ungrouped" : "group");
         return S_OK;
     }
     HRESULT SelectAndPositionItems(UINT count, const ITEMID_CHILD **ids, POINT *points, DWORD flags) {
-        assert(flags == SVSI_NOSTATECHANGE);
+        assert(flags == (SVSI_POSITIONITEM | SVSI_NOSTATECHANGE));
         ++restoreCalls;
         for (UINT i = 0; i < count; ++i) {
             restoredIds.push_back(ids[i] ? ids[i]->index : -1);

@@ -3,4 +3,4 @@ param([string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '..\..\common\Native.ps1')
 $test = Build-NativeTest -Name ViewStateTests -CaseDirectory $PSScriptRoot -Extract View
-foreach ($scenario in @('success','all-fail','columns-fail','width-fail','sort-fail','group-fail','partial-items','no-items','count-fail','no-manager','no-group')) { Invoke-TestProgram $test @($scenario) }
+foreach ($scenario in @('success','all-fail','columns-fail','width-fail','sort-fail','group-fail','partial-items','no-items','count-fail','no-manager','no-group','details','list','auto-arrange','mode-unavailable')) { Invoke-TestProgram $test @($scenario) }

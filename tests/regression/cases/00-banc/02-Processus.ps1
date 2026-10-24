@@ -13,7 +13,13 @@ try {
     $env:LOCALAPPDATA=$temporaryRoot
     $hostExecutable=Join-Path $PSHOME $(if ($env:OS -eq 'Windows_NT') {'powershell.exe'} else {'pwsh'})
     foreach ($code in @(0,7,9)) {
-        $processes+=Start-TestApplication -Executable $hostExecutable -Arguments ('-NoProfile -Command "exit '+$code+'"')
+        if ($code -eq 0) {
+            $processes+=Start-TestApplication -Executable $hostExecutable -Arguments ('-NoProfile -Command "exit '+$code+'"')
+        } else {
+            # Both pipes exceed their buffers: sequential reads would deadlock.
+            $arguments='-NoProfile -Command "[Console]::Out.Write((''stdout-'+$code+''' * 20000)); [Console]::Error.Write((''stderr-'+$code+''' * 20000)); exit '+$code+'"'
+            $processes+=Start-TestApplication -Executable $hostExecutable -Arguments $arguments -OutputDirectory $temporaryRoot
+        }
     }
     if (('0x{0:X8}' -f [int]-1073740791) -ne '0xC0000409' -or ('0x{0:X8}' -f [int]-1073741819) -ne '0xC0000005') {
         throw 'Crash exit-code formatting is incorrect.'
@@ -39,6 +45,12 @@ try {
     }
     $records=@((Get-Content -LiteralPath (Join-Path $temporaryRoot 'application-exits.json') -Raw | ConvertFrom-Json))
     if ($records.Count -ne 3 -or ($records.ExitCode -join ',') -ne '0,7,9') { throw 'Missing application exit records.' }
+    foreach ($index in @(1,2)) {
+        $code=@(0,7,9)[$index]
+        $prefix=Join-Path $temporaryRoot ('application-'+$applicationIds[$index])
+        if ([IO.File]::ReadAllText($prefix+'.stdout.log') -cne (('stdout-'+$code)*20000)) { throw 'Application stdout was lost or truncated.' }
+        if ([IO.File]::ReadAllText($prefix+'.stderr.log') -cne (('stderr-'+$code)*20000)) { throw 'Application stderr was lost or truncated.' }
+    }
     if (!(Test-Path -LiteralPath (Join-Path $temporaryRoot ('application-traces\'+$traceName)))) { throw 'Missing application trace.' }
     if (!(Test-Path -LiteralPath (Join-Path $temporaryRoot ('application-traces\'+$searchName)))) { throw 'Missing name-search trace.' }
     if (!(Test-Path -LiteralPath (Join-Path $temporaryRoot ('application-recovery\'+$reportName)))) { throw 'Missing application recovery report.' }
