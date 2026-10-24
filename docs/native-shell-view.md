@@ -54,7 +54,11 @@ Panneau externe. Deux subsistent :
   mais ne restitue pas l'offset exact de défilement. Le flux
   `IShellBrowser::GetViewStateStream` est bien demandé par la vue, mais sous
   Windows 10 il ne contient que les réglages de présentation (mode, tri,
-  groupement, colonnes), pas la position de défilement.
+  groupement, colonnes), pas la position de défilement. L'ancrage sur le
+  dernier élément visible a été tenté puis retiré le 24 octobre 2026 :
+  `IFolderView2::GetVisibleItem` énumère tous les éléments présents dans la
+  vue, pas ceux de la zone affichée (sonde sur 19045), et aucune interface
+  publique n'expose la zone affichée.
 
 Le clic d'activation est rétabli depuis l'audit du 24 octobre 2026 : lorsqu'une
 fenêtre est activée par un clic (`WM_ACTIVATE` avec `WA_CLICKACTIVE`), Windows
