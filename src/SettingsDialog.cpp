@@ -170,6 +170,8 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::getKeepSourceWindowOpen() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_KEEP_SELECTION_ON_ACTIVATE,
                 settings::getKeepSelectionOnActivate() ? BST_CHECKED : BST_UNCHECKED);
+            CheckDlgButton(hwnd, IDC_WINDOW_STATE_LOCK_ENABLED,
+                settings::getWindowStateLockEnabled() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_LIVE_NAME_SEARCH,
                 settings::getLiveNameSearch() ? BST_CHECKED : BST_UNCHECKED);
             return TRUE;
@@ -180,6 +182,30 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 SetWindowLongPtr(hwnd, DWLP_MSGRESULT, FALSE);
                 return TRUE;
             } else if (notif->code == PSN_APPLY) {
+                const bool lockEnabled = !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_LOCK_ENABLED);
+                if (lockEnabled != settings::getWindowStateLockEnabled()) {
+                    if (!lockEnabled) {
+                        TASKDIALOGCONFIG config = {sizeof(config)};
+                        config.hwndParent = GetParent(hwnd);
+                        config.hInstance = GetModuleHandle(nullptr);
+                        config.pszWindowTitle = MAKEINTRESOURCE(IDS_CONFIRM_CAPTION);
+                        config.pszMainInstruction = MAKEINTRESOURCE(IDS_DISABLE_STATE_LOCK_CONFIRM);
+                        config.pszMainIcon = TD_WARNING_ICON;
+                        config.dwCommonButtons = TDCBF_OK_BUTTON | TDCBF_CANCEL_BUTTON;
+                        config.nDefaultButton = IDCANCEL;
+                        int button = IDCANCEL;
+                        if (!checkHR(TaskDialogIndirect(&config, &button, nullptr, nullptr)) || button != IDOK) {
+                            SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
+                            return TRUE;
+                        }
+                    }
+                    if (!settings::setWindowStateLockEnabled(lockEnabled)) {
+                        reportFolderStateError(GetParent(hwnd));
+                        SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
+                        return TRUE;
+                    }
+                    notifyWindowSettingsChanged();
+                }
                 int pathLength = GetWindowTextLength(GetDlgItem(hwnd, IDC_START_FOLDER_PATH));
                 std::vector<wchar_t> startingFolder(static_cast<size_t>(pathLength) + 1);
                 if (GetDlgItemText(hwnd, IDC_START_FOLDER_PATH,
@@ -227,6 +253,7 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     || LOWORD(wParam) == IDC_START_FOLDER_PATH && pathCBChanged(wParam, lParam)
                     || LOWORD(wParam) == IDC_GROUP_FOLDER_WINDOWS && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_KEEP_SOURCE_WINDOW_OPEN && HIWORD(wParam) == BN_CLICKED
+                    || LOWORD(wParam) == IDC_WINDOW_STATE_LOCK_ENABLED && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_LIVE_NAME_SEARCH && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_KEEP_SELECTION_ON_ACTIVATE && HIWORD(wParam) == BN_CLICKED) {
                 PropSheet_Changed(GetParent(hwnd), hwnd);
