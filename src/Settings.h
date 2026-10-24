@@ -73,6 +73,8 @@ bool getKeepSelectionOnActivate();
 void setKeepSelectionOnActivate(bool value);
 bool getLiveNameSearch();
 void setLiveNameSearch(bool value);
+bool getWindowStateLockEnabled();
+bool setWindowStateLockEnabled(bool value);
 bool getFullNamesOnSelection();
 void setFullNamesOnSelection(bool value);
 LSTATUS resetGlobalOptions();
