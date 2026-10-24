@@ -96,6 +96,35 @@ int main(int argc, char **argv) {
             require(store.move("renamed","renamed"),"same key");
             require(store.move("missing","empty"),"missing source");
             require(store.read("empty",&s) && s.present==FolderState::Icons,"missing source erased existing target");
+            rawSQL(path,"CREATE TRIGGER fail_lock BEFORE INSERT ON folder_state WHEN new.key='locked' BEGIN SELECT RAISE(ABORT,'forced lock failure'); END");
+            require(!store.setLocked("locked",original,FolderState::All,true),"failed lock was accepted");
+            require(store.read("locked",&s) && !s.locked && !s.present,"failed lock leaked a snapshot");
+            rawSQL(path,"DROP TRIGGER fail_lock");
+            require(store.setLocked("locked", original, FolderState::All, true),"lock snapshot");
+            FolderState temporary = original; temporary.x=123; temporary.width=345;
+            temporary.maximized=false; temporary.view.mode=1; temporary.icons={1,2,3};
+            require(store.save("locked",temporary,FolderState::All),"locked save");
+            require(store.read("locked",&s) && s.locked && s.x==original.x
+                && s.width==original.width && s.maximized && s.view.mode==original.view.mode
+                && s.icons==temporary.icons,"lock must protect geometry/view but not icons");
+            require(store.move("locked","locked-renamed"),"locked rekey");
+            require(store.read("locked-renamed",&s) && s.locked,"rekey lost lock");
+            require(store.setLocked("locked-renamed",temporary,FolderState::All,false),"unlock snapshot");
+            require(store.read("locked-renamed",&s) && !s.locked && s.x==123
+                && s.width==345 && !s.maximized && s.view.mode==1,"unlock must capture visible state");
+            require(store.setLocked("locked-renamed",original,FolderState::All,true),"relock");
+            rawSQL(path,"CREATE TRIGGER fail_unlock BEFORE UPDATE ON folder_state WHEN old.locked=1 BEGIN SELECT RAISE(ABORT,'forced unlock failure'); END");
+            require(!store.setLocked("locked-renamed",temporary,FolderState::All,false),"failed unlock accepted");
+            require(!store.clearLocks(),"failed global clearing accepted");
+            require(store.read("locked-renamed",&s) && s.locked && s.x==original.x,"failure lost the reference or lock");
+            rawSQL(path,"DROP TRIGGER fail_unlock");
+            require(store.clearLocks(),"global unlock");
+            temporary.locked = true; // An old in-memory lock must never be written back.
+            require(store.save("locked-renamed",temporary,FolderState::All),"stale snapshot save");
+            require(store.read("locked-renamed",&s) && !s.locked && s.x==123,"stale save revived lock");
+            require(store.setLocked("locked-renamed",original,FolderState::All,true),"lock before reset");
+            require(store.clear("locked-renamed",FolderState::All),"full reset unlocks");
+            require(store.read("locked-renamed",&s) && !s.locked && !s.present,"full reset retained lock");
             require(store.clearAll(),"reset all");
             require(store.read("renamed",&s) && !s.present,"reset left data");
             require(store.save("folder",original,FolderState::All),"after reset");
