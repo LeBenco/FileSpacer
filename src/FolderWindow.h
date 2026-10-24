@@ -271,6 +271,8 @@ private:
     HRESULT refreshView();
     HRESULT invokeViewCommand(IContextMenu *menu, CMINVOKECOMMANDINFO *info);
     void resumeDeferredClose();
+    bool isBackgroundActivationClick(const MSG *msg) const;
+    bool activationClickPending = false;
 
     CComPtr<IShellItem> selected; // retains the selected shortcut rather than its resolved target
 
