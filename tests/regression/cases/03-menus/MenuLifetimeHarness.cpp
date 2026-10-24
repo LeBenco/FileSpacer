@@ -251,12 +251,18 @@ struct FolderWindow : ItemWindow {
         Release();
     }
     void scheduleStateSave() { assert(!observation.closed && !observation.cleared); ++observation.saves; }
+    // Close deferral around view verbs; a direct closeNow() here is not a queued WM_CLOSE.
+    unsigned navigationDepth = 0;
+    UINT deferredCloseMessage = 0;
+    HRESULT invokeViewCommand(IContextMenu *menu, CMINVOKECOMMANDINFO *info);
+    void resumeDeferredClose();
     CComPtr<IContextMenu> queryBackgroundMenu(HMENU *);
     void newItem(const char *);
     void trackContextMenu(POINT) override;
     void openViewMenu(POINT);
     void openBackgroundSubMenu(IContextMenu *, HMENU, POINT);
 };
+bool PostMessageW(HWND, UINT, WPARAM, LPARAM) { assert(false && "no close is deferred in this harness"); return true; }
 HMENU findViewMenu(IContextMenu *, HMENU menu) { return menu; } // Borrowed submenu stand-in.
 void boundary(Stage stage) {
     if (stage != Stage::None && stage == observation.closeAt && !observation.fired) {

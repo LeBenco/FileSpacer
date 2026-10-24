@@ -870,6 +870,15 @@ void FolderWindow::resumeDeferredClose() {
         checkLE(PostMessageW(hwnd, closeMessage, 0, 0));
 }
 
+// Verbs of the view's own menus (Refresh, New) reload the view and dispatch
+// messages before InvokeCommand returns.
+HRESULT FolderWindow::invokeViewCommand(IContextMenu *menu, CMINVOKECOMMANDINFO *info) {
+    ++navigationDepth;
+    const HRESULT result = invokeShellCommand(menu, info);
+    resumeDeferredClose();
+    return result;
+}
+
 LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     CComPtr<ItemWindow> messageKeepAlive(this);
     // Capture and cancellation notifications are sent synchronously, outside
@@ -1193,7 +1202,7 @@ void FolderWindow::newItem(const char *verb) {
     CMINVOKECOMMANDINFO info = {sizeof(info)};
     info.hwnd = hwnd;
     info.lpVerb = verb;
-    checkHR(invokeShellCommand(contextMenu, &info));
+    checkHR(invokeViewCommand(contextMenu, &info));
 }
 
 void FolderWindow::trackContextMenu(POINT pos) {
@@ -1263,7 +1272,7 @@ void FolderWindow::trackContextMenu(POINT pos) {
                 }
                 if (isWindowOperational()) {
                     info.hwnd = hwnd;
-                    checkHR(invokeShellCommand(contextMenu, (CMINVOKECOMMANDINFO *)&info));
+                    checkHR(invokeViewCommand(contextMenu, (CMINVOKECOMMANDINFO *)&info));
                 }
             };
             invoke();
@@ -1521,7 +1530,7 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
         }
         if (isWindowOperational()) {
             info.hwnd = hwnd;
-            checkHR(invokeShellCommand(contextMenu, (CMINVOKECOMMANDINFO *)&info));
+            checkHR(invokeViewCommand(contextMenu, (CMINVOKECOMMANDINFO *)&info));
         }
     }
 }

@@ -79,7 +79,7 @@ switch ($Mode) {
         foreach ($signature in @('void ItemWindow::trackContextMenu(POINT pos)', 'int ItemWindow::trackContextMenu(POINT pos, HMENU menu, HWND menuOwner)')) {
             $pieces+=Get-SourceBlock $item $signature
         }
-        foreach ($signature in @('CComPtr<IContextMenu> FolderWindow::queryBackgroundMenu(HMENU *popupMenu)', 'void FolderWindow::newItem(const char *verb)', 'void FolderWindow::trackContextMenu(POINT pos)', 'void FolderWindow::openViewMenu(POINT point)', 'void FolderWindow::openBackgroundSubMenu(')) {
+        foreach ($signature in @('CComPtr<IContextMenu> FolderWindow::queryBackgroundMenu(HMENU *popupMenu)', 'void FolderWindow::newItem(const char *verb)', 'void FolderWindow::trackContextMenu(POINT pos)', 'void FolderWindow::openViewMenu(POINT point)', 'void FolderWindow::openBackgroundSubMenu(', 'HRESULT FolderWindow::invokeViewCommand(', 'void FolderWindow::resumeDeferredClose()')) {
             $pieces+=Get-SourceBlock $folder $signature
         }
         Save-Source 'ProductionMethods.inc' ($pieces -join "`n`n")
