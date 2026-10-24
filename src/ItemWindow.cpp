@@ -790,7 +790,6 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             onDestroy();
             return 0;
         case WM_NCDESTROY:
-            RemovePropW(hwnd, identityProperty.c_str());
             proxyIcon.destroy();
             // don't need icon lock since icon thread is stopped
             if (iconLarge) {
