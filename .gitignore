@@ -12,3 +12,6 @@
 *.ilk
 *.idb
 *.pch
+
+# Linked worktrees are separate local checkouts.
+/worktrees/
