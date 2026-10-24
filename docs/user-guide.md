@@ -4,6 +4,8 @@
   Hold Ctrl to reverse the behavior for that operation, or change the default in
   Settings > General. Opening several selected folders keeps the source window.
 - Opening a folder that already has a FileSpacer window activates that window.
+- Navigating up or opening an ancestor does not automatically select the folder
+  you came from. An existing window keeps its current selection.
 - The title-bar menu's Close Parent Windows command closes the open FileSpacer
   windows for all ancestors of the current folder, keeping the current window
   and unrelated folders open. It also works across FileSpacer processes and is
@@ -17,7 +19,7 @@
   closure is considered; an older entry is not offered instead, and the history
   is retained. The current window stays open. A reopened folder keeps its saved
   geometry and view settings,
-  and restores its selection and scroll position once the Shell has loaded it.
+  and restores its selection and focused item once the Shell has loaded it. The focused item can be brought into view; the exact previous scroll offset is not restored.
   The menu icon loads in the background, including custom folder icons; a generic
   folder icon is used if the Shell cannot retrieve it.
 - The taskbar icon's Jump List also offers Reopen Last Closed Window, including
@@ -100,3 +102,22 @@ welcome dialog. They are off by default and notify you when a newer release is
 available. Older releases without installer metadata offer their GitHub release
 page instead. Updates are never installed without your confirmation.
 
+
+
+## View behavior in 1.1
+
+Control Panel opens in its native Windows window and leaves the source
+FileSpacer folder open, with its selection.
+
+For ergonomic reasons, navigating to a parent or ancestor no longer selects
+the originating folder automatically. This avoids adding an unintended folder
+to a subsequent Ctrl selection or opening multiple folders accidentally.
+An already-open parent keeps its existing selection.
+
+The public Shell integration currently uses Windows' native selected-name
+rendering and activation-click selection behavior. FileSpacer's custom opaque
+full-name rendering and preserve-selection-on-activation behavior are unavailable;
+their Settings controls are disabled and labeled accordingly. Previously saved
+preferences are retained. Exact scroll restoration is also unavailable.
+These three differences are accepted for 1.1 and remain candidates for a future
+implementation using documented public APIs.
