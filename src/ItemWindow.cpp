@@ -604,7 +604,10 @@ void ItemWindow::recordFolderAccess(HRESULT result) {
     } else if (!savedState.firstFailedAt) {
         savedState.firstFailedAt = now;
     }
-    if (expired) stateKey.clear();
+    if (expired) {
+        stateKey.clear();
+        updateStateLock();
+    }
     storageErrorShown = false;
 }
 
@@ -625,9 +628,55 @@ void ItemWindow::resetViewState() {
     resetViewState(FolderState::All);
 }
 
+bool ItemWindow::updateStateLock() {
+    FolderState current;
+    auto store = folderStateStore();
+    const bool wasLocked = stateLocked;
+    if (!store || !store->read(stateKey, &current)) {
+        stateStorageError();
+        return false;
+    }
+    stateLocked = settings::getWindowStateLockEnabled() && current.locked;
+    if (wasLocked && !stateLocked) viewStateDirty(FolderState::All);
+    if (wasLocked != stateLocked) {
+        proxyIcon.setLocked(stateLocked);
+        if (isWindowOperational()) onSize(clientSize(hwnd));
+    }
+    return true;
+}
+
+void ItemWindow::toggleStateLock() {
+    CComPtr<ItemWindow> keepAlive(this);
+    if (!isFolder() || !settings::getWindowStateLockEnabled() || stateKey.empty()
+            || !isWindowOperational() || !loadFolderState()) return;
+    if (!updateStateLock()) return;
+    const bool locking = !stateLocked;
+    const FolderState previous = savedState;
+    // A transition must capture the visible view, never fill failed getters from
+    // an older snapshot. Require every previously supported view property.
+    savedState.view = {};
+    const uint32_t protectedParts = FolderState::All & ~FolderState::Icons;
+    const uint32_t captured = captureViewState(FolderState::All);
+    if (!isWindowOperational()) return;
+    auto store = folderStateStore();
+    if ((captured & protectedParts) != protectedParts
+            || (savedState.view.present & previous.view.present) != previous.view.present
+            || !store || !store->setLocked(stateKey, savedState, captured, locking)) {
+        savedState = previous;
+        viewStateDirty(FolderState::All);
+        stateStorageError();
+        return;
+    }
+    savedState.present |= captured;
+    viewStateClean(captured);
+    storageErrorShown = false;
+    updateStateLock();
+    onSize(clientSize(hwnd));
+}
+
 void ItemWindow::persistViewState() {
     if (stateKey.empty()) return; // No identity, or state expired after qualified access failures.
-    if (!loadFolderState()) return; // Do not overwrite state that could not be read.
+    if (!loadFolderState() || !updateStateLock()) return; // Do not overwrite unreadable state.
     const uint32_t captured = captureViewState(dirtyViewState);
     if (!captured) return;
     auto store = folderStateStore();
@@ -635,6 +684,7 @@ void ItemWindow::persistViewState() {
         savedState.present |= captured;
         viewStateClean(captured);
         storageErrorShown = false;
+        if (stateLocked) updateStateLock(); // Quota eviction removes the lock too.
     } else {
         stateStorageError(); // Failed writes remain dirty for the next event or close.
     }
@@ -960,6 +1010,7 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             break;
         case MSG_EXPIRE_FOLDER_STATE:
             stateKey.clear();
+            updateStateLock();
             return 0;
         case MSG_SHELL_NOTIFY: {
             LONG event;
@@ -1195,6 +1246,8 @@ void ItemWindow::addToolbarButtons(HWND tb) {
 
 int ItemWindow::getToolbarTooltip(WORD command) {
     switch (command) {
+        case IDM_PROXY_BUTTON:
+            return stateLocked ? IDS_WINDOW_STATE_LOCKED : 0;
         case IDM_PREV_WINDOW:
             return IDS_OPEN_PARENT_COMMAND;
         case IDM_CONTEXT_MENU:
@@ -1335,6 +1388,9 @@ bool ItemWindow::onCommand(WORD command) {
                 proxyIcon.setPressedState(false);
             return true;
         }
+        case IDM_TOGGLE_STATE_LOCK:
+            toggleStateLock();
+            return true;
         case IDM_RENAME_PROXY:
             proxyIcon.beginRename();
             return true;
@@ -1428,7 +1484,8 @@ LRESULT ItemWindow::onNotify(NMHDR *nmHdr) {
             if (res) {
                 dispInfo->hinst = GetModuleHandle(nullptr);
                 dispInfo->lpszText = MAKEINTRESOURCE(res);
-                dispInfo->uFlags |= TTF_DI_SETITEM;
+                if (dispInfo->hdr.idFrom != IDM_PROXY_BUTTON)
+                    dispInfo->uFlags |= TTF_DI_SETITEM;
             }
         }
     } else if (nmHdr->code == TBN_DROPDOWN) {
@@ -1525,6 +1582,7 @@ void ItemWindow::updateTaskbar() {
 }
 
 void ItemWindow::onSettingsChanged() {
+    updateStateLock();
     updateTaskbar();
     bool toolbarEnabled = settings::getToolbarEnabled();
     auto showControl = [](HWND control, bool visible) {
@@ -2316,6 +2374,11 @@ void ItemWindow::openCaptionMenu(POINT pos) {
         captionCommandBitmap(MDL2_COPY_PATH, iconSize, iconColor), path != nullptr);
     append(2, getString(IDS_CAPTION_RENAME),
         captionCommandBitmap(MDL2_RENAME, iconSize, iconColor), (attributes & SFGAO_CANRENAME) != 0);
+    if (isFolder() && settings::getWindowStateLockEnabled()) {
+        updateStateLock();
+        append(IDM_TOGGLE_STATE_LOCK,
+            getString(stateLocked ? IDS_UNLOCK_WINDOW_STATE : IDS_LOCK_WINDOW_STATE), nullptr, true);
+    }
     append(3, getString(IDS_CAPTION_PROPERTIES),
         captionCommandBitmap(MDL2_PROPERTIES, iconSize, iconColor), true);
     if (isFolder()) {
@@ -2431,6 +2494,8 @@ void ItemWindow::openCaptionMenu(POINT pos) {
             }
             return TRUE;
         }, reinterpret_cast<LPARAM>(&search));
+    } else if (command == IDM_TOGGLE_STATE_LOCK) {
+        toggleStateLock();
     } else if (command == 5) {
         reopenLastWindow(hwnd);
     } else if (command >= 6 && (size_t)(command - 6) < entries.size()) {
