@@ -5,6 +5,7 @@
 #include "UIStrings.h"
 #include "ShellUtils.h"
 #include "WinUtils.h"
+#include <vector>
 #include <shlobj.h>
 #include <shellapi.h>
 #include <shlwapi.h>
@@ -196,9 +197,9 @@ bool rememberRemovedDestinations(IObjectArray *removed, CRegKey &key) {
         std::wstring arguments;
         CComQIPtr<IShellLinkW> link(object);
         if (link) {
-            wchar_t buffer[32768] = {};
-            if (!checkHR(link->GetArguments(buffer, ARRAYSIZE(buffer)))) return false;
-            arguments = buffer;
+            std::vector<wchar_t> buffer(32768);
+            if (!checkHR(link->GetArguments(buffer.data(), static_cast<int>(buffer.size())))) return false;
+            arguments = buffer.data();
         } else {
             CComQIPtr<IShellItem> item(object);
             CComHeapPtr<wchar_t> path;
@@ -231,10 +232,10 @@ void buildJumpList(const wchar_t *appID, const wchar_t *executable, const wchar_
         if (!checkHR(quickAccess.CoCreateInstance(CLSID_EnumerableObjectCollection))) return false;
         UINT added = 0;
         for (const auto &link : destinations) {
-            wchar_t arguments[32768] = {};
-            if (!checkHR(link->GetArguments(arguments, ARRAYSIZE(arguments)))) return false;
+            std::vector<wchar_t> arguments(32768);
+            if (!checkHR(link->GetArguments(arguments.data(), static_cast<int>(arguments.size())))) return false;
             DWORD excluded = 0;
-            const std::wstring name = removedDestinationKey(arguments);
+            const std::wstring name = removedDestinationKey(arguments.data());
             if (name.empty()) return false;
             const LSTATUS status = key.QueryDWORDValue(name.c_str(), excluded);
             if (status != ERROR_SUCCESS && status != ERROR_FILE_NOT_FOUND) {
@@ -280,9 +281,9 @@ void updateReopenJumpLists() {
     const DWORD waited = WaitForSingleObject(mutex, INFINITE);
     if (waited == WAIT_OBJECT_0 || waited == WAIT_ABANDONED) {
         [&]() {
-            wchar_t executable[32768] = {};
-            const DWORD length = GetModuleFileNameW(nullptr, executable, ARRAYSIZE(executable));
-            if (!length || length >= ARRAYSIZE(executable)) return;
+            std::vector<wchar_t> executable(32768);
+            const DWORD length = GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size()));
+            if (!length || length >= executable.size()) return;
             const std::string path = folderStateDatabasePath();
             if (path.empty()) return;
             FolderStateStore store(path.c_str()); // This worker owns its SQLite connection.
@@ -311,7 +312,7 @@ void updateReopenJumpLists() {
                     CComPtr<IShellLinkW> link;
                     if (SUCCEEDED(folder->GetDisplayName(SIGDN_NORMALDISPLAY, &name))
                             && SUCCEEDED(folder->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &parsingName))
-                            && makeJumpListLink(executable, folderArguments(parsingName).c_str(), name,
+                            && makeJumpListLink(executable.data(), folderArguments(parsingName).c_str(), name,
                                 jumpListFolderIcon(folder), &link))
                         destinations.push_back(link);
                 }
@@ -329,7 +330,7 @@ void updateReopenJumpLists() {
                     nullptr, nullptr, nullptr, nullptr);
                 if (status == ERROR_NO_MORE_ITEMS) break;
                 if (!checkHR(HRESULT_FROM_WIN32(status))) break;
-                buildJumpList(appID, executable, canReopen ? reopenName.c_str() : nullptr,
+                buildJumpList(appID, executable.data(), canReopen ? reopenName.c_str() : nullptr,
                     reopenIcon, destinations);
             }
         }();
