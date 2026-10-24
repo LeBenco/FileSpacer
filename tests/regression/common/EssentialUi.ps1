@@ -40,11 +40,11 @@ function Get-UiPreference([string]$Name) {
     $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($script:UiSettingsKey)
     try { return $key.GetValue($Name,$null) } finally { $key.Dispose() }
 }
-function Initialize-Ui([string]$Name,[switch]$UseApplicationDefaults) {
+function Initialize-Ui([string]$Name,[switch]$UseApplicationDefaults,[string]$FixtureParent=$env:TEMP) {
     Assert-Ui ([Environment]::Is64BitProcess -and $env:OS -eq 'Windows_NT') 'Windows x64 is required.'
     $script:UiPreviousDpi=[FileSpacerRegression.Native]::SetThreadDpiAwarenessContext([IntPtr](-4))
     Assert-Ui ($script:UiPreviousDpi -ne [IntPtr]::Zero) 'Per-monitor DPI context could not be set.'
-    $script:UiRoot=Join-Path $env:TEMP ('FileSpacer-'+$Name+'-'+[Guid]::NewGuid().ToString('N'))
+    $script:UiRoot=Join-Path $FixtureParent ('FileSpacer-'+$Name+'-'+[Guid]::NewGuid().ToString('N'))
     [void](New-Item -ItemType Directory -Path $script:UiRoot)
     if (!$UseApplicationDefaults) {
         foreach ($name in @('StatusTextEnabled','ToolbarEnabled','QuickAccessEnabled','PathBarEnabled',
@@ -89,7 +89,7 @@ function Register-UiWindowProcess([IntPtr]$Window) {
     } catch { $windowProcess.Dispose(); throw }
 }
 function Open-UiFolder([string]$Path,[int]$ExpectedItems=-1) {
-    $process=Start-TestApplication -Executable $script:UiExecutable -Arguments ('/test "'+$Path+'"')
+    $process=Start-TestApplication -Executable $script:UiExecutable -Arguments ('/test "'+$Path+'"') -OutputDirectory $env:FS_REGRESSION_RUN
     [void]$script:UiProcesses.Add($process)
     Write-Host "STEP: opening $Path, PID=$($process.Id), expected items=$ExpectedItems"
     Wait-Ui { @(Find-UiFolder $Path).Count -eq 1 } "folder creation: $Path"
