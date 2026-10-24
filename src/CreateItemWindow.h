@@ -6,10 +6,11 @@
 
 namespace filespacer {
 
-enum class FolderOpenResult { Failed, Created, Activated, Pending };
-// The only creation path for folder windows; item must have SFGAO_FOLDER.
+enum class FolderOpenResult { Failed, Created, Activated, Pending, OpenedExternally };
+// Shared folder open path; Control Panel roots are delegated to Windows.
+// Other items must have SFGAO_FOLDER and use the spatial window creation path.
 FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCmd,
-    const ClosedWindow *reopening = nullptr, IShellItem *origin = nullptr);
+    const ClosedWindow *reopening = nullptr);
 // Only offer the latest history entry when its folder has no live window.
 bool canReopenClosedWindow(const ClosedWindow &window);
 CComPtr<IShellItem> resolveLink(IShellItem *linkItem);

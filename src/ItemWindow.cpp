@@ -54,6 +54,17 @@ const UINT SC_DRAGMOVE = SC_MOVE | 2; // https://stackoverflow.com/a/35880547/11
 
 static HBITMAP captionCommandBitmap(const wchar_t *glyph, int size, COLORREF color);
 
+ItemWindow *ItemWindow::fromChildWindow(HWND window) {
+    const HWND root = GetAncestor(window, GA_ROOT);
+    wchar_t name[256] = {};
+    if (!root || !GetClassName(root, name, _countof(name))
+            || wcscmp(name, ITEM_WINDOW_CLASS) != 0)
+        return nullptr;
+    // Only our own window class stores a WindowImpl in GWLP_USERDATA.
+    return static_cast<ItemWindow *>(reinterpret_cast<WindowImpl *>(
+        GetWindowLongPtr(root, GWLP_USERDATA)));
+}
+
 static LRESULT CALLBACK toolbarMenuOwnerProc(HWND window, UINT message,
         WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR owner) {
     switch (message) {
@@ -1372,7 +1383,7 @@ LRESULT ItemWindow::onNotify(NMHDR *nmHdr) {
     if (pathBar.isWindow(nmHdr->hwndFrom) && nmHdr->code == PathBar::OPEN_ITEM) {
         auto notification = reinterpret_cast<PathBar::OpenItemNotification *>(nmHdr);
         openChild(notification->item,
-            settings::getKeepSourceWindowOpen() == notification->control, true);
+            settings::getKeepSourceWindowOpen() == notification->control);
         return 0;
     }
     if (toolbarRebar && nmHdr->hwndFrom == toolbarRebar
@@ -1675,7 +1686,7 @@ void ItemWindow::onPaint(PAINTSTRUCT paint) {
     }
 }
 
-void ItemWindow::openChild(IShellItem *const childItem, bool closeSource, bool selectOrigin) {
+void ItemWindow::openChild(IShellItem *const childItem, bool closeSource) {
     CComPtr<ItemWindow> keepAlive(this); // a COM wait may dispatch window messages
     if (!isWindowOperational())
         return;
@@ -1704,8 +1715,7 @@ void ItemWindow::openChild(IShellItem *const childItem, bool closeSource, bool s
         return;
     }
     HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-    FolderOpenResult result = openFolderWindow(resolved, monitor, SW_SHOWNORMAL,
-        nullptr, selectOrigin ? item.p : nullptr);
+    FolderOpenResult result = openFolderWindow(resolved, monitor, SW_SHOWNORMAL);
     if (isWindowOperational() && closeSource
             && (result == FolderOpenResult::Created || result == FolderOpenResult::Activated))
         close(false);
@@ -1718,7 +1728,7 @@ void ItemWindow::openParent(bool closeSource) {
         return;
     CComPtr<IShellItem> parentItem;
     if (SUCCEEDED(item->GetParent(&parentItem)) && isWindowOperational())
-        openChild(parentItem, closeSource, true);
+        openChild(parentItem, closeSource);
 }
 
 
@@ -2120,7 +2130,7 @@ void ItemWindow::openParentMenu() {
         }
 
         if (isWindowOperational() && found && targetItem)
-            openChild(targetItem, closeSource, true);
+            openChild(targetItem, closeSource);
     }
 
 

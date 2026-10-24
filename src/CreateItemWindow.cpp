@@ -119,9 +119,43 @@ void recordFolderItemFailure(IShellItem *item, HRESULT result) {
         recordFolderPathFailure(path, result);
 }
 
+static bool isControlPanelFolder(IShellItem *item) {
+    SFGAOF attributes = 0;
+    if (SUCCEEDED(item->GetAttributes(SFGAO_FILESYSTEM, &attributes))
+            && (attributes & SFGAO_FILESYSTEM))
+        return false;
+    CComPtr<IShellItem> known;
+    int order = 1;
+    if (SUCCEEDED(SHGetKnownFolderItem(FOLDERID_ControlPanelFolder, KF_FLAG_DEFAULT,
+            nullptr, IID_PPV_ARGS(&known)))
+            && item->Compare(known, SICHINT_CANONICAL, &order) == S_OK && order == 0)
+        return true;
+    // Public Control Panel namespace identities, also used by Microsoft's
+    // Wireless User Interface APIs examples. Compare Shell items, not labels
+    // or PIDL internals; do not treat individual applets as the panel root.
+    const wchar_t *aliases[] = {L"::{26EE0668-A00A-44D7-9371-BEB064C98683}",
+        L"::{21EC2020-3AEA-1069-A2DD-08002B30309D}"};
+    for (const auto name : aliases) {
+        CComPtr<IShellItem> panel;
+        if (SUCCEEDED(SHCreateItemFromParsingName(name, nullptr, IID_PPV_ARGS(&panel)))
+                && item->Compare(panel, SICHINT_CANONICAL, &order) == S_OK && order == 0)
+            return true;
+    }
+    return false;
+}
+
 FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCmd,
-        const ClosedWindow *reopening, IShellItem *origin) {
+        const ClosedWindow *reopening) {
     if (isProcessQuitRequested()) return FolderOpenResult::Failed;
+    if (isControlPanelFolder(item)) {
+        if (isProcessQuitRequested()) return FolderOpenResult::Failed;
+        CComPtr<IOpenControlPanel> panel;
+        HRESULT result = panel.CoCreateInstance(CLSID_OpenControlPanel);
+        if (checkHR(result)) result = panel->Open(nullptr, nullptr, nullptr);
+        debugPrintf(L"Control Panel external open: HRESULT=0x%08lX\n",
+            static_cast<unsigned long>(result));
+        return checkHR(result) ? FolderOpenResult::OpenedExternally : FolderOpenResult::Failed;
+    }
     std::wstring identity = getFolderIdentity(item);
     std::wstring property = folderWindowProperty(identity);
     if (property.empty())
@@ -147,18 +181,6 @@ FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCm
     CComPtr<FolderWindow> window;
     window.Attach(new FolderWindow(item, identity));
     if (reopening) window->setReopenState(*reopening);
-    // Resolve the ancestor's direct child only for a newly created window.
-    // ILFindChild returns B\\C for a navigation from A\\B\\C to A;
-    // setSelectionOnOpen keeps only B, using the Shell's PIDL APIs.
-    if (origin && !reopening) {
-        CComHeapPtr<ITEMIDLIST> destinationID, originID;
-        if (SUCCEEDED(SHGetIDListFromObject(item, &destinationID)) && destinationID
-                && SUCCEEDED(SHGetIDListFromObject(origin, &originID)) && originID) {
-            PCUIDLIST_RELATIVE descendant = ILFindChild(destinationID, originID);
-            if (descendant && !ILIsEmpty(descendant))
-                window->setSelectionOnOpen(descendant);
-        }
-    }
     if (!window->create(window->requestedRect(monitor), showCmd))
         return FolderOpenResult::Failed;
     if (isProcessQuitRequested()) {

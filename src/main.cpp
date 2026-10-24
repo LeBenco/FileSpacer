@@ -328,7 +328,8 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         const FolderOpenResult opened = requestedLaunch == LAUNCH_REOPEN ? reopenLastWindow(nullptr)
             : restoreUpdateWindows(updateSession.c_str());
         type = opened == FolderOpenResult::Created ? LAUNCH_AUTO
-            : (opened == FolderOpenResult::Activated ? LAUNCH_FOUND : LAUNCH_FAIL);
+            : (opened == FolderOpenResult::Activated || opened == FolderOpenResult::OpenedExternally
+                ? LAUNCH_FOUND : LAUNCH_FAIL);
     } else {
         type = requestedLaunch == LAUNCH_HEADLESS ? LAUNCH_HEADLESS
             : createStartingWindow(startingFolder.get(), showCommand);
@@ -373,6 +374,11 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         {
             // A nested command can close or replace the globally active window.
             CComPtr<ItemWindow> activeWindow = ItemWindow::activeWindow;
+            if (msg.message >= WM_MOUSEFIRST && msg.message <= WM_MOUSELAST) {
+                // The initial press can target an inactive folder window.
+                if (ItemWindow *target = ItemWindow::fromChildWindow(msg.hwnd))
+                    activeWindow = target;
+            }
             if (activeWindow && activeWindow->handleTopLevelMessage(&msg))
                 continue;
         }
@@ -494,7 +500,8 @@ LaunchType createStartingWindow(wchar_t *path, int showCommand) {
     FolderOpenResult result = openFolderWindow(startItem, nullptr, showCommand);
     if (result == FolderOpenResult::Created)
         return LAUNCH_AUTO;
-    if (result == FolderOpenResult::Activated || result == FolderOpenResult::Pending)
+    if (result == FolderOpenResult::Activated || result == FolderOpenResult::Pending
+            || result == FolderOpenResult::OpenedExternally)
         return LAUNCH_FOUND;
     return LAUNCH_FAIL;
 }
