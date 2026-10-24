@@ -177,7 +177,9 @@ DWORD checkUpdate(UpdateInfo *info, const std::atomic_bool *cancel) {
 }
 
 void openUpdate(const UpdateInfo &info) {
-    ShellExecuteA(nullptr, "open", info.url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    // The manifest parser only accepts the ASCII GitHub release URL.
+    const std::wstring url(info.url.begin(), info.url.end());
+    ShellExecuteW(nullptr, L"open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 } // namespace
