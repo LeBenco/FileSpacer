@@ -55,11 +55,6 @@ public:
     CComPtr<IShellItem> item;
 
 protected:
-    enum ViewStateIndex {
-        STATE_POS, // 0x1
-        STATE_SIZE, // 0x2
-        STATE_LAST
-    };
     enum UserMessage {
         // WPARAM: 0, LPARAM: 0
         MSG_UPDATE_ICONS = WM_USER,

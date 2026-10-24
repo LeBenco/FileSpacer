@@ -1642,9 +1642,9 @@ void ItemWindow::recordGeometry() {
         return;
     if (geometryKnown) {
         if (rect.left != lastNormalRect.left || rect.top != lastNormalRect.top)
-            viewStateDirty(1 << STATE_POS);
+            viewStateDirty(FolderState::Position);
         if (rectWidth(rect) != rectWidth(lastNormalRect) || rectHeight(rect) != rectHeight(lastNormalRect))
-            viewStateDirty(1 << STATE_SIZE);
+            viewStateDirty(FolderState::Size);
     }
     const bool maximized = IsZoomed(hwnd) != FALSE;
     if (maximized != lastMaximized)
@@ -1828,7 +1828,7 @@ RECT ItemWindow::requestedRect(HMONITOR preferMonitor) {
         checkLE(DestroyWindow(owner));
     }
 
-    viewStateDirty(1 << STATE_POS);
+    viewStateDirty(FolderState::Position);
     return rect;
 }
 
