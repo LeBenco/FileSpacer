@@ -68,10 +68,10 @@ STDMETHODIMP FolderNameFilter::ShouldShow(IShellFolder *folder, PCIDLIST_ABSOLUT
     const SHGDNF flags = filesystem
         ? static_cast<SHGDNF>(SHGDN_INFOLDER | SHGDN_FORPARSING) : SHGDN_INFOLDER;
     HRESULT hr = folder->GetDisplayNameOf(childID, flags, &result);
-    if (FAILED(hr)) return hr;
+    if (FAILED(hr)) return S_OK; // An unreadable name never hides the item.
     CComHeapPtr<wchar_t> name;
     hr = StrRetToStr(&result, childID, &name);
-    if (FAILED(hr)) return hr;
+    if (FAILED(hr)) return S_OK; // An unreadable name never hides the item.
     // Filesystem names include extensions even when the view hides them.
     const wchar_t *fullName = name;
     const wchar_t *filename = filesystem ? PathFindFileName(fullName) : fullName;
