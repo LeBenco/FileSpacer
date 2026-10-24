@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0 — 2026-10-24
+
+- Refactor folder views to use Windows Shell implementations through public COM APIs instead of adapting internal Shell controls.
+- Keep spatial window state, selection/focus, icon positions and filtering connected to the production SQLite store and public Shell events.
+- Preserve native file commands and FileSpacer Alt move/resize and Properties gestures.
+- Open Control Panel in its native Windows window while preserving the source folder and selection.
+- Remove automatic origin-folder selection when navigating to a parent or ancestor for ergonomic reasons: subsequent Ctrl selections must not accidentally open both folders.
+- Accept three behavior differences in this release: custom full selected names with opaque backgrounds, selection preservation on activation click, and exact reopened scroll offsets are unavailable. Disable the two inactive Settings controls while retaining their saved preferences.
+- Streamline regression coverage around the production native Shell configuration; retire exploratory profile comparisons, embedding probes and migration-only reporting.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
+
 ## 1.0.8 — 2026-10-22
 
 - Move folder windows with Alt + left drag and resize them with Alt + right drag from the main file area, preserving the file selection.
