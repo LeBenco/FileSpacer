@@ -1,0 +1,4 @@
+#include <windows.h>
+#include "resource.h"
+LANGUAGE LANG_NEUTRAL,SUBLANG_NEUTRAL
+IDR_LOCK_BADGE_ICON ICON "res\\window-state-lock.ico"
