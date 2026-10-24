@@ -124,7 +124,17 @@ try {
         $phase='native context menu cancellation'
         Stop-NativeMenu
     } elseif($Case -in @('Header','Rename','Toolbar','Search')) {
-        [FileSpacerRegression.AltDragInput]::Move((Point-At ($point.X+40) ($point.Y+25)))
+        $destination=Point-At ($point.X+40) ($point.Y+25)
+        if($Case -eq 'Rename') {
+            # Stay inside the editor: a right release over the list is a context-menu
+            # request for the selection, which ends the rename (standard Shell behavior).
+            $c=[FileSpacerRegression.Native]::ClientBounds($control)
+            $x=[Math]::Min($point.X+40,$c.Right-4); $y=[Math]::Min($point.Y+25,$c.Bottom-4)
+            Assert-Ui (($x-$point.X) -gt [FileSpacerRegression.AltDragInput]::GetSystemMetrics(68)) 'The rename editor is too narrow for a drag inside it.'
+            $p=[FileSpacerRegression.NativeTargets]::Control($control,($x-1),($y-1),($x+1),($y+1))
+            $destination=Point-At $p.X $p.Y
+        }
+        [FileSpacerRegression.AltDragInput]::Move($destination)
         Wait-Ui { Assert-Fixed $before; return $true } 'excluded control kept window geometry' 200 5
         Stop-NativeMenu
         $phase='excluded control release and native menu cancellation'
@@ -137,6 +147,7 @@ try {
             # Same input and completion check as the validated left-drag case.
             [FileSpacerRegression.Native]::Keys($window,0x1b,$false,$false)
             Wait-Ui { ![FileSpacerRegression.Native]::IsWindow($control) -or ![FileSpacerRegression.Native]::IsWindowVisible($control) } 'rename cancelled without renaming' 0 5
+            Assert-Ui (((Use-UiView $window {param($v) $v.Names()}) | Sort-Object) -join ';' -eq (($names | Sort-Object) -join ';')) 'The gesture renamed an item.'
         }
         Assert-Fixed $before
     } else {
