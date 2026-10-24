@@ -20,7 +20,7 @@ void OffsetRect(RECT*r,int x,int y){r->left+=x;r->right+=x;r->top+=y;r->bottom+=
 int rectWidth(RECT r){return r.right-r.left;}int rectHeight(RECT r){return r.bottom-r.top;}
 SIZE rectSize(RECT r){return {rectWidth(r),rectHeight(r)};}int invScaleDPI(int v){return v;}
 struct ItemWindow{
- enum{STATE_POS=0,STATE_SIZE=1};int hwnd=1;RECT lastNormalRect{};bool geometryKnown=false,lastMaximized=false;unsigned dirtyViewState=0;FolderState savedState;
+ int hwnd=1;RECT lastNormalRect{};bool geometryKnown=false,lastMaximized=false;unsigned dirtyViewState=0;FolderState savedState;
  bool normalWindowRect(RECT*)const;void recordGeometry();uint32_t captureViewState(uint32_t);
  void viewStateDirty(uint32_t mask){dirtyViewState|=mask;}
 };
