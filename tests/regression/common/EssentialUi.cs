@@ -240,25 +240,6 @@ namespace FileSpacerRegression {
                 if(child!=IntPtr.Zero) Marshal.FreeCoTaskMem(child);
             }
         }
-        // First and last visible items, walking IFolderView2::GetVisibleItem forward
-        // like the production reopen snapshot. Empty when nothing is visible.
-        public string VisibleRange() {
-            var view2=(FolderView2)view; int count=Count; int first=-1,last=-1;
-            for(int from=-1;;) {
-                int next; int hr=view2.GetVisibleItem(from,0,out next); Native.Check(hr);
-                if(hr!=0||next<=from||next>=count) break;
-                if(first<0) first=next;
-                last=from=next;
-            }
-            if(first<0) return "";
-            IntPtr a; Native.Check(view.Item(first,out a));
-            try {
-                IntPtr b; Native.Check(view.Item(last,out b));
-                try { return Name(a)+";"+Name(b); } finally { Marshal.FreeCoTaskMem(b); }
-            } finally { Marshal.FreeCoTaskMem(a); }
-        }
-        // SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS: scroll to the item without selecting or focusing it.
-        public void Reveal(string name) { Native.Check(view.SelectItem(IndexOf(name),0x48u)); }
         public void Focus() { Native.Check(shellView.UIActivate(2)); }
         public void Dispose() {
             if(parent!=IntPtr.Zero) { Marshal.FreeCoTaskMem(parent); parent=IntPtr.Zero; }
