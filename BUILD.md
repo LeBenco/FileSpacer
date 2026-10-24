@@ -100,7 +100,7 @@ From the project root, close FileSpacer and Control Panel windows, then run:
 tests.cmd
 ```
 
-This is the reference regression suite: 96 cases, including one real native
+This is the reference regression suite: 100 cases, including one real native
 Shell/SQLite persistence test in the production spatial configuration. It
 uses the same MSVC/NMAKE build above. Do not also run the native launcher
 when the full suite already ran group 18.
