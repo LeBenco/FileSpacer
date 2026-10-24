@@ -2,7 +2,7 @@
 setlocal
 pushd "%~dp0"
 if errorlevel 1 exit /b 1
-call build.cmd debug
+call "%~dp0build.cmd" debug
 if errorlevel 1 (
     popd
     exit /b 1
