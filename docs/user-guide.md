@@ -114,10 +114,14 @@ the originating folder automatically. This avoids adding an unintended folder
 to a subsequent Ctrl selection or opening multiple folders accidentally.
 An already-open parent keeps its existing selection.
 
-The public Shell integration currently uses Windows' native selected-name
-rendering and activation-click selection behavior. FileSpacer's custom opaque
-full-name rendering and preserve-selection-on-activation behavior are unavailable;
-their Settings controls are disabled and labeled accordingly. Previously saved
-preferences are retained. Exact scroll restoration is also unavailable.
-These three differences are accepted for 1.1 and remain candidates for a future
-implementation using documented public APIs.
+The public Shell integration uses Windows' native selected-name rendering.
+FileSpacer's custom opaque full-name rendering is unavailable; its Settings
+control is disabled and labeled accordingly, and the saved preference is
+retained. Exact scroll restoration is also unavailable: reopening a folder
+restores the selection and focus and reveals the focused item.
+
+With "Preserve selection on activation" enabled (General page), the first click
+on the empty background of an inactive folder window only activates it and keeps
+its selection. Clicking an item, right-clicking, Alt gestures and clicks in the
+already active window behave as usual; a selection rectangle started by that
+first click requires a second press.
