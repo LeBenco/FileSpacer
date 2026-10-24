@@ -1287,8 +1287,8 @@ void FolderWindow::openQuickAccessMenu(POINT point) {
     CComPtr<ItemWindow> keepAlive(this);
     if (!isWindowOperational())
         return;
-    // Only these two names depend on Explorer implementation details.
-    // Resolve the property key at runtime and fail visibly if it is unavailable.
+    // The Explorer namespace and property are resolved at runtime by
+    // enumerateQuickAccessFolders; fail visibly if either is unavailable.
     auto unavailable = [this](UINT stage, HRESULT error) {
         if (!isWindowOperational())
             return;
@@ -1296,28 +1296,13 @@ void FolderWindow::openQuickAccessMenu(POINT point) {
             getString(stage), (DWORD)error).get(), getString(IDS_QUICK_ACCESS),
             MB_OK | MB_ICONWARNING);
     };
-    CComPtr<IShellItem> quickAccess;
-    HRESULT result = SHCreateItemFromParsingName(
-        L"shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}", nullptr,
-        IID_PPV_ARGS(&quickAccess));
-    if (FAILED(result)) {
-        unavailable(IDS_QUICK_ACCESS_OPEN, result);
-        return;
-    }
+    std::vector<CComPtr<IShellItem>> folders;
+    UINT stage = 0;
+    HRESULT result = enumerateQuickAccessFolders(&folders, &stage, true);
     if (!isWindowOperational())
         return;
-    PROPERTYKEY pinnedKey = {};
-    result = PSGetPropertyKeyFromName(L"System.Home.IsPinned", &pinnedKey);
     if (FAILED(result)) {
-        unavailable(IDS_QUICK_ACCESS_KEY, result);
-        return;
-    }
-    if (!isWindowOperational())
-        return;
-    CComPtr<IEnumShellItems> items;
-    result = quickAccess->BindToHandler(nullptr, BHID_EnumItems, IID_PPV_ARGS(&items));
-    if (FAILED(result)) {
-        unavailable(IDS_QUICK_ACCESS_ENUM, result);
+        unavailable(stage, result);
         return;
     }
     struct Entry {
@@ -1325,40 +1310,7 @@ void FolderWindow::openQuickAccessMenu(POINT point) {
         std::wstring path;
     };
     std::vector<Entry> entries;
-    while (isWindowOperational()) {
-        CComPtr<IShellItem> entry;
-        result = items->Next(1, &entry, nullptr);
-        if (result == S_FALSE)
-            break;
-        if (FAILED(result)) {
-            unavailable(IDS_QUICK_ACCESS_ENUM, result);
-            return;
-        }
-        if (!isWindowOperational())
-            return;
-        SFGAOF attributes = 0;
-        result = entry->GetAttributes(SFGAO_FOLDER, &attributes);
-        if (FAILED(result)) {
-            unavailable(IDS_QUICK_ACCESS_READ, result);
-            return;
-        }
-        if (!isWindowOperational())
-            return;
-        if (!(attributes & SFGAO_FOLDER))
-            continue;
-        CComPtr<IShellItem2> properties;
-        result = entry->QueryInterface(IID_PPV_ARGS(&properties));
-        BOOL pinned = FALSE;
-        if (SUCCEEDED(result) && isWindowOperational())
-            result = properties->GetBool(pinnedKey, &pinned);
-        if (FAILED(result)) {
-            unavailable(IDS_QUICK_ACCESS_READ, result);
-            return;
-        }
-        if (!isWindowOperational())
-            return;
-        if (!pinned)
-            continue;
+    for (const auto &entry : folders) {
         // Use the enumerated Shell item; resolve the destination only after selection.
         CComHeapPtr<wchar_t> name, path;
         result = entry->GetDisplayName(SIGDN_NORMALDISPLAY, &name);
