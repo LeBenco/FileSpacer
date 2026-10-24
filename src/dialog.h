@@ -41,3 +41,5 @@
 #define IDD_UPDATE_PROGRESS         112
 #define IDC_UPDATE_PROGRESS         1409
 // #define IDC_DONATE_LINK             1407 // Deferred public services.
+
+#define IDC_WINDOW_STATE_LOCK_ENABLED 1040
