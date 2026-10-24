@@ -5,6 +5,7 @@
 #include "ClosedWindows.h"
 #include "UIStrings.h"
 #include "WinUtils.h"
+#include <vector>
 #include <shlobj.h>
 #include <sqlite3.h>
 
@@ -43,10 +44,10 @@ BOOL CALLBACK captureWindow(HWND window, LPARAM parameter) {
 
 bool isUpdateSessionPath(const wchar_t *filename) {
     if (!filename) return false;
-    wchar_t temp[32768];
-    const DWORD length = GetTempPathW(ARRAYSIZE(temp), temp);
-    if (!length || length >= ARRAYSIZE(temp)) return false;
-    const std::wstring prefix = std::wstring(temp) + L"FileSpacerUpdate-";
+    std::vector<wchar_t> temp(32768);
+    const DWORD length = GetTempPathW(static_cast<DWORD>(temp.size()), temp.data());
+    if (!length || length >= temp.size()) return false;
+    const std::wstring prefix = std::wstring(temp.data()) + L"FileSpacerUpdate-";
     const std::wstring path(filename);
     const std::wstring suffix = L"\\windows.sqlite3";
     if (path.size() != prefix.size() + 38 + suffix.size()

@@ -439,13 +439,13 @@ std::wstring folderRelaunchIcon(PCIDLIST_ABSOLUTE pidl, HICON icon) {
     if (SUCCEEDED(SHBindToParent(pidl, IID_PPV_ARGS(&folder), &childID))
             && SUCCEEDED(folder->GetUIObjectOf(nullptr, 1, &childID,
                 __uuidof(IExtractIconW), nullptr, reinterpret_cast<void **>(&extractor)))) {
-        wchar_t file[32768];
+        std::vector<wchar_t> file(32768);
         int index = 0;
         UINT flags = 0;
-        if (extractor->GetIconLocation(GIL_FORSHORTCUT, file, _countof(file),
+        if (extractor->GetIconLocation(GIL_FORSHORTCUT, file.data(), static_cast<UINT>(file.size()),
                 &index, &flags) == S_OK) {
             if (!(flags & GIL_NOTFILENAME))
-                return std::wstring(file) + L"," + std::to_wstring(index);
+                return std::wstring(file.data()) + L"," + std::to_wstring(index);
             if (flags & GIL_DONTCACHE)
                 return {}; // respect a handler that forbids caching its image
         }
@@ -496,7 +496,7 @@ std::wstring folderRelaunchIcon(PCIDLIST_ABSOLUTE pidl, HICON icon) {
 
 void ItemWindow::updateWindowPropStore(IPropertyStore *const propStore) {
     CComHeapPtr<wchar_t> parsingName;
-    wchar_t executable[32768];
+    std::vector<wchar_t> executable(32768);
     std::wstring id;
     const bool grouped = taskbarGrouped;
     AcquireSRWLockShared(&iconLock);
@@ -505,13 +505,13 @@ void ItemWindow::updateWindowPropStore(IPropertyStore *const propStore) {
     bool relaunch = false;
     if (!grouped && checkHR(item->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &parsingName))) {
         id = folderTaskbarID(parsingName);
-        DWORD length = checkLE(GetModuleFileNameW(nullptr, executable, _countof(executable)));
+        DWORD length = checkLE(GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size())));
         relaunch = !id.empty()
-            && length > 0 && length < _countof(executable);
+            && length > 0 && length < executable.size();
         // The folder icon arrives asynchronously. Use the executable's icon
         // until then so pinning policy is valid before this window is shown.
         if (relaunch && resource.empty())
-            resource = std::wstring(executable) + L",0";
+            resource = std::wstring(executable.data()) + L",0";
     }
 
     // Windows fixes PreventPinning before this HWND's first explicit ID.
@@ -525,7 +525,7 @@ void ItemWindow::updateWindowPropStore(IPropertyStore *const propStore) {
     }
     PROPVARIANT empty = {VT_EMPTY};
     if (relaunch) {
-        std::wstring command = quoteCommandArgument(executable) + L" "
+        std::wstring command = quoteCommandArgument(executable.data()) + L" "
             + quoteCommandArgument(parsingName);
 #ifdef FILESPACER_DEBUG
         if (settings::testMode)
