@@ -143,6 +143,9 @@ function Close-Properties {
 }
 try {
     Initialize-Ui ('alt-'+$Case+'-'+$ViewName) -UseApplicationDefaults
+    # This case inspects the source after an ordinary double click. Keep it
+    # open explicitly; default source closure is covered by navigation group 12.
+    if($Case -eq 'PlainDouble') { Set-UiPreference 'KeepSourceWindowOpen' 1 }
     if($Case -eq 'Mode') { Set-UiPreference 'FullNamesOnSelection' ([int]$FullNamesOnSelection) }
     $folder=Join-Path $script:UiRoot 'GestureFixture'
     [void](New-Item -ItemType Directory -Path $folder)
