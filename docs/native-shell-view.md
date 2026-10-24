@@ -50,15 +50,20 @@ Panneau externe. Deux subsistent :
   des noms complets avec fond opaque n'est pas disponible : aucune interface
   publique de la vue (`IVisualProperties`, `FOLDERFLAGS`, `FOLDERVIEWOPTIONS`,
   messages `SFVM_*`) ne permet d'intervenir dans le dessin des libellés.
-- La réouverture restaure sélection et focus et peut révéler l'élément focalisé,
-  mais ne restitue pas l'offset exact de défilement. Le flux
-  `IShellBrowser::GetViewStateStream` est bien demandé par la vue, mais sous
-  Windows 10 il ne contient que les réglages de présentation (mode, tri,
-  groupement, colonnes), pas la position de défilement. L'ancrage sur le
-  dernier élément visible a été tenté puis retiré le 24 octobre 2026 :
-  `IFolderView2::GetVisibleItem` énumère tous les éléments présents dans la
-  vue, pas ceux de la zone affichée (sonde sur 19045), et aucune interface
-  publique n'expose la zone affichée.
+- La réouverture restaure sélection et focus, puis, en vues Détails et Liste,
+  ramène en haut la première ligne affichée à la fermeture. Capture : première
+  entrée de `IFolderView::Items` dont `GetItemPosition` tombe dans la zone
+  cliente de la fenêtre de vue, sous l'en-tête de colonnes (hauteur lue par le
+  rôle MSAA `ROLE_SYSTEM_COLUMNHEADER`, comme les gestes Alt). Restitution :
+  `SelectItem(SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS)` sur le dernier élément
+  puis sur l'ancre, sous `SetRedraw(FALSE)`, ce qui aligne l'ancre en haut
+  quelles que soient les barres de défilement. Les vues à icônes répondent en
+  coordonnées non défilées : l'ancre y est le premier élément et le mécanisme
+  laisse la vue en haut, comportement standard sans détection. L'offset exact
+  n'est pas restitué : le flux `IShellBrowser::GetViewStateStream` est bien
+  demandé par la vue, mais sous Windows 10 il ne contient que les réglages de
+  présentation. `IFolderView2::GetVisibleItem` énumère tous les éléments de la
+  vue, pas la zone affichée (sonde du 24 octobre 2026) : ne pas s'en servir.
 
 Le clic d'activation est rétabli depuis l'audit du 24 octobre 2026 : lorsqu'une
 fenêtre est activée par un clic (`WM_ACTIVATE` avec `WA_CLICKACTIVE`), Windows

@@ -10,7 +10,7 @@ tests.cmd
 ```
 
 Le lanceur construit l'application par `build.cmd debug`, initialise MSVC x64,
-et lance les **97 jeux** indépendants. Ils ne doivent pas être complétés par
+et lance les **98 jeux** indépendants. Ils ne doivent pas être complétés par
 un second passage des mêmes bancs natifs. Chaque jeu possède son processus
 PowerShell et son dossier de résultats sous `build/regression/<date>-<id>`.
 
@@ -43,7 +43,7 @@ tests.cmd -Pattern "20-validation-elargie\05-*"
 | 04-shell-sta | 1 | Références Shell/STA et durée de vie du processus. |
 | 05-dimensions | 1 | Validation des dimensions des préférences. |
 | 06-etat-vue | 1 | Captures partielles et erreurs de restauration. |
-| 07-fenetres | 4 | Géométrie, commandes asynchrones, fermetures initiales/après commande. |
+| 07-fenetres | 5 | Géométrie, commandes asynchrones, fermetures initiales/après commande, défilement retrouvé à la réouverture. |
 | 08-suppression | 2 | Stockage et notifications de suppression. |
 | 09-historique | 1 | Historique des fenêtres fermées. |
 | 10-manifeste-maj | 1 | Validation du manifeste de mise à jour. |

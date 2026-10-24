@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Reopening a closed window (Ctrl+Shift+T, Jump List) scrolls Details and List views back to the row that was at the top when the window was closed.
 - Crash diagnostics keep writing a minidump and a report to the application's local data; the attribution to the former full-name rendering, its automatic preference change and restart are removed.
 
 ## 1.1.1 — 2026-10-24
