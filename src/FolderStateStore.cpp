@@ -11,6 +11,7 @@
 #include "common.h"
 #include "Settings.h"
 #include "UIStrings.h"
+#include "WinUtils.h"
 #include <shlobj.h>
 #include <atlbase.h>
 #endif
@@ -523,12 +524,7 @@ std::string folderStateDatabasePath() {
 #ifdef FILESPACER_DEBUG
     if (settings::testMode) path = directory + L"\\folder-state-test.sqlite3";
 #endif
-    int length = WideCharToMultiByte(CP_UTF8, 0, path.c_str(), -1, nullptr, 0, nullptr, nullptr);
-    if (!length) return {};
-    std::string utf8(static_cast<size_t>(length), '\0');
-    if (!WideCharToMultiByte(CP_UTF8, 0, path.c_str(), -1, &utf8[0], length, nullptr, nullptr)) return {};
-    utf8.pop_back();
-    return utf8;
+    return toUtf8(path.c_str());
 }
 FolderStateStore *folderStateStore() {
     // /test is parsed before the first folder creation. No worker uses this connection.

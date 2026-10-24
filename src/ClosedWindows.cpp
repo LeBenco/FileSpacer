@@ -4,6 +4,7 @@
 #include "Settings.h"
 #include "UIStrings.h"
 #include "ShellUtils.h"
+#include "WinUtils.h"
 #include <shlobj.h>
 #include <shellapi.h>
 #include <shlwapi.h>
@@ -12,16 +13,6 @@
 
 namespace filespacer {
 namespace {
-std::string utf8(const wchar_t *text) {
-    if (!text || !*text) return {};
-    const int size = WideCharToMultiByte(CP_UTF8, 0, text, -1, nullptr, 0, nullptr, nullptr);
-    if (!size) return {};
-    std::string result(static_cast<size_t>(size), '\0');
-    if (!WideCharToMultiByte(CP_UTF8, 0, text, -1, &result[0], size, nullptr, nullptr)) return {};
-    result.pop_back();
-    return result;
-}
-
 std::wstring wide(const std::string &text) {
     if (text.empty()) return {};
     const int size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text.c_str(), -1, nullptr, 0);
@@ -37,8 +28,8 @@ bool getClosedWindowInfo(IShellItem *item, const wchar_t *title, ClosedWindow *w
     const std::wstring display = title ? title : L"";
     CComHeapPtr<wchar_t> name;
     if (FAILED(item->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &name))) return false;
-    window->parsingName = utf8(name);
-    window->displayName = utf8(display.c_str());
+    window->parsingName = toUtf8(name);
+    window->displayName = toUtf8(display.c_str());
     return !window->parsingName.empty();
 }
 

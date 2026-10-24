@@ -4,21 +4,12 @@
 #include "CreateItemWindow.h"
 #include "ClosedWindows.h"
 #include "UIStrings.h"
+#include "WinUtils.h"
 #include <shlobj.h>
 #include <sqlite3.h>
 
 namespace filespacer {
 namespace {
-std::string utf8(const wchar_t *text) {
-    const int size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, text, -1,
-        nullptr, 0, nullptr, nullptr);
-    if (!size) return {};
-    std::string result(static_cast<size_t>(size), '\0');
-    if (!WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, text, -1,
-            &result[0], size, nullptr, nullptr)) return {};
-    result.pop_back();
-    return result;
-}
 
 struct Capture {
     std::vector<std::string> paths;
@@ -77,13 +68,13 @@ bool isUpdateSessionPath(const wchar_t *filename) {
 
 bool createUpdateWindowSession(const wchar_t *filename) {
     if (!isUpdateSessionPath(filename)) return false;
-    const std::string path = utf8(filename);
+    const std::string path = toUtf8(filename, WC_ERR_INVALID_CHARS);
     return !path.empty() && createUpdateSession(path.c_str()) == SQLITE_OK;
 }
 
 DWORD inspectUpdateWindowSession(const wchar_t *filename, bool *hasWindows) {
     if (!isUpdateSessionPath(filename)) return ERROR_INVALID_PARAMETER;
-    const std::string path = utf8(filename);
+    const std::string path = toUtf8(filename, WC_ERR_INVALID_CHARS);
     std::vector<std::string> paths;
     if (path.empty() || readUpdateSession(path.c_str(), &paths) != SQLITE_OK) return ERROR_READ_FAULT;
     *hasWindows = !paths.empty();
@@ -92,7 +83,7 @@ DWORD inspectUpdateWindowSession(const wchar_t *filename, bool *hasWindows) {
 
 bool saveUpdateWindows(const wchar_t *filename) {
     if (!isUpdateSessionPath(filename)) return false;
-    const std::string path = utf8(filename);
+    const std::string path = toUtf8(filename, WC_ERR_INVALID_CHARS);
     if (path.empty()) return false;
     Capture capture;
     EnumThreadWindows(GetCurrentThreadId(), captureWindow, reinterpret_cast<LPARAM>(&capture));
@@ -106,7 +97,7 @@ FolderOpenResult restoreUpdateWindows(const wchar_t *filename) {
     const std::wstring consumed = std::wstring(filename) + L".restoring";
     if (!MoveFileW(filename, consumed.c_str())) return FolderOpenResult::Failed;
     std::vector<std::string> paths;
-    const std::string database = utf8(consumed.c_str());
+    const std::string database = toUtf8(consumed.c_str(), WC_ERR_INVALID_CHARS);
     if (database.empty() || readUpdateSession(database.c_str(), &paths) != SQLITE_OK) {
         MoveFileW(consumed.c_str(), filename); // Preserve the session for a later retry.
         return FolderOpenResult::Failed;
