@@ -89,7 +89,7 @@ try {
     foreach ($window in @($first,$second)) { [FileSpacerRegression.Native]::SetText((Get-UiSearchEdit $window),'keep') }
     Check-Counts 2 # Live search is initially disabled.
     $page=Set-UiPage 0
-    Assert-Ui (![FileSpacerRegression.Native]::IsWindowEnabled([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_KEEP_SELECTION_ON_ACTIVATE')))) 'Unavailable activation-selection behavior must be disabled in Settings.'
+    Assert-Ui ([FileSpacerRegression.Native]::IsWindowEnabled([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_KEEP_SELECTION_ON_ACTIVATE')))) 'Restored activation-selection behavior must be enabled in Settings.'
     Set-UiCheck $page 'IDC_LIVE_NAME_SEARCH' $true
     Press-UiSettings 4
     Write-Host "STEP: saved LiveNameSearch=$(Get-UiPreference 'LiveNameSearch'); waiting for filtering in both processes."
