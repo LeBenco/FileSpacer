@@ -9,7 +9,7 @@ struct ReopenViewHeader {
     uint32_t version = 1, selected = 0, flags = 0;
     POINT offset = {};
 };
-// Keep the existing blob layout and legacy flags; new captures have no anchor.
+// Existing blob layout: header, optional anchor (last visible item), optional focus, selection.
 constexpr uint32_t REOPEN_ANCHOR = 2, REOPEN_FOCUS = 4;
 }
 
@@ -37,10 +37,39 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
         if (!current()) return E_ABORT;
         if (SUCCEEDED(result) && focused) header.flags |= REOPEN_FOCUS;
     }
+    // Scroll anchor: the last visible item. Reopening reveals it with the minimal
+    // scroll, which puts it back at the bottom of the viewport as before closing;
+    // the first visible item would land at the bottom too, one page too early.
+    CComHeapPtr<ITEMID_CHILD> anchor;
+    CComQIPtr<IFolderView2> folderView2(view);
+    if (!current()) return E_ABORT;
+    int total = 0;
+    if (folderView2) {
+        result = folderView->ItemCount(SVGIO_ALLVIEW, &total);
+        if (!current()) return E_ABORT;
+        if (FAILED(result)) total = 0;
+    }
+    if (total > 0) {
+        int last = -1;
+        for (int from = -1;;) {
+            int next = -1;
+            result = folderView2->GetVisibleItem(from, FALSE, &next);
+            if (!current()) return E_ABORT;
+            if (result != S_OK || next <= from || next >= total) break;
+            last = from = next;
+        }
+        if (last >= 0) {
+            result = folderView->Item(last, &anchor);
+            if (!current()) return E_ABORT;
+            if (SUCCEEDED(result) && anchor) header.flags |= REOPEN_ANCHOR;
+        }
+    }
     CComPtr<IStream> stream;
     stream.Attach(SHCreateMemStream(nullptr, 0));
     if (!stream) return E_OUTOFMEMORY;
     result = IStream_Write(stream, &header, sizeof(header));
+    if (SUCCEEDED(result) && (header.flags & REOPEN_ANCHOR))
+        result = IStream_WritePidl(stream, anchor);
     if (SUCCEEDED(result) && (header.flags & REOPEN_FOCUS))
         result = IStream_WritePidl(stream, focused);
     if (FAILED(result)) return result;
@@ -115,6 +144,7 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         if (FAILED(value) && SUCCEEDED(restored)) restored = value;
     };
     if (anchor) {
+        // Revealed first: the selection and focus below must not scroll away from it.
         record(view->SelectItem(anchor, SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS));
         if (!current()) return E_ABORT;
     }
@@ -133,8 +163,8 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         record(result);
         if (SUCCEEDED(result)) {
             // A focus-only SelectItem otherwise includes SVSI_DESELECT (zero).
-            record(view->SelectItem(focused, (selection & SVSI_SELECT)
-                | SVSI_FOCUSED | SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS));
+            record(view->SelectItem(focused, (selection & SVSI_SELECT) | SVSI_FOCUSED
+                | (anchor ? 0 : SVSI_ENSUREVISIBLE) | SVSI_NOTAKEFOCUS));
             if (!current()) return E_ABORT;
         }
     }
