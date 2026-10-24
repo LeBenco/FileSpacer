@@ -41,3 +41,13 @@ included as `LockedList-LICENSE.txt` with the installed program. See
 The shortcut AppUserModelID is set by FileSpacer's `ShortcutAppID.nsh` using NSIS
 Windows COM macros. The former `nsis-shortcut-properties` submodule is not used.
 Material Design Icons and the former bundled Segoe font subset are not used.
+
+## Small & Flat lock icon
+
+The window-state lock badge (`src/res/window-state-lock.ico`) is the unmodified
+Small & Flat **lock** icon by paomedia, dedicated to the public domain under
+[CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/).
+
+Original collection and license: https://github.com/paomedia/small-n-flat
+
+ICO distribution: https://www.iconarchive.com/show/small-n-flat-icons-by-paomedia/lock-icon.html
