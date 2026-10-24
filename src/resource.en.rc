@@ -131,25 +131,13 @@ Application materials:\r\n\
 Installer: LockedList plug-in, zlib license.\r\n\
 Copyright (c) 2013 Afrow Soft Ltd. See LockedList-LICENSE.txt.\r\n\
 "
-    IDS_LABEL_INCOMPATIBLE, "Showing full file names when selected is an experimental feature. It has been disabled for this session because the file view does not meet its requirements.\n\nReason: %1\n\nThe disabled preference was also saved if the settings were writable."
-    IDS_LABEL_NO_OPTIONS, "Windows does not provide the required view option."
-    IDS_LABEL_OPTIONS_FAILED, "Windows rejected the required view option."
-    IDS_LABEL_NO_CONTROL, "The expected display control is missing or inaccessible."
-    IDS_LABEL_AMBIGUOUS_CONTROL, "Several display controls match; none was selected."
-    IDS_LABEL_INSTALL_FAILED, "The full-name display handler could not be installed."
-    IDS_LABEL_REBUILD_FAILED, "The standard view could not be recreated. Close this folder and reopen it."
-    IDS_LABEL_CRASH_DISABLED, "FileSpacer encountered a serious error during an operation specific to full file-name display. The diagnosis strongly links the error to this operation but cannot establish its initial cause with certainty.\n\nThis experimental feature has been disabled in the settings. FileSpacer has restarted with the standard view. A diagnostic report was saved in the application’s local data."
-    IDS_RECOVERY_RESTART_FAILED, "Full file-name display was disabled, but FileSpacer could not restart automatically. You can start it manually."
-    IDS_RECOVERY_DISABLE_FAILED, "The disabled full-name setting could not be saved. No automatic restart was attempted. Check access to the settings before restarting FileSpacer."
-    IDS_RECOVERY_UNAVAILABLE, "Full-name display error protection could not be initialized. FileSpacer will use the standard view for this session; your preferences were preserved."
-    IDS_RECOVERY_REPEATED, "FileSpacer encountered at least two serious errors within ten minutes. If the problem persists, close all instances and run one of these commands from the executable’s folder:\n\nFileSpacer.exe /reset-options\nRestores only global preferences.\n\nFileSpacer.exe /reset-all\nAlso resets saved folder positions, sizes and display settings.\n\nNeither command deletes your files or changes Windows associations. No reset was performed automatically. Resetting preferences enables full names by default; you can turn that option off before reopening the affected folder."
+    IDS_RECOVERY_UNAVAILABLE, "Crash diagnostics could not be initialized. FileSpacer will run without them for this session; your preferences were preserved."
     IDS_RESET_CLI_ARGUMENTS, "Use either /reset-options or /reset-all, without a folder path or other options. In Debug, /test may be added to reset only test data."
     IDS_RESET_CLI_BUSY, "The reset could not obtain exclusive access to the settings. Close all FileSpacer instances and check access to its local data folder, then try again. No settings were deleted."
     IDS_RESET_CLI_FAILED, "The preference reset could not be completed: %1\n\nSome preferences may already have been reset. If /reset-all was used, folder settings have already been reset."
     IDS_RESET_CLI_ALL_DONE, "Global preferences and saved folder positions, sizes and display settings were reset. Your files and Windows associations were preserved."
     IDS_RESET_CLI_OPTIONS_DONE, "Global preferences were reset. Saved folder settings, your files and Windows associations were preserved."
-    IDS_RECOVERY_UNATTRIBUTED, "FileSpacer stopped after a serious error. The diagnosis cannot attribute it to full file-name display; that option and your other preferences were preserved. A diagnostic report was saved in the application’s local data."
-    IDS_LABEL_DISABLED_NO_RESTART, "Another serious error occurred during experimental full-name handling. The option was disabled, but no further automatic restart was attempted to avoid repeated restarts. You can start FileSpacer manually."
+    IDS_RECOVERY_CRASHED, "FileSpacer stopped after a serious error. A diagnostic report and a memory dump were saved in the application’s local data; your preferences were preserved."
     IDS_SETTINGS_ACCESS_FAILED, "FileSpacer cannot obtain shared access to its settings. A reset may be in progress or the local data folder may be inaccessible. Try again after maintenance finishes."
 }
 
