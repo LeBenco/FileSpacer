@@ -10,7 +10,7 @@ tests.cmd
 ```
 
 Le lanceur construit l'application par `build.cmd debug`, initialise MSVC x64,
-et lance les **98 jeux** indépendants. Ils ne doivent pas être complétés par
+et lance les **100 jeux** indépendants. Ils ne doivent pas être complétés par
 un second passage des mêmes bancs natifs. Chaque jeu possède son processus
 PowerShell et son dossier de résultats sous `build/regression/<date>-<id>`.
 
@@ -58,6 +58,7 @@ tests.cmd -Pattern "20-validation-elargie\05-*"
 | 19-commandes-shell | 6 | Création, renommage, suppression, presse-papiers, drag/drop, menus, Unicode. |
 | 20-validation-elargie | 5 | Charge, images/modes, Ce PC, écrans/DPI disponibles, Panneau externe. |
 | 21-clic-activation | 1 | Clic sur le fond d'une fenêtre inactive : activation sans perte de sélection, clic d'élément, préférence désactivée. |
+| 22-verrouillage | 2 | Activation, menu natif, référence visible, géométrie/vue temporaires, placements individuels, déverrouillage, confirmation et suppression globale entre processus, réouverture et redémarrage ; rendu ICO natif, transparence, DPI et couleurs de contraste élevé. |
 
 Les 50 jeux Alt restent distincts : ils vérifient des gestes ou zones différents.
 Leur instrumentation peut observer un contrôle Windows ; l'application utilise
@@ -136,3 +137,23 @@ Les mesures de charge ne démontrent pas une parité de performances avec une
 autre version sans comparaison dans les mêmes conditions. Les configurations
 non présentes (écrans, DPI, extensions ou versions Windows) ne sont pas déclarées
 validées automatiquement. Voir [l'architecture](../../docs/native-shell-view.md).
+
+## Verrouillage de l’état mémorisé
+
+Le jeu 22 utilise le menu natif du titre et observe les fenêtres et les vues
+Shell réelles : état initial désactivé, activation, cadenas accessible, titres
+longs/étroits, capture, géométrie et mode temporaires, références normale et
+maximisée, positions exactes des icônes après réouverture, déverrouillage,
+annulation et confirmation de la désactivation. Deux processus ouverts et un
+dossier fermé vérifient l’effacement global, puis la réactivation et de nouveaux
+processus vérifient qu’aucun verrou ne revient. Le déplacement/renommage NTFS
+est effectué après la sortie du processus du dossier ; les notifications de
+renommage d’un dossier ouvert restent couvertes séparément par 19/05.
+Les captures PNG du titre sont conservées avec les résultats. Ce jeu n’active
+pas de thème Windows global ni de DPI indisponible sur le poste.
+
+Le stockage vérifie aussi les échecs transactionnels de verrouillage,
+déverrouillage et effacement global, les écritures d’un instantané ancien,
+la purge/expiration sans exemption et le transfert de clé. Le banc 18 relit
+la référence protégée (colonnes, largeurs, tri, regroupement, mode et taille)
+et l’applique à une nouvelle vue Shell, dont il contrôle les valeurs effectives.
