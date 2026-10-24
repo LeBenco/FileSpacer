@@ -1493,7 +1493,7 @@ LRESULT ItemWindow::onNotify(NMHDR *nmHdr) {
     return 0;
 }
 
-void ItemWindow::onActivate(WORD state, HWND) {
+void ItemWindow::onActivate(WORD state, HWND prevWindow) {
     if (state == WA_INACTIVE)
         persistViewState();
     if (state != WA_INACTIVE) {
@@ -1501,7 +1501,11 @@ void ItemWindow::onActivate(WORD state, HWND) {
         if (firstActivate)
             resolveItem();
         firstActivate = true;
-        if (isWindowOperational()) refreshReopenJumpLists();
+        // Quick access pins change in other processes: an activation coming from
+        // another FileSpacer window cannot have changed the Jump Lists.
+        DWORD previousProcess = 0;
+        if (prevWindow) GetWindowThreadProcessId(prevWindow, &previousProcess);
+        if (isWindowOperational() && previousProcess != GetCurrentProcessId()) refreshReopenJumpLists();
     }
 }
 
