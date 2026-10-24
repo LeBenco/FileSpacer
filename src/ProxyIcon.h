@@ -26,6 +26,7 @@ public:
     bool drawMenuButton(const NMCUSTOMDRAW &draw);
     POINT getMenuPoint(HWND parent);
 
+    void setLocked(bool locked);
     void setTitle(wchar_t *title);
     void setIcon(HICON icon); // does not take ownership!
     void setActive(bool active);
@@ -56,6 +57,7 @@ private:
     ItemWindow * const outer;
 
     HWND caption = nullptr, toolbar = nullptr, renameBox = nullptr;
+    bool stateLocked = false;
     HICON captionIcon = nullptr; // Borrowed from ItemWindow.
 };
 
