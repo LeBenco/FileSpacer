@@ -14,8 +14,10 @@ function Build-NativeTest {
         [Parameter(Mandatory=$true)][string]$CaseDirectory,
         [string[]]$ProductionSources=@(), [switch]$Sqlite, [switch]$Storage,
         [ValidateSet('','Menu','Shell','Settings','View','Adapters','Geometry')][string]$Extract='',
-        [switch]$Resources, [string[]]$Libraries=@())
+        [switch]$Resources, [switch]$CommonControls, [string[]]$Libraries=@(),
+        [string]$OutputDirectory='')
     $output=Join-Path $RunDirectory $Name
+    if ($OutputDirectory) { $output=[IO.Path]::GetFullPath($OutputDirectory) }
     [void][IO.Directory]::CreateDirectory($output)
     if ($Extract) {
         & (Join-Path $PSScriptRoot 'Prepare-Sources.ps1') -Mode $Extract -ProjectRoot $ProjectRoot -CaseDirectory $CaseDirectory -OutputDirectory $output
@@ -23,14 +25,14 @@ function Build-NativeTest {
     $source=Join-Path $CaseDirectory ($Name+'.cpp')
     if ($Extract -in @('View','Adapters','Geometry')) { $source=Join-Path $output ($Name+'.cpp') }
     $exe=Join-Path $output ($Name+'.exe')
-    $arguments=@('/nologo','/std:c++17','/EHsc','/W4','/MTd','/Zi','/UNDEBUG','/utf-8','/D_CRT_SECURE_NO_WARNINGS',
+    $arguments=@('/nologo','/std:c++17','/EHsc','/W4','/MTd','/Z7','/UNDEBUG','/utf-8','/D_CRT_SECURE_NO_WARNINGS',
         ('/I'+(Join-Path $ProjectRoot 'src')), ('/I'+$CaseDirectory), ('/I'+$output),
-        ('/Fo'+$output+'\\'), ('/Fd'+(Join-Path $output 'compiler.pdb')), ('/Fe'+$exe))
+        ('/Fo'+$output+'\\'), ('/Fe'+$exe))
     if ($Storage) { $arguments+='/DFILESPACER_STORAGE_TEST' }
     if ($Sqlite) {
         $sqliteDirectory=Join-Path $ProjectRoot 'third_party\sqlite'
         $obj=Join-Path $output 'sqlite3.obj'
-        Invoke-Compiler @('/nologo','/TC','/W3','/MTd','/Zi','/D_CRT_SECURE_NO_WARNINGS','/DSQLITE_OMIT_LOAD_EXTENSION','/DSQLITE_DQS=0',('/Fo'+$obj),('/Fd'+(Join-Path $output 'sqlite-compiler.pdb')),'/c',(Join-Path $sqliteDirectory 'sqlite3.c')) | Out-Host
+        Invoke-Compiler @('/nologo','/TC','/W3','/MTd','/Z7','/D_CRT_SECURE_NO_WARNINGS','/DSQLITE_OMIT_LOAD_EXTENSION','/DSQLITE_DQS=0',('/Fo'+$obj),'/c',(Join-Path $sqliteDirectory 'sqlite3.c')) | Out-Host
         $arguments+=@(('/I'+$sqliteDirectory),$obj)
     }
     $arguments+=$source
@@ -43,7 +45,7 @@ function Build-NativeTest {
     }
     $arguments+=@('/link','/subsystem:console','/incremental:no','/debug',('/pdb:'+(Join-Path $output ($Name+'.pdb'))),'User32.lib',
         '/manifest:embed',('/manifestinput:'+(Join-Path $PSScriptRoot 'TestExecutable.manifest')))
-    if ($Resources) { $arguments+="/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'" }
+    if ($Resources -or $CommonControls) { $arguments+="/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'" }
     $arguments+=$Libraries
     # Suppress success-stream compiler output: only the executable path is returned.
     Invoke-Compiler $arguments | Out-Host

@@ -20,7 +20,12 @@ int main(int argc, char **argv) {
         {
             FolderWindow::ShellViewState snapshot;
             FolderWindow::getViewState(&oldView, &snapshot);
-            FolderWindow::setViewState(&newView, snapshot);
+            restoreOptions(&newView, snapshot.view);
+            if (scenario == "details") newView.currentMode = FVM_DETAILS;
+            if (scenario == "list") newView.currentMode = FVM_LIST;
+            if (scenario == "auto-arrange") newView.autoArrange = true;
+            if (scenario == "mode-unavailable") newView.currentModeFails = true;
+            FolderWindow::setItemPositions(&newView, snapshot);
         }
         require(ITEMID_CHILD::live == 0, "PIDL ownership leak");
         std::set<std::string> expected = {"mode", "flags", "columns", "widths", "sort", "group"};
@@ -35,6 +40,7 @@ int main(int argc, char **argv) {
         std::vector<int> expectedIds = {0, 1, 2, 3};
         if (scenario == "partial-items") expectedIds = {0, 3};
         if (scenario == "all-fail" || scenario == "no-items" || scenario == "count-fail") expectedIds.clear();
+        if (scenario == "details" || scenario == "list" || scenario == "auto-arrange" || scenario == "mode-unavailable") expectedIds.clear();
         require(newView.restoredIds == expectedIds, "restored invalid item/position pairs");
         require(newView.restoreCalls == (expectedIds.empty() ? 0 : 1), "unexpected item restoration call");
         for (size_t i = 0; i < expectedIds.size(); ++i)

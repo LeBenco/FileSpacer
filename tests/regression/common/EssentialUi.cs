@@ -15,9 +15,23 @@ namespace FileSpacerRegression {
     [StructLayout(LayoutKind.Sequential)] public struct Point { public int X,Y; }
     [ComImport, Guid("6d5140c1-7436-11ce-8034-00aa006009fa"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface Services { [PreserveSig] int QueryService(ref Guid service, ref Guid iid, out IntPtr result); }
-    // Only the leading method is used; its slot follows IUnknown in IShellBrowser.
+    // IShellBrowser prefix through QueryActiveShellView, in Windows SDK order.
     [ComImport, Guid("000214e2-0000-0000-c000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    interface BrowserWindow { [PreserveSig] int GetWindow(out IntPtr window); }
+    interface BrowserWindow {
+        [PreserveSig] int GetWindow(out IntPtr window);
+        [PreserveSig] int ContextSensitiveHelp([MarshalAs(UnmanagedType.Bool)] bool enter);
+        [PreserveSig] int InsertMenusSB(IntPtr menu,IntPtr widths);
+        [PreserveSig] int SetMenuSB(IntPtr menu,IntPtr descriptor,IntPtr active);
+        [PreserveSig] int RemoveMenusSB(IntPtr menu);
+        [PreserveSig] int SetStatusTextSB([MarshalAs(UnmanagedType.LPWStr)] string text);
+        [PreserveSig] int EnableModelessSB([MarshalAs(UnmanagedType.Bool)] bool enable);
+        [PreserveSig] int TranslateAcceleratorSB(IntPtr message,ushort id);
+        [PreserveSig] int BrowseObject(IntPtr pidl,uint flags);
+        [PreserveSig] int GetViewStateStream(uint mode,out IntPtr stream);
+        [PreserveSig] int GetControlWindow(uint id,out IntPtr window);
+        [PreserveSig] int SendControlMsg(uint id,uint message,UIntPtr wParam,IntPtr lParam,out IntPtr result);
+        [PreserveSig] int QueryActiveShellView(out IntPtr view);
+    }
     [ComImport, Guid("000214e3-0000-0000-c000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface ShellView {
         [PreserveSig] int GetWindow(out IntPtr window);
@@ -114,6 +128,10 @@ namespace FileSpacerRegression {
         public uint Mode { get { uint n; Native.Check(view.GetCurrentViewMode(out n)); return n; } set { Native.Check(view.SetCurrentViewMode(value)); } }
         public void SetViewModeAndIconSize(uint mode, int size) { Native.Check(((FolderView2)view).SetViewModeAndIconSize(mode,size)); }
         public int IconSize { get { uint mode; int size; Native.Check(((FolderView2)view).GetViewModeAndIconSize(out mode,out size)); return size; } }
+        public bool AutoArrange {
+            get { int result=view.GetAutoArrange(); Native.Check(result); return result==0; }
+            set { Native.Check(((FolderView2)view).SetCurrentFolderFlags(1u,value?1u:0u)); } // FWF_AUTOARRANGE
+        }
         public IntPtr Window { get { IntPtr window; Native.Check(shellView.GetWindow(out window)); return window; } }
         public Rect Bounds { get { IntPtr window; Native.Check(shellView.GetWindow(out window)); return Native.Bounds(window); } }
         public string[] Selected() {
@@ -149,6 +167,40 @@ namespace FileSpacerRegression {
             }
             throw new InvalidOperationException("Item absent from actual Shell view: "+name);
         }
+        public string FolderParsingName {
+            get {
+                IntPtr text=IntPtr.Zero;
+                try { Native.Check(Native.SHGetNameFromIDList(parent,0x80028000,out text)); return Marshal.PtrToStringUni(text); }
+                finally { if(text!=IntPtr.Zero) Marshal.FreeCoTaskMem(text); }
+            }
+        }
+        public string[] ParsingNames(bool selected) {
+            var names=new List<string>(); Guid iid=typeof(EnumPidls).GUID; IntPtr pointer=IntPtr.Zero;
+            int count; Native.Check(view.ItemCount(selected?1u:2u,out count));
+            if(count==0) return names.ToArray();
+            Native.Check(view.Items(selected?1u:2u,ref iid,out pointer));
+            EnumPidls items=null;
+            try {
+                items=(EnumPidls)Marshal.GetObjectForIUnknown(pointer);
+                for(;;) {
+                    IntPtr child; uint fetched; Native.Check(items.Next(1,out child,out fetched));
+                    if(fetched==0) break;
+                    IntPtr absolute=IntPtr.Zero,text=IntPtr.Zero;
+                    try {
+                        absolute=Native.ILCombine(parent,child);
+                        if(absolute==IntPtr.Zero) throw new OutOfMemoryException("ILCombine");
+                        Native.Check(Native.SHGetNameFromIDList(absolute,0x80028000,out text));
+                        names.Add(Marshal.PtrToStringUni(text));
+                    } finally {
+                        if(text!=IntPtr.Zero) Marshal.FreeCoTaskMem(text);
+                        if(absolute!=IntPtr.Zero) Marshal.FreeCoTaskMem(absolute);
+                        if(child!=IntPtr.Zero) Marshal.FreeCoTaskMem(child);
+                    }
+                }
+            } finally { if(pointer!=IntPtr.Zero) Marshal.Release(pointer); Native.Release(items); }
+            names.Sort(StringComparer.OrdinalIgnoreCase); return names.ToArray();
+        }
+        public void SelectIndex(int index) { Native.Check(view.SelectItem(index,29u)); }
         public void Deselect(string name) { Native.Check(view.SelectItem(IndexOf(name),0)); }
         public void Select(string name) { Select(name,false); }
         public void Select(string name,bool extendSelection) {
@@ -172,6 +224,22 @@ namespace FileSpacerRegression {
             }
             positions.Sort(StringComparer.OrdinalIgnoreCase); return String.Join(";",positions.ToArray());
         }
+        public void Position(string name,int x,int y) {
+            IntPtr child=IntPtr.Zero, storage=IntPtr.Zero;
+            try {
+                Native.Check(view.Item(IndexOf(name),out child));
+                if(child==IntPtr.Zero) throw new InvalidOperationException("Shell returned no item PIDL: "+name);
+                storage=Marshal.AllocHGlobal(IntPtr.Size+Marshal.SizeOf(typeof(Point)));
+                Marshal.WriteIntPtr(storage,child);
+                IntPtr point=IntPtr.Add(storage,IntPtr.Size);
+                Marshal.StructureToPtr(new Point{X=x,Y=y},point,false);
+                // SVSI_POSITIONITEM | SVSI_NOSTATECHANGE: no selection/focus mutation.
+                Native.Check(view.SelectAndPositionItems(1,storage,point,0x80000080u));
+            } finally {
+                if(storage!=IntPtr.Zero) Marshal.FreeHGlobal(storage);
+                if(child!=IntPtr.Zero) Marshal.FreeCoTaskMem(child);
+            }
+        }
         public void Focus() { Native.Check(shellView.UIActivate(2)); }
         public void Dispose() {
             if(parent!=IntPtr.Zero) { Marshal.FreeCoTaskMem(parent); parent=IntPtr.Zero; }
@@ -187,6 +255,7 @@ namespace FileSpacerRegression {
         [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr window);
         [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr window);
         [DllImport("user32.dll")] public static extern IntPtr GetParent(IntPtr window);
+        [DllImport("user32.dll")] static extern IntPtr GetAncestor(IntPtr window,uint flags);
         [DllImport("user32.dll",EntryPoint="GetWindowLongW")] public static extern int Style(IntPtr window,int index);
         [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr window,int id);
         [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr window,out uint pid);
@@ -363,6 +432,48 @@ namespace FileSpacerRegression {
         static object Service(Services provider,Guid service,Guid iid) {
             IntPtr pointer; Check(provider.QueryService(ref service,ref iid,out pointer));
             try { return Marshal.GetObjectForIUnknown(pointer); } finally { Marshal.Release(pointer); }
+        }
+        public static string ActiveFolderParsingName(object registered,IntPtr window) {
+            BrowserWindow browser=null; object active=null; PersistFolder folder=null;
+            IntPtr viewPointer=IntPtr.Zero,folderPointer=IntPtr.Zero,pidl=IntPtr.Zero,text=IntPtr.Zero;
+            string stage="IServiceProvider/SID_STopLevelBrowser";
+            try {
+                Services provider=registered as Services;
+                if(provider==null) throw new COMException("No IServiceProvider",unchecked((int)0x80004002));
+                browser=(BrowserWindow)Service(provider,new Guid("4c96be40-915c-11cf-99d3-00aa004ae837"),typeof(BrowserWindow).GUID);
+                stage="IShellBrowser::GetWindow";
+                IntPtr actual; Check(browser.GetWindow(out actual));
+                // IOleWindow may return a document/container window rather than
+                // IWebBrowser2's top-level frame. Compare their parent root.
+                IntPtr root=actual==IntPtr.Zero?IntPtr.Zero:GetAncestor(actual,2); // GA_ROOT, not owners
+                if(window==IntPtr.Zero || root!=window)
+                    throw new COMException("Browser root HWND mismatch: registered="+window.ToInt64()+
+                        ", browser="+actual.ToInt64()+", root="+root.ToInt64(),unchecked((int)0x80004005));
+                stage="IShellBrowser::QueryActiveShellView";
+                Check(browser.QueryActiveShellView(out viewPointer));
+                if(viewPointer==IntPtr.Zero) return null;
+                active=Marshal.GetObjectForIUnknown(viewPointer);
+                stage="IShellView/IFolderView";
+                FolderView view=active as FolderView;
+                if(view==null) throw new COMException("No IFolderView",unchecked((int)0x80004002));
+                stage="IFolderView::GetFolder(IPersistFolder2)";
+                Guid iid=typeof(PersistFolder).GUID; Check(view.GetFolder(ref iid,out folderPointer));
+                if(folderPointer==IntPtr.Zero) return null;
+                folder=(PersistFolder)Marshal.GetObjectForIUnknown(folderPointer);
+                stage="IPersistFolder2::GetCurFolder";
+                Check(folder.GetCurFolder(out pidl));
+                if(pidl==IntPtr.Zero) return null;
+                stage="SHGetNameFromIDList(SIGDN_DESKTOPABSOLUTEPARSING)";
+                Check(SHGetNameFromIDList(pidl,0x80028000,out text));
+                return Marshal.PtrToStringUni(text);
+            } catch(COMException failure) { throw new COMException(stage+": "+failure.Message,failure.ErrorCode); }
+            finally {
+                if(text!=IntPtr.Zero) Marshal.FreeCoTaskMem(text);
+                if(pidl!=IntPtr.Zero) Marshal.FreeCoTaskMem(pidl);
+                if(folderPointer!=IntPtr.Zero) Marshal.Release(folderPointer);
+                if(viewPointer!=IntPtr.Zero) Marshal.Release(viewPointer);
+                Release(folder); Release(active); Release(browser);
+            }
         }
         public static ViewProbe View(object registered,IntPtr window) {
             Services provider=registered as Services; if(provider==null) return null;
