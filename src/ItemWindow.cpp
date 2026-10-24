@@ -50,7 +50,6 @@ const wchar_t ITEM_WINDOW_CLASS[] = L"FileSpacer Item Window";
 const wchar_t TESTPOS_CLASS[] = L"FileSpacer Test Window";
 const wchar_t TOOLBAR_HOST_CLASS[] = L"FileSpacer Toolbar Host";
 const wchar_t WINDOW_THEME[] = L"CompositedWindow::Window";
-const UINT SC_DRAGMOVE = SC_MOVE | 2; // https://stackoverflow.com/a/35880547/11525734
 
 static HBITMAP captionCommandBitmap(const wchar_t *glyph, int size, COLORREF color);
 
@@ -99,7 +98,7 @@ static LRESULT CALLBACK toolbarHostProc(
                 POINT cursor;
                 GetCursorPos(&cursor);
                 if (DragDetect(host, cursor))
-                    SendMessage(owner, WM_SYSCOMMAND, SC_DRAGMOVE, 0);
+                    SendMessage(owner, WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(cursor.x, cursor.y));
                 return 0;
             }
         }
@@ -709,8 +708,10 @@ RECT ItemWindow::windowBody() {
 }
 
 void ItemWindow::fakeDragMove() {
-    // https://stackoverflow.com/a/35880547/11525734
-    SendMessage(hwnd, WM_SYSCOMMAND, SC_DRAGMOVE, 0);
+    // The documented caption press starts the system move loop with the button held.
+    POINT cursor;
+    GetCursorPos(&cursor);
+    SendMessage(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(cursor.x, cursor.y));
 }
 
 LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
