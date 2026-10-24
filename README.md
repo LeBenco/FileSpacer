@@ -4,6 +4,11 @@
 
 # FileSpacer
 
+Version 1.1 uses Windows' own folder view, controlled through public Shell COM
+interfaces. The Shell provides rendering, file operations and notifications;
+FileSpacer manages spatial windows and their saved state. Control Panel opens
+in its native Windows window. See [the architecture and accepted differences](docs/native-shell-view.md).
+
 FileSpacer is a file manager for Microsoft Windows with a fully spatial interface: folders open in separate windows that retain their position, size, and display settings. By default, opening a folder closes the window it was opened from, avoiding the accumulation of windows and keeping the desktop uncluttered.
 
 Windows File Explorer does not provide all the behaviors needed for a consistent, efficient spatial workflow. FileSpacer aims to provide them:
