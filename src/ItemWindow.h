@@ -88,6 +88,9 @@ protected:
     // External COM/Win32 calls may reenter and change this state before returning.
     bool isWindowOperational() const { return hwnd != nullptr && !closing; }
 
+    bool stateLocked = false;
+    bool updateStateLock();
+    void toggleStateLock();
     bool loadFolderState();
     FolderState &getSavedFolderState() { return savedState; }
     void resetViewState(uint32_t mask);
