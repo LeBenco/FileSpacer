@@ -1707,7 +1707,7 @@ STDMETHODIMP FolderWindow::QueryService(
         REFGUID guidService,
         REFIID riid,
         void **ppv) {
-
+    if (!ppv) return E_POINTER;
     *ppv = nullptr;
 
     if (guidService == SID_SExplorerBrowserFrame) {
