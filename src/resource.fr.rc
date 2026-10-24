@@ -140,3 +140,11 @@ Copyright (c) 2013 Afrow Soft Ltd. Voir LockedList-LICENSE.txt.\r\n\
     IDS_RECOVERY_CRASHED, "FileSpacer s’est arrêté à la suite d’une erreur grave. Un rapport de diagnostic et un fichier mémoire ont été enregistrés dans les données locales de l’application ; vos préférences ont été conservées."
     IDS_SETTINGS_ACCESS_FAILED, "FileSpacer ne peut pas obtenir l’accès partagé à ses réglages. Une réinitialisation est peut-être en cours, ou le dossier des données locales est inaccessible. Réessayez après la fin de l’opération de maintenance."
 }
+
+STRINGTABLE
+BEGIN
+  IDS_LOCK_WINDOW_STATE "Verrouiller l’état de la fenêtre"
+  IDS_UNLOCK_WINDOW_STATE "Déverrouiller l’état de la fenêtre"
+  IDS_WINDOW_STATE_LOCKED "État de la fenêtre verrouillé. Les changements de disposition restent temporaires."
+  IDS_DISABLE_STATE_LOCK_CONFIRM "Désactiver cette fonctionnalité supprimera toutes les informations de verrouillage des fenêtres. Les fenêtres reprendront l’enregistrement normal de leur état. Voulez-vous continuer ?"
+END
