@@ -691,12 +691,12 @@ void FolderWindow::applyNameFilter(const wchar_t *text) {
         // Keep the interface already retained by DefView and refresh natively.
         enumerationComplete = false;
         restoreIconsPending = searchText.empty();
-        hr = view ? view->Refresh() : S_OK;
+        hr = view ? refreshView() : S_OK;
         if (FAILED(hr) && isWindowOperational()) {
             activeFilter->setQuery(previousText.c_str());
             searchText = previousText;
             if (view)
-                view->Refresh();
+                refreshView();
         }
     }
     if (FAILED(hr) && isWindowOperational()) {
@@ -836,6 +836,9 @@ void FolderWindow::scheduleUpdateSelection() {
     checkLE(SetTimer(hwnd, TIMER_UPDATE_SELECTION, SELECTION_UPDATE_DELAY_MS, nullptr));
 }
 
+// BrowseToObject and IShellView::Refresh dispatch window messages before they
+// return. A close handled inside them destroys the view the Shell is still
+// using; keep the request until the call returns, then post it.
 HRESULT FolderWindow::browseToItem() {
     CComPtr<ItemWindow> keepAlive(this);
     CComPtr<IShellItem> currentItem = item;
@@ -844,14 +847,27 @@ HRESULT FolderWindow::browseToItem() {
     debugPrintf(L"NATIVE HWND=%p BrowseToObject begin\n", hwnd);
     const HRESULT result = viewHost.navigate(currentItem);
     debugPrintf(L"NATIVE HWND=%p BrowseToObject returned: HRESULT=0x%08lX\n", hwnd, static_cast<unsigned long>(result));
-    --navigationDepth;
-    if (!navigationDepth && isWindowOperational()) {
-        const UINT closeMessage = deferredCloseMessage;
-        deferredCloseMessage = 0;
-        if (closeMessage)
-            checkLE(PostMessageW(hwnd, closeMessage, 0, 0));
-    }
+    resumeDeferredClose();
     return result;
+}
+
+HRESULT FolderWindow::refreshView() {
+    CComPtr<ItemWindow> keepAlive(this);
+    CComPtr<IShellView> view = shellView;
+    if (!isWindowOperational() || !view) return E_ABORT;
+    ++navigationDepth;
+    const HRESULT result = view->Refresh();
+    resumeDeferredClose();
+    return result;
+}
+
+void FolderWindow::resumeDeferredClose() {
+    --navigationDepth;
+    if (navigationDepth || !isWindowOperational()) return;
+    const UINT closeMessage = deferredCloseMessage;
+    deferredCloseMessage = 0;
+    if (closeMessage)
+        checkLE(PostMessageW(hwnd, closeMessage, 0, 0));
 }
 
 LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
@@ -917,7 +933,7 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             // ShlObj_core.h documents "ShellState" for Shell option changes.
             if (shellView && lParam
                     && lstrcmpi(reinterpret_cast<LPCWSTR>(lParam), L"ShellState") == 0)
-                checkHR(shellView->Refresh());
+                checkHR(refreshView());
             break;
         case WM_WINDOWPOSCHANGED: {
             CComPtr<ItemWindow> keepAlive(this);
@@ -1124,7 +1140,7 @@ void FolderWindow::refresh() {
     if (shellView) {
         enumerationComplete = false;
         restoreIconsPending = searchText.empty();
-        HRESULT hr = shellView->Refresh();
+        HRESULT hr = refreshView();
         checkHR(hr);
         recordFolderAccess(hr);
     } // TODO: invoke context menu verb instead?
