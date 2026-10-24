@@ -501,11 +501,6 @@ INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
             if (LOWORD(wParam) == IDC_AUTO_UPDATE && HIWORD(wParam) == BN_CLICKED) {
                 PropSheet_Changed(GetParent(hwnd), hwnd);
                 return TRUE;
-            } else
-            if (HIWORD(wParam) == CBN_SELCHANGE) {
-
-                SendMessage(GetParent(hwnd), LOWORD(wParam), lParam, (LPARAM)tempPtr(0xDD8AD83Ell)); 
-                return TRUE;
             }
             return FALSE;
     }
