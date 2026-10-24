@@ -122,7 +122,7 @@ FolderStateStore::FolderStateStore(const char *utf8Path) {
     }
     int schema = sqlite3_column_int(version.get(), 0);
     version.reset();
-    if (schema != 0 && schema != 2 && schema != 3 && schema != 4) {
+    if (schema != 0 && schema != 2 && schema != 3 && schema != 4 && schema != 5) {
         lastError = "Unsupported FileSpacer database version";
         finishWrite(false);
         return;
@@ -131,12 +131,17 @@ FolderStateStore::FolderStateStore(const char *utf8Path) {
             || !execute("CREATE TABLE IF NOT EXISTS folder_state("
             "key TEXT PRIMARY KEY NOT NULL, x INTEGER, y INTEGER, width INTEGER, height INTEGER,"
             "view BLOB, icons BLOB, last_success_at INTEGER NOT NULL DEFAULT 0,"
-            "first_failed_at INTEGER, maximized INTEGER) WITHOUT ROWID;"
+            "first_failed_at INTEGER, maximized INTEGER, locked INTEGER NOT NULL DEFAULT 0) WITHOUT ROWID;"
             "CREATE INDEX IF NOT EXISTS folder_state_age ON folder_state(last_success_at);"
             "CREATE TABLE IF NOT EXISTS closed_windows("
             "sequence INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL,"
             "parsing_name TEXT NOT NULL, display_name TEXT NOT NULL, view_state BLOB);"
-            "PRAGMA user_version=4;")) {
+            "PRAGMA user_version=5;")) {
+        finishWrite(false);
+        return;
+    }
+    if (schema >= 2 && schema <= 4 && !execute(
+            "ALTER TABLE folder_state ADD COLUMN locked INTEGER NOT NULL DEFAULT 0;")) {
         finishWrite(false);
         return;
     }
@@ -150,7 +155,7 @@ bool FolderStateStore::read(const std::string &key, FolderState *state) {
     if (!initialized) return false;
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db,
-            "SELECT x,y,width,height,view,icons,last_success_at,first_failed_at,maximized "
+            "SELECT x,y,width,height,view,icons,last_success_at,first_failed_at,maximized,locked "
             "FROM folder_state WHERE key=?1", -1, &raw, nullptr)))
         return false;
     Statement statement(raw, sqlite3_finalize);
@@ -159,6 +164,7 @@ bool FolderStateStore::read(const std::string &key, FolderState *state) {
     if (!result(code)) return false;
     FolderState value;
     if (code == SQLITE_ROW) {
+        value.locked = sqlite3_column_int(raw, 9) != 0;
         value.lastSuccessAt = sqlite3_column_int64(raw, 6);
         value.firstFailedAt = sqlite3_column_int64(raw, 7);
         if (sqlite3_column_type(raw, 8) != SQLITE_NULL) {
@@ -193,24 +199,45 @@ bool FolderStateStore::read(const std::string &key, FolderState *state) {
 }
 
 bool FolderStateStore::save(const std::string &key, const FolderState &state, uint32_t parts) {
+    return writeState(key, state, parts, -1);
+}
+
+bool FolderStateStore::setLocked(const std::string &key, const FolderState &state,
+        uint32_t parts, bool locked) {
+    if (key.empty()) return false;
+    return writeState(key, state, parts, locked ? 1 : 0);
+}
+
+bool FolderStateStore::clearLocks() {
+    return initialized && execute("UPDATE folder_state SET locked=0 WHERE locked!=0");
+}
+
+bool FolderStateStore::writeState(const std::string &key, const FolderState &state,
+        uint32_t parts, int lockChange) {
     if (!initialized) return false;
     parts &= FolderState::All;
     if (!parts) return true;
     if (key.empty()) return true;
     if (!execute("BEGIN IMMEDIATE")) return false;
     const bool success = [&]() {
+#if defined(_WIN32) && !defined(FILESPACER_STORAGE_TEST)
+        // Read after taking the write lock: global disabling clears locks after
+        // disabling the preference, and waits for any earlier writer to finish.
+        if (lockChange >= 0 && !settings::getWindowStateLockEnabled()) return false;
+#endif
         sqlite3_stmt *raw = nullptr;
         if (!result(sqlite3_prepare_v2(db,
-            "INSERT INTO folder_state(key,x,y,width,height,view,icons,last_success_at,first_failed_at,maximized) "
-            "VALUES(?1,?2,?3,?4,?5,?6,?7,?9,?10,?11) "
+            "INSERT INTO folder_state(key,x,y,width,height,view,icons,last_success_at,first_failed_at,maximized,locked) "
+            "VALUES(?1,?2,?3,?4,?5,?6,?7,?9,?10,?11,max(?12,0)) "
             "ON CONFLICT(key) DO UPDATE SET "
-            "x=CASE WHEN (?8&1)!=0 THEN excluded.x ELSE x END,"
-            "y=CASE WHEN (?8&1)!=0 THEN excluded.y ELSE y END,"
-            "width=CASE WHEN (?8&2)!=0 THEN excluded.width ELSE width END,"
-            "height=CASE WHEN (?8&2)!=0 THEN excluded.height ELSE height END,"
-            "view=CASE WHEN (?8&4)!=0 THEN excluded.view ELSE view END,"
+            "x=CASE WHEN (?8&1)!=0 AND (locked=0 OR ?12>=0) THEN excluded.x ELSE x END,"
+            "y=CASE WHEN (?8&1)!=0 AND (locked=0 OR ?12>=0) THEN excluded.y ELSE y END,"
+            "width=CASE WHEN (?8&2)!=0 AND (locked=0 OR ?12>=0) THEN excluded.width ELSE width END,"
+            "height=CASE WHEN (?8&2)!=0 AND (locked=0 OR ?12>=0) THEN excluded.height ELSE height END,"
+            "view=CASE WHEN (?8&4)!=0 AND (locked=0 OR ?12>=0) THEN excluded.view ELSE view END,"
             "icons=CASE WHEN (?8&8)!=0 THEN excluded.icons ELSE icons END,"
-            "maximized=CASE WHEN (?8&16)!=0 THEN excluded.maximized ELSE maximized END", -1, &raw, nullptr)))
+            "maximized=CASE WHEN (?8&16)!=0 AND (locked=0 OR ?12>=0) THEN excluded.maximized ELSE maximized END,"
+            "locked=CASE WHEN ?12>=0 THEN ?12 ELSE locked END", -1, &raw, nullptr)))
             return false;
         Statement statement(raw, sqlite3_finalize);
         if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))) return false;
@@ -235,6 +262,7 @@ bool FolderStateStore::save(const std::string &key, const FolderState &state, ui
         if (state.firstFailedAt && !result(sqlite3_bind_int64(raw, 10, state.firstFailedAt))) return false;
         if ((parts & FolderState::Maximized)
                 && !result(sqlite3_bind_int(raw, 11, state.maximized ? 1 : 0))) return false;
+        if (!result(sqlite3_bind_int(raw, 12, lockChange))) return false;
         // An existing row keeps its current access metadata, even if this snapshot is older.
         return result(sqlite3_step(raw));
     }();
@@ -377,13 +405,14 @@ bool FolderStateStore::clear(const std::string &key, uint32_t parts) {
     if (!initialized) return false;
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db,
-        "UPDATE folder_state SET x=CASE WHEN (?2&1)!=0 THEN NULL ELSE x END,"
-        "y=CASE WHEN (?2&1)!=0 THEN NULL ELSE y END,"
-        "width=CASE WHEN (?2&2)!=0 THEN NULL ELSE width END,"
-        "height=CASE WHEN (?2&2)!=0 THEN NULL ELSE height END,"
-        "view=CASE WHEN (?2&4)!=0 THEN NULL ELSE view END,"
+        "UPDATE folder_state SET x=CASE WHEN (?2&1)!=0 AND (locked=0 OR ?2=31) THEN NULL ELSE x END,"
+        "y=CASE WHEN (?2&1)!=0 AND (locked=0 OR ?2=31) THEN NULL ELSE y END,"
+        "width=CASE WHEN (?2&2)!=0 AND (locked=0 OR ?2=31) THEN NULL ELSE width END,"
+        "height=CASE WHEN (?2&2)!=0 AND (locked=0 OR ?2=31) THEN NULL ELSE height END,"
+        "view=CASE WHEN (?2&4)!=0 AND (locked=0 OR ?2=31) THEN NULL ELSE view END,"
         "icons=CASE WHEN (?2&8)!=0 THEN NULL ELSE icons END,"
-        "maximized=CASE WHEN (?2&16)!=0 THEN NULL ELSE maximized END WHERE key=?1", -1, &raw, nullptr))) return false;
+        "maximized=CASE WHEN (?2&16)!=0 AND (locked=0 OR ?2=31) THEN NULL ELSE maximized END,"
+        "locked=CASE WHEN ?2=31 THEN 0 ELSE locked END WHERE key=?1", -1, &raw, nullptr))) return false;
     Statement statement(raw, sqlite3_finalize);
     if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))
             || !result(sqlite3_bind_int(raw, 2, static_cast<int>(parts)))) return false;
@@ -492,7 +521,7 @@ bool FolderStateStore::move(const std::string &oldKey, const std::string &newKey
     sqlite3_stmt *raw = nullptr;
     bool success = result(sqlite3_prepare_v2(db,
         "INSERT OR REPLACE INTO folder_state "
-        "SELECT ?2,x,y,width,height,view,icons,last_success_at,first_failed_at,maximized "
+        "SELECT ?2,x,y,width,height,view,icons,last_success_at,first_failed_at,maximized,locked "
         "FROM folder_state WHERE key=?1", -1, &raw, nullptr));
     {
         Statement statement(raw, sqlite3_finalize);
