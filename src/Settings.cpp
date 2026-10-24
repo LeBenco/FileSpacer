@@ -120,10 +120,6 @@ SETTINGS_BOOL_VALUE(KeepSelectionOnActivate, L"KeepSelectionOnActivate", DEFAULT
 SETTINGS_BOOL_VALUE(LiveNameSearch, L"LiveNameSearch", DEFAULT_LIVE_NAME_SEARCH)
 SETTINGS_BOOL_VALUE(FullNamesOnSelection, L"FullNamesOnSelection", DEFAULT_FULL_NAMES_ON_SELECTION)
 
-LSTATUS disableFullNamesOnSelection() {
-    const DWORD disabled = 0;
-    return setSettingsValue(L"FullNamesOnSelection", REG_DWORD, &disabled, sizeof(disabled));
-}
 
 LSTATUS resetGlobalOptions() {
     // Delete current/future preference values, preserving version metadata and subkeys

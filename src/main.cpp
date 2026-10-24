@@ -195,10 +195,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     if (!recoveryArgv) return 1;
     const bool maintenance = handleUpdateCommandLine(recoveryArgc, recoveryArgv, &maintenanceExit)
         || recovery::handleCommandLine(recoveryArgc, recoveryArgv, &maintenanceExit);
-    bool restarted = false;
-    for (int i = 1; i < recoveryArgc; ++i) {
-        restarted |= lstrcmpiW(recoveryArgv[i], L"/recovery-restarted") == 0;
-    }
     wstr_ptr startingFolder;
     std::wstring updateSession;
     if (!maintenance && recoveryArgc == 3 && lstrcmpiW(recoveryArgv[1], L"/restore-update") == 0)
@@ -217,14 +213,12 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     const UINT length = GetWindowsDirectoryW(workingDirectory, _countof(workingDirectory));
     if (!length || length >= _countof(workingDirectory)
             || !checkLE(SetCurrentDirectoryW(workingDirectory))) return 1;
-    if (!recovery::start(restarted, startingFolder.get())) {
+    if (!recovery::start()) {
         if (!recovery::hasSettingsAccess()) {
             MessageBoxW(nullptr, getString(IDS_SETTINGS_ACCESS_FAILED), getString(IDS_APP_NAME),
                 MB_OK | MB_ICONERROR);
             return 3;
         }
-        // Keep the ordinary Shell view available even when crash protection cannot start.
-        recovery::blockFullNames();
         MessageBoxW(nullptr, getString(IDS_RECOVERY_UNAVAILABLE), getString(IDS_APP_NAME),
             MB_OK | MB_ICONWARNING);
     }
@@ -435,9 +429,6 @@ LaunchType parseStartingFolder(int argc, wchar_t **argv, wstr_ptr *folder) {
             return LAUNCH_HEADLESS;
         } else if (lstrcmpiW(arg, L"/reopen-last") == 0) {
             reopen = true;
-        } else if (lstrcmpiW(arg, L"/recovery-restarted") == 0) {
-            // Internal one-shot restart marker, not a folder path.
-            continue;
         } else if (lstrcmpi(arg, L"/test") == 0) {
 #ifdef FILESPACER_DEBUG
             settings::testMode = true;
