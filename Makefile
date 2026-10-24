@@ -32,6 +32,7 @@ TARGET = $(OUTDIR)\FileSpacer.exe
 RESOURCE = $(OUTDIR)\resource.res
 ICON_SVG = src\res\FileSpacer.svg
 ICON_ICO = src\res\FileSpacer.ico
+LOCK_BADGE_ICO = src\res\window-state-lock.ico
 ICON_512 = $(OUTDIR)\FileSpacer-512.png
 ICON_PNGS = \
     $(OUTDIR)\FileSpacer-16.png \
@@ -98,7 +99,7 @@ $(SQLITE_OBJECT): $(SQLITE_DIR)\sqlite3.c $(SQLITE_DIR)\sqlite3.h Makefile
 	cl.exe $(SQLITE_FLAGS) /Fd$(OUTDIR)\sqlite3-compiler.pdb /Fo$(SQLITE_OBJECT) /c $(SQLITE_DIR)\sqlite3.c
 
 $(RESOURCE): src\*.rc src\resource.h src\dialog.h \
-    src\res\FileSpacer.exe.manifest $(ICON_ICO) \
+    src\res\FileSpacer.exe.manifest $(ICON_ICO) $(LOCK_BADGE_ICO) \
     Makefile
 	rc.exe /D _UNICODE /D UNICODE /n /I src /fo $(RESOURCE) src\resource.rc
 
