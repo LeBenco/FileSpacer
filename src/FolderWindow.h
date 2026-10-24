@@ -6,24 +6,20 @@
 #include "ShellViewHost.h"
 #include "WindowResizeGesture.h"
 #include <memory>
+#include <vector>
 #include <ExDisp.h>
 #include <shlobj_core.h>
 
 namespace filespacer {
 
 class FolderWindow : public ItemWindow, public IServiceProvider, public ICommDlgBrowser2,
-        public IExplorerBrowserEvents, public IShellFolderViewCB, public IWebBrowserApp,
-        public IShellBrowser, public IFolderFilter {
+        public IExplorerBrowserEvents, public IWebBrowserApp,
+        public IShellBrowser {
 public:
     static void init();
 
     FolderWindow(IShellItem *item, const std::wstring &identity);
     void setReopenState(const ClosedWindow &window) { reopeningWindow = window; }
-    void setSelectionOnOpen(PCUIDLIST_RELATIVE descendant) {
-        // The clone is a fresh, aligned COM allocation; legacy PIDL typedefs
-        // still qualify ILCloneFirst's return pointer as __unaligned.
-        selectionOnOpen.Attach(reinterpret_cast<ITEMID_CHILD *>(ILCloneFirst(descendant)));
-    }
 
     bool handleTopLevelMessage(MSG *msg) override;
 
@@ -93,13 +89,6 @@ public:
     STDMETHODIMP OnNavigationComplete(PCIDLIST_ABSOLUTE folder) override;
     STDMETHODIMP OnNavigationFailed(PCIDLIST_ABSOLUTE folder) override;
     STDMETHODIMP OnViewCreated(IShellView *shellView) override;
-    // IShellFolderViewCB
-    STDMETHODIMP MessageSFVCB(UINT msg, WPARAM wParam, LPARAM lParam) override;
-    // IFolderFilter (queried on the replacement view callback)
-    STDMETHODIMP GetEnumFlags(IShellFolder *folder, PCIDLIST_ABSOLUTE folderID,
-        HWND *window, DWORD *flags) override;
-    STDMETHODIMP ShouldShow(IShellFolder *folder, PCIDLIST_ABSOLUTE folderID,
-        PCUITEMID_CHILD childID) override;
     // IDispatch
     STDMETHODIMP GetTypeInfoCount(UINT *) override;
     STDMETHODIMP GetTypeInfo(UINT, LCID, ITypeInfo **) override;
@@ -163,7 +152,9 @@ protected:
     enum UserMessage {
         MSG_INITIAL_NAVIGATION = ItemWindow::MSG_LAST,
         // WM_USER + 7 is the Shell compatibility query for IShellBrowser.
-        MSG_QUICK_ACCESS_ICON = WM_APP + 45
+        MSG_QUICK_ACCESS_ICON = WM_APP + 45,
+        MSG_ENUM_READY = WM_APP + 46,
+        MSG_ENUM_DONE = WM_APP + 47
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
 
@@ -179,7 +170,6 @@ protected:
     std::vector<uint8_t> captureReopenViewState() override;
 
     virtual FOLDERSETTINGS folderSettings() const;
-    virtual void initDefaultView(IFolderView2 *folderView);
 
     void onCreate() override;
     void onDestroy() override;
@@ -200,15 +190,25 @@ protected:
     void onItemChanged() override;
     void refresh() override;
 
-    HWND listView = nullptr;
     CComPtr<IShellView> shellView;
 
 private:
+    bool handleAltMouseMessage(MSG *msg);
+    bool handleResizeMessage(UINT message, WPARAM wParam, LPARAM lParam);
+    void cancelAltGesture();
+    HRESULT showGestureProperties(POINT point);
+    WindowResizeGesture resizeGesture;
+    bool suppressAltButtonUp = false;
+    bool suppressAltUp = false;
+
     ClosedWindow reopeningWindow;
-    CComHeapPtr<ITEMID_CHILD> selectionOnOpen;
-    class InitialSelectionCallback;
-    bool initialSelectionEnumerationReady = false;
-    void selectOpenedChild();
+    bool initialEnumerationReady = false;
+    bool viewOptionsApplied = false;
+    bool initialStateApplied = false;
+    bool restoreIconsPending = false;
+    ULONG_PTR viewGeneration = 0;
+    ULONG_PTR viewOptionsEnumerationBaseline = 0;
+    void finishViewInitialization();
     void restoreReopenViewState();
     void placeSearchBox();
     void applyNameFilter(const wchar_t *text);
@@ -219,39 +219,21 @@ private:
 
     struct ShellViewState {
         FolderViewSettings view;
+        std::vector<uint8_t> selection;
 
         int numItems = 0;
         std::unique_ptr<CComHeapPtr<ITEMID_CHILD>[]> itemIds;
         std::unique_ptr<POINT[]> itemPositions;
     };
 
-    bool fullNamesOnSelection = false; // Cached for this view; no registry access during painting.
-    bool labelCollapsePending = false;
-    HWND listViewOwner = nullptr;
-    void listViewCreated();
-    void detachListView();
-    bool handleAltMouseMessage(MSG *msg);
-    bool handleResizeMessage(MSG *msg);
-    WindowResizeGesture resizeGesture;
-    bool suppressAltButtonUp = false;
-    void disableFullNames(UINT reason);
-    bool rebuildStandardView = false;
-    UINT fullNamesFailure = 0;
-    static LRESULT CALLBACK listViewSubclassProc(HWND hwnd, UINT message,
-        WPARAM wParam, LPARAM lParam, UINT_PTR subclassID, DWORD_PTR refData);
-    static LRESULT CALLBACK listViewOwnerProc(HWND hwnd, UINT message,
-        WPARAM wParam, LPARAM lParam, UINT_PTR subclassID, DWORD_PTR refData);
-
     static void getViewState(IFolderView2 *folderView, ShellViewState *state);
-    static void setViewState(IFolderView2 *folderView, const ShellViewState &state);
+    static void setItemPositions(IFolderView2 *folderView, const ShellViewState &state);
 
-    bool writeIconPositions(IFolderView *folderView, IStream *stream);
     void loadIconPositions();
     void scheduleStateSave(bool icons = false);
     bool viewReady = false;
     bool enumerationComplete = false;
     bool restoringState = false;
-    bool readIconPositions(IFolderView *folderView, IStream *stream);
 
     void selectionChanged();
     void scheduleUpdateSelection();
@@ -285,19 +267,13 @@ private:
     bool initialNavigationPending = false;
     unsigned navigationDepth = 0;
     UINT deferredCloseMessage = 0;
-    bool deferredBrowserRebuild = false;
     HRESULT browseToItem();
-    CComPtr<IShellFolderViewCB> prevCB;
 
     CComPtr<IShellItem> selected; // retains the selected shortcut rather than its resolved target
 
     // jank flags
     bool updateSelectionOnActivate = false;
     bool activateOnShiftRelease = false;
-    bool firstODDispInfo = false;
-    bool checkActivationDrag = false; // Consumed by the next button-down.
-    bool handlingRButtonDown = false;
-    bool selectedWhileHandlingRButtonDown = false;
     bool invokingDefaultVerb = false;
 
     std::unique_ptr<ShellViewState> storedViewState;

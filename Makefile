@@ -63,6 +63,10 @@ OBJECTS = \
     $(OUTDIR)\SettingsDialog.obj \
     $(OUTDIR)\ShellUtils.obj \
     $(OUTDIR)\ShellViewHost.obj \
+    $(OUTDIR)\ShellViewFilter.obj \
+    $(OUTDIR)\ShellViewSettings.obj \
+    $(OUTDIR)\ShellViewSelection.obj \
+    $(OUTDIR)\ShellViewIcons.obj \
     $(OUTDIR)\UIStrings.obj \
     $(OUTDIR)\Update.obj \
     $(OUTDIR)\UpdateManifest.obj \
@@ -80,7 +84,7 @@ $(OUTDIR):
 	@if not exist "$(OUTDIR)" mkdir "$(OUTDIR)"
 
 $(TARGET): $(OBJECTS) $(SQLITE_OBJECT) $(RESOURCE) Makefile
-	cl.exe /nologo /Fe$(TARGET) $(OBJECTS) $(SQLITE_OBJECT) $(RESOURCE) /link /incremental:no /manifest:no /debug /pdb:$(OUTDIR)\FileSpacer.pdb $(LINKFLAGS)
+	cl.exe /nologo /Fe$(TARGET) $(OBJECTS) $(SQLITE_OBJECT) $(RESOURCE) /link /incremental:no /manifest:no /debug /pdb:$(OUTDIR)\FileSpacer.pdb $(LINKFLAGS) Uuid.lib
 
 # Header changes rebuild all C++ files; source changes rebuild only their objects.
 $(OBJECTS): src\*.h $(SQLITE_DIR)\sqlite3.h Makefile
