@@ -25,8 +25,7 @@ and paths, including network paths.
 Crash protection may save diagnostic text reports and minidumps in
 `%LOCALAPPDATA%\FileSpacer`. These stay on the computer unless the user chooses
 to share them. Diagnostics can contain file paths, process details, and portions
-of process memory. The same folder contains a settings lock file. Recovery
-counters are stored in the current user's Registry.
+of process memory. The same folder contains a settings lock file.
 
 Debug builds can use separate test preferences and local test data with `/test`.
 
