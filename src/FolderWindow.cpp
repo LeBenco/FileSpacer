@@ -472,7 +472,7 @@ FOLDERSETTINGS FolderWindow::folderSettings() const {
         settings.fFlags = FWF_AUTOARRANGE | FWF_NOWEBVIEW | FWF_NOHEADERINALLVIEWS;
     } else {
         // Virtual folders can provide their own presentation instead of Details.
-        settings.ViewMode = FVM_AUTO;
+        settings.ViewMode = static_cast<UINT>(FVM_AUTO);
     }
     debugPrintf(L"NATIVE initial settings: attributes=0x%08lX HRESULT=0x%08lX mode=%u flags=0x%08X\n",
         attributes, static_cast<unsigned long>(result), settings.ViewMode, settings.fFlags);
