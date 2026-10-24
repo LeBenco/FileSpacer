@@ -107,31 +107,49 @@ std::wstring folderArguments(const wchar_t *path) {
     return arguments;
 }
 
-bool getQuickAccessFolders(std::vector<CComPtr<IShellItem>> *folders) {
-    // Use the same Explorer namespace/property as the existing toolbar menu.
-    // Their names are Explorer implementation details, resolved at runtime.
+} // namespace
+
+HRESULT enumerateQuickAccessFolders(std::vector<CComPtr<IShellItem>> *folders, UINT *stage,
+        bool strict) {
+    // Only these two names depend on Explorer implementation details; they are
+    // resolved at runtime and the failing step is reported through *stage.
     CComPtr<IShellItem> quickAccess;
-    CComPtr<IEnumShellItems> items;
+    *stage = IDS_QUICK_ACCESS_OPEN;
+    HRESULT result = SHCreateItemFromParsingName(L"shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}",
+        nullptr, IID_PPV_ARGS(&quickAccess));
+    if (FAILED(result)) return result;
     PROPERTYKEY pinnedKey = {};
-    if (!checkHR(SHCreateItemFromParsingName(L"shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}",
-            nullptr, IID_PPV_ARGS(&quickAccess)))
-            || !checkHR(PSGetPropertyKeyFromName(L"System.Home.IsPinned", &pinnedKey))
-            || !checkHR(quickAccess->BindToHandler(nullptr, BHID_EnumItems, IID_PPV_ARGS(&items))))
-        return false;
+    *stage = IDS_QUICK_ACCESS_KEY;
+    result = PSGetPropertyKeyFromName(L"System.Home.IsPinned", &pinnedKey);
+    if (FAILED(result)) return result;
+    CComPtr<IEnumShellItems> items;
+    *stage = IDS_QUICK_ACCESS_ENUM;
+    result = quickAccess->BindToHandler(nullptr, BHID_EnumItems, IID_PPV_ARGS(&items));
+    if (FAILED(result)) return result;
     for (;;) {
         CComPtr<IShellItem> item;
-        const HRESULT next = items->Next(1, &item, nullptr);
-        if (next == S_FALSE) return true;
-        if (!checkHR(next)) return false;
+        *stage = IDS_QUICK_ACCESS_ENUM;
+        result = items->Next(1, &item, nullptr);
+        if (result == S_FALSE) return S_OK;
+        if (FAILED(result)) return result;
+        *stage = IDS_QUICK_ACCESS_READ;
         SFGAOF attributes = 0;
-        if (!checkHR(item->GetAttributes(SFGAO_FOLDER, &attributes))) continue;
-        if (!(attributes & SFGAO_FOLDER)) continue;
-        CComQIPtr<IShellItem2> properties(item);
         BOOL pinned = FALSE;
-        if (!properties || !checkHR(properties->GetBool(pinnedKey, &pinned))) continue;
+        result = item->GetAttributes(SFGAO_FOLDER, &attributes);
+        if (SUCCEEDED(result) && (attributes & SFGAO_FOLDER)) {
+            CComQIPtr<IShellItem2> properties(item);
+            result = properties ? properties->GetBool(pinnedKey, &pinned) : E_NOINTERFACE;
+        }
+        if (FAILED(result)) {
+            if (strict) return result;
+            checkHR(result); // The Jump List skips an unreadable entry.
+            continue;
+        }
         if (pinned) folders->push_back(item);
     }
 }
+
+namespace {
 
 std::wstring jumpListFolderIcon(IShellItem *item) {
     CComHeapPtr<ITEMIDLIST> pidl;
@@ -286,7 +304,8 @@ void updateReopenJumpLists() {
 
             std::vector<CComPtr<IShellItem>> folders;
             std::vector<CComPtr<IShellLinkW>> destinations;
-            if (getQuickAccessFolders(&folders)) {
+            UINT stage = 0;
+            if (checkHR(enumerateQuickAccessFolders(&folders, &stage, false))) {
                 for (const auto &folder : folders) {
                     CComHeapPtr<wchar_t> name, parsingName;
                     CComPtr<IShellLinkW> link;
