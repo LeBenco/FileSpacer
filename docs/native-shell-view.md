@@ -41,26 +41,42 @@ par leurs identités Shell, sans décoder les PIDL ou comparer des noms traduits
 Le dossier FileSpacer source reste ouvert avec sa sélection. Aucun site de
 navigation déduit ou API privée n'est utilisé pour tenter un hébergement interne.
 
-## Trois écarts acceptés pour 1.1
+## Écarts acceptés pour 1.1 et clic d'activation rétabli
 
-L'utilisateur a accepté ces écarts pour cette release, après validation du
-Panneau externe :
+L'utilisateur a accepté trois écarts pour la release 1.1, après validation du
+Panneau externe. Deux subsistent :
 
 - Les noms sélectionnés utilisent le rendu natif Windows. L'affichage spécifique
-  des noms complets avec fond opaque n'est pas disponible.
-- Un clic d'activation suit la sélection native Windows. La préservation spéciale
-  de la sélection lors du clic sur le fond d'une fenêtre inactive n'est pas disponible.
+  des noms complets avec fond opaque n'est pas disponible : aucune interface
+  publique de la vue (`IVisualProperties`, `FOLDERFLAGS`, `FOLDERVIEWOPTIONS`,
+  messages `SFVM_*`) ne permet d'intervenir dans le dessin des libellés.
 - La réouverture restaure sélection et focus et peut révéler l'élément focalisé,
-  mais ne restitue pas l'offset exact de défilement.
+  mais ne restitue pas l'offset exact de défilement. Le flux
+  `IShellBrowser::GetViewStateStream` est bien demandé par la vue, mais sous
+  Windows 10 il ne contient que les réglages de présentation (mode, tri,
+  groupement, colonnes), pas la position de défilement.
 
-Les deux options concernées sont désactivées et expliquées dans les ressources
-françaises et anglaises. Leurs valeurs enregistrées sont conservées. Ces écarts
-ne sont pas présentés comme des fonctionnalités migrées ; leur réexamen est
-décrit dans [le prompt pour Claude](prompt-claude-parite-vue-shell.md).
+Le clic d'activation est rétabli depuis l'audit du 24 octobre 2026 : lorsqu'une
+fenêtre est activée par un clic (`WM_ACTIVATE` avec `WA_CLICKACTIVE`), Windows
+publie ensuite le message bouton vers la fenêtre cliquée ; la boucle de messages
+de FileSpacer écarte ce premier `WM_LBUTTONDOWN` quand il vise le fond de la vue
+(rôle MSAA `ROLE_SYSTEM_LIST`), sans Alt, et que la préférence « Conserver la
+sélection à l'activation » est active. Un clic sur un élément, un clic droit, les
+en-têtes et ascenseurs, les gestes Alt et le clic dans une fenêtre déjà active
+gardent leur traitement natif ou FileSpacer. Un rectangle de sélection commencé
+par le clic d'activation est absorbé ; un second appui est nécessaire.
+`WM_MOUSEACTIVATE` n'atteint pas le cadre à travers les fenêtres du Shell et
+n'est donc pas utilisé.
+
+L'option « Afficher les noms longs en entier à la sélection » reste désactivée
+et expliquée dans les ressources françaises et anglaises ; sa valeur enregistrée
+est conservée. Le réexamen des écarts est décrit dans
+[le prompt pour Claude](prompt-claude-parite-vue-shell.md) et dans
+`audit/rapport.md`.
 
 ## Régression maintenue
 
-La commande de référence est `tests.cmd`, soit **96 jeux**. Elle inclut un seul
+La commande de référence est `tests.cmd`, soit **97 jeux**. Elle inclut un seul
 banc Shell réel dans la configuration de production : `18-vue-shell-native/02-Persistance`.
 Il teste les réglages, la sélection, le focus, les positions, le filtrage et la
 destruction/recréation avec SQLite. Ne pas ajouter l'exécution du lanceur natif

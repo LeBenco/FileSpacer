@@ -10,7 +10,7 @@ tests.cmd
 ```
 
 Le lanceur construit l'application par `build.cmd debug`, initialise MSVC x64,
-et lance les **96 jeux** indépendants. Ils ne doivent pas être complétés par
+et lance les **97 jeux** indépendants. Ils ne doivent pas être complétés par
 un second passage des mêmes bancs natifs. Chaque jeu possède son processus
 PowerShell et son dossier de résultats sous `build/regression/<date>-<id>`.
 
@@ -57,6 +57,7 @@ tests.cmd -Pattern "20-validation-elargie\05-*"
 | 18-vue-shell-native | 1 | Hôte réel, SQLite, réglages, sélection/focus, positions, filtre, recréation. |
 | 19-commandes-shell | 6 | Création, renommage, suppression, presse-papiers, drag/drop, menus, Unicode. |
 | 20-validation-elargie | 5 | Charge, images/modes, Ce PC, écrans/DPI disponibles, Panneau externe. |
+| 21-clic-activation | 1 | Clic sur le fond d'une fenêtre inactive : activation sans perte de sélection, clic d'élément, préférence désactivée. |
 
 Les 50 jeux Alt restent distincts : ils vérifient des gestes ou zones différents.
 Leur instrumentation peut observer un contrôle Windows ; l'application utilise
@@ -99,16 +100,21 @@ La remontée ne sélectionne plus le dossier d'origine pour des raisons d'ergono
 Les six jeux de navigation conservent cette exigence, la sélection d'un parent
 déjà ouvert et l'ouverture du seul dossier explicitement choisi avec Ctrl.
 
-Les noms complets sélectionnés à fond opaque, la préservation spéciale de la
-sélection au clic d'activation et le défilement exact à la réouverture restent
-absents de 1.1, par décision explicite de l'utilisateur. Les deux options sans
-effet sont désactivées dans les préférences ; 13/01 vérifie cet état. Ces écarts
+Les noms complets sélectionnés à fond opaque et le défilement exact à la
+réouverture restent absents, par décision explicite de l'utilisateur. L'option
+sans effet est désactivée dans les préférences ; 13/01 vérifie cet état et vérifie
+que « Conserver la sélection à l'activation » est de nouveau active. Ces écarts
 ne sont pas comptabilisés comme des fonctionnalités testées et conformes.
 
-Après l'intégration de la préparation 1.1, seul ce jeu modifié est à reprendre :
+Le clic d'activation est couvert par `21-clic-activation/01-FondInactif` : un
+vrai clic (SendInput) sur le fond de la vue d'une fenêtre inactive doit l'activer
+sans changer la sélection, un clic sur un élément doit le sélectionner, le clic
+dans la fenêtre déjà active et la préférence désactivée gardent la désélection
+native. Le point de clic est trouvé par UI Automation, jamais par une classe de
+contrôle supposée.
 
 ```cmd
-tests.cmd -Pattern "13-preferences\01-*"
+tests.cmd -Pattern "21-clic-activation\*"
 ```
 
 ## Résultats et isolation
