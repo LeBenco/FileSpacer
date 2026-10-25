@@ -310,6 +310,9 @@ try {
             $expectedSelection='AnchorA'
         }
         {$_ -in @('DoubleAlt','DoubleAltMotion')} {
+            # Native Explorer selects the pointed item before opening Properties.
+            # The disabled-window-shortcuts reference is checked in 24/03.
+            $expectedSelection='OtherC'
             Begin-Gesture $point $true $true
             Wait-Ui {
                 $found=@([FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,$script:targetProcessId) | Where-Object { Test-AltProperties $_ })
