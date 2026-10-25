@@ -2,6 +2,7 @@
 #include <common.h>
 
 #include <WinUtils.h>
+#include "WindowShortcuts.h"
 
 namespace filespacer {
 
@@ -78,6 +79,8 @@ bool setWindowStateLockEnabled(bool value);
 bool getFullNamesOnSelection();
 void setFullNamesOnSelection(bool value);
 LSTATUS resetGlobalOptions();
+WindowShortcuts getWindowShortcuts();
+LSTATUS setWindowShortcuts(const WindowShortcuts &value);
 
 bool getDeselectOnOpen();
 void setDeselectOnOpen(bool value); // TODO: add to Settings

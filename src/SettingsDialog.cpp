@@ -561,6 +561,11 @@ void openSettingsDialog(HWND owner, SettingsPage page) {
     pages[SETTINGS_DISPLAY].pszTemplate = MAKEINTRESOURCE(IDD_SETTINGS_DISPLAY);
     pages[SETTINGS_DISPLAY].pfnDlgProc = displayProc;
 
+    pages[SETTINGS_SHORTCUTS] = {sizeof(PROPSHEETPAGE)};
+    pages[SETTINGS_SHORTCUTS].hInstance = hInstance;
+    pages[SETTINGS_SHORTCUTS].pszTemplate = MAKEINTRESOURCE(IDD_SETTINGS_SHORTCUTS);
+    pages[SETTINGS_SHORTCUTS].pfnDlgProc = shortcutsProc;
+
     pages[SETTINGS_BROWSER] = {sizeof(PROPSHEETPAGE)};
     // pages[SETTINGS_BROWSER].dwFlags = PSP_HASHELP; // Deferred public help.
     pages[SETTINGS_BROWSER].hInstance = hInstance;

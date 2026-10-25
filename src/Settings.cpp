@@ -128,6 +128,28 @@ bool getWindowStateLockEnabled() {
     return value != 0;
 }
 
+WindowShortcuts getWindowShortcuts() {
+    DWORD value = 0;
+    if (getSettingsValue(L"WindowShortcuts", RRF_RT_DWORD, &value, sizeof(value)) != ERROR_SUCCESS
+            || (value & 0xffffc0c0u) != 0x01000000u)
+        return DEFAULT_WINDOW_SHORTCUTS;
+    auto decode = [](DWORD bits) -> WindowShortcut {
+        return {(bits & 32u) != 0, bits & 7u, static_cast<GestureButton>((bits >> 3) & 3u)};
+    };
+    const WindowShortcuts bindings = {decode(value), decode(value >> 8)};
+    return validShortcuts(bindings) ? bindings : DEFAULT_WINDOW_SHORTCUTS;
+}
+
+LSTATUS setWindowShortcuts(const WindowShortcuts &bindings) {
+    if (!validShortcuts(bindings)) return ERROR_INVALID_DATA;
+    auto encode = [](const WindowShortcut &binding) -> DWORD {
+        return (binding.enabled ? 32u : 0u) | binding.modifiers | (static_cast<DWORD>(binding.button) << 3);
+    };
+    // One registry value commits both actions atomically, including swaps.
+    const DWORD value = 0x01000000u | encode(bindings.move) | (encode(bindings.resize) << 8);
+    return setSettingsValue(L"WindowShortcuts", REG_DWORD, &value, sizeof(value));
+}
+
 bool setWindowStateLockEnabled(bool value) {
     const bool previous = getWindowStateLockEnabled();
     const DWORD enabled = value ? 1 : 0;
