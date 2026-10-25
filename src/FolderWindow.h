@@ -216,6 +216,12 @@ private:
     SearchBox searchBox;
     CComPtr<IFolderFilter> nameFilter;
     std::wstring searchText;
+    std::vector<std::wstring> searchHistory;
+    bool searchHistoryDirty = false;
+    void rememberSearch(const std::wstring &query);
+    void saveSearchHistory();
+    void openSearchMenu();
+    void selectSearchSuggestion(UINT command, const wchar_t *text);
 
     struct ShellViewState {
         FolderViewSettings view;

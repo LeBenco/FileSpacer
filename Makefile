@@ -51,6 +51,7 @@ OBJECTS = \
     $(OUTDIR)\CreateItemWindow.obj \
     $(OUTDIR)\DPI.obj \
     $(OUTDIR)\ExecuteCommand.obj \
+    $(OUTDIR)\Everything.obj \
     $(OUTDIR)\FolderWindow.obj \
     $(OUTDIR)\FolderIdentity.obj \
     $(OUTDIR)\FolderStateStore.obj \

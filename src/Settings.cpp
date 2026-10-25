@@ -119,6 +119,38 @@ SETTINGS_BOOL_VALUE(GroupFolderWindows, L"GroupFolderWindows", DEFAULT_GROUP_FOL
 SETTINGS_BOOL_VALUE(KeepSourceWindowOpen, L"KeepSourceWindowOpen", DEFAULT_KEEP_SOURCE_WINDOW_OPEN)
 SETTINGS_BOOL_VALUE(KeepSelectionOnActivate, L"KeepSelectionOnActivate", DEFAULT_KEEP_SELECTION_ON_ACTIVATE)
 SETTINGS_BOOL_VALUE(LiveNameSearch, L"LiveNameSearch", DEFAULT_LIVE_NAME_SEARCH)
+SETTINGS_BOOL_VALUE(EverythingEnabled, L"EverythingEnabled", false)
+SETTINGS_STRING_VALUE(EverythingPath, REG_SZ, L"EverythingPath", L"")
+
+DWORD getSearchHistoryLimit() {
+    DWORD value = DEFAULT_SEARCH_HISTORY_LIMIT;
+    getSettingsValue(L"SearchHistoryLimit", RRF_RT_DWORD, &value, sizeof(value));
+    return value > MAX_SEARCH_HISTORY_LIMIT ? MAX_SEARCH_HISTORY_LIMIT : value;
+}
+
+bool setSearchHistoryLimit(DWORD value) {
+    if (value > MAX_SEARCH_HISTORY_LIMIT) return false;
+    const DWORD previous = getSearchHistoryLimit();
+    if (setSettingsValue(L"SearchHistoryLimit", REG_DWORD, &value, sizeof(value)) != ERROR_SUCCESS)
+        return false;
+    auto store = folderStateStore();
+    if (!store || !store->trimSearchHistory(value)) {
+        setSettingsValue(L"SearchHistoryLimit", REG_DWORD, &previous, sizeof(previous));
+        return false;
+    }
+    return true;
+}
+
+EverythingScope getEverythingScope() {
+    DWORD value = 0;
+    getSettingsValue(L"EverythingScope", RRF_RT_DWORD, &value, sizeof(value));
+    return value == 1 ? EverythingScope::Everywhere : EverythingScope::Folder;
+}
+
+void setEverythingScope(EverythingScope value) {
+    const DWORD scope = static_cast<DWORD>(value);
+    setSettingsValue(L"EverythingScope", REG_DWORD, &scope, sizeof(scope));
+}
 SETTINGS_BOOL_VALUE(FullNamesOnSelection, L"FullNamesOnSelection", DEFAULT_FULL_NAMES_ON_SELECTION)
 
 

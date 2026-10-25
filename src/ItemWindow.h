@@ -93,6 +93,7 @@ protected:
     void toggleStateLock();
     bool loadFolderState();
     FolderState &getSavedFolderState() { return savedState; }
+    const std::string &getFolderStateKey() const { return stateKey; }
     void resetViewState(uint32_t mask);
     void persistViewState();
     virtual uint32_t captureViewState(uint32_t mask);

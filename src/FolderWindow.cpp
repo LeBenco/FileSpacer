@@ -11,6 +11,7 @@
 #include "GDIUtils.h"
 #include "WinUtils.h"
 #include "Settings.h"
+#include "Everything.h"
 #include "DPI.h"
 #include "UIStrings.h"
 #include <windowsx.h>
@@ -308,6 +309,25 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
 
 void FolderWindow::onCreate() {
     ItemWindow::onCreate();
+    const DWORD historyLimit = settings::getSearchHistoryLimit();
+    searchBox.setDropdownEnabled(settings::getEverythingEnabled() || historyLimit != 0, settings::getEverythingPath().get());
+    if (historyLimit && !getFolderStateKey().empty()) {
+        auto store = folderStateStore();
+        std::vector<std::string> queries;
+        if (!store || !store->readSearchHistory(getFolderStateKey(), historyLimit, &queries))
+            stateStorageError();
+        else for (const auto &query : queries) {
+            const int length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+                query.c_str(), -1, nullptr, 0);
+            if (length <= 1) continue;
+            std::wstring value(static_cast<size_t>(length), L'\0');
+            if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, query.c_str(), -1,
+                    &value[0], length)) {
+                value.pop_back();
+                searchHistory.push_back(std::move(value));
+            }
+        }
+    }
     quickAccessIconThread.Attach(new QuickAccessIconThread(hwnd, GetSystemMetrics(SM_CXSMICON)));
     quickAccessIconThread->start();
     placeSearchBox();
@@ -537,6 +557,7 @@ void FolderWindow::onDestroy() {
     KillTimer(hwnd, TIMER_SAVE_STATE);
     viewStateDirty(FolderState::Icons);
     persistViewState();
+    saveSearchHistory();
     searchBox.destroy();
     if (quickAccessIconThread)
         quickAccessIconThread->stop();
@@ -638,6 +659,15 @@ void FolderWindow::applyNameFilter(const wchar_t *text) {
 }
 
 LRESULT FolderWindow::onNotify(NMHDR *notification) {
+    if (notification->code == SearchBox::DROPDOWN) {
+        openSearchMenu();
+        return 0;
+    }
+    if (notification->code == SearchBox::SELECT) {
+        auto search = reinterpret_cast<SearchBox::Notification *>(notification);
+        selectSearchSuggestion(search->command, search->text);
+        return 0;
+    }
     if (notification->code == SearchBox::RESIZE) {
         if (!settings::getPathBarEnabled())
             return 0;
@@ -666,11 +696,80 @@ LRESULT FolderWindow::onNotify(NMHDR *notification) {
         return 0;
     }
     if (notification->code == SearchBox::APPLY) {
+        CComPtr<ItemWindow> keepAlive(this);
         auto search = reinterpret_cast<SearchBox::Notification *>(notification);
+        const std::wstring query = search->text;
+        const bool explicitSubmit = search->explicitSubmit;
         applyNameFilter(search->text);
+        if (isWindowOperational() && explicitSubmit && searchText == query)
+            rememberSearch(query);
         return 0;
     }
     return ItemWindow::onNotify(notification);
+}
+
+void FolderWindow::rememberSearch(const std::wstring &query) {
+    const DWORD limit = settings::getSearchHistoryLimit();
+    if (!limit || query.find_first_not_of(L" \t\r\n") == std::wstring::npos) return;
+    searchHistory.erase(std::remove(searchHistory.begin(), searchHistory.end(), query), searchHistory.end());
+    searchHistory.insert(searchHistory.begin(), query);
+    if (searchHistory.size() > limit) searchHistory.resize(limit);
+    searchHistoryDirty = true;
+    scheduleStateSave();
+}
+
+void FolderWindow::saveSearchHistory() {
+    if (!searchHistoryDirty || getFolderStateKey().empty()) return;
+    std::vector<std::string> queries;
+    for (const auto &query : searchHistory) queries.push_back(toUtf8(query.c_str()));
+    auto store = folderStateStore();
+    if (store && store->saveSearchHistory(getFolderStateKey(), queries, settings::getSearchHistoryLimit()))
+        searchHistoryDirty = false;
+    else stateStorageError();
+}
+
+void FolderWindow::openSearchMenu() {
+    CComPtr<ItemWindow> keepAlive(this);
+    if (!isWindowOperational()) return;
+    const DWORD limit = settings::getSearchHistoryLimit();
+    if (searchHistory.size() > limit) searchHistory.resize(limit);
+    HMENU menu = createSearchMenu(settings::getEverythingEnabled(), searchHistory);
+    if (!menu) return;
+    searchBox.showDropdown(menu);
+    DestroyMenu(menu);
+}
+
+void FolderWindow::selectSearchSuggestion(UINT command, const wchar_t *text) {
+    CComPtr<ItemWindow> keepAlive(this);
+    if (!isWindowOperational()) return;
+    const std::wstring query = text;
+    if (command >= 2 && settings::getSearchHistoryLimit()) {
+        searchBox.setText(query.c_str());
+        applyNameFilter(query.c_str());
+        if (isWindowOperational() && searchText == query) rememberSearch(query);
+    } else if (command == 1 && settings::getEverythingEnabled()) {
+        auto manualPath = settings::getEverythingPath();
+        const std::wstring executable = manualPath[0] ? std::wstring(manualPath.get()) : findEverything();
+        std::wstring folder;
+        DWORD error = ERROR_SUCCESS;
+        if (settings::getEverythingScope() == settings::EverythingScope::Folder) {
+            CComHeapPtr<wchar_t> path;
+            const HRESULT result = item->GetDisplayName(SIGDN_FILESYSPATH, &path);
+            if (!isWindowOperational()) return;
+            if (FAILED(result)) error = ERROR_PATH_NOT_FOUND;
+            else folder = path;
+        }
+        if (!error) error = launchEverything(executable, everythingArguments(query, folder));
+        if (error) {
+            auto detail = getErrorMessage(error);
+            auto message = formatString(IDS_EVERYTHING_ERROR, executable.c_str(), error, detail.get());
+            MessageBoxW(hwnd, message.get(), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
+        } else if (isWindowOperational()) {
+            rememberSearch(query);
+            searchBox.setText(L"");
+            applyNameFilter(L"");
+        }
+    }
 }
 
 LRESULT FolderWindow::onDropdown(int command, POINT pos) {
@@ -689,6 +788,7 @@ void FolderWindow::onActivate(WORD state, HWND prevWindow) {
     CComPtr<ItemWindow> keepAlive(this); // Shell calls can reenter dispatch
     activationClickPending = state == WA_CLICKACTIVE;
     if (state == WA_INACTIVE) {
+        searchBox.hideDropdown();
         cancelAltGesture();
         viewStateDirty(FolderState::Icons);
     }
@@ -748,6 +848,11 @@ void FolderWindow::onSettingsChanged() {
                 | (settings::getStatusTextEnabled() ? SWP_SHOWWINDOW : SWP_HIDEWINDOW)));
     ItemWindow::onSettingsChanged();
     searchBox.setLiveSearch(settings::getLiveNameSearch());
+    if (isWindowOperational())
+        searchBox.setDropdownEnabled(settings::getEverythingEnabled() || settings::getSearchHistoryLimit() != 0, settings::getEverythingPath().get());
+    const DWORD limit = settings::getSearchHistoryLimit();
+    if (searchHistory.size() > limit) searchHistory.resize(limit);
+    if (!limit) searchHistoryDirty = false; // The preference already cleared persisted histories.
     if (isWindowOperational())
         setSingleSelectionLabels(shellView, settings::getFullNamesOnSelection());
     if (viewHost && hasStatusText())
@@ -833,10 +938,24 @@ bool FolderWindow::isBackgroundActivationClick(const MSG *msg) const {
 
 LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     CComPtr<ItemWindow> messageKeepAlive(this);
+    LPARAM testNamespace = 0;
+#ifdef FILESPACER_DEBUG
+    testNamespace = settings::testMode ? 1 : 0;
+#endif
+    if (settingsChangedMessage && message == settingsChangedMessage && lParam == testNamespace
+            && wParam >= 1 && wParam <= settings::MAX_SEARCH_HISTORY_LIMIT + 1) {
+        const size_t limit = static_cast<size_t>(wParam - 1);
+        if (searchHistory.size() > limit) searchHistory.resize(limit);
+        if (!limit) searchHistoryDirty = false;
+    }
     // Capture and cancellation notifications are sent synchronously, outside
     // the application's GetMessage/pretranslation loop.
     if (handleResizeMessage(message, wParam, lParam)) return 0;
-    if (message == WM_CANCELMODE) cancelAltGesture();
+    if (message == WM_CANCELMODE) {
+        searchBox.hideDropdown();
+        cancelAltGesture();
+    }
+    if (message == WM_MOVE) searchBox.hideDropdown();
     // The synchronous Shell call can dispatch another window message. Closing
     // the host also destroys its child view, so defer the entire close request.
     if (navigationDepth && (message == WM_CLOSE || message == MSG_CLOSE_AUTOMATIC)) {
@@ -931,6 +1050,7 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             if (wParam == TIMER_SAVE_STATE) {
                 KillTimer(hwnd, TIMER_SAVE_STATE);
                 persistViewState();
+                saveSearchHistory();
                 return 0;
             }
             if (wParam == TIMER_UPDATE_SELECTION) {

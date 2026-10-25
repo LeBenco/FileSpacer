@@ -93,9 +93,9 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "", IDC_FOLDER_WINDOW_HEIGHT, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 251, 214, 35, 14
 }
 
-IDD_SETTINGS_BROWSER DIALOGEX DISCARDABLE 0, 0, 300, 238
+IDD_SETTINGS_BROWSER DIALOGEX DISCARDABLE 0, 0, 300, 277
 STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
-CAPTION "Explorateur par défaut"
+CAPTION "Intégration"
 FONT 8, "MS Shell Dlg", 400, 0, 0
 {
   CONTROL "Ouverture des dossiers", -1, "Button", BS_GROUPBOX, 7, 7, 286, 99
@@ -103,6 +103,17 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Remplacer l'Explorateur de fichiers Windows comme programme par défaut pour ouvrir tous les dossiers.", -1, "Static", WS_GROUP, 42, 22, 244, 24
   CONTROL "&Définir comme explorateur par défaut", IDC_SET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 56, 272, 14
   CONTROL "&Rétablir l'Explorateur de fichiers Windows", IDC_RESET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 77, 272, 14
+  GROUPBOX "Everything (application externe)", -1, 7, 111, 286, 97
+  CONTROL "Activer &Everything", IDC_EVERYTHING_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 123, 272, 12
+  LTEXT "Exécutable (vide = détection automatique)", -1, 14, 138, 272, 9
+  EDITTEXT IDC_EVERYTHING_PATH, 14, 149, 272, 14, ES_AUTOHSCROLL|WS_TABSTOP
+  PUSHBUTTON "&Détecter", IDC_EVERYTHING_DETECT, 14, 166, 90, 14
+  PUSHBUTTON "&Parcourir...", IDC_EVERYTHING_BROWSE, 111, 166, 90, 14
+  LTEXT "Portée", -1, 14, 188, 70, 9
+  COMBOBOX IDC_EVERYTHING_SCOPE, 88, 185, 198, 60, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+  GROUPBOX "Historique de recherche par dossier", -1, 7, 213, 286, 44
+  LTEXT "Recherches récentes (0 à 20 ; 0 désactive)", -1, 14, 229, 222, 16
+  EDITTEXT IDC_SEARCH_HISTORY_LIMIT, 246, 228, 40, 14, ES_NUMBER|WS_TABSTOP
 }
 
 IDD_SETTINGS_ABOUT DIALOGEX DISCARDABLE 0, 0, 300, 238
