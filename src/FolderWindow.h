@@ -196,9 +196,9 @@ private:
     bool handleAltMouseMessage(MSG *msg);
     bool handleResizeMessage(UINT message, WPARAM wParam, LPARAM lParam);
     void cancelAltGesture();
-    HRESULT showGestureProperties(POINT point);
     WindowResizeGesture resizeGesture;
-    bool suppressAltButtonUp = false;
+    MSG deferredGestureClick = {};
+    ULONG_PTR deferredGestureGeneration = 0;
     bool suppressAltUp = false;
 
     ClosedWindow reopeningWindow;

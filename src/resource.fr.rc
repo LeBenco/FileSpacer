@@ -148,3 +148,27 @@ BEGIN
   IDS_WINDOW_STATE_LOCKED "État de la fenêtre verrouillé. Les changements de disposition restent temporaires."
   IDS_DISABLE_STATE_LOCK_CONFIRM "Désactiver cette fonctionnalité supprimera toutes les informations de verrouillage des fenêtres. Les fenêtres reprendront l’enregistrement normal de leur état. Voulez-vous continuer ?"
 END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_MOVE "Déplacer la fenêtre"
+  IDS_SHORTCUT_RESIZE "Redimensionner la fenêtre"
+  IDS_SHORTCUT_DISABLED "désactivé"
+  IDS_SHORTCUT_LEFT "gauche"
+  IDS_SHORTCUT_MIDDLE "milieu"
+  IDS_SHORTCUT_RIGHT "droit"
+  IDS_SHORTCUT_CTRL "Ctrl + "
+  IDS_SHORTCUT_ALT "Alt + "
+  IDS_SHORTCUT_SHIFT "Maj + "
+  IDS_SHORTCUT_DESCRIPTION "%1!s!glisser %2!s!"
+  IDS_SHORTCUT_HEADER "%1!s! (%2!s!)"
+  IDS_SHORTCUT_ACCESSIBLE "Activer : %1!s!"
+  IDS_SHORTCUT_GENERAL "Certaines combinaisons sont réservées à la sélection et aux menus."
+  IDS_SHORTCUT_RESERVED "Combinaison réservée. Ajoutez Alt ou choisissez le bouton milieu."
+  IDS_SHORTCUT_CONFLICT "Déjà utilisé pour %1!s!."
+  IDS_SHORTCUT_RECORD "Saisir les touches et le bouton directement..."
+  IDS_SHORTCUT_STOP_RECORD "Masquer la saisie directe"
+  IDS_SHORTCUT_LEFT_HINT "Réservé à la sélection"
+  IDS_SHORTCUT_RIGHT_HINT "Réservé aux menus et à la sélection"
+  IDS_SHORTCUT_SAVE_FAILED "Les raccourcis n’ont pas pu être enregistrés. Les réglages précédents restent actifs."
+END

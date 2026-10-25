@@ -208,67 +208,16 @@ static LONG gestureRoleAt(POINT point) {
 
 bool FolderWindow::handleResizeMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     const bool handled = resizeGesture.handleMessage(message, wParam, lParam);
-    if (resizeGesture.takeCompleted() && isWindowOperational()) persistViewState();
+    if (resizeGesture.takeCompleted()) {
+        deferredGestureClick = {};
+        if (isWindowOperational()) persistViewState();
+    }
     return handled;
 }
 
 void FolderWindow::cancelAltGesture() {
     resizeGesture.cancel();
     if (resizeGesture.takeCompleted() && isWindowOperational()) persistViewState();
-}
-
-HRESULT FolderWindow::showGestureProperties(POINT point) {
-    const HWND owner = hwnd;
-    const CComPtr<IShellView> source = shellView;
-    const ULONG_PTR generation = viewGeneration;
-    auto current = [&]() {
-        return isWindowOperational() && hwnd == owner && shellView == source
-            && viewGeneration == generation;
-    };
-    CComQIPtr<IFolderView2> view(source);
-    if (!current()) return E_ABORT;
-    if (!view) return E_NOINTERFACE;
-    CComPtr<IAccessible> accessible;
-    CComVariant child, role, state;
-    HRESULT hr = AccessibleObjectFromPoint(point, &accessible, &child);
-    if (!current()) return E_ABORT;
-    if (hr != S_OK) return hr;
-    hr = accessible->get_accRole(child, &role);
-    if (!current()) return E_ABORT;
-    if (hr != S_OK) return hr;
-    if (role.vt != VT_I4 || role.lVal != ROLE_SYSTEM_LISTITEM) return E_NOINTERFACE;
-    // Used alone, SELFLAG_TAKEFOCUS moves the focus/anchor without changing
-    // selection (the documented equivalent of Ctrl+Arrow in Explorer).
-    hr = accessible->accSelect(SELFLAG_TAKEFOCUS, child);
-    debugPrintf(L"ALT focus-only HRESULT=0x%08lX\n", static_cast<unsigned long>(hr));
-    if (!current()) return E_ABORT;
-    if (hr != S_OK) return hr;
-    hr = accessible->get_accState(child, &state);
-    if (!current()) return E_ABORT;
-    if (hr != S_OK) return hr;
-    if (state.vt != VT_I4 || !(state.lVal & STATE_SYSTEM_FOCUSED)) return E_FAIL;
-    int index = -1;
-    hr = view->GetFocusedItem(&index);
-    debugPrintf(L"ALT focused item: HRESULT=0x%08lX index=%d state=0x%08lX\n",
-        static_cast<unsigned long>(hr), index, static_cast<unsigned long>(state.lVal));
-    if (!current()) return E_ABORT;
-    if (hr != S_OK) return hr;
-    if (index < 0) return E_FAIL;
-    CComPtr<IShellItem> target;
-    hr = view->GetItem(index, IID_PPV_ARGS(&target));
-    if (!current()) return E_ABORT;
-    if (hr != S_OK) return hr;
-    CComHeapPtr<ITEMIDLIST> id;
-    hr = SHGetIDListFromObject(target, &id);
-    if (!current()) return E_ABORT;
-    if (FAILED(hr)) return hr;
-    SHELLEXECUTEINFO info = {};
-    info.cbSize = sizeof(info);
-    info.fMask = SEE_MASK_INVOKEIDLIST | SEE_MASK_NOASYNC;
-    info.hwnd = owner;
-    info.lpVerb = L"properties";
-    info.lpIDList = id;
-    return ShellExecuteEx(&info) ? S_OK : HRESULT_FROM_WIN32(GetLastError());
 }
 
 bool FolderWindow::handleAltMouseMessage(MSG *msg) {
@@ -278,25 +227,42 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
         suppressAltUp = false;
         return true;
     }
-    if (suppressAltButtonUp) {
-        const bool released = msg->message == WM_LBUTTONUP;
-        const bool movedWithoutButton = msg->message == WM_MOUSEMOVE && !(msg->wParam & MK_LBUTTON);
-        const bool newPress = msg->message == WM_LBUTTONDOWN || msg->message == WM_LBUTTONDBLCLK
-            || msg->message == WM_RBUTTONDOWN || msg->message == WM_RBUTTONDBLCLK;
-        if (released || movedWithoutButton || newPress) {
-            // Properties can run on another Shell thread and receive the release.
-            suppressAltButtonUp = false;
-            if (GetCapture() == hwnd) ReleaseCapture();
-            if (released) return true;
-        } else if (msg->message == WM_MOUSEMOVE) {
-            return true;
-        }
-    }
     if ((msg->message != WM_LBUTTONDOWN && msg->message != WM_LBUTTONDBLCLK
             && msg->message != WM_RBUTTONDOWN
-            && msg->message != WM_RBUTTONDBLCLK)
-            || GetKeyState(VK_MENU) >= 0 || GetCapture() || !shellView)
+            && msg->message != WM_RBUTTONDBLCLK
+            && msg->message != WM_MBUTTONDOWN && msg->message != WM_MBUTTONDBLCLK)
+            || GetCapture() || !shellView)
         return false;
+    // A window gesture consumes its first click. If Windows subsequently reports
+    // a double click, deliver that deferred click to the view before its normal
+    // double-click message, so Explorer owns selection and Properties throughout.
+    if (msg->message == WM_LBUTTONDBLCLK) {
+        MSG click = deferredGestureClick;
+        deferredGestureClick = {};
+        const CComPtr<IShellView> view = shellView;
+        HWND root = nullptr;
+        const ULONG_PTR generation = viewGeneration;
+        if (click.hwnd == msg->hwnd && click.hwnd && deferredGestureGeneration == generation
+                && msg->time - click.time <= GetDoubleClickTime()
+                && SUCCEEDED(view->GetWindow(&root)) && root
+                && (click.hwnd == root || IsChild(root, click.hwnd))) {
+            if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+            DispatchMessageW(&click);
+            if (!isWindowOperational() || shellView != view || viewGeneration != generation
+                    || !IsWindow(click.hwnd)) return true;
+            click.message = WM_LBUTTONUP;
+            click.wParam &= ~static_cast<WPARAM>(MK_LBUTTON);
+            DispatchMessageW(&click);
+        }
+        return false;
+    }
+    deferredGestureClick = {};
+    const GestureButton button = msg->message == WM_LBUTTONDOWN ? GestureButton::Left
+        : msg->message == WM_MBUTTONDOWN || msg->message == WM_MBUTTONDBLCLK ? GestureButton::Middle : GestureButton::Right;
+    const unsigned modifiers = currentGestureModifiers();
+    const WindowShortcuts bindings = settings::getWindowShortcuts();
+    const bool moving = matchesShortcut(bindings.move, button, modifiers);
+    if (!moving && !matchesShortcut(bindings.resize, button, modifiers)) return false;
     const HWND owner = hwnd;
     const CComPtr<IShellView> view = shellView;
     const ULONG_PTR generation = viewGeneration;
@@ -325,23 +291,15 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
     if (role != ROLE_SYSTEM_LIST && role != ROLE_SYSTEM_LISTITEM) return false;
     SetForegroundWindow(owner);
     if (!current()) return true;
-    if (msg->message == WM_RBUTTONDOWN || msg->message == WM_RBUTTONDBLCLK)
-        return resizeGesture.begin(owner, owner, point);
-    suppressAltUp = true;
-    if (msg->message == WM_LBUTTONDBLCLK) {
-        // Reserve the second press before invoking the Shell's Properties verb.
-        suppressAltButtonUp = true;
-        SetCapture(owner);
-        if (GetCapture() == owner && current()) {
-            const HRESULT hr = role == ROLE_SYSTEM_LISTITEM ? showGestureProperties(point) : S_FALSE;
-            debugPrintf(L"ALT HWND=%p Properties HRESULT=0x%08lX\n", owner, static_cast<unsigned long>(hr));
-            checkHR(hr);
-        } else {
-            suppressAltButtonUp = false;
-        }
-        return true;
+    if (button == GestureButton::Left) {
+        deferredGestureClick = *msg;
+        deferredGestureGeneration = generation;
     }
+    if (!moving || button != GestureButton::Left)
+        return resizeGesture.begin(owner, owner, point, button, moving);
+    suppressAltUp = (modifiers & GestureAlt) != 0;
     if (DragDetect(owner, point) && current()) {
+        deferredGestureClick = {};
         if (GetCapture() == owner) ReleaseCapture();
         SendMessage(owner, WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(point.x, point.y));
     }
@@ -574,9 +532,6 @@ void FolderWindow::restoreReopenViewState() {
 }
 
 void FolderWindow::onDestroy() {
-    const bool release = suppressAltButtonUp;
-    suppressAltButtonUp = false;
-    if (release && GetCapture() == hwnd) ReleaseCapture();
     resizeGesture.stop();
     checkHR(viewHost.stopObserving());
     KillTimer(hwnd, TIMER_SAVE_STATE);
