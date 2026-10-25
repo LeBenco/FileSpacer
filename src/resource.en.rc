@@ -149,3 +149,27 @@ BEGIN
   IDS_WINDOW_STATE_LOCKED "Window state locked. Layout changes remain temporary."
   IDS_DISABLE_STATE_LOCK_CONFIRM "Disabling this feature will delete all window state locks. Windows will resume saving their state normally. Do you want to continue?"
 END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_MOVE "Move the window"
+  IDS_SHORTCUT_RESIZE "Resize the window"
+  IDS_SHORTCUT_DISABLED "disabled"
+  IDS_SHORTCUT_LEFT "left"
+  IDS_SHORTCUT_MIDDLE "middle"
+  IDS_SHORTCUT_RIGHT "right"
+  IDS_SHORTCUT_CTRL "Ctrl + "
+  IDS_SHORTCUT_ALT "Alt + "
+  IDS_SHORTCUT_SHIFT "Shift + "
+  IDS_SHORTCUT_DESCRIPTION "%1!s!drag %2!s!"
+  IDS_SHORTCUT_HEADER "%1!s! (%2!s!)"
+  IDS_SHORTCUT_ACCESSIBLE "Enable: %1!s!"
+  IDS_SHORTCUT_GENERAL "Some combinations are reserved for selection and menus."
+  IDS_SHORTCUT_RESERVED "Reserved combination. Add Alt or choose the middle button."
+  IDS_SHORTCUT_CONFLICT "Already assigned to %1!s!."
+  IDS_SHORTCUT_RECORD "Enter keys and mouse button directly..."
+  IDS_SHORTCUT_STOP_RECORD "Hide direct input"
+  IDS_SHORTCUT_LEFT_HINT "Reserved for selection"
+  IDS_SHORTCUT_RIGHT_HINT "Reserved for menus and selection"
+  IDS_SHORTCUT_SAVE_FAILED "The shortcuts could not be saved. The previous settings remain active."
+END

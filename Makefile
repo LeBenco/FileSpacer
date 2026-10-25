@@ -62,6 +62,7 @@ OBJECTS = \
 	$(OUTDIR)\SearchBox.obj \
     $(OUTDIR)\Settings.obj \
     $(OUTDIR)\SettingsDialog.obj \
+    $(OUTDIR)\ShortcutSettingsPage.obj \
     $(OUTDIR)\ShellUtils.obj \
     $(OUTDIR)\ShellViewHost.obj \
     $(OUTDIR)\ShellViewFilter.obj \

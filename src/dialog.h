@@ -43,3 +43,25 @@
 // #define IDC_DONATE_LINK             1407 // Deferred public services.
 
 #define IDC_WINDOW_STATE_LOCK_ENABLED 1040
+
+#define IDD_SETTINGS_SHORTCUTS       114
+#define IDD_SHORTCUT_EDITOR          115
+#define IDC_SHORTCUT_MOVE            1500
+#define IDC_SHORTCUT_RESIZE          1501
+#define IDC_SHORTCUT_ENABLE_MOVE     1502
+#define IDC_SHORTCUT_ENABLE_RESIZE   1503
+#define IDC_SHORTCUT_CTRL            1510
+#define IDC_SHORTCUT_ALT             1511
+#define IDC_SHORTCUT_SHIFT           1512
+#define IDC_SHORTCUT_LEFT            1513
+#define IDC_SHORTCUT_MIDDLE          1514
+#define IDC_SHORTCUT_RIGHT           1515
+#define IDC_SHORTCUT_LEFT_HINT       1516
+#define IDC_SHORTCUT_RIGHT_HINT      1517
+#define IDC_SHORTCUT_FEEDBACK        1518
+#define IDC_SHORTCUT_RECORD          1519
+#define IDC_SHORTCUT_CAPTURE         1520
+#define IDC_SHORTCUT_CAPTURE_HINT    1521
+#define IDC_SHORTCUT_DEFAULT         1522
+#define IDC_SHORTCUT_REVERT          1523
+#define IDC_SHORTCUT_EXCHANGE        1524
