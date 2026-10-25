@@ -100,10 +100,12 @@ From the project root, close FileSpacer and Control Panel windows, then run:
 tests.cmd
 ```
 
-This is the reference regression suite: 101 cases, including one real native
+This is the reference regression suite: 109 cases, including one real native
 Shell/SQLite persistence test in the production spatial configuration. It
 uses the same MSVC/NMAKE build above. Do not also run the native launcher
 when the full suite already ran group 18.
+The external Everything test requires a closed, installed copy of Everything;
+its fixtures and index are isolated. See the test guide for its prerequisites.
 
 For a targeted run, use `-Category` or `-Pattern`; see
 [the test guide](tests/regression/README.md). The retained native test can
