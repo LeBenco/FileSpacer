@@ -172,4 +172,13 @@ BEGIN
   IDS_SHORTCUT_LEFT_HINT "Reserved for selection"
   IDS_SHORTCUT_RIGHT_HINT "Reserved for menus and selection"
   IDS_SHORTCUT_SAVE_FAILED "The shortcuts could not be saved. The previous settings remain active."
+  IDS_SEARCH_EVERYTHING "Search in Everything"
+  IDS_SEARCH_MENU "Everything and recent searches"
+  IDS_EVERYTHING_ERROR "Everything could not be started.\nCheck its path in Settings > Integration.\n\nExecutable: %1!s!\nError %2!u!: %3!s!"
+  IDS_EVERYTHING_AUTO "Automatic detection"
+  IDS_EVERYTHING_FOLDER "Current folder and subfolders"
+  IDS_EVERYTHING_EVERYWHERE "Everywhere"
+  IDS_EVERYTHING_NOT_FOUND "Everything was not found. Install it or select its executable manually."
+  IDS_SEARCH_HISTORY_INVALID "Enter a search history limit from 0 to 20."
+  IDS_EVERYTHING_EXECUTABLE "Everything executable (*.exe)"
 END

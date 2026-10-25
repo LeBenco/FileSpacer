@@ -32,6 +32,9 @@ const bool      DEFAULT_DESELECT_ON_OPEN    = true;
 const bool      DEFAULT_KEEP_SOURCE_WINDOW_OPEN = false;
 const bool      DEFAULT_KEEP_SELECTION_ON_ACTIVATE = true;
 const bool      DEFAULT_LIVE_NAME_SEARCH     = false;
+const DWORD     DEFAULT_SEARCH_HISTORY_LIMIT = 5;
+const DWORD     MAX_SEARCH_HISTORY_LIMIT = 20;
+enum class EverythingScope : DWORD { Folder, Everywhere };
 const bool      DEFAULT_FULL_NAMES_ON_SELECTION = true;
 
 DWORD getLastOpenedVersion();
@@ -74,6 +77,14 @@ bool getKeepSelectionOnActivate();
 void setKeepSelectionOnActivate(bool value);
 bool getLiveNameSearch();
 void setLiveNameSearch(bool value);
+DWORD getSearchHistoryLimit();
+bool setSearchHistoryLimit(DWORD value);
+bool getEverythingEnabled();
+void setEverythingEnabled(bool value);
+wstr_ptr getEverythingPath(); // Empty selects automatic detection.
+void setEverythingPath(wchar_t *value);
+EverythingScope getEverythingScope();
+void setEverythingScope(EverythingScope value);
 bool getWindowStateLockEnabled();
 bool setWindowStateLockEnabled(bool value);
 bool getFullNamesOnSelection();

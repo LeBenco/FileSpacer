@@ -1,5 +1,6 @@
 #include "SettingsDialog.h"
 #include "Settings.h"
+#include "Everything.h"
 #include "FolderStateStore.h"
 #include "CreateItemWindow.h"
 #include "ClosedWindows.h"
@@ -144,14 +145,21 @@ bool pathCBChanged(WPARAM wParam, LPARAM lParam) {
 
 void notifyWindowSettingsChanged() {
     if (ItemWindow::settingsChangedMessage) {
-        auto notify = [](HWND window, LPARAM) -> BOOL {
+        auto notify = [](HWND window, LPARAM historyLimit) -> BOOL {
+            LPARAM testNamespace = 0;
+#ifdef FILESPACER_DEBUG
+            testNamespace = settings::testMode ? 1 : 0;
+#endif
             wchar_t className[64];
             if (GetClassName(window, className, _countof(className))
                     && lstrcmp(className, L"FileSpacer Item Window") == 0)
-                checkLE(SendNotifyMessage(window, ItemWindow::settingsChangedMessage, 0, 0));
+                checkLE(SendNotifyMessage(window, ItemWindow::settingsChangedMessage,
+                    static_cast<WPARAM>(historyLimit), testNamespace));
             return TRUE;
         };
-        checkLE(EnumWindows(notify, 0));
+        // Include the applied limit: another process can receive this after a
+        // later preference change, and must still discard a cleared/trimmed cache.
+        checkLE(EnumWindows(notify, settings::getSearchHistoryLimit() + 1));
     }
 }
 
@@ -440,14 +448,70 @@ void changeDefaultBrowser(HWND owner, bool value) {
     }
 }
 
+static bool searchHistoryLimit(HWND hwnd, DWORD *value) {
+    wchar_t text[16] = {};
+    const int length = GetWindowTextLengthW(GetDlgItem(hwnd, IDC_SEARCH_HISTORY_LIMIT));
+    GetDlgItemTextW(hwnd, IDC_SEARCH_HISTORY_LIMIT, text, _countof(text));
+    DWORD number = 0;
+    bool valid = length > 0 && length < 3;
+    for (int index = 0; valid && index < length; ++index) {
+        valid = text[index] >= L'0' && text[index] <= L'9';
+        if (valid) number = number * 10 + text[index] - L'0';
+    }
+    if (valid && number <= settings::MAX_SEARCH_HISTORY_LIMIT) {
+        *value = number;
+        return true;
+    }
+    MessageBoxW(GetParent(hwnd), getString(IDS_SEARCH_HISTORY_INVALID),
+        getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
+    SetDlgItemInt(hwnd, IDC_SEARCH_HISTORY_LIMIT, settings::getSearchHistoryLimit(), FALSE);
+    SetFocus(GetDlgItem(hwnd, IDC_SEARCH_HISTORY_LIMIT));
+    SendDlgItemMessageW(hwnd, IDC_SEARCH_HISTORY_LIMIT, EM_SETSEL, 0, -1);
+    return false;
+}
+
 INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
+        case WM_INITDIALOG:
+            CheckDlgButton(hwnd, IDC_EVERYTHING_ENABLED,
+                settings::getEverythingEnabled() ? BST_CHECKED : BST_UNCHECKED);
+            SetDlgItemTextW(hwnd, IDC_EVERYTHING_PATH, settings::getEverythingPath().get());
+            SendDlgItemMessageW(hwnd, IDC_EVERYTHING_PATH, EM_SETCUEBANNER, TRUE,
+                reinterpret_cast<LPARAM>(getString(IDS_EVERYTHING_AUTO)));
+            SendDlgItemMessageW(hwnd, IDC_EVERYTHING_SCOPE, CB_ADDSTRING, 0,
+                reinterpret_cast<LPARAM>(getString(IDS_EVERYTHING_FOLDER)));
+            SendDlgItemMessageW(hwnd, IDC_EVERYTHING_SCOPE, CB_ADDSTRING, 0,
+                reinterpret_cast<LPARAM>(getString(IDS_EVERYTHING_EVERYWHERE)));
+            SendDlgItemMessageW(hwnd, IDC_EVERYTHING_SCOPE, CB_SETCURSEL,
+                static_cast<WPARAM>(settings::getEverythingScope()), 0);
+            SetDlgItemInt(hwnd, IDC_SEARCH_HISTORY_LIMIT, settings::getSearchHistoryLimit(), FALSE);
+            return TRUE;
         case WM_NOTIFY: {
             NMHDR *notif = (NMHDR *)lParam;
             if (notif->code == PSN_KILLACTIVE) {
-                SetWindowLongPtr(hwnd, DWLP_MSGRESULT, FALSE);
+                DWORD limit = 0;
+                SetWindowLongPtr(hwnd, DWLP_MSGRESULT, !searchHistoryLimit(hwnd, &limit));
                 return TRUE;
             } else if (notif->code == PSN_APPLY) {
+                DWORD limit = 0;
+                if (!searchHistoryLimit(hwnd, &limit)) {
+                    SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
+                    return TRUE;
+                }
+                if (!settings::setSearchHistoryLimit(limit)) {
+                    reportFolderStateError(GetParent(hwnd));
+                    SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
+                    return TRUE;
+                }
+                const int length = GetWindowTextLengthW(GetDlgItem(hwnd, IDC_EVERYTHING_PATH));
+                std::vector<wchar_t> path(static_cast<size_t>(length) + 1);
+                GetDlgItemTextW(hwnd, IDC_EVERYTHING_PATH, path.data(), length + 1);
+                settings::setEverythingPath(path.data());
+                settings::setEverythingEnabled(!!IsDlgButtonChecked(hwnd, IDC_EVERYTHING_ENABLED));
+                const LRESULT scope = SendDlgItemMessageW(hwnd, IDC_EVERYTHING_SCOPE, CB_GETCURSEL, 0, 0);
+                settings::setEverythingScope(scope == 1 ? settings::EverythingScope::Everywhere
+                    : settings::EverythingScope::Folder);
+                notifyWindowSettingsChanged();
                 SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_NOERROR);
                 return TRUE;
             } else if (notif->code == PSN_HELP) {
@@ -461,6 +525,33 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             return FALSE;
         }
         case WM_COMMAND:
+            if (LOWORD(wParam) == IDC_EVERYTHING_DETECT && HIWORD(wParam) == BN_CLICKED) {
+                const auto path = findEverything();
+                if (path.empty()) MessageBoxW(GetParent(hwnd), getString(IDS_EVERYTHING_NOT_FOUND),
+                    getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
+                else SetDlgItemTextW(hwnd, IDC_EVERYTHING_PATH, path.c_str());
+                return TRUE;
+            }
+            if (LOWORD(wParam) == IDC_EVERYTHING_BROWSE && HIWORD(wParam) == BN_CLICKED) {
+                CComPtr<IFileOpenDialog> dialog;
+                if (SUCCEEDED(dialog.CoCreateInstance(__uuidof(FileOpenDialog)))) {
+                    const COMDLG_FILTERSPEC filter = {getString(IDS_EVERYTHING_EXECUTABLE), L"*.exe"};
+                    dialog->SetFileTypes(1, &filter);
+                    if (SUCCEEDED(dialog->Show(GetParent(hwnd)))) {
+                        CComPtr<IShellItem> item;
+                        CComHeapPtr<wchar_t> path;
+                        if (SUCCEEDED(dialog->GetResult(&item))
+                                && SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH, &path)))
+                            SetDlgItemTextW(hwnd, IDC_EVERYTHING_PATH, path);
+                    }
+                }
+                return TRUE;
+            }
+            if ((LOWORD(wParam) == IDC_EVERYTHING_ENABLED && HIWORD(wParam) == BN_CLICKED)
+                    || (LOWORD(wParam) == IDC_EVERYTHING_SCOPE && HIWORD(wParam) == CBN_SELCHANGE)
+                    || ((LOWORD(wParam) == IDC_EVERYTHING_PATH || LOWORD(wParam) == IDC_SEARCH_HISTORY_LIMIT)
+                        && HIWORD(wParam) == EN_CHANGE))
+                PropSheet_Changed(GetParent(hwnd), hwnd);
             if (LOWORD(wParam) == IDC_SET_DEFAULT_BROWSER && HIWORD(wParam) == BN_CLICKED) {
                 changeDefaultBrowser(GetParent(hwnd), true);
                 return TRUE;
