@@ -35,7 +35,7 @@ namespace FileSpacerRegression {
         [DllImport("user32.dll")] static extern bool IsChild(IntPtr parent,IntPtr child);
         [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr window,out uint processId);
         [DllImport("user32.dll",SetLastError=true)] static extern bool GetGUIThreadInfo(uint thread,ref GuiInfo info);
-        static bool buttonHeld,altHeld,rightButton;
+        static bool buttonHeld,altHeld,rightButton,middleButton,ctrlHeld,shiftHeld;
         static DateTime lastRelease=DateTime.MinValue;
 
         static Input Key(ushort key,bool up) {
@@ -43,7 +43,7 @@ namespace FileSpacerRegression {
             input.Data.Keyboard.Flags=up?2u:0u; return input;
         }
         static Input Button(bool up) {
-            var input=new Input(); input.Data.Mouse.Flags=rightButton?(up?0x10u:8u):(up?4u:2u); return input;
+            var input=new Input(); input.Data.Mouse.Flags=middleButton?(up?0x40u:0x20u):rightButton?(up?0x10u:8u):(up?4u:2u); return input;
         }
         static void Send(params Input[] inputs) {
             if(SendInput((uint)inputs.Length,inputs,Marshal.SizeOf(typeof(Input)))!=inputs.Length)
@@ -55,19 +55,24 @@ namespace FileSpacerRegression {
         public static void BeginRight(IntPtr window,MousePoint point,bool alt,bool doublePress) {
             BeginButton(window,point,alt,doublePress,true);
         }
-        static void BeginButton(IntPtr window,MousePoint point,bool alt,bool doublePress,bool right) {
+        public static void BeginConfigured(IntPtr window,MousePoint point,int button,int modifiers) {
+            BeginButton(window,point,(modifiers&2)!=0,false,button==2,button==1,(modifiers&1)!=0,(modifiers&4)!=0);
+        }
+        static void BeginButton(IntPtr window,MousePoint point,bool alt,bool doublePress,bool right,bool middle=false,bool control=false,bool shift=false) {
             // Separate independent gestures using the actual Windows setting.
             // doublePress below still emits both clicks in one uninterrupted batch.
             double elapsed=(DateTime.UtcNow-lastRelease).TotalMilliseconds;
             if(elapsed<=GetDoubleClickTime()) Thread.Sleep((int)(GetDoubleClickTime()-elapsed)+1);
-            foreach(int key in new int[]{0x01,0x02,0x10,0x11,0x12})
+            foreach(int key in new int[]{0x01,0x02,0x04,0x10,0x11,0x12})
                 if(GetAsyncKeyState(key)<0) throw new InvalidOperationException("Release mouse buttons and modifiers before the test gesture.");
             Move(point);
             IntPtr target=WindowFromPoint(point);
             if(target!=window && !IsChild(window,target))
                 throw new InvalidOperationException("The test gesture point is covered by another window.");
             // Track ownership before sending, so finally can release partial input too.
-            buttonHeld=true; altHeld=alt; rightButton=right;
+            buttonHeld=true; altHeld=alt; rightButton=right; middleButton=middle; ctrlHeld=control; shiftHeld=shift;
+            if(control) Send(Key(0x11,false));
+            if(shift) Send(Key(0x10,false));
             if(alt) {
                 Send(Key(0x12,false));
                 // SendInput inserts input; confirm the OS key state separately.
@@ -105,7 +110,13 @@ namespace FileSpacerRegression {
         }
         public static void End() {
             try { if(buttonHeld) { Trace(rightButton?"releasing right":"releasing left"); Send(Button(true)); buttonHeld=false; lastRelease=DateTime.UtcNow; } }
-            finally { ReleaseAlt(); }
+            finally {
+                try { ReleaseAlt(); }
+                finally {
+                    try { if(shiftHeld) { Send(Key(0x10,true)); shiftHeld=false; } }
+                    finally { if(ctrlHeld) { Send(Key(0x11,true)); ctrlHeld=false; } }
+                }
+            }
         }
         public static void Escape() {
             ReleaseAlt();

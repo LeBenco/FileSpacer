@@ -15,6 +15,7 @@ function Build-NativeTest {
         [string[]]$ProductionSources=@(), [switch]$Sqlite, [switch]$Storage,
         [ValidateSet('','Menu','Shell','Settings','View','Adapters','Geometry')][string]$Extract='',
         [switch]$Resources, [switch]$CommonControls, [string[]]$Libraries=@(),
+        [ValidateSet('c++14','c++17')][string]$Standard='c++17', [string[]]$Defines=@(),
         [string]$OutputDirectory='')
     $output=Join-Path $RunDirectory $Name
     if ($OutputDirectory) { $output=[IO.Path]::GetFullPath($OutputDirectory) }
@@ -25,10 +26,11 @@ function Build-NativeTest {
     $source=Join-Path $CaseDirectory ($Name+'.cpp')
     if ($Extract -in @('View','Adapters','Geometry')) { $source=Join-Path $output ($Name+'.cpp') }
     $exe=Join-Path $output ($Name+'.exe')
-    $arguments=@('/nologo','/std:c++17','/EHsc','/W4','/MTd','/Z7','/UNDEBUG','/utf-8','/D_CRT_SECURE_NO_WARNINGS',
+    $arguments=@('/nologo',('/std:'+$Standard),'/EHsc','/W4','/MTd','/Z7','/UNDEBUG','/utf-8','/D_CRT_SECURE_NO_WARNINGS',
         ('/I'+(Join-Path $ProjectRoot 'src')), ('/I'+$CaseDirectory), ('/I'+$output),
         ('/Fo'+$output+'\\'), ('/Fe'+$exe))
     if ($Storage) { $arguments+='/DFILESPACER_STORAGE_TEST' }
+    foreach ($define in $Defines) { $arguments+=('/D'+$define) }
     if ($Sqlite) {
         $sqliteDirectory=Join-Path $ProjectRoot 'third_party\sqlite'
         $obj=Join-Path $output 'sqlite3.obj'
