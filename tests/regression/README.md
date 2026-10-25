@@ -10,7 +10,7 @@ tests.cmd
 ```
 
 Le lanceur construit l'application par `build.cmd debug`, initialise MSVC x64,
-et lance les **104 jeux** indépendants. Ils ne doivent pas être complétés par
+et lance les **109 jeux** indépendants. Ils ne doivent pas être complétés par
 un second passage des mêmes bancs natifs. Chaque jeu possède son processus
 PowerShell et son dossier de résultats sous `build/regression/<date>-<id>`.
 
@@ -61,6 +61,28 @@ tests.cmd -Pattern "24-*"
 | 21-clic-activation | 1 | Clic sur le fond d'une fenêtre inactive : activation sans perte de sélection, clic d'élément, préférence désactivée. |
 | 22-verrouillage | 2 | Activation, menu natif, référence visible, géométrie/vue temporaires, placements individuels, déverrouillage, confirmation et suppression globale entre processus, réouverture et redémarrage ; rendu ICO natif, transparence, DPI et couleurs de contraste élevé. |
 | 24-raccourcis | 3 | Onglet natif FR/EN, 2 304 couples de réglages, persistance atomique, capture directe, conflits, valeurs par défaut par action, annulation, 64 gestes réels dans deux processus et comparaison des propriétés avec le Shell sans raccourcis. |
+| 25-recherche-integration | 5 | Historique SQLite isolé, migration, entrées Win32, arguments et erreurs, parcours Shell réel, préférences 0/5/20, application Everything réelle et suggestions sans chevron au focus/clic. |
+
+Le groupe 25 réutilise `Native.ps1`, `EssentialUi.ps1` et le mode `/test` du
+lanceur. Les deux premiers jeux sont internes : ils ne lancent pas Everything.
+Pour vérifier une machine dépourvue d'Everything avant installation, définir
+`FILESPACER_EXPECT_EVERYTHING_ABSENT=1` avant le jeu 02 ; cette assertion vérifie la
+détection réelle, sans faux registre d'installation.
+
+Le jeu 04 nécessite Everything fermé et installé. Par défaut, il cherche
+`%LOCALAPPDATA%\Programs\Everything\Everything.exe` ; `FILESPACER_EVERYTHING_EXE`
+permet de préciser une autre installation. Il vérifie aussi la détection automatique
+de cette installation, qui doit donc se trouver à un emplacement détectable.
+Il ouvre l'application officielle avec un INI et une base dédiés aux fixtures,
+indexe uniquement ces fixtures et lit les requêtes et noms effectivement affichés.
+Il contrôle les deux portées, les sous-dossiers, le chemin manuel Unicode, les
+guillemets, métacaractères et erreurs visibles. Il ne remplace pas Everything par
+un lanceur simulé. En l'absence de ce prérequis, le parcours réel reste non validé.
+
+Le jeu 05 vérifie la liste sans chevron avec de vrais événements clavier/souris :
+ouverture au focus et au clic, saisie et recherche instantanée conservées, aucune
+présélection, Entrée locale, flèches et séparateur, Échap sans effacement, Tab,
+réouverture, choix d'un historique à la souris et fermeture avec son propriétaire.
 
 Les 50 jeux Alt restent distincts : ils vérifient des gestes ou zones différents.
 Leur instrumentation peut observer un contrôle Windows ; l'application utilise
@@ -139,6 +161,13 @@ Les mesures de charge ne démontrent pas une parité de performances avec une
 autre version sans comparaison dans les mêmes conditions. Les configurations
 non présentes (écrans, DPI, extensions ou versions Windows) ne sont pas déclarées
 validées automatiquement. Voir [l'architecture](../../docs/native-shell-view.md).
+
+Pour diagnostiquer la recherche, `set FS_SEARCH_TIMINGS=1` active les durées des
+lectures réelles dans `search-observations.jsonl`. Le jeu 20/01 écrit aussi les
+phases dans `load-phases.jsonl` (temps, CPU et présence du helper Computer Use).
+Ces journaux ne changent ni les attentes ni les délais. Une inspection
+d'accessibilité concurrente peut ralentir fortement la vue de 5 000 éléments ;
+le banc n'arrête aucun outil externe. Voir la [comparaison contrôlée](../../docs/development-history.md#load-investigation-and-observer-correction).
 
 ## Verrouillage de l’état mémorisé
 
