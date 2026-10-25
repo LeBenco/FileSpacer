@@ -50,7 +50,8 @@ try {
     Check-Windows $true $true $true
 
     [void](Show-UiSettings $first); $page=Set-UiPage 1
-    Assert-Ui (![FileSpacerRegression.Native]::IsWindowEnabled([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_FULL_NAMES_ON_SELECTION')))) 'Unavailable selected-name rendering must be disabled in Settings.'
+    Assert-Ui ([FileSpacerRegression.Native]::IsWindowEnabled([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_FULL_NAMES_ON_SELECTION')))) 'Single selected-name rendering must be available in Settings.'
+    Set-UiCheck $page 'IDC_FULL_NAMES_ON_SELECTION' $true
     Set-UiCheck $page 'IDC_STATUS_TEXT_ENABLED' $false
     Set-UiCheck $page 'IDC_PATH_BAR_ENABLED' $false
     Check-Windows $true $true $true
@@ -58,6 +59,7 @@ try {
     Press-UiSettings 5
     Check-Windows $true $true $true
     Assert-Ui ((Get-UiPreference 'StatusTextEnabled') -eq 1 -and (Get-UiPreference 'PathBarEnabled') -eq 1) 'Cancel saved pending changes.'
+    Assert-Ui ((Get-UiPreference 'FullNamesOnSelection') -eq 0) 'Cancel saved the pending selected-name option.'
     Write-Host 'PASS: pending preferences and Cancel affect neither saved values nor open windows.'
 
     [void](Show-UiSettings $first); $page=Set-UiPage 1
@@ -65,8 +67,13 @@ try {
     Set-UiCheck $page 'IDC_PATH_BAR_ENABLED' $false
     Press-UiSettings 4; Check-Windows $false $true $false
     Assert-Ui ((Get-UiPreference 'StatusTextEnabled') -eq 0 -and (Get-UiPreference 'PathBarEnabled') -eq 0) 'Apply did not save the selected preferences.'
+    Set-UiCheck $page 'IDC_FULL_NAMES_ON_SELECTION' $true
+    Press-UiSettings 4
+    Wait-Ui { (Get-UiPreference 'FullNamesOnSelection') -eq 1 } 'Apply enables the selected-name option'
+    Set-UiCheck $page 'IDC_FULL_NAMES_ON_SELECTION' $false
     Set-UiCheck $page 'IDC_TOOLBAR_ENABLED' $false
     Press-UiSettings 4; Check-Windows $false $false $false
+    Wait-Ui { (Get-UiPreference 'FullNamesOnSelection') -eq 0 } 'Apply disables the selected-name option'
     Set-UiCheck $page 'IDC_TOOLBAR_ENABLED' $true
     Press-UiSettings 4; Check-Windows $false $true $false
     Assert-Ui ([FileSpacerRegression.Native]::Message([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_PATH_BAR_ENABLED')),0xf0,0,0) -eq 0) 'Hiding/showing the toolbar lost the path-bar choice.'
