@@ -118,6 +118,11 @@ n'est livré ici ; le build de l'application, la suite de régression et les
 analyses statiques d'un correctif produit ne sont donc pas annoncés comme passés.
 Les sondes temporaires ne sont pas ajoutées au dépôt.
 
+## Recherche complémentaire
+
+Les essais sur le dépliage multiple et un volet de lecture alternatif sont
+décrits dans [le compte rendu complémentaire](native-multi-label-investigation.md).
+
 ## Contrats documentés consultés
 
 - [IShellView / IOleWindow::GetWindow](https://learn.microsoft.com/en-us/windows/win32/api/oleidl/nf-oleidl-iolewindow-getwindow)
