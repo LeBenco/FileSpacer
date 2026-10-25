@@ -362,13 +362,15 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 bool refreshButtonEnabled = !!IsDlgButtonChecked(hwnd, IDC_REFRESH_BUTTON_ENABLED);
                 bool upButtonEnabled = !!IsDlgButtonChecked(hwnd, IDC_UP_BUTTON_ENABLED);
                 bool viewButtonEnabled = !!IsDlgButtonChecked(hwnd, IDC_VIEW_BUTTON_ENABLED);
+                bool fullNamesOnSelection = !!IsDlgButtonChecked(hwnd, IDC_FULL_NAMES_ON_SELECTION);
                 bool windowSettingsChanged = statusTextEnabled != settings::getStatusTextEnabled()
                     || toolbarEnabled != settings::getToolbarEnabled()
                     || quickAccessEnabled != settings::getQuickAccessEnabled()
                     || pathBarEnabled != settings::getPathBarEnabled()
                     || refreshButtonEnabled != settings::getRefreshButtonEnabled()
                     || upButtonEnabled != settings::getUpButtonEnabled()
-                    || viewButtonEnabled != settings::getViewButtonEnabled();
+                    || viewButtonEnabled != settings::getViewButtonEnabled()
+                    || fullNamesOnSelection != settings::getFullNamesOnSelection();
                 settings::setStatusTextEnabled(statusTextEnabled);
                 settings::setToolbarEnabled(toolbarEnabled);
                 settings::setQuickAccessEnabled(quickAccessEnabled);
@@ -376,8 +378,7 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::setRefreshButtonEnabled(refreshButtonEnabled);
                 settings::setUpButtonEnabled(upButtonEnabled);
                 settings::setViewButtonEnabled(viewButtonEnabled);
-                // The view implementation is chosen when each folder window is created.
-                settings::setFullNamesOnSelection(!!IsDlgButtonChecked(hwnd, IDC_FULL_NAMES_ON_SELECTION));
+                settings::setFullNamesOnSelection(fullNamesOnSelection);
                 if (windowSettingsChanged)
                     notifyWindowSettingsChanged();
                 SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_NOERROR);
