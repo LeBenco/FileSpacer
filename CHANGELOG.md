@@ -1,9 +1,13 @@
 # Changelog
 
-## Unreleased
+## 1.1.3 — 2026-10-25
 
 - Add a Shortcuts settings tab to configure or disable window move/resize gestures using modifier keys and left, middle or right mouse buttons, with direct input capture and conflict validation.
 - Leave Alt + double-click Properties handling to the native Explorer view.
+- Restore full labels on opaque backgrounds for a single selected item in Icons view. Multiple selection retains native Windows rendering, and the preference now describes this scope.
+- Add exhaustive shortcut configuration tests and real mouse gesture coverage, with French and English settings resources.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.2...v1.1.3)
 
 ## 1.1.2 — 2026-10-25
 
