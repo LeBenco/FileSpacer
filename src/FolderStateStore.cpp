@@ -3,6 +3,7 @@
 #include <cstring>
 #include <memory>
 #include <utility>
+#include <algorithm>
 #if defined(_WIN32) && defined(FILESPACER_STORAGE_TEST)
 #include <windows.h>
 #endif
@@ -122,7 +123,7 @@ FolderStateStore::FolderStateStore(const char *utf8Path) {
     }
     int schema = sqlite3_column_int(version.get(), 0);
     version.reset();
-    if (schema != 0 && schema != 2 && schema != 3 && schema != 4 && schema != 5) {
+    if (schema != 0 && schema != 2 && schema != 3 && schema != 4 && schema != 5 && schema != 6) {
         lastError = "Unsupported FileSpacer database version";
         finishWrite(false);
         return;
@@ -136,7 +137,12 @@ FolderStateStore::FolderStateStore(const char *utf8Path) {
             "CREATE TABLE IF NOT EXISTS closed_windows("
             "sequence INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL,"
             "parsing_name TEXT NOT NULL, display_name TEXT NOT NULL, view_state BLOB);"
-            "PRAGMA user_version=5;")) {
+            "CREATE TABLE IF NOT EXISTS search_history("
+            "sequence INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT NOT NULL, query TEXT NOT NULL,"
+            "UNIQUE(key,query));"
+            "CREATE TRIGGER IF NOT EXISTS delete_search_history AFTER DELETE ON folder_state "
+            "BEGIN DELETE FROM search_history WHERE key=old.key; END;"
+            "PRAGMA user_version=6;")) {
         finishWrite(false);
         return;
     }
@@ -529,12 +535,86 @@ bool FolderStateStore::move(const std::string &oldKey, const std::string &newKey
             && result(sqlite3_bind_text(raw, 2, newKey.c_str(), -1, SQLITE_TRANSIENT))
             && result(sqlite3_step(raw));
     }
+    // Move history before deleting the old state (whose trigger removes its history).
+    for (const char *sql : {"DELETE FROM search_history WHERE key=?2",
+            "UPDATE search_history SET key=?2 WHERE key=?1"}) {
+        raw = nullptr;
+        if (success) success = result(sqlite3_prepare_v2(db, sql, -1, &raw, nullptr));
+        Statement statement(raw, sqlite3_finalize);
+        if (success && sqlite3_bind_parameter_index(raw, "?1"))
+            success = result(sqlite3_bind_text(raw, 1, oldKey.c_str(), -1, SQLITE_TRANSIENT));
+        if (success) success = result(sqlite3_bind_text(raw, 2, newKey.c_str(), -1, SQLITE_TRANSIENT))
+            && result(sqlite3_step(raw));
+    }
     raw = nullptr;
     if (success) success = result(sqlite3_prepare_v2(db,
         "DELETE FROM folder_state WHERE key=?1", -1, &raw, nullptr));
     {
         Statement statement(raw, sqlite3_finalize);
         if (success) success = result(sqlite3_bind_text(raw, 1, oldKey.c_str(), -1, SQLITE_TRANSIENT))
+            && result(sqlite3_step(raw));
+    }
+    return finishWrite(success);
+}
+
+bool FolderStateStore::readSearchHistory(const std::string &key, unsigned limit,
+        std::vector<std::string> *queries) {
+    if (!initialized) return false;
+    sqlite3_stmt *raw = nullptr;
+    if (!result(sqlite3_prepare_v2(db, "SELECT query FROM search_history WHERE key=?1 "
+            "ORDER BY sequence DESC LIMIT ?2", -1, &raw, nullptr))) return false;
+    Statement statement(raw, sqlite3_finalize);
+    if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))
+            || !result(sqlite3_bind_int(raw, 2, limit > 20 ? 20 : static_cast<int>(limit)))) return false;
+    std::vector<std::string> values;
+    int code;
+    while ((code = sqlite3_step(raw)) == SQLITE_ROW)
+        values.emplace_back(reinterpret_cast<const char *>(sqlite3_column_text(raw, 0)));
+    if (!result(code)) return false;
+    *queries = std::move(values);
+    return true;
+}
+
+bool FolderStateStore::saveSearchHistory(const std::string &key,
+        const std::vector<std::string> &queries, unsigned limit) {
+    if (!initialized || !execute("BEGIN IMMEDIATE")) return false;
+    const bool success = [&]() {
+        sqlite3_stmt *raw = nullptr;
+        if (!result(sqlite3_prepare_v2(db, "DELETE FROM search_history WHERE key=?1",
+                -1, &raw, nullptr))) return false;
+        {
+            Statement statement(raw, sqlite3_finalize);
+            if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))
+                    || !result(sqlite3_step(raw))) return false;
+        }
+        raw = nullptr;
+        // Never recreate a folder state removed by maintenance or a confirmed deletion.
+        if (!result(sqlite3_prepare_v2(db, "INSERT OR IGNORE INTO search_history(key,query) "
+                "SELECT ?1,?2 WHERE EXISTS(SELECT 1 FROM folder_state WHERE key=?1)",
+                -1, &raw, nullptr))) return false;
+        Statement statement(raw, sqlite3_finalize);
+        const size_t count = (std::min)(queries.size(), static_cast<size_t>(limit > 20 ? 20 : limit));
+        for (size_t index = count; index > 0; --index) {
+            if (queries[index - 1].empty()) continue;
+            sqlite3_reset(raw);
+            if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))
+                    || !result(sqlite3_bind_text(raw, 2, queries[index - 1].c_str(), -1, SQLITE_TRANSIENT))
+                    || !result(sqlite3_step(raw))) return false;
+        }
+        return true;
+    }();
+    return finishWrite(success);
+}
+
+bool FolderStateStore::trimSearchHistory(unsigned limit) {
+    if (!initialized || !execute("BEGIN IMMEDIATE")) return false;
+    sqlite3_stmt *raw = nullptr;
+    bool success = result(sqlite3_prepare_v2(db, "DELETE FROM search_history WHERE sequence NOT IN "
+        "(SELECT recent.sequence FROM search_history recent WHERE recent.key=search_history.key "
+        "ORDER BY recent.sequence DESC LIMIT ?1)", -1, &raw, nullptr));
+    {
+        Statement statement(raw, sqlite3_finalize);
+        if (success) success = result(sqlite3_bind_int(raw, 1, limit > 20 ? 20 : static_cast<int>(limit)))
             && result(sqlite3_step(raw));
     }
     return finishWrite(success);
