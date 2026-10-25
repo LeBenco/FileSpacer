@@ -80,7 +80,7 @@ class LabelTests : public IServiceProvider, public ICommDlgBrowser2, public IExp
         return image;
     }
     static size_t differences(const Raster &a, const Raster &b, RECT area) {
-        if (a.pixels.empty() || a.width != b.width || a.height != b.height) return SIZE_MAX;
+        if (a.pixels.empty() || b.pixels.empty() || a.width != b.width || a.height != b.height) return SIZE_MAX;
         size_t count = 0;
         for (LONG y = (std::max)(0L, area.top); y < area.bottom && y < a.height; ++y)
             for (LONG x = (std::max)(0L, area.left); x < area.right && x < a.width; ++x)
@@ -148,6 +148,10 @@ class LabelTests : public IServiceProvider, public ICommDlgBrowser2, public IExp
         expect(label.bottom - label.top > 60 && changed > 50 && changed != SIZE_MAX,
             "single selected long name has an opaque native label background");
         RECT all = {0, 0, native.width, native.height};
+        Raster unavailable;
+        unavailable.width = native.width; unavailable.height = native.height;
+        expect(differences(native, unavailable, all) == SIZE_MAX,
+            "a failed second capture cannot be compared as a valid image");
         expect(differences(native, disabled, all) == 0, "disabling restores the exact native image");
         unchanged({0}, 0);
         nativeCase({0, 1}, 1, "multiple selection is pixel-identical to native rendering");
@@ -160,7 +164,8 @@ class LabelTests : public IServiceProvider, public ICommDlgBrowser2, public IExp
         unchanged({0}, 1);
         select({0}, 0);
         const Raster returnedNative = render(false), returnedSingle = render(true);
-        expect(differences(returnedNative, returnedSingle, label) > 50,
+        const size_t returnedChanges = differences(returnedNative, returnedSingle, label);
+        expect(returnedChanges > 50 && returnedChanges != SIZE_MAX,
             "returning to a single selection restores the opaque label");
         expect(SUCCEEDED(folder->SelectItem(0, SVSI_EDIT | SVSI_SELECT | SVSI_FOCUSED)), "begin native rename editor");
         expect(ListView_GetEditControl(list) != nullptr, "native rename editor remains available");
