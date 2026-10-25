@@ -46,8 +46,8 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Afficher le bouton A&ffichage", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 105, 130, 14
   CONTROL "Les éléments ci-dessus sont visibles lorsque la barre d’outils est affichée.", -1, "Static", WS_GROUP, 14, 121, 272, 16
   CONTROL "Noms des fichiers", -1, "Button", BS_GROUPBOX, 7, 147, 286, 46
-  CONTROL "Afficher les &noms longs en entier à la sélection", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|WS_DISABLED, 14, 159, 272, 12
-  CONTROL "Indisponible avec la vue Shell actuelle.\nLe rendu natif de Windows s’applique.", -1, "Static", WS_GROUP, 14, 173, 272, 16
+  CONTROL "Afficher le &nom complet en sélection simple", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 159, 272, 12
+  CONTROL "En vue Icônes, avec fond opaque.\nSinon, le rendu natif de Windows s’applique.", -1, "Static", WS_GROUP, 14, 173, 272, 16
   CONTROL "Taille des fenêtres par défaut", -1, "Button", BS_GROUPBOX, 7, 200, 286, 35
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 217, 88, 8
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 214, 35, 14
