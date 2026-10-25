@@ -171,4 +171,13 @@ BEGIN
   IDS_SHORTCUT_LEFT_HINT "Réservé à la sélection"
   IDS_SHORTCUT_RIGHT_HINT "Réservé aux menus et à la sélection"
   IDS_SHORTCUT_SAVE_FAILED "Les raccourcis n’ont pas pu être enregistrés. Les réglages précédents restent actifs."
+  IDS_SEARCH_EVERYTHING "Rechercher dans Everything"
+  IDS_SEARCH_MENU "Everything et recherches récentes"
+  IDS_EVERYTHING_ERROR "Impossible de lancer Everything.\nVérifiez son chemin dans Paramètres > Intégration.\n\nExécutable : %1!s!\nErreur %2!u! : %3!s!"
+  IDS_EVERYTHING_AUTO "Détection automatique"
+  IDS_EVERYTHING_FOLDER "Dossier courant et sous-dossiers"
+  IDS_EVERYTHING_EVERYWHERE "Partout"
+  IDS_EVERYTHING_NOT_FOUND "Everything est introuvable. Installez-le ou sélectionnez son exécutable manuellement."
+  IDS_SEARCH_HISTORY_INVALID "Saisissez une limite d’historique comprise entre 0 et 20."
+  IDS_EVERYTHING_EXECUTABLE "Exécutable Everything (*.exe)"
 END

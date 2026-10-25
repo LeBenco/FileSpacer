@@ -61,6 +61,9 @@ public:
     bool clearAll();
     bool remove(const std::string &key);
     bool move(const std::string &oldKey, const std::string &newKey);
+    bool readSearchHistory(const std::string &key, unsigned limit, std::vector<std::string> *queries);
+    bool saveSearchHistory(const std::string &key, const std::vector<std::string> &queries, unsigned limit);
+    bool trimSearchHistory(unsigned limit);
     bool lastClosedWindow(ClosedWindow *window);
     bool takeClosedWindow(ClosedWindow *window);
     bool rememberClosedWindow(const ClosedWindow &window);
