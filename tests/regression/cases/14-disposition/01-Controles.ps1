@@ -38,7 +38,7 @@ function Snapshot-Layout([bool]$Path,[bool]$Commands) {
     $searchBounds=[FileSpacerRegression.Native]::Bounds($search)
     Inside $searchBounds ([FileSpacerRegression.Native]::ClientBounds($toolbar)) 'Search box'
     Inside ([FileSpacerRegression.Native]::Bounds((Get-UiSearchEdit $window))) ([FileSpacerRegression.Native]::ClientBounds($search)) 'Search edit'
-    $submit=Get-UiControl $search 'Button'
+    $submit=Get-UiSearchSubmit $window
     Inside ([FileSpacerRegression.Native]::Bounds($submit)) ([FileSpacerRegression.Native]::ClientBounds($search)) 'Search submit button'
     Separate ([FileSpacerRegression.Native]::Bounds((Get-UiSearchEdit $window))) ([FileSpacerRegression.Native]::Bounds($submit)) 'Search edit / submit button'
     if ($Path) {
