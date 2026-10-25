@@ -110,7 +110,7 @@ try {
     foreach ($window in @($first,$second)) { [FileSpacerRegression.Native]::SetText((Get-UiSearchEdit $window),'keep') }
     Check-Counts 2
     foreach ($window in @($first,$second)) {
-        $button=Get-UiControl (Get-UiControl $window 'FileSpacer Search Box') 'Button'
+        $button=Get-UiSearchSubmit $window
         [void][FileSpacerRegression.Native]::Message($button,0xf5,0,0)
     }
     Check-Counts 1

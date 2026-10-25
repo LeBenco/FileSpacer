@@ -49,7 +49,9 @@ int main(int argc, char **argv) {
         {
             FolderStateStore store(path.c_str()); require(store.ready(), store.error().c_str());
             Database db(path.c_str());
-            require(db.number("PRAGMA user_version") == 5, "schema version");
+            require(db.number("PRAGMA user_version") == 6, "schema version");
+            require(db.number("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='search_history'") == 1,
+                "separate history table missing");
             require(db.number("PRAGMA synchronous") == 2, "FULL must remain enabled");
             // Connection-specific WAL settings are inspected on a second production store
             // through observable recycling; this observer's own pragma values are defaults.
@@ -132,10 +134,13 @@ int main(int argc, char **argv) {
             require(window != nullptr && SetPropW(window, L"open", reinterpret_cast<HANDLE>(1)), "native quota window");
             state(store, "open", 40000000, 100);
             state(store, "closed", 40000000, 200);
+            require(store.saveSearchHistory("closed", {"closed query"}, 5), "closed quota history");
             require(store.setLocked("closed", read(store, "closed"), FolderState::Position, true), "locked quota fixture");
             state(store, "recent", 40000000, 300);
             require(db.number("SELECT count(*) FROM folder_state WHERE key='open'") == 1
                 && db.number("SELECT count(*) FROM folder_state WHERE key='closed'") == 0, "closed rows must be preferred");
+            require(db.number("SELECT count(*) FROM search_history WHERE key='closed'") == 0,
+                "quota left orphan search history");
             state(store, "open", 105000000, 400);
             require(db.number("SELECT count(*) FROM folder_state WHERE key='open'") == 0 && IsWindow(window), "quota priority over open state");
             RemovePropW(window, L"open"); DestroyWindow(window);
