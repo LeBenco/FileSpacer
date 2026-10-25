@@ -10,7 +10,7 @@ try {
     foreach ($name in @('keep.txt','other.txt')) { [IO.File]::WriteAllText((Join-Path $folder $name),'fixture') }
     $window=Open-UiFolder $folder 2
     $edit=Get-UiSearchEdit $window
-    $button=Get-UiControl (Get-UiControl $window 'FileSpacer Search Box') 'Button'
+    $button=Get-UiSearchSubmit $window
     [FileSpacerRegression.Native]::SetText($edit,'keep')
     Assert-SearchCount $window 2
     [void][FileSpacerRegression.Native]::Message($button,0xf5,0,0) # BM_CLICK
