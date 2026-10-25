@@ -10,7 +10,7 @@ tests.cmd
 ```
 
 Le lanceur construit l'application par `build.cmd debug`, initialise MSVC x64,
-et lance les **100 jeux** indépendants. Ils ne doivent pas être complétés par
+et lance les **101 jeux** indépendants. Ils ne doivent pas être complétés par
 un second passage des mêmes bancs natifs. Chaque jeu possède son processus
 PowerShell et son dossier de résultats sous `build/regression/<date>-<id>`.
 

@@ -171,6 +171,13 @@ int main() {
     require(stored.cx == minimum.cx && stored.cy == minimum.cy && writes == 9, "valid dimensions and options saved");
     ++cases;
     reset();
+    CheckDlgButton(displayPage, IDC_FULL_NAMES_ON_SELECTION, BST_UNCHECKED);
+    require(notify(PSN_APPLY) == PSNRET_NOERROR && !options[7] && notifications == 1,
+        "changing only selected-name rendering notifies existing windows");
+    require(notify(PSN_APPLY) == PSNRET_NOERROR && notifications == 1,
+        "unchanged selected-name rendering does not notify twice");
+    ++cases;
+    reset();
     setText(IDC_FOLDER_WINDOW_WIDTH, L"640"); setText(IDC_FOLDER_WINDOW_HEIGHT, L"480");
     CheckDlgButton(displayPage, IDC_STATUS_TEXT_ENABLED, BST_UNCHECKED);
     require(notify(PSN_APPLY) == PSNRET_NOERROR && notifications == 1, "valid options update existing windows");
