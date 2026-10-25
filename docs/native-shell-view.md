@@ -5,8 +5,10 @@
 FileSpacer conserve la vue système hébergée par `IExplorerBrowser`. Le Shell
 assure le rendu, l'énumération, les images, les modes d'affichage et les commandes
 de fichiers. `ShellViewHost` utilise les interfaces COM publiques ; l'application
-ne cherche plus les contrôles enfants du Shell, ne les sous-classe plus et ne
-leur envoie plus de messages `LVM_*`. L'ancienne vue entièrement réimplémentée
+ne cherche plus les contrôles enfants du Shell et ne les sous-classe plus.
+Une adaptation facultative des libellés utilise les notifications ListView
+reçues par la fenêtre publique de la vue et les messages `LVM_*` correspondants.
+L'ancienne vue entièrement réimplémentée
 est abandonnée pour limiter le code de rendu et d'interaction à maintenir.
 
 La configuration spatiale demande `FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING`,
@@ -44,10 +46,10 @@ navigation déduit ou API privée n'est utilisé pour tenter un hébergement int
 ## Écarts acceptés pour 1.1 et clic d'activation rétabli
 
 L'utilisateur a accepté trois écarts pour la release 1.1, après validation du
-Panneau externe. Deux subsistent :
+Panneau externe. Deux subsistaient après les premiers correctifs :
 
-- Les noms sélectionnés utilisent le rendu natif Windows. L'affichage spécifique
-  des noms complets avec fond opaque n'est pas disponible : aucune interface
+- Les noms sélectionnés utilisaient le rendu natif Windows. L'affichage spécifique
+  des noms complets avec fond opaque n'était pas disponible : aucune interface
   publique de la vue (`IVisualProperties`, `FOLDERFLAGS`, `FOLDERVIEWOPTIONS`,
   messages `SFVM_*`) ne permet d'intervenir dans le dessin des libellés.
 - La réouverture restaure sélection et focus, puis, en vues Détails et Liste,
@@ -77,19 +79,42 @@ par le clic d'activation est absorbé ; un second appui est nécessaire.
 `WM_MOUSEACTIVATE` n'atteint pas le cadre à travers les fenêtres du Shell et
 n'est donc pas utilisé.
 
-L'option « Afficher les noms longs en entier à la sélection » reste désactivée
-et expliquée dans les ressources françaises et anglaises ; sa valeur enregistrée
-est conservée. Le réexamen des écarts est décrit dans
-[le prompt pour Claude](prompt-claude-parite-vue-shell.md) et dans
-`audit/rapport.md`.
+## Nom complet en sélection simple (modification non publiée)
+
+L'option existante est réactivée en français et en anglais, sans changer sa
+valeur enregistrée. En vue Icônes, une adaptation facultative de `NM_CUSTOMDRAW`
+remplit le fond du libellé de l'unique élément effectivement sélectionné, puis
+laisse Windows dessiner le texte. Elle ne force ni le dépliage ni le repliage.
+La sélection multiple, le focus seul et les autres modes restent entièrement
+natifs ; Windows peut donc encore y déplier le nom focalisé.
+
+Le callback est installé sur la fenêtre fournie par `IShellView::GetWindow`, sur
+le même thread. Il ne recherche pas et ne sous-classe pas les contrôles enfants.
+L'émetteur doit être un ListView appartenant à cette vue avant toute lecture de
+sa notification. Les messages documentés du contrôle sont lus sans modifier
+sélection, focus ou placement.
+
+Le traitement du Shell et son résultat sont préservés ; `CDRF_SKIPDEFAULT` n'est
+jamais ajouté. La disparition des notifications, un échec d'installation ou des
+préconditions indisponibles laissent le dessin standard se poursuivre. Aucun
+détecteur de réussite graphique ni reconstruction de vue n'est introduit.
+Le callback sans pointeur vers FileSpacer se retire à `WM_NCDESTROY`.
+Appliquer la préférence met à jour les fenêtres déjà ouvertes.
+
+[Validation de cette modification](validation-single-selection-labels.md).
+Les essais exploratoires précédents restent dans
+[le premier rapport](native-label-draw-investigation.md) et
+[le rapport sur la sélection multiple](native-multi-label-investigation.md).
 
 ## Régression maintenue
 
-La commande de référence est `tests.cmd`, soit **97 jeux**. Elle inclut un seul
+La commande de référence est `tests.cmd`, soit **101 jeux**. Elle inclut le
 banc Shell réel dans la configuration de production : `18-vue-shell-native/02-Persistance`.
 Il teste les réglages, la sélection, le focus, les positions, le filtrage et la
 destruction/recréation avec SQLite. Ne pas ajouter l'exécution du lanceur natif
 à une exécution complète qui contient déjà ce groupe.
+Le jeu `23-noms-selection-simple/01-Rendu` vérifie séparément le fond opaque
+en sélection simple et le rendu natif identique dans les autres sélections.
 
 Les 50 cas Alt, les commandes Shell, Ce PC, le Panneau externe, la navigation,
 les préférences, les notifications, la fermeture et les autres contrats de
