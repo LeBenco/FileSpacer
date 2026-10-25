@@ -4,6 +4,11 @@ Recherche du 25 octobre 2026 sur `main`, à partir de `2724d57`.
 Suite de [l'essai du fond opaque](native-label-draw-investigation.md).
 Aucun code de production n'est modifié.
 
+Décision postérieure à ces essais : le volet n'est pas retenu. L'intégration
+choisie limite le fond opaque à une sélection simple et conserve le traitement
+natif dans les autres cas ; voir la
+[validation du comportement livré](validation-single-selection-labels.md).
+
 ## Conclusion
 
 Les essais réalisés ne permettent pas d'étendre le dépliage natif à tous les
