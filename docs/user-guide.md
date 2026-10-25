@@ -47,6 +47,52 @@
   sizes, and view settings, keeping global application preferences. It closes
   open FileSpacer folder windows before clearing the database.
 
+## Search and Everything
+
+The existing search field filters the current Shell view. Enter or the magnifier
+submits the filter; **Settings > General > Filter while typing** also applies it
+during typing. Neither action automatically uses Everything.
+
+Clicking or focusing the search field opens a suggestion list: **Search in
+Everything** when enabled, followed by the current folder's recent searches,
+newest first. A separator appears only when both sections contain entries. There
+is no chevron or extra button. Typing continues in the field, including instant
+filtering when enabled, and no entry is selected automatically.
+
+Up/Down navigate the list, skipping the separator. Enter accepts an explicitly
+selected entry; otherwise it submits the local search. Selecting a recent search
+fills the same field and applies the local filter. Escape closes the list without
+changing the query. Click the field again, use Ctrl+F, or press Down to reopen it.
+Tab closes the list and continues through the magnifier to the folder view. An
+empty list is never displayed.
+
+In **Settings > Integration**, enable Everything independently of history. Leave
+its executable path empty for automatic detection, use **Detect**, or browse/type
+an absolute `.exe` path without enclosing quotes. Portable installations outside
+the standard locations need a manual path. Everything opens as an external
+application, using the visible query. The default scope is the current filesystem
+folder and its subfolders; **Everywhere** removes that restriction. A virtual Shell
+folder has no filesystem scope: choose Everywhere to search from it.
+
+A successful launch clears the local field and filter. A launch error displays a
+dialog and keeps both. Everything must be installed separately; its own index and
+settings control the external results.
+
+The Everything entry shows the icon from its executable, loaded in the background
+at the appropriate display size. It is cached in memory and refreshed at the next
+list opening when the executable's path, dates or size change. Loading an icon
+does not delay typing or opening the list; an unavailable icon leaves the action
+usable.
+
+History retains five different explicit submissions per folder by default, across
+sessions. Typing alone does not add entries, even with instant filtering enabled.
+Repeated submissions move the query to the front. The history limit in Integration
+accepts 0 through 20; zero clears and disables history while local search and
+Everything remain available. Reducing the limit also trims closed folders.
+History follows the folder's existing identity on rename/move and is removed with
+its saved state. Temporary access failures follow the existing conservative state
+expiration rules; they do not immediately delete history.
+
 ## Lock a folder window's saved state
 
 Enable **Settings > General > Enable window state locking** (off by default).
