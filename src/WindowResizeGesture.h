@@ -1,14 +1,16 @@
 #pragma once
 #include <common.h>
 #include <windows.h>
+#include "WindowShortcuts.h"
 
 namespace filespacer {
 
-// Application-managed right-button gesture. It deliberately does not enter
-// Windows' left-button modal sizing loop or synthesize mouse input.
+// Shared capture for resizing with any button and moving with middle/right.
+// Left-button movement retains Windows' native modal move loop.
 class WindowResizeGesture {
 public:
-    bool begin(HWND window, HWND source, POINT screenPoint);
+    bool begin(HWND window, HWND source, POINT screenPoint,
+        GestureButton button = GestureButton::Right, bool move = false);
     bool handleMessage(UINT message, WPARAM wParam, LPARAM lParam);
     void cancel();
     void stop(); // Teardown commits the current size without resizing a dying window.
@@ -26,7 +28,9 @@ private:
     HCURSOR previousCursor = nullptr;
     bool dragging = false;
     bool completed = false;
-    bool swallowRightUp = false;
+    GestureButton button = GestureButton::Right;
+    bool move = false;
+    bool swallowButtonUp = false;
     bool swallowAltUp = false;
 };
 

@@ -5,13 +5,13 @@
 
 namespace filespacer {
 
-bool WindowResizeGesture::begin(HWND target, HWND control, POINT point) {
+bool WindowResizeGesture::begin(HWND target, HWND control, POINT point, GestureButton trigger, bool moving) {
     if (source || GetCapture() || IsZoomed(target) || IsIconic(target)
             || !(GetWindowLongPtr(target, GWL_STYLE) & WS_THICKFRAME))
         return false;
     RECT bounds = {};
     if (!GetWindowRect(target, &bounds)) return false;
-    HCURSOR resizeCursor = LoadCursor(nullptr, IDC_SIZENWSE);
+    HCURSOR resizeCursor = LoadCursor(nullptr, moving ? IDC_SIZEALL : IDC_SIZENWSE);
     if (!resizeCursor) return false;
     MINMAXINFO tracking = {};
     // FileSpacer is system-DPI-aware, like its existing frame/layout code.
@@ -27,8 +27,10 @@ bool WindowResizeGesture::begin(HWND target, HWND control, POINT point) {
     limits = tracking;
     cursor = resizeCursor;
     dragging = false;
-    swallowRightUp = false;
-    swallowAltUp = true;
+    button = trigger;
+    move = moving;
+    swallowButtonUp = false;
+    swallowAltUp = GetKeyState(VK_MENU) < 0;
     SetCapture(control);
     if (GetCapture() != control) {
         source = nullptr;
@@ -50,6 +52,11 @@ void WindowResizeGesture::update(POINT point) {
         previousCursor = SetCursor(cursor);
     } else {
         SetCursor(cursor);
+    }
+    if (move) {
+        if (!checkLE(SetWindowPos(window, nullptr, initialBounds.left + dx, initialBounds.top + dy,
+                0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE))) cancel();
+        return;
     }
     const LONG width = (std::max)(limits.ptMinTrackSize.x,
         (std::min)(limits.ptMaxTrackSize.x, initialBounds.right - initialBounds.left + dx));
@@ -74,7 +81,7 @@ void WindowResizeGesture::finish(bool restore, bool swallowRelease) {
     window = nullptr;
     dragging = false;
     previousCursor = nullptr;
-    swallowRightUp = swallowRelease;
+    swallowButtonUp = swallowRelease;
     completed = changed;
     if (restore && changed && IsWindow(target))
         SetWindowPos(target, nullptr, bounds.left, bounds.top,
@@ -101,11 +108,13 @@ bool WindowResizeGesture::handleMessage(UINT message, WPARAM wParam, LPARAM lPar
         swallowAltUp = false;
         return true;
     }
-    if (message == WM_RBUTTONDOWN || message == WM_RBUTTONDBLCLK)
-        swallowRightUp = false;
+    if (message == WM_LBUTTONDOWN || message == WM_LBUTTONDBLCLK
+            || message == WM_MBUTTONDOWN || message == WM_MBUTTONDBLCLK
+            || message == WM_RBUTTONDOWN || message == WM_RBUTTONDBLCLK)
+        swallowButtonUp = false;
     if (!source) {
-        if (swallowRightUp && message == WM_RBUTTONUP) {
-            swallowRightUp = false;
+        if (swallowButtonUp && message == gestureButtonUp(button)) {
+            swallowButtonUp = false;
             return true;
         }
         return false;
@@ -126,12 +135,12 @@ bool WindowResizeGesture::handleMessage(UINT message, WPARAM wParam, LPARAM lPar
         SetCursor(cursor);
         return true;
     }
-    if (message == WM_MOUSEMOVE || message == WM_RBUTTONUP) {
+    if (message == WM_MOUSEMOVE || message == gestureButtonUp(button)) {
         if (GetCapture() != source) { cancel(); return true; }
         POINT point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
         if (ClientToScreen(source, &point)) update(point);
-        if (message == WM_RBUTTONUP) finish(false, false);
-        else if (!(wParam & MK_RBUTTON)) cancel();
+        if (message == gestureButtonUp(button)) finish(false, false);
+        else if (!(wParam & gestureButtonMask(button))) cancel();
         return true;
     }
     // Reserve the whole gesture; no partial click or wheel reaches the view.

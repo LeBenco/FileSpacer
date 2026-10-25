@@ -6,12 +6,14 @@
 namespace filespacer {
 
 enum SettingsPage {
-    SETTINGS_GENERAL, SETTINGS_DISPLAY, SETTINGS_BROWSER, SETTINGS_ABOUT,
+    SETTINGS_GENERAL, SETTINGS_DISPLAY, SETTINGS_SHORTCUTS, SETTINGS_BROWSER, SETTINGS_ABOUT,
     NUM_SETTINGS_PAGES
 };
 
 void openSettingsDialog(HWND owner, SettingsPage page = SETTINGS_GENERAL);
 void requestSettingsDialogClose();
+INT_PTR CALLBACK shortcutsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+void notifyWindowSettingsChanged();
 // Used by preferences and the welcome dialog.
 void changeDefaultBrowser(HWND owner, bool value);
 
