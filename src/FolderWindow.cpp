@@ -3,6 +3,7 @@
 #include "ShellViewSelection.h"
 #include "ShellViewIcons.h"
 #include "ShellViewFilter.h"
+#include "ShellViewLabels.h"
 #include "CreateItemWindow.h"
 #include "ClosedWindows.h"
 #include "ShellMenuIcons.h"
@@ -785,12 +786,15 @@ void FolderWindow::onSize(SIZE size) {
 }
 
 void FolderWindow::onSettingsChanged() {
+    CComPtr<ItemWindow> keepAlive(this);
     if (bottomStatusBar)
         checkLE(SetWindowPos(bottomStatusBar, nullptr, 0, 0, 0, 0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
                 | (settings::getStatusTextEnabled() ? SWP_SHOWWINDOW : SWP_HIDEWINDOW)));
     ItemWindow::onSettingsChanged();
     searchBox.setLiveSearch(settings::getLiveNameSearch());
+    if (isWindowOperational())
+        setSingleSelectionLabels(shellView, settings::getFullNamesOnSelection());
     if (viewHost && hasStatusText())
         updateStatus();
 }
@@ -1815,6 +1819,8 @@ STDMETHODIMP FolderWindow::OnViewCreated(IShellView *const view) {
     if (!current()) return S_OK;
     if (FAILED(observed)) setStatusText(getErrorMessage(observed).get());
 
+    if (!current()) return S_OK;
+    setSingleSelectionLabels(view, settings::getFullNamesOnSelection());
     if (!current()) return S_OK;
     restoringState = false;
     finishViewInitialization();

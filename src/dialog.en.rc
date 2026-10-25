@@ -48,8 +48,8 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Show &View button", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 105, 130, 14
   CONTROL "The elements above are visible when the toolbar is shown.", -1, "Static", WS_GROUP, 14, 121, 272, 16
   CONTROL "File names", -1, "Button", BS_GROUPBOX, 7, 147, 286, 46
-  CONTROL "Show full &names when selected", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|WS_DISABLED, 14, 159, 272, 12
-  CONTROL "Unavailable with the current Shell view.\nWindows' native rendering is used.", -1, "Static", WS_GROUP, 14, 173, 272, 16
+  CONTROL "Show the full &name for a single selection", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 159, 272, 12
+  CONTROL "In Icons view, with an opaque background.\nOtherwise, Windows' native rendering is used.", -1, "Static", WS_GROUP, 14, 173, 272, 16
   CONTROL "Default window size", -1, "Button", BS_GROUPBOX, 7, 200, 286, 35
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 217, 88, 8
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 214, 35, 14
