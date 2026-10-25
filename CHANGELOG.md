@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add a Shortcuts settings tab to configure or disable window move/resize gestures using modifier keys and left, middle or right mouse buttons, with direct input capture and conflict validation.
+- Leave Alt + double-click Properties handling to the native Explorer view.
+
 ## 1.1.2 — 2026-10-25
 
 - Add optional locking of a folder window's saved geometry and view settings from its title menu. Temporary changes remain possible, and individual file icon positions keep saving normally.
