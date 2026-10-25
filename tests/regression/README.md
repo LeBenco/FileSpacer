@@ -10,7 +10,7 @@ tests.cmd
 ```
 
 Le lanceur construit l'application par `build.cmd debug`, initialise MSVC x64,
-et lance les **101 jeux** indépendants. Ils ne doivent pas être complétés par
+et lance les **104 jeux** indépendants. Ils ne doivent pas être complétés par
 un second passage des mêmes bancs natifs. Chaque jeu possède son processus
 PowerShell et son dossier de résultats sous `build/regression/<date>-<id>`.
 
@@ -30,6 +30,7 @@ tests.cmd -Pattern "1[56]-*"
 tests.cmd -Pattern "18-vue-shell-native\*"
 tests.cmd -Pattern "19-commandes-shell\*"
 tests.cmd -Pattern "20-validation-elargie\05-*"
+tests.cmd -Pattern "24-*"
 ```
 
 ## Couverture conservée
@@ -59,6 +60,7 @@ tests.cmd -Pattern "20-validation-elargie\05-*"
 | 20-validation-elargie | 5 | Charge, images/modes, Ce PC, écrans/DPI disponibles, Panneau externe. |
 | 21-clic-activation | 1 | Clic sur le fond d'une fenêtre inactive : activation sans perte de sélection, clic d'élément, préférence désactivée. |
 | 22-verrouillage | 2 | Activation, menu natif, référence visible, géométrie/vue temporaires, placements individuels, déverrouillage, confirmation et suppression globale entre processus, réouverture et redémarrage ; rendu ICO natif, transparence, DPI et couleurs de contraste élevé. |
+| 24-raccourcis | 3 | Onglet natif FR/EN, 2 304 couples de réglages, persistance atomique, capture directe, conflits, valeurs par défaut par action, annulation, 64 gestes réels dans deux processus et comparaison des propriétés avec le Shell sans raccourcis. |
 
 Les 50 jeux Alt restent distincts : ils vérifient des gestes ou zones différents.
 Leur instrumentation peut observer un contrôle Windows ; l'application utilise
