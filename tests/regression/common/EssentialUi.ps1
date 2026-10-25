@@ -213,6 +213,16 @@ function Get-UiCommandToolbar([IntPtr]$Window) {
     return $found[0]
 }
 function Get-UiSearchEdit([IntPtr]$Window) { return Get-UiControl (Get-UiControl $Window 'FileSpacer Search Box') 'Edit' }
+function Get-UiSearchSubmit([IntPtr]$Window) {
+    $search=Get-UiControl $Window 'FileSpacer Search Box'
+    # The pre-integration build has one unnamed button. This permits comparisons
+    # with that build using the same assertions and fixture, without a new harness.
+    $buttons=@([FileSpacerRegression.Native]::Children($search,'Button'))
+    if ($buttons.Count -eq 1) { return $buttons[0] }
+    $button=[FileSpacerRegression.Native]::GetDlgItem($search,(Get-UiId 'IDC_SEARCH_SUBMIT'))
+    Assert-Ui ($button -ne [IntPtr]::Zero) 'Search submit button is missing.'
+    return $button
+}
 function Assert-UiVisible([IntPtr]$Window,[string]$Class,[bool]$Visible) {
     $control=Get-UiControl $Window $Class
     Wait-Ui { [FileSpacerRegression.Native]::IsWindowVisible($control) -eq $Visible } "$Class visibility = $Visible" 200

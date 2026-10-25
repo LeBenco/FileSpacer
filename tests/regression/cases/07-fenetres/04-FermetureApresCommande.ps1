@@ -16,7 +16,7 @@ try {
             $window=Open-UiFolder $folder 256
             Activate-Ui $window
             $edit=Get-UiSearchEdit $window
-            $button=Get-UiControl (Get-UiControl $window 'FileSpacer Search Box') 'Button'
+            $button=Get-UiSearchSubmit $window
             if ($scenario -eq 'clear-filter') {
                 [FileSpacerRegression.Native]::SetText($edit,'keep')
                 [void][FileSpacerRegression.Native]::Message($button,0xf5,0,0)

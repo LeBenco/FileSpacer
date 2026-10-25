@@ -152,11 +152,19 @@ namespace FileSpacerRegression {
             names.Sort(StringComparer.OrdinalIgnoreCase); return names.ToArray();
         }
         public string[] Names() {
-            var names=new List<string>();
-            for(int i=0,n=Count;i<n;++i) {
-                IntPtr child; Native.Check(view.Item(i,out child));
-                try { names.Add(Name(child)); } finally { Marshal.FreeCoTaskMem(child); }
-            }
+            var names=new List<string>(); Guid iid=typeof(EnumPidls).GUID; IntPtr pointer=IntPtr.Zero;
+            if(Count==0) return names.ToArray();
+            Native.Check(view.Items(2,ref iid,out pointer));
+            if(pointer==IntPtr.Zero) return names.ToArray(); // View may have emptied during enumeration.
+            EnumPidls items=null;
+            try {
+                items=(EnumPidls)Marshal.GetObjectForIUnknown(pointer);
+                for(;;) {
+                    IntPtr child; uint fetched; Native.Check(items.Next(1,out child,out fetched));
+                    if(fetched==0) break;
+                    try { names.Add(Name(child)); } finally { Marshal.FreeCoTaskMem(child); }
+                }
+            } finally { if(pointer!=IntPtr.Zero) Marshal.Release(pointer); Native.Release(items); }
             names.Sort(StringComparer.OrdinalIgnoreCase); return names.ToArray();
         }
         public int IndexOf(string name) {
@@ -286,7 +294,7 @@ namespace FileSpacerRegression {
         [DllImport("user32.dll")] static extern bool IsIconic(IntPtr window);
         [DllImport("user32.dll")] public static extern bool IsWindowEnabled(IntPtr window);
         [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(Point point);
-        [DllImport("user32.dll",SetLastError=true)] static extern bool SetCursorPos(int x,int y);
+        [DllImport("user32.dll",SetLastError=true)] public static extern bool SetCursorPos(int x,int y);
         [DllImport("user32.dll",SetLastError=true)] static extern bool GetCursorPos(out Point point);
         [DllImport("user32.dll",SetLastError=true)] public static extern bool PostMessage(IntPtr window,uint message,IntPtr wParam,IntPtr lParam);
         [DllImport("user32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern IntPtr SendMessageTimeout(IntPtr window,uint message,UIntPtr wParam,IntPtr lParam,uint flags,uint timeout,out UIntPtr result);
@@ -411,6 +419,22 @@ namespace FileSpacerRegression {
             var info=new GuiThreadInfo(); info.Size=(uint)Marshal.SizeOf(typeof(GuiThreadInfo));
             if(!GetGUIThreadInfo(thread,ref info)) throw new Win32Exception(Marshal.GetLastWin32Error(),"Cannot inspect window GUI thread.");
             return info.Active;
+        }
+        public static IntPtr FocusedWindowInOwningThread(IntPtr window) {
+            uint pid;uint thread=GetWindowThreadProcessId(window,out pid);
+            var info=new GuiThreadInfo();info.Size=(uint)Marshal.SizeOf(typeof(GuiThreadInfo));
+            if(thread==0 || !GetGUIThreadInfo(thread,ref info)) throw new Win32Exception();
+            return info.Focus;
+        }
+        public static void ClickControl(IntPtr window,IntPtr control,int x,int y) {
+            if(GetForegroundWindow()!=window) throw new InvalidOperationException("Test window is not foreground; click was not sent.");
+            var point=new Point{X=x,Y=y};
+            if(WindowFromPoint(point)!=control) throw new InvalidOperationException("Click target is obscured.");
+            if(!SetCursorPos(x,y) || WindowFromPoint(point)!=control) throw new Win32Exception();
+            var down=new Input();down.Type=0;down.Data.Mouse.Flags=2;
+            var up=new Input();up.Type=0;up.Data.Mouse.Flags=4;
+            uint sent=SendInput(2,new Input[]{down,up},Marshal.SizeOf(typeof(Input)));
+            if(sent!=2) { if(sent==1) SendInput(1,new Input[]{up},Marshal.SizeOf(typeof(Input)));throw new InvalidOperationException("Click input incomplete."); }
         }
         public static void Keys(IntPtr window,ushort key,bool control,bool alt) {
             if(GetForegroundWindow()!=window) throw new InvalidOperationException("Test window is not foreground; input was not sent.");

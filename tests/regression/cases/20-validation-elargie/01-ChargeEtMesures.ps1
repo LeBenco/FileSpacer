@@ -2,6 +2,30 @@
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
 . (Join-Path $PSScriptRoot '..\..\common\ShellIntegration.ps1')
 $testFailure=$null;$samples=@()
+$script:LoadObservedProcess=$null
+function Measure-LoadStep([string]$Phase,[scriptblock]$Action) {
+    $previousPhase=$env:FS_SEARCH_PHASE;$env:FS_SEARCH_PHASE=$Phase
+    $watch=[Diagnostics.Stopwatch]::StartNew();$cpuBefore=$null;$success=$false
+    if ($script:LoadObservedProcess -and !$script:LoadObservedProcess.HasExited) {
+        $script:LoadObservedProcess.Refresh();$cpuBefore=$script:LoadObservedProcess.TotalProcessorTime.TotalMilliseconds
+    }
+    $helperIds=@(Get-Process -Name codex-computer-use -ErrorAction SilentlyContinue | ForEach-Object {$_.Id})
+    $record=@{Phase=$Phase;Event='begin';ComputerUseHelpers=$helperIds;Utc=[DateTime]::UtcNow.ToString('o')}
+    [IO.File]::AppendAllText((Join-Path $env:FS_REGRESSION_RUN 'load-phases.jsonl'),($record | ConvertTo-Json -Compress)+"`r`n")
+    try { & $Action;$success=$true }
+    finally {
+        $watch.Stop();$cpuMilliseconds=$null
+        try {
+            if ($null -ne $cpuBefore -and !$script:LoadObservedProcess.HasExited) {
+                $script:LoadObservedProcess.Refresh();$cpuMilliseconds=$script:LoadObservedProcess.TotalProcessorTime.TotalMilliseconds-$cpuBefore
+            }
+            $helperIds=@(Get-Process -Name codex-computer-use -ErrorAction SilentlyContinue | ForEach-Object {$_.Id})
+            $record=@{Phase=$Phase;Event='end';Success=$success;Milliseconds=$watch.ElapsedMilliseconds;ApplicationCpuMilliseconds=$cpuMilliseconds;ComputerUseHelpers=$helperIds;Utc=[DateTime]::UtcNow.ToString('o')}
+            [IO.File]::AppendAllText((Join-Path $env:FS_REGRESSION_RUN 'load-phases.jsonl'),($record | ConvertTo-Json -Compress)+"`r`n")
+        } catch { Write-Warning ('Cannot record load timing: '+$_.Exception.Message) }
+        $env:FS_SEARCH_PHASE=$previousPhase
+    }
+}
 try {
     Initialize-Ui 'shell-load'
     $folder=Join-Path $script:UiRoot 'Five-thousand';[void][IO.Directory]::CreateDirectory($folder)
@@ -9,27 +33,33 @@ try {
         $name=('item-{0:D5}.txt' -f $index);[IO.File]::WriteAllText((Join-Path $folder $name),'load-fixture');$name
     })
     foreach ($iteration in 1..3) {
-        $watch=[Diagnostics.Stopwatch]::StartNew();$window=Open-UiFolder $folder 5000;$watch.Stop()
+        $script:LoadObservedProcess=$null
+        $watch=[Diagnostics.Stopwatch]::StartNew();$window=Measure-LoadStep "open-$iteration" { Open-UiFolder $folder 5000 };$watch.Stop()
         $ownerId=[uint32]0;[void][FileSpacerRegression.Native]::GetWindowThreadProcessId($window,[ref]$ownerId)
         $ownerProcess=@($script:UiProcesses | Where-Object {$_.Id -eq $ownerId -and !$_.HasExited})[0]
+        $script:LoadObservedProcess=$ownerProcess
         $ownerProcess.Refresh()
         $samples+=@{Iteration=$iteration;OpenUntilStableMilliseconds=$watch.ElapsedMilliseconds;
             PrivateBytes=$ownerProcess.PrivateMemorySize64;WorkingSetBytes=$ownerProcess.WorkingSet64;Handles=$ownerProcess.HandleCount;ProcessId=$ownerId}
         Save-ShellCoverage 'measurements.json' @{Samples=$samples;IncludesStableWaitMilliseconds=300;ComparisonToBaseline='NOT_PERFORMED';TimingIsObservation=$true}
-        Assert-SearchNames $window $expected
+        Measure-LoadStep "initial-identities-$iteration" { Assert-SearchNames $window $expected }
         Activate-Ui $window
-        $edit=Get-UiSearchEdit $window;$button=Get-UiControl (Get-UiControl $window 'FileSpacer Search Box') 'Button'
+        $edit=Get-UiSearchEdit $window;$button=Get-UiSearchSubmit $window
         foreach ($query in @('item-02500.txt','no-load-match','')) {
-            [FileSpacerRegression.Native]::SetText($edit,$query)
-            [void][FileSpacerRegression.Native]::Message($button,0xf5,0,0)
-            if ($query -eq '') { Assert-SearchNames $window $expected }
-            elseif ($query -eq 'item-02500.txt') { Assert-SearchNames $window @('item-02500.txt') }
-            else { Assert-SearchNames $window @() }
+            Measure-LoadStep "submit-$iteration-[$query]" {
+                [FileSpacerRegression.Native]::SetText($edit,$query)
+                [void][FileSpacerRegression.Native]::Message($button,0xf5,0,0)
+            }
+            Measure-LoadStep "results-$iteration-[$query]" {
+                if ($query -eq '') { Assert-SearchNames $window $expected }
+                elseif ($query -eq 'item-02500.txt') { Assert-SearchNames $window @('item-02500.txt') }
+                else { Assert-SearchNames $window @() }
+            }
         }
         Focus-ShellFixture $window 'item-02500.txt'
         [FileSpacerRegression.Native]::Keys($window,0x74,$false,$false)
-        Assert-SearchNames $window $expected
-        Close-UiFolder $window
+        Measure-LoadStep "refresh-identities-$iteration" { Assert-SearchNames $window $expected }
+        Measure-LoadStep "close-$iteration" { Close-UiFolder $window }
         Wait-Ui { @($script:UiProcesses | Where-Object {!$_.HasExited}).Count -eq 0 } 'load sample processes exit'
         foreach ($application in $script:UiProcesses) { Assert-Ui ($application.ExitCode -eq 0) 'Load sample process crashed.' }
     }
