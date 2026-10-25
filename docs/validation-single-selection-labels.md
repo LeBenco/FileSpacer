@@ -105,3 +105,30 @@ Aucun défaut nouveau manifeste n'est confirmé par les analyses ; aucun
 changement de forme n'a été appliqué pour masquer ces signalements. Le verdict
 est **REVIEW**, distinct du succès du build et des contrôles fonctionnels.
 Aucune correction de produit n'a été nécessaire à la suite des analyses.
+
+## Relecture complémentaire de la session
+
+Les changements conservés depuis `9550f52` ont été réexaminés : comptes rendus
+et captures des expériences, adaptation livrée, raccordement des préférences,
+ressources et tests. Les essais de volet et de redessin ont été retirés ; leur
+présence dans les rapports ne constitue pas une fonctionnalité du produit.
+L'implémentation conservée reste limitée au fond du libellé natif. Les API
+Win32/Shell absentes du cache WinMD ont été revérifiées dans le SDK local et la
+documentation officielle. Aucun remplacement de l'implémentation n'est requis.
+
+Une faiblesse du banc a été corrigée : `differences` rejette aussi une seconde
+capture vide, évitant un accès hors limites après un échec de capture. Un cas
+de régression couvre cette situation. L'assertion du retour à une sélection
+simple rejette explicitement le marqueur d'erreur `SIZE_MAX`.
+
+Le test `23-noms-selection-simple/01-Rendu` passe après cette correction.
+Clang-tidy et Cppcheck terminent avec les mêmes diagnostics qu'avant : verdict
+**PASS pour cette correction du banc**. Le **REVIEW antérieur** sur les
+signalements de forme et les contrats Win32 n'est pas levé.
+
+Les sources de l'application sont inchangées. Le SHA-256 de l'exécutable Debug
+est identique avant et après la vérification :
+`2694C1635CB767F742A11B66B6C6AD0C74BBB078F0C7DBB00E783FE07E7D782D`.
+Cette correction de test ne modifie donc ni le comportement ni les performances
+du produit ; aucune équivalence de performances entre deux implémentations
+différentes n'est supposée.
