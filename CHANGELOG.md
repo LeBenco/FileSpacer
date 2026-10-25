@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.4 — 2026-10-25
+
+This release builds on 1.1.3, which already provides configurable keyboard/mouse gestures for moving and resizing windows.
+
+- Add optional external Everything search with automatic detection, a manual executable path, current-folder/subfolder or everywhere scope, and explicit launch errors.
+- Show Everything and recent searches automatically when entering the existing search field, without an extra button. Keep native search, instant filtering and local recent-query reuse.
+- Remember five recent searches per folder across sessions by default, configurable from zero to twenty independently of Everything. Preserve existing folder/search data and clean history with the existing conservative folder-state policy.
+- Display Everything's executable icon at the appropriate size, with background extraction and a memory cache refreshed when its executable changes.
+- Add isolated storage, migration and real Shell/Everything regression coverage; make the Shell test reader robust while successive filters change the view.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
+
 ## 1.1.3 — 2026-10-25
 
 - Add a Shortcuts settings tab to configure or disable window move/resize gestures using modifier keys and left, middle or right mouse buttons, with direct input capture and conflict validation.
