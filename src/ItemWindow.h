@@ -18,7 +18,7 @@ namespace filespacer {
 enum class FolderOpenResult;
 
 class ItemWindow : public WindowImpl, public UnknownImpl {
-    friend FolderOpenResult openFolderWindow(IShellItem *, HMONITOR, int, const ClosedWindow *);
+    friend FolderOpenResult openFolderWindow(IShellItem *, HMONITOR, int, const ClosedWindow *, HWND);
     friend ProxyIcon;
 protected:
     static HACCEL accelTable;
@@ -39,7 +39,7 @@ public:
     ItemWindow(IShellItem *item, const std::wstring &identity);
 
     virtual SIZE requestedSize();
-    virtual RECT requestedRect(HMONITOR preferMonitor); // called for root windows
+    virtual RECT requestedRect(HMONITOR preferMonitor, HWND source = nullptr); // called for root windows
 
     void resetViewState(); // call immediately after constructing to reset all view state properties
 
@@ -58,6 +58,8 @@ protected:
     enum UserMessage {
         // WPARAM: 0, LPARAM: 0
         MSG_UPDATE_ICONS = WM_USER,
+        // Shared ancestor receiver; see SHChangeNotification_Lock.
+        MSG_SHELL_ANCESTOR_NOTIFY = WM_USER + 1,
         // see SHChangeNotification_Lock
         MSG_SHELL_NOTIFY = WM_USER + 2, // Keep existing message IDs.
         // WPARAM: 0, LPARAM: 0
@@ -175,6 +177,9 @@ private:
 
     void registerShellNotify();
     void unregisterShellNotify();
+    static LRESULT CALLBACK ancestorNotifyProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
+    void handleShellChange(LONG event, PCIDLIST_ABSOLUTE oldID,
+        PCIDLIST_ABSOLUTE newID, bool ancestorNotification);
 
     void itemMoved(IShellItem *newItem);
 
@@ -207,6 +212,7 @@ private:
     HWND quickAccessToolbar = nullptr;
     long shellWindowCookie = 0;
     ULONG shellNotifyID = 0;
+    uint64_t shellNotifyGeneration = 0;
     CComHeapPtr<ITEMIDLIST> notifyItemID;
 
     bool firstActivate = false, closing = false;
