@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Open new folder windows at a balanced 4:3 default size (580 × 435 at 96 DPI), retaining the existing height and honoring configured dimensions and each folder's saved size.
+
 ## 1.1.5 — 2026-10-26
 
 - Fix Alt + double-click followed by mouse movement creating an unintended shortcut. Preserve native Properties, selection and focus without replaying a held button press.
