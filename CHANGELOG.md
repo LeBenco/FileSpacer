@@ -5,6 +5,7 @@
 ## 1.1.7 — 2026-10-26
 
 - Minimize new-window overlap with exact geometry, first looking for free space. Rename the General option to "Minimize window overlap".
+- Offer an optional default file manager choice in the English and French installer, with instructions to enable or reverse it later in FileSpacer's Integration settings.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.6...v1.1.7)
 
