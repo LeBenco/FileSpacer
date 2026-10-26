@@ -54,7 +54,7 @@ tests.cmd -Pattern "24-*"
 | 05-dimensions | 1 | Validation des dimensions des préférences. |
 | 06-etat-vue | 1 | Captures partielles et erreurs de restauration. |
 | 07-fenetres | 5 | Géométrie, commandes asynchrones, fermetures initiales/après commande, défilement retrouvé à la réouverture. |
-| 08-suppression | 2 | Stockage et notifications de suppression. |
+| 08-suppression | 2 | Stockage, suppressions directes et d’ancêtres via le Shell ou le système de fichiers, fermeture groupée et réouverture dans un même processus, conservation des fenêtres voisines et nettoyage SQLite. |
 | 09-historique | 1 | Historique des fenêtres fermées. |
 | 10-manifeste-maj | 1 | Validation du manifeste de mise à jour. |
 | 11-session-maj | 1 | Conservation de la session pendant une mise à jour. |
@@ -71,6 +71,7 @@ tests.cmd -Pattern "24-*"
 | 22-verrouillage | 2 | Activation, menu natif, référence visible, géométrie/vue temporaires, placements individuels, déverrouillage, confirmation et suppression globale entre processus, réouverture et redémarrage ; rendu ICO natif, transparence, DPI et couleurs de contraste élevé. |
 | 24-raccourcis | 3 | Onglet natif FR/EN, 2 304 couples de réglages, persistance atomique, capture directe, conflits, valeurs par défaut par action, annulation, 64 gestes réels dans deux processus et comparaison des propriétés, de la sélection, de la géométrie et des fichiers avec le Shell sans raccourcis, y compris après mouvement du second appui. |
 | 25-recherche-integration | 5 | Historique SQLite isolé, migration, entrées Win32, arguments et erreurs, parcours Shell réel, préférences 0/5/20, application Everything réelle et suggestions sans chevron au focus/clic. |
+| 26-placement-fenetres | 2 | Compteurs d’occupation, retrait/réintégration, déplacements incrémentaux, placement discret, bords et coordonnées négatives ; observations de calcul sur une grille 4K ; option Général, maintenance À propos, fenêtres de processus distincts, réduction, remplacement spatial et priorité de la position mémorisée sur le vrai Shell. |
 
 Le groupe 25 réutilise `Native.ps1`, `EssentialUi.ps1` et le mode `/test` du
 lanceur. Les deux premiers jeux sont internes : ils ne lancent pas Everything.
