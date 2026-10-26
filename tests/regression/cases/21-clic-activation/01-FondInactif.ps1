@@ -8,6 +8,7 @@ Add-Type -AssemblyName WindowsBase
 $references=@([System.Windows.Automation.AutomationElement].Assembly.Location,
     [System.Windows.Automation.ControlType].Assembly.Location,[System.Windows.Rect].Assembly.Location)
 Add-Type -Path (Join-Path $inputRoot 'MouseInput.cs') -ReferencedAssemblies $references
+Add-Type -Path (Join-Path $inputRoot 'NativeTargets.cs') -ReferencedAssemblies @([ComponentModel.Win32Exception].Assembly.Location)
 $testFailure=$null
 # A real left click through SendInput; the helper spaces independent clicks by the
 # Windows double-click time and verifies that the point is not covered.
@@ -38,11 +39,17 @@ try {
     Use-UiView $window {param($view) $view.Focus(); $view.Select('AnchorA'); $view.Select('AnchorB',$true)}
     Assert-UiSelected $window 'AnchorA;AnchorB'
     $viewWindow=Use-UiView $window {param($view) $view.Window}
+    $lists=@([FileSpacerRegression.Native]::Children($viewWindow,'SysListView32'))
+    Assert-Ui ($lists.Count -eq 1) 'Require the validated native Shell item container.'
+    $list=$lists[0]
 
     Write-Host 'STEP: preference enabled; background click on the inactive window'
     Assert-Ui ((Get-UiPreference 'KeepSelectionOnActivate') -eq 1) 'The fixture preference must enable selection preservation.'
     Deactivate-Window
-    $background=[FileSpacerRegression.AltDragInput]::BackgroundPoint($viewWindow)
+    $bounds=[FileSpacerRegression.Native]::ClientBounds($list)
+    $background=New-Object FileSpacerRegression.MousePoint
+    $background.X=[int]($bounds.Left+$bounds.Width/2);$background.Y=[int]($bounds.Top+3*$bounds.Height/4)
+    [FileSpacerRegression.NativeTargets]::Background($list,$background.X,$background.Y)
     Click-At $window $background
     Wait-Ui { [FileSpacerRegression.Native]::GetForegroundWindow() -eq $window } 'background click activates the inactive window' 0 5
     Assert-UiSelected $window 'AnchorA;AnchorB'
@@ -57,7 +64,9 @@ try {
     Use-UiView $window {param($view) $view.Select('AnchorA')}
     Assert-UiSelected $window 'AnchorA'
     Deactivate-Window
-    $item=[FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,'OtherC')
+    $index=Use-UiView $window {param($view) $view.IndexOf('OtherC')}
+    $native=[FileSpacerRegression.NativeTargets]::Item($list,$index,3,$false,$false)
+    $item=New-Object FileSpacerRegression.MousePoint;$item.X=$native.X;$item.Y=$native.Y
     Click-At $window $item
     Wait-Ui { [FileSpacerRegression.Native]::GetForegroundWindow() -eq $window } 'item click activates the inactive window' 0 5
     Assert-UiSelected $window 'OtherC'
@@ -66,7 +75,7 @@ try {
     Write-Host 'STEP: preference disabled; background click on the inactive window'
     Set-UiPreference 'KeepSelectionOnActivate' 0
     Deactivate-Window
-    $background=[FileSpacerRegression.AltDragInput]::BackgroundPoint($viewWindow)
+    [FileSpacerRegression.NativeTargets]::Background($list,$background.X,$background.Y)
     Click-At $window $background
     Wait-Ui { [FileSpacerRegression.Native]::GetForegroundWindow() -eq $window } 'background click activates with the preference disabled' 0 5
     Assert-UiSelected $window ''
