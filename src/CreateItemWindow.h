@@ -10,7 +10,7 @@ enum class FolderOpenResult { Failed, Created, Activated, Pending, OpenedExterna
 // Shared folder open path; Control Panel roots are delegated to Windows.
 // Other items must have SFGAO_FOLDER and use the spatial window creation path.
 FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCmd,
-    const ClosedWindow *reopening = nullptr);
+    const ClosedWindow *reopening = nullptr, HWND replacingWindow = nullptr);
 // Only offer the latest history entry when its folder has no live window.
 bool canReopenClosedWindow(const ClosedWindow &window);
 CComPtr<IShellItem> resolveLink(IShellItem *linkItem);
