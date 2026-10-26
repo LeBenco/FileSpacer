@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.5 — 2026-10-26
+
+- Fix Alt + double-click followed by mouse movement creating an unintended shortcut. Preserve native Properties, selection and focus without replaying a held button press.
+- Correct full regression coverage for native double-click timing and physical mouse targets, and compare Properties, selection, focus, selection anchor, geometry and folder contents with window gestures disabled and enabled, including Ctrl/Shift combinations.
+- Isolate the real Everything test executable and its bootstrap INI so the installed user's administrator setting cannot redirect test searches or trigger elevation. Check that the installed settings stay unchanged.
+- Keep the desktop awake and temporarily suspend the screen saver during UI regression runs, restoring its original runtime state during cleanup, including after test failures.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.4...v1.1.5)
+
 ## 1.1.4 — 2026-10-25
 
 This release builds on 1.1.3, which already provides configurable keyboard/mouse gestures for moving and resizing windows.
