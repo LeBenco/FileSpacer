@@ -54,7 +54,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Garder la fenêtre ouverte par défaut", IDC_KEEP_SOURCE_WINDOW_OPEN, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 52, 272, 12
   CONTROL "&Conserver la sélection à l’activation", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 66, 272, 12
   CONTROL "Lors d’un clic sur le fond d’une fenêtre inactive.", -1, "Static", WS_GROUP, 14, 80, 272, 8
-  CONTROL "Réduire le recouvrement des &nouvelles fenêtres", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 94, 272, 12
+  CONTROL "Mi&nimiser la superposition des fenêtres", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 94, 272, 12
   CONTROL "Les positions mémorisées restent prioritaires.", -1, "Static", WS_GROUP, 14, 108, 272, 8
   CONTROL "Filtre par nom", -1, "Button", BS_GROUPBOX, 7, 124, 286, 28
   CONTROL "Filtrer pendant la &saisie", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 135, 272, 12
