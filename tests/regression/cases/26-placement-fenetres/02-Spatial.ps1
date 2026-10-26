@@ -31,6 +31,9 @@ try {
     [void](Show-UiSettings $other); $general=Set-UiPage 0
     $smart=[FileSpacerRegression.Native]::GetDlgItem($general,(Get-UiId 'IDC_SMART_WINDOW_PLACEMENT'))
     Assert-Ui ($smart -ne [IntPtr]::Zero -and [FileSpacerRegression.Native]::Message($smart,0xf0,0,0) -eq 1) 'Smart placement is not enabled by default in General.'
+    $placementLabel=[FileSpacerRegression.Native]::Text($smart).Replace('&','')
+    $frenchLabel='Minimiser la superposition des fen'+[char]0xea+'tres'
+    Assert-Ui ($placementLabel -in @('Minimize window overlap',$frenchLabel)) 'The placement option label is incorrect.'
     Assert-Ui ([FileSpacerRegression.Native]::GetDlgItem($general,(Get-UiId 'IDC_RESET_FOLDER_STATE')) -eq [IntPtr]::Zero) 'Maintenance remains in General.'
     Set-UiCheck $general 'IDC_SMART_WINDOW_PLACEMENT' $false
     Press-UiSettings 5
