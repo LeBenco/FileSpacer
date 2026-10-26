@@ -292,15 +292,16 @@ void updateReopenJumpLists() {
             std::wstring reopenName = getString(IDS_REOPEN_LAST);
             if (last.sequence)
                 reopenName = formatString(IDS_REOPEN_NAMED, closedWindowName(last).c_str()).get();
-            const bool canReopen = canReopenClosedWindow(last);
+            bool canReopen = canReopenClosedWindow(last);
             std::wstring reopenIcon;
             if (canReopen) {
                 CComPtr<IShellItem> folder;
-                if (checkHR(SHCreateItemFromParsingName(closedWindowPath(last).c_str(),
-                        nullptr, IID_PPV_ARGS(&folder))))
-                    reopenIcon = jumpListFolderIcon(folder);
-                else
-                    reopenIcon = jumpListFolderIcon(nullptr); // Unavailable folder: native stock icon.
+                SFGAOF attributes = 0;
+                canReopen = SUCCEEDED(SHCreateItemFromParsingName(closedWindowPath(last).c_str(),
+                        nullptr, IID_PPV_ARGS(&folder)))
+                    && SUCCEEDED(folder->GetAttributes(SFGAO_FOLDER | SFGAO_VALIDATE, &attributes))
+                    && (attributes & SFGAO_FOLDER);
+                if (canReopen) reopenIcon = jumpListFolderIcon(folder);
             }
 
             std::vector<CComPtr<IShellItem>> folders;
