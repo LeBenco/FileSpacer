@@ -12,6 +12,7 @@
 #include "ShellUtils.h"
 #include "Settings.h"
 #include "SettingsDialog.h"
+#include "WindowPlacement.h"
 #include "DPI.h"
 #include "UIStrings.h"
 #include <windowsx.h>
@@ -50,6 +51,15 @@ const wchar_t ITEM_WINDOW_CLASS[] = L"FileSpacer Item Window";
 const wchar_t TESTPOS_CLASS[] = L"FileSpacer Test Window";
 const wchar_t TOOLBAR_HOST_CLASS[] = L"FileSpacer Toolbar Host";
 const wchar_t WINDOW_THEME[] = L"CompositedWindow::Window";
+
+namespace {
+const wchar_t ANCESTOR_NOTIFY_CLASS[] = L"FileSpacer Ancestor Notifications";
+std::unique_ptr<std::remove_pointer<HWND>::type, decltype(&DestroyWindow)>
+    ancestorNotifyWindow(nullptr, DestroyWindow);
+ULONG ancestorNotifyID = 0;
+// Main STA only. Each published window owns its native-window COM reference.
+std::vector<ItemWindow *> ancestorNotifyWindows;
+}
 
 static HBITMAP captionCommandBitmap(const wchar_t *glyph, int size, COLORREF color);
 
@@ -273,6 +283,15 @@ void ItemWindow::init() {
         itemClass.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     RegisterClass(&itemClass);
 
+    WNDCLASSW ancestorClass = {};
+    ancestorClass.lpfnWndProc = ancestorNotifyProc;
+    ancestorClass.hInstance = hInstance;
+    ancestorClass.lpszClassName = ANCESTOR_NOTIFY_CLASS;
+    if (checkLE(RegisterClassW(&ancestorClass))) {
+        ancestorNotifyWindow.reset(checkLE(CreateWindowExW(0, ANCESTOR_NOTIFY_CLASS, L"",
+            0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, hInstance, nullptr)));
+    }
+
     WNDCLASS testPosClass = {};
     testPosClass.lpszClassName = TESTPOS_CLASS;
     testPosClass.lpfnWndProc = DefWindowProc;
@@ -331,6 +350,10 @@ void ItemWindow::init() {
 }
 
 void ItemWindow::uninit() {
+    if (ancestorNotifyID) SHChangeNotifyDeregister(ancestorNotifyID);
+    ancestorNotifyID = 0;
+    ancestorNotifyWindow.reset();
+    UnregisterClassW(ANCESTOR_NOTIFY_CLASS, GetModuleHandleW(nullptr));
     ProxyIcon::uninit();
     if (symbolFont)
         DeleteFont(symbolFont);
@@ -739,7 +762,8 @@ bool ItemWindow::create(RECT rect, int showCommand) {
 
 void ItemWindow::close(bool remember) {
     // TODO: remove this method and use Post/Send directly
-    PostMessage(hwnd, remember ? WM_CLOSE : MSG_CLOSE_AUTOMATIC, 0, 0);
+    if (!checkLE(PostMessage(hwnd, remember ? WM_CLOSE : MSG_CLOSE_AUTOMATIC, 0, 0)))
+        cancelPlacementWithdrawal(hwnd);
 }
 
 
@@ -802,6 +826,7 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             // Publish identity before Shell/COM initialization can dispatch another open.
             if (!SetPropW(hwnd, identityProperty.c_str(), reinterpret_cast<HANDLE>(1)))
                 return FALSE;
+            initializeWindowPlacement(hwnd);
             AddRef(); // keep the object alive from the first native window message
             lockProcess();
             windowLifetime = true;
@@ -820,6 +845,7 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             closing = true;
             if (!onCloseRequest()) {
                 closing = false;
+                cancelPlacementWithdrawal(hwnd);
                 return 0; // don't close
             }
             if (message == WM_CLOSE && hwnd && isFolder()) {
@@ -837,9 +863,11 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             break; // pass to DefWindowProc
         }
         case WM_DESTROY:
+            removeWindowPlacement(hwnd);
             onDestroy();
             return 0;
         case WM_NCDESTROY:
+            destroyWindowPlacement(hwnd);
             proxyIcon.destroy();
             // don't need icon lock since icon thread is stopped
             if (iconLarge) {
@@ -958,6 +986,7 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             return colorI + 1;
         }
         case WM_WINDOWPOSCHANGED: {
+            updateWindowPlacement(hwnd);
             WINDOWPOS *winPos = (WINDOWPOS *)lParam;
             const auto checkFlags = SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED;
             if ((winPos->flags & checkFlags) != checkFlags)
@@ -1013,6 +1042,7 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             updateStateLock();
             return 0;
         case MSG_SHELL_NOTIFY: {
+            CComPtr<ItemWindow> keepAlive(this);
             LONG event;
             ITEMIDLIST **idls;
             HANDLE lock = SHChangeNotification_Lock((HANDLE)wParam, (DWORD)lParam, &idls, &event);
@@ -1023,36 +1053,7 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
 				if (idls[1])
 					newID.Attach(reinterpret_cast<ITEMIDLIST *>(ILCloneFull(idls[1])));
                 SHChangeNotification_Unlock(lock);
-                // Compare retained PIDLs: constructing an IShellItem for a
-                // deleted path can fail before its deletion is handled.
-                bool matches = oldID && notifyItemID && ILIsEqual(oldID, notifyItemID);
-                if (!matches && oldID && notifyItemID) {
-                    CComPtr<IShellFolder> desktop;
-                    if (SUCCEEDED(SHGetDesktopFolder(&desktop))) {
-                        const HRESULT compared = desktop->CompareIDs(SHCIDS_CANONICALONLY,
-                            oldID, notifyItemID);
-                        matches = SUCCEEDED(compared) && (short)HRESULT_CODE(compared) == 0;
-                    }
-                }
-                if (matches) {
-                    if (event & (SHCNE_DELETE | SHCNE_RMDIR)) {
-                        // Only a confirmed removal deletes state. Prevent close-time
-                        // saves from recreating the deleted row, including reentrant UI.
-                        CComPtr<ItemWindow> keepAlive(this);
-                        closing = true;
-                        const std::string deletedKey = std::move(stateKey);
-                        stateKey.clear();
-                        auto store = folderStateStore();
-                        if (!store || !store->remove(deletedKey)) stateStorageError();
-                        checkLE(DestroyWindow(hwnd));
-                    } else if ((event & (SHCNE_RENAMEITEM | SHCNE_RENAMEFOLDER)) && newID) {
-                        CComPtr<IShellItem> moved;
-                        if (checkHR(SHCreateItemFromIDList(newID, IID_PPV_ARGS(&moved))))
-                            itemMoved(moved);
-                    } else {
-                        resolveItem();
-                    }
-                }
+                handleShellChange(event, oldID, newID, false);
             }
             return 0;
         }
@@ -1582,6 +1583,7 @@ void ItemWindow::updateTaskbar() {
 }
 
 void ItemWindow::onSettingsChanged() {
+    if (!settings::getSmartWindowPlacement()) clearWindowPlacement();
     updateStateLock();
     updateTaskbar();
     bool toolbarEnabled = settings::getToolbarEnabled();
@@ -1777,7 +1779,8 @@ void ItemWindow::openChild(IShellItem *const childItem, bool closeSource) {
         return;
     }
     HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-    FolderOpenResult result = openFolderWindow(resolved, monitor, SW_SHOWNORMAL);
+    FolderOpenResult result = openFolderWindow(resolved, monitor, SW_SHOWNORMAL,
+        nullptr, closeSource ? hwnd : nullptr);
     if (isWindowOperational() && closeSource
             && (result == FolderOpenResult::Created || result == FolderOpenResult::Activated))
         close(false);
@@ -1800,7 +1803,7 @@ SIZE ItemWindow::requestedSize() {
     return defaultSize();
 }
 
-RECT ItemWindow::requestedRect(HMONITOR preferMonitor) {
+RECT ItemWindow::requestedRect(HMONITOR preferMonitor, HWND source) {
     SIZE size = requestedSize();
 
     // First try the position stored for this item.
@@ -1838,6 +1841,15 @@ RECT ItemWindow::requestedRect(HMONITOR preferMonitor) {
 
     // No valid stored position: choose an initial position.
     RECT rect;
+
+    if (settings::getSmartWindowPlacement()) {
+        const HMONITOR monitor = preferMonitor ? preferMonitor
+            : MonitorFromWindow(GetForegroundWindow(), MONITOR_DEFAULTTOPRIMARY);
+        if (findWindowPlacement(monitor, size, source, rect)) {
+            viewStateDirty(FolderState::Position);
+            return rect;
+        }
+    }
 
     if (!preferMonitor) {
         rect = RECT{
@@ -1934,6 +1946,7 @@ void ItemWindow::unregisterShellWindow() {
 }
 
 void ItemWindow::registerShellNotify() {
+    CComPtr<ItemWindow> keepAlive(this);
     notifyItemID.Free();
     if (!checkHR(SHGetIDListFromObject(item, &notifyItemID))) return;
     CComPtr<IShellItem> parentItem;
@@ -1946,14 +1959,111 @@ void ItemWindow::registerShellNotify() {
             SHCNE_DELETE | SHCNE_RENAMEITEM | (isFolder() ? (SHCNE_RMDIR | SHCNE_RENAMEFOLDER) : 0),
             MSG_SHELL_NOTIFY, 1, &notifEntry);
     }
+    // One Shell-only registration per process; filesystem interrupts stay local.
+    if (!isWindowOperational() || !notifyItemID || ILIsEmpty(notifyItemID)) return;
+    if (!ancestorNotifyID && ancestorNotifyWindow) {
+        CComHeapPtr<ITEMIDLIST> desktopID;
+        desktopID.Attach(reinterpret_cast<ITEMIDLIST *>(ILCloneFull(notifyItemID)));
+        if (!desktopID) {
+            checkHR(E_OUTOFMEMORY);
+            return;
+        }
+        while (ILRemoveLastID(desktopID)) {}
+        SHChangeNotifyEntry ancestorEntry = {desktopID, TRUE};
+        ancestorNotifyID = SHChangeNotifyRegister(ancestorNotifyWindow.get(),
+            SHCNRF_ShellLevel | SHCNRF_NewDelivery, SHCNE_RMDIR,
+            MSG_SHELL_ANCESTOR_NOTIFY, 1, &ancestorEntry);
+        checkHR(ancestorNotifyID ? S_OK : E_FAIL);
+    }
+    if (isWindowOperational() && notifyItemID
+            && std::find(ancestorNotifyWindows.begin(), ancestorNotifyWindows.end(), this)
+                == ancestorNotifyWindows.end())
+        ancestorNotifyWindows.push_back(this);
 }
 
 void ItemWindow::unregisterShellNotify() {
+    ++shellNotifyGeneration;
+    ancestorNotifyWindows.erase(std::remove(ancestorNotifyWindows.begin(),
+        ancestorNotifyWindows.end(), this), ancestorNotifyWindows.end());
     if (shellNotifyID) {
         SHChangeNotifyDeregister(shellNotifyID);
         shellNotifyID = 0;
     }
     notifyItemID.Free();
+}
+
+LRESULT CALLBACK ItemWindow::ancestorNotifyProc(HWND window, UINT message,
+        WPARAM wParam, LPARAM lParam) {
+    if (message != MSG_SHELL_ANCESTOR_NOTIFY)
+        return DefWindowProcW(window, message, wParam, lParam);
+    LONG event;
+    ITEMIDLIST **idls;
+    HANDLE lock = SHChangeNotification_Lock((HANDLE)wParam, (DWORD)lParam, &idls, &event);
+    if (!lock) return 0;
+    CComHeapPtr<ITEMIDLIST> removedID;
+    if ((event & SHCNE_RMDIR) && idls[0] && !ancestorNotifyWindows.empty())
+        removedID.Attach(reinterpret_cast<ITEMIDLIST *>(ILCloneFull(idls[0])));
+    SHChangeNotification_Unlock(lock);
+    if (!removedID) return 0;
+
+    // Acquire references before any callback can close or move other windows.
+    std::vector<CComPtr<ItemWindow>> targets;
+    for (auto *target : ancestorNotifyWindows) {
+        if (target->isWindowOperational() && target->notifyItemID
+                && ILIsParent(removedID, target->notifyItemID, FALSE))
+            targets.emplace_back(target);
+    }
+    for (const auto &target : targets)
+        target->handleShellChange(event, removedID, nullptr, true);
+    return 0;
+}
+
+void ItemWindow::handleShellChange(LONG event, PCIDLIST_ABSOLUTE oldID,
+        PCIDLIST_ABSOLUTE newID, bool ancestorNotification) {
+    if (!isWindowOperational()) return;
+    if (ancestorNotification && (!(event & SHCNE_RMDIR) || !oldID || !notifyItemID
+            || !ILIsParent(oldID, notifyItemID, FALSE))) return;
+    // Compare retained PIDLs: constructing an IShellItem for a
+    // deleted path can fail before its deletion is handled.
+    const uint64_t generation = shellNotifyGeneration;
+    bool sameItem = oldID && notifyItemID && ILIsEqual(oldID, notifyItemID);
+    if (!sameItem && oldID && notifyItemID) {
+        // Keep the input alive if comparison reenters and replaces the registration.
+        CComHeapPtr<ITEMIDLIST> comparedID;
+        comparedID.Attach(reinterpret_cast<ITEMIDLIST *>(ILCloneFull(notifyItemID)));
+        if (!comparedID) {
+            checkHR(E_OUTOFMEMORY);
+            return;
+        }
+        CComPtr<IShellFolder> desktop;
+        if (SUCCEEDED(SHGetDesktopFolder(&desktop))) {
+            const HRESULT compared = desktop->CompareIDs(SHCIDS_CANONICALONLY,
+                oldID, comparedID);
+            sameItem = SUCCEEDED(compared) && (short)HRESULT_CODE(compared) == 0;
+        }
+    }
+    // Shell/COM calls may have closed the window or replaced its registration.
+    if (!isWindowOperational() || generation != shellNotifyGeneration) return;
+    // The local channel owns the item itself; the shared Shell channel owns
+    // strict ancestors. Their accepted events never overlap.
+    const bool matches = ancestorNotification ? !sameItem : sameItem;
+    if (matches) {
+        if (event & (SHCNE_DELETE | SHCNE_RMDIR)) {
+            // Prevent close-time saves from recreating the deleted row.
+            closing = true;
+            const std::string deletedKey = std::move(stateKey);
+            stateKey.clear();
+            auto store = folderStateStore();
+            if (!store || !store->remove(deletedKey)) stateStorageError();
+            checkLE(DestroyWindow(hwnd));
+        } else if ((event & (SHCNE_RENAMEITEM | SHCNE_RENAMEFOLDER)) && newID) {
+            CComPtr<IShellItem> moved;
+            if (checkHR(SHCreateItemFromIDList(newID, IID_PPV_ARGS(&moved))))
+                itemMoved(moved);
+        } else {
+            resolveItem();
+        }
+    }
 }
 
 bool ItemWindow::resolveItem() {
