@@ -176,6 +176,8 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::getGroupFolderWindows() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_KEEP_SOURCE_WINDOW_OPEN,
                 settings::getKeepSourceWindowOpen() ? BST_CHECKED : BST_UNCHECKED);
+            CheckDlgButton(hwnd, IDC_SMART_WINDOW_PLACEMENT,
+                settings::getSmartWindowPlacement() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_KEEP_SELECTION_ON_ACTIVATE,
                 settings::getKeepSelectionOnActivate() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_WINDOW_STATE_LOCK_ENABLED,
@@ -221,9 +223,12 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     settings::setStartingFolder(startingFolder.data());
                 bool groupFolderWindows = !!IsDlgButtonChecked(hwnd, IDC_GROUP_FOLDER_WINDOWS);
                 bool liveNameSearch = !!IsDlgButtonChecked(hwnd, IDC_LIVE_NAME_SEARCH);
-                bool windowSettingsChanged = liveNameSearch != settings::getLiveNameSearch();
+                const bool smartPlacement = !!IsDlgButtonChecked(hwnd, IDC_SMART_WINDOW_PLACEMENT);
+                bool windowSettingsChanged = liveNameSearch != settings::getLiveNameSearch()
+                    || smartPlacement != settings::getSmartWindowPlacement();
                 settings::setGroupFolderWindows(groupFolderWindows);
                 settings::setKeepSourceWindowOpen(!!IsDlgButtonChecked(hwnd, IDC_KEEP_SOURCE_WINDOW_OPEN));
+                settings::setSmartWindowPlacement(smartPlacement);
                 settings::setKeepSelectionOnActivate(
                     !!IsDlgButtonChecked(hwnd, IDC_KEEP_SELECTION_ON_ACTIVATE));
                 settings::setLiveNameSearch(liveNameSearch);
@@ -242,10 +247,7 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             return FALSE;
         }
         case WM_COMMAND:
-            if (LOWORD(wParam) == IDC_RESET_FOLDER_STATE && HIWORD(wParam) == BN_CLICKED) {
-                resetAllFolderState(GetParent(hwnd));
-                return TRUE;
-            } else if (LOWORD(wParam) == IDC_START_FOLDER_BROWSE && HIWORD(wParam) == BN_CLICKED) {
+            if (LOWORD(wParam) == IDC_START_FOLDER_BROWSE && HIWORD(wParam) == BN_CLICKED) {
                 CComHeapPtr<wchar_t> selected;
                 if (chooseFolder(GetParent(hwnd), selected)) {
                     setCBPath(GetDlgItem(hwnd, IDC_START_FOLDER_PATH), selected);
@@ -261,6 +263,7 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     || LOWORD(wParam) == IDC_START_FOLDER_PATH && pathCBChanged(wParam, lParam)
                     || LOWORD(wParam) == IDC_GROUP_FOLDER_WINDOWS && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_KEEP_SOURCE_WINDOW_OPEN && HIWORD(wParam) == BN_CLICKED
+                    || LOWORD(wParam) == IDC_SMART_WINDOW_PLACEMENT && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_WINDOW_STATE_LOCK_ENABLED && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_LIVE_NAME_SEARCH && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_KEEP_SELECTION_ON_ACTIVATE && HIWORD(wParam) == BN_CLICKED) {
@@ -617,7 +620,10 @@ INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
                 return TRUE;
             }
 #endif
-            if (LOWORD(wParam) == IDC_AUTO_UPDATE && HIWORD(wParam) == BN_CLICKED) {
+            if (LOWORD(wParam) == IDC_RESET_FOLDER_STATE && HIWORD(wParam) == BN_CLICKED) {
+                resetAllFolderState(GetParent(hwnd));
+                return TRUE;
+            } else if (LOWORD(wParam) == IDC_AUTO_UPDATE && HIWORD(wParam) == BN_CLICKED) {
                 PropSheet_Changed(GetParent(hwnd), hwnd);
                 return TRUE;
             }
