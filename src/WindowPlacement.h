@@ -8,36 +8,26 @@
 
 namespace filespacer {
 
-// Ten screen-coordinate pixels per cell, independent of saved folder geometry.
-class WindowPlacementGrid {
+// Keep exact monitor-clipped geometry; build query tables only when placing.
+class WindowPlacementState {
 public:
-    explicit WindowPlacementGrid(RECT workArea);
-    WindowPlacementGrid(const WindowPlacementGrid &) = delete;
-    WindowPlacementGrid &operator=(const WindowPlacementGrid &) = delete;
+    explicit WindowPlacementState(RECT workArea);
+    WindowPlacementState(const WindowPlacementState &) = delete;
+    WindowPlacementState &operator=(const WindowPlacementState &) = delete;
     const RECT &workArea() const { return work; }
     void setWindow(HWND window, const RECT *rect);
     void beginRefresh();
     void endRefresh();
-    POINT findPosition(SIZE size, POINT preferred);
-    uint64_t occupiedArea(const RECT &rect);
+    POINT findPosition(SIZE size, POINT preferred) const;
 
 private:
-    static constexpr LONG cellSize = 10;
-    struct Entry { RECT cells; uint64_t generation; };
+    struct Entry { RECT bounds; uint64_t generation; };
     RECT work;
-    LONG columns, rows;
     uint64_t generation = 0;
-    bool dirty = true;
     std::unordered_map<HWND, Entry> windows;
-    std::vector<uint32_t> counts;
-    std::vector<uint64_t> sums;
-    RECT toCells(const RECT &rect) const;
-    void change(const RECT &cells, bool add);
-    void changeDifference(const RECT &rect, const RECT &other, bool add);
-    void prepareSums();
 };
 
-// Local notifications update existing grids. A placement also reconciles windows
+// Local notifications update stored geometry. A placement also reconciles windows
 // in other processes, including their provisional replacement withdrawals.
 void updateWindowPlacement(HWND window) noexcept;
 void clearWindowPlacement();
