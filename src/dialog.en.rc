@@ -56,7 +56,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Keep the window open by default", IDC_KEEP_SOURCE_WINDOW_OPEN, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 52, 272, 12
   CONTROL "Preserve selection on &activation", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 66, 272, 12
   CONTROL "On a background click in an inactive window.", -1, "Static", WS_GROUP, 14, 80, 272, 8
-  CONTROL "Reduce overlap of &new windows", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 94, 272, 12
+  CONTROL "Mi&nimize window overlap", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 94, 272, 12
   CONTROL "Saved positions always take priority.", -1, "Static", WS_GROUP, 14, 108, 272, 8
   CONTROL "Name filter", -1, "Button", BS_GROUPBOX, 7, 124, 286, 28
   CONTROL "Filter while t&yping", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 135, 272, 12
