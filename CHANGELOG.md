@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.1.7 — 2026-10-26
+
+- Minimize new-window overlap with exact geometry, first looking for free space. Rename the General option to "Minimize window overlap".
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.6...v1.1.7)
+
 ## 1.1.6 — 2026-10-26
 
 - Fix folder windows remaining open when an ancestor folder is deleted or moved to the Recycle Bin.
