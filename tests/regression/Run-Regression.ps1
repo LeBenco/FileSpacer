@@ -41,6 +41,7 @@ $backup=Join-Path $run 'saved-test-state'
 $registryPrepared=$false; $dbPrepared=$false; $dbComplete=$false; $fatal=$null
 $savedRegistry=$null; $movedFiles=New-Object Collections.Generic.List[string]
 $originalFiles=@{}
+$desktopActivity=$null
 
 function Read-RegistryTree([Microsoft.Win32.RegistryKey]$Key) {
     $values=@(); $children=@()
@@ -104,6 +105,10 @@ function Stop-TestApplication {
 }
 try {
     if ($ui) {
+        Add-Type -Path (Join-Path $PSScriptRoot 'common\DesktopActivity.cs')
+        $desktopActivity=New-Object FileSpacerRegression.DesktopActivity
+        @{OriginalScreenSaverActive=$desktopActivity.OriginalScreenSaverActive; Suspended=$true} |
+            ConvertTo-Json | Set-Content -LiteralPath (Join-Path $run 'desktop-activity.json') -Encoding UTF8
         [void][IO.Directory]::CreateDirectory($backup)
         $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($testKey)
         if ($key) {
@@ -216,6 +221,17 @@ finally {
                     try { Write-RegistryTree $key $savedRegistry } finally { $key.Dispose() }
                 }
             } catch { $fatal="Restore test registry: $($_.Exception.Message)"; Write-Warning $fatal }
+        }
+        if ($desktopActivity) {
+            try {
+                $desktopActivity.Dispose()
+                @{OriginalScreenSaverActive=$desktopActivity.OriginalScreenSaverActive; Restored=$true} |
+                    ConvertTo-Json | Set-Content -LiteralPath (Join-Path $run 'desktop-activity.json') -Encoding UTF8
+            } catch {
+                $restoreError="Restore desktop activity: $($_.Exception.Message)"
+                if ($fatal) { $fatal+='; '+$restoreError } else { $fatal=$restoreError }
+                Write-Warning $restoreError
+            }
         }
     }
 }

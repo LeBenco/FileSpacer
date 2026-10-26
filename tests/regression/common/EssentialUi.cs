@@ -167,6 +167,18 @@ namespace FileSpacerRegression {
             } finally { if(pointer!=IntPtr.Zero) Marshal.Release(pointer); Native.Release(items); }
             names.Sort(StringComparer.OrdinalIgnoreCase); return names.ToArray();
         }
+        public string SelectionMark() {
+            int index; int result=view.GetSelectionMarkedItem(out index); Native.Check(result);
+            if(result!=0 || index<0) return String.Empty;
+            IntPtr child; Native.Check(view.Item(index,out child));
+            try { return Name(child); } finally { Marshal.FreeCoTaskMem(child); }
+        }
+        public string Focused() {
+            int index; int result=view.GetFocusedItem(out index); Native.Check(result);
+            if(result!=0 || index<0) return String.Empty;
+            IntPtr child; Native.Check(view.Item(index,out child));
+            try { return Name(child); } finally { Marshal.FreeCoTaskMem(child); }
+        }
         public int IndexOf(string name) {
             for(int i=0,n=Count;i<n;++i) {
                 IntPtr child; Native.Check(view.Item(i,out child));
@@ -373,7 +385,7 @@ namespace FileSpacerRegression {
             if(!IsWindow(window)||!IsWindowVisible(window)||!IsWindowEnabled(window))
                 throw new InvalidOperationException("No visible enabled activation target.");
             foreach(int key in new int[]{0x01,0x02,0x04,0x10,0x11,0x12})
-                if(GetAsyncKeyState(key)<0) throw new InvalidOperationException("Release mouse buttons and Shift/Ctrl/Alt before UI tests.");
+                if(GetAsyncKeyState(key)<0) throw new InvalidOperationException(String.Format("Release mouse buttons and Shift/Ctrl/Alt before UI tests; key 0x{0:X2} is down.",key));
             // Try to raise the target; verify actual exposure below before clicking.
             if(!SetWindowPos(window,IntPtr.Zero,0,0,0,0,0x13)) throw new Win32Exception(); // NOMOVE|NOSIZE|NOACTIVATE
             Rect rect=Bounds(window);

@@ -6,6 +6,7 @@ Add-Type -AssemblyName UIAutomationTypes
 Add-Type -AssemblyName WindowsBase
 $references=@([System.Windows.Automation.AutomationElement].Assembly.Location,[System.Windows.Automation.ControlType].Assembly.Location,[System.Windows.Rect].Assembly.Location)
 Add-Type -Path (Join-Path $PSScriptRoot '..\15-deplacement-alt\MouseInput.cs') -ReferencedAssemblies $references
+Add-Type -Path (Join-Path $PSScriptRoot '..\15-deplacement-alt\NativeTargets.cs') -ReferencedAssemblies @([ComponentModel.Win32Exception].Assembly.Location)
 $testFailure=$null;$controlHeld=$false;$first=[IntPtr]::Zero;$second=[IntPtr]::Zero
 try {
     Initialize-Ui 'shell-native-drag'
@@ -23,8 +24,20 @@ try {
         Focus-ShellFixture $first $name
         $sourceView=Use-UiView $first {param($view) $view.Window}
         $destinationView=Use-UiView $second {param($view) $view.Window}
-        $from=[FileSpacerRegression.AltDragInput]::ItemPoint($sourceView,$name)
-        $to=[FileSpacerRegression.AltDragInput]::BackgroundPoint($destinationView)
+        # Details rows can be visible yet expose no UIA clickable point.
+        # Reuse the physical gesture bench's verified icon hit test instead.
+        $lists=@([FileSpacerRegression.Native]::Children($sourceView,'SysListView32'))
+        Assert-Ui ($lists.Count -eq 1) 'Require the validated native Shell item container.'
+        $itemIndex=Use-UiView $first {param($view) $view.IndexOf($name)}
+        $itemCount=Use-UiView $first {param($view) $view.Count}
+        $native=[FileSpacerRegression.NativeTargets]::Item($lists[0],$itemIndex,$itemCount,$true,$false)
+        $from=New-Object FileSpacerRegression.MousePoint; $from.X=$native.X; $from.Y=$native.Y
+        $destinationLists=@([FileSpacerRegression.Native]::Children($destinationView,'SysListView32'))
+        Assert-Ui ($destinationLists.Count -eq 1) 'Require the validated native destination container.'
+        $bounds=[FileSpacerRegression.Native]::ClientBounds($destinationLists[0])
+        $to=New-Object FileSpacerRegression.MousePoint
+        $to.X=[int]($bounds.Left+$bounds.Width/2);$to.Y=[int]($bounds.Top+3*$bounds.Height/4)
+        [FileSpacerRegression.NativeTargets]::Background($destinationLists[0],$to.X,$to.Y)
         try {
             [FileSpacerRegression.AltDragInput]::Begin($first,$from,$false,$false)
             [FileSpacerRegression.AltDragInput]::VerifyHeld($false)
@@ -57,7 +70,7 @@ try {
         if ($name -eq 'Drag-copy') { Assert-Ui (Test-Path -LiteralPath (Join-Path $source $name)) 'Ctrl+drag removed the source after releasing Ctrl.' }
     }
     Assert-SearchNames $first @('Drag-copy');Assert-SearchNames $second @('AnchorA','Drag-copy','Drag-move')
-    Write-Host 'PASS: physical native drag/drop moves, Ctrl+drag copies, bytes and both views agree; targets located through public UI Automation.'
+    Write-Host 'PASS: physical native drag/drop moves, Ctrl+drag copies, bytes and both views agree; targets verified by native Shell hit testing.'
 } catch {
     $testFailure=$_
     try {

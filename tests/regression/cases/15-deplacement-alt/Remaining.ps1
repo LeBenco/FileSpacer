@@ -310,21 +310,21 @@ try {
             $expectedSelection='AnchorA'
         }
         {$_ -in @('DoubleAlt','DoubleAltMotion')} {
-            # Native Explorer selects the pointed item before opening Properties.
-            # The disabled-window-shortcuts reference is checked in 24/03.
+            # Since 1.1.3 the Shell owns this gesture. Its native reference in
+            # 24/03 opens Properties after release, for the pointed OtherC item.
             $expectedSelection='OtherC'
             Begin-Gesture $point $true $true
-            Wait-Ui {
-                $found=@([FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,$script:targetProcessId) | Where-Object { Test-AltProperties $_ })
-                if($found.Count -eq 1) { $script:properties=$found[0]; return $true }; return $false
-            } 'Properties for the exact fixture path with second press still held' 0 10
-            $state.Evidence.Properties=$properties.ToInt64()
             if($Case -eq 'DoubleAltMotion') {
                 [FileSpacerRegression.AltDragInput]::VerifyHeld($true)
                 [FileSpacerRegression.AltDragInput]::Move((Point-At ($point.X+96) ($point.Y+72)))
             }
             Observe-Fixed $before
             [FileSpacerRegression.AltDragInput]::End()
+            Wait-Ui {
+                $found=@([FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,$script:targetProcessId) | Where-Object { Test-AltProperties $_ })
+                if($found.Count -eq 1) { $script:properties=$found[0]; return $true }; return $false
+            } 'native Properties for the exact fixture path after release' 0 10
+            $state.Evidence.Properties=$properties.ToInt64()
             Close-Properties
             Wait-Idle; Observe-Fixed $before
         }
