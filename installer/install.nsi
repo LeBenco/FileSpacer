@@ -20,6 +20,7 @@ ShowUninstDetails show
 !define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_VALUENAME "Install_Dir"
 !include MultiUser.nsh
 !include x64.nsh
+!include Sections.nsh
 !include EnumUsersReg.nsh
 !addplugindir /x86-unicode "plugins"
 
@@ -57,12 +58,16 @@ LangString SEC_START ${LANG_ENGLISH} "Start Menu shortcut"
 LangString SEC_START ${LANG_FRENCH} "Raccourci dans le menu Démarrer"
 LangString SEC_CONTEXT ${LANG_ENGLISH} "Folder context menu"
 LangString SEC_CONTEXT ${LANG_FRENCH} "Menu contextuel des dossiers"
+LangString SEC_DEFAULT ${LANG_ENGLISH} "Make FileSpacer the default file manager"
+LangString SEC_DEFAULT ${LANG_FRENCH} "Définir FileSpacer comme gestionnaire de fichiers par défaut"
 LangString DESC_BASE ${LANG_ENGLISH} "FileSpacer and its licenses."
 LangString DESC_BASE ${LANG_FRENCH} "FileSpacer et ses licences."
 LangString DESC_START ${LANG_ENGLISH} "Add FileSpacer to the Start Menu."
 LangString DESC_START ${LANG_FRENCH} "Ajouter FileSpacer au menu Démarrer."
-LangString DESC_CONTEXT ${LANG_ENGLISH} "Add 'Open in FileSpacer' to folders and drives. Required for the default browser option; does not enable it."
-LangString DESC_CONTEXT ${LANG_FRENCH} "Ajouter « Ouvrir dans FileSpacer » aux dossiers et lecteurs. Nécessaire pour l'option de navigateur par défaut, sans l'activer."
+LangString DESC_CONTEXT ${LANG_ENGLISH} "Add 'Open in FileSpacer' to folders and drives. Required for the default file manager option; does not enable it."
+LangString DESC_CONTEXT ${LANG_FRENCH} "Ajouter « Ouvrir dans FileSpacer » aux dossiers et lecteurs. Nécessaire pour l'option de gestionnaire de fichiers par défaut, sans l'activer."
+LangString DESC_DEFAULT ${LANG_ENGLISH} "Open folders and drives with FileSpacer instead of Windows File Explorer. You can also enable this option later or restore File Explorer at any time in FileSpacer's settings, under Integration."
+LangString DESC_DEFAULT ${LANG_FRENCH} "Ouvrir les dossiers et les lecteurs avec FileSpacer à la place de l'Explorateur de fichiers Windows. Vous pouvez aussi activer cette option plus tard ou rétablir l'Explorateur à tout moment dans les paramètres de FileSpacer, onglet Intégration."
 LangString CONTEXT_TEXT ${LANG_ENGLISH} "Open in FileSpacer"
 LangString CONTEXT_TEXT ${LANG_FRENCH} "Ouvrir dans FileSpacer"
 LangString CLOSE_TITLE ${LANG_ENGLISH} "Close FileSpacer"
@@ -73,6 +78,8 @@ LangString ERROR_OS ${LANG_ENGLISH} "FileSpacer requires Windows 10 or later, 64
 LangString ERROR_OS ${LANG_FRENCH} "FileSpacer nécessite Windows 10 ou ultérieur, 64 bits."
 LangString ERROR_INSTALL ${LANG_ENGLISH} "Installation failed. Close FileSpacer and check access to the installation folder."
 LangString ERROR_INSTALL ${LANG_FRENCH} "L'installation a échoué. Fermez FileSpacer et vérifiez l'accès au dossier d'installation."
+LangString ERROR_DEFAULT ${LANG_ENGLISH} "Unable to make FileSpacer the default file manager. You can try again in FileSpacer's settings, under Integration."
+LangString ERROR_DEFAULT ${LANG_FRENCH} "Impossible de définir FileSpacer comme gestionnaire de fichiers par défaut. Vous pouvez réessayer dans les paramètres de FileSpacer, onglet Intégration."
 LangString ERROR_UNINSTALL ${LANG_ENGLISH} "Uninstallation failed. Close FileSpacer and try again."
 LangString ERROR_UNINSTALL ${LANG_FRENCH} "La désinstallation a échoué. Fermez FileSpacer puis réessayez."
 LangString ERROR_SCOPE ${LANG_ENGLISH} "An installation already exists in a different mode. Keep its mode and location, or uninstall it before changing them."
@@ -311,6 +318,27 @@ context_failed:
 context_done:
 SectionEnd
 
+Section /o "$(SEC_DEFAULT)" SecDefault
+    ; Match settings::setDefaultBrowser: this choice belongs to the current user.
+    ; Leaving this option unchecked preserves an existing default association.
+    ClearErrors
+    WriteRegStr HKCU "Software\Classes\Directory\shell" "" "filespacer"
+    WriteRegStr HKCU "Software\Classes\CompressedFolder\shell" "" "filespacer"
+    WriteRegStr HKCU "Software\Classes\Drive\shell" "" "filespacer"
+    IfErrors 0 default_done
+    System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
+    MessageBox MB_OK|MB_ICONSTOP $(ERROR_DEFAULT) /SD IDOK
+    SetErrorLevel 2
+    Abort
+default_done:
+SectionEnd
+
+Function .onSelChange
+    ${If} ${SectionIsSelected} ${SecDefault}
+        !insertmacro SelectSection ${SecContext}
+    ${EndIf}
+FunctionEnd
+
 Section -ApplyOptions
     ; An unchecked component also removes a component installed by an earlier version.
     ${IfNot} ${SectionIsSelected} ${SecStart}
@@ -363,4 +391,5 @@ SectionEnd
     !insertmacro MUI_DESCRIPTION_TEXT ${SecBase} $(DESC_BASE)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecStart} $(DESC_START)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecContext} $(DESC_CONTEXT)
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecDefault} $(DESC_DEFAULT)
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
