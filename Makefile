@@ -78,6 +78,7 @@ OBJECTS = \
     $(OUTDIR)\UpdateSessionStore.obj \
     $(OUTDIR)\WinUtils.obj \
     $(OUTDIR)\WindowResizeGesture.obj \
+    $(OUTDIR)\WindowPlacement.obj \
 	$(OUTDIR)\CrashRecovery.obj \
     $(OUTDIR)\main.obj
 
