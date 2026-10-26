@@ -52,6 +52,9 @@ namespace FileSpacerRegression {
         public static void Begin(IntPtr window,MousePoint point,bool alt,bool doublePress) {
             BeginButton(window,point,alt,doublePress,false);
         }
+        public static void BeginDoubleConfigured(IntPtr window,MousePoint point,int modifiers) {
+            BeginButton(window,point,(modifiers&2)!=0,true,false,false,(modifiers&1)!=0,(modifiers&4)!=0);
+        }
         public static void BeginRight(IntPtr window,MousePoint point,bool alt,bool doublePress) {
             BeginButton(window,point,alt,doublePress,true);
         }
@@ -64,7 +67,7 @@ namespace FileSpacerRegression {
             double elapsed=(DateTime.UtcNow-lastRelease).TotalMilliseconds;
             if(elapsed<=GetDoubleClickTime()) Thread.Sleep((int)(GetDoubleClickTime()-elapsed)+1);
             foreach(int key in new int[]{0x01,0x02,0x04,0x10,0x11,0x12})
-                if(GetAsyncKeyState(key)<0) throw new InvalidOperationException("Release mouse buttons and modifiers before the test gesture.");
+                if(GetAsyncKeyState(key)<0) throw new InvalidOperationException(String.Format("Release mouse buttons and modifiers before the test gesture; key 0x{0:X2} is down.",key));
             Move(point);
             IntPtr target=WindowFromPoint(point);
             if(target!=window && !IsChild(window,target))
