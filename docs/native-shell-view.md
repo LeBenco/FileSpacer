@@ -108,7 +108,7 @@ Les essais exploratoires précédents restent dans
 
 ## Régression maintenue
 
-La commande de référence est `tests.cmd`, soit **101 jeux**. Elle inclut le
+La commande de référence est `tests.cmd`, soit **111 jeux**. Elle inclut le
 banc Shell réel dans la configuration de production : `18-vue-shell-native/02-Persistance`.
 Il teste les réglages, la sélection, le focus, les positions, le filtrage et la
 destruction/recréation avec SQLite. Ne pas ajouter l'exécution du lanceur natif
