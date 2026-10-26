@@ -59,7 +59,16 @@ try {
     Assert-Ui ([IO.Path]::GetFullPath($detected) -eq [IO.Path]::GetFullPath($executable)) 'Automatic detection did not find installed Everything.'
     Press-UiSettings 5
     Assert-Ui (@(Get-Process Everything -ErrorAction SilentlyContinue).Count -eq 0) 'Close existing Everything before isolated integration test.'
-    $config=Join-Path $script:UiRoot 'Everything.ini'
+    # run_as_admin is bootstrapped from the INI beside the executable even
+    # with -config. Never let the installed user's INI control this test.
+    $installedConfig=Join-Path (Split-Path $executable -Parent) 'Everything.ini'
+    $installedHash=if(Test-Path -LiteralPath $installedConfig){(Get-FileHash -LiteralPath $installedConfig -Algorithm SHA256).Hash}else{''}
+    $tools=Join-Path $script:UiRoot 'Everything isolated'
+    [void](New-Item -ItemType Directory -Path $tools)
+    $isolatedExecutable=Join-Path $tools 'Everything.exe'
+    Copy-Item -LiteralPath $executable -Destination $isolatedExecutable
+    $executable=$isolatedExecutable
+    $config=Join-Path $tools 'Everything.ini'
     $ini=@('[Everything]','app_data=0','run_as_admin=0','run_in_background=0','show_tray_icon=0',
         'check_for_updates_on_startup=0','auto_include_fixed_volumes=0','auto_include_removable_volumes=0',
         'auto_include_fixed_refs_volumes=0','auto_include_removable_refs_volumes=0',('folders='+$script:UiRoot),'folder_monitor_changes=1','language=1033') -join "`r`n"
@@ -68,7 +77,7 @@ try {
     Wait-Ui { $external.Refresh();return $external.MainWindowHandle -ne [IntPtr]::Zero } 'real Everything window'
     $externalWindow=$external.MainWindowHandle
     Write-Host ('STEP: real Everything class='+[FileSpacerRegression.Native]::Class($externalWindow)+', version='+(Get-Item -LiteralPath $executable).VersionInfo.FileVersion)
-    Set-SearchOptions $window $true 5 '' 0
+    Set-SearchOptions $window $true 5 $executable 0
     Submit-Search $window 'keep' @('keep.txt')
     Select-SearchMenu $window 0
     Assert-EverythingQuery ('"'+$folder+'\" <keep>')
@@ -83,6 +92,7 @@ try {
     $manualFolder=Join-Path $script:UiRoot ('Outils espace '+[char]0xe9)
     [void](New-Item -ItemType Directory -Path $manualFolder)
     $manual=Join-Path $manualFolder 'Everything.exe';Copy-Item -LiteralPath $executable -Destination $manual
+    Copy-Item -LiteralPath $config -Destination (Join-Path $manualFolder 'Everything.ini')
     Set-SearchOptions $window $true 0 $manual 1
     [FileSpacerRegression.Native]::SetText((Get-UiSearchEdit $window),'keep')
     Select-SearchMenu $window 0
@@ -94,7 +104,9 @@ try {
         Assert-EverythingQuery $query
         Assert-SearchNames $window @('keep.txt','other.txt','sub')
     }
-    Write-Host 'PASS: real Everything 1.4, automatic detection, manual Unicode path, both scopes, exact visible queries, quote/metacharacter transfer, success reset and explicit failure preserving local search.'
+    $installedHashAfter=if(Test-Path -LiteralPath $installedConfig){(Get-FileHash -LiteralPath $installedConfig -Algorithm SHA256).Hash}else{''}
+    Assert-Ui ($installedHashAfter -ceq $installedHash) 'Installed Everything bootstrap settings changed during the isolated test.'
+    Write-Host 'PASS: real Everything 1.4, installed automatic detection, isolated executable/bootstrap, manual Unicode path, both scopes, exact visible queries, quote/metacharacter transfer, unchanged installed settings, success reset and explicit failure preserving local search.'
 } catch { $testFailure=$_; throw }
 finally {
     try {
