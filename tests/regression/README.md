@@ -10,7 +10,7 @@ tests.cmd
 ```
 
 Le lanceur construit l'application par `build.cmd debug`, initialise MSVC x64,
-et lance les **109 jeux** indépendants. Ils ne doivent pas être complétés par
+et lance les **111 jeux** indépendants. Ils ne doivent pas être complétés par
 un second passage des mêmes bancs natifs. Chaque jeu possède son processus
 PowerShell et son dossier de résultats sous `build/regression/<date>-<id>`.
 
@@ -69,6 +69,7 @@ tests.cmd -Pattern "24-*"
 | 20-validation-elargie | 5 | Charge, images/modes, Ce PC, écrans/DPI disponibles, Panneau externe. |
 | 21-clic-activation | 1 | Clic sur le fond d'une fenêtre inactive : activation sans perte de sélection, clic d'élément, préférence désactivée. |
 | 22-verrouillage | 2 | Activation, menu natif, référence visible, géométrie/vue temporaires, placements individuels, déverrouillage, confirmation et suppression globale entre processus, réouverture et redémarrage ; rendu ICO natif, transparence, DPI et couleurs de contraste élevé. |
+| 23-noms-selection-simple | 1 | Fond opaque du libellé natif en sélection simple ; rendu natif conservé en sélection multiple, sans sélection et avec le focus seul ; sélection, positions et captures valides. |
 | 24-raccourcis | 3 | Onglet natif FR/EN, 2 304 couples de réglages, persistance atomique, capture directe, conflits, valeurs par défaut par action, annulation, 64 gestes réels dans deux processus et comparaison des propriétés, de la sélection, de la géométrie et des fichiers avec le Shell sans raccourcis, y compris après mouvement du second appui. |
 | 25-recherche-integration | 5 | Historique SQLite isolé, migration, entrées Win32, arguments et erreurs, parcours Shell réel, préférences 0/5/20, application Everything réelle et suggestions sans chevron au focus/clic. |
 | 26-placement-fenetres | 2 | Placement hybride libre/encombré, mise à jour de la géométrie, retrait/réintégration, réconciliation, bords, coordonnées négatives et tailles ; contrôles fonctionnels sans mesure de temps ni oracle d’optimalité ; libellé et option Général, maintenance À propos, processus distincts, réduction, remplacement spatial et priorité de la position mémorisée sur le vrai Shell. |
