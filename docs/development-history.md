@@ -1,16 +1,79 @@
 # Development history and validation
 
-This handoff records the work in chronological order: window shortcuts and
-release 1.1.3 first, then search/Everything integration and its follow-ups.
-Both sessions took place on 25 October 2026. Their order is established by the
-search comparison's baseline, commit `f257a2c`, which already contains the
-published shortcut implementation.
+This handoff consolidates the separate development and validation sessions on
+25–26 October 2026. Current code, Git state and published releases take precedence
+over the older snapshots retained below. In particular, the initial search
+integration was once uncommitted, but it has since shipped in 1.1.4.
 
-At consolidation, `main` is at `f257a2c`: the shortcut work is committed and
-published, while the later search changes remain local and uncommitted.
-The entries below describe historical checks on their respective revisions,
-not a new validation of the combined working tree. Current code and Git state
-take precedence over these snapshots.
+## Consolidated status — 26 October 2026
+
+The latest published application is **1.1.7**, tag `v1.1.7`, commit `99ff6f7`.
+At the start of this documentation audit, local `main` and `origin/main` both
+resolved to that commit and the main working tree was clean. Documentation-only
+commits may follow the release tag; they do not change the released executable.
+Another session subsequently added an uncommitted installer option. Its pending
+validation and a separate folder-icon design discussion are recorded below;
+neither is part of the published 1.1.7 installer.
+
+The public release API was checked during this audit: versions 1.1.2 through
+1.1.7 are published releases, each with its versioned installer and update
+manifest. Local tags resolve as follows:
+
+| Version | Application commit | Delivered scope |
+| --- | --- | --- |
+| [1.1.2](https://github.com/LeBenco/FileSpacer/releases/tag/v1.1.2) | `9550f52` | Optional saved-window-state locking, native lock badge, reopened scroll anchor and simplified crash reporting. |
+| [1.1.3](https://github.com/LeBenco/FileSpacer/releases/tag/v1.1.3) | `f257a2c` | Configurable window gestures and opaque native labels for single selection. |
+| [1.1.4](https://github.com/LeBenco/FileSpacer/releases/tag/v1.1.4) | `b222a35` | Everything, persistent per-folder search history, automatic suggestions and cached executable icon. |
+| [1.1.5](https://github.com/LeBenco/FileSpacer/releases/tag/v1.1.5) | `fe728f2` | Native Alt-double-click correction, stronger physical-input tests and isolated Everything/bootstrap handling. |
+| [1.1.6](https://github.com/LeBenco/FileSpacer/releases/tag/v1.1.6) | `45f4922` | Ancestor-removal dispatch, unavailable Jump List entries, initial smart placement, maintenance relocation and wider defaults. |
+| [1.1.7](https://github.com/LeBenco/FileSpacer/releases/tag/v1.1.7) | `99ff6f7` | Exact hybrid placement and the renamed General option. |
+
+The current runner discovers **111 cases: 19 Internal and 92 UI**. The last
+complete successful suite recorded below was **109/109 on 1.1.5**. Later work
+added group 26 and used targeted checks: 19 Internal and 13 real Shell cases
+passed for the hybrid placement. This is not a claim that all 111 cases were
+rerun successfully on 1.1.7. Historical failures and external obstructions remain
+identified separately.
+
+Detailed coverage is split between this chronology, the [user guide](user-guide.md),
+[native view architecture](native-shell-view.md), [single-selection validation](validation-single-selection-labels.md),
+[shortcut policy](window-shortcuts.md), [search implementation](search-integration.md),
+and [independent placement study](../tests/placement-simulation/RESULTS.md).
+The separate client-test worktree and its unfinished isolation checks are recorded
+at the end; they are not part of the released application.
+
+## 2026-10-25 — Earlier delivered work: locking and selected labels
+
+Saved-window-state locking shipped in 1.1.2. It is globally optional and disabled
+by default. Locking captures geometry and view settings; temporary changes remain
+possible, while individual icon positions continue saving. Unlocking captures the
+current visible state. Normal retention/quota rules still apply. Global disabling
+requires confirmation and clears locks across processes without deleting other
+folder state. The Small & Flat CC0 lock icon, native multi-resolution rendering,
+DPI/high-contrast handling and accessible state are retained. Group 22 covers the
+state transitions and native badge renderer. These are delivered features, not
+the undecided prototype described by older planning material.
+
+The 1.1.2 release also includes the Details/List top-row scroll anchor and removes
+the obsolete attribution, preference change and automatic restart from crash
+reporting, while retaining minidumps/reports. The 24 October native-view migration
+and its later fixes remain the architectural baseline.
+
+The later selected-label work shipped with 1.1.3. In Icons mode, an optional
+`NM_CUSTOMDRAW` adaptation fills the background of the one actually selected
+item, then lets the native control draw the text. Multiple/empty selection,
+focus-only items and other modes retain native drawing; no custom text pane or
+multi-selection overlay was delivered. The preference updates already-open
+windows. The real native-control rendering checks, selection/focus/position
+preservation and static **REVIEW** findings are retained in
+[the validation report](validation-single-selection-labels.md). Earlier
+[drawing probes](native-label-draw-investigation.md) and
+[multiple-selection/pane experiments](native-multi-label-investigation.md)
+remain investigations, not product features. Group 23 also rejects empty render
+captures instead of accepting invalid image comparisons.
+
+These additions complement the historical records below; they do not turn their
+limited DPI/theme coverage into a general visual validation.
 
 ## 2026-10-25 — Window shortcuts and release 1.1.3
 
@@ -693,3 +756,210 @@ no regression test was modified or run for this focused manual validation.
 
 The changelog records this change under Unreleased. No version change, installer,
 tag or release is part of this task.
+
+## 2026-10-26 — Ancestor removal, notification cost and release 1.1.6
+
+The reported defect was confirmed: removing a directory could leave a window
+for a descendant open, including a grandchild, while the Jump List still offered
+an unavailable last-closed folder. Reconstructing an IShellItem for a removed
+path can fail before removal is handled, so the final implementation compares
+retained PIDLs instead of depending on that reconstruction.
+
+The delivered `ItemWindow` design has one message-only ancestor receiver and
+one Shell-only `SHCNE_RMDIR` registration **per process**. Existing local item
+registrations keep their normal filesystem/Shell scope. The receiver selects
+strict descendants, takes strong references before dispatch and keeps cloned
+PIDLs through reentrant COM comparisons. A registration-generation guard rejects
+continuations that became stale. A confirmed removal clears the stored state
+key before destruction, so close-time saving cannot recreate the deleted row.
+Unrelated and same-prefix sibling windows remain unaffected.
+
+The earlier per-window broad registration was evaluated before this dispatch
+design was retained. A separate native subscription study completed 45/45 runs
+and 135/135 phases, with 71,100 published directories, 505,600 broad deliveries,
+963,800 recipient checks, no lock failures or false matches, and normal producer
+and receiver exit codes. It measured native notification cost in an isolated
+STA harness; it did not measure the complete FileSpacer UI. Temporary source,
+binaries and fixtures were removed. The retained local summary is under
+`build/subscription-bench-20261026/`.
+
+`ClosedWindows.cpp` now omits an unavailable latest folder from the Jump List
+without treating the expected parsing failure as a product error. The history
+entry is retained for a later retry; an older entry is not silently substituted.
+
+Final focused evidence for the dispatch:
+
+- Debug x64 `/W4`: PASS, no warnings.
+- Eight real Shell scenarios passed, including direct/ancestor removals at
+  depths one and two, Recycle Bin and permanent deletion, recursive filesystem
+  removal, preservation of unrelated siblings, four windows in one process,
+  child close/reopen, batch close and survival of the parent. Open-folder rename
+  also preserved its identity, selection and geometry.
+- The separate `07-fenetres/01-Etats` case failed because the RustDesk panel
+  covered the maximized window's Minimize button. Its actual obstruction was
+  recorded; the target, focus and assertions were not changed to obtain PASS.
+  The overall affected run remains failed rather than being relabelled successful.
+- clang-tidy and Cppcheck finished with full changed-header coverage, real
+  SDK/MSVC/ATL where required, and no parsing failure or ATL reduction.
+  **REVIEW** remains for adjacent old/new PIDL parameters and Cppcheck treating
+  the generation guard as constant without modelling COM reentrancy. A cloned
+  target PIDL was retained across COM before final validation.
+
+Release preparation subsequently passed all 19 Internal cases. Five initial
+preparation failures were resolved by putting the standard Windows PowerShell
+modules first in `PSModulePath`; tests and expected results were unchanged.
+The initial placement implementation and its real Shell checks were also
+included in this release, together with the 580 x 435 default size and moving
+folder-state maintenance from General to About.
+
+The pending 1.1.6 changes were reorganized into 14 file-scoped commits under the
+configured human author/committer identity, in addition to the two wider-default
+commits that were already on main. Older local commit IDs in intermediate
+validation reports are historical; tag `v1.1.6` resolves to `45f4922` and the
+source in that tag is authoritative. Local Debug, Release and NSIS builds passed.
+The [publication workflow](https://github.com/LeBenco/FileSpacer/actions/runs/40390773529)
+succeeded. The published installer has 1,331,515 bytes and SHA-256
+`b25895aff347ba580f1ecec99b529f5032b7b0bcfffd961fa69354eff09e40da`;
+the downloaded file, update manifest and GitHub digest agreed. The local
+pre-publication installer is a separate build and is not that published artifact.
+Local evidence is retained under `build/ancestor-dispatch/` and
+`build/release-1.1.6/`.
+
+## 2026-10-26 — Exact hybrid window placement and release 1.1.7
+
+The initial enabled-by-default occupation grid shipped in 1.1.6. It used
+ten-unit cells, incremental union counts and summed-area queries, with
+transaction-like withdrawal of a source that spatial navigation would close.
+The user then requested minimizing the actual covered surface and accepted an
+exact hybrid after comparing implementations.
+
+The delivered `WindowPlacementState` retains exact monitor-clipped rectangles.
+Updates only record geometry. For a new placement it first checks the preferred
+origin and searches for free space with a sweep and coverage tree; if no free
+position exists, compressed true edges and weighted union-area tables provide
+exact minimization. Existing windows are not rearranged. The preferred location
+breaks equal-area ties. Saved folder geometry still takes precedence; minimized,
+invisible and cloaked windows and the source being replaced are excluded.
+Failed creation can reintegrate the source. Oversized requested dimensions retain
+an accessible origin. Allocation failure does not escape the EnumWindows callback
+and leaves the existing Windows-placement fallback available.
+
+The option stays in General > Folder navigation, enabled by default. Its text is
+**Minimize window overlap** / **Minimiser la superposition des fenêtres**.
+The existing preference key is retained. Coordinates use the same Windows
+coordinate context as the window rectangles and monitor work area; the study
+uses logical dimensions directly, without a separate Windows zoom parameter.
+
+The committed [independent study](../tests/placement-simulation/README.md) is
+separate from the automatic regression suite. It manipulates rectangles rather
+than windows and retains the former grid in `LegacyGrid.inc`:
+
+- Initial comparison: 324 scenes, six methods, three repetitions. The two exact
+  methods and pixel grid obtained the same minimum surface. The ten-unit grid
+  was suboptimal in 32 scenes, with no missed free position in that sample.
+- Observed general-exact/grid crossovers for dispersed windows were between
+  40–60 windows in 1080p and 100–200 in 4K. Earlier 23/59 estimates compared
+  candidate-count bounds; they were not measured speed thresholds.
+- Adversarial pass: 2,160 scenes, 11 repetitions per method, 20/40/60 windows,
+  three target sizes and logical 1080p/4K. Cases force the failed sweep and
+  exact fallback or leave exactly one free integer origin. Candidate counts
+  reach 55,695 out of the 59,049 bound for 60 windows.
+- With 60 blocked windows, the slowest scene median was 0.7203 ms in 1080p
+  and 0.5707 ms in 4K. Raw maxima were 5.7044 and 1.1438 ms. The geometry
+  behind the isolated 5.7044 ms sample was repeated 100 times: median
+  0.3661 ms, maximum 0.7282 ms. The original spike is retained; its cause
+  was not instrumented. These are observed calculation costs, not an OS
+  scheduling bound or complete folder-opening latency.
+
+The actual product's group 26 was changed to **functional checks only**:
+free/blocked execution, geometry updates, withdrawal/reintegration, refresh,
+bounds, negative coordinates, oversized dimensions and several-window scenes.
+It contains no timing measurement or independent optimality oracle. The real
+Shell case also checks the localized setting name, default, Cancel/Apply,
+About maintenance, cross-process placement, minimized windows, spatial source
+closure and saved-position priority. All 19 Internal cases and 13 targeted real
+Shell cases passed. Earlier Computer Use identity failures were separate from
+this native project harness; no FileSpacer defect was established from them.
+
+Debug and Release builds passed without warnings. Both static tools completed
+the changed source/header consumers. The product verdict is **REVIEW** for two
+Cppcheck aggregate-initialization warnings on `PlacementChoice::area/distance`;
+all construction sites initialize the fields, and clang-tidy has no new product
+diagnostic. The historical study's deterministic-seed, callback/cast,
+aggregate and test-entry-point/style findings are documented separately.
+No modified C++ file lacks analysis. Version-header analysis introduced no
+new diagnostic; unchanged Update `deallocuse` messages also occur in its baseline.
+
+Release 1.1.7 comprises 18 commits, grouping files only when their complete
+messages match. Benco's configured identity is both author and committer, with
+no added co-author. `release.sh` pushed `main` and annotated tag `v1.1.7` at
+`99ff6f7`. The [workflow](https://github.com/LeBenco/FileSpacer/actions/runs/40401354272)
+built and published the installer and update manifest successfully. The
+downloaded installer has 1,332,573 bytes and SHA-256
+`3830366c64264a2a3afdc75e6e26273b0922e167a33ad794874f77a062103107`;
+the manifest's `01010700` version, size, hash and GitHub digest were verified.
+Evidence remains under `build/hybrid-placement/`,
+`build/placement-worst-cases/` and `build/release-1.1.7/`.
+
+## 2026-10-26 — Separate client-test worktree: partial validation
+
+The separate `codex/client-smoke` worktree is based on 1.1.5 commit `fe728f2`.
+Its connection launcher and `tests/client` prototypes remain untracked in that
+worktree. They were not merged into `main`, committed with the placement work,
+or included in releases 1.1.6/1.1.7.
+
+The Windows Sandbox smoke test passed using a Release executable and precompiled
+.NET helper prepared on the host: a real folder and `probe.txt` were observed,
+the window was resized programmatically from 210 x 435 to 900 x 600, and it exited
+normally with code zero. Neither Visual Studio nor `cl.exe` was present in the
+guest. This validates that limited client scenario, not physical input or the
+complete regression suite on a clean client.
+
+The Alt-right-drag experiment worked behind other host windows. Pointer
+non-interference remains **REVIEW**: some trials contained manual host activity,
+and another observed unexplained host pointer movement. Minimized Sandbox was
+**BLOCKED** by unavailable guest input/foreground conditions; later input failed
+with access denied. No assertion or focus repair changed that into PASS.
+
+The later Hyper-V access launcher waits for its helper's real exit and report;
+four simulated launcher outcomes passed. The last retained real connection
+report is **BLOCKED** with rejected credentials. No FileSpacer tests were started
+by that connection probe. Client execution with VMConnect closed, guest physical
+input and transfer of the full suite remain unvalidated. This audit did not
+launch a VM, enter credentials, rerun tests or alter that worktree.
+
+## 2026-10-26 — Local installer option and folder-icon proposal
+
+A separate session added an optional, initially unchecked default-file-manager
+component to `installer/install.nsi`. Its French and English descriptions explain
+that it opens folders and drives in FileSpacer, can also be enabled later in
+Settings > Integration, and can be reversed there. Selecting it also selects
+the required context-menu component; it uses the same three per-user folder/drive
+associations as the existing settings code. This remains an **uncommitted local
+change**. The session reported a successful Debug build with no recompilation;
+NSIS compilation and visual inspection of the bilingual pages remain pending.
+At the user's request that session is waiting for this documentation work to
+finish. Its installer changes are preserved outside the documentation commits.
+
+Another session considered a folder-icon editor based on `desktop.ini`: reference
+the original icon or copy it under a renamed hidden file in the target folder.
+The design proposal favours an independent utility exposed through a Shell
+command, with preview and reset-to-default controls. No implementation was made,
+and actual Shell/menu integration was not validated. This is a design discussion,
+not a delivered FileSpacer feature.
+
+## Documentation audit boundaries
+
+This consolidation checked local Git/tag history, published release metadata,
+retained delivery/analysis summaries, the current source contracts and the
+separate client worktree. The runner's actual category discovery was counted:
+111 cases, including the previously omitted group-23 catalogue row. Current
+guides were corrected; historical 97/100/101/109-case runs keep their original
+scope. No build or test was rerun merely to update this documentation.
+
+Remaining limits are explicit: no full 111-case PASS on 1.1.7, the obstructed
+Minimize-button case, the existing static REVIEW findings, incomplete additional
+theme/DPI/provider coverage, unfinished per-file badge investigation and the
+client-isolation work above. Features and later passing runs do not erase those
+historical failures or turn the prototypes into shipped behavior. The local
+installer change likewise awaits its own compilation and visual validation.
