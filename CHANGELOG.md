@@ -2,7 +2,15 @@
 
 ## Unreleased
 
+## 1.1.6 — 2026-10-26
+
+- Fix folder windows remaining open when an ancestor folder is deleted or moved to the Recycle Bin.
+- Fix Jump Lists offering to reopen folders that are no longer available.
+- Reduce overlap when placing folder windows without a saved position, ignoring the source being replaced during spatial navigation. Enable this by default with an option under General > Folder navigation.
+- Move folder-state maintenance from General to About.
 - Open new folder windows at a balanced 4:3 default size (580 × 435 at 96 DPI), retaining the existing height and honoring configured dimensions and each folder's saved size.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.5...v1.1.6)
 
 ## 1.1.5 — 2026-10-26
 
