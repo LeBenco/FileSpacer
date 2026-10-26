@@ -3,6 +3,8 @@
 #include "FolderIdentity.h"
 #include "ClosedWindows.h"
 #include "ProcessLifetime.h"
+#include "Settings.h"
+#include "WindowPlacement.h"
 #include <ctime>
 #include <algorithm>
 #include <vector>
@@ -145,7 +147,11 @@ static bool isControlPanelFolder(IShellItem *item) {
 }
 
 FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCmd,
-        const ClosedWindow *reopening) {
+        const ClosedWindow *reopening, HWND replacingWindow) {
+    // The caller keeps its C++ window object alive, but Shell calls below may
+    // destroy its HWND. Do not withdraw a subsequently recycled window handle.
+    const LONG_PTR replacingIdentity = replacingWindow
+        ? GetWindowLongPtrW(replacingWindow, GWLP_USERDATA) : 0;
     if (isProcessQuitRequested()) return FolderOpenResult::Failed;
     if (isControlPanelFolder(item)) {
         if (isProcessQuitRequested()) return FolderOpenResult::Failed;
@@ -181,7 +187,12 @@ FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCm
     CComPtr<FolderWindow> window;
     window.Attach(new FolderWindow(item, identity));
     if (reopening) window->setReopenState(*reopening);
-    if (!window->create(window->requestedRect(monitor), showCmd))
+    if (!replacingIdentity || GetWindowLongPtrW(replacingWindow, GWLP_USERDATA) != replacingIdentity)
+        replacingWindow = nullptr;
+    // Withdraw once before placement. Failure restores only this source's
+    // contribution; success leaves it withdrawn until its deferred destruction.
+    PlacementWithdrawal withdrawal(settings::getSmartWindowPlacement() ? replacingWindow : nullptr);
+    if (!window->create(window->requestedRect(monitor, replacingWindow), showCmd))
         return FolderOpenResult::Failed;
     if (isProcessQuitRequested()) {
         HWND created = nullptr;
@@ -193,6 +204,7 @@ FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCm
     // Preserve foreground activation when a 32-bit Shell client launches this x64 server.
     if (showCmd == SW_SHOWNORMAL)
         window->setForeground();
+    withdrawal.commit();
     return FolderOpenResult::Created;
 }
 
