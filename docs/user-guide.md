@@ -43,7 +43,13 @@
   Settings even when the toolbar is hidden.
 - English and French resources are selected from the Windows display language,
   with English as the fallback. Changing the language requires restarting.
-- Settings > General > Reset all folder state clears saved folder positions,
+- Settings > General > Reduce overlap of new windows is enabled by default.
+  Folders without a valid saved position look for a position with reduced overlap
+  with other visible FileSpacer windows on the chosen monitor. Minimized
+  windows and the source being replaced during spatial navigation are ignored.
+  Saved positions keep priority. Disabling the option restores Windows' default
+  placement without moving existing windows.
+- Settings > About > Maintenance > Reset all folder state clears saved folder positions,
   sizes, and view settings, keeping global application preferences. It closes
   open FileSpacer folder windows before clearing the database.
 
