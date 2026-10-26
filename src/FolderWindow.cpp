@@ -234,11 +234,11 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
             && msg->message != WM_MBUTTONDOWN && msg->message != WM_MBUTTONDBLCLK)
             || GetCapture() || !shellView)
         return false;
-    // A window gesture consumes its first click. If Windows subsequently reports
-    // a double click, deliver that deferred click to the view before its normal
-    // double-click message, so Explorer owns selection and Properties throughout.
+    // A window gesture consumes its first click. Prepare that click's selection
+    // through MSAA before the native double-click. Replaying a button-down while
+    // the second press is physically held can start an unintended Shell drag.
     if (msg->message == WM_LBUTTONDBLCLK) {
-        MSG click = deferredGestureClick;
+        const MSG click = deferredGestureClick;
         deferredGestureClick = {};
         const CComPtr<IShellView> view = shellView;
         HWND root = nullptr;
@@ -248,12 +248,70 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
                 && SUCCEEDED(view->GetWindow(&root)) && root
                 && (click.hwnd == root || IsChild(root, click.hwnd))) {
             if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
-            DispatchMessageW(&click);
-            if (!isWindowOperational() || shellView != view || viewGeneration != generation
-                    || !IsWindow(click.hwnd)) return true;
-            click.message = WM_LBUTTONUP;
-            click.wParam &= ~static_cast<WPARAM>(MK_LBUTTON);
-            DispatchMessageW(&click);
+            CComPtr<IAccessible> accessible;
+            CComVariant child, role, state;
+            if (SUCCEEDED(AccessibleObjectFromPoint(click.pt, &accessible, &child)) && accessible
+                    && SUCCEEDED(accessible->get_accRole(child, &role)) && role.vt == VT_I4
+                    && role.lVal == ROLE_SYSTEM_LISTITEM) {
+                LONG flags = SELFLAG_NONE;
+                if (click.wParam & MK_CONTROL) {
+                    if (FAILED(accessible->get_accState(child, &state)) || state.vt != VT_I4) return false;
+                    flags |= state.lVal & STATE_SYSTEM_SELECTED ? SELFLAG_REMOVESELECTION : SELFLAG_ADDSELECTION;
+                } else {
+                    flags |= SELFLAG_TAKESELECTION;
+                }
+                if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                CComQIPtr<IFolderView2> folderView(view);
+                if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                if (!folderView) return false;
+                // TAKEFOCUS in the MSAA proxy can synthesize Alt restoration
+                // after the real key release. Resolve the pointed item through
+                // a selection-only operation, then focus its public Shell index.
+                std::vector<CComHeapPtr<ITEMID_CHILD>> previousSelection;
+                if (click.wParam & MK_CONTROL) {
+                    int count = 0;
+                    checkHR(folderView->ItemCount(SVGIO_SELECTION, &count));
+                    if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                    if (count < 0) return false;
+                    previousSelection.resize(static_cast<size_t>(count));
+                    CComPtr<IEnumIDList> selectedItems;
+                    checkHR(folderView->Items(SVGIO_SELECTION, IID_PPV_ARGS(&selectedItems)));
+                    if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                    for (auto &id : previousSelection) {
+                        if (!selectedItems) return false;
+                        const HRESULT hr = selectedItems->Next(1, &id, nullptr);
+                        if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                        if (hr != S_OK) { checkHR(hr); return false; }
+                    }
+                }
+                checkHR(accessible->accSelect(SELFLAG_TAKESELECTION, child));
+                if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                int index = -1;
+                const HRESULT found = folderView->GetSelectedItem(-1, &index);
+                if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                CComHeapPtr<ITEMID_CHILD> pointed;
+                if (found == S_OK && index >= 0) {
+                    checkHR(folderView->Item(index, &pointed));
+                    if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                }
+                if (click.wParam & MK_CONTROL) {
+                    checkHR(view->SelectItem(nullptr, SVSI_DESELECTOTHERS));
+                    if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                    for (const auto &id : previousSelection) {
+                        checkHR(view->SelectItem(id, SVSI_SELECT | SVSI_NOTAKEFOCUS));
+                        if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                    }
+                    checkHR(accessible->accSelect(flags, child));
+                    if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                }
+                if (pointed) {
+                    DWORD selection = 0;
+                    checkHR(folderView->GetSelectionState(pointed, &selection));
+                    if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                    checkHR(view->SelectItem(pointed, (selection & SVSI_SELECT) | SVSI_FOCUSED | SVSI_SELECTIONMARK | SVSI_NOTAKEFOCUS));
+                }
+            }
+            if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
         }
         return false;
     }
