@@ -554,3 +554,107 @@ The existing `release.sh` procedure pushes main and an annotated `v1.1.4` tag;
 the repository's GitHub Actions workflow builds and publishes the installer and
 update manifest. Publication success and asset integrity must be verified from
 the actual workflow/release, not inferred from the successful local build.
+
+## 2026-10-26 — Full regression follow-up and 1.1.5 correction
+
+The initial full 1.1.4 run executed 109 cases: 102 PASS, five FAIL, two BLOCKED,
+no NOT_RUN, and no runner restoration error. Its results remain separate from
+corrected reruns. The 5,000-item load case passed in 30.3 seconds with the
+Computer Use helper present; no helper was stopped for this run. A later full
+attempt (29 PASS, one FAIL, 79 BLOCKED) was invalidated by Windows LockApp covering
+the test windows. Neither attempt is being reclassified as a successful suite.
+
+Two old Alt-double-click cases expected Properties while the second press was
+still held. Observing the sheet after release, as in the existing native reference,
+preserved the exact target/path, selection, geometry and file assertions. It
+exposed a real product defect: replaying the consumed first button-down while the
+second press was held could start a Shell drag and create an unintended shortcut.
+The native reference kept `AnchorA;OtherC`, while enabled window gestures produced
+`AnchorA;OtherC;OtherC - Raccourci.lnk`. This was reproduced before application
+changes with the same second-press motion and observation interval.
+
+`FolderWindow::handleAltMouseMessage` now resolves the pointed item with a public
+MSAA selection-only operation and obtains its actual Shell PIDL through
+`IFolderView2`. Shell `SelectItem` supplies focus and the selection mark without
+replaying a button-down. Ctrl combinations snapshot and restore selection before
+applying their selection operation; PIDLs remain individually owned in a fixed-size
+array, without moving ATL heap-pointer wrappers. Native Alt+Shift selects the
+pointed item, while Ctrl combinations preserve the native multiple-selection
+behavior. The real double-click and Properties remain handled by the Shell.
+View-generation and lifetime guards remain around reentrant boundaries.
+
+An intermediate MSAA TAKEFOCUS implementation was rejected: a passive modifier-only
+trace showed MSAA injecting Alt-up/Alt-down after the real release, leaving Alt
+pressed. Sticky Keys was disabled. Selection alone avoided that race but failed
+the native logical-focus comparison. The final Shell-focus approach passes the
+reference comparison, including focus, selection mark, Properties target/title,
+unchanged geometry and exact folder contents. Coverage includes second-press
+motion, move/resize bindings, Alt+Ctrl/Shift combinations and an initially selected
+Ctrl target. The original gesture assertions were not weakened.
+
+Physical drag/drop and activation tests reuse the existing `NativeTargets` helper
+because UI Automation returned no clickable point for visible Details rows and
+misidentified empty background. The helper validates the observed native control,
+Shell index/count, icon hit and selection before real mouse input. Move/copy bytes,
+both views, Ctrl retention and activation-selection assertions remain. Input
+guards now report the specific virtual key rather than only requesting release.
+
+The real Everything test exposed an isolation defect with installed
+`Everything.ini` setting `run_as_admin=1`: Everything bootstraps that setting beside
+the executable even with `-config`. The test retains real installation detection,
+then uses a byte-identical official executable copy with a dedicated adjacent
+bootstrap INI, fixtures and index. The Unicode-path copy has its own bootstrap.
+A SHA-256 comparison checks that the installed INI remains unchanged. This tests
+the actual Everything application with isolated manual-path launches, without
+changing the installed user's elevation option.
+
+At the user's request, the outer UI test runner now uses a scoped Windows power
+request to keep the display/system awake and temporarily disables the screen saver
+at runtime. Its final cleanup restores the original state and releases the owned
+request, including after a failing case. No saved power plan or desktop preference
+is changed; Internal-only runs skip this setup. `desktop-activity.json` records
+initial state and restoration. Normal and deliberately failing cleanup probes, and
+both passing and failing real UI runs, verified restoration. Manual locking and
+security policies remain outside this suspension; the runner does not unlock
+Windows. Temporary investigation helpers are not part of the delivered mechanism.
+
+Debug, Release and the 1.1.5 installer build without new `/W4` warnings. clang-tidy
+and Cppcheck independently completed FolderWindow and the three version-header
+consumers (main, SettingsDialog and Update), with x64 Debug macros, C++14, real
+MSVC/ATL 14.44.35207 and SDK 10.0.19041.0 headers for clang-tidy, and official
+windows/microsoft_atl/sqlite3 models for Cppcheck. The full source baseline at
+`b222a35` was analyzed with the same settings. No parsing failure, timeout, analyzer
+crash or ATL coverage reduction occurred; no modified C++ file lacks coverage.
+
+Static analysis is **REVIEW**, with no confirmed new functional defect. New
+FolderWindow warnings concern braces, short identifiers, signed positive Win32/MSAA
+flag combinations, declarations, implicit boolean conversions, const suggestions,
+include-cleaner preferences for transitive SDK definitions, and increased cognitive
+complexity (189). They were not used for unrelated refactoring or suppressions.
+Cppcheck has no new diagnostic. Its two unchanged Update `deallocuse` messages are
+also present in the baseline. Source locations inside lambda descriptions are
+normalized so moved lines are not misclassified as new diagnostics.
+
+The final complete rerun executed all 109 cases: **109 PASS, zero FAIL, zero
+BLOCKED, zero NOT_RUN, no runner restoration error**. The real Everything case
+passed in 12.9 seconds, suggestions in 8.9 seconds, native Properties comparison
+in 25.9 seconds and the 5,000-item load in 30.6 seconds. The exhaustive settings
+matrix took 156.9 seconds and the 64 real gestures 175.9 seconds, versus 152.5 and
+180.1 seconds in the initial run. These are observed scenario durations, not a
+standalone performance-equivalence benchmark. Source/test hashes remained unchanged
+through the final run. The screen saver was initially enabled and its runtime
+state was restored successfully; saved desktop/power preferences were not changed.
+
+Release 1.1.5 is prepared with separate application, tests, documentation and
+version/changelog commits under Benco's existing identity, without an added
+co-author. Publication uses the existing annotated-tag/GitHub Actions workflow;
+its outcome and downloaded asset/manifest hashes are checked separately from the
+local build and recorded with the publication report.
+
+A separate, non-delivered badge probe used the actual official Everything
+1.4.1.1032 executable with an isolated bootstrap and index. An EFU containing two
+files in different folders and one listed folder also exposed synthesized ancestor
+folders; `filelistfilename:` still included them. The exact three-member assertion
+failed and was retained. This simple EFU route is therefore not validated for exact
+badge membership. Everything 1.5 Tags properties are a separate candidate requiring
+persistence, refresh and rename/move validation before any badge implementation.

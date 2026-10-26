@@ -20,6 +20,15 @@ disponibles pendant les jeux UI. Les scripts, C++, C#, `.inc`, headers, ressourc
 et manifests sous `tests` sont des dépendances des jeux ; ne pas les dissocier.
 Conserver les exceptions antivirus déjà configurées sur le projet.
 
+Lorsqu'au moins un jeu UI est sélectionné, le lanceur maintient temporairement
+l'écran et le système éveillés avec une requête d'alimentation Windows et suspend
+l'économiseur d'écran. Le nettoyage final rétablit l'état initial, même après un
+échec, puis ferme la requête. Le profil d'alimentation et les préférences
+enregistrées restent inchangés ; les jeux internes seuls ne font rien de cela.
+`desktop-activity.json` consigne l'état initial et sa restauration. Un verrouillage
+explicite de la session ou une politique de sécurité peut toujours bloquer les
+tests ; le lanceur ne déverrouille pas Windows.
+
 Pour sélectionner un périmètre :
 
 ```cmd
@@ -60,7 +69,7 @@ tests.cmd -Pattern "24-*"
 | 20-validation-elargie | 5 | Charge, images/modes, Ce PC, écrans/DPI disponibles, Panneau externe. |
 | 21-clic-activation | 1 | Clic sur le fond d'une fenêtre inactive : activation sans perte de sélection, clic d'élément, préférence désactivée. |
 | 22-verrouillage | 2 | Activation, menu natif, référence visible, géométrie/vue temporaires, placements individuels, déverrouillage, confirmation et suppression globale entre processus, réouverture et redémarrage ; rendu ICO natif, transparence, DPI et couleurs de contraste élevé. |
-| 24-raccourcis | 3 | Onglet natif FR/EN, 2 304 couples de réglages, persistance atomique, capture directe, conflits, valeurs par défaut par action, annulation, 64 gestes réels dans deux processus et comparaison des propriétés avec le Shell sans raccourcis. |
+| 24-raccourcis | 3 | Onglet natif FR/EN, 2 304 couples de réglages, persistance atomique, capture directe, conflits, valeurs par défaut par action, annulation, 64 gestes réels dans deux processus et comparaison des propriétés, de la sélection, de la géométrie et des fichiers avec le Shell sans raccourcis, y compris après mouvement du second appui. |
 | 25-recherche-integration | 5 | Historique SQLite isolé, migration, entrées Win32, arguments et erreurs, parcours Shell réel, préférences 0/5/20, application Everything réelle et suggestions sans chevron au focus/clic. |
 
 Le groupe 25 réutilise `Native.ps1`, `EssentialUi.ps1` et le mode `/test` du
@@ -73,8 +82,13 @@ Le jeu 04 nécessite Everything fermé et installé. Par défaut, il cherche
 `%LOCALAPPDATA%\Programs\Everything\Everything.exe` ; `FILESPACER_EVERYTHING_EXE`
 permet de préciser une autre installation. Il vérifie aussi la détection automatique
 de cette installation, qui doit donc se trouver à un emplacement détectable.
-Il ouvre l'application officielle avec un INI et une base dédiés aux fixtures,
-indexe uniquement ces fixtures et lit les requêtes et noms effectivement affichés.
+Il vérifie la détection sur l'installation réelle, puis lance une copie de
+l'exécutable officiel placée avec son propre `Everything.ini` et sa base de
+fixtures. Ce bootstrap est nécessaire : Everything lit `run_as_admin` à côté de
+l'exécutable même avec `-config`. Le réglage d'élévation et l'INI de l'installation
+restent inchangés ; leur empreinte est vérifiée. Les lancements réels passent par
+le chemin manuel de la copie isolée.
+Le test indexe uniquement ces fixtures et lit les requêtes et noms effectivement affichés.
 Il contrôle les deux portées, les sous-dossiers, le chemin manuel Unicode, les
 guillemets, métacaractères et erreurs visibles. Il ne remplace pas Everything par
 un lanceur simulé. En l'absence de ce prérequis, le parcours réel reste non validé.
