@@ -3,155 +3,281 @@
 #include "Settings.h"
 
 #include <algorithm>
-#include <cassert>
+#include <limits>
 #include <memory>
 #include <dwmapi.h>
 
 #pragma comment(lib, "Dwmapi.lib")
 
 namespace filespacer {
+namespace {
+using Area = uint64_t;
+struct PlacementQuery {
+    RECT work;
+    SIZE size;
+    POINT preferred;
+    std::vector<RECT> windows;
+};
+struct PlacementChoice { POINT point; Area area; Area distance; };
 
-constexpr LONG WindowPlacementGrid::cellSize;
-
-WindowPlacementGrid::WindowPlacementGrid(RECT workArea) : work(workArea),
-        columns((work.right - work.left + cellSize - 1) / cellSize),
-        rows((work.bottom - work.top + cellSize - 1) / cellSize),
-        counts(static_cast<size_t>(columns) * rows),
-        sums((static_cast<size_t>(columns) + 1) * (rows + 1)) {}
-
-RECT WindowPlacementGrid::toCells(const RECT &rect) const {
-    const LONG left = (std::max)(rect.left, work.left);
-    const LONG top = (std::max)(rect.top, work.top);
-    const LONG right = (std::min)(rect.right, work.right);
-    const LONG bottom = (std::min)(rect.bottom, work.bottom);
-    if (left >= right || top >= bottom) return {};
-    return {(left - work.left) / cellSize, (top - work.top) / cellSize,
-        (right - work.left + cellSize - 1) / cellSize,
-        (bottom - work.top + cellSize - 1) / cellSize};
+LONG clamp(LONG value, LONG low, LONG high) {
+    return (std::max)(low, (std::min)(value, high));
+}
+RECT footprint(POINT point, SIZE size) {
+    return {point.x, point.y, point.x + size.cx, point.y + size.cy};
+}
+bool intersects(const RECT &a, const RECT &b) {
+    return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+}
+Area distance(POINT a, POINT b) {
+    const int64_t dx = static_cast<int64_t>(a.x) - b.x;
+    const int64_t dy = static_cast<int64_t>(a.y) - b.y;
+    return static_cast<Area>(dx * dx + dy * dy);
+}
+bool better(const PlacementChoice &a, const PlacementChoice &b) {
+    if (a.area != b.area) return a.area < b.area;
+    if (a.distance != b.distance) return a.distance < b.distance;
+    return a.point.y < b.point.y || (a.point.y == b.point.y && a.point.x < b.point.x);
+}
+void unique(std::vector<LONG> &values) {
+    std::sort(values.begin(), values.end());
+    values.erase(std::unique(values.begin(), values.end()), values.end());
+}
+size_t indexOf(const std::vector<LONG> &values, LONG value) {
+    return static_cast<size_t>(std::lower_bound(values.begin(), values.end(), value) - values.begin());
+}
+struct Probe { size_t cell; LONG offset; };
+Probe locate(const std::vector<LONG> &cuts, LONG value) {
+    const auto upper = std::upper_bound(cuts.begin(), cuts.end(), value);
+    const size_t cell = static_cast<size_t>(upper - cuts.begin() - 1);
+    return {cell, value - cuts[cell]};
+}
+std::vector<LONG> candidates(const PlacementQuery &scene, bool horizontal) {
+    const LONG start = horizontal ? scene.work.left : scene.work.top;
+    const LONG extent = horizontal ? scene.size.cx : scene.size.cy;
+    const LONG end = (horizontal ? scene.work.right : scene.work.bottom) - extent;
+    std::vector<LONG> result = {start, end, horizontal ? scene.preferred.x : scene.preferred.y};
+    for (const auto &rect : scene.windows) {
+        const LONG first = horizontal ? rect.left : rect.top;
+        const LONG last = horizontal ? rect.right : rect.bottom;
+        for (LONG value : {first, last, first - extent, last - extent})
+            if (value >= start && value <= end) result.push_back(value);
+    }
+    unique(result);
+    return result;
 }
 
-void WindowPlacementGrid::change(const RECT &cells, bool add) {
-    for (LONG y = cells.top; y < cells.bottom; ++y) {
-        for (LONG x = cells.left; x < cells.right; ++x) {
-            auto &count = counts[static_cast<size_t>(y) * columns + x];
-            const bool wasOccupied = count != 0;
-            if (add) ++count;
-            else { assert(count != 0); --count; }
-            if (wasOccupied != (count != 0)) dirty = true;
+// Compress the true obstacle edges, build union counts
+// by 2D differences, then integrate occupied widths for each candidate x.
+// Both preprocessing and all candidate queries are O(n^2), not O(n^2 log n).
+class ExactSearch {
+public:
+    explicit ExactSearch(const PlacementQuery &scene) : scene(scene) {}
+    PlacementChoice find() {
+        if (!ready) prepare();
+        const size_t preferredX = indexOf(cx, scene.preferred.x), preferredY = indexOf(cy, scene.preferred.y);
+        const Area preferredArea = integral(preferredX, bottoms[preferredY]) - integral(preferredX, tops[preferredY]);
+        if (!preferredArea) return {scene.preferred, 0, 0};
+        PlacementChoice best = {scene.preferred, (std::numeric_limits<Area>::max)(), 0};
+        for (size_t x = 0; x < cx.size(); ++x) {
+            for (size_t y = 0; y < cy.size(); ++y) {
+                const POINT point = {cx[x], cy[y]};
+                const PlacementChoice next = {point, integral(x, bottoms[y]) - integral(x, tops[y]),
+                    distance(point, scene.preferred)};
+                if (better(next, best)) best = next;
+            }
+        }
+        return best;
+    }
+private:
+    const PlacementQuery &scene;
+    bool ready = false;
+    std::vector<LONG> cx, cy, ys, widths;
+    std::vector<Area> prefixes;
+    std::vector<Probe> tops, bottoms;
+    Area integral(size_t x, Probe y) const {
+        Area value = prefixes[x * ys.size() + y.cell];
+        if (y.offset) value += static_cast<Area>(widths[x * (ys.size() - 1) + y.cell]) * y.offset;
+        return value;
+    }
+    void prepare() {
+        cx = candidates(scene, true); cy = candidates(scene, false);
+        std::vector<LONG> xs = {scene.work.left, scene.work.right};
+        ys = {scene.work.top, scene.work.bottom};
+        for (const auto &rect : scene.windows) {
+            xs.push_back(rect.left); xs.push_back(rect.right);
+            ys.push_back(rect.top); ys.push_back(rect.bottom);
+        }
+        unique(xs); unique(ys);
+        const size_t columns = xs.size(), rows = ys.size();
+        std::vector<int> counts(columns * rows);
+        for (const auto &rect : scene.windows) {
+            const size_t left = indexOf(xs, rect.left), right = indexOf(xs, rect.right);
+            const size_t top = indexOf(ys, rect.top), bottom = indexOf(ys, rect.bottom);
+            ++counts[top * columns + left]; --counts[top * columns + right];
+            --counts[bottom * columns + left]; ++counts[bottom * columns + right];
+        }
+        for (size_t y = 0; y < rows; ++y) {
+            int line = 0;
+            for (size_t x = 0; x < columns; ++x) {
+                line += counts[y * columns + x];
+                counts[y * columns + x] = line + (y ? counts[(y - 1) * columns + x] : 0);
+            }
+        }
+        widths.resize(cx.size() * (rows - 1));
+        prefixes.assign(cx.size() * rows, 0);
+        std::vector<Probe> lefts, rights;
+        for (LONG x : cx) { lefts.push_back(locate(xs, x)); rights.push_back(locate(xs, x + scene.size.cx)); }
+        std::vector<LONG> line(columns);
+        for (size_t y = 0; y + 1 < rows; ++y) {
+            line[0] = 0;
+            for (size_t x = 0; x + 1 < columns; ++x)
+                line[x + 1] = line[x] + (counts[y * columns + x] ? xs[x + 1] - xs[x] : 0);
+            const auto at = [&](Probe p) {
+                return line[p.cell] + (p.offset && counts[y * columns + p.cell] ? p.offset : 0);
+            };
+            for (size_t x = 0; x < cx.size(); ++x) {
+                const LONG occupied = at(rights[x]) - at(lefts[x]);
+                widths[x * (rows - 1) + y] = occupied;
+                prefixes[x * rows + y + 1] = prefixes[x * rows + y]
+                    + static_cast<Area>(occupied) * (ys[y + 1] - ys[y]);
+            }
+        }
+        for (LONG y : cy) { tops.push_back(locate(ys, y)); bottoms.push_back(locate(ys, y + scene.size.cy)); }
+        ready = true;
+    }
+};
+
+// Range-add/minimum tree over integer y-position bands. Search zero-covered
+// predecessors/successors without materializing the union's polygon boundary.
+class CoverageTree {
+public:
+    explicit CoverageTree(size_t leaves) : leaves(leaves), minimum(4 * leaves), lazy(4 * leaves) {}
+    void add(size_t first, size_t last, int delta) { add(1, 0, leaves, first, last, delta); }
+    int firstZero(size_t from) { return zero(1, 0, leaves, from, leaves, false); }
+    int lastZero(size_t to) { return zero(1, 0, leaves, 0, to + 1, true); }
+private:
+    size_t leaves;
+    std::vector<int> minimum, lazy;
+    void apply(size_t node, int delta) { minimum[node] += delta; lazy[node] += delta; }
+    void push(size_t node) {
+        if (lazy[node]) { apply(2 * node, lazy[node]); apply(2 * node + 1, lazy[node]); lazy[node] = 0; }
+    }
+    void add(size_t node, size_t left, size_t right, size_t first, size_t last, int delta) {
+        if (first >= right || last <= left) return;
+        if (first <= left && right <= last) { apply(node, delta); return; }
+        push(node);
+        const size_t middle = (left + right) / 2;
+        add(2 * node, left, middle, first, last, delta);
+        add(2 * node + 1, middle, right, first, last, delta);
+        minimum[node] = (std::min)(minimum[2 * node], minimum[2 * node + 1]);
+    }
+    int zero(size_t node, size_t left, size_t right, size_t first, size_t last, bool reverse) {
+        if (minimum[node] || first >= right || last <= left) return -1;
+        if (right - left == 1) return static_cast<int>(left);
+        push(node);
+        const size_t middle = (left + right) / 2;
+        const int result = reverse ? zero(2 * node + 1, middle, right, first, last, reverse)
+            : zero(2 * node, left, middle, first, last, reverse);
+        if (result >= 0) return result;
+        return reverse ? zero(2 * node, left, middle, first, last, reverse)
+            : zero(2 * node + 1, middle, right, first, last, reverse);
+    }
+};
+
+bool findFree(const PlacementQuery &scene, PlacementChoice &best) {
+    const RECT preferred = footprint(scene.preferred, scene.size);
+    if (std::none_of(scene.windows.begin(), scene.windows.end(),
+            [&](const RECT &r) { return intersects(r, preferred); })) {
+        best = {scene.preferred, 0, 0}; return true;
+    }
+    struct Event { LONG x, first, last; int delta; };
+    const LONG maxX = scene.work.right - scene.size.cx, maxY = scene.work.bottom - scene.size.cy;
+    std::vector<Event> events = {{scene.work.left, 0, 0, 0}, {maxX + 1, 0, 0, 0}};
+    std::vector<LONG> ys = {scene.work.top, maxY + 1};
+    for (const auto &r : scene.windows) {
+        // Integer origins: touching edges are allowed, positive-area overlap is not.
+        const LONG left = (std::max)(scene.work.left, r.left - scene.size.cx + 1);
+        const LONG right = (std::min)(maxX, r.right - 1);
+        const LONG top = (std::max)(scene.work.top, r.top - scene.size.cy + 1);
+        const LONG bottom = (std::min)(maxY, r.bottom - 1);
+        if (left > right || top > bottom) continue;
+        events.push_back({left, top, bottom + 1, 1});
+        events.push_back({right + 1, top, bottom + 1, -1});
+        ys.push_back(top); ys.push_back(bottom + 1);
+    }
+    unique(ys);
+    std::sort(events.begin(), events.end(), [](const Event &a, const Event &b) { return a.x < b.x; });
+    CoverageTree tree(ys.size() - 1);
+    const size_t preferredBand = locate(ys, scene.preferred.y).cell;
+    best = {scene.preferred, 1, 0};
+    size_t event = 0;
+    while (event < events.size()) {
+        const LONG x = events[event].x;
+        do {
+            const auto &e = events[event++];
+            if (e.delta) tree.add(indexOf(ys, e.first), indexOf(ys, e.last), e.delta);
+        } while (event < events.size() && events[event].x == x);
+        if (x > maxX || event == events.size()) break;
+        const LONG nearestX = clamp(scene.preferred.x, x, events[event].x - 1);
+        for (int band : {tree.lastZero(preferredBand), tree.firstZero(preferredBand)}) {
+            if (band < 0) continue;
+            const LONG y = clamp(scene.preferred.y, ys[band], ys[band + 1] - 1);
+            const POINT point = {nearestX, y};
+            const PlacementChoice next = {point, 0, distance(point, scene.preferred)};
+            if (better(next, best)) best = next;
         }
     }
+    return best.area == 0;
 }
 
-void WindowPlacementGrid::changeDifference(const RECT &rect, const RECT &other, bool add) {
-    RECT intersection = {};
-    if (!IntersectRect(&intersection, &rect, &other)) {
-        change(rect, add);
+
+} // namespace
+
+WindowPlacementState::WindowPlacementState(RECT workArea) : work(workArea) {}
+
+void WindowPlacementState::setWindow(HWND window, const RECT *rect) {
+    RECT bounds = {};
+    if (!rect || !IntersectRect(&bounds, rect, &work)) {
+        windows.erase(window);
         return;
     }
-    change({rect.left, rect.top, rect.right, intersection.top}, add);
-    change({rect.left, intersection.bottom, rect.right, rect.bottom}, add);
-    change({rect.left, intersection.top, intersection.left, intersection.bottom}, add);
-    change({intersection.right, intersection.top, rect.right, intersection.bottom}, add);
-}
-
-void WindowPlacementGrid::setWindow(HWND window, const RECT *rect) {
-    const RECT next = rect ? toCells(*rect) : RECT{};
     auto found = windows.find(window);
-    if (found != windows.end()) {
-        const RECT previous = found->second.cells;
-        found->second.generation = generation;
-        if (EqualRect(&previous, &next)) return;
-        changeDifference(previous, next, false);
-        changeDifference(next, previous, true);
-        if (IsRectEmpty(&next)) windows.erase(found);
-        else found->second.cells = next;
-    } else if (!IsRectEmpty(&next)) {
-        // Allocate the entry before changing counters, so allocation failure
-        // cannot leave an unregistered contribution behind.
-        windows.emplace(window, Entry{next, generation});
-        change(next, true);
-    }
+    if (found != windows.end()) found->second = {bounds, generation};
+    else windows.emplace(window, Entry{bounds, generation});
 }
 
-void WindowPlacementGrid::beginRefresh() { ++generation; }
+void WindowPlacementState::beginRefresh() { ++generation; }
 
-void WindowPlacementGrid::endRefresh() {
+void WindowPlacementState::endRefresh() {
     for (auto entry = windows.begin(); entry != windows.end();) {
-        if (entry->second.generation != generation) {
-            change(entry->second.cells, false);
-            entry = windows.erase(entry);
-        } else ++entry;
+        if (entry->second.generation != generation) entry = windows.erase(entry);
+        else ++entry;
     }
 }
 
-void WindowPlacementGrid::prepareSums() {
-    if (!dirty) return;
-    const size_t stride = static_cast<size_t>(columns) + 1;
-    for (LONG y = 0; y < rows; ++y) {
-        uint64_t occupied = 0;
-        for (LONG x = 0; x < columns; ++x) {
-            if (counts[static_cast<size_t>(y) * columns + x]) ++occupied;
-            sums[(static_cast<size_t>(y) + 1) * stride + x + 1]
-                = sums[static_cast<size_t>(y) * stride + x + 1] + occupied;
-        }
-    }
-    dirty = false;
-}
-
-uint64_t WindowPlacementGrid::occupiedArea(const RECT &rect) {
-    prepareSums();
-    const size_t stride = static_cast<size_t>(columns) + 1;
-    const auto at = [&](LONG x, LONG y) { return sums[static_cast<size_t>(y) * stride + x]; };
-    const auto integral = [&](LONG screenX, LONG screenY) {
-        const LONG x = (std::max)(work.left, (std::min)(screenX, work.right)) - work.left;
-        const LONG y = (std::max)(work.top, (std::min)(screenY, work.bottom)) - work.top;
-        const LONG column = x / cellSize, row = y / cellSize;
-        const LONG dx = x % cellSize, dy = y % cellSize;
-        uint64_t area = at(column, row) * cellSize * cellSize;
-        if (dx) area += (at(column + 1, row) - at(column, row)) * cellSize * dx;
-        if (dy) area += (at(column, row + 1) - at(column, row)) * cellSize * dy;
-        if (dx && dy && counts[static_cast<size_t>(row) * columns + column])
-            area += static_cast<uint64_t>(dx) * dy;
-        return area;
-    };
-    if (IsRectEmpty(&rect)) return 0;
-    return integral(rect.right, rect.bottom) - integral(rect.left, rect.bottom)
-        - integral(rect.right, rect.top) + integral(rect.left, rect.top);
-}
-
-POINT WindowPlacementGrid::findPosition(SIZE size, POINT preferred) {
-    // Preserve the requested size even when it exceeds the work area. Its
-    // upper-left corner remains accessible and the other axis can still fit.
-    const LONG maxX = (std::max)(work.left, work.right - size.cx);
-    const LONG maxY = (std::max)(work.top, work.bottom - size.cy);
-    preferred.x = (std::max)(work.left, (std::min)(preferred.x, maxX));
-    preferred.y = (std::max)(work.top, (std::min)(preferred.y, maxY));
-    POINT best = preferred;
-    uint64_t bestArea = occupiedArea({best.x, best.y, best.x + size.cx, best.y + size.cy});
-    uint64_t bestDistance = 0;
-    if (!bestArea) return best;
-    for (LONG y = work.top;; y = (std::min)(y + cellSize, maxY)) {
-        for (LONG x = work.left;; x = (std::min)(x + cellSize, maxX)) {
-            const uint64_t area = occupiedArea({x, y, x + size.cx, y + size.cy});
-            const int64_t dx = static_cast<int64_t>(x) - preferred.x;
-            const int64_t dy = static_cast<int64_t>(y) - preferred.y;
-            const uint64_t distance = static_cast<uint64_t>(dx * dx + dy * dy);
-            if (area < bestArea || (area == bestArea && distance < bestDistance)) {
-                best = {x, y}; bestArea = area; bestDistance = distance;
-            }
-            if (x == maxX) break;
-        }
-        if (y == maxY) break;
-    }
-    return best;
+POINT WindowPlacementState::findPosition(SIZE size, POINT preferred) const {
+    if (IsRectEmpty(&work) || size.cx <= 0 || size.cy <= 0) return {work.left, work.top};
+    // Only the part on this monitor participates when a requested size is larger
+    // than its work area; requestedRect still preserves the full window size.
+    size.cx = (std::min)(size.cx, work.right - work.left);
+    size.cy = (std::min)(size.cy, work.bottom - work.top);
+    preferred.x = clamp(preferred.x, work.left, work.right - size.cx);
+    preferred.y = clamp(preferred.y, work.top, work.bottom - size.cy);
+    PlacementQuery query = {work, size, preferred, {}};
+    query.windows.reserve(windows.size());
+    for (const auto &window : windows) query.windows.push_back(window.second.bounds);
+    PlacementChoice free = {};
+    if (findFree(query, free)) return free.point;
+    return ExactSearch(query).find().point;
 }
 
 namespace {
 const wchar_t withdrawalProperty[] = L"FileSpacer.PlacementWithdrawal";
 const wchar_t testProperty[] = L"FileSpacer.PlacementTest";
-struct MonitorGrid { HMONITOR monitor; std::unique_ptr<WindowPlacementGrid> grid; };
+struct MonitorPlacement { HMONITOR monitor; std::unique_ptr<WindowPlacementState> state; };
 // All folder windows and placement requests of this process use its UI thread.
-thread_local std::vector<MonitorGrid> grids;
+thread_local std::vector<MonitorPlacement> placements;
 
 bool placementRect(HWND window, RECT &rect) {
     wchar_t name[64] = {};
@@ -176,25 +302,25 @@ bool placementRect(HWND window, RECT &rect) {
 }
 
 void updateWindowPlacement(HWND window) noexcept {
-    if (grids.empty()) return;
+    if (placements.empty()) return;
     RECT rect = {};
     const bool occupied = placementRect(window, rect);
     try {
-        for (auto &entry : grids) entry.grid->setWindow(window, occupied ? &rect : nullptr);
+        for (auto &entry : placements) entry.state->setWindow(window, occupied ? &rect : nullptr);
     } catch (...) {
         // A notification or rollback must not throw through a window procedure
         // or destructor. Rebuild this disposable cache at the next placement.
-        grids.clear();
+        placements.clear();
     }
 }
 
-void clearWindowPlacement() { grids.clear(); }
+void clearWindowPlacement() { placements.clear(); }
 
 void removeWindowPlacement(HWND window) {
     // Destruction can reenter Shell code before WM_NCDESTROY. Keep the closing
     // window excluded from any intervening cross-process snapshot as well.
     SetPropW(window, withdrawalProperty, reinterpret_cast<HANDLE>(1));
-    for (auto &entry : grids) entry.grid->setWindow(window, nullptr);
+    for (auto &entry : placements) entry.state->setWindow(window, nullptr);
 }
 
 void cancelPlacementWithdrawal(HWND window) {
@@ -210,39 +336,52 @@ void initializeWindowPlacement(HWND window) {
 }
 
 void destroyWindowPlacement(HWND window) {
-    for (auto &entry : grids) entry.grid->setWindow(window, nullptr);
+    for (auto &entry : placements) entry.state->setWindow(window, nullptr);
     RemovePropW(window, withdrawalProperty);
     RemovePropW(window, testProperty);
 }
 
-bool findWindowPlacement(HMONITOR monitor, SIZE size, HWND source, RECT &rect) {
+bool findWindowPlacement(HMONITOR monitor, SIZE size, HWND source, RECT &rect) try {
     MONITORINFO info = {sizeof(info)};
     if (!monitor || size.cx <= 0 || size.cy <= 0 || !GetMonitorInfoW(monitor, &info)
             || IsRectEmpty(&info.rcWork)) return false;
-    auto found = std::find_if(grids.begin(), grids.end(),
-        [monitor](const MonitorGrid &entry) { return entry.monitor == monitor; });
-    if (found == grids.end()) {
-        grids.push_back({monitor, std::make_unique<WindowPlacementGrid>(info.rcWork)});
-        found = grids.end() - 1;
-    } else if (!EqualRect(&found->grid->workArea(), &info.rcWork)) {
-        found->grid = std::make_unique<WindowPlacementGrid>(info.rcWork);
+    auto found = std::find_if(placements.begin(), placements.end(),
+        [monitor](const MonitorPlacement &entry) { return entry.monitor == monitor; });
+    if (found == placements.end()) {
+        placements.push_back({monitor, std::make_unique<WindowPlacementState>(info.rcWork)});
+        found = placements.end() - 1;
+    } else if (!EqualRect(&found->state->workArea(), &info.rcWork)) {
+        found->state = std::make_unique<WindowPlacementState>(info.rcWork);
     }
-    auto &grid = *found->grid;
-    grid.beginRefresh();
+    auto &state = *found->state;
+    state.beginRefresh();
     const auto collect = [](HWND window, LPARAM data) -> BOOL {
-        RECT bounds = {};
-        if (placementRect(window, bounds))
-            reinterpret_cast<WindowPlacementGrid *>(data)->setWindow(window, &bounds);
-        return TRUE;
+        try {
+            RECT bounds = {};
+            if (placementRect(window, bounds))
+                reinterpret_cast<WindowPlacementState *>(data)->setWindow(window, &bounds);
+            return TRUE;
+        } catch (...) {
+            // Do not let allocation failures escape through a Win32 callback.
+            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+            return FALSE;
+        }
     };
-    if (!EnumWindows(collect, reinterpret_cast<LPARAM>(&grid))) return false;
-    grid.endRefresh();
+    if (!EnumWindows(collect, reinterpret_cast<LPARAM>(&state))) {
+        placements.clear();
+        return false;
+    }
+    state.endRefresh();
     POINT preferred = {info.rcWork.left, info.rcWork.top};
     RECT origin = {};
     if (source && GetWindowRect(source, &origin)) preferred = {origin.left, origin.top};
-    const POINT position = grid.findPosition(size, preferred);
+    const POINT position = state.findPosition(size, preferred);
     rect = {position.x, position.y, position.x + size.cx, position.y + size.cy};
     return true;
+} catch (...) {
+    // Leave the caller's native Windows placement available if tables cannot be built.
+    placements.clear();
+    return false;
 }
 
 PlacementWithdrawal::PlacementWithdrawal(HWND source) {
