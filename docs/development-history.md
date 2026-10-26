@@ -658,3 +658,38 @@ folders; `filelistfilename:` still included them. The exact three-member asserti
 failed and was retained. This simple EFU route is therefore not validated for exact
 badge membership. Everything 1.5 Tags properties are a separate candidate requiring
 persistence, refresh and rename/move validation before any badge implementation.
+
+## 2026-10-26 — Default folder window proportions
+
+Change the fallback folder-window size in `src/Settings.h` from 210 × 435 to
+580 × 435 at 96 DPI. The height stays at 435 and the outer-window ratio becomes
+4:3. Existing configured dimensions and per-folder saved sizes retain precedence;
+no preferences or saved geometry are migrated.
+
+The Microsoft [Win32 layout guide](https://learn.microsoft.com/en-us/windows/win32/uxguide/vis-layout#window-size)
+recommends content-appropriate default sizing and balanced proportions between
+3:5 and 5:3. This is Windows 7-era guidance, not a specific 4:3 requirement.
+The user's proposed 4:3 ratio fits that range while preserving the current height.
+
+Debug MSVC 14.44.35207 / NMAKE / Windows SDK 10.0.19041.0 completed with `/W4`
+and no warnings. clang-tidy 23.1.4 and Cppcheck 2.22 independently completed
+Settings, FolderWindow, SettingsDialog and ItemWindow, covering the modified
+Settings header. The baseline source snapshot was taken at `fe728f2` and analyzed
+with identical Windows x64, C++14 and Debug settings. clang-tidy used the real
+SDK/STL/ATL headers; Cppcheck used the official windows/microsoft_atl/sqlite3
+models without full system headers. Static analysis: **PASS**, no new diagnostic,
+parsing failure, timeout, crash or reduced ATL coverage. No analysis-driven code
+correction was needed.
+
+A fresh fixture folder was opened in the real Debug application with isolated
+`/test` registry/database state and no configured window dimensions. The desktop
+controller repeatedly rejected the observed window identity, so it could not
+complete its own visual inspection. The user inspected the open window, confirmed
+correct proportions and controls, and closed it; the application exited with code
+0. No resize/reopen interaction was exercised in this manual check. The original
+test registry/database were restored and production registry/database hashes
+remained unchanged. All 168 regression-source files retained their SHA-256 hashes;
+no regression test was modified or run for this focused manual validation.
+
+The changelog records this change under Unreleased. No version change, installer,
+tag or release is part of this task.
