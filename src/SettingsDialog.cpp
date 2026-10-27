@@ -14,6 +14,12 @@
 #include <prsht.h>
 #include <shellapi.h>
 #include <shobjidl_core.h>
+#include <uxtheme.h>
+#include <vsstyle.h>
+#pragma warning(push)
+#pragma warning(disable: 4458) // Shadowed members in Windows SDK GDI+ headers.
+#include <gdiplus.h>
+#pragma warning(pop)
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -29,6 +35,19 @@ const wchar_t *SPECIAL_PATHS[] = {
 };
 
 static HWND settingsDialog = nullptr;
+static HWND settingsCaller = nullptr;
+static HWND settingsFallbackOwner = nullptr;
+
+static LRESULT CALLBACK settingsOwnerHook(int code, WPARAM wParam, LPARAM lParam) {
+    if (code == HCBT_DESTROYWND && reinterpret_cast<HWND>(wParam) == settingsCaller) {
+        const HWND caller = settingsCaller;
+        settingsCaller = nullptr;
+        if (settingsDialog && GetWindow(settingsDialog, GW_OWNER) == caller)
+            checkLE(SetWindowLongPtrW(settingsDialog, GWLP_HWNDPARENT,
+                reinterpret_cast<LONG_PTR>(settingsFallbackOwner)));
+    }
+    return CallNextHookEx(nullptr, code, wParam, lParam);
+}
 
 static void resetAllFolderState(HWND owner) {
     TASKDIALOGCONFIG config = {sizeof(config)};
@@ -174,11 +193,9 @@ struct GeneralHelp {
     int activeControl = 0;
 
     explicit GeneralHelp(HWND page) {
-        // The standard question-mark icon is shared with Windows.
-        HICON icon = static_cast<HICON>(checkLE(LoadImageW(nullptr, IDI_QUESTION, IMAGE_ICON,
-            scaleDPI(16), scaleDPI(16), LR_SHARED)));
+        layout(page);
         for (int id : {IDC_SMART_WINDOW_PLACEMENT_HELP, IDC_GROUP_FOLDER_WINDOWS_HELP})
-            SendDlgItemMessageW(page, id, BM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(icon));
+            checkLE(SetWindowSubclass(GetDlgItem(page, id), buttonProc, 0, 0));
         tooltip.reset(checkLE(CreateWindowExW(WS_EX_TOPMOST | WS_EX_NOACTIVATE, TOOLTIPS_CLASSW, nullptr,
             WS_POPUP | TTS_NOPREFIX | TTS_BALLOON | TTS_CLOSE,
             CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
@@ -190,6 +207,90 @@ struct GeneralHelp {
         tool.lpszText = const_cast<wchar_t *>(getString(IDS_SMART_WINDOW_PLACEMENT_HELP));
         checkLE(SendMessageW(tooltip.get(), TTM_ADDTOOLW, 0, reinterpret_cast<LPARAM>(&tool)));
         SendMessageW(tooltip.get(), TTM_SETMAXTIPWIDTH, 0, scaleDPI(360));
+    }
+    static LRESULT CALLBACK buttonProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam,
+            UINT_PTR id, DWORD_PTR) {
+        if (message == WM_KILLFOCUS) {
+            auto help = reinterpret_cast<GeneralHelp *>(GetWindowLongPtrW(GetParent(window), GWLP_USERDATA));
+            if (help) help->hide();
+        }
+        if (message == WM_NCDESTROY) RemoveWindowSubclass(window, buttonProc, id);
+        return DefSubclassProc(window, message, wParam, lParam);
+    }
+    void layout(HWND page) const {
+        auto releaseDC = [page](HDC context) { ReleaseDC(page, context); };
+        std::unique_ptr<std::remove_pointer<HDC>::type, decltype(releaseDC)> context(GetDC(page), releaseDC);
+        if (!context) return;
+        const int labels[] = {IDC_SMART_WINDOW_PLACEMENT, IDC_GROUP_FOLDER_WINDOWS};
+        const int buttons[] = {IDC_SMART_WINDOW_PLACEMENT_HELP, IDC_GROUP_FOLDER_WINDOWS_HELP};
+        for (int index = 0; index < _countof(labels); ++index) {
+            const HWND label = GetDlgItem(page, labels[index]);
+            const HFONT font = reinterpret_cast<HFONT>(SendMessageW(label, WM_GETFONT, 0, 0));
+            const HGDIOBJ previous = SelectObject(context.get(), font);
+            TEXTMETRICW metrics = {};
+            checkLE(GetTextMetricsW(context.get(), &metrics));
+            const int length = GetWindowTextLengthW(label);
+            std::wstring text(static_cast<size_t>(length) + 1, L'\0');
+            GetWindowTextW(label, &text[0], length + 1);
+            RECT extent = {};
+            DrawTextW(context.get(), text.c_str(), length, &extent, DT_CALCRECT | DT_SINGLELINE);
+            SIZE check = {GetSystemMetrics(SM_CXMENUCHECK), GetSystemMetrics(SM_CYMENUCHECK)};
+            std::unique_ptr<std::remove_pointer<HTHEME>::type, decltype(&CloseThemeData)> theme(
+                OpenThemeData(label, L"Button"), CloseThemeData);
+            if (theme) {
+                SIZE themed = {};
+                if (SUCCEEDED(GetThemePartSize(theme.get(), context.get(), BP_CHECKBOX,
+                        CBS_UNCHECKEDNORMAL, nullptr, TS_TRUE, &themed))) check = themed;
+            }
+            SelectObject(context.get(), previous);
+            RECT bounds = windowRect(label);
+            MapWindowPoints(nullptr, page, reinterpret_cast<POINT *>(&bounds), 2);
+            const int labelWidth = check.cx + scaleDPI(3) + extent.right;
+            const int size = scaleDPI(20);
+            const int padding = (size - scaleDPI(16)) / 2;
+            checkLE(SetWindowPos(label, nullptr, 0, 0, labelWidth, bounds.bottom - bounds.top,
+                SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE));
+            checkLE(SetWindowPos(GetDlgItem(page, buttons[index]), HWND_TOP,
+                bounds.left + labelWidth + scaleDPI(4) - padding,
+                bounds.top + (metrics.tmHeight - size) / 2, size, size, SWP_NOACTIVATE));
+        }
+    }
+    bool draw(const DRAWITEMSTRUCT &item) const {
+        if (item.CtlType != ODT_BUTTON || (item.CtlID != IDC_SMART_WINDOW_PLACEMENT_HELP
+                && item.CtlID != IDC_GROUP_FOLDER_WINDOWS_HELP)) return false;
+        const int saved = SaveDC(item.hDC);
+        if (!saved) return false;
+        if (FAILED(DrawThemeParentBackground(item.hwndItem, item.hDC, &item.rcItem)))
+            FillRect(item.hDC, &item.rcItem, GetSysColorBrush(COLOR_BTNFACE));
+        {
+            const COLORREF ink = GetSysColor(item.itemState & ODS_DISABLED ? COLOR_GRAYTEXT
+                : item.itemState & ODS_SELECTED ? COLOR_HOTLIGHT : COLOR_BTNTEXT);
+            const COLORREF paper = GetSysColor(COLOR_WINDOW);
+            Gdiplus::SolidBrush fill(Gdiplus::Color(255, GetRValue(ink), GetGValue(ink), GetBValue(ink)));
+            Gdiplus::SolidBrush mark(Gdiplus::Color(255, GetRValue(paper), GetGValue(paper), GetBValue(paper)));
+            const Gdiplus::REAL diameter = static_cast<Gdiplus::REAL>(scaleDPI(16));
+            const Gdiplus::REAL cx = static_cast<Gdiplus::REAL>(item.rcItem.left + item.rcItem.right) / 2;
+            const Gdiplus::REAL cy = static_cast<Gdiplus::REAL>(item.rcItem.top + item.rcItem.bottom) / 2;
+            Gdiplus::Graphics graphics(item.hDC);
+            graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+            graphics.FillEllipse(&fill, cx - diameter / 2, cy - diameter / 2, diameter, diameter);
+            Gdiplus::FontFamily family(L"Segoe UI");
+            Gdiplus::GraphicsPath question;
+            question.AddString(L"?", 1, &family, Gdiplus::FontStyleBold,
+                diameter * 0.85f, Gdiplus::PointF(0, 0), nullptr);
+            Gdiplus::RectF bounds;
+            if (question.GetBounds(&bounds) == Gdiplus::Ok) {
+                // Center the visible glyph, independently of the font's line spacing.
+                Gdiplus::Matrix placement;
+                placement.Translate(cx - bounds.X - bounds.Width / 2, cy - bounds.Y - bounds.Height / 2);
+                question.Transform(&placement);
+                graphics.FillPath(&mark, &question);
+            }
+        }
+        if ((item.itemState & ODS_FOCUS) && !(item.itemState & ODS_NOFOCUSRECT))
+            DrawFocusRect(item.hDC, &item.rcItem);
+        RestoreDC(item.hDC, saved);
+        return true;
     }
     void hide() {
         if (tooltip) SendMessageW(tooltip.get(), TTM_TRACKACTIVATE, FALSE, reinterpret_cast<LPARAM>(&tool));
@@ -331,7 +432,6 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             if (LOWORD(wParam) == IDC_SMART_WINDOW_PLACEMENT_HELP
                     || LOWORD(wParam) == IDC_GROUP_FOLDER_WINDOWS_HELP) {
                 if (help && HIWORD(wParam) == BN_CLICKED) help->toggle(LOWORD(wParam));
-                else if (help && HIWORD(wParam) == BN_KILLFOCUS) help->hide();
                 return TRUE;
             }
             if (LOWORD(wParam) == IDC_START_FOLDER_BROWSE && HIWORD(wParam) == BN_CLICKED) {
@@ -356,6 +456,13 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 PropSheet_Changed(GetParent(hwnd), hwnd);
                 return TRUE;
             }
+            return FALSE;
+        case WM_DRAWITEM:
+            return help && help->draw(*reinterpret_cast<DRAWITEMSTRUCT *>(lParam));
+        case WM_THEMECHANGED:
+        case WM_SYSCOLORCHANGE:
+            if (help) { help->hide(); help->layout(hwnd); }
+            RedrawWindow(hwnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
             return FALSE;
         case WM_DESTROY:
             SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
@@ -767,13 +874,17 @@ void openSettingsDialog(HWND owner, SettingsPage page) {
     sheet.nStartPage = page;
     sheet.ppsp = pages;
     sheet.pfnCallback = [](HWND window, UINT message, LPARAM) -> int {
-        if (message == PSCB_INITIALIZED)
+        if (message == PSCB_INITIALIZED) {
             settingsDialog = window;
+            if (settingsCaller)
+                checkLE(SetWindowLongPtrW(window, GWLP_HWNDPARENT,
+                    reinterpret_cast<LONG_PTR>(settingsCaller)));
+            SetForegroundWindow(window);
+        }
         return 0;
     };
 
-    // An invisible owner keeps the native dialog out of the taskbar and alive
-    // if Maintenance closes all folder windows, including its original caller.
+    // Keep a fallback owner if the caller disappears during the native modal loop.
     RECT ownerRect = {};
     checkLE(GetWindowRect(owner, &ownerRect));
     HWND modalOwner = checkLE(CreateWindowEx(0, L"Static", L"", WS_POPUP,
@@ -782,6 +893,11 @@ void openSettingsDialog(HWND owner, SettingsPage page) {
     if (!modalOwner)
         return;
     sheet.hwndParent = modalOwner;
+    settingsFallbackOwner = modalOwner;
+    // Watch only this UI thread, and detach before Windows destroys owned popups.
+    std::unique_ptr<std::remove_pointer<HHOOK>::type, decltype(&UnhookWindowsHookEx)> ownerHook(
+        checkLE(SetWindowsHookExW(WH_CBT, settingsOwnerHook, nullptr, GetCurrentThreadId())), UnhookWindowsHookEx);
+    settingsCaller = ownerHook ? owner : nullptr;
 
     lockProcess();
     std::vector<HWND> disabledWindows;
@@ -796,7 +912,10 @@ void openSettingsDialog(HWND owner, SettingsPage page) {
         reinterpret_cast<LPARAM>(&disabledWindows)));
     // PropertySheet runs its native modal message loop and destroys the dialog.
     checkLE(PropertySheet(&sheet) != -1);
+    ownerHook.reset();
     settingsDialog = nullptr;
+    settingsCaller = nullptr;
+    settingsFallbackOwner = nullptr;
     for (HWND window : disabledWindows) {
         if (IsWindow(window)) // Maintenance may have closed it.
             EnableWindow(window, TRUE);
