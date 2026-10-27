@@ -4,6 +4,7 @@
 #include <shlobj.h>
 #include <shlwapi.h>
 #include <shellapi.h>
+#include <shlguid.h>
 #include <atlbase.h>
 #include <cstdio>
 #include <cwchar>
@@ -69,7 +70,9 @@ void checkMenu(const wchar_t *type, bool explorer, bool background = false) {
         "real Shell displays the Explorer command");
 }
 void fixtures() {
-    const wchar_t *types[] = {L"Directory", L"Directory\\Background", L"CompressedFolder", L"Drive"};
+    put(HKEY_CLASSES_ROOT, L"Folder\\shell", nullptr, L"open");
+    put(HKEY_CLASSES_ROOT, L"Folder\\shell\\open\\command", nullptr, L"native Explorer command");
+    const wchar_t *types[] = {L"Directory", L"Directory\\Background", L"CompressedFolder", L"Drive", L"NetServer", L"NetShare"};
     for (const wchar_t *type : types) {
         const std::wstring shell = std::wstring(type) + L"\\shell";
         put(HKEY_CLASSES_ROOT, shell, nullptr, L"none");
@@ -77,6 +80,17 @@ void fixtures() {
         put(HKEY_CLASSES_ROOT, shell + L"\\filespacer\\command", nullptr, L"original command");
         put(HKEY_CLASSES_ROOT, shell + L"\\filespacer\\command", L"DelegateExecute", L"original delegate");
     }
+}
+
+void checkServerDefault(IShellItem *server, bool fileSpacerDefault) {
+    CComPtr<IQueryAssociations> associations;
+    require(SUCCEEDED(server->BindToHandler(nullptr, BHID_AssociationArray, IID_PPV_ARGS(&associations))),
+        "query actual server target associations");
+    wchar_t command[2048] = {}; DWORD size = _countof(command);
+    require(SUCCEEDED(associations->GetString(0, ASSOCSTR_COMMAND, nullptr, command, &size)),
+        "read actual server default command");
+    require(lstrcmpW(command, fileSpacerDefault ? L"original command" : L"native Explorer command") == 0,
+        "server shortcut target follows the selected file manager");
 }
 
 void checkDefaultOpening() {
@@ -135,7 +149,26 @@ int wmain(int argc, wchar_t **argv) {
     const std::wstring path = L"Software\\FileSpacer.ContextMenuTest-" + std::to_wstring(GetCurrentProcessId());
     HKEY user = nullptr, classes = nullptr;
     int exitCode = 0;
+    wchar_t image[MAX_PATH] = {};
+    std::wstring shortcutPath;
     try {
+        const DWORD imageLength = GetModuleFileNameW(nullptr, image, _countof(image));
+        require(imageLength && imageLength < _countof(image), "shortcut fixture executable path");
+        shortcutPath = std::wstring(image) + L".lnk";
+        CComPtr<IShellItem> server, shortcut, shortcutTarget;
+        require(SUCCEEDED(SHCreateItemFromParsingName(L"\\\\localhost", nullptr, IID_PPV_ARGS(&server))),
+            "parse a real server root without enumerating shares");
+        CComHeapPtr<ITEMIDLIST> serverID;
+        require(SUCCEEDED(SHGetIDListFromObject(server, &serverID)), "get native server identity");
+        CComPtr<IShellLinkW> link;
+        require(SUCCEEDED(link.CoCreateInstance(CLSID_ShellLink)), "create native server shortcut");
+        require(SUCCEEDED(link->SetIDList(serverID)), "set server shortcut target");
+        CComQIPtr<IPersistFile> persisted(link);
+        require(persisted && SUCCEEDED(persisted->Save(shortcutPath.c_str(), FALSE)), "save isolated shortcut");
+        require(SUCCEEDED(SHCreateItemFromParsingName(shortcutPath.c_str(), nullptr, IID_PPV_ARGS(&shortcut))),
+            "parse the saved shortcut");
+        require(SUCCEEDED(shortcut->BindToHandler(nullptr, BHID_LinkTargetItem, IID_PPV_ARGS(&shortcutTarget))),
+            "resolve the real shortcut target through the Shell");
         require(RegCreateKeyExW(HKEY_CURRENT_USER, path.c_str(), 0, nullptr, 0,
             KEY_ALL_ACCESS, nullptr, &user, nullptr) == ERROR_SUCCESS, "create isolated registry");
         require(RegCreateKeyExW(user, L"Software\\Classes", 0, nullptr, 0,
@@ -144,12 +177,17 @@ int wmain(int argc, wchar_t **argv) {
         require(RegOverridePredefKey(HKEY_CLASSES_ROOT, classes) == ERROR_SUCCESS, "isolate merged class reads");
         require(settings::synchronizeContextMenus().status() == ERROR_SUCCESS, "portable launch leaves missing registration alone");
         require(!exists(HKEY_CLASSES_ROOT, L"Directory\\shell\\filespacer.explorer"), "portable launch installs nothing");
+        put(HKEY_CLASSES_ROOT, L"Directory\\shell\\filespacer", nullptr, L"Open in FileSpacer");
+        require(!settings::supportsDefaultBrowser(), "old installation needs the network verbs before claiming the default");
         fixtures();
+        require(settings::supportsDefaultBrowser(), "complete installation supports default file manager selection");
         for (int pass = 0; pass < 4; ++pass) {
             const bool explorer = (pass % 2) == 0;
             require(settings::setDefaultBrowser(explorer).status() == ERROR_SUCCESS, "toggle all associations and menus");
             checkMenu(L"Directory", explorer); checkMenu(L"Directory", explorer, true);
             checkMenu(L"CompressedFolder", explorer); checkMenu(L"Drive", explorer);
+            checkMenu(L"NetServer", explorer); checkMenu(L"NetShare", explorer);
+            checkServerDefault(shortcutTarget, explorer);
             require(read(HKEY_CLASSES_ROOT, L"Directory\\shell") == (explorer ? L"filespacer" : L"none"), "default association preserved");
             require(settings::synchronizeContextMenus().status() == ERROR_SUCCESS, "repeat synchronization succeeds");
             if (pass == 0) checkDefaultOpening();
@@ -174,12 +212,31 @@ int wmain(int argc, wchar_t **argv) {
         auto result = settings::synchronizeContextMenus();
         require(result.directory != ERROR_SUCCESS && result.drive == ERROR_SUCCESS, "failure reported without skipping independent menus");
         checkMenu(L"Drive", true);
+        put(HKEY_CLASSES_ROOT, L"Directory\\shell", nullptr, L"none");
+        require(RegSetKeyValueW(HKEY_CLASSES_ROOT, L"NetServer\\shell", nullptr, REG_DWORD, &invalid, sizeof(invalid)) == ERROR_SUCCESS,
+            "inject malformed network server association");
+        put(HKEY_CLASSES_ROOT, L"NetShare\\shell", nullptr, L"filespacer");
+        result = settings::synchronizeContextMenus();
+        require(result.directory == ERROR_SUCCESS && result.networkServer != ERROR_SUCCESS
+            && result.networkShare == ERROR_SUCCESS && result.status() != ERROR_SUCCESS,
+            "server failure is reported without skipping the share menu");
+        checkMenu(L"NetShare", true);
+        put(HKEY_CLASSES_ROOT, L"NetServer\\shell", nullptr, L"filespacer");
+        require(RegSetKeyValueW(HKEY_CLASSES_ROOT, L"NetShare\\shell", nullptr, REG_DWORD, &invalid, sizeof(invalid)) == ERROR_SUCCESS,
+            "inject malformed network share association");
+        result = settings::synchronizeContextMenus();
+        require(result.directory == ERROR_SUCCESS && result.networkServer == ERROR_SUCCESS
+            && result.networkShare != ERROR_SUCCESS && result.status() != ERROR_SUCCESS,
+            "share failure is reported without skipping the server menu");
+        checkMenu(L"NetServer", true);
     } catch (const std::exception &error) { std::fprintf(stderr, "FAIL: %s (%d)\n", error.what(), checks); exitCode = 1; }
     if (RegOverridePredefKey(HKEY_CLASSES_ROOT, nullptr) != ERROR_SUCCESS) exitCode = 1;
     if (RegOverridePredefKey(HKEY_CURRENT_USER, nullptr) != ERROR_SUCCESS) exitCode = 1;
     if (classes) RegCloseKey(classes);
     if (user) RegCloseKey(user);
     if (RegDeleteTreeW(HKEY_CURRENT_USER, path.c_str()) != ERROR_SUCCESS) exitCode = 1;
+    if (!shortcutPath.empty() && GetFileAttributesW(shortcutPath.c_str()) != INVALID_FILE_ATTRIBUTES
+            && !DeleteFileW(shortcutPath.c_str())) exitCode = 1;
     CoUninitialize();
     if (!exitCode) std::printf("PASS: %d checks; isolated registrations, real undisplayed Shell menus, both toggle directions and external changes.\n", checks);
     return exitCode;
