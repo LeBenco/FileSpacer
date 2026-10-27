@@ -1,6 +1,8 @@
 # Validation : libellé opaque en sélection simple
 
-25 octobre 2026, modification non publiée.
+Validation du 25 octobre 2026. Le comportement décrit a été publié en
+[1.1.3](../CHANGELOG.md#113--2026-10-25). Les résultats et les réserves ci-dessous
+restent ceux de cette validation.
 
 ## Comportement livré
 
