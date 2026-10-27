@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path
 $executable = Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'
 $temporaryBase = [IO.Path]::GetFullPath($env:TEMP)
-$temporaryRoot = [IO.Path]::GetFullPath((Join-Path $temporaryBase ('FileSpacer-deletion-' + [Guid]::NewGuid().ToString('N'))))
+$temporaryRoot = [IO.Path]::GetFullPath((Join-Path $temporaryBase ('FS-delete-' + [Guid]::NewGuid().ToString('N'))))
 if ([IO.Path]::GetDirectoryName($temporaryRoot).TrimEnd('\') -ne $temporaryBase.TrimEnd('\')) {
     throw 'The fixture root is outside the temporary directory.'
 }
