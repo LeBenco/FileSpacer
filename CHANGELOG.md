@@ -5,6 +5,7 @@
 - Offer Open in Windows File Explorer in folder context menus when FileSpacer is the default file manager, and Open in FileSpacer otherwise; update the menus when changing the default, after installation and at startup.
 - Enlarge the About tab's application icon to 48 pixels at 100% scaling, with text positioned beside it.
 - Keep maximized window titles fully visible and stretch the toolbar across the available width.
+- Allow regression tests to run in a configured Hyper-V client while compiling the application and test helpers on the host.
 
 ## 1.1.9 — 2026-10-27
 
