@@ -19,6 +19,10 @@ LINKFLAGS = /subsystem:windows /OPT:REF /OPT:ICF
 INKSCAPE = C:\Program Files\Inkscape\bin\inkscape.com
 !ENDIF
 
+!IFNDEF ICON_PYTHON
+ICON_PYTHON = $(INKSCAPE:inkscape.com=python.exe)
+!ENDIF
+
 SQLITE_DIR = third_party\sqlite
 SQLITE_COMMON_FLAGS = /nologo /W3 /TC /D _CRT_SECURE_NO_WARNINGS /D SQLITE_OMIT_LOAD_EXTENSION /D SQLITE_DQS=0
 !IF "$(CFG)" == "Debug"
@@ -33,18 +37,7 @@ RESOURCE = $(OUTDIR)\resource.res
 ICON_SVG = src\res\FileSpacer.svg
 ICON_ICO = src\res\FileSpacer.ico
 LOCK_BADGE_ICO = src\res\window-state-lock.ico
-ICON_512 = $(OUTDIR)\FileSpacer-512.png
-ICON_PNGS = \
-    $(OUTDIR)\FileSpacer-16.png \
-    $(OUTDIR)\FileSpacer-20.png \
-    $(OUTDIR)\FileSpacer-24.png \
-    $(OUTDIR)\FileSpacer-32.png \
-    $(OUTDIR)\FileSpacer-40.png \
-    $(OUTDIR)\FileSpacer-48.png \
-    $(OUTDIR)\FileSpacer-64.png \
-    $(OUTDIR)\FileSpacer-96.png \
-    $(OUTDIR)\FileSpacer-128.png \
-    $(OUTDIR)\FileSpacer-256.png
+ICON_GENERATOR = generate-icon.py
 OBJECTS = \
     $(OUTDIR)\ClosedWindows.obj \
     $(OUTDIR)\COMUtils.obj \
@@ -106,20 +99,9 @@ $(RESOURCE): src\*.rc src\resource.h src\dialog.h \
     Makefile
 	rc.exe /D _UNICODE /D UNICODE /n /I src /fo $(RESOURCE) src\resource.rc
 
-$(ICON_ICO): $(ICON_SVG) $(OUTDIR)
-	"$(INKSCAPE)" "$(ICON_SVG)" --export-filename="$(ICON_512)" --export-width=512 --export-height=512 --export-background-opacity=0
-	magick "$(ICON_512)" -filter Cubic -resize 16x16 "$(OUTDIR)\FileSpacer-16.png"
-	magick "$(ICON_512)" -filter Cubic -resize 20x20 "$(OUTDIR)\FileSpacer-20.png"
-	magick "$(ICON_512)" -filter Cubic -resize 24x24 "$(OUTDIR)\FileSpacer-24.png"
-	magick "$(ICON_512)" -filter Cubic -resize 32x32 "$(OUTDIR)\FileSpacer-32.png"
-	magick "$(ICON_512)" -filter Cubic -resize 40x40 "$(OUTDIR)\FileSpacer-40.png"
-	magick "$(ICON_512)" -filter Cubic -resize 48x48 "$(OUTDIR)\FileSpacer-48.png"
-	magick "$(ICON_512)" -filter Cubic -resize 64x64 "$(OUTDIR)\FileSpacer-64.png"
-	magick "$(ICON_512)" -filter Cubic -resize 96x96 "$(OUTDIR)\FileSpacer-96.png"
-	magick "$(ICON_512)" -filter Cubic -resize 128x128 "$(OUTDIR)\FileSpacer-128.png"
-	magick "$(ICON_512)" -filter Cubic -resize 256x256 "$(OUTDIR)\FileSpacer-256.png"
-	magick $(ICON_PNGS) "$(ICON_ICO)"
-	del /q "$(ICON_512)" $(ICON_PNGS)
+# Regenerate the optical small sizes and the larger vector sizes together.
+$(ICON_ICO): $(ICON_SVG) $(ICON_GENERATOR) Makefile
+	"$(ICON_PYTHON)" "$(ICON_GENERATOR)" --source "$(ICON_SVG)" --output "$(ICON_ICO)" --work-dir "$(OUTDIR)" --inkscape "$(INKSCAPE)"
 
 clean:
 	@if exist "build\debug" rmdir /s /q "build\debug"
