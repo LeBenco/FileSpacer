@@ -17,6 +17,8 @@ using HWND = void *;
 using WPARAM = std::uintptr_t;
 using LPARAM = std::intptr_t;
 using LRESULT = std::intptr_t;
+using HHOOK = void *;
+using HOOKPROC = LRESULT (*)(int, WPARAM, LPARAM);
 struct POINT { int x, y; };
 struct CMINVOKECOMMANDINFO { UINT cbSize; HWND hwnd = nullptr; const char *lpVerb = nullptr; };
 struct CMINVOKECOMMANDINFOEX {
@@ -40,6 +42,16 @@ inline bool checkResult(HRESULT hr) { return SUCCEEDED(hr); }
 #define _countof(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 #define debugPrintf(...) ((void)0)
+
+// This deterministic harness exercises the non-preview menu lifetime path.
+// Real preview capture/hover/restore is exercised by group 28 on the Shell.
+namespace settings { bool getViewMenuPreviewEnabled() { return false; } }
+struct FolderState { enum { Icons = 8 }; };
+constexpr int WH_MSGFILTER = -1;
+HHOOK SetWindowsHookEx(int, HOOKPROC, void *, unsigned long) { assert(false); return nullptr; }
+bool UnhookWindowsHookEx(HHOOK) { assert(false); return false; }
+unsigned long GetCurrentThreadId() { assert(false); return 0; }
+bool KillTimer(HWND, std::uintptr_t) { assert(false); return false; }
 
 struct ItemWindow;
 enum class Stage { None, Popup, Settings, ItemObject, QueryMenu, Window,
@@ -238,6 +250,18 @@ struct ShellViewHost {
     void destroy() { browser.Release(); }
 };
 struct FolderWindow : ItemWindow {
+    struct ViewMenuPreview {
+        static ViewMenuPreview *active;
+        ViewMenuPreview(FolderWindow &, HMENU, IContextMenu *, IFolderView2 *) { assert(false); }
+        bool capture() { assert(false); return false; }
+        void finish(UINT) { assert(false); }
+        static LRESULT filter(int, WPARAM, LPARAM) { assert(false); return 0; }
+    };
+    std::shared_ptr<ViewMenuPreview> viewMenuPreview;
+    bool viewReady = true, initialStateApplied = true, enumerationComplete = true, restoringState = false;
+    enum { TIMER_SAVE_STATE = 2 };
+    void viewStateDirty(unsigned) { assert(false); }
+    void persistViewState() { assert(false); }
     CComPtr<IShellView> shellView;
     ShellViewHost viewHost;
     FolderWindow() { shellView.Attach(new IShellView); }
@@ -262,6 +286,7 @@ struct FolderWindow : ItemWindow {
     void openViewMenu(POINT);
     void openBackgroundSubMenu(IContextMenu *, HMENU, POINT);
 };
+FolderWindow::ViewMenuPreview *FolderWindow::ViewMenuPreview::active = nullptr;
 bool PostMessageW(HWND, UINT, WPARAM, LPARAM) { assert(false && "no close is deferred in this harness"); return true; }
 HMENU findViewMenu(IContextMenu *, HMENU menu) { return menu; } // Borrowed submenu stand-in.
 void boundary(Stage stage) {
