@@ -20,13 +20,13 @@ Windows 10 or later, x64. Available in English and French.
   folder. [Icon layout](docs/user-guide.md#icon-layout).
 - **Move and resize windows** from anywhere in the file area, preserving
   selection. Mouse shortcuts are configurable; defaults are Alt + left drag
-  and Alt + right drag. [Window gestures](docs/user-guide.md#window-shortcuts).
+  and Alt + right drag. [Window gestures](docs/user-guide.md#moving-and-resizing).
 - **Switch between open folders** from the title-bar menu, close parent
   windows, or reopen the last closed window with Ctrl+Shift+T.
   [Window navigation](docs/user-guide.md#window-navigation).
 - **Lock a window's saved layout** while allowing temporary changes to its
   position, size and view settings.
-  [Window state locking](docs/user-guide.md#lock-a-folder-windows-saved-state).
+  [Window state locking](docs/user-guide.md#locking-a-saved-layout).
 - **Filter the current folder** and reuse its recent searches.
   [Search and history](docs/user-guide.md#search-and-history).
 - **Preserve selection when activating a window** by clicking its background.
