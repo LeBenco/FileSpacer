@@ -1,11 +1,76 @@
 # Development history and validation
 
 This handoff consolidates the separate development and validation sessions on
-25–26 October 2026. Current code, Git state and published releases take precedence
+25–27 October 2026. Current code, Git state and published releases take precedence
 over the older snapshots retained below. In particular, the initial search
 integration was once uncommitted, but it has since shipped in 1.1.4.
 
-## Consolidated status — 26 October 2026
+## Documentation reference — 27 October 2026
+
+The released baseline is **1.1.9**, local tag `v1.1.9` at `ae0213b`.
+Version 1.1.8 (`v1.1.8` at `9de5d02`) includes the tesseract application icon,
+clarified and themed settings, the optional lock badge and settings ownership by
+the calling folder window. Version 1.1.9 adds default-on View menu hover previews
+with cancellation restoration. See the [changelog](../CHANGELOG.md) and
+[user guide](user-guide.md) for the resulting behavior.
+
+The tagged 1.1.9 sources contain **113 cases: 19 Internal and 94 UI**, including
+the two View preview cases in group 28. A local client-test integration
+adds an artifact-contract case and remains uncommitted; other
+local work does not become part of a release merely by being present in the
+checkout. Subsequent menu, About and maximization work is distinguished below.
+The reference test guides use the runner's discovered catalogue rather than
+repeating a fixed total.
+
+The last complete successful suite recorded here remains **109/109 on 1.1.5**.
+Later targeted runs and preparation of VM artifacts do not establish a complete
+1.1.9 or VM suite PASS. This documentation update reruns no application tests
+and changes no historical static-analysis verdict.
+
+Entries below retain their dated evidence. Terms such as "latest", "current",
+"uncommitted" and "pending" refer to the state at the time of each entry.
+
+## 2026-10-27 — Changes after 1.1.9
+
+The context-menu changes are committed through `352048b`: FileSpacer's menu
+command offers the other file manager and resynchronizes on integration changes,
+installation and normal startup. They are not part of the 1.1.9 release. The
+[integration note](context-menu-integration.md) records the Debug build, 324 checks
+per language, the real Shell menu test, static **REVIEW** and installer limits.
+
+The About tab now loads a 48-DIP application icon (48 × 48 pixels at 96 DPI),
+with adjacent text moved to avoid overlap. This implementation and
+`13-preferences/07-APropos.ps1` remain local and uncommitted. The Debug build
+completed without warnings; the targeted real UI test passed in `AgentWin10`
+at 96 DPI (`vm-52d1ed26afe34629b6d1c202f72419cb`). clang-tidy and Cppcheck
+completed on `SettingsDialog.cpp`, including `dialog.h`; the verdict remains
+**REVIEW** for indirect includes, constness, the Win32 `LPARAM` conversion and
+the resource macro. No new Cppcheck defect was confirmed. The separate placement
+test 26/02 failed on a label expectation that already differs from the baseline
+EN/FR resources (`vm-7e8d86588c984fcc9796f1cb10d8440b`); that failure is retained.
+
+Maximization is corrected by local commits `527fbdf`, `9a44deb` and `4fd5885`.
+The single toolbar band explicitly expands with `RB_MAXIMIZEBAND`; the folder
+title and menu stay within the visible maximized caption and recover their
+normal vertical position on restore. Native DWM frame and caption buttons are
+retained. The title clipping was reproduced in Windows 10 19045 at 96 DPI
+(-1 pixel before, +2 pixels after); the originally reported stale toolbar width
+was not reproduced before the change.
+
+The Debug build completed without `/W4` warnings. Real Shell tests in
+`AgentWin10` passed: six window cases (`vm-7e14fa325eec44e88350ef0de7f5f4fb`)
+and the toolbar layout/options case (`vm-7840d3b7ac344ebcb80ec7057c65014d`).
+A temporary 1920 × 1080, 100% probe measured a 1920-pixel toolbar and visible
+title through maximize, minimize and reopen; the guest display was restored to
+1024 × 768 (`vm-6bf044b13a744a678f6f2277babf449c`). Its temporary case was removed.
+clang-tidy and Cppcheck completed on `ItemWindow.cpp` and `ProxyIcon.cpp`, covering
+`ProxyIcon.h`, with no missing coverage or confirmed new defect. The verdict is
+**REVIEW** for clang-tidy include, BOOL conversion, brace and cognitive-complexity
+observations (28 against a threshold of 25); Cppcheck adds no new diagnostic.
+These maximization commits remain local: no push, tag or release was performed
+for them. The targeted results do not establish a complete regression-suite PASS.
+
+## Historical consolidated status — 26 October 2026
 
 The latest published application is **1.1.7**, tag `v1.1.7`, commit `99ff6f7`.
 At the start of this documentation audit, local `main` and `origin/main` both
