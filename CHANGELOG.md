@@ -2,10 +2,15 @@
 
 ## Unreleased
 
+## 1.1.10 — 2026-10-27
+
 - Offer Open in Windows File Explorer in folder context menus when FileSpacer is the default file manager, and Open in FileSpacer otherwise; update the menus when changing the default, after installation and at startup.
+- Fix network server and share shortcuts opening in Windows File Explorer when FileSpacer is the default file manager. Update the installed Folder Context Menu component and select FileSpacer as default again to enable network integration.
 - Enlarge the About tab's application icon to 48 pixels at 100% scaling, with text positioned beside it.
 - Keep maximized window titles fully visible and stretch the toolbar across the available width.
 - Allow regression tests to run in a configured Hyper-V client while compiling the application and test helpers on the host.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.9...v1.1.10)
 
 ## 1.1.9 — 2026-10-27
 
