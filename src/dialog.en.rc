@@ -24,7 +24,7 @@ STYLE DS_SHELLFONT|DS_CONTROL|WS_CHILD|WS_CLIPCHILDREN
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 400, 0, 0
 {
-  LTEXT "Keys to hold — optional", -1, 0, 4, 270, 9
+  LTEXT "Keys to hold", -1, 0, 4, 270, 9
   CONTROL "Alt", IDC_SHORTCUT_ALT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 0, 16, 60, 12
   CONTROL "Ctrl", IDC_SHORTCUT_CTRL, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 70, 16, 60, 12
   CONTROL "Shift", IDC_SHORTCUT_SHIFT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 140, 16, 60, 12
@@ -44,55 +44,54 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   PUSHBUTTON "Default setting", IDC_SHORTCUT_DEFAULT, 0, 125, 100, 14
 }
 
-IDD_SETTINGS_GENERAL DIALOGEX DISCARDABLE 0, 0, 300, 277
+IDD_SETTINGS_GENERAL DIALOGEX DISCARDABLE 0, 0, 360, 277
 STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
 CAPTION "General"
 FONT 8, "MS Shell Dlg", 400, 0, 0
 {
-  CONTROL "&Starting folder", -1, "Button", BS_GROUPBOX, 7, 7, 286, 30
-  CONTROL "", IDC_START_FOLDER_PATH, "ComboBoxEx32", CBS_DROPDOWN|WS_TABSTOP|0x00000040, 14, 18, 210, 300
-  CONTROL "&Browse...", IDC_START_FOLDER_BROWSE, "Button", WS_TABSTOP, 231, 18, 55, 14
-  CONTROL "Folder navigation", -1, "Button", BS_GROUPBOX, 7, 41, 286, 79
-  CONTROL "&Keep the window open by default", IDC_KEEP_SOURCE_WINDOW_OPEN, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 52, 272, 12
-  CONTROL "Preserve selection on &activation", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 66, 272, 12
-  CONTROL "On a background click in an inactive window.", -1, "Static", WS_GROUP, 14, 80, 272, 8
-  CONTROL "Mi&nimize window overlap", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 94, 272, 12
-  CONTROL "Saved positions always take priority.", -1, "Static", WS_GROUP, 14, 108, 272, 8
-  CONTROL "Name filter", -1, "Button", BS_GROUPBOX, 7, 124, 286, 28
-  CONTROL "Filter while t&yping", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 135, 272, 12
-  CONTROL "Taskbar", -1, "Button", BS_GROUPBOX, 7, 156, 286, 51
-  CONTROL "&Group folder windows on the taskbar (new windows)", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 167, 272, 12
-  CONTROL "Grouping follows your Windows taskbar settings.", -1, "Static", WS_GROUP, 14, 181, 272, 8
-  CONTROL "Without grouping, folders can be pinned to the taskbar.", -1, "Static", WS_GROUP, 14, 191, 272, 8
-  CONTROL "File Explorer options", -1, "Button", BS_GROUPBOX, 7, 211, 286, 35
-  CONTROL "Some File Explorer options also affect FileSpacer folder windows.", -1, "Static", WS_GROUP, 14, 222, 210, 16
-  CONTROL "&Options...", IDC_EXPLORER_SETTINGS, "Button", WS_TABSTOP, 231, 222, 55, 14
-  CONTROL "Enable window state &locking", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 253, 272, 12
+  CONTROL "&Starting folder", -1, "Button", BS_GROUPBOX, 7, 7, 346, 30
+  CONTROL "", IDC_START_FOLDER_PATH, "ComboBoxEx32", CBS_DROPDOWN|WS_TABSTOP|0x00000040, 14, 18, 270, 300
+  CONTROL "&Browse...", IDC_START_FOLDER_BROWSE, "Button", WS_TABSTOP, 291, 18, 55, 14
+  CONTROL "Folder navigation", -1, "Button", BS_GROUPBOX, 7, 41, 346, 55
+  CONTROL "&Keep the source window open when opening an item", IDC_KEEP_SOURCE_WINDOW_OPEN, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 52, 332, 12
+  CONTROL "Keep the current selection when &clicking an inactive window", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 66, 332, 12
+  CONTROL "Place &new windows in free space (saved positions always take priority)", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 80, 332, 12
+  CONTROL "Search box", -1, "Button", BS_GROUPBOX, 7, 100, 346, 28
+  CONTROL "Filter while t&yping", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 111, 332, 12
+  CONTROL "Taskbar", -1, "Button", BS_GROUPBOX, 7, 132, 346, 51
+  CONTROL "&Group folder windows on the taskbar (new windows)", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 143, 332, 12
+  CONTROL "Grouping follows your Windows taskbar settings.", -1, "Static", WS_GROUP, 14, 157, 332, 8
+  CONTROL "Without grouping, folders can be pinned to the taskbar.", -1, "Static", WS_GROUP, 14, 167, 332, 8
+  CONTROL "File Explorer options", -1, "Button", BS_GROUPBOX, 7, 187, 346, 35
+  CONTROL "Some File Explorer options also affect FileSpacer folder windows.", -1, "Static", WS_GROUP, 14, 198, 270, 16
+  CONTROL "&Options...", IDC_EXPLORER_SETTINGS, "Button", WS_TABSTOP, 291, 198, 55, 14
+  CONTROL "Window locking", -1, "Button", BS_GROUPBOX, 7, 226, 346, 44
+  CONTROL "Enable window state &locking", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 237, 332, 12
+  CONTROL "Show a padlock in the title &bar of locked folders", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 251, 332, 12
 }
 
-IDD_SETTINGS_DISPLAY DIALOGEX DISCARDABLE 0, 0, 300, 238
+IDD_SETTINGS_DISPLAY DIALOGEX DISCARDABLE 0, 0, 360, 238
 STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
 CAPTION "Display"
 FONT 8, "MS Shell Dlg", 400, 0, 0
 {
-  CONTROL "Interface elements", -1, "Button", BS_GROUPBOX, 7, 7, 286, 49
-  CONTROL "Show st&atus bar", IDC_STATUS_TEXT_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 21, 272, 14
-  CONTROL "Show &toolbar", IDC_TOOLBAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 35, 272, 14
-  CONTROL "Toolbar elements", -1, "Button", BS_GROUPBOX, 7, 63, 286, 77
+  CONTROL "Interface elements", -1, "Button", BS_GROUPBOX, 7, 7, 346, 49
+  CONTROL "Show st&atus bar", IDC_STATUS_TEXT_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 21, 332, 14
+  CONTROL "Show &toolbar", IDC_TOOLBAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 35, 332, 14
+  CONTROL "Toolbar elements", -1, "Button", BS_GROUPBOX, 7, 63, 346, 77
   CONTROL "Show &Quick access", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 77, 130, 14
   CONTROL "Show &Up button", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 77, 130, 14
-  CONTROL "Show &path bar", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 91, 272, 14
+  CONTROL "Show &path bar", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 91, 332, 14
   CONTROL "Show &Refresh button", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 105, 130, 14
   CONTROL "Show &View button", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 105, 130, 14
-  CONTROL "The elements above are visible when the toolbar is shown.", -1, "Static", WS_GROUP, 14, 121, 272, 16
-  CONTROL "File names", -1, "Button", BS_GROUPBOX, 7, 147, 286, 46
-  CONTROL "Show the full &name for a single selection", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 159, 272, 12
-  CONTROL "In Icons view, with an opaque background.\nOtherwise, Windows' native rendering is used.", -1, "Static", WS_GROUP, 14, 173, 272, 16
-  CONTROL "Default window size", -1, "Button", BS_GROUPBOX, 7, 200, 286, 35
-  CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 217, 88, 8
-  CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 214, 35, 14
-  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT_LABEL, "Static", SS_RIGHT|WS_GROUP, 156, 217, 88, 8
-  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 251, 214, 35, 14
+  CONTROL "The elements above are visible when the toolbar is shown.", -1, "Static", WS_GROUP, 14, 121, 332, 16
+  CONTROL "File names", -1, "Button", BS_GROUPBOX, 7, 147, 346, 28
+  CONTROL "Show the full &name of a selected file (does not apply to multiple selections)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 159, 332, 12
+  CONTROL "Default window size", -1, "Button", BS_GROUPBOX, 7, 182, 346, 35
+  CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 199, 118, 8
+  CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 139, 196, 35, 14
+  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT_LABEL, "Static", SS_RIGHT|WS_GROUP, 186, 199, 118, 8
+  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 311, 196, 35, 14
 }
 
 IDD_SETTINGS_BROWSER DIALOGEX DISCARDABLE 0, 0, 300, 277
@@ -106,7 +105,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Set as default browser", IDC_SET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 56, 272, 14
   CONTROL "&Reset default browser", IDC_RESET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 77, 272, 14
   GROUPBOX "Everything (external application)", -1, 7, 111, 286, 97
-  CONTROL "Enable &Everything", IDC_EVERYTHING_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 123, 272, 12
+  CONTROL "Add &Everything search to the search box", IDC_EVERYTHING_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 123, 272, 12
   LTEXT "Executable (empty = automatic detection)", -1, 14, 138, 272, 9
   EDITTEXT IDC_EVERYTHING_PATH, 14, 149, 272, 14, ES_AUTOHSCROLL|WS_TABSTOP
   PUSHBUTTON "&Detect", IDC_EVERYTHING_DETECT, 14, 166, 90, 14
