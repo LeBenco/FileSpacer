@@ -100,6 +100,15 @@ browser**. Choose **Reset default browser** to return folder opening to Windows
 File Explorer. These actions update the current user's folder, drive and
 compressed-folder associations immediately.
 
+The context-menu command always offers the other file manager: **Open in Windows
+File Explorer** when FileSpacer is the default, and **Open in FileSpacer** otherwise.
+This also applies to the background of a folder. The installer and Integration
+settings update these menus immediately; FileSpacer checks them again at each
+normal startup, so changes made by another tool take effect at the next launch.
+The default folder-opening command is preserved. No background monitor is used.
+See [the integration note](context-menu-integration.md) for implementation and
+validation details.
+
 The same page offers **File Explorer options**: some Windows folder preferences
 also affect FileSpacer's native folder view.
 
