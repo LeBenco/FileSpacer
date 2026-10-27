@@ -65,11 +65,12 @@ def draw_folder(size):
 
 
 def draw_logo(size, logo):
-    """Rasterize the unchanged nine faces on one shared grid, then average once."""
+    """Rasterize the nine SVG faces on one shared grid, then average once."""
     factor = 32
     high = Image.new("RGBA", (size * factor, size * factor))
     draw = ImageDraw.Draw(high)
-    match = re.fullmatch(r"matrix\(([^)]+)\)", logo.get("transform", ""))
+    match = re.fullmatch(r"matrix\(([^)]+)\)",
+                        logo.get("transform", "matrix(1,0,0,1,0,0)"))
     if match is None:
         raise ValueError("The logo must have an SVG matrix transform.")
     a, b, c, d, e, f = map(float, re.split(r"[,\s]+", match[1].strip()))
@@ -87,9 +88,9 @@ def generate(source, output, work_dir, inkscape):
     artwork = ET.parse(source).getroot()
     if artwork.get("viewBox") != "0 0 212 212":
         raise ValueError("The optical masters require the centered 212 x 212 SVG.")
-    logo = artwork.find(f"{NS}g[@id='logo-colored-13points']")
+    logo = artwork.find(f"{NS}g[@id='logo-tesseract-projected']")
     if logo is None or len(logo) != 9 or any(p.tag != NS + "polygon" for p in logo):
-        raise ValueError("The SVG must contain the original nine logo polygons.")
+        raise ValueError("The SVG must contain the nine projected tesseract polygons.")
 
     work_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="icon-", dir=work_dir) as temporary:
