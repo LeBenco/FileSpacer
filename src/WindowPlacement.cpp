@@ -276,8 +276,12 @@ namespace {
 const wchar_t withdrawalProperty[] = L"FileSpacer.PlacementWithdrawal";
 const wchar_t testProperty[] = L"FileSpacer.PlacementTest";
 struct MonitorPlacement { HMONITOR monitor; std::unique_ptr<WindowPlacementState> state; };
-// All folder windows and placement requests of this process use its UI thread.
-thread_local std::vector<MonitorPlacement> placements;
+// Keep initialization off unrelated Shell workers, including threads starting
+// after the main thread has begun shutting down the static runtime.
+std::vector<MonitorPlacement> &windowPlacements() {
+    static thread_local std::vector<MonitorPlacement> placements;
+    return placements;
+}
 
 bool placementRect(HWND window, RECT &rect) {
     wchar_t name[64] = {};
@@ -302,6 +306,7 @@ bool placementRect(HWND window, RECT &rect) {
 }
 
 void updateWindowPlacement(HWND window) noexcept {
+    auto &placements = windowPlacements();
     if (placements.empty()) return;
     RECT rect = {};
     const bool occupied = placementRect(window, rect);
@@ -314,13 +319,13 @@ void updateWindowPlacement(HWND window) noexcept {
     }
 }
 
-void clearWindowPlacement() { placements.clear(); }
+void clearWindowPlacement() { windowPlacements().clear(); }
 
 void removeWindowPlacement(HWND window) {
     // Destruction can reenter Shell code before WM_NCDESTROY. Keep the closing
     // window excluded from any intervening cross-process snapshot as well.
     SetPropW(window, withdrawalProperty, reinterpret_cast<HANDLE>(1));
-    for (auto &entry : placements) entry.state->setWindow(window, nullptr);
+    for (auto &entry : windowPlacements()) entry.state->setWindow(window, nullptr);
 }
 
 void cancelPlacementWithdrawal(HWND window) {
@@ -336,12 +341,13 @@ void initializeWindowPlacement(HWND window) {
 }
 
 void destroyWindowPlacement(HWND window) {
-    for (auto &entry : placements) entry.state->setWindow(window, nullptr);
+    for (auto &entry : windowPlacements()) entry.state->setWindow(window, nullptr);
     RemovePropW(window, withdrawalProperty);
     RemovePropW(window, testProperty);
 }
 
 bool findWindowPlacement(HMONITOR monitor, SIZE size, HWND source, RECT &rect) try {
+    auto &placements = windowPlacements();
     MONITORINFO info = {sizeof(info)};
     if (!monitor || size.cx <= 0 || size.cy <= 0 || !GetMonitorInfoW(monitor, &info)
             || IsRectEmpty(&info.rcWork)) return false;
@@ -380,7 +386,7 @@ bool findWindowPlacement(HMONITOR monitor, SIZE size, HWND source, RECT &rect) t
     return true;
 } catch (...) {
     // Leave the caller's native Windows placement available if tables cannot be built.
-    placements.clear();
+    windowPlacements().clear();
     return false;
 }
 
