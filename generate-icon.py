@@ -4,8 +4,10 @@
 import argparse
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
+import uuid
 import xml.etree.ElementTree as ET
 
 from PIL import Image, ImageDraw
@@ -119,7 +121,13 @@ def generate(source, output, work_dir, inkscape):
                     expected = image.convert("RGBA").tobytes()
                 if icon.ico.getimage((size, size)).convert("RGBA").tobytes() != expected:
                     raise ValueError(f"The ICO changed pixels in the {size}px image.")
-        generated.replace(output)
+        # Inherit the resource directory's permissions, not the private temp ACL.
+        staged = output.with_name(f".{output.name}.{uuid.uuid4().hex}.tmp")
+        try:
+            shutil.copyfile(generated, staged)
+            staged.replace(output)
+        finally:
+            staged.unlink(missing_ok=True)
     print(f"Generated {output}: ten sizes, RGBA pixels verified.")
 
 
