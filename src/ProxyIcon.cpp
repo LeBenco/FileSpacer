@@ -118,6 +118,7 @@ void ProxyIcon::create(HWND parent, wchar_t *title, int top, int height) {
         top += max(0, (height - buttonHeight) / 2);
         height = min(height, buttonHeight);
     }
+    normalTop = top;
     SetWindowPos(caption, nullptr, 0, top, 0, height, SWP_NOZORDER | SWP_NOACTIVATE);
     SetWindowPos(toolbar, nullptr, 0, top, ideal.cx, height, SWP_NOZORDER | SWP_NOACTIVATE);
     setActive(false);
@@ -297,9 +298,24 @@ void ProxyIcon::autoSize(LONG parentWidth, LONG captionLeft, LONG captionRight) 
     const int labelWidth = max(0, actualWidth - menuSize.cx);
     RECT rect = windowRect(toolbar);
     MapWindowRect(nullptr, outer->hwnd, &rect);
-    SetWindowPos(caption, nullptr, actualLeft, rect.top, labelWidth, rectHeight(rect),
+    int top = normalTop;
+    if (IsZoomed(outer->hwnd)) {
+        POINT origin = {};
+        MONITORINFO monitor = {sizeof(monitor)};
+        if (checkLE(ClientToScreen(outer->hwnd, &origin))
+                && checkLE(GetMonitorInfo(MonitorFromWindow(outer->hwnd,
+                    MONITOR_DEFAULTTONEAREST), &monitor))) {
+            // Windows clips the maximized resize border. Center only our title
+            // in the visible caption without moving the native DWM buttons.
+            const int hiddenTop = max(0, monitor.rcWork.top - origin.y);
+            if (hiddenTop > 0)
+                top = hiddenTop + max(0,
+                    (outer->CAPTION_HEIGHT - hiddenTop - rectHeight(rect)) / 2);
+        }
+    }
+    SetWindowPos(caption, nullptr, actualLeft, top, labelWidth, rectHeight(rect),
         SWP_NOZORDER | SWP_NOACTIVATE);
-    SetWindowPos(toolbar, nullptr, actualLeft + labelWidth, rect.top,
+    SetWindowPos(toolbar, nullptr, actualLeft + labelWidth, top,
         min(actualWidth, menuSize.cx), rectHeight(rect), SWP_NOZORDER | SWP_NOACTIVATE);
     InvalidateRect(caption, nullptr, FALSE);
 }
