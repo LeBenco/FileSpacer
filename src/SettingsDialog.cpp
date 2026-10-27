@@ -176,6 +176,8 @@ struct GeneralHelp {
     std::unique_ptr<std::remove_pointer<HWND>::type, WindowDeleter> tooltip;
     TOOLINFOW tool = {sizeof(TOOLINFOW)};
     int activeControl = 0;
+    Gdiplus::GraphicsPath infoGlyph;
+    Gdiplus::RectF infoBounds;
 
     explicit GeneralHelp(HWND page) {
         layout(page);
@@ -219,18 +221,26 @@ struct GeneralHelp {
         if (message == WM_NCDESTROY) RemoveWindowSubclass(window, buttonProc, id);
         return DefSubclassProc(window, message, wParam, lParam);
     }
-    void layout(HWND page) const {
+    void layout(HWND page) {
         auto releaseDC = [page](HDC context) { ReleaseDC(page, context); };
         std::unique_ptr<std::remove_pointer<HDC>::type, decltype(releaseDC)> context(GetDC(page), releaseDC);
         if (!context) return;
+        const HFONT font = reinterpret_cast<HFONT>(SendMessageW(page, WM_GETFONT, 0, 0));
+        const HGDIOBJ previous = SelectObject(context.get(), font);
+        TEXTMETRICW metrics = {};
+        checkLE(GetTextMetricsW(context.get(), &metrics));
+        // Use Microsoft's Info glyph at the dialog's text size, with the Windows 10 font as fallback.
+        Gdiplus::FontFamily fluent(L"Segoe Fluent Icons"), mdl2(L"Segoe MDL2 Assets");
+        const Gdiplus::FontFamily *family = fluent.GetLastStatus() == Gdiplus::Ok ? &fluent : &mdl2;
+        infoGlyph.Reset();
+        infoBounds = Gdiplus::RectF();
+        if (infoGlyph.AddString(L"\uE946", 1, family, Gdiplus::FontStyleRegular,
+                static_cast<Gdiplus::REAL>(metrics.tmHeight), Gdiplus::PointF(0, 0), nullptr) == Gdiplus::Ok)
+            infoGlyph.GetBounds(&infoBounds);
         const int labels[] = {IDC_SMART_WINDOW_PLACEMENT, IDC_GROUP_FOLDER_WINDOWS};
         const int buttons[] = {IDC_SMART_WINDOW_PLACEMENT_HELP, IDC_GROUP_FOLDER_WINDOWS_HELP};
         for (int index = 0; index < _countof(labels); ++index) {
             const HWND label = GetDlgItem(page, labels[index]);
-            const HFONT font = reinterpret_cast<HFONT>(SendMessageW(label, WM_GETFONT, 0, 0));
-            const HGDIOBJ previous = SelectObject(context.get(), font);
-            TEXTMETRICW metrics = {};
-            checkLE(GetTextMetricsW(context.get(), &metrics));
             const int length = GetWindowTextLengthW(label);
             std::wstring text(static_cast<size_t>(length) + 1, L'\0');
             GetWindowTextW(label, &text[0], length + 1);
@@ -244,18 +254,18 @@ struct GeneralHelp {
                 if (SUCCEEDED(GetThemePartSize(theme.get(), context.get(), BP_CHECKBOX,
                         CBS_UNCHECKEDNORMAL, nullptr, TS_TRUE, &themed))) check = themed;
             }
-            SelectObject(context.get(), previous);
             RECT bounds = windowRect(label);
             MapWindowPoints(nullptr, page, reinterpret_cast<POINT *>(&bounds), 2);
             const int labelWidth = check.cx + scaleDPI(3) + extent.right;
             const int size = scaleDPI(20);
-            const int padding = (size - scaleDPI(16)) / 2;
+            const int padding = static_cast<int>((size - infoBounds.Width) / 2 + 0.5f);
             checkLE(SetWindowPos(label, nullptr, 0, 0, labelWidth, bounds.bottom - bounds.top,
                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE));
             checkLE(SetWindowPos(GetDlgItem(page, buttons[index]), HWND_TOP,
                 bounds.left + labelWidth + scaleDPI(4) - padding,
                 bounds.top + (metrics.tmHeight - size) / 2, size, size, SWP_NOACTIVATE));
         }
+        SelectObject(context.get(), previous);
     }
     bool draw(const DRAWITEMSTRUCT &item) const {
         if (item.CtlType != ODT_BUTTON || (item.CtlID != IDC_SMART_WINDOW_PLACEMENT_HELP
@@ -267,27 +277,15 @@ struct GeneralHelp {
         {
             const COLORREF ink = GetSysColor(item.itemState & ODS_DISABLED ? COLOR_GRAYTEXT
                 : item.itemState & ODS_SELECTED ? COLOR_HOTLIGHT : COLOR_BTNTEXT);
-            const COLORREF paper = GetSysColor(COLOR_WINDOW);
             Gdiplus::SolidBrush fill(Gdiplus::Color(255, GetRValue(ink), GetGValue(ink), GetBValue(ink)));
-            Gdiplus::SolidBrush mark(Gdiplus::Color(255, GetRValue(paper), GetGValue(paper), GetBValue(paper)));
-            const Gdiplus::REAL diameter = static_cast<Gdiplus::REAL>(scaleDPI(16));
             const Gdiplus::REAL cx = static_cast<Gdiplus::REAL>(item.rcItem.left + item.rcItem.right) / 2;
             const Gdiplus::REAL cy = static_cast<Gdiplus::REAL>(item.rcItem.top + item.rcItem.bottom) / 2;
             Gdiplus::Graphics graphics(item.hDC);
             graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
-            graphics.FillEllipse(&fill, cx - diameter / 2, cy - diameter / 2, diameter, diameter);
-            Gdiplus::FontFamily family(L"Segoe UI");
-            Gdiplus::GraphicsPath question;
-            question.AddString(L"?", 1, &family, Gdiplus::FontStyleBold,
-                diameter * 0.85f, Gdiplus::PointF(0, 0), nullptr);
-            Gdiplus::RectF bounds;
-            if (question.GetBounds(&bounds) == Gdiplus::Ok) {
-                // Center the visible glyph, independently of the font's line spacing.
-                Gdiplus::Matrix placement;
-                placement.Translate(cx - bounds.X - bounds.Width / 2, cy - bounds.Y - bounds.Height / 2);
-                question.Transform(&placement);
-                graphics.FillPath(&mark, &question);
-            }
+            // Center the original glyph's visible outline without changing its proportions.
+            graphics.TranslateTransform(cx - infoBounds.X - infoBounds.Width / 2,
+                cy - infoBounds.Y - infoBounds.Height / 2);
+            graphics.FillPath(&fill, &infoGlyph);
         }
         if ((item.itemState & ODS_FOCUS) && !(item.itemState & ODS_NOFOCUSRECT))
             DrawFocusRect(item.hDC, &item.rcItem);
