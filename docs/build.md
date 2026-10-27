@@ -9,6 +9,9 @@ installer uses NSIS.
 - Visual Studio 2022 Build Tools, installed in its standard location under
   `%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools`.
 - Inkscape, normally at `C:\Program Files\Inkscape\bin\inkscape.com`.
+- Python with Pillow, included in the Windows Inkscape distribution. The build
+  uses `python.exe` beside `inkscape.com` by default; set `ICON_PYTHON` to use
+  another Python interpreter with Pillow installed. NumPy is not required.
 - ImageMagick, with the `magick` command available on PATH.
 - NSIS, normally at `%ProgramFiles(x86)%\NSIS\makensis.exe`, for the installer.
 
@@ -34,9 +37,25 @@ set "MAKENSIS=D:\Tools\NSIS\makensis.exe"
 build.cmd installer
 ```
 
-The Makefile exports `src\res\FileSpacer.svg` to a multi-resolution ICO using
-Inkscape and ImageMagick. `build.cmd installer` always repackages the current
-Release executable and accompanying notices; it does not launch the installer.
+The Makefile runs `generate-icon.py` to regenerate `src\res\FileSpacer.ico` with
+ten sizes (16, 20, 24, 32, 40, 48, 64, 96, 128 and 256 pixels). For 16 to 48
+pixels, the script draws the folder using the optical geometry and colors in
+`FOLDER_MASTERS` and `draw_folder`: edges fit each pixel grid, the back is flat,
+and the front has a simplified vertical gradient. It reads the logo polygons,
+colors and matrix from `src\res\FileSpacer.svg`, rasterizes them on one shared
+grid at 32 times the target size, and reduces them with Box filtering. These
+small variants are recalculated from the script and SVG, without stored PNGs.
+
+Inkscape renders the four larger sizes directly from the SVG. ImageMagick packs
+32-bit images with alpha, with lossless PNG compression for the 256-pixel image.
+The script checks all ten decoded RGBA images against its generated PNGs before
+replacing the ICO and removes its temporary files. Changes to the SVG, generator
+or Makefile regenerate the icon; a clean build uses the same generation path.
+The small-folder optical masters are specific to the centered 212 x 212 artwork:
+update the script when changing that folder design or its coordinate system.
+
+`build.cmd installer` always repackages the current Release executable and
+accompanying notices; it does not launch the installer.
 
 ## SQLite
 
