@@ -41,10 +41,18 @@ The Makefile runs `generate-icon.py` to regenerate `src\res\FileSpacer.ico` with
 ten sizes (16, 20, 24, 32, 40, 48, 64, 96, 128 and 256 pixels). For 16 to 48
 pixels, the script draws the folder using the optical geometry and colors in
 `FOLDER_MASTERS` and `draw_folder`: edges fit each pixel grid, the back is flat,
-and the front has a simplified vertical gradient. It reads the logo polygons,
-colors and matrix from `src\res\FileSpacer.svg`, rasterizes them on one shared
-grid at 32 times the target size, and reduces them with Box filtering. These
-small variants are recalculated from the script and SVG, without stored PNGs.
+and the front has a simplified vertical gradient. It reads the nine projected
+tesseract polygons and their colors from `src\res\FileSpacer.svg`, rasterizes
+them on one shared grid at 32 times the target size, and reduces them with Box
+filtering. The logo coordinates are already in the SVG coordinate system; an
+absent matrix transform is treated as the identity. These small variants are
+recalculated from the script and SVG, without stored PNGs.
+
+The SVG includes the original 4D vertices, their 3D projection and the camera
+parameters in its `tesseract-scene` metadata. The purple-to-green cube edge ratio
+is 11/20 in 3D, before the final 2D projection; the camera uses a 45-degree azimuth,
+30-degree elevation and distance of six outer-cube edges. The ICO generator reads
+the resulting 2D polygons, preserving the accepted geometry at every icon size.
 
 Inkscape renders the four larger sizes directly from the SVG. ImageMagick packs
 32-bit images with alpha, with lossless PNG compression for the 256-pixel image.
