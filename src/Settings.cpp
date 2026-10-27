@@ -23,6 +23,8 @@ const wchar_t KEY_DIRECTORY_VERB[]      = L"Directory\\shell\\filespacer";
 const wchar_t KEY_DIRECTORY_BROWSER[]   = L"Software\\Classes\\Directory\\Shell";
 const wchar_t KEY_COMPRESSED_BROWSER[]  = L"Software\\Classes\\CompressedFolder\\Shell";
 const wchar_t KEY_DRIVE_BROWSER[]       = L"Software\\Classes\\Drive\\Shell";
+const wchar_t KEY_SERVER_BROWSER[]      = L"Software\\Classes\\NetServer\\Shell";
+const wchar_t KEY_SHARE_BROWSER[]       = L"Software\\Classes\\NetShare\\Shell";
 const wchar_t DATA_BROWSER_SET[]        = L"filespacer";
 const wchar_t DATA_BROWSER_CLEAR[]      = L"none";
 
@@ -231,8 +233,14 @@ LSTATUS resetGlobalOptions() {
 SETTINGS_BOOL_VALUE(DeselectOnOpen, L"DeselectOnOpen", DEFAULT_DESELECT_ON_OPEN)
 
 bool supportsDefaultBrowser() {
-    return !RegGetValue(HKEY_CLASSES_ROOT, KEY_DIRECTORY_VERB, L"",
-        RRF_RT_ANY, nullptr, nullptr, nullptr);
+    const wchar_t *const verbs[] = {KEY_DIRECTORY_VERB,
+        L"NetServer\\shell\\filespacer", L"NetShare\\shell\\filespacer"};
+    for (const wchar_t *verb : verbs) {
+        if (RegGetValue(HKEY_CLASSES_ROOT, verb, L"",
+                RRF_RT_ANY, nullptr, nullptr, nullptr) != ERROR_SUCCESS)
+            return false;
+    }
+    return true;
 }
 
 namespace {
@@ -313,6 +321,8 @@ DefaultBrowserResult synchronizeContextMenus() {
     result.directory = synchronizeType(L"Directory", changed);
     result.compressedFolder = synchronizeType(L"CompressedFolder", changed);
     result.drive = synchronizeType(L"Drive", changed);
+    result.networkServer = synchronizeType(L"NetServer", changed);
+    result.networkShare = synchronizeType(L"NetShare", changed);
     if (changed) SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     return result;
 }
@@ -325,10 +335,14 @@ DefaultBrowserResult setDefaultBrowser(bool value) {
     result.directory = RegSetKeyValue(HKEY_CURRENT_USER, KEY_DIRECTORY_BROWSER, L"", REG_SZ, data, size);
     result.compressedFolder = RegSetKeyValue(HKEY_CURRENT_USER, KEY_COMPRESSED_BROWSER, L"", REG_SZ, data, size);
     result.drive = RegSetKeyValue(HKEY_CURRENT_USER, KEY_DRIVE_BROWSER, L"", REG_SZ, data, size);
+    result.networkServer = RegSetKeyValue(HKEY_CURRENT_USER, KEY_SERVER_BROWSER, L"", REG_SZ, data, size);
+    result.networkShare = RegSetKeyValue(HKEY_CURRENT_USER, KEY_SHARE_BROWSER, L"", REG_SZ, data, size);
     const DefaultBrowserResult menus = synchronizeContextMenus();
     if (result.directory == ERROR_SUCCESS) result.directory = menus.directory;
     if (result.compressedFolder == ERROR_SUCCESS) result.compressedFolder = menus.compressedFolder;
     if (result.drive == ERROR_SUCCESS) result.drive = menus.drive;
+    if (result.networkServer == ERROR_SUCCESS) result.networkServer = menus.networkServer;
+    if (result.networkShare == ERROR_SUCCESS) result.networkShare = menus.networkShare;
     // Associations can change even when the menus were already synchronized.
     SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     return result;
