@@ -9,12 +9,13 @@
 #include "main.h"
 #include "WinUtils.h"
 #include "UIStrings.h"
+#include "DPI.h"
 #include <atlbase.h>
 #include <prsht.h>
 #include <shellapi.h>
 #include <shobjidl_core.h>
-#include <uxtheme.h>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace filespacer {
@@ -164,10 +165,61 @@ void notifyWindowSettingsChanged() {
     }
 }
 
+static bool searchHistoryLimit(HWND hwnd, DWORD *value);
+
+struct GeneralHelp {
+    struct WindowDeleter { void operator()(HWND window) const { DestroyWindow(window); } };
+    std::unique_ptr<std::remove_pointer<HWND>::type, WindowDeleter> tooltip;
+    TOOLINFOW tool = {sizeof(TOOLINFOW)};
+    int activeControl = 0;
+
+    explicit GeneralHelp(HWND page) {
+        // The standard question-mark icon is shared with Windows.
+        HICON icon = static_cast<HICON>(checkLE(LoadImageW(nullptr, IDI_QUESTION, IMAGE_ICON,
+            scaleDPI(16), scaleDPI(16), LR_SHARED)));
+        for (int id : {IDC_SMART_WINDOW_PLACEMENT_HELP, IDC_GROUP_FOLDER_WINDOWS_HELP})
+            SendDlgItemMessageW(page, id, BM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(icon));
+        tooltip.reset(checkLE(CreateWindowExW(WS_EX_TOPMOST | WS_EX_NOACTIVATE, TOOLTIPS_CLASSW, nullptr,
+            WS_POPUP | TTS_NOPREFIX | TTS_BALLOON | TTS_CLOSE,
+            CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+            GetParent(page), nullptr, GetModuleHandleW(nullptr), nullptr)));
+        if (!tooltip) return;
+        tool.uFlags = TTF_TRACK;
+        tool.hwnd = page;
+        tool.uId = 1;
+        tool.lpszText = const_cast<wchar_t *>(getString(IDS_SMART_WINDOW_PLACEMENT_HELP));
+        checkLE(SendMessageW(tooltip.get(), TTM_ADDTOOLW, 0, reinterpret_cast<LPARAM>(&tool)));
+        SendMessageW(tooltip.get(), TTM_SETMAXTIPWIDTH, 0, scaleDPI(360));
+    }
+    void hide() {
+        if (tooltip) SendMessageW(tooltip.get(), TTM_TRACKACTIVATE, FALSE, reinterpret_cast<LPARAM>(&tool));
+        activeControl = 0;
+    }
+    void toggle(int control) {
+        if (!tooltip) return;
+        const bool wasVisible = activeControl == control && IsWindowVisible(tooltip.get());
+        hide();
+        if (wasVisible) return;
+        const bool placement = control == IDC_SMART_WINDOW_PLACEMENT_HELP;
+        tool.lpszText = const_cast<wchar_t *>(getString(placement
+            ? IDS_SMART_WINDOW_PLACEMENT_HELP : IDS_GROUP_FOLDER_WINDOWS_HELP));
+        SendMessageW(tooltip.get(), TTM_UPDATETIPTEXTW, 0, reinterpret_cast<LPARAM>(&tool));
+        SendMessageW(tooltip.get(), TTM_SETTITLEW, TTI_NONE, reinterpret_cast<LPARAM>(getString(placement
+            ? IDS_SMART_WINDOW_PLACEMENT_HELP_TITLE : IDS_GROUP_FOLDER_WINDOWS_HELP_TITLE)));
+        const RECT anchor = windowRect(GetDlgItem(tool.hwnd, control));
+        SendMessageW(tooltip.get(), TTM_TRACKPOSITION, 0,
+            MAKELPARAM((anchor.left + anchor.right) / 2, anchor.bottom));
+        activeControl = control;
+        SendMessageW(tooltip.get(), TTM_TRACKACTIVATE, TRUE, reinterpret_cast<LPARAM>(&tool));
+    }
+};
+
 INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    auto help = reinterpret_cast<GeneralHelp *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
     switch (message) {
         case WM_INITDIALOG: {
-            checkHR(EnableThemeDialogTexture(hwnd, ETDT_DISABLE));
+            auto state = std::make_unique<GeneralHelp>(hwnd);
+            SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(state.release()));
             for (int i = 0; i < _countof(SPECIAL_PATHS); i++) {
                 COMBOBOXEXITEM item = {CBEIF_TEXT, -1, (wchar_t *)SPECIAL_PATHS[i]};
                 SendDlgItemMessage(hwnd, IDC_START_FOLDER_PATH, CBEM_INSERTITEM, 0, (LPARAM)&item);
@@ -190,14 +242,27 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_LOCK_ENABLED));
             CheckDlgButton(hwnd, IDC_LIVE_NAME_SEARCH,
                 settings::getLiveNameSearch() ? BST_CHECKED : BST_UNCHECKED);
+            SetDlgItemInt(hwnd, IDC_SEARCH_HISTORY_LIMIT, settings::getSearchHistoryLimit(), FALSE);
             return TRUE;
         }
         case WM_NOTIFY: {
             NMHDR *notif = (NMHDR *)lParam;
+            if (help && notif->hwndFrom == help->tooltip.get() && notif->code == TTN_POP) {
+                help->activeControl = 0;
+                return TRUE;
+            }
             if (notif->code == PSN_KILLACTIVE) {
-                SetWindowLongPtr(hwnd, DWLP_MSGRESULT, FALSE);
+                if (help) help->hide();
+                DWORD limit = 0;
+                SetWindowLongPtr(hwnd, DWLP_MSGRESULT, !searchHistoryLimit(hwnd, &limit));
                 return TRUE;
             } else if (notif->code == PSN_APPLY) {
+                if (help) help->hide();
+                DWORD limit = 0;
+                if (!searchHistoryLimit(hwnd, &limit)) {
+                    SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
+                    return TRUE;
+                }
                 const bool lockEnabled = !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_LOCK_ENABLED);
                 if (lockEnabled != settings::getWindowStateLockEnabled()) {
                     if (!lockEnabled) {
@@ -222,6 +287,12 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     }
                     notifyWindowSettingsChanged();
                 }
+                const bool historyChanged = limit != settings::getSearchHistoryLimit();
+                if (!settings::setSearchHistoryLimit(limit)) {
+                    reportFolderStateError(GetParent(hwnd));
+                    SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
+                    return TRUE;
+                }
                 int pathLength = GetWindowTextLength(GetDlgItem(hwnd, IDC_START_FOLDER_PATH));
                 std::vector<wchar_t> startingFolder(static_cast<size_t>(pathLength) + 1);
                 if (GetDlgItemText(hwnd, IDC_START_FOLDER_PATH,
@@ -231,7 +302,8 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 bool liveNameSearch = !!IsDlgButtonChecked(hwnd, IDC_LIVE_NAME_SEARCH);
                 const bool smartPlacement = !!IsDlgButtonChecked(hwnd, IDC_SMART_WINDOW_PLACEMENT);
                 const bool lockBadgeEnabled = !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_LOCK_BADGE_ENABLED);
-                bool windowSettingsChanged = liveNameSearch != settings::getLiveNameSearch()
+                bool windowSettingsChanged = historyChanged
+                    || liveNameSearch != settings::getLiveNameSearch()
                     || smartPlacement != settings::getSmartWindowPlacement()
                     || lockBadgeEnabled != settings::getWindowStateLockBadgeEnabled();
                 settings::setGroupFolderWindows(groupFolderWindows);
@@ -256,17 +328,18 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             return FALSE;
         }
         case WM_COMMAND:
+            if (LOWORD(wParam) == IDC_SMART_WINDOW_PLACEMENT_HELP
+                    || LOWORD(wParam) == IDC_GROUP_FOLDER_WINDOWS_HELP) {
+                if (help && HIWORD(wParam) == BN_CLICKED) help->toggle(LOWORD(wParam));
+                else if (help && HIWORD(wParam) == BN_KILLFOCUS) help->hide();
+                return TRUE;
+            }
             if (LOWORD(wParam) == IDC_START_FOLDER_BROWSE && HIWORD(wParam) == BN_CLICKED) {
                 CComHeapPtr<wchar_t> selected;
                 if (chooseFolder(GetParent(hwnd), selected)) {
                     setCBPath(GetDlgItem(hwnd, IDC_START_FOLDER_PATH), selected);
                     PropSheet_Changed(GetParent(hwnd), hwnd);
                 }
-                return TRUE;
-            } else if (LOWORD(wParam) == IDC_EXPLORER_SETTINGS && HIWORD(wParam) == BN_CLICKED) {
-                // https://docs.microsoft.com/en-us/windows/win32/shell/executing-control-panel-items#folder-options
-                ShellExecute(nullptr, L"open",
-                    L"rundll32.exe", L"shell32.dll,Options_RunDLL 7", nullptr, SW_SHOWNORMAL);
                 return TRUE;
             } else if (HIWORD(wParam) == EN_CHANGE
                     || LOWORD(wParam) == IDC_START_FOLDER_PATH && pathCBChanged(wParam, lParam)
@@ -284,6 +357,10 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 return TRUE;
             }
             return FALSE;
+        case WM_DESTROY:
+            SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
+            delete help;
+            return TRUE;
         default:
             return FALSE;
     }
@@ -339,7 +416,6 @@ static bool readFolderWindowSize(HWND hwnd, SIZE &size) {
 INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
         case WM_INITDIALOG: {
-            checkHR(EnableThemeDialogTexture(hwnd, ETDT_DISABLE));
             const SIZE minimum = minimumFolderWindowSize();
             auto widthLabel = formatString(IDS_FOLDER_WIDTH_LABEL, minimum.cx);
             auto heightLabel = formatString(IDS_FOLDER_HEIGHT_LABEL, minimum.cy);
@@ -490,7 +566,6 @@ static bool searchHistoryLimit(HWND hwnd, DWORD *value) {
 INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
         case WM_INITDIALOG:
-            checkHR(EnableThemeDialogTexture(hwnd, ETDT_DISABLE));
             CheckDlgButton(hwnd, IDC_EVERYTHING_ENABLED,
                 settings::getEverythingEnabled() ? BST_CHECKED : BST_UNCHECKED);
             SetDlgItemTextW(hwnd, IDC_EVERYTHING_PATH, settings::getEverythingPath().get());
@@ -502,25 +577,13 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 reinterpret_cast<LPARAM>(getString(IDS_EVERYTHING_EVERYWHERE)));
             SendDlgItemMessageW(hwnd, IDC_EVERYTHING_SCOPE, CB_SETCURSEL,
                 static_cast<WPARAM>(settings::getEverythingScope()), 0);
-            SetDlgItemInt(hwnd, IDC_SEARCH_HISTORY_LIMIT, settings::getSearchHistoryLimit(), FALSE);
             return TRUE;
         case WM_NOTIFY: {
             NMHDR *notif = (NMHDR *)lParam;
             if (notif->code == PSN_KILLACTIVE) {
-                DWORD limit = 0;
-                SetWindowLongPtr(hwnd, DWLP_MSGRESULT, !searchHistoryLimit(hwnd, &limit));
+                SetWindowLongPtr(hwnd, DWLP_MSGRESULT, FALSE);
                 return TRUE;
             } else if (notif->code == PSN_APPLY) {
-                DWORD limit = 0;
-                if (!searchHistoryLimit(hwnd, &limit)) {
-                    SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
-                    return TRUE;
-                }
-                if (!settings::setSearchHistoryLimit(limit)) {
-                    reportFolderStateError(GetParent(hwnd));
-                    SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
-                    return TRUE;
-                }
                 const int length = GetWindowTextLengthW(GetDlgItem(hwnd, IDC_EVERYTHING_PATH));
                 std::vector<wchar_t> path(static_cast<size_t>(length) + 1);
                 GetDlgItemTextW(hwnd, IDC_EVERYTHING_PATH, path.data(), length + 1);
@@ -543,6 +606,12 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             return FALSE;
         }
         case WM_COMMAND:
+            if (LOWORD(wParam) == IDC_EXPLORER_SETTINGS && HIWORD(wParam) == BN_CLICKED) {
+                // https://docs.microsoft.com/en-us/windows/win32/shell/executing-control-panel-items#folder-options
+                ShellExecute(nullptr, L"open",
+                    L"rundll32.exe", L"shell32.dll,Options_RunDLL 7", nullptr, SW_SHOWNORMAL);
+                return TRUE;
+            }
             if (LOWORD(wParam) == IDC_EVERYTHING_DETECT && HIWORD(wParam) == BN_CLICKED) {
                 const auto path = findEverything();
                 if (path.empty()) MessageBoxW(GetParent(hwnd), getString(IDS_EVERYTHING_NOT_FOUND),
@@ -567,8 +636,7 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             }
             if ((LOWORD(wParam) == IDC_EVERYTHING_ENABLED && HIWORD(wParam) == BN_CLICKED)
                     || (LOWORD(wParam) == IDC_EVERYTHING_SCOPE && HIWORD(wParam) == CBN_SELCHANGE)
-                    || ((LOWORD(wParam) == IDC_EVERYTHING_PATH || LOWORD(wParam) == IDC_SEARCH_HISTORY_LIMIT)
-                        && HIWORD(wParam) == EN_CHANGE))
+                    || (LOWORD(wParam) == IDC_EVERYTHING_PATH && HIWORD(wParam) == EN_CHANGE))
                 PropSheet_Changed(GetParent(hwnd), hwnd);
             if (LOWORD(wParam) == IDC_SET_DEFAULT_BROWSER && HIWORD(wParam) == BN_CLICKED) {
                 changeDefaultBrowser(GetParent(hwnd), true);
@@ -586,7 +654,6 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
         case WM_INITDIALOG: {
-            checkHR(EnableThemeDialogTexture(hwnd, ETDT_DISABLE));
             SendDlgItemMessage(hwnd, IDC_LEGAL_INFO, EM_SETTABSTOPS, 1, (LPARAM)tempPtr(16u));
             CheckDlgButton(hwnd, IDC_AUTO_UPDATE,
                 settings::getUpdateCheckEnabled() ? BST_CHECKED : BST_UNCHECKED);
