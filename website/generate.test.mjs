@@ -19,7 +19,7 @@ async function fixture(t) {
   }
   return root;
 }
-test('real documents keep integration nesting, local anchors, images and GitHub references', async t => {
+test('real documents keep guide nesting, local anchors, images and GitHub references', async t => {
   const output = await fs.mkdtemp(path.join(os.tmpdir(), 'filespacer-site-'));
   t.after(() => {
     assert.equal(path.dirname(output), os.tmpdir());
@@ -29,7 +29,7 @@ test('real documents keep integration nesting, local anchors, images and GitHub 
   assert.equal(result.documents, 5);
   const html = await fs.readFile(path.join(output, 'index.html'), 'utf8');
   const nav = await fs.readFile(path.join(output, '_includes/components/site_nav.html'), 'utf8');
-  assert.match(html, /href="#user-guide--window-shortcuts"/);
+  assert.match(html, /href="#user-guide--moving-and-resizing"/);
   assert.match(html, /href="#user-guide--everything"/);
   assert.match(html, /href="#user-guide--nilesoft-shell"/);
   assert.match(html, /https:\/\/github\.com\/LeBenco\/FileSpacer\/blob\/main\/docs\/build\.md/);
@@ -37,6 +37,11 @@ test('real documents keep integration nesting, local anchors, images and GitHub 
   assert.doesNotMatch(html, /data-source="(?:docs\/(?:build|native-shell-view)|tests\/)/);
   assert.match(nav, /href="#user-guide--integration"[^]*href="#user-guide--windows-integration"[^]*href="#user-guide--everything"[^]*href="#user-guide--nilesoft-shell"/);
   assert.match(html, /<h4 id="user-guide--everything"/);
+  const windows = html.match(/<h3 id="user-guide--managing-windows">[^]*?(?=<h3 |<\/section>)/)?.[0];
+  assert.ok(windows, 'The user guide groups window controls under Managing windows');
+  assert.match(windows, /<h4 id="user-guide--moving-and-resizing"/);
+  assert.match(windows, /<h4 id="user-guide--locking-a-saved-layout"/);
+  assert.match(html, /href="#user-guide--locking-a-saved-layout"/);
   assert.match(html, /assets\/content\/src\/res\/FileSpacer\.svg/);
   await fs.access(path.join(output, 'assets/content/src/res/FileSpacer.svg'));
 });
