@@ -16,12 +16,9 @@
 #include <shobjidl_core.h>
 #include <uxtheme.h>
 #include <vsstyle.h>
-#pragma warning(push)
-#pragma warning(disable: 4458) // Shadowed members in Windows SDK GDI+ headers.
-#include <gdiplus.h>
-#pragma warning(pop)
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace filespacer {
@@ -173,11 +170,13 @@ static bool searchHistoryLimit(HWND hwnd, DWORD *value);
 
 struct GeneralHelp {
     struct WindowDeleter { void operator()(HWND window) const { DestroyWindow(window); } };
+    struct FontDeleter { void operator()(HFONT font) const { DeleteObject(font); } };
+    using FontPtr = std::unique_ptr<std::remove_pointer<HFONT>::type, FontDeleter>;
     std::unique_ptr<std::remove_pointer<HWND>::type, WindowDeleter> tooltip;
     TOOLINFOW tool = {sizeof(TOOLINFOW)};
     int activeControl = 0;
-    Gdiplus::GraphicsPath infoGlyph;
-    Gdiplus::RectF infoBounds;
+    FontPtr infoFont;
+    GLYPHMETRICS infoMetrics = {};
 
     explicit GeneralHelp(HWND page) {
         layout(page);
@@ -229,14 +228,33 @@ struct GeneralHelp {
         const HGDIOBJ previous = SelectObject(context.get(), font);
         TEXTMETRICW metrics = {};
         checkLE(GetTextMetricsW(context.get(), &metrics));
-        // Use Microsoft's InfoSolid glyph at the dialog's text size, with the Windows 10 font as fallback.
-        Gdiplus::FontFamily fluent(L"Segoe Fluent Icons"), mdl2(L"Segoe MDL2 Assets");
-        const Gdiplus::FontFamily *family = fluent.GetLastStatus() == Gdiplus::Ok ? &fluent : &mdl2;
-        infoGlyph.Reset();
-        infoBounds = Gdiplus::RectF();
-        if (infoGlyph.AddString(L"\uF167", 1, family, Gdiplus::FontStyleRegular,
-                static_cast<Gdiplus::REAL>(metrics.tmHeight), Gdiplus::PointF(0, 0), nullptr) == Gdiplus::Ok)
-            infoGlyph.GetBounds(&infoBounds);
+        // Let GDI grid-fit the official InfoSolid glyph at an integer 16-DIP size.
+        LOGFONTW icon = {};
+        icon.lfHeight = -scaleDPI(16);
+        icon.lfWeight = FW_NORMAL;
+        icon.lfCharSet = DEFAULT_CHARSET;
+        icon.lfQuality = DEFAULT_QUALITY; // Follow Windows font-smoothing settings.
+        MAT2 identity = {};
+        identity.eM11.value = identity.eM22.value = 1;
+        infoFont.reset();
+        infoMetrics = {};
+        for (const wchar_t *family : {L"Segoe Fluent Icons", L"Segoe MDL2 Assets"}) {
+            wcscpy_s(icon.lfFaceName, family);
+            FontPtr candidate(checkLE(CreateFontIndirectW(&icon)));
+            if (!candidate) continue;
+            SelectObject(context.get(), candidate.get());
+            wchar_t actualFace[LF_FACESIZE] = {};
+            // CreateFont can silently substitute a missing font; require the requested icon family.
+            const bool found = checkLE(GetTextFaceW(context.get(), _countof(actualFace), actualFace))
+                && lstrcmpiW(actualFace, family) == 0
+                && checkLE(GetGlyphOutlineW(context.get(), L'\uF167', GGO_METRICS,
+                    &infoMetrics, 0, nullptr, &identity) != GDI_ERROR);
+            SelectObject(context.get(), font);
+            if (found) {
+                infoFont = std::move(candidate);
+                break;
+            }
+        }
         const int labels[] = {IDC_SMART_WINDOW_PLACEMENT, IDC_GROUP_FOLDER_WINDOWS};
         const int buttons[] = {IDC_SMART_WINDOW_PLACEMENT_HELP, IDC_GROUP_FOLDER_WINDOWS_HELP};
         for (int index = 0; index < _countof(labels); ++index) {
@@ -258,7 +276,7 @@ struct GeneralHelp {
             MapWindowPoints(nullptr, page, reinterpret_cast<POINT *>(&bounds), 2);
             const int labelWidth = check.cx + scaleDPI(3) + extent.right;
             const int size = scaleDPI(20);
-            const int padding = static_cast<int>((size - infoBounds.Width) / 2 + 0.5f);
+            const int padding = (size - static_cast<int>(infoMetrics.gmBlackBoxX)) / 2;
             checkLE(SetWindowPos(label, nullptr, 0, 0, labelWidth, bounds.bottom - bounds.top,
                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE));
             checkLE(SetWindowPos(GetDlgItem(page, buttons[index]), HWND_TOP,
@@ -274,18 +292,21 @@ struct GeneralHelp {
         if (!saved) return false;
         if (FAILED(DrawThemeParentBackground(item.hwndItem, item.hDC, &item.rcItem)))
             FillRect(item.hDC, &item.rcItem, GetSysColorBrush(COLOR_BTNFACE));
-        {
+        if (infoFont) {
             const COLORREF ink = GetSysColor(item.itemState & ODS_DISABLED ? COLOR_GRAYTEXT
                 : item.itemState & ODS_SELECTED ? COLOR_HOTLIGHT : COLOR_BTNTEXT);
-            Gdiplus::SolidBrush fill(Gdiplus::Color(255, GetRValue(ink), GetGValue(ink), GetBValue(ink)));
-            const Gdiplus::REAL cx = static_cast<Gdiplus::REAL>(item.rcItem.left + item.rcItem.right) / 2;
-            const Gdiplus::REAL cy = static_cast<Gdiplus::REAL>(item.rcItem.top + item.rcItem.bottom) / 2;
-            Gdiplus::Graphics graphics(item.hDC);
-            graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
-            // Center the original glyph's visible outline without changing its proportions.
-            graphics.TranslateTransform(cx - infoBounds.X - infoBounds.Width / 2,
-                cy - infoBounds.Y - infoBounds.Height / 2);
-            graphics.FillPath(&fill, &infoGlyph);
+            SelectObject(item.hDC, infoFont.get());
+            SetBkMode(item.hDC, TRANSPARENT);
+            SetTextColor(item.hDC, ink);
+            SetTextAlign(item.hDC, TA_LEFT | TA_BASELINE | TA_NOUPDATECP);
+            // Center the grid-fitted ink bounds using an integer baseline and origin.
+            const int x = item.rcItem.left
+                + (item.rcItem.right - item.rcItem.left - static_cast<int>(infoMetrics.gmBlackBoxX)) / 2
+                - infoMetrics.gmptGlyphOrigin.x;
+            const int y = item.rcItem.top
+                + (item.rcItem.bottom - item.rcItem.top - static_cast<int>(infoMetrics.gmBlackBoxY)) / 2
+                + infoMetrics.gmptGlyphOrigin.y;
+            checkLE(ExtTextOutW(item.hDC, x, y, 0, nullptr, L"\uF167", 1, nullptr));
         }
         if ((item.itemState & ODS_FOCUS) && !(item.itemState & ODS_NOFOCUSRECT))
             DrawFocusRect(item.hDC, &item.rcItem);
