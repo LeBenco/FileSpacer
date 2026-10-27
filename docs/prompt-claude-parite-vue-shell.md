@@ -1,3 +1,15 @@
+# Demande historique : parité de la vue Shell
+
+Ce document conserve la demande initiale de recherche pour la migration 1.1.
+Il ne décrit pas l'état actuel du produit : le clic d'activation et l'ancrage
+du défilement en vues Détails/Liste ont été rétablis, puis le fond opaque en
+sélection simple a été publié en 1.1.3. Le dépliage personnalisé de tous les noms
+en sélection multiple et la restitution de l'offset exact ne sont pas livrés.
+Voir [l'architecture actuelle](native-shell-view.md) et le
+[guide utilisateur](user-guide.md). La demande d'origine est conservée ci-dessous.
+
+---
+
 Je développe FileSpacer, un gestionnaire de fichiers spatial C++/Win32 pour
 Windows 10 x64, issu de ChromaFiler et inspiré de Nautilus/GNOME 2. Chaque dossier
 possède une fenêtre propre, dont l'état est conservé dans SQLite.
