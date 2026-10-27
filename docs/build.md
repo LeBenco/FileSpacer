@@ -65,6 +65,34 @@ update the script when changing that folder design or its coordinate system.
 `build.cmd installer` always repackages the current Release executable and
 accompanying notices; it does not launch the installer.
 
+Packaging also runs `generate-installer-assets.py`, using the same SVG, optical
+small-icon masters and existing Inkscape/Pillow/ImageMagick tools. It generates
+a distinct ten-size installer ICO with a purple download-arrow badge, English
+and French wizard sidebars, and a header bitmap in `build\installer-assets`.
+These generated resources are not checked in; the application icon is unchanged.
+
+The installer saves its three component selections in the existing
+`install-info.ini` under `[Components]`: `StartMenu`, `ContextMenu` and
+`DefaultFileManager`, each `0` or `1`. Upgrades restore them after MultiUser
+restores the installation mode and directory. Older installations are migrated
+from their Start Menu shortcut and registered folder commands. The saved language
+is restored too. Revisiting a wizard page keeps edits made in that run; selecting
+the default manager still requires the context-menu component. Silent upgrades
+preserve the current default association even if it changed after installation.
+
+Run the isolated NSIS logic checks from CMD:
+
+```cmd
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\installer\Run-InstallerTests.ps1
+```
+
+This compiles the production save/restore blocks into a harmless NSIS executable,
+checks both installation scopes, legacy migration, invalid metadata, language,
+page revisits and silent/interactive default handling. It writes only fixtures
+under `build\installer-tests`, reads existing Shell registration without changing
+it, and does not install or uninstall FileSpacer. It complements installation
+tests on a client; it does not constitute an end-to-end upgrade test.
+
 ## SQLite
 
 SQLite 3.53.4 is bundled in `third_party\sqlite`. The unmodified upstream
