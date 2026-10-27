@@ -10,7 +10,8 @@ tests.cmd
 ```
 
 Le lanceur construit l'application par `build.cmd debug`, initialise MSVC x64,
-et lance les **111 jeux** indépendants. Ils ne doivent pas être complétés par
+et lance les jeux indépendants sélectionnés dans le catalogue du checkout.
+Ils ne doivent pas être complétés par
 un second passage des mêmes bancs natifs. Chaque jeu possède son processus
 PowerShell et son dossier de résultats sous `build/regression/<date>-<id>`.
 
@@ -53,13 +54,13 @@ tests.cmd -Pattern "24-*"
 | 04-shell-sta | 1 | Références Shell/STA et durée de vie du processus. |
 | 05-dimensions | 1 | Validation des dimensions des préférences. |
 | 06-etat-vue | 1 | Captures partielles et erreurs de restauration. |
-| 07-fenetres | 5 | Géométrie, commandes asynchrones, fermetures initiales/après commande, défilement retrouvé à la réouverture. |
+| 07-fenetres | 6 | Géométrie, commandes asynchrones, fermetures initiales/après commande, défilement retrouvé à la réouverture, titre visible et barre d’outils sur toute la largeur après maximisation, réduction et restauration. |
 | 08-suppression | 2 | Stockage, suppressions directes et d’ancêtres via le Shell ou le système de fichiers, fermeture groupée et réouverture dans un même processus, conservation des fenêtres voisines et nettoyage SQLite. |
 | 09-historique | 1 | Historique des fenêtres fermées. |
 | 10-manifeste-maj | 1 | Validation du manifeste de mise à jour. |
 | 11-session-maj | 1 | Conservation de la session pendant une mise à jour. |
 | 12-navigation-spatiale | 6 | Politique Ctrl, parent existant et remontée sans sélection automatique. |
-| 13-preferences | 6 | Apply/Cancel, propagation entre processus, recherche et persistance sous filtre. |
+| 13-preferences | 6 + 1 local | Apply/Cancel, propagation entre processus, recherche et persistance sous filtre ; contrôle local de l’icône À propos à 48 pixels à 96 DPI, sans chevauchement des textes. |
 | 14-disposition | 1 | Visibilité et disposition des contrôles de FileSpacer. |
 | 15-deplacement-alt | 32 | Déplacement, sélection, propriétés et exclusions des gestes Alt. |
 | 16-redimensionnement-alt | 18 | Redimensionnement, annulation, exclusions et géométrie persistante. |
@@ -73,6 +74,13 @@ tests.cmd -Pattern "24-*"
 | 24-raccourcis | 3 | Onglet natif FR/EN, 2 304 couples de réglages, persistance atomique, capture directe, conflits, valeurs par défaut par action, annulation, 64 gestes réels dans deux processus et comparaison des propriétés, de la sélection, de la géométrie et des fichiers avec le Shell sans raccourcis, y compris après mouvement du second appui. |
 | 25-recherche-integration | 5 | Historique SQLite isolé, migration, entrées Win32, arguments et erreurs, parcours Shell réel, préférences 0/5/20, application Everything réelle et suggestions sans chevron au focus/clic. |
 | 26-placement-fenetres | 2 | Placement hybride libre/encombré, mise à jour de la géométrie, retrait/réintégration, réconciliation, bords, coordonnées négatives et tailles ; contrôles fonctionnels sans mesure de temps ni oracle d’optimalité ; libellé et option Général, maintenance À propos, processus distincts, réduction, remplacement spatial et priorité de la position mémorisée sur le vrai Shell. |
+| 28-apercu-affichage | 2 | Aperçus natifs au survol du menu Affichage, changements de mode et de taille, sortie d’entrée, annulation par Échap ou clic extérieur, validation au clic, restauration de la vue et préférence Affichage activée par défaut avec Annuler/Appliquer/OK. |
+| 29-menu-gestionnaire | 1 | Bascule vers l’autre gestionnaire dans les menus, défauts indépendants par classe, resynchronisation, ressources EN/FR, commandes et délégations COM conservées, vrais menus Shell et invocation du défaut masqué par les deux voies ShellExecuteEx. |
+
+Le cas `13-preferences/07-APropos.ps1` et les modifications de l’icône qu’il
+vérifie sont présents localement mais pas encore committés. Les comptes du
+catalogue ne constituent pas un résultat de validation : consulter les rapports
+datés dans [l’historique](../../docs/development-history.md).
 
 Le groupe 25 réutilise `Native.ps1`, `EssentialUi.ps1` et le mode `/test` du
 lanceur. Les deux premiers jeux sont internes : ils ne lancent pas Everything.
@@ -141,11 +149,17 @@ La remontée ne sélectionne plus le dossier d'origine pour des raisons d'ergono
 Les six jeux de navigation conservent cette exigence, la sélection d'un parent
 déjà ouvert et l'ouverture du seul dossier explicitement choisi avec Ctrl.
 
-Les noms complets sélectionnés à fond opaque et le défilement exact à la
-réouverture restent absents, par décision explicite de l'utilisateur. L'option
-sans effet est désactivée dans les préférences ; 13/01 vérifie cet état et vérifie
-que « Conserver la sélection à l'activation » est de nouveau active. Ces écarts
-ne sont pas comptabilisés comme des fonctionnalités testées et conformes.
+Le fond opaque du nom sélectionné est disponible depuis 1.1.3 pour une sélection
+simple en mode Icônes. Le groupe 23 vérifie ce rendu et le traitement natif
+conservé en sélection multiple, avec le focus seul et dans les autres cas.
+Le jeu 13/01 vérifie que l'option est disponible, qu'Annuler abandonne les
+éditions et qu'Appliquer enregistre ses changements ; il vérifie aussi la
+disponibilité de « Conserver la sélection à l'activation ».
+
+À la réouverture, le défilement retrouve une ancre de ligne en vues Détails et
+Liste, couverte par 07/05 et le banc 18. La restitution de l'offset exact reste
+absente ; les vues à icônes ouvrent en haut. Le dépliage personnalisé de tous
+les noms d'une sélection multiple n'est pas une fonctionnalité livrée.
 
 Le clic d'activation est couvert par `21-clic-activation/01-FondInactif` : un
 vrai clic (SendInput) sur le fond de la vue d'une fenêtre inactive doit l'activer
