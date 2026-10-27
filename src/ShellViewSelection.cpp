@@ -189,22 +189,52 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         }
         folderView->SetRedraw(FALSE);
         if (!current()) return E_ABORT;
+        // Revealing an item must retain its selection bit: otherwise scrolling
+        // alone would force the complete selection to be rebuilt below.
+        auto reveal = [&](PCUITEMID_CHILD item) {
+            DWORD selection = 0;
+            const HRESULT queried = folderView->GetSelectionState(item, &selection);
+            if (!current()) return E_ABORT;
+            if (FAILED(queried)) return queried;
+            return view->SelectItem(item, (selection & SVSI_SELECT)
+                | SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS);
+        };
         if (last) {
-            record(view->SelectItem(last, SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS));
+            record(reveal(last));
             if (!current()) return E_ABORT;
         }
-        record(view->SelectItem(anchor, SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS));
+        record(reveal(anchor));
         if (!current()) return E_ABORT;
         folderView->SetRedraw(TRUE);
         if (!current()) return E_ABORT;
     }
-    // With no target item, request only the native deselect-all operation.
-    result = view->SelectItem(nullptr, SVSI_DESELECTOTHERS);
+    // Mode changes normally retain selection. Avoid generating a deselection
+    // and one selection notification per item when the exact set is unchanged.
+    int selectedCount = 0;
+    result = folderView->ItemCount(SVGIO_SELECTION, &selectedCount);
     if (!current()) return E_ABORT;
-    if (FAILED(result)) return result;
-    for (const auto &selectedItem : selectedItems) {
-        record(view->SelectItem(selectedItem, SVSI_SELECT | SVSI_NOTAKEFOCUS));
+    bool sameSelection = SUCCEEDED(result) && selectedCount >= 0
+        && static_cast<uint32_t>(selectedCount) == header.selected;
+    if (sameSelection) {
+        for (const auto &selectedItem : selectedItems) {
+            DWORD selection = 0;
+            result = folderView->GetSelectionState(selectedItem, &selection);
+            if (!current()) return E_ABORT;
+            if (FAILED(result) || !(selection & SVSI_SELECT)) {
+                sameSelection = false;
+                break;
+            }
+        }
+    }
+    if (!sameSelection) {
+        // With no target item, request only the native deselect-all operation.
+        result = view->SelectItem(nullptr, SVSI_DESELECTOTHERS);
         if (!current()) return E_ABORT;
+        if (FAILED(result)) return result;
+        for (const auto &selectedItem : selectedItems) {
+            record(view->SelectItem(selectedItem, SVSI_SELECT | SVSI_NOTAKEFOCUS));
+            if (!current()) return E_ABORT;
+        }
     }
     if (focused) {
         DWORD selection = 0;
