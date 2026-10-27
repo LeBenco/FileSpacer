@@ -7,7 +7,8 @@ integration was once uncommitted, but it has since shipped in 1.1.4.
 
 ## Documentation reference — 27 October 2026
 
-The released baseline is **1.1.9**, local tag `v1.1.9` at `ae0213b`.
+The starting released baseline for the sessions below was **1.1.9**, local tag
+`v1.1.9` at `ae0213b`.
 Version 1.1.8 (`v1.1.8` at `9de5d02`) includes the tesseract application icon,
 clarified and themed settings, the optional lock badge and settings ownership by
 the calling folder window. Version 1.1.9 adds default-on View menu hover previews
@@ -1256,3 +1257,36 @@ The failure is retained in `build/commit-all-20261027/internal-vm-authorized.log
 the unchanged assertions and harness were not bypassed or reclassified. Targeted
 passes do not establish a complete suite PASS, and the earlier placement-label
 failure and Everything client prerequisite remain separate limits.
+
+## 2026-10-27 — FileSpacer 1.1.10 release validation
+
+The release notes include alternative file-manager menus, the network-root
+shortcut fix, the 48-pixel About icon, maximized title/toolbar layout and the
+configured Hyper-V regression transport. Both application version definitions
+are 1.1.10. Debug and Release MSVC/NMAKE `/W4` builds completed without warnings;
+the NSIS `/WX` installer build also completed successfully. This supersedes the
+earlier installer-build limitation, but installation, upgrade and uninstallation
+were not exercised end to end.
+
+The final Debug binary passed **12 targeted cases** in `AgentWin10`: three
+runner/artifact cases, the network-menu regression (484 checks each in English
+and French), six window cases, the About icon and real selected/background
+context menus. All five deployments matched the final executable SHA-256;
+runner exits were zero, test state was restored and production data unchanged,
+with no cleanup errors. All 149 PowerShell test scripts parsed without errors.
+These checks do not establish a complete suite PASS: the older menu-reentrance
+extraction harness described above remains incompatible with View previews,
+and the remaining UI scenarios, including real Everything, were not rerun.
+
+clang-tidy and Cppcheck completed independently on all three version-header
+consumers (`main.cpp`, `SettingsDialog.cpp`, `Update.cpp`), using the same real
+SDK/MSVC/ATL headers and official Cppcheck models as the earlier analyses.
+Comparison against the sources before the version bump found no new diagnostic.
+The overall feature verdict remains **REVIEW** for the previously recorded style
+findings; no confirmed new functional defect, incomplete unit, analyzer timeout
+or reduced ATL coverage was introduced during release preparation.
+
+Twelve bug-fix commit messages were prefixed with `fix:` or `fix(test):` before
+publication. File trees, author/committer identities and dates were preserved;
+the other 48 messages in the development range were preserved byte for byte.
+Commit identifiers in earlier entries refer to the original messages.
