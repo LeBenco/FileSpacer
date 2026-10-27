@@ -154,7 +154,8 @@ protected:
         // WM_USER + 7 is the Shell compatibility query for IShellBrowser.
         MSG_QUICK_ACCESS_ICON = WM_APP + 45,
         MSG_ENUM_READY = WM_APP + 46,
-        MSG_ENUM_DONE = WM_APP + 47
+        MSG_ENUM_DONE = WM_APP + 47,
+        MSG_VIEW_MENU_PREVIEW = WM_APP + 48
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
 
@@ -228,6 +229,10 @@ private:
         std::vector<uint8_t> selection;
         std::vector<uint8_t> icons; // Existing icon-position blob, applied once to the new view.
     };
+
+    struct ViewMenuPreview;
+    std::shared_ptr<ViewMenuPreview> viewMenuPreview;
+    ULONG_PTR viewMenuPreviewSerial = 0;
 
     void loadIconPositions();
     void scheduleStateSave(bool icons = false);
