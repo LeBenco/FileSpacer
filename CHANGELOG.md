@@ -4,6 +4,8 @@
 
 ## 1.1.10 — 2026-10-27
 
+- Fix upgrades resetting installer component choices; restore the saved selections and preserve the current default file manager during silent upgrades.
+- Brand the installer with a larger FileSpacer wizard illustration and a distinct application icon with a download arrow.
 - Offer Open in Windows File Explorer in folder context menus when FileSpacer is the default file manager, and Open in FileSpacer otherwise; update the menus when changing the default, after installation and at startup.
 - Fix network server and share shortcuts opening in Windows File Explorer when FileSpacer is the default file manager. Update the installed Folder Context Menu component and select FileSpacer as default again to enable network integration.
 - Enlarge the About tab's application icon to 48 pixels at 100% scaling, with text positioned beside it.
