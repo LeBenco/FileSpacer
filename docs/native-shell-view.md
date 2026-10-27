@@ -1,4 +1,4 @@
-# FileSpacer 1.1 — vue Shell et API publiques
+# FileSpacer — vue Shell et API publiques
 
 ## Architecture retenue
 
@@ -43,15 +43,15 @@ par leurs identités Shell, sans décoder les PIDL ou comparer des noms traduits
 Le dossier FileSpacer source reste ouvert avec sa sélection. Aucun site de
 navigation déduit ou API privée n'est utilisé pour tenter un hébergement interne.
 
-## Écarts acceptés pour 1.1 et clic d'activation rétabli
+## Écarts initiaux de 1.1 et comportements rétablis
 
-L'utilisateur a accepté trois écarts pour la release 1.1, après validation du
-Panneau externe. Deux subsistaient après les premiers correctifs :
+Trois écarts avaient été acceptés pour la release 1.1.0, après validation du
+Panneau externe. Le clic d'activation a ensuite été rétabli ; depuis 1.1.3,
+le fond opaque est également disponible pour un unique nom sélectionné en mode
+Icônes, dans le périmètre décrit ci-dessous.
 
-- Les noms sélectionnés utilisaient le rendu natif Windows. L'affichage spécifique
-  des noms complets avec fond opaque n'était pas disponible : aucune interface
-  publique de la vue (`IVisualProperties`, `FOLDERFLAGS`, `FOLDERVIEWOPTIONS`,
-  messages `SFVM_*`) ne permet d'intervenir dans le dessin des libellés.
+- La sélection multiple et les modes autres qu'Icônes conservent le rendu natif.
+  Aucun volet ni dépliage personnalisé de tous les noms sélectionnés n'est livré.
 - La réouverture restaure sélection et focus, puis, en vues Détails et Liste,
   ramène en haut la première ligne affichée à la fermeture. Capture : première
   entrée de `IFolderView::Items` dont `GetItemPosition` tombe dans la zone
@@ -79,7 +79,7 @@ par le clic d'activation est absorbé ; un second appui est nécessaire.
 `WM_MOUSEACTIVATE` n'atteint pas le cadre à travers les fenêtres du Shell et
 n'est donc pas utilisé.
 
-## Nom complet en sélection simple (modification non publiée)
+## Nom complet en sélection simple (depuis 1.1.3)
 
 L'option existante est réactivée en français et en anglais, sans changer sa
 valeur enregistrée. En vue Icônes, une adaptation facultative de `NM_CUSTOMDRAW`
@@ -108,7 +108,8 @@ Les essais exploratoires précédents restent dans
 
 ## Régression maintenue
 
-La commande de référence est `tests.cmd`, soit **111 jeux**. Elle inclut le
+La commande de référence est `tests.cmd` ; le catalogue courant figure dans le
+[guide des tests](../tests/regression/README.md). Elle inclut le
 banc Shell réel dans la configuration de production : `18-vue-shell-native/02-Persistance`.
 Il teste les réglages, la sélection, le focus, les positions, le filtrage et la
 destruction/recréation avec SQLite. Ne pas ajouter l'exécution du lanceur natif
@@ -128,12 +129,14 @@ de comportement ne sont pas supprimés pour transformer un échec en succès.
 Le double passage de fermeture initiale selon une préférence de rendu désormais
 inactive est remplacé par quatre fermetures de la vue de production.
 
-Les validations Windows ont été communiquées au fil des incréments ; le dernier
-jeu Panneau externe est confirmé passant par l'utilisateur. Le changement des
-deux contrôles de préférences requiert seulement la reprise ciblée du jeu
-`13-preferences/01-FenetresOuvertes` après intégration. Une validation exhaustive
-de toutes les configurations Windows, extensions et DPI n'est pas déduite de
-ces résultats.
+Le jeu `13-preferences/01-FenetresOuvertes` vérifie la disponibilité et
+l'application de l'option de libellé, ainsi que la disponibilité du clic
+d'activation ; son passage ciblé est consigné dans la
+[validation de la sélection simple](validation-single-selection-labels.md).
+Le groupe `28-apercu-affichage` couvre les aperçus du menu Affichage et leur
+préférence, ajoutés en 1.1.9. La présence de ces tests ne vaut pas exécution
+complète du catalogue : les résultats datés et leurs limites restent dans
+[l'historique de validation](development-history.md).
 
 ## Références
 
