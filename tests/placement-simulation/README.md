@@ -17,7 +17,7 @@ des taches n'est retranchee.
 
 ## Executer
 
-Depuis CMD, a la racine du projet, avec la chaine MSVC de BUILD.md :
+Depuis CMD, a la racine du projet, avec la chaine MSVC du [guide de compilation](../../docs/build.md) :
 
 ```cmd
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\placement-simulation\Run-Simulation.ps1

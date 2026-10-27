@@ -14,7 +14,7 @@ et lance les **111 jeux** indépendants. Ils ne doivent pas être complétés pa
 un second passage des mêmes bancs natifs. Chaque jeu possède son processus
 PowerShell et son dossier de résultats sous `build/regression/<date>-<id>`.
 
-Windows 10 x64, les dépendances de [BUILD.md](../../BUILD.md), PowerShell 5.1,
+Windows 10 x64, les dépendances du [guide de compilation](../../docs/build.md), PowerShell 5.1,
 un bureau interactif et TEMP sur NTFS sont requis. Laisser clavier et souris
 disponibles pendant les jeux UI. Les scripts, C++, C#, `.inc`, headers, ressources
 et manifests sous `tests` sont des dépendances des jeux ; ne pas les dissocier.
