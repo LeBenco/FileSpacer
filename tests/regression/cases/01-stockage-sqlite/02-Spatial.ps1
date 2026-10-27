@@ -65,7 +65,7 @@ function Wait-Count([string]$property, [int]$count) {
 $previousDpiContext = [SpatialNative]::SetThreadDpiAwarenessContext([IntPtr](-4))
 $processes = New-Object System.Collections.ArrayList
 function Open([string]$path) {
-    $process = Start-TestApplication -Executable $Executable -Arguments ('/test "' + $path + '"')
+    $process = Start-TestApplication -Executable $Executable -Arguments ('/test "' + $path + '"') -OutputDirectory $RunDirectory
     [void]$processes.Add($process)
 }
 function Drain-Launches {
