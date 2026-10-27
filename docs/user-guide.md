@@ -52,21 +52,9 @@ window** enabled, clicking an inactive folder's background activates it without
 clearing the selection. Start a selection rectangle with a second press. Item
 clicks, right-clicks and window gestures retain their usual behavior.
 
-### Lock a folder window's saved state
+## Managing windows
 
-Enable **Settings > General > Enable window state locking** (off by default), then choose
-**Lock window state** in the menu beside a folder's title. Locking captures its
-position, size and view settings; a padlock identifies a locked folder.
-
-You can still move, resize and change the view temporarily. Reopening the folder
-restores the locked layout. Individual icon positions continue to save normally.
-**Unlock window state** keeps the current layout. The padlock can be hidden in
-General settings without removing the lock.
-
-Disabling the feature asks for confirmation and removes all saved locks,
-including those on closed folders. Enabling it again does not restore them.
-
-## Window shortcuts
+### Moving and resizing
 
 Drag in the file area, on its background or an item, using these defaults:
 
@@ -88,6 +76,20 @@ be applied.
 The default-setting button resets one action. **Revert** restores the last
 applied shortcuts; **Cancel** discards pending edits. **Apply** or **OK** makes
 the changes available to open FileSpacer windows.
+
+### Locking a saved layout
+
+Enable **Settings > General > Enable window state locking** (off by default), then choose
+**Lock window state** in the menu beside a folder's title. Locking captures its
+position, size and view settings; a padlock identifies a locked folder.
+
+You can still move, resize and change the view temporarily. Reopening the folder
+restores the locked layout. Individual icon positions continue to save normally.
+**Unlock window state** keeps the current layout. The padlock can be hidden in
+General settings without removing the lock.
+
+Disabling the feature asks for confirmation and removes all saved locks,
+including those on closed folders. Enabling it again does not restore them.
 
 ## Search and history
 
