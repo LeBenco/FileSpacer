@@ -15,8 +15,8 @@ installer: FORCE_INSTALLER
 # Force packaging despite the existing installer directory; no file is created.
 FORCE_INSTALLER:
 
-installer-assets: FORCE_INSTALLER
-	"$(ICON_PYTHON)" generate-installer-assets.py --source "$(ICON_SVG)" --output build\installer-assets --inkscape "$(INKSCAPE)"
+installer-assets: $(ICON_ICO) FORCE_INSTALLER
+	"$(ICON_PYTHON)" generate-installer-assets.py --source "$(ICON_SVG)" --icon "$(ICON_ICO)" --output build\installer-assets --inkscape "$(INKSCAPE)"
 
 clean-installer:
 	@if exist "build\FileSpacer-install.exe" del /q "build\FileSpacer-install.exe"
