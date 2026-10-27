@@ -3,7 +3,9 @@
     [ValidateSet('All','Internal','UI')][string]$Category='All',
     [string]$Pattern='*',
     [ValidateRange(30,3600)][int]$TimeoutSeconds=300,
-    [string]$RunDirectory=''
+    [string]$RunDirectory='',
+    [string]$VM='',
+    [switch]$Prepared
 )
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version 2
@@ -12,10 +14,13 @@ Set-StrictMode -Version 2
 if ($env:OS -ne 'Windows_NT' -or ![Environment]::Is64BitProcess) { throw 'Windows x64 is required.' }
 $ProjectRoot=(Resolve-Path -LiteralPath $ProjectRoot).Path
 $caseRoot=Join-Path $PSScriptRoot 'cases'
+$preparedSelection=$null
+if ($Prepared) { $preparedSelection=Get-Content -LiteralPath (Join-Path $ProjectRoot 'selection.json') -Raw | ConvertFrom-Json }
 $tests=@(Get-ChildItem -LiteralPath $caseRoot -Recurse -File -Filter '*.ps1' | Where-Object { $_.Name -match '^\d{2}-.+\.ps1$' } | Sort-Object FullName)
 $selected=@()
 foreach ($test in $tests) {
     $relative=$test.FullName.Substring($caseRoot.Length+1)
+    if ($Prepared -and $relative -notin $preparedSelection.Cases) { continue }
     if ($relative -notlike $Pattern) { continue }
     $first=Get-Content -LiteralPath $test.FullName -TotalCount 1
     if ($first -notmatch '^# Test-Category: (Internal|UI)$') { throw "Missing test category: $relative" }
@@ -23,7 +28,16 @@ foreach ($test in $tests) {
     if ($Category -eq 'All' -or $Category -eq $kind) { $selected+=@{ File=$test; Relative=$relative; Category=$kind } }
 }
 if (!$selected.Count) { throw 'No tests matched the requested category/pattern.' }
-if (!(Get-Command cl.exe -ErrorAction SilentlyContinue)) { throw 'Run tests.cmd or use an x64 MSVC developer prompt.' }
+if ($Prepared -and $selected.Count -ne @($preparedSelection.Cases).Count) { throw 'Prepared selection differs from the selected guest cases.' }
+if ($Prepared) { $TimeoutSeconds=[int]$preparedSelection.TimeoutSeconds }
+if ($VM) {
+    if ($Prepared) { throw 'A prepared guest run cannot dispatch another VM.' }
+    . (Join-Path $PSScriptRoot 'common\Prepare-Client.ps1')
+    Invoke-ClientRegression -VM $VM -Selected $selected -TimeoutSeconds $TimeoutSeconds -RunDirectory $RunDirectory
+    exit $LASTEXITCODE
+}
+if ($Prepared) { . (Join-Path $PSScriptRoot 'common\Prepared.ps1') }
+elseif (!(Get-Command cl.exe -ErrorAction SilentlyContinue)) { throw 'Run tests.cmd or use an x64 MSVC developer prompt.' }
 $ui=@($selected | Where-Object { $_.Category -eq 'UI' }).Count -gt 0
 if ($ui -and ![Environment]::UserInteractive) { throw 'UI tests require an interactive Windows desktop.' }
 if ($ui -and @(Get-Process -Name FileSpacer -ErrorAction SilentlyContinue).Count) { throw 'Close existing FileSpacer processes before running UI tests.' }
@@ -138,6 +152,8 @@ try {
     foreach ($entry in $selected) {
         $relative=$entry.Relative
         Write-Host "RUN  $relative"
+        @{Expected=$selected.Count;Completed=$results.Count;Current=$relative} | ConvertTo-Json |
+            Set-Content -LiteralPath (Join-Path $run 'progress.json') -Encoding UTF8
         $relativeDirectory=Join-Path ([IO.Path]::GetDirectoryName($relative)) ([IO.Path]::GetFileNameWithoutExtension($relative))
         $testRun=Join-Path $run $relativeDirectory
         [void][IO.Directory]::CreateDirectory($testRun)
@@ -146,6 +162,10 @@ try {
         $started=Get-Date; $exitCode=-1; $status='FAIL'; $detail=''; $cleanupDetail=''; $collectionDetail=''
         # Separate PowerShell processes prevent Add-Type and global collisions.
         $arguments='-NoProfile -ExecutionPolicy Bypass -File "'+$entry.File.FullName+'" -ProjectRoot "'+$ProjectRoot+'"'
+        if ($Prepared) {
+            $env:FS_REGRESSION_CASE=$relative
+            $arguments='-NoProfile -ExecutionPolicy Bypass -File "'+(Join-Path $PSScriptRoot 'common\Prepared-Case.ps1')+'" -ProjectRoot "'+$ProjectRoot+'" -Case "'+$relative+'"'
+        }
         $job=Start-RecordedProcess -Executable (Join-Path $PSHOME 'powershell.exe') -Arguments $arguments -OutputPath $log -ErrorPath $errors
         $process=$job.Process
         try {
