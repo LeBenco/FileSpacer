@@ -18,6 +18,7 @@ ShowUninstDetails show
 !define MULTIUSER_INSTALLMODE_INSTDIR "FileSpacer"
 !define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_KEY "Software\FileSpacer"
 !define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_VALUENAME "Install_Dir"
+!define MULTIUSER_INSTALLMODE_FUNCTION RestoreInstallChoices
 !include MultiUser.nsh
 !include x64.nsh
 !include Sections.nsh
@@ -37,10 +38,15 @@ VIAddVersionKey /LANG=1033 "FileVersion" "${PRODUCT_VERSION}"
 VIAddVersionKey /LANG=1033 "LegalCopyright" "Copyright (c) 2026 Benco; original ChromaFiler (c) 2023 J. van't Hoog"
 BrandingText "FileSpacer ${PRODUCT_VERSION} (x64)"
 
-!define MUI_ICON "..\src\res\FileSpacer.ico"
+!define MUI_ICON "..\build\installer-assets\FileSpacer-install.ico"
 !define MUI_UNICON "..\src\res\FileSpacer.ico"
 !define MUI_ABORTWARNING
 !define MUI_COMPONENTSPAGE_SMALLDESC
+!define MUI_HEADERIMAGE
+!define MUI_HEADERIMAGE_RIGHT
+!define MUI_HEADERIMAGE_BITMAP "..\build\installer-assets\header.bmp"
+!define MUI_WELCOMEFINISHPAGE_BITMAP "..\build\installer-assets\wizard-en.bmp"
+!define MUI_CUSTOMFUNCTION_GUIINIT SetWizardArtwork
 !insertmacro MUI_PAGE_LICENSE "..\LICENSE"
 !insertmacro MULTIUSER_PAGE_INSTALLMODE
 !insertmacro MUI_PAGE_COMPONENTS
@@ -87,7 +93,15 @@ LangString ERROR_SCOPE ${LANG_FRENCH} "Une installation existe déjà dans un au
 
 Var locked
 Var uninstallDirectory
+Var choicesScope
+Var upgrading
 !include ShortcutAppID.nsh
+
+Function SetWizardArtwork
+    ${If} $LANGUAGE == ${LANG_FRENCH}
+        File /oname=$PLUGINSDIR\modern-wizard.bmp "..\build\installer-assets\wizard-fr.bmp"
+    ${EndIf}
+FunctionEnd
 
 Function .onInit
     ${IfNot} ${RunningX64}
@@ -340,6 +354,11 @@ SectionEnd
 Section /o "$(SEC_DEFAULT)" SecDefault
     ; Match settings::setDefaultBrowser: this choice belongs to the current user.
     ; Leaving this option unchecked preserves an existing default association.
+    ; An unattended upgrade must not reclaim a default changed since installation.
+    ${If} ${Silent}
+    ${AndIf} $upgrading == 1
+        Goto default_done
+    ${EndIf}
     ClearErrors
     WriteRegStr HKCU "Software\Classes\Directory\shell" "" "filespacer"
     WriteRegStr HKCU "Software\Classes\CompressedFolder\shell" "" "filespacer"
@@ -359,6 +378,62 @@ Function .onSelChange
         !insertmacro SelectSection ${SecContext}
     ${EndIf}
 FunctionEnd
+
+!macro RESTORE_COMPONENT SECTION KEY
+    ReadINIStr $0 "$INSTDIR\install-info.ini" "Components" "${KEY}"
+    ${If} $0 == "1"
+        !insertmacro SelectSection ${SECTION}
+    ${ElseIf} $0 == "0"
+        !insertmacro UnselectSection ${SECTION}
+    ${EndIf}
+!macroend
+
+Function RestoreInstallChoices
+    ; MultiUser calls this after restoring the scope and its installation directory,
+    ; including silent setup. Do not discard edits when revisiting the same scope.
+    ${If} $choicesScope == $MultiUser.InstallMode
+        Return
+    ${EndIf}
+    Push $0
+    StrCpy $choicesScope $MultiUser.InstallMode
+    StrCpy $upgrading 0
+    !insertmacro SelectSection ${SecStart}
+    !insertmacro SelectSection ${SecContext}
+    !insertmacro UnselectSection ${SecDefault}
+    ReadINIStr $0 "$INSTDIR\install-info.ini" "Installation" "Mode"
+    ${If} $0 == $MultiUser.InstallMode
+        StrCpy $upgrading 1
+        ; Migrate older installers without saved checkboxes from installed state.
+        ${IfNot} ${FileExists} "$SMPROGRAMS\FileSpacer.lnk"
+            !insertmacro UnselectSection ${SecStart}
+        ${EndIf}
+        ReadRegStr $0 SHCTX "Software\Classes\Directory\shell\filespacer\command" ""
+        ${If} $0 == ""
+            !insertmacro UnselectSection ${SecContext}
+        ${EndIf}
+        ReadRegStr $0 HKCR "Directory\shell" ""
+        ${If} $0 == "filespacer"
+            !insertmacro SelectSection ${SecDefault}
+        ${EndIf}
+        !insertmacro RESTORE_COMPONENT ${SecStart} "StartMenu"
+        !insertmacro RESTORE_COMPONENT ${SecContext} "ContextMenu"
+        !insertmacro RESTORE_COMPONENT ${SecDefault} "DefaultFileManager"
+        ReadINIStr $0 "$INSTDIR\install-info.ini" "Installation" "Language"
+        ${If} $0 == ${LANG_ENGLISH}
+        ${OrIf} $0 == ${LANG_FRENCH}
+            StrCpy $LANGUAGE $0
+        ${EndIf}
+    ${EndIf}
+    Call .onSelChange
+    ClearErrors
+    Pop $0
+FunctionEnd
+
+!macro SAVE_COMPONENT SECTION KEY
+    SectionGetFlags ${SECTION} $0
+    IntOp $0 $0 & ${SF_SELECTED}
+    WriteINIStr "$INSTDIR\install-info.ini" "Components" "${KEY}" $0
+!macroend
 
 Section -ApplyOptions
     ; An unchecked component also removes a component installed by an earlier version.
@@ -381,6 +456,15 @@ Section -ApplyOptions
         ${EndIf}
     ${EndIf}
     System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
+    ClearErrors
+    !insertmacro SAVE_COMPONENT ${SecStart} "StartMenu"
+    !insertmacro SAVE_COMPONENT ${SecContext} "ContextMenu"
+    !insertmacro SAVE_COMPONENT ${SecDefault} "DefaultFileManager"
+    ${If} ${Errors}
+        MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
+        SetErrorLevel 2
+        Abort
+    ${EndIf}
 SectionEnd
 
 Section "Uninstall"
