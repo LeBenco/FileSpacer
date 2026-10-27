@@ -1,4 +1,4 @@
-; -*- coding: utf-8 -*-
+﻿; -*- coding: utf-8 -*-
 ; FileSpacer, Windows 10+ x64. Compile from the project root through NMAKE.
 Unicode True
 Name "FileSpacer"
