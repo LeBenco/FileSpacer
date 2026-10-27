@@ -4,6 +4,7 @@
 
 ## 1.1.8 — 2026-10-27
 
+- Replace the application icon and README logo with the new folder-and-cube design, with optimized small icon sizes.
 - Clarify English and French settings labels and group window-locking options together.
 - Add an option to hide the padlock badge on locked folder windows without changing their saved state locks.
 - Use native Windows theme backgrounds throughout settings pages and shortcut controls.
