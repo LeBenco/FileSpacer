@@ -190,6 +190,8 @@ FunctionEnd
     DeleteRegKey SHCTX "Software\Classes\Directory\Background\shell\filespacer"
     DeleteRegKey SHCTX "Software\Classes\CompressedFolder\shell\filespacer"
     DeleteRegKey SHCTX "Software\Classes\Drive\shell\filespacer"
+    DeleteRegKey SHCTX "Software\Classes\NetServer\shell\filespacer"
+    DeleteRegKey SHCTX "Software\Classes\NetShare\shell\filespacer"
 !macroend
 
 !macro CLEANUP_FUNCTIONS PREFIX
@@ -197,6 +199,8 @@ Function ${PREFIX}CleanupCurrentUser
     !insertmacro CLEAR_DEFAULT HKCU "" "Directory"
     !insertmacro CLEAR_DEFAULT HKCU "" "CompressedFolder"
     !insertmacro CLEAR_DEFAULT HKCU "" "Drive"
+    !insertmacro CLEAR_DEFAULT HKCU "" "NetServer"
+    !insertmacro CLEAR_DEFAULT HKCU "" "NetShare"
     !insertmacro CLEAR_DEFAULT HKCU "" "Directory\Background"
 FunctionEnd
 Function ${PREFIX}CleanupUser
@@ -207,11 +211,15 @@ Function ${PREFIX}CleanupUser
         !insertmacro CLEAR_CLASSES_DEFAULT HKU "$0\" "Directory"
         !insertmacro CLEAR_CLASSES_DEFAULT HKU "$0\" "CompressedFolder"
         !insertmacro CLEAR_CLASSES_DEFAULT HKU "$0\" "Drive"
+        !insertmacro CLEAR_CLASSES_DEFAULT HKU "$0\" "NetServer"
+        !insertmacro CLEAR_CLASSES_DEFAULT HKU "$0\" "NetShare"
         !insertmacro CLEAR_CLASSES_DEFAULT HKU "$0\" "Directory\Background"
     ${Else}
         !insertmacro CLEAR_DEFAULT HKU "$0\" "Directory"
         !insertmacro CLEAR_DEFAULT HKU "$0\" "CompressedFolder"
         !insertmacro CLEAR_DEFAULT HKU "$0\" "Drive"
+        !insertmacro CLEAR_DEFAULT HKU "$0\" "NetServer"
+        !insertmacro CLEAR_DEFAULT HKU "$0\" "NetShare"
         !insertmacro CLEAR_DEFAULT HKU "$0\" "Directory\Background"
     ${EndIf}
 FunctionEnd
@@ -224,6 +232,8 @@ FunctionEnd
     !insertmacro CLEAR_DEFAULT SHCTX "" "Directory"
     !insertmacro CLEAR_DEFAULT SHCTX "" "CompressedFolder"
     !insertmacro CLEAR_DEFAULT SHCTX "" "Drive"
+    !insertmacro CLEAR_DEFAULT SHCTX "" "NetServer"
+    !insertmacro CLEAR_DEFAULT SHCTX "" "NetShare"
     !insertmacro CLEAR_DEFAULT SHCTX "" "Directory\Background"
     ${If} $MultiUser.InstallMode == "CurrentUser"
         Call ${PREFIX}CleanupCurrentUser
@@ -317,6 +327,8 @@ Section "$(SEC_CONTEXT)" SecContext
     !insertmacro INSTALL_VERB "Directory\Background" "%V"
     !insertmacro INSTALL_VERB "CompressedFolder" "%1"
     !insertmacro INSTALL_VERB "Drive" "%1"
+    !insertmacro INSTALL_VERB "NetServer" "%1"
+    !insertmacro INSTALL_VERB "NetShare" "%1"
     Goto context_done
 context_failed:
     MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
@@ -332,6 +344,8 @@ Section /o "$(SEC_DEFAULT)" SecDefault
     WriteRegStr HKCU "Software\Classes\Directory\shell" "" "filespacer"
     WriteRegStr HKCU "Software\Classes\CompressedFolder\shell" "" "filespacer"
     WriteRegStr HKCU "Software\Classes\Drive\shell" "" "filespacer"
+    WriteRegStr HKCU "Software\Classes\NetServer\shell" "" "filespacer"
+    WriteRegStr HKCU "Software\Classes\NetShare\shell" "" "filespacer"
     IfErrors 0 default_done
     System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
     MessageBox MB_OK|MB_ICONSTOP $(ERROR_DEFAULT) /SD IDOK
