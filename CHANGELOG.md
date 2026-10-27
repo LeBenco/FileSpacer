@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Preview display modes while hovering over the View menu, with progressive restoration when cancelling and a default-on option under Display settings.
+
 ## 1.1.8 — 2026-10-27
 
 - Replace the application icon and README logo with a projected tesseract design and an 11/20 purple-to-green cube edge ratio, retaining optimized small icon sizes.
