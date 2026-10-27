@@ -34,8 +34,8 @@ moved or renamed, and closes when the folder is deleted.
 - The taskbar icon's Jump List also offers Reopen Last Closed Window, including
   the name and Shell icon of the folder to reopen, even when no FileSpacer window
   remains open.
-  This task is omitted when the latest closed folder is already open or the
-  history is empty, using the same rule as the title-bar menu and Ctrl+Shift+T.
+  This task is omitted when the history is empty, or the latest closed folder
+  is already open or unavailable.
   Its Quick access category shows Explorer's pinned Quick access folders with
   their Shell icons; clicking one opens it in FileSpacer. The list refreshes
   on startup, activation and changes to the closed-window history. Windows
@@ -53,6 +53,9 @@ moved or renamed, and closes when the folder is deleted.
 - Files open through the normal Windows application association mechanism.
 - Toolbar and status-bar visibility can be changed in Settings. Ctrl+, opens
   Settings even when the toolbar is hidden.
+- Settings belongs to the folder window that opened it. Closing that window
+  discards pending edits. Confirmed maintenance closes Settings without applying
+  other pending changes.
 - English and French resources are selected from the Windows display language,
   with English as the fallback. Changing the language requires restarting.
 - Settings > About > Maintenance > Reset all folder state clears saved folder positions,
@@ -68,6 +71,20 @@ size. Moving or renaming the folder preserves its saved spatial state.
 
 [Window state locking](#lock-a-folder-windows-saved-state) keeps a reference for
 window geometry and view settings; individual icon positions continue to save.
+
+## View options
+
+**Settings > Display > Show the full name of a selected file (does not apply to
+multiple selections)** is enabled by default. In Icons view, FileSpacer fills
+the background of the single selected item's expanded name to keep it readable.
+Windows still draws and expands the text. Multiple selections, focus alone and
+other view modes keep their native rendering.
+
+**Settings > Display > Preview display modes in the View menu** is also enabled
+by default. Hovering a supported display mode in the View menu previews it in
+the folder. Leaving that entry, pressing Escape or clicking outside the menu
+restores the initial view; clicking a mode keeps it. Preview states are temporary
+and do not replace the folder's saved layout.
 
 ## Window placement
 
@@ -92,8 +109,8 @@ first click requires a second press.
 The installer offers **Make FileSpacer the default file manager**, unchecked by
 default. Selecting it also enables the folder context-menu component required
 for opening folders through FileSpacer. Installing the context-menu component
-alone adds **Open in FileSpacer** to folders and drives without changing the
-default application.
+alone adds a command to open folders and drives in the other file manager,
+without changing the default application.
 
 To enable this later, open **Settings > Integration** and choose **Set as default
 browser**. Choose **Reset default browser** to return folder opening to Windows
@@ -222,7 +239,7 @@ FileSpacer.exe /reset-all
 
 The first command resets global preferences. The second also resets saved folder
 state. Neither deletes files or changes Windows associations. Resetting preferences
-also restores the default setting for experimental full-name display.
+also restores the default settings for selected-file names and View menu previews.
 
 ## Updates
 
@@ -248,7 +265,7 @@ page instead. Updates are never installed without your confirmation.
 
 
 
-## View behavior in 1.1
+## Native view behavior
 
 Control Panel opens in its native Windows window and leaves the source
 FileSpacer folder open, with its selection.
@@ -258,9 +275,6 @@ the originating folder automatically. This avoids adding an unintended folder
 to a subsequent Ctrl selection or opening multiple folders accidentally.
 An already-open parent keeps its existing selection.
 
-The public Shell integration uses Windows' native selected-name rendering.
-FileSpacer's custom opaque full-name rendering is unavailable; its Settings
-control is disabled and labeled accordingly, and the saved preference is
-retained. Scroll restoration on reopening is anchored on the first displayed
-row in Details and List views; icon views and other layouts open at the top,
-with the selection and focus restored.
+Scroll restoration on reopening is anchored on the first displayed row in
+Details and List views; the exact pixel offset is not restored. Icon views and
+other layouts open at the top, with the selection and focus restored.
