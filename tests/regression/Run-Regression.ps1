@@ -160,6 +160,18 @@ try {
         $env:FS_REGRESSION_RUN=$testRun
         $log=Join-Path $testRun 'output.log'; $errors=Join-Path $testRun 'errors.log'
         $started=Get-Date; $exitCode=-1; $status='FAIL'; $detail=''; $cleanupDetail=''; $collectionDetail=''
+        if ($entry.Category -eq 'UI') {
+            # Cases are independent. Retaining previous fixtures' taskbar identities
+            # makes each Shell CommitList rewrite an ever-growing set of old lists.
+            $jumpLists=$testKey+'\JumpLists'
+            $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($jumpLists)
+            $previousIdentities=0
+            try { if ($key) { $previousIdentities=$key.SubKeyCount } }
+            finally { if ($key) { $key.Dispose() } }
+            [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($jumpLists,$false)
+            @{RemovedJumpListIdentities=$previousIdentities;Key=$jumpLists} | ConvertTo-Json |
+                Set-Content -LiteralPath (Join-Path $testRun 'case-fixture.json') -Encoding UTF8
+        }
         # Separate PowerShell processes prevent Add-Type and global collisions.
         $arguments='-NoProfile -ExecutionPolicy Bypass -File "'+$entry.File.FullName+'" -ProjectRoot "'+$ProjectRoot+'"'
         if ($Prepared) {
