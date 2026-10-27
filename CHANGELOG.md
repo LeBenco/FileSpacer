@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 1.1.8 — 2026-10-27
+
+- Clarify English and French settings labels and group window-locking options together.
+- Add an option to hide the padlock badge on locked folder windows without changing their saved state locks.
+- Use native Windows theme backgrounds throughout settings pages and shortcut controls.
+- Explain window placement and taskbar grouping with standard Windows hover tooltips beside their options.
+- Tie settings to the folder window that opened them and discard pending edits when it closes. Confirmed folder-state maintenance closes settings without applying pending changes.
+- Reorganize the README around spatial navigation and features, with research references, a latest-release link, dedicated build and Nilesoft Shell guides, and expanded user documentation.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.7...v1.1.8)
+
 ## 1.1.7 — 2026-10-26
 
 - Minimize new-window overlap with exact geometry, first looking for free space. Rename the General option to "Minimize window overlap".
