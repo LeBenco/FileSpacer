@@ -52,22 +52,21 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Starting folder", -1, "Button", BS_GROUPBOX, 7, 7, 286, 30
   CONTROL "", IDC_START_FOLDER_PATH, "ComboBoxEx32", CBS_DROPDOWN|WS_TABSTOP|0x00000040, 14, 18, 210, 300
   CONTROL "&Browse...", IDC_START_FOLDER_BROWSE, "Button", WS_TABSTOP, 231, 18, 55, 14
-  CONTROL "Folder navigation", -1, "Button", BS_GROUPBOX, 7, 41, 286, 63
-  CONTROL "&Keep the source window open when opening an item", IDC_KEEP_SOURCE_WINDOW_OPEN, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|WS_TABSTOP, 14, 52, 272, 12
-  CONTROL "Keep the current selection when &clicking an inactive window", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|WS_TABSTOP, 14, 66, 272, 12
-  CONTROL "Place &new windows in free space (saved positions always take priority)", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|WS_TABSTOP, 14, 80, 272, 20
-  CONTROL "Window locking", -1, "Button", BS_GROUPBOX, 7, 108, 286, 44
-  CONTROL "Enable window state &locking", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|WS_TABSTOP, 14, 119, 272, 12
-  CONTROL "Show a padlock in the title &bar of locked folders", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|WS_TABSTOP, 14, 133, 272, 12
-  CONTROL "Search box", -1, "Button", BS_GROUPBOX, 7, 156, 286, 28
-  CONTROL "Filter while t&yping", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 167, 272, 12
-  CONTROL "Taskbar", -1, "Button", BS_GROUPBOX, 7, 188, 286, 47
-  CONTROL "&Group folder windows on the taskbar (new windows)", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|WS_TABSTOP, 14, 199, 272, 12
-  CONTROL "Grouping follows your Windows taskbar settings.", -1, "Static", WS_GROUP, 14, 213, 272, 8
-  CONTROL "Without grouping, folders can be pinned to the taskbar.", -1, "Static", WS_GROUP, 14, 223, 272, 8
-  CONTROL "File Explorer options", -1, "Button", BS_GROUPBOX, 7, 239, 286, 31
-  CONTROL "Some File Explorer options also affect FileSpacer folder windows.", -1, "Static", WS_GROUP, 14, 250, 210, 16
-  CONTROL "&Options...", IDC_EXPLORER_SETTINGS, "Button", WS_TABSTOP, 231, 250, 55, 14
+  CONTROL "Folder navigation", -1, "Button", BS_GROUPBOX, 7, 41, 286, 55
+  CONTROL "&Keep the source window open when opening an item", IDC_KEEP_SOURCE_WINDOW_OPEN, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 52, 272, 12
+  CONTROL "Keep the current selection when &clicking an inactive window", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 66, 272, 12
+  CONTROL "Place &new windows in free space", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 80, 250, 12
+  CONTROL "Help with window placement", IDC_SMART_WINDOW_PLACEMENT_HELP, "Button", BS_ICON|BS_FLAT|BS_NOTIFY|WS_TABSTOP, 274, 79, 12, 14
+  CONTROL "Window locking", -1, "Button", BS_GROUPBOX, 7, 100, 286, 44
+  CONTROL "Enable window state &locking", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 111, 272, 12
+  CONTROL "Show a padlock in the title &bar of locked folders", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
+  CONTROL "Search box", -1, "Button", BS_GROUPBOX, 7, 148, 286, 52
+  CONTROL "Filter while t&yping", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 159, 272, 12
+  LTEXT "Recent searches per folder (0 to 20; 0 disables history)", -1, 14, 177, 222, 16
+  EDITTEXT IDC_SEARCH_HISTORY_LIMIT, 246, 176, 40, 14, ES_NUMBER|WS_TABSTOP
+  CONTROL "Taskbar", -1, "Button", BS_GROUPBOX, 7, 204, 286, 30
+  CONTROL "&Group folder windows on the taskbar", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 215, 250, 12
+  CONTROL "Help with taskbar grouping", IDC_GROUP_FOLDER_WINDOWS_HELP, "Button", BS_ICON|BS_FLAT|BS_NOTIFY|WS_TABSTOP, 274, 214, 12, 14
 }
 
 IDD_SETTINGS_DISPLAY DIALOGEX DISCARDABLE 0, 0, 300, 238
@@ -86,7 +85,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Show &View button", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 105, 130, 14
   CONTROL "The elements above are visible when the toolbar is shown.", -1, "Static", WS_GROUP, 14, 121, 272, 16
   CONTROL "File names", -1, "Button", BS_GROUPBOX, 7, 147, 286, 38
-  CONTROL "Show the full &name of a selected file (does not apply to multiple selections)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|WS_TABSTOP, 14, 159, 272, 20
+  CONTROL "Show the full &name of a selected file (does not apply to multiple selections)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 159, 272, 20
   CONTROL "Default window size", -1, "Button", BS_GROUPBOX, 7, 192, 286, 35
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 209, 88, 8
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 206, 35, 14
@@ -105,16 +104,16 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Set as default browser", IDC_SET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 56, 272, 14
   CONTROL "&Reset default browser", IDC_RESET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 77, 272, 14
   GROUPBOX "Everything (external application)", -1, 7, 111, 286, 97
-  CONTROL "Add &Everything search to the search box", IDC_EVERYTHING_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|WS_TABSTOP, 14, 123, 272, 12
+  CONTROL "Add &Everything search to the search box", IDC_EVERYTHING_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 123, 272, 12
   LTEXT "Executable (empty = automatic detection)", -1, 14, 138, 272, 9
   EDITTEXT IDC_EVERYTHING_PATH, 14, 149, 272, 14, ES_AUTOHSCROLL|WS_TABSTOP
   PUSHBUTTON "&Detect", IDC_EVERYTHING_DETECT, 14, 166, 90, 14
   PUSHBUTTON "&Browse...", IDC_EVERYTHING_BROWSE, 111, 166, 90, 14
   LTEXT "Search scope", -1, 14, 188, 70, 9
   COMBOBOX IDC_EVERYTHING_SCOPE, 88, 185, 198, 60, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
-  GROUPBOX "Search history per folder", -1, 7, 213, 286, 44
-  LTEXT "Recent searches (0 to 20; 0 disables history)", -1, 14, 229, 222, 16
-  EDITTEXT IDC_SEARCH_HISTORY_LIMIT, 246, 228, 40, 14, ES_NUMBER|WS_TABSTOP
+  CONTROL "File Explorer options", -1, "Button", BS_GROUPBOX, 7, 213, 286, 35
+  CONTROL "Some File Explorer options also affect FileSpacer folder windows.", -1, "Static", WS_GROUP, 14, 224, 210, 16
+  CONTROL "&Options...", IDC_EXPLORER_SETTINGS, "Button", WS_TABSTOP, 231, 224, 55, 14
 }
 
 IDD_SETTINGS_ABOUT DIALOGEX DISCARDABLE 0, 0, 300, 277
