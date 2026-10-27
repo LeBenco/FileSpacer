@@ -1,0 +1,18 @@
+/* Standard Just the Docs desktop widths: 16.5rem navigation + 50rem content. */
+@media (min-width: 66.5rem) {
+  body {
+    background: #eceef2;
+  }
+
+  .side-bar {
+    left: calc((100% - 66.5rem) / 2);
+    width: 16.5rem;
+    border-left: 1px solid #dddde4;
+  }
+
+  .side-bar + .main {
+    min-height: 100vh;
+    border-right: 1px solid #dddde4;
+    background: #fff;
+  }
+}
