@@ -27,7 +27,7 @@ namespace FileSpacerRegression {
         }
         [StructLayout(LayoutKind.Sequential)] struct Input { public uint Type; public Union Data; }
         [DllImport("user32.dll",SetLastError=true)] static extern uint SendInput(uint count,Input[] inputs,int size);
-        [DllImport("user32.dll",SetLastError=true)] static extern bool SetCursorPos(int x,int y);
+        [DllImport("user32.dll",SetLastError=true)] static extern bool GetCursorPos(out MousePoint point);
         [DllImport("user32.dll")] static extern short GetAsyncKeyState(int key);
         [DllImport("user32.dll")] static extern uint GetDoubleClickTime();
         [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
@@ -106,7 +106,23 @@ namespace FileSpacerRegression {
         }
         public static void Move(MousePoint point) {
             Trace("pointer to ("+point.X+","+point.Y+")");
-            if(!SetCursorPos(point.X,point.Y)) throw new Win32Exception();
+            int left=GetSystemMetrics(76),top=GetSystemMetrics(77);
+            int width=GetSystemMetrics(78),height=GetSystemMetrics(79);
+            var input=new Input();
+            // Pixel centres on the entire virtual desktop, independent of mouse
+            // acceleration. Send real mouse motion rather than SetCursorPos.
+            input.Data.Mouse.X=(int)(((long)(point.X-left)*65536+32768)/width);
+            input.Data.Mouse.Y=(int)(((long)(point.Y-top)*65536+32768)/height);
+            input.Data.Mouse.Flags=0xC001; // MOVE | ABSOLUTE | VIRTUALDESK
+            Send(input);
+            var deadline=Stopwatch.StartNew();
+            while(true) {
+                MousePoint actual;
+                if(!GetCursorPos(out actual)) throw new Win32Exception();
+                if(actual.X==point.X && actual.Y==point.Y) break;
+                if(deadline.ElapsedMilliseconds>=2000) throw new TimeoutException("Windows did not place the pointer at the requested physical coordinates.");
+                Thread.Sleep(10);
+            }
         }
         public static void ReleaseAlt() {
             if(altHeld) { Trace("releasing Alt"); Send(Key(0x12,true)); altHeld=false; }
