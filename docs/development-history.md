@@ -15,16 +15,16 @@ with cancellation restoration. See the [changelog](../CHANGELOG.md) and
 [user guide](user-guide.md) for the resulting behavior.
 
 The tagged 1.1.9 sources contain **113 cases: 19 Internal and 94 UI**, including
-the two View preview cases in group 28. A local client-test integration
-adds an artifact-contract case and remains uncommitted; other
-local work does not become part of a release merely by being present in the
-checkout. Subsequent menu, About and maximization work is distinguished below.
+the two View preview cases in group 28. The integrated client-test transport
+adds an artifact-contract case; the branch checkpoint below also includes the
+About icon and the subsequent menu and maximization work. These branch changes
+do not become part of a release merely by being committed.
 The reference test guides use the runner's discovered catalogue rather than
 repeating a fixed total.
 
 The last complete successful suite recorded here remains **109/109 on 1.1.5**.
 Later targeted runs and preparation of VM artifacts do not establish a complete
-1.1.9 or VM suite PASS. This documentation update reruns no application tests
+1.1.9 or VM suite PASS. The initial documentation audit reran no application tests
 and changes no historical static-analysis verdict.
 
 Entries below retain their dated evidence. Terms such as "latest", "current",
@@ -40,7 +40,8 @@ per language, the real Shell menu test, static **REVIEW** and installer limits.
 
 The About tab now loads a 48-DIP application icon (48 × 48 pixels at 96 DPI),
 with adjacent text moved to avoid overlap. This implementation and
-`13-preferences/07-APropos.ps1` remain local and uncommitted. The Debug build
+`13-preferences/07-APropos.ps1` were initially left local and uncommitted; they
+are included in the branch checkpoint below. The Debug build
 completed without warnings; the targeted real UI test passed in `AgentWin10`
 at 96 DPI (`vm-52d1ed26afe34629b6d1c202f72419cb`). clang-tidy and Cppcheck
 completed on `SettingsDialog.cpp`, including `dialog.h`; the verdict remains
@@ -67,8 +68,9 @@ clang-tidy and Cppcheck completed on `ItemWindow.cpp` and `ProxyIcon.cpp`, cover
 `ProxyIcon.h`, with no missing coverage or confirmed new defect. The verdict is
 **REVIEW** for clang-tidy include, BOOL conversion, brace and cognitive-complexity
 observations (28 against a threshold of 25); Cppcheck adds no new diagnostic.
-These maximization commits remain local: no push, tag or release was performed
-for them. The targeted results do not establish a complete regression-suite PASS.
+These maximization commits were initially kept local; the later branch checkpoint
+includes them without creating a tag or release. The targeted results do not
+establish a complete regression-suite PASS.
 
 ## Historical consolidated status — 26 October 2026
 
@@ -1028,3 +1030,229 @@ theme/DPI/provider coverage, unfinished per-file badge investigation and the
 client-isolation work above. Features and later passing runs do not erase those
 historical failures or turn the prototypes into shipped behavior. The local
 installer change likewise awaits its own compilation and visual validation.
+## 2026-10-27 — Autonomous client smoke tests in Hyper-V
+
+The client-test prototype is developed in the isolated `codex/client-smoke`
+checkout based on `fe728f2` (1.1.5), preserving the other development session's
+checkout. FileSpacer itself is unchanged. MSVC/NMAKE Debug and the existing C#
+test helpers are compiled on the development host. The actual Windows 10 client
+`AgentWin10` receives the artifacts and never needs Visual Studio, MSVC, an SDK
+installation, or guest compilation. The Debug build completed without C++ `/W4`
+warnings; Inkscape emitted installed-extension/cache-path messages during icon
+export, before the successful executable and helper builds.
+
+PowerShell Direct access first failed for the passwordless guest account. After
+the user configured its password, the connection was verified. Autonomous
+launching now uses the host task `FileSpacer-AgentWin10-Smoke`. Its fixed host
+controller scripts and configuration are installed outside the repository with
+Administrators/SYSTEM write access and an Administrators owner. Guest credentials
+are stored outside the repository using Windows DPAPI, bound to the host account
+and machine. Initial installation and controller updates require UAC; ordinary
+test requests do not. Requests select only a run identifier and a checkout under
+the configured workspace. No workspace binary is executed elevated on the host.
+
+The first autonomous request correctly reported an open VMConnect console. After
+the user closed it, the guest application and real Shell folder opened and exited
+normally, but mouse input failed with access denied. `query session` established
+that the guest user session was disconnected. Transferring it to its console with
+`tscon` needed guest administration. That preparation now runs through PowerShell
+Direct before the temporary `Interactive` / `Limited` UI task. The UI worker
+explicitly verifies that its token is not administrative. The preparation uses
+the native command directly, without changing the guest's PowerShell execution
+policy. Host credential commands explicitly load the Windows PowerShell 5.1
+security module to avoid an incompatible module path inherited from another
+PowerShell runtime.
+
+Three final requests launched by the agent, without UAC or password entry during
+the request, are **PASS**:
+
+- `9c6ee74fb71e4de09060ab50423190bc`: disconnected guest session transferred to console;
+- `967e3257c9a54c188d81d9fa97801ef7`: console already active, no repeated transfer.
+- `3ec6702e67aa4836a752684ca3b953c4`: final CMD entry point, which also propagates
+  failures without an interactive pause.
+
+All three used the real Shell to verify the fixture directory and `probe.txt`, then
+performed the existing Alt-right mouse gesture from 650 × 400 to 746 × 472,
+released input, closed FileSpacer and checked its process exit code 0. Guest
+worker and host controller exits are also 0. VMConnect was absent throughout the
+observed passage, the UI worker was not administrative, `/test` state was removed
+after process exit, and production preferences/database were unchanged. Existing
+guest `/test` data would cause a blocked precondition instead of being replaced.
+Reports and application exits are under each `build/client-smoke/hyperv-smoke-*`
+directory. The second request took approximately nine seconds including transfer
+and result collection.
+
+Local checks also covered the ten PowerShell scripts' syntax, native task
+definitions, mutex acquisition and a dummy-credential DPAPI round trip. They
+are separate from the real guest UI passes. No application C++ changed, so no new
+C++ static-analysis run was required. The complete 109-case suite, including its
+Everything integration case, has not been migrated or executed in this VM. The
+earlier Sandbox pointer non-interference REVIEW and minimized-input limitation
+remain separate findings. See [client-test instructions](../tests/client/README.md).
+
+### Removing the host launcher console
+
+The user reported intermittent foreground windows and requested launches without
+waiting for UAC. Configuration prompts were attributable to setup. Passive PID
+sampling also recorded a PowerShell window at the start of a test request,
+distinct from the non-elevated caller. A previous event-hook observer failed to
+stop cleanly, and an earlier sampling supervisor hit its deadline; those probes
+were not counted as a successful global foreground validation. Dell Display and
+Peripheral Manager foreground events were separately observed after a test, but
+do not establish the origin of every window the user reported.
+
+The host task now starts `NoConsoleRunner.exe`, a .NET GUI-subsystem executable
+using `ProcessStartInfo.CreateNoWindow=true` and `UseShellExecute=false` for its
+fixed protected PowerShell controller. It exposes no arbitrary command input,
+retains the child exit code, captures stdout/stderr and catches startup failures
+without displaying an error dialog. The invocation script collects these host
+logs alongside the guest reports. The controller's PID is recorded for diagnosis.
+The executable is built on the development host using its existing .NET compiler;
+no application C++ or guest build dependency changes.
+
+Local checks used real PowerShell child processes: no attached console
+(`GetConsoleWindow()==0`), preserved exit codes 0 and 23, captured stdout/stderr,
+and preserved accented text. This remains a launcher check, not a FileSpacer test.
+After the user chose when to approve the protected configuration update, two real
+guest requests passed: `27923dc7fc124831a209c2859119c094` and
+`a7ca0fc8c4ef4e61a24b1c8b74b22f86`. The second included a bounded, input-free,
+hook-free foreground PID sampler: its exit was 0, the test exit was 0, only
+ChatGPT remained foreground and the controller PID never appeared. All temporary
+observer sources and executables were removed; raw reports remain separate.
+
+Routine requests need no UAC or password entry. Privileged controller changes
+remain a separate setup operation through `update-agentwin10-runner.cmd`, run at
+the user's chosen moment; it applies the prepared update and starts the VM test.
+The installed task, encrypted credentials and automatic log transfer are retained
+for subsequent development. This validates the minimal real-input client scenario;
+the complete 109-case suite still requires adaptation before claiming VM coverage.
+
+## 2026-10-27 — Main regression launcher with an optional Hyper-V target
+
+The client worktree was fast-forwarded to `9459e00` (the current 1.1.7 sources)
+before integrating the runner. `tests.cmd` now accepts `-VM <configured name>`;
+omitting it retains local execution. Category/pattern selection happens before
+client preparation and keeps group, single-case and combined filters. Timeout
+and custom report-directory options remain available. An unknown profile or a
+protected controller differing from the checkout fails explicitly, without a
+local UI fallback or automatic configuration/UAC prompt.
+
+Application and helper compilation stays on the host. Preparation inspects the
+selected scripts and their dependencies, reuses `Build-NativeTest`, and builds
+their C# sources and inline definitions with the installed .NET compiler. The
+guest executes the original scenarios in separate PowerShell processes. Native
+build arguments, source identities and transferred artifact hashes are checked;
+missing or changed helpers fail rather than compiling in the client. Lock-badge
+source extraction was moved into the existing source-preparation helper so its
+test can use the same preparation path. No application C++ changed.
+
+The existing protected task, DPAPI credentials, PowerShell Direct connection,
+limited interactive guest token and no-console host executable are reused.
+Reports are automatically retrieved under `build/regression/vm-<id>/output/`,
+including the ordinary per-case results, summary and application diagnostics.
+Guest test-state restoration and unchanged production state are checked, together
+with guest/host task and runner exits. Optional report copies never overwrite an
+existing result directory. Long-run deadlines depend on the selected case count.
+
+The first targeted runs exposed runner defects: inherited PowerShell module
+paths hid the Windows hash command, JSON arrays required explicit enumeration
+under PowerShell 5.1, and the prepared manifest needed process-global scope across
+case script boundaries. These were corrected; their failed reports are retained.
+
+The first existing resize case reached the expected minimum geometry and used
+the correct cursor handle, but Windows reported `CURSOR_SUPPRESSED` in the
+disconnected-console guest. A zero relative mouse motion did not resolve it.
+Replacing `SetCursorPos` in the shared gesture helper with absolute `SendInput`
+motion over the virtual desktop did: each requested physical coordinate is
+verified before continuing, and the original visible-cursor assertion is kept.
+All **50 existing group-15/group-16 scenarios passed** in request
+`1276c77a6dbf44f4b4f533063171de0a` (356.68 seconds of case execution). The worker
+was limited, VMConnect absent, runner/task exits zero, test state restored and
+production data unchanged. This is real guest Shell/UI validation.
+
+Other actual checks: Debug build without new `/W4` warnings; local runner group
+00 passed, including the new artifact-contract case (three cases total); the
+local lock-badge native case passed; guest window-state case 07/01 passed in
+`b5ebf9bda17c401a9ec2d3f5b770aa73`; native placement case 26/01 and its custom
+report copy passed in `646f00cea09b4992bf53b8d090dcbd20`. The earlier two guest
+runner cases passed in `3d32ea43abaf4a1eb9761069c877795e`. Unknown VM and empty
+selection checks returned nonzero as expected. The 111 preexisting cases were
+prepared on the host, then the added artifact-contract case was prepared and
+executed locally; the suite now contains 112 cases. That contract uses inert
+fixture bytes to check copy/argument/hash failures and is not an application
+integration test. All PowerShell sources parsed and required C# helpers compiled.
+
+The complete 112-case suite and real Everything case have not been run in this
+VM. The Sandbox host-pointer observers and launchers were removed; the minimal
+Hyper-V diagnostic remains explicitly separate from the main regression suite.
+No new C++ static-analysis verdict is required for these PowerShell/C# changes.
+
+Further protected-controller adjustments were considered, then withdrawn:
+the normal invocation script can retain the completed guest FAIL/INCOMPLETE
+status from the existing connection report. No second protected update or UAC
+is required; the workspace controller sources match the already installed and
+tested version. Per-case progress remains in the retrieved runner log/report.
+The stale controller guard was actually exercised and returned nonzero. The parser
+check covered 142 PowerShell scripts with Windows PowerShell 5.1.19041.7802.
+Another worktree's performance tests subsequently opened FileSpacer on the host;
+they were left running and the root launcher's close-before-build guard correctly
+refused a further build. No application was killed. Automatic approval rejected
+local commit creation by referring to the earlier no-commit instruction; no
+commits, push or release were performed pending explicit clarification.
+
+The final ordinary invocation path was rerun without a second UAC: all three
+group-00 cases passed in the guest in `ada0f6c2cc2b460e82fc013ef3d539fc`.
+Request `dd3a9a2859c349e2aacb5fa4c0b81d62` then exercised the real Everything
+prerequisite through `tests.cmd`: Everything is absent in this VM, so the existing
+case reported its installation prerequisite, retained its existing FAIL
+classification and returned code 1. The caller preserved that status and
+retrieved the complete logs; cleanup and production-state checks passed. This
+validates error propagation, not the external Everything integration. Installing
+Everything in the client and running that functional scenario remain outstanding.
+
+The 26 validated project files were then copied byte-for-byte to the clean main
+checkout at `9459e00`, without changing its branch, index or commits and without
+touching the other development worktree. From the actual project root,
+`tests.cmd -VM AgentWin10 -Category Internal -Pattern "00-banc\*"` passed all
+three cases (`c7dcfb02b95b4d69906f4f1d4708287b`), followed by the real Shell
+drag/drop case 19/03 (`f101791f78d44490baba67a5b67f6234`). The client native
+resource/extraction case 22/02 also passed (`a2f6a3d271604c2e9543b7850d0e21ce`).
+A later local-root rerun was correctly refused when the other worktree's
+performance tests reopened FileSpacer; no process was interrupted. The earlier
+local three-case pass remains separate evidence. Changes remain uncommitted.
+Temporary cursor instrumentation was removed after diagnosis. The original
+visible-cursor check is retained verbatim, and the final minimum-resize case
+passed again in `0f03bdee8ceb4ce89487d485e1076abf`, through the main runner using
+the already-built application while leaving the parallel host benchmark alone.
+## 2026-10-27 — Branch checkpoint without a release
+
+The remaining About icon and Hyper-V transport sources are committed with their
+helpers, native preparation, artifact-contract test and documentation. The
+network-root menu follow-up through `363beb4` and the maximization commits are
+included in this checkpoint. No application version, release tag or release
+package is created.
+
+The Debug MSVC/NMAKE build completed without warnings. Windows PowerShell
+5.1.19041.7802 parsed all 149 test scripts; the no-console C# launcher compiled.
+Seven targeted cases passed in AgentWin10: three runner/artifact cases
+(`vm-ab65630c330640f88d5510d407d3ed77`), About icon
+(`vm-d6fefa5b44eb4fa8bbef8cda30dc9201`), lock badge
+(`vm-a0164610da684860bccc1105e5525128`), window movement
+(`vm-0151a399461047be957b143988553a9e`) and minimum resize
+(`vm-38d1ea95440f4217a398e9a9b3c4fb3b`). The guest reports confirm limited tokens,
+restored test state and unchanged production preferences/database.
+
+clang-tidy and Cppcheck were rerun on the final `SettingsDialog.cpp`, covering
+`dialog.h`, against the pre-icon HEAD sources. Both completed with the real
+SDK/MSVC/ATL headers for clang-tidy and official Windows/ATL/SQLite models for
+Cppcheck. The verdict is **REVIEW** for indirect includes and constness; no
+confirmed new defect or new Cppcheck diagnostic remains, and no required header
+is left without coverage. Logs and comparison are in `build/commit-all-20261027/`.
+
+The all-Internal invocation stopped during host preparation of
+`03-menus/01-Reentrance`: its extracted `showViewMenu` body depends on View preview
+symbols absent from that older harness. No guest test ran in that invocation.
+The failure is retained in `build/commit-all-20261027/internal-vm-authorized.log`;
+the unchanged assertions and harness were not bypassed or reclassified. Targeted
+passes do not establish a complete suite PASS, and the earlier placement-label
+failure and Everything client prerequisite remain separate limits.
