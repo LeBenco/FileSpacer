@@ -11,9 +11,11 @@ try {
     }
     $first=Open-UiFolder $a 2;$second=Open-UiFolder $b 2
     [void](Show-UiSettings $first);$page=Set-UiPage 3
-    Assert-Ui ([FileSpacerRegression.Native]::Text([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_SEARCH_HISTORY_LIMIT'))) -eq '5') 'Default history limit is not 5.'
     Assert-Ui ([FileSpacerRegression.Native]::Message([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_EVERYTHING_SCOPE')),0x147,0,0) -eq 0) 'Default scope is not current folder.'
+    $page=Set-UiPage 0
     $limitEdit=[FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_SEARCH_HISTORY_LIMIT'))
+    Assert-Ui ($limitEdit -ne [IntPtr]::Zero) 'History limit is missing from General settings.'
+    Assert-Ui ([FileSpacerRegression.Native]::Text($limitEdit) -eq '5') 'Default history limit is not 5.'
     [FileSpacerRegression.Native]::SetText($limitEdit,'21');Press-UiSettings 4
     $ownerId=[uint32]0;[void][FileSpacerRegression.Native]::GetWindowThreadProcessId($first,[ref]$ownerId)
     $invalid=@{Dialog=[IntPtr]::Zero}

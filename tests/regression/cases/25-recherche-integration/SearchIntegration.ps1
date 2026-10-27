@@ -4,9 +4,12 @@
 Add-Type -Path (Join-Path $PSScriptRoot 'SearchMenus.cs') -ReferencedAssemblies UIAutomationClient,UIAutomationTypes
 
 function Set-SearchOptions([IntPtr]$Window,[bool]$Everything,[int]$Limit,[string]$Path='',[int]$Scope=0) {
-    [void](Show-UiSettings $Window); $page=Set-UiPage 3
+    [void](Show-UiSettings $Window); $page=Set-UiPage 0
+    $limitEdit=[FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_SEARCH_HISTORY_LIMIT'))
+    Assert-Ui ($limitEdit -ne [IntPtr]::Zero) 'History limit is missing from General settings.'
+    [FileSpacerRegression.Native]::SetText($limitEdit,[string]$Limit)
+    $page=Set-UiPage 3
     Set-UiCheck $page 'IDC_EVERYTHING_ENABLED' $Everything
-    [FileSpacerRegression.Native]::SetText([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_SEARCH_HISTORY_LIMIT')),[string]$Limit)
     [FileSpacerRegression.Native]::SetText([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_EVERYTHING_PATH')),$Path)
     [void][FileSpacerRegression.Native]::Message([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_EVERYTHING_SCOPE')),0x14e,$Scope,0)
     Press-UiSettings 3
