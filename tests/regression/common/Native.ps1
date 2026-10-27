@@ -1,6 +1,7 @@
 ﻿$ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1') -ErrorAction Stop
 if ($env:OS -ne 'Windows_NT' -or ![Environment]::Is64BitProcess) { throw 'Windows x64 is required.' }
-if (!(Get-Command cl.exe -ErrorAction SilentlyContinue)) { throw 'Run tests.cmd, or use an x64 MSVC developer prompt.' }
+if (!$env:FS_REGRESSION_PREPARED -and !(Get-Command cl.exe -ErrorAction SilentlyContinue)) { throw 'Run tests.cmd, or use an x64 MSVC developer prompt.' }
 if ($env:FS_REGRESSION_RUN) { $RunDirectory=$env:FS_REGRESSION_RUN }
 else { $RunDirectory=Join-Path $ProjectRoot ('build\regression\individual-'+[Guid]::NewGuid().ToString('N')) }
 [void][IO.Directory]::CreateDirectory($RunDirectory)
@@ -13,13 +14,16 @@ function Build-NativeTest {
     param([Parameter(Mandatory=$true)][string]$Name,
         [Parameter(Mandatory=$true)][string]$CaseDirectory,
         [string[]]$ProductionSources=@(), [switch]$Sqlite, [switch]$Storage,
-        [ValidateSet('','Menu','Shell','Settings','View','Adapters','Geometry')][string]$Extract='',
+        [ValidateSet('','Menu','Shell','Settings','View','Adapters','Geometry','LockBadge')][string]$Extract='',
         [switch]$Resources, [switch]$CommonControls, [string[]]$Libraries=@(),
         [ValidateSet('c++14','c++17')][string]$Standard='c++17', [string[]]$Defines=@(),
         [string]$OutputDirectory='')
     $output=Join-Path $RunDirectory $Name
     if ($OutputDirectory) { $output=[IO.Path]::GetFullPath($OutputDirectory) }
     [void][IO.Directory]::CreateDirectory($output)
+    if ($env:FS_REGRESSION_PREPARED) {
+        return Copy-PreparedNativeTest -Parameters $PSBoundParameters -OutputDirectory $output
+    }
     if ($Extract) {
         & (Join-Path $PSScriptRoot 'Prepare-Sources.ps1') -Mode $Extract -ProjectRoot $ProjectRoot -CaseDirectory $CaseDirectory -OutputDirectory $output
     }
