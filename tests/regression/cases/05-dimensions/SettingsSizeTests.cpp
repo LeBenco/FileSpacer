@@ -15,7 +15,7 @@
 
 namespace {
 SIZE stored = {400, 500};
-bool options[8] = {true, true, true, true, true, true, true, true};
+bool options[9] = {true, true, true, true, true, true, true, true, true};
 int writes = 0, notifications = 0, testErrorCount = 0, cases = 0;
 std::wstring lastError;
 void require(bool condition, const char *description) {
@@ -37,6 +37,7 @@ TEST_OPTION(RefreshButtonEnabled, 4)
 TEST_OPTION(UpButtonEnabled, 5)
 TEST_OPTION(ViewButtonEnabled, 6)
 TEST_OPTION(FullNamesOnSelection, 7)
+TEST_OPTION(ViewMenuPreviewEnabled, 8)
 #undef TEST_OPTION
 }
 void notifyWindowSettingsChanged() { ++notifications; }
@@ -168,7 +169,7 @@ int main() {
     setText(IDC_FOLDER_WINDOW_HEIGHT, std::to_wstring(minimum.cy).c_str());
     require(notify(PSN_KILLACTIVE) == FALSE && writes == 0, "valid leaving does not save yet");
     require(notify(PSN_APPLY) == PSNRET_NOERROR && testErrorCount == 0, "exact minima accepted");
-    require(stored.cx == minimum.cx && stored.cy == minimum.cy && writes == 9, "valid dimensions and options saved");
+    require(stored.cx == minimum.cx && stored.cy == minimum.cy && writes == 10, "valid dimensions and all nine options saved");
     ++cases;
     reset();
     CheckDlgButton(displayPage, IDC_FULL_NAMES_ON_SELECTION, BST_UNCHECKED);
