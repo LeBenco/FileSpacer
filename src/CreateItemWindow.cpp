@@ -18,9 +18,14 @@
 
 namespace filespacer {
 
-// Serialize lookup + publication, not the lifetime or loading of the folder view.
-static thread_local std::vector<std::wstring> pendingOpens;
+// Initialize only on a thread that opens folders, never on a late Shell worker
+// starting while the static runtime is already shutting down.
+static std::vector<std::wstring> &pendingOpens() {
+    static thread_local std::vector<std::wstring> opens;
+    return opens;
+}
 
+// Serialize lookup + publication, not the lifetime or loading of the folder view.
 class FolderOpenLock {
 public:
     explicit FolderOpenLock(const std::wstring &property) {
@@ -28,7 +33,7 @@ public:
         mutex = CreateMutexW(nullptr, FALSE, name.c_str());
         if (!mutex)
             return;
-        pendingOpens.push_back(property);
+        pendingOpens().push_back(property);
         registered = true;
         DWORD wait = WaitForSingleObject(mutex, 0);
         if (wait == WAIT_OBJECT_0 || wait == WAIT_ABANDONED) {
@@ -49,7 +54,7 @@ public:
         if (mutex)
             CloseHandle(mutex);
         if (registered)
-            pendingOpens.pop_back();
+            pendingOpens().pop_back();
     }
     explicit operator bool() const { return acquired; }
     FolderOpenLock(const FolderOpenLock &) = delete;
@@ -167,7 +172,8 @@ FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCm
     if (property.empty())
         return FolderOpenResult::Failed;
     // A mutex is recursive on its owning thread. Reject a reentrant creation too.
-    bool pending = std::find(pendingOpens.begin(), pendingOpens.end(), property) != pendingOpens.end();
+    const auto &opens = pendingOpens();
+    bool pending = std::find(opens.begin(), opens.end(), property) != opens.end();
     if (pending)
         return FolderOpenResult::Pending;
     FolderOpenLock lock(property);
