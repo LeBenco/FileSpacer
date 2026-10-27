@@ -121,6 +121,18 @@ versioned installer and `FileSpacer-update.txt`.
 
 ## Regression tests
 
+`tests.cmd` runs locally by default. Add `-VM AgentWin10` to execute in the
+configured Hyper-V client, while keeping application and test-helper compilation
+on the host. Existing `-Category`, `-Pattern`, `-TimeoutSeconds` and
+`-RunDirectory` options also apply to VM runs. For example:
+
+```cmd
+tests.cmd -VM AgentWin10 -Category UI -Pattern "16-redimensionnement-alt\03-*"
+```
+
+An unconfigured VM fails explicitly. There is no automatic local UI fallback.
+See [the regression guide](../tests/regression/README.md) for setup and reports.
+
 From the project root, close FileSpacer and Control Panel windows, then run:
 
 ```cmd
