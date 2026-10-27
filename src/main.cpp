@@ -195,14 +195,17 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     if (!recoveryArgv) return 1;
     const bool maintenance = handleUpdateCommandLine(recoveryArgc, recoveryArgv, &maintenanceExit)
         || recovery::handleCommandLine(recoveryArgc, recoveryArgv, &maintenanceExit);
+    const bool synchronizeMenus = !maintenance && recoveryArgc == 2
+        && lstrcmpiW(recoveryArgv[1], L"/sync-context-menus") == 0;
     wstr_ptr startingFolder;
     std::wstring updateSession;
     if (!maintenance && recoveryArgc == 3 && lstrcmpiW(recoveryArgv[1], L"/restore-update") == 0)
         updateSession = recoveryArgv[2];
-    const LaunchType requestedLaunch = maintenance ? LAUNCH_FAIL : !updateSession.empty()
+    const LaunchType requestedLaunch = maintenance || synchronizeMenus ? LAUNCH_FAIL : !updateSession.empty()
         ? LAUNCH_RESTORE_UPDATE : parseStartingFolder(recoveryArgc, recoveryArgv, &startingFolder);
     LocalFree(recoveryArgv);
     if (maintenance) return maintenanceExit;
+    if (synchronizeMenus) return settings::synchronizeContextMenus().status();
     // Leave immediately so a new launch cannot keep the installed image mapped.
     if (isUpdateInstallationRunning()) return 0;
     if (requestedLaunch == LAUNCH_FAIL) return 1;
@@ -221,6 +224,18 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         }
         MessageBoxW(nullptr, getString(IDS_RECOVERY_UNAVAILABLE), getString(IDS_APP_NAME),
             MB_OK | MB_ICONWARNING);
+    }
+
+#ifdef FILESPACER_DEBUG
+    if (!settings::testMode)
+#endif
+    {
+        const LSTATUS status = settings::synchronizeContextMenus().status();
+        if (status != ERROR_SUCCESS) {
+            auto error = getErrorMessage(static_cast<DWORD>(status));
+            auto message = formatString(IDS_CONTEXT_MENU_SYNC_FAILED, static_cast<DWORD>(status), error.get());
+            MessageBoxW(nullptr, message.get(), getString(IDS_APP_NAME), MB_OK | MB_ICONWARNING);
+        }
     }
 
 #ifdef FILESPACER_MEMLEAKS
