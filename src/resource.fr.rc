@@ -145,6 +145,8 @@ Copyright (c) 2013 Afrow Soft Ltd. Voir LockedList-LICENSE.txt.\r\n\
 
 STRINGTABLE
 BEGIN
+    IDS_OPEN_IN_EXPLORER, "Ouvrir dans l'explorateur Windows"
+    IDS_CONTEXT_MENU_SYNC_FAILED, "Impossible de mettre à jour les menus contextuels des dossiers (erreur %1!u!) : %2"
   IDS_LOCK_WINDOW_STATE "Verrouiller l’état de la fenêtre"
   IDS_UNLOCK_WINDOW_STATE "Déverrouiller l’état de la fenêtre"
   IDS_WINDOW_STATE_LOCKED "État de la fenêtre verrouillé. Les changements de disposition restent temporaires."
