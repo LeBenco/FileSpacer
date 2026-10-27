@@ -1,6 +1,6 @@
 # Window shortcut implementation and validation
 
-For everyday use and configuration, see [Window shortcuts in the user guide](user-guide.md#window-shortcuts).
+For everyday use and configuration, see [Moving and resizing in the user guide](user-guide.md#moving-and-resizing).
 
 The **Shortcuts / Raccourcis** settings tab configures moving and resizing folder
 windows. Defaults are Alt + left drag to move and Alt + right drag to resize.
