@@ -16,6 +16,7 @@
 #include <shobjidl_core.h>
 #include <uxtheme.h>
 #include <vsstyle.h>
+#include <memory>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -754,6 +755,9 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
         case WM_INITDIALOG: {
+            const auto *page = reinterpret_cast<const PROPSHEETPAGE *>(lParam);
+            SendDlgItemMessageW(hwnd, IDC_ABOUT_ICON, STM_SETICON,
+                static_cast<WPARAM>(page->lParam), 0);
             SendDlgItemMessage(hwnd, IDC_LEGAL_INFO, EM_SETTABSTOPS, 1, (LPARAM)tempPtr(16u));
             CheckDlgButton(hwnd, IDC_AUTO_UPDATE,
                 settings::getUpdateCheckEnabled() ? BST_CHECKED : BST_UNCHECKED);
@@ -831,6 +835,10 @@ void openSettingsDialog(HWND owner, SettingsPage page) {
     resetFolderStateRequested = false;
 
     HINSTANCE hInstance = GetModuleHandle(nullptr);
+    const int aboutIconSize = scaleDPI(48);
+    std::unique_ptr<std::remove_pointer_t<HICON>, decltype(&DestroyIcon)> aboutIcon(
+        static_cast<HICON>(checkLE(LoadImageW(hInstance, MAKEINTRESOURCEW(IDR_APP_ICON),
+            IMAGE_ICON, aboutIconSize, aboutIconSize, 0))), DestroyIcon);
     PROPSHEETPAGE pages[NUM_SETTINGS_PAGES];
 
     pages[SETTINGS_GENERAL] = {sizeof(PROPSHEETPAGE)};
@@ -860,6 +868,7 @@ void openSettingsDialog(HWND owner, SettingsPage page) {
     pages[SETTINGS_ABOUT].hInstance = hInstance;
     pages[SETTINGS_ABOUT].pszTemplate = MAKEINTRESOURCE(IDD_SETTINGS_ABOUT);
     pages[SETTINGS_ABOUT].pfnDlgProc = aboutProc;
+    pages[SETTINGS_ABOUT].lParam = reinterpret_cast<LPARAM>(aboutIcon.get());
 
     PROPSHEETHEADER sheet = {sizeof(sheet)};
     sheet.dwFlags = PSH_PROPSHEETPAGE | PSH_USEICONID | PSH_NOCONTEXTHELP | PSH_USECALLBACK;
