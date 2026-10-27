@@ -2,7 +2,11 @@
 
 ## Unreleased
 
+## 1.1.9 — 2026-10-27
+
 - Preview display modes while hovering over the View menu, with progressive restoration when cancelling and a default-on option under Display settings.
+
+[Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.8...v1.1.9)
 
 ## 1.1.8 — 2026-10-27
 
