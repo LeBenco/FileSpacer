@@ -532,6 +532,8 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::getViewButtonEnabled() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_FULL_NAMES_ON_SELECTION,
                 settings::getFullNamesOnSelection() ? BST_CHECKED : BST_UNCHECKED);
+            CheckDlgButton(hwnd, IDC_VIEW_MENU_PREVIEW_ENABLED,
+                settings::getViewMenuPreviewEnabled() ? BST_CHECKED : BST_UNCHECKED);
             enableToolbarOptions(hwnd);
             return TRUE;
         }
@@ -556,6 +558,7 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 bool upButtonEnabled = !!IsDlgButtonChecked(hwnd, IDC_UP_BUTTON_ENABLED);
                 bool viewButtonEnabled = !!IsDlgButtonChecked(hwnd, IDC_VIEW_BUTTON_ENABLED);
                 bool fullNamesOnSelection = !!IsDlgButtonChecked(hwnd, IDC_FULL_NAMES_ON_SELECTION);
+                bool viewMenuPreviewEnabled = !!IsDlgButtonChecked(hwnd, IDC_VIEW_MENU_PREVIEW_ENABLED);
                 bool windowSettingsChanged = statusTextEnabled != settings::getStatusTextEnabled()
                     || toolbarEnabled != settings::getToolbarEnabled()
                     || quickAccessEnabled != settings::getQuickAccessEnabled()
@@ -563,7 +566,8 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     || refreshButtonEnabled != settings::getRefreshButtonEnabled()
                     || upButtonEnabled != settings::getUpButtonEnabled()
                     || viewButtonEnabled != settings::getViewButtonEnabled()
-                    || fullNamesOnSelection != settings::getFullNamesOnSelection();
+                    || fullNamesOnSelection != settings::getFullNamesOnSelection()
+                    || viewMenuPreviewEnabled != settings::getViewMenuPreviewEnabled();
                 settings::setStatusTextEnabled(statusTextEnabled);
                 settings::setToolbarEnabled(toolbarEnabled);
                 settings::setQuickAccessEnabled(quickAccessEnabled);
@@ -572,6 +576,7 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::setUpButtonEnabled(upButtonEnabled);
                 settings::setViewButtonEnabled(viewButtonEnabled);
                 settings::setFullNamesOnSelection(fullNamesOnSelection);
+                settings::setViewMenuPreviewEnabled(viewMenuPreviewEnabled);
                 if (windowSettingsChanged)
                     notifyWindowSettingsChanged();
                 SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_NOERROR);
@@ -592,7 +597,8 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                         || LOWORD(wParam) == IDC_REFRESH_BUTTON_ENABLED
                         || LOWORD(wParam) == IDC_UP_BUTTON_ENABLED
                         || LOWORD(wParam) == IDC_VIEW_BUTTON_ENABLED
-                        || LOWORD(wParam) == IDC_FULL_NAMES_ON_SELECTION))) {
+                        || LOWORD(wParam) == IDC_FULL_NAMES_ON_SELECTION
+                        || LOWORD(wParam) == IDC_VIEW_MENU_PREVIEW_ENABLED))) {
                 PropSheet_Changed(GetParent(hwnd), hwnd);
                 return TRUE;
             }
