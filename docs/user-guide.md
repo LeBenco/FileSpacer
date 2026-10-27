@@ -30,6 +30,8 @@ including when its saved state is locked.
 
 ### View options
 
+Toolbar and status-bar visibility can be changed in **Settings**.
+
 In **Settings > Display**, two options are enabled by default:
 
 - **Show the full name of a selected file** keeps one selected name readable in
@@ -154,26 +156,16 @@ opened menus.
 
 ## Settings and updates
 
-### Interface and preferences
+**Preferences.** **Ctrl+,** opens Settings, even with the toolbar hidden.
+The interface follows Windows' display language, with English as the fallback;
+changing the language requires restarting.
 
-**Ctrl+,** opens Settings, even with the toolbar hidden. Toolbar and status-bar
-visibility can be changed there. Closing the folder that opened Settings discards
-pending edits. The interface follows Windows' display language, with English as
-the fallback; changing the language requires restarting.
+**Updates.** Check for a new release in **Settings > About**, then choose
+**Install FileSpacer vX.Y.Z** to update. Installation requires confirmation;
+updates are never installed automatically. After installation, FileSpacer reopens
+the previously open folders with their saved layouts. Optional weekly checks
+are off by default and can be enabled in About.
 
-**Settings > About > Maintenance > Reset all folder state** closes open folder
-windows and clears their saved layouts and history, keeping global preferences
-and your files. This also removes saved window-state locks.
-
-### Updates
-
-**Settings > About** checks for a new release. **Install FileSpacer vX.Y.Z** asks
-for confirmation, downloads and verifies the installer, then closes folder
-windows normally before starting setup. You can cancel the download; updates
-are never installed automatically.
-
-After installation, FileSpacer requests reopening the previously open folders
-with their saved layouts. Cancelling setup or UAC also requests reopening them.
-Automatic weekly checks are optional and off by default; enable them in About
-or the first-run welcome dialog. Older releases may offer the GitHub release
-page instead of an installer.
+**Maintenance.** **Settings > About > Maintenance > Reset all folder state**
+closes open folder windows and clears their saved layouts, history and
+window-state locks. Your files and global preferences are preserved.
