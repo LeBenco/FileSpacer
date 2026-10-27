@@ -1,12 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-only; Copyright (C) 2026 Benco
-"""Derive the installer icon and wizard artwork from FileSpacer's SVG."""
+"""Compose optical installer icons from FileSpacer's ICO; render wizard SVGs."""
 
 import argparse
 import copy
-import importlib.util
 from pathlib import Path
 import subprocess
-import sys
 import xml.etree.ElementTree as ET
 
 from PIL import Image, ImageDraw
@@ -14,20 +12,47 @@ from PIL import Image, ImageDraw
 
 NS = "{http://www.w3.org/2000/svg}"
 ET.register_namespace("", NS[1:-1])
+# Diameter, white outline, arrow shaft width, head width and total height.
+# These are pixel measurements for each native frame, not scaled SVG geometry.
+BADGE_MASTERS = {
+    16: (7, .75, 1, 4, 5),
+    20: (8, 1, 1.5, 4.5, 5.5),
+    24: (10, 1, 2, 5.5, 7),
+    32: (13, 1.25, 2.5, 7.5, 9),
+    40: (16, 1.5, 3, 9.5, 11),
+    48: (19, 1.75, 3.5, 11, 13),
+    64: (24, 2, 4.5, 14.5, 16.5),
+    96: (34, 2.5, 6.5, 21, 23.5),
+    128: (45, 3.25, 8.5, 28, 31),
+    256: (88, 6, 18, 55, 61),
+}
 
 
-def generate(source, output, inkscape):
-    spec = importlib.util.spec_from_file_location(
-        "app_icon", Path(__file__).with_name("generate-icon.py"))
-    app_icon = importlib.util.module_from_spec(spec)
-    sys.dont_write_bytecode = True
-    spec.loader.exec_module(app_icon)
+def draw_badge(size, bounds):
+    """Fit an independent badge to this bitmap's folder edges with a yellow rim."""
+    diameter, stroke, shaft, head, height = BADGE_MASTERS[size]
+    factor = 16
+    right, bottom = bounds[2] - 1 - 1/factor, bounds[3] - 1 - 1/factor
+    cx, cy = right - diameter/2, bottom - diameter/2
+    badge = Image.new("RGBA", (size * factor, size * factor))
+    draw = ImageDraw.Draw(badge)
+    draw.ellipse(tuple(round(v * factor) for v in
+                 (right-diameter, bottom-diameter, right, bottom)),
+                 fill="#5743A2", outline="white", width=round(stroke * factor))
+    # Snap the shaft's left edge to a pixel, keeping its own optical width.
+    left = round(cx - shaft/2)
+    ax = left + shaft/2
+    arrow = ((left, cy-height/2), (left+shaft, cy-height/2),
+             (left+shaft, cy), (ax+head/2, cy), (ax, cy+height/2),
+             (ax-head/2, cy), (left, cy))
+    draw.polygon([(x*factor, y*factor) for x, y in arrow], fill="white")
+    return badge.resize((size, size), Image.Resampling.BOX)
+
+
+def generate(source, icon_source, output, inkscape):
     artwork = ET.parse(source).getroot()
     if artwork.get("viewBox") != "0 0 212 212":
         raise ValueError("Expected the centered 212 x 212 application artwork.")
-    logo = artwork.find(f"{NS}g[@id='logo-tesseract-projected']")
-    if logo is None or len(logo) != 9:
-        raise ValueError("Expected the nine projected tesseract polygons.")
     output.mkdir(parents=True, exist_ok=True)
 
     def svg(width, height):
@@ -48,53 +73,28 @@ def generate(source, output, inkscape):
                        check=True, timeout=180)
         return png
 
-    installer = svg(224, 224)
-    ET.SubElement(installer, NS + "use", href="#app", x="6", y="6",
-                  width="212", height="212")
-    # Align the outer white edge with the folder's right (218) and bottom (208).
-    badge = ET.SubElement(installer, NS + "g", transform="translate(179.5 169.5)")
-    ET.SubElement(badge, NS + "circle", r="36",
-                  fill="#5743A2", stroke="white", **{"stroke-width": "5"})
-    # Variant A: enlarged downward arrow within the approved purple badge.
-    ET.SubElement(badge, NS + "path", fill="white",
-                  d="M-8-27h16v26h16l-24 27-24-27h16z")
     frames = []
-    for size in app_icon.SIZES:
-        png = output / f"installer-{size}.png"
-        if size in app_icon.FOLDER_MASTERS:
-            frame = Image.alpha_composite(app_icon.draw_folder(size),
-                                          app_icon.draw_logo(size, logo))
-            factor = 16
-            badge = Image.new("RGBA", (size * factor, size * factor))
-            draw = ImageDraw.Draw(badge)
-            radius = size * .205
-            # Pillow draws the white outline inside this box; match the optical
-            # folder master's last covered subpixel on both axes.
-            right = size - 1/factor
-            bottom = app_icon.FOLDER_MASTERS[size][3] - 1/factor
-            cx, cy = right - radius, bottom - radius
-            draw.ellipse(tuple(round(v * factor) for v in
-                         (cx-radius, cy-radius, cx+radius, cy+radius)),
-                         fill="#5743A2", outline="white",
-                         width=max(1, round(size * .027 * factor)))
-            arrow = ((-8, -27), (8, -27), (8, -1), (24, -1),
-                     (0, 26), (-24, -1), (-8, -1))
-            draw.polygon([((cx+x*radius/36)*factor, (cy+y*radius/36)*factor)
-                          for x, y in arrow], fill="white")
-            frame = Image.alpha_composite(
-                frame, badge.resize((size, size), Image.Resampling.BOX))
+    with Image.open(icon_source) as app:
+        if app.ico.sizes() != {(s, s) for s in BADGE_MASTERS}:
+            raise ValueError("The application ICO must contain all ten optical sizes.")
+        for size in BADGE_MASTERS:
+            base = app.ico.getimage((size, size)).convert("RGBA")
+            badge = draw_badge(size, base.getbbox())
+            frame = Image.alpha_composite(base, badge)
+            if frame.getchannel("A").tobytes() != base.getchannel("A").tobytes():
+                raise ValueError(f"The badge extends outside the folder at {size}px.")
+            png = output / f"installer-{size}.png"
             frame.save(png)
-        else:
-            render(installer, f"installer-{size}", size, size)
-        frames.append(png)
+            badge.save(output / f"badge-{size}.png")
+            frames.append(png)
     icon_path = output / "FileSpacer-install.ico"
     subprocess.run(["magick", *map(str, frames), "-define",
                     "icon:png-compression-size=256", str(icon_path)],
                    check=True, timeout=180)
     with Image.open(icon_path) as icon:
-        if icon.ico.sizes() != {(s, s) for s in app_icon.SIZES}:
+        if icon.ico.sizes() != {(s, s) for s in BADGE_MASTERS}:
             raise ValueError("Installer ICO sizes do not match the application icon.")
-        for size, png in zip(app_icon.SIZES, frames):
+        for size, png in zip(BADGE_MASTERS, frames):
             with Image.open(png) as frame:
                 if icon.ico.getimage((size, size)).convert("RGBA").tobytes() != frame.convert("RGBA").tobytes():
                     raise ValueError(f"Installer ICO pixels changed at {size}px.")
@@ -130,7 +130,8 @@ def generate(source, output, inkscape):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, required=True)
+    parser.add_argument("--icon", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--inkscape", required=True)
     args = parser.parse_args()
-    generate(args.source.resolve(), args.output.resolve(), args.inkscape)
+    generate(args.source.resolve(), args.icon.resolve(), args.output.resolve(), args.inkscape)
