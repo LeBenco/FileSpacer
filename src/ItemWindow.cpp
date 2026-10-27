@@ -1634,10 +1634,8 @@ void ItemWindow::layoutToolbarRow(int width) {
         width, rectHeight(rebarRect),
         SWP_NOZORDER | SWP_NOACTIVATE);
 
-    REBARBANDINFO band = {sizeof(band)};
-    band.fMask = RBBIM_SIZE;
-    band.cx = clientSize(toolbarRebar).cx;
-    SendMessage(toolbarRebar, RB_SETBANDINFO, 0, (LPARAM)&band);
+    // The single band must fill the row, including after maximize/restore.
+    SendMessage(toolbarRebar, RB_MAXIMIZEBAND, 0, FALSE);
 
     int rebarHeight = (int)SendMessage(toolbarRebar, RB_GETBARHEIGHT, 0, 0);
     SetWindowPos(toolbarRebar, nullptr,
