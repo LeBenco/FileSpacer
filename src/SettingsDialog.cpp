@@ -616,10 +616,12 @@ void changeDefaultBrowser(HWND owner, bool value) {
         return;
     }
     const settings::DefaultBrowserResult result = settings::setDefaultBrowser(value);
-    const LSTATUS statuses[] = {result.directory, result.compressedFolder, result.drive};
-    const UINT labels[] = {IDS_BROWSER_DIRECTORY, IDS_BROWSER_COMPRESSED_FOLDER, IDS_BROWSER_DRIVE};
+    const LSTATUS statuses[] = {result.directory, result.compressedFolder, result.drive,
+        result.networkServer, result.networkShare};
+    const UINT labels[] = {IDS_BROWSER_DIRECTORY, IDS_BROWSER_COMPRESSED_FOLDER, IDS_BROWSER_DRIVE,
+        IDS_BROWSER_NETWORK_SERVER, IDS_BROWSER_NETWORK_SHARE};
     std::wstring failures;
-    for (int index = 0; index < 3; ++index) {
+    for (int index = 0; index < _countof(statuses); ++index) {
         if (statuses[index] == ERROR_SUCCESS)
             continue;
         auto error = getErrorMessage(static_cast<DWORD>(statuses[index]));
