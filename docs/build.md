@@ -65,10 +65,15 @@ update the script when changing that folder design or its coordinate system.
 `build.cmd installer` always repackages the current Release executable and
 accompanying notices; it does not launch the installer.
 
-Packaging also runs `generate-installer-assets.py`, using the same SVG, optical
-small-icon masters and existing Inkscape/Pillow/ImageMagick tools. It generates
-a distinct ten-size installer ICO with a purple download-arrow badge, English
-and French wizard sidebars, and a header bitmap in `build\installer-assets`.
+Packaging also runs `generate-installer-assets.py` with the existing
+Inkscape/Pillow/ImageMagick tools. It decodes the ten native bitmaps of
+`src\res\FileSpacer.ico` without scaling them, then composites a separate purple
+download-arrow badge. `BADGE_MASTERS` defines the badge diameter, white outline,
+shaft, head and height individually for every size. Placement follows each
+bitmap's actual folder bounds, retaining one yellow pixel on the right and
+bottom; the generator checks that the original alpha outline stays intact.
+The SVG remains the source for English and French wizard sidebars and the header
+bitmap. All outputs go into `build\installer-assets`.
 These generated resources are not checked in; the application icon is unchanged.
 
 The installer saves its three component selections in the existing
