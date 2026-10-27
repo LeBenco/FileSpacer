@@ -109,7 +109,9 @@ struct DefaultBrowserResult {
     LSTATUS directory;
     LSTATUS compressedFolder;
     LSTATUS drive;
+    LSTATUS status() const { return directory ? directory : compressedFolder ? compressedFolder : drive; }
 };
 DefaultBrowserResult setDefaultBrowser(bool value);
+DefaultBrowserResult synchronizeContextMenus();
 
 }} // namespace
