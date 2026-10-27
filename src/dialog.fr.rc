@@ -121,11 +121,11 @@ STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
 CAPTION "À propos"
 FONT 8, "MS Shell Dlg", 400, 0, 0
 {
-  CONTROL IDR_APP_ICON, -1, "Static", SS_ICON, 7, 7, 0, 0
-  CONTROL "FileSpacer", 12, "Static", SS_NOTIFY|WS_GROUP, 35, 7, 49, 8
-  CONTROL "Version :", -1, "Static", WS_GROUP, 35, 15, 35, 8
-  CONTROL "", IDC_VERSION, "Static", WS_GROUP, 77, 15, 49, 8
-  CONTROL "Par Benco", -1, "Static", WS_GROUP, 35, 26, 244, 8
+  CONTROL "", IDC_ABOUT_ICON, "Static", SS_ICON|SS_REALSIZEIMAGE, 7, 7, 0, 0
+  CONTROL "FileSpacer", 12, "Static", SS_NOTIFY|WS_GROUP, 47, 7, 49, 8
+  CONTROL "Version :", -1, "Static", WS_GROUP, 47, 15, 35, 8
+  CONTROL "", IDC_VERSION, "Static", WS_GROUP, 89, 15, 49, 8
+  CONTROL "Par Benco", -1, "Static", WS_GROUP, 47, 26, 232, 8
 #if 0 // Deferred public services.
   CONTROL "&Aide", IDC_HELP_LINK, "Button", WS_TABSTOP, 7, 28, 84, 14
   CONTROL "&Site web", IDC_WEBSITE_LINK, "Button", WS_TABSTOP, 105, 28, 84, 14
