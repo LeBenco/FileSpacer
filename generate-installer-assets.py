@@ -51,11 +51,13 @@ def generate(source, output, inkscape):
     installer = svg(224, 224)
     ET.SubElement(installer, NS + "use", href="#app", x="6", y="6",
                   width="212", height="212")
-    ET.SubElement(installer, NS + "circle", cx="180", cy="181", r="36",
+    # Align the outer white edge with the folder's right (218) and bottom (208).
+    badge = ET.SubElement(installer, NS + "g", transform="translate(179.5 169.5)")
+    ET.SubElement(badge, NS + "circle", r="36",
                   fill="#5743A2", stroke="white", **{"stroke-width": "5"})
     # Variant A: enlarged downward arrow within the approved purple badge.
-    ET.SubElement(installer, NS + "path", fill="white",
-                  d="M172 154h16v26h16l-24 27-24-27h16z")
+    ET.SubElement(badge, NS + "path", fill="white",
+                  d="M-8-27h16v26h16l-24 27-24-27h16z")
     frames = []
     for size in app_icon.SIZES:
         png = output / f"installer-{size}.png"
@@ -66,7 +68,11 @@ def generate(source, output, inkscape):
             badge = Image.new("RGBA", (size * factor, size * factor))
             draw = ImageDraw.Draw(badge)
             radius = size * .205
-            cx, cy = size * .79, size * .8
+            # Pillow draws the white outline inside this box; match the optical
+            # folder master's last covered subpixel on both axes.
+            right = size - 1/factor
+            bottom = app_icon.FOLDER_MASTERS[size][3] - 1/factor
+            cx, cy = right - radius, bottom - radius
             draw.ellipse(tuple(round(v * factor) for v in
                          (cx-radius, cy-radius, cx+radius, cy+radius)),
                          fill="#5743A2", outline="white",
