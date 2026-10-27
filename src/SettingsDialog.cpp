@@ -182,6 +182,10 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::getKeepSelectionOnActivate() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_WINDOW_STATE_LOCK_ENABLED,
                 settings::getWindowStateLockEnabled() ? BST_CHECKED : BST_UNCHECKED);
+            CheckDlgButton(hwnd, IDC_WINDOW_STATE_LOCK_BADGE_ENABLED,
+                settings::getWindowStateLockBadgeEnabled() ? BST_CHECKED : BST_UNCHECKED);
+            EnableWindow(GetDlgItem(hwnd, IDC_WINDOW_STATE_LOCK_BADGE_ENABLED),
+                !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_LOCK_ENABLED));
             CheckDlgButton(hwnd, IDC_LIVE_NAME_SEARCH,
                 settings::getLiveNameSearch() ? BST_CHECKED : BST_UNCHECKED);
             return TRUE;
@@ -224,14 +228,17 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 bool groupFolderWindows = !!IsDlgButtonChecked(hwnd, IDC_GROUP_FOLDER_WINDOWS);
                 bool liveNameSearch = !!IsDlgButtonChecked(hwnd, IDC_LIVE_NAME_SEARCH);
                 const bool smartPlacement = !!IsDlgButtonChecked(hwnd, IDC_SMART_WINDOW_PLACEMENT);
+                const bool lockBadgeEnabled = !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_LOCK_BADGE_ENABLED);
                 bool windowSettingsChanged = liveNameSearch != settings::getLiveNameSearch()
-                    || smartPlacement != settings::getSmartWindowPlacement();
+                    || smartPlacement != settings::getSmartWindowPlacement()
+                    || lockBadgeEnabled != settings::getWindowStateLockBadgeEnabled();
                 settings::setGroupFolderWindows(groupFolderWindows);
                 settings::setKeepSourceWindowOpen(!!IsDlgButtonChecked(hwnd, IDC_KEEP_SOURCE_WINDOW_OPEN));
                 settings::setSmartWindowPlacement(smartPlacement);
                 settings::setKeepSelectionOnActivate(
                     !!IsDlgButtonChecked(hwnd, IDC_KEEP_SELECTION_ON_ACTIVATE));
                 settings::setLiveNameSearch(liveNameSearch);
+                settings::setWindowStateLockBadgeEnabled(lockBadgeEnabled);
                 if (windowSettingsChanged)
                     notifyWindowSettingsChanged();
                 SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_NOERROR);
@@ -265,8 +272,12 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     || LOWORD(wParam) == IDC_KEEP_SOURCE_WINDOW_OPEN && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_SMART_WINDOW_PLACEMENT && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_WINDOW_STATE_LOCK_ENABLED && HIWORD(wParam) == BN_CLICKED
+                    || LOWORD(wParam) == IDC_WINDOW_STATE_LOCK_BADGE_ENABLED && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_LIVE_NAME_SEARCH && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_KEEP_SELECTION_ON_ACTIVATE && HIWORD(wParam) == BN_CLICKED) {
+                if (LOWORD(wParam) == IDC_WINDOW_STATE_LOCK_ENABLED && HIWORD(wParam) == BN_CLICKED)
+                    EnableWindow(GetDlgItem(hwnd, IDC_WINDOW_STATE_LOCK_BADGE_ENABLED),
+                        !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_LOCK_ENABLED));
                 PropSheet_Changed(GetParent(hwnd), hwnd);
                 return TRUE;
             }
