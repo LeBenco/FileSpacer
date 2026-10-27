@@ -113,11 +113,29 @@ HRESULT restoreIconPositions(IFolderView *view, const std::vector<uint8_t> &byte
     HRESULT result = decodePositions(bytes, positions);
     if (FAILED(result)) return result;
     if (!current()) return E_ABORT;
-    HRESULT restored = S_OK;
+    std::vector<PCUITEMID_CHILD> items;
+    std::vector<POINT> points;
+    items.reserve(positions.size());
+    points.reserve(positions.size());
     for (const auto &position : positions) {
-        PCUITEMID_CHILD item = position.id;
-        POINT point = scaleDPI(position.point);
-        result = view->SelectAndPositionItems(1, &item, &point, SVSI_POSITIONITEM | SVSI_NOSTATECHANGE);
+        const POINT point = scaleDPI(position.point);
+        POINT actual = {};
+        result = view->GetItemPosition(position.id, &actual);
+        if (!current()) return E_ABORT;
+        if (SUCCEEDED(result) && actual.x == point.x && actual.y == point.y) continue;
+        items.push_back(position.id);
+        points.push_back(point);
+    }
+    if (items.empty()) return S_OK;
+    result = view->SelectAndPositionItems(static_cast<UINT>(items.size()), items.data(), points.data(),
+        SVSI_POSITIONITEM | SVSI_NOSTATECHANGE);
+    if (!current()) return E_ABORT;
+    if (SUCCEEDED(result)) return result;
+    // Keep individual-item recovery for providers that reject a batch or an
+    // item removed since capture, preserving the previous partial restore.
+    HRESULT restored = S_OK;
+    for (size_t i = 0; i < items.size(); ++i) {
+        result = view->SelectAndPositionItems(1, &items[i], &points[i], SVSI_POSITIONITEM | SVSI_NOSTATECHANGE);
         if (!current()) return E_ABORT;
         if (FAILED(result) && SUCCEEDED(restored)) restored = result;
     }
