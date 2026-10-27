@@ -90,6 +90,8 @@ EverythingScope getEverythingScope();
 void setEverythingScope(EverythingScope value);
 bool getWindowStateLockEnabled();
 bool setWindowStateLockEnabled(bool value);
+bool getWindowStateLockBadgeEnabled();
+void setWindowStateLockBadgeEnabled(bool value);
 bool getFullNamesOnSelection();
 void setFullNamesOnSelection(bool value);
 LSTATUS resetGlobalOptions();

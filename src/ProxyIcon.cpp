@@ -6,6 +6,7 @@
 #include "DPI.h"
 #include "resource.h"
 #include "UIStrings.h"
+#include "Settings.h"
 #include <windowsx.h>
 #include <shlobj.h>
 #include <vssym32.h>
@@ -238,7 +239,7 @@ bool ProxyIcon::drawTitle(const DRAWITEMSTRUCT *draw) {
             iconSize, iconSize, 0, nullptr, DI_NORMAL);
     RECT text = draw->rcItem;
     text.left += PROXY_PADDING.cx + iconSize + PROXY_INFLATE.cx;
-    if (stateLocked) {
+    if (stateLocked && settings::getWindowStateLockBadgeEnabled()) {
         const int badgeSize = scaleDPI(11);
         const int x = PROXY_PADDING.cx + iconSize - badgeSize + scaleDPI(2);
         const int y = (rectHeight(draw->rcItem) - iconSize)/2 + iconSize - badgeSize + scaleDPI(1);
