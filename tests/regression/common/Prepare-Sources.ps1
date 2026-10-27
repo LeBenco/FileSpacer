@@ -1,5 +1,5 @@
 ﻿param(
-    [Parameter(Mandatory=$true)][ValidateSet('Menu','Shell','Settings','View','Adapters','Geometry')][string]$Mode,
+    [Parameter(Mandatory=$true)][ValidateSet('Menu','Shell','Settings','View','Adapters','Geometry','LockBadge')][string]$Mode,
     [Parameter(Mandatory=$true)][string]$ProjectRoot,
     [Parameter(Mandatory=$true)][string]$CaseDirectory,
     [Parameter(Mandatory=$true)][string]$OutputDirectory
@@ -54,6 +54,13 @@ function Save-Source([string]$Name,[string]$Text) {
 }
 [void][IO.Directory]::CreateDirectory($OutputDirectory)
 switch ($Mode) {
+    'LockBadge' {
+        $source=Read-Source 'ProxyIcon.cpp'
+        $start=$source.IndexOf('// Native ICO loading',[StringComparison]::Ordinal)
+        $end=$source.IndexOf('void ProxyIcon::init()',[StringComparison]::Ordinal)
+        if ($start -lt 0 -or $end -le $start) { throw 'Production ICO badge helper not found.' }
+        Save-Source 'LockBadge-under-test.inc' $source.Substring($start,$end-$start)
+    }
     'Adapters' {
         $settings=Read-Source 'ShellViewSettings.cpp'
         $helpers=Get-SourceBlock $settings "namespace {`nFolderViewSettings::Key stateKey"
