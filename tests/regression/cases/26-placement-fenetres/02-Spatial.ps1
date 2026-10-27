@@ -12,6 +12,10 @@ function Overlap-Area($First,$Second) {
 }
 try {
     Initialize-Ui 'smart-placement' -FixtureParent (Join-Path $ProjectRoot 'build')
+    # Earlier preference cases may have applied this value. Exercise the absent
+    # value default independently, before opening any window in this scenario.
+    $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($script:UiSettingsKey,$true)
+    try { $key.DeleteValue('SmartWindowPlacement',$false) } finally { $key.Dispose() }
     Set-UiPreference 'FolderWindow2Width' 400; Set-UiPreference 'FolderWindow2Height' 300
     Set-UiPreference 'KeepSourceWindowOpen' 0
     $parentPath=Join-Path $script:UiRoot 'Parent'; $childPath=Join-Path $parentPath 'Child'
@@ -32,8 +36,8 @@ try {
     $smart=[FileSpacerRegression.Native]::GetDlgItem($general,(Get-UiId 'IDC_SMART_WINDOW_PLACEMENT'))
     Assert-Ui ($smart -ne [IntPtr]::Zero -and [FileSpacerRegression.Native]::Message($smart,0xf0,0,0) -eq 1) 'Smart placement is not enabled by default in General.'
     $placementLabel=[FileSpacerRegression.Native]::Text($smart).Replace('&','')
-    $frenchLabel='Minimiser la superposition des fen'+[char]0xea+'tres'
-    Assert-Ui ($placementLabel -in @('Minimize window overlap',$frenchLabel)) 'The placement option label is incorrect.'
+    $frenchLabel='Placer les nouvelles fen'+[char]0xea+'tres sur un espace libre'
+    Assert-Ui ($placementLabel -in @('Place new windows in free space',$frenchLabel)) 'The placement option label is incorrect.'
     Assert-Ui ([FileSpacerRegression.Native]::GetDlgItem($general,(Get-UiId 'IDC_RESET_FOLDER_STATE')) -eq [IntPtr]::Zero) 'Maintenance remains in General.'
     Set-UiCheck $general 'IDC_SMART_WINDOW_PLACEMENT' $false
     Press-UiSettings 5
