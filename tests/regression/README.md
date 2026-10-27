@@ -43,11 +43,41 @@ tests.cmd -Pattern "20-validation-elargie\05-*"
 tests.cmd -Pattern "24-*"
 ```
 
+Le même point d'entrée accepte `-VM "nom"` pour une VM Hyper-V configurée :
+
+```cmd
+tests.cmd -VM AgentWin10
+tests.cmd -VM AgentWin10 -Category Internal
+tests.cmd -VM AgentWin10 -Category UI -Pattern "16-redimensionnement-alt\03-*"
+```
+
+Sans `-VM`, l'exécution reste locale. `-Category`, `-Pattern`, leur combinaison,
+`-TimeoutSeconds` et `-RunDirectory` restent disponibles. La sélection précède
+la préparation : seuls les scénarios choisis et leurs dépendances sont transférés.
+L'application, les exécutables natifs et les helpers C# sont compilés sur l'hôte.
+L'invité charge les artefacts préparés et échoue si un helper manque ou diffère ;
+il ne compile pas. Les scénarios et assertions sont ceux du banc local.
+
+Le compte invité doit avoir une session graphique ouverte, la VM doit être
+allumée et VMConnect fermé. Aucun geste n'est envoyé au bureau hôte. Une VM non
+configurée provoque une erreur, sans repli local. La configuration initiale et
+les mises à jour du contrôleur protégé demandent UAC ; les passages ordinaires
+réutilisent la tâche et les identifiants chiffrés. Voir le
+[guide Hyper-V](../client/README.md).
+
+Les rapports distants sont récupérés sous `build/regression/vm-<id>/output/` :
+`regression/results.json`, `regression/summary.json`, les journaux des cas et
+`result.json` pour les contrôles d'identité, de session et de restauration.
+`connection.json`, `smoke.json` (nom conservé du transport) et les journaux du
+contrôleur restent au niveau du passage. Avec `-RunDirectory`, une copie complète
+est créée à l'emplacement demandé, sans écraser de rapport existant. Un timeout,
+un cas bloqué ou une sortie non nulle ne donne jamais PASS.
+
 ## Couverture conservée
 
 | Groupe | Jeux | Contrat |
 |---|---:|---|
-| 00-banc | 2 | Rapports, sorties de processus et nettoyage du lanceur. |
+| 00-banc | 3 | Rapports, sorties de processus, nettoyage du lanceur et intégrité des artefacts client. |
 | 01-stockage-sqlite | 4 | Stockage, identités spatiales, adaptateurs et géométrie. |
 | 02-retention-quota | 1 | Conservation et limites des données. |
 | 03-menus | 1 | Réentrance et durée de vie des commandes de menus. |
@@ -60,7 +90,7 @@ tests.cmd -Pattern "24-*"
 | 10-manifeste-maj | 1 | Validation du manifeste de mise à jour. |
 | 11-session-maj | 1 | Conservation de la session pendant une mise à jour. |
 | 12-navigation-spatiale | 6 | Politique Ctrl, parent existant et remontée sans sélection automatique. |
-| 13-preferences | 6 + 1 local | Apply/Cancel, propagation entre processus, recherche et persistance sous filtre ; contrôle local de l’icône À propos à 48 pixels à 96 DPI, sans chevauchement des textes. |
+| 13-preferences | 7 | Apply/Cancel, propagation entre processus, recherche et persistance sous filtre ; contrôle de l’icône À propos à 48 pixels à 96 DPI, sans chevauchement des textes. |
 | 14-disposition | 1 | Visibilité et disposition des contrôles de FileSpacer. |
 | 15-deplacement-alt | 32 | Déplacement, sélection, propriétés et exclusions des gestes Alt. |
 | 16-redimensionnement-alt | 18 | Redimensionnement, annulation, exclusions et géométrie persistante. |
@@ -77,9 +107,9 @@ tests.cmd -Pattern "24-*"
 | 28-apercu-affichage | 2 | Aperçus natifs au survol du menu Affichage, changements de mode et de taille, sortie d’entrée, annulation par Échap ou clic extérieur, validation au clic, restauration de la vue et préférence Affichage activée par défaut avec Annuler/Appliquer/OK. |
 | 29-menu-gestionnaire | 1 | Bascule vers l’autre gestionnaire dans les menus, défauts indépendants par classe, resynchronisation, ressources EN/FR, commandes et délégations COM conservées, vrais menus Shell et invocation du défaut masqué par les deux voies ShellExecuteEx. |
 
-Le cas `13-preferences/07-APropos.ps1` et les modifications de l’icône qu’il
-vérifie sont présents localement mais pas encore committés. Les comptes du
-catalogue ne constituent pas un résultat de validation : consulter les rapports
+Le cas `13-preferences/07-APropos.ps1` vérifie l’icône chargée, sa taille adaptée
+au DPI et l’absence de chevauchement des textes. Les comptes du catalogue ne
+constituent pas un résultat de validation : consulter les rapports
 datés dans [l’historique](../../docs/development-history.md).
 
 Le groupe 25 réutilise `Native.ps1`, `EssentialUi.ps1` et le mode `/test` du
