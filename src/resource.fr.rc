@@ -79,7 +79,7 @@ STRINGTABLE {
 
     IDS_SUCCESS_CAPTION,    "Opération réussie"
     IDS_CONFIRM_CAPTION,    "Confirmation"
-    IDS_RESET_FOLDER_STATE_CONFIRM, "Réinitialiser toutes les positions, tailles et options d'affichage mémorisées des dossiers ? Les fenêtres de dossiers de FileSpacer seront fermées et ne seront pas rouvertes automatiquement. Les paramètres de l'application seront conservés."
+    IDS_RESET_FOLDER_STATE_CONFIRM, "Réinitialiser toutes les positions, tailles et options d'affichage mémorisées des dossiers ? Les fenêtres de dossiers de FileSpacer seront fermées et ne seront pas rouvertes automatiquement. Le dialogue de configuration sera fermé et les modifications non appliquées seront abandonnées. Les paramètres de l'application déjà enregistrés seront conservés."
     IDS_RESET_FOLDER_STATE_CLOSE_ERROR, "Impossible de fermer toutes les fenêtres de FileSpacer. Une fenêtre a peut-être refusé de se fermer ou ne répond plus. Aucun état mémorisé des dossiers n'a été supprimé. Certaines fenêtres ont peut-être déjà été fermées."
     IDS_RESET_FOLDER_STATE_STORAGE_ERROR, "Impossible d'ouvrir la base des états de dossiers. Aucun état mémorisé des dossiers n'a été supprimé."
     IDS_RESET_FOLDER_STATE_DELETE_ERROR, "Impossible de réinitialiser la base des états de dossiers. La suppression n'a pas été validée."

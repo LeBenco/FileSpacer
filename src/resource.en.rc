@@ -79,7 +79,7 @@ STRINGTABLE {
 
     IDS_SUCCESS_CAPTION,    "Success"
     IDS_CONFIRM_CAPTION,    "Are you sure?"
-    IDS_RESET_FOLDER_STATE_CONFIRM, "Reset all saved folder positions, sizes and view settings? FileSpacer folder windows will be closed and will not reopen automatically. Application settings will be kept."
+    IDS_RESET_FOLDER_STATE_CONFIRM, "Reset all saved folder positions, sizes and view settings? FileSpacer folder windows will be closed and will not reopen automatically. The settings dialog will close and unapplied changes will be discarded. Previously saved application settings will be kept."
     IDS_RESET_FOLDER_STATE_CLOSE_ERROR, "Unable to close all FileSpacer windows. A window may have refused to close or may not be responding. No saved folder state was deleted. Some windows may already have closed."
     IDS_RESET_FOLDER_STATE_STORAGE_ERROR, "Unable to open the folder state database. No saved folder state was deleted."
     IDS_RESET_FOLDER_STATE_DELETE_ERROR, "Unable to reset the folder state database. The deletion was not committed."
