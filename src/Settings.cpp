@@ -1,7 +1,10 @@
 #include "Settings.h"
 #include "FolderStateStore.h"
+#include "UIStrings.h"
 #include <strsafe.h>
 #include <atlbase.h>
+#include <shlobj.h>
+#include <cwchar>
 
 namespace filespacer {
 namespace settings {
@@ -232,6 +235,88 @@ bool supportsDefaultBrowser() {
         RRF_RT_ANY, nullptr, nullptr, nullptr);
 }
 
+namespace {
+LSTATUS setMenuString(const std::wstring &key, const wchar_t *name, DWORD type,
+        const wchar_t *value, bool &changed) {
+    const DWORD size = (lstrlenW(value) + 1) * sizeof(wchar_t);
+    std::wstring current(size / sizeof(wchar_t), L'\0');
+    DWORD actualSize = size, actualType = 0;
+    if (RegGetValueW(HKEY_CURRENT_USER, key.c_str(), name, RRF_RT_ANY | RRF_NOEXPAND,
+            &actualType, &current[0], &actualSize) == ERROR_SUCCESS
+            && actualType == type && actualSize == size
+            && memcmp(current.data(), value, size) == 0) return ERROR_SUCCESS;
+    const LSTATUS status = RegSetKeyValueW(HKEY_CURRENT_USER, key.c_str(), name, type, value, size);
+    if (status == ERROR_SUCCESS) changed = true;
+    return status;
+}
+
+LSTATUS removeMenuValue(const std::wstring &key, bool &changed) {
+    const LSTATUS status = RegDeleteKeyValueW(HKEY_CURRENT_USER, key.c_str(), L"ProgrammaticAccessOnly");
+    if (status == ERROR_FILE_NOT_FOUND || status == ERROR_PATH_NOT_FOUND) return ERROR_SUCCESS;
+    if (status == ERROR_SUCCESS) changed = true;
+    return status;
+}
+
+LSTATUS synchronizeMenu(const std::wstring &shell, bool explorer, bool background, bool &changed) {
+    const std::wstring verb = shell + L"\\filespacer";
+    const std::wstring alternate = L"Software\\Classes\\" + shell + L"\\filespacer.explorer";
+    const std::wstring userVerb = L"Software\\Classes\\" + verb;
+    // Only update installed FileSpacer menus; portable and /test launches install nothing.
+    const LSTATUS installed = RegGetValueW(HKEY_CLASSES_ROOT, verb.c_str(), nullptr,
+        RRF_RT_REG_SZ, nullptr, nullptr, nullptr);
+    if (installed != ERROR_SUCCESS && installed != ERROR_FILE_NOT_FOUND
+            && installed != ERROR_PATH_NOT_FOUND) return installed;
+    if (!explorer || installed != ERROR_SUCCESS) {
+        const LSTATUS visible = removeMenuValue(userVerb, changed);
+        const LSTATUS removed = RegDeleteTreeW(HKEY_CURRENT_USER, alternate.c_str());
+        if (removed == ERROR_SUCCESS) changed = true;
+        if (visible != ERROR_SUCCESS) return visible;
+        return removed == ERROR_FILE_NOT_FOUND || removed == ERROR_PATH_NOT_FOUND ? ERROR_SUCCESS : removed;
+    }
+    LSTATUS status = setMenuString(alternate, nullptr, REG_SZ, getString(IDS_OPEN_IN_EXPLORER), changed);
+    if (status == ERROR_SUCCESS) status = setMenuString(alternate, L"Icon", REG_EXPAND_SZ,
+        L"%SystemRoot%\\explorer.exe,0", changed);
+    if (status == ERROR_SUCCESS) status = setMenuString(alternate + L"\\command", nullptr, REG_EXPAND_SZ,
+        background ? L"\"%SystemRoot%\\explorer.exe\" \"%V\"" : L"\"%SystemRoot%\\explorer.exe\" \"%1\"", changed);
+    // Keep the installed command and DelegateExecute intact for default/programmatic opening.
+    if (status == ERROR_SUCCESS) status = setMenuString(userVerb, L"ProgrammaticAccessOnly", REG_SZ, L"", changed);
+    return status;
+}
+
+LSTATUS synchronizeType(const wchar_t *type, bool &changed) {
+    const std::wstring shell = std::wstring(type) + L"\\shell";
+    DWORD size = 0;
+    LSTATUS status = RegGetValueW(HKEY_CLASSES_ROOT, shell.c_str(), nullptr,
+        RRF_RT_REG_SZ, nullptr, nullptr, &size);
+    if (status != ERROR_SUCCESS && status != ERROR_FILE_NOT_FOUND && status != ERROR_PATH_NOT_FOUND)
+        return status;
+    std::wstring browser(size / sizeof(wchar_t) + 1, L'\0');
+    if (status == ERROR_SUCCESS) {
+        status = RegGetValueW(HKEY_CLASSES_ROOT, shell.c_str(), nullptr,
+            RRF_RT_REG_SZ, nullptr, &browser[0], &size);
+        if (status != ERROR_SUCCESS) return status;
+    }
+    // Shell's default value may be an ordered list of verbs separated by spaces or commas.
+    wchar_t *first = &browser[0] + std::wcsspn(browser.c_str(), L" ,");
+    first[std::wcscspn(first, L" ,")] = L'\0';
+    const bool explorer = lstrcmpiW(first, DATA_BROWSER_SET) == 0;
+    const LSTATUS menu = synchronizeMenu(shell, explorer, false, changed);
+    if (lstrcmpW(type, L"Directory") != 0) return menu;
+    const LSTATUS background = synchronizeMenu(L"Directory\\Background\\shell", explorer, true, changed);
+    return menu != ERROR_SUCCESS ? menu : background;
+}
+}
+
+DefaultBrowserResult synchronizeContextMenus() {
+    bool changed = false;
+    DefaultBrowserResult result = {};
+    result.directory = synchronizeType(L"Directory", changed);
+    result.compressedFolder = synchronizeType(L"CompressedFolder", changed);
+    result.drive = synchronizeType(L"Drive", changed);
+    if (changed) SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
+    return result;
+}
+
 DefaultBrowserResult setDefaultBrowser(bool value) {
     const wchar_t *data = value ? DATA_BROWSER_SET : DATA_BROWSER_CLEAR;
     DWORD size = value ? sizeof(DATA_BROWSER_SET) : sizeof(DATA_BROWSER_CLEAR);
@@ -240,6 +325,12 @@ DefaultBrowserResult setDefaultBrowser(bool value) {
     result.directory = RegSetKeyValue(HKEY_CURRENT_USER, KEY_DIRECTORY_BROWSER, L"", REG_SZ, data, size);
     result.compressedFolder = RegSetKeyValue(HKEY_CURRENT_USER, KEY_COMPRESSED_BROWSER, L"", REG_SZ, data, size);
     result.drive = RegSetKeyValue(HKEY_CURRENT_USER, KEY_DRIVE_BROWSER, L"", REG_SZ, data, size);
+    const DefaultBrowserResult menus = synchronizeContextMenus();
+    if (result.directory == ERROR_SUCCESS) result.directory = menus.directory;
+    if (result.compressedFolder == ERROR_SUCCESS) result.compressedFolder = menus.compressedFolder;
+    if (result.drive == ERROR_SUCCESS) result.drive = menus.drive;
+    // Associations can change even when the menus were already synchronized.
+    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     return result;
 }
 
