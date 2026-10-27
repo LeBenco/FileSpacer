@@ -181,9 +181,7 @@ BEGIN
   IDS_EVERYTHING_EVERYWHERE "Partout"
   IDS_EVERYTHING_NOT_FOUND "Everything est introuvable. Installez-le ou sélectionnez son exécutable manuellement."
   IDS_SEARCH_HISTORY_INVALID "Saisissez une limite d’historique comprise entre 0 et 20."
-  IDS_SMART_WINDOW_PLACEMENT_HELP_TITLE "Placement des nouvelles fenêtres"
   IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer place les nouvelles fenêtres de manière à minimiser le recouvrement des autres fenêtres de dossiers.\n\nCe placement s’applique aux dossiers sans position de fenêtre enregistrée, ainsi qu’aux positions devenues inaccessibles après un changement d’écran. Une position mémorisée encore utilisable reste prioritaire."
-  IDS_GROUP_FOLDER_WINDOWS_HELP_TITLE "Regroupement dans la barre des tâches"
   IDS_GROUP_FOLDER_WINDOWS_HELP "Les nouvelles fenêtres de dossiers peuvent être regroupées sous un même bouton de la barre des tâches, selon les paramètres de regroupement de Windows.\n\nSi cette option est désactivée, les dossiers peuvent être épinglés séparément dans la barre des tâches.\n\nCe réglage s’applique aux prochaines fenêtres ouvertes. Les fenêtres déjà ouvertes conservent leur regroupement actuel."
   IDS_EVERYTHING_EXECUTABLE "Exécutable Everything (*.exe)"
 END
