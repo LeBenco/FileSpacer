@@ -182,9 +182,7 @@ BEGIN
   IDS_EVERYTHING_EVERYWHERE "Everywhere"
   IDS_EVERYTHING_NOT_FOUND "Everything was not found. Install it or select its executable manually."
   IDS_SEARCH_HISTORY_INVALID "Enter a search history limit from 0 to 20."
-  IDS_SMART_WINDOW_PLACEMENT_HELP_TITLE "New window placement"
   IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer places new windows to minimize overlap with other folder windows.\n\nThis applies to folders without a saved window position, or whose saved position is no longer accessible after a display change. A saved position that is still usable takes priority."
-  IDS_GROUP_FOLDER_WINDOWS_HELP_TITLE "Taskbar grouping"
   IDS_GROUP_FOLDER_WINDOWS_HELP "New folder windows can be grouped under one taskbar button, according to your Windows taskbar settings.\n\nWhen this option is off, folders can be pinned separately to the taskbar.\n\nThis setting applies to windows opened after the change. Windows that are already open keep their current taskbar grouping."
   IDS_EVERYTHING_EXECUTABLE "Everything executable (*.exe)"
 END
