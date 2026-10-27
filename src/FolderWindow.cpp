@@ -87,6 +87,241 @@ void FolderWindow::init() {
 FolderWindow::FolderWindow(IShellItem *const item, const std::wstring &identity)
         : ItemWindow(item, identity) {}
 
+// The menu owns this session while tracking. A pending EnumDone can retain it
+// afterward so an incomplete presentation never reaches the state store.
+struct FolderWindow::ViewMenuPreview {
+    struct Entry { UINT command; };
+    static thread_local ViewMenuPreview *active;
+    FolderWindow &owner;
+    HMENU menu;
+    HMENU displayedMenu = nullptr;
+    CComPtr<IContextMenu> context;
+    CComPtr<IShellView> source;
+    CComPtr<IFolderView2> view;
+    const ULONG_PTR generation;
+    const ULONG_PTR serial;
+    ShellViewState initial;
+    std::vector<Entry> entries;
+    UINT initialCommand = 0, currentCommand = 0, wantedCommand = 0;
+    bool tracking = true, posted = false, busy = false, changed = false, waiting = false;
+    ULONG_PTR enumerationBaseline = 0;
+    std::vector<std::vector<uint8_t>> positionChunks;
+    size_t nextPositionChunk = 0;
+
+    HRESULT preparePositionChunks() {
+        positionChunks.clear();
+        nextPositionChunk = 0;
+        if (initial.icons.empty()) return S_OK;
+        if (initial.icons.size() > INT32_MAX) return E_INVALIDARG;
+        CComPtr<IStream> stream;
+        stream.Attach(SHCreateMemStream(initial.icons.data(), static_cast<UINT>(initial.icons.size())));
+        if (!stream) return E_OUTOFMEMORY;
+        size_t offset = 0, first = 0, count = 0;
+        while (offset < initial.icons.size()) {
+            CComHeapPtr<ITEMID_CHILD> id;
+            POINT point = {};
+            HRESULT result = IStream_ReadPidl(stream, &id);
+            if (FAILED(result) || !id) return FAILED(result) ? result : E_INVALIDARG;
+            result = IStream_Read(stream, &point, sizeof(point));
+            if (FAILED(result)) return result;
+            ULARGE_INTEGER at = {};
+            LARGE_INTEGER zero = {};
+            result = stream->Seek(zero, STREAM_SEEK_CUR, &at);
+            if (FAILED(result) || at.QuadPart > initial.icons.size()) return FAILED(result) ? result : E_INVALIDARG;
+            offset = static_cast<size_t>(at.QuadPart);
+            if (++count == 32 || offset == initial.icons.size()) {
+                positionChunks.emplace_back(initial.icons.data() + first, initial.icons.data() + offset);
+                first = offset;
+                count = 0;
+            }
+        }
+        return S_OK;
+    }
+
+    void advancePositions() {
+        if (busy || !current() || currentCommand || nextPositionChunk >= positionChunks.size()) return;
+        busy = true;
+        auto valid = [&]() { return current(); };
+        ++owner.navigationDepth;
+        const HRESULT result = restoreIconPositions(view, positionChunks[nextPositionChunk++], valid);
+        owner.resumeDeferredClose();
+        checkHR(result);
+        busy = false;
+        if (!current() || nextPositionChunk == positionChunks.size()) {
+            positionChunks.clear();
+            nextPositionChunk = 0;
+        } else if (tracking) PostMessage(owner.hwnd, WM_NULL, 0, 0);
+    }
+
+    void finishPositions() {
+        while (!busy && current() && !currentCommand && nextPositionChunk < positionChunks.size()) advancePositions();
+    }
+
+    ViewMenuPreview(FolderWindow &window, HMENU popup, IContextMenu *handler,
+            IFolderView2 *folderView) : owner(window), menu(popup), context(handler),
+        source(window.shellView), view(folderView), generation(window.viewGeneration),
+        serial(++window.viewMenuPreviewSerial) {}
+
+    bool current() const {
+        return owner.isWindowOperational() && owner.shellView == source
+            && owner.viewGeneration == generation;
+    }
+
+    bool capture() {
+        initial.view = captureOptions(view, {});
+        if (!current() || !(initial.view.present & FolderViewSettings::Mode)) return false;
+        auto valid = [&]() { return current(); };
+        HRESULT result = captureReopenSelection(source, valid, initial.selection);
+        if (FAILED(result) || !current()) return false;
+        if (owner.spatialView(view) && current()) {
+            result = captureIconPositions(view, valid, owner.enumerationComplete,
+                owner.getSavedFolderState().icons, initial.icons, !owner.searchText.empty());
+            if (FAILED(result) || !current()) return false;
+        }
+        for (int i = 0, count = GetMenuItemCount(menu); i < count; ++i) {
+            MENUITEMINFO info = {sizeof(info)};
+            info.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_SUBMENU;
+            if (!GetMenuItemInfo(menu, i, TRUE, &info) || info.hSubMenu
+                    || (info.fType & MFT_SEPARATOR) || (info.fState & (MFS_DISABLED | MFS_GRAYED))
+                    || info.wID < IDM_SHELL_FIRST || info.wID > IDM_SHELL_LAST) continue;
+            wchar_t verb[64] = {};
+            if (FAILED(context->GetCommandString(info.wID - IDM_SHELL_FIRST, GCS_VERBW,
+                    nullptr, reinterpret_cast<char *>(verb), _countof(verb))) || !current()) continue;
+            // Canonical verbs observed on the actual Shell; never match translated labels.
+            if (_wcsnicmp(verb, L"viewlogical", 11) != 0) continue;
+            entries.push_back({info.wID});
+            if (info.fState & MFS_CHECKED) initialCommand = info.wID;
+        }
+        return current() && !entries.empty();
+    }
+
+    static LRESULT CALLBACK filter(int code, WPARAM wParam, LPARAM lParam) {
+        if (code == MSGF_MENU && active) {
+            const MSG &message = *reinterpret_cast<const MSG *>(lParam);
+            if (message.message == WM_MOUSEMOVE || message.message == WM_NCMOUSEMOVE) {
+                POINT point = {};
+                if (GetCursorPos(&point)) active->pointAt(point);
+            }
+        }
+        return CallNextHookEx(nullptr, code, wParam, lParam);
+    }
+
+    void pointAt(POINT point) {
+        if (!tracking || !current() || !displayedMenu) return;
+        const int position = MenuItemFromPoint(nullptr, displayedMenu, point);
+        const UINT pointed = position >= 0 ? GetMenuItemID(displayedMenu, position) : 0;
+        UINT command = 0;
+        for (const auto &entry : entries) {
+            if (entry.command == pointed) {
+                command = entry.command == initialCommand ? 0 : entry.command;
+                break;
+            }
+        }
+        wantedCommand = command;
+    }
+
+    void highlight(UINT command, HMENU popup) {
+        if (!tracking || !current()) return;
+        displayedMenu = popup;
+        for (const auto &entry : entries) {
+            if (entry.command == command) {
+                wantedCommand = command == initialCommand ? 0 : command;
+                break;
+            }
+        }
+    }
+
+    void restoreDetails() {
+        if (!current() || waiting || (tracking && currentCommand)) return;
+        auto valid = [&]() { return current(); };
+        ++owner.navigationDepth;
+        if (!currentCommand && !initial.icons.empty() && owner.spatialView(view) && current()) {
+            if (tracking) {
+                checkHR(preparePositionChunks());
+                if (!positionChunks.empty()) PostMessage(owner.hwnd, WM_NULL, 0, 0);
+            } else checkHR(restoreIconPositions(view, initial.icons, valid));
+        }
+        if (current()) {
+            auto selection = initial.selection;
+            checkHR(restoreReopenSelection(source, selection, valid));
+        }
+        owner.resumeDeferredClose();
+    }
+
+    void apply(UINT command) {
+        if (busy || !current() || command == currentCommand) return;
+        positionChunks.clear();
+        nextPositionChunk = 0;
+        busy = true;
+        int before = -1, after = -1;
+        HRESULT counted = view->ItemCount(SVGIO_ALLVIEW, &before);
+        if (!current()) { busy = false; return; }
+        enumerationBaseline = owner.viewHost.enumerationSerial();
+        ++owner.navigationDepth;
+        HRESULT result;
+        if (command) {
+            auto info = owner.makeInvokeInfo(static_cast<int>(command - IDM_SHELL_FIRST), POINT{});
+            info.hwnd = owner.hwnd;
+            result = invokeShellCommand(context, reinterpret_cast<CMINVOKECOMMANDINFO *>(&info));
+        } else {
+            FolderViewSettings presentation = initial.view;
+            presentation.present &= FolderViewSettings::Mode | FolderViewSettings::Flags;
+            result = restoreOptions(view, presentation);
+        }
+        owner.resumeDeferredClose();
+        if (SUCCEEDED(result)) { currentCommand = command; changed = true; }
+        if (current()) {
+            HRESULT recounted = view->ItemCount(SVGIO_ALLVIEW, &after);
+            if (current()) {
+                waiting = (FAILED(counted) || FAILED(recounted) || before != after)
+                    && owner.viewHost.enumerationSerial() <= enumerationBaseline;
+                restoreDetails();
+            }
+        }
+        checkHR(result);
+        busy = false;
+        if (SUCCEEDED(result) && tracking && wantedCommand != currentCommand && !posted && current())
+            posted = PostMessage(owner.hwnd, MSG_VIEW_MENU_PREVIEW, serial, 0) != FALSE;
+    }
+
+    void update() {
+        posted = false;
+        if (tracking) apply(wantedCommand);
+    }
+
+    void enumerated(ULONG_PTR enumeration) {
+        if (!busy && waiting && enumeration > enumerationBaseline && current()) {
+            waiting = false;
+            restoreDetails();
+            if (!tracking && current()) {
+                owner.viewMenuPreview.reset();
+                owner.scheduleStateSave();
+            }
+        }
+    }
+
+    void finish(UINT command) {
+        tracking = false;
+        // An outside click / Escape retains the original mode. A chosen entry
+        // already previewed is committed without another round trip through it.
+        const UINT chosen = command == initialCommand ? 0 : command;
+        if (!chosen) finishPositions();
+        const bool applying = chosen != currentCommand;
+        apply(chosen);
+        if (!current()) return;
+        if (!chosen && currentCommand) return; // Never persist a preview after failed cancellation.
+        // Returning to the initial mode already restored its details in apply().
+        // Only a committed preview still needs its selection/focus restored here.
+        if (!applying && chosen && changed && !waiting) restoreDetails();
+        if (!waiting) {
+            owner.viewMenuPreview.reset();
+            owner.scheduleStateSave();
+        }
+    }
+};
+
+thread_local FolderWindow::ViewMenuPreview *FolderWindow::ViewMenuPreview::active = nullptr;
+
 bool FolderWindow::hasStatusText() {
     return bottomStatusBar && (GetWindowLongPtr(bottomStatusBar, GWL_STYLE) & WS_VISIBLE);
 }
@@ -526,7 +761,7 @@ FOLDERSETTINGS FolderWindow::folderSettings() const {
 }
 
 void FolderWindow::scheduleStateSave(bool icons) {
-    if (restoringState || !viewReady) return;
+    if (restoringState || !viewReady || viewMenuPreview) return;
     if (icons) viewStateDirty(FolderState::Icons);
     // Coalesce related native notifications; no polling and no database write per mouse move.
     SetTimer(hwnd, TIMER_SAVE_STATE, 250, nullptr);
@@ -534,7 +769,7 @@ void FolderWindow::scheduleStateSave(bool icons) {
 
 uint32_t FolderWindow::captureViewState(uint32_t mask) {
     uint32_t captured = ItemWindow::captureViewState(mask);
-    if (!viewHost || !viewReady || !initialStateApplied || restoringState
+    if (!viewHost || !viewReady || !initialStateApplied || restoringState || viewMenuPreview
             || getSavedFolderState().firstFailedAt) return captured;
     CComPtr<IShellView> source = shellView;
     const ULONG_PTR generation = viewGeneration;
@@ -585,6 +820,7 @@ void FolderWindow::loadIconPositions() {
 }
 
 std::vector<uint8_t> FolderWindow::captureReopenViewState() {
+    if (viewMenuPreview) return viewMenuPreview->initial.selection;
     // Closing is already set: use HWND/view identity rather than isWindowOperational.
     const HWND owner = hwnd;
     CComPtr<IShellView> view = shellView;
@@ -610,6 +846,8 @@ void FolderWindow::restoreReopenViewState() {
 }
 
 void FolderWindow::onDestroy() {
+    if (viewMenuPreview) restoringState = true;
+    viewMenuPreview.reset();
     resizeGesture.stop();
     checkHR(viewHost.stopObserving());
     KillTimer(hwnd, TIMER_SAVE_STATE);
@@ -1027,6 +1265,15 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
     }
 
     switch (message) {
+        case WM_ENTERIDLE: {
+            auto preview = viewMenuPreview;
+            if (wParam == MSGF_MENU && preview) {
+                preview->update();
+                preview->advancePositions();
+                return 0;
+            }
+            break;
+        }
         case MSG_ENUM_READY:
         case MSG_ENUM_DONE:
             if (isWindowOperational() && viewHost.isViewNotification(wParam)) {
@@ -1036,8 +1283,22 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
                 else if (static_cast<ULONG_PTR>(lParam) > viewOptionsEnumerationBaseline)
                     enumerationComplete = true;
                 finishViewInitialization();
+                auto preview = viewMenuPreview;
+                if (message == MSG_ENUM_DONE && preview)
+                    preview->enumerated(static_cast<ULONG_PTR>(lParam));
             }
             return 0;
+        case MSG_VIEW_MENU_PREVIEW: {
+            auto preview = viewMenuPreview;
+            if (preview && preview->serial == wParam && isWindowOperational()) preview->update();
+            return 0;
+        }
+        case WM_MENUSELECT: {
+            auto preview = viewMenuPreview;
+            if (preview && HIWORD(wParam) != 0xFFFF && !(HIWORD(wParam) & MF_POPUP))
+                preview->highlight(LOWORD(wParam), reinterpret_cast<HMENU>(lParam));
+            break;
+        }
         case MSG_QUICK_ACCESS_ICON: {
             HBITMAP bitmap = quickAccessIconThread ? quickAccessIconThread->takeBitmap() : nullptr;
             if (!bitmap)
@@ -1603,22 +1864,46 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     // The parent menu and this object are owned by openViewMenu.
     if (!isWindowOperational())
         return;
-    int cmd = TrackPopupMenuEx(subMenu, TPM_RETURNCMD | TPM_RIGHTBUTTON,
-        point.x, point.y, hwnd, nullptr);
-    if (isWindowOperational() && viewHost && cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) {
+    const bool previewEnabled = settings::getViewMenuPreviewEnabled();
+    if (previewEnabled) {
+        // Native icon moves may not have scheduled a save yet. Preserve the
+        // complete original placement before a preview can be closed.
+        viewStateDirty(FolderState::Icons);
+        persistViewState();
+    }
+    if (!isWindowOperational()) return;
+    CComPtr<IFolderView2> folderView;
+    auto detachSite = [](IContextMenu *handler) { checkHR(IUnknown_SetSite(handler, nullptr)); };
+    std::unique_ptr<IContextMenu, decltype(detachSite)> site(nullptr, detachSite);
+    if (checkHR(viewHost.currentView(IID_PPV_ARGS(&folderView))) && isWindowOperational()
+            && checkHR(IUnknown_SetSite(contextMenu, folderView)))
+        site.reset(contextMenu);
+    if (!isWindowOperational()) return;
+    std::shared_ptr<ViewMenuPreview> preview;
+    HHOOK hook = nullptr;
+    ViewMenuPreview *previous = ViewMenuPreview::active;
+    if (previewEnabled && folderView && viewReady && initialStateApplied && enumerationComplete && !restoringState) {
+        preview = std::make_shared<ViewMenuPreview>(*this, subMenu, contextMenu, folderView);
+        if (preview->capture()) {
+            hook = SetWindowsHookEx(WH_MSGFILTER, ViewMenuPreview::filter, nullptr, GetCurrentThreadId());
+            checkLE(hook);
+            if (hook) {
+                ViewMenuPreview::active = preview.get();
+                viewMenuPreview = preview;
+                KillTimer(hwnd, TIMER_SAVE_STATE);
+            }
+        }
+    }
+    const int cmd = isWindowOperational() ? TrackPopupMenuEx(subMenu, TPM_RETURNCMD | TPM_RIGHTBUTTON,
+        point.x, point.y, hwnd, nullptr) : 0;
+    if (hook) {
+        UnhookWindowsHookEx(hook);
+        ViewMenuPreview::active = previous;
+        preview->finish(cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST ? static_cast<UINT>(cmd) : 0);
+    } else if (isWindowOperational() && viewHost && cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) {
         auto info = makeInvokeInfo(cmd - IDM_SHELL_FIRST, point);
-        CComPtr<IFolderView2> folderView;
-        auto detachSite = [](IContextMenu *handler) { checkHR(IUnknown_SetSite(handler, nullptr)); };
-        std::unique_ptr<IContextMenu, decltype(detachSite)> site(nullptr, detachSite);
-        if (isWindowOperational() && checkHR(viewHost.currentView(IID_PPV_ARGS(&folderView)))
-                && isWindowOperational()) {
-            if (checkHR(IUnknown_SetSite(contextMenu, folderView)))
-                site.reset(contextMenu);
-        }
-        if (isWindowOperational()) {
-            info.hwnd = hwnd;
-            checkHR(invokeViewCommand(contextMenu, (CMINVOKECOMMANDINFO *)&info));
-        }
+        info.hwnd = hwnd;
+        checkHR(invokeViewCommand(contextMenu, reinterpret_cast<CMINVOKECOMMANDINFO *>(&info)));
     }
 }
 
@@ -1885,6 +2170,7 @@ STDMETHODIMP FolderWindow::Notify(IShellView *, DWORD) {
 // OR: OnNavigationPending, OnNavigationFailed
 STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
     CComPtr<ItemWindow> keepAlive(this);
+    viewMenuPreview.reset();
     cancelAltGesture();
     debugPrintf(L"NATIVE HWND=%p OnNavigationPending\n", hwnd);
     checkHR(viewHost.stopObserving());
