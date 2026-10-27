@@ -4,110 +4,68 @@
 
 # FileSpacer
 
-Version 1.1 uses Windows' own folder view, controlled through public Shell COM
-interfaces. The Shell provides rendering, file operations and notifications;
-FileSpacer manages spatial windows and their saved state. Control Panel opens
-in its native Windows window. See [the architecture and accepted differences](docs/native-shell-view.md).
+FileSpacer is a file manager for Windows built around the [spatial paradigm](https://en.wikipedia.org/wiki/Spatial_file_manager): each folder has a single window that remembers its position, size and view settings. This provides [stable visual landmarks](https://www.csse.canterbury.ac.nz/~andy/papers/transforms.pdf), allowing [spatial memory](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/01/p153-robertson.pdf) to help you recognize familiar folders at a glance. In a navigational file manager, the same window displays different folders in succession: its position and dimensions alone cannot identify the current folder, so you need to look at its contents to determine where you are. By preserving distinct landmarks for each folder, the spatial approach can help reduce the cognitive load of finding your way around your files.
 
-FileSpacer is a file manager for Microsoft Windows with a fully spatial interface: folders open in separate windows that retain their position, size, and display settings. By default, opening a folder closes the window it was opened from, avoiding the accumulation of windows and keeping the desktop uncluttered.
+To address the accumulation of windows, a recognized drawback of the spatial paradigm, FileSpacer closes the source window by default when a folder is opened. Hold Ctrl while opening a folder to keep the source window open when you want to work with several folders at once.
 
-Windows File Explorer does not provide all the behaviors needed for a consistent, efficient spatial workflow. FileSpacer aims to provide them:
+Windows 10 or later, x64. Available in English and French.
 
-- Each folder is represented by a single window, permanently and unambiguously tied to that folder.
-- Folders retain their spatial state: window position, size, and view settings.
-- A folder window follows its folder when it is moved or renamed.
-- When a folder is deleted, its window closes.
-- Windows' Auto-arrange feature can be turned off, allowing icons to be positioned freely. Their positions are saved with the folder settings and restored the next time the folder is opened.
-- By default, opening a folder closes the source window. This behavior can be reversed in Settings; holding Ctrl reverses it for an individual operation.
-- Hold Alt and drag with the left mouse button in the main file area to move a folder window, or with the right button to resize it, preserving the file selection.
+[Download the latest release](https://github.com/LeBenco/FileSpacer/releases/latest)
+· [User guide](docs/user-guide.md)
+· [Changelog](CHANGELOG.md)
 
-FileSpacer is compatible with [Nilesoft Shell](https://nilesoft.org/) for menu theming and targeted customization.
+## Features
 
-FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler), created by J. van't Hoog. It started as a small fork to remove the Miller-column approach, which I am not particularly fond of, and quickly grew into a project of its own. Many thanks to vanjac: his work provided an excellent foundation!
+- **Arrange icons freely**, with their positions saved and restored for each
+  folder. [Icon layout](docs/user-guide.md#icon-layout).
+- **Move and resize windows** from anywhere in the file area, preserving
+  selection. Mouse shortcuts are configurable; defaults are Alt + left drag
+  and Alt + right drag. [Window gestures](docs/window-shortcuts.md).
+- **Switch between open folders** from the title-bar menu, close parent
+  windows, or reopen the last closed window with Ctrl+Shift+T.
+  [Window navigation](docs/user-guide.md#window-navigation).
+- **Lock a window's saved layout** while allowing temporary changes to its
+  position, size and view settings.
+  [Window state locking](docs/user-guide.md#lock-a-folder-windows-saved-state).
+- **Filter the current folder** and reuse its recent searches.
+  [Search and history](docs/user-guide.md#search-and-everything).
+- **Preserve selection when activating a window** by clicking its background.
+  [Selection and activation](docs/user-guide.md#selection-and-activation).
+- **Reduce overlap between windows** when opening folders without a saved
+  position. [Window placement](docs/user-guide.md#window-placement).
 
-## Build and use
+## Integration
 
-Windows 10 or later, x64. The interface includes English and French resources. See [BUILD.md](BUILD.md) for the MSVC/NMAKE build and NSIS installer, and the [user guide](docs/user-guide.md) for navigation and maintenance commands.
+**Nilesoft Shell** can theme FileSpacer's menus and customize their commands,
+with rules targeting individual menus.
+[Configuration and examples](docs/nilesoft-shell.md).
 
-Run Windows regression tests with `tests.cmd`; see the [test guide](tests/regression/README.md) for individual groups and prerequisites.
+**Everything** can search the current folder and its subfolders, or search
+everywhere, using the query entered in FileSpacer. Results open in Everything,
+which must be installed separately.
+[Setup and usage](docs/user-guide.md#search-and-everything).
 
-## Nilesoft Shell
+FileSpacer can also be set as the default application for opening folders.
+[Windows integration](docs/user-guide.md#windows-integration).
 
-Nilesoft Shell themes and menu customizations can be applied to FileSpacer through `shell.nss` and its imported configuration files, using the standard directives to add, modify or remove menu items, with conditions adapted to FileSpacer.
+## Build
 
-### Scope system-menu rules
+Builds use MSVC/NMAKE, Visual Studio 2022 Build Tools with ATL and a Windows SDK,
+Inkscape and ImageMagick. NSIS is required for the installer; SQLite is bundled.
+See the [build guide](docs/build.md).
 
-For rules intended for Windows Explorer, the desktop or the taskbar, add `process.is_explorer &&` to their existing `where` condition. To preserve their scope in other applications while excluding FileSpacer, use `process.name != 'FileSpacer' &&` instead. Apply the filter to generic `menu`, `item`, `modify` and `remove` rules, including those in imported files.
+Regression tests combine PowerShell scenarios with C++ and C# helpers for
+internal checks and real Windows UI/Shell tests. Run them through `tests.cmd`,
+locally or in a configured Hyper-V VM.
+See the [test guide](tests/regression/README.md).
 
-### Apply themes to FileSpacer
+---
 
-Allow FileSpacer in `settings.exclude.where` and keep your theme import. For the usual exclusion condition:
+FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler),
+created by J. van't Hoog. Many thanks to vanjac for the foundation!
 
-```nss
-settings {
-    exclude.where = !process.is_explorer && !window.is_explorer && process.name != 'FileSpacer'
-}
-import 'imports/theme.nss'
-```
-
-Theme properties can also use process-specific expressions: for example, `dark = if(process.name == 'FileSpacer', true, sys.dark)` inside `theme { ... }` selects dark mode for FileSpacer and the system preference elsewhere.
-
-When using FileSpacer instead of File Explorer, theme changes apply directly to newly opened menus after unregistering and registering Nilesoft Shell again, without restarting Explorer.
-
-### Target a specific menu
-
-Declare these variables before the imports that use them:
-
-```nss
-$filespacer = (process.name == 'FileSpacer')
-$filespacer_title = (filespacer && window.parent.name == 'FileSpacer Item Window')
-$filespacer_toolbar = (filespacer && window.parent.name == 'FileSpacer Toolbar Host')
-$filespacer_context = (filespacer && !filespacer_title && !filespacer_toolbar)
-```
-
-Use the corresponding `where` and `type` properties on your rules:
-
-| Menu                      | `where`              | `type`        |
-| ------------------------- | -------------------- | ------------- |
-| Title-bar drop-down       | `filespacer_title`   | `'*'`         |
-| Toolbar **…**             | `filespacer_toolbar` | `'*'`         |
-| Selected files or folders | `filespacer_context` | `'file\|dir'` |
-| Folder background         | `filespacer_context` | `'back'`      |
-
-Use `mode='multiple'` for rules that should remain available across selection states. `process.name` omits `.exe`; `window.parent.name` identifies a window class.
-
-### Target an existing menu entry
-
-Nilesoft's general `modify(find=...)` mechanism matches an entry by its label. Combine it with `where` to limit the change to a menu; `|` separates alternative labels and `*` is a wildcard:
-
-```nss
-modify(type='*' mode='multiple' where=filespacer_title
-       find='Copy path|Copier le chemin' title='Copy folder path')
-```
-
-See the Nilesoft [configuration reference](https://nilesoft.org/docs/configuration/).
-
-### Recommended menu appearance
-
-Square corners are recommended for the title-bar and toolbar menus to match FileSpacer's buttons. Using the variables above, add this setting to your existing `theme { ... }` block:
-
-```nss
-border.radius = if(
-    process.name == 'FileSpacer' &&
-    (
-        window.parent.name == 'FileSpacer Item Window' ||
-        window.parent.name == 'FileSpacer Toolbar Host'
-    ),
-    0,
-    default
-)
-```
-
-If you already use a custom radius, replace `default` with its previous value.
-
-## License and privacy
-
-FileSpacer is distributed under the [GNU General Public License v3.0](LICENSE). Copyright (c) 2026 Benco, for the FileSpacer modifications. Original ChromaFiler code: Copyright (c) 2023 J. van't Hoog.
-
-See [third-party notices](THIRD_PARTY_NOTICES.md) and the [privacy policy](docs/privacy-policy.md).
-
+Distributed under the [GNU GPL v3.0](LICENSE).
+Copyright © 2026 Benco for FileSpacer modifications;
+original ChromaFiler code © 2023 J. van't Hoog.
+See [third-party notices](THIRD_PARTY_NOTICES.md)
+and the [privacy policy](docs/privacy-policy.md).
