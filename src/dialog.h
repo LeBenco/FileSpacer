@@ -50,6 +50,7 @@
 // #define IDC_DONATE_LINK             1407 // Deferred public services.
 
 #define IDC_WINDOW_STATE_LOCK_ENABLED 1040
+#define IDC_WINDOW_STATE_LOCK_BADGE_ENABLED 1041
 
 #define IDD_SETTINGS_SHORTCUTS       114
 #define IDD_SHORTCUT_EDITOR          115
