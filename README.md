@@ -20,7 +20,7 @@ Windows 10 or later, x64. Available in English and French.
   folder. [Icon layout](docs/user-guide.md#icon-layout).
 - **Move and resize windows** from anywhere in the file area, preserving
   selection. Mouse shortcuts are configurable; defaults are Alt + left drag
-  and Alt + right drag. [Window gestures](docs/window-shortcuts.md).
+  and Alt + right drag. [Window gestures](docs/user-guide.md#window-shortcuts).
 - **Switch between open folders** from the title-bar menu, close parent
   windows, or reopen the last closed window with Ctrl+Shift+T.
   [Window navigation](docs/user-guide.md#window-navigation).
@@ -28,7 +28,7 @@ Windows 10 or later, x64. Available in English and French.
   position, size and view settings.
   [Window state locking](docs/user-guide.md#lock-a-folder-windows-saved-state).
 - **Filter the current folder** and reuse its recent searches.
-  [Search and history](docs/user-guide.md#search-and-everything).
+  [Search and history](docs/user-guide.md#search-and-history).
 - **Preserve selection when activating a window** by clicking its background.
   [Selection and activation](docs/user-guide.md#selection-and-activation).
 - **Reduce overlap between windows** when opening folders without a saved
@@ -38,12 +38,12 @@ Windows 10 or later, x64. Available in English and French.
 
 **Nilesoft Shell** can theme FileSpacer's menus and customize their commands,
 with rules targeting individual menus.
-[Configuration and examples](docs/nilesoft-shell.md).
+[Setup and configuration](docs/user-guide.md#nilesoft-shell).
 
 **Everything** can search the current folder and its subfolders, or search
 everywhere, using the query entered in FileSpacer. Results open in Everything,
 which must be installed separately.
-[Setup and usage](docs/user-guide.md#search-and-everything).
+[Setup and usage](docs/user-guide.md#everything).
 
 FileSpacer can also be set as the default application for opening folders.
 [Windows integration](docs/user-guide.md#windows-integration).
