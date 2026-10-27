@@ -54,7 +54,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Ne pas fermer la fenêtre d’origine lors d’une ouverture", IDC_KEEP_SOURCE_WINDOW_OPEN, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 52, 272, 12
   CONTROL "Ne pas perdre la sélection quand on &clique sur une fenêtre en arrière-plan", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 66, 272, 12
   CONTROL "Placer les nouvelles fenêtres sur un &espace libre", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 80, 250, 12
-  CONTROL "Aide sur le placement des fenêtres", IDC_SMART_WINDOW_PLACEMENT_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 79, 12, 14
+  CONTROL "Informations sur le placement des fenêtres", IDC_SMART_WINDOW_PLACEMENT_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 79, 12, 14
   CONTROL "Verrouillage des fenêtres", -1, "Button", BS_GROUPBOX, 7, 100, 286, 44
   CONTROL "Activer le &verrouillage de l’état des fenêtres", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 111, 272, 12
   CONTROL "Afficher un verrou dans la &barre de titre pour les dossiers verrouillés", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
@@ -64,7 +64,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   EDITTEXT IDC_SEARCH_HISTORY_LIMIT, 246, 176, 40, 14, ES_NUMBER|WS_TABSTOP
   CONTROL "Barre des tâches", -1, "Button", BS_GROUPBOX, 7, 204, 286, 30
   CONTROL "Regrouper les fenêtres dans la barre des &tâches", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 215, 250, 12
-  CONTROL "Aide sur le regroupement des fenêtres", IDC_GROUP_FOLDER_WINDOWS_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 214, 12, 14
+  CONTROL "Informations sur le regroupement des fenêtres", IDC_GROUP_FOLDER_WINDOWS_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 214, 12, 14
 }
 
 IDD_SETTINGS_DISPLAY DIALOGEX DISCARDABLE 0, 0, 300, 238
