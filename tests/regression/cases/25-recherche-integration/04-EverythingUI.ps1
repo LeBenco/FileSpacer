@@ -2,7 +2,13 @@
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
 . (Join-Path $PSScriptRoot 'SearchIntegration.ps1')
 $testFailure=$null;$external=$null;$externalWindow=[IntPtr]::Zero
-$executable=if($env:FILESPACER_EVERYTHING_EXE){$env:FILESPACER_EVERYTHING_EXE}else{Join-Path $env:LOCALAPPDATA 'Programs\Everything\Everything.exe'}
+$probe=Build-NativeTest -Name EverythingTests -CaseDirectory $PSScriptRoot -ProductionSources @('Everything.cpp','SearchBox.cpp','WinUtils.cpp','DPI.cpp','UIStrings.cpp') -Resources -CommonControls -Standard 'c++14' -Libraries @('Ole32.lib','Gdi32.lib','Comctl32.lib','UxTheme.lib','Dwmapi.lib')
+$executable=$env:FILESPACER_EVERYTHING_EXE
+if(!$executable) {
+    $detection=Join-Path $env:FS_REGRESSION_RUN 'everything-detected.txt'
+    Invoke-TestProgram $probe @('--detect',$detection)
+    $executable=[IO.File]::ReadAllText($detection,[Text.Encoding]::Unicode)
+}
 function Expect-LaunchError([IntPtr]$Window,[string]$Path) {
     Set-SearchOptions $Window $true 5 $Path
     Submit-Search $Window 'keep' @('keep.txt')
@@ -38,7 +44,7 @@ function Assert-EverythingNames([string[]]$Expected) {
     } catch { Write-Host ('DIAG: actual Everything names='+$observed.Names);throw }
 }
 try {
-    if (!(Test-Path -LiteralPath $executable)) {
+    if (!$executable -or !(Test-Path -LiteralPath $executable)) {
         $reason='Install Everything or set FILESPACER_EVERYTHING_EXE for the real integration test.'
         @{Kind='EverythingPrerequisite';Reason=$reason} | ConvertTo-Json |
             Set-Content -LiteralPath (Join-Path $env:FS_REGRESSION_RUN 'blocked.json') -Encoding UTF8
@@ -56,9 +62,10 @@ try {
     [void](Show-UiSettings $window);$page=Set-UiPage 3
     [void][FileSpacerRegression.Native]::Message([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_EVERYTHING_DETECT')),0xf5,0,0)
     $detected=[FileSpacerRegression.Native]::Text([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_EVERYTHING_PATH')))
-    Assert-Ui ([IO.Path]::GetFullPath($detected) -eq [IO.Path]::GetFullPath($executable)) 'Automatic detection did not find installed Everything.'
+    Assert-Ui ([IO.Path]::GetFullPath($detected) -eq [IO.Path]::GetFullPath($executable)) ('Automatic detection did not find installed Everything. Expected='+$executable+'; actual='+$detected)
     Press-UiSettings 5
-    Assert-Ui (@(Get-Process Everything -ErrorAction SilentlyContinue).Count -eq 0) 'Close existing Everything before isolated integration test.'
+    $session=[Diagnostics.Process]::GetCurrentProcess().SessionId
+    Assert-Ui (@(Get-Process Everything -ErrorAction SilentlyContinue | Where-Object {$_.SessionId -eq $session}).Count -eq 0) 'Close existing Everything in this desktop session before isolated integration test.'
     # run_as_admin is bootstrapped from the INI beside the executable even
     # with -config. Never let the installed user's INI control this test.
     $installedConfig=Join-Path (Split-Path $executable -Parent) 'Everything.ini'
