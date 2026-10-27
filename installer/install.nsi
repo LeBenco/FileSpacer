@@ -1,4 +1,4 @@
-﻿; -*- coding: utf-8 -*-
+; -*- coding: utf-8 -*-
 ; FileSpacer, Windows 10+ x64. Compile from the project root through NMAKE.
 Unicode True
 Name "FileSpacer"
@@ -64,8 +64,8 @@ LangString DESC_BASE ${LANG_ENGLISH} "FileSpacer and its licenses."
 LangString DESC_BASE ${LANG_FRENCH} "FileSpacer et ses licences."
 LangString DESC_START ${LANG_ENGLISH} "Add FileSpacer to the Start Menu."
 LangString DESC_START ${LANG_FRENCH} "Ajouter FileSpacer au menu Démarrer."
-LangString DESC_CONTEXT ${LANG_ENGLISH} "Add 'Open in FileSpacer' to folders and drives. Required for the default file manager option; does not enable it."
-LangString DESC_CONTEXT ${LANG_FRENCH} "Ajouter « Ouvrir dans FileSpacer » aux dossiers et lecteurs. Nécessaire pour l'option de gestionnaire de fichiers par défaut, sans l'activer."
+LangString DESC_CONTEXT ${LANG_ENGLISH} "Add a folder and drive menu command for the other file manager: FileSpacer or Windows File Explorer. Required for the default file manager option; does not enable it."
+LangString DESC_CONTEXT ${LANG_FRENCH} "Ajouter aux dossiers et lecteurs une commande vers l'autre gestionnaire : FileSpacer ou l'explorateur Windows. Nécessaire pour l'option de gestionnaire par défaut, sans l'activer."
 LangString DESC_DEFAULT ${LANG_ENGLISH} "Open folders and drives with FileSpacer instead of Windows File Explorer. You can also enable this option later or restore File Explorer at any time in FileSpacer's settings, under Integration."
 LangString DESC_DEFAULT ${LANG_FRENCH} "Ouvrir les dossiers et les lecteurs avec FileSpacer à la place de l'Explorateur de fichiers Windows. Vous pouvez aussi activer cette option plus tard ou rétablir l'Explorateur à tout moment dans les paramètres de FileSpacer, onglet Intégration."
 LangString CONTEXT_TEXT ${LANG_ENGLISH} "Open in FileSpacer"
@@ -177,6 +177,9 @@ FunctionEnd
     ${If} $R0 == "filespacer"
         WriteRegStr ${ROOT} "${PREFIX}${TYPE}\shell" "" "none"
     ${EndIf}
+    DeleteRegValue ${ROOT} "${PREFIX}${TYPE}\shell\filespacer" "ProgrammaticAccessOnly"
+    DeleteRegKey /ifempty ${ROOT} "${PREFIX}${TYPE}\shell\filespacer"
+    DeleteRegKey ${ROOT} "${PREFIX}${TYPE}\shell\filespacer.explorer"
 !macroend
 !macro CLEAR_DEFAULT ROOT PREFIX TYPE
     !insertmacro CLEAR_CLASSES_DEFAULT ${ROOT} "${PREFIX}Software\Classes\" "${TYPE}"
@@ -194,6 +197,7 @@ Function ${PREFIX}CleanupCurrentUser
     !insertmacro CLEAR_DEFAULT HKCU "" "Directory"
     !insertmacro CLEAR_DEFAULT HKCU "" "CompressedFolder"
     !insertmacro CLEAR_DEFAULT HKCU "" "Drive"
+    !insertmacro CLEAR_DEFAULT HKCU "" "Directory\Background"
 FunctionEnd
 Function ${PREFIX}CleanupUser
     Pop $0
@@ -203,10 +207,12 @@ Function ${PREFIX}CleanupUser
         !insertmacro CLEAR_CLASSES_DEFAULT HKU "$0\" "Directory"
         !insertmacro CLEAR_CLASSES_DEFAULT HKU "$0\" "CompressedFolder"
         !insertmacro CLEAR_CLASSES_DEFAULT HKU "$0\" "Drive"
+        !insertmacro CLEAR_CLASSES_DEFAULT HKU "$0\" "Directory\Background"
     ${Else}
         !insertmacro CLEAR_DEFAULT HKU "$0\" "Directory"
         !insertmacro CLEAR_DEFAULT HKU "$0\" "CompressedFolder"
         !insertmacro CLEAR_DEFAULT HKU "$0\" "Drive"
+        !insertmacro CLEAR_DEFAULT HKU "$0\" "Directory\Background"
     ${EndIf}
 FunctionEnd
 !macroend
@@ -218,6 +224,7 @@ FunctionEnd
     !insertmacro CLEAR_DEFAULT SHCTX "" "Directory"
     !insertmacro CLEAR_DEFAULT SHCTX "" "CompressedFolder"
     !insertmacro CLEAR_DEFAULT SHCTX "" "Drive"
+    !insertmacro CLEAR_DEFAULT SHCTX "" "Directory\Background"
     ${If} $MultiUser.InstallMode == "CurrentUser"
         Call ${PREFIX}CleanupCurrentUser
     ${Else}
@@ -347,6 +354,17 @@ Section -ApplyOptions
     ${IfNot} ${SectionIsSelected} ${SecContext}
         !insertmacro REMOVE_VERBS
         !insertmacro CLEANUP_DEFAULTS ""
+    ${Else}
+        ; Use the same per-user synchronization as Settings and normal startup.
+        ; This also preserves and reflects a default selected before this upgrade.
+        ClearErrors
+        ExecWait '"$INSTDIR\FileSpacer.exe" /sync-context-menus' $0
+        ${If} ${Errors}
+        ${OrIf} $0 != 0
+            MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
+            SetErrorLevel 2
+            Abort
+        ${EndIf}
     ${EndIf}
     System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
 SectionEnd
