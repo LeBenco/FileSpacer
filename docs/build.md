@@ -127,7 +127,7 @@ From the project root, close FileSpacer and Control Panel windows, then run:
 tests.cmd
 ```
 
-This is the reference regression suite: 111 cases, including one real native
+This is the reference regression suite, including one real native
 Shell/SQLite persistence test in the production spatial configuration. It
 uses the same MSVC/NMAKE build above. Do not also run the native launcher
 when the full suite already ran group 18.
@@ -141,6 +141,6 @@ and initializes MSVC x64 itself; no shared compiler PDB is required. The
 exploratory profile comparisons and Control Panel embedding probes have
 been retired. Their sources remain in the migration branch history.
 
-Version 1.1.0 uses the public Shell integration described in
-[the architecture note](native-shell-view.md), including the three
-explicitly accepted behavior differences.
+FileSpacer uses the public Shell integration described in
+[the architecture note](native-shell-view.md), which distinguishes the remaining
+native-view limits from behaviors restored since the initial 1.1.0 migration.
