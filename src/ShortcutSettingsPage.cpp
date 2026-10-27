@@ -171,8 +171,11 @@ public:
     }
     void paint(HDC context) {
         RECT client = {}; GetClientRect(page, &client);
-        FillRect(context, &client, GetSysColorBrush(COLOR_BTNFACE));
-        HTHEME theme = OpenThemeData(page, L"Button");
+        HTHEME theme = OpenThemeData(page, L"Tab");
+        if (!theme || FAILED(DrawThemeBackground(theme, context, TABP_BODY, 0, &client, nullptr)))
+            FillRect(context, &client, GetSysColorBrush(COLOR_BTNFACE));
+        if (theme) CloseThemeData(theme);
+        theme = OpenThemeData(page, L"Button");
         for (int i = 0; i < 2; ++i) {
             const RECT &frame = frames[i];
             if (!theme || FAILED(DrawThemeBackground(theme, context, BP_GROUPBOX, GBS_NORMAL, &frame, nullptr)))
@@ -192,7 +195,8 @@ public:
         if (index < 0 || index >= 2) return;
         const int savedDC = SaveDC(item.hDC);
         if (!savedDC) return;
-        FillRect(item.hDC, &item.rcItem, GetSysColorBrush(COLOR_BTNFACE));
+        if (FAILED(DrawThemeParentBackground(item.hwndItem, item.hDC, &item.rcItem)))
+            FillRect(item.hDC, &item.rcItem, GetSysColorBrush(COLOR_BTNFACE));
         SetBkMode(item.hDC, TRANSPARENT); SetTextColor(item.hDC, GetSysColor(COLOR_BTNTEXT));
         SelectObject(item.hDC, reinterpret_cast<HFONT>(SendMessageW(page, WM_GETFONT, 0, 0)));
         RECT text = item.rcItem; text.right -= scaleDPI(25);
@@ -244,20 +248,21 @@ LRESULT CALLBACK captureProc(HWND window, UINT message, WPARAM wParam, LPARAM lP
 }
 
 INT_PTR CALLBACK editorProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
-    if (message == WM_INITDIALOG) { SetWindowLongPtrW(window, GWLP_USERDATA, lParam); return TRUE; }
+    if (message == WM_INITDIALOG) {
+        SetWindowLongPtrW(window, GWLP_USERDATA, lParam);
+        checkHR(EnableThemeDialogTexture(window, ETDT_ENABLETAB));
+        return TRUE;
+    }
     auto self = reinterpret_cast<ShortcutPage *>(GetWindowLongPtrW(window, GWLP_USERDATA));
     if (!self) return FALSE;
     if (message == WM_COMMAND) { self->command(LOWORD(wParam)); return TRUE; }
-    if (message == WM_CTLCOLORSTATIC || message == WM_CTLCOLORBTN) {
+    if (message == WM_CTLCOLORSTATIC && self->warning
+            && GetDlgCtrlID(reinterpret_cast<HWND>(lParam)) == IDC_SHORTCUT_FEEDBACK) {
         const HDC context = reinterpret_cast<HDC>(wParam);
-        SetTextColor(context, self->warning && GetDlgCtrlID(reinterpret_cast<HWND>(lParam)) == IDC_SHORTCUT_FEEDBACK
-            ? RGB(190, 0, 0) : GetSysColor(COLOR_BTNTEXT));
-        SetBkColor(context, GetSysColor(COLOR_BTNFACE));
-        return reinterpret_cast<INT_PTR>(GetSysColorBrush(COLOR_BTNFACE));
-    }
-    if (message == WM_ERASEBKGND) {
-        RECT rect = {}; GetClientRect(window, &rect);
-        FillRect(reinterpret_cast<HDC>(wParam), &rect, GetSysColorBrush(COLOR_BTNFACE)); return TRUE;
+        DrawThemeParentBackground(reinterpret_cast<HWND>(lParam), context, nullptr);
+        SetTextColor(context, RGB(190, 0, 0));
+        SetBkMode(context, TRANSPARENT);
+        return reinterpret_cast<INT_PTR>(GetStockObject(HOLLOW_BRUSH));
     }
     return FALSE;
 }
@@ -266,6 +271,7 @@ INT_PTR CALLBACK editorProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
 INT_PTR CALLBACK shortcutsProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
     auto self = reinterpret_cast<ShortcutPage *>(GetWindowLongPtrW(window, GWLP_USERDATA));
     if (message == WM_INITDIALOG) {
+        checkHR(EnableThemeDialogTexture(window, ETDT_ENABLETAB));
         auto state = std::make_unique<ShortcutPage>(); state->page = window;
         state->accessibility.CoCreateInstance(CLSID_AccPropServices);
         LOGFONTW font = {};
@@ -318,10 +324,6 @@ INT_PTR CALLBACK shortcutsProc(HWND window, UINT message, WPARAM wParam, LPARAM 
     }
     if (message == WM_PRINTCLIENT) { self->paint(reinterpret_cast<HDC>(wParam)); return TRUE; }
     if (message == WM_DRAWITEM) { self->draw(*reinterpret_cast<DRAWITEMSTRUCT *>(lParam)); return TRUE; }
-    if (message == WM_CTLCOLORSTATIC || message == WM_CTLCOLORBTN) {
-        SetBkColor(reinterpret_cast<HDC>(wParam), GetSysColor(COLOR_BTNFACE));
-        return reinterpret_cast<INT_PTR>(GetSysColorBrush(COLOR_BTNFACE));
-    }
     if (message == WM_THEMECHANGED || message == WM_SYSCOLORCHANGE)
         RedrawWindow(window, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
     if (message == WM_DESTROY) {
