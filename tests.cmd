@@ -2,6 +2,12 @@
 setlocal
 pushd "%~dp0"
 if errorlevel 1 exit /b 1
+rem Local by default. -VM "name" dispatches the filtered suite to a configured VM.
+powershell.exe -NoProfile -Command "if (Get-Process FileSpacer -ErrorAction SilentlyContinue) { Write-Error 'Close FileSpacer before building.'; exit 1 }"
+if errorlevel 1 (
+    popd
+    exit /b 1
+)
 call "%~dp0build.cmd" debug
 if errorlevel 1 (
     popd
