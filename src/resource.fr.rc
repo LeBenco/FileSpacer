@@ -115,7 +115,8 @@ STRINGTABLE {
 // Si vous appréciez FileSpacer, vous pouvez faire un don pour soutenir son développement. Cliquez sur le bouton Faire un don ci-dessus.\r\n
     IDS_LEGAL_INFO,         "\
 Copyright (c) 2026 Benco (modifications FileSpacer)\r\n\
-ChromaFiler d'origine : Copyright (c) 2023 J. van't Hoog\r\n\
+FileSpacer est un fork de ChromaFiler.\r\n\
+Copyright (c) 2023 J. van't Hoog (ChromaFiler)\r\n\
 \r\n\
 Licence publique générale GNU v3.0. Aucune garantie.\r\n\
 Vous pouvez redistribuer et modifier ce logiciel selon les termes de la GPL.\r\n\
@@ -128,7 +129,8 @@ Ressources de l'application :\r\n\
   Notices complètes : Lucide-LICENSE.txt dans le dossier d'installation.\r\n\
 - Segoe MDL2 Assets : police Microsoft fournie par Windows, non redistribuée.\r\n\
 \r\n\
-Installateur : module LockedList, licence zlib.\r\n\
+Installateur créé avec NSIS (Nullsoft Scriptable Install System) : https://nsis.sourceforge.io/\r\n\
+Module LockedList : licence zlib.\r\n\
 Copyright (c) 2013 Afrow Soft Ltd. Voir LockedList-LICENSE.txt.\r\n\
 "
     IDS_RECOVERY_UNAVAILABLE, "Le diagnostic des plantages n’a pas pu être initialisé. FileSpacer fonctionnera sans lui pour cette session ; vos préférences ont été conservées."
@@ -179,5 +181,9 @@ BEGIN
   IDS_EVERYTHING_EVERYWHERE "Partout"
   IDS_EVERYTHING_NOT_FOUND "Everything est introuvable. Installez-le ou sélectionnez son exécutable manuellement."
   IDS_SEARCH_HISTORY_INVALID "Saisissez une limite d’historique comprise entre 0 et 20."
+  IDS_SMART_WINDOW_PLACEMENT_HELP_TITLE "Placement des nouvelles fenêtres"
+  IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer cherche d’abord un espace libre sur l’écran. S’il n’y en a pas, il choisit la position qui réduit au minimum la surface recouverte des autres fenêtres de dossiers.\n\nCe placement s’applique aux dossiers sans position de fenêtre enregistrée, ainsi qu’aux positions devenues inaccessibles après un changement d’écran. Une position mémorisée encore utilisable reste prioritaire."
+  IDS_GROUP_FOLDER_WINDOWS_HELP_TITLE "Regroupement dans la barre des tâches"
+  IDS_GROUP_FOLDER_WINDOWS_HELP "Les nouvelles fenêtres de dossiers peuvent être regroupées sous un même bouton de la barre des tâches, selon les paramètres de regroupement de Windows.\n\nSi cette option est désactivée, les dossiers peuvent être épinglés séparément dans la barre des tâches.\n\nCe réglage s’applique aux prochaines fenêtres ouvertes. Les fenêtres déjà ouvertes conservent leur regroupement actuel."
   IDS_EVERYTHING_EXECUTABLE "Exécutable Everything (*.exe)"
 END

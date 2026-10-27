@@ -115,7 +115,8 @@ STRINGTABLE {
 // If you enjoy FileSpacer, please consider donating to support its development. Click the Donate button above.\r\n
     IDS_LEGAL_INFO,         "\
 Copyright (c) 2026 Benco (FileSpacer modifications)\r\n\
-Original ChromaFiler: Copyright (c) 2023 J. van't Hoog\r\n\
+FileSpacer is a fork of ChromaFiler.\r\n\
+Copyright (c) 2023 J. van't Hoog (ChromaFiler)\r\n\
 \r\n\
 GNU General Public License v3.0. No warranty.\r\n\
 You may redistribute and modify this software under the GPL.\r\n\
@@ -128,7 +129,8 @@ Application materials:\r\n\
   Complete notices: Lucide-LICENSE.txt in the installation folder.\r\n\
 - Segoe MDL2 Assets: Microsoft font supplied by Windows; not redistributed.\r\n\
 \r\n\
-Installer: LockedList plug-in, zlib license.\r\n\
+Installer built with NSIS (Nullsoft Scriptable Install System): https://nsis.sourceforge.io/\r\n\
+LockedList plug-in: zlib license.\r\n\
 Copyright (c) 2013 Afrow Soft Ltd. See LockedList-LICENSE.txt.\r\n\
 "
     IDS_RECOVERY_UNAVAILABLE, "Crash diagnostics could not be initialized. FileSpacer will run without them for this session; your preferences were preserved."
@@ -180,5 +182,9 @@ BEGIN
   IDS_EVERYTHING_EVERYWHERE "Everywhere"
   IDS_EVERYTHING_NOT_FOUND "Everything was not found. Install it or select its executable manually."
   IDS_SEARCH_HISTORY_INVALID "Enter a search history limit from 0 to 20."
+  IDS_SMART_WINDOW_PLACEMENT_HELP_TITLE "New window placement"
+  IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer first looks for free space on the screen. If none is available, it chooses the position that covers the smallest area of other folder windows.\n\nThis applies to folders without a saved window position, or whose saved position is no longer accessible after a display change. A saved position that is still usable takes priority."
+  IDS_GROUP_FOLDER_WINDOWS_HELP_TITLE "Taskbar grouping"
+  IDS_GROUP_FOLDER_WINDOWS_HELP "New folder windows can be grouped under one taskbar button, according to your Windows taskbar settings.\n\nWhen this option is off, folders can be pinned separately to the taskbar.\n\nThis setting applies to windows opened after the change. Windows that are already open keep their current taskbar grouping."
   IDS_EVERYTHING_EXECUTABLE "Everything executable (*.exe)"
 END
