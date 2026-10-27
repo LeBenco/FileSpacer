@@ -1,5 +1,5 @@
 <p align="center">
-    <img height="200" alt="FileSpacer" src="https://github.com/user-attachments/assets/b15bf127-741a-4929-9d04-416a6e5cb0ed" />
+    <img height="200" alt="FileSpacer" src="src/res/FileSpacer.svg" />
 </p>
 
 # FileSpacer
