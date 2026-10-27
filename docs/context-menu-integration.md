@@ -2,8 +2,9 @@
 
 The FileSpacer-provided command opens the other file manager. With FileSpacer as
 the default, the menu offers **Open in Windows File Explorer**. Otherwise it offers
-**Open in FileSpacer**. This applies independently to directories, drives and ZIP
-folders. A directory's background menu follows the directory association.
+**Open in FileSpacer**. This applies independently to directories, drives, ZIP
+folders, network servers and network shares. A directory's background menu follows
+the directory association.
 
 ## Implementation
 
@@ -20,7 +21,7 @@ remain intact. A separate `filespacer.explorer` verb launches
 Explorer icon and an English or French caption. Resetting the default removes
 this verb and the visibility override. Windows-owned verbs are unchanged.
 
-Integration settings synchronize after changing all three associations and retain
+Integration settings synchronize after changing all five associations and retain
 independent error reporting. Normal startup synchronizes again; Debug `/test`
 startup skips this production integration. There is no registry watcher or resident
 helper. The installer calls the same operation through `/sync-context-menus`,
@@ -34,6 +35,43 @@ exit code.
 
 Microsoft references: [static and programmatic-only Shell verbs](https://learn.microsoft.com/en-us/windows/win32/shell/context-menu-handlers)
 and [association-change notification](https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shchangenotify).
+
+## Network roots
+
+Windows classifies a server root such as `\\server` as `NetServer`, and provides
+`NetShare` for network shares. Setting only `Directory`, `Drive` and
+`CompressedFolder` leaves server roots using Explorer's inherited `Folder` command.
+The installer now registers FileSpacer's existing command and COM delegate for
+both network classes; default selection, reset, menu synchronization and uninstall
+cleanup cover them too. Failures are reported separately for each class.
+
+Update the installed Folder Context Menu component, then select FileSpacer as the
+default again in Integration settings, or choose that option in the updated
+installer. Startup synchronization does not change the user's default choices.
+The Integration page detects missing network verbs and asks for an installation
+update rather than reporting success with incomplete registrations. Portable
+startup still installs nothing.
+
+These are the documented [predefined Shell object classes](https://learn.microsoft.com/en-us/windows/win32/shell/reg-shell-exts).
+
+### Network regression validation — 27 October 2026
+
+- The extended case failed against the previous implementation, then passed with
+  **484 checks per language** in English and French in `AgentWin10`.
+- A real saved `.lnk` targets `\\localhost`. The native Shell resolves it, and
+  `BHID_AssociationArray` / `IQueryAssociations` confirm that its server target
+  follows the selected manager in both directions under the isolated registry.
+  Menus cover both network classes; independent server/share errors and missing
+  registrations from an older installation are checked too.
+- Debug MSVC/NMAKE `/W4`: successful, no warnings. clang-tidy and Cppcheck completed
+  on `Settings.cpp`, `SettingsDialog.cpp` and `ContextMenuTests.cpp`, including
+  `Settings.h` and `resource.h`, with the Windows x64 configurations described
+  below and an unchanged-source comparison. **REVIEW**: new style suggestions
+  only (arrays, constants, braces, nested conditionals and direct includes); no
+  confirmed new functional defect, timeout or ATL fallback.
+- The installer was not built or run. This validates native shortcut resolution
+  and association lookup with isolated registrations; it does not claim a
+  physical Desktop double-click or an installed upgrade/uninstall test.
 
 ## Validation — 27 October 2026
 
