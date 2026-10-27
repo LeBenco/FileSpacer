@@ -15,8 +15,8 @@ and scrolls for longer histories. Colors and fonts use the existing Windows
 system settings; the list's real strings remain available to accessibility APIs.
 
 Only a successful explicit local submission, recent-query selection, or external
-launch records a nonblank query. This event and the two scope choices below are
-implementation assumptions for this integration, not historical product approvals.
+launch records a nonblank query. This integration shipped in 1.1.4; see the
+[user guide](user-guide.md#search-and-everything) for its current usage.
 
 The default Everything scope is the current filesystem folder with descendants;
 the other choice is Everywhere. FileSpacer passes one `-search` parameter to the
