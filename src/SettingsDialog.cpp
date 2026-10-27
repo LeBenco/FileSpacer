@@ -35,21 +35,9 @@ const wchar_t *SPECIAL_PATHS[] = {
 };
 
 static HWND settingsDialog = nullptr;
-static HWND settingsCaller = nullptr;
-static HWND settingsFallbackOwner = nullptr;
+static bool resetFolderStateRequested = false;
 
-static LRESULT CALLBACK settingsOwnerHook(int code, WPARAM wParam, LPARAM lParam) {
-    if (code == HCBT_DESTROYWND && reinterpret_cast<HWND>(wParam) == settingsCaller) {
-        const HWND caller = settingsCaller;
-        settingsCaller = nullptr;
-        if (settingsDialog && GetWindow(settingsDialog, GW_OWNER) == caller)
-            checkLE(SetWindowLongPtrW(settingsDialog, GWLP_HWNDPARENT,
-                reinterpret_cast<LONG_PTR>(settingsFallbackOwner)));
-    }
-    return CallNextHookEx(nullptr, code, wParam, lParam);
-}
-
-static void resetAllFolderState(HWND owner) {
+static bool confirmResetAllFolderState(HWND owner) {
     TASKDIALOGCONFIG config = {sizeof(config)};
     config.hwndParent = owner;
     config.hInstance = GetModuleHandle(nullptr);
@@ -59,12 +47,10 @@ static void resetAllFolderState(HWND owner) {
     config.dwCommonButtons = TDCBF_YES_BUTTON | TDCBF_NO_BUTTON;
     config.nDefaultButton = IDNO;
     int button = IDNO;
-    if (!checkHR(TaskDialogIndirect(&config, &button, nullptr, nullptr)) || button != IDYES)
-        return;
+    return checkHR(TaskDialogIndirect(&config, &button, nullptr, nullptr)) && button == IDYES;
+}
 
-    // Keep the settings dialog open: openSettingsDialog holds a process lock.
-    // Disable it only during this command, including any normal save prompts.
-    EnableWindow(owner, FALSE);
+static void resetAllFolderState() {
     int result = []() -> int {
         std::vector<HWND> windows;
         auto collect = [](HWND window, LPARAM data) -> BOOL {
@@ -104,9 +90,8 @@ static void resetAllFolderState(HWND owner) {
         refreshReopenJumpLists();
         return IDS_RESET_FOLDER_STATE_SUCCESS;
     }();
-    EnableWindow(owner, TRUE);
     bool success = result == IDS_RESET_FOLDER_STATE_SUCCESS;
-    TaskDialog(owner, GetModuleHandle(nullptr),
+    TaskDialog(nullptr, GetModuleHandle(nullptr),
         MAKEINTRESOURCE(success ? IDS_SETTINGS_CAPTION : IDS_ERROR_CAPTION),
         MAKEINTRESOURCE(result), nullptr, TDCBF_OK_BUTTON,
         success ? TD_INFORMATION_ICON : TD_ERROR_ICON, nullptr);
@@ -201,12 +186,29 @@ struct GeneralHelp {
             CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
             GetParent(page), nullptr, GetModuleHandleW(nullptr), nullptr)));
         if (!tooltip) return;
+        if (!checkLE(SetWindowSubclass(tooltip.get(), tooltipProc, 0, reinterpret_cast<DWORD_PTR>(this)))) {
+            tooltip.reset();
+            return;
+        }
         tool.uFlags = TTF_TRACK;
         tool.hwnd = page;
         tool.uId = 1;
         tool.lpszText = const_cast<wchar_t *>(getString(IDS_SMART_WINDOW_PLACEMENT_HELP));
         checkLE(SendMessageW(tooltip.get(), TTM_ADDTOOLW, 0, reinterpret_cast<LPARAM>(&tool)));
         SendMessageW(tooltip.get(), TTM_SETMAXTIPWIDTH, 0, scaleDPI(360));
+    }
+    ~GeneralHelp() {
+        if (tooltip) RemoveWindowSubclass(tooltip.get(), tooltipProc, 0);
+    }
+    static LRESULT CALLBACK tooltipProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam,
+            UINT_PTR id, DWORD_PTR data) {
+        if (message == WM_NCDESTROY) {
+            // Windows can destroy the owned popup before its property page.
+            auto help = reinterpret_cast<GeneralHelp *>(data);
+            help->tooltip.release();
+            RemoveWindowSubclass(window, tooltipProc, id);
+        }
+        return DefSubclassProc(window, message, wParam, lParam);
     }
     static LRESULT CALLBACK buttonProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam,
             UINT_PTR id, DWORD_PTR) {
@@ -811,7 +813,9 @@ INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
             }
 #endif
             if (LOWORD(wParam) == IDC_RESET_FOLDER_STATE && HIWORD(wParam) == BN_CLICKED) {
-                resetAllFolderState(GetParent(hwnd));
+                const HWND dialog = GetParent(hwnd);
+                if (confirmResetAllFolderState(dialog) && settingsDialog == dialog && IsWindow(dialog))
+                    resetFolderStateRequested = !!checkLE(PostMessageW(dialog, PSM_PRESSBUTTON, PSBTN_CANCEL, 0));
                 return TRUE;
             } else if (LOWORD(wParam) == IDC_AUTO_UPDATE && HIWORD(wParam) == BN_CLICKED) {
                 PropSheet_Changed(GetParent(hwnd), hwnd);
@@ -824,7 +828,7 @@ INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 
 void requestSettingsDialogClose() {
     if (settingsDialog)
-        PostMessageW(settingsDialog, PSM_PRESSBUTTON, PSBTN_OK, 0);
+        PostMessageW(settingsDialog, PSM_PRESSBUTTON, PSBTN_CANCEL, 0);
 }
 
 void openSettingsDialog(HWND owner, SettingsPage page) {
@@ -833,6 +837,7 @@ void openSettingsDialog(HWND owner, SettingsPage page) {
         PropSheet_SetCurSel(settingsDialog, nullptr, page);
         return;
     }
+    resetFolderStateRequested = false;
 
     HINSTANCE hInstance = GetModuleHandle(nullptr);
     PROPSHEETPAGE pages[NUM_SETTINGS_PAGES];
@@ -868,36 +873,17 @@ void openSettingsDialog(HWND owner, SettingsPage page) {
     PROPSHEETHEADER sheet = {sizeof(sheet)};
     sheet.dwFlags = PSH_PROPSHEETPAGE | PSH_USEICONID | PSH_NOCONTEXTHELP | PSH_USECALLBACK;
     sheet.hInstance = hInstance;
+    sheet.hwndParent = owner;
     sheet.pszIcon = MAKEINTRESOURCE(IDR_APP_ICON);
     sheet.pszCaption = MAKEINTRESOURCE(IDS_SETTINGS_CAPTION);
     sheet.nPages = _countof(pages);
     sheet.nStartPage = page;
     sheet.ppsp = pages;
     sheet.pfnCallback = [](HWND window, UINT message, LPARAM) -> int {
-        if (message == PSCB_INITIALIZED) {
+        if (message == PSCB_INITIALIZED)
             settingsDialog = window;
-            if (settingsCaller)
-                checkLE(SetWindowLongPtrW(window, GWLP_HWNDPARENT,
-                    reinterpret_cast<LONG_PTR>(settingsCaller)));
-            SetForegroundWindow(window);
-        }
         return 0;
     };
-
-    // Keep a fallback owner if the caller disappears during the native modal loop.
-    RECT ownerRect = {};
-    checkLE(GetWindowRect(owner, &ownerRect));
-    HWND modalOwner = checkLE(CreateWindowEx(0, L"Static", L"", WS_POPUP,
-        ownerRect.left, ownerRect.top, ownerRect.right - ownerRect.left,
-        ownerRect.bottom - ownerRect.top, nullptr, nullptr, hInstance, nullptr));
-    if (!modalOwner)
-        return;
-    sheet.hwndParent = modalOwner;
-    settingsFallbackOwner = modalOwner;
-    // Watch only this UI thread, and detach before Windows destroys owned popups.
-    std::unique_ptr<std::remove_pointer<HHOOK>::type, decltype(&UnhookWindowsHookEx)> ownerHook(
-        checkLE(SetWindowsHookExW(WH_CBT, settingsOwnerHook, nullptr, GetCurrentThreadId())), UnhookWindowsHookEx);
-    settingsCaller = ownerHook ? owner : nullptr;
 
     lockProcess();
     std::vector<HWND> disabledWindows;
@@ -912,17 +898,17 @@ void openSettingsDialog(HWND owner, SettingsPage page) {
         reinterpret_cast<LPARAM>(&disabledWindows)));
     // PropertySheet runs its native modal message loop and destroys the dialog.
     checkLE(PropertySheet(&sheet) != -1);
-    ownerHook.reset();
     settingsDialog = nullptr;
-    settingsCaller = nullptr;
-    settingsFallbackOwner = nullptr;
+    const bool resetRequested = resetFolderStateRequested;
+    resetFolderStateRequested = false;
+    // Maintenance closes folder windows only after the settings pages are gone.
+    if (resetRequested) resetAllFolderState();
     for (HWND window : disabledWindows) {
         if (IsWindow(window)) // Maintenance may have closed it.
             EnableWindow(window, TRUE);
     }
     if (IsWindow(owner))
         SetActiveWindow(owner);
-    checkLE(DestroyWindow(modalOwner));
     unlockProcess();
 }
 
