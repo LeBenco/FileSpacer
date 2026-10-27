@@ -173,17 +173,13 @@ struct GeneralHelp {
     struct FontDeleter { void operator()(HFONT font) const { DeleteObject(font); } };
     using FontPtr = std::unique_ptr<std::remove_pointer<HFONT>::type, FontDeleter>;
     std::unique_ptr<std::remove_pointer<HWND>::type, WindowDeleter> tooltip;
-    TOOLINFOW tool = {sizeof(TOOLINFOW)};
-    int activeControl = 0;
     FontPtr infoFont;
     GLYPHMETRICS infoMetrics = {};
 
     explicit GeneralHelp(HWND page) {
         layout(page);
-        for (int id : {IDC_SMART_WINDOW_PLACEMENT_HELP, IDC_GROUP_FOLDER_WINDOWS_HELP})
-            checkLE(SetWindowSubclass(GetDlgItem(page, id), buttonProc, 0, 0));
         tooltip.reset(checkLE(CreateWindowExW(WS_EX_TOPMOST | WS_EX_NOACTIVATE, TOOLTIPS_CLASSW, nullptr,
-            WS_POPUP | TTS_NOPREFIX | TTS_BALLOON | TTS_CLOSE,
+            WS_POPUP | TTS_NOPREFIX,
             CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
             GetParent(page), nullptr, GetModuleHandleW(nullptr), nullptr)));
         if (!tooltip) return;
@@ -191,11 +187,15 @@ struct GeneralHelp {
             tooltip.reset();
             return;
         }
-        tool.uFlags = TTF_TRACK;
-        tool.hwnd = page;
-        tool.uId = 1;
-        tool.lpszText = const_cast<wchar_t *>(getString(IDS_SMART_WINDOW_PLACEMENT_HELP));
-        checkLE(SendMessageW(tooltip.get(), TTM_ADDTOOLW, 0, reinterpret_cast<LPARAM>(&tool)));
+        for (int id : {IDC_SMART_WINDOW_PLACEMENT_HELP, IDC_GROUP_FOLDER_WINDOWS_HELP}) {
+            TOOLINFOW tool = {sizeof(TOOLINFOW)};
+            tool.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+            tool.hwnd = page;
+            tool.uId = reinterpret_cast<UINT_PTR>(GetDlgItem(page, id));
+            tool.lpszText = const_cast<wchar_t *>(getString(id == IDC_SMART_WINDOW_PLACEMENT_HELP
+                ? IDS_SMART_WINDOW_PLACEMENT_HELP : IDS_GROUP_FOLDER_WINDOWS_HELP));
+            checkLE(SendMessageW(tooltip.get(), TTM_ADDTOOLW, 0, reinterpret_cast<LPARAM>(&tool)));
+        }
         SendMessageW(tooltip.get(), TTM_SETMAXTIPWIDTH, 0, scaleDPI(360));
     }
     ~GeneralHelp() {
@@ -209,15 +209,6 @@ struct GeneralHelp {
             help->tooltip.release();
             RemoveWindowSubclass(window, tooltipProc, id);
         }
-        return DefSubclassProc(window, message, wParam, lParam);
-    }
-    static LRESULT CALLBACK buttonProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam,
-            UINT_PTR id, DWORD_PTR) {
-        if (message == WM_KILLFOCUS) {
-            auto help = reinterpret_cast<GeneralHelp *>(GetWindowLongPtrW(GetParent(window), GWLP_USERDATA));
-            if (help) help->hide();
-        }
-        if (message == WM_NCDESTROY) RemoveWindowSubclass(window, buttonProc, id);
         return DefSubclassProc(window, message, wParam, lParam);
     }
     void layout(HWND page) {
@@ -314,25 +305,7 @@ struct GeneralHelp {
         return true;
     }
     void hide() {
-        if (tooltip) SendMessageW(tooltip.get(), TTM_TRACKACTIVATE, FALSE, reinterpret_cast<LPARAM>(&tool));
-        activeControl = 0;
-    }
-    void toggle(int control) {
-        if (!tooltip) return;
-        const bool wasVisible = activeControl == control && IsWindowVisible(tooltip.get());
-        hide();
-        if (wasVisible) return;
-        const bool placement = control == IDC_SMART_WINDOW_PLACEMENT_HELP;
-        tool.lpszText = const_cast<wchar_t *>(getString(placement
-            ? IDS_SMART_WINDOW_PLACEMENT_HELP : IDS_GROUP_FOLDER_WINDOWS_HELP));
-        SendMessageW(tooltip.get(), TTM_UPDATETIPTEXTW, 0, reinterpret_cast<LPARAM>(&tool));
-        SendMessageW(tooltip.get(), TTM_SETTITLEW, TTI_NONE, reinterpret_cast<LPARAM>(getString(placement
-            ? IDS_SMART_WINDOW_PLACEMENT_HELP_TITLE : IDS_GROUP_FOLDER_WINDOWS_HELP_TITLE)));
-        const RECT anchor = windowRect(GetDlgItem(tool.hwnd, control));
-        SendMessageW(tooltip.get(), TTM_TRACKPOSITION, 0,
-            MAKELPARAM((anchor.left + anchor.right) / 2, anchor.bottom));
-        activeControl = control;
-        SendMessageW(tooltip.get(), TTM_TRACKACTIVATE, TRUE, reinterpret_cast<LPARAM>(&tool));
+        if (tooltip) SendMessageW(tooltip.get(), TTM_POP, 0, 0);
     }
 };
 
@@ -369,10 +342,6 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
         }
         case WM_NOTIFY: {
             NMHDR *notif = (NMHDR *)lParam;
-            if (help && notif->hwndFrom == help->tooltip.get() && notif->code == TTN_POP) {
-                help->activeControl = 0;
-                return TRUE;
-            }
             if (notif->code == PSN_KILLACTIVE) {
                 if (help) help->hide();
                 DWORD limit = 0;
@@ -450,11 +419,6 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             return FALSE;
         }
         case WM_COMMAND:
-            if (LOWORD(wParam) == IDC_SMART_WINDOW_PLACEMENT_HELP
-                    || LOWORD(wParam) == IDC_GROUP_FOLDER_WINDOWS_HELP) {
-                if (help && HIWORD(wParam) == BN_CLICKED) help->toggle(LOWORD(wParam));
-                return TRUE;
-            }
             if (LOWORD(wParam) == IDC_START_FOLDER_BROWSE && HIWORD(wParam) == BN_CLICKED) {
                 CComHeapPtr<wchar_t> selected;
                 if (chooseFolder(GetParent(hwnd), selected)) {
