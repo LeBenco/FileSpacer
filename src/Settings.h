@@ -109,7 +109,12 @@ struct DefaultBrowserResult {
     LSTATUS directory;
     LSTATUS compressedFolder;
     LSTATUS drive;
-    LSTATUS status() const { return directory ? directory : compressedFolder ? compressedFolder : drive; }
+    LSTATUS networkServer;
+    LSTATUS networkShare;
+    LSTATUS status() const {
+        return directory ? directory : compressedFolder ? compressedFolder : drive ? drive
+            : networkServer ? networkServer : networkShare;
+    }
 };
 DefaultBrowserResult setDefaultBrowser(bool value);
 DefaultBrowserResult synchronizeContextMenus();
