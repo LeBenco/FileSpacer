@@ -13,6 +13,7 @@
 #include <prsht.h>
 #include <shellapi.h>
 #include <shobjidl_core.h>
+#include <uxtheme.h>
 #include <string>
 #include <vector>
 
@@ -166,6 +167,7 @@ void notifyWindowSettingsChanged() {
 INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
         case WM_INITDIALOG: {
+            checkHR(EnableThemeDialogTexture(hwnd, ETDT_DISABLE));
             for (int i = 0; i < _countof(SPECIAL_PATHS); i++) {
                 COMBOBOXEXITEM item = {CBEIF_TEXT, -1, (wchar_t *)SPECIAL_PATHS[i]};
                 SendDlgItemMessage(hwnd, IDC_START_FOLDER_PATH, CBEM_INSERTITEM, 0, (LPARAM)&item);
@@ -337,6 +339,7 @@ static bool readFolderWindowSize(HWND hwnd, SIZE &size) {
 INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
         case WM_INITDIALOG: {
+            checkHR(EnableThemeDialogTexture(hwnd, ETDT_DISABLE));
             const SIZE minimum = minimumFolderWindowSize();
             auto widthLabel = formatString(IDS_FOLDER_WIDTH_LABEL, minimum.cx);
             auto heightLabel = formatString(IDS_FOLDER_HEIGHT_LABEL, minimum.cy);
@@ -487,6 +490,7 @@ static bool searchHistoryLimit(HWND hwnd, DWORD *value) {
 INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
         case WM_INITDIALOG:
+            checkHR(EnableThemeDialogTexture(hwnd, ETDT_DISABLE));
             CheckDlgButton(hwnd, IDC_EVERYTHING_ENABLED,
                 settings::getEverythingEnabled() ? BST_CHECKED : BST_UNCHECKED);
             SetDlgItemTextW(hwnd, IDC_EVERYTHING_PATH, settings::getEverythingPath().get());
@@ -582,6 +586,7 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
         case WM_INITDIALOG: {
+            checkHR(EnableThemeDialogTexture(hwnd, ETDT_DISABLE));
             SendDlgItemMessage(hwnd, IDC_LEGAL_INFO, EM_SETTABSTOPS, 1, (LPARAM)tempPtr(16u));
             CheckDlgButton(hwnd, IDC_AUTO_UPDATE,
                 settings::getUpdateCheckEnabled() ? BST_CHECKED : BST_UNCHECKED);
