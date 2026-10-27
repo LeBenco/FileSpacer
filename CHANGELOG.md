@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Offer Open in Windows File Explorer in folder context menus when FileSpacer is the default file manager, and Open in FileSpacer otherwise; update the menus when changing the default, after installation and at startup.
+
 ## 1.1.9 — 2026-10-27
 
 - Preview display modes while hovering over the View menu, with progressive restoration when cancelling and a default-on option under Display settings.
