@@ -1,0 +1,71 @@
+name: Publish FileSpacer documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - README.md
+      - docs/user-guide.md
+      - docs/privacy-policy.md
+      - CHANGELOG.md
+      - THIRD_PARTY_NOTICES.md
+      - src/res/FileSpacer.svg
+      - website/**
+      - .github/workflows/pages.yml
+  pull_request:
+    paths:
+      - README.md
+      - docs/user-guide.md
+      - docs/privacy-policy.md
+      - CHANGELOG.md
+      - THIRD_PARTY_NOTICES.md
+      - src/res/FileSpacer.svg
+      - website/**
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: npm ci --prefix website --ignore-scripts
+      - run: npm test --prefix website
+      - run: npm run generate --prefix website
+      - uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697 # v1
+        with:
+          source: build/site-source
+          destination: build/site
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: build/site
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
