@@ -98,6 +98,11 @@ Function .onInit
     !insertmacro ASSERT $defaultWritten 1 "fresh explicit default"
     StrCpy $1 0
 next_scope:
+    ${If} $MultiUser.InstallMode == "AllUsers"
+        SetShellVarContext all
+    ${Else}
+        SetShellVarContext current
+    ${EndIf}
     WriteINIStr "$INSTDIR\install-info.ini" "Installation" "Mode" $MultiUser.InstallMode
     WriteINIStr "$INSTDIR\install-info.ini" "Installation" "Language" "1036"
     !insertmacro ROUNDTRIP 0 0 0
@@ -126,6 +131,7 @@ next_scope:
     ${EndIf}
     ; Metadata for another scope cannot leak into a fresh installation.
     StrCpy $MultiUser.InstallMode "CurrentUser"
+    SetShellVarContext current
     Call RestoreInstallChoices
     !insertmacro CHECK_SELECTION ${SecStart} 1 "other scope Start"
     !insertmacro CHECK_SELECTION ${SecContext} 1 "other scope Context"
