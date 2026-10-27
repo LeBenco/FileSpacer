@@ -3,6 +3,7 @@
 #include "SearchBox.h"
 #include "WinUtils.h"
 #include <iostream>
+#include <fstream>
 #include <stdexcept>
 
 using namespace filespacer;
@@ -11,6 +12,13 @@ static void require(bool condition, const char *message) {
 }
 int wmain(int argc, wchar_t **argv) {
     try {
+        if (argc == 3 && std::wstring(argv[1]) == L"--detect") {
+            const auto executable = findEverything();
+            std::ofstream output(argv[2], std::ios::binary);
+            output.write(reinterpret_cast<const char *>(executable.data()),
+                static_cast<std::streamsize>(executable.size() * sizeof(wchar_t)));
+            return output ? 0 : 2;
+        }
         if (argc == 2 && std::wstring(argv[1]) == L"--expect-absent") {
             require(findEverything().empty(), "Everything unexpectedly detected");
             std::cout << "PASS: actual machine has no detected Everything installation.\n";
