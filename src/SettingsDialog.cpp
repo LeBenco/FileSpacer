@@ -229,12 +229,12 @@ struct GeneralHelp {
         const HGDIOBJ previous = SelectObject(context.get(), font);
         TEXTMETRICW metrics = {};
         checkLE(GetTextMetricsW(context.get(), &metrics));
-        // Use Microsoft's Info glyph at the dialog's text size, with the Windows 10 font as fallback.
+        // Use Microsoft's InfoSolid glyph at the dialog's text size, with the Windows 10 font as fallback.
         Gdiplus::FontFamily fluent(L"Segoe Fluent Icons"), mdl2(L"Segoe MDL2 Assets");
         const Gdiplus::FontFamily *family = fluent.GetLastStatus() == Gdiplus::Ok ? &fluent : &mdl2;
         infoGlyph.Reset();
         infoBounds = Gdiplus::RectF();
-        if (infoGlyph.AddString(L"\uE946", 1, family, Gdiplus::FontStyleRegular,
+        if (infoGlyph.AddString(L"\uF167", 1, family, Gdiplus::FontStyleRegular,
                 static_cast<Gdiplus::REAL>(metrics.tmHeight), Gdiplus::PointF(0, 0), nullptr) == Gdiplus::Ok)
             infoGlyph.GetBounds(&infoBounds);
         const int labels[] = {IDC_SMART_WINDOW_PLACEMENT, IDC_GROUP_FOLDER_WINDOWS};
