@@ -8,6 +8,10 @@ FileSpacer is a file manager for Windows built around the [spatial paradigm](htt
 
 To address the accumulation of windows, a recognized drawback of the spatial paradigm, FileSpacer closes the source window by default when a folder is opened. Hold Ctrl while opening a folder to keep the source window open when you want to work with several folders at once.
 
+FileSpacer keeps its interface deliberately understated, unlike some cluttered interfaces that leave just enough room between the buttons to glimpse a file.
+
+Tabs are incompatible with the spatial model and will never be added.
+
 Windows 10 or later, x64. Available in English and French.
 
 [Download the latest release](https://github.com/LeBenco/FileSpacer/releases/latest)
