@@ -216,3 +216,5 @@ are off by default and can be enabled in About.
 **Maintenance.** **Settings > About > Maintenance > Reset all folder state**
 closes open folder windows and clears their saved layouts, history and
 window-state locks. Your files and global preferences are preserved.
+
+**Documentation.** Choose **Documentation** above **FileSpacer Settings** in the main menu, press **F1**, or use the button in **Settings > About**. The installed guide opens in your browser in the Windows display language, with English as the fallback. Pages, images and search work offline; the language selector lets you switch translations.
