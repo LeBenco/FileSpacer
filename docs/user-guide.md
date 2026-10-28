@@ -69,8 +69,8 @@ Drag in the file area, on its background or an item, using these defaults:
 | Move the window | Alt + left drag |
 | Resize from the bottom-right corner | Alt + right drag |
 
-<details>
-<summary>See the gestures in action</summary>
+<details open>
+<summary>Animated demonstrations</summary>
 
 **Move the window — Alt + left drag**
 
