@@ -11,7 +11,8 @@ Git LFS setup is needed.
 | `window-menu.png` | The title menu, open folders and the saved-layout lock. |
 | `search.png` | Local search history and the optional Everything action. |
 | `shortcuts.png` | Settings with the movement action expanded. |
-| `display.png` | Display settings with the optional mixed folder/file sorting option. |
+| `mixed-sorting.png` | Folders and files sharing one alphabetical order in FileSpacer 1.2.0. |
+| `display.png` | Earlier Display settings capture, retained for reference. |
 | `locked-title.png` | A close-up of the locked folder's title and padlock badge. |
 | `move-window.gif` | Alt + left drag to move a folder window. |
 | `resize-window.gif` | Alt + right drag to resize a folder window. |
@@ -20,7 +21,7 @@ The website and English documentation use the English series, with fictional
 English folder names and contents. See `provenance.json` for the capture context,
 dimensions and checksums.
 
-The English captures use the existing en-US resources, selected at startup in a
+The original English captures use the existing en-US resources, selected at startup in a
 disposable documentation build of FileSpacer 1.1.10 because the VM's active
 Windows session remains French. The source UI strings and controls are unchanged.
 
@@ -39,6 +40,12 @@ The Display settings capture also has a French copy, `display-fr.png`.
 These two images were recorded from a development build, as described in
 `display-provenance.json`. The option is available starting with release 1.2.0;
 the capture provenance is retained as its historical record.
+
+The current guide illustrates the actual mixed order with `mixed-sorting.png`.
+Its French counterpart, `mixed-sorting-fr.png`, uses translated fictional folder
+and file names. Both show FileSpacer 1.2.0, with the preference enabled and icons
+automatically arranged by name. Their capture context and checksums are in
+`mixed-sorting-provenance.json`.
 
 ## Nilesoft Shell comparisons
 
