@@ -1,4 +1,4 @@
-name: Publish FileSpacer documentation
+name: Publish FileSpacer website
 
 on:
   push:
