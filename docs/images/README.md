@@ -34,6 +34,24 @@ The animations also have French copies, `move-window-fr.gif` and
 `resize-window-fr.gif`. They show the VM's Windows wallpaper around the window
 so that its movement and changing size remain visible.
 
+## Nilesoft Shell comparisons
+
+The `nilesoft-navigation-default.png` / `nilesoft-navigation-adapted.png` and
+`nilesoft-main-menu-default.png` / `nilesoft-main-menu-adapted.png` pairs show the
+same Modern theme with its default rounded corners and with the recommended
+square corners. Each file also has a French copy ending in `-fr.png`; only the
+English versions are included in the website.
+
+See `nilesoft-provenance.json` for versions, dimensions and checksums. Keep the
+same menu contents, window geometry and theme in each pair. Change only the
+conditional corner-radius rule documented in `../nilesoft-shell.md`.
+
+Use English Windows for new English menu captures when possible. The current
+English series uses the application's English resources and real Nilesoft
+label rules for native Windows menu entries, applied identically to both
+variants on the French VM. No labels were edited in the exported images.
+Back up and restore the installed Nilesoft configuration around each session.
+
 ## Recording an animation
 
 Use ScreenToGif with the cursor and mouse-click highlights enabled. Add an
