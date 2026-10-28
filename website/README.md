@@ -26,6 +26,11 @@ upstream layout override only translates its skip link; retain its MIT notice
 and review it when updating the theme. The repository README has no language
 selector or language links.
 
+The theme's `lunr/custom-index.js` hook uses Unicode word trimming for translated
+sites and omits English stemming and stop words. Lunr's default ASCII trimmer
+would otherwise discard Greek words. English keeps the original search pipeline.
+The test dependency matches the theme's Lunr 2.3.9 runtime.
+
 ## Local checks
 
 With Node.js 22 or later, run from the repository root:

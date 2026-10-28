@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {generate} from './generate.mjs';
+import lunr from 'lunr';
 
 const repository = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 async function fixture(t) {
@@ -117,4 +118,28 @@ test('missing localized media and mismatched translation headings fail the build
   await fs.writeFile(image, bytes);
   await fs.appendFile(path.join(target, 'docs/user-guide.md'), '\n## Une rubrique supplémentaire\n');
   await assert.rejects(generate(root, path.join(root, 'output')), /Translation heading (?:structure|count) differs from English/);
+});
+
+test('translated search keeps Greek and accented words through indexing and querying', async () => {
+  const hook = (await fs.readFile(path.join(repository, 'website/_includes/lunr/custom-index.js'), 'utf8'))
+    .replace(/{%[^]*?%}/g, '');
+  const customize = new Function('lunr', 'docs', 'i', hook);
+  const docs = {
+    0: {title: 'Μετακίνηση και αλλαγή μεγέθους', content: 'Κλειδώστε την αποθηκευμένη διάταξη.'},
+    1: {title: 'Déplacement et redimensionnement', content: 'Éléments et sélection.'},
+    2: {title: 'Verschieben und Größenänderung', content: 'Fenstergrößen ändern.'},
+    3: {title: 'Movimiento y cambio de tamaño', content: 'Configuración y selección.'},
+  };
+  const index = lunr(function () {
+    this.ref('id');
+    this.field('title');
+    this.field('content');
+    for (const i in docs) {
+      customize.call(this, lunr, docs, i);
+      this.add({id: i, ...docs[i]});
+    }
+  });
+  for (const [query, expected] of [['μετακίνηση', '0'], ['αποθηκευμένη', '0'], ['déplacement', '1'], ['éléments', '1'], ['größenänderung', '2'], ['tamaño', '3'], ['configuración', '3']]) {
+    assert.equal(index.search(query)[0]?.ref, expected, query);
+  }
 });

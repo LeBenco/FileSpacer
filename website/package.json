@@ -6,6 +6,11 @@
     "generate": "node generate.mjs",
     "test": "node --test generate.test.mjs"
   },
-  "engines": { "node": ">=22" },
-  "devDependencies": { "marked": "17.0.5" }
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "lunr": "2.3.9",
+    "marked": "17.0.5"
+  }
 }
