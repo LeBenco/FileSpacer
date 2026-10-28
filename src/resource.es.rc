@@ -1,0 +1,192 @@
+#include <windows.h>
+#include "resource.h"
+
+LANGUAGE LANG_SPANISH, SUBLANG_SPANISH
+
+IDR_ITEM_MENU   MENU {
+    MENUITEM    "Configuración de FileSpacer\tCtrl+,", IDM_SETTINGS
+    //     MENUITEM    "Help\tF1",                     IDM_HELP // Deferred public help.
+}
+
+STRINGTABLE {
+    IDS_CAPTION_COPY_PATH, "Copiar ruta de acceso"
+    IDS_CAPTION_RENAME, "Cambiar nombre"
+    IDS_CAPTION_PROPERTIES, "Propiedades"
+    IDS_CAPTION_CLOSE_PARENTS, "Cerrar ventanas de carpetas superiores"
+    IDS_CAPTION_REOPEN_NAMED, "Volver a abrir «%1»\tCtrl+Mayús+T"
+    IDS_REOPEN_LAST, "Volver a abrir la última ventana cerrada"
+    IDS_REOPEN_MENU, "Volver a abrir la última ventana cerrada\tCtrl+Mayús+T"
+    IDS_REOPEN_NAMED, "Volver a abrir «%1»"
+    IDS_REOPEN_EMPTY, "No hay ninguna ventana cerrada que volver a abrir."
+    IDS_REOPEN_FAILED, "No se puede volver a abrir esta carpeta:\n%1\n\nPermanece en el historial de ventanas cerradas."
+
+    IDS_QUICK_ACCESS, "Acceso rápido"
+    IDS_QUICK_ACCESS_UNAVAILABLE, "Acceso rápido no está disponible.\n\nPaso: %1\nCódigo: 0x%2!08X!\n\nPulsa Ctrl+C para copiar este mensaje."
+    IDS_QUICK_ACCESS_EMPTY, "No hay carpetas ancladas"
+    IDS_QUICK_ACCESS_OPEN, "Abriendo Acceso rápido"
+    IDS_QUICK_ACCESS_KEY, "Buscando la propiedad de carpetas ancladas"
+    IDS_QUICK_ACCESS_ENUM, "Enumerando elementos"
+    IDS_QUICK_ACCESS_READ, "Leyendo elementos"
+    IDS_QUICK_ACCESS_TARGET, "Resolviendo carpetas"
+    IDS_QUICK_ACCESS_MENU, "Creando el menú"
+
+    IDS_APP_NAME,           "FileSpacer"
+    IDS_PATH_BAR,           "Dirección"
+    IDS_SEARCH_NAME,        "Buscar por nombre"
+    IDS_SEARCH_CUE,         "Buscar en %1"
+    IDS_SEARCH_APPLY,       "Buscar"
+    IDS_SEARCH_ERROR,       "No se puede aplicar el filtro por nombre.\n\n%1"
+    IDS_ADDRESS_NOT_FOLDER, "Esta dirección no corresponde a una carpeta: %1"
+
+    IDS_UNKNOWN_ERROR,      "Error desconocido"
+    IDS_ERROR_CAPTION,      "Error"
+    IDS_CANT_FIND_ITEM,     "No se encuentra el elemento en la ruta de acceso: %1"
+    IDS_INVALID_CHARS,      "El nombre del archivo no puede contener los siguientes caracteres:\n\\ / : * ? "" < > |"
+
+    IDS_SETTINGS_CAPTION,   "Configuración de FileSpacer"
+    IDS_NO_UPDATE_CAPTION,  "No hay actualizaciones disponibles"
+    IDS_NO_UPDATE,          "Estás usando la versión más reciente."
+    IDS_UPDATE_CLOSE_BUTTON, "Cerrar"
+    IDS_UPDATE_SEARCH_BUTTON, "&Buscar actualizaciones"
+    IDS_UPDATE_INSTALL_BUTTON, "&Instalar FileSpacer v%1"
+    IDS_UPDATE_RELEASE_BUTTON, "Ver FileSpacer v%1"
+    IDS_UPDATE_SEARCHING, "Buscando una nueva versión…"
+    IDS_UPDATE_AVAILABLE, "Hay una nueva versión disponible."
+    IDS_UPDATE_DOWNLOADING, "Descargando el instalador…"
+    IDS_UPDATE_PROGRESS, "Descarga: %1!u! %%"
+    IDS_UPDATE_CLOSING, "Descarga verificada. Cerrando ventanas…"
+    IDS_UPDATE_FAILED, "La actualización ha fallado. Puedes intentarlo de nuevo."
+    IDS_UPDATE_FAILED_DETAIL, "Error de actualización: %1"
+    IDS_UPDATE_LEGACY, "Descarga esta versión desde su página de versiones de GitHub."
+    IDS_UPDATE_BUSY, "Ya hay una instalación de FileSpacer en curso."
+    IDS_UPDATE_CONFIRM_TITLE, "¿Instalar la nueva versión de FileSpacer?"
+    IDS_UPDATE_CONFIRM, "Se descargará y verificará el instalador. Puedes seguir usando FileSpacer y cancelar durante la descarga. Después se cerrarán todas las ventanas de FileSpacer, guardando sus posiciones y su configuración como de costumbre, y se iniciará la instalación. Las carpetas abiertas volverán a abrirse cuando termine o se cancele la instalación.\n\n¿Continuar?"
+    IDS_UPDATE_RELAY_FAILED, "No se ha podido completar la actualización o la restauración de las ventanas. No se ha finalizado ningún proceso de forma forzada.\n\n%1"
+    IDS_UPDATE_RESTORE_FAILED, "No se han podido volver a abrir %1!u! carpetas. Es posible que se hayan movido, eliminado o que no estén disponibles. Las demás carpetas se han vuelto a abrir."
+    IDS_UPDATE_ERROR,       "Error al buscar actualizaciones"
+    IDS_UPDATE_NOTIF_TITLE, "Actualización de FileSpacer"
+    IDS_UPDATE_NOTIF_INFO,  "Hay una nueva versión de FileSpacer disponible. Haz clic en esta notificación para abrir la página de descarga."
+
+    IDS_OPEN_PARENT_COMMAND,"Abrir carpeta superior\n(Alt+Flecha arriba)"
+    IDS_MENU_COMMAND,       "Menú..."
+    IDS_REFRESH_COMMAND,    "Actualizar\n(Ctrl+R)"
+    IDS_VIEW_COMMAND,       "Vista..."
+	
+	IDS_FOLDER_STATUS,          "%1!d! elementos"
+	IDS_FOLDER_STATUS_SEL,      "%1!d! elementos    %2!d! seleccionados"
+	IDS_FOLDER_STATUS_SEL_SIZE, "%1!d! elementos    %2!d! seleccionados    %3!s!"
+    IDS_FOLDER_ERROR,       "No se ha podido abrir la carpeta"
+
+    IDS_SUCCESS_CAPTION,    "Operación completada"
+    IDS_CONFIRM_CAPTION,    "¿Estás seguro?"
+    IDS_RESET_FOLDER_STATE_CONFIRM, "¿Restablecer todas las posiciones, tamaños y opciones de vista guardados de las carpetas? Las ventanas de las carpetas de FileSpacer se cerrarán y no se volverán a abrir automáticamente. Se cerrará la ventana de configuración y se descartarán los cambios sin aplicar. Se conservará la configuración de la aplicación guardada anteriormente."
+    IDS_RESET_FOLDER_STATE_CLOSE_ERROR, "No se han podido cerrar todas las ventanas de FileSpacer. Puede que alguna haya rechazado el cierre o no responda. No se ha eliminado ningún estado de carpeta guardado. Es posible que algunas ventanas ya se hayan cerrado."
+    IDS_RESET_FOLDER_STATE_STORAGE_ERROR, "No se puede abrir la base de datos de estados de las carpetas. No se ha eliminado ningún estado guardado."
+    IDS_RESET_FOLDER_STATE_DELETE_ERROR, "No se puede restablecer la base de datos de estados de las carpetas. No se ha confirmado la eliminación."
+    IDS_RESET_FOLDER_STATE_SUCCESS, "Se han restablecido las posiciones, los tamaños y las opciones de vista guardados de las carpetas. Se ha conservado la configuración de la aplicación."
+    IDS_FOLDER_WIDTH_LABEL,   "&Ancho (mín.: %1!d! px):"
+    IDS_FOLDER_HEIGHT_LABEL,  "Al&tura (mín.: %1!d! px):"
+    IDS_FOLDER_WIDTH_INVALID, "El ancho debe ser un número entero de al menos %1!d! px."
+    IDS_FOLDER_HEIGHT_INVALID,"La altura debe ser un número entero de al menos %1!d! px."
+    IDS_FOLDER_STATE_ERROR, "FileSpacer no ha podido leer o guardar la base de datos de estados de las carpetas. Comprueba que se pueda escribir en la carpeta de datos locales de la aplicación y que la base de datos esté disponible. Los datos existentes no se han restablecido."
+    IDS_BROWSER_SET_FAILED, "No se ha podido cambiar el explorador de archivos predeterminado"
+    IDS_BROWSER_DIRECTORY, "Carpetas"
+    IDS_BROWSER_COMPRESSED_FOLDER, "Carpetas comprimidas (ZIP)"
+    IDS_BROWSER_DRIVE, "Unidades"
+    IDS_BROWSER_NETWORK_SERVER, "Servidores de red"
+    IDS_BROWSER_NETWORK_SHARE, "Recursos compartidos de red"
+    IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (error %2!lu!)"
+    IDS_BROWSER_ASSOCIATIONS_FAILED, "No se han podido cambiar las siguientes asociaciones:\n\n%1\n\nSe han conservado los cambios realizados correctamente."
+    IDS_BROWSER_SET,        "FileSpacer se ha establecido como explorador de archivos predeterminado. Puedes revertir el cambio en la configuración de FileSpacer."
+    IDS_BROWSER_RESET,      "Se ha restaurado el Explorador de archivos como explorador predeterminado."
+    IDS_REQUIRE_CONTEXT,    "Instala o actualiza FileSpacer con la opción «Menú contextual de carpetas» habilitada para poder cambiar el explorador predeterminado, incluidas las ubicaciones de red."
+    IDS_BROWSER_SET_CONFIRM,"Esto sustituirá el Explorador de archivos de Windows como programa predeterminado para abrir todas las carpetas."
+
+    IDS_WELCOME_HEADER,     "Te damos la bienvenida"
+    IDS_WELCOME_BODY,       "Parece que es la primera vez que usas FileSpacer."
+#if 0 // Deferred public services.
+    IDS_WELCOME_TUTORIAL,   "&Leer tutorial\nRecomendado para nuevos usuarios"
+#endif
+    IDS_WELCOME_BROWSER,    "&Establecer como explorador de archivos predeterminado\nSustituir el Explorador de archivos predeterminado"
+    IDS_WELCOME_UPDATE,     "Buscar &actualizaciones semanalmente"
+
+    IDS_ADMIN_WARNING,      "Estás intentando ejecutar FileSpacer como administrador. No se recomienda hacerlo.\n\n¿Continuar de todos modos?"
+    IDS_DONT_ASK,           "No volver a preguntar"
+
+// Deferred donation paragraph:
+// If you enjoy FileSpacer, please consider donating to support its development. Click the Donate button above.\r\n
+    IDS_LEGAL_INFO,         "\
+Copyright (c) 2026 Benco (modificaciones de FileSpacer)\r\n\
+FileSpacer es una bifurcación de ChromaFiler.\r\n\
+Copyright (c) 2023 J. van't Hoog (ChromaFiler)\r\n\
+\r\n\
+Licencia Pública General de GNU v3.0. Sin garantía.\r\n\
+Puedes redistribuir y modificar este software según los términos de la GPL.\r\n\
+Consulta LICENSE.txt en la carpeta de instalación y https://www.gnu.org/licenses/gpl-3.0.html\r\n\
+Proyecto original: https://github.com/vanjac/chromafiler\r\n\
+\r\n\
+Componentes de la aplicación:\r\n\
+- SQLite 3.53.4: dominio público; https://sqlite.org/\r\n\
+- Iconos de navegación Lucide / Feather: ISC / MIT; https://lucide.dev/license\r\n\
+  Avisos completos: Lucide-LICENSE.txt en la carpeta de instalación.\r\n\
+- Segoe Fluent Icons / Segoe MDL2 Assets: fuentes de Microsoft incluidas en Windows; no se redistribuyen.\r\n\
+\r\n\
+Instalador creado con NSIS (Nullsoft Scriptable Install System): https://nsis.sourceforge.io/\r\n\
+Complemento LockedList: licencia zlib.\r\n\
+Copyright (c) 2013 Afrow Soft Ltd. Consulta LockedList-LICENSE.txt.\r\n\
+"
+    IDS_RECOVERY_UNAVAILABLE, "No se ha podido inicializar el diagnóstico de errores graves. FileSpacer funcionará sin él durante esta sesión; tus preferencias se han conservado."
+    IDS_RESET_CLI_ARGUMENTS, "Usa /reset-options o /reset-all, sin indicar una ruta de carpeta ni otras opciones. En modo de depuración puedes añadir /test para restablecer solo los datos de prueba."
+    IDS_RESET_CLI_BUSY, "El restablecimiento no ha podido obtener acceso exclusivo a la configuración. Cierra todas las instancias de FileSpacer, comprueba el acceso a su carpeta de datos locales y vuelve a intentarlo. No se ha eliminado ninguna configuración."
+    IDS_RESET_CLI_FAILED, "No se ha podido completar el restablecimiento de preferencias: %1\n\nEs posible que algunas preferencias ya se hayan restablecido. Si se usó /reset-all, la configuración de las carpetas ya se ha restablecido."
+    IDS_RESET_CLI_ALL_DONE, "Se han restablecido las preferencias globales y las posiciones, tamaños y opciones de vista guardados de las carpetas. Se han conservado tus archivos y las asociaciones de Windows."
+    IDS_RESET_CLI_OPTIONS_DONE, "Se han restablecido las preferencias globales. Se han conservado los estados guardados de las carpetas, tus archivos y las asociaciones de Windows."
+    IDS_RECOVERY_CRASHED, "FileSpacer se ha detenido tras un error grave. Se han guardado un informe de diagnóstico y un volcado de memoria en los datos locales de la aplicación; tus preferencias se han conservado."
+    IDS_SETTINGS_ACCESS_FAILED, "FileSpacer no puede obtener acceso compartido a su configuración. Es posible que haya un restablecimiento en curso o que la carpeta de datos locales no sea accesible. Inténtalo de nuevo cuando termine el mantenimiento."
+}
+
+
+STRINGTABLE
+BEGIN
+    IDS_OPEN_IN_EXPLORER, "Abrir en el Explorador de archivos de Windows"
+    IDS_CONTEXT_MENU_SYNC_FAILED, "No se han podido actualizar los menús contextuales de las carpetas (error %1!u!): %2"
+  IDS_LOCK_WINDOW_STATE "Bloquear el estado de la ventana"
+  IDS_UNLOCK_WINDOW_STATE "Desbloquear el estado de la ventana"
+  IDS_WINDOW_STATE_LOCKED "Estado de la ventana bloqueado. Los cambios de disposición son temporales."
+  IDS_DISABLE_STATE_LOCK_CONFIRM "Al desactivar esta función se eliminarán todos los bloqueos del estado de las ventanas. Las ventanas volverán a guardar su estado normalmente. ¿Quieres continuar?"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_MOVE "Mover la ventana"
+  IDS_SHORTCUT_RESIZE "Cambiar el tamaño de la ventana"
+  IDS_SHORTCUT_DISABLED "desactivado"
+  IDS_SHORTCUT_LEFT "botón izquierdo"
+  IDS_SHORTCUT_MIDDLE "botón central"
+  IDS_SHORTCUT_RIGHT "botón derecho"
+  IDS_SHORTCUT_CTRL "Ctrl + "
+  IDS_SHORTCUT_ALT "Alt + "
+  IDS_SHORTCUT_SHIFT "Mayús + "
+  IDS_SHORTCUT_DESCRIPTION "%1!s!arrastrar con el %2!s!"
+  IDS_SHORTCUT_HEADER "%1!s! (%2!s!)"
+  IDS_SHORTCUT_ACCESSIBLE "Activar: %1!s!"
+  IDS_SHORTCUT_GENERAL "Algunas combinaciones están reservadas para selección y menús."
+  IDS_SHORTCUT_RESERVED "Combinación reservada. Añade Alt o elige el botón central."
+  IDS_SHORTCUT_CONFLICT "Ya está asignada a %1!s!."
+  IDS_SHORTCUT_RECORD "Pulsa directamente las teclas y el botón del ratón..."
+  IDS_SHORTCUT_STOP_RECORD "Ocultar captura directa"
+  IDS_SHORTCUT_LEFT_HINT "Reservado para selección"
+  IDS_SHORTCUT_RIGHT_HINT "Reservado para menús y selección"
+  IDS_SHORTCUT_SAVE_FAILED "No se han podido guardar los métodos abreviados. La configuración anterior sigue activa."
+  IDS_SEARCH_EVERYTHING "Buscar en Everything"
+  IDS_SEARCH_MENU "Everything y búsquedas recientes"
+  IDS_EVERYTHING_ERROR "No se ha podido iniciar Everything.\nComprueba su ruta en Configuración > Integración.\n\nEjecutable: %1!s!\nError %2!u!: %3!s!"
+  IDS_EVERYTHING_AUTO "Detección automática"
+  IDS_EVERYTHING_FOLDER "Carpeta actual y subcarpetas"
+  IDS_EVERYTHING_EVERYWHERE "En todas partes"
+  IDS_EVERYTHING_NOT_FOUND "No se ha encontrado Everything. Instálalo o selecciona manualmente su archivo ejecutable."
+  IDS_SEARCH_HISTORY_INVALID "Introduce un límite del historial de búsquedas entre 0 y 20."
+  IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer coloca las ventanas nuevas para minimizar la superposición con otras ventanas de carpetas.\n\nEsto se aplica a carpetas sin posición de ventana guardada o cuya posición guardada deja de ser accesible tras cambiar la configuración de las pantallas. Siempre tiene prioridad una posición guardada que siga siendo utilizable."
+  IDS_GROUP_FOLDER_WINDOWS_HELP "Las nuevas ventanas de carpetas pueden agruparse en un solo botón de la barra de tareas, según la configuración de la barra de tareas de Windows.\n\nSi se desactiva esta opción, las carpetas pueden anclarse por separado a la barra de tareas.\n\nEl cambio se aplica a las ventanas abiertas después. Las ya abiertas conservan su agrupación actual."
+  IDS_EVERYTHING_EXECUTABLE "Ejecutable de Everything (*.exe)"
+END
