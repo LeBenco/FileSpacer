@@ -17,6 +17,8 @@ InstallDir ""
 !include FileFunc.nsh
 !include x64.nsh
 !include Sections.nsh
+!define FILESPACER_DOCS "..\build\offline-docs"
+!include "..\build\offline-docs.nsh"
 !include EnumUsersReg.nsh
 !addplugindir /x86-unicode "plugins"
 
@@ -570,6 +572,8 @@ Section "FileSpacer" SecBase
     File /oname=SQLite-NOTICE.txt "..\third_party\sqlite\README.txt"
     File /oname=THIRD_PARTY_NOTICES.md "..\THIRD_PARTY_NOTICES.md"
     File /oname=privacy-policy.md "..\docs\privacy-policy.md"
+    !insertmacro InstallDocumentation
+    SetOutPath "$INSTDIR"
     WriteUninstaller "$INSTDIR\uninstall.exe"
     WriteINIStr "$INSTDIR\install-info.ini" "Installation" "Mode" $installMode
     WriteINIStr "$INSTDIR\install-info.ini" "Installation" "Language" $LANGUAGE
@@ -906,6 +910,7 @@ provider_removed:
     Delete "$INSTDIR\SQLite-NOTICE.txt"
     Delete "$INSTDIR\THIRD_PARTY_NOTICES.md"
     Delete "$INSTDIR\privacy-policy.md"
+    !insertmacro RemoveDocumentation
     Delete "$INSTDIR\ShortcutProperties-LICENSE.txt"
     Delete "$INSTDIR\install-info.ini"
     Delete "$INSTDIR\uninstall.exe"
