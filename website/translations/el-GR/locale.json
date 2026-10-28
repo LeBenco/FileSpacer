@@ -1,0 +1,20 @@
+{
+  "name": "Ελληνικά",
+  "description": "Χωρικός διαχειριστής αρχείων για τα Windows",
+  "overview": "Παρουσίαση",
+  "user-guide": "Οδηγός χρήσης",
+  "privacy-policy": "Απόρρητο",
+  "changelog": "Ιστορικό εκδόσεων",
+  "third-party-notices": "Στοιχεία τρίτων",
+  "language": "Γλώσσα",
+  "navigation": "Κύρια πλοήγηση",
+  "submenu": "Υπομενού",
+  "search": "Αναζήτηση στο FileSpacer",
+  "noResults": "Δεν βρέθηκαν αποτελέσματα",
+  "download": "Λήψη",
+  "repository": "FileSpacer στο GitHub",
+  "back": "Επιστροφή στην κορυφή",
+  "skip": "Μετάβαση στο κύριο περιεχόμενο",
+  "attribution": "Αυτός ο ιστότοπος χρησιμοποιεί το <a href=\"https://github.com/just-the-docs/just-the-docs\">Just the Docs</a>, ένα θέμα τεκμηρίωσης για το Jekyll.",
+  "license": "Διανέμεται με την άδεια"
+}

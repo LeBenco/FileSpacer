@@ -16,18 +16,20 @@ Git LFS setup is needed.
 | `move-window.gif` | Alt + left drag to move a folder window. |
 | `resize-window.gif` | Alt + right drag to resize a folder window. |
 
-The website and English documentation use the English series, with fictional
-English folder names and contents. See `provenance.json` for the capture context,
+The English documentation and English website use the unsuffixed series, with
+fictional English folder names and contents. Each translated website substitutes
+the corresponding localized series: `-fr`, `-de`, `-it`, `-es`, `-pt` or `-el`.
+Markdown keeps the original image references; the generator selects and copies
+the localized files. See `provenance.json` for the original capture context,
 dimensions and checksums.
 
 The original English captures use the existing en-US resources, selected at startup in a
 disposable documentation build of FileSpacer 1.1.10 because the VM's active
 Windows session remains French. The source UI strings and controls are unchanged.
 
-The original French screenshots are kept as `overview-fr.png`,
-`window-menu-fr.png` and `search-fr.png` for future French
-documentation. Their capture context and checksums are in `provenance-fr.json`.
-They are not included in the current website build.
+The original French screenshots, including `overview-fr.png`,
+`window-menu-fr.png` and `search-fr.png`, are used by the French website.
+Their capture context and checksums are in `provenance-fr.json`.
 
 The title close-up also has a French copy, `locked-title-fr.png`.
 
@@ -51,8 +53,7 @@ automatically arranged by name. Their capture context and checksums are in
 The `nilesoft-navigation-default.png` / `nilesoft-navigation-adapted.png` and
 `nilesoft-main-menu-default.png` / `nilesoft-main-menu-adapted.png` pairs show the
 same Modern theme with its default rounded corners and with the recommended
-square corners. Each file also has a French copy ending in `-fr.png`; only the
-English versions are included in the website.
+square corners. Each file has a localized copy for every translated website.
 
 See `nilesoft-provenance.json` for versions, dimensions and checksums. Keep the
 same menu contents, window geometry and theme in each pair. Change only the
@@ -63,6 +64,22 @@ English series uses the application's English resources and real Nilesoft
 label rules for native Windows menu entries, applied identically to both
 variants on the French VM. No labels were edited in the exported images.
 Back up and restore the installed Nilesoft configuration around each session.
+
+## Additional language series
+
+`localization-provenance.json` records the 45 PNGs and 10 GIFs added for German,
+Italian, Spanish, European Portuguese and Greek, including checksums, dimensions,
+VM run IDs, application version and recorded keystroke frames. The existing
+English and French series remain valid for unchanged screens.
+
+These five series were captured from FileSpacer 1.2.2 in the documentation VM.
+Disposable builds select the application's real language resources at startup
+and retain the real Windows controls. Spanish selects resource ID `040A`
+explicitly, matching the resource file's Spanish (traditional sort) declaration.
+Fictional filenames, layouts and gesture recordings match the English examples;
+the established French examples retain their translated fictional filenames.
+Nilesoft's actual label rules localize native Windows menu entries on the French
+VM identically in both corner variants. Exported image labels were not edited.
 
 ## Recording an animation
 
@@ -76,9 +93,9 @@ Use a short loop with pauses before and after the gesture.
 
 Replace the existing PNG or GIF under the same name when the corresponding
 interface changes. There is no need to recapture unchanged screens for every release.
-Keep the app version and capture context in `provenance.json` current.
+Update the corresponding provenance file with the app version and capture context.
 
-Use a dedicated VM with fictional folders and files. Prefer an English Windows
+Use a dedicated VM with fictional folders and files. Prefer the target Windows
 display language, since FileSpacer follows Windows. Preserve the real interface;
 do not redraw or translate labels inside a screenshot.
 
