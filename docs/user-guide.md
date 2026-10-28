@@ -69,9 +69,6 @@ Drag in the file area, on its background or an item, using these defaults:
 | Move the window | Alt + left drag |
 | Resize from the bottom-right corner | Alt + right drag |
 
-<details open>
-<summary>Animated demonstrations</summary>
-
 **Move the window — Alt + left drag**
 
 ![Moving a folder window by holding Alt and dragging in the file area with the left mouse button.](images/move-window.gif)
@@ -79,8 +76,6 @@ Drag in the file area, on its background or an item, using these defaults:
 **Resize the window — Alt + right drag**
 
 ![Resizing a folder window by holding Alt and dragging in the file area with the right mouse button.](images/resize-window.gif)
-
-</details>
 
 The selection is preserved. Escape cancels the gesture and restores the original
 geometry. Text fields, headers, scrollbars, toolbars and menus keep their normal
