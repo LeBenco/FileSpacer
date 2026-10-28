@@ -1,6 +1,8 @@
 # Build outputs and temporary test fixtures.
 /build/
 /website/node_modules/
+/.github/scripts/.bundle/
+/.github/scripts/vendor/
 
 # Local development settings.
 /.vs/
