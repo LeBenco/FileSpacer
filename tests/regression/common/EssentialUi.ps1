@@ -99,7 +99,7 @@ function Open-UiFolder([string]$Path,[int]$ExpectedItems=-1) {
     Wait-Ui {
         $view=Get-UiView $window
         if ($null -eq $view) { return $false }
-        try { return $ExpectedItems -lt 0 -or $view.Count -eq $ExpectedItems } finally { $view.Dispose() }
+        try { return $view.ContentVisible -and ($ExpectedItems -lt 0 -or $view.Count -eq $ExpectedItems) } finally { $view.Dispose() }
     } 'registered Shell view and folder enumeration' 300
     Write-Host "STEP: Shell view ready for $Path, HWND=$window"
     return $window
@@ -114,7 +114,7 @@ function Track-UiFolder([string]$Path) {
         if (![FileSpacerRegression.Native]::IsWindowVisible($window)) { return $false }
         $view=Get-UiView $window
         if ($null -eq $view) { return $false }
-        try { return $view.Count -ge 0 } finally { $view.Dispose() }
+        try { return $view.ContentVisible -and $view.Count -ge 0 } finally { $view.Dispose() }
     } 'visible navigation target with registered Shell view' 300
     Write-Host "STEP: navigation target ready, HWND=$window"
     return $window
