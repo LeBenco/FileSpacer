@@ -50,11 +50,48 @@ site root, other languages under `/de/`, `/el/`, `/es/`, `/fr/`, `/it/` and `/pt
 These outputs are generated and ignored by Git. The application build and its
 dependencies are separate from this documentation build.
 
+## Shared website and offline builds
+
+`.github/scripts/build-docs.mjs` owns the complete generation pipeline: it calls
+this generator, builds every discovered language with Jekyll and retains the same
+pinned theme, localized navigation, search indexing and media. Its build-only Ruby
+dependencies are locked in `.github/scripts/Gemfile.lock`. Node.js 22+, Ruby 3.3
+and Bundler are needed to generate finished pages; none is needed to read them.
+
+From CMD at the repository root, install the dependencies once:
+
+```cmd
+npm ci --prefix website --ignore-scripts
+cd .github\scripts
+bundle install
+cd ..\..
+node .github\scripts\build-docs.mjs --target web
+node .github\scripts\build-docs.mjs --target offline
+```
+
+The outputs are `build/site` and `build/offline-docs`. The offline variant resolves
+site links and resources relative to each HTML page and embeds its search data
+in the existing theme script, so search works from `file://` without a server.
+The theme's indexing and localized tokenization remain unchanged. A changed theme
+loader fails generation until its offline adaptation has been reviewed.
+
+Both workflows invoke `.github/actions/build-docs`, which installs the same
+dependencies and calls this script with the appropriate target. The release
+workflow checks out the version tag for documentation and application alike;
+it never downloads the published website or waits for the Pages workflow.
+
+The offline output includes a source fingerprint, file hashes and discovered
+languages. Installer packaging verifies these before reusing a generated copy.
+Text input hashes normalize CRLF/LF to permit Linux-to-Windows artifact transfer.
+An absent, stale or damaged copy is rebuilt with Jekyll. A generated NSIS include
+installs the documentation and removes only its owned files on uninstallation;
+unowned files in the help directory are preserved.
+
 ## GitHub Pages
 
 The Pages workflow builds and checks relevant pull requests. It generates the
-sources once, reads `locales.json` to create its build matrix, builds each language
-independently, then merges and deploys their artifacts. No second language list
+sources once, reads `locales.json`, builds each language and deploys the result.
+No second language list
 needs updating in CI. Pushes to `main` rebuild and deploy when a source document,
 translation, capture, icon, generator or workflow changes. It can also be started
 manually. The workflow does not create application releases, tags or installers.
