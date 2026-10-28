@@ -1,0 +1,192 @@
+#include <windows.h>
+#include "resource.h"
+
+LANGUAGE LANG_GREEK, SUBLANG_DEFAULT
+
+IDR_ITEM_MENU   MENU {
+    MENUITEM    "Ρυθμίσεις FileSpacer\tCtrl+,", IDM_SETTINGS
+    //     MENUITEM    "Help\tF1",                     IDM_HELP // Deferred public help.
+}
+
+STRINGTABLE {
+    IDS_CAPTION_COPY_PATH, "Αντιγραφή διαδρομής"
+    IDS_CAPTION_RENAME, "Μετονομασία"
+    IDS_CAPTION_PROPERTIES, "Ιδιότητες"
+    IDS_CAPTION_CLOSE_PARENTS, "Κλείσιμο παραθύρων γονικών φακέλων"
+    IDS_CAPTION_REOPEN_NAMED, "Εκ νέου άνοιγμα «%1»\tCtrl+Shift+T"
+    IDS_REOPEN_LAST, "Εκ νέου άνοιγμα τελευταίου κλειστού παραθύρου"
+    IDS_REOPEN_MENU, "Εκ νέου άνοιγμα τελευταίου κλειστού παραθύρου\tCtrl+Shift+T"
+    IDS_REOPEN_NAMED, "Εκ νέου άνοιγμα «%1»"
+    IDS_REOPEN_EMPTY, "Δεν υπάρχει κλειστό παράθυρο για εκ νέου άνοιγμα."
+    IDS_REOPEN_FAILED, "Δεν ήταν δυνατό το εκ νέου άνοιγμα αυτού του φακέλου:\n%1\n\nΠαραμένει στο ιστορικό κλειστών παραθύρων."
+
+    IDS_QUICK_ACCESS, "Γρήγορη πρόσβαση"
+    IDS_QUICK_ACCESS_UNAVAILABLE, "Η Γρήγορη πρόσβαση δεν είναι διαθέσιμη.\n\nΒήμα: %1\nΚωδικός: 0x%2!08X!\n\nΠατήστε Ctrl+C για αντιγραφή αυτού του μηνύματος."
+    IDS_QUICK_ACCESS_EMPTY, "Δεν υπάρχουν καρφιτσωμένοι φάκελοι"
+    IDS_QUICK_ACCESS_OPEN, "Άνοιγμα Γρήγορης πρόσβασης"
+    IDS_QUICK_ACCESS_KEY, "Αναζήτηση ιδιότητας καρφιτσωμένων φακέλων"
+    IDS_QUICK_ACCESS_ENUM, "Απαρίθμηση στοιχείων"
+    IDS_QUICK_ACCESS_READ, "Ανάγνωση στοιχείων"
+    IDS_QUICK_ACCESS_TARGET, "Εντοπισμός φακέλων"
+    IDS_QUICK_ACCESS_MENU, "Δημιουργία μενού"
+
+    IDS_APP_NAME,           "FileSpacer"
+    IDS_PATH_BAR,           "Διεύθυνση"
+    IDS_SEARCH_NAME,        "Αναζήτηση κατά όνομα"
+    IDS_SEARCH_CUE,         "Αναζήτηση στο %1"
+    IDS_SEARCH_APPLY,       "Αναζήτηση"
+    IDS_SEARCH_ERROR,       "Δεν ήταν δυνατή η εφαρμογή του φίλτρου ονόματος.\n\n%1"
+    IDS_ADDRESS_NOT_FOLDER, "Αυτή η διεύθυνση δεν αντιστοιχεί σε φάκελο: %1"
+
+    IDS_UNKNOWN_ERROR,      "Άγνωστο σφάλμα"
+    IDS_ERROR_CAPTION,      "Σφάλμα"
+    IDS_CANT_FIND_ITEM,     "Δεν βρέθηκε στοιχείο στη διαδρομή: %1"
+    IDS_INVALID_CHARS,      "Το όνομα αρχείου δεν μπορεί να περιέχει τους ακόλουθους χαρακτήρες:\n\\ / : * ? "" < > |"
+
+    IDS_SETTINGS_CAPTION,   "Ρυθμίσεις FileSpacer"
+    IDS_NO_UPDATE_CAPTION,  "Δεν υπάρχουν διαθέσιμες ενημερώσεις"
+    IDS_NO_UPDATE,          "Χρησιμοποιείτε την πιο πρόσφατη έκδοση."
+    IDS_UPDATE_CLOSE_BUTTON, "Κλείσιμο"
+    IDS_UPDATE_SEARCH_BUTTON, "Έλεγχος για &ενημερώσεις"
+    IDS_UPDATE_INSTALL_BUTTON, "&Εγκατάσταση FileSpacer v%1"
+    IDS_UPDATE_RELEASE_BUTTON, "Προβολή FileSpacer v%1"
+    IDS_UPDATE_SEARCHING, "Έλεγχος για νέα έκδοση…"
+    IDS_UPDATE_AVAILABLE, "Υπάρχει διαθέσιμη νέα έκδοση."
+    IDS_UPDATE_DOWNLOADING, "Λήψη προγράμματος εγκατάστασης…"
+    IDS_UPDATE_PROGRESS, "Λήψη: %1!u! %%"
+    IDS_UPDATE_CLOSING, "Η λήψη επαληθεύτηκε. Κλείσιμο παραθύρων…"
+    IDS_UPDATE_FAILED, "Η ενημέρωση απέτυχε. Μπορείτε να δοκιμάσετε ξανά."
+    IDS_UPDATE_FAILED_DETAIL, "Αποτυχία ενημέρωσης: %1"
+    IDS_UPDATE_LEGACY, "Κατεβάστε αυτήν την έκδοση από τη σελίδα εκδόσεων στο GitHub."
+    IDS_UPDATE_BUSY, "Μια εγκατάσταση του FileSpacer βρίσκεται ήδη σε εξέλιξη."
+    IDS_UPDATE_CONFIRM_TITLE, "Εγκατάσταση της νέας έκδοσης του FileSpacer;"
+    IDS_UPDATE_CONFIRM, "Θα γίνει λήψη και επαλήθευση του προγράμματος εγκατάστασης. Μπορείτε να συνεχίσετε να χρησιμοποιείτε το FileSpacer και να ακυρώσετε κατά τη λήψη. Στη συνέχεια, όλα τα παράθυρα του FileSpacer θα κλείσουν, αφού αποθηκευτούν οι θέσεις και οι ρυθμίσεις τους όπως συνήθως, και θα ξεκινήσει η εγκατάσταση. Οι ανοιχτοί φάκελοι θα ανοίξουν ξανά μετά την ολοκλήρωση ή την ακύρωση της εγκατάστασης.\n\nΣυνέχεια;"
+    IDS_UPDATE_RELAY_FAILED, "Δεν ήταν δυνατή η ολοκλήρωση της ενημέρωσης ή της επαναφοράς των παραθύρων. Δεν τερματίστηκε αναγκαστικά καμία διεργασία.\n\n%1"
+    IDS_UPDATE_RESTORE_FAILED, "Δεν ήταν δυνατό το εκ νέου άνοιγμα %1!u! φακέλων. Ενδέχεται να έχουν μετακινηθεί, διαγραφεί ή να μην είναι διαθέσιμοι. Οι υπόλοιποι φάκελοι άνοιξαν ξανά."
+    IDS_UPDATE_ERROR,       "Σφάλμα κατά τον έλεγχο για ενημερώσεις"
+    IDS_UPDATE_NOTIF_TITLE, "Ενημέρωση FileSpacer"
+    IDS_UPDATE_NOTIF_INFO,  "Υπάρχει διαθέσιμη νέα έκδοση του FileSpacer. Κάντε κλικ σε αυτήν την ειδοποίηση για να ανοίξετε τη σελίδα λήψης."
+
+    IDS_OPEN_PARENT_COMMAND,"Άνοιγμα γονικού φακέλου\n(Alt+Επάνω βέλος)"
+    IDS_MENU_COMMAND,       "Μενού..."
+    IDS_REFRESH_COMMAND,    "Ανανέωση\n(Ctrl+R)"
+    IDS_VIEW_COMMAND,       "Προβολή..."
+	
+	IDS_FOLDER_STATUS,          "%1!d! στοιχεία"
+	IDS_FOLDER_STATUS_SEL,      "%1!d! στοιχεία    %2!d! επιλεγμένα"
+	IDS_FOLDER_STATUS_SEL_SIZE, "%1!d! στοιχεία    %2!d! επιλεγμένα    %3!s!"
+    IDS_FOLDER_ERROR,       "Δεν ήταν δυνατό το άνοιγμα του φακέλου"
+
+    IDS_SUCCESS_CAPTION,    "Επιτυχία"
+    IDS_CONFIRM_CAPTION,    "Είστε βέβαιοι;"
+    IDS_RESET_FOLDER_STATE_CONFIRM, "Θέλετε να γίνει επαναφορά όλων των αποθηκευμένων θέσεων, μεγεθών και ρυθμίσεων προβολής φακέλων; Τα παράθυρα φακέλων του FileSpacer θα κλείσουν και δεν θα ανοίξουν ξανά αυτόματα. Το παράθυρο ρυθμίσεων θα κλείσει και οι αλλαγές που δεν εφαρμόστηκαν θα απορριφθούν. Οι αποθηκευμένες ρυθμίσεις της εφαρμογής θα διατηρηθούν."
+    IDS_RESET_FOLDER_STATE_CLOSE_ERROR, "Δεν ήταν δυνατό το κλείσιμο όλων των παραθύρων του FileSpacer. Κάποιο παράθυρο ενδέχεται να αρνήθηκε να κλείσει ή να μην αποκρίνεται. Δεν διαγράφηκαν αποθηκευμένες καταστάσεις φακέλων. Ορισμένα παράθυρα ίσως έχουν ήδη κλείσει."
+    IDS_RESET_FOLDER_STATE_STORAGE_ERROR, "Δεν ήταν δυνατό το άνοιγμα της βάσης δεδομένων κατάστασης φακέλων. Δεν διαγράφηκαν αποθηκευμένες καταστάσεις."
+    IDS_RESET_FOLDER_STATE_DELETE_ERROR, "Δεν ήταν δυνατή η επαναφορά της βάσης δεδομένων κατάστασης φακέλων. Η διαγραφή δεν ολοκληρώθηκε."
+    IDS_RESET_FOLDER_STATE_SUCCESS, "Έγινε επαναφορά των αποθηκευμένων θέσεων, μεγεθών και ρυθμίσεων προβολής φακέλων. Οι ρυθμίσεις της εφαρμογής διατηρήθηκαν."
+    IDS_FOLDER_WIDTH_LABEL,   "&Πλάτος (ελάχ.: %1!d! px):"
+    IDS_FOLDER_HEIGHT_LABEL,  "Ύ&ψος (ελάχ.: %1!d! px):"
+    IDS_FOLDER_WIDTH_INVALID, "Το πλάτος πρέπει να είναι ακέραιος αριθμός τουλάχιστον %1!d! px."
+    IDS_FOLDER_HEIGHT_INVALID,"Το ύψος πρέπει να είναι ακέραιος αριθμός τουλάχιστον %1!d! px."
+    IDS_FOLDER_STATE_ERROR, "Το FileSpacer δεν μπόρεσε να διαβάσει ή να αποθηκεύσει τη βάση δεδομένων κατάστασης φακέλων. Ελέγξτε ότι ο τοπικός φάκελος δεδομένων της εφαρμογής επιτρέπει εγγραφή και ότι η βάση είναι διαθέσιμη. Τα υπάρχοντα δεδομένα δεν επαναφέρθηκαν."
+    IDS_BROWSER_SET_FAILED, "Δεν ήταν δυνατή η αλλαγή της προεπιλεγμένης εφαρμογής διαχείρισης αρχείων"
+    IDS_BROWSER_DIRECTORY, "Φάκελοι"
+    IDS_BROWSER_COMPRESSED_FOLDER, "Συμπιεσμένοι φάκελοι (ZIP)"
+    IDS_BROWSER_DRIVE, "Μονάδες δίσκου"
+    IDS_BROWSER_NETWORK_SERVER, "Διακομιστές δικτύου"
+    IDS_BROWSER_NETWORK_SHARE, "Κοινόχρηστοι πόροι δικτύου"
+    IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (σφάλμα %2!lu!)"
+    IDS_BROWSER_ASSOCIATIONS_FAILED, "Δεν ήταν δυνατή η αλλαγή των ακόλουθων συσχετίσεων:\n\n%1\n\nΟι επιτυχημένες αλλαγές διατηρήθηκαν."
+    IDS_BROWSER_SET,        "Το FileSpacer ορίστηκε ως προεπιλεγμένη εφαρμογή διαχείρισης αρχείων. Μπορείτε να αναιρέσετε την αλλαγή στις ρυθμίσεις του FileSpacer."
+    IDS_BROWSER_RESET,      "Η Εξερεύνηση αρχείων επανήλθε ως προεπιλεγμένη εφαρμογή διαχείρισης αρχείων."
+    IDS_REQUIRE_CONTEXT,    "Εγκαταστήστε ή ενημερώστε το FileSpacer με ενεργοποιημένο το «Μενού περιβάλλοντος φακέλων» για να αλλάξετε την προεπιλεγμένη εφαρμογή, ακόμα και για θέσεις δικτύου."
+    IDS_BROWSER_SET_CONFIRM,"Η Εξερεύνηση αρχείων των Windows θα αντικατασταθεί ως προεπιλεγμένο πρόγραμμα για το άνοιγμα όλων των φακέλων."
+
+    IDS_WELCOME_HEADER,     "Καλώς ορίσατε"
+    IDS_WELCOME_BODY,       "Φαίνεται ότι χρησιμοποιείτε το FileSpacer για πρώτη φορά."
+#if 0 // Deferred public services.
+    IDS_WELCOME_TUTORIAL,   "&Ανάγνωση οδηγού\nΣυνιστάται για νέους χρήστες"
+#endif
+    IDS_WELCOME_BROWSER,    "&Ορισμός ως προεπιλεγμένης διαχείρισης αρχείων\nΑντικατάσταση της Εξερεύνησης αρχείων"
+    IDS_WELCOME_UPDATE,     "&Εβδομαδιαίος έλεγχος για ενημερώσεις"
+
+    IDS_ADMIN_WARNING,      "Προσπαθείτε να εκτελέσετε το FileSpacer ως διαχειριστής. Αυτό δεν συνιστάται!\n\nΘέλετε να συνεχίσετε;"
+    IDS_DONT_ASK,           "Να μην ερωτηθώ ξανά"
+
+// Deferred donation paragraph:
+// If you enjoy FileSpacer, please consider donating to support its development. Click the Donate button above.\r\n
+    IDS_LEGAL_INFO,         "\
+Copyright (c) 2026 Benco (τροποποιήσεις FileSpacer)\r\n\
+Το FileSpacer είναι παράγωγο έργο του ChromaFiler.\r\n\
+Copyright (c) 2023 J. van't Hoog (ChromaFiler)\r\n\
+\r\n\
+Γενική Άδεια Δημόσιας Χρήσης GNU v3.0. Χωρίς εγγύηση.\r\n\
+Επιτρέπεται η αναδιανομή και τροποποίηση του λογισμικού σύμφωνα με την GPL.\r\n\
+Δείτε το LICENSE.txt στον φάκελο εγκατάστασης και το https://www.gnu.org/licenses/gpl-3.0.html\r\n\
+Αρχικό έργο: https://github.com/vanjac/chromafiler\r\n\
+\r\n\
+Στοιχεία εφαρμογής:\r\n\
+- SQLite 3.53.4: κοινό κτήμα· https://sqlite.org/\r\n\
+- Εικονίδια πλοήγησης Lucide / Feather: ISC / MIT· https://lucide.dev/license\r\n\
+  Πλήρεις σημειώσεις: Lucide-LICENSE.txt στον φάκελο εγκατάστασης.\r\n\
+- Segoe Fluent Icons / Segoe MDL2 Assets: γραμματοσειρές Microsoft που παρέχονται από τα Windows· δεν αναδιανέμονται.\r\n\
+\r\n\
+Πρόγραμμα εγκατάστασης με NSIS (Nullsoft Scriptable Install System): https://nsis.sourceforge.io/\r\n\
+Πρόσθετο LockedList: άδεια zlib.\r\n\
+Copyright (c) 2013 Afrow Soft Ltd. Δείτε το LockedList-LICENSE.txt.\r\n\
+"
+    IDS_RECOVERY_UNAVAILABLE, "Δεν ήταν δυνατή η αρχικοποίηση των διαγνωστικών σφάλματος. Το FileSpacer θα λειτουργήσει χωρίς αυτά σε αυτήν τη συνεδρία· οι προτιμήσεις σας διατηρήθηκαν."
+    IDS_RESET_CLI_ARGUMENTS, "Χρησιμοποιήστε είτε /reset-options είτε /reset-all, χωρίς διαδρομή φακέλου ή άλλες επιλογές. Στη λειτουργία Debug μπορείτε να προσθέσετε /test για επαναφορά μόνο των δεδομένων δοκιμών."
+    IDS_RESET_CLI_BUSY, "Η επαναφορά δεν μπόρεσε να αποκτήσει αποκλειστική πρόσβαση στις ρυθμίσεις. Κλείστε όλες τις παρουσίες του FileSpacer, ελέγξτε την πρόσβαση στον τοπικό φάκελο δεδομένων και δοκιμάστε ξανά. Δεν διαγράφηκαν ρυθμίσεις."
+    IDS_RESET_CLI_FAILED, "Δεν ήταν δυνατή η ολοκλήρωση της επαναφοράς προτιμήσεων: %1\n\nΟρισμένες προτιμήσεις ενδέχεται να έχουν ήδη επαναφερθεί. Αν χρησιμοποιήθηκε /reset-all, οι ρυθμίσεις φακέλων έχουν ήδη επαναφερθεί."
+    IDS_RESET_CLI_ALL_DONE, "Έγινε επαναφορά των γενικών προτιμήσεων και των αποθηκευμένων θέσεων, μεγεθών και ρυθμίσεων προβολής των φακέλων. Τα αρχεία σας και οι συσχετίσεις των Windows διατηρήθηκαν."
+    IDS_RESET_CLI_OPTIONS_DONE, "Έγινε επαναφορά των γενικών προτιμήσεων. Οι αποθηκευμένες ρυθμίσεις φακέλων, τα αρχεία σας και οι συσχετίσεις των Windows διατηρήθηκαν."
+    IDS_RECOVERY_CRASHED, "Το FileSpacer σταμάτησε μετά από σοβαρό σφάλμα. Μια αναφορά διαγνωστικών και ένα αρχείο αποτύπωσης μνήμης αποθηκεύτηκαν στα τοπικά δεδομένα της εφαρμογής· οι προτιμήσεις σας διατηρήθηκαν."
+    IDS_SETTINGS_ACCESS_FAILED, "Το FileSpacer δεν μπορεί να αποκτήσει κοινόχρηστη πρόσβαση στις ρυθμίσεις του. Ίσως εκτελείται επαναφορά ή ο τοπικός φάκελος δεδομένων δεν είναι προσβάσιμος. Δοκιμάστε ξανά μετά τη συντήρηση."
+}
+
+
+STRINGTABLE
+BEGIN
+    IDS_OPEN_IN_EXPLORER, "Άνοιγμα στην Εξερεύνηση αρχείων των Windows"
+    IDS_CONTEXT_MENU_SYNC_FAILED, "Δεν ήταν δυνατή η ενημέρωση των μενού περιβάλλοντος φακέλων (σφάλμα %1!u!): %2"
+  IDS_LOCK_WINDOW_STATE "Κλείδωμα κατάστασης παραθύρου"
+  IDS_UNLOCK_WINDOW_STATE "Ξεκλείδωμα κατάστασης παραθύρου"
+  IDS_WINDOW_STATE_LOCKED "Η κατάσταση παραθύρου είναι κλειδωμένη. Οι αλλαγές διάταξης είναι προσωρινές."
+  IDS_DISABLE_STATE_LOCK_CONFIRM "Η απενεργοποίηση αυτής της δυνατότητας θα διαγράψει όλα τα κλειδώματα κατάστασης παραθύρων. Τα παράθυρα θα αποθηκεύουν ξανά κανονικά την κατάστασή τους. Θέλετε να συνεχίσετε;"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_MOVE "Μετακίνηση παραθύρου"
+  IDS_SHORTCUT_RESIZE "Αλλαγή μεγέθους παραθύρου"
+  IDS_SHORTCUT_DISABLED "απενεργοποιημένο"
+  IDS_SHORTCUT_LEFT "αριστερό"
+  IDS_SHORTCUT_MIDDLE "μεσαίο"
+  IDS_SHORTCUT_RIGHT "δεξί"
+  IDS_SHORTCUT_CTRL "Ctrl + "
+  IDS_SHORTCUT_ALT "Alt + "
+  IDS_SHORTCUT_SHIFT "Shift + "
+  IDS_SHORTCUT_DESCRIPTION "%1!s!σύρσιμο με το %2!s! κουμπί"
+  IDS_SHORTCUT_HEADER "%1!s! (%2!s!)"
+  IDS_SHORTCUT_ACCESSIBLE "Ενεργοποίηση: %1!s!"
+  IDS_SHORTCUT_GENERAL "Ορισμένοι συνδυασμοί δεσμεύονται για επιλογή και μενού."
+  IDS_SHORTCUT_RESERVED "Δεσμευμένος συνδυασμός. Προσθέστε Alt ή επιλέξτε το μεσαίο κουμπί."
+  IDS_SHORTCUT_CONFLICT "Έχει ήδη αντιστοιχιστεί στο %1!s!."
+  IDS_SHORTCUT_RECORD "Πατήστε απευθείας τα πλήκτρα και το κουμπί ποντικιού..."
+  IDS_SHORTCUT_STOP_RECORD "Απόκρυψη άμεσης εισαγωγής"
+  IDS_SHORTCUT_LEFT_HINT "Δεσμευμένο για επιλογή"
+  IDS_SHORTCUT_RIGHT_HINT "Δεσμευμένο για μενού και επιλογή"
+  IDS_SHORTCUT_SAVE_FAILED "Δεν ήταν δυνατή η αποθήκευση των συντομεύσεων. Οι προηγούμενες ρυθμίσεις παραμένουν ενεργές."
+  IDS_SEARCH_EVERYTHING "Αναζήτηση στο Everything"
+  IDS_SEARCH_MENU "Everything και πρόσφατες αναζητήσεις"
+  IDS_EVERYTHING_ERROR "Δεν ήταν δυνατή η εκκίνηση του Everything.\nΕλέγξτε τη διαδρομή στις Ρυθμίσεις > Ενσωμάτωση.\n\nΕκτελέσιμο: %1!s!\nΣφάλμα %2!u!: %3!s!"
+  IDS_EVERYTHING_AUTO "Αυτόματος εντοπισμός"
+  IDS_EVERYTHING_FOLDER "Τρέχων φάκελος και υποφάκελοι"
+  IDS_EVERYTHING_EVERYWHERE "Παντού"
+  IDS_EVERYTHING_NOT_FOUND "Το Everything δεν βρέθηκε. Εγκαταστήστε το ή επιλέξτε χειροκίνητα το εκτελέσιμό του."
+  IDS_SEARCH_HISTORY_INVALID "Εισαγάγετε όριο ιστορικού αναζήτησης από 0 έως 20."
+  IDS_SMART_WINDOW_PLACEMENT_HELP "Το FileSpacer τοποθετεί τα νέα παράθυρα ώστε να περιορίζει την επικάλυψη με άλλα παράθυρα φακέλων.\n\nΑυτό ισχύει για φακέλους χωρίς αποθηκευμένη θέση παραθύρου ή όταν η αποθηκευμένη θέση δεν είναι πλέον προσβάσιμη μετά από αλλαγή οθόνης. Μια αποθηκευμένη θέση που παραμένει διαθέσιμη έχει προτεραιότητα."
+  IDS_GROUP_FOLDER_WINDOWS_HELP "Τα νέα παράθυρα φακέλων μπορούν να ομαδοποιούνται σε ένα κουμπί της γραμμής εργασιών, σύμφωνα με τις ρυθμίσεις των Windows.\n\nΌταν η επιλογή είναι ανενεργή, οι φάκελοι μπορούν να καρφιτσώνονται ξεχωριστά στη γραμμή εργασιών.\n\nΗ ρύθμιση ισχύει για παράθυρα που ανοίγουν μετά την αλλαγή. Όσα είναι ήδη ανοιχτά διατηρούν την ομαδοποίησή τους."
+  IDS_EVERYTHING_EXECUTABLE "Εκτελέσιμο Everything (*.exe)"
+END
