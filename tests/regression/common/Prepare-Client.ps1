@@ -121,7 +121,7 @@ function New-ClientPackage {
     # Only inspect selected scripts and their dependencies, plus runner helpers.
     foreach($relative in @('Run-Regression.ps1','common\Process.ps1','common\Results.ps1','common\Prepared.ps1','common\Prepared-Case.ps1')) { Copy-PackageFile (Join-Path $regression $relative) }
     Copy-PackageFile (Join-Path $ProjectRoot 'tests\client\HyperVSmoke.ps1')
-    foreach($relative in @('src\resource.h','src\dialog.h','build\debug\FileSpacer.exe')) { Copy-PackageFile (Join-Path $ProjectRoot $relative) }
+    foreach($relative in @('src\resource.h','src\dialog.h','build\debug\FileSpacer.exe','build\debug\FileSpacerFolder.dll')) { Copy-PackageFile (Join-Path $ProjectRoot $relative) }
     $runnerFiles=@{(Join-Path $regression 'common\DesktopActivity.cs')=$true}
     Copy-PackageFile (Join-Path $regression 'common\DesktopActivity.cs')
     Build-ManagedBundle 'runner' $runnerFiles

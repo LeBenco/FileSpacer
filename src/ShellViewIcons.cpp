@@ -1,4 +1,5 @@
 #include "ShellViewIcons.h"
+#include "MixedFolder.h"
 #include "DPI.h"
 #include <atlbase.h>
 #include <shlobj.h>
@@ -72,10 +73,14 @@ HRESULT captureIconPositions(IFolderView *view, const std::function<bool()> &cur
             if (!current()) return E_ABORT;
             if (FAILED(result)) return result;
             position = invScaleDPI(position);
-            result = IStream_WritePidl(stream, id);
+            CComHeapPtr<ITEMID_CHILD> native;
+            result = nativeViewChild(view, id, &native);
+            if (!current()) return E_ABORT;
+            if (FAILED(result)) return result;
+            result = IStream_WritePidl(stream, native);
             if (SUCCEEDED(result)) result = IStream_Write(stream, &position, sizeof(position));
             if (FAILED(result)) return result;
-            visible.emplace(reinterpret_cast<const char *>(id.m_pData), ILGetSize(id));
+            visible.emplace(reinterpret_cast<const char *>(native.m_pData), ILGetSize(native));
         }
     }
     if (!enumerationComplete && !previous.empty()) {
@@ -113,6 +118,13 @@ HRESULT restoreIconPositions(IFolderView *view, const std::vector<uint8_t> &byte
     HRESULT result = decodePositions(bytes, positions);
     if (FAILED(result)) return result;
     if (!current()) return E_ABORT;
+    for (auto &position : positions) {
+        CComHeapPtr<ITEMID_CHILD> shown;
+        result = mixedViewChild(view, position.id, &shown);
+        if (!current()) return E_ABORT;
+        if (FAILED(result)) return result;
+        position.id.Free(); position.id.Attach(shown.Detach());
+    }
     std::vector<PCUITEMID_CHILD> items;
     std::vector<POINT> points;
     items.reserve(positions.size());

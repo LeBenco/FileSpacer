@@ -1,6 +1,7 @@
 #include "FolderWindow.h"
 #include "ShellViewSettings.h"
 #include "ShellViewSelection.h"
+#include "MixedFolder.h"
 #include "ShellViewIcons.h"
 #include "ShellViewFilter.h"
 #include "ShellViewLabels.h"
@@ -1151,6 +1152,9 @@ void FolderWindow::onSettingsChanged() {
     if (!limit) searchHistoryDirty = false; // The preference already cleared persisted histories.
     if (isWindowOperational())
         setSingleSelectionLabels(shellView, settings::getFullNamesOnSelection());
+    if (isWindowOperational() && viewHost
+            && viewHost.mixedSortingPreference() != settings::getMixedFolderSorting())
+        onItemChanged();
     if (viewHost && hasStatusText())
         updateStatus();
 }
@@ -1181,7 +1185,11 @@ HRESULT FolderWindow::browseToItem() {
     if (!isWindowOperational() || !viewHost) return E_ABORT;
     ++navigationDepth;
     debugPrintf(L"NATIVE HWND=%p BrowseToObject begin\n", hwnd);
-    const HRESULT result = viewHost.navigate(currentItem);
+    bool isolated = false;
+#ifdef FILESPACER_DEBUG
+    isolated = settings::testMode;
+#endif
+    const HRESULT result = viewHost.navigate(currentItem, settings::getMixedFolderSorting(), isolated);
     debugPrintf(L"NATIVE HWND=%p BrowseToObject returned: HRESULT=0x%08lX\n", hwnd, static_cast<unsigned long>(result));
     resumeDeferredClose();
     return result;
@@ -1400,7 +1408,7 @@ void FolderWindow::updateSelection() {
 
     if (numSelected == 1) {
         CComPtr<IShellItemArray> selection;
-        if (folderView->GetSelection(FALSE, &selection) == S_OK && isWindowOperational()) {
+        if (nativeViewSelection(folderView, FALSE, &selection) == S_OK && isWindowOperational()) {
             CComPtr<IShellItem> newSelected;
             if (checkHR(selection->GetItemAt(0, &newSelected)) && isWindowOperational())
                 selected = newSelected;
@@ -1443,7 +1451,7 @@ void FolderWindow::updateStatus() {
 
         CComPtr<IShellItemArray> selection;
 
-        if (folderView->GetSelection(FALSE, &selection) == S_OK && isWindowOperational()) {
+        if (nativeViewSelection(folderView, FALSE, &selection) == S_OK && isWindowOperational()) {
             DWORD count = 0;
             checkHR(selection->GetCount(&count));
 
@@ -2087,7 +2095,7 @@ STDMETHODIMP FolderWindow::OnDefaultCommand(IShellView *const view) {
             && numSelected == 1) {
 
         CComPtr<IShellItemArray> selection;
-        if (folderView->GetSelection(FALSE, &selection) == S_OK) {
+        if (nativeViewSelection(folderView, FALSE, &selection) == S_OK) {
             CComPtr<IShellItem> selectedItem;
 
             if (checkHR(selection->GetItemAt(0, &selectedItem))) {
