@@ -1,12 +1,16 @@
 ---
 layout: table_wrappers
 ---
-{% comment %}Just the Docs v0.12.0 default layout, MIT licensed. Only the skip-link text is localized. See UPSTREAM-LICENSE.txt.{% endcomment %}
+{% comment %}Just the Docs v0.12.0 default layout, MIT licensed. Localized skip link and versioned theme script. See UPSTREAM-LICENSE.txt.{% endcomment %}
 
 <!DOCTYPE html>
 
 <html lang="{{ site.lang | default: 'en-US' }}">
-{% include head.html %}
+{% capture document_head %}{% include head.html %}{% endcapture %}
+{% assign script_path = '/assets/js/just-the-docs.js' | relative_url %}
+{% assign asset_version = site.time | date: '%s' %}
+{% assign versioned_script_path = script_path | append: '?v=' | append: asset_version %}
+{{ document_head | replace: script_path, versioned_script_path }}
 <body>
   <a class="skip-to-main" href="#main-content">{{ site.fs_ui.skip }}</a>
   {% include icons/icons.html %}
