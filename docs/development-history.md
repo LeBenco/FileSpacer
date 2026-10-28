@@ -918,9 +918,11 @@ The existing preference key is retained. Coordinates use the same Windows
 coordinate context as the window rectangles and monitor work area; the study
 uses logical dimensions directly, without a separate Windows zoom parameter.
 
-The committed [independent study](../tests/placement-simulation/README.md) is
-separate from the automatic regression suite. It manipulates rectangles rather
-than windows and retains the former grid in `LegacyGrid.inc`:
+The [independent study](../tests/placement-simulation/README.md) was separate
+from the automatic regression suite. It manipulated rectangles rather than
+windows and retained the former grid in `LegacyGrid.inc`. Its six source and
+measurement-script files were retired during the 27 October test review;
+the recorded results and Git history preserve the comparison:
 
 - Initial comparison: 324 scenes, six methods, three repetitions. The two exact
   methods and pixel grid obtained the same minimum surface. The ten-unit grid
@@ -1290,3 +1292,76 @@ Twelve bug-fix commit messages were prefixed with `fix:` or `fix(test):` before
 publication. File trees, author/committer identities and dates were preserved;
 the other 48 messages in the development range were preserved byte for byte.
 Commit identifiers in earlier entries refer to the original messages.
+
+## 2026-10-28 — Regression catalog review and VM validation
+
+The catalog retains all **117 cases (21 Internal, 96 UI)**. They exercise current
+application or runner contracts, including fault injection and native Shell
+paths. The 5,000-file case retains exact identities, empty/full filtering,
+refresh and three process restarts; its first full-run cost was 35.71 seconds,
+about 3% of case execution time. The 100 MB quota fixture and shortcut matrices
+also retain their functional volumes. Six standalone placement-study source and
+measurement files were removed because they exercised historical copies and
+prototypes; their results and Git history remain available.
+
+The two older native harnesses now provide the current View-preview dependencies:
+menu lifetime still exercises its 40 deterministic non-preview cases, while real
+preview behavior remains in group 28; settings validation now provides nine
+display options and expects ten writes including dimensions. Search tests use
+General for history settings and Integration for Everything. Other fixture fixes
+shorten a deletion path proven absent before FileSpacer runs, verify the current
+placement label with an absent isolated preference, and retain concurrent-launch
+output. Everything uses production detection of the installed executable and
+allows its session-zero service while requiring its desktop UI to be closed.
+
+The first full VM run, `f5082dc59da6413e81b53226d876d5b2`, executed 117 cases:
+109 passed and eight failed. A reproduced startup/shutdown crash was a product
+defect: the exact-image dump stack reaches eager initialization of `pendingOpens`
+on a late Shell worker while the main thread is already shutting down the CRT.
+`CreateItemWindow.cpp` and `WindowPlacement.cpp` now initialize their thread-local
+vectors only when used. Twelve concurrent spatial launches then pass unchanged.
+
+Two subsequent full runs, `a1bae07c6cf447fdb38316dbbbe807ba` and the instrumented
+`0e30339cfd2f4da7a8785de154044fdf`, each reproduced the same five closing-timeout
+cases: 19/05, 22/01, 25/03, 26/02 and 28/01. Eight live dumps show the main STA
+still dispatching messages and a process lock retained by Jump List refresh.
+Workers either wait for FileSpacer's serialization mutex or write through
+`CDestinationList::CommitList`, `CFileStream::Commit` and `FlushFileBuffers`.
+The installed VM images and matching
+[public Microsoft symbols](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/microsoft-public-symbols)
+resolve those stacks; collecting managed objects does not consistently end the waits.
+These failures remain recorded as failures.
+
+The runner now clears only `Software\FileSpacer\Test\JumpLists` between independent
+UI cases and records removed identity counts in `case-fixture.json`. Previously,
+each case rewrote the accumulated taskbar identities of earlier, deleted
+fixtures. Within-case histories, volumes, assertions and deadlines remain
+unchanged. The complete same-binary run `d2a05d49960f47dc9f836c76c76edd00` then
+passes **117/117 (21 Internal, 96 UI)**, with no failed, blocked or unrun case.
+All 183 recorded application exits are normal and every error log is empty.
+All 96 UI cases record fixture isolation: 236 previous-case identities were
+removed in total, at most 14 between two cases. This verifies the fixture cause
+without changing application code, assertions or deadlines for these five cases.
+The 5,000-file case takes 27.79 seconds, 2.88% of total case time.
+
+The final executable SHA-256 is
+`EB7E5CAEA6F68AAF69FBFCAF7C8638A0BA45D1D1F8E9E027EAE49B019025F9FF`.
+Package hashes and all current PowerShell script hashes match. The guest uses
+its limited token, performs no compilation, restores test state and leaves
+production preferences/data unchanged, without cleanup errors. The real Shell
+and Everything integration are included. The full reports remain under
+`build/regression/vm-d2a05d49960f47dc9f836c76c76edd00/`; the independent final
+check is `build/regression-review-20261027/final-verification.json`.
+
+Debug MSVC/NMAKE compilation completes without new `/W4` warnings. clang-tidy and
+Cppcheck both completed on all five modified C++ units, using Windows x64,
+actual C++14/C++17 settings, real SDK/MSVC/ATL headers for clang-tidy and applicable
+official Cppcheck models. The pure API-double harness uses the standard model.
+No modified header is uncovered and no analysis timed out or reduced ATL checks.
+The verdict is **REVIEW** for style suggestions and a newly visible analyzer
+use-after-free path in the menu harness: it assumes destruction in the
+`Stage::None` branch despite disabled closure injection and the explicit
+not-destroyed assertion. All 40 deterministic runtime cases pass; this alert is
+not labeled pre-existing because the original harness did not compile.
+No new functional static defect has been confirmed. Logs, exact-image stacks
+and comparisons are in `build/regression-review-20261027/`.
