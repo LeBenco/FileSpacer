@@ -44,6 +44,15 @@ In **Settings > Display**, two options are enabled by default:
   it. Click to keep it; Escape or leaving the preview restores the initial view.
   Previewing does not replace the saved layout.
 
+**Upcoming (not yet released).** **Mix folders and files when sorting**, in
+**Settings > Display > Files**, is off by default. Enable it to sort folders and
+files together in Details, List and automatically arranged icon views. Free icon
+layouts are preserved. Virtual folders and archives retain Windows' ordering.
+
+![Display settings with the upcoming Mix folders and files when sorting option unchecked.](images/display.png)
+
+*Display settings in the unreleased build, with mixed sorting disabled.*
+
 ### Window placement
 
 **Settings > General > Place new windows in free space** is enabled by default.
