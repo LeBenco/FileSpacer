@@ -142,6 +142,15 @@ namespace FileSpacerRegression {
         public IntPtr Window { get { IntPtr window; Native.Check(shellView.GetWindow(out window)); return window; } }
         public Rect Bounds { get { IntPtr window; Native.Check(shellView.GetWindow(out window)); return Native.Bounds(window); } }
         public bool ContentVisible { get { return Native.ContentVisible(Window); } }
+        public Guid FolderClassId {
+            get {
+                Guid iid=typeof(PersistFolder).GUID; IntPtr pointer;
+                Native.Check(view.GetFolder(ref iid,out pointer));
+                PersistFolder folder=null;
+                try { folder=(PersistFolder)Marshal.GetObjectForIUnknown(pointer); Guid id; Native.Check(folder.GetClassID(out id)); return id; }
+                finally { if(pointer!=IntPtr.Zero) Marshal.Release(pointer); Native.Release(folder); }
+            }
+        }
         public string[] Selected() {
             var names=new List<string>(); Guid iid=typeof(EnumPidls).GUID; IntPtr p=IntPtr.Zero;
             int count; Native.Check(view.ItemCount(1,out count));
