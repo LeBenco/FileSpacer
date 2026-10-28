@@ -39,14 +39,19 @@
   white-space: nowrap;
 }
 
-/* Dark faces of the icon's purple and green cubes stay legible on the sidebar. */
+/* Dark faces of the logo's cubes keep headings and navigation legible. */
 #site-nav .nav-list-link,
-#site-nav .nav-list-expander {
+#site-nav .nav-list-expander,
+.main-content h3,
+.main-content h4,
+.main-content h5,
+.main-content h6 {
   color: #1f675a;
 }
 
 #site-nav > .nav-list > .nav-list-item > .nav-list-link,
-#site-nav > .nav-list > .nav-list-item > .nav-list-expander {
+#site-nav > .nav-list > .nav-list-item > .nav-list-expander,
+.main-content h2 {
   color: #6f50b8;
 }
 
