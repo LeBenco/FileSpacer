@@ -46,16 +46,14 @@ In **Settings > Display**, two options are enabled by default:
 
 **Mix folders and files when sorting**, in
 **Settings > Display > Files**, is off by default. Enable it to sort folders and
-files together in Details, List and automatically arranged icon views. Free icon
+files together, as on [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27)
+and [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html).
+It applies to Details, List and automatically arranged icon views. Free icon
 layouts are preserved. Virtual folders and archives retain Windows' ordering.
 
-Similar mixed ordering is available in [Finder on macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27)
-and Linux file managers such as [GNOME Files](https://help.gnome.org/gnome-help/nautilus-views.html),
-depending on their folder-first settings.
+![A folder window with fictional folders and files mixed in alphabetical order.](images/mixed-sorting.png)
 
-![Display settings with Mix folders and files when sorting unchecked.](images/display.png)
-
-*Display settings with mixed sorting disabled by default (available since 1.2.0).*
+*Folders and files share the same alphabetical order.*
 
 ### Window placement
 
