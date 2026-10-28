@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.2 — 2026-10-28
+
+- Fix mixed sorting using the custom folder provider in free icon layouts. Use the native provider for free placement and switch providers when committing a sorted layout, preserving saved icon positions, selection and focus.
+
 ## 1.2.1 — 2026-10-28
 
 - Reduce transient generic icons when opening folders with mixed sorting. Prepare the visible icons in the Windows cache before revealing the native view, with a bounded wait for slow icon handlers.

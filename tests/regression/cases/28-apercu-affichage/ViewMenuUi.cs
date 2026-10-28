@@ -41,7 +41,7 @@ namespace FileSpacerViewMenuTests {
             if(Native.GetForegroundWindow()!=owner)throw new InvalidOperationException("Escape target is not foreground");
             if(SendInput(2,new Input[]{new Input{Type=1,VirtualKey=27},new Input{Type=1,VirtualKey=27,KeyFlags=2}},40)!=2)throw new Win32Exception();
         }
-        public static Popup Active(IntPtr owner) {
+        public static Popup Active(IntPtr owner,bool includeAll=false) {
             foreach(IntPtr window in Native.Top("#32768",null,Owner(owner))) {
                 if(!Native.IsWindowVisible(window))continue;
                 var bar=new MenuBarInfo{Size=(uint)Marshal.SizeOf(typeof(MenuBarInfo))};
@@ -57,7 +57,7 @@ namespace FileSpacerViewMenuTests {
                             if(!Native.IsWindowVisible(window)||GetMenuItemCount(bar.Menu)<0){vanished=true;break;}
                             throw new Win32Exception(error);
                         }
-                        if((info.Type&0x800)!=0)break;
+                        if((info.Type&0x800)!=0){if(includeAll)continue;break;}
                         Rect bounds;
                         if(!GetMenuItemRect(window,bar.Menu,i,out bounds)) {
                             int error=Marshal.GetLastWin32Error();

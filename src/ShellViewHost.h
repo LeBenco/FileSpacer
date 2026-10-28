@@ -33,7 +33,7 @@ public:
     // Notifications contain a unique observation generation in wParam. EnumDone
     // also carries its monotonically increasing serial in lParam.
     HRESULT observeView(IShellView *view, HWND target, UINT readyMessage,
-        UINT enumDoneMessage, ULONG_PTR &generation);
+        UINT enumDoneMessage, ULONG_PTR &generation, UINT changedMessage = 0);
     HRESULT stopObserving();
     bool isViewNotification(WPARAM generation) const;
     ULONG_PTR enumerationSerial() const;
