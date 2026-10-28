@@ -118,13 +118,7 @@ def generate(source, icon_source, output, inkscape):
         with Image.open(png) as image:
             image.convert("RGB").save(output / f"wizard-{language}.bmp")
 
-    header = svg(150, 57)
-    ET.SubElement(header, NS + "rect", width="150", height="57", fill="white")
-    ET.SubElement(header, NS + "use", href="#app", x="96", y="4", width="49", height="49")
-    png = render(header, "header", 300, 114)
-    with Image.open(png) as image:
-        image.convert("RGB").save(output / "header.bmp")
-    print(f"Generated {icon_path}: ten verified sizes; English/French wizard and header bitmaps.")
+    print(f"Generated {icon_path}: ten verified sizes and English/French sidebar bitmaps.")
 
 
 if __name__ == "__main__":
