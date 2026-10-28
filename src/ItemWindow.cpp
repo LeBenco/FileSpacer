@@ -1402,11 +1402,11 @@ bool ItemWindow::onCommand(WORD command) {
             openParentMenu();
             return true;
         }
-#if 0 // Deferred public help.
-        case IDM_HELP:
-            ShellExecute(nullptr, L"open", helpURL(), nullptr, nullptr, SW_SHOWNORMAL);
+        case IDM_HELP: {
+            CComPtr<ItemWindow> keepAlive(this);
+            openDocumentation(hwnd);
             return true;
-#endif
+        }
         case IDM_SETTINGS: {
             // Maintenance can close this window during the modal dialog.
             CComPtr<ItemWindow> keepAlive(this);
