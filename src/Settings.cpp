@@ -158,6 +158,7 @@ void setEverythingScope(EverythingScope value) {
     const DWORD scope = static_cast<DWORD>(value);
     setSettingsValue(L"EverythingScope", REG_DWORD, &scope, sizeof(scope));
 }
+SETTINGS_BOOL_VALUE(MixedFolderSorting, L"MixedFolderSorting", false)
 SETTINGS_BOOL_VALUE(FullNamesOnSelection, L"FullNamesOnSelection", DEFAULT_FULL_NAMES_ON_SELECTION)
 SETTINGS_BOOL_VALUE(WindowStateLockBadgeEnabled, L"WindowStateLockBadgeEnabled", true)
 

@@ -1,0 +1,5 @@
+LIBRARY FileSpacerFolder
+EXPORTS
+    DllGetClassObject PRIVATE
+    DllCanUnloadNow PRIVATE
+    CreateMixedFolderItem
