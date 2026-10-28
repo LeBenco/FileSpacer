@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.1 — 2026-10-28
+
+- Reduce transient generic icons when opening folders with mixed sorting. Prepare the visible icons in the Windows cache before revealing the native view, with a bounded wait for slow icon handlers.
+
 ## 1.2.0 — 2026-10-28
 
 - Add an optional mixed sort for files and folders in filesystem directories, under Display → Files, while retaining the native Windows view and saved folder state. The option is off by default.

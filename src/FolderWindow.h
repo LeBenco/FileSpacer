@@ -19,6 +19,7 @@ public:
     static void init();
 
     FolderWindow(IShellItem *item, const std::wstring &identity);
+    ~FolderWindow() override;
     void setReopenState(const ClosedWindow &window) { reopeningWindow = window; }
 
     bool handleTopLevelMessage(MSG *msg) override;
@@ -147,6 +148,7 @@ protected:
     enum TimerID {
         TIMER_UPDATE_SELECTION = 1,
         TIMER_SAVE_STATE,
+        TIMER_STARTUP_ICONS,
         TIMER_LAST
     };
     enum UserMessage {
@@ -155,7 +157,8 @@ protected:
         MSG_QUICK_ACCESS_ICON = WM_APP + 45,
         MSG_ENUM_READY = WM_APP + 46,
         MSG_ENUM_DONE = WM_APP + 47,
-        MSG_VIEW_MENU_PREVIEW = WM_APP + 48
+        MSG_VIEW_MENU_PREVIEW = WM_APP + 48,
+        MSG_STARTUP_ICONS = WM_APP + 49
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
 
@@ -268,6 +271,11 @@ private:
     CComPtr<QuickAccessIconThread> quickAccessIconThread;
     HIMAGELIST quickAccessImages = nullptr;
 
+    class StartupIconsThread;
+    CComPtr<StartupIconsThread> startupIconsThread;
+    ULONGLONG startupIconsDeadline = 0;
+    void stopStartupIcons();
+    void preloadVisibleIcons(IFolderView2 *view);
     ShellViewHost viewHost;
     bool initialNavigationPending = false;
     unsigned navigationDepth = 0;
