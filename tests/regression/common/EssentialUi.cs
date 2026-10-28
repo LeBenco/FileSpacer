@@ -127,6 +127,13 @@ namespace FileSpacerRegression {
         public int Count { get { int n; Native.Check(view.ItemCount(2,out n)); return n; } }
         public uint Mode { get { uint n; Native.Check(view.GetCurrentViewMode(out n)); return n; } set { Native.Check(view.SetCurrentViewMode(value)); } }
         public void SetViewModeAndIconSize(uint mode, int size) { Native.Check(((FolderView2)view).SetViewModeAndIconSize(mode,size)); }
+        [StructLayout(LayoutKind.Sequential)] struct SortColumn { public Guid Format; public uint Id; public int Direction; }
+        public void SortBy(bool date, bool ascending) {
+            var column=new SortColumn { Format=new Guid("B725F130-47EF-101A-A5F1-02608C9EEBAC"), Id=date?14u:10u, Direction=ascending?1:-1 };
+            IntPtr memory=Marshal.AllocHGlobal(Marshal.SizeOf(typeof(SortColumn)));
+            try { Marshal.StructureToPtr(column,memory,false); Native.Check(((FolderView2)view).SetSortColumns(memory,1)); }
+            finally { Marshal.FreeHGlobal(memory); }
+        }
         public int IconSize { get { uint mode; int size; Native.Check(((FolderView2)view).GetViewModeAndIconSize(out mode,out size)); return size; } }
         public bool AutoArrange {
             get { int result=view.GetAutoArrange(); Native.Check(result); return result==0; }
@@ -151,10 +158,12 @@ namespace FileSpacerRegression {
             } finally { if(p!=IntPtr.Zero) Marshal.Release(p); Native.Release(items); }
             names.Sort(StringComparer.OrdinalIgnoreCase); return names.ToArray();
         }
-        public string[] Names() {
+        public string[] Names() { return ReadNames(false); }
+        public string[] OrderedNames() { return ReadNames(true); }
+        string[] ReadNames(bool ordered) {
             var names=new List<string>(); Guid iid=typeof(EnumPidls).GUID; IntPtr pointer=IntPtr.Zero;
             if(Count==0) return names.ToArray();
-            Native.Check(view.Items(2,ref iid,out pointer));
+            Native.Check(view.Items(ordered?0x80000002u:2u,ref iid,out pointer));
             if(pointer==IntPtr.Zero) return names.ToArray(); // View may have emptied during enumeration.
             EnumPidls items=null;
             try {
@@ -165,7 +174,7 @@ namespace FileSpacerRegression {
                     try { names.Add(Name(child)); } finally { Marshal.FreeCoTaskMem(child); }
                 }
             } finally { if(pointer!=IntPtr.Zero) Marshal.Release(pointer); Native.Release(items); }
-            names.Sort(StringComparer.OrdinalIgnoreCase); return names.ToArray();
+            if(!ordered) names.Sort(StringComparer.OrdinalIgnoreCase); return names.ToArray();
         }
         public string SelectionMark() {
             int index; int result=view.GetSelectionMarkedItem(out index); Native.Check(result);
