@@ -1,3 +1,16 @@
+.aux-nav .aux-nav-list {
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.aux-nav .aux-nav-list-item {
+  height: auto;
+}
+
+.aux-nav .btn {
+  white-space: nowrap;
+}
+
 /* Standard Just the Docs desktop widths: 16.5rem navigation + 50rem content. */
 @media screen and (min-width: 66.5rem) {
   html {
