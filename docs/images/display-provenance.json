@@ -1,0 +1,29 @@
+{
+  "application": "FileSpacer",
+  "status": "Unreleased development build",
+  "source_revision": "0dd7eaab895987bfac21e550d181cfbf069436f1",
+  "captured": "2026-10-28",
+  "environment": "Windows 10 Hyper-V guest; isolated /test profile",
+  "crop": "Direct screen pixels of the visible settings window; no resizing or retouching",
+  "english_capture": "Temporary source copies select English with documented MUI APIs and PSH_USEPAGELANG; production source unchanged.",
+  "captures": [
+    {
+      "file": "display-fr.png",
+      "language": "fr",
+      "width": 472,
+      "height": 580,
+      "mixed_sorting_enabled": false,
+      "executable_sha256": "c04f7f26150a4126898da59dab263929676c993588f7c12ea7cba9ffad1fc554",
+      "sha256": "98f6109e7e462bc27915d237092ea0534d14a8e4bb1f3db31b37479167900601"
+    },
+    {
+      "file": "display.png",
+      "language": "en",
+      "width": 472,
+      "height": 580,
+      "mixed_sorting_enabled": false,
+      "executable_sha256": "571eb63d9919f97a7ca2e6b39836fc3352b8b12857808f93af08fd2738d002c1",
+      "sha256": "28edf3fd71344f29d6692f29c931c5901bb2b293b6ee22490527602244679b61"
+    }
+  ]
+}
