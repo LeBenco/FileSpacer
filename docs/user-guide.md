@@ -102,10 +102,6 @@ The default-setting button resets one action. **Revert** restores the last
 applied shortcuts; **Cancel** discards pending edits. **Apply** or **OK** makes
 the changes available to open FileSpacer windows.
 
-![Shortcuts settings with the window movement action expanded.](images/shortcuts.png)
-
-*Expand an action to edit its binding or record a key-and-mouse combination.*
-
 ### Locking a saved layout
 
 Enable **Settings > General > Enable window state locking** (off by default), then choose

@@ -10,7 +10,6 @@ Git LFS setup is needed.
 | `overview.png` | A single folder window with freely positioned demo items. |
 | `window-menu.png` | The title menu, open folders and the saved-layout lock. |
 | `search.png` | Local search history and the optional Everything action. |
-| `shortcuts.png` | Settings with the movement action expanded. |
 | `mixed-sorting.png` | Folders and files sharing one alphabetical order in FileSpacer 1.2.0. |
 | `display.png` | Earlier Display settings capture, retained for reference. |
 | `locked-title.png` | A close-up of the locked folder's title and padlock badge. |
