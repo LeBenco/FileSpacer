@@ -17,6 +17,7 @@ async function fixture(t) {
     await fs.mkdir(path.dirname(path.join(root, source)), {recursive: true});
     await fs.copyFile(path.join(repository, source), path.join(root, source));
   }
+  await fs.cp(path.join(repository, 'docs/images'), path.join(root, 'docs/images'), {recursive: true});
   return root;
 }
 test('real documents keep guide nesting, local anchors, images and GitHub references', async t => {
