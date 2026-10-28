@@ -1,0 +1,15 @@
+@font-face { font-family: 'FileSpacer Flags'; src: url('language-flags.woff2') format('woff2'); font-display: swap; }
+#site-nav { padding-top: 1.5rem; }
+.language-picker { position: relative; margin: 0 2rem 1rem; font-size: 0.875rem; }
+.language-picker summary { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border: 1px solid #dddde4; border-radius: 0.375rem; background: #fff; color: #3d3d43; line-height: 1.25rem; list-style: none; cursor: pointer; }
+.language-picker summary::-webkit-details-marker { display: none; }
+.language-picker summary:hover { border-color: #aaa6ba; }
+.language-picker summary:focus-visible, .language-picker a:focus-visible { outline: 2px solid #6f50b8; outline-offset: 2px; }
+.language-picker summary svg { width: 1rem; height: 1rem; margin-left: auto; color: #6f50b8; }
+.language-picker[open] summary svg { transform: rotate(180deg); }
+.language-picker .language-options { position: absolute; z-index: 20; top: calc(100% + 0.375rem); left: 0; right: 0; padding: 0.25rem; border: 1px solid #dddde4; border-radius: 0.375rem; background: #fff; box-shadow: 0 4px 12px #27262b18; }
+.language-picker .language-options a { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 0.25rem; color: #3d3d43; line-height: 1.25rem; text-decoration: none; }
+.language-picker .language-options a:hover, .language-picker .language-options a:focus-visible { background: #f0f6f3; }
+.language-picker .language-options a[aria-current="true"] { color: #6f50b8; background: #f0edf7; }
+.language-picker .language-options .selected-mark { margin-left: auto; }
+.language-picker .language-flag { min-width: 1.25rem; text-align: center; font-family: 'FileSpacer Flags', 'Segoe UI Emoji', sans-serif; }

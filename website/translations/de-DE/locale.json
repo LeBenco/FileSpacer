@@ -1,0 +1,20 @@
+{
+  "name": "Deutsch",
+  "description": "Räumlicher Dateimanager für Windows",
+  "overview": "Überblick",
+  "user-guide": "Benutzerhandbuch",
+  "privacy-policy": "Datenschutz",
+  "changelog": "Versionsverlauf",
+  "third-party-notices": "Drittanbieterhinweise",
+  "language": "Sprache",
+  "navigation": "Hauptnavigation",
+  "submenu": "Untermenü",
+  "search": "FileSpacer durchsuchen",
+  "noResults": "Keine Ergebnisse gefunden",
+  "download": "Herunterladen",
+  "repository": "FileSpacer auf GitHub",
+  "back": "Nach oben",
+  "skip": "Zum Hauptinhalt springen",
+  "attribution": "Diese Website verwendet <a href=\"https://github.com/just-the-docs/just-the-docs\">Just the Docs</a>, ein Dokumentationstheme für Jekyll.",
+  "license": "Veröffentlicht unter der"
+}

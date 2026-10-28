@@ -1,0 +1,499 @@
+{
+  "application": "FileSpacer",
+  "version": "1.2.2",
+  "sourceCommit": "2a30898",
+  "captured": "2026-10-28",
+  "environment": "AgentWin10, Windows 10 Hyper-V guest, 96 DPI",
+  "profile": "Isolated /test profile; application and Nilesoft configuration restored by regression harness",
+  "languageSelection": "Temporary documentation binaries selecting the existing UI resources; production sources and UI strings unchanged. Spanish selects resource language 040A explicitly.",
+  "demoContent": "Identical English fictional filenames, generated images and positions to the English reference scenes.",
+  "staticCrop": "Direct guest screen pixels of the visible window or title/menu close-up, with no scaling, retouching or translated image labels. Main Nilesoft menu uses the same 387-pixel close-up width as English; navigation expands only to fit translated commands.",
+  "animation": "ScreenToGif 2.43.2; real VM recording with Windows wallpaper, cursor/click highlights and visible Alt overlay",
+  "nilesoft": {
+    "version": "1.9.15",
+    "configurationRestored": true,
+    "theme": "Modern; identical native-menu label rules in both corner variants, rendered in the target language on the French Windows guest"
+  },
+  "captures": [
+    {
+      "file": "overview-de.png",
+      "language": "de-DE",
+      "width": 906,
+      "height": 553,
+      "sha256": "56e2502253599706507d8c19402fbf8c9672fc4057f5bcf74cddf4b612f0b2e8",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "window-menu-de.png",
+      "language": "de-DE",
+      "width": 906,
+      "height": 553,
+      "sha256": "070ade4770446a3b3429d2a06c423adbef69dd7e3459096287b074a39198d535",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "locked-title-de.png",
+      "language": "de-DE",
+      "width": 142,
+      "height": 33,
+      "sha256": "759768d964b7e92bf57ca0deea09f74c9d089c3c0e3ff49612f460fcf5cb8f36",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "search-de.png",
+      "language": "de-DE",
+      "width": 906,
+      "height": 553,
+      "sha256": "bd9c423d8f66e94ef3636967459a76fd7b2bdd324ac3c868e083899a8d71cfa6",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "move-window-de.gif",
+      "language": "de-DE",
+      "width": 1000,
+      "height": 620,
+      "sha256": "62551790ffcbc63168788a4f4dcbc5d18cee07f4bb73575667c4d650158a09c4",
+      "run": "cfa6a8690d2842c89931fa4966320631",
+      "frames": 49,
+      "duration_ms": 7060,
+      "framesWithRecordedKeys": 2,
+      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+    },
+    {
+      "file": "resize-window-de.gif",
+      "language": "de-DE",
+      "width": 1000,
+      "height": 620,
+      "sha256": "8906061808dd4c8e58c7913b654b6bbebb9b9fbf0cb23929e9e49abe70b72bd3",
+      "run": "cfa6a8690d2842c89931fa4966320631",
+      "frames": 49,
+      "duration_ms": 6930,
+      "framesWithRecordedKeys": 2,
+      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+    },
+    {
+      "file": "mixed-sorting-de.png",
+      "language": "de-DE",
+      "width": 786,
+      "height": 513,
+      "sha256": "68adfb64d725f94bed9e58e9e66334857f30292cc8ef1a51e63fd7cae3e384ef",
+      "run": "a25726cbcc2540df82569246c380fd99"
+    },
+    {
+      "file": "nilesoft-navigation-default-de.png",
+      "language": "de-DE",
+      "width": 406,
+      "height": 247,
+      "sha256": "658c6d83b1e6ae580ddcb942432923d357cbdfd2f81fcda3779a31605b2d9c38",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-navigation-adapted-de.png",
+      "language": "de-DE",
+      "width": 406,
+      "height": 247,
+      "sha256": "954c1e0cce2b474da87a0ae3446fcd6969e96c40515442d9d46c6992f6a40627",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-main-menu-default-de.png",
+      "language": "de-DE",
+      "width": 387,
+      "height": 356,
+      "sha256": "a8ff6e422de164e07baaf4d6e279774cfe5c395ad63da47c722fabcde3506086",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-main-menu-adapted-de.png",
+      "language": "de-DE",
+      "width": 387,
+      "height": 356,
+      "sha256": "7e90e38089260a7b4e5c087e881fcd32705631498779cb4cf669f4da789ea5d2",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "overview-it.png",
+      "language": "it-IT",
+      "width": 906,
+      "height": 553,
+      "sha256": "3c6efb08319814297d925cf9bb5793bb09be7ffa29d105aee4d16fb9f080ba36",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "window-menu-it.png",
+      "language": "it-IT",
+      "width": 906,
+      "height": 553,
+      "sha256": "2ede507f3e9d0f38cf7e2fc260b9e77f01d5b0917c548ed656d7a4130ad70979",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "locked-title-it.png",
+      "language": "it-IT",
+      "width": 142,
+      "height": 33,
+      "sha256": "759768d964b7e92bf57ca0deea09f74c9d089c3c0e3ff49612f460fcf5cb8f36",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "search-it.png",
+      "language": "it-IT",
+      "width": 906,
+      "height": 553,
+      "sha256": "2a3fda4c221dadd5f417dd28456440d908d29c54c429f04aced30887fedb10a0",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "move-window-it.gif",
+      "language": "it-IT",
+      "width": 1000,
+      "height": 620,
+      "sha256": "2170cb3f881a1dba8a38414843e752a8cc334d29622a0f089f5510ce2f186798",
+      "run": "cfa6a8690d2842c89931fa4966320631",
+      "frames": 49,
+      "duration_ms": 6980,
+      "framesWithRecordedKeys": 2,
+      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+    },
+    {
+      "file": "resize-window-it.gif",
+      "language": "it-IT",
+      "width": 1000,
+      "height": 620,
+      "sha256": "ac5ffaa32865a030f16911fdf8443ae8df5cd6b9954cf3ba50dc8efc19f1df1e",
+      "run": "cfa6a8690d2842c89931fa4966320631",
+      "frames": 49,
+      "duration_ms": 6960,
+      "framesWithRecordedKeys": 2,
+      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+    },
+    {
+      "file": "mixed-sorting-it.png",
+      "language": "it-IT",
+      "width": 786,
+      "height": 513,
+      "sha256": "d3d6dfd47f3c5bb5e519d889f3436a20c95bc723ce6797d6da92035e18fa791c",
+      "run": "a25726cbcc2540df82569246c380fd99"
+    },
+    {
+      "file": "nilesoft-navigation-default-it.png",
+      "language": "it-IT",
+      "width": 384,
+      "height": 247,
+      "sha256": "84c2648a757c579573183b5ed1b332320cc7c49fa6fe6c78f73bc0d2acb3856a",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-navigation-adapted-it.png",
+      "language": "it-IT",
+      "width": 384,
+      "height": 247,
+      "sha256": "b7da06a0c2b3b0b585f8a8b954cc6d37e9e12f40fd01e5857711ebe9ba08b43d",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-main-menu-default-it.png",
+      "language": "it-IT",
+      "width": 387,
+      "height": 356,
+      "sha256": "ab386002ccdf384b4970e2fcefca5ffd966be7240de62f856a57c65d7149d4b1",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-main-menu-adapted-it.png",
+      "language": "it-IT",
+      "width": 387,
+      "height": 356,
+      "sha256": "98159ac7a16c428fbad328ac026605ebed8cb446719590193e4ca8ef42b27c26",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "overview-es.png",
+      "language": "es-ES",
+      "width": 906,
+      "height": 553,
+      "sha256": "3f42418a79bc94b9ee4acdbaadf2f7e7e0172c39097f526defd0147f2d26cf5c",
+      "run": "a25726cbcc2540df82569246c380fd99"
+    },
+    {
+      "file": "window-menu-es.png",
+      "language": "es-ES",
+      "width": 906,
+      "height": 553,
+      "sha256": "929077979aeaa470685a056b5e9e2b73d9963e8e75620364209a695259de5d21",
+      "run": "a25726cbcc2540df82569246c380fd99"
+    },
+    {
+      "file": "locked-title-es.png",
+      "language": "es-ES",
+      "width": 142,
+      "height": 33,
+      "sha256": "759768d964b7e92bf57ca0deea09f74c9d089c3c0e3ff49612f460fcf5cb8f36",
+      "run": "a25726cbcc2540df82569246c380fd99"
+    },
+    {
+      "file": "search-es.png",
+      "language": "es-ES",
+      "width": 906,
+      "height": 553,
+      "sha256": "afdbc61361e9e290604ad9c2654ca0bb89ae8e87e6afe552c24124ee14acee51",
+      "run": "a25726cbcc2540df82569246c380fd99"
+    },
+    {
+      "file": "move-window-es.gif",
+      "language": "es-ES",
+      "width": 1000,
+      "height": 620,
+      "sha256": "e10436e4c3337277526b3d71578deb41a93f1f373477ebf68647b12ffb6aec37",
+      "run": "a25726cbcc2540df82569246c380fd99",
+      "frames": 48,
+      "duration_ms": 6910,
+      "framesWithRecordedKeys": 2,
+      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+    },
+    {
+      "file": "resize-window-es.gif",
+      "language": "es-ES",
+      "width": 1000,
+      "height": 620,
+      "sha256": "cabf168086fe56576bc7cd24be04889ac79d41e92772811f451cf20ba226ea00",
+      "run": "a25726cbcc2540df82569246c380fd99",
+      "frames": 49,
+      "duration_ms": 7000,
+      "framesWithRecordedKeys": 2,
+      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+    },
+    {
+      "file": "mixed-sorting-es.png",
+      "language": "es-ES",
+      "width": 786,
+      "height": 513,
+      "sha256": "dd4e5a2c5f9baf826ec9920a95df1241f3734202ff471be80f4dc40e53f393bb",
+      "run": "a25726cbcc2540df82569246c380fd99"
+    },
+    {
+      "file": "nilesoft-navigation-default-es.png",
+      "language": "es-ES",
+      "width": 387,
+      "height": 247,
+      "sha256": "9bdea6c753621ac6405d01963409f1897cf3d31be326cda3e6c8a8b3d84d6879",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-navigation-adapted-es.png",
+      "language": "es-ES",
+      "width": 387,
+      "height": 247,
+      "sha256": "e6a0325263e7ab3420f4a0d97b43c2b29b8914b308f5950f6eeb0d1c08600816",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-main-menu-default-es.png",
+      "language": "es-ES",
+      "width": 387,
+      "height": 356,
+      "sha256": "22533b94c9ab4ca1bd1e5c3989a912643c34b355732e656fcc112cba82517f30",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-main-menu-adapted-es.png",
+      "language": "es-ES",
+      "width": 387,
+      "height": 356,
+      "sha256": "4f07a92e6ef571b7dd881154af4100cf07f3f17cb3167d94a0c8612bcc7e018f",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "overview-pt.png",
+      "language": "pt-PT",
+      "width": 906,
+      "height": 553,
+      "sha256": "7e6fae3d60017c0c681afb451c8e76ed60c76d71f0e24f7a4bc084e565888a15",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "window-menu-pt.png",
+      "language": "pt-PT",
+      "width": 906,
+      "height": 553,
+      "sha256": "529bbe8d1d7ec4b98db9dd83a7ea6399fd1c8bec3edb729a922d332630ec364b",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "locked-title-pt.png",
+      "language": "pt-PT",
+      "width": 142,
+      "height": 33,
+      "sha256": "759768d964b7e92bf57ca0deea09f74c9d089c3c0e3ff49612f460fcf5cb8f36",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "search-pt.png",
+      "language": "pt-PT",
+      "width": 906,
+      "height": 553,
+      "sha256": "5014024a015d7cad28d4d469e4d2e4dffdd8f1961cab3d341ca764649a759825",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "move-window-pt.gif",
+      "language": "pt-PT",
+      "width": 1000,
+      "height": 620,
+      "sha256": "e340eff421312e91b406588754efe4bee97e5e378b7fed9cc6bacd742df1ee52",
+      "run": "cfa6a8690d2842c89931fa4966320631",
+      "frames": 49,
+      "duration_ms": 6980,
+      "framesWithRecordedKeys": 2,
+      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+    },
+    {
+      "file": "resize-window-pt.gif",
+      "language": "pt-PT",
+      "width": 1000,
+      "height": 620,
+      "sha256": "7e11bdec6ee759d7ecba76cfd8deff767714f30f27884e1b53ad8cb7af4f8784",
+      "run": "cfa6a8690d2842c89931fa4966320631",
+      "frames": 49,
+      "duration_ms": 7000,
+      "framesWithRecordedKeys": 2,
+      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+    },
+    {
+      "file": "mixed-sorting-pt.png",
+      "language": "pt-PT",
+      "width": 786,
+      "height": 513,
+      "sha256": "999e73542d27ed18644e8f6262ff0ff5e72bfa77ee61c2017b965fefb9fd28a5",
+      "run": "a25726cbcc2540df82569246c380fd99"
+    },
+    {
+      "file": "nilesoft-navigation-default-pt.png",
+      "language": "pt-PT",
+      "width": 360,
+      "height": 247,
+      "sha256": "aa9aad1d827f2c8658bf0fe0dc3a3073587d4d8572443a080545debddba5566f",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-navigation-adapted-pt.png",
+      "language": "pt-PT",
+      "width": 360,
+      "height": 247,
+      "sha256": "b7f97d3bea6494ab090a1054df7a4c56e82eb434837995f5ba6b75f1792748ed",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-main-menu-default-pt.png",
+      "language": "pt-PT",
+      "width": 387,
+      "height": 356,
+      "sha256": "032a9d98356f2e81454cfe6344e13daf5b61c4e2a1e7107796bb1a99bf15b1c8",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-main-menu-adapted-pt.png",
+      "language": "pt-PT",
+      "width": 387,
+      "height": 356,
+      "sha256": "11a2a29c96f66b4b6f826ca2d551aff7d30a6dad4464f8d3bd225cbe06d16c19",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "overview-el.png",
+      "language": "el-GR",
+      "width": 906,
+      "height": 553,
+      "sha256": "509c77bb4fa3e84c10a1279120220f63bf925c439086ba54af045919a36847a8",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "window-menu-el.png",
+      "language": "el-GR",
+      "width": 906,
+      "height": 553,
+      "sha256": "64ceb7c5fe69c750bf3502fbfc381235aefdb57592b72e6c443a6cde36d9ad99",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "locked-title-el.png",
+      "language": "el-GR",
+      "width": 142,
+      "height": 33,
+      "sha256": "759768d964b7e92bf57ca0deea09f74c9d089c3c0e3ff49612f460fcf5cb8f36",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "search-el.png",
+      "language": "el-GR",
+      "width": 906,
+      "height": 553,
+      "sha256": "542121f81f297dcdfd6392735752285eaee81bda2914130af47055000ba213c6",
+      "run": "cfa6a8690d2842c89931fa4966320631"
+    },
+    {
+      "file": "move-window-el.gif",
+      "language": "el-GR",
+      "width": 1000,
+      "height": 620,
+      "sha256": "ad2caf751e2f4f487b2e90c71f16e7bc9e61061220d357f283e5b3d6c803cb75",
+      "run": "cfa6a8690d2842c89931fa4966320631",
+      "frames": 49,
+      "duration_ms": 6950,
+      "framesWithRecordedKeys": 2,
+      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+    },
+    {
+      "file": "resize-window-el.gif",
+      "language": "el-GR",
+      "width": 1000,
+      "height": 620,
+      "sha256": "9fbfcd4eedc7b0dba5312f0e90ed2b9e0d6e9afac3b866b584c55807659c490d",
+      "run": "cfa6a8690d2842c89931fa4966320631",
+      "frames": 50,
+      "duration_ms": 6950,
+      "framesWithRecordedKeys": 2,
+      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+    },
+    {
+      "file": "mixed-sorting-el.png",
+      "language": "el-GR",
+      "width": 786,
+      "height": 513,
+      "sha256": "e17b84a5bc297659e0475965f5febc853acb7c0634d375f93c89557e15aed182",
+      "run": "a25726cbcc2540df82569246c380fd99"
+    },
+    {
+      "file": "nilesoft-navigation-default-el.png",
+      "language": "el-GR",
+      "width": 394,
+      "height": 247,
+      "sha256": "e1d824d1ea72f10d6bdf663168400f6f04e80a33d6485c8755f3a1ba057c9a79",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-navigation-adapted-el.png",
+      "language": "el-GR",
+      "width": 394,
+      "height": 247,
+      "sha256": "f3bbd8c6d2ebeca176af06778fd8d5b2c7c0f862c385cdb2366276b71ab23565",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-main-menu-default-el.png",
+      "language": "el-GR",
+      "width": 387,
+      "height": 356,
+      "sha256": "426b0abcbc40ca552adea7cc652ebaa2892669515431b47f01139d82b6638a99",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    },
+    {
+      "file": "nilesoft-main-menu-adapted-el.png",
+      "language": "el-GR",
+      "width": 387,
+      "height": 356,
+      "sha256": "968f14b02199c00ea62637dd3d2b5ec70a6c38754e8467002998e7ca6894233b",
+      "run": "432cdd6794a3401aadb462c495d75a4e"
+    }
+  ]
+}
