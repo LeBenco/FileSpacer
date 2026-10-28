@@ -49,6 +49,10 @@ In **Settings > Display**, two options are enabled by default:
 files together in Details, List and automatically arranged icon views. Free icon
 layouts are preserved. Virtual folders and archives retain Windows' ordering.
 
+Similar mixed ordering is available in [Finder on macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27)
+and Linux file managers such as [GNOME Files](https://help.gnome.org/gnome-help/nautilus-views.html),
+depending on their folder-first settings.
+
 ![Display settings with the upcoming Mix folders and files when sorting option unchecked.](images/display.png)
 
 *Display settings in the unreleased build, with mixed sorting disabled.*
