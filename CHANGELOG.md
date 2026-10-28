@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add an optional mixed sort for files and folders in filesystem directories, under Display → Files, while retaining the native Windows view.
+
 ## 1.1.10 — 2026-10-27
 
 - Fix upgrades resetting installer component choices; restore the saved selections and preserve the current default file manager during silent upgrades.
