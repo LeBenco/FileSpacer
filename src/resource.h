@@ -11,7 +11,7 @@
 #define IDM_PREV_WINDOW     1002
 #define IDM_CLOSE_WINDOW    1003
 #define IDM_REFRESH         1004
-// #define IDM_HELP            1005 // Deferred public services.
+#define IDM_HELP            1005
 #define IDM_PROXY_MENU      1006
 #define IDM_NEW_FOLDER      1007
 #define IDM_RENAME_PROXY    1008
@@ -195,4 +195,5 @@
 #define IDS_CONTEXT_MENU_SYNC_FAILED 371
 #define IDS_BROWSER_NETWORK_SERVER 372
 #define IDS_BROWSER_NETWORK_SHARE 373
+#define IDS_DOCUMENTATION_ERROR 374
 #define IDC_SEARCH_SUBMIT 1601
