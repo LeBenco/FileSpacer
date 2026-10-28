@@ -144,6 +144,7 @@ FunctionEnd
 Function ${PREFIX}LockedListShow
     !insertmacro MUI_HEADER_TEXT $(CLOSE_TITLE) $(CLOSE_TEXT)
     LockedList::AddModule "$INSTDIR\FileSpacer.exe"
+    LockedList::AddModule "$INSTDIR\FileSpacerFolder.dll"
     LockedList::Dialog /autonext
     Pop $R0
 FunctionEnd
@@ -157,6 +158,7 @@ FunctionEnd
 Function ${PREFIX}CheckClosed
     StrCpy $locked 0
     LockedList::AddModule "$INSTDIR\FileSpacer.exe"
+    LockedList::AddModule "$INSTDIR\FileSpacerFolder.dll"
     GetFunctionAddress $R0 ${PREFIX}SearchCallback
     LockedList::SilentSearch $R0
     Pop $R0
@@ -282,6 +284,7 @@ Section "FileSpacer" SecBase
     IfErrors install_failed
     SetOverwrite on
     File "..\build\release\FileSpacer.exe"
+    File "..\build\release\FileSpacerFolder.dll"
     File /oname=LICENSE.txt "..\LICENSE"
     File /oname=LockedList-LICENSE.txt "plugins\LockedList.txt"
     File /oname=Lucide-LICENSE.txt "..\licenses\Lucide-LICENSE.txt"
@@ -475,6 +478,15 @@ Section "Uninstall"
     Delete "$INSTDIR\FileSpacer.exe"
     IfErrors uninstall_failed ; Keep the registration when the executable cannot be removed.
 exe_removed:
+    IfFileExists "$INSTDIR\FileSpacerFolder.dll" 0 provider_removed
+    Delete "$INSTDIR\FileSpacerFolder.dll"
+    IfErrors uninstall_failed
+provider_removed:
+    ReadRegStr $0 HKCU "Software\Classes\CLSID\{4FDD0CE1-6FD0-441C-AD2D-6DD056610DE3}\InprocServer32" ""
+    ${If} $0 == "$INSTDIR\FileSpacerFolder.dll"
+        DeleteRegKey HKCU "Software\Classes\CLSID\{4FDD0CE1-6FD0-441C-AD2D-6DD056610DE3}"
+        RMDir "$LOCALAPPDATA\FileSpacer\ShellView.{4FDD0CE1-6FD0-441C-AD2D-6DD056610DE3}"
+    ${EndIf}
     Delete "$INSTDIR\LICENSE.txt"
     Delete "$INSTDIR\LockedList-LICENSE.txt"
     Delete "$INSTDIR\Lucide-LICENSE.txt"
