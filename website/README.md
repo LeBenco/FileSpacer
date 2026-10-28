@@ -22,9 +22,10 @@ for terminology sources and naming conventions.
 
 Each language gets its own Just the Docs build, navigation, search index,
 interface labels and media, using the same pinned theme and framing. The small
-upstream layout override only translates its skip link; retain its MIT notice
-and review it when updating the theme. The repository README has no language
-selector or language links.
+upstream layout override translates its skip link and versions the compiled
+theme script so browsers receive search changes after deployment. Retain its
+MIT notice and review it when updating the theme. The repository README has no
+language selector or language links.
 
 The theme's `lunr/custom-index.js` hook uses Unicode word trimming for translated
 sites and omits English stemming and stop words. Lunr's default ASCII trimmer
