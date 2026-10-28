@@ -1,0 +1,27 @@
+name: Build FileSpacer documentation
+description: Generate the website or offline documentation with the same sources and theme.
+inputs:
+  target:
+    description: web or offline
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: website/package-lock.json
+    - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1
+      with:
+        ruby-version: '3.3'
+        working-directory: .github/scripts
+        bundler-cache: true
+    - shell: bash
+      run: npm ci --prefix website --ignore-scripts
+    - shell: bash
+      run: npm test --prefix website
+    - shell: bash
+      env:
+        DOCS_TARGET: ${{ inputs.target }}
+      run: node .github/scripts/build-docs.mjs --target "$DOCS_TARGET"
