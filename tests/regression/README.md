@@ -73,6 +73,66 @@ contrôleur restent au niveau du passage. Avec `-RunDirectory`, une copie compl�
 est créée à l'emplacement demandé, sans écraser de rapport existant. Un timeout,
 un cas bloqué ou une sortie non nulle ne donne jamais PASS.
 
+## Revue du catalogue — 27 octobre 2026
+
+Les 117 cas (21 Internal, 96 UI) sont conservés après examen des scénarios,
+assertions et dépendances. Un succès passé ne rend pas un comportement immuable :
+les ressources, préférences, notifications Shell, migrations de données et
+frontières de durée de vie peuvent tous régresser lors d'une modification.
+
+Les jeux internes de captures partielles et d'échecs injectés exercent le code
+courant extrait ou compilé ; ils couvrent des chemins que le vrai Shell ne
+permet pas de provoquer de manière déterministe. Les tests du banc gardent les
+crashs, sorties, blocages et erreurs de nettoyage visibles, et vérifient
+l'identité des artefacts préparés. Ils restent nécessaires même après un passage
+complet réussi. Les petits lanceurs des groupes 12, 15 et 16 sélectionnent des
+préférences, gestes ou modes distincts : leur taille ne les rend pas temporaires.
+
+Seuls les six fichiers de programmes et scripts de
+[l'étude historique du placement](../placement-simulation/README.md) sont
+supprimés : ils comparaient l'ancienne grille et des prototypes sans appeler le
+placement de production. Les résultats historiques sont conservés. Les deux cas
+du groupe 26 continuent de tester l'algorithme livré et son intégration réelle.
+Les lanceurs de diagnostic natif et Hyper-V sont conservés : ils utilisent
+encore les composants actuels et permettent de diagnostiquer leur exécution.
+
+Les dépendances manquantes des deux bancs internes ont été mises à jour pour
+l'option d'aperçu Affichage : le groupe 03 conserve ses fermetures injectées sur
+le chemin sans aperçu, tandis que le groupe 28 exerce l'aperçu réel ; le groupe
+05 compte et fournit les neuf options actuelles de la page Affichage. Les tests
+de recherche utilisent désormais le champ d'historique dans Général et les
+autres options dans Intégration. Le groupe 26 attend le libellé actuel « Placer
+les nouvelles fenêtres sur un espace libre ». Les résultats attendus de
+persistance, de recherche et de placement restent conservés.
+
+### Charge fonctionnelle conservée
+
+Le cas `20-validation-elargie/01-ChargeEtMesures.ps1` reste dans la suite :
+5 000 identités réelles, filtre exact, résultat vide, retour au contenu complet,
+rafraîchissement et trois ouvertures/fermetures de processus. Les petits dossiers
+ne couvrent pas les mêmes volumes d'énumération, de filtrage et de restauration.
+Les trois cycles vérifient aussi la réutilisation de l'état sauvegardé. Le dernier
+passage complet dans la VM a pris 27,79 secondes pour ce cas, environ 2,9 % du temps
+des 117 scénarios ; ce coût ne justifie pas d'en réduire la couverture.
+
+Les durées, la mémoire et les handles sont des preuves de diagnostic sans seuil
+de performance : ils ne constituent pas un benchmark de comparaison validé une
+fois pour toutes. Le test de rétention/quota conserve aussi ses volumes, car il
+vérifie la limite produit de 100 Mo, la purge et la réutilisation des pages. Les
+matrices de raccourcis couvrent des combinaisons fonctionnelles distinctes.
+
+### Dernier passage complet — 28 octobre 2026
+
+`tests.cmd -VM AgentWin10` : **117/117 PASS** (21 Internal, 96 UI), aucun FAIL,
+BLOCKED ou NOT_RUN. Les 183 sorties applicatives enregistrées sont normales,
+sans erreur de nettoyage. Les 96 cas UI ont leur trace d'isolation des listes
+de tâches ; préférences et bases de test sont restaurées, données de production
+inchangées. Application et helpers sont compilés sur l'hôte, puis exécutés sous
+le jeton limité de la VM, y compris le vrai Shell et Everything.
+Le passage est `d2a05d49960f47dc9f836c76c76edd00`, sous `build/regression/vm-<id>/`.
+Les échecs initiaux, leur diagnostic et le verdict d'analyse statique REVIEW sont
+conservés dans [l'historique](../../docs/development-history.md).
+
 ## Couverture conservée
 
 | Groupe | Jeux | Contrat |
@@ -118,10 +178,14 @@ Pour vérifier une machine dépourvue d'Everything avant installation, définir
 `FILESPACER_EXPECT_EVERYTHING_ABSENT=1` avant le jeu 02 ; cette assertion vérifie la
 détection réelle, sans faux registre d'installation.
 
-Le jeu 04 nécessite Everything fermé et installé. Par défaut, il cherche
-`%LOCALAPPDATA%\Programs\Everything\Everything.exe` ; `FILESPACER_EVERYTHING_EXE`
-permet de préciser une autre installation. Il vérifie aussi la détection automatique
-de cette installation, qui doit donc se trouver à un emplacement détectable.
+Le jeu 04 nécessite une installation réelle d'Everything et aucune interface
+Everything ouverte dans la session de bureau testée. Le service Windows
+Everything, exécuté en session 0, peut rester actif. Par défaut, le helper natif
+interroge la détection de production pour trouver l'installation réelle, y compris
+sous Program Files ; `FILESPACER_EVERYTHING_EXE` permet de préciser une autre
+installation. Le bouton Détecter doit retrouver cette installation, qui doit
+donc se trouver à un emplacement détectable. Le chemin renvoyé par le helper est
+conservé en UTF-16 dans `everything-detected.txt`, sans perte des caractères Unicode.
 Il vérifie la détection sur l'installation réelle, puis lance une copie de
 l'exécutable officiel placée avec son propre `Everything.ini` et sa base de
 fixtures. Ce bootstrap est nécessaire : Everything lit `run_as_admin` à côté de
@@ -212,7 +276,15 @@ Les résultats des jeux suivants ne sont pas déduits de ceux déjà exécutés.
 
 Les préférences et la base de test sont sauvegardées/restaurées par le runner.
 Ne pas réinitialiser les données de production pour lancer les tests. Les
-fenêtres du Panneau déjà ouvertes bloquent 20/05 ; seules les fenêtres créées
+identités de listes de tâches laissées par les anciens cas UI sont retirées
+avant le cas suivant, uniquement sous `Software\FileSpacer\Test\JumpLists`.
+Le fichier `case-fixture.json` consigne leur nombre. Les identités créées pendant
+un même scénario sont conservées jusqu'à sa fin : ses cycles, volumes et
+réouvertures restent testés ensemble. Sans cette isolation, les écritures Shell
+`CommitList`/`FlushFileBuffers` des anciens dossiers s'accumulent et prolongent
+la sortie des processus des cas suivants, sans rapport avec leur fixture.
+
+Les fenêtres du Panneau déjà ouvertes bloquent 20/05 ; seules les fenêtres créées
 et suivies pendant ce jeu sont fermées, jamais le processus Explorer entier.
 La reconnaissance utilise le dossier de la vue Shell active, avec rattachement
 au cadre par `GetAncestor(GA_ROOT)`, sans titre localisé comme preuve d'identité.
