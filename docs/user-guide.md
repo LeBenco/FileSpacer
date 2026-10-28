@@ -20,6 +20,10 @@ folder preserves its saved layout.
 Going to a parent does not select the folder you came from. An already-open
 parent keeps its selection. Control Panel opens in its own Windows window.
 
+![The folder title menu with window navigation and saved-layout locking.](images/window-menu.png)
+
+*The title menu, shown here with a locked window layout.*
+
 ## View and layout
 
 ### Icon layout
@@ -79,6 +83,10 @@ The default-setting button resets one action. **Revert** restores the last
 applied shortcuts; **Cancel** discards pending edits. **Apply** or **OK** makes
 the changes available to open FileSpacer windows.
 
+![Shortcuts settings with the window movement action expanded.](images/shortcuts.png)
+
+*Expand an action to edit its binding or record a key-and-mouse combination.*
+
 ### Locking a saved layout
 
 Enable **Settings > General > Enable window state locking** (off by default), then choose
@@ -108,6 +116,10 @@ History keeps five different submitted searches per folder by default. Change
 the limit in General settings from 0 to 20; 0 clears and disables history.
 Typing alone does not add a history entry. See [Everything](#everything) for
 searching subfolders or all indexed files.
+
+![Search suggestions with Everything and recent queries for fictional project files.](images/search.png)
+
+*Everything is a separate action; recent searches filter the current folder.*
 
 ## Integration
 

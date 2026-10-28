@@ -6,6 +6,7 @@ on:
     paths:
       - README.md
       - docs/user-guide.md
+      - docs/images/**
       - docs/privacy-policy.md
       - CHANGELOG.md
       - THIRD_PARTY_NOTICES.md
@@ -16,6 +17,7 @@ on:
     paths:
       - README.md
       - docs/user-guide.md
+      - docs/images/**
       - docs/privacy-policy.md
       - CHANGELOG.md
       - THIRD_PARTY_NOTICES.md
