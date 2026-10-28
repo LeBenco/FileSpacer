@@ -11,6 +11,7 @@ enum SettingsPage {
 };
 
 void openSettingsDialog(HWND owner, SettingsPage page = SETTINGS_GENERAL);
+void openDocumentation(HWND owner);
 void requestSettingsDialogClose();
 INT_PTR CALLBACK shortcutsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 void notifyWindowSettingsChanged();
