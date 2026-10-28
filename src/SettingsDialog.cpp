@@ -35,6 +35,53 @@ const wchar_t *SPECIAL_PATHS[] = {
 static HWND settingsDialog = nullptr;
 static bool resetFolderStateRequested = false;
 
+void openDocumentation(HWND owner) {
+    auto reportError = [owner](DWORD error, const wchar_t *file) {
+        auto message = formatString(IDS_DOCUMENTATION_ERROR, file, getErrorMessage(error).get());
+        MessageBoxW(IsWindow(owner) ? owner : nullptr, message.get(), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
+    };
+    std::vector<wchar_t> executable(32768);
+    const DWORD length = GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size()));
+    if (!length) {
+        const DWORD error = GetLastError();
+        reportError(error, L"FileSpacer.exe");
+        return;
+    }
+    if (length >= executable.size()) {
+        reportError(ERROR_INSUFFICIENT_BUFFER, L"FileSpacer.exe");
+        return;
+    }
+    std::wstring directory(executable.data(), length);
+    directory.erase(directory.find_last_of(L"\\/") + 1);
+    directory += L"help\\";
+    std::wstring file = directory + L"index.html";
+    // Match startup's Windows display language, with English at the help root.
+    ULONG count = 0, size = 0;
+    if (GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &count, nullptr, &size) && size > 1) {
+        std::vector<wchar_t> languages(size);
+        if (GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &count, languages.data(), &size)) {
+            std::wstring language(languages.data());
+            const size_t separator = language.find(L'-');
+            if (separator != std::wstring::npos)
+                language.resize(separator);
+            const std::wstring localized = directory + language + L"\\index.html";
+            const DWORD attributes = GetFileAttributesW(localized.c_str());
+            if (attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY))
+                file = localized;
+        }
+    }
+    SHELLEXECUTEINFOW info = {sizeof(info)};
+    info.fMask = SEE_MASK_NOASYNC | SEE_MASK_FLAG_NO_UI;
+    info.hwnd = owner;
+    info.lpVerb = L"open";
+    info.lpFile = file.c_str();
+    info.nShow = SW_SHOWNORMAL;
+    if (!ShellExecuteExW(&info)) {
+        const DWORD error = GetLastError();
+        reportError(error, file.c_str());
+    }
+}
+
 static bool confirmResetAllFolderState(HWND owner) {
     TASKDIALOGCONFIG config = {sizeof(config)};
     config.hwndParent = owner;
@@ -798,6 +845,10 @@ INT_PTR CALLBACK aboutProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
             return FALSE;
         }
         case WM_COMMAND:
+            if (LOWORD(wParam) == IDC_HELP_LINK && HIWORD(wParam) == BN_CLICKED) {
+                openDocumentation(hwnd);
+                return TRUE;
+            }
 #if 0 // Deferred public help, website and donation links.
             if (LOWORD(wParam) == IDC_HELP_LINK && HIWORD(wParam) == BN_CLICKED) {
                 ShellExecute(nullptr, L"open", L"https://github.com/vanjac/chromafiler/wiki",
