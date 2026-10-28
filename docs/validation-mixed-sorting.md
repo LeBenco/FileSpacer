@@ -228,3 +228,23 @@ les API MUI et `PSH_USEPAGELANG` ; aucune modification de langue n'est ajoutée 
 produit ni aux réglages Windows. Ces outils de capture ne sont pas des tests
 maintenus. Les deux captures ont été examinées visuellement avant transmission
 à l'agent chargé de la documentation.
+
+## Raccord avec l'installateur actualisé sur main
+
+La récupération des ajouts déjà publiés intègre aussi la nouvelle page native
+listant les processus à fermer. Le conflit avec l'ancienne page est résolu en
+conservant cette évolution ; la recherche commune vérifie à la fois l'exécutable
+et FileSpacerFolder.dll. La distribution et le retrait de la DLL restent actifs.
+
+Le build complet d'installateur passe, contrairement au prétraitement seul
+inexploitable de l'étape précédente. Aucun installateur produit n'est exécuté.
+Le banc existant d'installation est étendu à la présence de la DLL, son retrait
+et la suppression de son inscription et de son cache appartenant à l'installation.
+Ces dernières opérations sont redirigées vers le namespace GUID et le dossier
+de fixture du banc. Il ne touche pas à l'inscription ni au cache de production.
+
+PASS : 100 assertions NSIS, sondes de lancement et d'élévation, puis cycle
+CurrentUser à payload inerte (installation, verrouillage, upgrade, suppression
+des composants, désinstallation et préservation d'un fichier non possédé).
+Rapport : build/installer-tests/ee56e33bad6049c69f981301c0368849.
+Le consentement UAC réel et le cycle All users ne sont pas exécutés.
