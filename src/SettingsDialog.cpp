@@ -531,6 +531,8 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::getUpButtonEnabled() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_VIEW_BUTTON_ENABLED,
                 settings::getViewButtonEnabled() ? BST_CHECKED : BST_UNCHECKED);
+            CheckDlgButton(hwnd, IDC_MIXED_FOLDER_SORTING,
+                settings::getMixedFolderSorting() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_FULL_NAMES_ON_SELECTION,
                 settings::getFullNamesOnSelection() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_VIEW_MENU_PREVIEW_ENABLED,
@@ -558,6 +560,7 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 bool refreshButtonEnabled = !!IsDlgButtonChecked(hwnd, IDC_REFRESH_BUTTON_ENABLED);
                 bool upButtonEnabled = !!IsDlgButtonChecked(hwnd, IDC_UP_BUTTON_ENABLED);
                 bool viewButtonEnabled = !!IsDlgButtonChecked(hwnd, IDC_VIEW_BUTTON_ENABLED);
+                bool mixedFolderSorting = !!IsDlgButtonChecked(hwnd, IDC_MIXED_FOLDER_SORTING);
                 bool fullNamesOnSelection = !!IsDlgButtonChecked(hwnd, IDC_FULL_NAMES_ON_SELECTION);
                 bool viewMenuPreviewEnabled = !!IsDlgButtonChecked(hwnd, IDC_VIEW_MENU_PREVIEW_ENABLED);
                 bool windowSettingsChanged = statusTextEnabled != settings::getStatusTextEnabled()
@@ -567,6 +570,7 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     || refreshButtonEnabled != settings::getRefreshButtonEnabled()
                     || upButtonEnabled != settings::getUpButtonEnabled()
                     || viewButtonEnabled != settings::getViewButtonEnabled()
+                    || mixedFolderSorting != settings::getMixedFolderSorting()
                     || fullNamesOnSelection != settings::getFullNamesOnSelection()
                     || viewMenuPreviewEnabled != settings::getViewMenuPreviewEnabled();
                 settings::setStatusTextEnabled(statusTextEnabled);
@@ -576,6 +580,7 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::setRefreshButtonEnabled(refreshButtonEnabled);
                 settings::setUpButtonEnabled(upButtonEnabled);
                 settings::setViewButtonEnabled(viewButtonEnabled);
+                settings::setMixedFolderSorting(mixedFolderSorting);
                 settings::setFullNamesOnSelection(fullNamesOnSelection);
                 settings::setViewMenuPreviewEnabled(viewMenuPreviewEnabled);
                 if (windowSettingsChanged)
@@ -598,6 +603,7 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                         || LOWORD(wParam) == IDC_REFRESH_BUTTON_ENABLED
                         || LOWORD(wParam) == IDC_UP_BUTTON_ENABLED
                         || LOWORD(wParam) == IDC_VIEW_BUTTON_ENABLED
+                        || LOWORD(wParam) == IDC_MIXED_FOLDER_SORTING
                         || LOWORD(wParam) == IDC_FULL_NAMES_ON_SELECTION
                         || LOWORD(wParam) == IDC_VIEW_MENU_PREVIEW_ENABLED))) {
                 PropSheet_Changed(GetParent(hwnd), hwnd);
