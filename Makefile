@@ -58,6 +58,7 @@ OBJECTS = \
     $(OUTDIR)\SettingsDialog.obj \
     $(OUTDIR)\ShortcutSettingsPage.obj \
     $(OUTDIR)\ShellUtils.obj \
+    $(OUTDIR)\MixedFolder.obj \
     $(OUTDIR)\ShellViewHost.obj \
     $(OUTDIR)\ShellViewFilter.obj \
     $(OUTDIR)\ShellViewSettings.obj \
@@ -75,13 +76,16 @@ OBJECTS = \
 	$(OUTDIR)\CrashRecovery.obj \
     $(OUTDIR)\main.obj
 
-all: $(OUTDIR) $(TARGET)
+all: $(OUTDIR) $(OUTDIR)\FileSpacerFolder.dll $(TARGET)
 
 $(OUTDIR):
 	@if not exist "$(OUTDIR)" mkdir "$(OUTDIR)"
 
-$(TARGET): $(OBJECTS) $(SQLITE_OBJECT) $(RESOURCE) Makefile
+$(TARGET): $(OBJECTS) $(SQLITE_OBJECT) $(RESOURCE) $(OUTDIR)\FileSpacerFolder.dll Makefile
 	cl.exe /nologo /Fe$(TARGET) $(OBJECTS) $(SQLITE_OBJECT) $(RESOURCE) /link /incremental:no /manifest:no /debug /pdb:$(OUTDIR)\FileSpacer.pdb $(LINKFLAGS) Uuid.lib
+
+$(OUTDIR)\FileSpacerFolder.dll: src\MixedFolderProvider.cpp src\MixedFolder.h src\common.h src\MixedFolderProvider.def Makefile
+	cl.exe $(CXXFLAGS) /DSTRICT_TYPED_ITEMIDS /Fd$(OUTDIR)\MixedFolder-compiler.pdb /Fo$(OUTDIR)\MixedFolderProvider.obj /LD /Fe$@ src\MixedFolderProvider.cpp /link /incremental:no /debug /pdb:$(OUTDIR)\FileSpacerFolder.pdb /def:src\MixedFolderProvider.def User32.lib Shell32.lib Shlwapi.lib Ole32.lib OleAut32.lib Propsys.lib Uuid.lib
 
 # Header changes rebuild all C++ files; source changes rebuild only their objects.
 $(OBJECTS): src\*.h $(SQLITE_DIR)\sqlite3.h Makefile
