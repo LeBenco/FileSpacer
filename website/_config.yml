@@ -7,6 +7,8 @@ plugins:
   - jekyll-remote-theme
   - jekyll-include-cache
 aux_links:
+  Download latest release:
+    - https://github.com/LeBenco/FileSpacer/releases/latest
   FileSpacer on GitHub:
     - https://github.com/LeBenco/FileSpacer
 heading_anchors: false
