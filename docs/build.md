@@ -75,31 +75,55 @@ download-arrow badge. `BADGE_MASTERS` defines the badge diameter, white outline,
 shaft, head and height individually for every size. Placement follows each
 bitmap's actual folder bounds, retaining one yellow pixel on the right and
 bottom; the generator checks that the original alpha outline stays intact.
-The SVG remains the source for English and French wizard sidebars and the header
-bitmap. All outputs go into `build\installer-assets`.
+The SVG remains the source for English and French wizard sidebars. The shared
+native dialog in `installer\wizard-ui.rc` places that illustration on the left
+of every setup and uninstaller page, with a light-gray sidebar and white content.
+Packaging compiles this resource into a build-only DLL for NSIS `ChangeUI` and
+converts the complete changelog into UTF-16 text for the scrollable first page.
+The scope choices and version history appear before the license, components and
+installation directory. All generated resources go into `build\installer-assets`.
 These generated resources are not checked in; the application icon is unchanged.
+
+Setup declares `asInvoker`, so opening it does not request Windows confirmation.
+Choosing All users launches a silent copy with the native `runas` verb only when
+installation begins. The parent passes the directory, language and component
+choices, waits for the real exit code, and applies personal integration choices
+under the initiating user's account. The machine worker requires an elevated
+token and never changes that administrator account's personal default manager.
+The uninstaller requests confirmation only for an All users installation.
+Declining confirmation returns the cancellation code expected by the updater.
 
 The installer saves its three component selections in the existing
 `install-info.ini` under `[Components]`: `StartMenu`, `ContextMenu` and
-`DefaultFileManager`, each `0` or `1`. Upgrades restore them after MultiUser
-restores the installation mode and directory. Older installations are migrated
+`DefaultFileManager`, each `0` or `1`. Upgrades restore them after restoring the
+installation mode and directory. Older installations are migrated
 from their Start Menu shortcut and registered folder commands. The saved language
-is restored too. Revisiting a wizard page keeps edits made in that run; selecting
+is restored during initialization. Revisiting a wizard page keeps edits made in that run; selecting
 the default manager still requires the context-menu component. Silent upgrades
 preserve the current default association even if it changed after installation.
 
-Run the isolated NSIS logic checks from CMD:
+After packaging, run the isolated NSIS checks from CMD:
 
 ```cmd
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\installer\Run-InstallerTests.ps1
 ```
 
-This compiles the production save/restore blocks into a harmless NSIS executable,
-checks both installation scopes, legacy migration, invalid metadata, language,
-page revisits and silent/interactive default handling. It writes only fixtures
-under `build\installer-tests`, reads existing Shell registration without changing
-it, and does not install or uninstall FileSpacer. It complements installation
-tests on a client; it does not constitute an end-to-end upgrade test.
+The logic harness checks both scopes, legacy migration, invalid metadata,
+language, page revisits and silent/interactive default handling. The native
+launcher probe exercises actual child exit codes and launch failures using
+`open` instead of `runas`. Worker option parsing uses a token-query stub;
+unelevated-token rejection is checked separately when the test itself is not
+elevated. Cancellation and worker failures must propagate to the parent.
+
+The lifecycle harness runs the real installer sections with an inert payload,
+redirected shortcuts and fresh GUID-prefixed registry keys under HKCU. It checks
+Current user installation, silent upgrade, removal of unchecked components and
+native uninstallation, including preservation of an unowned file. Fixtures stay
+under `build\installer-tests`; only the run's registry namespace is removed.
+These tests need permission to write their isolated HKCU keys, not administrator
+rights. They do not modify the user's FileSpacer installation or associations.
+Real UAC consent and the All users lifecycle require the dedicated client VM;
+the probes do not validate those interactions or the application payload.
 
 ## SQLite
 
