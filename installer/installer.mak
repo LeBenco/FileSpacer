@@ -3,8 +3,12 @@
 MAKENSIS = makensis.exe
 !ENDIF
 
+!IFNDEF NODE
+NODE = node
+!ENDIF
+
 !IF "$(CFG)" == "Release"
-installer: all installer-assets FORCE_INSTALLER
+installer: all installer-assets installer-documentation FORCE_INSTALLER
 	"$(MAKENSIS)" /NOCONFIG /WX /V3 installer\install.nsi
 !ELSE
 installer: FORCE_INSTALLER
@@ -14,6 +18,9 @@ installer: FORCE_INSTALLER
 
 # Force packaging despite the existing installer directory; no file is created.
 FORCE_INSTALLER:
+
+installer-documentation: FORCE_INSTALLER
+	"$(NODE)" .github\scripts\build-docs.mjs --target offline
 
 installer-assets: $(ICON_ICO) FORCE_INSTALLER
 	"$(ICON_PYTHON)" generate-installer-assets.py --source "$(ICON_SVG)" --icon "$(ICON_ICO)" --output build\installer-assets --inkscape "$(INKSCAPE)"
