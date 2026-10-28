@@ -69,6 +69,16 @@ try {
     Run-FixtureProcess $installer ("/S /$mode /D=$directory")
     if(!(Test-Path -LiteralPath (Join-Path $directory 'FileSpacer.exe'))) { throw 'Payload not installed.' }
     if(!(Test-Path -LiteralPath (Join-Path $directory 'FileSpacerFolder.dll'))) { throw 'Mixed-sort provider DLL not installed.' }
+    $documentation=Join-Path $directory 'help'
+    $manifest=Get-Content -LiteralPath (Join-Path $root 'build\offline-docs\build-info.json') -Raw | ConvertFrom-Json
+    foreach($language in $manifest.languages) {
+        $page=Join-Path $documentation ($language.path+'/index.html')
+        if(!(Test-Path -LiteralPath $page -PathType Leaf)) { throw "Missing installed documentation: $($language.code)" }
+    }
+    foreach($entry in $manifest.files.PSObject.Properties) {
+        $installedFile=Join-Path $documentation $entry.Name
+        if((Get-FileHash -LiteralPath $installedFile -Algorithm SHA256).Hash -ine $entry.Value) { throw "Installed documentation differs: $($entry.Name)" }
+    }
     Check-Profile $directory $mode 1
     $installed=$hive.OpenSubKey($registryPrefix+'FileSpacer')
     try {
@@ -100,7 +110,11 @@ try {
     # unchecked. Existing shortcut/verb must actually be removed on upgrade.
     $profile="[Installation]`r`nMode=$mode`r`nLanguage=1036`r`n[Components]`r`nStartMenu=0`r`nContextMenu=0`r`nDefaultFileManager=0`r`n"
     [IO.File]::WriteAllText((Join-Path $directory 'install-info.ini'),$profile,[Text.Encoding]::Unicode)
+    [IO.File]::WriteAllText((Join-Path $documentation 'index.html'),'Old documentation to replace.')
+    $userDocumentation=Join-Path $documentation 'keep-my-notes.txt'
+    [IO.File]::WriteAllText($userDocumentation,'Unowned help notes.')
     Run-FixtureProcess $installer ("/S /$mode /D=$directory")
+    if((Get-FileHash -LiteralPath (Join-Path $documentation 'index.html') -Algorithm SHA256).Hash -ine $manifest.files.'index.html') { throw 'Documentation was not replaced on upgrade.' }
     Check-Profile $directory $mode 0
     if(Test-Path -LiteralPath (Join-Path $shortcutDirectory 'FileSpacer.lnk')) { throw 'Unchecked shortcut survived the upgrade.' }
     $command=$hive.OpenSubKey($registryPrefix+'Classes\Directory\shell\filespacer')
@@ -118,6 +132,10 @@ try {
     foreach($owned in 'FileSpacer.exe','FileSpacerFolder.dll','uninstall.exe','install-info.ini') {
         if(Test-Path -LiteralPath (Join-Path $directory $owned)) { throw "Owned file remained after uninstallation: $owned" }
     }
+    foreach($owned in @($manifest.files.PSObject.Properties.Name)+@('build-info.json')) {
+        if(Test-Path -LiteralPath (Join-Path $documentation $owned)) { throw "Owned documentation remained after uninstallation: $owned" }
+    }
+    if(!(Test-Path -LiteralPath $userDocumentation) -or [IO.File]::ReadAllText($userDocumentation) -cne 'Unowned help notes.') { throw 'Uninstallation removed or changed unowned help notes.' }
     $provider=$hive.OpenSubKey($providerKey)
     if($provider) { $provider.Dispose(); throw 'Owned provider registration remained after uninstallation.' }
     if(Test-Path -LiteralPath $providerFixture) { throw 'Owned provider cache remained after uninstallation.' }
