@@ -285,10 +285,11 @@ struct PropertyValue {
     ~PropertyValue() { PropVariantClear(&value); }
 };
 
-class Folder : public IShellFolder2, public IPersistFolder2, public IMixedFolder {
+class Folder : public IShellFolder2, public IPersistFolder2, public IMixedFolder, public IShellIcon {
     LONG references = 1;
     CLSID clsid;
     CComPtr<IShellFolder2> source;
+    CComPtr<IShellIcon> sourceIcons;
     CComHeapPtr<ITEMIDLIST_ABSOLUTE> nativeRoot, viewRoot;
     HRESULT nativeAbsolute(PCUIDLIST_RELATIVE id, PIDLIST_ABSOLUTE *out) {
         if (!id || !out) return E_POINTER; *out = nullptr;
@@ -318,12 +319,15 @@ public:
     HRESULT bind(PCIDLIST_ABSOLUTE native, PCIDLIST_ABSOLUTE shown) {
         nativeRoot.Attach(ILCloneFull(native)); viewRoot.Attach(ILCloneFull(shown));
         if (!nativeRoot || !viewRoot) return E_OUTOFMEMORY;
-        return SHBindToObject(nullptr, nativeRoot, nullptr, IID_PPV_ARGS(&source));
+        const HRESULT hr = SHBindToObject(nullptr, nativeRoot, nullptr, IID_PPV_ARGS(&source));
+        if (SUCCEEDED(hr)) source->QueryInterface(IID_PPV_ARGS(&sourceIcons));
+        return hr;
     }
     STDMETHODIMP QueryInterface(REFIID iid, void **out) override {
         if (!out) return E_POINTER; *out = nullptr;
         if (iid == IID_IUnknown || iid == IID_IShellFolder || iid == IID_IShellFolder2) *out = static_cast<IShellFolder2 *>(this);
         else if (iid == IID_IPersist || iid == IID_IPersistFolder || iid == IID_IPersistFolder2) *out = static_cast<IPersistFolder2 *>(this);
+        else if (iid == IID_IShellIcon) *out = static_cast<IShellIcon *>(this);
         else if (iid == __uuidof(IMixedFolder)) *out = static_cast<IMixedFolder *>(this);
         else return E_NOINTERFACE;
         AddRef(); return S_OK;
@@ -354,6 +358,14 @@ public:
         const HRESULT hr = unwrapItem(child, relativeItem, &native);
         if (FAILED(hr)) return hr;
         *out = ILCloneChild(reinterpret_cast<PCUITEMID_CHILD>(native)); return *out ? S_OK : E_OUTOFMEMORY;
+    }
+    STDMETHODIMP GetIconOf(PCUITEMID_CHILD child, UINT flags, int *index) override {
+        if (!child || !index) return E_POINTER;
+        *index = -1;
+        if (!sourceIcons) return S_FALSE;
+        PCUIDLIST_RELATIVE native = nullptr;
+        const HRESULT hr = unwrapItem(child, relativeItem, &native);
+        return SUCCEEDED(hr) ? sourceIcons->GetIconOf(reinterpret_cast<PCUITEMID_CHILD>(native), flags, index) : hr;
     }
     STDMETHODIMP ViewChild(PCUITEMID_CHILD child, PITEMID_CHILD *out) override { return wrapItem(child, relativeItem, out); }
     STDMETHODIMP ParseDisplayName(HWND hwnd, IBindCtx *context, LPWSTR name, ULONG *eaten, PIDLIST_RELATIVE *out, ULONG *attributes) override {

@@ -1,4 +1,4 @@
-﻿# Test-Category: UI
+# Test-Category: UI
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
 . (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
 $failure=$null
@@ -92,6 +92,11 @@ try {
     Wait-Ui {(Use-UiView $window {param($view) $view.Positions()}) -ceq $positions} 'canonical icon positions after reopening' 150
     Assert-Ui ((Get-UiPreference 'MixedFolderSorting') -eq 1) 'The preference did not persist.'
     Write-Host 'PASS: toggling and reopening preserve canonical native item positions and selection.'
+    $empty=Join-Path $script:UiRoot 'empty';[void][IO.Directory]::CreateDirectory($empty)
+    $emptyWindow=Open-UiFolder $empty 0
+    Assert-Ui (Use-UiView $emptyWindow {param($view) $view.ContentVisible}) 'An empty mixed folder retained hidden content.'
+    Close-UiFolder $emptyWindow
+    Write-Host 'PASS: an empty mixed folder becomes visible without an icon job.'
 }catch{$failure=$_;Write-Host $_.Exception.ToString();throw}finally{
     try { Stop-Ui -Failure $failure } finally {
     if(!$registrationExisted -and (Test-Path -LiteralPath $providerKey)){Remove-Item -LiteralPath $providerKey -Recurse -Force}

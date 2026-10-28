@@ -99,9 +99,21 @@ HRESULT ShellViewHost::initialize(HWND parent, RECT bounds, const FOLDERSETTINGS
     }
     if (FAILED(hr)) return hr;
     FOLDERSETTINGS initialSettings = settings;
-    hr = created->Initialize(parent, &bounds, &initialSettings);
+    WNDCLASSW wc = {};
+    wc.lpfnWndProc = DefWindowProcW; wc.hInstance = GetModuleHandleW(nullptr);
+    wc.lpszClassName = L"FileSpacer Shell Content";
+    wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+    if (!RegisterClassW(&wc) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS)
+        return HRESULT_FROM_WIN32(GetLastError());
+    contentWindow = CreateWindowExW(0, wc.lpszClassName, L"", WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN,
+        bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top,
+        parent, nullptr, wc.hInstance, nullptr);
+    if (!contentWindow) return HRESULT_FROM_WIN32(GetLastError());
+    RECT contentBounds = {0, 0, bounds.right - bounds.left, bounds.bottom - bounds.top};
+    hr = created->Initialize(contentWindow, &contentBounds, &initialSettings);
     if (FAILED(hr)) {
         created->Destroy(); // Initialize may have allocated window resources before failing.
+        DestroyWindow(contentWindow); contentWindow = nullptr;
         return hr;
     }
     browser = created;
@@ -178,6 +190,9 @@ ULONG_PTR ShellViewHost::enumerationSerial() const {
 }
 
 HRESULT ShellViewHost::destroy() {
+    const HWND previousContent = contentWindow;
+    contentWindow = nullptr;
+    masked = false;
     const HRESULT observationResult = stopObserving();
     // Detach first: callbacks during teardown must not find a dying browser.
     CComPtr<IExplorerBrowser> previous;
@@ -197,6 +212,7 @@ HRESULT ShellViewHost::destroy() {
         const HRESULT destroyResult = previous->Destroy();
         if (SUCCEEDED(result)) result = destroyResult;
     }
+    if (previousContent) DestroyWindow(previousContent);
     return result;
 }
 
@@ -212,6 +228,7 @@ HRESULT ShellViewHost::navigate(IShellItem *item, bool mixFolders, bool isolated
     if (!current) return E_UNEXPECTED;
     mixedSorting = mixFolders;
     CComPtr<IShellItem> target = item;
+    bool custom = false;
     if (mixFolders) {
         SFGAOF attributes = 0;
         const SFGAOF required = SFGAO_FOLDER | SFGAO_FILESYSTEM;
@@ -219,12 +236,17 @@ HRESULT ShellViewHost::navigate(IShellItem *item, bool mixFolders, bool isolated
         if (FAILED(hr)) return hr;
         // Virtual providers and archives retain their own native view contract.
         if ((attributes & required) == required && !(attributes & SFGAO_STREAM)) {
+            custom = true;
             target.Release();
             hr = mixedFolderItem(item, isolated, &target);
             if (FAILED(hr)) return hr;
         }
     }
-    return current->BrowseToObject(target, SBSP_ABSOLUTE);
+    if (custom) { const HRESULT hr = maskContent(); if (FAILED(hr)) revealContent(); }
+    else revealContent();
+    const HRESULT hr = current->BrowseToObject(target, SBSP_ABSOLUTE);
+    if (FAILED(hr)) revealContent();
+    return hr;
 }
 
 HRESULT ShellViewHost::lockNavigation(bool locked) {
@@ -241,7 +263,29 @@ HRESULT ShellViewHost::setFilter(IFolderFilter *filter) {
 
 HRESULT ShellViewHost::setBounds(RECT bounds) {
     CComPtr<IExplorerBrowser> current = browser;
-    return current ? current->SetRect(nullptr, bounds) : E_UNEXPECTED;
+    if (!current || !contentWindow) return E_UNEXPECTED;
+    if (!SetWindowPos(contentWindow, nullptr, bounds.left, bounds.top,
+            bounds.right - bounds.left, bounds.bottom - bounds.top, SWP_NOZORDER | SWP_NOACTIVATE))
+        return HRESULT_FROM_WIN32(GetLastError());
+    RECT contentBounds = {0, 0, bounds.right - bounds.left, bounds.bottom - bounds.top};
+    return current->SetRect(nullptr, contentBounds);
 }
 
+HRESULT ShellViewHost::maskContent() {
+    if (!contentWindow) return E_UNEXPECTED;
+    const LONG_PTR style = GetWindowLongPtrW(contentWindow, GWL_EXSTYLE);
+    SetWindowLongPtrW(contentWindow, GWL_EXSTYLE, style | WS_EX_LAYERED);
+    if (!(GetWindowLongPtrW(contentWindow, GWL_EXSTYLE) & WS_EX_LAYERED)) return E_FAIL;
+    masked = true;
+    if (!SetLayeredWindowAttributes(contentWindow, 0, 0, LWA_ALPHA)) return HRESULT_FROM_WIN32(GetLastError());
+    return S_OK;
+}
+
+void ShellViewHost::revealContent() {
+    if (!contentWindow || !masked) return;
+    SetLayeredWindowAttributes(contentWindow, 0, 255, LWA_ALPHA);
+    SetWindowLongPtrW(contentWindow, GWL_EXSTYLE, GetWindowLongPtrW(contentWindow, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+    masked = false;
+    RedrawWindow(contentWindow, nullptr, nullptr, RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_FRAME);
+}
 } // namespace filespacer

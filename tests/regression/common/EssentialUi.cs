@@ -141,6 +141,7 @@ namespace FileSpacerRegression {
         }
         public IntPtr Window { get { IntPtr window; Native.Check(shellView.GetWindow(out window)); return window; } }
         public Rect Bounds { get { IntPtr window; Native.Check(shellView.GetWindow(out window)); return Native.Bounds(window); } }
+        public bool ContentVisible { get { return Native.ContentVisible(Window); } }
         public string[] Selected() {
             var names=new List<string>(); Guid iid=typeof(EnumPidls).GUID; IntPtr p=IntPtr.Zero;
             int count; Native.Check(view.ItemCount(1,out count));
@@ -285,6 +286,14 @@ namespace FileSpacerRegression {
         [DllImport("user32.dll",CharSet=CharSet.Unicode)] static extern int GetWindowText(IntPtr window,StringBuilder text,int size);
         [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr window);
         [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr window);
+        [DllImport("user32.dll")] static extern bool GetLayeredWindowAttributes(IntPtr window,out uint key,out byte alpha,out uint flags);
+        public static bool ContentVisible(IntPtr window) {
+            for(IntPtr current=window;current!=IntPtr.Zero;current=GetAncestor(current,1)) {
+                uint key,flags;byte alpha;
+                if(GetLayeredWindowAttributes(current,out key,out alpha,out flags) && (flags&2)!=0 && alpha==0) return false;
+            }
+            return true;
+        }
         [DllImport("user32.dll")] public static extern IntPtr GetParent(IntPtr window);
         [DllImport("user32.dll")] static extern IntPtr GetAncestor(IntPtr window,uint flags);
         [DllImport("user32.dll",EntryPoint="GetWindowLongW")] public static extern int Style(IntPtr window,int index);

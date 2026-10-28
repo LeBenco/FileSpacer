@@ -23,6 +23,9 @@ public:
     explicit operator bool() const { return browser != nullptr; }
     HRESULT currentView(REFIID iid, void **view) const;
     HRESULT navigate(IShellItem *item, bool mixFolders = false, bool isolated = false);
+    // FolderWindow reveals a custom view after restoring state and preparing icons.
+    bool contentMasked() const { return masked; }
+    void revealContent();
     bool mixedSortingPreference() const { return mixedSorting; }
     HRESULT lockNavigation(bool locked);
     HRESULT setFilter(IFolderFilter *filter);
@@ -36,6 +39,9 @@ public:
     ULONG_PTR enumerationSerial() const;
 
 private:
+    HRESULT maskContent();
+    HWND contentWindow = nullptr;
+    bool masked = false;
     struct ViewSignal;
     class ViewCallback;
     CComPtr<IExplorerBrowser> browser;
