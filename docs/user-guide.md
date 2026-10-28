@@ -44,7 +44,7 @@ In **Settings > Display**, two options are enabled by default:
   it. Click to keep it; Escape or leaving the preview restores the initial view.
   Previewing does not replace the saved layout.
 
-**Upcoming (not yet released).** **Mix folders and files when sorting**, in
+**Mix folders and files when sorting**, in
 **Settings > Display > Files**, is off by default. Enable it to sort folders and
 files together in Details, List and automatically arranged icon views. Free icon
 layouts are preserved. Virtual folders and archives retain Windows' ordering.
@@ -53,9 +53,9 @@ Similar mixed ordering is available in [Finder on macOS](https://support.apple.c
 and Linux file managers such as [GNOME Files](https://help.gnome.org/gnome-help/nautilus-views.html),
 depending on their folder-first settings.
 
-![Display settings with the upcoming Mix folders and files when sorting option unchecked.](images/display.png)
+![Display settings with Mix folders and files when sorting unchecked.](images/display.png)
 
-*Display settings in the unreleased build, with mixed sorting disabled.*
+*Display settings with mixed sorting disabled by default (available since 1.2.0).*
 
 ### Window placement
 
