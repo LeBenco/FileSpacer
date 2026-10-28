@@ -4,11 +4,12 @@
 LANGUAGE LANG_GREEK, SUBLANG_DEFAULT
 
 IDR_ITEM_MENU   MENU {
+    MENUITEM    "Τεκμηρίωση\tF1", IDM_HELP
     MENUITEM    "Ρυθμίσεις FileSpacer\tCtrl+,", IDM_SETTINGS
-    //     MENUITEM    "Help\tF1",                     IDM_HELP // Deferred public help.
 }
 
 STRINGTABLE {
+    IDS_DOCUMENTATION_ERROR, "Δεν ήταν δυνατό το άνοιγμα της τοπικής τεκμηρίωσης:\n%1\n\n%2"
     IDS_CAPTION_COPY_PATH, "Αντιγραφή διαδρομής"
     IDS_CAPTION_RENAME, "Μετονομασία"
     IDS_CAPTION_PROPERTIES, "Ιδιότητες"
