@@ -140,3 +140,5 @@ O tema Modern apresentado abaixo usa os cantos arredondados predefinidos à esqu
 **Atualizações.** Procure uma nova versão em **Definições > Acerca de** e escolha **Instalar o FileSpacer vX.Y.Z** para atualizar. A instalação requer confirmação; as atualizações nunca são instaladas automaticamente. Depois da instalação, o FileSpacer reabre as pastas anteriormente abertas com as disposições guardadas. As verificações semanais opcionais estão desativadas por predefinição e podem ser ativadas em Acerca de.
 
 **Manutenção.** **Definições > Acerca de > Manutenção > Repor o estado de todas as pastas** fecha as janelas de pastas abertas e limpa as disposições guardadas, o histórico e os bloqueios de estado. Os seus ficheiros e as preferências globais são conservados.
+
+**Documentação.** Escolha **Documentação** acima de **Definições do FileSpacer** no menu principal, prima **F1** ou utilize o botão em **Definições > Acerca de**. O guia instalado abre no navegador no idioma de apresentação do Windows, com o inglês como alternativa. As páginas, imagens e pesquisas funcionam sem ligação à Internet; o seletor de idioma permite mudar de tradução.
