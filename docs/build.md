@@ -27,6 +27,9 @@ build.cmd installer
 The outputs are `build\debug\FileSpacer.exe`, `build\release\FileSpacer.exe`,
 and `build\FileSpacer-install.exe`. Debug uses `FILESPACER_DEBUG`, `/MTd`, and the
 console subsystem. Release uses `/O2`, `/MT`, and the Windows subsystem.
+Each configuration also builds `FileSpacerFolder.dll` beside the executable.
+Keep the DLL with the application; it provides the optional mixed file/folder
+sort using the native Windows view. The installer includes both binaries.
 Distribute the Release installer.
 
 To override nonstandard tool locations in CMD:
