@@ -1,0 +1,42 @@
+{
+  "application": "FileSpacer",
+  "version": "1.1.10",
+  "captured": "2026-10-28",
+  "environment": "Windows 10 Hyper-V guest",
+  "profile": "Isolated /test profile, Debug binary; no debug console in captures",
+  "ui_language": "fr-FR",
+  "demo_content_language": "en",
+  "demo_content": "Fictional folders, text, CSV, Markdown and generated sample images",
+  "executable_sha256": "0ed6a7ecbb5d6e4aad5829a80cf1857f09fc41825d087c92c8296f6f25a5eaf3",
+  "crop": "Direct screen pixels inside DWMWA_EXTENDED_FRAME_BOUNDS; no resizing or retouching",
+  "captures": [
+    {
+      "file": "overview.png",
+      "width": 906,
+      "height": 553,
+      "dpi": 96,
+      "sha256": "83425c26d8c25ec098c53ce9c9b87d6af117db4751291efd3b4d9f3b9fc69ab2"
+    },
+    {
+      "file": "window-menu.png",
+      "width": 906,
+      "height": 553,
+      "dpi": 96,
+      "sha256": "885d57f4a4a1d6d8101bfc3d98ee0b48f1e48292a1627934321e649a8956980b"
+    },
+    {
+      "file": "search.png",
+      "width": 906,
+      "height": 553,
+      "dpi": 96,
+      "sha256": "139fbc7947dc2887da5e689b0548414d5abe8743395dab53c1a1bf308e3f0253"
+    },
+    {
+      "file": "shortcuts.png",
+      "width": 472,
+      "height": 574,
+      "dpi": 96,
+      "sha256": "5e5d35eb673d729bc15391e93f0a06344c7a92a40d20b724c554d088fc5beea6"
+    }
+  ]
+}
