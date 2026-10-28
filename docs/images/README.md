@@ -11,6 +11,7 @@ Git LFS setup is needed.
 | `window-menu.png` | The title menu, open folders and the saved-layout lock. |
 | `search.png` | Local search history and the optional Everything action. |
 | `shortcuts.png` | Settings with the movement action expanded. |
+| `display.png` | Display settings with the upcoming mixed folder/file sorting option. |
 | `locked-title.png` | A close-up of the locked folder's title and padlock badge. |
 | `move-window.gif` | Alt + left drag to move a folder window. |
 | `resize-window.gif` | Alt + right drag to resize a folder window. |
@@ -33,6 +34,11 @@ The title close-up also has a French copy, `locked-title-fr.png`.
 The animations also have French copies, `move-window-fr.gif` and
 `resize-window-fr.gif`. They show the VM's Windows wallpaper around the window
 so that its movement and changing size remain visible.
+
+The Display settings capture also has a French copy, `display-fr.png`.
+These two images show an **unreleased development build**, recorded separately
+in `display-provenance.json`. Keep the guide's unreleased notice until a published
+release includes the option.
 
 ## Nilesoft Shell comparisons
 
