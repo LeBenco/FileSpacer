@@ -39,20 +39,25 @@
   white-space: nowrap;
 }
 
-/* Dark faces of the logo's cubes keep headings and navigation legible. */
+/* Purple and green faces of the logo, with readable contrast. */
 #site-nav .nav-list-link,
 #site-nav .nav-list-expander,
 .main-content h3,
 .main-content h4,
 .main-content h5,
 .main-content h6 {
-  color: #1f675a;
+  color: #287a6c;
 }
 
 #site-nav > .nav-list > .nav-list-item > .nav-list-link,
 #site-nav > .nav-list > .nav-list-item > .nav-list-expander,
 .main-content h2 {
   color: #6f50b8;
+}
+
+#site-nav .nav-list .nav-list .nav-list-link:hover,
+#site-nav .nav-list .nav-list .nav-list-link.active {
+  background: #f0f6f3;
 }
 
 /* Standard Just the Docs desktop widths: 16.5rem navigation + 50rem content. */
