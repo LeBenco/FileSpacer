@@ -1,5 +1,5 @@
 ﻿param(
-    [Parameter(Mandatory=$true)][ValidateSet('Menu','Shell','Settings','View','Adapters','Geometry','LockBadge')][string]$Mode,
+    [Parameter(Mandatory=$true)][ValidateSet('Menu','Shell','Settings','View','Adapters','Geometry','LockBadge','Documentation')][string]$Mode,
     [Parameter(Mandatory=$true)][string]$ProjectRoot,
     [Parameter(Mandatory=$true)][string]$CaseDirectory,
     [Parameter(Mandatory=$true)][string]$OutputDirectory
@@ -54,6 +54,10 @@ function Save-Source([string]$Name,[string]$Text) {
 }
 [void][IO.Directory]::CreateDirectory($OutputDirectory)
 switch ($Mode) {
+    'Documentation' {
+        $source=Read-Source 'SettingsDialog.cpp'
+        Save-Source 'DocumentationProduction.inc' (Get-SourceBlock $source 'void openDocumentation(HWND owner)')
+    }
     'LockBadge' {
         $source=Read-Source 'ProxyIcon.cpp'
         $start=$source.IndexOf('// Native ICO loading',[StringComparison]::Ordinal)
