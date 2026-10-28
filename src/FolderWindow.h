@@ -158,7 +158,8 @@ protected:
         MSG_ENUM_READY = WM_APP + 46,
         MSG_ENUM_DONE = WM_APP + 47,
         MSG_VIEW_MENU_PREVIEW = WM_APP + 48,
-        MSG_STARTUP_ICONS = WM_APP + 49
+        MSG_STARTUP_ICONS = WM_APP + 49,
+        MSG_VIEW_CHANGED = WM_APP + 50
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
 
@@ -239,6 +240,7 @@ private:
 
     void loadIconPositions();
     void scheduleStateSave(bool icons = false);
+    void synchronizeViewProvider();
     bool viewReady = false;
     bool enumerationComplete = false;
     bool restoringState = false;

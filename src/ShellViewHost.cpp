@@ -19,7 +19,7 @@ struct ShellViewHost::ViewSignal {
     std::atomic<HWND> target{nullptr};
     std::atomic<ULONG_PTR> serial{0};
     ULONG_PTR generation = 0;
-    UINT readyMessage = 0, enumDoneMessage = 0;
+    UINT readyMessage = 0, enumDoneMessage = 0, changedMessage = 0;
 };
 
 // A retained callback owns only a cancellation token. No window, view or host
@@ -75,7 +75,16 @@ public:
                 signal->generation, static_cast<LPARAM>(serial));
             return S_OK;
         }
+        if (id == DISPID_VIEWMODECHANGED || id == DISPID_ORDERCHANGED || id == DISPID_FOLDERCHANGED) {
+            const HWND target = signal->target.load();
+            if (target && signal->changedMessage)
+                PostMessage(target, signal->changedMessage, signal->generation, 0);
+            return S_OK;
+        }
         if (id == DISPID_VERBINVOKED || id == DISPID_DEFAULTVERBINVOKED) {
+            const HWND target = signal->target.load();
+            if (target && signal->changedMessage)
+                PostMessage(target, signal->changedMessage, signal->generation, 0);
             // False would cancel the Shell's native command.
             if (result) { result->vt = VT_BOOL; result->boolVal = VARIANT_TRUE; }
             return S_OK;
@@ -139,7 +148,7 @@ HRESULT ShellViewHost::stopObserving() {
 }
 
 HRESULT ShellViewHost::observeView(IShellView *view, HWND target, UINT readyMessage,
-        UINT enumDoneMessage, ULONG_PTR &generation) {
+        UINT enumDoneMessage, ULONG_PTR &generation, UINT changedMessage) {
     generation = 0;
     HRESULT hr = stopObserving();
     if (FAILED(hr)) return hr;
@@ -150,6 +159,7 @@ HRESULT ShellViewHost::observeView(IShellView *view, HWND target, UINT readyMess
     current->generation = ++nextViewGeneration;
     current->readyMessage = readyMessage;
     current->enumDoneMessage = enumDoneMessage;
+    current->changedMessage = changedMessage;
     current->target.store(target);
     signal = current;
     generation = current->generation;

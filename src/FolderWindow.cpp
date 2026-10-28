@@ -892,6 +892,38 @@ void FolderWindow::scheduleStateSave(bool icons) {
     SetTimer(hwnd, TIMER_SAVE_STATE, 250, nullptr);
 }
 
+void FolderWindow::synchronizeViewProvider() {
+    if (!isWindowOperational() || !viewReady || !initialStateApplied || restoringState
+            || viewMenuPreview || navigationDepth) return;
+    if (!settings::getMixedFolderSorting() && !viewHost.mixedSortingPreference()) return;
+    CComPtr<ItemWindow> keepAlive(this);
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    auto current = [&]() {
+        return isWindowOperational() && shellView == source && viewGeneration == generation;
+    };
+    CComQIPtr<IFolderView2> view(source);
+    if (!view || !current()) return;
+    const bool free = spatialView(view);
+    if (!current()) return;
+    const bool mixed = settings::getMixedFolderSorting() && !free;
+    if (mixed == viewHost.mixedSortingPreference()) return;
+    // A view menu can still hold the old provider while previewing its options.
+    GUITHREADINFO gui = {sizeof(gui)};
+    if (GetGUIThreadInfo(GetCurrentThreadId(), &gui)
+            && (gui.flags & (GUI_INMENUMODE | GUI_POPUPMENUMODE | GUI_SYSTEMMENUMODE))) {
+        scheduleStateSave();
+        return;
+    }
+    // Switching back from an arranged view must not save its temporary grid
+    // over the folder's last free placement.
+    if (free) loadIconPositions();
+    if (!current()) return;
+    viewStateDirty(FolderState::Icons);
+    persistViewState();
+    if (current()) onItemChanged(); // Existing canonical positions/selection transfer.
+}
+
 uint32_t FolderWindow::captureViewState(uint32_t mask) {
     uint32_t captured = ItemWindow::captureViewState(mask);
     if (!viewHost || !viewReady || !initialStateApplied || restoringState || viewMenuPreview
@@ -1277,9 +1309,8 @@ void FolderWindow::onSettingsChanged() {
     if (!limit) searchHistoryDirty = false; // The preference already cleared persisted histories.
     if (isWindowOperational())
         setSingleSelectionLabels(shellView, settings::getFullNamesOnSelection());
-    if (isWindowOperational() && viewHost
-            && viewHost.mixedSortingPreference() != settings::getMixedFolderSorting())
-        onItemChanged();
+    if (isWindowOperational() && viewHost)
+        synchronizeViewProvider();
     if (viewHost && hasStatusText())
         updateStatus();
 }
@@ -1314,7 +1345,17 @@ HRESULT FolderWindow::browseToItem() {
 #ifdef FILESPACER_DEBUG
     isolated = settings::testMode;
 #endif
-    const HRESULT result = viewHost.navigate(currentItem, settings::getMixedFolderSorting(), isolated);
+    FolderViewSettings presentation;
+    if (storedViewState) presentation = storedViewState->view;
+    else if (loadFolderState() && (getSavedFolderState().present & FolderState::View))
+        presentation = getSavedFolderState().view;
+    if (!isWindowOperational()) { resumeDeferredClose(); return E_ABORT; }
+    const UINT mode = (presentation.present & FolderViewSettings::Mode)
+        ? static_cast<UINT>(presentation.mode) : FVM_DETAILS;
+    const DWORD flags = (presentation.present & FolderViewSettings::Flags)
+        ? presentation.flags : FWF_AUTOARRANGE;
+    const bool free = mode != FVM_DETAILS && mode != FVM_LIST && !(flags & FWF_AUTOARRANGE);
+    const HRESULT result = viewHost.navigate(currentItem, settings::getMixedFolderSorting() && !free, isolated);
     debugPrintf(L"NATIVE HWND=%p BrowseToObject returned: HRESULT=0x%08lX\n", hwnd, static_cast<unsigned long>(result));
     resumeDeferredClose();
     return result;
@@ -1426,6 +1467,10 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
                 stopStartupIcons(); viewHost.revealContent();
             }
             return 0;
+        case MSG_VIEW_CHANGED:
+            if (isWindowOperational() && viewHost.isViewNotification(wParam))
+                scheduleStateSave();
+            return 0;
         case MSG_VIEW_MENU_PREVIEW: {
             auto preview = viewMenuPreview;
             if (preview && preview->serial == wParam && isWindowOperational()) preview->update();
@@ -1512,6 +1557,8 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             }
             if (wParam == TIMER_SAVE_STATE) {
                 KillTimer(hwnd, TIMER_SAVE_STATE);
+                synchronizeViewProvider();
+                if (!isWindowOperational()) return 0;
                 persistViewState();
                 saveSearchHistory();
                 return 0;
@@ -2373,7 +2420,7 @@ STDMETHODIMP FolderWindow::OnViewCreated(IShellView *const view) {
     viewReady = false;
     enumerationComplete = false;
     const HRESULT observed = viewHost.observeView(view, hwnd, MSG_ENUM_READY,
-        MSG_ENUM_DONE, viewGeneration);
+        MSG_ENUM_DONE, viewGeneration, MSG_VIEW_CHANGED);
     debugPrintf(L"NATIVE HWND=%p observeView: HRESULT=0x%08lX generation=%llu\n",
         hwnd, static_cast<unsigned long>(observed), static_cast<unsigned long long>(viewGeneration));
     checkHR(observed);
