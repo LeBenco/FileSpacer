@@ -12,7 +12,8 @@ FileSpacer keeps its interface deliberately understated, unlike some cluttered i
 
 Tabs are incompatible with the spatial model and will never be added.
 
-Windows 10 or later, x64. Available in English and French.
+Windows 10 or later, x64. Available in English, French, German, Italian, Spanish,
+Portuguese (Portugal) and Greek.
 
 [Download the latest release](https://github.com/LeBenco/FileSpacer/releases/latest)
 · [User guide](docs/user-guide.md)
