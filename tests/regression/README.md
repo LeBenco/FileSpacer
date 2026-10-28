@@ -266,6 +266,31 @@ contrôle supposée.
 tests.cmd -Pattern "21-clic-activation\*"
 ```
 
+## Tri mélangé
+
+Le groupe `30-tri-melange` ajoute deux cas utiles au catalogue, soit 119 cas
+(21 Internal, 98 UI). Le premier vérifie le tri réel, les changements de
+préférence, les notifications et les identités persistées lors des basculements.
+Le second réutilise cinq scénarios de commandes Shell du groupe 19 et un
+scénario de navigation du groupe 12 avec le fournisseur actif. Les mesures ponctuelles de montée en charge ne font pas
+partie de ce catalogue ; leur protocole et leurs résultats sont dans la
+[validation du tri mélangé](../../docs/validation-mixed-sorting.md).
+
+### Périmètre propre au tri mélangé
+
+| Traitement | Couverture | Justification |
+|---|---|---|
+| Réutiliser avec le fournisseur actif | 19/01 création, renommage, suppression ; 19/02 presse-papiers ; 19/03 glisser-déposer ; 19/04 menus | Identifiants transmis à `SetNameOf`, `IDataObject`, `IDropTarget` et aux menus natifs. |
+| Réutiliser avec le fournisseur actif | 19/05 renommage d'un dossier ouvert ; 12/01 navigation Entrée/Alt+Haut | Raccord des identités du fournisseur aux vrais dossiers et fenêtres spatiales. Une combinaison de politique suffit ; la matrice Ctrl/préférences reste dans le groupe 12. |
+| Ajouter dans 30/01, avec 12 éléments | Ordre nom/date dans les deux sens et modes Détails/Liste/Icônes automatiques ; basculement de préférence ; notifications | Ce sont les nouveaux comportements observables. |
+| Ajouter dans le même petit scénario | Identité Unicode, sélection/focus, positions libres après basculement/réouverture ; un filtrage puis son effacement | Vérifie les conversions aux frontières du fournisseur sans répéter les suites de persistance, de rendu ou de recherche. |
+| Garder une seule fois | 19/06 Unicode/annulation ; matrices de navigation, rendu, recherche ; stockage/quotas, mises à jour, géométrie/gestes Alt, historique/Everything | Les algorithmes et politiques correspondants ne changent pas. L'identité Unicode passe déjà par le nouveau fournisseur dans 30/01 ; l'annulation reste native. |
+
+Les lanceurs réutilisent les scénarios existants : leurs gestes, assertions et
+délais n'ont pas de seconde copie. Aucun scénario de montée en charge ni seuil
+de performance n'est ajouté pour cette option. Les cas de charge déjà présents
+ne sont pas dédoublés pour le fournisseur mélangé.
+
 ## Résultats et isolation
 
 `results.json`, `summary.json`, les sorties applicatives, codes de sortie et

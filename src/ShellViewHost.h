@@ -22,7 +22,8 @@ public:
     HRESULT destroy();
     explicit operator bool() const { return browser != nullptr; }
     HRESULT currentView(REFIID iid, void **view) const;
-    HRESULT navigate(IShellItem *item);
+    HRESULT navigate(IShellItem *item, bool mixFolders = false, bool isolated = false);
+    bool mixedSortingPreference() const { return mixedSorting; }
     HRESULT lockNavigation(bool locked);
     HRESULT setFilter(IFolderFilter *filter);
     HRESULT setBounds(RECT bounds);
@@ -38,6 +39,7 @@ private:
     struct ViewSignal;
     class ViewCallback;
     CComPtr<IExplorerBrowser> browser;
+    bool mixedSorting = false;
     DWORD eventsCookie = 0;
     bool advised = false;
     std::shared_ptr<ViewSignal> signal;
