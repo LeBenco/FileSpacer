@@ -1,0 +1,7 @@
+source "https://rubygems.org"
+
+# Match the existing actions/jekyll-build-pages toolchain.
+gem "github-pages", "= 232"
+gem "jekyll-include-cache", "= 0.2.1"
+gem "jekyll-octicons", "~> 14.2"
+gem "rake", ">= 12.3.1"
