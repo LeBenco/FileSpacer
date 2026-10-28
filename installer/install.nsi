@@ -9,17 +9,12 @@ ManifestSupportedOS Win10
 ShowInstDetails show
 ShowUninstDetails show
 
-!define MULTIUSER_EXECUTIONLEVEL Highest
-!define MULTIUSER_MUI
-!define MULTIUSER_INSTALLMODE_COMMANDLINE
-!define MULTIUSER_USE_PROGRAMFILES64
-!define MULTIUSER_INSTALLMODE_DEFAULT_REGISTRY_KEY "Software\FileSpacer"
-!define MULTIUSER_INSTALLMODE_DEFAULT_REGISTRY_VALUENAME "InstallMode"
-!define MULTIUSER_INSTALLMODE_INSTDIR "FileSpacer"
-!define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_KEY "Software\FileSpacer"
-!define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_VALUENAME "Install_Dir"
-!define MULTIUSER_INSTALLMODE_FUNCTION RestoreInstallChoices
-!include MultiUser.nsh
+RequestExecutionLevel user
+InstallDir ""
+!include MUI2.nsh
+!include LogicLib.nsh
+!include WinVer.nsh
+!include FileFunc.nsh
 !include x64.nsh
 !include Sections.nsh
 !include EnumUsersReg.nsh
@@ -42,24 +37,49 @@ BrandingText "FileSpacer ${PRODUCT_VERSION} (x64)"
 !define MUI_UNICON "..\src\res\FileSpacer.ico"
 !define MUI_ABORTWARNING
 !define MUI_COMPONENTSPAGE_SMALLDESC
-!define MUI_HEADERIMAGE
-!define MUI_HEADERIMAGE_RIGHT
-!define MUI_HEADERIMAGE_BITMAP "..\build\installer-assets\header.bmp"
-!define MUI_WELCOMEFINISHPAGE_BITMAP "..\build\installer-assets\wizard-en.bmp"
+!define MUI_TEXTCOLOR "20252E"
+!define MUI_BGCOLOR "FFFFFF"
 !define MUI_CUSTOMFUNCTION_GUIINIT SetWizardArtwork
+!define MUI_CUSTOMFUNCTION_UNGUIINIT un.SetWizardArtwork
+Page Custom ScopePageShow ScopePageLeave
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW SetPagePalette
+!define MUI_LICENSEPAGE_BGCOLOR "FFFFFF"
 !insertmacro MUI_PAGE_LICENSE "..\LICENSE"
-!insertmacro MULTIUSER_PAGE_INSTALLMODE
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW SetPagePalette
 !insertmacro MUI_PAGE_COMPONENTS
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW SetPagePalette
 !insertmacro MUI_PAGE_DIRECTORY
-Page Custom LockedListShow
+Page Custom LockedListShow LockedListLeave
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW SetPagePalette
 !insertmacro MUI_PAGE_INSTFILES
-!insertmacro MUI_PAGE_FINISH
+Page Custom FinishPageShow
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW un.SetPagePalette
 !insertmacro MUI_UNPAGE_CONFIRM
-UninstPage Custom un.LockedListShow
+UninstPage Custom un.LockedListShow un.LockedListLeave
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW un.SetPagePalette
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "English"
 !insertmacro MUI_LANGUAGE "French"
+ChangeUI IDD_INST "..\build\installer-assets\wizard-ui.dll"
 
+LangString SCOPE_TITLE ${LANG_ENGLISH} "Install FileSpacer ${PRODUCT_VERSION}"
+LangString SCOPE_TITLE ${LANG_FRENCH} "Installer FileSpacer ${PRODUCT_VERSION}"
+LangString SCOPE_SUBTITLE ${LANG_ENGLISH} "Choose who can use FileSpacer."
+LangString SCOPE_SUBTITLE ${LANG_FRENCH} "Choisissez qui pourra utiliser FileSpacer."
+LangString SCOPE_CURRENT ${LANG_ENGLISH} "Only for me"
+LangString SCOPE_CURRENT ${LANG_FRENCH} "Pour moi uniquement"
+LangString SCOPE_ALL ${LANG_ENGLISH} "All users (Windows will ask you to confirm)"
+LangString SCOPE_ALL ${LANG_FRENCH} "Tous les utilisateurs (Windows demandera votre confirmation)"
+LangString NOTES_TITLE ${LANG_ENGLISH} "What's new"
+LangString NOTES_TITLE ${LANG_FRENCH} "Nouveautés"
+LangString FINISH_TITLE ${LANG_ENGLISH} "FileSpacer is installed"
+LangString FINISH_TITLE ${LANG_FRENCH} "FileSpacer est installé"
+LangString FINISH_TEXT ${LANG_ENGLISH} "Installation is complete.$\r$\n$\r$\nClick Finish to close this wizard."
+LangString FINISH_TEXT ${LANG_FRENCH} "L'installation est terminée.$\r$\n$\r$\nCliquez sur Terminer pour fermer l'assistant."
+LangString FINISH_BUTTON ${LANG_ENGLISH} "Finish"
+LangString FINISH_BUTTON ${LANG_FRENCH} "Terminer"
+LangString ERROR_MACHINE ${LANG_ENGLISH} "Installation for all users could not be completed."
+LangString ERROR_MACHINE ${LANG_FRENCH} "L'installation pour tous les utilisateurs n'a pas pu être terminée."
 LangString SEC_START ${LANG_ENGLISH} "Start Menu shortcut"
 LangString SEC_START ${LANG_FRENCH} "Raccourci dans le menu Démarrer"
 LangString SEC_CONTEXT ${LANG_ENGLISH} "Folder context menu"
@@ -92,15 +112,173 @@ LangString ERROR_SCOPE ${LANG_ENGLISH} "An installation already exists in a diff
 LangString ERROR_SCOPE ${LANG_FRENCH} "Une installation existe déjà dans un autre mode. Conservez son mode et son emplacement, ou désinstallez-la avant de les changer."
 
 Var locked
-Var uninstallDirectory
 Var choicesScope
 Var upgrading
+Var installMode
+Var parameters
+Var requestedDirectory
+Var machineWorker
+Var delegated
+Var scopeCurrent
+Var scopeAll
+Var notesText
+Var elevatedParameters
+Var elevatedResult
+Var brandingBitmap
+Var titleFont
+Var processList
+!include Elevation.nsh
 !include ShortcutAppID.nsh
 
-Function SetWizardArtwork
+!macro WIZARD_STYLE PREFIX
+Function ${PREFIX}SetWizardArtwork
+    !if "${PREFIX}" == ""
+        SetAutoClose true
+    !endif
+    InitPluginsDir
     ${If} $LANGUAGE == ${LANG_FRENCH}
-        File /oname=$PLUGINSDIR\modern-wizard.bmp "..\build\installer-assets\wizard-fr.bmp"
+        File /oname=$PLUGINSDIR\sidebar.bmp "..\build\installer-assets\wizard-fr.bmp"
+    ${Else}
+        File /oname=$PLUGINSDIR\sidebar.bmp "..\build\installer-assets\wizard-en.bmp"
     ${EndIf}
+    System::Store S
+    SetCtlColors $HWNDPARENT 20252E F1F2F6
+    GetDlgItem $0 $HWNDPARENT 1034
+    SetCtlColors $0 20252E FFFFFF
+    System::Call 'user32::SetWindowPos(p r0,p 1,i 0,i 0,i 0,i 0,i 0x13)'
+    GetDlgItem $0 $HWNDPARENT 1025
+    ${NSD_SetStretchedImage} $0 "$PLUGINSDIR\sidebar.bmp" $brandingBitmap
+    GetDlgItem $0 $HWNDPARENT 1256
+    SetCtlColors $0 69717C F1F2F6
+    GetDlgItem $0 $HWNDPARENT 1028
+    SetCtlColors $0 69717C F1F2F6
+    CreateFont $titleFont "$(^Font)" 14 700
+    GetDlgItem $0 $HWNDPARENT 1037
+    SendMessage $0 ${WM_SETFONT} $titleFont 0
+    System::Store L
+FunctionEnd
+
+Function ${PREFIX}SetPagePalette
+    System::Store S
+    System::Call 'user32::GetWindow(p $HWNDPARENT,i 5)p.r0'
+    ${While} $0 != 0
+        System::Call 'user32::GetClassNameW(p r0,w .r2,i ${NSIS_MAX_STRLEN})i.r9'
+        ${If} $2 == "#32770"
+            SetCtlColors $0 20252E FFFFFF
+            System::Call 'user32::GetWindow(p r0,i 5)p.r1'
+            ${While} $1 != 0
+                System::Call 'user32::GetClassNameW(p r1,w .r2,i ${NSIS_MAX_STRLEN})i.r9'
+                ${If} $2 == "Static"
+                ${OrIf} $2 == "Button"
+                ${OrIf} $2 == "Edit"
+                    SetCtlColors $1 20252E FFFFFF
+                ${EndIf}
+                System::Call 'user32::GetWindow(p r1,i 2)p.r1'
+            ${EndWhile}
+        ${EndIf}
+        System::Call 'user32::GetWindow(p r0,i 2)p.r0'
+    ${EndWhile}
+    System::Store L
+FunctionEnd
+
+Function ${PREFIX}FreeWizardArtwork
+    ${If} $brandingBitmap != 0
+        System::Call 'gdi32::DeleteObject(p $brandingBitmap)'
+    ${EndIf}
+    ${If} $titleFont != 0
+        System::Call 'gdi32::DeleteObject(p $titleFont)'
+    ${EndIf}
+FunctionEnd
+!macroend
+!insertmacro WIZARD_STYLE ""
+!insertmacro WIZARD_STYLE "un."
+
+Function .onGUIEnd
+    Call FreeWizardArtwork
+FunctionEnd
+Function un.onGUIEnd
+    Call un.FreeWizardArtwork
+FunctionEnd
+
+Function FinishPageShow
+    !insertmacro MUI_HEADER_TEXT $(FINISH_TITLE) ""
+    System::Store S
+    GetDlgItem $0 $HWNDPARENT 1
+    SendMessage $0 ${WM_SETTEXT} 0 "STR:$(FINISH_BUTTON)"
+    GetDlgItem $1 $HWNDPARENT 2
+    System::Alloc 16
+    Pop $2
+    ${If} $2 != 0
+        System::Call 'user32::GetWindowRect(p r1,p r2)'
+        System::Call 'user32::MapWindowPoints(p 0,p $HWNDPARENT,p r2,i 2)'
+        System::Call '*$2(i.r3,i.r4,i.r5,i.r6)'
+        IntOp $5 $5 - $3
+        IntOp $6 $6 - $4
+        System::Call 'user32::SetWindowPos(p r0,p 0,i r3,i r4,i r5,i r6,i 0x14)'
+        System::Free $2
+    ${EndIf}
+    ShowWindow $1 ${SW_HIDE}
+    GetDlgItem $0 $HWNDPARENT 3
+    ShowWindow $0 ${SW_HIDE}
+    System::Store L
+    nsDialogs::Create 1018
+    Pop $0
+    ${NSD_CreateLabel} 0 12u 100% 90u "$(FINISH_TEXT)"
+    Pop $0
+    Call SetPagePalette
+    nsDialogs::Show
+FunctionEnd
+
+Function ScopePageShow
+    !insertmacro MUI_HEADER_TEXT $(SCOPE_TITLE) $(SCOPE_SUBTITLE)
+    nsDialogs::Create 1018
+    Pop $0
+    ${If} $0 == "error"
+        Abort
+    ${EndIf}
+    ${NSD_CreateRadioButton} 15u 4u -15u 12u "$(SCOPE_CURRENT)"
+    Pop $scopeCurrent
+    ${NSD_CreateRadioButton} 15u 22u -15u 14u "$(SCOPE_ALL)"
+    Pop $scopeAll
+    ${If} $installMode == "AllUsers"
+        ${NSD_Check} $scopeAll
+    ${Else}
+        ${NSD_Check} $scopeCurrent
+    ${EndIf}
+    nsDialogs::CreateControl STATIC "${DEFAULT_STYLES}|${SS_LEFT}" 0 0 30% 100% 10u "$(NOTES_TITLE)"
+    Pop $0
+    SetCtlColors $0 20252E FFFFFF
+    nsDialogs::CreateControl EDIT "${DEFAULT_STYLES}|${WS_TABSTOP}|${WS_VSCROLL}|${ES_MULTILINE}|${ES_AUTOVSCROLL}" "${WS_EX_CLIENTEDGE}" 0 40% 100% 60% ""
+    Pop $notesText
+    SendMessage $notesText ${EM_SETLIMITTEXT} 1048576 0
+    FileOpen $1 "$PLUGINSDIR\changelog.txt" r
+    IfErrors notes_ready
+    FileSeek $1 2 SET ; Skip the UTF-16LE BOM.
+notes_read:
+    ClearErrors
+    FileReadUTF16LE $1 $0
+    IfErrors notes_close
+    SendMessage $notesText ${EM_SETSEL} -1 -1
+    SendMessage $notesText ${EM_REPLACESEL} 0 "STR:$0"
+    Goto notes_read
+notes_close:
+    FileClose $1
+notes_ready:
+    SendMessage $notesText ${EM_SETREADONLY} 1 0
+    SendMessage $notesText ${EM_SETSEL} 0 0
+    SendMessage $notesText ${EM_SCROLLCARET} 0 0
+    Call SetPagePalette
+    nsDialogs::Show
+FunctionEnd
+
+Function ScopePageLeave
+    ${NSD_GetState} $scopeAll $0
+    ${If} $0 == ${BST_CHECKED}
+        StrCpy $installMode "AllUsers"
+    ${Else}
+        StrCpy $installMode "CurrentUser"
+    ${EndIf}
+    Call SetInstallScope
 FunctionEnd
 
 Function .onInit
@@ -111,31 +289,53 @@ Function .onInit
         Quit
     ${EndIf}
     SetRegView 64
-    !insertmacro MULTIUSER_INIT
+    Call InitializeInstall
     InitPluginsDir
+    File /oname=$PLUGINSDIR\changelog.txt "..\build\installer-assets\changelog.txt"
     ; The NSIS host is x86; this worker lets LockedList inspect x64 processes.
     File /oname=$PLUGINSDIR\LockedList64.dll "plugins\LockedList64.dll"
 FunctionEnd
 
 Function un.onInit
     SetRegView 64
-    StrCpy $uninstallDirectory $INSTDIR
-    ; Use the mode belonging to this uninstaller, even if both scopes exist.
-    ReadINIStr $0 "$INSTDIR\install-info.ini" "Installation" "Mode"
+    ReadINIStr $installMode "$INSTDIR\install-info.ini" "Installation" "Mode"
     ReadINIStr $1 "$INSTDIR\install-info.ini" "Installation" "Language"
     ${If} $1 == ${LANG_ENGLISH}
     ${OrIf} $1 == ${LANG_FRENCH}
         StrCpy $LANGUAGE $1
     ${EndIf}
-    ${If} $0 != "AllUsers"
-    ${AndIf} $0 != "CurrentUser"
+    ${If} $installMode == "AllUsers"
+        UserInfo::GetAccountType
+        Pop $0
+        ${If} $0 != "Admin"
+            ${un.GetParameters} $parameters
+            ClearErrors
+            ${un.GetOptionsS} $parameters "/MachineWorker" $0
+            ${IfNot} ${Errors}
+                SetErrorLevel 2 ; Never loop if an elevated worker lacks its token.
+                Quit
+            ${EndIf}
+            StrCpy $elevatedParameters "/MachineWorker"
+            ${If} ${Silent}
+                StrCpy $elevatedParameters "$elevatedParameters /S"
+            ${EndIf}
+            ; This process is already NSIS's temporary uninstaller copy.
+            StrCpy $elevatedParameters "$elevatedParameters _?=$INSTDIR"
+            Call un.RunElevated
+            ${If} $elevatedResult == 1223
+                StrCpy $elevatedResult 1
+            ${EndIf}
+            SetErrorLevel $elevatedResult
+            Quit
+        ${EndIf}
+        SetShellVarContext all
+    ${ElseIf} $installMode == "CurrentUser"
+        SetShellVarContext current
+    ${Else}
         MessageBox MB_OK|MB_ICONSTOP $(ERROR_UNINSTALL) /SD IDOK
         SetErrorLevel 2
         Quit
     ${EndIf}
-    StrCpy $CMDLINE '"$EXEPATH" /$0'
-    !insertmacro MULTIUSER_UNINIT
-    StrCpy $INSTDIR $uninstallDirectory
     InitPluginsDir
     File /oname=$PLUGINSDIR\LockedList64.dll "plugins\LockedList64.dll"
 FunctionEnd
@@ -143,25 +343,58 @@ FunctionEnd
 !macro LOCKED_PAGE PREFIX
 Function ${PREFIX}LockedListShow
     !insertmacro MUI_HEADER_TEXT $(CLOSE_TITLE) $(CLOSE_TEXT)
-    LockedList::AddModule "$INSTDIR\FileSpacer.exe"
-    LockedList::AddModule "$INSTDIR\FileSpacerFolder.dll"
-    LockedList::Dialog /autonext
-    Pop $R0
+    StrCpy $processList 0
+    Call ${PREFIX}SearchModules
+    ${If} $locked == 0
+    ${AndIf} $R0 == "done"
+        Abort ; Skip this page when there is nothing to close.
+    ${EndIf}
+    nsDialogs::Create 1018
+    Pop $0
+    ${NSD_CreateLabel} 0 4u 100% 28u "$(CLOSE_TEXT)"
+    Pop $0
+    ${NSD_CreateListBox} 0 40u 100% 88u ""
+    Pop $processList
+    Call ${PREFIX}SearchModules
+    Call ${PREFIX}SetPagePalette
+    nsDialogs::Show
+    StrCpy $processList 0
+FunctionEnd
+Function ${PREFIX}LockedListLeave
+    SendMessage $processList ${LB_RESETCONTENT} 0 0
+    Call ${PREFIX}SearchModules
+    ${If} $locked != 0
+    ${OrIf} $R0 != "done"
+        MessageBox MB_OK|MB_ICONSTOP $(CLOSE_TEXT) /SD IDOK
+        Abort
+    ${EndIf}
 FunctionEnd
 Function ${PREFIX}SearchCallback
     Pop $R0 ; process ID
     Pop $R1 ; path
     Pop $R2 ; description
     StrCpy $locked 1
-    Push false ; Stop searching. Never terminate a process.
+    ${If} $processList != 0
+        ${If} $R2 == ""
+            StrCpy $R2 "FileSpacer"
+        ${EndIf}
+        SendMessage $processList ${LB_ADDSTRING} 0 "STR:$R2 ($R0)"
+        Push true
+    ${Else}
+        Push false ; The final check only needs one match. Never terminate a process.
+    ${EndIf}
 FunctionEnd
-Function ${PREFIX}CheckClosed
+Function ${PREFIX}SearchModules
     StrCpy $locked 0
     LockedList::AddModule "$INSTDIR\FileSpacer.exe"
     LockedList::AddModule "$INSTDIR\FileSpacerFolder.dll"
     GetFunctionAddress $R0 ${PREFIX}SearchCallback
     LockedList::SilentSearch $R0
     Pop $R0
+FunctionEnd
+Function ${PREFIX}CheckClosed
+    StrCpy $processList 0
+    Call ${PREFIX}SearchModules
     ${If} $locked != 0
     ${OrIf} $R0 != "done"
         DetailPrint $(CLOSE_TEXT)
@@ -251,7 +484,7 @@ FunctionEnd
     !insertmacro CLEAR_DEFAULT SHCTX "" "NetServer"
     !insertmacro CLEAR_DEFAULT SHCTX "" "NetShare"
     !insertmacro CLEAR_DEFAULT SHCTX "" "Directory\Background"
-    ${If} $MultiUser.InstallMode == "CurrentUser"
+    ${If} $installMode == "CurrentUser"
         Call ${PREFIX}CleanupCurrentUser
     ${Else}
         !insertmacro EnumUsersReg "${PREFIX}" ${PREFIX}CleanupUser filespacer.temp
@@ -261,15 +494,18 @@ FunctionEnd
 Section "FileSpacer" SecBase
     SectionIn RO
     ; Prevent parallel installations from masking each other's COM registration.
-    ${If} $MultiUser.InstallMode == "AllUsers"
-        ReadRegStr $0 HKCU "Software\FileSpacer" "Install_Dir"
-    ${Else}
-        ReadRegStr $0 HKLM "Software\FileSpacer" "Install_Dir"
-    ${EndIf}
-    ${If} $0 != ""
-        MessageBox MB_OK|MB_ICONSTOP $(ERROR_SCOPE) /SD IDOK
-        SetErrorLevel 2
-        Abort
+    ; The parent checks the initiating user's HKCU, not an alternate admin's.
+    ${If} $machineWorker != 1
+        ${If} $installMode == "AllUsers"
+            ReadRegStr $0 HKCU "Software\FileSpacer" "Install_Dir"
+        ${Else}
+            ReadRegStr $0 HKLM "Software\FileSpacer" "Install_Dir"
+        ${EndIf}
+        ${If} $0 != ""
+            MessageBox MB_OK|MB_ICONSTOP $(ERROR_SCOPE) /SD IDOK
+            SetErrorLevel 2
+            Abort
+        ${EndIf}
     ${EndIf}
     ReadRegStr $1 SHCTX "Software\FileSpacer" "Install_Dir"
     ${If} $1 != ""
@@ -279,6 +515,21 @@ Section "FileSpacer" SecBase
         Abort
     ${EndIf}
     Call CheckClosed ; Also covers silent setup and launches after the custom page.
+    ${If} $installMode == "AllUsers"
+    ${AndIf} $machineWorker != 1
+        StrCpy $delegated 1
+        Call InstallForAllUsers
+        ${If} $elevatedResult != 0
+            ${If} $elevatedResult == 1223
+                StrCpy $elevatedResult 1 ; Match NSIS and the updater's cancellation code.
+            ${Else}
+                MessageBox MB_OK|MB_ICONSTOP "$(ERROR_MACHINE) ($elevatedResult)" /SD IDOK
+            ${EndIf}
+            SetErrorLevel $elevatedResult
+            Abort
+        ${EndIf}
+        Goto install_done
+    ${EndIf}
     ClearErrors
     SetOutPath "$INSTDIR"
     IfErrors install_failed
@@ -292,11 +543,11 @@ Section "FileSpacer" SecBase
     File /oname=THIRD_PARTY_NOTICES.md "..\THIRD_PARTY_NOTICES.md"
     File /oname=privacy-policy.md "..\docs\privacy-policy.md"
     WriteUninstaller "$INSTDIR\uninstall.exe"
-    WriteINIStr "$INSTDIR\install-info.ini" "Installation" "Mode" $MultiUser.InstallMode
+    WriteINIStr "$INSTDIR\install-info.ini" "Installation" "Mode" $installMode
     WriteINIStr "$INSTDIR\install-info.ini" "Installation" "Language" $LANGUAGE
     IfErrors install_failed
 
-    WriteRegStr SHCTX "Software\FileSpacer" "InstallMode" $MultiUser.InstallMode
+    WriteRegStr SHCTX "Software\FileSpacer" "InstallMode" $installMode
     WriteRegStr SHCTX "Software\FileSpacer" "Install_Dir" "$INSTDIR"
     WriteRegStr SHCTX "${REG_UNINST_KEY}" "DisplayName" "FileSpacer"
     WriteRegStr SHCTX "${REG_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
@@ -304,8 +555,8 @@ Section "FileSpacer" SecBase
     WriteRegStr SHCTX "${REG_UNINST_KEY}" "InstallLocation" "$INSTDIR"
     WriteRegDWORD SHCTX "${REG_UNINST_KEY}" "VersionMajor" ${PRODUCT_VERSION_1}
     WriteRegDWORD SHCTX "${REG_UNINST_KEY}" "VersionMinor" ${PRODUCT_VERSION_2}
-    WriteRegStr SHCTX "${REG_UNINST_KEY}" "UninstallString" '"$INSTDIR\uninstall.exe" /$MultiUser.InstallMode'
-    WriteRegStr SHCTX "${REG_UNINST_KEY}" "QuietUninstallString" '"$INSTDIR\uninstall.exe" /$MultiUser.InstallMode /S'
+    WriteRegStr SHCTX "${REG_UNINST_KEY}" "UninstallString" '"$INSTDIR\uninstall.exe" /$installMode'
+    WriteRegStr SHCTX "${REG_UNINST_KEY}" "QuietUninstallString" '"$INSTDIR\uninstall.exe" /$installMode /S'
     WriteRegDWORD SHCTX "${REG_UNINST_KEY}" "NoModify" 1
     WriteRegDWORD SHCTX "${REG_UNINST_KEY}" "NoRepair" 1
     SectionGetSize ${SecBase} $0
@@ -325,6 +576,9 @@ install_done:
 SectionEnd
 
 Section "$(SEC_START)" SecStart
+    ${If} $delegated == 1
+        Goto shortcut_done
+    ${EndIf}
     ClearErrors
     CreateShortcut /NoWorkingDir "$SMPROGRAMS\FileSpacer.lnk" "$INSTDIR\FileSpacer.exe"
     IfErrors shortcut_failed
@@ -336,9 +590,13 @@ shortcut_failed:
         SetErrorLevel 2
         Abort
     ${EndIf}
+shortcut_done:
 SectionEnd
 
 Section "$(SEC_CONTEXT)" SecContext
+    ${If} $delegated == 1
+        Goto context_done
+    ${EndIf}
     ClearErrors
     !insertmacro INSTALL_VERB "Directory" "%1"
     !insertmacro INSTALL_VERB "Directory\Background" "%V"
@@ -357,6 +615,10 @@ SectionEnd
 Section /o "$(SEC_DEFAULT)" SecDefault
     ; Match settings::setDefaultBrowser: this choice belongs to the current user.
     ; Leaving this option unchecked preserves an existing default association.
+    ; The unelevated parent applies HKCU choices for the original user.
+    ${If} $machineWorker == 1
+        Goto default_done
+    ${EndIf}
     ; An unattended upgrade must not reclaim a default changed since installation.
     ${If} ${Silent}
     ${AndIf} $upgrading == 1
@@ -392,19 +654,19 @@ FunctionEnd
 !macroend
 
 Function RestoreInstallChoices
-    ; MultiUser calls this after restoring the scope and its installation directory,
-    ; including silent setup. Do not discard edits when revisiting the same scope.
-    ${If} $choicesScope == $MultiUser.InstallMode
+    ; Called after selecting the scope and restoring its installation directory.
+    ; Do not discard edits when revisiting the same scope.
+    ${If} $choicesScope == $installMode
         Return
     ${EndIf}
     Push $0
-    StrCpy $choicesScope $MultiUser.InstallMode
+    StrCpy $choicesScope $installMode
     StrCpy $upgrading 0
     !insertmacro SelectSection ${SecStart}
     !insertmacro SelectSection ${SecContext}
     !insertmacro UnselectSection ${SecDefault}
     ReadINIStr $0 "$INSTDIR\install-info.ini" "Installation" "Mode"
-    ${If} $0 == $MultiUser.InstallMode
+    ${If} $0 == $installMode
         StrCpy $upgrading 1
         ; Migrate older installers without saved checkboxes from installed state.
         ${IfNot} ${FileExists} "$SMPROGRAMS\FileSpacer.lnk"
@@ -421,15 +683,130 @@ Function RestoreInstallChoices
         !insertmacro RESTORE_COMPONENT ${SecStart} "StartMenu"
         !insertmacro RESTORE_COMPONENT ${SecContext} "ContextMenu"
         !insertmacro RESTORE_COMPONENT ${SecDefault} "DefaultFileManager"
-        ReadINIStr $0 "$INSTDIR\install-info.ini" "Installation" "Language"
-        ${If} $0 == ${LANG_ENGLISH}
-        ${OrIf} $0 == ${LANG_FRENCH}
-            StrCpy $LANGUAGE $0
-        ${EndIf}
     ${EndIf}
     Call .onSelChange
     ClearErrors
     Pop $0
+FunctionEnd
+
+Function RestoreInstallLanguage
+    ; LANGUAGE is changed only during .onInit, never while revisiting a page.
+    ReadINIStr $0 "$INSTDIR\install-info.ini" "Installation" "Language"
+    ${If} $0 == ${LANG_ENGLISH}
+    ${OrIf} $0 == ${LANG_FRENCH}
+        StrCpy $LANGUAGE $0
+    ${EndIf}
+    ClearErrors
+FunctionEnd
+
+Function SetInstallScope
+    ${If} $choicesScope == $installMode
+        Return ; Also preserve an edited installation directory on Back/Next.
+    ${EndIf}
+    ${If} $installMode == "AllUsers"
+        SetShellVarContext all
+        StrCpy $INSTDIR "$PROGRAMFILES64\FileSpacer"
+    ${Else}
+        SetShellVarContext current
+        GetKnownFolderPath $INSTDIR {5CD7AEE2-2219-4A67-B85D-6C9CE15660CB}
+        ${If} $INSTDIR == ""
+            StrCpy $INSTDIR "$LOCALAPPDATA\Programs"
+        ${EndIf}
+        StrCpy $INSTDIR "$INSTDIR\FileSpacer"
+    ${EndIf}
+    ReadRegStr $0 SHCTX "Software\FileSpacer" "Install_Dir"
+    ${If} $0 != ""
+        StrCpy $INSTDIR $0
+    ${EndIf}
+    Call RestoreInstallChoices
+FunctionEnd
+
+!macro WORKER_COMPONENT SECTION KEY
+    ClearErrors
+    ${GetOptionsS} $parameters "/${KEY}=" $0
+    IfErrors worker_invalid
+    ${If} $0 == "1"
+        !insertmacro SelectSection ${SECTION}
+    ${ElseIf} $0 == "0"
+        !insertmacro UnselectSection ${SECTION}
+    ${Else}
+        Goto worker_invalid
+    ${EndIf}
+!macroend
+
+Function InitializeInstall
+    StrCpy $requestedDirectory $INSTDIR ; NSIS's optional /D=, kept last on the command line.
+    ${GetParameters} $parameters
+    ClearErrors
+    ${GetOptionsS} $parameters "/MachineWorker" $0
+    ${IfNot} ${Errors}
+        StrCpy $machineWorker 1
+        SetSilent silent
+        UserInfo::GetAccountType
+        Pop $0
+        ${If} $0 != "Admin"
+        ${OrIf} $INSTDIR == ""
+            Goto worker_invalid
+        ${EndIf}
+        StrCpy $installMode "AllUsers"
+        SetShellVarContext all
+        ClearErrors
+        ${GetOptionsS} $parameters "/AllUsers" $0
+        IfErrors worker_invalid
+        !insertmacro WORKER_COMPONENT ${SecStart} "StartMenu"
+        !insertmacro WORKER_COMPONENT ${SecContext} "ContextMenu"
+        !insertmacro WORKER_COMPONENT ${SecDefault} "DefaultFileManager"
+        ClearErrors
+        ${GetOptionsS} $parameters "/Language=" $0
+        IfErrors worker_invalid
+        ${If} $0 != ${LANG_ENGLISH}
+        ${AndIf} $0 != ${LANG_FRENCH}
+            Goto worker_invalid
+        ${EndIf}
+        StrCpy $LANGUAGE $0
+        Call .onSelChange
+        Return
+    ${EndIf}
+    StrCpy $installMode "CurrentUser"
+    ReadRegStr $0 HKCU "Software\FileSpacer" "Install_Dir"
+    ${If} $0 == ""
+        ReadRegStr $0 HKLM "Software\FileSpacer" "Install_Dir"
+        ${If} $0 != ""
+            StrCpy $installMode "AllUsers"
+        ${EndIf}
+    ${EndIf}
+    ClearErrors
+    ${GetOptionsS} $parameters "/CurrentUser" $0
+    ${IfNot} ${Errors}
+        StrCpy $installMode "CurrentUser"
+    ${EndIf}
+    ClearErrors
+    ${GetOptionsS} $parameters "/AllUsers" $0
+    ${IfNot} ${Errors}
+        StrCpy $installMode "AllUsers"
+    ${EndIf}
+    Call SetInstallScope
+    ${If} $requestedDirectory != ""
+        StrCpy $INSTDIR $requestedDirectory
+        StrCpy $choicesScope ""
+        Call RestoreInstallChoices
+    ${EndIf}
+    Call RestoreInstallLanguage
+    Return
+worker_invalid:
+    SetErrorLevel 2
+    Quit
+FunctionEnd
+
+Function InstallForAllUsers
+    SectionGetFlags ${SecStart} $0
+    IntOp $0 $0 & ${SF_SELECTED}
+    SectionGetFlags ${SecContext} $1
+    IntOp $1 $1 & ${SF_SELECTED}
+    SectionGetFlags ${SecDefault} $2
+    IntOp $2 $2 & ${SF_SELECTED}
+    StrCpy $elevatedParameters "/S /AllUsers /MachineWorker /StartMenu=$0 /ContextMenu=$1 /DefaultFileManager=$2 /Language=$LANGUAGE /D=$INSTDIR"
+    Call RunElevated
 FunctionEnd
 
 !macro SAVE_COMPONENT SECTION KEY
@@ -440,13 +817,17 @@ FunctionEnd
 
 Section -ApplyOptions
     ; An unchecked component also removes a component installed by an earlier version.
-    ${IfNot} ${SectionIsSelected} ${SecStart}
-        Delete "$SMPROGRAMS\FileSpacer.lnk"
+    ${If} $delegated != 1
+        ${IfNot} ${SectionIsSelected} ${SecStart}
+            Delete "$SMPROGRAMS\FileSpacer.lnk"
+        ${EndIf}
+        ${IfNot} ${SectionIsSelected} ${SecContext}
+            !insertmacro REMOVE_VERBS
+            !insertmacro CLEANUP_DEFAULTS ""
+        ${EndIf}
     ${EndIf}
-    ${IfNot} ${SectionIsSelected} ${SecContext}
-        !insertmacro REMOVE_VERBS
-        !insertmacro CLEANUP_DEFAULTS ""
-    ${Else}
+    ${If} $machineWorker != 1
+    ${AndIf} ${SectionIsSelected} ${SecContext}
         ; Use the same per-user synchronization as Settings and normal startup.
         ; This also preserves and reflects a default selected before this upgrade.
         ClearErrors
@@ -459,6 +840,9 @@ Section -ApplyOptions
         ${EndIf}
     ${EndIf}
     System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
+    ${If} $delegated == 1
+        Goto options_done ; The elevated worker already persisted all checkboxes.
+    ${EndIf}
     ClearErrors
     !insertmacro SAVE_COMPONENT ${SecStart} "StartMenu"
     !insertmacro SAVE_COMPONENT ${SecContext} "ContextMenu"
@@ -468,6 +852,7 @@ Section -ApplyOptions
         SetErrorLevel 2
         Abort
     ${EndIf}
+options_done:
 SectionEnd
 
 Section "Uninstall"

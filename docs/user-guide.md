@@ -20,6 +20,10 @@ folder preserves its saved layout.
 Going to a parent does not select the folder you came from. An already-open
 parent keeps its selection. Control Panel opens in its own Windows window.
 
+![The folder title menu with window navigation and saved-layout locking.](images/window-menu.png)
+
+*The title menu, shown here with a locked window layout.*
+
 ## View and layout
 
 ### Icon layout
@@ -65,6 +69,14 @@ Drag in the file area, on its background or an item, using these defaults:
 | Move the window | Alt + left drag |
 | Resize from the bottom-right corner | Alt + right drag |
 
+**Move the window — Alt + left drag**
+
+![Moving a folder window by holding Alt and dragging in the file area with the left mouse button.](images/move-window.gif)
+
+**Resize the window — Alt + right drag**
+
+![Resizing a folder window by holding Alt and dragging in the file area with the right mouse button.](images/resize-window.gif)
+
 The selection is preserved. Escape cancels the gesture and restores the original
 geometry. Text fields, headers, scrollbars, toolbars and menus keep their normal
 behavior. Alt + double-click on an item opens its Properties.
@@ -79,15 +91,24 @@ The default-setting button resets one action. **Revert** restores the last
 applied shortcuts; **Cancel** discards pending edits. **Apply** or **OK** makes
 the changes available to open FileSpacer windows.
 
+![Shortcuts settings with the window movement action expanded.](images/shortcuts.png)
+
+*Expand an action to edit its binding or record a key-and-mouse combination.*
+
 ### Locking a saved layout
 
 Enable **Settings > General > Enable window state locking** (off by default), then choose
 **Lock window state** in the menu beside a folder's title. Locking captures its
-position, size and view settings; a padlock identifies a locked folder.
+position, size and view settings. A **padlock badge on the folder icon in the
+title bar**, beside the folder name, identifies a locked layout.
+
+<img src="images/locked-title.png" alt="Close-up of the title bar: a padlock badge overlays the folder icon beside Studio project." width="420">
+
+*The padlock badge marks the saved layout as locked.*
 
 You can still move, resize and change the view temporarily. Reopening the folder
 restores the locked layout. Individual icon positions continue to save normally.
-**Unlock window state** keeps the current layout. The padlock can be hidden in
+**Unlock window state** keeps the current layout. The badge can be hidden in
 General settings without removing the lock.
 
 Disabling the feature asks for confirmation and removes all saved locks,
@@ -108,6 +129,10 @@ History keeps five different submitted searches per folder by default. Change
 the limit in General settings from 0 to 20; 0 clears and disables history.
 Typing alone does not add a history entry. See [Everything](#everything) for
 searching subfolders or all indexed files.
+
+![Search suggestions with Everything and recent queries for fictional project files.](images/search.png)
+
+*Everything is a separate action; recent searches filter the current folder.*
 
 ## Integration
 
@@ -153,6 +178,21 @@ See the [configuration reference and examples](nilesoft-shell.md) for the exact
 settings, menu-specific rules and recommended appearance. After changing the
 configuration, unregister and register Nilesoft Shell again to apply it to newly
 opened menus.
+
+The Modern theme below uses its default rounded corners on the left and the
+recommended square corners on the right.
+
+**Navigation menu**
+
+| Default corners | Recommended square corners |
+| --- | --- |
+| <img src="images/nilesoft-navigation-default.png" alt="Title-bar navigation menu with the Modern theme's default rounded corners." width="320"> | <img src="images/nilesoft-navigation-adapted.png" alt="The same title-bar navigation menu with the recommended square corners." width="320"> |
+
+**Main menu (…)**
+
+| Default corners | Recommended square corners |
+| --- | --- |
+| <img src="images/nilesoft-main-menu-default.png" alt="Main menu with the Modern theme's default rounded corners." width="320"> | <img src="images/nilesoft-main-menu-adapted.png" alt="The same main menu with the recommended square corners." width="320"> |
 
 ## Settings and updates
 
