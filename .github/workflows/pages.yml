@@ -34,9 +34,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  prepare:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      languages: ${{ steps.languages.outputs.matrix }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -49,17 +51,54 @@ jobs:
       - run: npm ci --prefix website --ignore-scripts
       - run: npm test --prefix website
       - run: npm run generate --prefix website
+      - name: Discover generated languages
+        id: languages
+        shell: bash
+        run: |
+          node -e 'const fs = require("node:fs"); const languages = JSON.parse(fs.readFileSync("build/site-source/locales.json", "utf8")); fs.appendFileSync(process.env.GITHUB_OUTPUT, "matrix=" + JSON.stringify(languages) + "\n");'
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: website-sources
+          path: build/site-source
+
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJSON(needs.prepare.outputs.languages) }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: website-sources
+          path: build/site-source
       - uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697 # v1
         with:
-          source: build/site-source
-          destination: build/site
+          source: build/site-source/${{ matrix.language.source }}
+          destination: build/site/${{ matrix.language.path }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: website-rendered-${{ matrix.language.code }}
+          path: build/site
+
+  assemble:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: website-rendered-*
+          merge-multiple: true
+          path: build/site
       - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: build/site
 
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: build
+    needs: assemble
     runs-on: ubuntu-latest
     permissions:
       pages: write

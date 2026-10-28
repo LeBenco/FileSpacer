@@ -1,0 +1,21 @@
+{
+  "locale": "en-GB",
+  "name": "English",
+  "description": "Spatial file manager for Windows",
+  "overview": "Overview",
+  "user-guide": "User guide",
+  "privacy-policy": "Privacy policy",
+  "changelog": "Changelog",
+  "third-party-notices": "Third-party notices",
+  "language": "Language",
+  "navigation": "Main",
+  "submenu": "Submenu",
+  "search": "Search FileSpacer",
+  "noResults": "No results found",
+  "download": "Download latest release",
+  "repository": "FileSpacer on GitHub",
+  "back": "Back to top",
+  "skip": "Skip to main content",
+  "attribution": "This site uses <a href=\"https://github.com/just-the-docs/just-the-docs\">Just the Docs</a>, a documentation theme for Jekyll.",
+  "license": "Distributed under the"
+}
