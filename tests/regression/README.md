@@ -266,6 +266,16 @@ contrôle supposée.
 tests.cmd -Pattern "21-clic-activation\*"
 ```
 
+## Tri mélangé
+
+Le groupe `30-tri-melange` ajoute deux cas utiles au catalogue, soit 119 cas
+(21 Internal, 98 UI). Le premier vérifie le tri réel, les changements de
+préférence, les notifications et les identités persistées lors des basculements.
+Le second réutilise les six scénarios de commandes Shell du groupe 19 avec le
+fournisseur actif. Les mesures ponctuelles de montée en charge ne font pas
+partie de ce catalogue ; leur protocole et leurs résultats sont dans la
+[validation du tri mélangé](../../docs/validation-mixed-sorting.md).
+
 ## Résultats et isolation
 
 `results.json`, `summary.json`, les sorties applicatives, codes de sortie et
