@@ -69,6 +69,19 @@ Drag in the file area, on its background or an item, using these defaults:
 | Move the window | Alt + left drag |
 | Resize from the bottom-right corner | Alt + right drag |
 
+<details>
+<summary>See the gestures in action</summary>
+
+**Move the window — Alt + left drag**
+
+![Moving a folder window by holding Alt and dragging in the file area with the left mouse button.](images/move-window.gif)
+
+**Resize the window — Alt + right drag**
+
+![Resizing a folder window by holding Alt and dragging in the file area with the right mouse button.](images/resize-window.gif)
+
+</details>
+
 The selection is preserved. Escape cancels the gesture and restores the original
 geometry. Text fields, headers, scrollbars, toolbars and menus keep their normal
 behavior. Alt + double-click on an item opens its Properties.
@@ -91,11 +104,16 @@ the changes available to open FileSpacer windows.
 
 Enable **Settings > General > Enable window state locking** (off by default), then choose
 **Lock window state** in the menu beside a folder's title. Locking captures its
-position, size and view settings; a padlock identifies a locked folder.
+position, size and view settings. A **padlock badge on the folder icon in the
+title bar**, beside the folder name, identifies a locked layout.
+
+<img src="images/locked-title.png" alt="Close-up of the title bar: a padlock badge overlays the folder icon beside Studio project." width="420">
+
+*The padlock badge marks the saved layout as locked.*
 
 You can still move, resize and change the view temporarily. Reopening the folder
 restores the locked layout. Individual icon positions continue to save normally.
-**Unlock window state** keeps the current layout. The padlock can be hidden in
+**Unlock window state** keeps the current layout. The badge can be hidden in
 General settings without removing the lock.
 
 Disabling the feature asks for confirmation and removes all saved locks,
