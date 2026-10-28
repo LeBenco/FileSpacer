@@ -1,4 +1,5 @@
 #include "ShellViewHost.h"
+#include "MixedFolder.h"
 #include <shlwapi.h>
 #include <shldisp.h>
 #include <shdispid.h>
@@ -206,9 +207,24 @@ HRESULT ShellViewHost::currentView(REFIID iid, void **view) const {
     return current ? current->GetCurrentView(iid, view) : E_UNEXPECTED;
 }
 
-HRESULT ShellViewHost::navigate(IShellItem *item) {
+HRESULT ShellViewHost::navigate(IShellItem *item, bool mixFolders, bool isolated) {
     CComPtr<IExplorerBrowser> current = browser;
-    return current ? current->BrowseToObject(item, SBSP_ABSOLUTE) : E_UNEXPECTED;
+    if (!current) return E_UNEXPECTED;
+    mixedSorting = mixFolders;
+    CComPtr<IShellItem> target = item;
+    if (mixFolders) {
+        SFGAOF attributes = 0;
+        const SFGAOF required = SFGAO_FOLDER | SFGAO_FILESYSTEM;
+        HRESULT hr = item->GetAttributes(required | SFGAO_STREAM, &attributes);
+        if (FAILED(hr)) return hr;
+        // Virtual providers and archives retain their own native view contract.
+        if ((attributes & required) == required && !(attributes & SFGAO_STREAM)) {
+            target.Release();
+            hr = mixedFolderItem(item, isolated, &target);
+            if (FAILED(hr)) return hr;
+        }
+    }
+    return current->BrowseToObject(target, SBSP_ABSOLUTE);
 }
 
 HRESULT ShellViewHost::lockNavigation(bool locked) {
