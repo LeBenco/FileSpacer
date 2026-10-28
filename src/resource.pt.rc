@@ -4,11 +4,12 @@
 LANGUAGE LANG_PORTUGUESE, SUBLANG_PORTUGUESE
 
 IDR_ITEM_MENU   MENU {
+    MENUITEM    "Documentação\tF1", IDM_HELP
     MENUITEM    "Definições do FileSpacer\tCtrl+,", IDM_SETTINGS
-    //     MENUITEM    "Help\tF1",                     IDM_HELP // Deferred public help.
 }
 
 STRINGTABLE {
+    IDS_DOCUMENTATION_ERROR, "Não foi possível abrir a documentação local:\n%1\n\n%2"
     IDS_CAPTION_COPY_PATH, "Copiar caminho"
     IDS_CAPTION_RENAME, "Mudar o nome"
     IDS_CAPTION_PROPERTIES, "Propriedades"
