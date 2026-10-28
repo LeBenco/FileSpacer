@@ -95,6 +95,8 @@ bool getWindowStateLockEnabled();
 bool setWindowStateLockEnabled(bool value);
 bool getWindowStateLockBadgeEnabled();
 void setWindowStateLockBadgeEnabled(bool value);
+bool getMixedFolderSorting();
+void setMixedFolderSorting(bool value);
 bool getFullNamesOnSelection();
 void setFullNamesOnSelection(bool value);
 LSTATUS resetGlobalOptions();
