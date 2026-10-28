@@ -1,9 +1,22 @@
+@media screen and (min-width: 50rem) {
+  .main-header {
+    height: auto;
+  }
+
+  .main-header .search {
+    /* Match the buttons and override the theme's forced 100% height. */
+    height: calc(1.25em + 1rem) !important;
+    font-size: 0.875rem;
+  }
+}
+
 .aux-nav {
   padding-left: 1rem;
 }
 
 .aux-nav .aux-nav-list {
   align-items: center;
+  height: auto;
   gap: 0.75rem;
 }
 
