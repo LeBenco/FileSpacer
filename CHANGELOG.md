@@ -6,8 +6,11 @@
 
 ## 1.1.10 — 2026-10-27
 
+- Request Windows confirmation only when installing or uninstalling for all users, and apply personal integration choices to the user who started setup.
+- Show the complete version history in a scrollable What's new panel beside the installation choices on the first installer screen.
 - Fix upgrades resetting installer component choices; restore the saved selections and preserve the current default file manager during silent upgrades.
-- Brand the installer with a larger FileSpacer wizard illustration and a distinct icon composed from the application's native bitmaps and a separately optimized download-arrow badge at every size, retaining a thin yellow rim at the folder's right and bottom edges.
+- Use the same FileSpacer sidebar, large logo and light-gray and white palette on every installer and uninstaller screen. Give the installer a distinct icon composed from the application's native bitmaps and a separately optimized download-arrow badge at every size, retaining a thin yellow rim at the folder's right and bottom edges.
+- Fix shutdown crashes caused by eager initialization of thread-local folder data on late Shell worker threads.
 - Offer Open in Windows File Explorer in folder context menus when FileSpacer is the default file manager, and Open in FileSpacer otherwise; update the menus when changing the default, after installation and at startup.
 - Fix network server and share shortcuts opening in Windows File Explorer when FileSpacer is the default file manager. Update the installed Folder Context Menu component and select FileSpacer as default again to enable network integration.
 - Enlarge the About tab's application icon to 48 pixels at 100% scaling, with text positioned beside it.

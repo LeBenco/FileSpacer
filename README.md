@@ -18,6 +18,10 @@ Windows 10 or later, x64. Available in English and French.
 · [User guide](docs/user-guide.md)
 · [Changelog](CHANGELOG.md)
 
+![A FileSpacer folder window with freely arranged demo files and folders.](docs/images/overview.png)
+
+*Each folder keeps its own window and icon layout.*
+
 ## Features
 
 - **Arrange icons freely**, with their positions saved and restored for each

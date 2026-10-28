@@ -1,0 +1,76 @@
+{
+  "application": "FileSpacer",
+  "version": "1.1.10",
+  "captured": "2026-10-28",
+  "environment": "Windows 10 Hyper-V guest",
+  "profile": "Isolated /test profile, Debug binary; no debug console in captures",
+  "ui_language": "en-US",
+  "demo_content_language": "en",
+  "demo_content": "Fictional folders, text, CSV, Markdown and generated sample images",
+  "executable_sha256": "2f51067bd27058af7da0a10891b0a5a131bc9d38b184a136f27c693a152d6c2b",
+  "crop": "Direct screen pixels inside DWMWA_EXTENDED_FRAME_BOUNDS; no resizing or retouching",
+  "captures": [
+    {
+      "file": "locked-title.png",
+      "width": 142,
+      "height": 33,
+      "dpi": 96,
+      "sha256": "759768d964b7e92bf57ca0deea09f74c9d089c3c0e3ff49612f460fcf5cb8f36",
+      "framing": "Direct screen crop of the title label, folder icon with padlock badge, and adjacent menu button; enlarged only by the documentation display width"
+    },
+    {
+      "file": "move-window.gif",
+      "width": 1000,
+      "height": 620,
+      "dpi": 96,
+      "sha256": "1665bfc84d5d2dda4f7dc38a73de54fecd6e1be3c1cc7142ec9565297b2b22c9",
+      "frames": 50,
+      "duration_ms": 6960,
+      "loop": "forever",
+      "framing": "Fixed region showing the Windows VM wallpaper around the folder window"
+    },
+    {
+      "file": "overview.png",
+      "width": 906,
+      "height": 553,
+      "dpi": 96,
+      "sha256": "48e455c6af43d9eaa6f3651626ef5fbf09051d04f5ef345d7318800603d2c0e9"
+    },
+    {
+      "file": "resize-window.gif",
+      "width": 1000,
+      "height": 620,
+      "dpi": 96,
+      "sha256": "38882938ab0da3fe39be79268e4dd2d2a0abfdf6f33701dc6a258da487af90b4",
+      "frames": 50,
+      "duration_ms": 6940,
+      "loop": "forever",
+      "framing": "Fixed region showing the Windows VM wallpaper around the folder window"
+    },
+    {
+      "file": "search.png",
+      "width": 906,
+      "height": 553,
+      "dpi": 96,
+      "sha256": "876c046bd2cc7a5103b14ca5ec952ba0a92b9035100afefd39774f3db6877a65"
+    },
+    {
+      "file": "shortcuts.png",
+      "width": 472,
+      "height": 551,
+      "dpi": 96,
+      "sha256": "8e6712da3230aecc5c1ebc0a46c2fcbdfb1e0518374d862ec356500e3162e31d"
+    },
+    {
+      "file": "window-menu.png",
+      "width": 906,
+      "height": 553,
+      "dpi": 96,
+      "sha256": "20080a77a88d15cc3fb92d0651f8a5dc3f6e0d20fc9df9811851b739927a394f"
+    }
+  ],
+  "windows_session_ui_language": "fr-FR",
+  "language_selection": "Existing English UI resources selected at startup in a disposable 1.1.10 documentation build; PSH_USEPAGELANG selects English native property-sheet buttons",
+  "animation_recording": "ScreenToGif 2.43.2, real VM screen capture, 15 fps, seven-second loops, built-in key and mouse-event overlays",
+  "animation_export": "ScreenToGif embedded GIF encoder, Neural quantization, 256 colors, unchanged-region detection, no transparent-pixel painting"
+}

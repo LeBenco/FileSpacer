@@ -1,0 +1,104 @@
+{
+  "application": "FileSpacer",
+  "version": "1.1.10",
+  "captured": "2026-10-28",
+  "environment": "Windows 10 Hyper-V guest; isolated /test profile",
+  "nilesoft_version": "1.9.15",
+  "theme": "Modern, dark mode",
+  "variants": {
+    "default": "Unmodified theme corner radius",
+    "adapted": "Conditional border.radius=0 for FileSpacer Item Window and FileSpacer Toolbar Host, as documented in docs/nilesoft-shell.md"
+  },
+  "crop": "Direct screen pixels of the menu and its trigger, entirely inside the visible FileSpacer window; no resizing or retouching",
+  "english_capture": "Disposable FileSpacer build selecting its existing en-US resources. On the French Windows guest, Nilesoft modify rules translate the native main-menu labels for both English variants; FileSpacer labels are unchanged.",
+  "english_menu_labels": {
+    "Affichage": "View",
+    "Trier par": "Sort by",
+    "Regrouper par": "Group by",
+    "Actualiser": "Refresh",
+    "Coller": "Paste",
+    "Coller le raccourci": "Paste shortcut",
+    "Annuler Renommer": "Undo Rename",
+    "Nouveau": "New",
+    "Propriétés": "Properties"
+  },
+  "executable_sha256": {
+    "en-US": "2f51067bd27058af7da0a10891b0a5a131bc9d38b184a136f27c693a152d6c2b",
+    "fr-FR": "0ed6a7ecbb5d6e4aad5829a80cf1857f09fc41825d087c92c8296f6f25a5eaf3"
+  },
+  "configuration_restored": true,
+  "captures": [
+    {
+      "file": "nilesoft-navigation-default.png",
+      "language": "en-US",
+      "variant": "default",
+      "width": 346,
+      "height": 247,
+      "dpi": 96,
+      "sha256": "b331e630fea5cc062348a5aba4d829f2ca49784d1a5b800271f5ab8926b7d425"
+    },
+    {
+      "file": "nilesoft-main-menu-default.png",
+      "language": "en-US",
+      "variant": "default",
+      "width": 387,
+      "height": 356,
+      "dpi": 96,
+      "sha256": "f27b272349abcfc4ad82531df7ba5ba8630e67f6821c32861ca25ad2d30b0c9a"
+    },
+    {
+      "file": "nilesoft-navigation-adapted.png",
+      "language": "en-US",
+      "variant": "adapted",
+      "width": 346,
+      "height": 247,
+      "dpi": 96,
+      "sha256": "9d27d6f8237413af4662261caf26485a35fe7aee06c5ff1b7b0ee43e3c997919"
+    },
+    {
+      "file": "nilesoft-main-menu-adapted.png",
+      "language": "en-US",
+      "variant": "adapted",
+      "width": 387,
+      "height": 356,
+      "dpi": 96,
+      "sha256": "27078ab48ad5cc092d06af66385214abbb14c4bdbbb8735bca2d2ff4a618371a"
+    },
+    {
+      "file": "nilesoft-navigation-default-fr.png",
+      "language": "fr-FR",
+      "variant": "default",
+      "width": 341,
+      "height": 247,
+      "dpi": 96,
+      "sha256": "79f238118c754d9a88486fdb4c1673eccfa29e5cb44d26814f25143fe9793de4"
+    },
+    {
+      "file": "nilesoft-main-menu-default-fr.png",
+      "language": "fr-FR",
+      "variant": "default",
+      "width": 387,
+      "height": 356,
+      "dpi": 96,
+      "sha256": "5603b8b2c2035aa33501fe57fb1ac249073f6c910df6f659375e2b37ad816478"
+    },
+    {
+      "file": "nilesoft-navigation-adapted-fr.png",
+      "language": "fr-FR",
+      "variant": "adapted",
+      "width": 341,
+      "height": 247,
+      "dpi": 96,
+      "sha256": "8d28a864912558971c54f21e484082146cf0b3a9590fb038b9acb59a3e7485d8"
+    },
+    {
+      "file": "nilesoft-main-menu-adapted-fr.png",
+      "language": "fr-FR",
+      "variant": "adapted",
+      "width": 387,
+      "height": 356,
+      "dpi": 96,
+      "sha256": "71a91fbd2ec217761768c34f1f5c44da57a5fc0fa18f6ca81756ea8be983c30c"
+    }
+  ]
+}
