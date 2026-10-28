@@ -64,6 +64,8 @@ ChangeUI IDD_INST "..\build\installer-assets\wizard-ui.dll"
 
 LangString SCOPE_TITLE ${LANG_ENGLISH} "Install FileSpacer ${PRODUCT_VERSION}"
 LangString SCOPE_TITLE ${LANG_FRENCH} "Installer FileSpacer ${PRODUCT_VERSION}"
+LangString BRANDING_SUBTITLE ${LANG_ENGLISH} "Spatial file manager"
+LangString BRANDING_SUBTITLE ${LANG_FRENCH} "Gestionnaire de fichiers$\r$\nspatial"
 LangString SCOPE_SUBTITLE ${LANG_ENGLISH} "Choose who can use FileSpacer."
 LangString SCOPE_SUBTITLE ${LANG_FRENCH} "Choisissez qui pourra utiliser FileSpacer."
 LangString SCOPE_CURRENT ${LANG_ENGLISH} "Only for me"
@@ -125,6 +127,8 @@ Var notesText
 Var elevatedParameters
 Var elevatedResult
 Var brandingBitmap
+Var brandingTitleFont
+Var brandingCaptionFont
 Var titleFont
 Var processList
 !include Elevation.nsh
@@ -148,6 +152,24 @@ Function ${PREFIX}SetWizardArtwork
     System::Call 'user32::SetWindowPos(p r0,p 1,i 0,i 0,i 0,i 0,i 0x13)'
     GetDlgItem $0 $HWNDPARENT 1025
     ${NSD_SetStretchedImage} $0 "$PLUGINSDIR\sidebar.bmp" $brandingBitmap
+    ; Native Segoe UI text avoids resampling glyphs with the sidebar bitmap.
+    ; Match the wizard DPI and explicitly request CLEARTYPE_QUALITY (5).
+    System::Call 'user32::GetDC(p $HWNDPARENT)p.r1'
+    System::Call 'gdi32::GetDeviceCaps(p r1,i 90)i.r2'
+    System::Call 'user32::ReleaseDC(p $HWNDPARENT,p r1)'
+    System::Call 'kernel32::MulDiv(i 16,i r2,i -72)i.r3'
+    System::Call 'gdi32::CreateFontW(i r3,i 0,i 0,i 0,i 600,i 0,i 0,i 0,i 0,i 0,i 0,i 5,i 0,w "Segoe UI")p.r4'
+    StrCpy $brandingTitleFont $4
+    System::Call 'kernel32::MulDiv(i 9,i r2,i -72)i.r3'
+    System::Call 'gdi32::CreateFontW(i r3,i 0,i 0,i 0,i 400,i 0,i 0,i 0,i 0,i 0,i 0,i 5,i 0,w "Segoe UI")p.r4'
+    StrCpy $brandingCaptionFont $4
+    GetDlgItem $0 $HWNDPARENT 1050
+    SetCtlColors $0 20252E F1F2F6
+    SendMessage $0 ${WM_SETFONT} $brandingTitleFont 1
+    GetDlgItem $0 $HWNDPARENT 1051
+    SetCtlColors $0 69717C F1F2F6
+    SendMessage $0 ${WM_SETTEXT} 0 "STR:$(BRANDING_SUBTITLE)"
+    SendMessage $0 ${WM_SETFONT} $brandingCaptionFont 1
     GetDlgItem $0 $HWNDPARENT 1256
     SetCtlColors $0 69717C F1F2F6
     GetDlgItem $0 $HWNDPARENT 1028
@@ -187,6 +209,12 @@ Function ${PREFIX}FreeWizardArtwork
     ${EndIf}
     ${If} $titleFont != 0
         System::Call 'gdi32::DeleteObject(p $titleFont)'
+    ${EndIf}
+    ${If} $brandingTitleFont != 0
+        System::Call 'gdi32::DeleteObject(p $brandingTitleFont)'
+    ${EndIf}
+    ${If} $brandingCaptionFont != 0
+        System::Call 'gdi32::DeleteObject(p $brandingCaptionFont)'
     ${EndIf}
 FunctionEnd
 !macroend
