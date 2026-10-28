@@ -43,7 +43,7 @@
 
 #define IDD_SETTINGS_ABOUT          106
 #define IDC_UPDATES_LINK            1401
-// #define IDC_HELP_LINK               1402 // Deferred public services.
+#define IDC_HELP_LINK               1402
 // #define IDC_WEBSITE_LINK            1403 // Deferred public services.
 #define IDC_AUTO_UPDATE             1404
 #define IDC_LEGAL_INFO              1405
