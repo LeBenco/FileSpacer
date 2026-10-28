@@ -53,27 +53,29 @@
 /* Standard Just the Docs desktop widths: 16.5rem navigation + 50rem content. */
 @media screen and (min-width: 66.5rem) {
   html {
-    overflow: hidden;
+    overflow-y: auto;
     background: #eceef2;
   }
 
   body {
     display: flex;
     max-width: 66.5rem;
-    height: calc(100vh - 2rem);
+    min-height: calc(100vh - 2rem);
     margin: 1rem auto;
-    overflow: hidden;
+    overflow: clip;
     border: 1px solid #dddde4;
     border-radius: 0.75rem;
     background: #fff;
   }
 
   .side-bar {
-    position: relative;
+    position: sticky;
+    top: calc(1rem + 1px);
     left: auto;
+    align-self: flex-start;
     flex-shrink: 0;
     width: 16.5rem;
-    height: 100%;
+    height: calc(100vh - 2rem - 2px);
     border-left: 0;
   }
 
@@ -81,11 +83,11 @@
     position: relative;
     flex: 1;
     min-width: 0;
-    height: 100%;
+    height: auto;
     min-height: 0;
     margin: 0;
-    overflow-y: auto;
-    scroll-padding-top: 1.5rem;
+    overflow: visible;
+    scroll-margin-top: calc(1rem + 1px);
     background: #fff;
   }
 
