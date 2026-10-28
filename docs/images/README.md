@@ -25,7 +25,7 @@ disposable documentation build of FileSpacer 1.1.10 because the VM's active
 Windows session remains French. The source UI strings and controls are unchanged.
 
 The original French screenshots are kept as `overview-fr.png`,
-`window-menu-fr.png`, `search-fr.png` and `shortcuts-fr.png` for future French
+`window-menu-fr.png` and `search-fr.png` for future French
 documentation. Their capture context and checksums are in `provenance-fr.json`.
 They are not included in the current website build.
 
