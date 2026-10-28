@@ -1,0 +1,192 @@
+#include <windows.h>
+#include "resource.h"
+
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+
+IDR_ITEM_MENU   MENU {
+    MENUITEM    "FileSpacer-Einstellungen\tStrg+,", IDM_SETTINGS
+    //     MENUITEM    "Help\tF1",                     IDM_HELP // Deferred public help.
+}
+
+STRINGTABLE {
+    IDS_CAPTION_COPY_PATH, "Pfad kopieren"
+    IDS_CAPTION_RENAME, "Umbenennen"
+    IDS_CAPTION_PROPERTIES, "Eigenschaften"
+    IDS_CAPTION_CLOSE_PARENTS, "Übergeordnete Fenster schließen"
+    IDS_CAPTION_REOPEN_NAMED, "„%1“ erneut öffnen\tStrg+Umschalt+T"
+    IDS_REOPEN_LAST, "Zuletzt geschlossenes Fenster erneut öffnen"
+    IDS_REOPEN_MENU, "Zuletzt geschlossenes Fenster erneut öffnen\tStrg+Umschalt+T"
+    IDS_REOPEN_NAMED, "„%1“ erneut öffnen"
+    IDS_REOPEN_EMPTY, "Kein geschlossenes Fenster zum erneuten Öffnen vorhanden."
+    IDS_REOPEN_FAILED, "Dieser Ordner konnte nicht erneut geöffnet werden:\n%1\n\nEr bleibt im Verlauf geschlossener Fenster erhalten."
+
+    IDS_QUICK_ACCESS, "Schnellzugriff"
+    IDS_QUICK_ACCESS_UNAVAILABLE, "Der Schnellzugriff ist nicht verfügbar.\n\nSchritt: %1\nCode: 0x%2!08X!\n\nDrücken Sie Strg+C, um diese Meldung zu kopieren."
+    IDS_QUICK_ACCESS_EMPTY, "Keine angehefteten Ordner"
+    IDS_QUICK_ACCESS_OPEN, "Schnellzugriff wird geöffnet"
+    IDS_QUICK_ACCESS_KEY, "Eigenschaft für angeheftete Ordner wird gesucht"
+    IDS_QUICK_ACCESS_ENUM, "Elemente werden aufgelistet"
+    IDS_QUICK_ACCESS_READ, "Elemente werden gelesen"
+    IDS_QUICK_ACCESS_TARGET, "Ordner werden aufgelöst"
+    IDS_QUICK_ACCESS_MENU, "Menü wird erstellt"
+
+    IDS_APP_NAME,           "FileSpacer"
+    IDS_PATH_BAR,           "Adresse"
+    IDS_SEARCH_NAME,        "Nach Namen suchen"
+    IDS_SEARCH_CUE,         "In %1 suchen"
+    IDS_SEARCH_APPLY,       "Suchen"
+    IDS_SEARCH_ERROR,       "Der Namensfilter konnte nicht angewendet werden.\n\n%1"
+    IDS_ADDRESS_NOT_FOLDER, "Diese Adresse ist kein Ordner: %1"
+
+    IDS_UNKNOWN_ERROR,      "Unbekannter Fehler"
+    IDS_ERROR_CAPTION,      "Fehler"
+    IDS_CANT_FIND_ITEM,     "Element unter diesem Pfad nicht gefunden: %1"
+    IDS_INVALID_CHARS,      "Der Dateiname darf folgende Zeichen nicht enthalten:\n\\ / : * ? "" < > |"
+
+    IDS_SETTINGS_CAPTION,   "FileSpacer-Einstellungen"
+    IDS_NO_UPDATE_CAPTION,  "Keine Updates verfügbar"
+    IDS_NO_UPDATE,          "Sie verwenden die neueste Version."
+    IDS_UPDATE_CLOSE_BUTTON, "Schließen"
+    IDS_UPDATE_SEARCH_BUTTON, "Nach &Updates suchen"
+    IDS_UPDATE_INSTALL_BUTTON, "FileSpacer v%1 &installieren"
+    IDS_UPDATE_RELEASE_BUTTON, "FileSpacer v%1 anzeigen"
+    IDS_UPDATE_SEARCHING, "Es wird nach einer neuen Version gesucht…"
+    IDS_UPDATE_AVAILABLE, "Eine neue Version ist verfügbar."
+    IDS_UPDATE_DOWNLOADING, "Installationsprogramm wird heruntergeladen…"
+    IDS_UPDATE_PROGRESS, "Download: %1!u! %%"
+    IDS_UPDATE_CLOSING, "Download überprüft. Fenster werden geschlossen…"
+    IDS_UPDATE_FAILED, "Das Update ist fehlgeschlagen. Sie können es erneut versuchen."
+    IDS_UPDATE_FAILED_DETAIL, "Update fehlgeschlagen: %1"
+    IDS_UPDATE_LEGACY, "Laden Sie diese Version von der GitHub-Release-Seite herunter."
+    IDS_UPDATE_BUSY, "Eine FileSpacer-Installation wird bereits ausgeführt."
+    IDS_UPDATE_CONFIRM_TITLE, "Neue Version von FileSpacer installieren?"
+    IDS_UPDATE_CONFIRM, "Das Installationsprogramm wird heruntergeladen und überprüft. Während des Downloads können Sie FileSpacer weiter verwenden und den Vorgang abbrechen. Anschließend werden alle FileSpacer-Fenster geschlossen. Ihre Positionen und Einstellungen werden wie gewohnt gespeichert, bevor die Installation startet. Geöffnete Ordner werden nach Abschluss oder Abbruch der Installation erneut geöffnet.\n\nFortfahren?"
+    IDS_UPDATE_RELAY_FAILED, "Das Update oder die Wiederherstellung der Fenster konnte nicht abgeschlossen werden. Kein Prozess wurde zwangsweise beendet.\n\n%1"
+    IDS_UPDATE_RESTORE_FAILED, "%1!u! Ordner konnten nicht erneut geöffnet werden. Sie wurden möglicherweise verschoben oder gelöscht oder sind nicht verfügbar. Die übrigen Ordner wurden erneut geöffnet."
+    IDS_UPDATE_ERROR,       "Fehler bei der Suche nach Updates"
+    IDS_UPDATE_NOTIF_TITLE, "FileSpacer-Update"
+    IDS_UPDATE_NOTIF_INFO,  "Eine neue Version von FileSpacer ist verfügbar. Klicken Sie auf diese Benachrichtigung, um die Downloadseite zu öffnen."
+
+    IDS_OPEN_PARENT_COMMAND,"Übergeordneten Ordner öffnen\n(Alt+Pfeil nach oben)"
+    IDS_MENU_COMMAND,       "Menü..."
+    IDS_REFRESH_COMMAND,    "Aktualisieren\n(Strg+R)"
+    IDS_VIEW_COMMAND,       "Ansicht..."
+	
+	IDS_FOLDER_STATUS,          "%1!d! Elemente"
+	IDS_FOLDER_STATUS_SEL,      "%1!d! Elemente    %2!d! ausgewählt"
+	IDS_FOLDER_STATUS_SEL_SIZE, "%1!d! Elemente    %2!d! ausgewählt    %3!s!"
+    IDS_FOLDER_ERROR,       "Ordner konnte nicht geöffnet werden"
+
+    IDS_SUCCESS_CAPTION,    "Erfolgreich"
+    IDS_CONFIRM_CAPTION,    "Sind Sie sicher?"
+    IDS_RESET_FOLDER_STATE_CONFIRM, "Alle gespeicherten Fensterpositionen, -größen und Ansichtseinstellungen der Ordner zurücksetzen? Die FileSpacer-Ordnerfenster werden geschlossen und nicht automatisch erneut geöffnet. Der Einstellungsdialog wird geschlossen und nicht übernommene Änderungen werden verworfen. Bereits gespeicherte Anwendungseinstellungen bleiben erhalten."
+    IDS_RESET_FOLDER_STATE_CLOSE_ERROR, "Nicht alle FileSpacer-Fenster konnten geschlossen werden. Ein Fenster hat das Schließen möglicherweise abgelehnt oder reagiert nicht. Keine gespeicherten Ordnerzustände wurden gelöscht. Einige Fenster sind möglicherweise bereits geschlossen."
+    IDS_RESET_FOLDER_STATE_STORAGE_ERROR, "Die Datenbank mit den Ordnerzuständen konnte nicht geöffnet werden. Keine gespeicherten Ordnerzustände wurden gelöscht."
+    IDS_RESET_FOLDER_STATE_DELETE_ERROR, "Die Datenbank mit den Ordnerzuständen konnte nicht zurückgesetzt werden. Der Löschvorgang wurde nicht übernommen."
+    IDS_RESET_FOLDER_STATE_SUCCESS, "Gespeicherte Fensterpositionen, -größen und Ansichtseinstellungen wurden zurückgesetzt. Die Anwendungseinstellungen bleiben erhalten."
+    IDS_FOLDER_WIDTH_LABEL,   "&Breite (min. %1!d! px):"
+    IDS_FOLDER_HEIGHT_LABEL,  "&Höhe (min. %1!d! px):"
+    IDS_FOLDER_WIDTH_INVALID, "Die Breite muss eine ganze Zahl von mindestens %1!d! px sein."
+    IDS_FOLDER_HEIGHT_INVALID,"Die Höhe muss eine ganze Zahl von mindestens %1!d! px sein."
+    IDS_FOLDER_STATE_ERROR, "FileSpacer konnte die Datenbank mit den Ordnerzuständen nicht lesen oder speichern. Prüfen Sie, ob der Ordner mit den lokalen Anwendungsdaten beschreibbar und die Datenbank verfügbar ist. Bestehende Daten wurden nicht zurückgesetzt."
+    IDS_BROWSER_SET_FAILED, "Standard-Dateibrowser konnte nicht geändert werden"
+    IDS_BROWSER_DIRECTORY, "Ordner"
+    IDS_BROWSER_COMPRESSED_FOLDER, "Komprimierte (ZIP-)Ordner"
+    IDS_BROWSER_DRIVE, "Laufwerke"
+    IDS_BROWSER_NETWORK_SERVER, "Netzwerkserver"
+    IDS_BROWSER_NETWORK_SHARE, "Netzwerkfreigaben"
+    IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (Fehler %2!lu!)"
+    IDS_BROWSER_ASSOCIATIONS_FAILED, "Die folgenden Zuordnungen konnten nicht geändert werden:\n\n%1\n\nErfolgreiche Änderungen bleiben erhalten."
+    IDS_BROWSER_SET,        "FileSpacer wurde als Standard-Dateibrowser festgelegt. Sie können dies in den FileSpacer-Einstellungen rückgängig machen."
+    IDS_BROWSER_RESET,      "Der Datei-Explorer wurde wieder als Standard-Dateibrowser festgelegt."
+    IDS_REQUIRE_CONTEXT,    "Installieren oder aktualisieren Sie FileSpacer mit aktivierter Option „Ordnerkontextmenü“, um den Standard-Dateibrowser auch für Netzwerkpfade ändern zu können."
+    IDS_BROWSER_SET_CONFIRM,"Dadurch wird der Windows-Datei-Explorer als Standardprogramm zum Öffnen aller Ordner ersetzt."
+
+    IDS_WELCOME_HEADER,     "Willkommen"
+    IDS_WELCOME_BODY,       "Sie verwenden FileSpacer offenbar zum ersten Mal."
+#if 0 // Deferred public services.
+    IDS_WELCOME_TUTORIAL,   "&Anleitung lesen\nFür neue Benutzer empfohlen"
+#endif
+    IDS_WELCOME_BROWSER,    "Als &Standard-Dateibrowser festlegen\nDatei-Explorer als Standard ersetzen"
+    IDS_WELCOME_UPDATE,     "&Wöchentlich nach Updates suchen"
+
+    IDS_ADMIN_WARNING,      "Sie versuchen, FileSpacer als Administrator auszuführen. Dies wird nicht empfohlen!\n\nTrotzdem fortfahren?"
+    IDS_DONT_ASK,           "Nicht erneut fragen"
+
+// Deferred donation paragraph:
+// If you enjoy FileSpacer, please consider donating to support its development. Click the Donate button above.\r\n
+    IDS_LEGAL_INFO,         "\
+Copyright (c) 2026 Benco (Änderungen an FileSpacer)\r\n\
+FileSpacer ist eine Abspaltung von ChromaFiler.\r\n\
+Copyright (c) 2023 J. van't Hoog (ChromaFiler)\r\n\
+\r\n\
+GNU General Public License v3.0. Ohne Gewährleistung.\r\n\
+Sie dürfen diese Software gemäß der GPL weiterverbreiten und verändern.\r\n\
+Siehe LICENSE.txt im Installationsordner und https://www.gnu.org/licenses/gpl-3.0.html\r\n\
+Ursprüngliches Projekt: https://github.com/vanjac/chromafiler\r\n\
+\r\n\
+Verwendete Komponenten:\r\n\
+- SQLite 3.53.4: gemeinfrei; https://sqlite.org/\r\n\
+- Lucide-/Feather-Navigationssymbole: ISC / MIT; https://lucide.dev/license\r\n\
+  Vollständige Hinweise: Lucide-LICENSE.txt im Installationsordner.\r\n\
+- Segoe Fluent Icons / Segoe MDL2 Assets: von Windows bereitgestellte Microsoft-Schriftarten; nicht mitgeliefert.\r\n\
+\r\n\
+Installationsprogramm erstellt mit NSIS (Nullsoft Scriptable Install System): https://nsis.sourceforge.io/\r\n\
+LockedList-Plugin: zlib-Lizenz.\r\n\
+Copyright (c) 2013 Afrow Soft Ltd. Siehe LockedList-LICENSE.txt.\r\n\
+"
+    IDS_RECOVERY_UNAVAILABLE, "Die Absturzdiagnose konnte nicht initialisiert werden. FileSpacer wird in dieser Sitzung ohne sie ausgeführt; Ihre Einstellungen bleiben erhalten."
+    IDS_RESET_CLI_ARGUMENTS, "Verwenden Sie entweder /reset-options oder /reset-all, ohne Ordnerpfad oder weitere Optionen. Im Debug-Modus kann /test hinzugefügt werden, um nur Testdaten zurückzusetzen."
+    IDS_RESET_CLI_BUSY, "Für das Zurücksetzen konnte kein exklusiver Zugriff auf die Einstellungen erlangt werden. Schließen Sie alle FileSpacer-Instanzen, prüfen Sie den Zugriff auf den lokalen Datenordner und versuchen Sie es erneut. Keine Einstellungen wurden gelöscht."
+    IDS_RESET_CLI_FAILED, "Die Einstellungen konnten nicht vollständig zurückgesetzt werden: %1\n\nEinige Einstellungen wurden möglicherweise bereits zurückgesetzt. Bei Verwendung von /reset-all wurden die Ordnerzustände bereits zurückgesetzt."
+    IDS_RESET_CLI_ALL_DONE, "Globale Einstellungen sowie gespeicherte Fensterpositionen, -größen und Ansichten wurden zurückgesetzt. Ihre Dateien und Windows-Zuordnungen bleiben erhalten."
+    IDS_RESET_CLI_OPTIONS_DONE, "Globale Einstellungen wurden zurückgesetzt. Gespeicherte Ordnerzustände, Ihre Dateien und Windows-Zuordnungen bleiben erhalten."
+    IDS_RECOVERY_CRASHED, "FileSpacer wurde nach einem schwerwiegenden Fehler beendet. Ein Diagnosebericht und ein Speicherabbild wurden im lokalen Anwendungsdatenordner gespeichert; Ihre Einstellungen bleiben erhalten."
+    IDS_SETTINGS_ACCESS_FAILED, "FileSpacer kann nicht auf die Einstellungen zugreifen. Möglicherweise läuft ein Zurücksetzen, oder der lokale Datenordner ist nicht erreichbar. Versuchen Sie es nach Abschluss der Wartung erneut."
+}
+
+
+STRINGTABLE
+BEGIN
+    IDS_OPEN_IN_EXPLORER, "Im Windows-Datei-Explorer öffnen"
+    IDS_CONTEXT_MENU_SYNC_FAILED, "Die Ordnerkontextmenüs konnten nicht aktualisiert werden (Fehler %1!u!): %2"
+  IDS_LOCK_WINDOW_STATE "Fensterzustand sperren"
+  IDS_UNLOCK_WINDOW_STATE "Fensterzustand entsperren"
+  IDS_WINDOW_STATE_LOCKED "Fensterzustand gesperrt. Layoutänderungen bleiben vorübergehend."
+  IDS_DISABLE_STATE_LOCK_CONFIRM "Beim Deaktivieren dieser Funktion werden alle Sperren von Fensterzuständen gelöscht. Fenster speichern ihren Zustand anschließend wieder wie gewohnt. Möchten Sie fortfahren?"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_MOVE "Fenster verschieben"
+  IDS_SHORTCUT_RESIZE "Fenstergröße ändern"
+  IDS_SHORTCUT_DISABLED "deaktiviert"
+  IDS_SHORTCUT_LEFT "linken"
+  IDS_SHORTCUT_MIDDLE "mittleren"
+  IDS_SHORTCUT_RIGHT "rechten"
+  IDS_SHORTCUT_CTRL "Strg + "
+  IDS_SHORTCUT_ALT "Alt + "
+  IDS_SHORTCUT_SHIFT "Umschalt + "
+  IDS_SHORTCUT_DESCRIPTION "%1!s!Ziehen mit der %2!s! Maustaste"
+  IDS_SHORTCUT_HEADER "%1!s! (%2!s!)"
+  IDS_SHORTCUT_ACCESSIBLE "Aktivieren: %1!s!"
+  IDS_SHORTCUT_GENERAL "Einige Kombinationen sind für Auswahl und Menüs reserviert."
+  IDS_SHORTCUT_RESERVED "Reservierte Kombination. Fügen Sie Alt hinzu oder wählen Sie die mittlere Maustaste."
+  IDS_SHORTCUT_CONFLICT "Bereits %1!s! zugewiesen."
+  IDS_SHORTCUT_RECORD "Tasten und Maustaste direkt eingeben..."
+  IDS_SHORTCUT_STOP_RECORD "Direkte Eingabe ausblenden"
+  IDS_SHORTCUT_LEFT_HINT "Für die Auswahl reserviert"
+  IDS_SHORTCUT_RIGHT_HINT "Für Menüs und Auswahl reserviert"
+  IDS_SHORTCUT_SAVE_FAILED "Die Tastenkombinationen konnten nicht gespeichert werden. Die bisherigen Einstellungen bleiben aktiv."
+  IDS_SEARCH_EVERYTHING "Mit Everything suchen"
+  IDS_SEARCH_MENU "Everything und letzte Suchanfragen"
+  IDS_EVERYTHING_ERROR "Everything konnte nicht gestartet werden.\nPrüfen Sie den Pfad unter Einstellungen > Integration.\n\nAusführbare Datei: %1!s!\nFehler %2!u!: %3!s!"
+  IDS_EVERYTHING_AUTO "Automatisch erkennen"
+  IDS_EVERYTHING_FOLDER "Aktueller Ordner und Unterordner"
+  IDS_EVERYTHING_EVERYWHERE "Überall"
+  IDS_EVERYTHING_NOT_FOUND "Everything wurde nicht gefunden. Installieren Sie es oder wählen Sie die ausführbare Datei manuell aus."
+  IDS_SEARCH_HISTORY_INVALID "Geben Sie einen Wert zwischen 0 und 20 für den Suchverlauf ein."
+  IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer platziert neue Fenster so, dass sie andere Ordnerfenster möglichst wenig überlappen.\n\nDas gilt für Ordner ohne gespeicherte Fensterposition oder wenn eine gespeicherte Position nach einem Wechsel der Bildschirmanordnung nicht mehr erreichbar ist. Eine weiterhin nutzbare gespeicherte Position hat Vorrang."
+  IDS_GROUP_FOLDER_WINDOWS_HELP "Neue Ordnerfenster können entsprechend Ihren Windows-Einstellungen unter einer gemeinsamen Schaltfläche in der Taskleiste gruppiert werden.\n\nIst diese Option deaktiviert, können Ordner einzeln an die Taskleiste angeheftet werden.\n\nDie Änderung gilt nur für danach geöffnete Fenster. Bereits geöffnete Fenster behalten ihre aktuelle Gruppierung."
+  IDS_EVERYTHING_EXECUTABLE "Ausführbare Everything-Datei (*.exe)"
+END
