@@ -179,6 +179,21 @@ settings, menu-specific rules and recommended appearance. After changing the
 configuration, unregister and register Nilesoft Shell again to apply it to newly
 opened menus.
 
+The Modern theme below uses its default rounded corners on the left and the
+recommended square corners on the right.
+
+**Navigation menu**
+
+| Default corners | Recommended square corners |
+| --- | --- |
+| <img src="images/nilesoft-navigation-default.png" alt="Title-bar navigation menu with the Modern theme's default rounded corners." width="320"> | <img src="images/nilesoft-navigation-adapted.png" alt="The same title-bar navigation menu with the recommended square corners." width="320"> |
+
+**Main menu (…)**
+
+| Default corners | Recommended square corners |
+| --- | --- |
+| <img src="images/nilesoft-main-menu-default.png" alt="Main menu with the Modern theme's default rounded corners." width="320"> | <img src="images/nilesoft-main-menu-adapted.png" alt="The same main menu with the recommended square corners." width="320"> |
+
 ## Settings and updates
 
 **Preferences.** **Ctrl+,** opens Settings, even with the toolbar hidden.
