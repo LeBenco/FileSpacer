@@ -28,6 +28,46 @@ Win32 et les informations MSAA publiques. Les tests peuvent observer les
 contrôles Windows pour vérifier un geste ; cette instrumentation n'est pas une
 dépendance de l'application aux contrôles internes du Shell.
 
+## Tri mélangé facultatif
+
+Dans Affichage → Fichiers, « Mélanger les dossiers et les fichiers dans le tri »
+active un fournisseur de dossier pour les répertoires du système de fichiers.
+Le réglage est désactivé par défaut. Les dossiers virtuels et archives conservent
+leur fournisseur Windows. Le tri agit en vues Détails, Liste et dans les modes à
+icônes lorsque le rangement automatique est actif ; les positions libres restent
+libres.
+
+`FileSpacerFolder.dll` implémente les interfaces publiques `IShellFolder2` et
+`IPersistFolder2`, et crée la vue native par `SHCreateShellFolderView`.
+`IExplorerBrowser` reste l'hôte. Le fournisseur possède ses identifiants d'éléments
+et délègue énumération, métadonnées, icônes, menus, données de transfert et actions
+au dossier Windows sous-jacent. Il compare les valeurs de colonnes sans ajouter
+de priorité aux dossiers ; les comparaisons d'identité restent celles de Windows.
+
+La racine est un point de jonction Shell interne, `ShellView.{CLSID}`, dans les
+données locales de FileSpacer. Son enregistrement COM est propre à l'utilisateur ;
+aucune entrée n'est ajoutée au Bureau ou à Ce PC. Le mode de test utilise un CLSID
+et un dossier distincts, supprimés par ses scénarios. L'installateur distribue la
+DLL avec l'application et retire l'inscription qu'il possède à la désinstallation.
+
+Le contrat `IMixedFolder` appartient à FileSpacer et sert uniquement à convertir
+les identifiants entre la vue et les vrais objets Shell. Les fenêtres, commandes
+externes et données SQLite continuent d'utiliser les identifiants natifs. Ainsi,
+l'activation, la désactivation et la réouverture partagent sélection, focus et
+positions sans changer le format de la base. Les notifications du dossier réel
+sont relayées vers l'espace de noms du fournisseur par `SHChangeNotify`.
+
+Les cas `30-tri-melange` vérifient le tri réel, les changements de préférence,
+les notifications et les commandes Shell existantes avec le fournisseur actif.
+Ils complètent les tests natifs de persistance et de rendu ; leur présence seule
+ne constitue pas une validation de la suite complète.
+
+[Comparaison de performances et choix du fournisseur conditionnel](validation-mixed-sorting.md).
+
+Références : [vue native](https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shcreateshellfolderview),
+[points de jonction](https://learn.microsoft.com/en-us/windows/win32/shell/nse-junction),
+[notifications](https://learn.microsoft.com/en-us/windows/win32/shell/sfvm-getnotify).
+
 ## Navigation et Panneau de configuration
 
 La sélection automatique du dossier d'origine lors d'une remontée est retirée
