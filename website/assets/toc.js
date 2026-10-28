@@ -16,9 +16,3 @@ function selectHeading() {
 }
 window.addEventListener('hashchange', selectHeading);
 document.addEventListener('DOMContentLoaded', selectHeading);
-
-document.addEventListener('click', event => {
-  if (event.target.closest('a[href="#top"]')) {
-    document.querySelector('.main')?.scrollTo({top: 0});
-  }
-});
