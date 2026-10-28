@@ -99,22 +99,13 @@ def generate(source, icon_source, output, inkscape):
                 if icon.ico.getimage((size, size)).convert("RGBA").tobytes() != frame.convert("RGBA").tobytes():
                     raise ValueError(f"Installer ICO pixels changed at {size}px.")
 
-    for language, caption in (("en", "Spatial file manager"),
-                              ("fr", "Gestionnaire de fichiers spatial")):
-        sidebar = svg(164, 314)
-        ET.SubElement(sidebar, NS + "rect", width="164", height="314", fill="#F1F2F6")
+    # Branding text is drawn by native, DPI-scaled controls in the wizard.
+    for language in ("en", "fr"):
+        sidebar = svg(164, 176)
+        ET.SubElement(sidebar, NS + "rect", width="164", height="176", fill="#F1F2F6")
         ET.SubElement(sidebar, NS + "use", href="#app", x="23", y="48",
                       width="118", height="118")
-        title = ET.SubElement(sidebar, NS + "text", x="82", y="200",
-                              fill="#20252E", **{"text-anchor": "middle",
-                              "font-family": "Segoe UI", "font-size": "18",
-                              "font-weight": "600"})
-        title.text = "FileSpacer"
-        tagline = ET.SubElement(sidebar, NS + "text", x="82", y="220",
-                                fill="#69717C", **{"text-anchor": "middle",
-                                "font-family": "Segoe UI", "font-size": "8.5"})
-        tagline.text = caption
-        png = render(sidebar, f"wizard-{language}", 328, 628)
+        png = render(sidebar, f"wizard-{language}", 328, 352)
         with Image.open(png) as image:
             image.convert("RGB").save(output / f"wizard-{language}.bmp")
 

@@ -6,6 +6,7 @@
 
 - Add an optional mixed sort for files and folders in filesystem directories, under Display → Files, while retaining the native Windows view and saved folder state. The option is off by default.
 - Add German, Italian, Spanish, Portuguese (Portugal) and Greek interface translations alongside English and French.
+- Render the installer's title and subtitle as larger, DPI-aware Windows text with ClearType smoothing.
 - Expand the online user guide with English and French screenshots, window gesture demonstrations and Nilesoft Shell menu comparisons.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.10...v1.2.0)
