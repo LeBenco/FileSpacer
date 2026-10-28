@@ -1,0 +1,192 @@
+#include <windows.h>
+#include "resource.h"
+
+LANGUAGE LANG_PORTUGUESE, SUBLANG_PORTUGUESE
+
+IDR_ITEM_MENU   MENU {
+    MENUITEM    "Definições do FileSpacer\tCtrl+,", IDM_SETTINGS
+    //     MENUITEM    "Help\tF1",                     IDM_HELP // Deferred public help.
+}
+
+STRINGTABLE {
+    IDS_CAPTION_COPY_PATH, "Copiar caminho"
+    IDS_CAPTION_RENAME, "Mudar o nome"
+    IDS_CAPTION_PROPERTIES, "Propriedades"
+    IDS_CAPTION_CLOSE_PARENTS, "Fechar janelas de pastas superiores"
+    IDS_CAPTION_REOPEN_NAMED, "Reabrir «%1»\tCtrl+Shift+T"
+    IDS_REOPEN_LAST, "Reabrir a última janela fechada"
+    IDS_REOPEN_MENU, "Reabrir a última janela fechada\tCtrl+Shift+T"
+    IDS_REOPEN_NAMED, "Reabrir «%1»"
+    IDS_REOPEN_EMPTY, "Não há janelas fechadas para reabrir."
+    IDS_REOPEN_FAILED, "Não foi possível reabrir esta pasta:\n%1\n\nA pasta mantém-se no histórico de janelas fechadas."
+
+    IDS_QUICK_ACCESS, "Acesso rápido"
+    IDS_QUICK_ACCESS_UNAVAILABLE, "O Acesso rápido não está disponível.\n\nPasso: %1\nCódigo: 0x%2!08X!\n\nPrima Ctrl+C para copiar esta mensagem."
+    IDS_QUICK_ACCESS_EMPTY, "Não existem pastas afixadas"
+    IDS_QUICK_ACCESS_OPEN, "A abrir o Acesso rápido"
+    IDS_QUICK_ACCESS_KEY, "A procurar a propriedade das pastas afixadas"
+    IDS_QUICK_ACCESS_ENUM, "A enumerar os itens"
+    IDS_QUICK_ACCESS_READ, "A ler os itens"
+    IDS_QUICK_ACCESS_TARGET, "A localizar as pastas"
+    IDS_QUICK_ACCESS_MENU, "A criar o menu"
+
+    IDS_APP_NAME,           "FileSpacer"
+    IDS_PATH_BAR,           "Endereço"
+    IDS_SEARCH_NAME,        "Pesquisar por nome"
+    IDS_SEARCH_CUE,         "Pesquisar em %1"
+    IDS_SEARCH_APPLY,       "Pesquisar"
+    IDS_SEARCH_ERROR,       "Não foi possível aplicar o filtro por nome.\n\n%1"
+    IDS_ADDRESS_NOT_FOLDER, "Este endereço não corresponde a uma pasta: %1"
+
+    IDS_UNKNOWN_ERROR,      "Erro desconhecido"
+    IDS_ERROR_CAPTION,      "Erro"
+    IDS_CANT_FIND_ITEM,     "Não foi possível encontrar o item no caminho: %1"
+    IDS_INVALID_CHARS,      "O nome do ficheiro não pode conter os seguintes caracteres:\n\\ / : * ? "" < > |"
+
+    IDS_SETTINGS_CAPTION,   "Definições do FileSpacer"
+    IDS_NO_UPDATE_CAPTION,  "Não existem atualizações disponíveis"
+    IDS_NO_UPDATE,          "Está a utilizar a versão mais recente."
+    IDS_UPDATE_CLOSE_BUTTON, "Fechar"
+    IDS_UPDATE_SEARCH_BUTTON, "&Procurar atualizações"
+    IDS_UPDATE_INSTALL_BUTTON, "&Instalar o FileSpacer v%1"
+    IDS_UPDATE_RELEASE_BUTTON, "Ver o FileSpacer v%1"
+    IDS_UPDATE_SEARCHING, "A procurar uma nova versão…"
+    IDS_UPDATE_AVAILABLE, "Está disponível uma nova versão."
+    IDS_UPDATE_DOWNLOADING, "A transferir o instalador…"
+    IDS_UPDATE_PROGRESS, "Transferência: %1!u! %%"
+    IDS_UPDATE_CLOSING, "Transferência verificada. A fechar janelas…"
+    IDS_UPDATE_FAILED, "A atualização falhou. Pode tentar novamente."
+    IDS_UPDATE_FAILED_DETAIL, "Falha na atualização: %1"
+    IDS_UPDATE_LEGACY, "Transfira esta versão a partir da página de versões no GitHub."
+    IDS_UPDATE_BUSY, "Já está em curso uma instalação do FileSpacer."
+    IDS_UPDATE_CONFIRM_TITLE, "Instalar a nova versão do FileSpacer?"
+    IDS_UPDATE_CONFIRM, "O instalador será transferido e verificado. Pode continuar a utilizar o FileSpacer e cancelar durante a transferência. Depois, todas as janelas do FileSpacer serão fechadas, guardando as posições e definições como habitualmente, e a instalação será iniciada. As pastas abertas serão reabertas depois de a instalação terminar ou ser cancelada.\n\nContinuar?"
+    IDS_UPDATE_RELAY_FAILED, "Não foi possível concluir a atualização ou o restauro das janelas. Nenhum processo foi terminado à força.\n\n%1"
+    IDS_UPDATE_RESTORE_FAILED, "Não foi possível reabrir %1!u! pastas. Podem ter sido movidas, eliminadas ou estar indisponíveis. As restantes pastas foram reabertas."
+    IDS_UPDATE_ERROR,       "Erro ao procurar atualizações"
+    IDS_UPDATE_NOTIF_TITLE, "Atualização do FileSpacer"
+    IDS_UPDATE_NOTIF_INFO,  "Está disponível uma nova versão do FileSpacer. Clique nesta notificação para abrir a página de transferência."
+
+    IDS_OPEN_PARENT_COMMAND,"Abrir pasta superior\n(Alt+Seta para cima)"
+    IDS_MENU_COMMAND,       "Menu..."
+    IDS_REFRESH_COMMAND,    "Atualizar\n(Ctrl+R)"
+    IDS_VIEW_COMMAND,       "Ver..."
+	
+	IDS_FOLDER_STATUS,          "%1!d! itens"
+	IDS_FOLDER_STATUS_SEL,      "%1!d! itens    %2!d! selecionados"
+	IDS_FOLDER_STATUS_SEL_SIZE, "%1!d! itens    %2!d! selecionados    %3!s!"
+    IDS_FOLDER_ERROR,       "Não foi possível abrir a pasta"
+
+    IDS_SUCCESS_CAPTION,    "Operação concluída"
+    IDS_CONFIRM_CAPTION,    "Tem a certeza?"
+    IDS_RESET_FOLDER_STATE_CONFIRM, "Repor todas as posições, dimensões e opções de visualização das pastas guardadas? As janelas de pastas do FileSpacer serão fechadas e não serão reabertas automaticamente. A janela de definições será fechada e as alterações não aplicadas serão descartadas. As definições da aplicação guardadas anteriormente serão mantidas."
+    IDS_RESET_FOLDER_STATE_CLOSE_ERROR, "Não foi possível fechar todas as janelas do FileSpacer. Uma janela pode ter recusado fechar ou não estar a responder. Não foram eliminados estados de pastas guardados. Algumas janelas podem já ter sido fechadas."
+    IDS_RESET_FOLDER_STATE_STORAGE_ERROR, "Não foi possível abrir a base de dados do estado das pastas. Não foram eliminados estados guardados."
+    IDS_RESET_FOLDER_STATE_DELETE_ERROR, "Não foi possível repor a base de dados do estado das pastas. A eliminação não foi confirmada."
+    IDS_RESET_FOLDER_STATE_SUCCESS, "As posições, dimensões e opções de visualização guardadas das pastas foram repostas. As definições da aplicação foram mantidas."
+    IDS_FOLDER_WIDTH_LABEL,   "&Largura (mín.: %1!d! px):"
+    IDS_FOLDER_HEIGHT_LABEL,  "&Altura (mín.: %1!d! px):"
+    IDS_FOLDER_WIDTH_INVALID, "A largura tem de ser um número inteiro de, pelo menos, %1!d! px."
+    IDS_FOLDER_HEIGHT_INVALID,"A altura tem de ser um número inteiro de, pelo menos, %1!d! px."
+    IDS_FOLDER_STATE_ERROR, "O FileSpacer não conseguiu ler ou guardar a base de dados do estado das pastas. Verifique se é possível escrever na pasta de dados locais da aplicação e se a base de dados está disponível. Os dados existentes não foram repostos."
+    IDS_BROWSER_SET_FAILED, "Não foi possível alterar o gestor de ficheiros predefinido"
+    IDS_BROWSER_DIRECTORY, "Pastas"
+    IDS_BROWSER_COMPRESSED_FOLDER, "Pastas comprimidas (ZIP)"
+    IDS_BROWSER_DRIVE, "Unidades"
+    IDS_BROWSER_NETWORK_SERVER, "Servidores de rede"
+    IDS_BROWSER_NETWORK_SHARE, "Partilhas de rede"
+    IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (erro %2!lu!)"
+    IDS_BROWSER_ASSOCIATIONS_FAILED, "Não foi possível alterar as seguintes associações:\n\n%1\n\nAs alterações efetuadas com êxito foram mantidas."
+    IDS_BROWSER_SET,        "O FileSpacer foi definido como gestor de ficheiros predefinido. Pode reverter esta alteração nas definições do FileSpacer."
+    IDS_BROWSER_RESET,      "O Explorador de Ficheiros foi reposto como gestor de ficheiros predefinido."
+    IDS_REQUIRE_CONTEXT,    "Instale ou atualize o FileSpacer com a opção «Menu de contexto das pastas» ativada para poder alterar o gestor de ficheiros predefinido, incluindo as localizações de rede."
+    IDS_BROWSER_SET_CONFIRM,"Isto substituirá o Explorador de Ficheiros do Windows como programa predefinido para abrir todas as pastas."
+
+    IDS_WELCOME_HEADER,     "Bem-vindo"
+    IDS_WELCOME_BODY,       "Parece ser a primeira vez que utiliza o FileSpacer."
+#if 0 // Deferred public services.
+    IDS_WELCOME_TUTORIAL,   "&Ler tutorial\nRecomendado para novos utilizadores"
+#endif
+    IDS_WELCOME_BROWSER,    "&Definir como gestor de ficheiros predefinido\nSubstituir o Explorador de Ficheiros predefinido"
+    IDS_WELCOME_UPDATE,     "Procurar &atualizações semanalmente"
+
+    IDS_ADMIN_WARNING,      "Está a tentar executar o FileSpacer como administrador. Isto não é recomendado!\n\nContinuar mesmo assim?"
+    IDS_DONT_ASK,           "Não voltar a perguntar"
+
+// Deferred donation paragraph:
+// If you enjoy FileSpacer, please consider donating to support its development. Click the Donate button above.\r\n
+    IDS_LEGAL_INFO,         "\
+Copyright (c) 2026 Benco (modificações ao FileSpacer)\r\n\
+O FileSpacer é uma derivação do ChromaFiler.\r\n\
+Copyright (c) 2023 J. van't Hoog (ChromaFiler)\r\n\
+\r\n\
+Licença Pública Geral GNU v3.0. Sem garantia.\r\n\
+Pode redistribuir e modificar este software nos termos da GPL.\r\n\
+Consulte LICENSE.txt na pasta de instalação e https://www.gnu.org/licenses/gpl-3.0.html\r\n\
+Projeto original: https://github.com/vanjac/chromafiler\r\n\
+\r\n\
+Componentes da aplicação:\r\n\
+- SQLite 3.53.4: domínio público; https://sqlite.org/\r\n\
+- Ícones de navegação Lucide / Feather: ISC / MIT; https://lucide.dev/license\r\n\
+  Avisos completos: Lucide-LICENSE.txt na pasta de instalação.\r\n\
+- Segoe Fluent Icons / Segoe MDL2 Assets: tipos de letra da Microsoft fornecidos pelo Windows; não redistribuídos.\r\n\
+\r\n\
+Instalador criado com NSIS (Nullsoft Scriptable Install System): https://nsis.sourceforge.io/\r\n\
+Plug-in LockedList: licença zlib.\r\n\
+Copyright (c) 2013 Afrow Soft Ltd. Consulte LockedList-LICENSE.txt.\r\n\
+"
+    IDS_RECOVERY_UNAVAILABLE, "Não foi possível inicializar o diagnóstico de falhas. O FileSpacer será executado sem este diagnóstico nesta sessão; as suas preferências foram preservadas."
+    IDS_RESET_CLI_ARGUMENTS, "Utilize /reset-options ou /reset-all, sem o caminho de uma pasta ou outras opções. No modo Debug, pode adicionar /test para repor apenas os dados de teste."
+    IDS_RESET_CLI_BUSY, "Não foi possível obter acesso exclusivo às definições para as repor. Feche todas as instâncias do FileSpacer, verifique o acesso à pasta de dados locais e tente novamente. Nenhuma definição foi eliminada."
+    IDS_RESET_CLI_FAILED, "Não foi possível concluir a reposição das preferências: %1\n\nAlgumas preferências podem já ter sido repostas. Se utilizou /reset-all, as definições das pastas já foram repostas."
+    IDS_RESET_CLI_ALL_DONE, "As preferências globais e as posições, dimensões e definições de visualização guardadas das pastas foram repostas. Os seus ficheiros e associações do Windows foram preservados."
+    IDS_RESET_CLI_OPTIONS_DONE, "As preferências globais foram repostas. As definições de pastas guardadas, os seus ficheiros e as associações do Windows foram preservados."
+    IDS_RECOVERY_CRASHED, "O FileSpacer parou após um erro grave. Foram guardados um relatório de diagnóstico e um despejo de memória nos dados locais da aplicação; as suas preferências foram preservadas."
+    IDS_SETTINGS_ACCESS_FAILED, "O FileSpacer não consegue obter acesso partilhado às definições. Pode estar em curso uma reposição ou a pasta de dados locais pode estar inacessível. Tente novamente após a conclusão da manutenção."
+}
+
+
+STRINGTABLE
+BEGIN
+    IDS_OPEN_IN_EXPLORER, "Abrir no Explorador de Ficheiros do Windows"
+    IDS_CONTEXT_MENU_SYNC_FAILED, "Não foi possível atualizar os menus de contexto das pastas (erro %1!u!): %2"
+  IDS_LOCK_WINDOW_STATE "Bloquear o estado da janela"
+  IDS_UNLOCK_WINDOW_STATE "Desbloquear o estado da janela"
+  IDS_WINDOW_STATE_LOCKED "Estado da janela bloqueado. As alterações de disposição são temporárias."
+  IDS_DISABLE_STATE_LOCK_CONFIRM "A desativação desta funcionalidade eliminará todos os bloqueios do estado das janelas. As janelas voltarão a guardar normalmente o seu estado. Pretende continuar?"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_MOVE "Mover a janela"
+  IDS_SHORTCUT_RESIZE "Redimensionar a janela"
+  IDS_SHORTCUT_DISABLED "desativado"
+  IDS_SHORTCUT_LEFT "botão esquerdo"
+  IDS_SHORTCUT_MIDDLE "botão central"
+  IDS_SHORTCUT_RIGHT "botão direito"
+  IDS_SHORTCUT_CTRL "Ctrl + "
+  IDS_SHORTCUT_ALT "Alt + "
+  IDS_SHORTCUT_SHIFT "Shift + "
+  IDS_SHORTCUT_DESCRIPTION "%1!s!arrastar com o %2!s!"
+  IDS_SHORTCUT_HEADER "%1!s! (%2!s!)"
+  IDS_SHORTCUT_ACCESSIBLE "Ativar: %1!s!"
+  IDS_SHORTCUT_GENERAL "Algumas combinações estão reservadas para seleção e menus."
+  IDS_SHORTCUT_RESERVED "Combinação reservada. Adicione Alt ou escolha o botão central."
+  IDS_SHORTCUT_CONFLICT "Já está atribuída a %1!s!."
+  IDS_SHORTCUT_RECORD "Introduza diretamente as teclas e o botão do rato..."
+  IDS_SHORTCUT_STOP_RECORD "Ocultar introdução direta"
+  IDS_SHORTCUT_LEFT_HINT "Reservado para seleção"
+  IDS_SHORTCUT_RIGHT_HINT "Reservado para menus e seleção"
+  IDS_SHORTCUT_SAVE_FAILED "Não foi possível guardar os atalhos. As definições anteriores mantêm-se ativas."
+  IDS_SEARCH_EVERYTHING "Pesquisar no Everything"
+  IDS_SEARCH_MENU "Everything e pesquisas recentes"
+  IDS_EVERYTHING_ERROR "Não foi possível iniciar o Everything.\nVerifique o caminho em Definições > Integração.\n\nExecutável: %1!s!\nErro %2!u!: %3!s!"
+  IDS_EVERYTHING_AUTO "Deteção automática"
+  IDS_EVERYTHING_FOLDER "Pasta atual e subpastas"
+  IDS_EVERYTHING_EVERYWHERE "Em todo o lado"
+  IDS_EVERYTHING_NOT_FOUND "O Everything não foi encontrado. Instale-o ou selecione manualmente o executável."
+  IDS_SEARCH_HISTORY_INVALID "Introduza um limite do histórico de pesquisas entre 0 e 20."
+  IDS_SMART_WINDOW_PLACEMENT_HELP "O FileSpacer coloca as novas janelas de modo a minimizar a sobreposição com outras janelas de pastas.\n\nIsto aplica-se a pastas sem uma posição de janela guardada ou cuja posição já não é acessível após uma alteração da configuração dos ecrãs. Uma posição guardada ainda utilizável tem prioridade."
+  IDS_GROUP_FOLDER_WINDOWS_HELP "As novas janelas de pastas podem ser agrupadas num único botão da barra de tarefas, de acordo com as definições do Windows.\n\nQuando esta opção está desativada, as pastas podem ser afixadas separadamente na barra de tarefas.\n\nEsta definição aplica-se às janelas abertas após a alteração. As janelas já abertas mantêm o agrupamento atual."
+  IDS_EVERYTHING_EXECUTABLE "Executável do Everything (*.exe)"
+END
