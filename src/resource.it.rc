@@ -1,0 +1,192 @@
+#include <windows.h>
+#include "resource.h"
+
+LANGUAGE LANG_ITALIAN, SUBLANG_ITALIAN
+
+IDR_ITEM_MENU   MENU {
+    MENUITEM    "Impostazioni di FileSpacer\tCtrl+,", IDM_SETTINGS
+    //     MENUITEM    "Help\tF1",                     IDM_HELP // Deferred public help.
+}
+
+STRINGTABLE {
+    IDS_CAPTION_COPY_PATH, "Copia percorso"
+    IDS_CAPTION_RENAME, "Rinomina"
+    IDS_CAPTION_PROPERTIES, "Proprietà"
+    IDS_CAPTION_CLOSE_PARENTS, "Chiudi le finestre delle cartelle superiori"
+    IDS_CAPTION_REOPEN_NAMED, "Riapri «%1»\tCtrl+Maiusc+T"
+    IDS_REOPEN_LAST, "Riapri l'ultima finestra chiusa"
+    IDS_REOPEN_MENU, "Riapri l'ultima finestra chiusa\tCtrl+Maiusc+T"
+    IDS_REOPEN_NAMED, "Riapri «%1»"
+    IDS_REOPEN_EMPTY, "Nessuna finestra chiusa da riaprire."
+    IDS_REOPEN_FAILED, "Impossibile riaprire questa cartella:\n%1\n\nRimane nella cronologia delle finestre chiuse."
+
+    IDS_QUICK_ACCESS, "Accesso rapido"
+    IDS_QUICK_ACCESS_UNAVAILABLE, "Accesso rapido non è disponibile.\n\nPassaggio: %1\nCodice: 0x%2!08X!\n\nPremi Ctrl+C per copiare questo messaggio."
+    IDS_QUICK_ACCESS_EMPTY, "Nessuna cartella aggiunta"
+    IDS_QUICK_ACCESS_OPEN, "Apertura di Accesso rapido"
+    IDS_QUICK_ACCESS_KEY, "Ricerca della proprietà delle cartelle aggiunte"
+    IDS_QUICK_ACCESS_ENUM, "Elenco degli elementi"
+    IDS_QUICK_ACCESS_READ, "Lettura degli elementi"
+    IDS_QUICK_ACCESS_TARGET, "Individuazione delle cartelle"
+    IDS_QUICK_ACCESS_MENU, "Creazione del menu"
+
+    IDS_APP_NAME,           "FileSpacer"
+    IDS_PATH_BAR,           "Indirizzo"
+    IDS_SEARCH_NAME,        "Cerca per nome"
+    IDS_SEARCH_CUE,         "Cerca in %1"
+    IDS_SEARCH_APPLY,       "Cerca"
+    IDS_SEARCH_ERROR,       "Impossibile applicare il filtro per nome.\n\n%1"
+    IDS_ADDRESS_NOT_FOLDER, "Questo indirizzo non corrisponde a una cartella: %1"
+
+    IDS_UNKNOWN_ERROR,      "Errore sconosciuto"
+    IDS_ERROR_CAPTION,      "Errore"
+    IDS_CANT_FIND_ITEM,     "Impossibile trovare l'elemento nel percorso: %1"
+    IDS_INVALID_CHARS,      "Il nome del file non può contenere i caratteri seguenti:\n\\ / : * ? "" < > |"
+
+    IDS_SETTINGS_CAPTION,   "Impostazioni di FileSpacer"
+    IDS_NO_UPDATE_CAPTION,  "Nessun aggiornamento disponibile"
+    IDS_NO_UPDATE,          "Stai usando la versione più recente."
+    IDS_UPDATE_CLOSE_BUTTON, "Chiudi"
+    IDS_UPDATE_SEARCH_BUTTON, "&Verifica disponibilità aggiornamenti"
+    IDS_UPDATE_INSTALL_BUTTON, "&Installa FileSpacer v%1"
+    IDS_UPDATE_RELEASE_BUTTON, "Visualizza FileSpacer v%1"
+    IDS_UPDATE_SEARCHING, "Ricerca di una nuova versione…"
+    IDS_UPDATE_AVAILABLE, "È disponibile una nuova versione."
+    IDS_UPDATE_DOWNLOADING, "Download del programma di installazione…"
+    IDS_UPDATE_PROGRESS, "Download: %1!u! %%"
+    IDS_UPDATE_CLOSING, "Download verificato. Chiusura delle finestre…"
+    IDS_UPDATE_FAILED, "Aggiornamento non riuscito. Puoi riprovare."
+    IDS_UPDATE_FAILED_DETAIL, "Aggiornamento non riuscito: %1"
+    IDS_UPDATE_LEGACY, "Scarica questa versione dalla relativa pagina delle release su GitHub."
+    IDS_UPDATE_BUSY, "È già in corso un'installazione di FileSpacer."
+    IDS_UPDATE_CONFIRM_TITLE, "Installare la nuova versione di FileSpacer?"
+    IDS_UPDATE_CONFIRM, "Il programma di installazione verrà scaricato e verificato. Durante il download puoi continuare a usare FileSpacer e annullare l'operazione. Successivamente, tutte le finestre di FileSpacer verranno chiuse, salvando come di consueto posizione e impostazioni, e inizierà l'installazione. Le cartelle aperte verranno riaperte al termine dell'installazione o dopo il suo annullamento.\n\nContinuare?"
+    IDS_UPDATE_RELAY_FAILED, "Impossibile completare l'aggiornamento o il ripristino delle finestre. Nessun processo è stato terminato forzatamente.\n\n%1"
+    IDS_UPDATE_RESTORE_FAILED, "Impossibile riaprire %1!u! cartelle. Potrebbero essere state spostate, eliminate o non essere disponibili. Le altre cartelle sono state riaperte."
+    IDS_UPDATE_ERROR,       "Errore durante la verifica degli aggiornamenti"
+    IDS_UPDATE_NOTIF_TITLE, "Aggiornamento di FileSpacer"
+    IDS_UPDATE_NOTIF_INFO,  "È disponibile una nuova versione di FileSpacer. Fai clic su questa notifica per aprire la pagina di download."
+
+    IDS_OPEN_PARENT_COMMAND,"Apri cartella superiore\n(Alt+Freccia SU)"
+    IDS_MENU_COMMAND,       "Menu..."
+    IDS_REFRESH_COMMAND,    "Aggiorna\n(Ctrl+R)"
+    IDS_VIEW_COMMAND,       "Visualizza..."
+	
+	IDS_FOLDER_STATUS,          "%1!d! elementi"
+	IDS_FOLDER_STATUS_SEL,      "%1!d! elementi    %2!d! selezionati"
+	IDS_FOLDER_STATUS_SEL_SIZE, "%1!d! elementi    %2!d! selezionati    %3!s!"
+    IDS_FOLDER_ERROR,       "Impossibile aprire la cartella"
+
+    IDS_SUCCESS_CAPTION,    "Operazione riuscita"
+    IDS_CONFIRM_CAPTION,    "Confermare l'operazione?"
+    IDS_RESET_FOLDER_STATE_CONFIRM, "Reimpostare tutte le posizioni, le dimensioni e le impostazioni di visualizzazione salvate delle cartelle? Le finestre delle cartelle di FileSpacer verranno chiuse e non saranno riaperte automaticamente. La finestra delle impostazioni verrà chiusa e le modifiche non applicate saranno scartate. Le impostazioni dell'applicazione già salvate saranno mantenute."
+    IDS_RESET_FOLDER_STATE_CLOSE_ERROR, "Impossibile chiudere tutte le finestre di FileSpacer. Una finestra potrebbe aver rifiutato la chiusura o non rispondere. Nessuno stato salvato delle cartelle è stato eliminato. Alcune finestre potrebbero essere già state chiuse."
+    IDS_RESET_FOLDER_STATE_STORAGE_ERROR, "Impossibile aprire il database dello stato delle cartelle. Nessuno stato salvato è stato eliminato."
+    IDS_RESET_FOLDER_STATE_DELETE_ERROR, "Impossibile reimpostare il database dello stato delle cartelle. L'eliminazione non è stata confermata."
+    IDS_RESET_FOLDER_STATE_SUCCESS, "Le posizioni, le dimensioni e le impostazioni di visualizzazione salvate delle cartelle sono state reimpostate. Le impostazioni dell'applicazione sono state mantenute."
+    IDS_FOLDER_WIDTH_LABEL,   "&Larghezza (min.: %1!d! px):"
+    IDS_FOLDER_HEIGHT_LABEL,  "&Altezza (min.: %1!d! px):"
+    IDS_FOLDER_WIDTH_INVALID, "La larghezza deve essere un numero intero di almeno %1!d! px."
+    IDS_FOLDER_HEIGHT_INVALID,"L'altezza deve essere un numero intero di almeno %1!d! px."
+    IDS_FOLDER_STATE_ERROR, "FileSpacer non è riuscito a leggere o salvare il database dello stato delle cartelle. Verifica che la cartella dei dati locali dell'applicazione sia scrivibile e che il database sia disponibile. I dati esistenti non sono stati reimpostati."
+    IDS_BROWSER_SET_FAILED, "Impossibile modificare il gestore di file predefinito"
+    IDS_BROWSER_DIRECTORY, "Cartelle"
+    IDS_BROWSER_COMPRESSED_FOLDER, "Cartelle compresse (ZIP)"
+    IDS_BROWSER_DRIVE, "Unità"
+    IDS_BROWSER_NETWORK_SERVER, "Server di rete"
+    IDS_BROWSER_NETWORK_SHARE, "Condivisioni di rete"
+    IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (errore %2!lu!)"
+    IDS_BROWSER_ASSOCIATIONS_FAILED, "Impossibile modificare le associazioni seguenti:\n\n%1\n\nLe modifiche riuscite sono state mantenute."
+    IDS_BROWSER_SET,        "FileSpacer è stato impostato come gestore di file predefinito. Puoi annullare la modifica nelle impostazioni di FileSpacer."
+    IDS_BROWSER_RESET,      "Esplora file è stato ripristinato come gestore di file predefinito."
+    IDS_REQUIRE_CONTEXT,    "Installa o aggiorna FileSpacer con l'opzione «Menu contestuale delle cartelle» abilitata per poter cambiare il gestore di file predefinito, anche per i percorsi di rete."
+    IDS_BROWSER_SET_CONFIRM,"Esplora file di Windows verrà sostituito come programma predefinito per l'apertura di tutte le cartelle."
+
+    IDS_WELCOME_HEADER,     "Benvenuto"
+    IDS_WELCOME_BODY,       "Sembra che sia la prima volta che usi FileSpacer."
+#if 0 // Deferred public services.
+    IDS_WELCOME_TUTORIAL,   "&Leggi la guida\nConsigliata ai nuovi utenti"
+#endif
+    IDS_WELCOME_BROWSER,    "&Imposta come gestore di file predefinito\nSostituisci Esplora file come programma predefinito"
+    IDS_WELCOME_UPDATE,     "Controlla gli &aggiornamenti ogni settimana"
+
+    IDS_ADMIN_WARNING,      "Stai tentando di eseguire FileSpacer come amministratore. Questa operazione è sconsigliata!\n\nContinuare comunque?"
+    IDS_DONT_ASK,           "Non chiedere più"
+
+// Deferred donation paragraph:
+// If you enjoy FileSpacer, please consider donating to support its development. Click the Donate button above.\r\n
+    IDS_LEGAL_INFO,         "\
+Copyright (c) 2026 Benco (modifiche a FileSpacer)\r\n\
+FileSpacer è un fork di ChromaFiler.\r\n\
+Copyright (c) 2023 J. van't Hoog (ChromaFiler)\r\n\
+\r\n\
+GNU General Public License v3.0. Nessuna garanzia.\r\n\
+È consentito ridistribuire e modificare questo software secondo la GPL.\r\n\
+Vedi LICENSE.txt nella cartella di installazione e https://www.gnu.org/licenses/gpl-3.0.html\r\n\
+Progetto originale: https://github.com/vanjac/chromafiler\r\n\
+\r\n\
+Componenti dell'applicazione:\r\n\
+- SQLite 3.53.4: dominio pubblico; https://sqlite.org/\r\n\
+- Icone di navigazione Lucide / Feather: ISC / MIT; https://lucide.dev/license\r\n\
+  Avvisi completi: Lucide-LICENSE.txt nella cartella di installazione.\r\n\
+- Segoe Fluent Icons / Segoe MDL2 Assets: caratteri Microsoft forniti da Windows; non ridistribuiti.\r\n\
+\r\n\
+Programma di installazione creato con NSIS (Nullsoft Scriptable Install System): https://nsis.sourceforge.io/\r\n\
+Plugin LockedList: licenza zlib.\r\n\
+Copyright (c) 2013 Afrow Soft Ltd. Vedi LockedList-LICENSE.txt.\r\n\
+"
+    IDS_RECOVERY_UNAVAILABLE, "Impossibile inizializzare la diagnostica degli arresti anomali. FileSpacer verrà eseguito senza di essa per questa sessione; le tue preferenze sono state conservate."
+    IDS_RESET_CLI_ARGUMENTS, "Usa /reset-options oppure /reset-all, senza un percorso di cartella o altre opzioni. In modalità Debug puoi aggiungere /test per reimpostare solo i dati di test."
+    IDS_RESET_CLI_BUSY, "Impossibile ottenere l'accesso esclusivo alle impostazioni per la reimpostazione. Chiudi tutte le istanze di FileSpacer, verifica l'accesso alla cartella dei dati locali e riprova. Nessuna impostazione è stata eliminata."
+    IDS_RESET_CLI_FAILED, "Impossibile completare la reimpostazione delle preferenze: %1\n\nAlcune preferenze potrebbero essere già state reimpostate. Se è stato usato /reset-all, le impostazioni delle cartelle sono già state reimpostate."
+    IDS_RESET_CLI_ALL_DONE, "Le preferenze globali e le posizioni, le dimensioni e le impostazioni di visualizzazione salvate delle cartelle sono state reimpostate. I tuoi file e le associazioni di Windows sono stati conservati."
+    IDS_RESET_CLI_OPTIONS_DONE, "Le preferenze globali sono state reimpostate. Le impostazioni salvate delle cartelle, i tuoi file e le associazioni di Windows sono stati conservati."
+    IDS_RECOVERY_CRASHED, "FileSpacer si è arrestato dopo un errore grave. Un rapporto diagnostico e un dump della memoria sono stati salvati nei dati locali dell'applicazione; le tue preferenze sono state conservate."
+    IDS_SETTINGS_ACCESS_FAILED, "FileSpacer non riesce a ottenere l'accesso condiviso alle impostazioni. Potrebbe essere in corso una reimpostazione oppure la cartella dei dati locali potrebbe non essere accessibile. Riprova al termine della manutenzione."
+}
+
+
+STRINGTABLE
+BEGIN
+    IDS_OPEN_IN_EXPLORER, "Apri in Esplora file di Windows"
+    IDS_CONTEXT_MENU_SYNC_FAILED, "Impossibile aggiornare i menu contestuali delle cartelle (errore %1!u!): %2"
+  IDS_LOCK_WINDOW_STATE "Blocca lo stato della finestra"
+  IDS_UNLOCK_WINDOW_STATE "Sblocca lo stato della finestra"
+  IDS_WINDOW_STATE_LOCKED "Stato della finestra bloccato. Le modifiche alla disposizione restano temporanee."
+  IDS_DISABLE_STATE_LOCK_CONFIRM "Disattivando questa funzione saranno eliminati tutti i blocchi dello stato delle finestre. Le finestre torneranno a salvare normalmente il proprio stato. Vuoi continuare?"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_MOVE "Sposta la finestra"
+  IDS_SHORTCUT_RESIZE "Ridimensiona la finestra"
+  IDS_SHORTCUT_DISABLED "disattivato"
+  IDS_SHORTCUT_LEFT "pulsante sinistro"
+  IDS_SHORTCUT_MIDDLE "pulsante centrale"
+  IDS_SHORTCUT_RIGHT "pulsante destro"
+  IDS_SHORTCUT_CTRL "Ctrl + "
+  IDS_SHORTCUT_ALT "Alt + "
+  IDS_SHORTCUT_SHIFT "Maiusc + "
+  IDS_SHORTCUT_DESCRIPTION "%1!s!trascina con il %2!s!"
+  IDS_SHORTCUT_HEADER "%1!s! (%2!s!)"
+  IDS_SHORTCUT_ACCESSIBLE "Attiva: %1!s!"
+  IDS_SHORTCUT_GENERAL "Alcune combinazioni sono riservate alla selezione e ai menu."
+  IDS_SHORTCUT_RESERVED "Combinazione riservata. Aggiungi Alt o scegli il pulsante centrale."
+  IDS_SHORTCUT_CONFLICT "Già assegnata a %1!s!."
+  IDS_SHORTCUT_RECORD "Premi direttamente i tasti e il pulsante del mouse..."
+  IDS_SHORTCUT_STOP_RECORD "Nascondi acquisizione diretta"
+  IDS_SHORTCUT_LEFT_HINT "Riservato alla selezione"
+  IDS_SHORTCUT_RIGHT_HINT "Riservato ai menu e alla selezione"
+  IDS_SHORTCUT_SAVE_FAILED "Impossibile salvare le scelte rapide. Le impostazioni precedenti restano attive."
+  IDS_SEARCH_EVERYTHING "Cerca in Everything"
+  IDS_SEARCH_MENU "Everything e ricerche recenti"
+  IDS_EVERYTHING_ERROR "Impossibile avviare Everything.\nControlla il percorso in Impostazioni > Integrazione.\n\nEseguibile: %1!s!\nErrore %2!u!: %3!s!"
+  IDS_EVERYTHING_AUTO "Rilevamento automatico"
+  IDS_EVERYTHING_FOLDER "Cartella corrente e sottocartelle"
+  IDS_EVERYTHING_EVERYWHERE "Ovunque"
+  IDS_EVERYTHING_NOT_FOUND "Everything non è stato trovato. Installalo o seleziona manualmente il file eseguibile."
+  IDS_SEARCH_HISTORY_INVALID "Inserisci un limite per la cronologia delle ricerche compreso tra 0 e 20."
+  IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer posiziona le nuove finestre riducendo al minimo la sovrapposizione con le altre finestre delle cartelle.\n\nQuesto vale per le cartelle senza una posizione della finestra salvata o la cui posizione salvata non è più accessibile dopo una modifica della configurazione dello schermo. Una posizione salvata ancora utilizzabile ha la precedenza."
+  IDS_GROUP_FOLDER_WINDOWS_HELP "Le nuove finestre delle cartelle possono essere raggruppate sotto un solo pulsante della barra delle applicazioni, in base alle impostazioni di Windows.\n\nQuando questa opzione è disattivata, le cartelle possono essere aggiunte separatamente alla barra delle applicazioni.\n\nQuesta impostazione si applica alle finestre aperte dopo la modifica. Quelle già aperte mantengono il raggruppamento attuale."
+  IDS_EVERYTHING_EXECUTABLE "Eseguibile di Everything (*.exe)"
+END
