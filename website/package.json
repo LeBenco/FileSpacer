@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "generate": "node generate.mjs",
-    "test": "node --test generate.test.mjs"
+    "test": "node --test generate.test.mjs ../.github/scripts/build-docs.test.mjs"
   },
   "engines": {
     "node": ">=22"
