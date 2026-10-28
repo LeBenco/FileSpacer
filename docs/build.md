@@ -68,6 +68,18 @@ update the script when changing that folder design or its coordinate system.
 `build.cmd installer` always repackages the current Release executable and
 accompanying notices; it does not launch the installer.
 
+It also packages the complete offline documentation in `help` beside the
+application. Install the documentation build dependencies and generate the HTML
+as described in [website generation](../website/README.md#shared-website-and-offline-builds).
+The installer target verifies the generated source fingerprint and file hashes,
+reuses a current copy, and otherwise regenerates it. Node.js must be on PATH;
+`NODE` can override its executable. Ruby/Bundler are only needed when regenerating,
+so the release workflow generates the documentation on Linux and transfers the
+verified output to the Windows packaging job from the same workflow and tag.
+The installed documentation needs only the user's browser, with no local server
+or network connection. FileSpacer opens the Windows display language and falls
+back to English if that translation is unavailable.
+
 Packaging also runs `generate-installer-assets.py` with the existing
 Inkscape/Pillow/ImageMagick tools. It decodes the ten native bitmaps of
 `src\res\FileSpacer.ico` without scaling them, then composites a separate purple
