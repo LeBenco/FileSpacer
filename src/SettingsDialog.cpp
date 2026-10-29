@@ -889,10 +889,46 @@ void requestSettingsDialogClose() {
         PostMessageW(settingsDialog, PSM_PRESSBUTTON, PSBTN_CANCEL, 0);
 }
 
+// The Preferences dialog another FileSpacer process may already show: the
+// property sheet owned by a window of the caller's class, with the dialog's
+// caption. Nothing else of that class owns a window with this caption.
+static HWND findSettingsDialog(HWND owner) {
+    struct Search { wchar_t ownerClass[64]; std::wstring caption; HWND found; } search = {};
+    if (!GetClassNameW(owner, search.ownerClass, ARRAYSIZE(search.ownerClass))) return nullptr;
+    search.caption = getString(IDS_SETTINGS_CAPTION);
+    EnumWindows([](HWND window, LPARAM data) -> BOOL {
+        auto &search = *reinterpret_cast<Search *>(data);
+        wchar_t windowClass[64] = {}, caption[128] = {};
+        const HWND dialogOwner = GetWindow(window, GW_OWNER);
+        if (dialogOwner && GetClassNameW(window, windowClass, ARRAYSIZE(windowClass))
+                && lstrcmpW(windowClass, L"#32770") == 0
+                && GetClassNameW(dialogOwner, windowClass, ARRAYSIZE(windowClass))
+                && lstrcmpW(windowClass, search.ownerClass) == 0
+                && GetWindowTextW(window, caption, ARRAYSIZE(caption)) && search.caption == caption) {
+            search.found = window;
+            return FALSE;
+        }
+        return TRUE;
+    }, reinterpret_cast<LPARAM>(&search));
+    return search.found;
+}
+
 void openSettingsDialog(HWND owner, SettingsPage page) {
     if (settingsDialog) {
         SetActiveWindow(settingsDialog);
         PropSheet_SetCurSel(settingsDialog, nullptr, page);
+        return;
+    }
+    // One dialog per user session: a dialog shown by another FileSpacer
+    // process is activated instead of opening a second one. It stays attached
+    // to its own calling window, which still cancels it when it closes.
+    if (const HWND remote = findSettingsDialog(owner)) {
+        DWORD process = 0;
+        GetWindowThreadProcessId(remote, &process);
+        AllowSetForegroundWindow(process);
+        if (IsIconic(remote)) ShowWindow(remote, SW_RESTORE);
+        SetForegroundWindow(remote);
+        PropSheet_SetCurSel(remote, nullptr, page);
         return;
     }
     resetFolderStateRequested = false;
