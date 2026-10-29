@@ -123,6 +123,12 @@ Empreintes SHA-256 des sources mesurées :
 - `src/MixedFolder.cpp` : `b49b00657e6fd3f0c7826cd18c491967765d190d0202f529334e0c9d3a9139e1`.
 - `build/mixed-scaling/ScalingBench.cpp` : `70775275db4802eb60e5a98c1087e81052f8395f13b49f1ae87918249cb693da`.
 
+Ces empreintes désignent les sources du comparatif et précèdent la
+désencapsulation des éléments du fournisseur du 29 octobre 2026 (identifiants
+natifs transmis tels quels, inscription aux notifications par `SFVM_GETNOTIFY`,
+fournisseur conservé en positions libres). Elles ne correspondent plus aux
+sources actuelles et servent seulement à retrouver les binaires mesurés.
+
 ## Validation de l'intégration
 
 Les cas conservés sont `30-tri-melange/01-TriEtIdentites` (tri, application à
