@@ -40,56 +40,6 @@
 
 namespace filespacer {
 
-// This job owns only native PIDLs and a cancellable notification target. It can
-// finish after the window closes without retaining its view or blocking its STA.
-class FolderWindow::StartupIconsThread : public UnknownImpl {
-public:
-    struct Item {
-        CComHeapPtr<ITEMIDLIST_ABSOLUTE> id;
-        Item() = default;
-        Item(Item &&other) noexcept : id(other.id.Detach()) {}
-    };
-    std::vector<Item> items;
-    StartupIconsThread(HWND owner, ULONG_PTR serial) : target(owner), generation(serial) { lockProcess(); }
-    ~StartupIconsThread() override = default;
-    STDMETHODIMP_(ULONG) Release() override {
-        const ULONG remaining = UnknownImpl::Release();
-        // The job and its PIDLs must be freed before the last process lock ends.
-        if (!remaining) unlockProcess();
-        return remaining;
-    }
-    bool start() {
-        AddRef();
-        if (SHCreateThread(run, this, static_cast<SHCT_FLAGS>(0), nullptr)) return true;
-        Release(); return false;
-    }
-    void stop() {
-        AcquireSRWLockExclusive(&notificationLock); target.store(nullptr); ReleaseSRWLockExclusive(&notificationLock);
-    }
-private:
-    std::atomic<HWND> target;
-    ULONG_PTR generation;
-    SRWLOCK notificationLock = SRWLOCK_INIT;
-    static DWORD WINAPI run(void *parameter) {
-        auto *self = static_cast<StartupIconsThread *>(parameter);
-        const HRESULT initialized = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-        if (SUCCEEDED(initialized)) for (const auto &item : self->items) {
-            if (!self->target.load()) break;
-            SHFILEINFOW info = {};
-            SHGetFileInfoW(reinterpret_cast<LPCWSTR>(item.id.m_pData), 0, &info, sizeof(info), SHGFI_PIDL | SHGFI_SYSICONINDEX);
-        }
-        AcquireSRWLockShared(&self->notificationLock);
-        const HWND owner = self->target.load();
-        if (owner) PostMessageW(owner, MSG_STARTUP_ICONS, self->generation, 0);
-        ReleaseSRWLockShared(&self->notificationLock);
-        // A close may cancel the target while COM releases its apartment objects.
-        // The worker reference keeps this process alive through that teardown.
-        if (SUCCEEDED(initialized)) CoUninitialize();
-        self->Release(); return 0;
-    }
-};
-
-
 FolderWindow::~FolderWindow() = default;
 
 static constexpr int BOTTOM_STATUS_HEIGHT_DIP = 23;
@@ -117,7 +67,6 @@ const wchar_t * const HIDDEN_ITEM_PARSE_NAMES[] = {
 const UINT WM_GETISHELLBROWSER_COMPAT = WM_USER + 7;
 
 static CComHeapPtr<ITEMID_CHILD> hiddenItemIDs[_countof(HIDDEN_ITEM_PARSE_NAMES)];
-
 
 bool FolderWindow::spatialView(IFolderView *const folderView) {
     UINT viewMode;
@@ -798,77 +747,6 @@ void FolderWindow::onCreate() {
     searchBox.setLiveSearch(settings::getLiveNameSearch());
 }
 
-
-void FolderWindow::stopStartupIcons() {
-    KillTimer(hwnd, TIMER_STARTUP_ICONS);
-    startupIconsDeadline = 0;
-    if (startupIconsThread) { startupIconsThread->stop(); startupIconsThread.Release(); }
-}
-
-void FolderWindow::preloadVisibleIcons(IFolderView2 *view) {
-    if (!viewHost.contentMasked() || startupIconsThread) return;
-    const ULONG_PTR generation = viewGeneration;
-    auto current = [&]() { return isWindowOperational() && generation == viewGeneration; };
-    HWND viewWindow = nullptr;
-    RECT viewport = {};
-    POINT spacing = {};
-    CComQIPtr<IShellView> currentView(view);
-    HRESULT geometry = currentView ? currentView->GetWindow(&viewWindow) : E_NOINTERFACE;
-    if (SUCCEEDED(geometry) && !GetClientRect(viewWindow, &viewport)) geometry = E_FAIL;
-    if (SUCCEEDED(geometry)) geometry = view->GetSpacing(&spacing);
-    UINT mode = FVM_AUTO;
-    if (SUCCEEDED(geometry)) geometry = view->GetCurrentViewMode(&mode);
-    const bool ordered = mode == FVM_DETAILS || mode == FVM_LIST || view->GetAutoArrange() == S_OK;
-    if (!current()) return;
-    if (FAILED(geometry)) { viewHost.revealContent(); return; }
-    spacing.x = std::max<LONG>(spacing.x, 1);
-    spacing.y = std::max<LONG>(spacing.y, 1);
-    CComPtr<StartupIconsThread> job;
-    job.Attach(new (std::nothrow) StartupIconsThread(hwnd, generation));
-    if (job) {
-        try {
-            int index = -1;
-            for (;;) {
-                int next = -1;
-                const HRESULT found = view->GetVisibleItem(index, FALSE, &next);
-                if (!current()) return;
-                if (found == S_FALSE) break;
-                if (FAILED(found) || next <= index) { job.Release(); break; }
-                index = next;
-                CComHeapPtr<ITEMID_CHILD> child;
-                POINT position = {};
-                HRESULT hr = view->Item(index, &child);
-                if (SUCCEEDED(hr)) hr = view->GetItemPosition(child, &position);
-                if (!current()) return;
-                if (FAILED(hr)) { job.Release(); break; }
-                // Ordered rows/columns beyond the viewport cannot become visible
-                // later in the same enumeration. Free icon positions still need a scan.
-                if (ordered && (mode == FVM_LIST ? position.x >= viewport.right : position.y >= viewport.bottom)) break;
-                RECT bounds = {position.x, position.y, position.x + spacing.x, position.y + spacing.y};
-                RECT visible = {};
-                if (!IntersectRect(&visible, &viewport, &bounds)) continue;
-                CComPtr<IShellItem> shown, native;
-                hr = view->GetItem(index, IID_PPV_ARGS(&shown));
-                if (SUCCEEDED(hr)) hr = nativeShellItem(shown, &native);
-                if (!current()) return;
-                if (FAILED(hr)) { job.Release(); break; }
-                job->items.emplace_back();
-                hr = SHGetIDListFromObject(native, &job->items.back().id);
-                if (!current()) return;
-                if (FAILED(hr)) { job.Release(); break; }
-            }
-        } catch (const std::bad_alloc &) { job.Release(); }
-    }
-    if (!current()) return;
-    if (job && !job->items.empty() && SetTimer(hwnd, TIMER_STARTUP_ICONS, 500, nullptr)) {
-        startupIconsDeadline = GetTickCount64() + 500;
-        startupIconsThread = job;
-        if (job->start()) return;
-        stopStartupIcons();
-    }
-    viewHost.revealContent();
-}
-
 FolderWindow::QuickAccessIconThread::QuickAccessIconThread(HWND ownerWindow, int imageSize)
         : owner(ownerWindow), iconSize(imageSize) {}
 
@@ -1064,7 +942,6 @@ void FolderWindow::restoreReopenViewState() {
 }
 
 void FolderWindow::onDestroy() {
-    stopStartupIcons();
     if (viewMenuPreview) restoringState = true;
     viewMenuPreview.reset();
     viewMenuRestore.reset();
@@ -1548,11 +1425,6 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
                     restore->replay(static_cast<ULONG_PTR>(lParam));
             }
             return 0;
-        case MSG_STARTUP_ICONS:
-            if (isWindowOperational() && viewHost.isViewNotification(wParam)) {
-                stopStartupIcons(); viewHost.revealContent();
-            }
-            return 0;
         case MSG_VIEW_CHANGED:
             if (isWindowOperational() && viewHost.isViewNotification(wParam))
                 scheduleStateSave();
@@ -1635,12 +1507,6 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             scheduleStateSave();
             break;
         case WM_TIMER:
-            if (wParam == TIMER_STARTUP_ICONS) {
-                if (startupIconsThread && GetTickCount64() >= startupIconsDeadline) {
-                    stopStartupIcons(); viewHost.revealContent();
-                }
-                return 0;
-            }
             if (wParam == TIMER_SAVE_STATE) {
                 KillTimer(hwnd, TIMER_SAVE_STATE);
                 synchronizeViewProvider();
@@ -1773,7 +1639,6 @@ void FolderWindow::clearSelection() {
         checkHR(shellView->SelectItem(nullptr, SVSI_DESELECTOTHERS)); // keep focus
     selected = nullptr; // in case this happened in the background
 }
-
 
 IDispatch * FolderWindow::getShellViewDispatch() {
     return this;
@@ -2446,7 +2311,6 @@ STDMETHODIMP FolderWindow::Notify(IShellView *, DWORD) {
 // order: OnNavigationPending, OnViewCreated, OnNavigationComplete
 // OR: OnNavigationPending, OnNavigationFailed
 STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
-    stopStartupIcons();
     CComPtr<ItemWindow> keepAlive(this);
     viewMenuPreview.reset();
     viewMenuRestore.reset();
@@ -2479,7 +2343,6 @@ STDMETHODIMP FolderWindow::OnNavigationComplete(PCIDLIST_ABSOLUTE) {
 }
 
 STDMETHODIMP FolderWindow::OnNavigationFailed(PCIDLIST_ABSOLUTE) {
-    stopStartupIcons(); viewHost.revealContent();
     debugPrintf(L"NATIVE HWND=%p OnNavigationFailed\n", hwnd);
     // This callback also reports cancellation and has no HRESULT: do not count a failure.
     checkHR(viewHost.stopObserving());
@@ -2601,11 +2464,6 @@ void FolderWindow::finishViewInitialization() {
     scheduleStateSave();
     updateSelection();
     if (current() && hasStatusText()) updateStatus();
-    if (current() && viewHost.contentMasked()) {
-        CComQIPtr<IFolderView2> folderView(view);
-        if (folderView) preloadVisibleIcons(folderView);
-        else viewHost.revealContent();
-    }
 }
 
 /* IDispatch */
