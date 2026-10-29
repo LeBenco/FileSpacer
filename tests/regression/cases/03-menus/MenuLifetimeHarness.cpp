@@ -257,7 +257,7 @@ struct FolderWindow : ItemWindow {
         void finish(UINT) { assert(false); }
         static LRESULT filter(int, WPARAM, LPARAM) { assert(false); return 0; }
     };
-    std::shared_ptr<ViewMenuPreview> viewMenuPreview;
+    std::shared_ptr<ViewMenuPreview> viewMenuPreview, viewMenuRestore;
     bool viewReady = true, initialStateApplied = true, enumerationComplete = true, restoringState = false;
     enum { TIMER_SAVE_STATE = 2 };
     void viewStateDirty(unsigned) { assert(false); }
