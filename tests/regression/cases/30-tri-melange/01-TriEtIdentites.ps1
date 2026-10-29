@@ -19,6 +19,11 @@ function Wait-Provider([IntPtr]$Window,[bool]$Mixed) {
         catch [Runtime.InteropServices.COMException] { return $false }
     } 'provider matching the committed layout' 300 } catch {Write-Host ($observed|ConvertTo-Json -Compress);throw}
 }
+# The provider roots its namespace in a junction under the application data:
+# the junction carries the hidden and system attributes like other Shell data.
+function Assert-TestJunctionHidden {
+    Wait-Ui { (Test-Path -LiteralPath $junction) -and (((Get-Item -LiteralPath $junction -Force).Attributes -band 6) -eq 6) } 'test junction with hidden and system attributes'
+}
 function Wait-Order([IntPtr]$Window,[string[]]$Names) {
     $expected=$Names -join '|'
     $observation=@{Error=$null;Names=@()}
@@ -119,6 +124,7 @@ try {
         if($mode-eq1){Toggle-AutoArrange $window}
         else {Use-UiView $window {param($view) $view.SetViewModeAndIconSize($mode,48);$view.SortBy($false,$true)}}
         Wait-Provider $window $true
+        Assert-TestJunctionHidden
         Wait-Order $window (Expected-Order $false $true $false)
         Assert-Ui (((Use-UiView $window {param($view) $view.Selected()}) -join '|') -ceq $selection) 'Switching to a sorted provider lost the multiselection.'
         Assert-Ui ((Use-UiView $window {param($view) $view.Focused()}) -ceq $focus) 'Switching to a sorted provider lost focus.'
