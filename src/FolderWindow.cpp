@@ -141,8 +141,9 @@ void FolderWindow::init() {
 FolderWindow::FolderWindow(IShellItem *const item, const std::wstring &identity)
         : ItemWindow(item, identity) {}
 
-// The menu owns this session while tracking. A pending EnumDone can retain it
-// afterward so an incomplete presentation never reaches the state store.
+// The menu owns this session while tracking. Once the menu closes, the window
+// retains it only while a refill observed by apply() is still running, to replay
+// the same restoration on that refill's EnumDone; saves are never held back.
 struct FolderWindow::ViewMenuPreview {
     struct Entry { UINT command; };
     static thread_local ViewMenuPreview *active;
@@ -158,8 +159,9 @@ struct FolderWindow::ViewMenuPreview {
     std::vector<Entry> entries;
     UINT initialCommand = 0, currentCommand = 0, wantedCommand = 0;
     UINT pendingCommand = 0; // Entry outside the modes, run after the preview is cancelled.
-    bool tracking = true, posted = false, busy = false, changed = false, waiting = false;
-    ULONG_PTR enumerationBaseline = 0;
+    UINT chosenCommand = 0; // Mode retained when the menu closed: 0 for the initial one.
+    bool tracking = true, posted = false, busy = false;
+    const ULONG_PTR enumerationBaseline; // Serial when the menu opened; earlier EnumDone are stale.
     std::vector<std::vector<uint8_t>> positionChunks;
     size_t nextPositionChunk = 0;
 
@@ -215,7 +217,8 @@ struct FolderWindow::ViewMenuPreview {
     ViewMenuPreview(FolderWindow &window, HMENU popup, IContextMenu *handler,
             IFolderView2 *folderView) : owner(window), menu(popup), context(handler),
         source(window.shellView), view(folderView), generation(window.viewGeneration),
-        serial(++window.viewMenuPreviewSerial) {}
+        serial(++window.viewMenuPreviewSerial),
+        enumerationBaseline(window.viewHost.enumerationSerial()) {}
 
     bool current() const {
         return owner.isWindowOperational() && owner.shellView == source
@@ -290,7 +293,7 @@ struct FolderWindow::ViewMenuPreview {
     }
 
     void restoreDetails() {
-        if (!current() || waiting || (tracking && currentCommand)) return;
+        if (!current() || (tracking && currentCommand)) return;
         auto valid = [&]() { return current(); };
         ++owner.navigationDepth;
         if (!currentCommand && !initial.icons.empty() && owner.spatialView(view) && current()) {
@@ -312,9 +315,9 @@ struct FolderWindow::ViewMenuPreview {
         nextPositionChunk = 0;
         busy = true;
         int before = -1, after = -1;
-        HRESULT counted = view->ItemCount(SVGIO_ALLVIEW, &before);
+        const HRESULT counted = view->ItemCount(SVGIO_ALLVIEW, &before);
         if (!current()) { busy = false; return; }
-        enumerationBaseline = owner.viewHost.enumerationSerial();
+        const ULONG_PTR baseline = owner.viewHost.enumerationSerial();
         ++owner.navigationDepth;
         HRESULT result;
         if (command) {
@@ -327,12 +330,18 @@ struct FolderWindow::ViewMenuPreview {
             result = restoreOptions(view, presentation);
         }
         owner.resumeDeferredClose();
-        if (SUCCEEDED(result)) { currentCommand = command; changed = true; }
+        if (SUCCEEDED(result)) currentCommand = command;
         if (current()) {
-            HRESULT recounted = view->ItemCount(SVGIO_ALLVIEW, &after);
+            const HRESULT recounted = view->ItemCount(SVGIO_ALLVIEW, &after);
             if (current()) {
-                waiting = (FAILED(counted) || FAILED(recounted) || before != after)
-                    && owner.viewHost.enumerationSerial() <= enumerationBaseline;
+                // As in finishViewInitialization, a changed count only invalidates
+                // the completed enumeration; nothing waits on the count itself.
+                // The refill's EnumDone completes the view again and replays the
+                // restoration made here, so a transient view is never persisted.
+                if (FAILED(counted) || FAILED(recounted) || before != after) {
+                    owner.enumerationComplete = false;
+                    owner.viewOptionsEnumerationBaseline = baseline;
+                }
                 restoreDetails();
             }
         }
@@ -363,17 +372,26 @@ struct FolderWindow::ViewMenuPreview {
         checkHR(owner.invokeViewCommand(context, reinterpret_cast<CMINVOKECOMMANDINFO *>(&info)));
     }
 
+    // While tracking, a refill completed by this EnumDone rebuilt the items
+    // the restoration concerned: restore them again (idempotent).
     void enumerated(ULONG_PTR enumeration) {
-        if (!busy && waiting && enumeration > enumerationBaseline && current()) {
-            waiting = false;
-            restoreDetails();
-            if (!tracking && current()) {
-                invokePending();
-                if (!current()) return;
-                owner.viewMenuPreview.reset();
-                owner.scheduleStateSave();
-            }
-        }
+        if (busy || enumeration <= enumerationBaseline || !current()) return;
+        restoreDetails();
+    }
+
+    // The menu closed while a refill observed by apply() was running: its
+    // EnumDone replays the same restoration, or retries a failed cancellation,
+    // then lets the completed view be saved.
+    void replay(ULONG_PTR enumeration) {
+        FolderWindow &window = owner;
+        if (busy || enumeration <= enumerationBaseline || !window.enumerationComplete || !current()) return;
+        if (chosenCommand != currentCommand) apply(chosenCommand);
+        else restoreDetails();
+        if (!current()) return;
+        // Releasing the record may destroy this session: only the window is used after it.
+        if (chosenCommand != currentCommand) { window.viewMenuRestore.reset(); return; }
+        if (window.enumerationComplete) window.viewMenuRestore.reset(); // Else another refill was observed.
+        window.scheduleStateSave();
     }
 
     void finish(UINT command) {
@@ -383,22 +401,28 @@ struct FolderWindow::ViewMenuPreview {
         // An entry outside the modes (sorting, auto arrange...) is not a mode:
         // the preview is cancelled first, then the entry runs the ordinary way.
         const bool mode = !command || isEntry(command);
-        const UINT chosen = mode && command != initialCommand ? command : 0;
-        if (!chosen) finishPositions();
-        const bool applying = chosen != currentCommand;
-        apply(chosen);
+        chosenCommand = mode && command != initialCommand ? command : 0;
+        if (!chosenCommand) finishPositions();
+        const bool applying = chosenCommand != currentCommand;
+        apply(chosenCommand);
         if (!current()) return;
-        if (!chosen && currentCommand) return; // Never persist a preview after failed cancellation.
         if (!mode) pendingCommand = command;
         // Returning to the initial mode already restored its details in apply().
         // Only a committed preview still needs its selection/focus restored here.
-        if (!applying && chosen && changed && !waiting) restoreDetails();
-        if (!waiting) {
-            invokePending();
-            if (!current()) return;
-            owner.viewMenuPreview.reset();
-            owner.scheduleStateSave();
-        }
+        if (!applying && chosenCommand) restoreDetails();
+        if (!current()) return;
+        invokePending();
+        if (!current()) return;
+        // The session stops holding back saves now. The restoration is final once
+        // the view is complete; a refill observed by apply() is still running and
+        // its EnumDone replays it. A failed cancellation is retried there as well,
+        // and the preview still showing is not persisted meanwhile.
+        FolderWindow &window = owner;
+        const bool settled = chosenCommand == currentCommand;
+        if (window.viewMenuPreview.get() == this && (!settled || !window.enumerationComplete))
+            window.viewMenuRestore = window.viewMenuPreview;
+        window.viewMenuPreview.reset();
+        if (settled) window.scheduleStateSave();
     }
 };
 
@@ -1005,7 +1029,8 @@ void FolderWindow::loadIconPositions() {
 }
 
 std::vector<uint8_t> FolderWindow::captureReopenViewState() {
-    if (viewMenuPreview) return viewMenuPreview->initial.selection;
+    const auto &session = viewMenuPreview ? viewMenuPreview : viewMenuRestore;
+    if (session) return session->initial.selection;
     // Closing is already set: use HWND/view identity rather than isWindowOperational.
     const HWND owner = hwnd;
     CComPtr<IShellView> view = shellView;
@@ -1034,6 +1059,7 @@ void FolderWindow::onDestroy() {
     stopStartupIcons();
     if (viewMenuPreview) restoringState = true;
     viewMenuPreview.reset();
+    viewMenuRestore.reset();
     resizeGesture.stop();
     checkHR(viewHost.stopObserving());
     KillTimer(hwnd, TIMER_SAVE_STATE);
@@ -1405,6 +1431,7 @@ HRESULT FolderWindow::refreshView() {
 // an EnumDone of the new enumeration marks it complete; a stale event still
 // queued from the previous one can no longer let positions be captured early.
 HRESULT FolderWindow::refreshEnumeration() {
+    viewMenuRestore.reset(); // An explicit restart supersedes a preview's pending replay.
     enumerationComplete = false;
     viewOptionsEnumerationBaseline = viewHost.enumerationSerial();
     return refreshView();
@@ -1508,6 +1535,9 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
                 auto preview = viewMenuPreview;
                 if (message == MSG_ENUM_DONE && preview)
                     preview->enumerated(static_cast<ULONG_PTR>(lParam));
+                auto restore = viewMenuRestore;
+                if (message == MSG_ENUM_DONE && restore && isWindowOperational())
+                    restore->replay(static_cast<ULONG_PTR>(lParam));
             }
             return 0;
         case MSG_STARTUP_ICONS:
@@ -2102,6 +2132,7 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     // The parent menu and this object are owned by openViewMenu.
     if (!isWindowOperational())
         return;
+    viewMenuRestore.reset(); // A new menu supersedes a previous preview's pending replay.
     const bool previewEnabled = settings::getViewMenuPreviewEnabled();
     if (previewEnabled) {
         // Native icon moves may not have scheduled a save yet. Preserve the
@@ -2410,6 +2441,7 @@ STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
     stopStartupIcons();
     CComPtr<ItemWindow> keepAlive(this);
     viewMenuPreview.reset();
+    viewMenuRestore.reset();
     cancelAltGesture();
     debugPrintf(L"NATIVE HWND=%p OnNavigationPending\n", hwnd);
     checkHR(viewHost.stopObserving());
