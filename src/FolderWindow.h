@@ -236,6 +236,10 @@ private:
 
     struct ViewMenuPreview;
     std::shared_ptr<ViewMenuPreview> viewMenuPreview;
+    // Finished session kept while a refill it observed is still running; its
+    // EnumDone replays the restoration. Dropped by navigation, closing, an
+    // enumeration restart and any new View menu.
+    std::shared_ptr<ViewMenuPreview> viewMenuRestore;
     ULONG_PTR viewMenuPreviewSerial = 0;
 
     void loadIconPositions();
