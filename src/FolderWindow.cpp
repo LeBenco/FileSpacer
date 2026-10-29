@@ -1268,7 +1268,10 @@ LRESULT FolderWindow::onDropdown(int command, POINT pos) {
 
 void FolderWindow::onActivate(WORD state, HWND prevWindow) {
     CComPtr<ItemWindow> keepAlive(this); // Shell calls can reenter dispatch
-    activationClickPending = state == WA_CLICKACTIVE;
+    // WA_CLICKACTIVE also reports a caption click, whose non-client button
+    // message never reaches the message loop after this notification: only a
+    // click inside the view can be the activation click absorbed later.
+    activationClickPending = state == WA_CLICKACTIVE && cursorOverShellView();
     if (state == WA_INACTIVE) {
         searchBox.hideDropdown();
         cancelAltGesture();
@@ -1422,6 +1425,15 @@ HRESULT FolderWindow::invokeViewCommand(IContextMenu *menu, CMINVOKECOMMANDINFO 
 // the activation. When that first message lands on the empty background of the
 // view, the application's own message loop drops it so the native view keeps
 // its selection. Item clicks, other buttons and Alt gestures are not affected.
+bool FolderWindow::cursorOverShellView() const {
+    POINT cursor = {};
+    HWND root = nullptr;
+    if (!shellView || !GetCursorPos(&cursor) || FAILED(shellView->GetWindow(&root)) || !root)
+        return false;
+    const HWND target = WindowFromPoint(cursor);
+    return target && (target == root || IsChild(root, target));
+}
+
 bool FolderWindow::isBackgroundActivationClick(const MSG *msg) const {
     if (!shellView || GetKeyState(VK_MENU) < 0 || GetAsyncKeyState(VK_MENU) < 0
             || !settings::getKeepSelectionOnActivate())
