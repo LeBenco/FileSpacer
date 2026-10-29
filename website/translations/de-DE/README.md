@@ -24,6 +24,7 @@ Windows 10 oder neuer, x64. Verfügbar auf Englisch, Französisch, Deutsch, Ital
 
 ## Funktionen
 
+- **Ein Fenster pro Ordner**, das bei bereits geöffneten Ordnern wieder aktiviert wird. Position, Größe, Ansichtseinstellungen und Symbolanordnung bleiben beim erneuten Öffnen erhalten. [Räumliche Navigation](docs/user-guide.md#window-navigation).
 - **Symbole frei anordnen.** Ihre Positionen werden für jeden Ordner gespeichert und wiederhergestellt. [Symbolanordnung](docs/user-guide.md#icon-layout).
 - **Fenster von jeder Stelle im Dateibereich aus verschieben und skalieren**, ohne die Auswahl zu verlieren. Die Mausgesten lassen sich anpassen; standardmäßig gelten Alt + Ziehen mit der linken bzw. rechten Maustaste. [Fenstergesten](docs/user-guide.md#moving-and-resizing).
 - **Zwischen geöffneten Ordnern wechseln**, über das Menü in der Titelleiste; übergeordnete Fenster schließen oder das zuletzt geschlossene Fenster mit Strg+Umschalt+T erneut öffnen. [Fensternavigation](docs/user-guide.md#window-navigation).

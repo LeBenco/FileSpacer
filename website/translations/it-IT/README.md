@@ -24,6 +24,7 @@ Windows 10 o versioni successive, x64. Disponibile in inglese, francese, tedesco
 
 ## Funzionalità
 
+- **Una finestra per ogni cartella**, riattivata se la cartella è già aperta. Posizione, dimensioni, impostazioni di visualizzazione e disposizione delle icone vengono ripristinate a ogni riapertura. [Navigazione spaziale](docs/user-guide.md#window-navigation).
 - **Disponi liberamente le icone**: le posizioni vengono salvate e ripristinate per ogni cartella. [Disposizione delle icone](docs/user-guide.md#icon-layout).
 - **Sposta e ridimensiona le finestre** da qualsiasi punto dell’area dei file, senza perdere la selezione. I gesti del mouse sono configurabili; quelli predefiniti sono Alt + trascinamento con il pulsante sinistro e Alt + trascinamento con il pulsante destro. [Gesti per le finestre](docs/user-guide.md#moving-and-resizing).
 - **Passa da una cartella aperta all’altra** dal menu della barra del titolo, chiudi le finestre delle cartelle superiori o riapri l’ultima finestra chiusa con Ctrl+Maiusc+T. [Navigazione tra finestre](docs/user-guide.md#window-navigation).
