@@ -128,11 +128,16 @@ laisse Windows dessiner le texte. Elle ne force ni le dépliage ni le repliage.
 La sélection multiple, le focus seul et les autres modes restent entièrement
 natifs ; Windows peut donc encore y déplier le nom focalisé.
 
-Le callback est installé sur la fenêtre fournie par `IShellView::GetWindow`, sur
-le même thread. Il ne recherche pas et ne sous-classe pas les contrôles enfants.
+Le callback sous-classe (`SetWindowSubclass`) la fenêtre de vue fournie par
+`IShellView::GetWindow`, qui appartient au Shell, sur le même thread. Il ne
+recherche pas et ne sous-classe pas les contrôles enfants de cette fenêtre.
 L'émetteur doit être un ListView appartenant à cette vue avant toute lecture de
 sa notification. Les messages documentés du contrôle sont lus sans modifier
-sélection, focus ou placement.
+sélection, focus ou placement. La présence d'un ListView découle du profil
+`FVO_CUSTOMPOSITION`, dont la documentation indique qu'il sélectionne l'ancienne
+vue « pour l'instant » : si une version de Windows change ce comportement,
+l'adaptation cesse silencieusement et le rendu reste natif ; le jeu 23 compare
+les images rendues et le détecterait.
 
 Le traitement du Shell et son résultat sont préservés ; `CDRF_SKIPDEFAULT` n'est
 jamais ajouté. La disparition des notifications, un échec d'installation ou des
