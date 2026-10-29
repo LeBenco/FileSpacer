@@ -113,11 +113,11 @@ Introduza uma consulta no campo de pesquisa do FileSpacer e escolha **Pesquisar 
 
 ### Nilesoft Shell
 
-O [Nilesoft Shell](https://nilesoft.org/) permite alterar o aspeto dos menus do FileSpacer e personalizar as suas entradas. É opcional e instala-se separadamente.
+Se utiliza o [Nilesoft Shell](https://nilesoft.org/), pode também usá-lo para alterar o aspeto dos menus do FileSpacer e personalizar as suas entradas.
 
-Permita o FileSpacer na regra de exclusão da configuração do Nilesoft e mantenha a importação do tema. Restrinja ao Explorador as regras que se destinam apenas a ele, para que não alterem também os menus do FileSpacer.
+Para esta integração opcional, recomenda-se adaptar a configuração do Nilesoft para que os menus se integrem visualmente no FileSpacer, em particular com cantos retos nos menus da barra de título e da barra de ferramentas.
 
-Consulte a [referência de configuração e os exemplos](nilesoft-shell.md) para as definições exatas, as regras específicas de cada menu e o aspeto recomendado. Depois de alterar a configuração, anule o registo do Nilesoft Shell e volte a registá-lo para aplicar a alteração aos menus abertos a seguir.
+A [referência de configuração e os exemplos](nilesoft-shell.md) explicam como permitir o FileSpacer, manter a importação do tema e limitar ao Explorador as regras que lhe são reservadas. Se alterar a configuração, anule o registo do Nilesoft Shell e volte a registá-lo para aplicar as alterações aos menus abertos a seguir.
 
 O tema Modern apresentado abaixo usa os cantos arredondados predefinidos à esquerda e os cantos retos recomendados à direita.
 
