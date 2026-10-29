@@ -604,7 +604,7 @@ void ItemWindow::stateStorageError() {
 }
 
 void ItemWindow::recordFolderAccess(HRESULT result) {
-    if (closing) return;
+    if (closing || deleted) return;
     const bool success = SUCCEEDED(result);
     if (!success && !isFolderAccessFailure(result)) return;
     // A successful access, unlike a delayed save, may recreate an age-expired state.
@@ -2018,7 +2018,7 @@ LRESULT CALLBACK ItemWindow::ancestorNotifyProc(HWND window, UINT message,
 
 void ItemWindow::handleShellChange(LONG event, PCIDLIST_ABSOLUTE oldID,
         PCIDLIST_ABSOLUTE newID, bool ancestorNotification) {
-    if (!isWindowOperational()) return;
+    if (!isWindowOperational() || deleted) return;
     if (ancestorNotification && (!(event & SHCNE_RMDIR) || !oldID || !notifyItemID
             || !ILIsParent(oldID, notifyItemID, FALSE))) return;
     // Compare retained PIDLs: constructing an IShellItem for a
@@ -2047,13 +2047,16 @@ void ItemWindow::handleShellChange(LONG event, PCIDLIST_ABSOLUTE oldID,
     const bool matches = ancestorNotification ? !sameItem : sameItem;
     if (matches) {
         if (event & (SHCNE_DELETE | SHCNE_RMDIR)) {
-            // Prevent close-time saves from recreating the deleted row.
-            closing = true;
+            // Prevent close-time saves from recreating the deleted row. The
+            // notification is dispatched from any nested message loop (navigation,
+            // refresh, preview), so the window closes through the posted path
+            // that the folder window can defer, never by a direct destruction.
+            deleted = true;
             const std::string deletedKey = std::move(stateKey);
             stateKey.clear();
             auto store = folderStateStore();
             if (!store || !store->remove(deletedKey)) stateStorageError();
-            checkLE(DestroyWindow(hwnd));
+            close(false);
         } else if ((event & (SHCNE_RENAMEITEM | SHCNE_RENAMEFOLDER)) && newID) {
             CComPtr<IShellItem> moved;
             if (checkHR(SHCreateItemFromIDList(newID, IID_PPV_ARGS(&moved))))
@@ -2065,7 +2068,7 @@ void ItemWindow::handleShellChange(LONG event, PCIDLIST_ABSOLUTE oldID,
 }
 
 bool ItemWindow::resolveItem() {
-    if (closing) // can happen when closing save prompt (window is activated)
+    if (closing || deleted) // can happen when closing save prompt (window is activated)
         return true;
     SFGAOF attr = 0;
     // A failed validation establishes an access failure, not a deletion.
