@@ -13,6 +13,7 @@
 #include <atlbase.h>
 #include <prsht.h>
 #include <shellapi.h>
+#include <shlwapi.h>
 #include <shobjidl_core.h>
 #include <uxtheme.h>
 #include <vsstyle.h>
@@ -741,6 +742,11 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 const int length = GetWindowTextLengthW(GetDlgItem(hwnd, IDC_EVERYTHING_PATH));
                 std::vector<wchar_t> path(static_cast<size_t>(length) + 1);
                 GetDlgItemTextW(hwnd, IDC_EVERYTHING_PATH, path.data(), length + 1);
+                // A path pasted from "Copy as path" carries quotes and spaces
+                // that launchEverything would only refuse at search time.
+                StrTrimW(path.data(), L" \t");
+                PathUnquoteSpacesW(path.data());
+                StrTrimW(path.data(), L" \t");
                 settings::setEverythingPath(path.data());
                 settings::setEverythingEnabled(!!IsDlgButtonChecked(hwnd, IDC_EVERYTHING_ENABLED));
                 const LRESULT scope = SendDlgItemMessageW(hwnd, IDC_EVERYTHING_SCOPE, CB_GETCURSEL, 0, 0);
