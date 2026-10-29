@@ -1,5 +1,6 @@
 #include "ShellViewHost.h"
 #include "MixedFolder.h"
+#include <shlobj.h>
 #include <shlwapi.h>
 #include <shldisp.h>
 #include <shdispid.h>
@@ -262,7 +263,14 @@ HRESULT ShellViewHost::navigate(IShellItem *item, bool mixFolders, bool isolated
         if (FAILED(hr)) return hr;
         // Virtual providers and archives retain their own native view contract.
         if ((attributes & required) == required && !(attributes & SFGAO_STREAM)) {
-            custom = true;
+            // The Desktop (empty PIDL) merges virtual entries into its filesystem
+            // folder; only the native view keeps their exclusions (ShouldShow).
+            CComHeapPtr<ITEMIDLIST_ABSOLUTE> id;
+            hr = SHGetIDListFromObject(item, &id);
+            if (FAILED(hr)) return hr;
+            custom = !ILIsEmpty(id);
+        }
+        if (custom) {
             target.Release();
             hr = mixedFolderItem(item, isolated, &target);
             if (FAILED(hr)) return hr;
