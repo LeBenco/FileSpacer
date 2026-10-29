@@ -569,7 +569,7 @@ void ItemWindow::updateWindowPropStore(IPropertyStore *const propStore) {
                 + std::to_wstring(reinterpret_cast<UINT_PTR>(hwnd));
     }
     if (id != taskbarAppID && id != APP_ID)
-        scheduleReopenJumpList(id);
+        scheduleReopenJumpList(id, stateKey);
     taskbarAppID = id;
     // Setting ID last tells the taskbar to refresh all relaunch information.
     propStoreWriteString(propStore, PKEY_AppUserModel_ID, id.c_str());
