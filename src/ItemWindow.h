@@ -197,6 +197,7 @@ private:
     ClosedWindow closingWindow;
     bool stateLoaded = false;
     bool storageErrorShown = false;
+    bool deleted = false; // The item is gone: never recreate its state nor revalidate it.
     uint32_t dirtyViewState = 0; // FolderState::Part flags
 
     std::wstring identityProperty;
