@@ -1,4 +1,5 @@
 #include "FolderStateStore.h"
+#include "ClosedWindows.h"
 #include <sqlite3.h>
 #include <cassert>
 #include <cstdio>
@@ -88,6 +89,18 @@ int main(int argc, char **argv) {
     left.insert(left.end(),right.begin(),right.end());
     std::sort(left.begin(),left.end());
     assert(left.size()==20 && std::adjacent_find(left.begin(),left.end())==left.end());
+    {
+        // Jump List fingerprint: equal models match; any field change, reordering or
+        // boundary shift between fields changes the fingerprint.
+        JumpListModel a, b, c, d, e;
+        for (JumpListModel *m : {&a, &b}) { m->add(L"C:\\App\\FileSpacer.exe"); m->add(L"Quick access"); m->add(L""); m->add(L"folder"); }
+        c.add(L"C:\\App\\FileSpacer.exe"); c.add(L"Quick access"); c.add(L"folder"); c.add(L"");
+        d.add(L"C:\\App\\FileSpacer.exe"); d.add(L"Quick acc"); d.add(L"ess"); d.add(L"folder");
+        e.add(L"C:\\App\\FileSpacer.exe"); e.add(L"Quick access"); e.add(L""); e.add(L"folder"); e.add(L"");
+        assert(a.fingerprint() == b.fingerprint());
+        assert(a.fingerprint() != c.fingerprint() && a.fingerprint() != d.fingerprint() && a.fingerprint() != e.fingerprint());
+        std::cout<<"PASS: empreinte des Jump Lists stable et sensible aux champs, à leur ordre et à leurs limites.\n";
+    }
     std::cout<<"PASS: migration préservant les états, historique UTF-8/binaire, ordre LIFO, retour après échec,"
         " unicité, limite de 20, persistance, reset et consommation simultanée par deux connexions.\n";
 }
