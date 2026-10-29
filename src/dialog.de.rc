@@ -58,7 +58,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Neue Fenster auf freiem Platz anordnen", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 80, 250, 12
   CONTROL "Informationen zur Fensterpositionierung", IDC_SMART_WINDOW_PLACEMENT_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 79, 12, 14
   CONTROL "Fenstersperre", -1, "Button", BS_GROUPBOX, 7, 100, 286, 44
-  CONTROL "Sperren des Fensterzustands &aktivieren", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 111, 272, 12
+  CONTROL "Sperren des &Fensterzustands aktivieren", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 111, 272, 12
   CONTROL "Schloss in der &Titelleiste gesperrter Ordner zeigen", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
   CONTROL "Suchfeld", -1, "Button", BS_GROUPBOX, 7, 148, 286, 52
   CONTROL "Beim &Eingeben filtern", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 159, 272, 12
@@ -78,10 +78,10 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Statusleiste anzeigen", IDC_STATUS_TEXT_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 21, 272, 14
   CONTROL "S&ymbolleiste anzeigen", IDC_TOOLBAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 35, 272, 14
   CONTROL "Elemente der Symbolleiste", -1, "Button", BS_GROUPBOX, 7, 63, 286, 77
-  CONTROL "&Schnellzugriff anzeigen", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 77, 130, 14
-  CONTROL "&Nach-oben-Schaltfläche anzeigen", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 77, 130, 14
+  CONTROL "Schnell&zugriff anzeigen", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 77, 130, 14
+  CONTROL "Nach-&oben-Schaltfläche anzeigen", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 77, 130, 14
   CONTROL "&Pfadleiste anzeigen", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 91, 272, 14
-  CONTROL "&Aktualisieren anzeigen", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 105, 130, 14
+  CONTROL "A&ktualisieren anzeigen", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 105, 130, 14
   CONTROL "&Ansicht anzeigen", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 105, 130, 14
   CONTROL "Diese Elemente sind nur bei sichtbarer Symbolleiste verfügbar.", -1, "Static", WS_GROUP, 14, 121, 272, 16
   CONTROL "Dateien", -1, "Button", BS_GROUPBOX, 7, 147, 286, 56
@@ -110,7 +110,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Everything-Suche zum Suchfeld hinzufügen", IDC_EVERYTHING_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 123, 272, 12
   LTEXT "Programmdatei (leer = automatisch erkennen)", -1, 14, 138, 272, 9
   EDITTEXT IDC_EVERYTHING_PATH, 14, 149, 272, 14, ES_AUTOHSCROLL|WS_TABSTOP
-  PUSHBUTTON "&Erkennen", IDC_EVERYTHING_DETECT, 14, 166, 90, 14
+  PUSHBUTTON "Er&kennen", IDC_EVERYTHING_DETECT, 14, 166, 90, 14
   PUSHBUTTON "&Durchsuchen...", IDC_EVERYTHING_BROWSE, 111, 166, 90, 14
   LTEXT "Suchbereich", -1, 14, 188, 70, 9
   COMBOBOX IDC_EVERYTHING_SCOPE, 88, 185, 198, 60, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP

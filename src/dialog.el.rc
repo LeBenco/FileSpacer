@@ -51,7 +51,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
 {
   CONTROL "&Αρχικός φάκελος", -1, "Button", BS_GROUPBOX, 7, 7, 286, 30
   CONTROL "", IDC_START_FOLDER_PATH, "ComboBoxEx32", CBS_DROPDOWN|WS_TABSTOP|0x00000040, 14, 18, 210, 300
-  CONTROL "&Αναζήτηση...", IDC_START_FOLDER_BROWSE, "Button", WS_TABSTOP, 231, 18, 55, 14
+  CONTROL "Ανα&ζήτηση...", IDC_START_FOLDER_BROWSE, "Button", WS_TABSTOP, 231, 18, 55, 14
   CONTROL "Περιήγηση φακέλων", -1, "Button", BS_GROUPBOX, 7, 41, 286, 55
   CONTROL "&Διατήρηση ανοιχτού παραθύρου προέλευσης", IDC_KEEP_SOURCE_WINDOW_OPEN, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 52, 272, 12
   CONTROL "Διατήρηση επιλογής με &κλικ σε ανενεργό παράθυρο", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 66, 272, 12
@@ -79,7 +79,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Εμφάνιση γραμμής &εργαλείων", IDC_TOOLBAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 35, 272, 14
   CONTROL "Στοιχεία γραμμής εργαλείων", -1, "Button", BS_GROUPBOX, 7, 63, 286, 77
   CONTROL "Εμφάνιση &Γρήγορης πρόσβασης", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 77, 130, 14
-  CONTROL "Εμφάνιση κουμπιού &Επάνω", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 77, 130, 14
+  CONTROL "Εμφάνιση κουμπιού Επά&νω", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 77, 130, 14
   CONTROL "Εμφάνιση γραμμής &διαδρομής", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 91, 272, 14
   CONTROL "Εμφάνιση κουμπιού &Ανανέωση", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 105, 130, 14
   CONTROL "Εμφάνιση κουμπιού &Προβολή", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 105, 130, 14
@@ -88,7 +88,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Εμφάνιση πλήρους &ονόματος επιλεγμένου αρχείου (όχι σε πολλαπλή επιλογή)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 159, 272, 20
   CONTROL "Ανάμειξη &φακέλων και αρχείων στην ταξινόμηση", IDC_MIXED_FOLDER_SORTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 183, 272, 14
   CONTROL "Μενού Προβολή", -1, "Button", BS_GROUPBOX, 7, 210, 286, 38
-  CONTROL "&Προεπισκόπηση λειτουργιών εμφάνισης στο μενού Προβολή", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 222, 272, 20
+  CONTROL "Προεπισκόπηση &λειτουργιών εμφάνισης στο μενού Προβολή", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 222, 272, 20
   CONTROL "Προεπιλεγμένο μέγεθος παραθύρων", -1, "Button", BS_GROUPBOX, 7, 255, 286, 35
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 272, 88, 8
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 269, 35, 14
@@ -105,12 +105,12 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL 32516, -1, "Static", SS_ICON, 14, 21, 0, 0
   CONTROL "Αντικατάσταση της Εξερεύνησης αρχείων ως προεπιλεγμένου προγράμματος ανοίγματος φακέλων.", -1, "Static", WS_GROUP, 42, 22, 244, 24
   CONTROL "&Ορισμός ως προεπιλεγμένης εφαρμογής διαχείρισης αρχείων", IDC_SET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 56, 272, 14
-  CONTROL "&Επαναφορά προεπιλεγμένης Εξερεύνησης αρχείων", IDC_RESET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 77, 272, 14
+  CONTROL "Επαναφορά &προεπιλεγμένης Εξερεύνησης αρχείων", IDC_RESET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 77, 272, 14
   GROUPBOX "Everything (εξωτερική εφαρμογή)", -1, 7, 111, 286, 97
   CONTROL "Προσθήκη αναζήτησης &Everything στο πλαίσιο αναζήτησης", IDC_EVERYTHING_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 123, 272, 12
   LTEXT "Εκτελέσιμο (κενό = αυτόματος εντοπισμός)", -1, 14, 138, 272, 9
   EDITTEXT IDC_EVERYTHING_PATH, 14, 149, 272, 14, ES_AUTOHSCROLL|WS_TABSTOP
-  PUSHBUTTON "&Εντοπισμός", IDC_EVERYTHING_DETECT, 14, 166, 90, 14
+  PUSHBUTTON "Εν&τοπισμός", IDC_EVERYTHING_DETECT, 14, 166, 90, 14
   PUSHBUTTON "&Αναζήτηση...", IDC_EVERYTHING_BROWSE, 111, 166, 90, 14
   LTEXT "Πεδίο αναζήτησης", -1, 14, 188, 70, 9
   COMBOBOX IDC_EVERYTHING_SCOPE, 88, 185, 198, 60, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
@@ -134,7 +134,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Ιστότοπος", IDC_WEBSITE_LINK, "Button", WS_TABSTOP, 84, 28, 63, 14
   CONTROL "&Δωρεά", IDC_DONATE_LINK, "Button", WS_TABSTOP, 161, 28, 63, 14
 #endif
-  CONTROL "Έλεγχος για &ενημερώσεις", IDC_UPDATES_LINK, "Button", WS_TABSTOP, 7, 40, 195, 16
+  CONTROL "Έ&λεγχος για ενημερώσεις", IDC_UPDATES_LINK, "Button", WS_TABSTOP, 7, 40, 195, 16
   CONTROL "&Τεκμηρίωση", IDC_HELP_LINK, "Button", WS_TABSTOP, 208, 40, 85, 16
   CONTROL "", IDC_UPDATE_STATUS, "Static", WS_GROUP, 7, 60, 286, 22
   CONTROL "&Αυτόματος εβδομαδιαίος έλεγχος ενημερώσεων", IDC_AUTO_UPDATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 7, 85, 286, 14
