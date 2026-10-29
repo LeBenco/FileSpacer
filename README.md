@@ -25,6 +25,9 @@ Portuguese (Portugal) and Greek.
 
 ## Features
 
+- **One window per folder**, reused if the folder is already open. Its position,
+  size, view settings and icon layout are restored between visits.
+  [Spatial navigation](docs/user-guide.md#window-navigation).
 - **Arrange icons freely**, with their positions saved and restored for each
   folder. [Icon layout](docs/user-guide.md#icon-layout).
 - **Move and resize windows** from anywhere in the file area, preserving

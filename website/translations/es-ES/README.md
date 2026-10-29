@@ -24,6 +24,7 @@ Windows 10 o posterior, x64. Disponible en inglés, francés, alemán, italiano,
 
 ## Funciones
 
+- **Una ventana por carpeta**, que se activa si la carpeta ya está abierta. Su posición, tamaño, configuración de vista y disposición de iconos se conservan entre aperturas. [Navegación espacial](docs/user-guide.md#window-navigation).
 - **Coloca los iconos libremente**, con las posiciones guardadas y restauradas para cada carpeta. [Disposición de iconos](docs/user-guide.md#icon-layout).
 - **Mueve y cambia el tamaño de las ventanas** desde cualquier punto del área de archivos sin perder la selección. Los gestos del ratón son configurables; por defecto, Alt + arrastrar con el botón izquierdo y Alt + arrastrar con el botón derecho. [Gestos de ventana](docs/user-guide.md#moving-and-resizing).
 - **Cambia entre carpetas abiertas** desde el menú de la barra de título, cierra las ventanas de las carpetas superiores o vuelve a abrir la última ventana cerrada con Ctrl+Mayús+T. [Navegación entre ventanas](docs/user-guide.md#window-navigation).
