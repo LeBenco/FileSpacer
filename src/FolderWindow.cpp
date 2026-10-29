@@ -157,6 +157,7 @@ struct FolderWindow::ViewMenuPreview {
     ShellViewState initial;
     std::vector<Entry> entries;
     UINT initialCommand = 0, currentCommand = 0, wantedCommand = 0;
+    UINT pendingCommand = 0; // Entry outside the modes, run after the preview is cancelled.
     bool tracking = true, posted = false, busy = false, changed = false, waiting = false;
     ULONG_PTR enumerationBaseline = 0;
     std::vector<std::vector<uint8_t>> positionChunks;
@@ -277,12 +278,15 @@ struct FolderWindow::ViewMenuPreview {
     void highlight(UINT command, HMENU popup) {
         if (!tracking || !current()) return;
         displayedMenu = popup;
+        // Like pointAt: an entry outside the modes returns to the initial mode.
+        UINT wanted = 0;
         for (const auto &entry : entries) {
             if (entry.command == command) {
-                wantedCommand = command == initialCommand ? 0 : command;
+                wanted = command == initialCommand ? 0 : command;
                 break;
             }
         }
+        wantedCommand = wanted;
     }
 
     void restoreDetails() {
@@ -343,11 +347,29 @@ struct FolderWindow::ViewMenuPreview {
         if (tracking) apply(wantedCommand);
     }
 
+    bool isEntry(UINT command) const {
+        for (const auto &entry : entries)
+            if (entry.command == command) return true;
+        return false;
+    }
+
+    // Runs the entry chosen outside the modes once the initial mode is restored.
+    void invokePending() {
+        const UINT command = pendingCommand;
+        pendingCommand = 0;
+        if (!command || !current()) return;
+        auto info = owner.makeInvokeInfo(static_cast<int>(command - IDM_SHELL_FIRST), POINT{});
+        info.hwnd = owner.hwnd;
+        checkHR(owner.invokeViewCommand(context, reinterpret_cast<CMINVOKECOMMANDINFO *>(&info)));
+    }
+
     void enumerated(ULONG_PTR enumeration) {
         if (!busy && waiting && enumeration > enumerationBaseline && current()) {
             waiting = false;
             restoreDetails();
             if (!tracking && current()) {
+                invokePending();
+                if (!current()) return;
                 owner.viewMenuPreview.reset();
                 owner.scheduleStateSave();
             }
@@ -358,16 +380,22 @@ struct FolderWindow::ViewMenuPreview {
         tracking = false;
         // An outside click / Escape retains the original mode. A chosen entry
         // already previewed is committed without another round trip through it.
-        const UINT chosen = command == initialCommand ? 0 : command;
+        // An entry outside the modes (sorting, auto arrange...) is not a mode:
+        // the preview is cancelled first, then the entry runs the ordinary way.
+        const bool mode = !command || isEntry(command);
+        const UINT chosen = mode && command != initialCommand ? command : 0;
         if (!chosen) finishPositions();
         const bool applying = chosen != currentCommand;
         apply(chosen);
         if (!current()) return;
         if (!chosen && currentCommand) return; // Never persist a preview after failed cancellation.
+        if (!mode) pendingCommand = command;
         // Returning to the initial mode already restored its details in apply().
         // Only a committed preview still needs its selection/focus restored here.
         if (!applying && chosen && changed && !waiting) restoreDetails();
         if (!waiting) {
+            invokePending();
+            if (!current()) return;
             owner.viewMenuPreview.reset();
             owner.scheduleStateSave();
         }
