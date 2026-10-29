@@ -109,13 +109,13 @@ try {
     Wait-Order $window (Expected-Order $false $true $false)
     Write-Host 'PASS: actual filesystem creation, rename and deletion update the mixed view without refresh commands.'
     Use-UiView $window {param($view) $view.SetViewModeAndIconSize(1,48);$view.AutoArrange=$false}
-    Wait-Provider $window $false
+    Wait-Provider $window $true
     Use-UiView $window {param($view) $view.Select($selectedName);$view.Select('item-03',$true);$view.Position($selectedName,310,170);$view.Position('item-03',100,270)}
     $positions=Use-UiView $window {param($view) $view.Positions()}
     Close-UiFolder $window
     $window=Open-UiFolder $folder 12
-    Wait-Provider $window $false
-    Assert-Ui ((Use-UiView $window {param($view) $view.Positions()}) -ceq $positions) 'Native free placement did not survive reopening.'
+    Wait-Provider $window $true
+    Assert-Ui ((Use-UiView $window {param($view) $view.Positions()}) -ceq $positions) 'Free placement under the mixed provider did not survive reopening.'
     Use-UiView $window {param($view) $view.Select($selectedName);$view.Select('item-03',$true)}
     $selection=(Use-UiView $window {param($view) $view.Selected()}) -join '|'
     $focus=Use-UiView $window {param($view) $view.Focused()}
@@ -126,28 +126,32 @@ try {
         Wait-Provider $window $true
         Assert-TestJunctionHidden
         Wait-Order $window (Expected-Order $false $true $false)
-        Assert-Ui (((Use-UiView $window {param($view) $view.Selected()}) -join '|') -ceq $selection) 'Switching to a sorted provider lost the multiselection.'
-        Assert-Ui ((Use-UiView $window {param($view) $view.Focused()}) -ceq $focus) 'Switching to a sorted provider lost focus.'
+        Assert-Ui (((Use-UiView $window {param($view) $view.Selected()}) -join '|') -ceq $selection) 'Switching to a sorted layout lost the multiselection.'
+        Assert-Ui ((Use-UiView $window {param($view) $view.Focused()}) -ceq $focus) 'Switching to a sorted layout lost focus.'
         if($mode-eq1){Toggle-AutoArrange $window}
         else {Use-UiView $window {param($view) $view.SetViewModeAndIconSize(1,48);$view.AutoArrange=$false}}
-        Wait-Provider $window $false
+        Wait-Provider $window $true
         $actualPositions=Use-UiView $window {param($view) $view.Positions()}
-        Assert-Ui ($actualPositions -ceq $positions) ('Returning to the native free layout lost icon positions. Expected: '+$positions+' Actual: '+$actualPositions)
-        Assert-Ui (((Use-UiView $window {param($view) $view.Selected()}) -join '|') -ceq $selection) 'Returning to the native free layout lost the multiselection.'
-        Assert-Ui ((Use-UiView $window {param($view) $view.Focused()}) -ceq $focus) 'Returning to the native free layout lost focus.'
+        Assert-Ui ($actualPositions -ceq $positions) ('Returning to the free layout lost icon positions. Expected: '+$positions+' Actual: '+$actualPositions)
+        Assert-Ui (((Use-UiView $window {param($view) $view.Selected()}) -join '|') -ceq $selection) 'Returning to the free layout lost the multiselection.'
+        Assert-Ui ((Use-UiView $window {param($view) $view.Focused()}) -ceq $focus) 'Returning to the free layout lost focus.'
     }
-    Write-Host 'PASS: free layout uses the native provider; Details/List/arranged Icons use mixed sorting; transitions retain all positions, multiselection and focus.'
+    Write-Host 'PASS: the mixed provider stays active in the free layout; Details/List/arranged Icons use mixed sorting; transitions retain all positions, multiselection and focus.'
     Use-UiView $window {param($view) $view.Select($selectedName)}
     [void](Show-UiSettings $window);$page=Set-UiPage 1
     Set-UiCheck $page 'IDC_MIXED_FOLDER_SORTING' $false;Press-UiSettings 4
+    Wait-Provider $window $false
     Wait-Ui {(Use-UiView $window {param($view) $view.Positions()}) -ceq $positions} 'native icon positions retained while disabling mixed sorting' 150
     Assert-Ui ((Use-UiView $window {param($view) $view.Selected()}) -eq $selectedName) 'Disabling mixed sorting lost selection.'
     Assert-Ui ((Use-UiView $window {param($view) $view.Focused()}) -ceq $selectedName) 'Disabling mixed sorting lost focus.'
     Set-UiCheck $page 'IDC_MIXED_FOLDER_SORTING' $true;Press-UiSettings 3
+    Wait-Provider $window $true
     Wait-Ui {(Use-UiView $window {param($view) $view.Positions()}) -ceq $positions} 'icon positions retained while enabling mixed sorting' 150
+    Assert-Ui ((Use-UiView $window {param($view) $view.Selected()}) -eq $selectedName) 'Enabling mixed sorting in the free layout lost selection.'
+    Assert-Ui ((Use-UiView $window {param($view) $view.Focused()}) -ceq $selectedName) 'Enabling mixed sorting in the free layout lost focus.'
     Close-UiFolder $window
     $window=Open-UiFolder $folder 12
-    Wait-Provider $window $false
+    Wait-Provider $window $true
     Wait-Ui {(Use-UiView $window {param($view) $view.Positions()}) -ceq $positions} 'canonical icon positions after reopening' 150
     Assert-Ui ((Get-UiPreference 'MixedFolderSorting') -eq 1) 'The preference did not persist.'
     Write-Host 'PASS: toggling and reopening preserve canonical native item positions and selection.'
@@ -155,7 +159,7 @@ try {
     $emptyWindow=Open-UiFolder $empty 0
     Assert-Ui (Use-UiView $emptyWindow {param($view) $view.ContentVisible}) 'An empty mixed folder retained hidden content.'
     Use-UiView $emptyWindow {param($view) $view.SetViewModeAndIconSize(1,48);$view.AutoArrange=$false}
-    Wait-Provider $emptyWindow $false
+    Wait-Provider $emptyWindow $true
     Use-UiView $emptyWindow {param($view) $view.SetViewModeAndIconSize(4,48)}
     Wait-Provider $emptyWindow $true
     Close-UiFolder $emptyWindow
