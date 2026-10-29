@@ -13,6 +13,22 @@ const EXPLORER_BROWSER_OPTIONS BROWSER_OPTIONS =
     EBO_NOBORDER | EBO_NOTRAVELLOG | EBO_NOPERSISTVIEWSTATE;
 // Shared across hosts so a notification cannot match another window after HWND reuse.
 std::atomic<ULONG_PTR> nextViewGeneration{0};
+// A process elevated through UAC does not load per-user COM classes
+// (https://learn.microsoft.com/windows/win32/com/the-com-elevation-moniker),
+// and the mixed-sort provider only exists through its HKCU registration:
+// such a process keeps the native view instead of failing every navigation.
+bool processElevated() {
+    static const bool elevated = [] {
+        HANDLE rawToken = nullptr;
+        if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &rawToken)) return false;
+        std::unique_ptr<void, decltype(&CloseHandle)> token(rawToken, &CloseHandle);
+        TOKEN_ELEVATION elevation = {};
+        DWORD size = sizeof(elevation);
+        return GetTokenInformation(token.get(), TokenElevation, &elevation, sizeof(elevation), &size)
+            && elevation.TokenIsElevated != 0;
+    }();
+    return elevated;
+}
 }
 
 struct ShellViewHost::ViewSignal {
@@ -239,7 +255,7 @@ HRESULT ShellViewHost::navigate(IShellItem *item, bool mixFolders, bool isolated
     mixedSorting = mixFolders;
     CComPtr<IShellItem> target = item;
     bool custom = false;
-    if (mixFolders) {
+    if (mixFolders && !processElevated()) {
         SFGAOF attributes = 0;
         const SFGAOF required = SFGAO_FOLDER | SFGAO_FILESYSTEM;
         HRESULT hr = item->GetAttributes(required | SFGAO_STREAM, &attributes);
