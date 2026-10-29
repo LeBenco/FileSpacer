@@ -1123,14 +1123,13 @@ void FolderWindow::applyNameFilter(const wchar_t *text) {
         activeFilter->setQuery(text);
         searchText = text;
         // Keep the interface already retained by DefView and refresh natively.
-        enumerationComplete = false;
         restoreIconsPending = searchText.empty();
-        hr = view ? refreshView() : S_OK;
+        hr = view ? refreshEnumeration() : S_OK;
         if (FAILED(hr) && isWindowOperational()) {
             activeFilter->setQuery(previousText.c_str());
             searchText = previousText;
             if (view)
-                refreshView();
+                refreshEnumeration();
         }
     }
     if (FAILED(hr) && isWindowOperational()) {
@@ -1402,6 +1401,15 @@ HRESULT FolderWindow::refreshView() {
     return result;
 }
 
+// Restart the enumeration. The baseline is read before the call so that only
+// an EnumDone of the new enumeration marks it complete; a stale event still
+// queued from the previous one can no longer let positions be captured early.
+HRESULT FolderWindow::refreshEnumeration() {
+    enumerationComplete = false;
+    viewOptionsEnumerationBaseline = viewHost.enumerationSerial();
+    return refreshView();
+}
+
 void FolderWindow::resumeDeferredClose() {
     --navigationDepth;
     if (navigationDepth || !isWindowOperational()) return;
@@ -1555,7 +1563,7 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             // ShlObj_core.h documents "ShellState" for Shell option changes.
             if (shellView && lParam
                     && lstrcmpi(reinterpret_cast<LPCWSTR>(lParam), L"ShellState") == 0)
-                checkHR(refreshView());
+                checkHR(refreshEnumeration());
             break;
         case WM_WINDOWPOSCHANGED: {
             CComPtr<ItemWindow> keepAlive(this);
@@ -1774,9 +1782,8 @@ void FolderWindow::refresh() {
     persistViewState();
     ItemWindow::refresh();
     if (shellView) {
-        enumerationComplete = false;
         restoreIconsPending = searchText.empty();
-        HRESULT hr = refreshView();
+        HRESULT hr = refreshEnumeration();
         checkHR(hr);
         recordFolderAccess(hr);
     } // TODO: invoke context menu verb instead?
