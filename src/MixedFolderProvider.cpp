@@ -25,6 +25,21 @@ constexpr LONG changeEvents = SHCNE_CREATE | SHCNE_DELETE | SHCNE_MKDIR | SHCNE_
 struct ItemHeader { USHORT cb; GUID signature; USHORT version; USHORT kind; };
 #pragma pack(pop)
 
+// The per-user registration is rewritten only when a value differs, so an
+// ordinary navigation no longer writes the Registry once it matches this module.
+LSTATUS ensureStringValue(CRegKey &key, const wchar_t *name, const wchar_t *value) {
+    wchar_t current[MAX_PATH];
+    ULONG length = ARRAYSIZE(current);
+    if (key.QueryStringValue(name, current, &length) == ERROR_SUCCESS && wcscmp(current, value) == 0)
+        return ERROR_SUCCESS;
+    return key.SetStringValue(name, value);
+}
+LSTATUS ensureDWORDValue(CRegKey &key, const wchar_t *name, DWORD value) {
+    DWORD current = 0;
+    if (key.QueryDWORDValue(name, current) == ERROR_SUCCESS && current == value) return ERROR_SUCCESS;
+    return key.SetDWORDValue(name, value);
+}
+
 // Only our own item identifiers are interpreted. The native PIDL payload is
 // opaque; its documented SHITEMID lengths are validated before delegation.
 HRESULT wrapItem(PCUIDLIST_RELATIVE native, USHORT kind, PITEMID_CHILD *out) {
@@ -581,12 +596,12 @@ extern "C" HRESULT WINAPI CreateMixedFolderItem(BOOL isolated, IShellItem *item,
     swprintf_s(key, L"Software\\Classes\\CLSID\\%s", id);
     CRegKey registration, server, shell;
     LSTATUS status = registration.Create(HKEY_CURRENT_USER, key);
-    if (status == ERROR_SUCCESS) status = registration.SetStringValue(nullptr, L"FileSpacer");
+    if (status == ERROR_SUCCESS) status = ensureStringValue(registration, nullptr, L"FileSpacer");
     if (status == ERROR_SUCCESS) status = server.Create(registration, L"InprocServer32");
-    if (status == ERROR_SUCCESS) status = server.SetStringValue(nullptr, path);
-    if (status == ERROR_SUCCESS) status = server.SetStringValue(L"ThreadingModel", L"Apartment");
+    if (status == ERROR_SUCCESS) status = ensureStringValue(server, nullptr, path);
+    if (status == ERROR_SUCCESS) status = ensureStringValue(server, L"ThreadingModel", L"Apartment");
     if (status == ERROR_SUCCESS) status = shell.Create(registration, L"ShellFolder");
-    if (status == ERROR_SUCCESS) status = shell.SetDWORDValue(L"Attributes", SFGAO_FOLDER | SFGAO_HASSUBFOLDER);
+    if (status == ERROR_SUCCESS) status = ensureDWORDValue(shell, L"Attributes", SFGAO_FOLDER | SFGAO_HASSUBFOLDER);
     if (status != ERROR_SUCCESS) return HRESULT_FROM_WIN32(status);
     // A documented filesystem junction keeps the namespace root internal to the
     // application's data directory, without a Desktop/This PC namespace entry.
