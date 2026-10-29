@@ -26,6 +26,15 @@ InstallDir ""
 !define EXECUTE_GUID "{c79db990-30a8-47e7-9f84-9db1316ae89b}"
 !define REG_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\FileSpacer"
 !define REG_APPPATH_KEY "Software\Microsoft\Windows\CurrentVersion\App Paths\FileSpacer.exe"
+; Exit codes of the elevated worker (/MachineWorker), explained by the parent.
+; 1 stays the cancellation code and 2 the generic failure of either process.
+!define EXIT_CLOSED 3
+!define EXIT_SCOPE 4
+!define EXIT_FILES 5
+!define EXIT_REGISTRY 6
+!define EXIT_SHORTCUT 7
+!define EXIT_CONTEXT 8
+!define EXIT_OPTIONS 9
 !getdllversion /productversion "..\build\release\FileSpacer.exe" PRODUCT_VERSION_
 !define PRODUCT_VERSION "${PRODUCT_VERSION_1}.${PRODUCT_VERSION_2}.${PRODUCT_VERSION_3}"
 VIProductVersion "${PRODUCT_VERSION}.${PRODUCT_VERSION_4}"
@@ -114,6 +123,22 @@ LangString ERROR_UNINSTALL ${LANG_ENGLISH} "Uninstallation failed. Close FileSpa
 LangString ERROR_UNINSTALL ${LANG_FRENCH} "La désinstallation a échoué. Fermez FileSpacer puis réessayez."
 LangString ERROR_SCOPE ${LANG_ENGLISH} "An installation already exists in a different mode. Keep its mode and location, or uninstall it before changing them."
 LangString ERROR_SCOPE ${LANG_FRENCH} "Une installation existe déjà dans un autre mode. Conservez son mode et son emplacement, ou désinstallez-la avant de les changer."
+LangString MACHINE_WAIT ${LANG_ENGLISH} "Installing for all users: confirm the Windows elevation prompt, then wait for the elevated installer to finish..."
+LangString MACHINE_WAIT ${LANG_FRENCH} "Installation pour tous les utilisateurs en cours : validez l'invite d'élévation de Windows, puis patientez jusqu'à la fin de l'installeur élevé…"
+LangString OPEN_LOG ${LANG_ENGLISH} "Open the installation log?"
+LangString OPEN_LOG ${LANG_FRENCH} "Ouvrir le journal d'installation ?"
+LangString ERROR_MACHINE_CLOSED ${LANG_ENGLISH} "FileSpacer or its folder provider is still loaded in a session on this computer. Close FileSpacer everywhere, then try again."
+LangString ERROR_MACHINE_CLOSED ${LANG_FRENCH} "FileSpacer ou son fournisseur de dossiers est encore chargé dans une session de cet ordinateur. Fermez FileSpacer partout, puis réessayez."
+LangString ERROR_MACHINE_FILES ${LANG_ENGLISH} "The elevated installer could not copy the program files. Check access to the installation folder."
+LangString ERROR_MACHINE_FILES ${LANG_FRENCH} "L'installeur élevé n'a pas pu copier les fichiers du programme. Vérifiez l'accès au dossier d'installation."
+LangString ERROR_MACHINE_REGISTRY ${LANG_ENGLISH} "The elevated installer could not write the registration of the program for all users."
+LangString ERROR_MACHINE_REGISTRY ${LANG_FRENCH} "L'installeur élevé n'a pas pu écrire l'inscription du programme pour tous les utilisateurs."
+LangString ERROR_MACHINE_SHORTCUT ${LANG_ENGLISH} "The elevated installer could not create the Start Menu shortcut."
+LangString ERROR_MACHINE_SHORTCUT ${LANG_FRENCH} "L'installeur élevé n'a pas pu créer le raccourci du menu Démarrer."
+LangString ERROR_MACHINE_CONTEXT ${LANG_ENGLISH} "The elevated installer could not register the folder context menu."
+LangString ERROR_MACHINE_CONTEXT ${LANG_FRENCH} "L'installeur élevé n'a pas pu inscrire le menu contextuel des dossiers."
+LangString ERROR_MACHINE_OPTIONS ${LANG_ENGLISH} "The elevated installer could not save the installation options."
+LangString ERROR_MACHINE_OPTIONS ${LANG_FRENCH} "L'installeur élevé n'a pas pu enregistrer les options d'installation."
 
 Var locked
 Var choicesScope
@@ -133,6 +158,22 @@ Var brandingTitleFont
 Var brandingCaptionFont
 Var titleFont
 Var processList
+Var logPath
+
+; The elevated worker runs silently: it leaves its trace in the log file the
+; parent passed with /Log=, which the parent replays and offers to open.
+!macro WORKER_LOG TEXT
+    ${If} $machineWorker == 1
+    ${AndIf} $logPath != ""
+        FileOpen $R9 "$logPath" a
+        ${IfNot} ${Errors}
+            FileSeek $R9 0 END
+            FileWriteUTF16LE $R9 "${TEXT}$\r$\n"
+            FileClose $R9
+        ${EndIf}
+        ClearErrors
+    ${EndIf}
+!macroend
 !include Elevation.nsh
 !include ShortcutAppID.nsh
 
@@ -427,9 +468,10 @@ Function ${PREFIX}CheckClosed
     Call ${PREFIX}SearchModules
     ${If} $locked != 0
     ${OrIf} $R0 != "done"
+        !insertmacro WORKER_LOG "FileSpacer.exe or FileSpacerFolder.dll is still loaded (exit code ${EXIT_CLOSED})."
         DetailPrint $(CLOSE_TEXT)
         MessageBox MB_OK|MB_ICONSTOP $(CLOSE_TEXT) /SD IDOK
-        SetErrorLevel 2
+        SetErrorLevel ${EXIT_CLOSED}
         Abort
     ${EndIf}
 FunctionEnd
@@ -533,15 +575,16 @@ Section "FileSpacer" SecBase
         ${EndIf}
         ${If} $0 != ""
             MessageBox MB_OK|MB_ICONSTOP $(ERROR_SCOPE) /SD IDOK
-            SetErrorLevel 2
+            SetErrorLevel ${EXIT_SCOPE}
             Abort
         ${EndIf}
     ${EndIf}
     ReadRegStr $1 SHCTX "Software\FileSpacer" "Install_Dir"
     ${If} $1 != ""
     ${AndIf} $1 != $INSTDIR
+        !insertmacro WORKER_LOG "An installation already exists at $1, not at $INSTDIR."
         MessageBox MB_OK|MB_ICONSTOP $(ERROR_SCOPE) /SD IDOK
-        SetErrorLevel 2
+        SetErrorLevel ${EXIT_SCOPE}
         Abort
     ${EndIf}
     Call CheckClosed ; Also covers silent setup and launches after the custom page.
@@ -553,16 +596,17 @@ Section "FileSpacer" SecBase
             ${If} $elevatedResult == 1223
                 StrCpy $elevatedResult 1 ; Match NSIS and the updater's cancellation code.
             ${Else}
-                MessageBox MB_OK|MB_ICONSTOP "$(ERROR_MACHINE) ($elevatedResult)" /SD IDOK
+                Call ExplainWorkerFailure
             ${EndIf}
             SetErrorLevel $elevatedResult
             Abort
         ${EndIf}
         Goto install_done
     ${EndIf}
+    !insertmacro WORKER_LOG "Copying the program files to $INSTDIR (mode $installMode)."
     ClearErrors
     SetOutPath "$INSTDIR"
-    IfErrors install_failed
+    IfErrors files_failed
     SetOverwrite on
     File "..\build\release\FileSpacer.exe"
     File "..\build\release\FileSpacerFolder.dll"
@@ -577,7 +621,8 @@ Section "FileSpacer" SecBase
     WriteUninstaller "$INSTDIR\uninstall.exe"
     WriteINIStr "$INSTDIR\install-info.ini" "Installation" "Mode" $installMode
     WriteINIStr "$INSTDIR\install-info.ini" "Installation" "Language" $LANGUAGE
-    IfErrors install_failed
+    IfErrors files_failed
+    !insertmacro WORKER_LOG "Files installed; writing the registration for all users."
 
     WriteRegStr SHCTX "Software\FileSpacer" "InstallMode" $installMode
     WriteRegStr SHCTX "Software\FileSpacer" "Install_Dir" "$INSTDIR"
@@ -598,11 +643,18 @@ Section "FileSpacer" SecBase
     WriteRegStr SHCTX "Software\Classes\CLSID\${EXECUTE_GUID}" "" "FileSpacer"
     WriteRegStr SHCTX "Software\Classes\CLSID\${EXECUTE_GUID}\LocalServer32" "" '"$INSTDIR\FileSpacer.exe"'
     WriteRegStr SHCTX "Software\Classes\CLSID\${EXECUTE_GUID}\LocalServer32" "ServerExecutable" "$INSTDIR\FileSpacer.exe"
-    IfErrors install_failed
+    IfErrors registry_failed
+    !insertmacro WORKER_LOG "Registration written."
     Goto install_done
-install_failed:
+files_failed:
+    !insertmacro WORKER_LOG "Copying the program files to $INSTDIR failed (exit code ${EXIT_FILES})."
     MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
-    SetErrorLevel 2
+    SetErrorLevel ${EXIT_FILES}
+    Abort
+registry_failed:
+    !insertmacro WORKER_LOG "Writing the registration failed (exit code ${EXIT_REGISTRY})."
+    MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
+    SetErrorLevel ${EXIT_REGISTRY}
     Abort
 install_done:
 SectionEnd
@@ -611,6 +663,7 @@ Section "$(SEC_START)" SecStart
     ${If} $delegated == 1
         Goto shortcut_done
     ${EndIf}
+    !insertmacro WORKER_LOG "Creating the Start Menu shortcut."
     ClearErrors
     CreateShortcut /NoWorkingDir "$SMPROGRAMS\FileSpacer.lnk" "$INSTDIR\FileSpacer.exe"
     IfErrors shortcut_failed
@@ -618,8 +671,9 @@ Section "$(SEC_START)" SecStart
     Pop $0
     ${If} $0 != 0
 shortcut_failed:
+        !insertmacro WORKER_LOG "Creating the Start Menu shortcut failed (exit code ${EXIT_SHORTCUT})."
         MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
-        SetErrorLevel 2
+        SetErrorLevel ${EXIT_SHORTCUT}
         Abort
     ${EndIf}
 shortcut_done:
@@ -629,6 +683,7 @@ Section "$(SEC_CONTEXT)" SecContext
     ${If} $delegated == 1
         Goto context_done
     ${EndIf}
+    !insertmacro WORKER_LOG "Registering the folder context menu."
     ClearErrors
     !insertmacro INSTALL_VERB "Directory" "%1"
     !insertmacro INSTALL_VERB "Directory\Background" "%V"
@@ -638,8 +693,9 @@ Section "$(SEC_CONTEXT)" SecContext
     !insertmacro INSTALL_VERB "NetShare" "%1"
     Goto context_done
 context_failed:
+    !insertmacro WORKER_LOG "Registering the folder context menu failed (exit code ${EXIT_CONTEXT})."
     MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
-    SetErrorLevel 2
+    SetErrorLevel ${EXIT_CONTEXT}
     Abort
 context_done:
 SectionEnd
@@ -774,6 +830,13 @@ Function InitializeInstall
     ${IfNot} ${Errors}
         StrCpy $machineWorker 1
         SetSilent silent
+        ClearErrors
+        ${GetOptionsS} $parameters "/Log=" $logPath
+        ${If} ${Errors}
+            StrCpy $logPath ""
+        ${EndIf}
+        ClearErrors
+        !insertmacro WORKER_LOG "Elevated worker started with: $parameters"
         UserInfo::GetAccountType
         Pop $0
         ${If} $0 != "Admin"
@@ -837,8 +900,81 @@ Function InstallForAllUsers
     IntOp $1 $1 & ${SF_SELECTED}
     SectionGetFlags ${SecDefault} $2
     IntOp $2 $2 & ${SF_SELECTED}
-    StrCpy $elevatedParameters "/S /AllUsers /MachineWorker /StartMenu=$0 /ContextMenu=$1 /DefaultFileManager=$2 /Language=$LANGUAGE /D=$INSTDIR"
+    ; The worker is silent: it logs into a file the parent replays afterwards.
+    StrCpy $logPath "$TEMP\FileSpacer-install-machine.log"
+    ClearErrors
+    FileOpen $R9 "$logPath" w
+    ${IfNot} ${Errors}
+        FileWriteUTF16LE /BOM $R9 ""
+        FileClose $R9
+    ${EndIf}
+    ClearErrors
+    DetailPrint $(MACHINE_WAIT)
+    FindWindow $R8 "#32770" "" $HWNDPARENT
+    GetDlgItem $R8 $R8 1006
+    SendMessage $R8 ${WM_SETTEXT} 0 "STR:$(MACHINE_WAIT)"
+    StrCpy $elevatedParameters "/S /AllUsers /MachineWorker /StartMenu=$0 /ContextMenu=$1 /DefaultFileManager=$2 /Language=$LANGUAGE /Log=$\"$logPath$\" /D=$INSTDIR"
     Call RunElevated
+    Call ReplayWorkerLog
+FunctionEnd
+
+Function ReplayWorkerLog
+    ${If} $logPath == ""
+        Return
+    ${EndIf}
+    ClearErrors
+    FileOpen $R9 "$logPath" r
+    ${If} ${Errors}
+        ClearErrors
+        Return
+    ${EndIf}
+    ${Do}
+        FileReadUTF16LE $R9 $R8
+        ${If} ${Errors}
+            ${ExitDo}
+        ${EndIf}
+        StrCpy $R7 $R8 2 -2
+        ${If} $R7 == "$\r$\n"
+            StrCpy $R8 $R8 -2
+        ${EndIf}
+        ${If} $R8 != ""
+            DetailPrint $R8
+        ${EndIf}
+    ${Loop}
+    FileClose $R9
+    ClearErrors
+FunctionEnd
+
+; Names the cause reported by the worker's exit code, then offers its log.
+Function ExplainWorkerFailure
+    ${Switch} $elevatedResult
+        ${Case} ${EXIT_CLOSED}
+            StrCpy $R8 $(ERROR_MACHINE_CLOSED)
+            ${Break}
+        ${Case} ${EXIT_SCOPE}
+            StrCpy $R8 $(ERROR_SCOPE)
+            ${Break}
+        ${Case} ${EXIT_FILES}
+            StrCpy $R8 $(ERROR_MACHINE_FILES)
+            ${Break}
+        ${Case} ${EXIT_REGISTRY}
+            StrCpy $R8 $(ERROR_MACHINE_REGISTRY)
+            ${Break}
+        ${Case} ${EXIT_SHORTCUT}
+            StrCpy $R8 $(ERROR_MACHINE_SHORTCUT)
+            ${Break}
+        ${Case} ${EXIT_CONTEXT}
+            StrCpy $R8 $(ERROR_MACHINE_CONTEXT)
+            ${Break}
+        ${Case} ${EXIT_OPTIONS}
+            StrCpy $R8 $(ERROR_MACHINE_OPTIONS)
+            ${Break}
+        ${Default}
+            StrCpy $R8 "$(ERROR_MACHINE) ($elevatedResult)"
+    ${EndSwitch}
+    MessageBox MB_YESNO|MB_ICONSTOP "$R8$\r$\n$\r$\n$(OPEN_LOG)" /SD IDNO IDNO explain_done
+    ExecShell "open" "$logPath"
+explain_done:
 FunctionEnd
 
 !macro SAVE_COMPONENT SECTION KEY
@@ -880,10 +1016,12 @@ Section -ApplyOptions
     !insertmacro SAVE_COMPONENT ${SecContext} "ContextMenu"
     !insertmacro SAVE_COMPONENT ${SecDefault} "DefaultFileManager"
     ${If} ${Errors}
+        !insertmacro WORKER_LOG "Saving the installation options failed (exit code ${EXIT_OPTIONS})."
         MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
-        SetErrorLevel 2
+        SetErrorLevel ${EXIT_OPTIONS}
         Abort
     ${EndIf}
+    !insertmacro WORKER_LOG "Elevated worker finished successfully."
 options_done:
 SectionEnd
 
