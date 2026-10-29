@@ -2,6 +2,7 @@ title: FileSpacer
 description: Spatial file manager for Windows
 url: https://lebenco.github.io
 baseurl: /FileSpacer
+favicon_ico: /assets/favicon.ico
 remote_theme: just-the-docs/just-the-docs@v0.12.0
 plugins:
   - jekyll-remote-theme
