@@ -216,16 +216,16 @@ bool rememberRemovedDestinations(IObjectArray *removed, CRegKey &key) {
     return true;
 }
 
-void buildJumpList(const wchar_t *appID, const wchar_t *executable, const wchar_t *reopenName,
+bool buildJumpList(const wchar_t *appID, const wchar_t *executable, const wchar_t *reopenName,
         const std::wstring &reopenIcon,
         const std::vector<CComPtr<IShellLinkW>> &destinations) {
     CRegKey key;
     CComPtr<ICustomDestinationList> list;
     if (!openJumpListKey(appID, &key) || !checkHR(list.CoCreateInstance(CLSID_DestinationList))
-            || !checkHR(list->SetAppID(appID))) return;
+            || !checkHR(list->SetAppID(appID))) return false;
     UINT slots = 0;
     CComPtr<IObjectArray> removed;
-    if (!checkHR(list->BeginList(&slots, IID_PPV_ARGS(&removed)))) return;
+    if (!checkHR(list->BeginList(&slots, IID_PPV_ARGS(&removed)))) return false;
     const bool complete = [&]() {
         if (!rememberRemovedDestinations(removed, key)) return false;
         CComPtr<IObjectCollection> quickAccess;
@@ -267,10 +267,57 @@ void buildJumpList(const wchar_t *appID, const wchar_t *executable, const wchar_
         return checkHR(list->AddUserTasks(array)) && checkHR(list->CommitList());
     }();
     if (!complete) checkHR(list->AbortList());
+    return complete;
+}
+
+// Value names of the destinations the user removed from one Jump List.
+bool removedDestinationNames(const wchar_t *appID, std::vector<std::wstring> *names) {
+    CRegKey key;
+    const std::wstring path = std::wstring(jumpListRegistryKey()) + L"\\" + appID;
+    if (!checkHR(HRESULT_FROM_WIN32(key.Open(HKEY_CURRENT_USER, path.c_str(), KEY_READ)))) return false;
+    for (DWORD index = 0;; ++index) {
+        wchar_t name[16384] = {};
+        DWORD size = ARRAYSIZE(name);
+        const LSTATUS status = RegEnumValueW(key, index, name, &size, nullptr, nullptr, nullptr, nullptr);
+        if (status == ERROR_NO_MORE_ITEMS) return true;
+        if (!checkHR(HRESULT_FROM_WIN32(status))) return false;
+        names->push_back(name);
+    }
+}
+
+bool folderWindowOpen(const std::wstring &property) {
+    struct Search { const std::wstring &property; bool found; } search{property, false};
+    EnumWindows([](HWND window, LPARAM data) -> BOOL {
+        auto &search = *reinterpret_cast<Search *>(data);
+        if (GetPropW(window, search.property.c_str())) { search.found = true; return FALSE; }
+        return TRUE;
+    }, reinterpret_cast<LPARAM>(&search));
+    return search.found;
+}
+
+// A key tagged by a window (StateKey) whose folder has no stored state and no
+// open window in any process is stale. Untagged keys from earlier versions are
+// kept: deleting one would forget the destinations the user removed from it.
+bool jumpListKeyStale(FolderStateStore &store, const wchar_t *appID) {
+    CRegKey key;
+    const std::wstring path = std::wstring(jumpListRegistryKey()) + L"\\" + appID;
+    if (key.Open(HKEY_CURRENT_USER, path.c_str(), KEY_READ) != ERROR_SUCCESS) return false;
+    wchar_t tag[1024] = {};
+    ULONG length = ARRAYSIZE(tag);
+    if (key.QueryStringValue(L"StateKey", tag, &length) != ERROR_SUCCESS || !tag[0]) return false;
+    std::string stateKey;
+    for (const wchar_t *character = tag; *character; ++character) stateKey.push_back(static_cast<char>(*character));
+    bool found = true;
+    if (!store.contains(stateKey, &found) || found) return false;
+    return !folderWindowOpen(tag); // The window property is the state key itself.
 }
 
 SRWLOCK refreshLock = SRWLOCK_INIT;
 bool refreshRunning = false, refreshPending = false;
+// Read and written only while the cross-process mutex is held. Memory only:
+// every start rebuilds once, then skips rebuilds whose inputs are unchanged.
+uint64_t builtFingerprint = 0;
+bool built = false, purged = false;
 } // namespace
 
 void updateReopenJumpLists() {
@@ -304,18 +351,16 @@ void updateReopenJumpLists() {
                 if (canReopen) reopenIcon = jumpListFolderIcon(folder);
             }
 
+            struct Destination { std::wstring parsingName, name, icon; };
             std::vector<CComPtr<IShellItem>> folders;
-            std::vector<CComPtr<IShellLinkW>> destinations;
+            std::vector<Destination> pinned;
             UINT stage = 0;
             if (checkHR(enumerateQuickAccessFolders(&folders, &stage, false))) {
                 for (const auto &folder : folders) {
                     CComHeapPtr<wchar_t> name, parsingName;
-                    CComPtr<IShellLinkW> link;
                     if (SUCCEEDED(folder->GetDisplayName(SIGDN_NORMALDISPLAY, &name))
-                            && SUCCEEDED(folder->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &parsingName))
-                            && makeJumpListLink(executable.data(), folderArguments(parsingName).c_str(), name,
-                                jumpListFolderIcon(folder), &link))
-                        destinations.push_back(link);
+                            && SUCCEEDED(folder->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &parsingName)))
+                        pinned.push_back({parsingName.m_pData, name.m_pData, jumpListFolderIcon(folder)});
                 }
             }
             CRegKey application;
@@ -323,7 +368,8 @@ void updateReopenJumpLists() {
             application.Close();
             CRegKey known;
             if (!checkHR(HRESULT_FROM_WIN32(known.Open(HKEY_CURRENT_USER,
-                    jumpListRegistryKey(), KEY_READ)))) return;
+                    jumpListRegistryKey(), KEY_READ | KEY_WRITE)))) return;
+            std::vector<std::wstring> appIDs;
             for (DWORD index = 0;; ++index) {
                 wchar_t appID[129] = {};
                 DWORD size = ARRAYSIZE(appID);
@@ -331,9 +377,45 @@ void updateReopenJumpLists() {
                     nullptr, nullptr, nullptr, nullptr);
                 if (status == ERROR_NO_MORE_ITEMS) break;
                 if (!checkHR(HRESULT_FROM_WIN32(status))) break;
-                buildJumpList(appID, executable.data(), canReopen ? reopenName.c_str() : nullptr,
-                    reopenIcon, destinations);
+                appIDs.push_back(appID);
             }
+            if (!purged) {
+                purged = true; // Once per process: the first update is the one at startup.
+                for (auto it = appIDs.begin(); it != appIDs.end();) {
+                    if (jumpListKeyStale(store, it->c_str())
+                            && checkHR(HRESULT_FROM_WIN32(RegDeleteTreeW(known, it->c_str()))))
+                        it = appIDs.erase(it);
+                    else ++it;
+                }
+            }
+            // Skip the rebuild when nothing it is built from has changed.
+            JumpListModel model;
+            model.add(executable.data());
+            model.add(getString(IDS_QUICK_ACCESS));
+            model.add(canReopen ? reopenName.c_str() : L"");
+            model.add(reopenIcon);
+            model.add(wide(last.key));
+            for (const auto &entry : pinned) { model.add(entry.parsingName); model.add(entry.name); model.add(entry.icon); }
+            for (const auto &appID : appIDs) {
+                model.add(appID);
+                std::vector<std::wstring> removedNames;
+                if (!removedDestinationNames(appID.c_str(), &removedNames)) return;
+                for (const auto &name : removedNames) model.add(name);
+            }
+            const uint64_t fingerprint = model.fingerprint();
+            if (built && fingerprint == builtFingerprint) return;
+            std::vector<CComPtr<IShellLinkW>> destinations;
+            for (const auto &entry : pinned) {
+                CComPtr<IShellLinkW> link;
+                if (makeJumpListLink(executable.data(), folderArguments(entry.parsingName.c_str()).c_str(),
+                        entry.name.c_str(), entry.icon, &link))
+                    destinations.push_back(link);
+            }
+            bool complete = true;
+            for (const auto &appID : appIDs)
+                complete = buildJumpList(appID.c_str(), executable.data(), canReopen ? reopenName.c_str() : nullptr,
+                    reopenIcon, destinations) && complete;
+            if (complete) { built = true; builtFingerprint = fingerprint; }
         }();
         ReleaseMutex(mutex);
     }
@@ -372,10 +454,12 @@ void refreshReopenJumpLists() {
     }
 }
 
-void scheduleReopenJumpList(const std::wstring &appID) {
+void scheduleReopenJumpList(const std::wstring &appID, const std::string &stateKey) {
     // Keep identities after their windows close: a folder may still be pinned.
     CRegKey key;
-    if (openJumpListKey(appID.c_str(), &key)) refreshReopenJumpLists();
+    if (!openJumpListKey(appID.c_str(), &key)) return;
+    if (!stateKey.empty()) checkHR(HRESULT_FROM_WIN32(key.SetStringValue(L"StateKey", wide(stateKey).c_str())));
+    refreshReopenJumpLists();
 }
 
 } // namespace
