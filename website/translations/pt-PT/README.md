@@ -24,6 +24,7 @@ Windows 10 ou posterior, x64. Disponível em inglês, francês, alemão, italian
 
 ## Funcionalidades
 
+- **Uma janela por pasta**, reativada se a pasta já estiver aberta. A posição, o tamanho, as definições de apresentação e a disposição dos ícones são mantidos entre aberturas. [Navegação espacial](docs/user-guide.md#window-navigation).
 - **Disponha os ícones livremente**, com posições guardadas e restauradas para cada pasta. [Disposição dos ícones](docs/user-guide.md#icon-layout).
 - **Mova e redimensione as janelas** a partir de qualquer ponto da área de ficheiros, mantendo a seleção. Os gestos do rato são configuráveis; por predefinição, Alt + arrastar com o botão esquerdo e Alt + arrastar com o botão direito. [Gestos de janela](docs/user-guide.md#moving-and-resizing).
 - **Alterne entre pastas abertas** através do menu da barra de título, feche as janelas das pastas superiores ou reabra a última janela fechada com Ctrl+Shift+T. [Navegação entre janelas](docs/user-guide.md#window-navigation).

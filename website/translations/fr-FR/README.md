@@ -24,6 +24,7 @@ Windows 10 ou version ultérieure, x64. Disponible en anglais, français, allema
 
 ## Fonctionnalités
 
+- **Une fenêtre unique par dossier**, réactivée si le dossier est déjà ouvert. Sa position, sa taille, ses réglages d’affichage et la disposition des icônes sont conservés d’une ouverture à l’autre. [Navigation spatiale](docs/user-guide.md#window-navigation).
 - **Disposez les icônes librement**, avec une disposition enregistrée et restaurée pour chaque dossier. [Disposition des icônes](docs/user-guide.md#icon-layout).
 - **Déplacez et redimensionnez les fenêtres** depuis la zone des fichiers en conservant la sélection. Les raccourcis souris sont configurables ; par défaut, Alt + glisser gauche et Alt + glisser droit. [Gestes de fenêtre](docs/user-guide.md#moving-and-resizing).
 - **Passez d’un dossier ouvert à l’autre** depuis le menu de la barre de titre, fermez les fenêtres parentes ou rouvrez la dernière fenêtre fermée avec Ctrl+Maj+T. [Navigation entre les fenêtres](docs/user-guide.md#window-navigation).
