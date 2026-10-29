@@ -284,6 +284,7 @@ private:
     UINT deferredCloseMessage = 0;
     HRESULT browseToItem();
     HRESULT refreshView();
+    HRESULT refreshEnumeration();
     HRESULT invokeViewCommand(IContextMenu *menu, CMINVOKECOMMANDINFO *info);
     void resumeDeferredClose();
     bool isBackgroundActivationClick(const MSG *msg) const;
