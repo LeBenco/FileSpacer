@@ -21,7 +21,7 @@ namespace FileSpacerViewMenuTests {
         [FieldOffset(12)] public uint KeyFlags;
         [FieldOffset(20)] public uint MouseFlags;
     }
-    public sealed class Entry { public uint Command; public string Label; public Rect Bounds; }
+    public sealed class Entry { public uint Command; public string Label; public Rect Bounds; public uint State; }
     public sealed class Popup { public IntPtr Window; public Entry[] Entries; }
     public static class MenuUi {
         [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(Point point);
@@ -40,6 +40,13 @@ namespace FileSpacerViewMenuTests {
         public static void Escape(IntPtr owner) {
             if(Native.GetForegroundWindow()!=owner)throw new InvalidOperationException("Escape target is not foreground");
             if(SendInput(2,new Input[]{new Input{Type=1,VirtualKey=27},new Input{Type=1,VirtualKey=27,KeyFlags=2}},40)!=2)throw new Win32Exception();
+        }
+        public static void Key(IntPtr owner,ushort key,int count) {
+            if(Native.GetForegroundWindow()!=owner)throw new InvalidOperationException("Key target is not foreground");
+            for(int i=0;i<count;++i) {
+                if(SendInput(2,new Input[]{new Input{Type=1,VirtualKey=key},new Input{Type=1,VirtualKey=key,KeyFlags=2}},40)!=2)throw new Win32Exception();
+                Thread.Sleep(80);
+            }
         }
         public static Popup Active(IntPtr owner,bool includeAll=false) {
             foreach(IntPtr window in Native.Top("#32768",null,Owner(owner))) {
@@ -64,7 +71,7 @@ namespace FileSpacerViewMenuTests {
                             if(!Native.IsWindowVisible(window)||GetMenuItemCount(bar.Menu)<0){vanished=true;break;}
                             throw new Win32Exception(error);
                         }
-                        entries.Add(new Entry{Command=info.Id,Label=Marshal.PtrToStringUni(text),Bounds=bounds});
+                        entries.Add(new Entry{Command=info.Id,Label=Marshal.PtrToStringUni(text),Bounds=bounds,State=info.State});
                     }finally{Marshal.FreeHGlobal(text);}
                 }
                 if(!vanished&&entries.Count>=6)return new Popup{Window=window,Entries=entries.ToArray()};
