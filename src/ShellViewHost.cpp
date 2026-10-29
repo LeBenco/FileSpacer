@@ -219,7 +219,6 @@ ULONG_PTR ShellViewHost::enumerationSerial() const {
 HRESULT ShellViewHost::destroy() {
     const HWND previousContent = contentWindow;
     contentWindow = nullptr;
-    masked = false;
     const HRESULT observationResult = stopObserving();
     // Detach first: callbacks during teardown must not find a dying browser.
     CComPtr<IExplorerBrowser> previous;
@@ -276,11 +275,7 @@ HRESULT ShellViewHost::navigate(IShellItem *item, bool mixFolders, bool isolated
             if (FAILED(hr)) return hr;
         }
     }
-    if (custom) { const HRESULT hr = maskContent(); if (FAILED(hr)) revealContent(); }
-    else revealContent();
-    const HRESULT hr = current->BrowseToObject(target, SBSP_ABSOLUTE);
-    if (FAILED(hr)) revealContent();
-    return hr;
+    return current->BrowseToObject(target, SBSP_ABSOLUTE);
 }
 
 HRESULT ShellViewHost::lockNavigation(bool locked) {
@@ -305,21 +300,4 @@ HRESULT ShellViewHost::setBounds(RECT bounds) {
     return current->SetRect(nullptr, contentBounds);
 }
 
-HRESULT ShellViewHost::maskContent() {
-    if (!contentWindow) return E_UNEXPECTED;
-    const LONG_PTR style = GetWindowLongPtrW(contentWindow, GWL_EXSTYLE);
-    SetWindowLongPtrW(contentWindow, GWL_EXSTYLE, style | WS_EX_LAYERED);
-    if (!(GetWindowLongPtrW(contentWindow, GWL_EXSTYLE) & WS_EX_LAYERED)) return E_FAIL;
-    masked = true;
-    if (!SetLayeredWindowAttributes(contentWindow, 0, 0, LWA_ALPHA)) return HRESULT_FROM_WIN32(GetLastError());
-    return S_OK;
-}
-
-void ShellViewHost::revealContent() {
-    if (!contentWindow || !masked) return;
-    SetLayeredWindowAttributes(contentWindow, 0, 255, LWA_ALPHA);
-    SetWindowLongPtrW(contentWindow, GWL_EXSTYLE, GetWindowLongPtrW(contentWindow, GWL_EXSTYLE) & ~WS_EX_LAYERED);
-    masked = false;
-    RedrawWindow(contentWindow, nullptr, nullptr, RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_FRAME);
-}
 } // namespace filespacer
