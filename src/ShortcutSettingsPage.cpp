@@ -24,8 +24,6 @@ namespace filespacer {
 namespace {
 struct FontDeleter { void operator()(HFONT font) const { DeleteObject(font); } };
 using FontPtr = std::unique_ptr<std::remove_pointer<HFONT>::type, FontDeleter>;
-constexpr UINT refreshApply = WM_APP + 173;
-constexpr int applyButtonId = 0x3021; // Standard property-sheet Apply button (ID_APPLY_NOW).
 constexpr int headerIds[] = {IDC_SHORTCUT_MOVE, IDC_SHORTCUT_RESIZE};
 constexpr int enableIds[] = {IDC_SHORTCUT_ENABLE_MOVE, IDC_SHORTCUT_ENABLE_RESIZE};
 constexpr UINT nameIds[] = {IDS_SHORTCUT_MOVE, IDS_SHORTCUT_RESIZE};
@@ -97,9 +95,12 @@ public:
         }
         const bool changed = !sameShortcut(pending.move, saved.move) || !sameShortcut(pending.resize, saved.resize);
         EnableWindow(GetDlgItem(page, IDC_SHORTCUT_REVERT), changed);
-        if (changed) PropSheet_Changed(GetParent(page), page);
+        // Documented sheet contract only: a changed, valid page registers its
+        // change (PSM_CHANGED enables Apply); an invalid or unchanged one
+        // withdraws it (PSM_UNCHANGED). Apply enabled by another page is
+        // refused in PSN_KILLACTIVE / PSN_APPLY with the reason.
+        if (changed && validShortcuts(pending)) PropSheet_Changed(GetParent(page), page);
         else PropSheet_UnChanged(GetParent(page), page);
-        if (!validShortcuts(pending)) EnableWindow(GetDlgItem(GetParent(page), applyButtonId), FALSE);
         if (selected < 0) return;
         const auto &value = binding(selected);
         const unsigned masks[] = {GestureCtrl, GestureAlt, GestureShift};
@@ -125,6 +126,18 @@ public:
         ShowWindow(child(IDC_SHORTCUT_CAPTURE), recording ? SW_SHOWNA : SW_HIDE);
         ShowWindow(child(IDC_SHORTCUT_CAPTURE_HINT), recording ? SW_SHOWNA : SW_HIDE);
         SetDlgItemTextW(editor, IDC_SHORTCUT_RECORD, getString(recording ? IDS_SHORTCUT_STOP_RECORD : IDS_SHORTCUT_RECORD));
+    }
+    // The sheet keeps this page active while its shortcuts are invalid
+    // (PSN_KILLACTIVE) and refuses to apply them (PSN_APPLY): the user is
+    // told which entry is refused and why, instead of a silent no-op.
+    void explainInvalid() const {
+        const int target = !validShortcut(pending.move) ? 0 : 1;
+        const auto &value = target == 0 ? pending.move : pending.resize;
+        const auto title = formatString(IDS_SHORTCUT_APPLY_REFUSED, getString(nameIds[target]));
+        const auto conflict = formatString(IDS_SHORTCUT_CONFLICT, getString(nameIds[1 - target]));
+        TaskDialog(GetParent(page), GetModuleHandleW(nullptr), MAKEINTRESOURCEW(IDS_ERROR_CAPTION), title.get(),
+            value.enabled && reservedShortcut(value) ? getString(IDS_SHORTCUT_RESERVED) : conflict.get(),
+            TDCBF_OK_BUTTON, TD_WARNING_ICON, nullptr);
     }
     void endCapture() {
         recording = false; captureUp = 0;
@@ -291,20 +304,24 @@ INT_PTR CALLBACK shortcutsProc(HWND window, UINT message, WPARAM wParam, LPARAM 
             SetWindowSubclass(GetDlgItem(window, headerIds[i]), headerProc, 1, reinterpret_cast<DWORD_PTR>(self));
         }
         SetWindowSubclass(self->child(IDC_SHORTCUT_CAPTURE), captureProc, 1, reinterpret_cast<DWORD_PTR>(self));
-        self->update(); self->layout(); PostMessageW(window, refreshApply, 0, 0); return TRUE;
+        self->update(); self->layout(); return TRUE;
     }
     if (!self) return FALSE;
     if (message == WM_COMMAND) { self->command(LOWORD(wParam)); return TRUE; }
     if (message == WM_NOTIFY) {
         const auto notification = reinterpret_cast<NMHDR *>(lParam);
-        if (notification->code == PSN_SETACTIVE) { self->update(); PostMessageW(window, refreshApply, 0, 0); }
+        if (notification->code == PSN_SETACTIVE) self->update();
         else if (notification->code == PSN_KILLACTIVE) {
             const bool invalid = !validShortcuts(self->pending);
             const int target = !validShortcut(self->pending.move) ? 0 : 1;
             if (invalid && self->selected != target) self->open(target);
+            if (invalid) self->explainInvalid();
             SetWindowLongPtrW(window, DWLP_MSGRESULT, invalid); return TRUE;
         } else if (notification->code == PSN_APPLY) {
-            if (!validShortcuts(self->pending)) { SetWindowLongPtrW(window, DWLP_MSGRESULT, PSNRET_INVALID); return TRUE; }
+            if (!validShortcuts(self->pending)) {
+                self->explainInvalid();
+                SetWindowLongPtrW(window, DWLP_MSGRESULT, PSNRET_INVALID); return TRUE;
+            }
             if (settings::setWindowShortcuts(self->pending) != ERROR_SUCCESS) {
                 TaskDialog(GetParent(window), GetModuleHandleW(nullptr), MAKEINTRESOURCEW(IDS_ERROR_CAPTION),
                     MAKEINTRESOURCEW(IDS_SHORTCUT_SAVE_FAILED), nullptr, TDCBF_OK_BUTTON, TD_ERROR_ICON, nullptr);
@@ -313,10 +330,6 @@ INT_PTR CALLBACK shortcutsProc(HWND window, UINT message, WPARAM wParam, LPARAM 
             self->saved = self->pending; self->update(); notifyWindowSettingsChanged();
             SetWindowLongPtrW(window, DWLP_MSGRESULT, PSNRET_NOERROR); return TRUE;
         }
-    }
-    if (message == refreshApply) {
-        if (!validShortcuts(self->pending)) EnableWindow(GetDlgItem(GetParent(window), applyButtonId), FALSE);
-        return TRUE;
     }
     if (message == WM_PAINT) {
         PAINTSTRUCT paint = {}; HDC context = BeginPaint(window, &paint);
