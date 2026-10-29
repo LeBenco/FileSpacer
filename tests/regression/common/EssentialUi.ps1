@@ -3,7 +3,14 @@ Set-StrictMode -Version 2
 if (!$env:FS_REGRESSION_RUN) { throw 'Run these UI tests through tests.cmd / Run-Regression.ps1 so the test registry and database are backed up.' }
 . (Join-Path $PSScriptRoot 'Process.ps1')
 . (Join-Path $PSScriptRoot 'Native.ps1')
-Add-Type -Path (Join-Path $PSScriptRoot 'EssentialUi.cs')
+if ($env:FS_REGRESSION_PREPARED) { Add-Type -Path (Join-Path $PSScriptRoot 'EssentialUi.cs') }
+else {
+    # Windows PowerShell compiles in memory (no assembly location). Keep the
+    # helper on disk in the run directory so case helpers can reference it.
+    $script:UiAssembly=Join-Path $env:FS_REGRESSION_RUN 'FileSpacerRegression.dll'
+    if (!(Test-Path -LiteralPath $script:UiAssembly)) { Add-Type -Path (Join-Path $PSScriptRoot 'EssentialUi.cs') -OutputAssembly $script:UiAssembly }
+    Add-Type -Path $script:UiAssembly
+}
 $script:UiProcesses=New-Object Collections.ArrayList
 $script:UiWindows=New-Object Collections.ArrayList
 $script:UiSettings=[IntPtr]::Zero
