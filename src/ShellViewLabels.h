@@ -9,8 +9,12 @@
 
 namespace filespacer {
 
-// Optional adaptation of the Shell's native labels. No control is discovered or
-// subclassed: only notifications delivered to IShellView's own window are used.
+// Optional adaptation of the Shell's native labels. The view window returned
+// by IShellView::GetWindow (owned by the Shell) is subclassed; no child control
+// is discovered or subclassed. Only the ListView notifications delivered to that
+// window and documented LVM_* reads of their sender are used. The ListView
+// itself follows from FVO_CUSTOMPOSITION selecting the classic view: should a
+// Windows release change that, the adaptation stops silently (test set 23).
 // Missing notifications or failed prerequisites leave native painting intact.
 inline LRESULT CALLBACK singleSelectionLabelProc(HWND window, UINT message,
         WPARAM wParam, LPARAM lParam, UINT_PTR id, DWORD_PTR) {
