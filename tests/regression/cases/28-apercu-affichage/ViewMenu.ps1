@@ -1,5 +1,5 @@
 ﻿. (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
-Add-Type -Path (Join-Path $PSScriptRoot 'ViewMenuUi.cs')
+Add-Type -Path (Join-Path $PSScriptRoot 'ViewMenuUi.cs') -ReferencedAssemblies ([FileSpacerRegression.Native].Assembly.Location)
 function Read-PreviewMode([IntPtr]$Window) {
     return Use-UiView $Window {param($view) @{Mode=$view.Mode;Size=$view.IconSize}}
 }
