@@ -2,38 +2,21 @@
 #include <common.h>
 
 #include <windows.h>
-#include <cstdint>
-#include <unordered_map>
 #include <vector>
 
 namespace filespacer {
 
-// Keep exact monitor-clipped geometry; build query tables only when placing.
-class WindowPlacementState {
-public:
-    explicit WindowPlacementState(RECT workArea);
-    WindowPlacementState(const WindowPlacementState &) = delete;
-    WindowPlacementState &operator=(const WindowPlacementState &) = delete;
-    const RECT &workArea() const { return work; }
-    void setWindow(HWND window, const RECT *rect);
-    void beginRefresh();
-    void endRefresh();
-    POINT findPosition(SIZE size, POINT preferred) const;
+// Exact placement over the windows of one work area: a free origin found by
+// sweep, else the origin with the least overlap. Pure over its inputs; only the
+// part of each window inside the work area counts.
+POINT findPlacementPosition(RECT work, SIZE size, POINT preferred, const std::vector<RECT> &windows);
 
-private:
-    struct Entry { RECT bounds; uint64_t generation; };
-    RECT work;
-    uint64_t generation = 0;
-    std::unordered_map<HWND, Entry> windows;
-};
-
-// Local notifications update stored geometry. A placement also reconciles windows
-// in other processes, including their provisional replacement withdrawals.
-void updateWindowPlacement(HWND window) noexcept;
-void clearWindowPlacement();
-void removeWindowPlacement(HWND window);
+// A placement snapshots the visible item windows of every process at the time
+// of the call. Two window properties survive between placements: the provisional
+// withdrawal of a replaced source and the test-mode marker.
 void cancelPlacementWithdrawal(HWND window);
 void initializeWindowPlacement(HWND window);
+void removeWindowPlacement(HWND window);
 void destroyWindowPlacement(HWND window);
 bool findWindowPlacement(HMONITOR monitor, SIZE size, HWND source, RECT &rect);
 

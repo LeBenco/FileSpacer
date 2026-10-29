@@ -3,8 +3,8 @@
 #include "Settings.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <limits>
-#include <memory>
 #include <dwmapi.h>
 
 #pragma comment(lib, "Dwmapi.lib")
@@ -234,29 +234,7 @@ bool findFree(const PlacementQuery &scene, PlacementChoice &best) {
 
 } // namespace
 
-WindowPlacementState::WindowPlacementState(RECT workArea) : work(workArea) {}
-
-void WindowPlacementState::setWindow(HWND window, const RECT *rect) {
-    RECT bounds = {};
-    if (!rect || !IntersectRect(&bounds, rect, &work)) {
-        windows.erase(window);
-        return;
-    }
-    auto found = windows.find(window);
-    if (found != windows.end()) found->second = {bounds, generation};
-    else windows.emplace(window, Entry{bounds, generation});
-}
-
-void WindowPlacementState::beginRefresh() { ++generation; }
-
-void WindowPlacementState::endRefresh() {
-    for (auto entry = windows.begin(); entry != windows.end();) {
-        if (entry->second.generation != generation) entry = windows.erase(entry);
-        else ++entry;
-    }
-}
-
-POINT WindowPlacementState::findPosition(SIZE size, POINT preferred) const {
+POINT findPlacementPosition(RECT work, SIZE size, POINT preferred, const std::vector<RECT> &windows) {
     if (IsRectEmpty(&work) || size.cx <= 0 || size.cy <= 0) return {work.left, work.top};
     // Only the part on this monitor participates when a requested size is larger
     // than its work area; requestedRect still preserves the full window size.
@@ -266,7 +244,10 @@ POINT WindowPlacementState::findPosition(SIZE size, POINT preferred) const {
     preferred.y = clamp(preferred.y, work.top, work.bottom - size.cy);
     PlacementQuery query = {work, size, preferred, {}};
     query.windows.reserve(windows.size());
-    for (const auto &window : windows) query.windows.push_back(window.second.bounds);
+    for (const auto &window : windows) {
+        RECT bounds = {};
+        if (IntersectRect(&bounds, &window, &work)) query.windows.push_back(bounds);
+    }
     PlacementChoice free = {};
     if (findFree(query, free)) return free.point;
     return ExactSearch(query).find().point;
@@ -275,13 +256,6 @@ POINT WindowPlacementState::findPosition(SIZE size, POINT preferred) const {
 namespace {
 const wchar_t withdrawalProperty[] = L"FileSpacer.PlacementWithdrawal";
 const wchar_t testProperty[] = L"FileSpacer.PlacementTest";
-struct MonitorPlacement { HMONITOR monitor; std::unique_ptr<WindowPlacementState> state; };
-// Keep initialization off unrelated Shell workers, including threads starting
-// after the main thread has begun shutting down the static runtime.
-std::vector<MonitorPlacement> &windowPlacements() {
-    static thread_local std::vector<MonitorPlacement> placements;
-    return placements;
-}
 
 bool placementRect(HWND window, RECT &rect) {
     wchar_t name[64] = {};
@@ -305,31 +279,14 @@ bool placementRect(HWND window, RECT &rect) {
 }
 }
 
-void updateWindowPlacement(HWND window) noexcept {
-    auto &placements = windowPlacements();
-    if (placements.empty()) return;
-    RECT rect = {};
-    const bool occupied = placementRect(window, rect);
-    try {
-        for (auto &entry : placements) entry.state->setWindow(window, occupied ? &rect : nullptr);
-    } catch (...) {
-        // A notification or rollback must not throw through a window procedure
-        // or destructor. Rebuild this disposable cache at the next placement.
-        placements.clear();
-    }
-}
-
-void clearWindowPlacement() { windowPlacements().clear(); }
-
 void removeWindowPlacement(HWND window) {
     // Destruction can reenter Shell code before WM_NCDESTROY. Keep the closing
-    // window excluded from any intervening cross-process snapshot as well.
+    // window excluded from any intervening cross-process snapshot.
     SetPropW(window, withdrawalProperty, reinterpret_cast<HANDLE>(1));
-    for (auto &entry : windowPlacements()) entry.state->setWindow(window, nullptr);
 }
 
 void cancelPlacementWithdrawal(HWND window) {
-    if (RemovePropW(window, withdrawalProperty)) updateWindowPlacement(window);
+    RemovePropW(window, withdrawalProperty);
 }
 
 void initializeWindowPlacement(HWND window) {
@@ -341,31 +298,20 @@ void initializeWindowPlacement(HWND window) {
 }
 
 void destroyWindowPlacement(HWND window) {
-    for (auto &entry : windowPlacements()) entry.state->setWindow(window, nullptr);
     RemovePropW(window, withdrawalProperty);
     RemovePropW(window, testProperty);
 }
 
 bool findWindowPlacement(HMONITOR monitor, SIZE size, HWND source, RECT &rect) try {
-    auto &placements = windowPlacements();
     MONITORINFO info = {sizeof(info)};
     if (!monitor || size.cx <= 0 || size.cy <= 0 || !GetMonitorInfoW(monitor, &info)
             || IsRectEmpty(&info.rcWork)) return false;
-    auto found = std::find_if(placements.begin(), placements.end(),
-        [monitor](const MonitorPlacement &entry) { return entry.monitor == monitor; });
-    if (found == placements.end()) {
-        placements.push_back({monitor, std::make_unique<WindowPlacementState>(info.rcWork)});
-        found = placements.end() - 1;
-    } else if (!EqualRect(&found->state->workArea(), &info.rcWork)) {
-        found->state = std::make_unique<WindowPlacementState>(info.rcWork);
-    }
-    auto &state = *found->state;
-    state.beginRefresh();
+    std::vector<RECT> windows;
     const auto collect = [](HWND window, LPARAM data) -> BOOL {
         try {
             RECT bounds = {};
             if (placementRect(window, bounds))
-                reinterpret_cast<WindowPlacementState *>(data)->setWindow(window, &bounds);
+                reinterpret_cast<std::vector<RECT> *>(data)->push_back(bounds);
             return TRUE;
         } catch (...) {
             // Do not let allocation failures escape through a Win32 callback.
@@ -373,37 +319,28 @@ bool findWindowPlacement(HMONITOR monitor, SIZE size, HWND source, RECT &rect) t
             return FALSE;
         }
     };
-    if (!EnumWindows(collect, reinterpret_cast<LPARAM>(&state))) {
-        placements.clear();
-        return false;
-    }
-    state.endRefresh();
+    if (!EnumWindows(collect, reinterpret_cast<LPARAM>(&windows))) return false;
     POINT preferred = {info.rcWork.left, info.rcWork.top};
     RECT origin = {};
     if (source && GetWindowRect(source, &origin)) preferred = {origin.left, origin.top};
-    const POINT position = state.findPosition(size, preferred);
+    const POINT position = findPlacementPosition(info.rcWork, size, preferred, windows);
     rect = {position.x, position.y, position.x + size.cx, position.y + size.cy};
     return true;
 } catch (...) {
     // Leave the caller's native Windows placement available if tables cannot be built.
-    windowPlacements().clear();
     return false;
 }
 
 PlacementWithdrawal::PlacementWithdrawal(HWND source) {
     if (source && !GetPropW(source, withdrawalProperty)
-            && SetPropW(source, withdrawalProperty, reinterpret_cast<HANDLE>(this))) {
+            && SetPropW(source, withdrawalProperty, reinterpret_cast<HANDLE>(this)))
         window = source;
-        updateWindowPlacement(window);
-    }
 }
 
 PlacementWithdrawal::~PlacementWithdrawal() {
     if (!committed && window
-            && GetPropW(window, withdrawalProperty) == reinterpret_cast<HANDLE>(this)) {
+            && GetPropW(window, withdrawalProperty) == reinterpret_cast<HANDLE>(this))
         RemovePropW(window, withdrawalProperty);
-        updateWindowPlacement(window);
-    }
 }
 
 } // namespace
