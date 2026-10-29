@@ -56,6 +56,7 @@ public:
     bool ready() const { return initialized; }
     const std::string &error() const { return lastError; }
     bool read(const std::string &key, FolderState *state);
+    bool contains(const std::string &key, bool *found);
     bool save(const std::string &key, const FolderState &state, uint32_t parts);
     // Capture and change the lock in one transaction. Ordinary saves consult the stored lock.
     bool setLocked(const std::string &key, const FolderState &state, uint32_t parts, bool locked);
