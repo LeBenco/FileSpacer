@@ -204,6 +204,19 @@ bool FolderStateStore::read(const std::string &key, FolderState *state) {
     return true;
 }
 
+bool FolderStateStore::contains(const std::string &key, bool *found) {
+    *found = false;
+    if (!initialized) return false;
+    sqlite3_stmt *raw = nullptr;
+    if (!result(sqlite3_prepare_v2(db, "SELECT 1 FROM folder_state WHERE key=?1", -1, &raw, nullptr))) return false;
+    Statement statement(raw, sqlite3_finalize);
+    if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))) return false;
+    const int code = sqlite3_step(raw);
+    if (!result(code)) return false;
+    *found = code == SQLITE_ROW;
+    return true;
+}
+
 bool FolderStateStore::save(const std::string &key, const FolderState &state, uint32_t parts) {
     return writeState(key, state, parts, -1);
 }
