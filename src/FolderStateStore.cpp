@@ -299,12 +299,15 @@ bool FolderStateStore::recordAccess(const std::string &key, bool success, int64_
         raw = nullptr;
         const char *sql = success
             ? "INSERT INTO folder_state(key,last_success_at) VALUES(?1,?2) "
-              "ON CONFLICT(key) DO UPDATE SET last_success_at=?2,first_failed_at=NULL"
+              "ON CONFLICT(key) DO UPDATE SET last_success_at=?2,first_failed_at=NULL "
+              "WHERE first_failed_at IS NOT NULL OR ?2>=last_success_at+?3"
             : "UPDATE folder_state SET first_failed_at=coalesce(first_failed_at,?2) WHERE key=?1";
         if (!result(sqlite3_prepare_v2(db, sql, -1, &raw, nullptr))) return false;
         Statement statement(raw, sqlite3_finalize);
         return result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))
-            && result(sqlite3_bind_int64(raw, 2, when)) && result(sqlite3_step(raw));
+            && result(sqlite3_bind_int64(raw, 2, when))
+            && (!success || result(sqlite3_bind_int64(raw, 3, SUCCESS_REFRESH_SECONDS)))
+            && result(sqlite3_step(raw));
     }();
     written = finishWrite(written);
     if (written && expired) *expired = removed;

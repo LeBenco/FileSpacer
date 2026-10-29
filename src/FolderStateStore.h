@@ -23,6 +23,11 @@ struct FolderViewSettings {
     bool groupAscending = false;
 };
 
+// A successful access refreshes last_success_at at most once a day (UTC
+// anniversary of the stored value); a failure, or the success ending a
+// failure period, is always recorded.
+constexpr int64_t SUCCESS_REFRESH_SECONDS = 24 * 60 * 60;
+
 struct FolderState {
     enum Part : uint32_t { Position = 1, Size = 2, View = 4, Icons = 8, Maximized = 16, All = 31 };
     int64_t lastSuccessAt = 0, firstFailedAt = 0; // UTC seconds; zero means no known failure.
@@ -56,6 +61,7 @@ public:
     bool setLocked(const std::string &key, const FolderState &state, uint32_t parts, bool locked);
     bool clearLocks();
     // Failure never creates a row. expired is true only after a committed age-based deletion.
+    // A success within SUCCESS_REFRESH_SECONDS of the stored one, with no failure to clear, changes nothing.
     bool recordAccess(const std::string &key, bool success, int64_t when, bool *expired = nullptr);
     bool clear(const std::string &key, uint32_t parts);
     bool clearAll();
