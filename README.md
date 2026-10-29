@@ -45,9 +45,10 @@ Portuguese (Portugal) and Greek.
 
 ## Integration
 
-**Nilesoft Shell** can theme FileSpacer's menus and customize their commands,
-with rules targeting individual menus.
-[Setup and configuration](docs/user-guide.md#nilesoft-shell).
+If you use **Nilesoft Shell**, you can also let it theme FileSpacer's menus and
+customize their commands, with rules targeting individual menus. Configuration
+adjustments are recommended for a consistent appearance.
+[Integration and configuration](docs/user-guide.md#nilesoft-shell).
 
 **Everything** can search the current folder and its subfolders, or search
 everywhere, using the query entered in FileSpacer. Results open in Everything,

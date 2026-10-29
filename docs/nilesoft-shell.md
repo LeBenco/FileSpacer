@@ -2,7 +2,7 @@
 
 For an overview, see [Nilesoft Shell in the user guide](user-guide.md#nilesoft-shell).
 
-[Nilesoft Shell](https://nilesoft.org/) themes and menu customizations can be applied to FileSpacer through `shell.nss` and its imported configuration files, using the standard directives to add, modify or remove menu items, with conditions adapted to FileSpacer.
+If you use [Nilesoft Shell](https://nilesoft.org/), you can also apply its themes and menu customizations to FileSpacer through `shell.nss` and its imported configuration files. For this optional integration, configuration adjustments are recommended so the menus fit FileSpacer's appearance. The examples below cover rules to add, modify or remove menu items, conditions specific to FileSpacer, and the recommended square corners.
 
 ## Scope system-menu rules
 

@@ -113,11 +113,11 @@ Inserisci una query nella casella di ricerca di FileSpacer e scegli **Cerca in E
 
 ### Nilesoft Shell
 
-[Nilesoft Shell](https://nilesoft.org/) permette di cambiare l’aspetto dei menu di FileSpacer e di personalizzarne le voci. È facoltativo e si installa separatamente.
+Se usi [Nilesoft Shell](https://nilesoft.org/), puoi affidargli anche l’aspetto dei menu di FileSpacer e la personalizzazione delle loro voci.
 
-Consenti FileSpacer nella regola di esclusione della configurazione Nilesoft e mantieni l’importazione del tema. Limita a Esplora file le regole destinate solo a quest’ultimo, in modo che non modifichino anche i menu di FileSpacer.
+Per questa integrazione facoltativa, è consigliabile adattare la configurazione di Nilesoft affinché i menu si integrino visivamente con FileSpacer, in particolare usando angoli squadrati per i menu della barra del titolo e della barra degli strumenti.
 
-Consulta la [guida alla configurazione con esempi](nilesoft-shell.md) per le impostazioni esatte, le regole specifiche per i menu e l’aspetto consigliato. Dopo una modifica alla configurazione, annulla la registrazione di Nilesoft Shell e registralo di nuovo per applicarla ai menu aperti successivamente.
+La [guida alla configurazione con esempi](nilesoft-shell.md) spiega come consentire FileSpacer, mantenere l’importazione del tema e limitare a Esplora file le regole riservate a quest’ultimo. Se modifichi la configurazione, annulla la registrazione di Nilesoft Shell e registralo di nuovo per applicare le modifiche ai menu aperti successivamente.
 
 Il tema Modern qui sotto usa gli angoli arrotondati predefiniti a sinistra e gli angoli squadrati consigliati a destra.
 

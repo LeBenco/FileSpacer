@@ -174,17 +174,17 @@ error keeps both so you can retry.
 
 ### Nilesoft Shell
 
-[Nilesoft Shell](https://nilesoft.org/) can theme FileSpacer's menus and customize
-their entries. It is optional and installed separately.
+If you use [Nilesoft Shell](https://nilesoft.org/), you can also let it theme
+FileSpacer's menus and customize their entries.
 
-Allow FileSpacer in your Nilesoft configuration's exclusion rule and keep your
-theme import. Rules intended only for Explorer should be restricted to Explorer
-so they do not also change FileSpacer's menus.
+For this optional integration, adjusting the Nilesoft configuration is
+recommended so the menus fit FileSpacer's appearance, particularly by using
+square corners for the title-bar and toolbar menus.
 
-See the [configuration reference and examples](nilesoft-shell.md) for the exact
-settings, menu-specific rules and recommended appearance. After changing the
-configuration, unregister and register Nilesoft Shell again to apply it to newly
-opened menus.
+The [configuration reference and examples](nilesoft-shell.md) explain how to
+allow FileSpacer, keep your theme import and scope Explorer-only rules. If you
+change the configuration, unregister and register Nilesoft Shell again to apply
+the changes to newly opened menus.
 
 The Modern theme below uses its default rounded corners on the left and the
 recommended square corners on the right.

@@ -113,11 +113,11 @@ Saisissez une requête dans le champ de recherche de FileSpacer et choisissez **
 
 ### Nilesoft Shell
 
-[Nilesoft Shell](https://nilesoft.org/) permet de modifier l’apparence des menus de FileSpacer et de personnaliser leurs entrées. Il est facultatif et s’installe séparément.
+Si vous utilisez [Nilesoft Shell](https://nilesoft.org/), vous pouvez aussi lui confier l’apparence des menus de FileSpacer et la personnalisation de leurs entrées.
 
-Autorisez FileSpacer dans la règle d’exclusion de votre configuration Nilesoft et conservez l’import de votre thème. Limitez à l’Explorateur les règles qui lui sont destinées afin qu’elles ne modifient pas aussi les menus de FileSpacer.
+Pour cette intégration facultative, une adaptation de la configuration Nilesoft est recommandée afin que les menus s’intègrent bien visuellement à FileSpacer, notamment avec des coins carrés pour les menus de la barre de titre et de la barre d’outils.
 
-Consultez la [référence de configuration et les exemples](nilesoft-shell.md) pour les réglages exacts, les règles propres à chaque menu et l’apparence recommandée. Après une modification, désenregistrez et réenregistrez Nilesoft Shell pour l’appliquer aux menus nouvellement ouverts.
+La [référence de configuration et les exemples](nilesoft-shell.md) expliquent comment autoriser FileSpacer, conserver l’import du thème et limiter à l’Explorateur les règles qui lui sont réservées. Si vous modifiez la configuration, désenregistrez puis réenregistrez Nilesoft Shell pour appliquer les changements aux menus nouvellement ouverts.
 
 Le thème Modern ci-dessous utilise ses coins arrondis par défaut à gauche et les coins carrés recommandés à droite.
 
