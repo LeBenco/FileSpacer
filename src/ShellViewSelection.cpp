@@ -1,5 +1,4 @@
 #include "ShellViewSelection.h"
-#include "MixedFolder.h"
 #include <atlbase.h>
 #include <shlobj.h>
 #include <shlwapi.h>
@@ -102,9 +101,9 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
     if (!stream) return E_OUTOFMEMORY;
     result = IStream_Write(stream, &header, sizeof(header));
     if (SUCCEEDED(result) && (header.flags & REOPEN_ANCHOR))
-        result = writeNativeViewPidl(folderView, stream, anchor);
+        result = IStream_WritePidl(stream, anchor);
     if (SUCCEEDED(result) && (header.flags & REOPEN_FOCUS))
-        result = writeNativeViewPidl(folderView, stream, focused);
+        result = IStream_WritePidl(stream, focused);
     if (FAILED(result)) return result;
     if (count) {
         CComPtr<IEnumIDList> selectedItems;
@@ -117,7 +116,7 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
             result = selectedItems->Next(1, &selectedItem, nullptr);
             if (!current()) return E_ABORT;
             if (result != S_OK) return FAILED(result) ? result : E_UNEXPECTED;
-            result = writeNativeViewPidl(folderView, stream, selectedItem);
+            result = IStream_WritePidl(stream, selectedItem);
             if (FAILED(result)) return result;
         }
     }
@@ -155,18 +154,18 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
     CComHeapPtr<ITEMID_CHILD> anchor, focused;
     if (header.flags & REOPEN_ANCHOR) {
-        result = readMixedViewPidl(folderView, stream, &anchor);
+        result = IStream_ReadPidl(stream, &anchor);
         if (FAILED(result)) return result;
         if (!anchor) return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
     }
     if (header.flags & REOPEN_FOCUS) {
-        result = readMixedViewPidl(folderView, stream, &focused);
+        result = IStream_ReadPidl(stream, &focused);
         if (FAILED(result)) return result;
         if (!focused) return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
     }
     std::vector<CComHeapPtr<ITEMID_CHILD>> selectedItems(header.selected);
     for (auto &selectedItem : selectedItems) {
-        result = readMixedViewPidl(folderView, stream, &selectedItem);
+        result = IStream_ReadPidl(stream, &selectedItem);
         if (FAILED(result)) return result;
         if (!selectedItem) return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
     }
