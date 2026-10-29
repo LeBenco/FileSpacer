@@ -148,7 +148,6 @@ protected:
     enum TimerID {
         TIMER_UPDATE_SELECTION = 1,
         TIMER_SAVE_STATE,
-        TIMER_STARTUP_ICONS,
         TIMER_LAST
     };
     enum UserMessage {
@@ -158,7 +157,6 @@ protected:
         MSG_ENUM_READY = WM_APP + 46,
         MSG_ENUM_DONE = WM_APP + 47,
         MSG_VIEW_MENU_PREVIEW = WM_APP + 48,
-        MSG_STARTUP_ICONS = WM_APP + 49,
         MSG_VIEW_CHANGED = WM_APP + 50
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
@@ -277,11 +275,6 @@ private:
     CComPtr<QuickAccessIconThread> quickAccessIconThread;
     HIMAGELIST quickAccessImages = nullptr;
 
-    class StartupIconsThread;
-    CComPtr<StartupIconsThread> startupIconsThread;
-    ULONGLONG startupIconsDeadline = 0;
-    void stopStartupIcons();
-    void preloadVisibleIcons(IFolderView2 *view);
     ShellViewHost viewHost;
     bool initialNavigationPending = false;
     unsigned navigationDepth = 0;
