@@ -59,7 +59,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Information about window placement", IDC_SMART_WINDOW_PLACEMENT_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 79, 12, 14
   CONTROL "Window locking", -1, "Button", BS_GROUPBOX, 7, 100, 286, 44
   CONTROL "Enable window state &locking", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 111, 272, 12
-  CONTROL "Show a padlock in the title &bar of locked folders", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
+  CONTROL "Show a &padlock in the title bar of locked folders", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
   CONTROL "Search box", -1, "Button", BS_GROUPBOX, 7, 148, 286, 52
   CONTROL "Filter while t&yping", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 159, 272, 12
   LTEXT "Recent searches per folder (0 to 20; 0 disables history)", -1, 14, 177, 222, 16
@@ -88,7 +88,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Show the full &name of a selected file (does not apply to multiple selections)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 159, 272, 20
   CONTROL "Mi&x folders and files when sorting", IDC_MIXED_FOLDER_SORTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 183, 272, 14
   CONTROL "View menu", -1, "Button", BS_GROUPBOX, 7, 210, 286, 38
-  CONTROL "&Preview display modes in the View menu", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 222, 272, 20
+  CONTROL "Preview &display modes in the View menu", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 222, 272, 20
   CONTROL "Default window size", -1, "Button", BS_GROUPBOX, 7, 255, 286, 35
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 272, 88, 8
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 269, 35, 14

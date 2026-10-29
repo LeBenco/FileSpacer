@@ -54,12 +54,12 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Sfoglia...", IDC_START_FOLDER_BROWSE, "Button", WS_TABSTOP, 231, 18, 55, 14
   CONTROL "Navigazione tra cartelle", -1, "Button", BS_GROUPBOX, 7, 41, 286, 55
   CONTROL "&Mantieni aperta la finestra di origine", IDC_KEEP_SOURCE_WINDOW_OPEN, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 52, 272, 12
-  CONTROL "Mantieni la selezione facendo &clic su una finestra inattiva", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 66, 272, 12
+  CONTROL "Mantieni la selezione facendo clic su una finestra &inattiva", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 66, 272, 12
   CONTROL "Disponi le &nuove finestre nello spazio libero", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 80, 250, 12
   CONTROL "Informazioni sul posizionamento delle finestre", IDC_SMART_WINDOW_PLACEMENT_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 79, 12, 14
   CONTROL "Blocco delle finestre", -1, "Button", BS_GROUPBOX, 7, 100, 286, 44
   CONTROL "Attiva il &blocco dello stato delle finestre", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 111, 272, 12
-  CONTROL "Mostra un lucchetto nella &barra del titolo delle cartelle bloccate", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
+  CONTROL "Mostra un &lucchetto nella barra del titolo delle cartelle bloccate", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
   CONTROL "Casella di ricerca", -1, "Button", BS_GROUPBOX, 7, 148, 286, 52
   CONTROL "Filtra durante la &digitazione", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 159, 272, 12
   LTEXT "Ricerche recenti per cartella (0–20; 0 disattiva la cronologia)", -1, 14, 177, 222, 16
@@ -76,10 +76,10 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
 {
   CONTROL "Elementi dell'interfaccia", -1, "Button", BS_GROUPBOX, 7, 7, 286, 49
   CONTROL "Mostra la barra di &stato", IDC_STATUS_TEXT_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 21, 272, 14
-  CONTROL "Mostra la barra degli &strumenti", IDC_TOOLBAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 35, 272, 14
+  CONTROL "Mostra la barra degli s&trumenti", IDC_TOOLBAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 35, 272, 14
   CONTROL "Elementi della barra degli strumenti", -1, "Button", BS_GROUPBOX, 7, 63, 286, 77
   CONTROL "Mostra &Accesso rapido", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 77, 130, 14
-  CONTROL "Mostra pulsante &Su", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 77, 130, 14
+  CONTROL "Mostra pulsante S&u", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 77, 130, 14
   CONTROL "Mostra barra del &percorso", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 91, 272, 14
   CONTROL "Mostra pulsante A&ggiorna", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 105, 130, 14
   CONTROL "Mostra pulsante &Visualizza", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 105, 130, 14
@@ -88,7 +88,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Mostra il &nome completo di un file selezionato (non per selezioni multiple)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 159, 272, 20
   CONTROL "Mescola &cartelle e file nell'ordinamento", IDC_MIXED_FOLDER_SORTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 183, 272, 14
   CONTROL "Menu Visualizza", -1, "Button", BS_GROUPBOX, 7, 210, 286, 38
-  CONTROL "Mostra l'&anteprima delle modalità nel menu Visualizza", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 222, 272, 20
+  CONTROL "Mostra l'anteprima delle &modalità nel menu Visualizza", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 222, 272, 20
   CONTROL "Dimensioni predefinite delle finestre", -1, "Button", BS_GROUPBOX, 7, 255, 286, 35
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 272, 88, 8
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 269, 35, 14
@@ -110,7 +110,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Aggiungi la ricerca di &Everything alla casella di ricerca", IDC_EVERYTHING_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 123, 272, 12
   LTEXT "Eseguibile (vuoto = rilevamento automatico)", -1, 14, 138, 272, 9
   EDITTEXT IDC_EVERYTHING_PATH, 14, 149, 272, 14, ES_AUTOHSCROLL|WS_TABSTOP
-  PUSHBUTTON "&Rileva", IDC_EVERYTHING_DETECT, 14, 166, 90, 14
+  PUSHBUTTON "Ri&leva", IDC_EVERYTHING_DETECT, 14, 166, 90, 14
   PUSHBUTTON "&Sfoglia...", IDC_EVERYTHING_BROWSE, 111, 166, 90, 14
   LTEXT "Ambito di ricerca", -1, 14, 188, 70, 9
   COMBOBOX IDC_EVERYTHING_SCOPE, 88, 185, 198, 60, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
