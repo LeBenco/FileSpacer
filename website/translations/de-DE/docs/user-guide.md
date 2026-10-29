@@ -113,11 +113,11 @@ Geben Sie eine Suchanfrage in das FileSpacer-Suchfeld ein und wählen Sie **In E
 
 ### Nilesoft Shell
 
-[Nilesoft Shell](https://nilesoft.org/) kann die FileSpacer-Menüs gestalten und ihre Einträge anpassen. Es ist optional und wird separat installiert.
+Wenn Sie [Nilesoft Shell](https://nilesoft.org/) verwenden, können Sie damit auch das Erscheinungsbild der FileSpacer-Menüs und ihre Einträge anpassen.
 
-Lassen Sie FileSpacer in der Ausschlussregel Ihrer Nilesoft-Konfiguration zu und behalten Sie den Import Ihres Themes bei. Regeln, die nur für den Explorer gedacht sind, sollten auf ihn beschränkt werden, damit sie nicht auch die FileSpacer-Menüs verändern.
+Für diese optionale Integration empfiehlt es sich, die Nilesoft-Konfiguration anzupassen, damit die Menüs optisch zu FileSpacer passen, insbesondere mit rechtwinkligen statt abgerundeten Ecken für die Menüs der Titelleiste und der Symbolleiste.
 
-Die [Konfigurationsreferenz mit Beispielen](nilesoft-shell.md) beschreibt die genauen Einstellungen, menüspezifischen Regeln und die empfohlene Darstellung. Nach einer Konfigurationsänderung müssen Sie die Registrierung von Nilesoft Shell aufheben und es erneut registrieren, damit die Änderung für neu geöffnete Menüs gilt.
+Die [Konfigurationsreferenz mit Beispielen](nilesoft-shell.md) erklärt, wie Sie FileSpacer zulassen, den Theme-Import beibehalten und Regeln für den Explorer auf diesen beschränken. Wenn Sie die Konfiguration ändern, heben Sie die Registrierung von Nilesoft Shell auf und registrieren Sie es erneut, damit die Änderungen für neu geöffnete Menüs gelten.
 
 Das folgende Modern-Theme zeigt links die standardmäßig abgerundeten Ecken und rechts die empfohlenen eckigen Menüs.
 
