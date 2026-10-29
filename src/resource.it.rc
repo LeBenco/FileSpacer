@@ -179,6 +179,7 @@ BEGIN
   IDS_SHORTCUT_LEFT_HINT "Riservato alla selezione"
   IDS_SHORTCUT_RIGHT_HINT "Riservato ai menu e alla selezione"
   IDS_SHORTCUT_SAVE_FAILED "Impossibile salvare le scelte rapide. Le impostazioni precedenti restano attive."
+  IDS_SHORTCUT_APPLY_REFUSED "La scelta rapida per “%1!s!” non può essere applicata."
   IDS_SEARCH_EVERYTHING "Cerca in Everything"
   IDS_SEARCH_MENU "Everything e ricerche recenti"
   IDS_EVERYTHING_ERROR "Impossibile avviare Everything.\nControlla il percorso in Impostazioni > Integrazione.\n\nEseguibile: %1!s!\nErrore %2!u!: %3!s!"

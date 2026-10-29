@@ -179,6 +179,7 @@ BEGIN
   IDS_SHORTCUT_LEFT_HINT "Für die Auswahl reserviert"
   IDS_SHORTCUT_RIGHT_HINT "Für Menüs und Auswahl reserviert"
   IDS_SHORTCUT_SAVE_FAILED "Die Tastenkombinationen konnten nicht gespeichert werden. Die bisherigen Einstellungen bleiben aktiv."
+  IDS_SHORTCUT_APPLY_REFUSED "Die Tastenkombination für „%1!s!“ kann nicht übernommen werden."
   IDS_SEARCH_EVERYTHING "Mit Everything suchen"
   IDS_SEARCH_MENU "Everything und letzte Suchanfragen"
   IDS_EVERYTHING_ERROR "Everything konnte nicht gestartet werden.\nPrüfen Sie den Pfad unter Einstellungen > Integration.\n\nAusführbare Datei: %1!s!\nFehler %2!u!: %3!s!"

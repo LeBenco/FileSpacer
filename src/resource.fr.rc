@@ -178,6 +178,7 @@ BEGIN
   IDS_SHORTCUT_LEFT_HINT "Réservé à la sélection"
   IDS_SHORTCUT_RIGHT_HINT "Réservé aux menus et à la sélection"
   IDS_SHORTCUT_SAVE_FAILED "Les raccourcis n’ont pas pu être enregistrés. Les réglages précédents restent actifs."
+  IDS_SHORTCUT_APPLY_REFUSED "Le raccourci « %1!s! » ne peut pas être appliqué."
   IDS_SEARCH_EVERYTHING "Rechercher dans Everything"
   IDS_SEARCH_MENU "Everything et recherches récentes"
   IDS_EVERYTHING_ERROR "Impossible de lancer Everything.\nVérifiez son chemin dans Paramètres > Intégration.\n\nExécutable : %1!s!\nErreur %2!u! : %3!s!"
