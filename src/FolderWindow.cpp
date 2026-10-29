@@ -164,6 +164,7 @@ struct FolderWindow::ViewMenuPreview {
     const ULONG_PTR enumerationBaseline; // Serial when the menu opened; earlier EnumDone are stale.
     std::vector<std::vector<uint8_t>> positionChunks;
     size_t nextPositionChunk = 0;
+    POINT lastPoint = {}; // Last cursor position seen; moves without displacement are not hovers.
 
     HRESULT preparePositionChunks() {
         positionChunks.clear();
@@ -218,7 +219,9 @@ struct FolderWindow::ViewMenuPreview {
             IFolderView2 *folderView) : owner(window), menu(popup), context(handler),
         source(window.shellView), view(folderView), generation(window.viewGeneration),
         serial(++window.viewMenuPreviewSerial),
-        enumerationBaseline(window.viewHost.enumerationSerial()) {}
+        enumerationBaseline(window.viewHost.enumerationSerial()) {
+        GetCursorPos(&lastPoint);
+    }
 
     bool current() const {
         return owner.isWindowOperational() && owner.shellView == source
@@ -266,6 +269,11 @@ struct FolderWindow::ViewMenuPreview {
 
     void pointAt(POINT point) {
         if (!tracking || !current() || !displayedMenu) return;
+        // Mouse messages also arrive while the cursor stands still (the view
+        // changes under the menu, the menu loop idles). Only a displacement is
+        // a hover; otherwise a keyboard highlight would be cancelled at once.
+        if (point.x == lastPoint.x && point.y == lastPoint.y) return;
+        lastPoint = point;
         const int position = MenuItemFromPoint(nullptr, displayedMenu, point);
         const UINT pointed = position >= 0 ? GetMenuItemID(displayedMenu, position) : 0;
         UINT command = 0;
