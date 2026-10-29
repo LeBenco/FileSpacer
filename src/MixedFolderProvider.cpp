@@ -285,11 +285,12 @@ struct PropertyValue {
     ~PropertyValue() { PropVariantClear(&value); }
 };
 
-class Folder : public IShellFolder2, public IPersistFolder2, public IMixedFolder, public IShellIcon {
+class Folder : public IShellFolder2, public IPersistFolder2, public IMixedFolder, public IShellIcon, public IShellIconOverlay {
     LONG references = 1;
     CLSID clsid;
     CComPtr<IShellFolder2> source;
     CComPtr<IShellIcon> sourceIcons;
+    CComPtr<IShellIconOverlay> sourceOverlays;
     CComHeapPtr<ITEMIDLIST_ABSOLUTE> nativeRoot, viewRoot;
     HRESULT nativeAbsolute(PCUIDLIST_RELATIVE id, PIDLIST_ABSOLUTE *out) {
         if (!id || !out) return E_POINTER; *out = nullptr;
@@ -320,7 +321,7 @@ public:
         nativeRoot.Attach(ILCloneFull(native)); viewRoot.Attach(ILCloneFull(shown));
         if (!nativeRoot || !viewRoot) return E_OUTOFMEMORY;
         const HRESULT hr = SHBindToObject(nullptr, nativeRoot, nullptr, IID_PPV_ARGS(&source));
-        if (SUCCEEDED(hr)) source->QueryInterface(IID_PPV_ARGS(&sourceIcons));
+        if (SUCCEEDED(hr)) { source->QueryInterface(IID_PPV_ARGS(&sourceIcons)); source->QueryInterface(IID_PPV_ARGS(&sourceOverlays)); }
         return hr;
     }
     STDMETHODIMP QueryInterface(REFIID iid, void **out) override {
@@ -328,6 +329,7 @@ public:
         if (iid == IID_IUnknown || iid == IID_IShellFolder || iid == IID_IShellFolder2) *out = static_cast<IShellFolder2 *>(this);
         else if (iid == IID_IPersist || iid == IID_IPersistFolder || iid == IID_IPersistFolder2) *out = static_cast<IPersistFolder2 *>(this);
         else if (iid == IID_IShellIcon) *out = static_cast<IShellIcon *>(this);
+        else if (iid == IID_IShellIconOverlay && sourceOverlays) *out = static_cast<IShellIconOverlay *>(this);
         else if (iid == __uuidof(IMixedFolder)) *out = static_cast<IMixedFolder *>(this);
         else return E_NOINTERFACE;
         AddRef(); return S_OK;
@@ -366,6 +368,22 @@ public:
         PCUIDLIST_RELATIVE native = nullptr;
         const HRESULT hr = unwrapItem(child, relativeItem, &native);
         return SUCCEEDED(hr) ? sourceIcons->GetIconOf(reinterpret_cast<PCUITEMID_CHILD>(native), flags, index) : hr;
+    }
+    // The Shell asks the folder for overlays before drawing each icon; without
+    // this delegation shortcut arrows and sync states vanish from mixed views.
+    STDMETHODIMP GetOverlayIndex(PCUITEMID_CHILD child, int *index) override {
+        if (!child || !index) return E_POINTER;
+        if (!sourceOverlays) return E_NOTIMPL;
+        PCUIDLIST_RELATIVE native = nullptr;
+        const HRESULT hr = unwrapItem(child, relativeItem, &native);
+        return SUCCEEDED(hr) ? sourceOverlays->GetOverlayIndex(reinterpret_cast<PCUITEMID_CHILD>(native), index) : hr;
+    }
+    STDMETHODIMP GetOverlayIconIndex(PCUITEMID_CHILD child, int *index) override {
+        if (!child || !index) return E_POINTER;
+        if (!sourceOverlays) return E_NOTIMPL;
+        PCUIDLIST_RELATIVE native = nullptr;
+        const HRESULT hr = unwrapItem(child, relativeItem, &native);
+        return SUCCEEDED(hr) ? sourceOverlays->GetOverlayIconIndex(reinterpret_cast<PCUITEMID_CHILD>(native), index) : hr;
     }
     STDMETHODIMP ViewChild(PCUITEMID_CHILD child, PITEMID_CHILD *out) override { return wrapItem(child, relativeItem, out); }
     STDMETHODIMP ParseDisplayName(HWND hwnd, IBindCtx *context, LPWSTR name, ULONG *eaten, PIDLIST_RELATIVE *out, ULONG *attributes) override {
