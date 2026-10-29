@@ -13,6 +13,11 @@ navigation from those directories, using each language's own name and a Unicode
 flag. The bundled, OFL-licensed Noto Color Emoji flag font supplies flags on
 Windows as well; it requires no external font service.
 
+`assets/favicon.ico` contains the application's original 16 × 16 icon frame,
+extracted from `src/res/FileSpacer.ico` without resampling. Keep it in sync
+when regenerating the application icon. The theme's `favicon_ico` setting
+uses this asset in every language.
+
 Heading order and hierarchy must match English. The generator normalizes levels,
 reuses the English document-specific heading IDs in every language and rewrites
 internal links. Changing language preserves the section being read. Missing
