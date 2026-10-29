@@ -986,7 +986,6 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             return colorI + 1;
         }
         case WM_WINDOWPOSCHANGED: {
-            updateWindowPlacement(hwnd);
             WINDOWPOS *winPos = (WINDOWPOS *)lParam;
             const auto checkFlags = SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED;
             if ((winPos->flags & checkFlags) != checkFlags)
@@ -1583,7 +1582,6 @@ void ItemWindow::updateTaskbar() {
 }
 
 void ItemWindow::onSettingsChanged() {
-    if (!settings::getSmartWindowPlacement()) clearWindowPlacement();
     updateStateLock();
     updateTaskbar();
     bool toolbarEnabled = settings::getToolbarEnabled();
