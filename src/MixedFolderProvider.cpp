@@ -619,6 +619,13 @@ extern "C" HRESULT WINAPI CreateMixedFolderItem(BOOL isolated, IShellItem *item,
     if (FAILED(location)) return location;
     const int created = SHCreateDirectoryExW(nullptr, parsing, nullptr);
     if (created != ERROR_SUCCESS && created != ERROR_ALREADY_EXISTS) return HRESULT_FROM_WIN32(created);
+    // The junction is application data, not a user folder: hide it from
+    // ordinary listings like other Shell-managed system folders. Only missing
+    // attributes are written, and the view does not depend on them.
+    constexpr DWORD hidden = FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM;
+    const DWORD attributes = GetFileAttributesW(parsing);
+    if (attributes != INVALID_FILE_ATTRIBUTES && (attributes & hidden) != hidden)
+        SetFileAttributesW(parsing, attributes | hidden);
     CComHeapPtr<ITEMIDLIST_ABSOLUTE> root, native, shown;
     HRESULT hr = SHParseDisplayName(parsing, nullptr, &root, 0, nullptr);
     if (SUCCEEDED(hr)) hr = SHGetIDListFromObject(item, &native);
