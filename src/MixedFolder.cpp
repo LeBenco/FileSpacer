@@ -58,36 +58,4 @@ HRESULT nativeViewSelection(IFolderView2 *view, BOOL noneMeansFolder, IShellItem
     }
     return SHCreateShellItemArrayFromIDLists(count, ids.data(), out);
 }
-
-HRESULT nativeViewChild(IFolderView *view, PCUITEMID_CHILD child, PITEMID_CHILD *out) {
-    if (!view || !child || !out) return E_POINTER;
-    *out = nullptr;
-    CComPtr<IMixedFolder> mixed;
-    if (SUCCEEDED(view->GetFolder(IID_PPV_ARGS(&mixed)))) return mixed->NativeChild(child, out);
-    *out = ILCloneChild(child);
-    return *out ? S_OK : E_OUTOFMEMORY;
-}
-
-HRESULT mixedViewChild(IFolderView *view, PCUITEMID_CHILD child, PITEMID_CHILD *out) {
-    if (!view || !child || !out) return E_POINTER;
-    *out = nullptr;
-    CComPtr<IMixedFolder> mixed;
-    if (SUCCEEDED(view->GetFolder(IID_PPV_ARGS(&mixed)))) return mixed->ViewChild(child, out);
-    *out = ILCloneChild(child);
-    return *out ? S_OK : E_OUTOFMEMORY;
-}
-
-HRESULT writeNativeViewPidl(IFolderView *view, IStream *stream, PCUITEMID_CHILD child) {
-    CComHeapPtr<ITEMID_CHILD> native;
-    const HRESULT hr = nativeViewChild(view, child, &native);
-    return SUCCEEDED(hr) ? IStream_WritePidl(stream, native) : hr;
-}
-
-HRESULT readMixedViewPidl(IFolderView *view, IStream *stream, PITEMID_CHILD *child) {
-    if (!child) return E_POINTER;
-    *child = nullptr;
-    CComHeapPtr<ITEMID_CHILD> native;
-    const HRESULT hr = IStream_ReadPidl(stream, &native);
-    return SUCCEEDED(hr) ? mixedViewChild(view, native, child) : hr;
-}
 }
