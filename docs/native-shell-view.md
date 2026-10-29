@@ -34,15 +34,20 @@ Dans Affichage → Fichiers, « Mélanger les dossiers et les fichiers dans le t
 active un fournisseur de dossier pour les répertoires du système de fichiers.
 Le réglage est désactivé par défaut. Les dossiers virtuels et archives conservent
 leur fournisseur Windows. Le tri agit en vues Détails, Liste et dans les modes à
-icônes lorsque le rangement automatique est actif ; les positions libres restent
-libres.
+icônes lorsque le rangement automatique est actif. En positions libres, le
+fournisseur reste actif et les positions restent libres : aucun changement de
+fournisseur n'accompagne le rangement automatique.
 
 `FileSpacerFolder.dll` implémente les interfaces publiques `IShellFolder2` et
 `IPersistFolder2`, et crée la vue native par `SHCreateShellFolderView`.
-`IExplorerBrowser` reste l'hôte. Le fournisseur possède ses identifiants d'éléments
-et délègue énumération, métadonnées, icônes, menus, données de transfert et actions
-au dossier Windows sous-jacent. Il compare les valeurs de colonnes sans ajouter
-de priorité aux dossiers ; les comparaisons d'identité restent celles de Windows.
+`IExplorerBrowser` reste l'hôte. Seule la racine sous la jonction porte un
+identifiant propre au fournisseur, le PIDL absolu du dossier affiché ; les
+éléments du dossier sont les identifiants du dossier Windows sous-jacent,
+transmis tels quels. Énumération, métadonnées, icônes, menus, données de
+transfert et actions sont déléguées à ce dossier sans traduction ; un sous-dossier
+est enveloppé de la même manière. Le fournisseur compare les valeurs de colonnes
+sans ajouter de priorité aux dossiers ; les comparaisons d'identité restent
+celles de Windows.
 
 La racine est un point de jonction Shell interne, `ShellView.{CLSID}`, dans les
 données locales de FileSpacer. Son enregistrement COM est propre à l'utilisateur ;
@@ -50,12 +55,14 @@ aucune entrée n'est ajoutée au Bureau ou à Ce PC. Le mode de test utilise un 
 et un dossier distincts, supprimés par ses scénarios. L'installateur distribue la
 DLL avec l'application et retire l'inscription qu'il possède à la désinstallation.
 
-Le contrat `IMixedFolder` appartient à FileSpacer et sert uniquement à convertir
-les identifiants entre la vue et les vrais objets Shell. Les fenêtres, commandes
-externes et données SQLite continuent d'utiliser les identifiants natifs. Ainsi,
-l'activation, la désactivation et la réouverture partagent sélection, focus et
-positions sans changer le format de la base. Les notifications du dossier réel
-sont relayées vers l'espace de noms du fournisseur par `SHChangeNotify`.
+Le contrat `IMixedFolder` appartient à FileSpacer et se réduit à `NativeItem` :
+un élément de la vue porte déjà l'identifiant natif, seul son parent diffère, et
+cette méthode rend le vrai objet Shell pour les fenêtres, les commandes externes
+et le statut. Les données SQLite reçoivent les identifiants de la vue tels quels,
+qui sont les identifiants natifs. Ainsi, l'activation, la désactivation et la
+réouverture partagent sélection, focus et positions sans changer le format de la
+base. La vue native s'inscrit aux notifications du dossier réel par
+`SFVM_GETNOTIFY` ; aucune notification n'est relayée.
 
 Les cas `30-tri-melange` vérifient le tri réel, les changements de préférence,
 les notifications et les commandes Shell existantes avec le fournisseur actif.
