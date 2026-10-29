@@ -68,6 +68,9 @@ int main(int argc, char **argv) {
             require(failed(store, "folder", 1740830400), "leap-year anniversary did not delete"); // March 1 12:00
             require(db.number("SELECT count(*) FROM folder_state WHERE key='folder'") == 0, "failure must DELETE row");
             require(!failed(store, "absent", 1800000000) && db.number("SELECT count(*) FROM folder_state WHERE key='absent'") == 0, "failure created error-only row");
+            bool present = true;
+            require(store.contains("absent", &present) && !present, "contains reported an absent key");
+            require(store.contains("other", &present) && present, "contains missed an existing key");
             successful(store, "folder", 1800000000);
             require(!failed(store, "folder", 1800001000), "new first failure");
             successful(store, "folder", 1800002000);
