@@ -8,8 +8,20 @@ else {
     # Windows PowerShell compiles in memory (no assembly location). Keep the
     # helper on disk in the run directory so case helpers can reference it.
     $script:UiAssembly=Join-Path $env:FS_REGRESSION_RUN 'FileSpacerRegression.dll'
-    if (!(Test-Path -LiteralPath $script:UiAssembly)) { Add-Type -Path (Join-Path $PSScriptRoot 'EssentialUi.cs') -OutputAssembly $script:UiAssembly }
-    Add-Type -Path $script:UiAssembly
+    if (!(Test-Path -LiteralPath $script:UiAssembly)) { Microsoft.PowerShell.Utility\Add-Type -Path (Join-Path $PSScriptRoot 'EssentialUi.cs') -OutputAssembly $script:UiAssembly }
+    Microsoft.PowerShell.Utility\Add-Type -Path $script:UiAssembly
+    # Case helpers compiled from source see the FileSpacerRegression types, as
+    # they do in a prepared run where csc bundles them with EssentialUi.cs.
+    function Add-Type {
+        param([string[]]$Path,[string]$TypeDefinition,[string[]]$AssemblyName,[string[]]$ReferencedAssemblies,[switch]$PassThru)
+        if ($AssemblyName) { Microsoft.PowerShell.Utility\Add-Type -AssemblyName $AssemblyName -PassThru:$PassThru; return }
+        # Process-wide path: the function may run in another script scope (nested scenarios).
+        $assembly=Join-Path $env:FS_REGRESSION_RUN 'FileSpacerRegression.dll'
+        $references=@($ReferencedAssemblies | Where-Object { $_ -and $_ -ne $assembly })+@($assembly)
+        if ($Path) { Microsoft.PowerShell.Utility\Add-Type -Path $Path -ReferencedAssemblies $references -PassThru:$PassThru }
+        elseif ($TypeDefinition) { Microsoft.PowerShell.Utility\Add-Type -TypeDefinition $TypeDefinition -ReferencedAssemblies $references -PassThru:$PassThru }
+        else { throw 'Unsupported Add-Type invocation in the local bench.' }
+    }
 }
 $script:UiProcesses=New-Object Collections.ArrayList
 $script:UiWindows=New-Object Collections.ArrayList
