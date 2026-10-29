@@ -179,6 +179,7 @@ BEGIN
   IDS_SHORTCUT_LEFT_HINT "Reservado para selección"
   IDS_SHORTCUT_RIGHT_HINT "Reservado para menús y selección"
   IDS_SHORTCUT_SAVE_FAILED "No se han podido guardar los métodos abreviados. La configuración anterior sigue activa."
+  IDS_SHORTCUT_APPLY_REFUSED "El método abreviado para «%1!s!» no se puede aplicar."
   IDS_SEARCH_EVERYTHING "Buscar en Everything"
   IDS_SEARCH_MENU "Everything y búsquedas recientes"
   IDS_EVERYTHING_ERROR "No se ha podido iniciar Everything.\nComprueba su ruta en Configuración > Integración.\n\nEjecutable: %1!s!\nError %2!u!: %3!s!"

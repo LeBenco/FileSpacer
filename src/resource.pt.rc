@@ -179,6 +179,7 @@ BEGIN
   IDS_SHORTCUT_LEFT_HINT "Reservado para seleção"
   IDS_SHORTCUT_RIGHT_HINT "Reservado para menus e seleção"
   IDS_SHORTCUT_SAVE_FAILED "Não foi possível guardar os atalhos. As definições anteriores mantêm-se ativas."
+  IDS_SHORTCUT_APPLY_REFUSED "O atalho para «%1!s!» não pode ser aplicado."
   IDS_SEARCH_EVERYTHING "Pesquisar no Everything"
   IDS_SEARCH_MENU "Everything e pesquisas recentes"
   IDS_EVERYTHING_ERROR "Não foi possível iniciar o Everything.\nVerifique o caminho em Definições > Integração.\n\nExecutável: %1!s!\nErro %2!u!: %3!s!"
