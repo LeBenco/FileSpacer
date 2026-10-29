@@ -1,7 +1,7 @@
 #include <windows.h>
 #include "resource.h"
 
-LANGUAGE LANG_ITALIAN, SUBLANG_ITALIAN
+LANGUAGE LANG_ITALIAN, SUBLANG_NEUTRAL
 
 IDR_ITEM_MENU   MENU {
     MENUITEM    "Documentazione\tF1", IDM_HELP
