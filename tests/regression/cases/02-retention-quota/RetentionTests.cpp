@@ -73,6 +73,16 @@ int main(int argc, char **argv) {
             successful(store, "folder", 1800002000);
             require(!read(store, "folder").firstFailedAt, "success did not clear failure period");
             require(!failed(store, "folder", 1900000000), "new first failure inherited old period");
+            // A success is refreshed at most once a day; ending a failure period is always written.
+            successful(store, "daily", 1850000000);
+            successful(store, "daily", 1850086399);
+            require(read(store, "daily").lastSuccessAt == 1850000000, "success rewritten within a day");
+            successful(store, "daily", 1850086400);
+            require(read(store, "daily").lastSuccessAt == 1850086400, "success not refreshed after a day");
+            require(!failed(store, "daily", 1850090000), "daily first failure");
+            successful(store, "daily", 1850090001);
+            s = read(store, "daily");
+            require(s.lastSuccessAt == 1850090001 && !s.firstFailedAt, "success ending a failure period not recorded at once");
             FolderState old; old.x = 10; old.y = 20; old.lastSuccessAt = 1; old.firstFailedAt = 1;
             require(store.save("folder", old, FolderState::Position), "save old snapshot");
             s = read(store, "folder");
@@ -127,7 +137,7 @@ int main(int argc, char **argv) {
             std::fseek(journal, 0, SEEK_END);
             long retained = std::ftell(journal); std::fclose(journal);
             require(retained >= 0 && retained <= 8000000, "recycled WAL retained more than configured limit");
-            std::cout << "PASS: failure anniversary, success recovery, unknown keys, stale saves, transactional errors, rekey metadata, 100MB quota, free-page reuse, oversized row, WAL history.\n";
+            std::cout << "PASS: failure anniversary, success recovery, daily success refresh, unknown keys, stale saves, transactional errors, rekey metadata, 100MB quota, free-page reuse, oversized row, WAL history.\n";
 #ifdef _WIN32
             require(store.clearAll(), "reset Windows quota");
             HWND window = CreateWindowExW(0, L"STATIC", L"quota test", WS_OVERLAPPED, 0, 0, 10, 10, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
