@@ -179,6 +179,7 @@ BEGIN
   IDS_SHORTCUT_LEFT_HINT "Reserved for selection"
   IDS_SHORTCUT_RIGHT_HINT "Reserved for menus and selection"
   IDS_SHORTCUT_SAVE_FAILED "The shortcuts could not be saved. The previous settings remain active."
+  IDS_SHORTCUT_APPLY_REFUSED "The shortcut for “%1!s!” cannot be applied."
   IDS_SEARCH_EVERYTHING "Search in Everything"
   IDS_SEARCH_MENU "Everything and recent searches"
   IDS_EVERYTHING_ERROR "Everything could not be started.\nCheck its path in Settings > Integration.\n\nExecutable: %1!s!\nError %2!u!: %3!s!"

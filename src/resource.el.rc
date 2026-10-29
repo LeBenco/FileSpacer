@@ -179,6 +179,7 @@ BEGIN
   IDS_SHORTCUT_LEFT_HINT "Δεσμευμένο για επιλογή"
   IDS_SHORTCUT_RIGHT_HINT "Δεσμευμένο για μενού και επιλογή"
   IDS_SHORTCUT_SAVE_FAILED "Δεν ήταν δυνατή η αποθήκευση των συντομεύσεων. Οι προηγούμενες ρυθμίσεις παραμένουν ενεργές."
+  IDS_SHORTCUT_APPLY_REFUSED "Η συντόμευση για «%1!s!» δεν μπορεί να εφαρμοστεί."
   IDS_SEARCH_EVERYTHING "Αναζήτηση στο Everything"
   IDS_SEARCH_MENU "Everything και πρόσφατες αναζητήσεις"
   IDS_EVERYTHING_ERROR "Δεν ήταν δυνατή η εκκίνηση του Everything.\nΕλέγξτε τη διαδρομή στις Ρυθμίσεις > Ενσωμάτωση.\n\nΕκτελέσιμο: %1!s!\nΣφάλμα %2!u!: %3!s!"
