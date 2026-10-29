@@ -417,11 +417,17 @@ public:
         if (FAILED(hr) || !native) return hr;
         *out = new(std::nothrow) Enumeration(native); return *out ? S_OK : E_OUTOFMEMORY;
     }
-    STDMETHODIMP BindToObject(PCUIDLIST_RELATIVE id, IBindCtx *, REFIID iid, void **out) override {
+    STDMETHODIMP BindToObject(PCUIDLIST_RELATIVE id, IBindCtx *context, REFIID iid, void **out) override {
         if (!out) return E_POINTER; *out = nullptr;
         CComHeapPtr<ITEMIDLIST_ABSOLUTE> native, shown;
         HRESULT hr = nativeAbsolute(id, &native);
         if (FAILED(hr)) return hr;
+        // Only the folder contract is wrapped. Any other handler (stream, property
+        // store, thumbnail...) comes from the native folder with the caller's bind context.
+        if (iid != IID_IUnknown && iid != IID_IShellFolder && iid != IID_IShellFolder2
+                && iid != IID_IPersist && iid != IID_IPersistFolder && iid != IID_IPersistFolder2
+                && iid != IID_IShellIcon && iid != IID_IShellIconOverlay && iid != __uuidof(IMixedFolder))
+            return SHBindToObject(nullptr, native, context, iid, out);
         shown.Attach(ILCombine(viewRoot, id)); if (!shown) return E_OUTOFMEMORY;
         auto *folder = new(std::nothrow) Folder(clsid); if (!folder) return E_OUTOFMEMORY;
         hr = folder->bind(native, shown);
