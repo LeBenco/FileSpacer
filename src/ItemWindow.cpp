@@ -614,6 +614,10 @@ void ItemWindow::recordFolderAccess(HRESULT result) {
     }
     if (stateKey.empty() || !loadFolderState()) return;
     const int64_t now = static_cast<int64_t>(std::time(nullptr));
+    // Activations are frequent: a success already recorded today, with no
+    // failure period to end, is not written again (no transaction at all).
+    if (success && !savedState.firstFailedAt && savedState.lastSuccessAt
+            && now < savedState.lastSuccessAt + SUCCESS_REFRESH_SECONDS) return;
     bool expired = false;
     auto store = folderStateStore();
     if (!store || !store->recordAccess(stateKey, success, now, &expired)) {
