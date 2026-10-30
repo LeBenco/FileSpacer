@@ -118,6 +118,8 @@ Use a short loop with pauses before and after the gesture.
 
 Replace the existing PNG or GIF under the same name when the corresponding
 interface changes. There is no need to recapture unchanged screens for every release.
+Screenshot URLs include a content hash, so replacing an image under the same
+filename refreshes cached thumbnails and popup images automatically.
 Update the corresponding provenance file with the app version and capture context.
 
 Use a dedicated VM with fictional folders and files. Prefer the target Windows
