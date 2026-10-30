@@ -2,6 +2,14 @@
 
 ## Non ancora pubblicato
 
+## 1.2.3 — 2026-10-30
+
+- Correggere identità, sovrapposizioni delle icone e notifiche delle cartelle nell’ordinamento misto; conservare le posizioni libere delle icone e usare le viste native quando il provider non è disponibile o è incompatibile.
+- Garantire una sola finestra Preferenze tra processi e correggere la convalida delle scorciatoie, i percorsi di Everything, i tasti di accesso e le traduzioni regionali.
+- Correggere la chiusura delle cartelle, i clic di attivazione e il ripristino dopo un’anteprima nel menu Visualizza.
+- Correggere gli aggiornamenti delle Jump List e la diagnostica dell’installazione; conservare i file di aiuto dell’utente durante aggiornamenti e disinstallazione.
+- Includere l’aiuto multilingue offline tramite F1 e Informazioni e aggiornare le guide di configurazione tradotte e i riferimenti di Nilesoft Shell.
+
 ## 1.2.2 — 2026-10-28
 
 - Correggere l’uso del provider di cartelle personalizzato con l’ordinamento misto e le icone disposte liberamente. Usare il provider nativo per il posizionamento libero e cambiare provider quando si conferma una disposizione ordinata, conservando posizioni salvate delle icone, selezione e stato attivo.
