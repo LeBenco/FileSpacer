@@ -1,6 +1,6 @@
 # Note sui componenti di terze parti
 
-FileSpacer è basato su [ChromaFiler](https://github.com/vanjac/chromafiler), Copyright (c) 2023 J. van’t Hoog, distribuito con licenza GNU General Public License v3.0. Modifiche di FileSpacer: Copyright (c) 2026 Benco. La licenza completa si trova in [LICENSE](LICENSE) nei sorgenti oppure in `LICENSE.txt` nella cartella di installazione. FileSpacer viene fornito senza garanzia; la ridistribuzione e la modifica sono consentite alle condizioni della licenza.
+FileSpacer è basato su [ChromaFiler](https://github.com/vanjac/chromafiler), Copyright (c) 2023 J. van’t Hoog, distribuito con licenza [GNU General Public License v3.0](LICENSE).
 
 ## SQLite
 
