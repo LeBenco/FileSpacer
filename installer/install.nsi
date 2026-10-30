@@ -186,6 +186,7 @@ Var brandingCaptionFont
 Var titleFont
 Var processList
 Var logPath
+Var updateResult
 
 ; The elevated worker runs silently: it leaves its trace in the log file the
 ; parent passed with /Log=, which the parent replays and offers to open.
@@ -905,6 +906,12 @@ Function InitializeInstall
         Call .onSelChange
         Return
     ${EndIf}
+    ClearErrors
+    ${GetOptionsS} $parameters "/UpdateResult=" $updateResult
+    ${If} ${Errors}
+        StrCpy $updateResult ""
+    ${EndIf}
+    ClearErrors
     StrCpy $installMode "CurrentUser"
     ReadRegStr $0 HKCU "Software\FileSpacer" "Install_Dir"
     ${If} $0 == ""
@@ -1026,6 +1033,33 @@ FunctionEnd
     WriteINIStr "$INSTDIR\install-info.ini" "Components" "${KEY}" $0
 !macroend
 
+Function WriteUpdateResult
+    ; Only the initiating parent writes the result, under its original identity.
+    ; An elevated worker must finish all machine changes before this is called.
+    ${If} $machineWorker == 1
+    ${OrIf} $updateResult == ""
+        Return
+    ${EndIf}
+    ClearErrors
+    FileOpen $R9 "$updateResult" w
+    IfErrors result_failed
+    FileWriteUTF16LE /BOM $R9 "[Installation]$\r$\nMode=$installMode$\r$\nExecutable=$INSTDIR\FileSpacer.exe$\r$\nComplete=1$\r$\n"
+    ${If} ${Errors}
+        FileClose $R9
+        Delete "$updateResult"
+        Goto result_failed
+    ${EndIf}
+    FileClose $R9
+    ${IfNot} ${Errors}
+        Return
+    ${EndIf}
+    Delete "$updateResult"
+result_failed:
+    MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
+    SetErrorLevel 2
+    Abort
+FunctionEnd
+
 Section -ApplyOptions
     ; An unchecked component also removes a component installed by an earlier version.
     ${If} $delegated != 1
@@ -1066,6 +1100,7 @@ Section -ApplyOptions
     ${EndIf}
     !insertmacro WORKER_LOG "Elevated worker finished successfully."
 options_done:
+    Call WriteUpdateResult
 SectionEnd
 
 Section "Uninstall"
