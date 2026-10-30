@@ -48,15 +48,15 @@ Portuguese (Portugal) and Greek.
 
 ## Integration
 
+If you use **Everything**, you can integrate it with FileSpacer to run advanced
+searches from its search field. Search the current folder and its subfolders,
+or all indexed files; results open in Everything.
+[Integration and usage](docs/user-guide.md#everything).
+
 If you use **Nilesoft Shell**, you can also let it theme FileSpacer's menus and
 customize their commands, with rules targeting individual menus. Configuration
 adjustments are recommended for a consistent appearance.
 [Integration and configuration](docs/user-guide.md#nilesoft-shell).
-
-**Everything** can search the current folder and its subfolders, or search
-everywhere, using the query entered in FileSpacer. Results open in Everything,
-which must be installed separately.
-[Setup and usage](docs/user-guide.md#everything).
 
 FileSpacer can also be set as the default application for opening folders.
 [Windows integration](docs/user-guide.md#windows-integration).

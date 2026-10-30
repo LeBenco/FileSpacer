@@ -35,9 +35,9 @@ Windows 10 ou posterior, x64. Disponível em inglês, francês, alemão, italian
 
 ## Integração
 
-Se utiliza o **Nilesoft Shell**, pode também usá-lo para alterar o aspeto dos menus do FileSpacer e personalizar os seus comandos, com regras específicas para cada menu. Recomenda-se adaptar a configuração para uma boa integração visual. [Integração e configuração](docs/user-guide.md#nilesoft-shell).
+Se utiliza o **Everything**, pode integrá-lo com o FileSpacer para efetuar pesquisas avançadas a partir do respetivo campo de pesquisa. Pode pesquisar na pasta atual e nas subpastas ou em todos os ficheiros indexados; os resultados abrem no Everything. [Integração e utilização](docs/user-guide.md#everything).
 
-O **Everything** pode pesquisar na pasta atual e nas subpastas, ou em todo o lado, usando a consulta introduzida no FileSpacer. Os resultados abrem no Everything, que tem de ser instalado separadamente. [Instalação e utilização](docs/user-guide.md#everything).
+Se utiliza o **Nilesoft Shell**, pode também usá-lo para alterar o aspeto dos menus do FileSpacer e personalizar os seus comandos, com regras específicas para cada menu. Recomenda-se adaptar a configuração para uma boa integração visual. [Integração e configuração](docs/user-guide.md#nilesoft-shell).
 
 Também pode definir o FileSpacer como aplicação predefinida para abrir pastas. [Integração com o Windows](docs/user-guide.md#windows-integration).
 
