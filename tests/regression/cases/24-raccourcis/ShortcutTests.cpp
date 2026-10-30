@@ -8,6 +8,7 @@
 #include <commctrl.h>
 #include <prsht.h>
 #include <objbase.h>
+#include <initguid.h>
 #include <oleacc.h>
 #include <cstdio>
 #include <cstdlib>
@@ -16,10 +17,35 @@
 using namespace filespacer;
 
 namespace {
+int refusalDialogs = 0;
+HRESULT CALLBACK dismissRefusal(HWND dialog, UINT message, WPARAM, LPARAM, LONG_PTR) {
+    if (message == TDN_CREATED) {
+        ++refusalDialogs;
+        PostMessageW(dialog, TDM_CLICK_BUTTON, IDOK, 0);
+    }
+    return S_OK;
+}
+HRESULT capturedTaskDialog(HWND owner, HINSTANCE instance, LPCWSTR title, LPCWSTR instruction,
+        LPCWSTR content, UINT buttons, LPCWSTR icon, int *button) {
+    TASKDIALOGCONFIG config = {sizeof(config)};
+    config.hwndParent = owner; config.hInstance = instance; config.pszWindowTitle = title;
+    config.pszMainInstruction = instruction; config.pszContent = content;
+    config.dwCommonButtons = static_cast<TASKDIALOG_COMMON_BUTTON_FLAGS>(buttons);
+    config.pszMainIcon = icon; config.pfCallback = dismissRefusal;
+    return TaskDialogIndirect(&config, button, nullptr, nullptr);
+}
+}
+// Keep the real page and native error dialog, adding only the acknowledgement
+// callback used by the dimensions harness so exhaustive rejections can finish.
+#define TaskDialog capturedTaskDialog
+#include "ShortcutSettingsPage.cpp"
+#undef TaskDialog
+
+namespace {
 int checks = 0, notifications = 0;
 void require(bool value, const char *message) {
     ++checks;
-    if (!value) { std::fprintf(stderr, "FAIL: %s (check %d)\n", message, checks); std::abort(); }
+    if (!value) { std::fprintf(stderr, "FAIL: %s (check %d)\n", message, checks); std::exit(EXIT_FAILURE); }
 }
 HWND sheet = nullptr, page = nullptr, editor = nullptr;
 int openSection = -1;
@@ -76,8 +102,9 @@ void setAction(int index, const WindowShortcut &value) {
 }
 LONG_PTR notify(UINT code) {
     NMHDR notification = {}; notification.code = code; notification.hwndFrom = sheet;
-    SendMessageW(page, WM_NOTIFY, 0, reinterpret_cast<LPARAM>(&notification));
-    return GetWindowLongPtrW(page, DWLP_MSGRESULT);
+    const LONG_PTR result = SendMessageW(page, WM_NOTIFY, 0, reinterpret_cast<LPARAM>(&notification));
+    pump(); // Finish dialog/owner notifications before editing the next pair.
+    return result;
 }
 void registryAndPageMatrix() {
     unsigned valid = 0, invalid = 0;
@@ -89,9 +116,26 @@ void registryAndPageMatrix() {
         require(validShortcuts(candidate) == expected, "all 2304 pairs use the specified combination policy");
         setAction(0, candidate.move); setAction(1, candidate.resize);
         const DWORD before = registryValue();
+        const int dialogsBefore = refusalDialogs;
         require((notify(PSN_KILLACTIVE) == FALSE) == expected, "native property sheet validates before leaving page");
-        if (!expected) openSection = !validShortcut(candidate.move) ? 0 : 1;
-        require((notify(PSN_APPLY) == PSNRET_NOERROR) == expected, "native page validates Apply for every pair");
+        if (!expected) {
+            openSection = !validShortcut(candidate.move) ? 0 : 1;
+            const auto &refused = openSection == 0 ? candidate.move : candidate.resize;
+            require(IsDlgButtonChecked(editor, IDC_SHORTCUT_LEFT + static_cast<int>(refused.button)) == BST_CHECKED,
+                "refusal keeps the selected button while opening the invalid action");
+        }
+        const LONG_PTR applied = notify(PSN_APPLY);
+        if ((applied == PSNRET_NOERROR) != expected)
+            std::fprintf(stderr, "PAIR: first=%u second=%u expected=%d apply=%lld\n",
+                first, second, expected, static_cast<long long>(applied));
+        require((applied == PSNRET_NOERROR) == expected, "native page validates Apply for every pair");
+        require(refusalDialogs == dialogsBefore + (expected ? 0 : 2),
+            "both invalid notifications show their native refusal dialog");
+        if (!expected) {
+            const auto &refused = openSection == 0 ? candidate.move : candidate.resize;
+            require(IsDlgButtonChecked(editor, IDC_SHORTCUT_LEFT + static_cast<int>(refused.button)) == BST_CHECKED,
+                "refusal keeps the selected button after Apply's native warning");
+        }
         if (expected) {
             ++valid; require(equal(settings::getWindowShortcuts(), candidate), "valid pair persists and reloads atomically");
         } else {
