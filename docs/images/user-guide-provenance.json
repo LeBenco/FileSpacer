@@ -1,0 +1,687 @@
+{
+  "application": "FileSpacer",
+  "version": "1.2.3",
+  "date": "2026-10-30",
+  "method": "Raw guest screen pixels, cropped to the DWM visible-frame union. No UI labels redrawn and no pixel retouching.",
+  "build": "Disposable documentation builds from released 10c4027, overriding only the UI language and property-sheet resource-language selection.",
+  "operatingSystem": "AgentWin10; French Windows session, real application resource strings and controls. Windows-owned breadcrumb names and size formatting can remain French.",
+  "desktop": "Larger supported display mode and the existing Windows default wallpaper used temporarily, then restored. No desktop outside the multi-window union; single-window captures contain only its visible frame.",
+  "everythingPortuguese": "Everything provides only pt-BR, used with FileSpacer pt-PT and European Portuguese fictional filenames.",
+  "languages": [
+    {
+      "Query": "brief",
+      "Version": "1.2.3",
+      "EverythingQuery": "\"P:\\Search examples\\\" <brief>",
+      "ExecutableSha256": "A70C0F9B23ECD5210D0D9D911FD17A90ECE0C7CEFC21DAF8EF80E0559DB88680",
+      "SearchFieldReenteredAfterSuccessfulLaunch": true,
+      "Shots": [
+        {
+          "Width": 1766,
+          "File": "spatial-windows.png",
+          "Height": 893,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Studio project",
+              "Top": 24,
+              "Height": 893,
+              "Width": 769
+            },
+            {
+              "Left": 868,
+              "Title": "Documents",
+              "Top": 24,
+              "Height": 389,
+              "Width": 929
+            },
+            {
+              "Left": 921,
+              "Title": "Images",
+              "Top": 474,
+              "Height": 443,
+              "Width": 734
+            }
+          ],
+          "Sha256": "7d2d28e60e8baa99890e02f6f77c5dcf97ae7b8485e05c89c406d631d41903fa"
+        },
+        {
+          "Width": 726,
+          "File": "selected-name.png",
+          "Height": 453,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Project notes",
+              "Top": 24,
+              "Height": 453,
+              "Width": 726
+            }
+          ],
+          "Sha256": "49201d4f70855370fcaf2437b8607d5f90ce9e00ea2bdb1af5601af1c8c21f70"
+        },
+        {
+          "Width": 1766,
+          "File": "everything-search.png",
+          "Height": 613,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Search examples",
+              "Top": 24,
+              "Height": 533,
+              "Width": 805
+            },
+            {
+              "Left": 878,
+              "Title": "\"P:\\Search examples\\\" <brief> - Everything",
+              "Top": 24,
+              "Height": 613,
+              "Width": 919
+            }
+          ],
+          "Sha256": "f26192cd2fe536cb371692c7686259fec7a006501980b5e4096ec3d8040526f4"
+        }
+      ],
+      "Language": "en-US",
+      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "EverythingResults": [
+        "Archived brief.txt",
+        "Final brief.txt",
+        "Project brief.txt"
+      ],
+      "Status": "PASS",
+      "SettingsTitle": "FileSpacer Settings",
+      "EverythingMenus": [
+        "File",
+        "Edit",
+        "View",
+        "Search",
+        "Bookmarks",
+        "Tools",
+        "Help"
+      ],
+      "EverythingVersion": "1.4.1.1032",
+      "RunId": "ddbafbe6dd174ed1bf18620c1ba87ada",
+      "EverythingLocale": "en-US"
+    },
+    {
+      "Query": "cadrage",
+      "Version": "1.2.3",
+      "EverythingQuery": "\"P:\\Exemples de recherche\\\" <cadrage>",
+      "ExecutableSha256": "116D965E9B629205B52FC9358D5BD9C4B0AE02D4A7561D88085D04E58ECC5F13",
+      "SearchFieldReenteredAfterSuccessfulLaunch": true,
+      "Shots": [
+        {
+          "Width": 1766,
+          "File": "spatial-windows-fr.png",
+          "Height": 893,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Projet studio",
+              "Top": 24,
+              "Height": 893,
+              "Width": 769
+            },
+            {
+              "Left": 868,
+              "Title": "Documents",
+              "Top": 24,
+              "Height": 389,
+              "Width": 929
+            },
+            {
+              "Left": 921,
+              "Title": "Images",
+              "Top": 474,
+              "Height": 443,
+              "Width": 734
+            }
+          ],
+          "Sha256": "8aebe05db6cbb22327861ba9120bd83c1d0c3b34017fe64c356fac4193f5a63c"
+        },
+        {
+          "Width": 726,
+          "File": "selected-name-fr.png",
+          "Height": 453,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Notes du projet",
+              "Top": 24,
+              "Height": 453,
+              "Width": 726
+            }
+          ],
+          "Sha256": "3d6d4c0f193bd239dc42e8323e6f86e53a305e957e3100086ab32b11dc4ce0be"
+        },
+        {
+          "Width": 1766,
+          "File": "everything-search-fr.png",
+          "Height": 613,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Exemples de recherche",
+              "Top": 24,
+              "Height": 533,
+              "Width": 805
+            },
+            {
+              "Left": 878,
+              "Title": "\"P:\\Exemples de recherche\\\" <cadrage> - Everything",
+              "Top": 24,
+              "Height": 613,
+              "Width": 919
+            }
+          ],
+          "Sha256": "1e8234bd5c996ef6419753998f1842e6013091f36456e80485ea27352842b906"
+        }
+      ],
+      "Language": "fr-FR",
+      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "EverythingResults": [
+        "Ancien cadrage.txt",
+        "Cadrage définitif.txt",
+        "Cadrage du projet.txt"
+      ],
+      "Status": "PASS",
+      "SettingsTitle": "Paramètres de FileSpacer",
+      "EverythingMenus": [
+        "Fichier",
+        "Edition",
+        "Affichage",
+        "Recherche",
+        "Signets",
+        "Outils",
+        "Aide"
+      ],
+      "EverythingVersion": "1.4.1.1032",
+      "RunId": "d9ad72c306704f1dbc8c41e754b246b4",
+      "EverythingLocale": "fr-FR"
+    },
+    {
+      "Query": "entwurf",
+      "Version": "1.2.3",
+      "EverythingQuery": "\"P:\\Suchbeispiele\\\" <entwurf>",
+      "ExecutableSha256": "BAC7D58E7795E420D2C24F21EBDBC2B5D470C5409FE37F3E5DA6D0EDFA3DEA12",
+      "SearchFieldReenteredAfterSuccessfulLaunch": true,
+      "Shots": [
+        {
+          "Width": 1766,
+          "File": "spatial-windows-de.png",
+          "Height": 893,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Studio-Projekt",
+              "Top": 24,
+              "Height": 893,
+              "Width": 769
+            },
+            {
+              "Left": 868,
+              "Title": "Dokumente",
+              "Top": 24,
+              "Height": 389,
+              "Width": 929
+            },
+            {
+              "Left": 921,
+              "Title": "Bilder",
+              "Top": 474,
+              "Height": 443,
+              "Width": 734
+            }
+          ],
+          "Sha256": "8d831e57f32829d64f3d423ba2cebe8b6f5064460504bf60e203648f0e49ebe8"
+        },
+        {
+          "Width": 726,
+          "File": "selected-name-de.png",
+          "Height": 453,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Projektnotizen",
+              "Top": 24,
+              "Height": 453,
+              "Width": 726
+            }
+          ],
+          "Sha256": "fe963997c640bfd0327c1a4b7d59a99aa99de870e7f81bac913f8cf369389c84"
+        },
+        {
+          "Width": 1766,
+          "File": "everything-search-de.png",
+          "Height": 613,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Suchbeispiele",
+              "Top": 24,
+              "Height": 533,
+              "Width": 805
+            },
+            {
+              "Left": 878,
+              "Title": "\"P:\\Suchbeispiele\\\" <entwurf> - Everything",
+              "Top": 24,
+              "Height": 613,
+              "Width": 919
+            }
+          ],
+          "Sha256": "531223432ee1d459b49e6276da7e64e8e5dd2a14c8315ea4034b0397e3ff67e4"
+        }
+      ],
+      "Language": "de-DE",
+      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "EverythingResults": [
+        "Alter Entwurf.txt",
+        "Endgültiger Entwurf.txt",
+        "Projektentwurf.txt"
+      ],
+      "Status": "PASS",
+      "SettingsTitle": "FileSpacer-Einstellungen",
+      "EverythingMenus": [
+        "Datei",
+        "Bearbeiten",
+        "Ansicht",
+        "Suchen",
+        "Lesezeichen",
+        "Extras",
+        "Hilfe"
+      ],
+      "EverythingVersion": "1.4.1.1032",
+      "RunId": "8e80ef2c89744bd590a3c6a43f905533",
+      "EverythingLocale": "de-DE"
+    },
+    {
+      "Query": "progetto",
+      "Version": "1.2.3",
+      "EverythingQuery": "\"P:\\Esempi di ricerca\\\" <progetto>",
+      "ExecutableSha256": "7A2F7114FB7AF7B52B82D0FC3F5224246A37D35C99CC4B22B6863FE298EE34EF",
+      "SearchFieldReenteredAfterSuccessfulLaunch": true,
+      "Shots": [
+        {
+          "Width": 1766,
+          "File": "spatial-windows-it.png",
+          "Height": 893,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Progetto studio",
+              "Top": 24,
+              "Height": 893,
+              "Width": 769
+            },
+            {
+              "Left": 868,
+              "Title": "Documenti",
+              "Top": 24,
+              "Height": 389,
+              "Width": 929
+            },
+            {
+              "Left": 921,
+              "Title": "Immagini",
+              "Top": 474,
+              "Height": 443,
+              "Width": 734
+            }
+          ],
+          "Sha256": "a1d3edb36e920b3ace40b456c1671129c13781d200f9459052a309569a302ba5"
+        },
+        {
+          "Width": 726,
+          "File": "selected-name-it.png",
+          "Height": 453,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Note del progetto",
+              "Top": 24,
+              "Height": 453,
+              "Width": 726
+            }
+          ],
+          "Sha256": "e6e446275bcedaef2c226158e6fe994e93a81efb23817fec0fd2651b30c7b3f8"
+        },
+        {
+          "Width": 1766,
+          "File": "everything-search-it.png",
+          "Height": 613,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Esempi di ricerca",
+              "Top": 24,
+              "Height": 533,
+              "Width": 805
+            },
+            {
+              "Left": 878,
+              "Title": "\"P:\\Esempi di ricerca\\\" <progetto> - Everything",
+              "Top": 24,
+              "Height": 613,
+              "Width": 919
+            }
+          ],
+          "Sha256": "bacaf0b54fcfb7dd0ed7dda19aca830a90fffc141e89799215e436c341dee2c4"
+        }
+      ],
+      "Language": "it-IT",
+      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "EverythingResults": [
+        "Progetto definitivo.txt",
+        "Sintesi del progetto.txt",
+        "Vecchio progetto.txt"
+      ],
+      "Status": "PASS",
+      "SettingsTitle": "Impostazioni di FileSpacer",
+      "EverythingMenus": [
+        "File",
+        "Modifica",
+        "Vista",
+        "Ricerca",
+        "Segnalibri",
+        "Strumenti",
+        "Aiuto"
+      ],
+      "EverythingVersion": "1.4.1.1032",
+      "RunId": "f11df60f424d463e87766602be7fd237",
+      "EverythingLocale": "it-IT"
+    },
+    {
+      "Query": "proyecto",
+      "Version": "1.2.3",
+      "EverythingQuery": "\"P:\\Ejemplos de búsqueda\\\" <proyecto>",
+      "ExecutableSha256": "8E7A25CAC76031EAEDB1B3E977D92CBF98253624603BB21F5B720B8EC87A6BBA",
+      "SearchFieldReenteredAfterSuccessfulLaunch": true,
+      "Shots": [
+        {
+          "Width": 1766,
+          "File": "spatial-windows-es.png",
+          "Height": 893,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Proyecto de estudio",
+              "Top": 24,
+              "Height": 893,
+              "Width": 769
+            },
+            {
+              "Left": 868,
+              "Title": "Documentos",
+              "Top": 24,
+              "Height": 389,
+              "Width": 929
+            },
+            {
+              "Left": 921,
+              "Title": "Imágenes",
+              "Top": 474,
+              "Height": 443,
+              "Width": 734
+            }
+          ],
+          "Sha256": "5bfbc24dc89cf9207c1865e3c476361a7d7d4ce1bb265eb6fb0b0482e67623a8"
+        },
+        {
+          "Width": 726,
+          "File": "selected-name-es.png",
+          "Height": 453,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Notas del proyecto",
+              "Top": 24,
+              "Height": 453,
+              "Width": 726
+            }
+          ],
+          "Sha256": "04667fbd302a69dfa51e2d6c558f456fce82064d0c008d65d25230570eebdf40"
+        },
+        {
+          "Width": 1766,
+          "File": "everything-search-es.png",
+          "Height": 613,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Ejemplos de búsqueda",
+              "Top": 24,
+              "Height": 533,
+              "Width": 805
+            },
+            {
+              "Left": 878,
+              "Title": "\"P:\\Ejemplos de búsqueda\\\" <proyecto> - Everything",
+              "Top": 24,
+              "Height": 613,
+              "Width": 919
+            }
+          ],
+          "Sha256": "b563130bd6b700ffe662d90bfd6a37ded4045995964c66e0cce7a2e75a74ceac"
+        }
+      ],
+      "Language": "es-ES",
+      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "EverythingResults": [
+        "Proyecto anterior.txt",
+        "Proyecto definitivo.txt",
+        "Resumen del proyecto.txt"
+      ],
+      "Status": "PASS",
+      "SettingsTitle": "Configuración de FileSpacer",
+      "EverythingMenus": [
+        "Archivo",
+        "Edición",
+        "Vista",
+        "Búsqueda",
+        "Marcadores",
+        "Herramientas",
+        "Ayuda"
+      ],
+      "EverythingVersion": "1.4.1.1032",
+      "RunId": "0c1b6c84ebf64750888f16f31315454b",
+      "EverythingLocale": "es-ES"
+    },
+    {
+      "Query": "projeto",
+      "Version": "1.2.3",
+      "EverythingQuery": "\"P:\\Exemplos de pesquisa\\\" <projeto>",
+      "ExecutableSha256": "9FAA0783A3F3D7F9791866F8CC2545BBEE1EAB0890123DB2278DA1209837A6F2",
+      "SearchFieldReenteredAfterSuccessfulLaunch": true,
+      "Shots": [
+        {
+          "Width": 1766,
+          "File": "spatial-windows-pt.png",
+          "Height": 893,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Projeto de estúdio",
+              "Top": 24,
+              "Height": 893,
+              "Width": 769
+            },
+            {
+              "Left": 868,
+              "Title": "Documentos",
+              "Top": 24,
+              "Height": 389,
+              "Width": 929
+            },
+            {
+              "Left": 921,
+              "Title": "Imagens",
+              "Top": 474,
+              "Height": 443,
+              "Width": 734
+            }
+          ],
+          "Sha256": "c53a051dcbd444fd6c8fa7feca8034ddb230472d9ba7ec691d638095bbe1ba8c"
+        },
+        {
+          "Width": 726,
+          "File": "selected-name-pt.png",
+          "Height": 453,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Notas do projeto",
+              "Top": 24,
+              "Height": 453,
+              "Width": 726
+            }
+          ],
+          "Sha256": "346c5852887647bcd733ddb762a3818e2d9399b09eebc76248901df9a308c934"
+        },
+        {
+          "Width": 1766,
+          "File": "everything-search-pt.png",
+          "Height": 613,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Exemplos de pesquisa",
+              "Top": 24,
+              "Height": 533,
+              "Width": 805
+            },
+            {
+              "Left": 878,
+              "Title": "\"P:\\Exemplos de pesquisa\\\" <projeto> - Everything",
+              "Top": 24,
+              "Height": 613,
+              "Width": 919
+            }
+          ],
+          "Sha256": "f4d5c8162830ee3d855efbe3b0d9ee96fac092c2f66d6f241d22776b0c452b33"
+        }
+      ],
+      "Language": "pt-PT",
+      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "EverythingResults": [
+        "Projeto anterior.txt",
+        "Projeto definitivo.txt",
+        "Resumo do projeto.txt"
+      ],
+      "Status": "PASS",
+      "SettingsTitle": "Definições do FileSpacer",
+      "EverythingMenus": [
+        "Arquivo",
+        "Editar",
+        "Visualização",
+        "Pesquisar",
+        "Favoritos",
+        "Ferramentas",
+        "Ajuda"
+      ],
+      "EverythingVersion": "1.4.1.1032",
+      "RunId": "034cbb28519545118e10e84d23af15dc",
+      "EverythingLocale": "pt-BR"
+    },
+    {
+      "Query": "σχέδιο",
+      "Version": "1.2.3",
+      "EverythingQuery": "\"P:\\Παραδείγματα αναζήτησης\\\" <σχέδιο>",
+      "ExecutableSha256": "DC2F1F0BA952953BA24E8C4AD50772707F6554FD32D971BC9908D9824D151F4E",
+      "SearchFieldReenteredAfterSuccessfulLaunch": true,
+      "Shots": [
+        {
+          "Width": 1766,
+          "File": "spatial-windows-el.png",
+          "Height": 893,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Έργο στούντιο",
+              "Top": 24,
+              "Height": 893,
+              "Width": 769
+            },
+            {
+              "Left": 868,
+              "Title": "Έγγραφα",
+              "Top": 24,
+              "Height": 389,
+              "Width": 929
+            },
+            {
+              "Left": 921,
+              "Title": "Εικόνες",
+              "Top": 474,
+              "Height": 443,
+              "Width": 734
+            }
+          ],
+          "Sha256": "247b4add1784fe25ed2b253d580aa5a8f27945e9e11a53eb9673e8651543b6c2"
+        },
+        {
+          "Width": 726,
+          "File": "selected-name-el.png",
+          "Height": 453,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Σημειώσεις έργου",
+              "Top": 24,
+              "Height": 453,
+              "Width": 726
+            }
+          ],
+          "Sha256": "2e06e9ac241acbdb3115ee7b21bb51d388504ac26ceec42a29228b82752f6816"
+        },
+        {
+          "Width": 1766,
+          "File": "everything-search-el.png",
+          "Height": 613,
+          "Windows": [
+            {
+              "Left": 31,
+              "Title": "Παραδείγματα αναζήτησης",
+              "Top": 24,
+              "Height": 533,
+              "Width": 805
+            },
+            {
+              "Left": 878,
+              "Title": "\"P:\\Παραδείγματα αναζήτησης\\\" <σχέδιο> - Everything",
+              "Top": 24,
+              "Height": 613,
+              "Width": 919
+            }
+          ],
+          "Sha256": "7847697f99112c20e9516245b47ed2533835da059ffc8d9f6663f53956c9d35b"
+        }
+      ],
+      "Language": "el-GR",
+      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "EverythingResults": [
+        "Αρχικό σχέδιο.txt",
+        "Παλιό σχέδιο.txt",
+        "Τελικό σχέδιο.txt"
+      ],
+      "Status": "PASS",
+      "SettingsTitle": "Ρυθμίσεις FileSpacer",
+      "EverythingMenus": [
+        "Αρχείο",
+        "Επεξεργασία",
+        "Προβολή",
+        "Αναζήτηση",
+        "Σελιδοδείκτες",
+        "Εργαλεία",
+        "Βοήθεια"
+      ],
+      "EverythingVersion": "1.4.1.1032",
+      "RunId": "7c344c21b2bc4283ac38fc72b4ec670d",
+      "EverythingLocale": "el-GR"
+    }
+  ],
+  "relatedSeries": {
+    "mixed-sorting-provenance.json": "Seven updated mixed-sorting captures with default navigation and localized filenames."
+  }
+}
