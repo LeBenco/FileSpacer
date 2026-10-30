@@ -209,6 +209,7 @@ private:
     bool viewOptionsApplied = false;
     bool initialStateApplied = false;
     bool restoreIconsPending = false;
+    bool spatialLayout = false;
     ULONG_PTR viewGeneration = 0;
     ULONG_PTR viewOptionsEnumerationBaseline = 0;
     void finishViewInitialization();
