@@ -8,12 +8,10 @@ try {
     $before='caf'+[char]0xe9+' original';$after='Renamed '+[char]0x03bb+' '+('long-name-'*6)
     [IO.File]::WriteAllText((Join-Path $folder $before),'unicode-path-payload')
     $window=Open-UiFolder $folder 1
-    Focus-ShellFixture $window $before
-    [FileSpacerRegression.Native]::Keys($window,0x71,$false,$false)
-    Wait-Ui { [FileSpacerRegression.ShellIntegration]::RenameFocused($window) } 'rename editor before cancellation'
-    [FileSpacerRegression.Native]::Keys($window,0x41,$true,$false)
-    [FileSpacerRegression.ShellIntegration]::TypeText($window,'Must-not-exist')
+    $viewWindow=Start-ShellRename $window $before
+    Set-ShellRenameText $window $viewWindow 'Must-not-exist'
     [FileSpacerRegression.Native]::Keys($window,0x1b,$false,$false)
+    Wait-Ui { ![FileSpacerRegression.ShellIntegration]::RenameFocused($window,$viewWindow) } 'native rename editor closed after Escape'
     Assert-SearchNames $window @($before)
     Assert-Ui (!(Test-Path -LiteralPath (Join-Path $folder 'Must-not-exist'))) 'Escape committed the cancelled rename.'
     Rename-ShellFixture $window $folder $before $after
