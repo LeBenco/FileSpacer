@@ -1,0 +1,59 @@
+/* SPDX-License-Identifier: GPL-3.0-only; Copyright (C) 2026 Benco */
+.screenshot-link {
+  display: inline-flex;
+  max-width: min(100%, 24rem);
+  cursor: zoom-in;
+  border: 1px solid #dddde4;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.screenshot-link img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 14rem;
+  object-fit: contain;
+}
+
+.screenshot-link:focus-visible {
+  outline: 3px solid #6f50b8;
+  outline-offset: 3px;
+}
+
+.image-dialog {
+  padding: 2.5rem 0.75rem 0.75rem;
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 2rem);
+  border: 1px solid #dddde4;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.image-dialog::backdrop {
+  background: rgb(20 20 28 / 75%);
+}
+
+.image-dialog img {
+  display: block;
+  max-width: calc(100vw - 4rem);
+  max-height: calc(100vh - 6rem);
+  object-fit: contain;
+}
+
+.image-dialog-small img {
+  width: min(28rem, calc(100vw - 4rem));
+}
+
+.image-dialog-close {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.4rem;
+  padding: 0.1rem 0.5rem;
+  border: 0;
+  background: transparent;
+  color: #27262b;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
