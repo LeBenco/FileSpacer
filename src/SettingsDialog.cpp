@@ -640,6 +640,10 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             return FALSE;
         }
         case WM_COMMAND:
+            if (LOWORD(wParam) == IDC_TITLE_MENU_EDIT && HIWORD(wParam) == BN_CLICKED) {
+                openTitleMenuDialog(GetParent(hwnd));
+                return TRUE;
+            }
             if (LOWORD(wParam) == IDC_TOOLBAR_ENABLED && HIWORD(wParam) == BN_CLICKED)
                 enableToolbarOptions(hwnd);
             if (((LOWORD(wParam) == IDC_FOLDER_WINDOW_WIDTH
