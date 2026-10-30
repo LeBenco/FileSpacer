@@ -20,23 +20,33 @@ InstallDir ""
 !define FILESPACER_DOCS "..\build\offline-docs"
 ; SPDX-License-Identifier: GPL-3.0-only; Copyright (C) 2026 Benco
 !macro CleanInstalledDocumentation Mode FailureLabel
-    IfErrors ${FailureLabel}
+    IfErrors documentation_failed_${Mode}
     InitPluginsDir
     File /oname=$PLUGINSDIR\FileSpacer-doc-cleanup.ps1 "RemoveDocumentation.ps1"
 !if "${Mode}" == "Upgrade"
     File /oname=$PLUGINSDIR\FileSpacer-doc-current.json "${FILESPACER_DOCS}\build-info.json"
-    IfErrors ${FailureLabel}
+    IfErrors documentation_failed_${Mode}
     nsExec::ExecToLog '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\FileSpacer-doc-cleanup.ps1" -HelpRoot "$INSTDIR\help" -CurrentInventory "$PLUGINSDIR\FileSpacer-doc-current.json"'
 !else
-    IfErrors ${FailureLabel}
+    IfErrors documentation_failed_${Mode}
     nsExec::ExecToLog '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\FileSpacer-doc-cleanup.ps1" -HelpRoot "$INSTDIR\help"'
 !endif
     Pop $0
     ${If} $0 != 0
         DetailPrint "Documentation cleanup failed: $0"
-        Goto ${FailureLabel}
+        Goto documentation_failed_${Mode}
     ${EndIf}
     ClearErrors
+    Goto documentation_done_${Mode}
+documentation_failed_${Mode}:
+!if "${Mode}" == "Upgrade"
+    Goto ${FailureLabel}
+!else
+    DetailPrint "Documentation cleanup failed; preserving the remaining help files and inventory."
+    StrCpy $documentationCleanupFailed 1
+    ClearErrors
+!endif
+documentation_done_${Mode}:
 !macroend
 !include "..\build\offline-docs.nsh"
 !include EnumUsersReg.nsh
@@ -148,6 +158,8 @@ LangString ERROR_DEFAULT ${LANG_ENGLISH} "Unable to make FileSpacer the default 
 LangString ERROR_DEFAULT ${LANG_FRENCH} "Impossible de définir FileSpacer comme gestionnaire de fichiers par défaut. Vous pouvez réessayer dans les paramètres de FileSpacer, onglet Intégration."
 LangString ERROR_UNINSTALL ${LANG_ENGLISH} "Uninstallation failed. Close FileSpacer and try again."
 LangString ERROR_UNINSTALL ${LANG_FRENCH} "La désinstallation a échoué. Fermez FileSpacer puis réessayez."
+LangString WARNING_UNINSTALL_DOCUMENTATION ${LANG_ENGLISH} "FileSpacer was uninstalled, but its help could not be cleaned up. The remaining help files and build-info.json were preserved in $INSTDIR\help."
+LangString WARNING_UNINSTALL_DOCUMENTATION ${LANG_FRENCH} "FileSpacer a été désinstallé, mais son aide n'a pas pu être nettoyée. Les fichiers d'aide restants et build-info.json ont été conservés dans $INSTDIR\help."
 LangString ERROR_SCOPE ${LANG_ENGLISH} "An installation already exists in a different mode. Keep its mode and location, or uninstall it before changing them."
 LangString ERROR_SCOPE ${LANG_FRENCH} "Une installation existe déjà dans un autre mode. Conservez son mode et son emplacement, ou désinstallez-la avant de les changer."
 LangString MACHINE_WAIT ${LANG_ENGLISH} "Installing for all users: confirm the Windows elevation prompt, then wait for the elevated installer to finish..."
@@ -187,6 +199,7 @@ Var titleFont
 Var processList
 Var logPath
 Var updateResult
+Var documentationCleanupFailed
 
 ; The elevated worker runs silently: it leaves its trace in the log file the
 ; parent passed with /Log=, which the parent replays and offers to open.
@@ -1106,6 +1119,7 @@ SectionEnd
 Section "Uninstall"
     Call un.CheckClosed
     ; Delete owned files only. No wildcards and no recursive installation-directory deletion.
+    StrCpy $documentationCleanupFailed 0
     ClearErrors
     !insertmacro RemoveDocumentation
     IfFileExists "$INSTDIR\FileSpacer.exe" 0 exe_removed
@@ -1141,6 +1155,9 @@ provider_removed:
     DeleteRegValue SHCTX "Software\FileSpacer" "Install_Dir"
     DeleteRegKey /ifempty SHCTX "Software\FileSpacer"
     System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
+    ${If} $documentationCleanupFailed == 1
+        MessageBox MB_OK|MB_ICONEXCLAMATION $(WARNING_UNINSTALL_DOCUMENTATION) /SD IDOK
+    ${EndIf}
     Goto uninstall_done
 uninstall_failed:
     MessageBox MB_OK|MB_ICONSTOP $(ERROR_UNINSTALL) /SD IDOK
