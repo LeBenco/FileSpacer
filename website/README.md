@@ -6,10 +6,13 @@ the source of the English site and the repository documentation. Complete
 website-only translations live under `website/translations/<language-region>/`.
 Build instructions, tests and technical notes remain on GitHub: links to files
 not included in the site become links to the repository's `main` branch.
+The Nilesoft configuration reference has a translated file for each language;
+its GitHub links follow the selected language. Developer guides remain English.
 
 The generator discovers language directories containing `locale.json` and all
-five translated source files. It creates the language selector above the sidebar
-navigation from those directories, using each language's own name and a Unicode
+five translated source files and the localized Nilesoft reference. It creates the
+language selector above the sidebar navigation from those directories, using
+each language's own name and a Unicode
 flag. The bundled, OFL-licensed Noto Color Emoji flag font supplies flags on
 Windows as well; it requires no external font service.
 
