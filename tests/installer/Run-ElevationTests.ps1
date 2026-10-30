@@ -98,6 +98,8 @@ Compile-Probe 'NativeLaunchProbe' ($nativeProbe.Replace('@NATIVE@', $native))
 Run-Probe 'NativeLaunchProbe' '/S' 0
 
 $logic = @(
+    (Block '!macro WORKER_EXIT .*?!macroend'),
+    (Block '!macro WORKER_LOG .*?!macroend'),
     (Block 'Function \.onSelChange\r?\n.*?FunctionEnd'),
     (Block '!macro RESTORE_COMPONENT .*?!macroend'),
     (Block 'Function RestoreInstallChoices\r?\n.*?FunctionEnd'),
@@ -105,11 +107,15 @@ $logic = @(
     (Block 'Function SetInstallScope\r?\n.*?FunctionEnd'),
     (Block '!macro WORKER_COMPONENT .*?!macroend'),
     (Block 'Function InitializeInstall\r?\n.*?FunctionEnd'),
+    (Block 'Function ReplayWorkerLog\r?\n.*?FunctionEnd'),
+    (Block 'Function ExplainWorkerFailure\r?\n.*?FunctionEnd'),
     (Block 'Function InstallForAllUsers\r?\n.*?FunctionEnd')
 ) -join "`r`n"
+$logic=$logic.Replace('$TEMP\FileSpacer-install-machine.log','@RUN@\worker.log')
 $parent = [regex]::Match($source, 'Call CheckClosed[^\r\n]*\r?\n(?<branch>.*?)(?=    ClearErrors)', 'Singleline').Groups['branch'].Value
 if (!$parent.Contains('Call InstallForAllUsers')) { throw 'Missing machine-install delegation.' }
-$errors = (@($source -split '\r?\n' | Where-Object { $_ -match '^LangString ERROR_MACHINE ' }) -join "`r`n")
+$errors = (@($source -split '\r?\n' | Where-Object { $_ -match '^LangString (ERROR_MACHINE(?:_\w+)?|ERROR_SCOPE|MACHINE_WAIT|OPEN_LOG) ' }) -join "`r`n")
+$defines = (@($source -split '\r?\n' | Where-Object { $_ -match '^!define EXIT_' }) -join "`r`n")
 $bootstrap = @'
 Unicode True
 Name "Installer bootstrap probe"
@@ -120,11 +126,13 @@ InstallDir ""
 !include LogicLib.nsh
 !include FileFunc.nsh
 !include Sections.nsh
+!include WinMessages.nsh
 !define LANG_ENGLISH 1033
 !define LANG_FRENCH 1036
 LoadLanguageFile "${NSISDIR}\Contrib\Language files\English.nlf"
 LoadLanguageFile "${NSISDIR}\Contrib\Language files\French.nlf"
 @ERRORS@
+@DEFINES@
 Var installMode
 Var parameters
 Var requestedDirectory
@@ -135,6 +143,7 @@ Var upgrading
 Var elevatedParameters
 Var elevatedResult
 Var fakeResult
+Var logPath
 Section "Start" SecStart
 SectionEnd
 Section "Context" SecContext
@@ -177,7 +186,7 @@ Function .onInit
     Quit
 FunctionEnd
 '@
-$bootstrap = $bootstrap.Replace('@LOGIC@',$logic).Replace('@PARENT@',$parent).Replace('@ERRORS@',$errors)
+$bootstrap = $bootstrap.Replace('@LOGIC@',$logic).Replace('@PARENT@',$parent).Replace('@ERRORS@',$errors).Replace('@DEFINES@',$defines)
 Compile-Probe 'BootstrapProbe' $bootstrap
 function Read-Report([string]$name) {
     $report = @{}
@@ -197,7 +206,10 @@ if ($report.Mode -cne 'CurrentUser' -or $report.Directory -cne $fixture -or $rep
 Run-Probe 'BootstrapProbe' ('/AllUsers /D='+$fixture) 0
 $report = Read-Report 'BootstrapProbe'
 $expected = "/S /AllUsers /MachineWorker /StartMenu=1 /ContextMenu=1 /DefaultFileManager=0 /Language=1036 /D=$fixture"
-if ($report.Mode -cne 'AllUsers' -or $report.Parameters -cne $expected) { throw 'Elevated command did not preserve the selected scope, directory or language.' }
+$logArgument=' /Log="'+(Join-Path $RunDirectory 'worker.log')+'"'
+if(!$report.Parameters.Contains($logArgument)){throw 'Elevated command lost its isolated worker log.'}
+if((Get-Item -LiteralPath (Join-Path $RunDirectory 'worker.log')).Length -lt 2){throw 'Worker log was not initialized.'}
+if ($report.Mode -cne 'AllUsers' -or $report.Parameters -cne $expected.Replace(' /D=',$logArgument+' /D=')) { throw 'Elevated command did not preserve the selected scope, directory or language.' }
 Run-Probe 'BootstrapProbe' ('/AllUsers /Result=1223 /D='+$fixture) 1
 Run-Probe 'BootstrapProbe' ('/AllUsers /Result=7 /D='+$fixture) 7
 
