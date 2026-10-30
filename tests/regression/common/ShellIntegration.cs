@@ -54,24 +54,47 @@ namespace FileSpacerRegression {
         }
         public static void TypeText(IntPtr owner,string text) {
             if(GetForegroundWindow()!=owner) throw new InvalidOperationException("Text owner is not foreground.");
-            if(!RenameFocused(owner)) throw new InvalidOperationException("No focused in-place rename editor in the target window.");
+            if(!EditFocused(owner)) throw new InvalidOperationException("No focused edit control in the target window.");
+            Send(TextInput(text).ToArray());
+        }
+        public static void ReplaceRenameText(IntPtr owner,IntPtr view,string text) {
+            if(GetForegroundWindow()!=owner) throw new InvalidOperationException("Text owner is not foreground.");
+            if(!RenameFocused(owner,view)) throw new InvalidOperationException("No focused in-place rename editor in the target Shell view.");
+            foreach(int modifier in new int[]{0x10,0x11,0x12})
+                if(GetAsyncKeyState(modifier)<0) throw new InvalidOperationException("Release modifiers before the test shortcut.");
+            // SendInput queues events; do not sample transient focus between Ctrl+A and typing.
+            var batch=new List<Input>{Key(0x11,false),Key(0x41,false),Key(0x41,true),Key(0x11,true)};
+            batch.AddRange(TextInput(text));
+            Send(batch.ToArray());
+        }
+        static List<Input> TextInput(string text) {
             var batch=new List<Input>();
             foreach(char character in text) {
                 var down=new Input(); down.Type=1; down.Data.Keyboard.Scan=character;down.Data.Keyboard.Flags=4;
                 var up=down;up.Data.Keyboard.Flags=6;batch.Add(down);batch.Add(up);
             }
-            Send(batch.ToArray());
+            return batch;
         }
         static GuiInfo Info(IntPtr owner) {
             uint process; uint thread=GetWindowThreadProcessId(owner,out process);
             var info=new GuiInfo();info.Size=(uint)Marshal.SizeOf(typeof(GuiInfo));
             if(thread==0 || !GetGUIThreadInfo(thread,ref info)) throw new Win32Exception();return info;
         }
-        public static bool RenameFocused(IntPtr owner) {
+        public static bool EditFocused(IntPtr owner) {
             IntPtr focus=Info(owner).Focus;
-            if(focus==IntPtr.Zero || !IsChild(owner,focus)) return false;
-            var name=new System.Text.StringBuilder(64);GetClassName(focus,name,name.Capacity);
+            return IsChild(owner,focus) && IsEdit(focus);
+        }
+        static bool IsEdit(IntPtr window) {
+            var name=new System.Text.StringBuilder(64);GetClassName(window,name,name.Capacity);
             return String.Equals(name.ToString(),"Edit",StringComparison.OrdinalIgnoreCase);
+        }
+        public static bool ViewFocused(IntPtr owner,IntPtr view) {
+            IntPtr focus=Info(owner).Focus;
+            return IsChild(owner,view) && (focus==view || IsChild(view,focus));
+        }
+        public static bool RenameFocused(IntPtr owner,IntPtr view) {
+            IntPtr focus=Info(owner).Focus;
+            return IsChild(owner,view) && IsChild(view,focus) && IsEdit(focus);
         }
         public static bool MenuActive(IntPtr owner) { return (Info(owner).Flags&0x1c)!=0; }
         public static bool OwnedBy(IntPtr dialog,IntPtr owner) {
