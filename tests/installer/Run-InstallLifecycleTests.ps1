@@ -68,7 +68,13 @@ try {
     $mode='CurrentUser'
     $directory=Join-Path $RunDirectory ('installed fixture '+$mode)
     $hive=[Microsoft.Win32.Registry]::CurrentUser
-    Run-FixtureProcess $installer ("/S /$mode /D=$directory")
+    $resultFile=Join-Path $RunDirectory 'result with spaces.ini'
+    Run-FixtureProcess $installer ("/S /$mode /UpdateResult=`"$resultFile`" /D=$directory")
+    $result=[IO.File]::ReadAllText($resultFile,[Text.Encoding]::Unicode)
+    foreach($entry in @('Complete=1',"Mode=$mode",("Executable="+(Join-Path $directory 'FileSpacer.exe')))) {
+        if($result -notmatch ('(?m)^'+[regex]::Escape($entry)+'\r?$')) { throw "Wrong setup result: $entry" }
+    }
+    Remove-Item -LiteralPath $resultFile
     if(!(Test-Path -LiteralPath (Join-Path $directory 'FileSpacer.exe'))) { throw 'Payload not installed.' }
     if(!(Test-Path -LiteralPath (Join-Path $directory 'FileSpacerFolder.dll'))) { throw 'Mixed-sort provider DLL not installed.' }
     $documentation=Join-Path $directory 'help'
@@ -104,7 +110,8 @@ try {
         $deadline=[DateTime]::UtcNow.AddSeconds(5)
         while(!(Test-Path -LiteralPath $ready) -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 25 }
         if(!(Test-Path -LiteralPath $ready)) { throw 'The running-file fixture did not become ready.' }
-        Run-FixtureProcess $installer ("/S /$mode /D=$directory") 2
+        Run-FixtureProcess $installer ("/S /$mode /UpdateResult=`"$resultFile`" /D=$directory") 2
+        if(Test-Path -LiteralPath $resultFile){throw 'Failed setup reported a completed installation.'}
         if([Convert]::ToBase64String([IO.File]::ReadAllBytes($heldExecutable)) -cne $heldBytes) { throw 'The blocked upgrade changed its running executable.' }
         Check-Profile $directory $mode 1
     } finally {
@@ -151,9 +158,12 @@ try {
     $provider=$hive.CreateSubKey($providerKey+'\InprocServer32')
     try { $provider.SetValue('',(Join-Path $directory 'FileSpacerFolder.dll')) } finally { $provider.Dispose() }
     [void][IO.Directory]::CreateDirectory($providerFixture)
-    Run-FixtureProcess (Join-Path $directory 'uninstall.exe') '/S'
-    $deadline=[DateTime]::UtcNow.AddSeconds(15)
-    while([DateTime]::UtcNow -lt $deadline -and ((Test-Path -LiteralPath (Join-Path $directory 'FileSpacer.exe')) -or (Test-Path -LiteralPath (Join-Path $directory 'uninstall.exe')))) { Start-Sleep -Milliseconds 50 }
+    # Run the actual uninstaller from outside its installation directory, with
+    # _?= last and unquoted to suppress NSIS's additional temporary launcher.
+    # Waiting for that real process also verifies its exit code after help cleanup.
+    $uninstaller=Join-Path $RunDirectory 'LifecycleUninstall.exe'
+    Copy-Item -LiteralPath (Join-Path $directory 'uninstall.exe') -Destination $uninstaller
+    Run-FixtureProcess $uninstaller ('/S _?='+$directory)
     foreach($owned in 'FileSpacer.exe','FileSpacerFolder.dll','uninstall.exe','install-info.ini') {
         if(Test-Path -LiteralPath (Join-Path $directory $owned)) { throw "Owned file remained after uninstallation: $owned" }
     }
