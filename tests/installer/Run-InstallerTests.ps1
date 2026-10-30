@@ -3,6 +3,7 @@
 [CmdletBinding()]
 param([string]$MakeNSIS = "${env:ProgramFiles(x86)}\NSIS\makensis.exe")
 $ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1') -ErrorAction Stop
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $run = Join-Path $root ('build\installer-tests\' + [guid]::NewGuid().ToString('N'))
 [void][IO.Directory]::CreateDirectory($run)
@@ -201,4 +202,5 @@ Write-Host $result.Trim()
 Write-Host "Retained report: $run"
 if ($testProcess.ExitCode -ne 0 -or $result -notmatch '^PASS:') { throw 'NSIS installer choice tests failed.' }
 & (Join-Path $PSScriptRoot 'Run-ElevationTests.ps1') -MakeNSIS $MakeNSIS -RunDirectory $run
+& (Join-Path $PSScriptRoot 'Run-DocumentationInventoryTests.ps1') -RunDirectory (Join-Path $run 'documentation-inventory')
 & (Join-Path $PSScriptRoot 'Run-InstallLifecycleTests.ps1') -MakeNSIS $MakeNSIS -RunDirectory $run
