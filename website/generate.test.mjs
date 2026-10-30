@@ -98,6 +98,9 @@ test('all available translations keep English section IDs, localized navigation 
     assert.ok(config.includes('lang: ' + language.code));
     assert.ok(config.includes('baseurl: /FileSpacer' + (language.path ? '/' + language.path : '')));
     assert.equal(language.images, result.images);
+    const reference = (language.path ? `website/translations/${language.code}/` : '') + 'docs/nilesoft-shell.md';
+    assert.ok(html.includes('href="https://github.com/LeBenco/FileSpacer/blob/main/' + reference + '"'), 'Nilesoft reference must use the selected language');
+    await fs.access(path.join(repository, reference));
   }
   const localizedImage = await fs.readFile(path.join(output, '_locales/fr-FR/assets/content/docs/images/overview.png'));
   assert.deepEqual(localizedImage, await fs.readFile(path.join(repository, 'docs/images/overview-fr.png')));
@@ -105,8 +108,12 @@ test('all available translations keep English section IDs, localized navigation 
 
 test('a translation with a missing document is rejected rather than partially published', async t => {
   const {root, target} = await translatedFixture(t);
+  const policy = await fs.readFile(path.join(target, 'docs/privacy-policy.md'));
   await fs.unlink(path.join(target, 'docs/privacy-policy.md'));
   await assert.rejects(generate(root, path.join(root, 'output')), /Incomplete translation fr-FR: missing docs\/privacy-policy\.md/);
+  await fs.writeFile(path.join(target, 'docs/privacy-policy.md'), policy);
+  await fs.unlink(path.join(target, 'docs/nilesoft-shell.md'));
+  await assert.rejects(generate(root, path.join(root, 'output')), /Incomplete translation fr-FR: missing docs\/nilesoft-shell\.md/);
 });
 
 test('missing localized media and mismatched translation headings fail the build', async t => {

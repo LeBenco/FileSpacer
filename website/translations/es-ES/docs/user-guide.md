@@ -19,7 +19,7 @@ Subir a la carpeta superior no selecciona la carpeta de la que vienes. Una carpe
 
 ### Disposición de iconos
 
-Desactiva **Organizar iconos automáticamente** en una vista de iconos para colocar libremente archivos y subcarpetas. Sus posiciones se guardan de forma independiente del tamaño y la posición de la ventana, incluso cuando su estado guardado está bloqueado.
+En una vista de iconos puedes colocar libremente archivos y subcarpetas cuando **Organizar iconos automáticamente** está desactivado. Sus posiciones se guardan de forma independiente del tamaño y la posición de la ventana, incluso cuando su estado guardado está bloqueado.
 
 ### Opciones de visualización
 
@@ -71,7 +71,7 @@ El botón de valor predeterminado restablece una acción. **Restablecer** recupe
 
 ### Bloqueo del estado guardado
 
-Activa **Configuración > General > Habilitar el bloqueo del estado de ventana** (desactivado de forma predeterminada) y elige **Bloquear el estado de la ventana** en el menú junto al título de la carpeta. El bloqueo guarda la posición, el tamaño y las opciones de visualización. Un **distintivo de candado sobre el icono de la carpeta en la barra de título**, junto al nombre, identifica un estado bloqueado.
+El bloqueo guarda la posición, el tamaño y las opciones de visualización de una carpeta para restaurarlos al volver a abrirla. Para usar esta función opcional, activa **Configuración > General > Habilitar el bloqueo del estado de ventana** (desactivado de forma predeterminada) y elige **Bloquear el estado de la ventana** en el menú junto al título de la carpeta. Un **distintivo de candado sobre el icono de la carpeta en la barra de título**, junto al nombre, identifica un estado bloqueado.
 
 <img src="images/locked-title.png" alt="Detalle de la barra de título: un distintivo de candado se superpone al icono de la carpeta junto a Studio project." width="420">
 
@@ -105,7 +105,9 @@ El componente del menú contextual ofrece **Abrir en el Explorador de archivos d
 
 ### Everything
 
-Instala [Everything](https://www.voidtools.com/) por separado y actívalo en **Configuración > Integración**. Deja vacía la ruta del ejecutable para la detección automática, usa **Detectar** o elige manualmente su archivo `.exe` para una instalación portable.
+Si usas [Everything](https://www.voidtools.com/), puedes integrarlo con FileSpacer para realizar búsquedas avanzadas directamente desde su cuadro de búsqueda.
+
+Para usar esta integración opcional, actívala en **Configuración > Integración**. Deja vacía la ruta del ejecutable para la detección automática, usa **Detectar** o elige manualmente su archivo `.exe` para una instalación portable.
 
 Elige el ámbito de búsqueda: la carpeta actual y sus subcarpetas, o **En todas partes**. Las carpetas virtuales no tienen un ámbito en el sistema de archivos; usa En todas partes para ellas.
 
@@ -113,11 +115,11 @@ Escribe una consulta en el cuadro de búsqueda de FileSpacer y elige **Buscar en
 
 ### Nilesoft Shell
 
-[Nilesoft Shell](https://nilesoft.org/) permite cambiar el aspecto de los menús de FileSpacer y personalizar sus entradas. Es opcional y se instala por separado.
+Si usas [Nilesoft Shell](https://nilesoft.org/), puedes dejar que gestione también el aspecto de los menús de FileSpacer y personalice sus entradas.
 
-Permite FileSpacer en la regla de exclusión de la configuración de Nilesoft y conserva la importación de tu tema. Limita al Explorador las reglas destinadas únicamente a él para que no cambien también los menús de FileSpacer.
+Para esta integración opcional, se recomienda adaptar la configuración de Nilesoft para que los menús encajen visualmente con FileSpacer, en particular usando esquinas rectas en los menús de la barra de título y de la barra de herramientas.
 
-Consulta la [referencia de configuración con ejemplos](nilesoft-shell.md) para los ajustes exactos, las reglas específicas de cada menú y el aspecto recomendado. Después de cambiar la configuración, anula el registro de Nilesoft Shell y vuelve a registrarlo para aplicar el cambio a los menús que se abran a continuación.
+La [referencia de configuración con ejemplos](nilesoft-shell.md) explica cómo permitir FileSpacer, conservar la importación del tema y limitar al Explorador las reglas reservadas para él. Si modificas la configuración, anula el registro de Nilesoft Shell y vuelve a registrarlo para aplicar los cambios a los menús que se abran a continuación.
 
 El tema Modern que aparece abajo usa sus esquinas redondeadas predeterminadas a la izquierda y las esquinas rectas recomendadas a la derecha.
 
