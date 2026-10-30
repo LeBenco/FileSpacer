@@ -9,6 +9,10 @@
   close.className = 'image-dialog-close';
   close.setAttribute('aria-label', document.querySelector('meta[name="fs-close-image"]').content);
   const image = document.createElement('img');
+  image.addEventListener('load', () => {
+    image.style.setProperty('--image-aspect-ratio', image.naturalWidth / image.naturalHeight);
+    dialog.classList.toggle('image-dialog-small', image.naturalWidth < 480);
+  });
   dialog.append(close, image);
   document.body.append(dialog);
   let opener;
@@ -20,7 +24,6 @@
     image.src = link.href;
     image.alt = link.querySelector('img').alt;
     dialog.setAttribute('aria-label', image.alt);
-    dialog.classList.toggle('image-dialog-small', link.querySelector('img').naturalWidth < 480);
     dialog.showModal();
     close.focus();
   });
