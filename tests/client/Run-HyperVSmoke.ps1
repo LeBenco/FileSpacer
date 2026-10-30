@@ -13,7 +13,8 @@ $guestRoot=$null;$taskRegistered=$false
 $report=[ordered]@{Status='BLOCKED';RunId=$runId;TaskStarted=$false;VMConnectAbsent=$true;ConsolePreparation=$null;TaskExitCode=$null;GuestResult=$null;Error=$null;CleanupErrors=@()}
 try {
     if(@(Get-Process vmconnect -ErrorAction SilentlyContinue).Count){throw 'Close VMConnect consoles, leaving the VM running and its desktop session signed in.'}
-    $desktops=@($Guest.ExplorerSessions | Where-Object { $_.BelongsToConnectedAccount })
+    # The probe lists Explorer processes; several may belong to one desktop.
+    $desktops=@($Guest.ExplorerSessions | Where-Object { $_.BelongsToConnectedAccount } | Sort-Object -Property SessionId -Unique)
     if($desktops.Count-ne1){throw 'Expected exactly one guest desktop for the connected account.'}
     $inputDirectory=Join-Path $RunDirectory 'input'
     $waitSeconds=180
