@@ -127,6 +127,10 @@ function New-ClientPackage {
     Build-ManagedBundle 'runner' $runnerFiles
     foreach($entry in $Selected) {
         Write-Host ('PREPARE '+$entry.Relative)
+        if ($entry.Relative -like '30-tri-melange\05-*') {
+            $legacy=& (Join-Path $PSScriptRoot 'Prepare-LegacyMixedProvider.ps1') -ProjectRoot $ProjectRoot
+            Copy-PackageFile $legacy
+        }
         if ($entry.Relative -like '32-installeur\*') {
             & (Join-Path $ProjectRoot 'tests\installer\Prepare-ArtworkFixture.ps1')
             foreach($relative in @('build\FileSpacer-install.exe','build\installer-tests\artwork\ArtworkUninstall.exe',
