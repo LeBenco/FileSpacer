@@ -7,10 +7,13 @@ Git LFS setup is needed.
 
 | File | Purpose |
 | --- | --- |
-| `overview.png` | A single folder window with freely positioned demo items. |
+| `spatial-windows.png` | Three non-overlapping windows with different geometry, view modes and icon sizes, including a free layout. |
+| `selected-name.png` | A long selected filename displayed in full. |
+| `everything-search.png` | A FileSpacer query alongside the actual Everything results. |
+| `overview.png` | Earlier single-window overview, retained for reference. |
 | `window-menu.png` | The title menu, open folders and the saved-layout lock. |
 | `search.png` | Local search history and the optional Everything action. |
-| `mixed-sorting.png` | Folders and files sharing one alphabetical order in FileSpacer 1.2.0. |
+| `mixed-sorting.png` | Folders and files sharing one alphabetical order, with the default navigation bar visible. |
 | `display.png` | Earlier Display settings capture, retained for reference. |
 | `locked-title.png` | A close-up of the locked folder's title and padlock badge. |
 | `move-window.gif` | Alt + left drag to move a folder window. |
@@ -43,9 +46,10 @@ These two images were recorded from a development build, as described in
 the capture provenance is retained as its historical record.
 
 The current guide illustrates the actual mixed order with `mixed-sorting.png`.
-Its French counterpart, `mixed-sorting-fr.png`, uses translated fictional folder
-and file names. Both show FileSpacer 1.2.0, with the preference enabled and icons
-automatically arranged by name. Their capture context and checksums are in
+Its six localized counterparts use translated fictional folder and file names.
+All seven show FileSpacer 1.2.3, with the preference enabled and icons
+automatically arranged by name. The default path bar remains visible, with
+Reload to its right and Quick access visible. Their capture context and checksums are in
 `mixed-sorting-provenance.json`.
 
 ## Nilesoft Shell comparisons
@@ -72,7 +76,8 @@ Italian, Spanish, European Portuguese and Greek, including checksums, dimensions
 VM run IDs, application version and recorded keystroke frames. The existing
 English and French series remain valid for unchanged screens.
 
-These five series were captured from FileSpacer 1.2.2 in the documentation VM.
+These five series were originally captured from FileSpacer 1.2.2 in the documentation VM.
+Their mixed-sorting records now identify the updated 1.2.3 captures explicitly.
 Disposable builds select the application's real language resources at startup
 and retain the real Windows controls. Spanish selects resource ID `040A`
 explicitly, matching the resource file's Spanish (traditional sort) declaration.
@@ -80,6 +85,26 @@ Fictional filenames, layouts and gesture recordings match the English examples;
 the established French examples retain their translated fictional filenames.
 Nilesoft's actual label rules localize native Windows menu entries on the French
 VM identically in both corner variants. Exported image labels were not edited.
+
+## User-guide scenes, FileSpacer 1.2.3
+
+`user-guide-provenance.json` records 21 real captures: the three new scenes in
+English and all six translations, including hashes, dimensions, executable
+hashes, VM run IDs, window geometry and verified Everything queries/results.
+They use matching resources from released commit `10c4027`; only language
+selection is overridden in disposable documentation builds. Older captures
+remain available for reference.
+
+The VM's Windows session is French, so Windows-owned breadcrumb labels and
+size formatting may remain French. Everything has no European Portuguese
+translation; its official Brazilian Portuguese interface is used beside
+FileSpacer and fictional names in European Portuguese.
+
+The scene with Everything shows real results launched from FileSpacer. Because
+a successful launch clears FileSpacer's field, the same query is entered again
+afterwards to make the relationship visible in one screenshot. No image labels
+or pixels are retouched. The temporary display resolution, existing default
+Windows wallpaper and private drive mapping are restored after each capture.
 
 ## Recording an animation
 
@@ -99,10 +124,12 @@ Use a dedicated VM with fictional folders and files. Prefer the target Windows
 display language, since FileSpacer follows Windows. Preserve the real interface;
 do not redraw or translate labels inside a screenshot.
 
-For static screenshots, capture only the visible window frame, including its
+For single-window static screenshots, capture only the visible window frame, including its
 title bar. Keep menus and suggestions entirely inside that frame. Exclude the desktop, taskbar, shadows,
 invisible resize borders and operating-system overlays. A window can be moved
-or resized before capture to keep overlays outside its bounds.
+or resized before capture to keep overlays outside its bounds. Multi-window
+scenes include the smallest rectangle containing their visible frames, with
+only the existing Windows wallpaper in the gaps.
 
 Check each PNG at its original size, then run:
 
