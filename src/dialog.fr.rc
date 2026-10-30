@@ -67,31 +67,32 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Informations sur le regroupement des fenêtres", IDC_GROUP_FOLDER_WINDOWS_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 214, 12, 14
 }
 
-IDD_SETTINGS_DISPLAY DIALOGEX DISCARDABLE 0, 0, 300, 295
+IDD_SETTINGS_DISPLAY DIALOGEX DISCARDABLE 0, 0, 300, 317
 STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
 CAPTION "Affichage"
 FONT 8, "MS Shell Dlg", 400, 0, 0
 {
-  CONTROL "Éléments de l’interface", -1, "Button", BS_GROUPBOX, 7, 7, 286, 49
+  CONTROL "Éléments de l’interface", -1, "Button", BS_GROUPBOX, 7, 7, 286, 71
   CONTROL "Afficher la barre d’é&tat", IDC_STATUS_TEXT_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 21, 272, 14
   CONTROL "Afficher la barre d’&outils", IDC_TOOLBAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 35, 272, 14
-  CONTROL "Éléments de la barre d’outils", -1, "Button", BS_GROUPBOX, 7, 63, 286, 77
-  CONTROL "Afficher l’&accès rapide", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 77, 130, 14
-  CONTROL "Afficher le bouton &Remonter", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 77, 130, 14
-  CONTROL "Afficher la barre de &chemin", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 91, 272, 14
-  CONTROL "Afficher le bouton Act&ualiser", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 105, 130, 14
-  CONTROL "Afficher le bouton A&ffichage", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 105, 130, 14
-  CONTROL "Les éléments ci-dessus sont visibles lorsque la barre d’outils est affichée.", -1, "Static", WS_GROUP, 14, 121, 272, 16
-  CONTROL "Fichiers", -1, "Button", BS_GROUPBOX, 7, 147, 286, 56
-  CONTROL "Affiche le &nom complet d’un fichier sélectionné (ne s’applique pas aux sélections multiples)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 159, 272, 20
-  CONTROL "Mélanger les &dossiers et les fichiers dans le tri", IDC_MIXED_FOLDER_SORTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 183, 272, 14
-  CONTROL "Menu Affichage", -1, "Button", BS_GROUPBOX, 7, 210, 286, 38
-  CONTROL "&Prévisualiser les modes d’affichage dans le menu Affichage", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 222, 272, 20
-  CONTROL "Taille des fenêtres par défaut", -1, "Button", BS_GROUPBOX, 7, 255, 286, 35
-  CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 272, 88, 8
-  CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 269, 35, 14
-  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT_LABEL, "Static", SS_RIGHT|WS_GROUP, 156, 272, 88, 8
-  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 251, 269, 35, 14
+  PUSHBUTTON "Modifier le menu de barre de titre", IDC_TITLE_MENU_EDIT, 14, 51, 272, 14
+  CONTROL "Éléments de la barre d’outils", -1, "Button", BS_GROUPBOX, 7, 85, 286, 77
+  CONTROL "Afficher l’&accès rapide", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 99, 130, 14
+  CONTROL "Afficher le bouton &Remonter", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 99, 130, 14
+  CONTROL "Afficher la barre de &chemin", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 113, 272, 14
+  CONTROL "Afficher le bouton Act&ualiser", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 127, 130, 14
+  CONTROL "Afficher le bouton A&ffichage", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 127, 130, 14
+  CONTROL "Les éléments ci-dessus sont visibles lorsque la barre d’outils est affichée.", -1, "Static", WS_GROUP, 14, 143, 272, 16
+  CONTROL "Fichiers", -1, "Button", BS_GROUPBOX, 7, 169, 286, 56
+  CONTROL "Affiche le &nom complet d’un fichier sélectionné (ne s’applique pas aux sélections multiples)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 181, 272, 20
+  CONTROL "Mélanger les &dossiers et les fichiers dans le tri", IDC_MIXED_FOLDER_SORTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 205, 272, 14
+  CONTROL "Menu Affichage", -1, "Button", BS_GROUPBOX, 7, 232, 286, 38
+  CONTROL "&Prévisualiser les modes d’affichage dans le menu Affichage", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 244, 272, 20
+  CONTROL "Taille des fenêtres par défaut", -1, "Button", BS_GROUPBOX, 7, 277, 286, 35
+  CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 294, 88, 8
+  CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 291, 35, 14
+  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT_LABEL, "Static", SS_RIGHT|WS_GROUP, 156, 294, 88, 8
+  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 251, 291, 35, 14
 }
 
 IDD_SETTINGS_BROWSER DIALOGEX DISCARDABLE 0, 0, 300, 277
@@ -151,3 +152,31 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "", IDC_UPDATE_PROGRESS, "msctls_progress32", WS_BORDER, 7, 47, 286, 12
   CONTROL "Annuler", IDCANCEL, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP, 217, 76, 76, 14
 }
+
+IDD_TITLE_MENU DIALOGEX 0, 0, 420, 300
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Personnaliser le menu de barre de titre"
+FONT 8, "MS Shell Dlg", 400, 0, 0
+BEGIN
+  CONTROL "", IDC_TITLE_MENU_ACTIONS, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_NOCOLUMNHEADER | WS_BORDER | WS_TABSTOP, 230, 10, 180, 230
+  LTEXT "", IDC_TITLE_MENU_NS_NOTICE, 10, 245, 400, 20
+  CONTROL "", IDC_TITLE_MENU_NS_LINK, "SysLink", WS_TABSTOP, 10, 265, 400, 14
+  PUSHBUTTON "Réglages par défaut", IDC_TITLE_MENU_DEFAULT, 10, 280, 125, 14
+  DEFPUSHBUTTON "OK", IDOK, 310, 280, 48, 14
+  PUSHBUTTON "Annuler", IDCANCEL, 362, 280, 48, 14
+END
+
+IDD_FOLDER_GROUPS DIALOGEX 0, 0, 300, 211
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Groupes de dossiers"
+FONT 8, "MS Shell Dlg", 400, 0, 0
+BEGIN
+  LTEXT "Ouvre les dossiers d’un groupe avec leur disposition enregistrée, en conservant les autres fenêtres.", -1, 10, 10, 280, 24
+  LISTBOX IDC_GROUPS_LIST, 10, 37, 280, 94, LBS_NOTIFY | WS_BORDER | WS_VSCROLL | WS_TABSTOP
+  LTEXT "&Nom du groupe :", -1, 10, 141, 80, 9
+  EDITTEXT IDC_GROUPS_NAME, 94, 137, 196, 14, ES_AUTOHSCROLL | WS_TABSTOP
+  PUSHBUTTON "&Enregistrer les dossiers ouverts", IDC_GROUPS_SAVE, 10, 160, 166, 15
+  PUSHBUTTON "&Supprimer", IDC_GROUPS_DELETE, 185, 160, 105, 15
+  DEFPUSHBUTTON "&Rappeler", IDC_GROUPS_RECALL, 132, 188, 76, 15
+  PUSHBUTTON "Fermer", IDCANCEL, 214, 188, 76, 15
+END
