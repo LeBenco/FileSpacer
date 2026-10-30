@@ -191,3 +191,34 @@ BEGIN
   IDS_GROUP_FOLDER_WINDOWS_HELP "Les nouvelles fenêtres de dossiers peuvent être regroupées sous un même bouton de la barre des tâches, selon les paramètres de regroupement de Windows.\n\nSi cette option est désactivée, les dossiers peuvent être épinglés séparément dans la barre des tâches.\n\nCe réglage s’applique aux prochaines fenêtres ouvertes. Les fenêtres déjà ouvertes conservent leur regroupement actuel."
   IDS_EVERYTHING_EXECUTABLE "Exécutable Everything (*.exe)"
 END
+
+STRINGTABLE
+BEGIN
+  IDS_TITLE_MENU_NS_NOTICE "Certaines entrées du menu sont gérées par Nilesoft Shell et ne peuvent pas être modifiées ici."
+  IDS_TITLE_MENU_NS_LINK "Modifier le menu dans <a>les fichiers de configuration de Nilesoft Shell</a>."
+  IDS_TITLE_MENU_NS_TOOLTIP "Les entrées gérées par Nilesoft Shell doivent être modifiées dans ses fichiers de configuration."
+  IDS_TITLE_MENU_EMPTY "Menu vide — glissez une action depuis la droite."
+  IDS_TITLE_MENU_RENDER_ERROR "Impossible de produire l’aperçu du menu. Les réglages existants sont conservés."
+  IDS_TITLE_MENU_SAVE_ERROR "Impossible d’enregistrer le menu."
+  IDS_TITLE_MENU_SETTINGS_ERROR "Impossible d’ouvrir le répertoire des paramètres de Nilesoft Shell."
+  IDS_TITLE_MENU_SEPARATOR "— Séparateur —"
+  IDS_TITLE_MENU_OPEN_WINDOWS "Fenêtres ouvertes"
+  IDS_TITLE_MENU_WINDOWS_BLOCK "<< Fenêtres ouvertes >>"
+  IDS_TITLE_MENU_RESTORE "Rétablir la disposition verrouillée"
+  IDS_TITLE_MENU_REPLACE "Remplacer la disposition de référence"
+  IDS_TITLE_MENU_FORGET "Oublier la disposition de ce dossier"
+  IDS_TITLE_MENU_CLOSE_DESCENDANTS "Fermer les fenêtres descendantes"
+  IDS_TITLE_MENU_CLOSE_OTHERS "Fermer les autres fenêtres"
+  IDS_TITLE_MENU_FIT "Ajuster la fenêtre au contenu"
+  IDS_TITLE_MENU_GROUPS "Enregistrer / rappeler un groupe de dossiers"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_TITLE_FORGET_CONFIRM "Oublier la disposition de ce dossier ?\n\nLa fenêtre reste en place, mais sa disposition ne sera plus enregistrée jusqu’à sa fermeture. Sa prochaine ouverture utilisera les réglages par défaut. L’historique de recherche est conservé."
+  IDS_TITLE_REPLACE_CONFIRM "Remplacer la disposition verrouillée par la position, la taille et les réglages actuellement visibles ?"
+  IDS_GROUPS_ERROR "Impossible de lire ou d’enregistrer le groupe de dossiers. Les groupes existants sont conservés."
+  IDS_GROUPS_REPLACE "Remplacer ce groupe par les dossiers actuellement ouverts dans FileSpacer ?"
+  IDS_GROUPS_DELETE_CONFIRM "Supprimer ce groupe de dossiers enregistré ? Les dossiers eux-mêmes sont conservés."
+  IDS_GROUPS_OPEN_ERROR "Certains dossiers du groupe n’ont pas pu être ouverts."
+END

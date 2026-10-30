@@ -192,3 +192,34 @@ BEGIN
   IDS_GROUP_FOLDER_WINDOWS_HELP "New folder windows can be grouped under one taskbar button, according to your Windows taskbar settings.\n\nWhen this option is off, folders can be pinned separately to the taskbar.\n\nThis setting applies to windows opened after the change. Windows that are already open keep their current taskbar grouping."
   IDS_EVERYTHING_EXECUTABLE "Everything executable (*.exe)"
 END
+
+STRINGTABLE
+BEGIN
+  IDS_TITLE_MENU_NS_NOTICE "Some menu entries are managed by Nilesoft Shell and cannot be changed here."
+  IDS_TITLE_MENU_NS_LINK "Edit the menu in <a>the Nilesoft Shell configuration files</a>."
+  IDS_TITLE_MENU_NS_TOOLTIP "Entries managed by Nilesoft Shell must be changed in its configuration files."
+  IDS_TITLE_MENU_EMPTY "Empty menu — drag an action from the list on the right."
+  IDS_TITLE_MENU_RENDER_ERROR "The menu preview could not be rendered. Your existing settings have been kept."
+  IDS_TITLE_MENU_SAVE_ERROR "The menu could not be saved."
+  IDS_TITLE_MENU_SETTINGS_ERROR "The Nilesoft Shell settings directory could not be opened."
+  IDS_TITLE_MENU_SEPARATOR "— Separator —"
+  IDS_TITLE_MENU_OPEN_WINDOWS "Open windows"
+  IDS_TITLE_MENU_WINDOWS_BLOCK "<< Open windows >>"
+  IDS_TITLE_MENU_RESTORE "Restore the locked layout"
+  IDS_TITLE_MENU_REPLACE "Replace the reference layout"
+  IDS_TITLE_MENU_FORGET "Forget this folder’s layout"
+  IDS_TITLE_MENU_CLOSE_DESCENDANTS "Close descendant windows"
+  IDS_TITLE_MENU_CLOSE_OTHERS "Close other windows"
+  IDS_TITLE_MENU_FIT "Fit the window to its contents"
+  IDS_TITLE_MENU_GROUPS "Save / recall a folder group"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_TITLE_FORGET_CONFIRM "Forget this folder’s layout?\n\nThe window stays in place, but its layout will no longer be saved until it closes. Its next opening will use the default settings. Search history is kept."
+  IDS_TITLE_REPLACE_CONFIRM "Replace the locked layout with the window’s current position, size and view settings?"
+  IDS_GROUPS_ERROR "The folder group could not be read or saved. Existing groups have been kept."
+  IDS_GROUPS_REPLACE "Replace this group with the folders currently open in FileSpacer?"
+  IDS_GROUPS_DELETE_CONFIRM "Delete this saved folder group? The folders themselves will be kept."
+  IDS_GROUPS_OPEN_ERROR "Some folders in the group could not be opened."
+END
