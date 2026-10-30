@@ -75,6 +75,15 @@ function Write-RegistryTree([Microsoft.Win32.RegistryKey]$Key,$Tree) {
         try { Write-RegistryTree $child $entry.Tree } finally { $child.Dispose() }
     }
 }
+function Initialize-TestPreferences {
+    [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($testKey,$false)
+    $key=[Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($testKey)
+    try {
+        foreach ($name in @('UpdateCheckEnabled','AdminWarning')) { $key.SetValue($name,0,[Microsoft.Win32.RegistryValueKind]::DWord) }
+        $key.SetValue('LastOpenedVersion',2147483647,[Microsoft.Win32.RegistryValueKind]::DWord)
+        $key.SetValue('KeepSourceWindowOpen',1,[Microsoft.Win32.RegistryValueKind]::DWord)
+    } finally { $key.Dispose() }
+}
 function Stop-TestApplication {
     # Preflight requires no existing FileSpacer. Clean up only the exact Debug
     # executable under test, including its crash-recovery helper processes.
@@ -130,13 +139,7 @@ try {
             $savedRegistry | Export-Clixml -LiteralPath (Join-Path $backup 'registry.xml')
         }
         $registryPrepared=$true
-        [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($testKey,$false)
-        $key=[Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($testKey)
-        try {
-            foreach ($name in @('UpdateCheckEnabled','AdminWarning')) { $key.SetValue($name,0,[Microsoft.Win32.RegistryValueKind]::DWord) }
-            $key.SetValue('LastOpenedVersion',2147483647,[Microsoft.Win32.RegistryValueKind]::DWord)
-            $key.SetValue('KeepSourceWindowOpen',1,[Microsoft.Win32.RegistryValueKind]::DWord)
-        } finally { $key.Dispose() }
+        Initialize-TestPreferences
         [void][IO.Directory]::CreateDirectory((Split-Path $database -Parent))
         foreach ($suffix in @('','-wal','-shm')) { $originalFiles[$suffix]=Test-Path -LiteralPath ($database+$suffix) }
         $dbPrepared=$true
@@ -168,8 +171,10 @@ try {
             $previousIdentities=0
             try { if ($key) { $previousIdentities=$key.SubKeyCount } }
             finally { if ($key) { $key.Dispose() } }
-            [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($jumpLists,$false)
-            @{RemovedJumpListIdentities=$previousIdentities;Key=$jumpLists} | ConvertTo-Json |
+            # A preceding case may legitimately apply other gestures or enable
+            # Everything. Each UI case gets the same preferences as a lone run.
+            Initialize-TestPreferences
+            @{RemovedJumpListIdentities=$previousIdentities;Key=$jumpLists;PreferencesReset=$true} | ConvertTo-Json |
                 Set-Content -LiteralPath (Join-Path $testRun 'case-fixture.json') -Encoding UTF8
         }
         # Separate PowerShell processes prevent Add-Type and global collisions.
