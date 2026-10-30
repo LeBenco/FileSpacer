@@ -18,6 +18,26 @@ InstallDir ""
 !include x64.nsh
 !include Sections.nsh
 !define FILESPACER_DOCS "..\build\offline-docs"
+; SPDX-License-Identifier: GPL-3.0-only; Copyright (C) 2026 Benco
+!macro CleanInstalledDocumentation Mode FailureLabel
+    IfErrors ${FailureLabel}
+    InitPluginsDir
+    File /oname=$PLUGINSDIR\FileSpacer-doc-cleanup.ps1 "RemoveDocumentation.ps1"
+!if "${Mode}" == "Upgrade"
+    File /oname=$PLUGINSDIR\FileSpacer-doc-current.json "${FILESPACER_DOCS}\build-info.json"
+    IfErrors ${FailureLabel}
+    nsExec::ExecToLog '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\FileSpacer-doc-cleanup.ps1" -HelpRoot "$INSTDIR\help" -CurrentInventory "$PLUGINSDIR\FileSpacer-doc-current.json"'
+!else
+    IfErrors ${FailureLabel}
+    nsExec::ExecToLog '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\FileSpacer-doc-cleanup.ps1" -HelpRoot "$INSTDIR\help"'
+!endif
+    Pop $0
+    ${If} $0 != 0
+        DetailPrint "Documentation cleanup failed: $0"
+        Goto ${FailureLabel}
+    ${EndIf}
+    ClearErrors
+!macroend
 !include "..\build\offline-docs.nsh"
 !include EnumUsersReg.nsh
 !addplugindir /x86-unicode "plugins"
@@ -35,6 +55,13 @@ InstallDir ""
 !define EXIT_SHORTCUT 7
 !define EXIT_CONTEXT 8
 !define EXIT_OPTIONS 9
+!macro WORKER_EXIT CODE
+    ${If} $machineWorker == 1
+        SetErrorLevel ${CODE}
+    ${Else}
+        SetErrorLevel 2
+    ${EndIf}
+!macroend
 !getdllversion /productversion "..\build\release\FileSpacer.exe" PRODUCT_VERSION_
 !define PRODUCT_VERSION "${PRODUCT_VERSION_1}.${PRODUCT_VERSION_2}.${PRODUCT_VERSION_3}"
 VIProductVersion "${PRODUCT_VERSION}.${PRODUCT_VERSION_4}"
@@ -471,7 +498,7 @@ Function ${PREFIX}CheckClosed
         !insertmacro WORKER_LOG "FileSpacer.exe or FileSpacerFolder.dll is still loaded (exit code ${EXIT_CLOSED})."
         DetailPrint $(CLOSE_TEXT)
         MessageBox MB_OK|MB_ICONSTOP $(CLOSE_TEXT) /SD IDOK
-        SetErrorLevel ${EXIT_CLOSED}
+        !insertmacro WORKER_EXIT ${EXIT_CLOSED}
         Abort
     ${EndIf}
 FunctionEnd
@@ -575,7 +602,7 @@ Section "FileSpacer" SecBase
         ${EndIf}
         ${If} $0 != ""
             MessageBox MB_OK|MB_ICONSTOP $(ERROR_SCOPE) /SD IDOK
-            SetErrorLevel ${EXIT_SCOPE}
+            !insertmacro WORKER_EXIT ${EXIT_SCOPE}
             Abort
         ${EndIf}
     ${EndIf}
@@ -584,7 +611,7 @@ Section "FileSpacer" SecBase
     ${AndIf} $1 != $INSTDIR
         !insertmacro WORKER_LOG "An installation already exists at $1, not at $INSTDIR."
         MessageBox MB_OK|MB_ICONSTOP $(ERROR_SCOPE) /SD IDOK
-        SetErrorLevel ${EXIT_SCOPE}
+        !insertmacro WORKER_EXIT ${EXIT_SCOPE}
         Abort
     ${EndIf}
     Call CheckClosed ; Also covers silent setup and launches after the custom page.
@@ -608,6 +635,7 @@ Section "FileSpacer" SecBase
     SetOutPath "$INSTDIR"
     IfErrors files_failed
     SetOverwrite on
+    !insertmacro CleanInstalledDocumentation "Upgrade" files_failed
     File "..\build\release\FileSpacer.exe"
     File "..\build\release\FileSpacerFolder.dll"
     File /oname=LICENSE.txt "..\LICENSE"
@@ -649,12 +677,12 @@ Section "FileSpacer" SecBase
 files_failed:
     !insertmacro WORKER_LOG "Copying the program files to $INSTDIR failed (exit code ${EXIT_FILES})."
     MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
-    SetErrorLevel ${EXIT_FILES}
+    !insertmacro WORKER_EXIT ${EXIT_FILES}
     Abort
 registry_failed:
     !insertmacro WORKER_LOG "Writing the registration failed (exit code ${EXIT_REGISTRY})."
     MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
-    SetErrorLevel ${EXIT_REGISTRY}
+    !insertmacro WORKER_EXIT ${EXIT_REGISTRY}
     Abort
 install_done:
 SectionEnd
@@ -673,7 +701,7 @@ Section "$(SEC_START)" SecStart
 shortcut_failed:
         !insertmacro WORKER_LOG "Creating the Start Menu shortcut failed (exit code ${EXIT_SHORTCUT})."
         MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
-        SetErrorLevel ${EXIT_SHORTCUT}
+        !insertmacro WORKER_EXIT ${EXIT_SHORTCUT}
         Abort
     ${EndIf}
 shortcut_done:
@@ -695,7 +723,7 @@ Section "$(SEC_CONTEXT)" SecContext
 context_failed:
     !insertmacro WORKER_LOG "Registering the folder context menu failed (exit code ${EXIT_CONTEXT})."
     MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
-    SetErrorLevel ${EXIT_CONTEXT}
+    !insertmacro WORKER_EXIT ${EXIT_CONTEXT}
     Abort
 context_done:
 SectionEnd
@@ -1018,7 +1046,7 @@ Section -ApplyOptions
     ${If} ${Errors}
         !insertmacro WORKER_LOG "Saving the installation options failed (exit code ${EXIT_OPTIONS})."
         MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
-        SetErrorLevel ${EXIT_OPTIONS}
+        !insertmacro WORKER_EXIT ${EXIT_OPTIONS}
         Abort
     ${EndIf}
     !insertmacro WORKER_LOG "Elevated worker finished successfully."
@@ -1029,6 +1057,7 @@ Section "Uninstall"
     Call un.CheckClosed
     ; Delete owned files only. No wildcards and no recursive installation-directory deletion.
     ClearErrors
+    !insertmacro RemoveDocumentation
     IfFileExists "$INSTDIR\FileSpacer.exe" 0 exe_removed
     Delete "$INSTDIR\FileSpacer.exe"
     IfErrors uninstall_failed ; Keep the registration when the executable cannot be removed.
@@ -1048,7 +1077,6 @@ provider_removed:
     Delete "$INSTDIR\SQLite-NOTICE.txt"
     Delete "$INSTDIR\THIRD_PARTY_NOTICES.md"
     Delete "$INSTDIR\privacy-policy.md"
-    !insertmacro RemoveDocumentation
     Delete "$INSTDIR\ShortcutProperties-LICENSE.txt"
     Delete "$INSTDIR\install-info.ini"
     Delete "$INSTDIR\uninstall.exe"
