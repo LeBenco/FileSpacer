@@ -74,6 +74,16 @@ PowerShell masquée pouvait apparaître au premier plan ; le lanceur actuel cré
 le processus avec `CreateNoWindow=true` et capture stdout/stderr et le code de
 sortie. Les sources du dépôt ne sont jamais exécutées élevées sur l'hôte.
 
+Le contrôle local du choix du bureau ne nécessite aucune VM ni connexion distante :
+
+```cmd
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\client\Test-DesktopSession.ps1
+```
+
+Il exerce la sélection réelle du contrôleur : plusieurs processus Explorer dans
+une même session du compte invité désignent un seul bureau ; aucune session ou
+plusieurs sessions distinctes restent bloquantes.
+
 Références Microsoft : [PowerShell Direct](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/powershell-direct),
 [tâches interactives](https://learn.microsoft.com/en-us/windows/win32/taskschd/security-contexts-for-running-tasks),
 [identifiants chiffrés DPAPI](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/export-clixml?view=powershell-5.1).
