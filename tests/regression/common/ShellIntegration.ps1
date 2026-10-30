@@ -4,15 +4,40 @@ Add-Type -Path (Join-Path $PSScriptRoot 'ShellIntegration.cs')
 
 function Focus-ShellFixture([IntPtr]$Window,[string]$Name='') {
     Activate-Ui $Window
-    Use-UiView $Window { param($view) if ($Name) { $view.Select($Name) }; $view.Focus() }
+    $viewWindow=Use-UiView $Window { param($view) if ($Name) { $view.Select($Name) }; $view.Focus(); $view.Window }
+    Wait-Ui { [FileSpacerRegression.ShellIntegration]::ViewFocused($Window,$viewWindow) } 'keyboard focus inside the Shell view'
+}
+function Start-ShellRename([IntPtr]$Window,[string]$Name) {
+    Focus-ShellFixture $Window $Name
+    $viewWindow=Use-UiView $Window { param($view) $view.Window }
+    [FileSpacerRegression.Native]::Keys($Window,0x71,$false,$false)
+    Wait-Ui { [FileSpacerRegression.ShellIntegration]::RenameFocused($Window,$viewWindow) } 'native in-place rename editor inside the Shell view'
+    return $viewWindow
+}
+function Set-ShellRenameText([IntPtr]$Window,[IntPtr]$ViewWindow,[string]$Text) {
+    try {
+        [FileSpacerRegression.ShellIntegration]::ReplaceRenameText($Window,$ViewWindow,$Text)
+        Wait-Ui {
+            if (![FileSpacerRegression.ShellIntegration]::RenameFocused($Window,$ViewWindow)) { return $false }
+            $edit=[FileSpacerRegression.Native]::FocusedWindowInOwningThread($Window)
+            return [FileSpacerRegression.Native]::Text($edit) -ceq $Text
+        } 'replacement text consumed by the native rename editor'
+    }
+    catch {
+        $failure=$_
+        try {
+            $focus=[FileSpacerRegression.Native]::FocusedWindowInOwningThread($Window)
+            $foreground=[FileSpacerRegression.Native]::GetForegroundWindow()
+            Write-Host "RENAME DIAGNOSTIC: owner=$Window view=$ViewWindow foreground=$foreground ($([FileSpacerRegression.Native]::Class($foreground))) focus=$focus ($([FileSpacerRegression.Native]::Class($focus))) active=$([FileSpacerRegression.Native]::ActiveWindowInOwningThread($Window))"
+        } catch { Write-Host "RENAME DIAGNOSTIC unavailable: $($_.Exception.Message)" }
+        throw $failure
+    }
 }
 function Rename-ShellFixture([IntPtr]$Window,[string]$Folder,[string]$Before,[string]$After) {
-    Focus-ShellFixture $Window $Before
-    [FileSpacerRegression.Native]::Keys($Window,0x71,$false,$false)
-    Wait-Ui { [FileSpacerRegression.ShellIntegration]::RenameFocused($Window) } 'native in-place rename editor'
-    [FileSpacerRegression.Native]::Keys($Window,0x41,$true,$false)
-    [FileSpacerRegression.ShellIntegration]::TypeText($Window,$After)
+    $viewWindow=Start-ShellRename $Window $Before
+    Set-ShellRenameText $Window $viewWindow $After
     [FileSpacerRegression.Native]::Keys($Window,0x0d,$false,$false)
+    Wait-Ui { ![FileSpacerRegression.ShellIntegration]::RenameFocused($Window,$viewWindow) } 'native rename editor closed after Enter'
     Wait-Ui { !(Test-Path -LiteralPath (Join-Path $Folder $Before)) -and (Test-Path -LiteralPath (Join-Path $Folder $After)) } 'rename changes the filesystem through the real UI'
     Assert-UiSelected $Window $After
 }
