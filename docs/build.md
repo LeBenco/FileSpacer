@@ -122,6 +122,21 @@ token and never changes that administrator account's personal default manager.
 The uninstaller requests confirmation only for an All users installation.
 Declining confirmation returns the cancellation code expected by the updater.
 
+The update relay derives the original directory from the running executable and
+reads its scope from the adjacent `install-info.ini`. If metadata is missing or
+invalid, a registry fallback must match that exact directory in only one scope.
+Known scope and directory are passed to setup as initial choices; an unregistered
+local build leaves those choices to the wizard. The initiating NSIS parent writes
+a UTF-16 `/UpdateResult=` file only after all installation sections succeed. It
+contains `[Installation]`, `Mode`, `Executable` and `Complete=1`. The relay validates
+the executable and its scope metadata before restoring windows there. Cancellation
+and failure restore the original executable; a missing or invalid success result
+retains the saved session and reports an error. Pending sessions are excluded from
+stale-relay cleanup. Test this contract with
+`tests.cmd -VM AgentWin10 -Pattern "11-session-maj\*"` and the isolated NSIS suite.
+The relay is copied from the running application, so its new selection contract
+is effective after the corrected application has been installed.
+
 The installer saves its three component selections in the existing
 `install-info.ini` under `[Components]`: `StartMenu`, `ContextMenu` and
 `DefaultFileManager`, each `0` or `1`. Upgrades restore them after restoring the
