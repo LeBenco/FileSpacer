@@ -113,7 +113,22 @@ try {
     [IO.File]::WriteAllText((Join-Path $documentation 'index.html'),'Old documentation to replace.')
     $userDocumentation=Join-Path $documentation 'keep-my-notes.txt'
     [IO.File]::WriteAllText($userDocumentation,'Unowned help notes.')
+    # An older package owned assets absent from the replacement package.
+    $obsolete=Join-Path $documentation 'retired\old.css'
+    $modified=Join-Path $documentation 'retired\edited.css'
+    [void][IO.Directory]::CreateDirectory((Split-Path -Parent $obsolete))
+    [IO.File]::WriteAllText($obsolete,'Old managed asset.')
+    [IO.File]::WriteAllText($modified,'Original managed asset.')
+    $previous=Get-Content -LiteralPath (Join-Path $documentation 'build-info.json') -Raw|ConvertFrom-Json
+    foreach($file in @($obsolete,$modified)) {
+        $relative=$file.Substring($documentation.Length+1).Replace('\','/')
+        $previous.files|Add-Member -NotePropertyName $relative -NotePropertyValue (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash
+    }
+    $previous|ConvertTo-Json -Depth 8|Set-Content -LiteralPath (Join-Path $documentation 'build-info.json') -Encoding UTF8
+    [IO.File]::WriteAllText($modified,'User-edited obsolete asset.')
     Run-FixtureProcess $installer ("/S /$mode /D=$directory")
+    if(Test-Path -LiteralPath $obsolete){throw 'An obsolete managed documentation asset survived upgrade.'}
+    if([IO.File]::ReadAllText($modified) -cne 'User-edited obsolete asset.'){throw 'Upgrade changed a modified obsolete asset.'}
     if((Get-FileHash -LiteralPath (Join-Path $documentation 'index.html') -Algorithm SHA256).Hash -ine $manifest.files.'index.html') { throw 'Documentation was not replaced on upgrade.' }
     Check-Profile $directory $mode 0
     if(Test-Path -LiteralPath (Join-Path $shortcutDirectory 'FileSpacer.lnk')) { throw 'Unchecked shortcut survived the upgrade.' }
@@ -136,6 +151,7 @@ try {
         if(Test-Path -LiteralPath (Join-Path $documentation $owned)) { throw "Owned documentation remained after uninstallation: $owned" }
     }
     if(!(Test-Path -LiteralPath $userDocumentation) -or [IO.File]::ReadAllText($userDocumentation) -cne 'Unowned help notes.') { throw 'Uninstallation removed or changed unowned help notes.' }
+    if([IO.File]::ReadAllText($modified) -cne 'User-edited obsolete asset.'){throw 'Uninstallation changed a preserved obsolete asset.'}
     $provider=$hive.OpenSubKey($providerKey)
     if($provider) { $provider.Dispose(); throw 'Owned provider registration remained after uninstallation.' }
     if(Test-Path -LiteralPath $providerFixture) { throw 'Owned provider cache remained after uninstallation.' }
