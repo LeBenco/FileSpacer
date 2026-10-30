@@ -825,6 +825,25 @@ FOLDERSETTINGS FolderWindow::folderSettings() const {
 
 void FolderWindow::scheduleStateSave(bool icons) {
     if (restoringState || !viewReady || viewMenuPreview) return;
+    if (initialStateApplied) {
+        CComPtr<ItemWindow> keepAlive(this);
+        CComPtr<IFolderView> view;
+        const ULONG_PTR generation = viewGeneration;
+        if (FAILED(viewHost.currentView(IID_PPV_ARGS(&view))) || !isWindowOperational()
+                || generation != viewGeneration) return;
+        const bool spatial = spatialView(view);
+        if (!isWindowOperational() || generation != viewGeneration) return;
+        if (spatial != spatialLayout) {
+            spatialLayout = spatial;
+            // Changing mode can discard the Shell's free positions even when
+            // the provider stays the same. Restore once, before any capture.
+            if (spatial) {
+                restoreIconsPending = searchText.empty();
+                finishViewInitialization(); // Otherwise the next EnumDone finishes it.
+                if (!isWindowOperational() || generation != viewGeneration) return;
+            }
+        }
+    }
     if (icons) viewStateDirty(FolderState::Icons);
     // Coalesce related native notifications; no polling and no database write per mouse move.
     SetTimer(hwnd, TIMER_SAVE_STATE, 250, nullptr);
@@ -862,7 +881,7 @@ uint32_t FolderWindow::captureViewState(uint32_t mask) {
         captured |= FolderState::View;
     }
     // A filtered subset must never replace the complete folder's icon positions.
-    if ((mask & FolderState::Icons) && spatialView(view)) {
+    if ((mask & FolderState::Icons) && !restoreIconsPending && spatialView(view)) {
         if (!current()) return captured;
         std::vector<uint8_t> bytes;
         const HRESULT result = captureIconPositions(view, current, enumerationComplete,
@@ -2405,6 +2424,12 @@ void FolderWindow::finishViewInitialization() {
     }
     const bool initial = !initialStateApplied;
     initialStateApplied = true;
+    if (initial) {
+        CComQIPtr<IFolderView> folderView(view);
+        if (!folderView || !current()) return;
+        spatialLayout = spatialView(folderView);
+        if (!current()) return;
+    }
     if (restoreIconsPending) {
         restoreIconsPending = false;
         if (initial && storedViewState) {
