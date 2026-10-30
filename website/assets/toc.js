@@ -1,5 +1,6 @@
 function selectHeading() {
-  const id = decodeURIComponent(location.hash.slice(1)) || 'overview';
+  const requested = decodeURIComponent(location.hash.slice(1)) || 'overview';
+  const id = document.getElementById(requested)?.dataset.aliasFor || requested;
   const links = document.querySelectorAll('#site-nav a');
   links.forEach(link => link.classList.remove('active'));
   const link = [...links].find(item => item.getAttribute('href') === '#' + id);
