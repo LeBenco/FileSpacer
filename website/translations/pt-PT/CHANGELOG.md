@@ -2,6 +2,14 @@
 
 ## Por publicar
 
+## 1.2.3 — 2026-10-30
+
+- Corrige as identidades, as sobreposições de ícones e as notificações de pastas na ordenação mista; conserva as posições livres dos ícones e usa vistas nativas quando o fornecedor está indisponível ou é incompatível.
+- Garante uma única janela de Preferências entre processos e corrige a validação dos atalhos, os caminhos do Everything, as teclas de acesso e as traduções regionais.
+- Corrige o fecho de pastas, os cliques de ativação e a reposição após a pré-visualização do menu Ver.
+- Corrige a atualização das Jump Lists e os diagnósticos do instalador; conserva os ficheiros de ajuda do utilizador durante atualizações e a desinstalação.
+- Inclui ajuda multilingue offline através de F1 e Acerca de e atualiza os guias de configuração traduzidos e as referências do Nilesoft Shell.
+
 ## 1.2.2 — 2026-10-28
 
 - Corrige a utilização do fornecedor de pastas personalizado na ordenação mista com ícones dispostos livremente. Usa o fornecedor nativo no posicionamento livre e muda de fornecedor ao confirmar uma disposição ordenada, conservando as posições guardadas dos ícones, a seleção e o foco.
