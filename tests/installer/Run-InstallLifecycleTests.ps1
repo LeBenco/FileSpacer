@@ -43,6 +43,34 @@ $shortcutCode = [IO.File]::ReadAllText((Join-Path $root 'installer\ShortcutAppID
 $variant = $variant.Replace('!include ShortcutAppID.nsh','!include "'+$shortcutHelper+'"')
 $installer = Join-Path $RunDirectory 'LifecycleInstaller.exe'
 $variant = $variant.Replace('OutFile "..\build\FileSpacer-install.exe"', 'OutFile "'+$installer+'"')
+# Exercise actual nsExec launch/nonzero failures without changing the host's PowerShell.
+if([regex]::Matches($variant,'(?m)^    nsExec::ExecToLog ').Count -ne 2){throw 'Expected both production documentation cleanup commands.'}
+$variant = [regex]::Replace($variant, '(?m)^    (nsExec::ExecToLog .*)\r?$', {
+    param($match)
+    @'
+    ${If} ${FileExists} "$INSTDIR\missing-powershell.fixture"
+        nsExec::ExecToLog '"$INSTDIR\absent-powershell.exe"'
+    ${ElseIf} ${FileExists} "$INSTDIR\script-failure.fixture"
+        nsExec::ExecToLog '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -Command "exit 126"'
+    ${Else}
+        @COMMAND@
+    ${EndIf}
+'@.Replace('@COMMAND@',$match.Groups[1].Value)
+})
+# Record the real detail/warning branches even in silent mode, where NSIS skips MessageBox.
+$detail='DetailPrint "Documentation cleanup failed; preserving the remaining help files and inventory."'
+$warning='MessageBox MB_OK|MB_ICONEXCLAMATION $(WARNING_UNINSTALL_DOCUMENTATION) /SD IDOK'
+foreach($entry in @(@($detail,'detail'),@($warning,'final'))) {
+    if(!$variant.Contains($entry[0])) { throw ('Missing documentation failure notification: '+$entry[1]) }
+    $record=@'
+FileOpen $R8 "@RUN@\documentation-warning.log" a
+    FileSeek $R8 0 END
+    FileWriteUTF16LE $R8 "@KIND@: $(WARNING_UNINSTALL_DOCUMENTATION)$\r$\n"
+    FileClose $R8
+    @ORIGINAL@
+'@.Replace('@RUN@',$RunDirectory).Replace('@KIND@',$entry[1]).Replace('@ORIGINAL@',$entry[0])
+    $variant=$variant.Replace($entry[0],$record)
+}
 $variant = '!cd "' + (Join-Path $root 'installer') + '"' + "`r`n" + $variant
 $variantPath = Join-Path $RunDirectory 'LifecycleInstaller.nsi'
 [IO.File]::WriteAllText($variantPath,$variant,[Text.UTF8Encoding]::new($true))
@@ -179,6 +207,64 @@ try {
     $installed=$hive.OpenSubKey($registryPrefix+'FileSpacer')
     if($installed) { $installed.Dispose(); throw 'Installation registration remained after uninstallation.' }
     Write-Host "PASS: $mode fixture installation, running-process protection, silent upgrade, component removal and native uninstallation preserving unowned data."
+
+    foreach($scenario in @('invalid-inventory','missing-powershell','script-failure')) {
+        $directory=Join-Path $RunDirectory $scenario
+        $documentation=Join-Path $directory 'help'
+        $warningLog=Join-Path $RunDirectory 'documentation-warning.log'
+        if(Test-Path -LiteralPath $warningLog){Remove-Item -LiteralPath $warningLog}
+        Run-FixtureProcess $installer ("/S /CurrentUser /D=$directory")
+        $inventory=Join-Path $documentation 'build-info.json'
+        if($scenario -eq 'invalid-inventory') {
+            [IO.File]::WriteAllText($inventory,'{"files":{"../outside.txt":"'+('0'*64)+'"}}')
+        } else {
+            [IO.File]::WriteAllText((Join-Path $directory ($scenario+'.fixture')),'Inject cleanup failure only in this fixture.')
+        }
+        [IO.File]::WriteAllText((Join-Path $documentation 'unowned.txt'),'Keep this help note.')
+        # An extra byte distinguishes the old payload from the replacement: a
+        # failed Upgrade must leave every installed byte unchanged before copy.
+        $payloadPath=Join-Path $directory 'FileSpacer.exe'
+        $stream=[IO.File]::OpenWrite($payloadPath)
+        try {$stream.Seek(0,[IO.SeekOrigin]::End)|Out-Null;$stream.WriteByte(0)}finally{$stream.Dispose()}
+        $before=@{}
+        foreach($file in Get-ChildItem -LiteralPath $directory -Recurse -File -Force) {
+            $before[$file.FullName]=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
+        }
+        Run-FixtureProcess $installer ("/S /CurrentUser /UpdateResult=`"$resultFile`" /D=$directory") 2
+        if(Test-Path -LiteralPath $resultFile){throw "Failed $scenario upgrade reported success."}
+        if(@(Get-ChildItem -LiteralPath $directory -Recurse -File -Force).Count -ne $before.Count){throw "Failed $scenario upgrade changed installed files."}
+        foreach($file in $before.Keys) {
+            if(!(Test-Path -LiteralPath $file) -or (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash -cne $before[$file]) {
+                throw "Failed $scenario upgrade changed $file."
+            }
+        }
+        if(Test-Path -LiteralPath $warningLog){throw 'Upgrade used the nonfatal uninstall warning branch.'}
+        Copy-Item -LiteralPath (Join-Path $directory 'uninstall.exe') -Destination $uninstaller -Force
+        Run-FixtureProcess $uninstaller ('/S _?='+$directory)
+        foreach($owned in @('FileSpacer.exe','FileSpacerFolder.dll','uninstall.exe','install-info.ini','LICENSE.txt','LockedList-LICENSE.txt',
+            'Lucide-LICENSE.txt','SQLite-NOTICE.txt','THIRD_PARTY_NOTICES.md','privacy-policy.md')) {
+            if(Test-Path -LiteralPath (Join-Path $directory $owned)){throw "Cleanup failure blocked program removal: $scenario / $owned"}
+        }
+        foreach($file in @($before.Keys | Where-Object {$_.StartsWith($documentation+'\',[StringComparison]::OrdinalIgnoreCase)})) {
+            if(!(Test-Path -LiteralPath $file) -or (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash -cne $before[$file]) {
+                throw "Cleanup failure changed preserved help: $scenario / $file"
+            }
+        }
+        if(!(Test-Path -LiteralPath $inventory)){throw 'Cleanup failure removed build-info.json.'}
+        $notification=[IO.File]::ReadAllText($warningLog,[Text.Encoding]::Unicode)
+        foreach($kind in @('detail','final')) {
+            if($notification -notmatch ('(?m)^'+$kind+': .*build-info\.json.*'+[regex]::Escape($directory)+'\\help')) {
+                throw "Missing $kind documentation warning for $scenario."
+            }
+        }
+        if(Test-Path -LiteralPath (Join-Path $shortcutDirectory 'FileSpacer.lnk')){throw 'Cleanup failure left the program shortcut.'}
+        foreach($key in @('FileSpacer','Microsoft\Windows\CurrentVersion\Uninstall\FileSpacer','Microsoft\Windows\CurrentVersion\App Paths\FileSpacer.exe',
+            'Classes\Directory\shell\filespacer')) {
+            $remaining=$hive.OpenSubKey($registryPrefix+$key)
+            if($remaining){$remaining.Dispose();throw "Cleanup failure left program registration: $key"}
+        }
+        Write-Host "PASS: $scenario blocks Upgrade before copy; uninstall removes the program, preserves help/inventory and reports both detail and final warnings."
+    }
 } catch { $testError=$_ }
 finally {
     # Delete only the fresh GUID namespaces owned by this run, even on failure.
