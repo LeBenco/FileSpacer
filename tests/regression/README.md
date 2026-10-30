@@ -135,6 +135,9 @@ conservés dans [l'historique](../../docs/development-history.md).
 
 ## Couverture conservée
 
+Le catalogue courant contient 131 cas : 25 Internal et 106 UI. Ces nombres
+décrivent les scénarios disponibles, pas un passage complet validé.
+
 | Groupe | Jeux | Contrat |
 |---|---:|---|
 | 00-banc | 3 | Rapports, sorties de processus, nettoyage du lanceur et intégrité des artefacts client. |
@@ -146,11 +149,11 @@ conservés dans [l'historique](../../docs/development-history.md).
 | 06-etat-vue | 1 | Captures partielles et erreurs de restauration. |
 | 07-fenetres | 6 | Géométrie, commandes asynchrones, fermetures initiales/après commande, défilement retrouvé à la réouverture, titre visible et barre d’outils sur toute la largeur après maximisation, réduction et restauration. |
 | 08-suppression | 2 | Stockage, suppressions directes et d’ancêtres via le Shell ou le système de fichiers, fermeture groupée et réouverture dans un même processus, conservation des fenêtres voisines et nettoyage SQLite. |
-| 09-historique | 1 | Historique des fenêtres fermées. |
+| 09-historique | 2 | Historique des fenêtres fermées ; réessai des Jump Lists après lien ou commit refusé et retour à un ancien modèle après remplacement partiel. |
 | 10-manifeste-maj | 1 | Validation du manifeste de mise à jour. |
 | 11-session-maj | 1 | Conservation de la session pendant une mise à jour. |
 | 12-navigation-spatiale | 6 | Politique Ctrl, parent existant et remontée sans sélection automatique. |
-| 13-preferences | 7 | Apply/Cancel, propagation entre processus, recherche et persistance sous filtre ; contrôle de l’icône À propos à 48 pixels à 96 DPI, sans chevauchement des textes. |
+| 13-preferences | 10 | Apply/Cancel, refus des raccourcis invalides, propagation entre processus, unicité séquentielle et concurrente, réservation en cours d'initialisation/fermeture, appelant fermé et mutex abandonné ; recherche et persistance sous filtre, icône À propos à 48 pixels à 96 DPI. |
 | 14-disposition | 1 | Visibilité et disposition des contrôles de FileSpacer. |
 | 15-deplacement-alt | 32 | Déplacement, sélection, propriétés et exclusions des gestes Alt. |
 | 16-redimensionnement-alt | 18 | Redimensionnement, annulation, exclusions et géométrie persistante. |
@@ -158,14 +161,17 @@ conservés dans [l'historique](../../docs/development-history.md).
 | 18-vue-shell-native | 1 | Hôte réel, SQLite, réglages, sélection/focus, positions, filtre, recréation. |
 | 19-commandes-shell | 6 | Création, renommage, suppression, presse-papiers, drag/drop, menus, Unicode. |
 | 20-validation-elargie | 5 | Charge, images/modes, Ce PC, écrans/DPI disponibles, Panneau externe. |
-| 21-clic-activation | 1 | Clic sur le fond d'une fenêtre inactive : activation sans perte de sélection, clic d'élément, préférence désactivée. |
+| 21-clic-activation | 2 | Clic sur le fond d'une fenêtre inactive : activation sans perte de sélection, clic d'élément, préférence désactivée ; activation par la légende suivie d'un clic sur le fond. |
 | 22-verrouillage | 2 | Activation, menu natif, référence visible, géométrie/vue temporaires, placements individuels, déverrouillage, confirmation et suppression globale entre processus, réouverture et redémarrage ; rendu ICO natif, transparence, DPI et couleurs de contraste élevé. |
 | 23-noms-selection-simple | 1 | Fond opaque du libellé natif en sélection simple ; rendu natif conservé en sélection multiple, sans sélection et avec le focus seul ; sélection, positions et captures valides. |
 | 24-raccourcis | 3 | Onglet natif FR/EN, 2 304 couples de réglages, persistance atomique, capture directe, conflits, valeurs par défaut par action, annulation, 64 gestes réels dans deux processus et comparaison des propriétés, de la sélection, de la géométrie et des fichiers avec le Shell sans raccourcis, y compris après mouvement du second appui. |
-| 25-recherche-integration | 5 | Historique SQLite isolé, migration, entrées Win32, arguments et erreurs, parcours Shell réel, préférences 0/5/20, application Everything réelle et suggestions sans chevron au focus/clic. |
+| 25-recherche-integration | 6 | Historique SQLite isolé, migration, entrées Win32, arguments et erreurs, parcours Shell réel, préférences 0/5/20, application Everything réelle, chemin manuel normalisé et suggestions sans chevron au focus/clic. |
 | 26-placement-fenetres | 2 | Fonction pure de placement hybride libre/encombré sur un instantané de fenêtres : préférence libre ou occupée, instantanés distincts, fenêtres hors écran ou rognées, indépendance de l’ordre, bords, coordonnées négatives et tailles ; contrôles fonctionnels sans mesure de temps ni oracle d’optimalité ; libellé et option Général, maintenance À propos, processus distincts, réduction, remplacement spatial et priorité de la position mémorisée sur le vrai Shell. |
-| 28-apercu-affichage | 2 | Aperçus natifs au survol du menu Affichage, changements de mode et de taille, sortie d’entrée, annulation par Échap ou clic extérieur, validation au clic, restauration de la vue et préférence Affichage activée par défaut avec Annuler/Appliquer/OK. |
+| 28-apercu-affichage | 4 | Aperçus natifs au survol et au clavier, changements de mode et de taille, sortie d’entrée, annulation par Échap ou clic extérieur, validation au clic, modification du dossier par un autre processus, restauration de la vue et préférence Affichage avec Annuler/Appliquer/OK. |
 | 29-menu-gestionnaire | 1 | Bascule vers l’autre gestionnaire dans les menus, défauts indépendants par classe, resynchronisation, ressources EN/FR, commandes et délégations COM conservées, vrais menus Shell et invocation du défaut masqué par les deux voies ShellExecuteEx. |
+| 30-documentation | 1 | Lanceur d'aide local extrait du code de production, langues et replis, erreurs, menus et F1. |
+| 30-tri-melange | 4 | Tri et identités persistées, commandes Shell, dossier affiché renommé/supprimé ; contrat privé du fournisseur et identité canonique d'un enfant réel. |
+| 31-langues | 1 | Chargement des traductions pour les variantes régionales. |
 
 Le cas `13-preferences/07-APropos.ps1` vérifie l’icône chargée, sa taille adaptée
 au DPI et l’absence de chevauchement des textes. Les comptes du catalogue ne
@@ -268,15 +274,20 @@ tests.cmd -Pattern "21-clic-activation\*"
 
 ## Tri mélangé
 
-Le groupe `30-tri-melange` ajoute trois cas utiles au catalogue, soit 120 cas
-(21 Internal, 99 UI). Le premier vérifie le tri réel, les changements de
+Le groupe `30-tri-melange` comprend trois cas UI et un cas Internal.
+Le premier vérifie le tri réel, les changements de
 préférence, les notifications et les identités persistées en positions libres,
 où le fournisseur reste actif, et lors des changements de préférence.
 Le second réutilise cinq scénarios de commandes Shell du groupe 19 et un
 scénario de navigation du groupe 12 avec le fournisseur actif. Le troisième
 renomme puis supprime, depuis le système de fichiers, le dossier affiché par
 une fenêtre sous fournisseur, aussi listé par une fenêtre parente sous
-fournisseur. Les mesures ponctuelles de montée en charge ne font pas
+fournisseur. Le quatrième interroge les deux versions de l'interface privée
+sur le vrai Shell et compare l'enfant converti à son identité canonique.
+Le test de réessai `09/02` utilise la méthode de production extraite avec
+SQLite et registre réels, mais injecte les échecs à la frontière Shell :
+il ne vérifie pas l'affichage de la Jump List Windows.
+Les mesures ponctuelles de montée en charge ne font pas
 partie de ce catalogue ; leur protocole et leurs résultats sont dans la
 [validation du tri mélangé](../../docs/validation-mixed-sorting.md).
 
