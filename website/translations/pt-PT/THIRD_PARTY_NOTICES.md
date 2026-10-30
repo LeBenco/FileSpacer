@@ -6,9 +6,9 @@ O FileSpacer baseia-se no [ChromaFiler](https://github.com/vanjac/chromafiler), 
 
 O SQLite 3.53.4 está ligado estaticamente à aplicação e pertence ao domínio público. O código-fonte não modificado e a sua proveniência encontram-se em `third_party/sqlite`. Consulte <https://sqlite.org/copyright.html>.
 
-## Lucide e Feather
+## Ícones dos botões Subir e Atualizar (Lucide e Feather)
 
-Os botões Subir e Atualizar usam traçados adaptados dos ícones `arrow-up` e `rotate-cw` do Lucide, desenhados com o Windows GDI+. A seta também é abrangida pelo aviso MIT do Feather incluído na licença completa do Lucide. A geometria, a espessura do traço e a orientação do ícone de atualização foram adaptadas para o FileSpacer.
+Na barra de ferramentas, a **seta para cima** abre a **pasta superior** e a **seta circular** **atualiza o conteúdo da pasta**. Estes dois ícones são adaptados do **Lucide** (`arrow-up` e `rotate-cw`). O ícone da seta para cima tem origem no **Feather**.
 
 Consulte [licenses/Lucide-LICENSE.txt](licenses/Lucide-LICENSE.txt) para os avisos ISC e MIT completos no código-fonte, ou `Lucide-LICENSE.txt` na pasta de instalação. Consulte <https://lucide.dev/license>.
 

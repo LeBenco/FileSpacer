@@ -13,12 +13,12 @@ SQLite 3.53.4 is statically linked into the application. It is in the public dom
 The unmodified sources and their provenance are in `third_party/sqlite`.
 See <https://sqlite.org/copyright.html>.
 
-## Lucide and Feather
+## Up and Refresh button icons (Lucide and Feather)
 
-The Up and Refresh buttons use paths adapted from Lucide's `arrow-up` and
-`rotate-cw` icons, drawn with Windows GDI+. The arrow is also covered by the
-Feather MIT notice included in Lucide's complete license. Geometry, stroke width,
-and refresh orientation have been adapted for FileSpacer.
+In the toolbar, the **up arrow** opens the **parent folder**, and the
+**circular arrow** **refreshes the folder contents**. These two icons are adapted
+from **Lucide** (`arrow-up` and `rotate-cw`). The up-arrow icon originally comes
+from **Feather**.
 
 See [licenses/Lucide-LICENSE.txt](licenses/Lucide-LICENSE.txt) for the complete
 ISC and MIT notices in the source tree, or `Lucide-LICENSE.txt` in the installation

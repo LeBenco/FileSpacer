@@ -6,9 +6,9 @@ FileSpacer è basato su [ChromaFiler](https://github.com/vanjac/chromafiler), Co
 
 SQLite 3.53.4 è collegato staticamente all’applicazione ed è di pubblico dominio. I sorgenti non modificati e le informazioni sulla loro provenienza si trovano in `third_party/sqlite`. Vedi <https://sqlite.org/copyright.html>.
 
-## Lucide e Feather
+## Icone dei pulsanti Su e Aggiorna (Lucide e Feather)
 
-I pulsanti Su e Aggiorna usano tracciati adattati dalle icone Lucide `arrow-up` e `rotate-cw`, disegnati con Windows GDI+. La freccia è coperta anche dalla nota MIT di Feather inclusa nella licenza completa di Lucide. Geometria, spessore del tratto e orientamento dell’icona di aggiornamento sono stati adattati per FileSpacer.
+Nella barra degli strumenti, la **freccia verso l’alto** apre la **cartella superiore** e la **freccia circolare** **aggiorna il contenuto della cartella**. Le due icone sono adattate da **Lucide** (`arrow-up` e `rotate-cw`). L’icona della freccia verso l’alto proviene originariamente da **Feather**.
 
 Vedi [licenses/Lucide-LICENSE.txt](licenses/Lucide-LICENSE.txt) per le note ISC e MIT complete nei sorgenti, oppure `Lucide-LICENSE.txt` nella cartella di installazione. Vedi <https://lucide.dev/license>.
 
