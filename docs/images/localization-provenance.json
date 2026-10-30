@@ -74,10 +74,12 @@
     {
       "file": "mixed-sorting-de.png",
       "language": "de-DE",
-      "width": 786,
-      "height": 513,
-      "sha256": "68adfb64d725f94bed9e58e9e66334857f30292cc8ef1a51e63fd7cae3e384ef",
-      "run": "a25726cbcc2540df82569246c380fd99"
+      "width": 946,
+      "height": 553,
+      "sha256": "5898d3a173f3aed027e0519bcd161299b591a274d877675a4b65dfd5f706974e",
+      "run": "ecd16bf3ecde446ea12f050ea170a546",
+      "version": "1.2.3",
+      "defaultNavigation": true
     },
     {
       "file": "nilesoft-navigation-default-de.png",
@@ -170,10 +172,12 @@
     {
       "file": "mixed-sorting-it.png",
       "language": "it-IT",
-      "width": 786,
-      "height": 513,
-      "sha256": "d3d6dfd47f3c5bb5e519d889f3436a20c95bc723ce6797d6da92035e18fa791c",
-      "run": "a25726cbcc2540df82569246c380fd99"
+      "width": 946,
+      "height": 553,
+      "sha256": "22130dbe1798e20c3a78fca434d07c8e775e4b85f12580e80b48b362b5546bfe",
+      "run": "ecd16bf3ecde446ea12f050ea170a546",
+      "version": "1.2.3",
+      "defaultNavigation": true
     },
     {
       "file": "nilesoft-navigation-default-it.png",
@@ -266,10 +270,12 @@
     {
       "file": "mixed-sorting-es.png",
       "language": "es-ES",
-      "width": 786,
-      "height": 513,
-      "sha256": "dd4e5a2c5f9baf826ec9920a95df1241f3734202ff471be80f4dc40e53f393bb",
-      "run": "a25726cbcc2540df82569246c380fd99"
+      "width": 946,
+      "height": 553,
+      "sha256": "0c69d3a6eabec5e5377d105b96613d14f3407d45a70f66412411d94460f53d4c",
+      "run": "ecd16bf3ecde446ea12f050ea170a546",
+      "version": "1.2.3",
+      "defaultNavigation": true
     },
     {
       "file": "nilesoft-navigation-default-es.png",
@@ -362,10 +368,12 @@
     {
       "file": "mixed-sorting-pt.png",
       "language": "pt-PT",
-      "width": 786,
-      "height": 513,
-      "sha256": "999e73542d27ed18644e8f6262ff0ff5e72bfa77ee61c2017b965fefb9fd28a5",
-      "run": "a25726cbcc2540df82569246c380fd99"
+      "width": 946,
+      "height": 553,
+      "sha256": "d12d49f56213bcc8ca5bcf7dd38e40b8cc0a188b72c2bda26f4bf615d00921fe",
+      "run": "ecd16bf3ecde446ea12f050ea170a546",
+      "version": "1.2.3",
+      "defaultNavigation": true
     },
     {
       "file": "nilesoft-navigation-default-pt.png",
@@ -458,10 +466,12 @@
     {
       "file": "mixed-sorting-el.png",
       "language": "el-GR",
-      "width": 786,
-      "height": 513,
-      "sha256": "e17b84a5bc297659e0475965f5febc853acb7c0634d375f93c89557e15aed182",
-      "run": "a25726cbcc2540df82569246c380fd99"
+      "width": 946,
+      "height": 553,
+      "sha256": "b95e76bd751802b95a5e43f503e8ef972a44f18c5706e647b8889ee9431ce300",
+      "run": "ecd16bf3ecde446ea12f050ea170a546",
+      "version": "1.2.3",
+      "defaultNavigation": true
     },
     {
       "file": "nilesoft-navigation-default-el.png",
@@ -495,5 +505,11 @@
       "sha256": "968f14b02199c00ea62637dd3d2b5ec70a6c38754e8467002998e7ca6894233b",
       "run": "432cdd6794a3401aadb462c495d75a4e"
     }
-  ]
+  ],
+  "mixedSortingUpdate": {
+    "date": "2026-10-30",
+    "version": "1.2.3",
+    "reference": "mixed-sorting-provenance.json",
+    "reason": "Default navigation restored and fictional filenames localized."
+  }
 }
