@@ -28,9 +28,9 @@ parent keeps its selection. Control Panel opens in its own Windows window.
 
 ### Icon layout
 
-Turn off **Auto arrange icons** in an icon view to position files and subfolders
-freely. Their positions are saved independently of the window's size and position,
-including when its saved state is locked.
+Icon views let you position files and subfolders freely when
+**Auto arrange icons** is turned off. Their positions are saved independently of
+the window's size and position, including when its saved state is locked.
 
 ### View options
 
@@ -104,10 +104,12 @@ the changes available to open FileSpacer windows.
 
 ### Locking a saved layout
 
-Enable **Settings > General > Enable window state locking** (off by default), then choose
-**Lock window state** in the menu beside a folder's title. Locking captures its
-position, size and view settings. A **padlock badge on the folder icon in the
-title bar**, beside the folder name, identifies a locked layout.
+Locking captures a folder's position, size and view settings as the layout to
+restore when reopening it. To use this optional feature, enable
+**Settings > General > Enable window state locking** (off by default), then
+choose **Lock window state** in the menu beside a folder's title. A **padlock
+badge on the folder icon in the title bar**, beside the folder name, identifies
+a locked layout.
 
 <img src="images/locked-title.png" alt="Close-up of the title bar: a padlock badge overlays the folder icon beside Studio project." width="420">
 
@@ -160,9 +162,12 @@ preferences, some of which also affect FileSpacer's file view.
 
 ### Everything
 
-Install [Everything](https://www.voidtools.com/) separately, then enable it in
-**Settings > Integration**. Leave its executable path empty for automatic
-detection, use **Detect**, or choose its `.exe` manually for a portable install.
+If you use [Everything](https://www.voidtools.com/), you can integrate it with
+FileSpacer to run advanced searches directly from its search field.
+
+To use this optional integration, enable it in **Settings > Integration**.
+Leave its executable path empty for automatic detection, use **Detect**, or
+choose its `.exe` manually for a portable install.
 
 Choose the search scope: the current folder and its subfolders, or **Everywhere**.
 Virtual folders have no filesystem scope; use Everywhere for them.

@@ -19,7 +19,7 @@ Beim Wechsel zum übergeordneten Ordner wird der Ausgangsordner nicht ausgewähl
 
 ### Symbolanordnung
 
-Deaktivieren Sie in einer Symbolansicht **Symbole automatisch anordnen**, um Dateien und Unterordner frei zu platzieren. Ihre Positionen werden unabhängig von Fenstergröße und -position gespeichert, auch bei gesperrtem Fensterzustand.
+In einer Symbolansicht können Sie Dateien und Unterordner frei platzieren, wenn **Symbole automatisch anordnen** deaktiviert ist. Ihre Positionen werden unabhängig von Fenstergröße und -position gespeichert, auch bei gesperrtem Fensterzustand.
 
 ### Ansichtsoptionen
 
@@ -71,7 +71,7 @@ Die Schaltfläche für die Standardeinstellung setzt eine Aktion zurück. **Zur�
 
 ### Gespeicherten Fensterzustand sperren
 
-Aktivieren Sie **Einstellungen > Allgemein > Sperren des Fensterzustands aktivieren** (standardmäßig deaktiviert). Wählen Sie anschließend **Fensterzustand sperren** im Menü neben dem Ordnertitel. Die Sperre hält Position, Größe und Ansichtseinstellungen fest. Ein **Schlosssymbol auf dem Ordnersymbol in der Titelleiste**, neben dem Ordnernamen, kennzeichnet den gesperrten Zustand.
+Die Sperre hält Position, Größe und Ansichtseinstellungen eines Ordners fest, damit sie beim erneuten Öffnen wiederhergestellt werden. Wenn Sie diese optionale Funktion nutzen möchten, aktivieren Sie **Einstellungen > Allgemein > Sperren des Fensterzustands aktivieren** (standardmäßig deaktiviert). Wählen Sie anschließend **Fensterzustand sperren** im Menü neben dem Ordnertitel. Ein **Schlosssymbol auf dem Ordnersymbol in der Titelleiste**, neben dem Ordnernamen, kennzeichnet den gesperrten Zustand.
 
 <img src="images/locked-title.png" alt="Nahaufnahme der Titelleiste: Ein Schlosssymbol überlagert das Ordnersymbol neben Studio project." width="420">
 
@@ -105,7 +105,9 @@ Die Kontextmenükomponente bietet **Im Windows-Datei-Explorer öffnen** an, wenn
 
 ### Everything
 
-Installieren Sie [Everything](https://www.voidtools.com/) separat und aktivieren Sie es unter **Einstellungen > Integration**. Lassen Sie den Programmpfad zur automatischen Erkennung leer, wählen Sie **Erkennen** oder geben Sie bei einer portablen Installation die `.exe`-Datei selbst an.
+Wenn Sie [Everything](https://www.voidtools.com/) verwenden, können Sie es in FileSpacer integrieren, um erweiterte Suchanfragen direkt über dessen Suchfeld auszuführen.
+
+Um diese optionale Integration zu nutzen, aktivieren Sie sie unter **Einstellungen > Integration**. Lassen Sie den Programmpfad zur automatischen Erkennung leer, wählen Sie **Erkennen** oder geben Sie bei einer portablen Installation die `.exe`-Datei selbst an.
 
 Wählen Sie den Suchbereich: aktueller Ordner mit Unterordnern oder **Überall**. Virtuelle Ordner haben keinen Suchbereich im Dateisystem; verwenden Sie dafür Überall.
 
