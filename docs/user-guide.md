@@ -2,224 +2,142 @@
 
 ## Window navigation
 
-Each folder has one window that remembers its position, size and view settings.
-Reopening an already-open folder activates its window. Moving or renaming a
-folder preserves its saved layout.
+One folder has one window. Reopening an already-open folder brings its window forward; position, size, view settings and icon layout are remembered. Moving or renaming a folder preserves its layout.
 
-- Opening a folder or its parent closes the source window by default. Hold Ctrl
-  to reverse this once, or change the default in **Settings > General**. Opening
-  several selected folders keeps the source window open.
-- The menu beside the folder title switches between open folders. **Close Parent
-  Windows** closes its open ancestors while leaving other folders open.
-- **Ctrl+Shift+T**, or **Reopen Last Closed Window** in the title-bar menu or
-  taskbar Jump List, reopens a closed folder without closing the current one.
-  Its layout and selection are restored; Details and List views also restore
-  the first visible row. The taskbar command can reopen earlier closures in turn.
+- Opening a folder or its parent closes the source window by default. Ctrl reverses this once; the default can be changed in **Settings > General**. Opening several selected folders keeps the source window open.
+- The menu beside the folder title switches between open folders. **Close Parent Windows** closes its open ancestors, leaving other folders open.
+- **Ctrl+Shift+T** reopens the last closed folder without closing the current one. The title menu and taskbar Jump List offer the same command; the latter can go further back through closed folders. Layout and selection return, along with the first visible row in Details and List views.
 - The taskbar Jump List also opens folders pinned in File Explorer's Quick access.
 
-Going to a parent does not select the folder you came from. An already-open
-parent keeps its selection. Control Panel opens in its own Windows window.
+Going to a parent does not select the folder just left. An already-open parent keeps its selection. Control Panel opens in its own Windows window.
 
-![The folder title menu with window navigation and saved-layout locking.](images/window-menu.png)
-
-*The title menu, shown here with a locked window layout.*
+![The folder title menu, with navigation and saved-layout commands.](images/window-menu.png)
 
 ## View and layout
 
 ### Icon layout
 
-Icon views let you position files and subfolders freely when
-**Auto arrange icons** is turned off. Their positions are saved independently of
-the window's size and position, including when its saved state is locked.
+Icon views allow free placement of files and subfolders when **Auto arrange icons** is off. Icon positions are saved independently of window geometry, including when the window's saved layout is locked.
 
 ### View options
 
-Toolbar and status-bar visibility can be changed in **Settings**.
+**Show the full name of a selected file**, in **Settings > Display**, keeps one selected name fully readable in Icons view. It is on by default and does not change multiple selections or other views.
 
-In **Settings > Display**, two options are enabled by default:
+![A long selected filename displayed in full in Icons view.](images/selected-name.png)
 
-- **Show the full name of a selected file** keeps one selected name readable in
-  Icons view. It does not change multiple selections or other view modes.
-- **Preview display modes in the View menu** previews a mode as you hover over
-  it. Click to keep it; Escape or leaving the preview restores the initial view.
-  Previewing does not replace the saved layout.
+**Preview display modes in the View menu**, also on by default, shows each mode on hover. Clicking keeps it; Escape or leaving the preview restores the initial view. A preview never replaces the saved layout.
 
-**Mix folders and files when sorting**, in
-**Settings > Display > Files**, is off by default. Enable it to sort folders and
-files together, as on [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27)
-and [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html).
-It applies to Details, List and automatically arranged icon views. Free icon
-layouts are preserved. Virtual folders and archives retain Windows' ordering.
+**Mix folders and files when sorting** sorts both together, as on [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) and [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). The option is off by default in **Settings > Display > Files**. It applies to Details, List and automatically arranged icon views; free layouts are preserved. Virtual folders and archives keep Windows' ordering.
 
-![A folder window with fictional folders and files mixed in alphabetical order.](images/mixed-sorting.png)
+![Files and folders sharing the same alphabetical order.](images/mixed-sorting.png)
 
-*Folders and files share the same alphabetical order.*
+Toolbar and status-bar visibility can also be changed in Settings.
 
 ### Window placement
 
-**Settings > General > Place new windows in free space** is enabled by default.
-Folders without a saved position open in available space, with overlap reduced
-when no free space remains. Saved positions take priority. Turning this off uses
-Windows' default placement without moving existing windows.
+Folders without a saved position open in free space, or with reduced overlap when space runs out. Saved positions take priority. **Settings > General > Place new windows in free space** is on by default; switching it off uses Windows' placement without moving existing windows.
 
 ### Selection and activation
 
-With **Settings > General > Keep the current selection when clicking an inactive
-window** enabled, clicking an inactive folder's background activates it without
-clearing the selection. Start a selection rectangle with a second press. Item
-clicks, right-clicks and window gestures retain their usual behavior.
+**Keep the current selection when clicking an inactive window**, in **Settings > General**, lets a background click activate a folder without clearing its selection. A second press starts a selection rectangle. Item clicks, right-clicks and window gestures keep their usual behavior.
 
 ## Managing windows
 
 ### Moving and resizing
 
-Drag in the file area, on its background or an item, using these defaults:
+A window can be moved or resized by dragging anywhere in its file area, including over an item. The defaults are:
 
 | Action | Shortcut |
 | --- | --- |
 | Move the window | Alt + left drag |
 | Resize from the bottom-right corner | Alt + right drag |
 
-**Move the window — Alt + left drag**
+![Moving a window with Alt and a left-button drag.](images/move-window.gif)
 
-![Moving a folder window by holding Alt and dragging in the file area with the left mouse button.](images/move-window.gif)
+![Resizing a window with Alt and a right-button drag.](images/resize-window.gif)
 
-**Resize the window — Alt + right drag**
+Selection stays intact. Escape cancels the gesture. Text fields, headers, scrollbars, toolbars and menus keep their normal behavior; Alt + double-click opens an item's Properties.
 
-![Resizing a folder window by holding Alt and dragging in the file area with the right mouse button.](images/resize-window.gif)
-
-The selection is preserved. Escape cancels the gesture and restores the original
-geometry. Text fields, headers, scrollbars, toolbars and menus keep their normal
-behavior. Alt + double-click on an item opens its Properties.
-
-In **Settings > Shortcuts**, enable or disable each action and expand it to
-change its binding. Use the direct-input area to record a key/button combination.
-Left and right buttons require Alt; the middle button also supports combinations
-without Alt. Modifiers must match exactly. Reserved or duplicate bindings cannot
-be applied.
-
-The default-setting button resets one action. **Revert** restores the last
-applied shortcuts; **Cancel** discards pending edits. **Apply** or **OK** makes
-the changes available to open FileSpacer windows.
+Each action has its own configurable shortcut in **Settings > Shortcuts**. Left and right buttons require Alt; the middle button can also be used without it. Modifiers must match exactly, and reserved or duplicate combinations are refused. Changes apply to open windows; Revert returns to the last applied shortcuts, and Cancel discards pending edits.
 
 ### Locking a saved layout
 
-Locking captures a folder's position, size and view settings as the layout to
-restore when reopening it. To use this optional feature, enable
-**Settings > General > Enable window state locking** (off by default), then
-choose **Lock window state** in the menu beside a folder's title. A **padlock
-badge on the folder icon in the title bar**, beside the folder name, identifies
-a locked layout.
+Locking keeps a folder's position, size and view settings as the layout to restore on reopening. The feature is off by default in **Settings > General > Enable window state locking**. Once enabled, **Lock window state** is available beside the folder title. A padlock badge on its folder icon marks a locked layout.
 
-<img src="images/locked-title.png" alt="Close-up of the title bar: a padlock badge overlays the folder icon beside Studio project." width="420">
+<img src="images/locked-title.png" alt="Close-up of the folder title and its padlock badge." width="280">
 
-*The padlock badge marks the saved layout as locked.*
+Temporary changes remain possible; reopening restores the locked layout. Individual icon positions still save normally. **Unlock window state** keeps the current layout. Hiding the badge does not remove the lock.
 
-You can still move, resize and change the view temporarily. Reopening the folder
-restores the locked layout. Individual icon positions continue to save normally.
-**Unlock window state** keeps the current layout. The badge can be hidden in
-General settings without removing the lock.
-
-Disabling the feature asks for confirmation and removes all saved locks,
-including those on closed folders. Enabling it again does not restore them.
+Switching the feature off asks for confirmation and removes all locks, including those on closed folders. Switching it back on does not restore them.
 
 ## Search and history
 
-Type in the search field and press Enter or click the magnifier to filter the
-current folder. **Settings > General > Filter while typing** applies the filter
-as you type. This local filter never launches Everything automatically.
+Enter all or part of a file or folder name, then press Enter or click the magnifier to filter the current folder. **Filter while typing**, in **Settings > General**, applies it as text is entered. This local filter never launches Everything automatically.
 
-Focusing the field shows recent searches and, when enabled,
-**Search in Everything**. Use Up/Down and Enter to choose an entry, or click it.
-Enter without a selected suggestion submits the local filter. Escape closes
-the list without erasing your text; Ctrl+F focuses the field again.
+The field offers recent searches and, when enabled, **Search in Everything**. Up/Down and Enter select a suggestion; Enter without one applies the local filter. Escape closes the list without erasing the text, and Ctrl+F focuses the field.
 
-History keeps five different submitted searches per folder by default. Change
-the limit in General settings from 0 to 20; 0 clears and disables history.
-Typing alone does not add a history entry. See [Everything](#everything) for
-searching subfolders or all indexed files.
+History keeps five distinct submitted searches per folder by default. Its limit is adjustable from 0 to 20 in General settings; 0 clears and disables it. Typing alone does not add an entry. [Everything](#everything) can search subfolders or all indexed files.
 
-![Search suggestions with Everything and recent queries for fictional project files.](images/search.png)
-
-*Everything is a separate action; recent searches filter the current folder.*
+![The search field with Everything and recent-search suggestions.](images/search.png)
 
 ## Integration
 
 ### Windows integration
 
-The installer offers **Make FileSpacer the default file manager**, unchecked by
-default. It also installs the Folder Context Menu component. You can change the
-default later in **Settings > Integration** with **Set as default browser**;
-**Reset default browser** returns folder opening to Windows File Explorer.
+FileSpacer can be set as the default file manager during installation or later in **Settings > Integration** with **Set as default browser**. **Reset default browser** returns folder opening to File Explorer.
 
-The context-menu component offers **Open in Windows File Explorer** when
-FileSpacer is the default, and **Open in FileSpacer** otherwise. It applies to
-folders, drives, compressed folders, network locations and folder backgrounds.
-Installing only this component leaves the default application unchanged.
+The folder context menu offers **Open in FileSpacer**, or **Open in Windows File Explorer** when FileSpacer is the default. This also works on drives, ZIP folders, network locations and folder backgrounds, without requiring a change of default application.
 
-**File Explorer options** on the same settings page opens Windows folder
-preferences, some of which also affect FileSpacer's file view.
+File types open with their usual Windows application. Network folders, previews and installed context-menu commands also use Windows' usual handling. **File Explorer options** opens shared folder preferences, some of which affect FileSpacer too.
 
 ### Everything
 
-If you use [Everything](https://www.voidtools.com/), you can integrate it with
-FileSpacer to run advanced searches directly from its search field.
+An existing [Everything](https://www.voidtools.com/) installation can be integrated to run advanced searches from FileSpacer's search field. Results open in Everything.
 
-To use this optional integration, enable it in **Settings > Integration**.
-Leave its executable path empty for automatic detection, use **Detect**, or
-choose its `.exe` manually for a portable install.
+The option is enabled in **Settings > Integration**. Everything can be found automatically or with **Detect**; a portable copy can be selected manually. The scope is the current folder and its subfolders, or **Everywhere**; virtual folders require Everywhere.
 
-Choose the search scope: the current folder and its subfolders, or **Everywhere**.
-Virtual folders have no filesystem scope; use Everywhere for them.
+Selecting **Search in Everything** sends the entered query, using Everything's syntax. A successful launch clears FileSpacer's field and local filter; an error keeps them for another attempt.
 
-Enter a query in FileSpacer's search field and choose **Search in Everything**
-from its suggestions. Results open in Everything, using its index and search
-syntax. A successful launch clears FileSpacer's field and local filter; a launch
-error keeps both so you can retry.
+![A query in FileSpacer with the matching Everything results alongside it.](images/everything-search.png)
 
 ### Nilesoft Shell
 
-If you use [Nilesoft Shell](https://nilesoft.org/), you can also let it theme
-FileSpacer's menus and customize their entries.
+[Nilesoft Shell](https://nilesoft.org/) can style FileSpacer's menus and customize their commands. Adapting its configuration is recommended for a consistent appearance, particularly square corners on the title-bar and toolbar menus.
 
-For this optional integration, adjusting the Nilesoft configuration is
-recommended so the menus fit FileSpacer's appearance, particularly by using
-square corners for the title-bar and toolbar menus.
+The [configuration reference](nilesoft-shell.md) covers allowing FileSpacer, retaining the theme and keeping Explorer-only rules out of its menus. After a configuration change, unregistering and registering Nilesoft Shell applies it to newly opened menus.
 
-The [configuration reference and examples](nilesoft-shell.md) explain how to
-allow FileSpacer, keep your theme import and scope Explorer-only rules. If you
-change the configuration, unregister and register Nilesoft Shell again to apply
-the changes to newly opened menus.
-
-The Modern theme below uses its default rounded corners on the left and the
-recommended square corners on the right.
+The Modern theme below compares its default corners with the recommended square corners.
 
 **Navigation menu**
 
 | Default corners | Recommended square corners |
 | --- | --- |
-| <img src="images/nilesoft-navigation-default.png" alt="Title-bar navigation menu with the Modern theme's default rounded corners." width="320"> | <img src="images/nilesoft-navigation-adapted.png" alt="The same title-bar navigation menu with the recommended square corners." width="320"> |
+| <img src="images/nilesoft-navigation-default.png" alt="Navigation menu with default rounded corners." width="320"> | <img src="images/nilesoft-navigation-adapted.png" alt="The same menu with square corners." width="320"> |
 
 **Main menu (…)**
 
 | Default corners | Recommended square corners |
 | --- | --- |
-| <img src="images/nilesoft-main-menu-default.png" alt="Main menu with the Modern theme's default rounded corners." width="320"> | <img src="images/nilesoft-main-menu-adapted.png" alt="The same main menu with the recommended square corners." width="320"> |
+| <img src="images/nilesoft-main-menu-default.png" alt="Main menu with default rounded corners." width="320"> | <img src="images/nilesoft-main-menu-adapted.png" alt="The same menu with square corners." width="320"> |
 
 ## Settings and updates
 
-**Preferences.** **Ctrl+,** opens Settings, even with the toolbar hidden.
-The interface follows Windows' display language, with English as the fallback;
-changing the language requires restarting.
+Ctrl+, opens Settings, even with the toolbar hidden. The interface follows Windows' display language, with English as fallback; a language change needs a restart. F1 opens the installed guide, also available offline.
 
-**Updates.** Check for a new release in **Settings > About**, then choose
-**Install FileSpacer vX.Y.Z** to update. Installation requires confirmation;
-updates are never installed automatically. After installation, FileSpacer reopens
-the previously open folders with their saved layouts. Optional weekly checks
-are off by default and can be enabled in About.
+Updates are checked in **Settings > About**. Downloading and installing require confirmation; installation is never automatic. Afterwards, previously open folders return with their saved layouts. Optional weekly checks are off by default and can be enabled in About.
 
-**Maintenance.** **Settings > About > Maintenance > Reset all folder state**
-closes open folder windows and clears their saved layouts, history and
-window-state locks. Your files and global preferences are preserved.
+## Local data
 
-**Documentation.** Choose **Documentation** above **FileSpacer Settings** in the main menu, press **F1**, or use the button in **Settings > About**. The installed guide opens in your browser in the Windows display language, with English as the fallback. Pages, images and search work offline; the language selector lets you switch translations.
+Folder layouts, window locks, searches and closed-folder history are stored locally in `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. General preferences are in the Windows Registry at `HKEY_CURRENT_USER\Software\FileSpacer`. Saved state can contain folder paths, including network paths. Temporary update files and the list of folders to reopen stay in `%TEMP%\FileSpacerUpdate-{GUID}`.
+
+**Settings > About > Maintenance > Reset all folder state** closes folder windows and clears their saved layouts, history and locks. Files and general preferences are preserved.
+
+For troubleshooting, `FileSpacer.exe /reset-options` resets general preferences; `/reset-all` also clears saved folder state. Neither deletes files, changes Windows file associations or removes existing diagnostic reports.
+
+## Privacy
+
+FileSpacer has no telemetry, usage tracking or advertising. Crash reports are not sent automatically. Any diagnostic reports stay in `%LOCALAPPDATA%\FileSpacer`; sharing them is optional and may reveal file paths or parts of process memory.
+
+Update checks and downloads contact GitHub over HTTPS. GitHub receives the usual connection information, including the IP address and application version, but no folder state, file paths or diagnostic reports.
+
+Network-drive credentials are entered and handled by Windows, as in File Explorer. FileSpacer does not read or store them. Choosing an Everything search passes the query and, for a folder-scoped search, its path to the local Everything application.
