@@ -131,7 +131,10 @@ function Track-UiFolder([string]$Path) {
     Register-UiWindowProcess $window
     Wait-Ui {
         if (![FileSpacerRegression.Native]::IsWindowVisible($window)) { return $false }
-        $view=Get-UiView $window
+        # A retargeted window may already have its new caption while its old
+        # view has gone and the new IFolderView service is not available yet.
+        try { $view=Get-UiView $window }
+        catch [InvalidCastException] { return $false }
         if ($null -eq $view) { return $false }
         try { return $view.ContentVisible -and $view.Count -ge 0 } finally { $view.Dispose() }
     } 'visible navigation target with registered Shell view' 300
