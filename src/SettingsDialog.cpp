@@ -3,6 +3,7 @@
 #include "Everything.h"
 #include "FolderStateStore.h"
 #include "CreateItemWindow.h"
+#include "ItemWindow.h"
 #include "ClosedWindows.h"
 #include "Update.h"
 #include "UpdateInstaller.h"
@@ -893,18 +894,22 @@ void requestSettingsDialogClose() {
 // property sheet owned by a window of the caller's class, with the dialog's
 // caption. Nothing else of that class owns a window with this caption.
 static HWND findSettingsDialog(HWND owner) {
-    struct Search { wchar_t ownerClass[64]; std::wstring caption; HWND found; } search = {};
+    struct Search { wchar_t ownerClass[64]; std::wstring caption; HWND found; bool test; } search = {};
     if (!GetClassNameW(owner, search.ownerClass, ARRAYSIZE(search.ownerClass))) return nullptr;
     search.caption = getString(IDS_SETTINGS_CAPTION);
+    search.test = GetPropW(owner, L"FileSpacer.PlacementTest") != nullptr;
     EnumWindows([](HWND window, LPARAM data) -> BOOL {
         auto &search = *reinterpret_cast<Search *>(data);
         wchar_t windowClass[64] = {}, caption[128] = {};
         const HWND dialogOwner = GetWindow(window, GW_OWNER);
-        if (dialogOwner && GetClassNameW(window, windowClass, ARRAYSIZE(windowClass))
+        if (dialogOwner && IsWindowVisible(window)
+                && (GetPropW(dialogOwner, L"FileSpacer.PlacementTest") != nullptr) == search.test
+                && GetClassNameW(window, windowClass, ARRAYSIZE(windowClass))
                 && lstrcmpW(windowClass, L"#32770") == 0
                 && GetClassNameW(dialogOwner, windowClass, ARRAYSIZE(windowClass))
                 && lstrcmpW(windowClass, search.ownerClass) == 0
-                && GetWindowTextW(window, caption, ARRAYSIZE(caption)) && search.caption == caption) {
+                && (GetPropW(window, L"FileSpacer.Preferences")
+                    || (GetWindowTextW(window, caption, ARRAYSIZE(caption)) && search.caption == caption))) {
             search.found = window;
             return FALSE;
         }
@@ -913,15 +918,69 @@ static HWND findSettingsDialog(HWND owner) {
     return search.found;
 }
 
+namespace {
+struct SettingsMutexDeleter {
+    void operator()(HANDLE mutex) const { ReleaseMutex(mutex); CloseHandle(mutex); }
+};
+struct SettingsRequest {
+    HWND owner = nullptr;
+    LONG_PTR identity = 0;
+    SettingsPage page = SETTINGS_GENERAL;
+    UINT_PTR timer = 0;
+    bool processLocked = false;
+    CComPtr<ItemWindow> lifetime;
+    void cancel() {
+        if (timer) KillTimer(nullptr, timer);
+        timer = 0; owner = nullptr; lifetime.Release();
+        if (processLocked) { processLocked = false; unlockProcess(); }
+    }
+};
+SettingsRequest settingsRequest;
+
+void CALLBACK retrySettings(HWND, UINT, UINT_PTR timer, DWORD) {
+    if (timer != settingsRequest.timer) return;
+    const HWND owner = settingsRequest.owner;
+    const SettingsPage page = settingsRequest.page;
+    CComPtr<ItemWindow> lifetime = settingsRequest.lifetime;
+    const bool current = IsWindow(owner)
+        && GetWindowLongPtrW(owner, GWLP_USERDATA) == settingsRequest.identity;
+    settingsRequest.cancel();
+    if (current) openSettingsDialog(owner, page);
+}
+
+void queueSettings(HWND owner, SettingsPage page) {
+    settingsRequest.owner = owner;
+    settingsRequest.identity = GetWindowLongPtrW(owner, GWLP_USERDATA);
+    settingsRequest.page = page;
+    settingsRequest.lifetime = ItemWindow::fromChildWindow(owner);
+    // The timer retries the reservation; elapsed time never grants ownership.
+    // A thread timer also observes a closed owner instead of retaining it forever.
+    settingsRequest.timer = SetTimer(nullptr, 0, 50, retrySettings);
+    if (checkLE(settingsRequest.timer != 0)) {
+        lockProcess();
+        settingsRequest.processLocked = true;
+    } else settingsRequest.cancel();
+}
+}
+
 void openSettingsDialog(HWND owner, SettingsPage page) {
+    settingsRequest.cancel();
+    if (!IsWindow(owner)) return;
     if (settingsDialog) {
         SetActiveWindow(settingsDialog);
         PropSheet_SetCurSel(settingsDialog, nullptr, page);
         return;
     }
-    // One dialog per user session: a dialog shown by another FileSpacer
-    // process is activated instead of opening a second one. It stays attached
-    // to its own calling window, which still cancels it when it closes.
+    const wchar_t *mutexName = GetPropW(owner, L"FileSpacer.PlacementTest")
+        ? L"Local\\FileSpacer.Test.Preferences" : L"Local\\FileSpacer.Preferences";
+    std::unique_ptr<void, decltype(&CloseHandle)> mutex(CreateMutexW(nullptr, FALSE, mutexName), &CloseHandle);
+    if (!checkLE(mutex != nullptr)) return;
+    const DWORD waited = WaitForSingleObject(mutex.get(), 0);
+    if (!checkLE(waited != WAIT_FAILED)) return;
+    const bool acquired = waited == WAIT_OBJECT_0 || waited == WAIT_ABANDONED;
+    // Keep the reservation until the modal PropertySheet has been destroyed,
+    // including its initialization and all close-time cleanup.
+    std::unique_ptr<void, SettingsMutexDeleter> reservation(acquired ? mutex.release() : nullptr);
     if (const HWND remote = findSettingsDialog(owner)) {
         DWORD process = 0;
         GetWindowThreadProcessId(remote, &process);
@@ -929,6 +988,10 @@ void openSettingsDialog(HWND owner, SettingsPage page) {
         if (IsIconic(remote)) ShowWindow(remote, SW_RESTORE);
         SetForegroundWindow(remote);
         PropSheet_SetCurSel(remote, nullptr, page);
+        return;
+    }
+    if (!acquired) {
+        queueSettings(owner, page);
         return;
     }
     resetFolderStateRequested = false;
@@ -979,8 +1042,10 @@ void openSettingsDialog(HWND owner, SettingsPage page) {
     sheet.nStartPage = page;
     sheet.ppsp = pages;
     sheet.pfnCallback = [](HWND window, UINT message, LPARAM) -> int {
-        if (message == PSCB_INITIALIZED)
+        if (message == PSCB_INITIALIZED) {
             settingsDialog = window;
+            checkLE(SetPropW(window, L"FileSpacer.Preferences", reinterpret_cast<HANDLE>(1)));
+        }
         return 0;
     };
 
