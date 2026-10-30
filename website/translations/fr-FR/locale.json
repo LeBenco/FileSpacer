@@ -3,7 +3,6 @@
   "description": "Gestionnaire de fichiers spatial pour Windows",
   "overview": "Présentation",
   "user-guide": "Guide d’utilisation",
-  "privacy-policy": "Confidentialité",
   "changelog": "Historique des versions",
   "third-party-notices": "Composants tiers",
   "language": "Langue",
@@ -11,10 +10,12 @@
   "submenu": "Sous-menu",
   "search": "Rechercher dans FileSpacer",
   "noResults": "Aucun résultat",
-  "download": "Télécharger",
+  "download": "Télécharger {version}",
   "repository": "FileSpacer sur GitHub",
   "back": "Retour en haut",
   "skip": "Aller au contenu principal",
   "attribution": "Ce site utilise <a href=\"https://github.com/just-the-docs/just-the-docs\">Just the Docs</a>, un thème de documentation pour Jekyll.",
-  "license": "Distribué sous"
+  "license": "Distribué sous",
+  "enlargeImage": "Agrandir la capture",
+  "closeImage": "Fermer l’image"
 }
