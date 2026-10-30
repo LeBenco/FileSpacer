@@ -54,11 +54,26 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
     ['privacy-policy--windows-and-external-applications', 'privacy'],
   ]) assert.ok(html.includes(`id="${alias}" data-alias-for="user-guide--${target}"`));
   const screenshots = [...html.matchAll(/<a class="screenshot-link"[^>]+><img\b[^>]+><\/a>/g)];
-  assert.equal(screenshots.length, [...html.matchAll(/<img\b[^>]*src="[^"]+\.(?:png|gif)"/g)].length);
+  assert.equal(screenshots.length, [...html.matchAll(/<img\b[^>]*src="[^"]+\.(?:png|gif)\?v=[a-f0-9]{12}"/g)].length);
   assert.ok(screenshots.length > 0);
   assert.ok(screenshots.every(([link]) => !link.includes('.svg')));
-  assert.match(html, /screenshot-link" href="assets\/content\/docs\/images\/spatial-windows\.png"/);
+  assert.match(html, /screenshot-link" href="assets\/content\/docs\/images\/spatial-windows\.png\?v=[a-f0-9]{12}"/);
   await fs.access(path.join(output, 'assets/content/src/res/FileSpacer.svg'));
+});
+
+test('replacing an image changes both its thumbnail and popup URL while unchanged images keep their cache key', async t => {
+  const root = await fixture(t);
+  const output = path.join(root, 'output');
+  await generate(root, output);
+  const before = await fs.readFile(path.join(output, 'index.html'), 'utf8');
+  const imageUrl = (html, name) => html.match(new RegExp(`href="(assets/content/docs/images/${name}\\.png\\?v=[a-f0-9]{12})"`))[1];
+  await fs.copyFile(path.join(root, 'docs/images/selected-name.png'), path.join(root, 'docs/images/spatial-windows.png'));
+  await generate(root, output);
+  const after = await fs.readFile(path.join(output, 'index.html'), 'utf8');
+  const updated = imageUrl(after, 'spatial-windows');
+  assert.notEqual(updated, imageUrl(before, 'spatial-windows'));
+  assert.ok(after.includes(`src="${updated}"`));
+  assert.equal(imageUrl(after, 'window-menu'), imageUrl(before, 'window-menu'));
 });
 
 test('download version skips unreleased notes and follows the newest release', async t => {
@@ -120,7 +135,8 @@ test('all available translations keep English section IDs, localized navigation 
     assert.ok(nav.indexOf('language-picker') < nav.indexOf('<ul class="nav-list">'));
     assert.ok(nav.includes('hreflang="' + language.code + '"'));
     assert.ok(config.includes('lang: ' + language.code));
-    assert.match(config, /v\d+\.\d+\.\d+/);
+    const ui = JSON.parse(config.match(/^fs_ui: (.+)$/m)[1]);
+    assert.match(ui.download, /v\d+\.\d+\.\d+/);
     assert.doesNotMatch(config, /\{version\}/);
     assert.match(html, /class="screenshot-link"[^>]+aria-label="[^"]+"/);
     assert.ok(config.includes('baseurl: /FileSpacer' + (language.path ? '/' + language.path : '')));
