@@ -177,6 +177,8 @@ protected:
     void onCreate() override;
     void onDestroy() override;
     bool onCommand(WORD command) override;
+    void restoreReferenceLayout();
+    void fitWindowToContents();
     LRESULT onDropdown(int command, POINT pos) override;
     LRESULT onNotify(NMHDR *notification) override;
     void onActivate(WORD state, HWND prevWindow) override;
