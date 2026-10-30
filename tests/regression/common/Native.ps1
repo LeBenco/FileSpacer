@@ -14,7 +14,7 @@ function Build-NativeTest {
     param([Parameter(Mandatory=$true)][string]$Name,
         [Parameter(Mandatory=$true)][string]$CaseDirectory,
         [string[]]$ProductionSources=@(), [switch]$Sqlite, [switch]$Storage,
-        [ValidateSet('','Menu','Shell','Settings','View','Adapters','Geometry','LockBadge','Documentation')][string]$Extract='',
+        [ValidateSet('','Menu','Shell','Settings','View','Adapters','Geometry','LockBadge','Documentation','JumpLists')][string]$Extract='',
         [switch]$Resources, [switch]$CommonControls, [string[]]$Libraries=@(),
         [ValidateSet('c++14','c++17')][string]$Standard='c++17', [string[]]$Defines=@(),
         [string]$OutputDirectory='')
