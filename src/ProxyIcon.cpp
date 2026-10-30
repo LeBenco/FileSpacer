@@ -208,6 +208,12 @@ void ProxyIcon::setIcon(HICON icon) {
 // moving, activation and double-click maximization; no simulated dragging is used.
 LRESULT CALLBACK ProxyIcon::captionProc(HWND window, UINT message,
         WPARAM wParam, LPARAM lParam, UINT_PTR id, DWORD_PTR) {
+    if (message == WM_COMMAND && !lParam) {
+        // Nilesoft Shell's window.command targets this menu owner. Queue the
+        // same stable command on the real host instead of running it in NS.
+        PostMessageW(GetParent(window), WM_COMMAND, wParam, 0);
+        return 0;
+    }
     if (message == WM_NCHITTEST)
         return HTTRANSPARENT;
     if (message == WM_NCDESTROY)
