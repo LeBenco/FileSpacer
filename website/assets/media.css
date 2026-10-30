@@ -27,7 +27,7 @@
   max-height: calc(100vh - 2rem);
   border: 1px solid #dddde4;
   border-radius: 0.5rem;
-  background: #fff;
+  background: #eceef2;
 }
 
 .image-dialog::backdrop {
@@ -39,6 +39,7 @@
   max-width: calc(100vw - 4rem);
   max-height: calc(100vh - 6rem);
   object-fit: contain;
+  outline: 1px solid #c4c6ce;
 }
 
 .image-dialog-small img {
