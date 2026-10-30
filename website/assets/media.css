@@ -42,7 +42,7 @@
 }
 
 .image-dialog-small img {
-  width: min(28rem, calc(100vw - 4rem));
+  width: min(28rem, calc(100vw - 4rem), calc((100vh - 6rem) * var(--image-aspect-ratio, 1)));
 }
 
 .image-dialog-close {
