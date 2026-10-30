@@ -47,8 +47,12 @@ La compilation utilise MSVC/NMAKE, Visual Studio 2022 Build Tools avec ATL et un
 
 Les tests de non-régression associent des scénarios PowerShell à des outils C++ et C# pour les vérifications internes et les tests réels de l’interface Windows et du Shell. Exécutez-les avec `tests.cmd`, en local ou dans une VM Hyper-V configurée. Consultez le [guide des tests](tests/regression/README.md).
 
----
+## Licence et crédits
 
 FileSpacer est un dérivé de [ChromaFiler](https://github.com/vanjac/chromafiler), créé par J. van’t Hoog (vanjac). Un grand merci à vanjac pour cette base !
 
-Distribué sous [GNU GPL v3.0](LICENSE). Copyright © 2026 Benco pour les modifications de FileSpacer ; code ChromaFiler d’origine © 2023 J. van’t Hoog. Consultez les [mentions des composants tiers](THIRD_PARTY_NOTICES.md) et la [politique de confidentialité](docs/privacy-policy.md).
+Copyright © 2026 Benco pour les modifications de FileSpacer ; code ChromaFiler d’origine © 2023 J. van’t Hoog.
+
+FileSpacer est distribué sous GNU GPL v3.0. La licence complète se trouve dans [LICENSE](LICENSE) dans les sources, ou `LICENSE.txt` dans le dossier d’installation. FileSpacer est fourni sans garantie ; sa redistribution et sa modification sont autorisées dans les conditions de cette licence.
+
+Voir les [mentions des composants tiers](THIRD_PARTY_NOTICES.md) et la [politique de confidentialité](docs/privacy-policy.md).
