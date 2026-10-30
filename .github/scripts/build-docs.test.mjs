@@ -63,7 +63,7 @@ initSearch();`;
   assert.throws(() => offlineSearch('function initSearch() {}', {}), /theme search loader changed/);
 });
 
-test('installer removes only the documentation files it owns', async t => {
+test('installer dispatches removal to the installed inventory', async t => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'filespacer-docs-nsis-'));
   t.after(() => {
     assert.equal(path.dirname(directory), os.tmpdir());
@@ -73,8 +73,7 @@ test('installer removes only the documentation files it owns', async t => {
   await installerInclude(output, ['index.html', 'fr/index.html', 'fr/assets/a.css']);
   const include = await fs.readFile(output + '.nsh', 'utf8');
   assert.match(include, /File "\$\{FILESPACER_DOCS\}\\fr\\assets\\a.css"/);
-  assert.match(include, /Delete "\$INSTDIR\\help\\fr\\index.html"/);
+  assert.match(include, /!macro RemoveDocumentation\r?\n  !insertmacro CleanInstalledDocumentation "Uninstall" uninstall_failed/);
+  assert.doesNotMatch(include, /Delete |RMDir /);
   assert.doesNotMatch(include, /\/r|\*/i);
-  assert.ok(include.indexOf('RMDir "$INSTDIR\\help\\fr\\assets"') < include.indexOf('RMDir "$INSTDIR\\help\\fr"'));
-  assert.ok(include.indexOf('RMDir "$INSTDIR\\help\\fr"') < include.indexOf('RMDir "$INSTDIR\\help"'));
 });
