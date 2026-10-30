@@ -20,9 +20,11 @@ using System.Reflection;
 [assembly: AssemblyInformationalVersion("1.1.10")]
 public static class InstallerTestPayload {
     public static void Main(string[] args) {
-        if (args.Length == 2 && args[0] == "/hold") {
-            System.IO.File.WriteAllText(args[1], "ready");
-            System.Threading.Thread.Sleep(10000);
+        if (args.Length == 3 && args[0] == "/hold") {
+            using (var release = System.Threading.EventWaitHandle.OpenExisting(args[2])) {
+                System.IO.File.WriteAllText(args[1], "ready");
+                if (!release.WaitOne(60000)) System.Environment.Exit(3);
+            }
         }
     }
 }
@@ -89,12 +91,16 @@ try {
     try { if(!$command -or $command.GetValue('') -notlike ('*'+$directory+'*')) { throw 'Context command was not installed under the fixture namespace.' } }
     finally { if($command) { $command.Dispose() } }
     # A running fixture must be detected before an upgrade writes anything.
-    # The inert payload exits by itself; no FileSpacer process is terminated.
+    # Release the inert payload after the check; installer startup can take
+    # longer than a fixed hold delay. No FileSpacer process is terminated.
     $ready=Join-Path $RunDirectory 'holder-ready.txt'
     $heldExecutable=Join-Path $directory 'FileSpacer.exe'
     $heldBytes=[Convert]::ToBase64String([IO.File]::ReadAllBytes($heldExecutable))
-    $holder=Start-Process -FilePath $heldExecutable -ArgumentList ('/hold "'+$ready+'"') -WindowStyle Hidden -PassThru
+    $releaseName='Local\FileSpacerInstallerTests.'+[guid]::NewGuid().ToString('N')
+    $release=[Threading.EventWaitHandle]::new($false,[Threading.EventResetMode]::ManualReset,$releaseName)
+    $holder=$null
     try {
+        $holder=Start-Process -FilePath $heldExecutable -ArgumentList ('/hold "'+$ready+'" '+$releaseName) -WindowStyle Hidden -PassThru
         $deadline=[DateTime]::UtcNow.AddSeconds(5)
         while(!(Test-Path -LiteralPath $ready) -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 25 }
         if(!(Test-Path -LiteralPath $ready)) { throw 'The running-file fixture did not become ready.' }
@@ -102,9 +108,13 @@ try {
         if([Convert]::ToBase64String([IO.File]::ReadAllBytes($heldExecutable)) -cne $heldBytes) { throw 'The blocked upgrade changed its running executable.' }
         Check-Profile $directory $mode 1
     } finally {
-        $holderExited=$holder.WaitForExit(15000)
-        $holder.Dispose()
-        if(!$holderExited) { $cleanupErrors.Add('The inert holder did not exit naturally.') }
+        [void]$release.Set()
+        if($holder) {
+            $holderExited=$holder.WaitForExit(15000)
+            if(!$holderExited -or $holder.ExitCode -ne 0) { $cleanupErrors.Add('The inert holder did not exit after release.') }
+            $holder.Dispose()
+        }
+        $release.Dispose()
     }
     # Reproduce an upgrade from a setup where both optional components were
     # unchecked. Existing shortcut/verb must actually be removed on upgrade.
