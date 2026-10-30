@@ -19,7 +19,7 @@ Revenir au parent ne sélectionne pas le dossier dont vous venez. Un parent déj
 
 ### Disposition des icônes
 
-Désactivez **Réorganiser automatiquement les icônes** dans un mode à icônes pour disposer librement les fichiers et sous-dossiers. Leurs positions sont enregistrées indépendamment de la taille et de la position de la fenêtre, y compris lorsque son état enregistré est verrouillé.
+Dans un mode à icônes, vous pouvez disposer librement les fichiers et sous-dossiers lorsque **Réorganiser automatiquement les icônes** est désactivé. Leurs positions sont enregistrées indépendamment de la taille et de la position de la fenêtre, y compris lorsque son état enregistré est verrouillé.
 
 ### Options d’affichage
 
@@ -71,7 +71,7 @@ Le bouton de valeur par défaut réinitialise une action. **Rétablir** restaure
 
 ### Verrouillage de l’état enregistré
 
-Activez **Paramètres > Général > Activer le verrouillage de l’état des fenêtres** (désactivé par défaut), puis choisissez **Verrouiller l’état de la fenêtre** dans le menu à côté du titre du dossier. Le verrouillage enregistre sa position, sa taille et ses réglages d’affichage. Un **badge de cadenas sur l’icône du dossier dans la barre de titre**, à côté de son nom, identifie un état verrouillé.
+Le verrouillage enregistre la position, la taille et les réglages d’affichage d’un dossier pour les restaurer à sa réouverture. Pour utiliser cette fonction facultative, activez **Paramètres > Général > Activer le verrouillage de l’état des fenêtres** (désactivé par défaut), puis choisissez **Verrouiller l’état de la fenêtre** dans le menu à côté du titre du dossier. Un **badge de cadenas sur l’icône du dossier dans la barre de titre**, à côté de son nom, identifie un état verrouillé.
 
 <img src="images/locked-title.png" alt="Gros plan de la barre de titre : un badge de cadenas recouvre l’icône du dossier à côté de Projet studio." width="420">
 
@@ -105,7 +105,9 @@ Le composant de menu contextuel propose **Ouvrir dans l’Explorateur de fichier
 
 ### Everything
 
-Installez [Everything](https://www.voidtools.com/) séparément, puis activez-le dans **Paramètres > Intégration**. Laissez le chemin de l’exécutable vide pour la détection automatique, utilisez **Détecter**, ou choisissez manuellement son fichier `.exe` pour une installation portable.
+Si vous utilisez [Everything](https://www.voidtools.com/), vous pouvez l’intégrer à FileSpacer pour lancer des recherches avancées directement depuis son champ de recherche.
+
+Pour utiliser cette intégration facultative, activez-la dans **Paramètres > Intégration**. Laissez le chemin de l’exécutable vide pour la détection automatique, utilisez **Détecter**, ou choisissez manuellement son fichier `.exe` pour une installation portable.
 
 Choisissez la portée de la recherche : le dossier courant et ses sous-dossiers, ou **Partout**. Les dossiers virtuels n’ont pas de portée sur le système de fichiers ; utilisez Partout pour eux.
 
