@@ -2,10 +2,10 @@
   "application": "FileSpacer",
   "version": "1.2.3",
   "date": "2026-10-30",
-  "method": "Raw guest screen pixels, cropped to the DWM visible-frame union. No UI labels redrawn and no pixel retouching.",
+  "method": "Raw guest screen captures cropped to the DWM visible-frame union. Spatial and Everything scenes were recaptured over an original solid-color surface. Spatial scenes have 32 px of matching solid-color outer canvas; padding leaves raw captured pixels unchanged. Selected-name shots retain their original capture runs. No UI labels redrawn.",
   "build": "Disposable documentation builds from released 10c4027, overriding only the UI language and property-sheet resource-language selection.",
   "operatingSystem": "AgentWin10; French Windows session, real application resource strings and controls. Windows-owned breadcrumb names and size formatting can remain French.",
-  "desktop": "Larger supported display mode and the existing Windows default wallpaper used temporarily, then restored. No desktop outside the multi-window union; single-window captures contain only its visible frame.",
+  "desktop": "Larger supported display mode used temporarily and restored. Original solid blue-gray background #DCE4EE covers desktop artwork only during capture; the Windows wallpaper setting is not changed. Single-window captures contain only the visible frame.",
   "everythingPortuguese": "Everything provides only pt-BR, used with FileSpacer pt-PT and European Portuguese fictional filenames.",
   "languages": [
     {
@@ -16,9 +16,9 @@
       "SearchFieldReenteredAfterSuccessfulLaunch": true,
       "Shots": [
         {
-          "Width": 1766,
+          "Width": 1830,
           "File": "spatial-windows.png",
-          "Height": 893,
+          "Height": 957,
           "Windows": [
             {
               "Left": 31,
@@ -42,7 +42,22 @@
               "Width": 734
             }
           ],
-          "Sha256": "7d2d28e60e8baa99890e02f6f77c5dcf97ae7b8485e05c89c406d631d41903fa"
+          "RunId": "deb8edececf748e889ad5f3f4972cc5c",
+          "Background": "#DCE4EE",
+          "OriginalCapture": {
+            "Width": 1766,
+            "Height": 893,
+            "Sha256": "25e92209946c649d325cc03b0830211314adedb7a65c8b74d8a47e90c519ef32"
+          },
+          "CanvasPadding": {
+            "Left": 32,
+            "Top": 32,
+            "Right": 32,
+            "Bottom": 32,
+            "Background": "#DCE4EE",
+            "OriginalPixelsUnchanged": true
+          },
+          "Sha256": "fccc05414bc1f076229858f09833d14db6c255dba2ddcbc27751a555c019c211"
         },
         {
           "Width": 726,
@@ -57,7 +72,8 @@
               "Width": 726
             }
           ],
-          "Sha256": "49201d4f70855370fcaf2437b8607d5f90ce9e00ea2bdb1af5601af1c8c21f70"
+          "Sha256": "49201d4f70855370fcaf2437b8607d5f90ce9e00ea2bdb1af5601af1c8c21f70",
+          "RunId": "ddbafbe6dd174ed1bf18620c1ba87ada"
         },
         {
           "Width": 1766,
@@ -79,11 +95,13 @@
               "Width": 919
             }
           ],
-          "Sha256": "f26192cd2fe536cb371692c7686259fec7a006501980b5e4096ec3d8040526f4"
+          "RunId": "deb8edececf748e889ad5f3f4972cc5c",
+          "Background": "#DCE4EE",
+          "Sha256": "782e745f3bd4495a403b42e58138b73bed72b3434dae01a6ffc3a5a294c47e8d"
         }
       ],
       "Language": "en-US",
-      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "Background": "#DCE4EE; original solid-color backdrop recorded behind real windows",
       "EverythingResults": [
         "Archived brief.txt",
         "Final brief.txt",
@@ -100,8 +118,9 @@
         "Tools",
         "Help"
       ],
+      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
       "EverythingVersion": "1.4.1.1032",
-      "RunId": "ddbafbe6dd174ed1bf18620c1ba87ada",
+      "RunId": "deb8edececf748e889ad5f3f4972cc5c",
       "EverythingLocale": "en-US"
     },
     {
@@ -112,9 +131,9 @@
       "SearchFieldReenteredAfterSuccessfulLaunch": true,
       "Shots": [
         {
-          "Width": 1766,
+          "Width": 1830,
           "File": "spatial-windows-fr.png",
-          "Height": 893,
+          "Height": 957,
           "Windows": [
             {
               "Left": 31,
@@ -138,7 +157,22 @@
               "Width": 734
             }
           ],
-          "Sha256": "8aebe05db6cbb22327861ba9120bd83c1d0c3b34017fe64c356fac4193f5a63c"
+          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Background": "#DCE4EE",
+          "OriginalCapture": {
+            "Width": 1766,
+            "Height": 893,
+            "Sha256": "51c1634a04dfd7caf24248f16049e5d38f670f99e1e09850e7ee53e310143355"
+          },
+          "CanvasPadding": {
+            "Left": 32,
+            "Top": 32,
+            "Right": 32,
+            "Bottom": 32,
+            "Background": "#DCE4EE",
+            "OriginalPixelsUnchanged": true
+          },
+          "Sha256": "2bfeebae7881f9442367a22434e86394738806d7027cb69f3f54df4ebd0c792f"
         },
         {
           "Width": 726,
@@ -153,7 +187,8 @@
               "Width": 726
             }
           ],
-          "Sha256": "3d6d4c0f193bd239dc42e8323e6f86e53a305e957e3100086ab32b11dc4ce0be"
+          "Sha256": "3d6d4c0f193bd239dc42e8323e6f86e53a305e957e3100086ab32b11dc4ce0be",
+          "RunId": "d9ad72c306704f1dbc8c41e754b246b4"
         },
         {
           "Width": 1766,
@@ -175,11 +210,13 @@
               "Width": 919
             }
           ],
-          "Sha256": "1e8234bd5c996ef6419753998f1842e6013091f36456e80485ea27352842b906"
+          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Background": "#DCE4EE",
+          "Sha256": "086827004c4d4c1ea11fbae008a3204d19ac8f80faa94cc9dcc08ae79b304490"
         }
       ],
       "Language": "fr-FR",
-      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "Background": "#DCE4EE; original solid-color backdrop recorded behind real windows",
       "EverythingResults": [
         "Ancien cadrage.txt",
         "Cadrage définitif.txt",
@@ -196,8 +233,9 @@
         "Outils",
         "Aide"
       ],
+      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
       "EverythingVersion": "1.4.1.1032",
-      "RunId": "d9ad72c306704f1dbc8c41e754b246b4",
+      "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
       "EverythingLocale": "fr-FR"
     },
     {
@@ -208,9 +246,9 @@
       "SearchFieldReenteredAfterSuccessfulLaunch": true,
       "Shots": [
         {
-          "Width": 1766,
+          "Width": 1830,
           "File": "spatial-windows-de.png",
-          "Height": 893,
+          "Height": 957,
           "Windows": [
             {
               "Left": 31,
@@ -234,7 +272,22 @@
               "Width": 734
             }
           ],
-          "Sha256": "8d831e57f32829d64f3d423ba2cebe8b6f5064460504bf60e203648f0e49ebe8"
+          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Background": "#DCE4EE",
+          "OriginalCapture": {
+            "Width": 1766,
+            "Height": 893,
+            "Sha256": "3048506819592e98baba8bbbe4fb9e77000a79ed514100e782f3e62f0cf9a66e"
+          },
+          "CanvasPadding": {
+            "Left": 32,
+            "Top": 32,
+            "Right": 32,
+            "Bottom": 32,
+            "Background": "#DCE4EE",
+            "OriginalPixelsUnchanged": true
+          },
+          "Sha256": "21c60d2582628d0e1f13586e5c042a0ebc1c740d7fce29c73008e8184e87e570"
         },
         {
           "Width": 726,
@@ -249,7 +302,8 @@
               "Width": 726
             }
           ],
-          "Sha256": "fe963997c640bfd0327c1a4b7d59a99aa99de870e7f81bac913f8cf369389c84"
+          "Sha256": "fe963997c640bfd0327c1a4b7d59a99aa99de870e7f81bac913f8cf369389c84",
+          "RunId": "8e80ef2c89744bd590a3c6a43f905533"
         },
         {
           "Width": 1766,
@@ -271,11 +325,13 @@
               "Width": 919
             }
           ],
-          "Sha256": "531223432ee1d459b49e6276da7e64e8e5dd2a14c8315ea4034b0397e3ff67e4"
+          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Background": "#DCE4EE",
+          "Sha256": "1430b449bfe97b43bfb50a2d9f627f900ffb756f69def5e57b92b229712e0fa8"
         }
       ],
       "Language": "de-DE",
-      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "Background": "#DCE4EE; original solid-color backdrop recorded behind real windows",
       "EverythingResults": [
         "Alter Entwurf.txt",
         "Endgültiger Entwurf.txt",
@@ -292,8 +348,9 @@
         "Extras",
         "Hilfe"
       ],
+      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
       "EverythingVersion": "1.4.1.1032",
-      "RunId": "8e80ef2c89744bd590a3c6a43f905533",
+      "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
       "EverythingLocale": "de-DE"
     },
     {
@@ -304,9 +361,9 @@
       "SearchFieldReenteredAfterSuccessfulLaunch": true,
       "Shots": [
         {
-          "Width": 1766,
+          "Width": 1830,
           "File": "spatial-windows-it.png",
-          "Height": 893,
+          "Height": 957,
           "Windows": [
             {
               "Left": 31,
@@ -330,7 +387,22 @@
               "Width": 734
             }
           ],
-          "Sha256": "a1d3edb36e920b3ace40b456c1671129c13781d200f9459052a309569a302ba5"
+          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Background": "#DCE4EE",
+          "OriginalCapture": {
+            "Width": 1766,
+            "Height": 893,
+            "Sha256": "5b8327efd2714827cf4939ae7b7196bc1767f488f42defc94ec6020f2c4bb57f"
+          },
+          "CanvasPadding": {
+            "Left": 32,
+            "Top": 32,
+            "Right": 32,
+            "Bottom": 32,
+            "Background": "#DCE4EE",
+            "OriginalPixelsUnchanged": true
+          },
+          "Sha256": "fb464821087c484330dbf3fd88bf8bf5dd00109f9664fba4726768f9f478bf5f"
         },
         {
           "Width": 726,
@@ -345,7 +417,8 @@
               "Width": 726
             }
           ],
-          "Sha256": "e6e446275bcedaef2c226158e6fe994e93a81efb23817fec0fd2651b30c7b3f8"
+          "Sha256": "e6e446275bcedaef2c226158e6fe994e93a81efb23817fec0fd2651b30c7b3f8",
+          "RunId": "f11df60f424d463e87766602be7fd237"
         },
         {
           "Width": 1766,
@@ -367,11 +440,13 @@
               "Width": 919
             }
           ],
-          "Sha256": "bacaf0b54fcfb7dd0ed7dda19aca830a90fffc141e89799215e436c341dee2c4"
+          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Background": "#DCE4EE",
+          "Sha256": "39366d7837bba5868edd20fe32281e8dee1745fd4c95e3e6c0a6c183835dc2b7"
         }
       ],
       "Language": "it-IT",
-      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "Background": "#DCE4EE; original solid-color backdrop recorded behind real windows",
       "EverythingResults": [
         "Progetto definitivo.txt",
         "Sintesi del progetto.txt",
@@ -388,8 +463,9 @@
         "Strumenti",
         "Aiuto"
       ],
+      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
       "EverythingVersion": "1.4.1.1032",
-      "RunId": "f11df60f424d463e87766602be7fd237",
+      "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
       "EverythingLocale": "it-IT"
     },
     {
@@ -400,9 +476,9 @@
       "SearchFieldReenteredAfterSuccessfulLaunch": true,
       "Shots": [
         {
-          "Width": 1766,
+          "Width": 1830,
           "File": "spatial-windows-es.png",
-          "Height": 893,
+          "Height": 957,
           "Windows": [
             {
               "Left": 31,
@@ -426,7 +502,22 @@
               "Width": 734
             }
           ],
-          "Sha256": "5bfbc24dc89cf9207c1865e3c476361a7d7d4ce1bb265eb6fb0b0482e67623a8"
+          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Background": "#DCE4EE",
+          "OriginalCapture": {
+            "Width": 1766,
+            "Height": 893,
+            "Sha256": "1cf27e1b97dc6c0838b2b6692af5199b213a228346e134b0822e1be3c4b4a5c4"
+          },
+          "CanvasPadding": {
+            "Left": 32,
+            "Top": 32,
+            "Right": 32,
+            "Bottom": 32,
+            "Background": "#DCE4EE",
+            "OriginalPixelsUnchanged": true
+          },
+          "Sha256": "964ce055545675c9d3445371b619fe5219a4a89ef506243220eb3e4fecc7788b"
         },
         {
           "Width": 726,
@@ -441,7 +532,8 @@
               "Width": 726
             }
           ],
-          "Sha256": "04667fbd302a69dfa51e2d6c558f456fce82064d0c008d65d25230570eebdf40"
+          "Sha256": "04667fbd302a69dfa51e2d6c558f456fce82064d0c008d65d25230570eebdf40",
+          "RunId": "0c1b6c84ebf64750888f16f31315454b"
         },
         {
           "Width": 1766,
@@ -463,11 +555,13 @@
               "Width": 919
             }
           ],
-          "Sha256": "b563130bd6b700ffe662d90bfd6a37ded4045995964c66e0cce7a2e75a74ceac"
+          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Background": "#DCE4EE",
+          "Sha256": "0f540b3442d2b2e75f6eef33a7389b2711bd97e195e4fae1e4e7e33d324505d4"
         }
       ],
       "Language": "es-ES",
-      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "Background": "#DCE4EE; original solid-color backdrop recorded behind real windows",
       "EverythingResults": [
         "Proyecto anterior.txt",
         "Proyecto definitivo.txt",
@@ -484,8 +578,9 @@
         "Herramientas",
         "Ayuda"
       ],
+      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
       "EverythingVersion": "1.4.1.1032",
-      "RunId": "0c1b6c84ebf64750888f16f31315454b",
+      "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
       "EverythingLocale": "es-ES"
     },
     {
@@ -496,9 +591,9 @@
       "SearchFieldReenteredAfterSuccessfulLaunch": true,
       "Shots": [
         {
-          "Width": 1766,
+          "Width": 1830,
           "File": "spatial-windows-pt.png",
-          "Height": 893,
+          "Height": 957,
           "Windows": [
             {
               "Left": 31,
@@ -522,7 +617,22 @@
               "Width": 734
             }
           ],
-          "Sha256": "c53a051dcbd444fd6c8fa7feca8034ddb230472d9ba7ec691d638095bbe1ba8c"
+          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Background": "#DCE4EE",
+          "OriginalCapture": {
+            "Width": 1766,
+            "Height": 893,
+            "Sha256": "79632c981cd864bb4fddca58e3870b76d480716cf518529f9c897b6b00d4f344"
+          },
+          "CanvasPadding": {
+            "Left": 32,
+            "Top": 32,
+            "Right": 32,
+            "Bottom": 32,
+            "Background": "#DCE4EE",
+            "OriginalPixelsUnchanged": true
+          },
+          "Sha256": "6db9006d4dfef3c98745d877b7c7f71637872f6203842d1a041e9874eff64680"
         },
         {
           "Width": 726,
@@ -537,7 +647,8 @@
               "Width": 726
             }
           ],
-          "Sha256": "346c5852887647bcd733ddb762a3818e2d9399b09eebc76248901df9a308c934"
+          "Sha256": "346c5852887647bcd733ddb762a3818e2d9399b09eebc76248901df9a308c934",
+          "RunId": "034cbb28519545118e10e84d23af15dc"
         },
         {
           "Width": 1766,
@@ -559,11 +670,13 @@
               "Width": 919
             }
           ],
-          "Sha256": "f4d5c8162830ee3d855efbe3b0d9ee96fac092c2f66d6f241d22776b0c452b33"
+          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Background": "#DCE4EE",
+          "Sha256": "bfa79ecead92acd5287d855f97556355d817882a4ff7ebeeb366be016808518a"
         }
       ],
       "Language": "pt-PT",
-      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "Background": "#DCE4EE; original solid-color backdrop recorded behind real windows",
       "EverythingResults": [
         "Projeto anterior.txt",
         "Projeto definitivo.txt",
@@ -580,8 +693,9 @@
         "Ferramentas",
         "Ajuda"
       ],
+      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
       "EverythingVersion": "1.4.1.1032",
-      "RunId": "034cbb28519545118e10e84d23af15dc",
+      "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
       "EverythingLocale": "pt-BR"
     },
     {
@@ -592,9 +706,9 @@
       "SearchFieldReenteredAfterSuccessfulLaunch": true,
       "Shots": [
         {
-          "Width": 1766,
+          "Width": 1830,
           "File": "spatial-windows-el.png",
-          "Height": 893,
+          "Height": 957,
           "Windows": [
             {
               "Left": 31,
@@ -618,7 +732,22 @@
               "Width": 734
             }
           ],
-          "Sha256": "247b4add1784fe25ed2b253d580aa5a8f27945e9e11a53eb9673e8651543b6c2"
+          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Background": "#DCE4EE",
+          "OriginalCapture": {
+            "Width": 1766,
+            "Height": 893,
+            "Sha256": "db39956737b945160c6816cdbf560188cc345ff064bf059630e457a82c07e693"
+          },
+          "CanvasPadding": {
+            "Left": 32,
+            "Top": 32,
+            "Right": 32,
+            "Bottom": 32,
+            "Background": "#DCE4EE",
+            "OriginalPixelsUnchanged": true
+          },
+          "Sha256": "c377e215787ae88141b37dcfe8e8742581532b0700cbe8799c8ad38a08533a70"
         },
         {
           "Width": 726,
@@ -633,7 +762,8 @@
               "Width": 726
             }
           ],
-          "Sha256": "2e06e9ac241acbdb3115ee7b21bb51d388504ac26ceec42a29228b82752f6816"
+          "Sha256": "2e06e9ac241acbdb3115ee7b21bb51d388504ac26ceec42a29228b82752f6816",
+          "RunId": "7c344c21b2bc4283ac38fc72b4ec670d"
         },
         {
           "Width": 1766,
@@ -655,11 +785,13 @@
               "Width": 919
             }
           ],
-          "Sha256": "7847697f99112c20e9516245b47ed2533835da059ffc8d9f6663f53956c9d35b"
+          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Background": "#DCE4EE",
+          "Sha256": "1a58c2845a811644a4ce3329e7d008f3f8e38073fd46610795b2f36389ad122e"
         }
       ],
       "Language": "el-GR",
-      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "Background": "#DCE4EE; original solid-color backdrop recorded behind real windows",
       "EverythingResults": [
         "Αρχικό σχέδιο.txt",
         "Παλιό σχέδιο.txt",
@@ -676,12 +808,22 @@
         "Εργαλεία",
         "Βοήθεια"
       ],
+      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
       "EverythingVersion": "1.4.1.1032",
-      "RunId": "7c344c21b2bc4283ac38fc72b4ec670d",
+      "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
       "EverythingLocale": "el-GR"
     }
   ],
   "relatedSeries": {
     "mixed-sorting-provenance.json": "Seven updated mixed-sorting captures with default navigation and localized filenames."
+  },
+  "background": {
+    "color": "#DCE4EE",
+    "artwork": "None; original solid color, no external image or attribution",
+    "capture": "Owned borderless background surface below the real application windows",
+    "stateRestoredRuns": [
+      "deb8edececf748e889ad5f3f4972cc5c",
+      "04d1e7cc98eb45a7b63cf14b5f93be38"
+    ]
   }
 }
