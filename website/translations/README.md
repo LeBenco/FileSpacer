@@ -4,10 +4,12 @@ The repository's main README and documentation remain English. These complete
 Markdown variants are inputs for the website only; they do not add language
 links or controls to the repository README.
 
-Each language-region directory contains `locale.json` and the same five source
+Each language-region directory contains `locale.json` and the same four source
 paths used by the English site: `README.md`, `docs/user-guide.md`,
-`docs/privacy-policy.md`, `CHANGELOG.md`, and `THIRD_PARTY_NOTICES.md`.
-It also contains `docs/nilesoft-shell.md`, a complete localized reference linked
+`CHANGELOG.md`, and `THIRD_PARTY_NOTICES.md`. Privacy details and local-data
+maintenance belong in separate user-guide sections; `docs/privacy-policy.md`
+remains a short localized policy for GitHub.
+The directory also contains `docs/nilesoft-shell.md`, a complete localized reference linked
 from the user guide and kept as a separate GitHub document. A missing reference
 fails generation instead of silently linking readers to English.
 The generator discovers these directories. Its English input remains the
@@ -21,7 +23,7 @@ documentation links to the selected language's GitHub file. Developer documents
 outside the website still link to the English GitHub source.
 
 Keep image references under their original English filenames. The generator
-substitutes real language-specific captures such as `overview-de.png`, while
+substitutes real language-specific captures such as `spatial-windows-de.png`, while
 the neutral application logo is shared. It fails when an included capture or
 animation is missing. Do not translate text inside exported images.
 
@@ -40,6 +42,20 @@ restrained humour of the English text rather than translating word for word.
 License files, command names, registry paths, identifiers and executable names
 remain unchanged.
 
+Prefer short descriptions of behavior and useful subtleties over instructions
+for self-explanatory controls. In French, use neutral descriptions or infinitives
+for actions and avoid repeated direct address. This is an editorial choice, not
+a universal documentation convention: Microsoft and GNOME use direct address in
+French, Everything favors concise English commands, and German documentation
+commonly retains formal address. Follow each language's idiom rather than forcing
+French sentence patterns onto it. Place screenshots after the behavior they
+illustrate; keep descriptive alternative text instead of a redundant caption.
+
+The Everything screenshot uses its available Brazilian Portuguese translation
+alongside FileSpacer and fictional names in European Portuguese. Everything does
+not provide a European Portuguese translation in its official
+[language list](https://www.voidtools.com/support/everything/supported_languages/).
+
 | Language | File Explorer | Folder | Taskbar | Keyboard shortcuts |
 | --- | --- | --- | --- | --- |
 | Français | Explorateur de fichiers | dossier | barre des tâches | raccourcis clavier |
@@ -48,6 +64,11 @@ remain unchanged.
 | Español | Explorador de archivos | carpeta | barra de tareas | métodos abreviados de teclado |
 | Português (Portugal) | Explorador de Ficheiros | pasta | barra de tarefas | atalhos de teclado |
 | Ελληνικά | Εξερεύνηση αρχείων | φάκελος | γραμμή εργασιών | συντομεύσεις πληκτρολογίου |
+
+Style comparison checked on 2026-10-30: [Microsoft File Explorer](https://support.microsoft.com/fr-fr/windows/experience/fileexplorer/file-explorer-in-windows)
+for large commercial software, [Everything search](https://www.voidtools.com/support/everything/searching/)
+for a smaller utility, and GNOME Files in [French](https://help.gnome.org/gnome-help/files-browse.html.fr)
+and [German](https://help.gnome.org/gnome-help/files-browse.html.de) for open-source documentation.
 
 Terminology references checked on 2026-10-28:
 
