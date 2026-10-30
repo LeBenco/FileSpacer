@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
 import {Marked} from 'marked';
 
 const template = path.dirname(fileURLToPath(import.meta.url));
@@ -151,7 +152,7 @@ export async function generate(repository = path.dirname(template), destination 
       }});
       rendered.push(`<section aria-labelledby="${doc.id}" data-source="${doc.source}">\n${renderer.parser(doc.tokens)}</section>`);
     }
-    const html = `<h1 class="fs-9">FileSpacer</h1>\n${rendered.join('\n<hr>\n')}`.replace(/<img\b[^>]*>/g, img => {
+    let html = `<h1 class="fs-9">FileSpacer</h1>\n${rendered.join('\n<hr>\n')}`.replace(/<img\b[^>]*>/g, img => {
       const src = img.match(/\bsrc="([^"]+)"/)?.[1];
       if (!src || !/\.(png|gif)$/i.test(src)) return img;
       const alt = img.match(/\balt="([^"]*)"/)?.[1] || '';
@@ -172,12 +173,16 @@ export async function generate(repository = path.dirname(template), destination 
     localizedConfig += `\nlang: ${language.code}\nfs_ui: ${JSON.stringify(language.ui)}\n`;
     await fs.writeFile(path.join(output, '_config.yml'), localizedConfig);
     await fs.writeFile(path.join(output, '_includes/components/site_nav.html'), `<nav aria-label="${escape(language.ui.navigation)}" id="site-nav" class="site-nav">${languagePicker(language, languages)}<ul class="nav-list">${[...documents.values()].map(doc => navigation(doc.headings, language.ui)).join('')}</ul></nav>\n`);
-    await fs.writeFile(path.join(output, 'index.html'), `---\nlayout: default\ntitle: FileSpacer\nhas_toc: false\n---\n${html}`);
     for (const [source, target] of assets) {
       if (!await exists(path.join(repository, source))) throw new Error(`Missing localized media (${language.code}): ${source}`);
       await fs.mkdir(path.dirname(path.join(output, target)), {recursive: true});
       await fs.copyFile(path.join(repository, source), path.join(output, target));
+      if (/\.(png|gif)$/i.test(target)) {
+        const version = createHash('sha256').update(await fs.readFile(path.join(repository, source))).digest('hex').slice(0, 12);
+        html = html.replaceAll(`="${target}"`, `="${target}?v=${version}"`);
+      }
     }
+    await fs.writeFile(path.join(output, 'index.html'), `---\nlayout: default\ntitle: FileSpacer\nhas_toc: false\n---\n${html}`);
     results.push({code: language.code, path: language.path, source: language.source, documents: documents.size, headings: ids.length, images: assets.size});
   }
   await fs.writeFile(path.join(destination, 'locales.json'), json(results));
