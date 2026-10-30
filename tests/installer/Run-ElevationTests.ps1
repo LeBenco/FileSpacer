@@ -36,6 +36,37 @@ function Run-Probe([string]$name, [string]$arguments, [int]$expected) {
 $native = [IO.File]::ReadAllText((Join-Path $root 'installer\Elevation.nsh'))
 $native = $native.Replace('!insertmacro ELEVATION_FUNCTION "un."', '')
 $native = $native.Replace('"runas"', '"open"').Replace('$EXEPATH', '$probeProgram')
+$nativeChild = @'
+Unicode True
+Name "Native launch child"
+OutFile "@RUN@\@NAME@.exe"
+RequestExecutionLevel user
+SilentInstall silent
+!include LogicLib.nsh
+!include FileFunc.nsh
+Section
+SectionEnd
+Function .onInit
+    ${GetParameters} $0
+    ClearErrors
+    ${GetOptionsS} $0 "/Child=" $1
+    ${If} ${Errors}
+        SetErrorLevel 25
+        Quit
+    ${EndIf}
+    ${If} $1 == 23
+        ${GetOptionsS} $0 "/Echo=" $2
+        ${If} $2 != "quoted payload with spaces"
+            SetErrorLevel 24
+            Quit
+        ${EndIf}
+        StrCpy $1 0
+    ${EndIf}
+    SetErrorLevel $1
+    Quit
+FunctionEnd
+'@
+Compile-Probe 'NativeLaunchChild' $nativeChild
 $nativeProbe = @'
 Unicode True
 Name "Native launch probe"
@@ -51,14 +82,7 @@ Var probeProgram
 Section
 SectionEnd
 Function .onInit
-    ${GetParameters} $0
-    ClearErrors
-    ${GetOptionsS} $0 "/Child=" $1
-    ${IfNot} ${Errors}
-        SetErrorLevel $1
-        Quit
-    ${EndIf}
-    StrCpy $probeProgram $EXEPATH
+    StrCpy $probeProgram "$EXEDIR\NativeLaunchChild.exe"
     StrCpy $0 "register preserved"
     StrCpy $R0 "extended register preserved"
     StrCpy $elevatedParameters "/S /Child=0"
@@ -77,6 +101,12 @@ Function .onInit
     Call RunElevated
     ${If} $elevatedResult != 1223
         SetErrorLevel 12
+        Quit
+    ${EndIf}
+    StrCpy $elevatedParameters '/S /Child=23 /Echo="quoted payload with spaces"'
+    Call RunElevated
+    ${If} $elevatedResult != 0
+        SetErrorLevel 15
         Quit
     ${EndIf}
     StrCpy $probeProgram "$EXEDIR\missing-probe.exe"
@@ -234,5 +264,5 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
 } else {
     Write-Host 'Coverage: unelevated-token rejection is skipped when this test process is already elevated.'
 }
-Write-Host 'PASS: native process exit codes and launch failure; bootstrap/profile restoration; worker argument transport; cancellation/failure propagation; invalid options.'
+Write-Host 'PASS: native process exit codes, quoted arguments and launch failure; bootstrap/profile restoration; worker argument transport; cancellation/failure propagation; invalid options.'
 Write-Host 'Coverage: worker option parsing uses a token stub; native launcher uses open; no real UAC consent or full installation was exercised.'
