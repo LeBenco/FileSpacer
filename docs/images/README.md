@@ -37,8 +37,14 @@ Their capture context and checksums are in `provenance-fr.json`.
 The title close-up also has a French copy, `locked-title-fr.png`.
 
 The animations also have French copies, `move-window-fr.gif` and
-`resize-window-fr.gif`. They show the VM's Windows wallpaper around the window
-so that its movement and changing size remain visible.
+`resize-window-fr.gif`. All fourteen recordings now show FileSpacer 1.2.3 with
+localized fictional filenames and the default navigation bar. A plain blue-gray
+background keeps the movement and changing size visible.
+
+Every scene that includes the desktop uses the same original solid color,
+`#DCE4EE`, with no external artwork or image credit required. It is displayed
+behind the real windows during recording; the VM's wallpaper setting stays
+unchanged. Windows, shadows, cursors and key overlays are captured directly.
 
 The Display settings capture also has a French copy, `display-fr.png`.
 These two images were recorded from a development build, as described in
@@ -77,12 +83,13 @@ VM run IDs, application version and recorded keystroke frames. The existing
 English and French series remain valid for unchanged screens.
 
 These five series were originally captured from FileSpacer 1.2.2 in the documentation VM.
-Their mixed-sorting records now identify the updated 1.2.3 captures explicitly.
+Their mixed-sorting and animation records now identify the updated 1.2.3 captures explicitly.
 Disposable builds select the application's real language resources at startup
 and retain the real Windows controls. Spanish selects resource ID `040A`
 explicitly, matching the resource file's Spanish (traditional sort) declaration.
-Fictional filenames, layouts and gesture recordings match the English examples;
-the established French examples retain their translated fictional filenames.
+The original static scenes retain their English fictional filenames. The newer
+user-guide scenes and gesture recordings use corresponding localized names,
+with matching geometry, layouts and gestures in every language.
 Nilesoft's actual label rules localize native Windows menu entries on the French
 VM identically in both corner variants. Exported image labels were not edited.
 
@@ -95,6 +102,10 @@ They use matching resources from released commit `10c4027`; only language
 selection is overridden in disposable documentation builds. Older captures
 remain available for reference.
 
+The seven `spatial-windows` images have 32 pixels of matching blue-gray canvas on every
+side so the windows do not touch the image edge. Their original screenshot
+pixels are unchanged; original dimensions and hashes are retained in provenance.
+
 The VM's Windows session is French, so Windows-owned breadcrumb labels and
 size formatting may remain French. Everything has no European Portuguese
 translation; its official Brazilian Portuguese interface is used beside
@@ -103,8 +114,9 @@ FileSpacer and fictional names in European Portuguese.
 The scene with Everything shows real results launched from FileSpacer. Because
 a successful launch clears FileSpacer's field, the same query is entered again
 afterwards to make the relationship visible in one screenshot. No image labels
-or pixels are retouched. The temporary display resolution, existing default
-Windows wallpaper and private drive mapping are restored after each capture.
+or pixels are retouched. The temporary display resolution and private drive
+mapping are restored after each capture. The plain background surface is closed,
+without changing the Windows wallpaper.
 
 ## Recording an animation
 
@@ -112,7 +124,10 @@ Use ScreenToGif with the cursor and mouse-click highlights enabled. Add an
 automatic **Key strokes** task and disable **Ignore modifier keys**: otherwise
 Alt pressed on its own is hidden. Keep the overlay visible throughout each
 gesture and check the exported GIF, including frames in the middle of the drag.
-Use a short loop with pauses before and after the gesture.
+Use a short loop with pauses before and after the gesture. Keep the same
+`#DCE4EE` background below the window and use fictional filenames in the target
+language. Record the project key events and check the exported loop as well as
+the actual movement or resizing.
 
 ## Updating a screenshot
 
@@ -130,8 +145,9 @@ For single-window static screenshots, capture only the visible window frame, inc
 title bar. Keep menus and suggestions entirely inside that frame. Exclude the desktop, taskbar, shadows,
 invisible resize borders and operating-system overlays. A window can be moved
 or resized before capture to keep overlays outside its bounds. Multi-window
-scenes include the smallest rectangle containing their visible frames, with
-only the existing Windows wallpaper in the gaps.
+scenes start with the smallest rectangle containing their visible frames, with
+only the original solid-color background in the gaps. Matching solid-color outer canvas may
+be added afterwards; record its size and preserve the original pixels.
 
 Check each PNG at its original size, then run:
 
