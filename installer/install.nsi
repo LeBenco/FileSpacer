@@ -215,13 +215,28 @@ Function ${PREFIX}SetWizardArtwork
     ${Else}
         File /oname=$PLUGINSDIR\sidebar.bmp "..\build\installer-assets\wizard-en.bmp"
     ${EndIf}
+    File /oname=$PLUGINSDIR\WizardBitmap.dll "..\build\installer-assets\WizardBitmap.dll"
     System::Store S
     SetCtlColors $HWNDPARENT 20252E F1F2F6
     GetDlgItem $0 $HWNDPARENT 1034
     SetCtlColors $0 20252E FFFFFF
     System::Call 'user32::SetWindowPos(p r0,p 1,i 0,i 0,i 0,i 0,i 0x13)'
     GetDlgItem $0 $HWNDPARENT 1025
-    ${NSD_SetStretchedImage} $0 "$PLUGINSDIR\sidebar.bmp" $brandingBitmap
+    StrCpy $brandingBitmap 0
+    System::Call 'user32::GetClientRect(p r0,@r1)i.r9'
+    ${If} $9 != 0
+        System::Call '*$1(i,i,i.r2,i.r3)'
+        StrCpy $4 0
+        System::Call '"$PLUGINSDIR\WizardBitmap.dll"::createWizardBitmap(w "$PLUGINSDIR\sidebar.bmp",i r2,i r3)p.r4'
+        ${If} $4 P<> 0
+            StrCpy $brandingBitmap $4
+            ; Display the already resized bitmap without another sampling pass.
+            SendMessage $0 ${STM_SETIMAGE} ${IMAGE_BITMAP} $brandingBitmap
+        ${EndIf}
+    ${EndIf}
+    ${If} $brandingBitmap P= 0
+        ${NSD_SetStretchedImage} $0 "$PLUGINSDIR\sidebar.bmp" $brandingBitmap
+    ${EndIf}
     ; Native Segoe UI text avoids resampling glyphs with the sidebar bitmap.
     ; Match the wizard DPI and explicitly request CLEARTYPE_QUALITY (5).
     System::Call 'user32::GetDC(p $HWNDPARENT)p.r1'
