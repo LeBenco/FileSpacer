@@ -6,9 +6,9 @@ FileSpacer est fondé sur [ChromaFiler](https://github.com/vanjac/chromafiler), 
 
 SQLite 3.53.4 est lié statiquement à l’application. Il appartient au domaine public. Les sources non modifiées et leur provenance se trouvent dans `third_party/sqlite`. Consultez <https://sqlite.org/copyright.html>.
 
-## Lucide et Feather
+## Icônes des boutons Remonter et Actualiser (Lucide et Feather)
 
-Les boutons Monter et Actualiser utilisent des tracés adaptés des icônes Lucide `arrow-up` et `rotate-cw`, dessinés avec Windows GDI+. La flèche est également couverte par la mention MIT de Feather incluse dans la licence complète de Lucide. La géométrie, l’épaisseur des traits et l’orientation de l’icône d’actualisation ont été adaptées pour FileSpacer.
+Dans la barre d’outils, la **flèche vers le haut** permet de **remonter au dossier parent** ; la **flèche circulaire** permet d’**actualiser le contenu du dossier**. Ces deux icônes sont adaptées de **Lucide** (`arrow-up` et `rotate-cw`). La flèche vers le haut provient à l’origine de **Feather**.
 
 Consultez [licenses/Lucide-LICENSE.txt](licenses/Lucide-LICENSE.txt) pour les mentions ISC et MIT complètes dans les sources, ou `Lucide-LICENSE.txt` dans le dossier d’installation. Voir <https://lucide.dev/license>.
 

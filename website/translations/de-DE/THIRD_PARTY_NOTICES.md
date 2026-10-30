@@ -6,9 +6,9 @@ FileSpacer basiert auf [ChromaFiler](https://github.com/vanjac/chromafiler), Cop
 
 SQLite 3.53.4 wird statisch in die Anwendung eingebunden. Es ist gemeinfrei. Die unveränderten Quellen und ihre Herkunft sind in `third_party/sqlite` enthalten. Siehe <https://sqlite.org/copyright.html>.
 
-## Lucide und Feather
+## Symbole der Schaltflächen Aufwärts und Aktualisieren (Lucide und Feather)
 
-Die Schaltflächen Aufwärts und Aktualisieren verwenden angepasste Pfade der Lucide-Symbole `arrow-up` und `rotate-cw`, gezeichnet mit Windows GDI+. Der Pfeil fällt auch unter den MIT-Lizenzhinweis von Feather, der in der vollständigen Lucide-Lizenz enthalten ist. Geometrie, Strichstärke und Ausrichtung des Aktualisierungssymbols wurden für FileSpacer angepasst.
+In der Symbolleiste öffnet der **Pfeil nach oben** den **übergeordneten Ordner**; der **kreisförmige Pfeil** **aktualisiert den Ordnerinhalt**. Beide Symbole sind angepasste Versionen der **Lucide**-Symbole `arrow-up` und `rotate-cw`. Das Symbol mit dem Pfeil nach oben stammt ursprünglich aus **Feather**.
 
 Die vollständigen ISC- und MIT-Hinweise stehen in [licenses/Lucide-LICENSE.txt](licenses/Lucide-LICENSE.txt) im Quelltext oder `Lucide-LICENSE.txt` im Installationsordner. Siehe <https://lucide.dev/license>.
 
