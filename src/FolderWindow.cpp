@@ -971,6 +971,22 @@ void FolderWindow::onDestroy() {
 
 bool FolderWindow::onCommand(WORD command) {
     switch (command) {
+        case IDM_RESTORE_LAYOUT:
+            restoreReferenceLayout();
+            return true;
+        case IDM_REPLACE_LAYOUT: {
+            CComPtr<ItemWindow> keepAlive(this);
+            if (MessageBoxW(hwnd, getString(IDS_TITLE_REPLACE_CONFIRM), getString(IDS_APP_NAME),
+                    MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2) == IDYES && isWindowOperational())
+                toggleStateLock(true);
+            return true;
+        }
+        case IDM_FORGET_LAYOUT:
+            forgetLayout();
+            return true;
+        case IDM_FIT_CONTENT:
+            fitWindowToContents();
+            return true;
         case IDM_QUICK_ACCESS:
             openQuickAccessMenu(clientToScreen(hwnd, {0, 0}));
             return true;
@@ -982,6 +998,95 @@ bool FolderWindow::onCommand(WORD command) {
             return true;
     }
     return ItemWindow::onCommand(command);
+}
+
+void FolderWindow::restoreReferenceLayout() {
+    CComPtr<ItemWindow> keepAlive(this);
+    if (!isWindowOperational() || !viewReady || !enumerationComplete || restoringState || viewMenuPreview) return;
+    FolderState reference;
+    auto store = folderStateStore();
+    if (!store || !store->read(getFolderStateKey(), &reference)) { stateStorageError(); return; }
+    if (!reference.locked || !settings::getWindowStateLockEnabled()) return;
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    auto current = [&]() {
+        return isWindowOperational() && shellView == source && viewGeneration == generation;
+    };
+    CComQIPtr<IFolderView2> view(source);
+    if (!view || !current()) return;
+    getSavedFolderState() = reference;
+    restoringState = true;
+    auto apply = [&]() {
+        const RECT rect = requestedRect(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST));
+        if (!current()) return;
+        ShowWindow(hwnd, SW_RESTORE);
+        if (!current()) return;
+        SetWindowPos(hwnd, nullptr, rect.left, rect.top, rectWidth(rect), rectHeight(rect),
+            SWP_NOZORDER | SWP_NOACTIVATE);
+        if (!current()) return;
+        if ((reference.present & FolderState::Maximized) && reference.maximized)
+            ShowWindow(hwnd, SW_MAXIMIZE);
+        if (!current()) return;
+        if (reference.present & FolderState::View) checkHR(restoreOptions(view, reference.view));
+    };
+    apply();
+    restoringState = false;
+}
+
+void FolderWindow::fitWindowToContents() {
+    CComPtr<ItemWindow> keepAlive(this);
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    auto current = [&]() { return isWindowOperational() && shellView == source && viewGeneration == generation; };
+    if (!current() || !enumerationComplete || restoringState || viewMenuPreview) return;
+    CComQIPtr<IFolderView2> view(source);
+    if (!view || !current()) return;
+    int count = 0;
+    if (FAILED(view->ItemCount(SVGIO_ALLVIEW, &count)) || !current()) return;
+    POINT spacing = {};
+    if (FAILED(view->GetSpacing(&spacing)) || !current()) return;
+    spacing.x = (std::max<LONG>)(spacing.x, scaleDPI(32));
+    spacing.y = (std::max<LONG>)(spacing.y, scaleDPI(20));
+    SIZE content = {scaleDPI(96), scaleDPI(64)};
+    for (int i = 0; i < count; ++i) {
+        CComHeapPtr<ITEMID_CHILD> id;
+        if (FAILED(view->Item(i, &id)) || !current()) return;
+        POINT position = {};
+        if (FAILED(view->GetItemPosition(id, &position)) || !current()) return;
+        content.cx = (std::max<LONG>)(content.cx, position.x + spacing.x);
+        content.cy = (std::max<LONG>)(content.cy, position.y + spacing.y);
+    }
+    UINT mode = 0;
+    if (FAILED(view->GetCurrentViewMode(&mode)) || !current()) return;
+    if (mode == FVM_DETAILS) {
+        CComQIPtr<IColumnManager> columns(source);
+        UINT length = 0;
+        if (!columns || FAILED(columns->GetColumnCount(CM_ENUM_VISIBLE, &length)) || !current()) return;
+        std::vector<PROPERTYKEY> keys(length);
+        if (length && (FAILED(columns->GetColumns(CM_ENUM_VISIBLE, keys.data(), length)) || !current())) return;
+        LONG width = 0;
+        for (const auto &key : keys) {
+            CM_COLUMNINFO info = {sizeof(info), CM_MASK_WIDTH};
+            if (FAILED(columns->GetColumnInfo(key, &info)) || !current()) return;
+            if (info.uWidth > 32768 || width > 32768) return;
+            width += static_cast<LONG>(info.uWidth);
+        }
+        content.cx = (std::max<LONG>)(scaleDPI(96), width);
+    }
+    HWND body = nullptr;
+    if (FAILED(source->GetWindow(&body)) || !current()) return;
+    RECT viewRect = {}, windowRect = {};
+    if (!GetClientRect(body, &viewRect) || !GetWindowRect(hwnd, &windowRect)) return;
+    MONITORINFO monitor = {sizeof(monitor)};
+    if (!GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &monitor)) return;
+    const LONG width = (std::min<LONG>)(rectWidth(monitor.rcWork), (std::max<LONG>)(GetSystemMetrics(SM_CXMINTRACK),
+        content.cx + rectWidth(windowRect) - rectWidth(viewRect) + scaleDPI(12)));
+    const LONG height = (std::min<LONG>)(rectHeight(monitor.rcWork), (std::max<LONG>)(GetSystemMetrics(SM_CYMINTRACK),
+        content.cy + rectHeight(windowRect) - rectHeight(viewRect) + scaleDPI(12)));
+    const LONG x = (std::max<LONG>)(monitor.rcWork.left, (std::min<LONG>)(windowRect.left, monitor.rcWork.right - width));
+    const LONG y = (std::max<LONG>)(monitor.rcWork.top, (std::min<LONG>)(windowRect.top, monitor.rcWork.bottom - height));
+    ShowWindow(hwnd, SW_RESTORE);
+    if (current()) SetWindowPos(hwnd, nullptr, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
 void FolderWindow::placeSearchBox() {
