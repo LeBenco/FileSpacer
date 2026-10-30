@@ -2,6 +2,14 @@
 
 ## Noch nicht veröffentlicht
 
+## 1.2.3 — 2026-10-30
+
+- Identitäten, Symbolüberlagerungen und Ordnerbenachrichtigungen bei gemischter Sortierung korrigieren; freie Symbolpositionen erhalten und die native Ansicht verwenden, wenn der Anbieter fehlt oder inkompatibel ist.
+- Prozessübergreifend nur ein Einstellungsfenster zulassen sowie Tastenkürzelprüfung, Everything-Pfade, Zugriffstasten und regionale Übersetzungen korrigieren.
+- Das Schließen von Ordnerfenstern, Aktivierungsklicks und die Wiederherstellung nach einer Vorschau im Menü Ansicht korrigieren.
+- Sprunglistenaktualisierungen und Installationsdiagnosen korrigieren; eigene Hilfedateien bei Updates und der Deinstallation erhalten.
+- Mehrsprachige Offlinehilfe über F1 und Info mitliefern sowie übersetzte Einrichtungsanleitungen und Nilesoft-Shell-Referenzen aktualisieren.
+
 ## 1.2.2 — 2026-10-28
 
 - Die Verwendung des angepassten Ordneranbieters bei gemischter Sortierung und frei angeordneten Symbolen korrigieren. Bei freier Platzierung den nativen Anbieter verwenden und beim Übernehmen einer sortierten Anordnung den Anbieter wechseln, ohne gespeicherte Symbolpositionen, Auswahl oder Fokus zu verlieren.
