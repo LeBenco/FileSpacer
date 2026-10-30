@@ -193,6 +193,12 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     int maintenanceExit = 0, recoveryArgc = 0;
     wchar_t **recoveryArgv = CommandLineToArgvW(GetCommandLineW(), &recoveryArgc);
     if (!recoveryArgv) return 1;
+    if (recoveryArgc == 6 && lstrcmpW(recoveryArgv[1], L"/render-title-menu") == 0) {
+        const POINT origin = { _wtol(recoveryArgv[4]), _wtol(recoveryArgv[5]) };
+        const int result = renderTitleMenu(recoveryArgv[2], recoveryArgv[3], origin);
+        LocalFree(recoveryArgv);
+        return result;
+    }
     const bool maintenance = handleUpdateCommandLine(recoveryArgc, recoveryArgv, &maintenanceExit)
         || recovery::handleCommandLine(recoveryArgc, recoveryArgv, &maintenanceExit);
     const bool synchronizeMenus = !maintenance && recoveryArgc == 2
