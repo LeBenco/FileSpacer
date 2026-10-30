@@ -49,9 +49,11 @@ Les scénarios Everything nécessitent Everything dans l'invité ; l'installatio
 de l'hôte n'est pas une installation du client. Les préconditions propres à chaque
 cas (écrans, providers Shell, bureau déverrouillé…) restent applicables.
 
-La préparation des cas a été vérifiée sur l'hôte. La validation effective
-de ce transport porte sur des passages ciblés ; elle ne constitue pas un PASS
-du catalogue complet dans la VM.
+Le 30 octobre 2026, le catalogue complet a passé 132/132 cas dans AgentWin10
+(25 Internal, 107 UI), avec FileSpacer 1.2.3 Debug et un jeton invité limité,
+sans intervention pendant le passage. Le profil de test a été restauré,
+les données de production sont restées inchangées et le nettoyage n'a signalé
+aucune erreur. Les préconditions de session décrites plus haut restent requises.
 
 ## Diagnostic minimal historique
 
