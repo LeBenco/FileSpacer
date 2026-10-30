@@ -1,7 +1,10 @@
 # Website generation
 
-The public site concatenates `README.md`, the user guide, the privacy policy,
-the changelog and third-party notices. The original English documents remain
+The public site concatenates `README.md`, the user guide, the changelog and
+third-party notices. Privacy and local-data maintenance have separate sections
+in the user guide. The short standalone privacy policy remains on GitHub; its
+former site anchors still reach the relevant guide sections.
+The original English documents remain
 the source of the English site and the repository documentation. Complete
 website-only translations live under `website/translations/<language-region>/`.
 Build instructions, tests and technical notes remain on GitHub: links to files
@@ -10,7 +13,8 @@ The Nilesoft configuration reference has a translated file for each language;
 its GitHub links follow the selected language. Developer guides remain English.
 
 The generator discovers language directories containing `locale.json` and all
-five translated source files and the localized Nilesoft reference. It creates the
+four translated source files, the privacy policy and the localized Nilesoft
+reference. It creates the
 language selector above the sidebar navigation from those directories, using
 each language's own name and a Unicode
 flag. The bundled, OFL-licensed Noto Color Emoji flag font supplies flags on
@@ -34,6 +38,15 @@ upstream layout override translates its skip link and versions the compiled
 theme script so browsers receive search changes after deployment. Retain its
 MIT notice and review it when updating the theme. The repository README has no
 language selector or language links.
+
+Download buttons show the first released version in `CHANGELOG.md`, without a
+network request during generation. Keep `{version}` in each localized label.
+
+PNG and GIF screenshots are small linked thumbnails. A local script opens them
+in a native HTML dialog with a localized close button, Escape, backdrop dismissal
+and focus restoration. Links still open the image when JavaScript or native
+dialogs are unavailable. The theme has no built-in lightbox; no additional
+library or CDN is used. SVG logos are not treated as screenshots.
 
 The theme's `lunr/custom-index.js` hook uses Unicode word trimming for translated
 sites and omits English stemming and stop words. Lunr's default ASCII trimmer
