@@ -145,6 +145,7 @@ static BOOL compositionEnabled = FALSE;
 
 HACCEL ItemWindow::accelTable;
 UINT ItemWindow::settingsChangedMessage = 0;
+UINT ItemWindow::closeDescendantsMessage = 0;
 
 CComPtr<ItemWindow> ItemWindow::activeWindow;
 
@@ -267,6 +268,7 @@ int ItemWindow::cascadeSize() {
 
 void ItemWindow::init() {
     settingsChangedMessage = checkLE(RegisterWindowMessage(L"FileSpacer.SettingsChanged"));
+    closeDescendantsMessage = checkLE(RegisterWindowMessageW(L"FileSpacer.CloseDescendants"));
     ProxyIcon::init();
     PathBar::init();
 
@@ -672,12 +674,13 @@ bool ItemWindow::updateStateLock() {
     return true;
 }
 
-void ItemWindow::toggleStateLock() {
+void ItemWindow::toggleStateLock(bool replaceReference) {
     CComPtr<ItemWindow> keepAlive(this);
     if (!isFolder() || !settings::getWindowStateLockEnabled() || stateKey.empty()
             || !isWindowOperational() || !loadFolderState()) return;
     if (!updateStateLock()) return;
-    const bool locking = !stateLocked;
+    if (replaceReference && !stateLocked) return;
+    const bool locking = replaceReference || !stateLocked;
     const FolderState previous = savedState;
     // A transition must capture the visible view, never fill failed getters from
     // an older snapshot. Require every previously supported view property.
@@ -695,6 +698,7 @@ void ItemWindow::toggleStateLock() {
         return;
     }
     savedState.present |= captured;
+    layoutForgotten = false;
     viewStateClean(captured);
     storageErrorShown = false;
     updateStateLock();
@@ -702,6 +706,7 @@ void ItemWindow::toggleStateLock() {
 }
 
 void ItemWindow::persistViewState() {
+    if (layoutForgotten) return;
     if (stateKey.empty()) return; // No identity, or state expired after qualified access failures.
     if (!loadFolderState() || !updateStateLock()) return; // Do not overwrite unreadable state.
     const uint32_t captured = captureViewState(dirtyViewState);
@@ -715,6 +720,19 @@ void ItemWindow::persistViewState() {
     } else {
         stateStorageError(); // Failed writes remain dirty for the next event or close.
     }
+}
+
+void ItemWindow::forgetLayout() {
+    CComPtr<ItemWindow> keepAlive(this);
+    if (!isFolder() || !isWindowOperational() || stateKey.empty()) return;
+    if (MessageBoxW(hwnd, getString(IDS_TITLE_FORGET_CONFIRM), getString(IDS_APP_NAME),
+            MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2) != IDYES || !isWindowOperational()) return;
+    auto store = folderStateStore();
+    if (!store || !store->clear(stateKey, FolderState::All)) { stateStorageError(); return; }
+    savedState.present = 0; savedState.view = {}; savedState.icons.clear(); savedState.locked = false;
+    layoutForgotten = true;
+    viewStateClean(FolderState::All);
+    updateStateLock();
 }
 
 uint32_t ItemWindow::captureViewState(uint32_t mask) {
@@ -804,6 +822,23 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
         persistViewState();
     if (settingsChangedMessage && message == settingsChangedMessage) {
         onSettingsChanged();
+        return 0;
+    }
+    if (closeDescendantsMessage && message == closeDescendantsMessage) {
+        CComPtr<ItemWindow> keepAlive(this);
+        const HWND ancestor = reinterpret_cast<HWND>(wParam);
+        wchar_t name[64] = {};
+        if (ancestor != hwnd && isWindowOperational() && isFolder()
+                && GetClassNameW(ancestor, name, ARRAYSIZE(name))
+                && lstrcmpW(name, ITEM_WINDOW_CLASS) == 0) {
+#ifdef FILESPACER_DEBUG
+            if ((GetPropW(ancestor, L"FileSpacer.PlacementTest") != nullptr) != settings::testMode) return 0;
+#endif
+            const auto parents = getParentWindowProperties();
+            if (isWindowOperational() && std::any_of(parents.begin(), parents.end(),
+                    [ancestor](const std::wstring &property) { return GetPropW(ancestor, property.c_str()) != nullptr; }))
+                PostMessageW(hwnd, WM_CLOSE, 0, 0);
+        }
         return 0;
     }
     if (message == WM_DRAWITEM && proxyIcon.drawTitle(
@@ -1395,6 +1430,36 @@ bool ItemWindow::onCommand(WORD command) {
         case IDM_TOGGLE_STATE_LOCK:
             toggleStateLock();
             return true;
+        case IDM_CAPTION_COPY_PATH:
+        case IDM_CAPTION_PROPERTIES:
+        case IDM_CAPTION_CLOSE_PARENTS:
+            executeCaptionCommand(command);
+            return true;
+        case IDM_CLOSE_DESCENDANTS:
+        case IDM_CLOSE_OTHERS: {
+            CComPtr<ItemWindow> keepAlive(this);
+            struct Close { HWND source; UINT message; } close{hwnd,
+                command == IDM_CLOSE_DESCENDANTS ? closeDescendantsMessage : WM_CLOSE};
+            if (command == IDM_CLOSE_DESCENDANTS && !isFolder()) return true;
+            EnumWindows([](HWND target, LPARAM data) -> BOOL {
+                const auto &request = *reinterpret_cast<Close *>(data);
+                wchar_t name[64] = {};
+                if (target == request.source || !IsWindowVisible(target)
+                        || !GetClassNameW(target, name, ARRAYSIZE(name))
+                        || lstrcmpW(name, ITEM_WINDOW_CLASS) != 0) return TRUE;
+#ifdef FILESPACER_DEBUG
+                if ((GetPropW(target, L"FileSpacer.PlacementTest") != nullptr) != settings::testMode) return TRUE;
+#endif
+                PostMessageW(target, request.message, reinterpret_cast<WPARAM>(request.source), 0);
+                return TRUE;
+            }, reinterpret_cast<LPARAM>(&close));
+            return true;
+        }
+        case IDM_FOLDER_GROUPS: {
+            CComPtr<ItemWindow> keepAlive(this);
+            openFolderGroupsDialog(hwnd);
+            return true;
+        }
         case IDM_RENAME_PROXY:
             proxyIcon.beginRename();
             return true;
@@ -2425,6 +2490,9 @@ void ItemWindow::openCaptionMenu(POINT pos) {
         if (!GetClassName(window, windowClass, (int)ARRAYSIZE(windowClass))
                 || lstrcmp(windowClass, ITEM_WINDOW_CLASS) != 0)
             return TRUE;
+#ifdef FILESPACER_DEBUG
+        if ((GetPropW(window, L"FileSpacer.PlacementTest") != nullptr) != settings::testMode) return TRUE;
+#endif
         const int length = GetWindowTextLength(window);
         if (!length)
             return TRUE;
@@ -2463,6 +2531,8 @@ void ItemWindow::openCaptionMenu(POINT pos) {
         GetThemeColor(theme, MENU_POPUPITEM, MPI_NORMAL, TMT_TEXTCOLOR, &iconColor);
         CloseThemeData(theme);
     }
+    const auto composition = settings::getTitleMenu();
+    std::vector<int> menuOrder;
     auto append = [&](UINT command, const wchar_t *name, HBITMAP bitmap, bool enabled) {
         MENUITEMINFO info = {sizeof(info)};
         info.fMask = MIIM_ID | MIIM_STRING | MIIM_BITMAP | MIIM_STATE;
@@ -2470,7 +2540,21 @@ void ItemWindow::openCaptionMenu(POINT pos) {
         info.dwTypeData = const_cast<wchar_t *>(name);
         info.hbmpItem = bitmap;
         info.fState = enabled ? MFS_ENABLED : MFS_DISABLED;
-        InsertMenuItem(menu, (UINT)-1, TRUE, &info);
+        int entry = TITLE_OPEN_WINDOWS;
+        if (command < 20000) {
+            entry = -1;
+            for (int candidate = 0; candidate < TITLE_SEPARATOR; ++candidate)
+                if (titleMenuCommand(candidate) == command) { entry = candidate; break; }
+        }
+        const auto requested = std::find(composition.begin(), composition.end(), entry);
+        if (requested == composition.end()) { if (bitmap) DeleteObject(bitmap); return; }
+        const int order = static_cast<int>(requested - composition.begin());
+        const auto position = std::upper_bound(menuOrder.begin(), menuOrder.end(), order);
+        if (!InsertMenuItemW(menu, static_cast<UINT>(position - menuOrder.begin()), TRUE, &info)) {
+            if (bitmap) DeleteObject(bitmap);
+            return;
+        }
+        menuOrder.insert(position, order);
         if (bitmap)
             bitmaps.push_back(bitmap);
     };
@@ -2483,16 +2567,16 @@ void ItemWindow::openCaptionMenu(POINT pos) {
     item->GetAttributes(SFGAO_CANRENAME, &attributes);
     if (!isWindowOperational())
         return;
-    append(1, getString(IDS_CAPTION_COPY_PATH),
+    append(IDM_CAPTION_COPY_PATH, getString(IDS_CAPTION_COPY_PATH),
         captionCommandBitmap(MDL2_COPY_PATH, iconSize, iconColor), path != nullptr);
-    append(2, getString(IDS_CAPTION_RENAME),
+    append(IDM_RENAME_PROXY, getString(IDS_CAPTION_RENAME),
         captionCommandBitmap(MDL2_RENAME, iconSize, iconColor), (attributes & SFGAO_CANRENAME) != 0);
     if (isFolder() && settings::getWindowStateLockEnabled()) {
         updateStateLock();
         append(IDM_TOGGLE_STATE_LOCK,
             getString(stateLocked ? IDS_UNLOCK_WINDOW_STATE : IDS_LOCK_WINDOW_STATE), nullptr, true);
     }
-    append(3, getString(IDS_CAPTION_PROPERTIES),
+    append(IDM_CAPTION_PROPERTIES, getString(IDS_CAPTION_PROPERTIES),
         captionCommandBitmap(MDL2_PROPERTIES, iconSize, iconColor), true);
     if (isFolder()) {
         const auto parentProperties = getParentWindowProperties();
@@ -2508,7 +2592,7 @@ void ItemWindow::openCaptionMenu(POINT pos) {
                 break;
             }
         }
-        append(4, getString(IDS_CAPTION_CLOSE_PARENTS),
+        append(IDM_CAPTION_CLOSE_PARENTS, getString(IDS_CAPTION_CLOSE_PARENTS),
             captionCommandBitmap(MDL2_CLOSE_PARENTS, iconSize, iconColor), canCloseParents);
     }
     ClosedWindow lastClosed;
@@ -2527,12 +2611,20 @@ void ItemWindow::openCaptionMenu(POINT pos) {
     }
     const bool canReopen = canReopenClosedWindow(lastClosed);
     if (canReopen) {
-        append(5, reopenLabel.c_str(), captionCommandBitmap(MDL2_FOLDER, iconSize, iconColor),
+        append(IDM_REOPEN_WINDOW, reopenLabel.c_str(), captionCommandBitmap(MDL2_FOLDER, iconSize, iconColor),
             true);
-        reopenIcons.start(hwnd, menu, iconSize, {closedWindowPath(lastClosed)}, 5);
+        reopenIcons.start(hwnd, menu, iconSize, {closedWindowPath(lastClosed)}, IDM_REOPEN_WINDOW);
     }
-    if (!entries.empty())
-        AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
+    append(IDM_SETTINGS, getString(IDS_SETTINGS_CAPTION), nullptr, true);
+    if (isFolder()) {
+        append(IDM_RESTORE_LAYOUT, getString(IDS_TITLE_MENU_RESTORE), nullptr, stateLocked);
+        append(IDM_REPLACE_LAYOUT, getString(IDS_TITLE_MENU_REPLACE), nullptr, stateLocked);
+        append(IDM_FORGET_LAYOUT, getString(IDS_TITLE_MENU_FORGET), nullptr, !stateKey.empty());
+        append(IDM_CLOSE_DESCENDANTS, getString(IDS_TITLE_MENU_CLOSE_DESCENDANTS), nullptr, true);
+        append(IDM_FIT_CONTENT, getString(IDS_TITLE_MENU_FIT), nullptr, true);
+    }
+    append(IDM_CLOSE_OTHERS, getString(IDS_TITLE_MENU_CLOSE_OTHERS), nullptr, !entries.empty());
+    append(IDM_FOLDER_GROUPS, getString(IDS_TITLE_MENU_GROUPS), nullptr, true);
     CComPtr<IWICImagingFactory> factory;
     factory.CoCreateInstance(CLSID_WICImagingFactory);
     if (!isWindowOperational())
@@ -2548,10 +2640,25 @@ void ItemWindow::openCaptionMenu(POINT pos) {
             : nullptr;
         if (!bitmap)
             bitmap = captionCommandBitmap(MDL2_FOLDER, iconSize, iconColor);
-        append((UINT)index + 6, label.c_str(), bitmap, true);
+        append((UINT)index + 20000, label.c_str(), bitmap, true);
     }
     if (!isWindowOperational())
         return;
+    for (size_t index = 0; index < composition.size(); ++index) {
+        if (composition[index] != TITLE_SEPARATOR) continue;
+        const auto position = std::upper_bound(menuOrder.begin(), menuOrder.end(), static_cast<int>(index));
+        // Do not leave separators at either edge when conditional actions or
+        // the dynamic open-window block have no entries in this context.
+        if (position == menuOrder.begin() || position == menuOrder.end()) continue;
+        MENUITEMINFOW separator = {sizeof(separator)};
+        separator.fMask = MIIM_FTYPE | MIIM_ID; separator.fType = MFT_SEPARATOR;
+        separator.wID = static_cast<UINT>(0xe000 + index);
+        if (InsertMenuItemW(menu, static_cast<UINT>(position - menuOrder.begin()), TRUE, &separator))
+            menuOrder.insert(position, static_cast<int>(index));
+    }
+    if (!GetMenuItemCount(menu)) return;
+    CComPtr<IClassFactory> titleExtension;
+    activateTitleMenuExtension(&titleExtension);
     const UINT command = TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON,
         pos.x, pos.y, proxyIcon.getMenuOwner(), nullptr);
     reopenIcons.stop();
@@ -2559,7 +2666,32 @@ void ItemWindow::openCaptionMenu(POINT pos) {
     if (!isWindowOperational())
         return;
 
-    if (command == 1 && path) {
+    if (command >= 20000 && (size_t)(command - 20000) < entries.size()) {
+        const HWND target = entries[command - 20000].window;
+        wchar_t windowClass[64] = {};
+        // The selected window may have closed while the popup was open.
+        if (GetClassName(target, windowClass, (int)ARRAYSIZE(windowClass))
+                && lstrcmp(windowClass, ITEM_WINDOW_CLASS) == 0) {
+            if (IsIconic(target))
+                ShowWindowAsync(target, SW_RESTORE);
+            SetForegroundWindow(target);
+        }
+        // Selecting an existing window never navigates or closes the source.
+    } else if (command) {
+        onCommand(static_cast<WORD>(command));
+    }
+}
+
+void ItemWindow::executeCaptionCommand(WORD command) {
+    CComPtr<ItemWindow> keepAlive(this);
+    if (!isWindowOperational()) return;
+    CComHeapPtr<wchar_t> path;
+    if (command == IDM_CAPTION_COPY_PATH) {
+        if (FAILED(item->GetDisplayName(SIGDN_FILESYSPATH, &path)) && isWindowOperational())
+            item->GetDisplayName(SIGDN_DESKTOPABSOLUTEEDITING, &path);
+        if (!isWindowOperational()) return;
+    }
+    if (command == IDM_CAPTION_COPY_PATH && path) {
         const size_t bytes = ((size_t)lstrlen(path) + 1) * sizeof(wchar_t);
         HGLOBAL memory = GlobalAlloc(GMEM_MOVEABLE, bytes);
         if (!memory)
@@ -2579,11 +2711,11 @@ void ItemWindow::openCaptionMenu(POINT pos) {
         }
         if (memory)
             GlobalFree(memory);
-    } else if (command == 2) {
+    } else if (command == IDM_RENAME_PROXY) {
         proxyIcon.beginRename();
-    } else if (command == 3) {
+    } else if (command == IDM_CAPTION_PROPERTIES) {
         openProxyProperties();
-    } else if (command == 4 && isFolder()) {
+    } else if (command == IDM_CAPTION_CLOSE_PARENTS && isFolder()) {
         // Resolve the current ancestors again after the popup's nested message loop.
         const auto parentProperties = getParentWindowProperties();
         if (!isWindowOperational())
@@ -2609,19 +2741,8 @@ void ItemWindow::openCaptionMenu(POINT pos) {
         }, reinterpret_cast<LPARAM>(&search));
     } else if (command == IDM_TOGGLE_STATE_LOCK) {
         toggleStateLock();
-    } else if (command == 5) {
+    } else if (command == IDM_REOPEN_WINDOW) {
         reopenLastWindow(hwnd);
-    } else if (command >= 6 && (size_t)(command - 6) < entries.size()) {
-        const HWND target = entries[command - 6].window;
-        wchar_t windowClass[64] = {};
-        // The selected window may have closed while the popup was open.
-        if (GetClassName(target, windowClass, (int)ARRAYSIZE(windowClass))
-                && lstrcmp(windowClass, ITEM_WINDOW_CLASS) == 0) {
-            if (IsIconic(target))
-                ShowWindowAsync(target, SW_RESTORE);
-            SetForegroundWindow(target);
-        }
-        // Selecting an existing window never navigates or closes the source.
     }
 }
 
