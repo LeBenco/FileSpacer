@@ -139,12 +139,13 @@ $logic = @(
     (Block 'Function InitializeInstall\r?\n.*?FunctionEnd'),
     (Block 'Function ReplayWorkerLog\r?\n.*?FunctionEnd'),
     (Block 'Function ExplainWorkerFailure\r?\n.*?FunctionEnd'),
-    (Block 'Function InstallForAllUsers\r?\n.*?FunctionEnd')
+    (Block 'Function InstallForAllUsers\r?\n.*?FunctionEnd'),
+    (Block 'Function WriteUpdateResult\r?\n.*?FunctionEnd')
 ) -join "`r`n"
 $logic=$logic.Replace('$TEMP\FileSpacer-install-machine.log','@RUN@\worker.log')
 $parent = [regex]::Match($source, 'Call CheckClosed[^\r\n]*\r?\n(?<branch>.*?)(?=    ClearErrors)', 'Singleline').Groups['branch'].Value
 if (!$parent.Contains('Call InstallForAllUsers')) { throw 'Missing machine-install delegation.' }
-$errors = (@($source -split '\r?\n' | Where-Object { $_ -match '^LangString (ERROR_MACHINE(?:_\w+)?|ERROR_SCOPE|MACHINE_WAIT|OPEN_LOG) ' }) -join "`r`n")
+$errors = (@($source -split '\r?\n' | Where-Object { $_ -match '^LangString (ERROR_MACHINE(?:_\w+)?|ERROR_INSTALL|ERROR_SCOPE|MACHINE_WAIT|OPEN_LOG) ' }) -join "`r`n")
 $defines = (@($source -split '\r?\n' | Where-Object { $_ -match '^!define EXIT_' }) -join "`r`n")
 $bootstrap = @'
 Unicode True
@@ -174,6 +175,7 @@ Var elevatedParameters
 Var elevatedResult
 Var fakeResult
 Var logPath
+Var updateResult
 Section "Start" SecStart
 SectionEnd
 Section "Context" SecContext
@@ -199,6 +201,7 @@ Function .onInit
     ${EndIf}
     Call InitializeInstall
     Call ApplyMachineParent
+    Call WriteUpdateResult
     FileOpen $9 "@RUN@\@NAME@.txt" w
     FileWriteWord $9 0xFEFF
     FileWriteUTF16LE $9 'Mode=$installMode$\r$\nDirectory=$INSTDIR$\r$\nLanguage=$LANGUAGE$\r$\nWorker=$machineWorker$\r$\n'
@@ -242,6 +245,19 @@ if((Get-Item -LiteralPath (Join-Path $RunDirectory 'worker.log')).Length -lt 2){
 if ($report.Mode -cne 'AllUsers' -or $report.Parameters -cne $expected.Replace(' /D=',$logArgument+' /D=')) { throw 'Elevated command did not preserve the selected scope, directory or language.' }
 Run-Probe 'BootstrapProbe' ('/AllUsers /Result=1223 /D='+$fixture) 1
 Run-Probe 'BootstrapProbe' ('/AllUsers /Result=7 /D='+$fixture) 7
+foreach($mode in @('CurrentUser','AllUsers')) {
+    $setupResult=Join-Path $RunDirectory ($mode+' result with spaces.ini')
+    $setupDirectory=if($mode-eq'AllUsers'){Join-Path $fixture ([string][char]0x00e9+[char]0x6587)}else{$fixture}
+    [void][IO.Directory]::CreateDirectory($setupDirectory)
+    Run-Probe 'BootstrapProbe' ('/'+$mode+' /UpdateResult="'+$setupResult+'" /D='+$setupDirectory) 0
+    $receipt=[IO.File]::ReadAllText($setupResult,[Text.Encoding]::Unicode)
+    foreach($entry in @('Complete=1',('Mode='+$mode),('Executable='+$setupDirectory+'\FileSpacer.exe'))) {
+        if($receipt -notmatch ('(?m)^'+[regex]::Escape($entry)+'\r?$')) { throw ('Wrong setup receipt: '+$entry) }
+    }
+}
+$cancelResult=Join-Path $RunDirectory 'cancelled-result.ini'
+Run-Probe 'BootstrapProbe' ('/AllUsers /Result=1223 /UpdateResult="'+$cancelResult+'" /D='+$fixture) 1
+if(Test-Path -LiteralPath $cancelResult){throw 'Cancelled elevation wrote a completed setup result.'}
 
 # The real effective-token check above is retained in BootstrapProbe. A separate
 # probe stubs only that token query to test worker options without host elevation.
