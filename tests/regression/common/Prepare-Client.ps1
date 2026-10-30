@@ -127,6 +127,13 @@ function New-ClientPackage {
     Build-ManagedBundle 'runner' $runnerFiles
     foreach($entry in $Selected) {
         Write-Host ('PREPARE '+$entry.Relative)
+        if ($entry.Relative -like '32-installeur\*') {
+            & (Join-Path $ProjectRoot 'tests\installer\Prepare-ArtworkFixture.ps1')
+            foreach($relative in @('build\FileSpacer-install.exe','build\installer-tests\artwork\ArtworkUninstall.exe',
+                'build\installer-assets\wizard-en.bmp','build\installer-assets\wizard-fr.bmp')) {
+                Copy-PackageFile (Join-Path $ProjectRoot $relative)
+            }
+        }
         $dependencies=@{}
         Get-Dependencies $entry.File.FullName $dependencies
         foreach($file in @($dependencies.Keys | Sort-Object)) {
