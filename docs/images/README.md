@@ -102,9 +102,12 @@ They use matching resources from released commit `10c4027`; only language
 selection is overridden in disposable documentation builds. Older captures
 remain available for reference.
 
-The seven `spatial-windows` images have 32 pixels of matching blue-gray canvas on every
-side so the windows do not touch the image edge. Their original screenshot
-pixels are unchanged; original dimensions and hashes are retained in provenance.
+The spatial and Everything scenes include 32 pixels of the real blue-gray
+background around the visible window frames. This captures their native shadows
+completely. The margin is recorded with the scene, not added as flat canvas
+after a tight crop. Spatial scenes are slightly shorter to keep operating-system
+overlays outside the capture. Dimensions, capture bounds and hashes are retained
+in provenance.
 
 The VM's Windows session is French, so Windows-owned breadcrumb labels and
 size formatting may remain French. Everything has no European Portuguese
@@ -145,9 +148,11 @@ For single-window static screenshots, capture only the visible window frame, inc
 title bar. Keep menus and suggestions entirely inside that frame. Exclude the desktop, taskbar, shadows,
 invisible resize borders and operating-system overlays. A window can be moved
 or resized before capture to keep overlays outside its bounds. Multi-window
-scenes start with the smallest rectangle containing their visible frames, with
-only the original solid-color background in the gaps. Matching solid-color outer canvas may
-be added afterwards; record its size and preserve the original pixels.
+scenes include 32 pixels beyond the smallest rectangle containing their visible
+frames, with the original solid-color background in the gaps. Capture these
+pixels directly so the shadows can fade naturally; adding canvas after clipping
+them does not restore them. Keep the entire capture inside the real desktop and
+away from operating-system overlays. Check the outer edges as well as the content.
 
 Check each PNG at its original size, then run:
 
