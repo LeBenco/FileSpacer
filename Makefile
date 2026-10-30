@@ -46,6 +46,7 @@ OBJECTS = \
     $(OUTDIR)\ExecuteCommand.obj \
     $(OUTDIR)\Everything.obj \
     $(OUTDIR)\FolderWindow.obj \
+    $(OUTDIR)\FolderGroups.obj \
     $(OUTDIR)\FolderIdentity.obj \
     $(OUTDIR)\FolderStateStore.obj \
     $(OUTDIR)\GDIUtils.obj \
@@ -57,6 +58,8 @@ OBJECTS = \
     $(OUTDIR)\Settings.obj \
     $(OUTDIR)\SettingsDialog.obj \
     $(OUTDIR)\ShortcutSettingsPage.obj \
+    $(OUTDIR)\TitleMenuDialog.obj \
+    $(OUTDIR)\TitleMenuRenderer.obj \
     $(OUTDIR)\ShellUtils.obj \
     $(OUTDIR)\MixedFolder.obj \
     $(OUTDIR)\ShellViewHost.obj \
@@ -100,6 +103,7 @@ $(SQLITE_OBJECT): $(SQLITE_DIR)\sqlite3.c $(SQLITE_DIR)\sqlite3.h Makefile
 	cl.exe $(SQLITE_FLAGS) /Fd$(OUTDIR)\sqlite3-compiler.pdb /Fo$(SQLITE_OBJECT) /c $(SQLITE_DIR)\sqlite3.c
 
 $(RESOURCE): src\*.rc src\resource.h src\dialog.h \
+    src\res\title-menu-backdrop.bmp \
     src\res\FileSpacer.exe.manifest $(ICON_ICO) $(LOCK_BADGE_ICO) \
     Makefile
 	rc.exe /D _UNICODE /D UNICODE /n /I src /fo $(RESOURCE) src\resource.rc
