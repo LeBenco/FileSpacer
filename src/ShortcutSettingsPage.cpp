@@ -130,8 +130,12 @@ public:
     // The sheet keeps this page active while its shortcuts are invalid
     // (PSN_KILLACTIVE) and refuses to apply them (PSN_APPLY): the user is
     // told which entry is refused and why, instead of a silent no-op.
-    void explainInvalid() const {
+    void explainInvalid() {
         const int target = !validShortcut(pending.move) ? 0 : 1;
+        // Focus restored to a shared auto-radio button can select it for the
+        // other action. Keep the refused choice intact while opening its editor.
+        SetFocus(GetDlgItem(page, enableIds[target]));
+        if (selected != target) open(target);
         const auto &value = target == 0 ? pending.move : pending.resize;
         const auto title = formatString(IDS_SHORTCUT_APPLY_REFUSED, getString(nameIds[target]));
         const auto conflict = formatString(IDS_SHORTCUT_CONFLICT, getString(nameIds[1 - target]));
@@ -313,8 +317,6 @@ INT_PTR CALLBACK shortcutsProc(HWND window, UINT message, WPARAM wParam, LPARAM 
         if (notification->code == PSN_SETACTIVE) self->update();
         else if (notification->code == PSN_KILLACTIVE) {
             const bool invalid = !validShortcuts(self->pending);
-            const int target = !validShortcut(self->pending.move) ? 0 : 1;
-            if (invalid && self->selected != target) self->open(target);
             if (invalid) self->explainInvalid();
             SetWindowLongPtrW(window, DWLP_MSGRESULT, invalid); return TRUE;
         } else if (notification->code == PSN_APPLY) {
