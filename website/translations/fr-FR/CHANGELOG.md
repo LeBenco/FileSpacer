@@ -2,6 +2,14 @@
 
 ## À venir
 
+## 1.2.3 — 2026-10-30
+
+- Corriger les identités, les surimpressions d’icônes et les notifications de dossiers du tri mixte ; conserver les positions libres des icônes et utiliser les vues natives si le fournisseur est indisponible ou incompatible.
+- Garantir une seule fenêtre Préférences entre processus et corriger la validation des raccourcis, les chemins Everything, les mnémoniques clavier et les traductions régionales.
+- Corriger la fermeture des dossiers, les clics d’activation et la restauration après un aperçu du menu Affichage.
+- Corriger les rafraîchissements des Jump Lists et les diagnostics de l’installeur ; conserver les fichiers d’aide utilisateur pendant les mises à niveau et la désinstallation.
+- Intégrer l’aide multilingue hors ligne par F1 et À propos, et actualiser les guides de configuration traduits et les références Nilesoft Shell.
+
 ## 1.2.2 — 2026-10-28
 
 - Corriger l’utilisation du fournisseur de dossiers personnalisé par le tri mixte en disposition libre des icônes. Utiliser le fournisseur natif pour le placement libre et changer de fournisseur à la validation d’une disposition triée, en conservant les positions enregistrées des icônes, la sélection et le focus.
