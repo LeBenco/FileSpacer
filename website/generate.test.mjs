@@ -28,7 +28,7 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
     return fs.rm(output, {recursive: true, force: true});
   });
   const result = await generate(repository, output);
-  assert.equal(result.documents, 5);
+  assert.equal(result.documents, 4);
   const html = await fs.readFile(path.join(output, 'index.html'), 'utf8');
   const nav = await fs.readFile(path.join(output, '_includes/components/site_nav.html'), 'utf8');
   assert.match(html, /href="#user-guide--moving-and-resizing"/);
@@ -45,7 +45,31 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
   assert.match(windows, /<h4 id="user-guide--locking-a-saved-layout"/);
   assert.match(html, /href="#user-guide--locking-a-saved-layout"/);
   assert.match(html, /assets\/content\/src\/res\/FileSpacer\.svg/);
+  assert.doesNotMatch(nav, /href="#privacy-policy"/);
+  assert.match(nav, /href="#user-guide--privacy"/);
+  for (const [alias, target] of [
+    ['privacy-policy', 'privacy'], ['privacy-policy--local-data', 'local-data'],
+    ['privacy-policy--resetting-preferences', 'local-data'],
+    ['privacy-policy--update-checks', 'settings-and-updates'],
+    ['privacy-policy--windows-and-external-applications', 'privacy'],
+  ]) assert.ok(html.includes(`id="${alias}" data-alias-for="user-guide--${target}"`));
+  const screenshots = [...html.matchAll(/<a class="screenshot-link"[^>]+><img\b[^>]+><\/a>/g)];
+  assert.equal(screenshots.length, [...html.matchAll(/<img\b[^>]*src="[^"]+\.(?:png|gif)"/g)].length);
+  assert.ok(screenshots.length > 0);
+  assert.ok(screenshots.every(([link]) => !link.includes('.svg')));
+  assert.match(html, /screenshot-link" href="assets\/content\/docs\/images\/spatial-windows\.png"/);
   await fs.access(path.join(output, 'assets/content/src/res/FileSpacer.svg'));
+});
+
+test('download version skips unreleased notes and follows the newest release', async t => {
+  const root = await fixture(t);
+  await fs.writeFile(path.join(root, 'CHANGELOG.md'), '# Changelog\n\n## Unreleased\n\nPending.\n\n## 9.8.7 — 2026-10-30\n\nReleased.\n');
+  await generate(root, path.join(root, 'output'));
+  const config = await fs.readFile(path.join(root, 'output/_config.yml'), 'utf8');
+  assert.match(config, /Download v9\.8\.7/);
+  assert.doesNotMatch(config, /\{version\}/);
+  await fs.writeFile(path.join(root, 'CHANGELOG.md'), '# Changelog\n\n## [Unreleased]\n');
+  await assert.rejects(generate(root, path.join(root, 'invalid')), /Missing released version/);
 });
 
 test('broken source anchors fail generation instead of publishing broken navigation', async t => {
@@ -96,14 +120,17 @@ test('all available translations keep English section IDs, localized navigation 
     assert.ok(nav.indexOf('language-picker') < nav.indexOf('<ul class="nav-list">'));
     assert.ok(nav.includes('hreflang="' + language.code + '"'));
     assert.ok(config.includes('lang: ' + language.code));
+    assert.match(config, /v\d+\.\d+\.\d+/);
+    assert.doesNotMatch(config, /\{version\}/);
+    assert.match(html, /class="screenshot-link"[^>]+aria-label="[^"]+"/);
     assert.ok(config.includes('baseurl: /FileSpacer' + (language.path ? '/' + language.path : '')));
     assert.equal(language.images, result.images);
     const reference = (language.path ? `website/translations/${language.code}/` : '') + 'docs/nilesoft-shell.md';
     assert.ok(html.includes('href="https://github.com/LeBenco/FileSpacer/blob/main/' + reference + '"'), 'Nilesoft reference must use the selected language');
     await fs.access(path.join(repository, reference));
   }
-  const localizedImage = await fs.readFile(path.join(output, '_locales/fr-FR/assets/content/docs/images/overview.png'));
-  assert.deepEqual(localizedImage, await fs.readFile(path.join(repository, 'docs/images/overview-fr.png')));
+  const localizedImage = await fs.readFile(path.join(output, '_locales/fr-FR/assets/content/docs/images/spatial-windows.png'));
+  assert.deepEqual(localizedImage, await fs.readFile(path.join(repository, 'docs/images/spatial-windows-fr.png')));
 });
 
 test('a translation with a missing document is rejected rather than partially published', async t => {
@@ -118,7 +145,7 @@ test('a translation with a missing document is rejected rather than partially pu
 
 test('missing localized media and mismatched translation headings fail the build', async t => {
   const {root, target} = await translatedFixture(t);
-  const image = path.join(root, 'docs/images/overview-fr.png');
+  const image = path.join(root, 'docs/images/spatial-windows-fr.png');
   const bytes = await fs.readFile(image);
   await fs.unlink(image);
   await assert.rejects(generate(root, path.join(root, 'output')), /Missing localized media \(fr-FR\)/);
