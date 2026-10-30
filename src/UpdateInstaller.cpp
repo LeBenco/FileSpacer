@@ -1,4 +1,5 @@
 #include "UpdateInstaller.h"
+#include "UpdateInstallTarget.h"
 #include "Update.h"
 #include "UpdateSession.h"
 #include "ProcessLifetime.h"
@@ -501,22 +502,6 @@ bool unsignedDecimal(const wchar_t *text, uint64_t maximum, uint64_t &value) {
     return true;
 }
 
-std::wstring installedExecutable(const wchar_t *fallback) {
-    // Setup can be started from a local build; restart the installed application.
-    const HKEY roots[] = {HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
-    for (HKEY root : roots) {
-        CRegKey key;
-        if (key.Open(root, L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\FileSpacer.exe",
-                KEY_READ | KEY_WOW64_64KEY) != ERROR_SUCCESS) continue;
-        std::vector<wchar_t> path(32768);
-        ULONG length = static_cast<ULONG>(path.size());
-        if (key.QueryStringValue(nullptr, path.data(), &length) != ERROR_SUCCESS || !path[0]) continue;
-        const DWORD attributes = GetFileAttributesW(path.data());
-        if (attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY)) return path.data();
-    }
-    return fallback;
-}
-
 DWORD runInstallerRelay(int argc, wchar_t **argv) {
     uint64_t size = 0, gateValue = 0;
     if (argc != 7 || !unsignedDecimal(argv[5], MAX_INSTALLER_SIZE, size) || !size
@@ -538,6 +523,7 @@ DWORD runInstallerRelay(int argc, wchar_t **argv) {
     const std::wstring directory = relay.substr(0, slash);
     const std::wstring installer = directory + L"\\FileSpacer-install.exe";
     const std::wstring sessionFile = directory + L"\\windows.sqlite3";
+    const std::wstring resultFile = directory + L"\\installation.ini";
     if (installer != argv[3] || relay == argv[2]) return ERROR_INVALID_PARAMETER;
     // Hold a read-only handle without write/delete sharing until the installer exits.
     CHandle file(CreateFileW(installer.c_str(), GENERIC_READ, FILE_SHARE_READ,
@@ -557,13 +543,17 @@ DWORD runInstallerRelay(int argc, wchar_t **argv) {
         if (!collectProcesses(argv[2], remaining))
             EnumWindows(requestQuit, reinterpret_cast<LPARAM>(&remaining));
     }
-    bool installed = false;
+    std::wstring restartExecutable = argv[2];
+    bool canRestart = true;
     if (!error) {
+        const auto origin = findUpdateInstallTarget(argv[2]);
+        const std::wstring parameters = updateInstallerParameters(origin, resultFile);
         HRESULT init = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
         SHELLEXECUTEINFOW execute = {sizeof(execute)};
         execute.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC | SEE_MASK_FLAG_NO_UI;
         execute.lpVerb = L"open";
         execute.lpFile = installer.c_str();
+        execute.lpParameters = parameters.c_str();
         execute.lpDirectory = directory.c_str();
         execute.nShow = SW_SHOWNORMAL;
         if (!ShellExecuteExW(&execute)) error = GetLastError();
@@ -572,7 +562,12 @@ DWORD runInstallerRelay(int argc, wchar_t **argv) {
             DWORD status = 0;
             if (WaitForSingleObject(execute.hProcess, INFINITE) != WAIT_OBJECT_0
                     || !GetExitCodeProcess(execute.hProcess, &status)) error = GetLastError();
-            else if (status == 0) installed = true;
+            else if (status == 0) {
+                UpdateInstallTarget installed;
+                error = readUpdateInstallResult(resultFile, installed);
+                canRestart = !error;
+                if (!error) restartExecutable = installed.executable;
+            }
             else error = status == 1 ? ERROR_CANCELLED : ERROR_INSTALL_FAILURE;
             CloseHandle(execute.hProcess);
         }
@@ -585,14 +580,14 @@ DWORD runInstallerRelay(int argc, wchar_t **argv) {
         const DWORD inspectError = inspectUpdateWindowSession(sessionFile.c_str(), &hasWindows);
         if (inspectError) {
             if (!error || error == ERROR_CANCELLED) error = inspectError;
-        } else if (hasWindows) {
-            const std::wstring executable = installed ? installedExecutable(argv[2]) : argv[2];
-            const DWORD restartError = launchUpdateSession(executable, sessionFile);
+        } else if (hasWindows && canRestart) {
+            const DWORD restartError = launchUpdateSession(restartExecutable, sessionFile);
             if (restartError && (!error || error == ERROR_CANCELLED)) error = restartError;
-        } else DeleteFileW(sessionFile.c_str());
+        } else if (!hasWindows) DeleteFileW(sessionFile.c_str());
     }
     file.Close();
     DeleteFileW(installer.c_str());
+    DeleteFileW(resultFile.c_str());
     // Windows keeps our own executable mapped. The directory is reused by nobody;
     // the next update removes stale relay copies after their processes have ended.
     return error == ERROR_CANCELLED ? ERROR_SUCCESS : error;
@@ -619,6 +614,18 @@ void cleanOldRelays() {
         if (current.QuadPart <= created.QuadPart
                 || current.QuadPart - created.QuadPart < 24ULL * 60 * 60 * 10000000) continue;
         const std::wstring directory = base + data.cFileName;
+        // Keep saved windows when setup or a later restoration did not complete.
+        // In particular, a missing/invalid setup result must not lose the session.
+        const std::wstring sessionPath = directory + L"\\windows.sqlite3";
+        const DWORD session = GetFileAttributesW(sessionPath.c_str());
+        const DWORD sessionError = session == INVALID_FILE_ATTRIBUTES ? GetLastError() : ERROR_SUCCESS;
+        if (session != INVALID_FILE_ATTRIBUTES
+                || (sessionError != ERROR_FILE_NOT_FOUND && sessionError != ERROR_PATH_NOT_FOUND)) continue;
+        const std::wstring restoringPath = directory + L"\\windows.sqlite3.restoring";
+        const DWORD restoring = GetFileAttributesW(restoringPath.c_str());
+        const DWORD restoringError = restoring == INVALID_FILE_ATTRIBUTES ? GetLastError() : ERROR_SUCCESS;
+        if (restoring != INVALID_FILE_ATTRIBUTES
+                || (restoringError != ERROR_FILE_NOT_FOUND && restoringError != ERROR_PATH_NOT_FOUND)) continue;
         // A live relay's mapped image cannot be deleted; retain its installer too.
         if (DeleteFileW((directory + L"\\FileSpacerUpdate.exe").c_str())
                 || GetLastError() == ERROR_FILE_NOT_FOUND) {
@@ -626,6 +633,7 @@ void cleanOldRelays() {
             DeleteFileW((directory + L"\\windows.sqlite3").c_str());
             DeleteFileW((directory + L"\\windows.sqlite3-journal").c_str());
             DeleteFileW((directory + L"\\windows.sqlite3.restoring").c_str());
+            DeleteFileW((directory + L"\\installation.ini").c_str());
             RemoveDirectoryW(directory.c_str());
         }
     } while (FindNextFileW(find, &data));
