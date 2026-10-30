@@ -404,14 +404,16 @@ void updateReopenJumpLists() {
             }
             const uint64_t fingerprint = model.fingerprint();
             if (built && fingerprint == builtFingerprint) return;
+            built = false; // A partial replacement also invalidates the previous model.
             std::vector<CComPtr<IShellLinkW>> destinations;
+            bool complete = true;
             for (const auto &entry : pinned) {
                 CComPtr<IShellLinkW> link;
                 if (makeJumpListLink(executable.data(), folderArguments(entry.parsingName.c_str()).c_str(),
                         entry.name.c_str(), entry.icon, &link))
                     destinations.push_back(link);
+                else complete = false;
             }
-            bool complete = true;
             for (const auto &appID : appIDs)
                 complete = buildJumpList(appID.c_str(), executable.data(), canReopen ? reopenName.c_str() : nullptr,
                     reopenIcon, destinations) && complete;
