@@ -2,11 +2,11 @@
 
 ## Unreleased
 
-- Smooth the installer and uninstaller sidebar logo with high-quality image scaling at the current display size.
-- Preserve quoted elevation arguments so an all-users update starts its silent worker instead of reopening the installer.
-
 ## 1.2.3 — 2026-10-30
 
+- Smooth the installer and uninstaller sidebar logo with high-quality image scaling at the current display size.
+- Preserve quoted elevation arguments so an all-users update starts its silent worker instead of reopening the installer.
+- Update the originating installation by default and restore windows with the exact executable reported by setup, including when personal and all-users installations coexist.
 - Fix mixed sorting identities, overlays and folder notifications; keep free icon positions and use native views when the provider is unavailable or incompatible.
 - Fix Preferences uniqueness across processes, shortcut validation, Everything paths, keyboard mnemonics and regional translations.
 - Fix folder closing, activation clicks and View menu preview restoration.
