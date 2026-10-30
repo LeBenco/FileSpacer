@@ -7,11 +7,15 @@ const template = path.dirname(fileURLToPath(import.meta.url));
 const sources = [
   ['README.md', 'overview'],
   ['docs/user-guide.md', 'user-guide'],
-  ['docs/privacy-policy.md', 'privacy-policy'],
   ['CHANGELOG.md', 'changelog'],
   ['THIRD_PARTY_NOTICES.md', 'third-party-notices'],
 ];
-const localizedReferences = ['docs/nilesoft-shell.md'];
+const localizedReferences = ['docs/nilesoft-shell.md', 'docs/privacy-policy.md'];
+const privacyAliases = {
+  'user-guide--settings-and-updates': ['privacy-policy--update-checks'],
+  'user-guide--local-data': ['privacy-policy--local-data', 'privacy-policy--resetting-preferences'],
+  'user-guide--privacy': ['privacy-policy', 'privacy-policy--windows-and-external-applications'],
+};
 const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 const text = value => value.replace(/<[^>]*>/g, '').replace(/[*`_~]/g, '');
 const slug = value => text(value).toLowerCase().replace(/[^\p{L}\p{M}\p{N}_\-\s]/gu, '').replace(/\s/g, '-');
@@ -52,9 +56,13 @@ function describeLanguage(code, ui, root, base, primary = false) {
 }
 
 export async function generate(repository = path.dirname(template), destination = path.join(repository, 'build/site-source')) {
+  const changelog = await fs.readFile(path.join(repository, 'CHANGELOG.md'), 'utf8');
+  const version = changelog.match(/^##\s+\[?v?(\d+\.\d+\.\d+(?:-[\w.-]+)?)\]?(?=\s|$)/m)?.[1];
+  if (!version) throw new Error('Missing released version in CHANGELOG.md');
   const config = (await fs.readFile(path.join(template, '_config.yml'), 'utf8')).replaceAll('\r\n', '\n');
   const base = config.match(/^baseurl:\s*(.*)$/m)[1].trim().replace(/\/$/, '');
   const english = JSON.parse(await fs.readFile(path.join(template, 'locale.json'), 'utf8'));
+  english.download = english.download.replace('{version}', 'v' + version);
   const languages = [describeLanguage(english.locale, english, repository, base, true)];
   const translations = path.join(repository, 'website/translations');
   if (await exists(translations)) {
@@ -68,6 +76,7 @@ export async function generate(repository = path.dirname(template), destination 
       for (const key of Object.keys(english).filter(key => key !== 'locale')) {
         if (typeof ui[key] !== 'string' || !ui[key].trim()) throw new Error(`Missing interface translation ${entry.name}: ${key}`);
       }
+      ui.download = ui.download.replace('{version}', 'v' + version);
       languages.push(describeLanguage(entry.name, ui, root, base));
     }
   }
@@ -118,6 +127,7 @@ export async function generate(repository = path.dirname(template), destination 
       }
       const doc = documents.get(target);
       if (!doc) {
+        if (target === 'docs/privacy-policy.md' && !fragment) return '#user-guide--privacy';
         const reference = language !== languages[0] && localizedReferences.includes(target)
           ? `website/translations/${language.code}/${target}` : target;
         return 'https://github.com/LeBenco/FileSpacer/blob/main/' + reference.split('/').map(encodeURIComponent).join('/') + (fragment ? '#' + encodeURIComponent(fragment) : '');
@@ -135,12 +145,18 @@ export async function generate(repository = path.dirname(template), destination 
       const renderer = new Marked({gfm: true, renderer: {
         heading(token) {
           const title = token.siteTitle ? escape(token.siteTitle) : this.parser.parseInline(token.tokens);
-          return `<h${token.siteDepth} id="${escape(token.siteId)}"><a href="#${escape(token.siteId)}" class="anchor-heading" aria-labelledby="${escape(token.siteId)}"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a>${title}</h${token.siteDepth}>\n`;
+          const aliases = (privacyAliases[token.siteId] || []).map(id => `<span id="${id}" data-alias-for="${token.siteId}" aria-hidden="true"></span>`).join('');
+          return `${aliases}<h${token.siteDepth} id="${escape(token.siteId)}"><a href="#${escape(token.siteId)}" class="anchor-heading" aria-labelledby="${escape(token.siteId)}"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a>${title}</h${token.siteDepth}>\n`;
         },
       }});
       rendered.push(`<section aria-labelledby="${doc.id}" data-source="${doc.source}">\n${renderer.parser(doc.tokens)}</section>`);
     }
-    const html = `<h1 class="fs-9">FileSpacer</h1>\n${rendered.join('\n<hr>\n')}`;
+    const html = `<h1 class="fs-9">FileSpacer</h1>\n${rendered.join('\n<hr>\n')}`.replace(/<img\b[^>]*>/g, img => {
+      const src = img.match(/\bsrc="([^"]+)"/)?.[1];
+      if (!src || !/\.(png|gif)$/i.test(src)) return img;
+      const alt = img.match(/\balt="([^"]*)"/)?.[1] || '';
+      return `<a class="screenshot-link" href="${src}" aria-label="${escape(language.ui.enlargeImage)}: ${alt}">${img}</a>`;
+    });
     const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
     const missing = [...html.matchAll(/<a\b[^>]*href="#([^"]+)"/g)].filter(match => !ids.includes(match[1]));
     if (new Set(ids).size !== ids.length || missing.length) throw new Error('Duplicate heading IDs or broken internal links');
