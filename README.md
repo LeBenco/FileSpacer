@@ -8,6 +8,8 @@ FileSpacer is a file manager for Windows built around the [spatial paradigm](htt
 
 To address the accumulation of windows, a recognized drawback of the spatial paradigm, FileSpacer closes the source window by default when a folder is opened. Hold Ctrl while opening a folder to keep the source window open when you want to work with several folders at once.
 
+<img src="docs/images/spatial-windows.png" alt="Three non-overlapping folder windows with different sizes, view modes and icon scales, including a free icon layout." width="560">
+
 FileSpacer keeps its interface deliberately understated, unlike some cluttered interfaces that leave just enough room between the buttons to glimpse a file.
 
 Tabs are incompatible with the spatial model and will never be added.
@@ -15,13 +17,11 @@ Tabs are incompatible with the spatial model and will never be added.
 Windows 10 or later, x64. Available in English, French, German, Italian, Spanish,
 Portuguese (Portugal) and Greek.
 
+No telemetry, usage tracking or advertising. Update checks contact GitHub; weekly checks are optional and off by default. Downloading and installing require confirmation. [Privacy](docs/user-guide.md#privacy).
+
 [Download the latest release](https://github.com/LeBenco/FileSpacer/releases/latest)
 · [User guide](docs/user-guide.md)
 · [Changelog](CHANGELOG.md)
-
-![A FileSpacer folder window with freely arranged demo files and folders.](docs/images/overview.png)
-
-*Each folder keeps its own window and icon layout.*
 
 ## Features
 
@@ -48,18 +48,11 @@ Portuguese (Portugal) and Greek.
 
 ## Integration
 
-If you use **Everything**, you can integrate it with FileSpacer to run advanced
-searches from its search field. Search the current folder and its subfolders,
-or all indexed files; results open in Everything.
-[Integration and usage](docs/user-guide.md#everything).
+FileSpacer can be set as the default file manager during installation or later in Settings. Files open with their usual Windows applications; network folders use Windows' usual handling. [Windows integration](docs/user-guide.md#windows-integration).
 
-If you use **Nilesoft Shell**, you can also let it theme FileSpacer's menus and
-customize their commands, with rules targeting individual menus. Configuration
-adjustments are recommended for a consistent appearance.
-[Integration and configuration](docs/user-guide.md#nilesoft-shell).
+With **Everything**, advanced searches can be launched from FileSpacer's search field, in the current folder and its subfolders or across all indexed files. Results open in Everything. [Integration and usage](docs/user-guide.md#everything).
 
-FileSpacer can also be set as the default application for opening folders.
-[Windows integration](docs/user-guide.md#windows-integration).
+With **Nilesoft Shell**, FileSpacer's menus can use its themes and custom commands. Configuration adjustments are recommended for a consistent appearance. [Integration and configuration](docs/user-guide.md#nilesoft-shell).
 
 ## Build
 
@@ -75,7 +68,7 @@ See the [test guide](tests/regression/README.md).
 ---
 
 FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler),
-created by J. van't Hoog. Many thanks to vanjac for the foundation!
+created by J. van't Hoog (vanjac). Many thanks to vanjac for the foundation!
 
 Distributed under the [GNU GPL v3.0](LICENSE).
 Copyright © 2026 Benco for FileSpacer modifications;
