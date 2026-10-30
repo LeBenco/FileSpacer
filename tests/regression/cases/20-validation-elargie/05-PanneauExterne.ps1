@@ -102,7 +102,7 @@ try {
         Activate-Ui $source
         Use-UiView $source { param($view) $view.Select('AnchorA.txt'); $view.Focus() }
         [FileSpacerRegression.Native]::Keys($source,0x4c,$true,$false)
-        Wait-Ui { [FileSpacerRegression.ShellIntegration]::RenameFocused($source) } 'FileSpacer address editor receives focus'
+        Wait-Ui { [FileSpacerRegression.ShellIntegration]::EditFocused($source) } 'FileSpacer address editor receives focus'
         [FileSpacerRegression.ShellIntegration]::TypeText($source,$targets[0])
         [FileSpacerRegression.Native]::Keys($source,0x0d,$control,$false)
         $panel=Wait-ExternalPanel ('address-control-'+$control)
