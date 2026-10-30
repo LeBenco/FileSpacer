@@ -34,6 +34,7 @@ public:
     static void flashWindow(HWND hwnd);
     static void expireFolderState(HWND hwnd);
     static UINT settingsChangedMessage;
+    static UINT closeDescendantsMessage;
     static ItemWindow *fromChildWindow(HWND window);
 
     ItemWindow(IShellItem *item, const std::wstring &identity);
@@ -92,7 +93,9 @@ protected:
 
     bool stateLocked = false;
     bool updateStateLock();
-    void toggleStateLock();
+    void toggleStateLock(bool replaceReference = false);
+    void forgetLayout();
+    bool layoutForgotten = false;
     bool loadFolderState();
     FolderState &getSavedFolderState() { return savedState; }
     const std::string &getFolderStateKey() const { return stateKey; }
@@ -187,6 +190,7 @@ private:
 
     std::vector<std::wstring> getParentWindowProperties();
     void openCaptionMenu(POINT pos);
+    void executeCaptionCommand(WORD command);
     void openProxyProperties();
     void openProxyContextMenu();
     void proxyRename(const wchar_t *name);
