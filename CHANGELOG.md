@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Customize the title bar menu from Display preferences, with drag and drop, defaults and the active Windows or Nilesoft Shell appearance.
+- Add layout restore, reference replacement, per-folder layout reset, descendant/other window closing, fit-to-content and named folder groups; expose stable commands for Nilesoft Shell.
+
 ## 1.2.3 — 2026-10-30
 
 - Smooth the installer and uninstaller sidebar logo with high-quality image scaling at the current display size.
