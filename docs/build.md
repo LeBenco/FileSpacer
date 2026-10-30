@@ -96,6 +96,23 @@ The scope choices and version history appear before the license, components and
 installation directory. All generated resources go into `build\installer-assets`.
 These generated resources are not checked in; the application icon is unchanged.
 
+The installer also builds an x86 `WizardBitmap.dll` with the current MSVC cross
+compiler and Windows SDK. NSIS extracts this helper only into its temporary
+plug-in directory. It uses the GDI+ C++ classes and high-quality bicubic
+interpolation to resize the sidebar to the control's actual pixel dimensions,
+then displays it without further scaling. The same path serves setup and
+uninstallation; the standard NSIS image loader remains a fallback on failure.
+The helper uses the static C++ runtime and Windows system DLLs only.
+To check its Debug build separately, run `nmake /f Makefile CFG=Debug installer-bitmap`
+from the x64 MSVC developer prompt.
+
+After packaging, the targeted VM test checks pixels captured from the real setup
+and uninstaller dialogs in English and French against a bicubic reference, and
+rejects the old NSIS scaling. Its uninstaller is generated on the host from the
+production script without executing installation sections. The guest only opens
+and cancels the dialogs, using fixture metadata; no installation is performed.
+Run `tests.cmd -VM AgentWin10 -Pattern "32-installeur\*"`.
+
 Setup declares `asInvoker`, so opening it does not request Windows confirmation.
 Choosing All users launches a silent copy with the native `runas` verb only when
 installation begins. The parent passes the directory, language and component
