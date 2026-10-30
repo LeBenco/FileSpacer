@@ -24,6 +24,7 @@ Windows 10 o posterior, x64. Disponible en inglés, francés, alemán, italiano,
 
 ## Funciones
 
+- **Una ventana por carpeta**, que se activa si la carpeta ya está abierta. Su posición, tamaño, configuración de vista y disposición de iconos se conservan entre aperturas. [Navegación espacial](docs/user-guide.md#window-navigation).
 - **Coloca los iconos libremente**, con las posiciones guardadas y restauradas para cada carpeta. [Disposición de iconos](docs/user-guide.md#icon-layout).
 - **Mueve y cambia el tamaño de las ventanas** desde cualquier punto del área de archivos sin perder la selección. Los gestos del ratón son configurables; por defecto, Alt + arrastrar con el botón izquierdo y Alt + arrastrar con el botón derecho. [Gestos de ventana](docs/user-guide.md#moving-and-resizing).
 - **Cambia entre carpetas abiertas** desde el menú de la barra de título, cierra las ventanas de las carpetas superiores o vuelve a abrir la última ventana cerrada con Ctrl+Mayús+T. [Navegación entre ventanas](docs/user-guide.md#window-navigation).
@@ -34,9 +35,9 @@ Windows 10 o posterior, x64. Disponible en inglés, francés, alemán, italiano,
 
 ## Integración
 
-**Nilesoft Shell** permite cambiar el aspecto de los menús de FileSpacer y personalizar sus comandos, con reglas para cada menú. [Instalación y configuración](docs/user-guide.md#nilesoft-shell).
+Si usas **Everything**, puedes integrarlo con FileSpacer para realizar búsquedas avanzadas desde su cuadro de búsqueda. Puedes buscar en la carpeta actual y sus subcarpetas o en todos los archivos indexados; los resultados se abren en Everything. [Integración y uso](docs/user-guide.md#everything).
 
-**Everything** puede buscar en la carpeta actual y sus subcarpetas, o en todas partes, usando la consulta introducida en FileSpacer. Los resultados se abren en Everything, que debe instalarse por separado. [Instalación y uso](docs/user-guide.md#everything).
+Si usas **Nilesoft Shell**, puedes dejar que gestione también el aspecto de los menús de FileSpacer y personalizar sus comandos, con reglas para cada menú. Se recomienda adaptar la configuración para una buena integración visual. [Integración y configuración](docs/user-guide.md#nilesoft-shell).
 
 También puedes establecer FileSpacer como aplicación predeterminada para abrir carpetas. [Integración con Windows](docs/user-guide.md#windows-integration).
 

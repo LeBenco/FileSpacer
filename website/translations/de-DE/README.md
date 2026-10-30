@@ -24,6 +24,7 @@ Windows 10 oder neuer, x64. Verfügbar auf Englisch, Französisch, Deutsch, Ital
 
 ## Funktionen
 
+- **Ein Fenster pro Ordner**, das bei bereits geöffneten Ordnern wieder aktiviert wird. Position, Größe, Ansichtseinstellungen und Symbolanordnung bleiben beim erneuten Öffnen erhalten. [Räumliche Navigation](docs/user-guide.md#window-navigation).
 - **Symbole frei anordnen.** Ihre Positionen werden für jeden Ordner gespeichert und wiederhergestellt. [Symbolanordnung](docs/user-guide.md#icon-layout).
 - **Fenster von jeder Stelle im Dateibereich aus verschieben und skalieren**, ohne die Auswahl zu verlieren. Die Mausgesten lassen sich anpassen; standardmäßig gelten Alt + Ziehen mit der linken bzw. rechten Maustaste. [Fenstergesten](docs/user-guide.md#moving-and-resizing).
 - **Zwischen geöffneten Ordnern wechseln**, über das Menü in der Titelleiste; übergeordnete Fenster schließen oder das zuletzt geschlossene Fenster mit Strg+Umschalt+T erneut öffnen. [Fensternavigation](docs/user-guide.md#window-navigation).
@@ -34,9 +35,9 @@ Windows 10 oder neuer, x64. Verfügbar auf Englisch, Französisch, Deutsch, Ital
 
 ## Integration
 
-**Nilesoft Shell** kann das Erscheinungsbild der FileSpacer-Menüs und ihre Befehle anpassen, auch mit Regeln für einzelne Menüs. [Einrichtung und Konfiguration](docs/user-guide.md#nilesoft-shell).
+Wenn Sie **Everything** verwenden, können Sie es in FileSpacer integrieren, um erweiterte Suchanfragen direkt über dessen Suchfeld auszuführen. Die Suche kann den aktuellen Ordner mit seinen Unterordnern oder alle indizierten Dateien umfassen; die Ergebnisse werden in Everything geöffnet. [Integration und Verwendung](docs/user-guide.md#everything).
 
-**Everything** kann mit der in FileSpacer eingegebenen Suchanfrage den aktuellen Ordner samt Unterordnern oder den gesamten Index durchsuchen. Die Ergebnisse werden in Everything geöffnet, das separat installiert werden muss. [Einrichtung und Verwendung](docs/user-guide.md#everything).
+Wenn Sie **Nilesoft Shell** verwenden, können Sie damit auch die FileSpacer-Menüs gestalten und ihre Befehle mit menüspezifischen Regeln anpassen. Für eine stimmige Darstellung empfiehlt es sich, die Konfiguration anzupassen. [Integration und Konfiguration](docs/user-guide.md#nilesoft-shell).
 
 FileSpacer lässt sich außerdem als Standardanwendung zum Öffnen von Ordnern festlegen. [Windows-Integration](docs/user-guide.md#windows-integration).
 

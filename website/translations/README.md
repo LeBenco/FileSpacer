@@ -7,14 +7,18 @@ links or controls to the repository README.
 Each language-region directory contains `locale.json` and the same five source
 paths used by the English site: `README.md`, `docs/user-guide.md`,
 `docs/privacy-policy.md`, `CHANGELOG.md`, and `THIRD_PARTY_NOTICES.md`.
+It also contains `docs/nilesoft-shell.md`, a complete localized reference linked
+from the user guide and kept as a separate GitHub document. A missing reference
+fails generation instead of silently linking readers to English.
 The generator discovers these directories. Its English input remains the
 original documents, with interface labels from `website/locale.json`.
 
 Keep the heading order and hierarchy identical to English. The generator uses
 the English heading IDs in every language, so switching language preserves the
 section being read and existing public anchors keep working. Links can use
-either a translated heading slug or the original English slug. Technical
-documents outside the website still link to the English GitHub source.
+either a translated heading slug or the original English slug. Referenced user
+documentation links to the selected language's GitHub file. Developer documents
+outside the website still link to the English GitHub source.
 
 Keep image references under their original English filenames. The generator
 substitutes real language-specific captures such as `overview-de.png`, while

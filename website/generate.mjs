@@ -11,6 +11,7 @@ const sources = [
   ['CHANGELOG.md', 'changelog'],
   ['THIRD_PARTY_NOTICES.md', 'third-party-notices'],
 ];
+const localizedReferences = ['docs/nilesoft-shell.md'];
 const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 const text = value => value.replace(/<[^>]*>/g, '').replace(/[*`_~]/g, '');
 const slug = value => text(value).toLowerCase().replace(/[^\p{L}\p{M}\p{N}_\-\s]/gu, '').replace(/\s/g, '-');
@@ -60,7 +61,7 @@ export async function generate(repository = path.dirname(template), destination 
     for (const entry of (await fs.readdir(translations, {withFileTypes: true})).sort((a, b) => a.name.localeCompare(b.name, 'en'))) {
       if (!entry.isDirectory()) continue;
       const root = path.join(translations, entry.name);
-      for (const file of ['locale.json', ...sources.map(([source]) => source)]) {
+      for (const file of ['locale.json', ...sources.map(([source]) => source), ...localizedReferences]) {
         if (!await exists(path.join(root, file))) throw new Error(`Incomplete translation ${entry.name}: missing ${file}`);
       }
       const ui = JSON.parse(await fs.readFile(path.join(root, 'locale.json'), 'utf8'));
@@ -116,7 +117,11 @@ export async function generate(repository = path.dirname(template), destination 
         return output;
       }
       const doc = documents.get(target);
-      if (!doc) return 'https://github.com/LeBenco/FileSpacer/blob/main/' + target.split('/').map(encodeURIComponent).join('/') + (fragment ? '#' + encodeURIComponent(fragment) : '');
+      if (!doc) {
+        const reference = language !== languages[0] && localizedReferences.includes(target)
+          ? `website/translations/${language.code}/${target}` : target;
+        return 'https://github.com/LeBenco/FileSpacer/blob/main/' + reference.split('/').map(encodeURIComponent).join('/') + (fragment ? '#' + encodeURIComponent(fragment) : '');
+      }
       const anchor = fragment ? doc.anchors.get(fragment) : doc.id;
       if (!anchor) throw new Error(`Missing heading in ${language.code}/${source}: ${href}`);
       return '#' + anchor;

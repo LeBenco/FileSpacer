@@ -19,7 +19,7 @@ Subir à pasta superior não seleciona a pasta de onde veio. Uma pasta superior 
 
 ### Disposição dos ícones
 
-Desative **Dispor ícones automaticamente** num modo de ícones para posicionar livremente ficheiros e subpastas. As posições são guardadas independentemente do tamanho e da posição da janela, mesmo quando o estado guardado está bloqueado.
+Num modo de ícones, pode posicionar livremente ficheiros e subpastas quando **Dispor ícones automaticamente** está desativado. As posições são guardadas independentemente do tamanho e da posição da janela, mesmo quando o estado guardado está bloqueado.
 
 ### Opções de apresentação
 
@@ -71,7 +71,7 @@ O botão de valor predefinido repõe uma ação. **Repor** recupera os últimos 
 
 ### Bloqueio do estado guardado
 
-Ative **Definições > Geral > Ativar bloqueio do estado da janela** (desativado por predefinição) e escolha **Bloquear o estado da janela** no menu junto ao título da pasta. O bloqueio guarda a posição, o tamanho e as definições de apresentação. Um **indicador de cadeado sobre o ícone da pasta na barra de título**, junto ao nome, identifica um estado bloqueado.
+O bloqueio guarda a posição, o tamanho e as definições de apresentação de uma pasta para os restaurar quando a voltar a abrir. Para utilizar esta função opcional, ative **Definições > Geral > Ativar bloqueio do estado da janela** (desativado por predefinição) e escolha **Bloquear o estado da janela** no menu junto ao título da pasta. Um **indicador de cadeado sobre o ícone da pasta na barra de título**, junto ao nome, identifica um estado bloqueado.
 
 <img src="images/locked-title.png" alt="Pormenor da barra de título: um cadeado está sobreposto ao ícone da pasta junto a Studio project." width="420">
 
@@ -105,7 +105,9 @@ O componente do menu de contexto oferece **Abrir no Explorador de Ficheiros do W
 
 ### Everything
 
-Instale o [Everything](https://www.voidtools.com/) separadamente e ative-o em **Definições > Integração**. Deixe vazio o caminho do executável para deteção automática, utilize **Detetar** ou escolha manualmente o ficheiro `.exe` de uma instalação portátil.
+Se utiliza o [Everything](https://www.voidtools.com/), pode integrá-lo com o FileSpacer para efetuar pesquisas avançadas diretamente a partir do respetivo campo de pesquisa.
+
+Para utilizar esta integração opcional, ative-a em **Definições > Integração**. Deixe vazio o caminho do executável para deteção automática, utilize **Detetar** ou escolha manualmente o ficheiro `.exe` de uma instalação portátil.
 
 Escolha o âmbito da pesquisa: a pasta atual e as subpastas, ou **Em todo o lado**. As pastas virtuais não têm um âmbito no sistema de ficheiros; utilize Em todo o lado para essas pastas.
 
@@ -113,11 +115,11 @@ Introduza uma consulta no campo de pesquisa do FileSpacer e escolha **Pesquisar 
 
 ### Nilesoft Shell
 
-O [Nilesoft Shell](https://nilesoft.org/) permite alterar o aspeto dos menus do FileSpacer e personalizar as suas entradas. É opcional e instala-se separadamente.
+Se utiliza o [Nilesoft Shell](https://nilesoft.org/), pode também usá-lo para alterar o aspeto dos menus do FileSpacer e personalizar as suas entradas.
 
-Permita o FileSpacer na regra de exclusão da configuração do Nilesoft e mantenha a importação do tema. Restrinja ao Explorador as regras que se destinam apenas a ele, para que não alterem também os menus do FileSpacer.
+Para esta integração opcional, recomenda-se adaptar a configuração do Nilesoft para que os menus se integrem visualmente no FileSpacer, em particular com cantos retos nos menus da barra de título e da barra de ferramentas.
 
-Consulte a [referência de configuração e os exemplos](nilesoft-shell.md) para as definições exatas, as regras específicas de cada menu e o aspeto recomendado. Depois de alterar a configuração, anule o registo do Nilesoft Shell e volte a registá-lo para aplicar a alteração aos menus abertos a seguir.
+A [referência de configuração e os exemplos](nilesoft-shell.md) explicam como permitir o FileSpacer, manter a importação do tema e limitar ao Explorador as regras que lhe são reservadas. Se alterar a configuração, anule o registo do Nilesoft Shell e volte a registá-lo para aplicar as alterações aos menus abertos a seguir.
 
 O tema Modern apresentado abaixo usa os cantos arredondados predefinidos à esquerda e os cantos retos recomendados à direita.
 
