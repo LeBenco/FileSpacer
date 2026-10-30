@@ -135,12 +135,18 @@ conservés dans [l'historique](../../docs/development-history.md).
 
 ## Couverture conservée
 
-Le catalogue courant contient 131 cas : 25 Internal et 106 UI. Ces nombres
+Le catalogue courant contient 132 cas : 25 Internal et 107 UI. Ces nombres
 décrivent les scénarios disponibles, pas un passage complet validé.
+
+Pour le renommage, le banc vérifie le focus dans la fenêtre de la vue Shell,
+puis attend son éditeur natif. Ctrl+A et le texte forment un seul lot d'entrées ;
+le texte affiché et la fermeture de l'éditeur sont observés avant la suite.
+Le champ de recherche du cadre est refusé comme cible de renommage.
+Les attentes ne rejouent aucune touche et les échecs conservent leur première cause.
 
 | Groupe | Jeux | Contrat |
 |---|---:|---|
-| 00-banc | 3 | Rapports, sorties de processus, nettoyage du lanceur et intégrité des artefacts client. |
+| 00-banc | 4 | Rapports, sorties de processus, nettoyage du lanceur, intégrité des artefacts client et refus de saisie de renommage dans le champ de recherche. |
 | 01-stockage-sqlite | 4 | Stockage, identités spatiales, adaptateurs et géométrie. |
 | 02-retention-quota | 1 | Conservation et limites des données. |
 | 03-menus | 1 | Réentrance et durée de vie des commandes de menus. |
