@@ -2531,24 +2531,6 @@ void ItemWindow::openCaptionMenu(POINT pos) {
             true);
         reopenIcons.start(hwnd, menu, iconSize, {closedWindowPath(lastClosed)}, 5);
     }
-    {
-        // Reuse the application menu label, including its localized shortcut.
-        auto destroyCommonMenu = [](HMENU handle) { checkLE(DestroyMenu(handle)); };
-        std::unique_ptr<std::remove_pointer_t<HMENU>, decltype(destroyCommonMenu)> common(
-            LoadMenuW(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDR_ITEM_MENU)), destroyCommonMenu);
-        MENUITEMINFOW settingsItem = {sizeof(settingsItem)};
-        settingsItem.fMask = MIIM_STRING;
-        if (common && checkLE(GetMenuItemInfoW(common.get(), IDM_SETTINGS, FALSE, &settingsItem))) {
-            std::wstring label(settingsItem.cch + 1, L'\0');
-            settingsItem.dwTypeData = &label[0];
-            ++settingsItem.cch;
-            if (checkLE(GetMenuItemInfoW(common.get(), IDM_SETTINGS, FALSE, &settingsItem))) {
-                AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-                append(6, label.c_str(), captionCommandBitmap(MDL2_SETTINGS, iconSize, iconColor),
-                    true);
-            }
-        }
-    }
     if (!entries.empty())
         AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
     CComPtr<IWICImagingFactory> factory;
@@ -2566,7 +2548,7 @@ void ItemWindow::openCaptionMenu(POINT pos) {
             : nullptr;
         if (!bitmap)
             bitmap = captionCommandBitmap(MDL2_FOLDER, iconSize, iconColor);
-        append((UINT)index + 7, label.c_str(), bitmap, true);
+        append((UINT)index + 6, label.c_str(), bitmap, true);
     }
     if (!isWindowOperational())
         return;
@@ -2629,10 +2611,8 @@ void ItemWindow::openCaptionMenu(POINT pos) {
         toggleStateLock();
     } else if (command == 5) {
         reopenLastWindow(hwnd);
-    } else if (command == 6) {
-        onCommand(IDM_SETTINGS);
-    } else if (command >= 7 && (size_t)(command - 7) < entries.size()) {
-        const HWND target = entries[command - 7].window;
+    } else if (command >= 6 && (size_t)(command - 6) < entries.size()) {
+        const HWND target = entries[command - 6].window;
         wchar_t windowClass[64] = {};
         // The selected window may have closed while the popup was open.
         if (GetClassName(target, windowClass, (int)ARRAYSIZE(windowClass))
