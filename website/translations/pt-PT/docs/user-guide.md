@@ -13,8 +13,6 @@ Subir à pasta superior não seleciona a pasta de onde veio. Uma pasta superior 
 
 ![O menu do título da pasta com navegação entre janelas e bloqueio do estado guardado.](images/window-menu.png)
 
-*O menu do título, aqui com o estado da janela bloqueado.*
-
 ## Apresentação e disposição
 
 ### Disposição dos ícones
@@ -23,18 +21,17 @@ Num modo de ícones, pode posicionar livremente ficheiros e subpastas quando **D
 
 ### Opções de apresentação
 
-A visibilidade da barra de ferramentas e da barra de estado pode ser alterada em **Definições**.
+**Mostrar o nome completo do ficheiro selecionado**, em **Definições > Apresentação**, torna totalmente legível um único nome selecionado na vista de ícones. Está ativo por predefinição e não altera seleções múltiplas nem outras vistas.
 
-Em **Definições > Apresentação**, duas opções estão ativadas por predefinição:
+![Um nome de ficheiro comprido, selecionado e apresentado na íntegra na vista de ícones.](images/selected-name.png)
 
-- **Mostrar o nome completo do ficheiro selecionado** mantém legível o nome de um único ficheiro selecionado no modo Ícones. Não altera as seleções múltiplas nem os outros modos de apresentação.
-- **Pré-visualizar modos de apresentação no menu Ver** mostra uma pré-visualização do modo sob o ponteiro. Clique para o manter; Esc ou sair da pré-visualização restaura a apresentação inicial. A pré-visualização não substitui a disposição guardada.
+**Pré-visualizar modos de apresentação no menu Ver**, também ativo por predefinição, mostra cada modo ao passar o ponteiro. Um clique confirma-o; Esc ou sair da pré-visualização repõe a vista inicial. A pré-visualização nunca substitui a disposição guardada.
 
-**Misturar pastas e ficheiros na ordenação**, em **Definições > Apresentação > Ficheiros**, está desativado por predefinição. Ative esta opção para ordenar pastas e ficheiros em conjunto, como no [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) e no [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Aplica-se aos modos Detalhes, Lista e Ícones dispostos automaticamente. As disposições livres são conservadas. As pastas virtuais e os arquivos comprimidos mantêm a ordenação do Windows.
+**Misturar pastas e ficheiros na ordenação** ordena-os em conjunto, como no [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) e no [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Está desativado por predefinição em **Definições > Apresentação > Ficheiros**. Aplica-se a Detalhes, Lista e ícones dispostos automaticamente; as disposições livres são preservadas. Pastas virtuais e ficheiros comprimidos mantêm a ordenação do Windows.
 
-![Uma janela com pastas e ficheiros de exemplo misturados por ordem alfabética.](images/mixed-sorting.png)
+![Pastas e ficheiros na mesma ordem alfabética.](images/mixed-sorting.png)
 
-*As pastas e os ficheiros partilham a mesma ordem alfabética.*
+A visibilidade das barras de ferramentas e de estado também se altera nas definições.
 
 ### Posicionamento das janelas
 
@@ -48,42 +45,34 @@ Com **Definições > Geral > Manter a seleção ao clicar numa janela inativa** 
 
 ### Movimento e redimensionamento
 
-Arraste na área de ficheiros, sobre o fundo ou sobre um elemento, com estes gestos predefinidos:
+É possível mover ou redimensionar uma janela arrastando a partir da área de ficheiros, incluindo sobre um elemento. Os atalhos predefinidos são:
 
 | Ação | Atalho |
 | --- | --- |
 | Mover a janela | Alt + arrastar com o botão esquerdo |
 | Redimensionar a partir do canto inferior direito | Alt + arrastar com o botão direito |
 
-**Mover a janela — Alt + arrastar com o botão esquerdo**
+![Mover uma janela com Alt e o botão esquerdo.](images/move-window.gif)
 
-![Movimento de uma janela de pasta mantendo Alt premido e arrastando com o botão esquerdo na área de ficheiros.](images/move-window.gif)
+![Redimensionar uma janela com Alt e o botão direito.](images/resize-window.gif)
 
-**Redimensionar a janela — Alt + arrastar com o botão direito**
+A seleção é preservada. Esc cancela o gesto. Campos de texto, cabeçalhos, barras de deslocamento, barras de ferramentas e menus mantêm o funcionamento normal; Alt + duplo clique abre as propriedades de um elemento.
 
-![Redimensionamento de uma janela de pasta mantendo Alt premido e arrastando com o botão direito na área de ficheiros.](images/resize-window.gif)
-
-A seleção é conservada. Esc cancela o gesto e restaura a posição e as dimensões iniciais. Os campos de texto, cabeçalhos, barras de deslocamento, barras de ferramentas e menus mantêm o comportamento normal. Alt + duplo clique num elemento abre as respetivas propriedades.
-
-Em **Definições > Atalhos**, ative ou desative cada ação e expanda-a para alterar a combinação. A área de captura direta regista uma combinação de teclas e botão do rato. Os botões esquerdo e direito requerem Alt; o botão central também suporta combinações sem Alt. As teclas modificadoras têm de corresponder exatamente. Não é possível aplicar combinações reservadas ou duplicadas.
-
-O botão de valor predefinido repõe uma ação. **Repor** recupera os últimos atalhos aplicados; **Cancelar** descarta as alterações pendentes. **Aplicar** ou **OK** disponibiliza as alterações nas janelas abertas do FileSpacer.
+Cada ação tem o seu atalho configurável em **Definições > Atalhos**. Os botões esquerdo e direito exigem Alt; o botão do meio também funciona sem Alt. Os modificadores têm de corresponder exatamente; combinações reservadas ou repetidas são recusadas. As alterações aplicam-se às janelas abertas. Repor regressa aos últimos atalhos aplicados e Cancelar descarta alterações pendentes.
 
 ### Bloqueio do estado guardado
 
-O bloqueio guarda a posição, o tamanho e as definições de apresentação de uma pasta para os restaurar quando a voltar a abrir. Para utilizar esta função opcional, ative **Definições > Geral > Ativar bloqueio do estado da janela** (desativado por predefinição) e escolha **Bloquear o estado da janela** no menu junto ao título da pasta. Um **indicador de cadeado sobre o ícone da pasta na barra de título**, junto ao nome, identifica um estado bloqueado.
+O bloqueio guarda a posição, o tamanho e a vista de uma pasta para a próxima abertura. Está desativado por predefinição em **Definições > Geral > Ativar bloqueio do estado da janela**. Depois de ativado, **Bloquear o estado da janela** fica disponível junto ao título da pasta. Um cadeado sobre o ícone da pasta assinala o bloqueio.
 
-<img src="images/locked-title.png" alt="Pormenor da barra de título: um cadeado está sobreposto ao ícone da pasta junto a Studio project." width="420">
+<img src="images/locked-title.png" alt="Pormenor do título da pasta com o indicador de cadeado." width="280">
 
-*O indicador de cadeado identifica o estado guardado como bloqueado.*
+Continuam a ser possíveis alterações temporárias; ao reabrir a pasta, regressa o estado bloqueado. As posições individuais dos ícones continuam a ser guardadas. **Desbloquear o estado da janela** mantém a disposição atual. Ocultar o cadeado não remove o bloqueio.
 
-Pode continuar a mover e redimensionar temporariamente a janela ou a mudar a apresentação. Reabrir a pasta restaura o estado bloqueado. As posições individuais dos ícones continuam a ser guardadas normalmente. **Desbloquear o estado da janela** mantém a disposição atual. Pode ocultar o indicador nas definições gerais sem remover o bloqueio.
-
-Desativar a funcionalidade pede confirmação e remove todos os bloqueios guardados, incluindo os de pastas fechadas. Voltar a ativá-la não os restaura.
+Desativar a função pede confirmação e remove todos os bloqueios, incluindo os das pastas fechadas. Voltar a ativá-la não os repõe.
 
 ## Pesquisa e histórico
 
-Escreva no campo de pesquisa e prima Enter ou clique na lupa para filtrar a pasta atual. **Definições > Geral > Filtrar enquanto escreve** aplica o filtro durante a escrita. Este filtro local nunca inicia o Everything automaticamente.
+Introduza todo ou parte do nome de um ficheiro ou de uma pasta e prima Enter ou clique na lupa para filtrar a pasta atual. **Definições > Geral > Filtrar enquanto escreve** aplica o filtro durante a escrita. Este filtro local nunca inicia o Everything automaticamente.
 
 Ativar o campo mostra as pesquisas recentes e, quando a integração está ativada, **Pesquisar no Everything**. Utilize as setas para cima/baixo e Enter, ou clique, para escolher uma entrada. Enter sem uma sugestão selecionada aplica o filtro local. Esc fecha a lista sem apagar o texto; Ctrl+F volta a ativar o campo.
 
@@ -91,37 +80,33 @@ O histórico conserva por predefinição cinco pesquisas distintas confirmadas p
 
 ![Sugestões de pesquisa com o Everything e consultas recentes sobre ficheiros de projeto fictícios.](images/search.png)
 
-*O Everything é uma ação separada; as pesquisas recentes filtram a pasta atual.*
-
 ## Integração
 
 ### Integração com o Windows
 
-O instalador oferece **Definir o FileSpacer como gestor de ficheiros predefinido**, desmarcado por predefinição. Instala também o componente do menu de contexto das pastas. Pode alterar a escolha posteriormente em **Definições > Integração** com **Definir como gestor de ficheiros predefinido**; **Repor o Explorador de Ficheiros predefinido** devolve a abertura das pastas ao Explorador de Ficheiros do Windows.
+O FileSpacer pode ser definido como gestor de ficheiros predefinido durante a instalação ou mais tarde, em **Definições > Integração**, com **Definir como gestor de ficheiros predefinido**. **Repor o Explorador de Ficheiros predefinido** devolve a abertura de pastas ao Explorador de Ficheiros.
 
-O componente do menu de contexto oferece **Abrir no Explorador de Ficheiros do Windows** quando o FileSpacer é o gestor predefinido, e **Abrir no FileSpacer** no caso contrário. Aplica-se a pastas, unidades, pastas comprimidas, localizações de rede e fundos de pastas. Instalar apenas este componente não altera a aplicação predefinida.
+O menu de contexto das pastas oferece **Abrir no FileSpacer**, ou **Abrir no Explorador de Ficheiros do Windows** quando o FileSpacer é o predefinido. Também funciona em unidades, pastas ZIP, localizações de rede e fundos de pastas, sem obrigar a mudar a aplicação predefinida.
 
-**Opções do Explorador de Ficheiros**, na mesma página de definições, abre as opções de pastas do Windows; algumas também afetam a apresentação dos ficheiros no FileSpacer.
+Os ficheiros abrem na aplicação habitual do Windows. Pastas de rede, pré-visualizações e comandos acrescentados ao menu de contexto também seguem o funcionamento normal do Windows. **Opções do Explorador de Ficheiros** abre preferências de pastas partilhadas, algumas das quais também se aplicam ao FileSpacer.
 
 ### Everything
 
-Se utiliza o [Everything](https://www.voidtools.com/), pode integrá-lo com o FileSpacer para efetuar pesquisas avançadas diretamente a partir do respetivo campo de pesquisa.
+Uma instalação existente do [Everything](https://www.voidtools.com/) pode ser integrada para iniciar pesquisas avançadas a partir do campo do FileSpacer. Os resultados abrem no Everything.
 
-Para utilizar esta integração opcional, ative-a em **Definições > Integração**. Deixe vazio o caminho do executável para deteção automática, utilize **Detetar** ou escolha manualmente o ficheiro `.exe` de uma instalação portátil.
+A opção ativa-se em **Definições > Integração**. O Everything é encontrado automaticamente ou com **Detetar**; uma cópia portátil pode ser escolhida manualmente. A pesquisa abrange a pasta atual e as subpastas, ou **Em todo o lado**. As pastas virtuais exigem Em todo o lado.
 
-Escolha o âmbito da pesquisa: a pasta atual e as subpastas, ou **Em todo o lado**. As pastas virtuais não têm um âmbito no sistema de ficheiros; utilize Em todo o lado para essas pastas.
+**Pesquisar no Everything** envia a consulta introduzida, com a sintaxe do Everything. Se o arranque for bem-sucedido, o campo e o filtro local do FileSpacer são limpos; em caso de erro, são mantidos para nova tentativa.
 
-Introduza uma consulta no campo de pesquisa do FileSpacer e escolha **Pesquisar no Everything** nas sugestões. Os resultados abrem no Everything, com o respetivo índice e sintaxe de pesquisa. Se o Everything for iniciado com êxito, o FileSpacer limpa o campo e remove o filtro local; se ocorrer um erro, conserva ambos para poder tentar novamente.
+![Uma pesquisa no FileSpacer e os resultados correspondentes no Everything, ao lado.](images/everything-search.png)
 
 ### Nilesoft Shell
 
-Se utiliza o [Nilesoft Shell](https://nilesoft.org/), pode também usá-lo para alterar o aspeto dos menus do FileSpacer e personalizar as suas entradas.
+O [Nilesoft Shell](https://nilesoft.org/) pode definir o aspeto dos menus do FileSpacer e personalizar os seus comandos. Recomenda-se adaptar a configuração para uma integração visual coerente, sobretudo com cantos retos nos menus da barra de título e da barra de ferramentas.
 
-Para esta integração opcional, recomenda-se adaptar a configuração do Nilesoft para que os menus se integrem visualmente no FileSpacer, em particular com cantos retos nos menus da barra de título e da barra de ferramentas.
+A [referência de configuração](nilesoft-shell.md) explica como permitir o FileSpacer, manter o tema e limitar ao Explorador as regras que lhe são específicas. Após uma alteração, anular e repetir o registo do Nilesoft Shell aplica-a aos menus abertos a partir daí.
 
-A [referência de configuração e os exemplos](nilesoft-shell.md) explicam como permitir o FileSpacer, manter a importação do tema e limitar ao Explorador as regras que lhe são reservadas. Se alterar a configuração, anule o registo do Nilesoft Shell e volte a registá-lo para aplicar as alterações aos menus abertos a seguir.
-
-O tema Modern apresentado abaixo usa os cantos arredondados predefinidos à esquerda e os cantos retos recomendados à direita.
+O tema Modern abaixo compara os cantos predefinidos com os cantos retos recomendados.
 
 **Menu de navegação**
 
@@ -137,10 +122,22 @@ O tema Modern apresentado abaixo usa os cantos arredondados predefinidos à esqu
 
 ## Definições e atualizações
 
-**Preferências.** **Ctrl+,** abre as definições, mesmo com a barra de ferramentas oculta. A interface segue o idioma de apresentação do Windows, com o inglês como alternativa; mudar de idioma exige reiniciar a aplicação.
+Ctrl+, abre as definições mesmo com a barra de ferramentas oculta. A interface segue o idioma de apresentação do Windows, recorrendo ao inglês quando necessário; mudar de idioma exige reiniciar. F1 abre o guia instalado, também disponível offline.
 
-**Atualizações.** Procure uma nova versão em **Definições > Acerca de** e escolha **Instalar o FileSpacer vX.Y.Z** para atualizar. A instalação requer confirmação; as atualizações nunca são instaladas automaticamente. Depois da instalação, o FileSpacer reabre as pastas anteriormente abertas com as disposições guardadas. As verificações semanais opcionais estão desativadas por predefinição e podem ser ativadas em Acerca de.
+As atualizações procuram-se em **Definições > Acerca de**. A transferência e a instalação exigem confirmação; a instalação nunca é automática. No fim, as pastas anteriormente abertas regressam com as disposições guardadas. As verificações semanais são opcionais e estão desativadas por predefinição; ativam-se em Acerca de.
 
-**Manutenção.** **Definições > Acerca de > Manutenção > Repor o estado de todas as pastas** fecha as janelas de pastas abertas e limpa as disposições guardadas, o histórico e os bloqueios de estado. Os seus ficheiros e as preferências globais são conservados.
+## Dados locais
 
-**Documentação.** Escolha **Documentação** acima de **Definições do FileSpacer** no menu principal, prima **F1** ou utilize o botão em **Definições > Acerca de**. O guia instalado abre no navegador no idioma de apresentação do Windows, com o inglês como alternativa. As páginas, imagens e pesquisas funcionam sem ligação à Internet; o seletor de idioma permite mudar de tradução.
+Disposições de pastas, bloqueios, pesquisas e histórico de pastas fechadas são guardados localmente em `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. As preferências gerais estão no Registo do Windows, em `HKEY_CURRENT_USER\Software\FileSpacer`. O estado guardado pode conter caminhos de pastas, incluindo caminhos de rede. Os ficheiros temporários de atualização e a lista de pastas a reabrir permanecem em `%TEMP%\FileSpacerUpdate-{GUID}`.
+
+**Definições > Acerca de > Manutenção > Repor o estado de todas as pastas** fecha as janelas das pastas e elimina as disposições, históricos e bloqueios guardados. Os ficheiros e as preferências gerais são preservados.
+
+Para resolver problemas, `FileSpacer.exe /reset-options` repõe as preferências gerais; `/reset-all` elimina também o estado guardado das pastas. Nenhum dos comandos elimina ficheiros, altera associações do Windows ou remove relatórios de diagnóstico existentes.
+
+## Privacidade
+
+O FileSpacer não inclui telemetria, monitorização de utilização ou publicidade. Não envia automaticamente relatórios de falhas. Os eventuais relatórios de diagnóstico permanecem em `%LOCALAPPDATA%\FileSpacer`; a partilha é opcional e pode revelar caminhos de ficheiros ou partes da memória do processo.
+
+As verificações de atualizações e as transferências contactam o GitHub por HTTPS. O GitHub recebe as informações habituais da ligação, incluindo o endereço IP e a versão da aplicação, mas nenhum estado de pasta, caminho de ficheiro ou relatório de diagnóstico.
+
+As credenciais de acesso a unidades de rede são introduzidas e geridas pelo Windows, tal como no Explorador de Ficheiros. O FileSpacer não as lê nem guarda. Uma pesquisa no Everything transmite a consulta e, se limitada à pasta, o respetivo caminho à aplicação Everything local.
