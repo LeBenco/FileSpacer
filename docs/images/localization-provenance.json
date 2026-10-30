@@ -8,7 +8,7 @@
   "languageSelection": "Temporary documentation binaries selecting the existing UI resources; production sources and UI strings unchanged. Spanish selects resource language 040A explicitly.",
   "demoContent": "Identical English fictional filenames, generated images and positions to the English reference scenes.",
   "staticCrop": "Direct guest screen pixels of the visible window or title/menu close-up, with no scaling, retouching or translated image labels. Main Nilesoft menu uses the same 387-pixel close-up width as English; navigation expands only to fit translated commands.",
-  "animation": "ScreenToGif 2.43.2; real VM recording with Windows wallpaper, cursor/click highlights and visible Alt overlay",
+  "animation": "ScreenToGif 2.43.2; real VM recording with native cursor/click highlights and Alt overlays; original solid-color background replaces the Windows wallpaper",
   "nilesoft": {
     "version": "1.9.15",
     "configurationRestored": true,
@@ -52,24 +52,68 @@
       "language": "de-DE",
       "width": 1000,
       "height": 620,
-      "sha256": "62551790ffcbc63168788a4f4dcbc5d18cee07f4bb73575667c4d650158a09c4",
-      "run": "cfa6a8690d2842c89931fa4966320631",
-      "frames": 49,
-      "duration_ms": 7060,
+      "sha256": "78868be96a9f836fba63cbdfce461ff4efe6b8fbc497bd7e6e8b4b3495d09d5e",
+      "run": "04d1e7cc98eb45a7b63cf14b5f93be38",
+      "frames": 50,
+      "duration_ms": 6920,
       "framesWithRecordedKeys": 2,
-      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+      "keyOverlay": "ScreenToGif automatic KeyStrokes task; standalone modifiers included; injected input included",
+      "framesWithVisibleAltBadge": 44,
+      "projectFrames": 104,
+      "before": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 772,
+        "Bottom": 502
+      },
+      "afterGesture": {
+        "Left": 208,
+        "Top": 130,
+        "Right": 928,
+        "Bottom": 580
+      },
+      "background": "#DCE4EE",
+      "loop": "forever",
+      "screenToGifVersion": "2.43.2",
+      "version": "1.2.3",
+      "sourceCommit": "10c4027",
+      "demoContentLanguage": "de",
+      "executableSha256": "BAC7D58E7795E420D2C24F21EBDBC2B5D470C5409FE37F3E5DA6D0EDFA3DEA12",
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
     },
     {
       "file": "resize-window-de.gif",
       "language": "de-DE",
       "width": 1000,
       "height": 620,
-      "sha256": "8906061808dd4c8e58c7913b654b6bbebb9b9fbf0cb23929e9e49abe70b72bd3",
-      "run": "cfa6a8690d2842c89931fa4966320631",
-      "frames": 49,
+      "sha256": "13a817e8f1c17bdedc7c03551a50bfaf5d95ddcf80b420c90002616eb6c0f98b",
+      "run": "04d1e7cc98eb45a7b63cf14b5f93be38",
+      "frames": 52,
       "duration_ms": 6930,
       "framesWithRecordedKeys": 2,
-      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+      "keyOverlay": "ScreenToGif automatic KeyStrokes task; standalone modifiers included; injected input included",
+      "framesWithVisibleAltBadge": 44,
+      "projectFrames": 104,
+      "before": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 772,
+        "Bottom": 502
+      },
+      "afterGesture": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 932,
+        "Bottom": 582
+      },
+      "background": "#DCE4EE",
+      "loop": "forever",
+      "screenToGifVersion": "2.43.2",
+      "version": "1.2.3",
+      "sourceCommit": "10c4027",
+      "demoContentLanguage": "de",
+      "executableSha256": "BAC7D58E7795E420D2C24F21EBDBC2B5D470C5409FE37F3E5DA6D0EDFA3DEA12",
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
     },
     {
       "file": "mixed-sorting-de.png",
@@ -150,24 +194,68 @@
       "language": "it-IT",
       "width": 1000,
       "height": 620,
-      "sha256": "2170cb3f881a1dba8a38414843e752a8cc334d29622a0f089f5510ce2f186798",
-      "run": "cfa6a8690d2842c89931fa4966320631",
+      "sha256": "4f86b73b40ac234dc83f145301144665fcd4a44c2e5fd4b348d78107e8f740eb",
+      "run": "04d1e7cc98eb45a7b63cf14b5f93be38",
       "frames": 49,
-      "duration_ms": 6980,
+      "duration_ms": 7030,
       "framesWithRecordedKeys": 2,
-      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+      "keyOverlay": "ScreenToGif automatic KeyStrokes task; standalone modifiers included; injected input included",
+      "framesWithVisibleAltBadge": 44,
+      "projectFrames": 105,
+      "before": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 772,
+        "Bottom": 502
+      },
+      "afterGesture": {
+        "Left": 208,
+        "Top": 130,
+        "Right": 928,
+        "Bottom": 580
+      },
+      "background": "#DCE4EE",
+      "loop": "forever",
+      "screenToGifVersion": "2.43.2",
+      "version": "1.2.3",
+      "sourceCommit": "10c4027",
+      "demoContentLanguage": "it",
+      "executableSha256": "7A2F7114FB7AF7B52B82D0FC3F5224246A37D35C99CC4B22B6863FE298EE34EF",
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
     },
     {
       "file": "resize-window-it.gif",
       "language": "it-IT",
       "width": 1000,
       "height": 620,
-      "sha256": "ac5ffaa32865a030f16911fdf8443ae8df5cd6b9954cf3ba50dc8efc19f1df1e",
-      "run": "cfa6a8690d2842c89931fa4966320631",
-      "frames": 49,
-      "duration_ms": 6960,
+      "sha256": "c791f42d273024c7056eccc17877eb7bd6a6a10813865e3547d7f4ddaea37eb9",
+      "run": "04d1e7cc98eb45a7b63cf14b5f93be38",
+      "frames": 54,
+      "duration_ms": 7000,
       "framesWithRecordedKeys": 2,
-      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+      "keyOverlay": "ScreenToGif automatic KeyStrokes task; standalone modifiers included; injected input included",
+      "framesWithVisibleAltBadge": 43,
+      "projectFrames": 104,
+      "before": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 772,
+        "Bottom": 502
+      },
+      "afterGesture": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 932,
+        "Bottom": 582
+      },
+      "background": "#DCE4EE",
+      "loop": "forever",
+      "screenToGifVersion": "2.43.2",
+      "version": "1.2.3",
+      "sourceCommit": "10c4027",
+      "demoContentLanguage": "it",
+      "executableSha256": "7A2F7114FB7AF7B52B82D0FC3F5224246A37D35C99CC4B22B6863FE298EE34EF",
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
     },
     {
       "file": "mixed-sorting-it.png",
@@ -248,24 +336,68 @@
       "language": "es-ES",
       "width": 1000,
       "height": 620,
-      "sha256": "e10436e4c3337277526b3d71578deb41a93f1f373477ebf68647b12ffb6aec37",
-      "run": "a25726cbcc2540df82569246c380fd99",
-      "frames": 48,
-      "duration_ms": 6910,
+      "sha256": "a66704de725166ce158c53af396c39d1d37b93fd877d59c1e9109d06345c1305",
+      "run": "04d1e7cc98eb45a7b63cf14b5f93be38",
+      "frames": 49,
+      "duration_ms": 7010,
       "framesWithRecordedKeys": 2,
-      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+      "keyOverlay": "ScreenToGif automatic KeyStrokes task; standalone modifiers included; injected input included",
+      "framesWithVisibleAltBadge": 43,
+      "projectFrames": 104,
+      "before": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 772,
+        "Bottom": 502
+      },
+      "afterGesture": {
+        "Left": 204,
+        "Top": 128,
+        "Right": 924,
+        "Bottom": 578
+      },
+      "background": "#DCE4EE",
+      "loop": "forever",
+      "screenToGifVersion": "2.43.2",
+      "version": "1.2.3",
+      "sourceCommit": "10c4027",
+      "demoContentLanguage": "es",
+      "executableSha256": "8E7A25CAC76031EAEDB1B3E977D92CBF98253624603BB21F5B720B8EC87A6BBA",
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
     },
     {
       "file": "resize-window-es.gif",
       "language": "es-ES",
       "width": 1000,
       "height": 620,
-      "sha256": "cabf168086fe56576bc7cd24be04889ac79d41e92772811f451cf20ba226ea00",
-      "run": "a25726cbcc2540df82569246c380fd99",
-      "frames": 49,
-      "duration_ms": 7000,
+      "sha256": "d5c0b8229742302143a4746eba233346189e584470ee1d8f8c63ff2dc41a3804",
+      "run": "04d1e7cc98eb45a7b63cf14b5f93be38",
+      "frames": 51,
+      "duration_ms": 7050,
       "framesWithRecordedKeys": 2,
-      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+      "keyOverlay": "ScreenToGif automatic KeyStrokes task; standalone modifiers included; injected input included",
+      "framesWithVisibleAltBadge": 43,
+      "projectFrames": 105,
+      "before": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 772,
+        "Bottom": 502
+      },
+      "afterGesture": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 932,
+        "Bottom": 582
+      },
+      "background": "#DCE4EE",
+      "loop": "forever",
+      "screenToGifVersion": "2.43.2",
+      "version": "1.2.3",
+      "sourceCommit": "10c4027",
+      "demoContentLanguage": "es",
+      "executableSha256": "8E7A25CAC76031EAEDB1B3E977D92CBF98253624603BB21F5B720B8EC87A6BBA",
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
     },
     {
       "file": "mixed-sorting-es.png",
@@ -346,24 +478,68 @@
       "language": "pt-PT",
       "width": 1000,
       "height": 620,
-      "sha256": "e340eff421312e91b406588754efe4bee97e5e378b7fed9cc6bacd742df1ee52",
-      "run": "cfa6a8690d2842c89931fa4966320631",
-      "frames": 49,
-      "duration_ms": 6980,
+      "sha256": "e1e37cbf438ed5dc1059320d4e76e719208babed238af211b99e083bda3ad1cd",
+      "run": "04d1e7cc98eb45a7b63cf14b5f93be38",
+      "frames": 50,
+      "duration_ms": 7010,
       "framesWithRecordedKeys": 2,
-      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+      "keyOverlay": "ScreenToGif automatic KeyStrokes task; standalone modifiers included; injected input included",
+      "framesWithVisibleAltBadge": 45,
+      "projectFrames": 105,
+      "before": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 772,
+        "Bottom": 502
+      },
+      "afterGesture": {
+        "Left": 208,
+        "Top": 130,
+        "Right": 928,
+        "Bottom": 580
+      },
+      "background": "#DCE4EE",
+      "loop": "forever",
+      "screenToGifVersion": "2.43.2",
+      "version": "1.2.3",
+      "sourceCommit": "10c4027",
+      "demoContentLanguage": "pt",
+      "executableSha256": "9FAA0783A3F3D7F9791866F8CC2545BBEE1EAB0890123DB2278DA1209837A6F2",
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
     },
     {
       "file": "resize-window-pt.gif",
       "language": "pt-PT",
       "width": 1000,
       "height": 620,
-      "sha256": "7e11bdec6ee759d7ecba76cfd8deff767714f30f27884e1b53ad8cb7af4f8784",
-      "run": "cfa6a8690d2842c89931fa4966320631",
-      "frames": 49,
-      "duration_ms": 7000,
+      "sha256": "0ced11af45160cdbbc27174dfcda102847ff23b87105be8466ecaefcc207f649",
+      "run": "04d1e7cc98eb45a7b63cf14b5f93be38",
+      "frames": 51,
+      "duration_ms": 6990,
       "framesWithRecordedKeys": 2,
-      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+      "keyOverlay": "ScreenToGif automatic KeyStrokes task; standalone modifiers included; injected input included",
+      "framesWithVisibleAltBadge": 42,
+      "projectFrames": 102,
+      "before": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 772,
+        "Bottom": 502
+      },
+      "afterGesture": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 932,
+        "Bottom": 582
+      },
+      "background": "#DCE4EE",
+      "loop": "forever",
+      "screenToGifVersion": "2.43.2",
+      "version": "1.2.3",
+      "sourceCommit": "10c4027",
+      "demoContentLanguage": "pt",
+      "executableSha256": "9FAA0783A3F3D7F9791866F8CC2545BBEE1EAB0890123DB2278DA1209837A6F2",
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
     },
     {
       "file": "mixed-sorting-pt.png",
@@ -444,24 +620,68 @@
       "language": "el-GR",
       "width": 1000,
       "height": 620,
-      "sha256": "ad2caf751e2f4f487b2e90c71f16e7bc9e61061220d357f283e5b3d6c803cb75",
-      "run": "cfa6a8690d2842c89931fa4966320631",
-      "frames": 49,
-      "duration_ms": 6950,
+      "sha256": "8f09f278b7d6986e296db7fc0f52e033761c7379a959819edb76842bb53149ec",
+      "run": "04d1e7cc98eb45a7b63cf14b5f93be38",
+      "frames": 51,
+      "duration_ms": 7040,
       "framesWithRecordedKeys": 2,
-      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+      "keyOverlay": "ScreenToGif automatic KeyStrokes task; standalone modifiers included; injected input included",
+      "framesWithVisibleAltBadge": 42,
+      "projectFrames": 103,
+      "before": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 772,
+        "Bottom": 502
+      },
+      "afterGesture": {
+        "Left": 208,
+        "Top": 130,
+        "Right": 928,
+        "Bottom": 580
+      },
+      "background": "#DCE4EE",
+      "loop": "forever",
+      "screenToGifVersion": "2.43.2",
+      "version": "1.2.3",
+      "sourceCommit": "10c4027",
+      "demoContentLanguage": "el",
+      "executableSha256": "DC2F1F0BA952953BA24E8C4AD50772707F6554FD32D971BC9908D9824D151F4E",
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
     },
     {
       "file": "resize-window-el.gif",
       "language": "el-GR",
       "width": 1000,
       "height": 620,
-      "sha256": "9fbfcd4eedc7b0dba5312f0e90ed2b9e0d6e9afac3b866b584c55807659c490d",
-      "run": "cfa6a8690d2842c89931fa4966320631",
-      "frames": 50,
-      "duration_ms": 6950,
+      "sha256": "6b277bee1215fc861d7191372a078c1735c2964da8e8b349fd6a27860764448c",
+      "run": "04d1e7cc98eb45a7b63cf14b5f93be38",
+      "frames": 54,
+      "duration_ms": 6990,
       "framesWithRecordedKeys": 2,
-      "keyOverlay": "ScreenToGif automatic KeyStrokes; modifier keys and injected events included"
+      "keyOverlay": "ScreenToGif automatic KeyStrokes task; standalone modifiers included; injected input included",
+      "framesWithVisibleAltBadge": 43,
+      "projectFrames": 104,
+      "before": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 772,
+        "Bottom": 502
+      },
+      "afterGesture": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 932,
+        "Bottom": 582
+      },
+      "background": "#DCE4EE",
+      "loop": "forever",
+      "screenToGifVersion": "2.43.2",
+      "version": "1.2.3",
+      "sourceCommit": "10c4027",
+      "demoContentLanguage": "el",
+      "executableSha256": "DC2F1F0BA952953BA24E8C4AD50772707F6554FD32D971BC9908D9824D151F4E",
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
     },
     {
       "file": "mixed-sorting-el.png",
@@ -511,5 +731,13 @@
     "version": "1.2.3",
     "reference": "mixed-sorting-provenance.json",
     "reason": "Default navigation restored and fictional filenames localized."
+  },
+  "animationUpdate": {
+    "captured": "2026-10-30",
+    "version": "1.2.3",
+    "sourceCommit": "10c4027",
+    "background": "#DCE4EE; original solid color, no external artwork",
+    "recording": "ScreenToGif 2.43.2; real VM recording with native cursor/click highlights and Alt overlays",
+    "demoContent": "Localized fictional filenames, real default navigation bar and Reload to the right of the visible path"
   }
 }
