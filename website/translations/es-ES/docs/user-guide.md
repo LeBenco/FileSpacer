@@ -13,8 +13,6 @@ Subir a la carpeta superior no selecciona la carpeta de la que vienes. Una carpe
 
 ![El menú del título de la carpeta con navegación entre ventanas y bloqueo del estado guardado.](images/window-menu.png)
 
-*El menú del título, aquí con el estado de la ventana bloqueado.*
-
 ## Visualización y disposición
 
 ### Disposición de iconos
@@ -23,18 +21,17 @@ En una vista de iconos puedes colocar libremente archivos y subcarpetas cuando *
 
 ### Opciones de visualización
 
-La visibilidad de la barra de herramientas y de la barra de estado se cambia en **Configuración**.
+**Mostrar el nombre completo del archivo seleccionado**, en **Configuración > Visualización**, permite leer entero un único nombre seleccionado en la vista de iconos. Está activado de forma predeterminada y no cambia las selecciones múltiples ni las demás vistas.
 
-En **Configuración > Visualización**, dos opciones están activadas de forma predeterminada:
+![Un nombre de archivo largo seleccionado y visible por completo en la vista de iconos.](images/selected-name.png)
 
-- **Mostrar el nombre completo del archivo seleccionado** mantiene legible un nombre seleccionado en la vista Iconos. No modifica las selecciones múltiples ni las otras vistas.
-- **Vista previa de los modos de presentación en el menú Vista** muestra una vista previa del modo sobre el que pasas el puntero. Haz clic para conservarlo; Esc o salir de la vista previa restaura la vista inicial. La vista previa no sustituye la disposición guardada.
+**Vista previa de los modos de presentación en el menú Vista**, también activada de forma predeterminada, muestra cada modo al pasar el puntero. Un clic lo conserva; Esc o salir de la vista previa restaura la vista inicial. La vista previa no sustituye la disposición guardada.
 
-**Mezclar carpetas y archivos al ordenar**, en **Configuración > Visualización > Archivos**, está desactivado de forma predeterminada. Actívalo para ordenar carpetas y archivos juntos, como en [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) y [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Se aplica a las vistas Detalles, Lista e Iconos organizados automáticamente. Las disposiciones libres se conservan. Las carpetas virtuales y los archivos comprimidos mantienen el orden de Windows.
+**Mezclar carpetas y archivos al ordenar** los ordena juntos, como en [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) y [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Está desactivado de forma predeterminada en **Configuración > Visualización > Archivos**. Se aplica a Detalles, Lista e iconos organizados automáticamente; se conservan las disposiciones libres. Las carpetas virtuales y los archivos comprimidos mantienen el orden de Windows.
 
-![Una ventana con carpetas y archivos de ejemplo mezclados en orden alfabético.](images/mixed-sorting.png)
+![Carpetas y archivos en un mismo orden alfabético.](images/mixed-sorting.png)
 
-*Las carpetas y los archivos comparten el mismo orden alfabético.*
+La visibilidad de las barras de herramientas y de estado también se cambia en la configuración.
 
 ### Colocación de ventanas
 
@@ -48,42 +45,34 @@ Con **Configuración > General > Mantener la selección al hacer clic en una ven
 
 ### Movimiento y cambio de tamaño
 
-Arrastra en el área de archivos, sobre el fondo o sobre un elemento, con estos gestos predeterminados:
+Las ventanas se pueden mover o redimensionar arrastrando desde el área de archivos, incluso sobre un elemento. Los métodos abreviados predeterminados son:
 
 | Acción | Método abreviado |
 | --- | --- |
 | Mover la ventana | Alt + arrastrar con el botón izquierdo |
 | Cambiar el tamaño desde la esquina inferior derecha | Alt + arrastrar con el botón derecho |
 
-**Mover la ventana — Alt + arrastrar con el botón izquierdo**
+![Mover una ventana con Alt y el botón izquierdo.](images/move-window.gif)
 
-![Movimiento de una ventana de carpeta manteniendo Alt y arrastrando con el botón izquierdo en el área de archivos.](images/move-window.gif)
+![Cambiar el tamaño de una ventana con Alt y el botón derecho.](images/resize-window.gif)
 
-**Cambiar el tamaño — Alt + arrastrar con el botón derecho**
+La selección se conserva. Esc cancela el gesto. Campos de texto, encabezados, barras de desplazamiento, barras de herramientas y menús funcionan como de costumbre; Alt + doble clic abre las propiedades de un elemento.
 
-![Cambio de tamaño de una ventana de carpeta manteniendo Alt y arrastrando con el botón derecho en el área de archivos.](images/resize-window.gif)
-
-La selección se conserva. Esc cancela el gesto y restaura la posición y las dimensiones iniciales. Los cuadros de texto, encabezados, barras de desplazamiento, barras de herramientas y menús mantienen su comportamiento normal. Alt + doble clic sobre un elemento abre sus propiedades.
-
-En **Configuración > Métodos abreviados**, activa o desactiva cada acción y despliégala para cambiar su combinación. El área de captura directa registra una combinación de teclas y botón del ratón. Los botones izquierdo y derecho requieren Alt; el central también admite combinaciones sin Alt. Las teclas modificadoras deben coincidir exactamente. No se pueden aplicar combinaciones reservadas o duplicadas.
-
-El botón de valor predeterminado restablece una acción. **Restablecer** recupera los últimos métodos abreviados aplicados; **Cancelar** descarta los cambios pendientes. **Aplicar** o **Aceptar** hace que los cambios estén disponibles en las ventanas abiertas de FileSpacer.
+Cada acción tiene su propia combinación configurable en **Configuración > Métodos abreviados**. Los botones izquierdo y derecho requieren Alt; el central también funciona sin Alt. Los modificadores deben coincidir exactamente; se rechazan las combinaciones reservadas o duplicadas. Los cambios se aplican a las ventanas abiertas. Restablecer vuelve a las últimas combinaciones aplicadas y Cancelar descarta los cambios pendientes.
 
 ### Bloqueo del estado guardado
 
-El bloqueo guarda la posición, el tamaño y las opciones de visualización de una carpeta para restaurarlos al volver a abrirla. Para usar esta función opcional, activa **Configuración > General > Habilitar el bloqueo del estado de ventana** (desactivado de forma predeterminada) y elige **Bloquear el estado de la ventana** en el menú junto al título de la carpeta. Un **distintivo de candado sobre el icono de la carpeta en la barra de título**, junto al nombre, identifica un estado bloqueado.
+El bloqueo conserva la posición, el tamaño y la vista de una carpeta para la próxima apertura. Está desactivado de forma predeterminada en **Configuración > General > Habilitar el bloqueo del estado de ventana**. Una vez activado, **Bloquear el estado de la ventana** aparece junto al título. Un candado sobre el icono de la carpeta señala el bloqueo.
 
-<img src="images/locked-title.png" alt="Detalle de la barra de título: un distintivo de candado se superpone al icono de la carpeta junto a Studio project." width="420">
+<img src="images/locked-title.png" alt="Detalle del título de una carpeta con el distintivo de candado." width="280">
 
-*El distintivo de candado indica que el estado guardado está bloqueado.*
+Se permiten cambios temporales; al volver a abrir la carpeta se recupera el estado bloqueado. Las posiciones individuales de los iconos se siguen guardando. **Desbloquear el estado de la ventana** conserva la disposición actual. Ocultar el candado no elimina el bloqueo.
 
-Puedes seguir moviendo y cambiando temporalmente el tamaño o la vista de la ventana. Volver a abrir la carpeta restaura el estado bloqueado. Las posiciones individuales de los iconos siguen guardándose normalmente. **Desbloquear el estado de la ventana** conserva la disposición actual. Puedes ocultar el distintivo en la configuración general sin quitar el bloqueo.
-
-Desactivar la función pide confirmación y elimina todos los bloqueos guardados, incluidos los de carpetas cerradas. Volver a activarla no los restaura.
+Desactivar la función pide confirmación y elimina todos los bloqueos, incluidos los de carpetas cerradas. Volver a activarla no los restaura.
 
 ## Búsqueda e historial
 
-Escribe en el cuadro de búsqueda y pulsa Entrar o haz clic en la lupa para filtrar la carpeta actual. **Configuración > General > Filtrar mientras se escribe** aplica el filtro durante la escritura. Este filtro local nunca inicia Everything automáticamente.
+Escribe todo o parte del nombre de un archivo o una carpeta y pulsa Entrar o haz clic en la lupa para filtrar la carpeta actual. **Configuración > General > Filtrar mientras se escribe** aplica el filtro durante la escritura. Este filtro local nunca inicia Everything automáticamente.
 
 Activar el cuadro muestra las búsquedas recientes y, cuando la integración está activada, **Buscar en Everything**. Usa las flechas Arriba/Abajo y Entrar, o haz clic, para elegir una entrada. Entrar sin una sugerencia seleccionada aplica el filtro local. Esc cierra la lista sin borrar el texto; Ctrl+F vuelve a activar el cuadro.
 
@@ -91,37 +80,33 @@ El historial conserva de forma predeterminada cinco búsquedas distintas confirm
 
 ![Sugerencias de búsqueda con Everything y consultas recientes sobre archivos de proyecto ficticios.](images/search.png)
 
-*Everything es una acción independiente; las búsquedas recientes filtran la carpeta actual.*
-
 ## Integración
 
 ### Integración con Windows
 
-El instalador ofrece **Establecer FileSpacer como gestor de archivos predeterminado**, sin marcar de forma predeterminada. También instala el componente del menú contextual de carpetas. Puedes cambiar la elección más adelante en **Configuración > Integración** con **Establecer como explorador predeterminado**; **Restaurar Explorador de archivos predeterminado** devuelve la apertura de carpetas al Explorador de archivos de Windows.
+FileSpacer se puede establecer como gestor de archivos predeterminado durante la instalación o después, en **Configuración > Integración**, con **Establecer como explorador predeterminado**. **Restaurar Explorador de archivos predeterminado** devuelve la apertura de carpetas al Explorador de archivos.
 
-El componente del menú contextual ofrece **Abrir en el Explorador de archivos de Windows** cuando FileSpacer es el gestor predeterminado, y **Abrir en FileSpacer** en caso contrario. Se aplica a carpetas, unidades, carpetas comprimidas, ubicaciones de red y fondos de carpetas. Instalar solo este componente no cambia la aplicación predeterminada.
+El menú contextual de las carpetas ofrece **Abrir en FileSpacer**, o **Abrir en el Explorador de archivos de Windows** cuando FileSpacer es el predeterminado. También funciona en unidades, carpetas ZIP, ubicaciones de red y fondos de carpetas, sin exigir un cambio de aplicación predeterminada.
 
-**Opciones del Explorador de archivos**, en la misma página de configuración, abre las opciones de carpeta de Windows; algunas también afectan a la vista de archivos de FileSpacer.
+Los archivos se abren con su aplicación habitual de Windows. Las carpetas de red, las vistas previas y los comandos añadidos al menú contextual también siguen el funcionamiento de Windows. **Opciones del Explorador de archivos** abre las preferencias compartidas de las carpetas; algunas también afectan a FileSpacer.
 
 ### Everything
 
-Si usas [Everything](https://www.voidtools.com/), puedes integrarlo con FileSpacer para realizar búsquedas avanzadas directamente desde su cuadro de búsqueda.
+Una instalación existente de [Everything](https://www.voidtools.com/) se puede integrar para lanzar búsquedas avanzadas desde el campo de FileSpacer. Los resultados se abren en Everything.
 
-Para usar esta integración opcional, actívala en **Configuración > Integración**. Deja vacía la ruta del ejecutable para la detección automática, usa **Detectar** o elige manualmente su archivo `.exe` para una instalación portable.
+La opción se activa en **Configuración > Integración**. Everything se encuentra automáticamente o con **Detectar**; una copia portátil se puede seleccionar manualmente. La búsqueda abarca la carpeta actual y sus subcarpetas, o **En todas partes**. Las carpetas virtuales requieren En todas partes.
 
-Elige el ámbito de búsqueda: la carpeta actual y sus subcarpetas, o **En todas partes**. Las carpetas virtuales no tienen un ámbito en el sistema de archivos; usa En todas partes para ellas.
+**Buscar en Everything** envía la consulta escrita, con la sintaxis de Everything. Si se inicia correctamente, se vacían el campo y el filtro local de FileSpacer; si falla, se conservan para volver a intentarlo.
 
-Escribe una consulta en el cuadro de búsqueda de FileSpacer y elige **Buscar en Everything** entre las sugerencias. Los resultados se abren en Everything, con su índice y su sintaxis de búsqueda. Si el inicio es correcto, FileSpacer vacía el cuadro y elimina el filtro local; si falla, conserva ambos para que puedas volver a intentarlo.
+![Una consulta en FileSpacer y, al lado, los resultados correspondientes en Everything.](images/everything-search.png)
 
 ### Nilesoft Shell
 
-Si usas [Nilesoft Shell](https://nilesoft.org/), puedes dejar que gestione también el aspecto de los menús de FileSpacer y personalice sus entradas.
+[Nilesoft Shell](https://nilesoft.org/) puede dar formato a los menús de FileSpacer y personalizar sus comandos. Se recomienda adaptar su configuración para lograr una apariencia coherente, sobre todo con esquinas rectas en los menús de la barra de título y de herramientas.
 
-Para esta integración opcional, se recomienda adaptar la configuración de Nilesoft para que los menús encajen visualmente con FileSpacer, en particular usando esquinas rectas en los menús de la barra de título y de la barra de herramientas.
+La [referencia de configuración](nilesoft-shell.md) explica cómo permitir FileSpacer, conservar el tema y limitar al Explorador las reglas específicas de este. Después de un cambio, anular y repetir el registro de Nilesoft Shell lo aplica a los menús que se abran a continuación.
 
-La [referencia de configuración con ejemplos](nilesoft-shell.md) explica cómo permitir FileSpacer, conservar la importación del tema y limitar al Explorador las reglas reservadas para él. Si modificas la configuración, anula el registro de Nilesoft Shell y vuelve a registrarlo para aplicar los cambios a los menús que se abran a continuación.
-
-El tema Modern que aparece abajo usa sus esquinas redondeadas predeterminadas a la izquierda y las esquinas rectas recomendadas a la derecha.
+El tema Modern de abajo compara sus esquinas predeterminadas con las esquinas rectas recomendadas.
 
 **Menú de navegación**
 
@@ -137,10 +122,22 @@ El tema Modern que aparece abajo usa sus esquinas redondeadas predeterminadas a 
 
 ## Configuración y actualizaciones
 
-**Preferencias.** **Ctrl+,** abre la configuración incluso con la barra de herramientas oculta. La interfaz sigue el idioma de visualización de Windows y usa el inglés como alternativa; cambiar de idioma requiere reiniciar la aplicación.
+Ctrl+, abre la configuración aunque la barra de herramientas esté oculta. La interfaz sigue el idioma de visualización de Windows y recurre al inglés si no está disponible; cambiar de idioma requiere reiniciar. F1 abre la guía instalada, también disponible sin conexión.
 
-**Actualizaciones.** Busca una nueva versión en **Configuración > Acerca de** y elige **Instalar FileSpacer vX.Y.Z** para actualizar. La instalación requiere confirmación; las actualizaciones nunca se instalan automáticamente. Tras la instalación, FileSpacer vuelve a abrir las carpetas que estaban abiertas con sus disposiciones guardadas. Las comprobaciones semanales opcionales están desactivadas de forma predeterminada y pueden activarse en Acerca de.
+Las actualizaciones se buscan en **Configuración > Acerca de**. La descarga y la instalación requieren confirmación; la instalación nunca es automática. Al terminar, se vuelven a abrir las carpetas anteriores con sus disposiciones guardadas. Las comprobaciones semanales son opcionales y están desactivadas de forma predeterminada; se activan en Acerca de.
 
-**Mantenimiento.** **Configuración > Acerca de > Mantenimiento > Restablecer el estado de todas las carpetas** cierra las ventanas de carpetas abiertas y borra las disposiciones guardadas, el historial y los bloqueos del estado. Tus archivos y las preferencias globales se conservan.
+## Datos locales
 
-**Documentación.** Elija **Documentación** encima de **Configuración de FileSpacer** en el menú principal, pulse **F1** o utilice el botón en **Configuración > Acerca de**. La guía instalada se abre en el navegador en el idioma de visualización de Windows, con el inglés como alternativa. Las páginas, imágenes y búsquedas funcionan sin conexión; el selector de idioma permite cambiar de traducción.
+Las disposiciones de las carpetas, los bloqueos, las búsquedas y el historial de carpetas cerradas se guardan localmente en `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. Las preferencias generales están en el Registro de Windows, en `HKEY_CURRENT_USER\Software\FileSpacer`. El estado guardado puede contener rutas de carpetas, incluidas las de red. Los archivos temporales de actualización y la lista de carpetas que se volverán a abrir permanecen en `%TEMP%\FileSpacerUpdate-{GUID}`.
+
+**Configuración > Acerca de > Mantenimiento > Restablecer el estado de todas las carpetas** cierra las ventanas de carpetas y borra sus disposiciones, historiales y bloqueos guardados. Conserva los archivos y las preferencias generales.
+
+Para solucionar problemas, `FileSpacer.exe /reset-options` restablece las preferencias generales; `/reset-all` borra también el estado guardado de las carpetas. Ninguno elimina archivos, cambia las asociaciones de Windows ni borra informes de diagnóstico existentes.
+
+## Privacidad
+
+FileSpacer no incluye telemetría, seguimiento del uso ni publicidad. Los informes de errores no se envían automáticamente. Los posibles informes de diagnóstico permanecen en `%LOCALAPPDATA%\FileSpacer`; compartirlos es opcional y puede revelar rutas de archivos o partes de la memoria del proceso.
+
+Las comprobaciones de actualizaciones y las descargas contactan con GitHub mediante HTTPS. GitHub recibe la información habitual de conexión, como la dirección IP y la versión de la aplicación, pero ningún estado de carpeta, ruta de archivo ni informe de diagnóstico.
+
+Windows recoge y gestiona las credenciales de las unidades de red, igual que en el Explorador de archivos. FileSpacer no las lee ni las almacena. Una búsqueda en Everything envía la consulta y, si está limitada a una carpeta, su ruta a la aplicación Everything local.

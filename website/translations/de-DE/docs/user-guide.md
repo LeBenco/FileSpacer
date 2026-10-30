@@ -13,8 +13,6 @@ Beim Wechsel zum übergeordneten Ordner wird der Ausgangsordner nicht ausgewähl
 
 ![Das Ordnertitelmenü mit Fensternavigation und Sperre des gespeicherten Fensterzustands.](images/window-menu.png)
 
-*Das Titelleistenmenü, hier mit gesperrtem Fensterzustand.*
-
 ## Ansicht und Anordnung
 
 ### Symbolanordnung
@@ -23,18 +21,17 @@ In einer Symbolansicht können Sie Dateien und Unterordner frei platzieren, wenn
 
 ### Ansichtsoptionen
 
-Die Sichtbarkeit der Symbolleiste und der Statusleiste lässt sich unter **Einstellungen** ändern.
+**Vollständigen Namen einer ausgewählten Datei anzeigen** unter **Einstellungen > Anzeige** zeigt einen einzelnen ausgewählten Namen in der Symbolansicht vollständig an. Die Option ist standardmäßig aktiviert; Mehrfachauswahl und andere Ansichten bleiben unverändert.
 
-Unter **Einstellungen > Anzeige** sind zwei Optionen standardmäßig aktiviert:
+![Ein langer ausgewählter Dateiname wird in der Symbolansicht vollständig angezeigt.](images/selected-name.png)
 
-- **Vollständigen Namen einer ausgewählten Datei anzeigen** hält einen ausgewählten Dateinamen in der Symbolansicht lesbar. Mehrfachauswahlen und andere Ansichten werden dadurch nicht verändert.
-- **Ansichtsmodi im Ansichtsmenü vorab anzeigen** zeigt beim Zeigen auf einen Modus eine Vorschau. Klicken Sie, um sie zu übernehmen; Esc oder das Verlassen der Vorschau stellt die ursprüngliche Ansicht wieder her. Eine Vorschau ersetzt nicht die gespeicherte Anordnung.
+**Ansichtsmodi im Ansichtsmenü vorab anzeigen**, ebenfalls standardmäßig aktiviert, zeigt beim Darüberfahren eine Vorschau. Ein Klick übernimmt die Ansicht; Esc oder das Verlassen der Vorschau stellt die ursprüngliche Ansicht wieder her. Die gespeicherte Anordnung wird dabei nicht überschrieben.
 
-**Ordner und Dateien beim Sortieren mischen** unter **Einstellungen > Anzeige > Dateien** ist standardmäßig deaktiviert. Aktivieren Sie die Option, um Ordner und Dateien gemeinsam zu sortieren, wie unter [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) und [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Sie gilt für Details, Liste und automatisch angeordnete Symbolansichten. Freie Symbolanordnungen bleiben erhalten. Virtuelle Ordner und Archive behalten die Windows-Sortierung bei.
+**Ordner und Dateien beim Sortieren mischen** sortiert beide gemeinsam, wie unter [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) und [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Die Option ist unter **Einstellungen > Anzeige > Dateien** standardmäßig deaktiviert. Sie gilt für Details, Liste und automatisch angeordnete Symbole; freie Anordnungen bleiben erhalten. Virtuelle Ordner und Archive behalten die Windows-Sortierung.
 
-![Ein Ordnerfenster mit Beispieldateien und -ordnern in einer gemeinsamen alphabetischen Reihenfolge.](images/mixed-sorting.png)
+![Ordner und Dateien in einer gemeinsamen alphabetischen Reihenfolge.](images/mixed-sorting.png)
 
-*Ordner und Dateien werden gemeinsam alphabetisch sortiert.*
+Auch die Sichtbarkeit von Symbolleiste und Statusleiste lässt sich in den Einstellungen ändern.
 
 ### Fensterpositionierung
 
@@ -48,42 +45,34 @@ Wenn **Einstellungen > Allgemein > Auswahl beim Klicken auf inaktives Fenster be
 
 ### Verschieben und Größenänderung
 
-Ziehen Sie im Dateibereich, auf dem Hintergrund oder einem Element. Standardmäßig gelten diese Gesten:
+Fenster lassen sich durch Ziehen im Dateibereich verschieben oder in der Größe ändern, auch über einem Element. Standardmäßig gelten:
 
 | Aktion | Tastenkombination |
 | --- | --- |
 | Fenster verschieben | Alt + Ziehen mit der linken Maustaste |
-| Größe an der unteren rechten Ecke ändern | Alt + Ziehen mit der rechten Maustaste |
+| Größe von der unteren rechten Ecke aus ändern | Alt + Ziehen mit der rechten Maustaste |
 
-**Fenster verschieben — Alt + Ziehen mit der linken Maustaste**
+![Fenster mit Alt und der linken Maustaste verschieben.](images/move-window.gif)
 
-![Ein Ordnerfenster wird bei gedrückter Alt-Taste mit der linken Maustaste im Dateibereich verschoben.](images/move-window.gif)
+![Fenstergröße mit Alt und der rechten Maustaste ändern.](images/resize-window.gif)
 
-**Fenstergröße ändern — Alt + Ziehen mit der rechten Maustaste**
+Die Auswahl bleibt erhalten. Esc bricht den Vorgang ab. Textfelder, Spaltenköpfe, Bildlaufleisten, Symbolleisten und Menüs funktionieren wie gewohnt; Alt + Doppelklick öffnet die Eigenschaften eines Elements.
 
-![Ein Ordnerfenster wird bei gedrückter Alt-Taste mit der rechten Maustaste im Dateibereich vergrößert.](images/resize-window.gif)
-
-Die Auswahl bleibt erhalten. Esc bricht die Geste ab und stellt die ursprüngliche Größe und Position wieder her. Textfelder, Überschriften, Bildlaufleisten, Symbolleisten und Menüs behalten ihr normales Verhalten. Alt + Doppelklick auf ein Element öffnet dessen Eigenschaften.
-
-Unter **Einstellungen > Tastenkombinationen** aktivieren oder deaktivieren Sie die einzelnen Aktionen und klappen sie auf, um ihre Belegung zu ändern. Im Bereich zur direkten Eingabe lässt sich eine Kombination aus Tasten und Maustaste aufzeichnen. Die linke und rechte Maustaste benötigen Alt; mit der mittleren Maustaste sind auch Kombinationen ohne Alt möglich. Die Zusatztasten müssen genau übereinstimmen. Reservierte oder doppelt belegte Kombinationen lassen sich nicht übernehmen.
-
-Die Schaltfläche für die Standardeinstellung setzt eine Aktion zurück. **Zurücksetzen** stellt die zuletzt übernommenen Tastenkombinationen wieder her; **Abbrechen** verwirft ausstehende Änderungen. Mit **Übernehmen** oder **OK** werden die Änderungen in den geöffneten FileSpacer-Fenstern wirksam.
+Unter **Einstellungen > Tastenkombinationen** lässt sich jede Aktion einzeln konfigurieren. Linke und rechte Maustaste erfordern Alt; die mittlere funktioniert auch ohne Alt. Zusatztasten müssen genau übereinstimmen; reservierte oder doppelte Belegungen werden abgelehnt. Änderungen gelten auch für offene Fenster. Zurücksetzen stellt die zuletzt übernommenen Belegungen wieder her, Abbrechen verwirft ausstehende Änderungen.
 
 ### Gespeicherten Fensterzustand sperren
 
-Die Sperre hält Position, Größe und Ansichtseinstellungen eines Ordners fest, damit sie beim erneuten Öffnen wiederhergestellt werden. Wenn Sie diese optionale Funktion nutzen möchten, aktivieren Sie **Einstellungen > Allgemein > Sperren des Fensterzustands aktivieren** (standardmäßig deaktiviert). Wählen Sie anschließend **Fensterzustand sperren** im Menü neben dem Ordnertitel. Ein **Schlosssymbol auf dem Ordnersymbol in der Titelleiste**, neben dem Ordnernamen, kennzeichnet den gesperrten Zustand.
+Eine Sperre hält Position, Größe und Ansicht eines Ordners für das erneute Öffnen fest. **Einstellungen > Allgemein > Sperren des Fensterzustands aktivieren** ist standardmäßig deaktiviert. Nach dem Aktivieren steht neben dem Ordnertitel **Fensterzustand sperren** zur Verfügung. Ein Schloss am Ordnersymbol kennzeichnet die Sperre.
 
-<img src="images/locked-title.png" alt="Nahaufnahme der Titelleiste: Ein Schlosssymbol überlagert das Ordnersymbol neben Studio project." width="420">
+<img src="images/locked-title.png" alt="Nahaufnahme des Ordnertitels mit Schlosssymbol." width="280">
 
-*Das Schlosssymbol kennzeichnet den gesperrten gespeicherten Zustand.*
+Vorübergehende Änderungen bleiben möglich; beim erneuten Öffnen kehrt der gesperrte Zustand zurück. Einzelne Symbolpositionen werden weiterhin gespeichert. **Fensterzustand entsperren** behält die aktuelle Anordnung bei. Das Ausblenden des Schlosses hebt die Sperre nicht auf.
 
-Sie können das Fenster weiterhin vorübergehend verschieben, skalieren oder seine Ansicht ändern. Beim erneuten Öffnen wird der gesperrte Zustand wiederhergestellt. Einzelne Symbolpositionen werden weiter normal gespeichert. **Fensterzustand entsperren** behält die aktuelle Anordnung bei. Das Schlosssymbol lässt sich in den allgemeinen Einstellungen ausblenden, ohne die Sperre aufzuheben.
-
-Beim Deaktivieren der Funktion wird nach einer Bestätigung gefragt. Anschließend werden alle gespeicherten Sperren entfernt, auch die geschlossener Ordner. Erneutes Aktivieren stellt sie nicht wieder her.
+Das Deaktivieren der Funktion erfordert eine Bestätigung und entfernt alle Sperren, auch bei geschlossenen Ordnern. Erneutes Aktivieren stellt sie nicht wieder her.
 
 ## Suche und Verlauf
 
-Geben Sie Text in das Suchfeld ein und drücken Sie die Eingabetaste oder klicken Sie auf die Lupe, um den aktuellen Ordner zu filtern. **Einstellungen > Allgemein > Beim Eingeben filtern** wendet den Filter bereits während der Eingabe an. Dieser lokale Filter startet Everything niemals automatisch.
+Geben Sie den Namen einer Datei oder eines Ordners ganz oder teilweise in das Suchfeld ein und drücken Sie die Eingabetaste oder klicken Sie auf die Lupe, um den aktuellen Ordner zu filtern. **Einstellungen > Allgemein > Beim Eingeben filtern** wendet den Filter bereits während der Eingabe an. Dieser lokale Filter startet Everything niemals automatisch.
 
 Beim Aktivieren des Felds werden die letzten Suchanfragen und, falls aktiviert, **In Everything suchen** angezeigt. Wählen Sie mit Pfeil nach oben/unten und der Eingabetaste oder per Mausklick einen Eintrag aus. Ohne ausgewählten Vorschlag wendet die Eingabetaste den lokalen Filter an. Esc schließt die Liste, ohne den Text zu löschen; Strg+F aktiviert das Feld erneut.
 
@@ -91,37 +80,33 @@ Standardmäßig speichert jeder Ordner fünf unterschiedliche bestätigte Suchan
 
 ![Suchvorschläge mit Everything und letzten Suchanfragen zu fiktiven Projektdateien.](images/search.png)
 
-*Everything ist eine eigene Aktion; die letzten Suchanfragen filtern den aktuellen Ordner.*
-
 ## Integration
 
 ### Windows-Integration
 
-Das Installationsprogramm bietet **FileSpacer als Standard-Dateimanager festlegen** an; die Option ist standardmäßig nicht ausgewählt. Es installiert außerdem die Komponente für das Ordnerkontextmenü. Unter **Einstellungen > Integration** lässt sich die Vorgabe später mit **Als Standard-Dateibrowser festlegen** ändern; **Standard-Dateibrowser zurücksetzen** übergibt das Öffnen von Ordnern wieder an den Windows-Datei-Explorer.
+FileSpacer lässt sich bei der Installation oder später unter **Einstellungen > Integration** mit **Als Standard-Dateibrowser festlegen** zum Standard-Dateimanager machen. **Standard-Dateibrowser zurücksetzen** übergibt das Öffnen von Ordnern wieder an den Datei-Explorer.
 
-Die Kontextmenükomponente bietet **Im Windows-Datei-Explorer öffnen** an, wenn FileSpacer der Standard ist, andernfalls **In FileSpacer öffnen**. Sie gilt für Ordner, Laufwerke, komprimierte Ordner, Netzwerkorte und Ordnerhintergründe. Die alleinige Installation dieser Komponente ändert die Standardanwendung nicht.
+Das Kontextmenü von Ordnern bietet **In FileSpacer öffnen**, beziehungsweise **Im Windows-Datei-Explorer öffnen**, wenn FileSpacer der Standard ist. Das gilt auch für Laufwerke, ZIP-Ordner, Netzwerkadressen und Ordnerhintergründe; die Standardanwendung muss dafür nicht geändert werden.
 
-**Datei-Explorer-Optionen** auf derselben Einstellungsseite öffnet die Windows-Ordneroptionen. Einige davon wirken sich auch auf die Dateiansicht von FileSpacer aus.
+Dateien öffnen sich in der zugeordneten Windows-Anwendung. Auch Netzwerkordner, Vorschauen und installierte Kontextmenübefehle verwenden das gewohnte Windows-Verhalten. **Datei-Explorer-Optionen** öffnet gemeinsame Ordnereinstellungen, von denen einige auch für FileSpacer gelten.
 
 ### Everything
 
-Wenn Sie [Everything](https://www.voidtools.com/) verwenden, können Sie es in FileSpacer integrieren, um erweiterte Suchanfragen direkt über dessen Suchfeld auszuführen.
+Ein vorhandenes [Everything](https://www.voidtools.com/) lässt sich einbinden, um erweiterte Suchanfragen direkt aus FileSpacers Suchfeld zu starten. Die Ergebnisse erscheinen in Everything.
 
-Um diese optionale Integration zu nutzen, aktivieren Sie sie unter **Einstellungen > Integration**. Lassen Sie den Programmpfad zur automatischen Erkennung leer, wählen Sie **Erkennen** oder geben Sie bei einer portablen Installation die `.exe`-Datei selbst an.
+Die Option wird unter **Einstellungen > Integration** aktiviert. Everything wird automatisch oder mit **Erkennen** gefunden; eine portable Ausgabe lässt sich manuell auswählen. Gesucht wird im aktuellen Ordner samt Unterordnern oder **Überall**. Virtuelle Ordner erfordern Überall.
 
-Wählen Sie den Suchbereich: aktueller Ordner mit Unterordnern oder **Überall**. Virtuelle Ordner haben keinen Suchbereich im Dateisystem; verwenden Sie dafür Überall.
+**In Everything suchen** übergibt die eingegebene Anfrage in Everything-Syntax. Nach einem erfolgreichen Start werden FileSpacers Suchfeld und lokaler Filter geleert; bei einem Fehler bleiben beide für einen neuen Versuch erhalten.
 
-Geben Sie eine Suchanfrage in das FileSpacer-Suchfeld ein und wählen Sie **In Everything suchen** aus den Vorschlägen. Die Ergebnisse werden in Everything geöffnet, mit dessen Index und Suchsyntax. Nach erfolgreichem Start leert FileSpacer das Suchfeld und hebt den lokalen Filter auf. Bei einem Startfehler bleiben beide für einen erneuten Versuch erhalten.
+![Eine Suchanfrage in FileSpacer und daneben die passenden Ergebnisse in Everything.](images/everything-search.png)
 
 ### Nilesoft Shell
 
-Wenn Sie [Nilesoft Shell](https://nilesoft.org/) verwenden, können Sie damit auch das Erscheinungsbild der FileSpacer-Menüs und ihre Einträge anpassen.
+[Nilesoft Shell](https://nilesoft.org/) kann FileSpacers Menüs gestalten und ihre Befehle anpassen. Für ein stimmiges Erscheinungsbild empfiehlt sich eine angepasste Konfiguration, insbesondere mit eckigen Menüs an Titel- und Symbolleiste.
 
-Für diese optionale Integration empfiehlt es sich, die Nilesoft-Konfiguration anzupassen, damit die Menüs optisch zu FileSpacer passen, insbesondere mit rechtwinkligen statt abgerundeten Ecken für die Menüs der Titelleiste und der Symbolleiste.
+Die [Konfigurationsreferenz](nilesoft-shell.md) beschreibt die Freigabe für FileSpacer, das Beibehalten des Designs und die Beschränkung Explorer-spezifischer Regeln. Nach Änderungen wendet erneutes Ab- und Anmelden von Nilesoft Shell die Konfiguration auf neu geöffnete Menüs an.
 
-Die [Konfigurationsreferenz mit Beispielen](nilesoft-shell.md) erklärt, wie Sie FileSpacer zulassen, den Theme-Import beibehalten und Regeln für den Explorer auf diesen beschränken. Wenn Sie die Konfiguration ändern, heben Sie die Registrierung von Nilesoft Shell auf und registrieren Sie es erneut, damit die Änderungen für neu geöffnete Menüs gelten.
-
-Das folgende Modern-Theme zeigt links die standardmäßig abgerundeten Ecken und rechts die empfohlenen eckigen Menüs.
+Das folgende Modern-Design vergleicht die standardmäßigen Ecken mit den empfohlenen eckigen Menüs.
 
 **Navigationsmenü**
 
@@ -137,10 +122,22 @@ Das folgende Modern-Theme zeigt links die standardmäßig abgerundeten Ecken und
 
 ## Einstellungen und Updates
 
-**Einstellungen.** **Strg+,** öffnet die Einstellungen auch bei ausgeblendeter Symbolleiste. Die Oberfläche folgt der Windows-Anzeigesprache; ist sie nicht verfügbar, wird Englisch verwendet. Ein Sprachwechsel erfordert einen Neustart.
+Strg+, öffnet die Einstellungen auch bei ausgeblendeter Symbolleiste. Die Oberfläche folgt der Windows-Anzeigesprache, ersatzweise Englisch; ein Sprachwechsel erfordert einen Neustart. F1 öffnet das installierte Handbuch, das auch offline verfügbar ist.
 
-**Updates.** Suchen Sie unter **Einstellungen > Info** nach einer neuen Version und wählen Sie **FileSpacer vX.Y.Z installieren**. Die Installation erfordert eine Bestätigung; Updates werden niemals automatisch installiert. Nach der Installation öffnet FileSpacer die zuvor geöffneten Ordner mit ihrer gespeicherten Anordnung erneut. Die optionalen wöchentlichen Prüfungen sind standardmäßig deaktiviert und lassen sich unter Info aktivieren.
+Unter **Einstellungen > Info** lassen sich Updates suchen. Herunterladen und Installieren erfordern eine Bestätigung; die Installation erfolgt niemals automatisch. Anschließend werden die zuvor geöffneten Ordner mit ihrer gespeicherten Anordnung wiederhergestellt. Die optionalen wöchentlichen Prüfungen sind standardmäßig aus und können unter Info aktiviert werden.
 
-**Wartung.** **Einstellungen > Info > Wartung > Alle Ordnerzustände zurücksetzen** schließt geöffnete Ordnerfenster und löscht deren gespeicherte Anordnungen, Verläufe und Fenstersperren. Ihre Dateien und globalen Einstellungen bleiben erhalten.
+## Lokale Daten
 
-**Dokumentation.** Wählen Sie **Dokumentation** oberhalb von **FileSpacer-Einstellungen** im Hauptmenü, drücken Sie **F1** oder verwenden Sie die Schaltfläche unter **Einstellungen > Info**. Das installierte Handbuch wird im Browser in der Windows-Anzeigesprache geöffnet; ersatzweise wird Englisch verwendet. Seiten, Bilder und Suche funktionieren offline. Über die Sprachauswahl können Sie die Übersetzung wechseln.
+Ordneranordnungen, Sperren, Suchanfragen und der Verlauf geschlossener Ordner liegen lokal in `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. Allgemeine Einstellungen stehen in der Windows-Registrierung unter `HKEY_CURRENT_USER\Software\FileSpacer`. Der gespeicherte Zustand kann Ordnerpfade einschließlich Netzwerkpfaden enthalten. Temporäre Update-Dateien und die Liste der wieder zu öffnenden Ordner bleiben unter `%TEMP%\FileSpacerUpdate-{GUID}`.
+
+**Einstellungen > Info > Wartung > Alle Ordnerzustände zurücksetzen** schließt die Ordnerfenster und löscht deren gespeicherte Anordnungen, Verläufe und Sperren. Dateien und allgemeine Einstellungen bleiben erhalten.
+
+Zur Fehlerbehebung setzt `FileSpacer.exe /reset-options` allgemeine Einstellungen zurück; `/reset-all` löscht zusätzlich die gespeicherten Ordnerzustände. Beide Befehle lassen Dateien, Windows-Dateizuordnungen und vorhandene Diagnoseberichte unverändert.
+
+## Datenschutz
+
+FileSpacer enthält weder Telemetrie noch Nutzungsverfolgung oder Werbung. Absturzberichte werden nicht automatisch versendet. Diagnoseberichte bleiben unter `%LOCALAPPDATA%\FileSpacer`; ihre Weitergabe ist freiwillig und kann Dateipfade oder Teile des Prozessspeichers offenlegen.
+
+Update-Prüfungen und Downloads verbinden sich per HTTPS mit GitHub. GitHub erhält übliche Verbindungsinformationen, darunter IP-Adresse und Anwendungsversion, aber keine Ordnerzustände, Dateipfade oder Diagnoseberichte.
+
+Zugangsdaten für Netzlaufwerke werden wie im Datei-Explorer von Windows entgegengenommen und verarbeitet. FileSpacer liest oder speichert sie nicht. Bei einer Everything-Suche werden die Anfrage und bei einer Ordnersuche dessen Pfad an die lokale Everything-Anwendung übergeben.
