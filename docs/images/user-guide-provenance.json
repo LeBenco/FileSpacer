@@ -2,7 +2,7 @@
   "application": "FileSpacer",
   "version": "1.2.3",
   "date": "2026-10-30",
-  "method": "Raw guest screen captures cropped to the DWM visible-frame union. Spatial and Everything scenes were recaptured over an original solid-color surface. Spatial scenes have 32 px of matching solid-color outer canvas; padding leaves raw captured pixels unchanged. Selected-name shots retain their original capture runs. No UI labels redrawn.",
+  "method": "Raw guest screen pixels. Multi-window scenes include 32px beyond the DWM frame union, capturing the real native shadows and original solid background. No canvas is added afterwards. Spatial scenes are slightly shorter to exclude OS overlays. Selected-name shots retain their original capture runs. No UI labels redrawn.",
   "build": "Disposable documentation builds from released 10c4027, overriding only the UI language and property-sheet resource-language selection.",
   "operatingSystem": "AgentWin10; French Windows session, real application resource strings and controls. Windows-owned breadcrumb names and size formatting can remain French.",
   "desktop": "Larger supported display mode used temporarily and restored. Original solid blue-gray background #DCE4EE covers desktop artwork only during capture; the Windows wallpaper setting is not changed. Single-window captures contain only the visible frame.",
@@ -16,48 +16,49 @@
       "SearchFieldReenteredAfterSuccessfulLaunch": true,
       "Shots": [
         {
+          "CaptureBounds": {
+            "Left": 7,
+            "Top": 0,
+            "Right": 1837,
+            "Bottom": 925
+          },
           "Width": 1830,
           "File": "spatial-windows.png",
-          "Height": 957,
+          "Height": 925,
           "Windows": [
             {
-              "Left": 31,
+              "Left": 39,
               "Title": "Studio project",
-              "Top": 24,
-              "Height": 893,
+              "Top": 32,
+              "Height": 861,
               "Width": 769
             },
             {
-              "Left": 868,
+              "Left": 876,
               "Title": "Documents",
-              "Top": 24,
-              "Height": 389,
+              "Top": 32,
+              "Height": 375,
               "Width": 929
             },
             {
-              "Left": 921,
+              "Left": 929,
               "Title": "Images",
-              "Top": 474,
-              "Height": 443,
+              "Top": 466,
+              "Height": 427,
               "Width": 734
             }
           ],
-          "RunId": "deb8edececf748e889ad5f3f4972cc5c",
+          "Sha256": "73298124f844720d36a60d7d8b3bd28cf7b5ef002303b5357d91a464de3d916c",
+          "RunId": "817c85d841774b919376e6cd901d0dbf",
           "Background": "#DCE4EE",
-          "OriginalCapture": {
-            "Width": 1766,
-            "Height": 893,
-            "Sha256": "25e92209946c649d325cc03b0830211314adedb7a65c8b74d8a47e90c519ef32"
-          },
-          "CanvasPadding": {
+          "CapturedMargin": {
             "Left": 32,
             "Top": 32,
             "Right": 32,
             "Bottom": 32,
-            "Background": "#DCE4EE",
-            "OriginalPixelsUnchanged": true
-          },
-          "Sha256": "fccc05414bc1f076229858f09833d14db6c255dba2ddcbc27751a555c019c211"
+            "NativeScreenPixels": true,
+            "ShadowsIncluded": true
+          }
         },
         {
           "Width": 726,
@@ -76,28 +77,42 @@
           "RunId": "ddbafbe6dd174ed1bf18620c1ba87ada"
         },
         {
-          "Width": 1766,
+          "Width": 1830,
           "File": "everything-search.png",
-          "Height": 613,
+          "Height": 677,
           "Windows": [
             {
-              "Left": 31,
+              "Left": 39,
               "Title": "Search examples",
-              "Top": 24,
+              "Top": 32,
               "Height": 533,
               "Width": 805
             },
             {
-              "Left": 878,
+              "Left": 886,
               "Title": "\"P:\\Search examples\\\" <brief> - Everything",
-              "Top": 24,
+              "Top": 32,
               "Height": 613,
               "Width": 919
             }
           ],
-          "RunId": "deb8edececf748e889ad5f3f4972cc5c",
+          "Sha256": "afbdb1a38c6fe12b96c7048333e06a6fc37dae8ba10e3f098149e0f86ae3eb15",
+          "RunId": "c5995a798b944245b24efa01edebb79b",
           "Background": "#DCE4EE",
-          "Sha256": "782e745f3bd4495a403b42e58138b73bed72b3434dae01a6ffc3a5a294c47e8d"
+          "CaptureBounds": {
+            "Left": 7,
+            "Top": 0,
+            "Right": 1837,
+            "Bottom": 677
+          },
+          "CapturedMargin": {
+            "Left": 32,
+            "Top": 32,
+            "Right": 32,
+            "Bottom": 32,
+            "NativeScreenPixels": true,
+            "ShadowsIncluded": true
+          }
         }
       ],
       "Language": "en-US",
@@ -118,9 +133,8 @@
         "Tools",
         "Help"
       ],
-      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "Crop": "Multi-window scenes include a native 32px screen margin and complete shadows; selected-name retains its original visible-frame crop.",
       "EverythingVersion": "1.4.1.1032",
-      "RunId": "deb8edececf748e889ad5f3f4972cc5c",
       "EverythingLocale": "en-US"
     },
     {
@@ -131,48 +145,49 @@
       "SearchFieldReenteredAfterSuccessfulLaunch": true,
       "Shots": [
         {
+          "CaptureBounds": {
+            "Left": 7,
+            "Top": 0,
+            "Right": 1837,
+            "Bottom": 925
+          },
           "Width": 1830,
           "File": "spatial-windows-fr.png",
-          "Height": 957,
+          "Height": 925,
           "Windows": [
             {
-              "Left": 31,
+              "Left": 39,
               "Title": "Projet studio",
-              "Top": 24,
-              "Height": 893,
+              "Top": 32,
+              "Height": 861,
               "Width": 769
             },
             {
-              "Left": 868,
+              "Left": 876,
               "Title": "Documents",
-              "Top": 24,
-              "Height": 389,
+              "Top": 32,
+              "Height": 375,
               "Width": 929
             },
             {
-              "Left": 921,
+              "Left": 929,
               "Title": "Images",
-              "Top": 474,
-              "Height": 443,
+              "Top": 466,
+              "Height": 427,
               "Width": 734
             }
           ],
-          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Sha256": "5f92dba44dc937d5ca7bf9459576e7aaccb727fb217aeeb596f8d296f2f3940d",
+          "RunId": "817c85d841774b919376e6cd901d0dbf",
           "Background": "#DCE4EE",
-          "OriginalCapture": {
-            "Width": 1766,
-            "Height": 893,
-            "Sha256": "51c1634a04dfd7caf24248f16049e5d38f670f99e1e09850e7ee53e310143355"
-          },
-          "CanvasPadding": {
+          "CapturedMargin": {
             "Left": 32,
             "Top": 32,
             "Right": 32,
             "Bottom": 32,
-            "Background": "#DCE4EE",
-            "OriginalPixelsUnchanged": true
-          },
-          "Sha256": "2bfeebae7881f9442367a22434e86394738806d7027cb69f3f54df4ebd0c792f"
+            "NativeScreenPixels": true,
+            "ShadowsIncluded": true
+          }
         },
         {
           "Width": 726,
@@ -191,28 +206,42 @@
           "RunId": "d9ad72c306704f1dbc8c41e754b246b4"
         },
         {
-          "Width": 1766,
+          "Width": 1830,
           "File": "everything-search-fr.png",
-          "Height": 613,
+          "Height": 677,
           "Windows": [
             {
-              "Left": 31,
+              "Left": 39,
               "Title": "Exemples de recherche",
-              "Top": 24,
+              "Top": 32,
               "Height": 533,
               "Width": 805
             },
             {
-              "Left": 878,
+              "Left": 886,
               "Title": "\"P:\\Exemples de recherche\\\" <cadrage> - Everything",
-              "Top": 24,
+              "Top": 32,
               "Height": 613,
               "Width": 919
             }
           ],
-          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Sha256": "1ee919879ab069d2136eb44c8303ae54af1eb012363d6b3383565977ddc91355",
+          "RunId": "c5995a798b944245b24efa01edebb79b",
           "Background": "#DCE4EE",
-          "Sha256": "086827004c4d4c1ea11fbae008a3204d19ac8f80faa94cc9dcc08ae79b304490"
+          "CaptureBounds": {
+            "Left": 7,
+            "Top": 0,
+            "Right": 1837,
+            "Bottom": 677
+          },
+          "CapturedMargin": {
+            "Left": 32,
+            "Top": 32,
+            "Right": 32,
+            "Bottom": 32,
+            "NativeScreenPixels": true,
+            "ShadowsIncluded": true
+          }
         }
       ],
       "Language": "fr-FR",
@@ -233,9 +262,8 @@
         "Outils",
         "Aide"
       ],
-      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "Crop": "Multi-window scenes include a native 32px screen margin and complete shadows; selected-name retains its original visible-frame crop.",
       "EverythingVersion": "1.4.1.1032",
-      "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
       "EverythingLocale": "fr-FR"
     },
     {
@@ -246,48 +274,49 @@
       "SearchFieldReenteredAfterSuccessfulLaunch": true,
       "Shots": [
         {
+          "CaptureBounds": {
+            "Left": 7,
+            "Top": 0,
+            "Right": 1837,
+            "Bottom": 925
+          },
           "Width": 1830,
           "File": "spatial-windows-de.png",
-          "Height": 957,
+          "Height": 925,
           "Windows": [
             {
-              "Left": 31,
+              "Left": 39,
               "Title": "Studio-Projekt",
-              "Top": 24,
-              "Height": 893,
+              "Top": 32,
+              "Height": 861,
               "Width": 769
             },
             {
-              "Left": 868,
+              "Left": 876,
               "Title": "Dokumente",
-              "Top": 24,
-              "Height": 389,
+              "Top": 32,
+              "Height": 375,
               "Width": 929
             },
             {
-              "Left": 921,
+              "Left": 929,
               "Title": "Bilder",
-              "Top": 474,
-              "Height": 443,
+              "Top": 466,
+              "Height": 427,
               "Width": 734
             }
           ],
-          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Sha256": "63c2af316cd72f8fa88f02343b2be2422ed82bd118cff4c5d5c64c67c99c89cd",
+          "RunId": "817c85d841774b919376e6cd901d0dbf",
           "Background": "#DCE4EE",
-          "OriginalCapture": {
-            "Width": 1766,
-            "Height": 893,
-            "Sha256": "3048506819592e98baba8bbbe4fb9e77000a79ed514100e782f3e62f0cf9a66e"
-          },
-          "CanvasPadding": {
+          "CapturedMargin": {
             "Left": 32,
             "Top": 32,
             "Right": 32,
             "Bottom": 32,
-            "Background": "#DCE4EE",
-            "OriginalPixelsUnchanged": true
-          },
-          "Sha256": "21c60d2582628d0e1f13586e5c042a0ebc1c740d7fce29c73008e8184e87e570"
+            "NativeScreenPixels": true,
+            "ShadowsIncluded": true
+          }
         },
         {
           "Width": 726,
@@ -306,28 +335,42 @@
           "RunId": "8e80ef2c89744bd590a3c6a43f905533"
         },
         {
-          "Width": 1766,
+          "Width": 1830,
           "File": "everything-search-de.png",
-          "Height": 613,
+          "Height": 677,
           "Windows": [
             {
-              "Left": 31,
+              "Left": 39,
               "Title": "Suchbeispiele",
-              "Top": 24,
+              "Top": 32,
               "Height": 533,
               "Width": 805
             },
             {
-              "Left": 878,
+              "Left": 886,
               "Title": "\"P:\\Suchbeispiele\\\" <entwurf> - Everything",
-              "Top": 24,
+              "Top": 32,
               "Height": 613,
               "Width": 919
             }
           ],
-          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Sha256": "ee0943fa05951684f670786af5b3e8768a6f7672c0948077f3408a943fc76a1e",
+          "RunId": "c5995a798b944245b24efa01edebb79b",
           "Background": "#DCE4EE",
-          "Sha256": "1430b449bfe97b43bfb50a2d9f627f900ffb756f69def5e57b92b229712e0fa8"
+          "CaptureBounds": {
+            "Left": 7,
+            "Top": 0,
+            "Right": 1837,
+            "Bottom": 677
+          },
+          "CapturedMargin": {
+            "Left": 32,
+            "Top": 32,
+            "Right": 32,
+            "Bottom": 32,
+            "NativeScreenPixels": true,
+            "ShadowsIncluded": true
+          }
         }
       ],
       "Language": "de-DE",
@@ -348,9 +391,8 @@
         "Extras",
         "Hilfe"
       ],
-      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "Crop": "Multi-window scenes include a native 32px screen margin and complete shadows; selected-name retains its original visible-frame crop.",
       "EverythingVersion": "1.4.1.1032",
-      "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
       "EverythingLocale": "de-DE"
     },
     {
@@ -361,48 +403,49 @@
       "SearchFieldReenteredAfterSuccessfulLaunch": true,
       "Shots": [
         {
+          "CaptureBounds": {
+            "Left": 7,
+            "Top": 0,
+            "Right": 1837,
+            "Bottom": 925
+          },
           "Width": 1830,
           "File": "spatial-windows-it.png",
-          "Height": 957,
+          "Height": 925,
           "Windows": [
             {
-              "Left": 31,
+              "Left": 39,
               "Title": "Progetto studio",
-              "Top": 24,
-              "Height": 893,
+              "Top": 32,
+              "Height": 861,
               "Width": 769
             },
             {
-              "Left": 868,
+              "Left": 876,
               "Title": "Documenti",
-              "Top": 24,
-              "Height": 389,
+              "Top": 32,
+              "Height": 375,
               "Width": 929
             },
             {
-              "Left": 921,
+              "Left": 929,
               "Title": "Immagini",
-              "Top": 474,
-              "Height": 443,
+              "Top": 466,
+              "Height": 427,
               "Width": 734
             }
           ],
-          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Sha256": "e724bdfbea78ae1629c533d07e3360b15d4e16def15df6214ddc06374f4143f4",
+          "RunId": "817c85d841774b919376e6cd901d0dbf",
           "Background": "#DCE4EE",
-          "OriginalCapture": {
-            "Width": 1766,
-            "Height": 893,
-            "Sha256": "5b8327efd2714827cf4939ae7b7196bc1767f488f42defc94ec6020f2c4bb57f"
-          },
-          "CanvasPadding": {
+          "CapturedMargin": {
             "Left": 32,
             "Top": 32,
             "Right": 32,
             "Bottom": 32,
-            "Background": "#DCE4EE",
-            "OriginalPixelsUnchanged": true
-          },
-          "Sha256": "fb464821087c484330dbf3fd88bf8bf5dd00109f9664fba4726768f9f478bf5f"
+            "NativeScreenPixels": true,
+            "ShadowsIncluded": true
+          }
         },
         {
           "Width": 726,
@@ -421,28 +464,42 @@
           "RunId": "f11df60f424d463e87766602be7fd237"
         },
         {
-          "Width": 1766,
+          "Width": 1830,
           "File": "everything-search-it.png",
-          "Height": 613,
+          "Height": 677,
           "Windows": [
             {
-              "Left": 31,
+              "Left": 39,
               "Title": "Esempi di ricerca",
-              "Top": 24,
+              "Top": 32,
               "Height": 533,
               "Width": 805
             },
             {
-              "Left": 878,
+              "Left": 886,
               "Title": "\"P:\\Esempi di ricerca\\\" <progetto> - Everything",
-              "Top": 24,
+              "Top": 32,
               "Height": 613,
               "Width": 919
             }
           ],
-          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Sha256": "17b63f488f86d3bb3d26066453a3daf3d163632739a74363a44f1514153c68a2",
+          "RunId": "c5995a798b944245b24efa01edebb79b",
           "Background": "#DCE4EE",
-          "Sha256": "39366d7837bba5868edd20fe32281e8dee1745fd4c95e3e6c0a6c183835dc2b7"
+          "CaptureBounds": {
+            "Left": 7,
+            "Top": 0,
+            "Right": 1837,
+            "Bottom": 677
+          },
+          "CapturedMargin": {
+            "Left": 32,
+            "Top": 32,
+            "Right": 32,
+            "Bottom": 32,
+            "NativeScreenPixels": true,
+            "ShadowsIncluded": true
+          }
         }
       ],
       "Language": "it-IT",
@@ -463,9 +520,8 @@
         "Strumenti",
         "Aiuto"
       ],
-      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "Crop": "Multi-window scenes include a native 32px screen margin and complete shadows; selected-name retains its original visible-frame crop.",
       "EverythingVersion": "1.4.1.1032",
-      "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
       "EverythingLocale": "it-IT"
     },
     {
@@ -476,48 +532,49 @@
       "SearchFieldReenteredAfterSuccessfulLaunch": true,
       "Shots": [
         {
+          "CaptureBounds": {
+            "Left": 7,
+            "Top": 0,
+            "Right": 1837,
+            "Bottom": 925
+          },
           "Width": 1830,
           "File": "spatial-windows-es.png",
-          "Height": 957,
+          "Height": 925,
           "Windows": [
             {
-              "Left": 31,
+              "Left": 39,
               "Title": "Proyecto de estudio",
-              "Top": 24,
-              "Height": 893,
+              "Top": 32,
+              "Height": 861,
               "Width": 769
             },
             {
-              "Left": 868,
+              "Left": 876,
               "Title": "Documentos",
-              "Top": 24,
-              "Height": 389,
+              "Top": 32,
+              "Height": 375,
               "Width": 929
             },
             {
-              "Left": 921,
+              "Left": 929,
               "Title": "Imágenes",
-              "Top": 474,
-              "Height": 443,
+              "Top": 466,
+              "Height": 427,
               "Width": 734
             }
           ],
-          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Sha256": "e3e4556565834c8cd293be91cf04258a6ac621865b4357fe408c6bf2519ebf12",
+          "RunId": "817c85d841774b919376e6cd901d0dbf",
           "Background": "#DCE4EE",
-          "OriginalCapture": {
-            "Width": 1766,
-            "Height": 893,
-            "Sha256": "1cf27e1b97dc6c0838b2b6692af5199b213a228346e134b0822e1be3c4b4a5c4"
-          },
-          "CanvasPadding": {
+          "CapturedMargin": {
             "Left": 32,
             "Top": 32,
             "Right": 32,
             "Bottom": 32,
-            "Background": "#DCE4EE",
-            "OriginalPixelsUnchanged": true
-          },
-          "Sha256": "964ce055545675c9d3445371b619fe5219a4a89ef506243220eb3e4fecc7788b"
+            "NativeScreenPixels": true,
+            "ShadowsIncluded": true
+          }
         },
         {
           "Width": 726,
@@ -536,28 +593,42 @@
           "RunId": "0c1b6c84ebf64750888f16f31315454b"
         },
         {
-          "Width": 1766,
+          "Width": 1830,
           "File": "everything-search-es.png",
-          "Height": 613,
+          "Height": 677,
           "Windows": [
             {
-              "Left": 31,
+              "Left": 39,
               "Title": "Ejemplos de búsqueda",
-              "Top": 24,
+              "Top": 32,
               "Height": 533,
               "Width": 805
             },
             {
-              "Left": 878,
+              "Left": 886,
               "Title": "\"P:\\Ejemplos de búsqueda\\\" <proyecto> - Everything",
-              "Top": 24,
+              "Top": 32,
               "Height": 613,
               "Width": 919
             }
           ],
-          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Sha256": "e856e74271223eba2bf10fcfbf02a8cd5135e80951930334d37f9cfb84c66f53",
+          "RunId": "c5995a798b944245b24efa01edebb79b",
           "Background": "#DCE4EE",
-          "Sha256": "0f540b3442d2b2e75f6eef33a7389b2711bd97e195e4fae1e4e7e33d324505d4"
+          "CaptureBounds": {
+            "Left": 7,
+            "Top": 0,
+            "Right": 1837,
+            "Bottom": 677
+          },
+          "CapturedMargin": {
+            "Left": 32,
+            "Top": 32,
+            "Right": 32,
+            "Bottom": 32,
+            "NativeScreenPixels": true,
+            "ShadowsIncluded": true
+          }
         }
       ],
       "Language": "es-ES",
@@ -578,9 +649,8 @@
         "Herramientas",
         "Ayuda"
       ],
-      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "Crop": "Multi-window scenes include a native 32px screen margin and complete shadows; selected-name retains its original visible-frame crop.",
       "EverythingVersion": "1.4.1.1032",
-      "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
       "EverythingLocale": "es-ES"
     },
     {
@@ -591,48 +661,49 @@
       "SearchFieldReenteredAfterSuccessfulLaunch": true,
       "Shots": [
         {
+          "CaptureBounds": {
+            "Left": 7,
+            "Top": 0,
+            "Right": 1837,
+            "Bottom": 925
+          },
           "Width": 1830,
           "File": "spatial-windows-pt.png",
-          "Height": 957,
+          "Height": 925,
           "Windows": [
             {
-              "Left": 31,
+              "Left": 39,
               "Title": "Projeto de estúdio",
-              "Top": 24,
-              "Height": 893,
+              "Top": 32,
+              "Height": 861,
               "Width": 769
             },
             {
-              "Left": 868,
+              "Left": 876,
               "Title": "Documentos",
-              "Top": 24,
-              "Height": 389,
+              "Top": 32,
+              "Height": 375,
               "Width": 929
             },
             {
-              "Left": 921,
+              "Left": 929,
               "Title": "Imagens",
-              "Top": 474,
-              "Height": 443,
+              "Top": 466,
+              "Height": 427,
               "Width": 734
             }
           ],
-          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Sha256": "0f82aae98c97603a3aa24011ad2d60ff81f1479622a8364353228516050b3d26",
+          "RunId": "817c85d841774b919376e6cd901d0dbf",
           "Background": "#DCE4EE",
-          "OriginalCapture": {
-            "Width": 1766,
-            "Height": 893,
-            "Sha256": "79632c981cd864bb4fddca58e3870b76d480716cf518529f9c897b6b00d4f344"
-          },
-          "CanvasPadding": {
+          "CapturedMargin": {
             "Left": 32,
             "Top": 32,
             "Right": 32,
             "Bottom": 32,
-            "Background": "#DCE4EE",
-            "OriginalPixelsUnchanged": true
-          },
-          "Sha256": "6db9006d4dfef3c98745d877b7c7f71637872f6203842d1a041e9874eff64680"
+            "NativeScreenPixels": true,
+            "ShadowsIncluded": true
+          }
         },
         {
           "Width": 726,
@@ -651,28 +722,42 @@
           "RunId": "034cbb28519545118e10e84d23af15dc"
         },
         {
-          "Width": 1766,
+          "Width": 1830,
           "File": "everything-search-pt.png",
-          "Height": 613,
+          "Height": 677,
           "Windows": [
             {
-              "Left": 31,
+              "Left": 39,
               "Title": "Exemplos de pesquisa",
-              "Top": 24,
+              "Top": 32,
               "Height": 533,
               "Width": 805
             },
             {
-              "Left": 878,
+              "Left": 886,
               "Title": "\"P:\\Exemplos de pesquisa\\\" <projeto> - Everything",
-              "Top": 24,
+              "Top": 32,
               "Height": 613,
               "Width": 919
             }
           ],
-          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Sha256": "fd97c283d199051692c81e04cd869d9ae73571e17149681d774a2ce4323947c3",
+          "RunId": "c5995a798b944245b24efa01edebb79b",
           "Background": "#DCE4EE",
-          "Sha256": "bfa79ecead92acd5287d855f97556355d817882a4ff7ebeeb366be016808518a"
+          "CaptureBounds": {
+            "Left": 7,
+            "Top": 0,
+            "Right": 1837,
+            "Bottom": 677
+          },
+          "CapturedMargin": {
+            "Left": 32,
+            "Top": 32,
+            "Right": 32,
+            "Bottom": 32,
+            "NativeScreenPixels": true,
+            "ShadowsIncluded": true
+          }
         }
       ],
       "Language": "pt-PT",
@@ -693,9 +778,8 @@
         "Ferramentas",
         "Ajuda"
       ],
-      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "Crop": "Multi-window scenes include a native 32px screen margin and complete shadows; selected-name retains its original visible-frame crop.",
       "EverythingVersion": "1.4.1.1032",
-      "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
       "EverythingLocale": "pt-BR"
     },
     {
@@ -706,48 +790,49 @@
       "SearchFieldReenteredAfterSuccessfulLaunch": true,
       "Shots": [
         {
+          "CaptureBounds": {
+            "Left": 7,
+            "Top": 0,
+            "Right": 1837,
+            "Bottom": 925
+          },
           "Width": 1830,
           "File": "spatial-windows-el.png",
-          "Height": 957,
+          "Height": 925,
           "Windows": [
             {
-              "Left": 31,
+              "Left": 39,
               "Title": "Έργο στούντιο",
-              "Top": 24,
-              "Height": 893,
+              "Top": 32,
+              "Height": 861,
               "Width": 769
             },
             {
-              "Left": 868,
+              "Left": 876,
               "Title": "Έγγραφα",
-              "Top": 24,
-              "Height": 389,
+              "Top": 32,
+              "Height": 375,
               "Width": 929
             },
             {
-              "Left": 921,
+              "Left": 929,
               "Title": "Εικόνες",
-              "Top": 474,
-              "Height": 443,
+              "Top": 466,
+              "Height": 427,
               "Width": 734
             }
           ],
-          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Sha256": "9f79bca9bd344c3ba93c48724cb20dce9a78ed1ce7a689d20f6e6fe70801d0e7",
+          "RunId": "817c85d841774b919376e6cd901d0dbf",
           "Background": "#DCE4EE",
-          "OriginalCapture": {
-            "Width": 1766,
-            "Height": 893,
-            "Sha256": "db39956737b945160c6816cdbf560188cc345ff064bf059630e457a82c07e693"
-          },
-          "CanvasPadding": {
+          "CapturedMargin": {
             "Left": 32,
             "Top": 32,
             "Right": 32,
             "Bottom": 32,
-            "Background": "#DCE4EE",
-            "OriginalPixelsUnchanged": true
-          },
-          "Sha256": "c377e215787ae88141b37dcfe8e8742581532b0700cbe8799c8ad38a08533a70"
+            "NativeScreenPixels": true,
+            "ShadowsIncluded": true
+          }
         },
         {
           "Width": 726,
@@ -766,28 +851,42 @@
           "RunId": "7c344c21b2bc4283ac38fc72b4ec670d"
         },
         {
-          "Width": 1766,
+          "Width": 1830,
           "File": "everything-search-el.png",
-          "Height": 613,
+          "Height": 677,
           "Windows": [
             {
-              "Left": 31,
+              "Left": 39,
               "Title": "Παραδείγματα αναζήτησης",
-              "Top": 24,
+              "Top": 32,
               "Height": 533,
               "Width": 805
             },
             {
-              "Left": 878,
+              "Left": 886,
               "Title": "\"P:\\Παραδείγματα αναζήτησης\\\" <σχέδιο> - Everything",
-              "Top": 24,
+              "Top": 32,
               "Height": 613,
               "Width": 919
             }
           ],
-          "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
+          "Sha256": "d7d9f9827d9e628bdbecbb03ade46e4730c565c935bb6faf3b5fb365bc4d9634",
+          "RunId": "c5995a798b944245b24efa01edebb79b",
           "Background": "#DCE4EE",
-          "Sha256": "1a58c2845a811644a4ce3329e7d008f3f8e38073fd46610795b2f36389ad122e"
+          "CaptureBounds": {
+            "Left": 7,
+            "Top": 0,
+            "Right": 1837,
+            "Bottom": 677
+          },
+          "CapturedMargin": {
+            "Left": 32,
+            "Top": 32,
+            "Right": 32,
+            "Bottom": 32,
+            "NativeScreenPixels": true,
+            "ShadowsIncluded": true
+          }
         }
       ],
       "Language": "el-GR",
@@ -808,9 +907,8 @@
         "Εργαλεία",
         "Βοήθεια"
       ],
-      "Crop": "Direct guest screen pixels bounding real non-overlapping windows; no resizing, retouching or translated image labels",
+      "Crop": "Multi-window scenes include a native 32px screen margin and complete shadows; selected-name retains its original visible-frame crop.",
       "EverythingVersion": "1.4.1.1032",
-      "RunId": "04d1e7cc98eb45a7b63cf14b5f93be38",
       "EverythingLocale": "el-GR"
     }
   ],
@@ -820,10 +918,10 @@
   "background": {
     "color": "#DCE4EE",
     "artwork": "None; original solid color, no external image or attribution",
-    "capture": "Owned borderless background surface below the real application windows",
+    "capture": "Owned solid-color surface below the real windows; complete margins and shadows captured directly, not reconstructed.",
     "stateRestoredRuns": [
-      "deb8edececf748e889ad5f3f4972cc5c",
-      "04d1e7cc98eb45a7b63cf14b5f93be38"
+      "817c85d841774b919376e6cd901d0dbf",
+      "c5995a798b944245b24efa01edebb79b"
     ]
   }
 }
