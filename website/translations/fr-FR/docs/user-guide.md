@@ -19,7 +19,7 @@ Revenir au parent ne sélectionne pas le dossier dont vous venez. Un parent déj
 
 ### Disposition des icônes
 
-Désactivez **Réorganiser automatiquement les icônes** dans un mode à icônes pour disposer librement les fichiers et sous-dossiers. Leurs positions sont enregistrées indépendamment de la taille et de la position de la fenêtre, y compris lorsque son état enregistré est verrouillé.
+Dans un mode à icônes, vous pouvez disposer librement les fichiers et sous-dossiers lorsque **Réorganiser automatiquement les icônes** est désactivé. Leurs positions sont enregistrées indépendamment de la taille et de la position de la fenêtre, y compris lorsque son état enregistré est verrouillé.
 
 ### Options d’affichage
 
@@ -71,7 +71,7 @@ Le bouton de valeur par défaut réinitialise une action. **Rétablir** restaure
 
 ### Verrouillage de l’état enregistré
 
-Activez **Paramètres > Général > Activer le verrouillage de l’état des fenêtres** (désactivé par défaut), puis choisissez **Verrouiller l’état de la fenêtre** dans le menu à côté du titre du dossier. Le verrouillage enregistre sa position, sa taille et ses réglages d’affichage. Un **badge de cadenas sur l’icône du dossier dans la barre de titre**, à côté de son nom, identifie un état verrouillé.
+Le verrouillage enregistre la position, la taille et les réglages d’affichage d’un dossier pour les restaurer à sa réouverture. Pour utiliser cette fonction facultative, activez **Paramètres > Général > Activer le verrouillage de l’état des fenêtres** (désactivé par défaut), puis choisissez **Verrouiller l’état de la fenêtre** dans le menu à côté du titre du dossier. Un **badge de cadenas sur l’icône du dossier dans la barre de titre**, à côté de son nom, identifie un état verrouillé.
 
 <img src="images/locked-title.png" alt="Gros plan de la barre de titre : un badge de cadenas recouvre l’icône du dossier à côté de Projet studio." width="420">
 
@@ -105,7 +105,9 @@ Le composant de menu contextuel propose **Ouvrir dans l’Explorateur de fichier
 
 ### Everything
 
-Installez [Everything](https://www.voidtools.com/) séparément, puis activez-le dans **Paramètres > Intégration**. Laissez le chemin de l’exécutable vide pour la détection automatique, utilisez **Détecter**, ou choisissez manuellement son fichier `.exe` pour une installation portable.
+Si vous utilisez [Everything](https://www.voidtools.com/), vous pouvez l’intégrer à FileSpacer pour lancer des recherches avancées directement depuis son champ de recherche.
+
+Pour utiliser cette intégration facultative, activez-la dans **Paramètres > Intégration**. Laissez le chemin de l’exécutable vide pour la détection automatique, utilisez **Détecter**, ou choisissez manuellement son fichier `.exe` pour une installation portable.
 
 Choisissez la portée de la recherche : le dossier courant et ses sous-dossiers, ou **Partout**. Les dossiers virtuels n’ont pas de portée sur le système de fichiers ; utilisez Partout pour eux.
 
@@ -113,11 +115,11 @@ Saisissez une requête dans le champ de recherche de FileSpacer et choisissez **
 
 ### Nilesoft Shell
 
-[Nilesoft Shell](https://nilesoft.org/) permet de modifier l’apparence des menus de FileSpacer et de personnaliser leurs entrées. Il est facultatif et s’installe séparément.
+Si vous utilisez [Nilesoft Shell](https://nilesoft.org/), vous pouvez aussi lui confier l’apparence des menus de FileSpacer et la personnalisation de leurs entrées.
 
-Autorisez FileSpacer dans la règle d’exclusion de votre configuration Nilesoft et conservez l’import de votre thème. Limitez à l’Explorateur les règles qui lui sont destinées afin qu’elles ne modifient pas aussi les menus de FileSpacer.
+Pour cette intégration facultative, une adaptation de la configuration Nilesoft est recommandée afin que les menus s’intègrent bien visuellement à FileSpacer, notamment avec des coins carrés pour les menus de la barre de titre et de la barre d’outils.
 
-Consultez la [référence de configuration et les exemples](nilesoft-shell.md) pour les réglages exacts, les règles propres à chaque menu et l’apparence recommandée. Après une modification, désenregistrez et réenregistrez Nilesoft Shell pour l’appliquer aux menus nouvellement ouverts.
+La [référence de configuration et les exemples](nilesoft-shell.md) expliquent comment autoriser FileSpacer, conserver l’import du thème et limiter à l’Explorateur les règles qui lui sont réservées. Si vous modifiez la configuration, désenregistrez puis réenregistrez Nilesoft Shell pour appliquer les changements aux menus nouvellement ouverts.
 
 Le thème Modern ci-dessous utilise ses coins arrondis par défaut à gauche et les coins carrés recommandés à droite.
 
