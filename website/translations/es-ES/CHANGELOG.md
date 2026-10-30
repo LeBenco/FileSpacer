@@ -2,6 +2,14 @@
 
 ## Próxima versión
 
+## 1.2.3 — 2026-10-30
+
+- Corrige las identidades, las superposiciones de iconos y las notificaciones de carpetas con el orden mixto; conserva las posiciones libres de los iconos y usa vistas nativas cuando el proveedor no está disponible o es incompatible.
+- Garantiza una sola ventana de Preferencias entre procesos y corrige la validación de atajos, las rutas de Everything, las teclas de acceso y las traducciones regionales.
+- Corrige el cierre de carpetas, los clics de activación y la restauración tras la vista previa del menú Ver.
+- Corrige la actualización de las Jump Lists y los diagnósticos del instalador; conserva los archivos de ayuda del usuario durante las actualizaciones y la desinstalación.
+- Incluye ayuda multilingüe sin conexión mediante F1 y Acerca de, y actualiza las guías de configuración traducidas y las referencias de Nilesoft Shell.
+
 ## 1.2.2 — 2026-10-28
 
 - Corrige el uso del proveedor de carpetas personalizado con el orden mixto y los iconos colocados libremente. Usa el proveedor nativo para la colocación libre y cambia de proveedor al confirmar una disposición ordenada, conservando las posiciones guardadas de los iconos, la selección y el foco.
