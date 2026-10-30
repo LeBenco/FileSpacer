@@ -23,7 +23,9 @@ Function ${PREFIX}RunElevated
     ${AndIf} $3 != 0
         System::Call '*$1(&w6 "runas")'
         System::Call '*$2(&w${NSIS_MAX_STRLEN} "$EXEPATH")'
-        System::Call '*$3(&w${NSIS_MAX_STRLEN} "$elevatedParameters")'
+        ; Keep embedded quotes out of System's call-expression parser.
+        StrCpy $4 $elevatedParameters
+        System::Call '*$3(&w${NSIS_MAX_STRLEN} r4)'
         ; SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC | SEE_MASK_FLAG_NO_UI.
         System::Call '*$0(i 60,i 0x540,p $HWNDPARENT,p r1,p r2,p r3,p 0,i 1,p 0,p 0,p 0,p 0,i 0,p 0,p 0)'
         System::Call 'ole32::CoInitializeEx(p 0,i 2)i.r5'
