@@ -39,6 +39,78 @@ LSTATUS setSettingsValue(const wchar_t *name, DWORD type, const void *data, DWOR
     return RegSetKeyValue(HKEY_CURRENT_USER, KEY_SETTINGS, name, type, data, size);
 }
 
+std::vector<int> getTitleMenu() {
+    DWORD data[65] = {}, bytes = sizeof(data);
+    if (RegGetValueW(HKEY_CURRENT_USER, KEY_SETTINGS, L"TitleMenu", RRF_RT_REG_BINARY,
+            nullptr, data, &bytes) != ERROR_SUCCESS || bytes < sizeof(DWORD)
+            || bytes % sizeof(DWORD) || data[0] != 1)
+        return defaultTitleMenu();
+    std::vector<int> items;
+    for (DWORD i = 1; i < bytes / sizeof(DWORD); ++i) {
+        if (data[i] >= TITLE_ENTRY_COUNT) return defaultTitleMenu();
+        items.push_back(static_cast<int>(data[i]));
+    }
+    return validTitleMenu(items) ? items : defaultTitleMenu();
+}
+
+LSTATUS setTitleMenu(const std::vector<int> &items) {
+    if (!validTitleMenu(items)) return ERROR_INVALID_DATA;
+    std::vector<DWORD> data{1}; // Schema version; a version alone is an empty menu.
+    for (int entry : items) data.push_back(static_cast<DWORD>(entry));
+    return setSettingsValue(L"TitleMenu", REG_BINARY, data.data(),
+        static_cast<DWORD>(data.size() * sizeof(DWORD)));
+}
+
+LSTATUS getFolderGroups(std::vector<FolderGroup> &groups) {
+    groups.clear();
+    const std::wstring path = std::wstring(KEY_SETTINGS) + L"\\FolderGroups";
+    CRegKey key;
+    LSTATUS status = key.Open(HKEY_CURRENT_USER, path.c_str(), KEY_QUERY_VALUE);
+    if (status == ERROR_FILE_NOT_FOUND) return ERROR_SUCCESS;
+    if (status != ERROR_SUCCESS) return status;
+    for (DWORD index = 0;; ++index) {
+        wchar_t name[16384] = {}; DWORD nameLength = _countof(name), bytes = 0, type = 0;
+        status = RegEnumValueW(key, index, name, &nameLength, nullptr, &type, nullptr, &bytes);
+        if (status == ERROR_NO_MORE_ITEMS) return ERROR_SUCCESS;
+        if (status != ERROR_SUCCESS) return status;
+        if (type != REG_MULTI_SZ || bytes < 2 * sizeof(wchar_t) || bytes > 1048576
+                || bytes % sizeof(wchar_t)) return ERROR_INVALID_DATA;
+        std::vector<wchar_t> value(bytes / sizeof(wchar_t), L'\0');
+        status = RegGetValueW(key, nullptr, name, RRF_RT_REG_MULTI_SZ, nullptr, value.data(), &bytes);
+        if (status != ERROR_SUCCESS) return status;
+        const size_t length = bytes / sizeof(wchar_t);
+        if (length < 2 || value[length - 1] || value[length - 2]) return ERROR_INVALID_DATA;
+        FolderGroup group; group.name.assign(name, nameLength);
+        for (size_t at = 0; at < length && value[at];) {
+            const auto end = std::find(value.begin() + at, value.begin() + length, L'\0');
+            if (end == value.begin() + length) return ERROR_INVALID_DATA;
+            group.paths.emplace_back(value.data() + at, static_cast<size_t>(end - value.begin()) - at);
+            at = static_cast<size_t>(end - value.begin()) + 1;
+        }
+        groups.push_back(std::move(group));
+    }
+}
+
+LSTATUS setFolderGroup(const FolderGroup &group) {
+    if (group.name.empty() || group.name.size() > 128 || group.paths.empty()
+            || group.name.find(L'\0') != std::wstring::npos) return ERROR_INVALID_PARAMETER;
+    std::vector<wchar_t> value;
+    for (const auto &path : group.paths) {
+        if (path.empty() || path.find(L'\0') != std::wstring::npos) return ERROR_INVALID_PARAMETER;
+        value.insert(value.end(), path.begin(), path.end()); value.push_back(L'\0');
+        if (value.size() > 524287) return ERROR_INVALID_DATA;
+    }
+    value.push_back(L'\0');
+    const std::wstring path = std::wstring(KEY_SETTINGS) + L"\\FolderGroups";
+    return RegSetKeyValueW(HKEY_CURRENT_USER, path.c_str(), group.name.c_str(), REG_MULTI_SZ,
+        value.data(), static_cast<DWORD>(value.size() * sizeof(wchar_t)));
+}
+
+LSTATUS removeFolderGroup(const std::wstring &name) {
+    const std::wstring path = std::wstring(KEY_SETTINGS) + L"\\FolderGroups";
+    return RegDeleteKeyValueW(HKEY_CURRENT_USER, path.c_str(), name.c_str());
+}
+
 wstr_ptr getSettingsString(const wchar_t *name, DWORD type, const wchar_t *defaultValue) {
     DWORD size;
     if (!RegGetValue(HKEY_CURRENT_USER, KEY_SETTINGS, name, type, nullptr, nullptr, &size)) {

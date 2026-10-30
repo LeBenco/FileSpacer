@@ -3,6 +3,7 @@
 
 #include <WinUtils.h>
 #include "WindowShortcuts.h"
+#include "TitleMenu.h"
 
 namespace filespacer {
 
@@ -102,6 +103,12 @@ void setFullNamesOnSelection(bool value);
 LSTATUS resetGlobalOptions();
 WindowShortcuts getWindowShortcuts();
 LSTATUS setWindowShortcuts(const WindowShortcuts &value);
+std::vector<int> getTitleMenu();
+LSTATUS setTitleMenu(const std::vector<int> &items);
+struct FolderGroup { std::wstring name; std::vector<std::wstring> paths; };
+LSTATUS getFolderGroups(std::vector<FolderGroup> &groups);
+LSTATUS setFolderGroup(const FolderGroup &group);
+LSTATUS removeFolderGroup(const std::wstring &name);
 
 bool getDeselectOnOpen();
 void setDeselectOnOpen(bool value); // TODO: add to Settings
