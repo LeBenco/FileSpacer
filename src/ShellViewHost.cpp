@@ -14,6 +14,8 @@ const EXPLORER_BROWSER_OPTIONS BROWSER_OPTIONS =
     EBO_NOBORDER | EBO_NOTRAVELLOG | EBO_NOPERSISTVIEWSTATE;
 // Shared across hosts so a notification cannot match another window after HWND reuse.
 std::atomic<ULONG_PTR> nextViewGeneration{0};
+// A mismatched or unavailable provider must not keep failing later navigations.
+std::atomic<bool> mixedProviderDisabled{false};
 // A process elevated through UAC does not load per-user COM classes
 // (https://learn.microsoft.com/windows/win32/com/the-com-elevation-moniker),
 // and the mixed-sort provider only exists through its HKCU registration:
@@ -255,7 +257,7 @@ HRESULT ShellViewHost::navigate(IShellItem *item, bool mixFolders, bool isolated
     mixedSorting = mixFolders;
     CComPtr<IShellItem> target = item;
     bool custom = false;
-    if (mixFolders && !processElevated()) {
+    if (mixFolders && !processElevated() && !mixedProviderDisabled.load()) {
         SFGAOF attributes = 0;
         const SFGAOF required = SFGAO_FOLDER | SFGAO_FILESYSTEM;
         HRESULT hr = item->GetAttributes(required | SFGAO_STREAM, &attributes);
@@ -270,9 +272,18 @@ HRESULT ShellViewHost::navigate(IShellItem *item, bool mixFolders, bool isolated
             custom = !ILIsEmpty(id);
         }
         if (custom) {
-            target.Release();
-            hr = mixedFolderItem(item, isolated, &target);
-            if (FAILED(hr)) return hr;
+            CComPtr<IShellItem> mixed;
+            hr = mixedFolderItem(item, isolated, &mixed);
+            CComPtr<IShellFolder> folder;
+            if (SUCCEEDED(hr)) hr = mixed->BindToHandler(nullptr, BHID_SFObject, IID_PPV_ARGS(&folder));
+            CComPtr<IMixedFolder> contract;
+            if (SUCCEEDED(hr)) hr = folder->QueryInterface(IID_PPV_ARGS(&contract));
+            if (SUCCEEDED(hr)) target = mixed;
+            else {
+                mixedProviderDisabled.store(true);
+                debugPrintf(L"Mixed provider unavailable or incompatible: HRESULT=0x%08lX; using native view\n",
+                    static_cast<unsigned long>(hr));
+            }
         }
     }
     return current->BrowseToObject(target, SBSP_ABSOLUTE);
