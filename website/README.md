@@ -47,6 +47,8 @@ in a native HTML dialog with a localized close button, Escape, backdrop dismissa
 and focus restoration. Links still open the image when JavaScript or native
 dialogs are unavailable. The theme has no built-in lightbox; no additional
 library or CDN is used. SVG logos are not treated as screenshots.
+Screenshot URLs include a content hash, so replacing an image under the same
+filename refreshes cached thumbnails and popup images automatically.
 
 The theme's `lunr/custom-index.js` hook uses Unicode word trimming for translated
 sites and omits English stemming and stop words. Lunr's default ASCII trimmer
