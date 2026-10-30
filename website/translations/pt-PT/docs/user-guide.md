@@ -19,7 +19,7 @@ Subir à pasta superior não seleciona a pasta de onde veio. Uma pasta superior 
 
 ### Disposição dos ícones
 
-Desative **Dispor ícones automaticamente** num modo de ícones para posicionar livremente ficheiros e subpastas. As posições são guardadas independentemente do tamanho e da posição da janela, mesmo quando o estado guardado está bloqueado.
+Num modo de ícones, pode posicionar livremente ficheiros e subpastas quando **Dispor ícones automaticamente** está desativado. As posições são guardadas independentemente do tamanho e da posição da janela, mesmo quando o estado guardado está bloqueado.
 
 ### Opções de apresentação
 
@@ -71,7 +71,7 @@ O botão de valor predefinido repõe uma ação. **Repor** recupera os últimos 
 
 ### Bloqueio do estado guardado
 
-Ative **Definições > Geral > Ativar bloqueio do estado da janela** (desativado por predefinição) e escolha **Bloquear o estado da janela** no menu junto ao título da pasta. O bloqueio guarda a posição, o tamanho e as definições de apresentação. Um **indicador de cadeado sobre o ícone da pasta na barra de título**, junto ao nome, identifica um estado bloqueado.
+O bloqueio guarda a posição, o tamanho e as definições de apresentação de uma pasta para os restaurar quando a voltar a abrir. Para utilizar esta função opcional, ative **Definições > Geral > Ativar bloqueio do estado da janela** (desativado por predefinição) e escolha **Bloquear o estado da janela** no menu junto ao título da pasta. Um **indicador de cadeado sobre o ícone da pasta na barra de título**, junto ao nome, identifica um estado bloqueado.
 
 <img src="images/locked-title.png" alt="Pormenor da barra de título: um cadeado está sobreposto ao ícone da pasta junto a Studio project." width="420">
 
@@ -105,7 +105,9 @@ O componente do menu de contexto oferece **Abrir no Explorador de Ficheiros do W
 
 ### Everything
 
-Instale o [Everything](https://www.voidtools.com/) separadamente e ative-o em **Definições > Integração**. Deixe vazio o caminho do executável para deteção automática, utilize **Detetar** ou escolha manualmente o ficheiro `.exe` de uma instalação portátil.
+Se utiliza o [Everything](https://www.voidtools.com/), pode integrá-lo com o FileSpacer para efetuar pesquisas avançadas diretamente a partir do respetivo campo de pesquisa.
+
+Para utilizar esta integração opcional, ative-a em **Definições > Integração**. Deixe vazio o caminho do executável para deteção automática, utilize **Detetar** ou escolha manualmente o ficheiro `.exe` de uma instalação portátil.
 
 Escolha o âmbito da pesquisa: a pasta atual e as subpastas, ou **Em todo o lado**. As pastas virtuais não têm um âmbito no sistema de ficheiros; utilize Em todo o lado para essas pastas.
 

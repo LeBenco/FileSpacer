@@ -19,7 +19,7 @@ Passare alla cartella superiore non seleziona quella da cui provieni. Una cartel
 
 ### Disposizione delle icone
 
-Disattiva **Disponi icone automaticamente** in una visualizzazione a icone per posizionare liberamente file e sottocartelle. Le loro posizioni vengono salvate indipendentemente dalle dimensioni e dalla posizione della finestra, anche quando il suo stato salvato è bloccato.
+Nelle visualizzazioni a icone puoi posizionare liberamente file e sottocartelle quando **Disponi icone automaticamente** è disattivato. Le loro posizioni vengono salvate indipendentemente dalle dimensioni e dalla posizione della finestra, anche quando il suo stato salvato è bloccato.
 
 ### Opzioni di visualizzazione
 
@@ -71,7 +71,7 @@ Il pulsante dell’impostazione predefinita reimposta una singola azione. **Ripr
 
 ### Blocco dello stato salvato
 
-Attiva **Impostazioni > Generale > Abilita il blocco dello stato della finestra** (disattivato per impostazione predefinita), poi scegli **Blocca lo stato della finestra** nel menu accanto al titolo della cartella. Il blocco salva posizione, dimensioni e impostazioni di visualizzazione. Un **lucchetto sovrapposto all’icona della cartella nella barra del titolo**, accanto al nome, identifica uno stato bloccato.
+Il blocco salva posizione, dimensioni e impostazioni di visualizzazione di una cartella per ripristinarle alla riapertura. Per usare questa funzione facoltativa, attiva **Impostazioni > Generale > Abilita il blocco dello stato della finestra** (disattivato per impostazione predefinita), poi scegli **Blocca lo stato della finestra** nel menu accanto al titolo della cartella. Un **lucchetto sovrapposto all’icona della cartella nella barra del titolo**, accanto al nome, identifica uno stato bloccato.
 
 <img src="images/locked-title.png" alt="Dettaglio della barra del titolo: un lucchetto è sovrapposto all’icona della cartella accanto a Studio project." width="420">
 
@@ -105,7 +105,9 @@ Il componente del menu di scelta rapida propone **Apri in Esplora file di Window
 
 ### Everything
 
-Installa [Everything](https://www.voidtools.com/) separatamente, poi attivalo in **Impostazioni > Integrazione**. Lascia vuoto il percorso dell’eseguibile per il rilevamento automatico, usa **Rileva** oppure scegli manualmente il file `.exe` per un’installazione portabile.
+Se usi [Everything](https://www.voidtools.com/), puoi integrarlo con FileSpacer per avviare ricerche avanzate direttamente dalla sua casella di ricerca.
+
+Per usare questa integrazione facoltativa, attivala in **Impostazioni > Integrazione**. Lascia vuoto il percorso dell’eseguibile per il rilevamento automatico, usa **Rileva** oppure scegli manualmente il file `.exe` per un’installazione portabile.
 
 Scegli l’ambito della ricerca: cartella corrente e sottocartelle oppure **Ovunque**. Le cartelle virtuali non hanno un ambito nel file system: per esse usa Ovunque.
 
