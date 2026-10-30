@@ -65,13 +65,18 @@ internal checks and real Windows UI/Shell tests. Run them through `tests.cmd`,
 locally or in a configured Hyper-V VM.
 See the [test guide](tests/regression/README.md).
 
----
+## License and credits
 
 FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler),
 created by J. van't Hoog (vanjac). Many thanks to vanjac for the foundation!
 
-Distributed under the [GNU GPL v3.0](LICENSE).
 Copyright © 2026 Benco for FileSpacer modifications;
 original ChromaFiler code © 2023 J. van't Hoog.
+
+FileSpacer is distributed under the GNU GPL v3.0. The complete license is in
+[LICENSE](LICENSE) in the source tree, or `LICENSE.txt` in the installation folder.
+FileSpacer comes without warranty; redistribution and modification are permitted
+under that license.
+
 See [third-party notices](THIRD_PARTY_NOTICES.md)
 and the [privacy policy](docs/privacy-policy.md).

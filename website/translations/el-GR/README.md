@@ -47,8 +47,12 @@ Windows 10 ή νεότερη έκδοση, x64. Διατίθεται στα αγ
 
 Οι δοκιμές παλινδρόμησης συνδυάζουν σενάρια PowerShell με βοηθητικά εργαλεία C++ και C# για εσωτερικούς ελέγχους και πραγματικές δοκιμές του περιβάλλοντος των Windows και του Shell. Εκτελέστε τις μέσω του `tests.cmd`, τοπικά ή σε ρυθμισμένη εικονική μηχανή Hyper-V. Δείτε τον [οδηγό δοκιμών](tests/regression/README.md).
 
----
+## Άδεια χρήσης και συντελεστές
 
 Το FileSpacer αποτελεί διακλάδωση του [ChromaFiler](https://github.com/vanjac/chromafiler), που δημιούργησε ο J. van’t Hoog (vanjac). Ευχαριστούμε θερμά τον vanjac για αυτή τη βάση!
 
-Διανέμεται με την άδεια [GNU GPL v3.0](LICENSE). Copyright © 2026 Benco για τις τροποποιήσεις του FileSpacer· αρχικός κώδικας του ChromaFiler © 2023 J. van’t Hoog. Δείτε τις [σημειώσεις για στοιχεία τρίτων](THIRD_PARTY_NOTICES.md) και την [πολιτική απορρήτου](docs/privacy-policy.md).
+Copyright © 2026 Benco για τις τροποποιήσεις του FileSpacer· αρχικός κώδικας του ChromaFiler © 2023 J. van’t Hoog.
+
+Το FileSpacer διανέμεται με την άδεια GNU GPL v3.0. Η πλήρης άδεια βρίσκεται στο [LICENSE](LICENSE) στον πηγαίο κώδικα ή στο `LICENSE.txt` στον φάκελο εγκατάστασης. Το FileSpacer παρέχεται χωρίς εγγύηση· η αναδιανομή και η τροποποίηση επιτρέπονται σύμφωνα με αυτή την άδεια.
+
+Δείτε τις [σημειώσεις για στοιχεία τρίτων](THIRD_PARTY_NOTICES.md) και την [πολιτική απορρήτου](docs/privacy-policy.md).

@@ -47,8 +47,12 @@ La compilación usa MSVC/NMAKE, Visual Studio 2022 Build Tools con ATL y un Wind
 
 Las pruebas de regresión combinan escenarios PowerShell con herramientas C++ y C# para las comprobaciones internas y las pruebas reales de la interfaz de Windows y del shell. Ejecútalas mediante `tests.cmd`, en local o en una VM Hyper-V configurada. Consulta la [guía de pruebas](tests/regression/README.md).
 
----
+## Licencia y agradecimientos
 
 FileSpacer es una bifurcación de [ChromaFiler](https://github.com/vanjac/chromafiler), creado por J. van’t Hoog (vanjac). ¡Muchas gracias a vanjac por esta base!
 
-Distribuido bajo la licencia [GNU GPL v3.0](LICENSE). Copyright © 2026 Benco por las modificaciones de FileSpacer; código original de ChromaFiler © 2023 J. van’t Hoog. Consulta los [avisos sobre componentes de terceros](THIRD_PARTY_NOTICES.md) y la [política de privacidad](docs/privacy-policy.md).
+Copyright © 2026 Benco por las modificaciones de FileSpacer; código original de ChromaFiler © 2023 J. van’t Hoog.
+
+FileSpacer se distribuye bajo la licencia GNU GPL v3.0. La licencia completa se encuentra en [LICENSE](LICENSE) en el código fuente, o en `LICENSE.txt` en la carpeta de instalación. FileSpacer se proporciona sin garantía; su redistribución y modificación están permitidas según las condiciones de esa licencia.
+
+Consulta los [avisos sobre componentes de terceros](THIRD_PARTY_NOTICES.md) y la [política de privacidad](docs/privacy-policy.md).
