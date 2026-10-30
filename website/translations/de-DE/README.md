@@ -8,19 +8,19 @@ FileSpacer ist ein Dateimanager für Windows nach dem [räumlichen Prinzip](http
 
 Damit sich nicht zu viele Fenster ansammeln – ein bekannter Nachteil dieses Prinzips –, schließt FileSpacer beim Öffnen eines Ordners standardmäßig das Ausgangsfenster. Halten Sie beim Öffnen Strg gedrückt, um es geöffnet zu lassen, wenn Sie mit mehreren Ordnern gleichzeitig arbeiten möchten.
 
+<img src="docs/images/spatial-windows.png" alt="Drei nicht überlappende Ordnerfenster mit unterschiedlicher Größe, Ansicht und Symbolskalierung, darunter eine freie Symbolanordnung." width="560">
+
 FileSpacer hält seine Oberfläche bewusst zurückhaltend, während manche überladenen Oberflächen zwischen all den Schaltflächen gerade noch einen Blick auf eine Datei erlauben.
 
 Registerkarten sind mit dem räumlichen Modell unvereinbar und werden niemals hinzugefügt.
 
 Windows 10 oder neuer, x64. Verfügbar auf Englisch, Französisch, Deutsch, Italienisch, Spanisch, Portugiesisch (Portugal) und Griechisch.
 
+Keine Telemetrie, Nutzungsverfolgung oder Werbung. Update-Prüfungen verbinden sich mit GitHub; wöchentliche Prüfungen sind optional und standardmäßig aus. Herunterladen und Installieren erfordern eine Bestätigung. [Datenschutz](docs/user-guide.md#datenschutz).
+
 [Neueste Version herunterladen](https://github.com/LeBenco/FileSpacer/releases/latest)
 · [Benutzerhandbuch](docs/user-guide.md)
 · [Versionsverlauf](CHANGELOG.md)
-
-![Ein FileSpacer-Ordnerfenster mit frei angeordneten Beispieldateien und -ordnern.](docs/images/overview.png)
-
-*Jeder Ordner behält sein Fenster und seine Symbolanordnung.*
 
 ## Funktionen
 
@@ -35,11 +35,11 @@ Windows 10 oder neuer, x64. Verfügbar auf Englisch, Französisch, Deutsch, Ital
 
 ## Integration
 
-Wenn Sie **Everything** verwenden, können Sie es in FileSpacer integrieren, um erweiterte Suchanfragen direkt über dessen Suchfeld auszuführen. Die Suche kann den aktuellen Ordner mit seinen Unterordnern oder alle indizierten Dateien umfassen; die Ergebnisse werden in Everything geöffnet. [Integration und Verwendung](docs/user-guide.md#everything).
+FileSpacer lässt sich bei der Installation oder später in den Einstellungen zum Standard-Dateimanager machen. Dateien öffnen sich in ihrer üblichen Windows-Anwendung; Netzwerkordner verwenden das gewohnte Windows-Verhalten. [Windows-Integration](docs/user-guide.md#windows-integration).
 
-Wenn Sie **Nilesoft Shell** verwenden, können Sie damit auch die FileSpacer-Menüs gestalten und ihre Befehle mit menüspezifischen Regeln anpassen. Für eine stimmige Darstellung empfiehlt es sich, die Konfiguration anzupassen. [Integration und Konfiguration](docs/user-guide.md#nilesoft-shell).
+Mit **Everything** lassen sich erweiterte Suchanfragen aus FileSpacers Suchfeld starten: im aktuellen Ordner samt Unterordnern oder in allen indizierten Dateien. Die Ergebnisse erscheinen in Everything. [Integration und Verwendung](docs/user-guide.md#everything).
 
-FileSpacer lässt sich außerdem als Standardanwendung zum Öffnen von Ordnern festlegen. [Windows-Integration](docs/user-guide.md#windows-integration).
+Mit **Nilesoft Shell** können FileSpacers Menüs dessen Designs und angepasste Befehle verwenden. Für ein stimmiges Erscheinungsbild empfiehlt sich eine angepasste Konfiguration. [Integration und Konfiguration](docs/user-guide.md#nilesoft-shell).
 
 ## Kompilieren
 
@@ -49,6 +49,6 @@ Die Regressionstests verbinden PowerShell-Szenarien mit C++- und C#-Hilfsprogram
 
 ---
 
-FileSpacer ist eine Abspaltung von [ChromaFiler](https://github.com/vanjac/chromafiler), entwickelt von J. van’t Hoog. Vielen Dank an vanjac für diese Grundlage!
+FileSpacer ist eine Abspaltung von [ChromaFiler](https://github.com/vanjac/chromafiler), entwickelt von J. van’t Hoog (vanjac). Vielen Dank an vanjac für diese Grundlage!
 
 Veröffentlicht unter der [GNU GPL v3.0](LICENSE). Copyright © 2026 Benco für die FileSpacer-Änderungen; ursprünglicher ChromaFiler-Code © 2023 J. van’t Hoog. Siehe [Drittanbieterhinweise](THIRD_PARTY_NOTICES.md) und [Datenschutzerklärung](docs/privacy-policy.md).

@@ -8,19 +8,19 @@ O FileSpacer é um gestor de ficheiros para Windows baseado no [paradigma espaci
 
 Para limitar a acumulação de janelas, uma desvantagem conhecida do paradigma espacial, o FileSpacer fecha por predefinição a janela de origem ao abrir uma pasta. Mantenha Ctrl premido durante a abertura para a conservar quando quiser trabalhar com várias pastas ao mesmo tempo.
 
+<img src="docs/images/spatial-windows.png" alt="Três janelas de pastas sem sobreposição, com tamanhos, modos de apresentação e níveis de zoom diferentes, incluindo uma disposição livre de ícones." width="560">
+
 O FileSpacer mantém uma interface deliberadamente sóbria, ao contrário de certas interfaces sobrecarregadas que mal deixam espaço entre os botões para se vislumbrar um ficheiro.
 
 Os separadores são incompatíveis com o modelo espacial e nunca serão adicionados.
 
 Windows 10 ou posterior, x64. Disponível em inglês, francês, alemão, italiano, espanhol, português (Portugal) e grego.
 
+Sem telemetria, monitorização de utilização ou publicidade. As verificações de atualizações contactam o GitHub; as semanais são opcionais e estão desativadas por predefinição. A transferência e a instalação exigem confirmação. [Privacidade](docs/user-guide.md#privacidade).
+
 [Transferir a versão mais recente](https://github.com/LeBenco/FileSpacer/releases/latest)
 · [Guia de utilização](docs/user-guide.md)
 · [Histórico de versões](CHANGELOG.md)
-
-![Uma janela do FileSpacer com ficheiros e pastas de exemplo dispostos livremente.](docs/images/overview.png)
-
-*Cada pasta conserva a sua janela e a disposição dos ícones.*
 
 ## Funcionalidades
 
@@ -35,11 +35,11 @@ Windows 10 ou posterior, x64. Disponível em inglês, francês, alemão, italian
 
 ## Integração
 
-Se utiliza o **Everything**, pode integrá-lo com o FileSpacer para efetuar pesquisas avançadas a partir do respetivo campo de pesquisa. Pode pesquisar na pasta atual e nas subpastas ou em todos os ficheiros indexados; os resultados abrem no Everything. [Integração e utilização](docs/user-guide.md#everything).
+O FileSpacer pode ser definido como gestor de ficheiros predefinido na instalação ou mais tarde nas definições. Os ficheiros abrem na aplicação habitual do Windows; as pastas de rede seguem o funcionamento normal do Windows. [Integração com o Windows](docs/user-guide.md#windows-integration).
 
-Se utiliza o **Nilesoft Shell**, pode também usá-lo para alterar o aspeto dos menus do FileSpacer e personalizar os seus comandos, com regras específicas para cada menu. Recomenda-se adaptar a configuração para uma boa integração visual. [Integração e configuração](docs/user-guide.md#nilesoft-shell).
+Com o **Everything**, é possível iniciar pesquisas avançadas a partir do campo do FileSpacer, na pasta atual e nas subpastas ou em todos os ficheiros indexados. Os resultados abrem no Everything. [Integração e utilização](docs/user-guide.md#everything).
 
-Também pode definir o FileSpacer como aplicação predefinida para abrir pastas. [Integração com o Windows](docs/user-guide.md#windows-integration).
+Com o **Nilesoft Shell**, os menus do FileSpacer podem usar os seus temas e comandos personalizados. Recomenda-se adaptar a configuração para uma integração visual coerente. [Integração e configuração](docs/user-guide.md#nilesoft-shell).
 
 ## Compilação
 
@@ -49,6 +49,6 @@ Os testes de regressão combinam cenários PowerShell com ferramentas C++ e C# p
 
 ---
 
-O FileSpacer é uma derivação do [ChromaFiler](https://github.com/vanjac/chromafiler), criado por J. van’t Hoog. Muito obrigado ao vanjac por esta base!
+O FileSpacer é uma derivação do [ChromaFiler](https://github.com/vanjac/chromafiler), criado por J. van’t Hoog (vanjac). Muito obrigado ao vanjac por esta base!
 
 Distribuído ao abrigo da [GNU GPL v3.0](LICENSE). Copyright © 2026 Benco pelas alterações do FileSpacer; código original do ChromaFiler © 2023 J. van’t Hoog. Consulte os [avisos relativos a componentes de terceiros](THIRD_PARTY_NOTICES.md) e a [política de privacidade](docs/privacy-policy.md).
