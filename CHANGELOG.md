@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.2.3 — 2026-10-30
+
+- Fix mixed sorting identities, overlays and folder notifications; keep free icon positions and use native views when the provider is unavailable or incompatible.
+- Fix Preferences uniqueness across processes, shortcut validation, Everything paths, keyboard mnemonics and regional translations.
+- Fix folder closing, activation clicks and View menu preview restoration.
+- Fix Jump List refreshes and installer diagnostics; preserve user help files during upgrades and uninstallation.
+- Bundle multilingual offline help through F1 and About, and refresh localized setup guides and Nilesoft Shell references.
+
 ## 1.2.2 — 2026-10-28
 
 - Fix mixed sorting using the custom folder provider in free icon layouts. Use the native provider for free placement and switch providers when committing a sorted layout, preserving saved icon positions, selection and focus.
