@@ -44,24 +44,80 @@
       "width": 1000,
       "height": 620,
       "dpi": 96,
-      "sha256": "3483843832ce19922be47969858716ae10ab960ac94dccc10eb74b879e228638",
-      "frames": 48,
-      "duration_ms": 6950,
+      "sha256": "9b690982bd512f8df8bd1e4d6393ccc171524c60dccfcf201a7b88b736bbd057",
+      "frames": 50,
+      "duration_ms": 6930,
       "loop": "forever",
-      "framing": "Fixed region showing the Windows VM wallpaper around the folder window"
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching",
+      "framesWithVisibleAltBadge": 42,
+      "framesWithRecordedKeys": 2,
+      "projectFrames": 103,
+      "before": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 772,
+        "Bottom": 502
+      },
+      "afterGesture": {
+        "Left": 204,
+        "Top": 128,
+        "Right": 924,
+        "Bottom": 578
+      },
+      "background": "#DCE4EE",
+      "keyOverlay": "ScreenToGif automatic KeyStrokes task; standalone modifiers included; injected input included",
+      "screenToGifVersion": "2.43.2",
+      "run": "04d1e7cc98eb45a7b63cf14b5f93be38",
+      "version": "1.2.3",
+      "sourceCommit": "10c4027",
+      "language": "fr-FR",
+      "demoContentLanguage": "fr",
+      "executableSha256": "116D965E9B629205B52FC9358D5BD9C4B0AE02D4A7561D88085D04E58ECC5F13"
     },
     {
       "file": "resize-window-fr.gif",
       "width": 1000,
       "height": 620,
       "dpi": 96,
-      "sha256": "7c7747e86a2354f7de1ed31aad3bd56c42e2b7bfbbe8c026395798e4f2745aa8",
-      "frames": 50,
-      "duration_ms": 6910,
+      "sha256": "9e6d6b8da376016090f5ad5fedeb9b79ee21b2dbb1a44babd14e9aa32b710e4a",
+      "frames": 52,
+      "duration_ms": 7050,
       "loop": "forever",
-      "framing": "Fixed region showing the Windows VM wallpaper around the folder window"
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching",
+      "framesWithVisibleAltBadge": 42,
+      "framesWithRecordedKeys": 2,
+      "projectFrames": 104,
+      "before": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 772,
+        "Bottom": 502
+      },
+      "afterGesture": {
+        "Left": 52,
+        "Top": 52,
+        "Right": 932,
+        "Bottom": 582
+      },
+      "background": "#DCE4EE",
+      "keyOverlay": "ScreenToGif automatic KeyStrokes task; standalone modifiers included; injected input included",
+      "screenToGifVersion": "2.43.2",
+      "run": "04d1e7cc98eb45a7b63cf14b5f93be38",
+      "version": "1.2.3",
+      "sourceCommit": "10c4027",
+      "language": "fr-FR",
+      "demoContentLanguage": "fr",
+      "executableSha256": "116D965E9B629205B52FC9358D5BD9C4B0AE02D4A7561D88085D04E58ECC5F13"
     }
   ],
   "animation_recording": "ScreenToGif 2.43.2, real VM screen capture, 15 fps, seven-second loops, built-in key and mouse-event overlays",
-  "animation_export": "ScreenToGif embedded GIF encoder, Neural quantization, 256 colors, unchanged-region detection, no transparent-pixel painting"
+  "animation_export": "ScreenToGif embedded GIF encoder, Neural quantization, 256 colors, unchanged-region detection, no transparent-pixel painting",
+  "animationUpdate": {
+    "captured": "2026-10-30",
+    "version": "1.2.3",
+    "sourceCommit": "10c4027",
+    "background": "#DCE4EE; original solid color, no external artwork",
+    "recording": "ScreenToGif 2.43.2; real VM recording with native cursor/click highlights and Alt overlays",
+    "demoContent": "Localized fictional filenames, real default navigation bar and Reload to the right of the visible path"
+  }
 }
