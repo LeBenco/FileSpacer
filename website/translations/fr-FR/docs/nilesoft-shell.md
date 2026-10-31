@@ -72,4 +72,23 @@ border.radius = if(
 )
 ```
 
-Si vous utiliser déjà un rayon personnalisé, remplacez `default` par sa valeur précédente.
+Si un rayon personnalisé est déjà défini, remplacer `default` par sa valeur précédente.
+
+## Utiliser les actions de FileSpacer
+
+Utiliser [`window.command`](https://nilesoft.org/docs/functions/window) avec l’un des identifiants ci-dessous pour ajouter une action de FileSpacer, même si elle ne figure pas dans sa propre composition de menu. Limiter la règle au menu de la barre de titre avec la condition `filespacer_title` définie plus haut. Les conditions habituelles de l’action s’appliquent : rétablir une disposition verrouillée nécessite par exemple un verrouillage existant.
+
+```nss
+item(type='*' mode='multiple' where=filespacer_title
+     title='Rétablir la disposition verrouillée' cmd=window.command(1123))
+```
+
+| Action | Identifiant |
+| --- | ---: |
+| Rétablir la disposition verrouillée | 1123 |
+| Remplacer la disposition de référence | 1124 |
+| Oublier la disposition de ce dossier | 1125 |
+| Fermer les fenêtres descendantes | 1126 |
+| Fermer les autres fenêtres | 1127 |
+| Ajuster la fenêtre au contenu | 1128 |
+| Enregistrer / rappeler un groupe de dossiers | 1129 |
