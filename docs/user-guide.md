@@ -76,6 +76,10 @@ The menu can be customized in **Settings > Display > Interface elements > Custom
 
 Entries managed by Nilesoft Shell cannot be changed here because its rules take priority. See [Nilesoft Shell integration](#nilesoft-shell).
 
+![Adding an action to the title-bar menu and removing another.](images/customize-title-menu.gif)
+
+![The customized title-bar menu with Restore the locked layout added.](images/customized-title-menu.png)
+
 - **Restore the locked layout** returns the current window to its reference layout without closing it or changing its selection. **Replace the reference layout** saves its current position, size and view settings as the new locked reference, after confirmation.
 
 - **Forget this folder’s layout** removes its saved layout and lock, preserving search history. The current window stays in place and stops saving its layout until it closes; the next opening uses defaults. Locking a new layout resumes saving.

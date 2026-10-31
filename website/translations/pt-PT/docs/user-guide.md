@@ -76,6 +76,10 @@ O menu personaliza-se em **Definições > Apresentação > Elementos da interfac
 
 As entradas geridas pelo Nilesoft Shell não podem ser alteradas aqui, porque as suas regras têm prioridade. Consultar a [integração com o Nilesoft Shell](#nilesoft-shell).
 
+![Adicionar uma ação ao menu da barra de título e remover outra.](images/customize-title-menu.gif)
+
+![O menu da barra de título com a ação Repor a disposição bloqueada.](images/customized-title-menu.png)
+
 - **Repor a disposição bloqueada** recupera a disposição de referência da janela sem a fechar nem alterar a seleção. **Substituir a disposição de referência** guarda, após confirmação, a posição, o tamanho e as definições de vista atuais como nova referência bloqueada.
 
 - **Esquecer a disposição desta pasta** remove a disposição guardada e o bloqueio, mas mantém o histórico de pesquisa. A janela permanece no mesmo sítio e deixa de guardar a disposição até ser fechada; na próxima abertura são usadas as predefinições. Bloquear uma nova disposição reativa a sua gravação.
