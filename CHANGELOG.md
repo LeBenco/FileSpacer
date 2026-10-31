@@ -6,7 +6,7 @@
 
 - Customize the title bar menu in seven languages, with drag and drop, defaults and native or Nilesoft Shell appearance.
 - Add saved-layout actions, fit-to-content, closing descendants or other windows, named folder groups and stable Nilesoft commands.
-- Fix uninstallation continuing when help cleanup fails and VM tests detecting multiple Explorer processes in one desktop session.
+- Fix help cleanup failures blocking uninstallation and VM tests misidentifying several Explorer processes as separate desktop sessions.
 - Fix seams between green icon faces and refresh multilingual guides and menu demonstrations.
 
 ## 1.2.3 — 2026-10-30
