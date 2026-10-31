@@ -2,6 +2,13 @@
 
 ## Noch nicht veröffentlicht
 
+## 1.3.0 — 2026-10-31
+
+- Das Titelleistenmenü in sieben Sprachen anpassen, mit Drag-and-drop, Standardeinstellungen und nativer oder Nilesoft-Shell-Darstellung.
+- Aktionen für gespeicherte Anordnungen, Anpassung an den Inhalt, Schließen untergeordneter oder anderer Fenster, benannte Ordnergruppen und stabile Nilesoft-Befehle hinzufügen.
+- Die Deinstallation auch bei fehlgeschlagener Hilfebereinigung fortsetzen und die Erkennung mehrerer Explorer-Prozesse in derselben Desktopsitzung durch VM-Tests korrigieren.
+- Nähte zwischen den grünen Symbolflächen beheben und mehrsprachige Anleitungen sowie Menüvorführungen aktualisieren.
+
 ## 1.2.3 — 2026-10-30
 
 - Identitäten, Symbolüberlagerungen und Ordnerbenachrichtigungen bei gemischter Sortierung korrigieren; freie Symbolpositionen erhalten und die native Ansicht verwenden, wenn der Anbieter fehlt oder inkompatibel ist.

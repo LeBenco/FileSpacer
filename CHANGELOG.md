@@ -2,8 +2,12 @@
 
 ## Unreleased
 
-- Customize the title bar menu from Display preferences, with drag and drop, defaults and the active Windows or Nilesoft Shell appearance.
-- Add layout restore, reference replacement, per-folder layout reset, descendant/other window closing, fit-to-content and named folder groups; expose stable commands for Nilesoft Shell.
+## 1.3.0 — 2026-10-31
+
+- Customize the title bar menu in seven languages, with drag and drop, defaults and native or Nilesoft Shell appearance.
+- Add saved-layout actions, fit-to-content, closing descendants or other windows, named folder groups and stable Nilesoft commands.
+- Fix uninstallation continuing when help cleanup fails and VM tests detecting multiple Explorer processes in one desktop session.
+- Fix seams between green icon faces and refresh multilingual guides and menu demonstrations.
 
 ## 1.2.3 — 2026-10-30
 
