@@ -32,6 +32,7 @@ Sin telemetría, seguimiento del uso ni publicidad. Las comprobaciones de actual
 - **Filtra la carpeta actual** y reutiliza sus búsquedas recientes. [Búsqueda e historial](docs/user-guide.md#search-and-history).
 - **Conserva la selección al activar una ventana** haciendo clic en su fondo. [Selección y activación](docs/user-guide.md#selection-and-activation).
 - **Reduce la superposición de ventanas** al abrir carpetas sin una posición guardada. [Colocación de ventanas](docs/user-guide.md#window-placement).
+- **Personalizar el menú de la barra de título** con acciones para ventanas y disposiciones, y guardar grupos de carpetas abiertas. [Personalización del menú](docs/user-guide.md#personalizar-el-menú-de-la-barra-de-título) · [Grupos de carpetas](docs/user-guide.md#grupos-de-carpetas).
 
 ## Integración
 

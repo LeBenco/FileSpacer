@@ -32,6 +32,7 @@ Sem telemetria, monitorização de utilização ou publicidade. As verificaçõe
 - **Filtre a pasta atual** e reutilize as pesquisas recentes. [Pesquisa e histórico](docs/user-guide.md#search-and-history).
 - **Conserve a seleção ao ativar uma janela** clicando no fundo. [Seleção e ativação](docs/user-guide.md#selection-and-activation).
 - **Reduza a sobreposição das janelas** ao abrir pastas sem posição guardada. [Posicionamento das janelas](docs/user-guide.md#window-placement).
+- **Personalizar o menu da barra de título** com ações para janelas e disposições e guardar grupos de pastas abertas. [Personalização do menu](docs/user-guide.md#personalizar-o-menu-da-barra-de-título) · [Grupos de pastas](docs/user-guide.md#grupos-de-pastas).
 
 ## Integração
 

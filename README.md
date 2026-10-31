@@ -45,6 +45,10 @@ No telemetry, usage tracking or advertising. Update checks contact GitHub; weekl
   [Selection and activation](docs/user-guide.md#selection-and-activation).
 - **Reduce overlap between windows** when opening folders without a saved
   position. [Window placement](docs/user-guide.md#window-placement).
+- **Customize the title-bar menu** with layout and window actions, and save
+  named groups of open folders.
+  [Menu customization](docs/user-guide.md#customize-the-title-bar-menu) ·
+  [Folder groups](docs/user-guide.md#folder-groups).
 
 ## Integration
 

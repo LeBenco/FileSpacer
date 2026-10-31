@@ -32,6 +32,7 @@ Nessuna telemetria, monitoraggio dell’utilizzo o pubblicità. I controlli degl
 - **Filtra la cartella corrente** e riutilizza le ricerche recenti. [Ricerca e cronologia](docs/user-guide.md#search-and-history).
 - **Mantieni la selezione quando attivi una finestra** facendo clic sullo sfondo. [Selezione e attivazione](docs/user-guide.md#selection-and-activation).
 - **Riduci la sovrapposizione delle finestre** quando apri cartelle senza una posizione salvata. [Posizionamento delle finestre](docs/user-guide.md#window-placement).
+- **Personalizzare il menu della barra del titolo** con azioni su finestre e disposizioni e salvare gruppi di cartelle aperte. [Personalizzazione del menu](docs/user-guide.md#personalizzare-il-menu-della-barra-del-titolo) · [Gruppi di cartelle](docs/user-guide.md#gruppi-di-cartelle).
 
 ## Integrazione
 
