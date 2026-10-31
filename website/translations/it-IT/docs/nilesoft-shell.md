@@ -73,3 +73,22 @@ border.radius = if(
 ```
 
 Se usi già un raggio personalizzato, sostituisci `default` con il suo valore precedente.
+
+## Usare le azioni di FileSpacer
+
+Usare [`window.command`](https://nilesoft.org/docs/functions/window) con uno degli ID seguenti per aggiungere un’azione di FileSpacer, anche se non compare nella composizione del suo menu. Limitare la regola al menu della barra del titolo con la condizione `filespacer_title` definita sopra. Restano validi i requisiti dell’azione: per ripristinare una disposizione bloccata, per esempio, deve già essere presente un blocco.
+
+```nss
+item(type='*' mode='multiple' where=filespacer_title
+     title='Ripristina la disposizione bloccata' cmd=window.command(1123))
+```
+
+| Azione | ID |
+| --- | ---: |
+| Ripristina la disposizione bloccata | 1123 |
+| Sostituisci la disposizione di riferimento | 1124 |
+| Rimuovi la disposizione salvata della cartella | 1125 |
+| Chiudi le finestre delle sottocartelle | 1126 |
+| Chiudi le altre finestre | 1127 |
+| Adatta la finestra al contenuto | 1128 |
+| Salva / apri un gruppo di cartelle | 1129 |

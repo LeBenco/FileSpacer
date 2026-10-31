@@ -73,3 +73,22 @@ border.radius = if(
 ```
 
 Wenn Sie bereits einen eigenen Eckenradius verwenden, ersetzen Sie `default` durch dessen bisherigen Wert.
+
+## FileSpacer-Aktionen verwenden
+
+Mit [`window.command`](https://nilesoft.org/docs/functions/window) und einer der folgenden IDs lässt sich eine FileSpacer-Aktion hinzufügen, auch wenn sie in dessen eigener Menüzusammenstellung fehlt. Die Regel mit der oben definierten Bedingung `filespacer_title` auf das Titelleistenmenü beschränken. Die üblichen Voraussetzungen gelten weiterhin: Ein gesperrtes Layout kann beispielsweise nur wiederhergestellt werden, wenn bereits eine Sperre besteht.
+
+```nss
+item(type='*' mode='multiple' where=filespacer_title
+     title='Gesperrtes Fensterlayout wiederherstellen' cmd=window.command(1123))
+```
+
+| Aktion | ID |
+| --- | ---: |
+| Gesperrtes Fensterlayout wiederherstellen | 1123 |
+| Referenzlayout ersetzen | 1124 |
+| Layout dieses Ordners verwerfen | 1125 |
+| Unterordnerfenster schließen | 1126 |
+| Andere Fenster schließen | 1127 |
+| Fenster an Inhalt anpassen | 1128 |
+| Ordnergruppe speichern / öffnen | 1129 |
