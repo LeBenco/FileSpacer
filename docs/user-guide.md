@@ -70,6 +70,22 @@ Temporary changes remain possible; reopening restores the locked layout. Individ
 
 Switching the feature off asks for confirmation and removes all locks, including those on closed folders. Switching it back on does not restore them.
 
+### Customize the title-bar menu
+
+The menu can be customized in **Settings > Display > Interface elements > Customize title bar menu**. Drag an action from the right into the menu, move an entry to reorder it, or drag it outside to remove it. **OK** applies the composition to all FileSpacer windows; **Cancel** discards the changes. Choosing **Restore defaults** resets the draft; **OK** applies it.
+
+Entries managed by Nilesoft Shell cannot be changed here because its rules take priority. See [Nilesoft Shell integration](#nilesoft-shell).
+
+- **Restore the locked layout** returns the current window to its reference layout without closing it or changing its selection. **Replace the reference layout** saves its current position, size and view settings as the new locked reference, after confirmation.
+
+- **Forget this folder’s layout** removes its saved layout and lock, preserving search history. The current window stays in place and stops saving its layout until it closes; the next opening uses defaults. Locking a new layout resumes saving.
+
+- Other available actions close descendant windows, close the other FileSpacer windows, or fit the window to its contents.
+
+### Folder groups
+
+**Save / recall a folder group** stores the currently open folders under a name. Opening a group brings each folder back with its own saved layout, keeping other windows open. Deleting a group removes only the list, never the folders.
+
 ## Search and history
 
 Enter all or part of a file or folder name, then press Enter or click the magnifier to filter the current folder. **Filter while typing**, in **Settings > General**, applies it as text is entered. This local filter never launches Everything automatically.
@@ -104,6 +120,17 @@ Selecting **Search in Everything** sends the entered query, using Everything's s
 
 [Nilesoft Shell](https://nilesoft.org/) can style FileSpacer's menus and customize their commands. Adapting its configuration is recommended for a consistent appearance, particularly square corners on the title-bar and toolbar menus.
 
+FileSpacer composes the title-bar menu first. Nilesoft Shell then applies its rules, which can rename, move, hide or add commands and therefore take priority. Entries shown in gray in the editor are changed in Nilesoft Shell’s configuration files.
+
+FileSpacer’s new actions can also be used in `shell.nss` or an imported file, with `window.command` and the action’s ID. For example, using the `filespacer_title` condition defined in the [configuration reference](nilesoft-shell.md):
+
+```nss
+item(type='*' mode='multiple' where=filespacer_title
+     title='Restore the locked layout' cmd=window.command(1123))
+```
+
+The reference lists the other actions and their IDs.
+
 The [configuration reference](nilesoft-shell.md) covers allowing FileSpacer, retaining the theme and keeping Explorer-only rules out of its menus. After a configuration change, unregistering and registering Nilesoft Shell applies it to newly opened menus.
 
 The Modern theme below compares its default corners with the recommended square corners.
@@ -128,7 +155,7 @@ Updates are checked in **Settings > About**. Downloading and installing require 
 
 ## Local data
 
-Folder layouts, window locks, searches and closed-folder history are stored locally in `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. General preferences are in the Windows Registry at `HKEY_CURRENT_USER\Software\FileSpacer`. Saved state can contain folder paths, including network paths. Temporary update files and the list of folders to reopen stay in `%TEMP%\FileSpacerUpdate-{GUID}`.
+Folder layouts, window locks, searches and closed-folder history are stored locally in `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. General preferences, the title-bar menu and folder groups are in the Windows Registry at `HKEY_CURRENT_USER\Software\FileSpacer`. Saved state can contain folder paths, including network paths. Temporary update files and the list of folders to reopen stay in `%TEMP%\FileSpacerUpdate-{GUID}`.
 
 **Settings > About > Maintenance > Reset all folder state** closes folder windows and clears their saved layouts, history and locks. Files and general preferences are preserved.
 

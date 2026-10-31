@@ -70,6 +70,22 @@ Les changements temporaires restent possibles ; rouvrir le dossier rétablit l�
 
 Désactiver la fonction demande confirmation et supprime tous les verrouillages, y compris ceux des dossiers fermés. La réactiver ne les restaure pas.
 
+### Personnaliser le menu de la barre de titre
+
+Le menu se personnalise dans **Paramètres > Affichage > Éléments de l’interface > Modifier le menu de barre de titre**. Faire glisser une action depuis la droite pour l’ajouter au menu, déplacer une entrée pour changer son ordre ou la glisser en dehors pour la retirer. **OK** applique la composition à toutes les fenêtres de FileSpacer ; **Annuler** abandonne les changements. **Réglages par défaut** permet de retrouver la composition d’origine, à valider avec **OK**.
+
+Les entrées gérées par Nilesoft Shell ne sont pas modifiables ici, car ses règles sont prioritaires. Voir l’[intégration Nilesoft Shell](#nilesoft-shell).
+
+- **Rétablir la disposition verrouillée** ramène la fenêtre à sa disposition de référence, sans la fermer ni changer sa sélection. **Remplacer la disposition de référence** enregistre sa position, sa taille et son affichage actuels comme nouvelle référence verrouillée, après confirmation.
+
+- **Oublier la disposition de ce dossier** retire sa disposition enregistrée et son verrouillage, en conservant l’historique des recherches. La fenêtre reste en place et cesse d’enregistrer sa disposition jusqu’à sa fermeture ; la prochaine ouverture utilise les réglages par défaut. Verrouiller une nouvelle disposition réactive son enregistrement.
+
+- D’autres actions ferment les fenêtres des sous-dossiers, ferment les autres fenêtres de FileSpacer ou ajustent la fenêtre à son contenu.
+
+### Groupes de dossiers
+
+**Enregistrer / rappeler un groupe de dossiers** conserve les dossiers ouverts sous un nom. Rappeler un groupe rouvre chaque dossier avec sa propre disposition enregistrée, sans fermer les autres fenêtres. Supprimer un groupe efface uniquement la liste, jamais les dossiers.
+
 ## Recherche et historique
 
 Saisir tout ou partie du nom d’un fichier ou d’un dossier, puis appuyer sur Entrée ou cliquer sur la loupe pour filtrer le dossier courant. **Filtrer pendant la saisie**, dans **Paramètres > Général**, applique le filtre au fur et à mesure. Ce filtre local ne lance jamais Everything automatiquement.
@@ -104,6 +120,17 @@ Choisir **Rechercher dans Everything** transmet la requête saisie, avec la synt
 
 [Nilesoft Shell](https://nilesoft.org/) peut gérer l’apparence des menus de FileSpacer et personnaliser leurs commandes. Une adaptation de sa configuration est recommandée pour une bonne intégration visuelle, notamment des coins carrés pour les menus de la barre de titre et de la barre d’outils.
 
+FileSpacer compose d’abord le menu de la barre de titre. Nilesoft Shell applique ensuite ses règles, qui peuvent renommer, déplacer, masquer ou ajouter des commandes et ont donc priorité. Les entrées grisées dans l’éditeur se modifient dans les fichiers de configuration de Nilesoft Shell.
+
+Les nouvelles actions de FileSpacer s’utilisent aussi dans `shell.nss` ou un fichier importé, avec `window.command` et l’identifiant de l’action. Par exemple, avec la condition `filespacer_title` définie dans la [référence de configuration](nilesoft-shell.md) :
+
+```nss
+item(type='*' mode='multiple' where=filespacer_title
+     title='Rétablir la disposition verrouillée' cmd=window.command(1123))
+```
+
+La référence donne les autres actions et leurs identifiants.
+
 La [référence de configuration](nilesoft-shell.md) explique comment autoriser FileSpacer, conserver le thème et limiter à l’Explorateur les règles qui lui sont réservées. Après une modification, désenregistrer puis réenregistrer Nilesoft Shell l’applique aux menus nouvellement ouverts.
 
 Le thème Modern ci-dessous compare ses coins par défaut aux coins carrés recommandés.
@@ -128,7 +155,7 @@ Les mises à jour se recherchent dans **Paramètres > À propos**. Le téléchar
 
 ## Données locales
 
-Dispositions des dossiers, verrouillages, recherches et historique des dossiers fermés sont conservés dans `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. Les préférences générales se trouvent dans le registre Windows, sous `HKEY_CURRENT_USER\Software\FileSpacer`. L’état enregistré peut contenir des chemins de dossiers, y compris réseau. Les fichiers temporaires de mise à jour et la liste des dossiers à rouvrir restent dans `%TEMP%\FileSpacerUpdate-{GUID}`.
+Dispositions des dossiers, verrouillages, recherches et historique des dossiers fermés sont conservés dans `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. Les préférences générales, le menu de la barre de titre et les groupes de dossiers se trouvent dans le registre Windows, sous `HKEY_CURRENT_USER\Software\FileSpacer`. L’état enregistré peut contenir des chemins de dossiers, y compris réseau. Les fichiers temporaires de mise à jour et la liste des dossiers à rouvrir restent dans `%TEMP%\FileSpacerUpdate-{GUID}`.
 
 **Paramètres > À propos > Maintenance > Réinitialiser l’état de tous les dossiers** ferme les fenêtres de dossiers et efface leurs dispositions, historiques et verrouillages. Les fichiers et les préférences générales sont conservés.
 

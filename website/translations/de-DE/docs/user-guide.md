@@ -70,6 +70,22 @@ Vorübergehende Änderungen bleiben möglich; beim erneuten Öffnen kehrt der ge
 
 Das Deaktivieren der Funktion erfordert eine Bestätigung und entfernt alle Sperren, auch bei geschlossenen Ordnern. Erneutes Aktivieren stellt sie nicht wieder her.
 
+### Titelleistenmenü anpassen
+
+Das Menü lässt sich unter **Einstellungen > Anzeige > Oberflächenelemente > Titelleistenmenü anpassen** bearbeiten. Eine Aktion aus der rechten Liste in das Menü ziehen, einen Eintrag verschieben, um die Reihenfolge zu ändern, oder aus dem Menü ziehen, um ihn zu entfernen. **OK** übernimmt die Zusammenstellung für alle FileSpacer-Fenster; **Abbrechen** verwirft die Änderungen. Mit **Standardwerte** die ursprüngliche Zusammenstellung wiederherstellen und anschließend mit **OK** übernehmen.
+
+Von Nilesoft Shell verwaltete Einträge lassen sich hier nicht ändern, da dessen Regeln Vorrang haben. Siehe [Nilesoft-Shell-Integration](#nilesoft-shell).
+
+- **Gesperrtes Fensterlayout wiederherstellen** setzt das aktuelle Fenster auf sein Referenzlayout zurück, ohne es zu schließen oder seine Auswahl zu ändern. **Referenzlayout ersetzen** speichert die aktuelle Position, Größe und Ansicht nach Bestätigung als neue gesperrte Referenz.
+
+- **Layout dieses Ordners verwerfen** entfernt das gespeicherte Layout und die Sperre, behält aber den Suchverlauf. Das Fenster bleibt an seiner Position und speichert bis zum Schließen kein Layout mehr; beim nächsten Öffnen gelten die Standardwerte. Das Sperren eines neuen Layouts aktiviert das Speichern wieder.
+
+- Weitere Aktionen schließen Unterordnerfenster oder die anderen FileSpacer-Fenster und passen das Fenster an seinen Inhalt an.
+
+### Ordnergruppen
+
+**Ordnergruppe speichern / öffnen** speichert die geöffneten Ordner unter einem Namen. Beim Öffnen einer Gruppe erhält jeder Ordner sein eigenes gespeichertes Layout; andere Fenster bleiben geöffnet. Das Löschen einer Gruppe entfernt nur die Liste, niemals die Ordner.
+
 ## Suche und Verlauf
 
 Geben Sie den Namen einer Datei oder eines Ordners ganz oder teilweise in das Suchfeld ein und drücken Sie die Eingabetaste oder klicken Sie auf die Lupe, um den aktuellen Ordner zu filtern. **Einstellungen > Allgemein > Beim Eingeben filtern** wendet den Filter bereits während der Eingabe an. Dieser lokale Filter startet Everything niemals automatisch.
@@ -104,6 +120,17 @@ Die Option wird unter **Einstellungen > Integration** aktiviert. Everything wird
 
 [Nilesoft Shell](https://nilesoft.org/) kann FileSpacers Menüs gestalten und ihre Befehle anpassen. Für ein stimmiges Erscheinungsbild empfiehlt sich eine angepasste Konfiguration, insbesondere mit eckigen Menüs an Titel- und Symbolleiste.
 
+FileSpacer stellt zunächst das Titelleistenmenü zusammen. Danach wendet Nilesoft Shell seine Regeln an, die Befehle umbenennen, verschieben, ausblenden oder hinzufügen können und somit Vorrang haben. Grau dargestellte Einträge werden in den Konfigurationsdateien von Nilesoft Shell geändert.
+
+Die neuen FileSpacer-Aktionen lassen sich auch in `shell.nss` oder einer importierten Datei verwenden: mit `window.command` und der ID der Aktion. Beispiel mit der in der [Konfigurationsreferenz](nilesoft-shell.md) definierten Bedingung `filespacer_title`:
+
+```nss
+item(type='*' mode='multiple' where=filespacer_title
+     title='Gesperrtes Fensterlayout wiederherstellen' cmd=window.command(1123))
+```
+
+Die Referenz enthält die weiteren Aktionen und ihre IDs.
+
 Die [Konfigurationsreferenz](nilesoft-shell.md) beschreibt die Freigabe für FileSpacer, das Beibehalten des Designs und die Beschränkung Explorer-spezifischer Regeln. Nach Änderungen wendet erneutes Ab- und Anmelden von Nilesoft Shell die Konfiguration auf neu geöffnete Menüs an.
 
 Das folgende Modern-Design vergleicht die standardmäßigen Ecken mit den empfohlenen eckigen Menüs.
@@ -128,7 +155,7 @@ Unter **Einstellungen > Info** lassen sich Updates suchen. Herunterladen und Ins
 
 ## Lokale Daten
 
-Ordneranordnungen, Sperren, Suchanfragen und der Verlauf geschlossener Ordner liegen lokal in `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. Allgemeine Einstellungen stehen in der Windows-Registrierung unter `HKEY_CURRENT_USER\Software\FileSpacer`. Der gespeicherte Zustand kann Ordnerpfade einschließlich Netzwerkpfaden enthalten. Temporäre Update-Dateien und die Liste der wieder zu öffnenden Ordner bleiben unter `%TEMP%\FileSpacerUpdate-{GUID}`.
+Ordneranordnungen, Sperren, Suchanfragen und der Verlauf geschlossener Ordner liegen lokal in `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. Allgemeine Einstellungen, das Titelleistenmenü und Ordnergruppen stehen in der Windows-Registrierung unter `HKEY_CURRENT_USER\Software\FileSpacer`. Der gespeicherte Zustand kann Ordnerpfade einschließlich Netzwerkpfaden enthalten. Temporäre Update-Dateien und die Liste der wieder zu öffnenden Ordner bleiben unter `%TEMP%\FileSpacerUpdate-{GUID}`.
 
 **Einstellungen > Info > Wartung > Alle Ordnerzustände zurücksetzen** schließt die Ordnerfenster und löscht deren gespeicherte Anordnungen, Verläufe und Sperren. Dateien und allgemeine Einstellungen bleiben erhalten.
 

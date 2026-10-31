@@ -70,6 +70,22 @@ Sono comunque possibili modifiche temporanee; riaprendo la cartella si ripristin
 
 Disattivare la funzione richiede conferma e rimuove tutti i blocchi, anche dalle cartelle chiuse. Riattivarla non li ripristina.
 
+### Personalizzare il menu della barra del titolo
+
+Il menu si personalizza in **Impostazioni > Visualizzazione > Elementi dell’interfaccia > Personalizza il menu della barra del titolo**. Trascinare un’azione dall’elenco a destra nel menu, spostare una voce per cambiarne l’ordine o trascinarla fuori per rimuoverla. **OK** applica la composizione a tutte le finestre di FileSpacer; **Annulla** scarta le modifiche. Per ripristinare la composizione originale, scegliere **Impostazioni predefinite** e confermare con **OK**.
+
+Le voci gestite da Nilesoft Shell non possono essere modificate qui, perché le sue regole hanno la precedenza. Vedere l’[integrazione con Nilesoft Shell](#nilesoft-shell).
+
+- **Ripristina la disposizione bloccata** riporta la finestra alla disposizione di riferimento senza chiuderla né cambiarne la selezione. **Sostituisci la disposizione di riferimento** salva, dopo conferma, la posizione, le dimensioni e le impostazioni di visualizzazione attuali come nuovo riferimento bloccato.
+
+- **Rimuovi la disposizione salvata della cartella** elimina la disposizione e il blocco, mantenendo la cronologia delle ricerche. La finestra resta al suo posto e smette di salvare la disposizione fino alla chiusura; all’apertura successiva vengono usati i valori predefiniti. Bloccare una nuova disposizione ne riattiva il salvataggio.
+
+- Altre azioni chiudono le finestre delle sottocartelle o le altre finestre di FileSpacer e adattano la finestra al contenuto.
+
+### Gruppi di cartelle
+
+**Salva / apri un gruppo di cartelle** memorizza le cartelle aperte con un nome. Aprire un gruppo riporta ogni cartella alla propria disposizione salvata e mantiene aperte le altre finestre. Eliminare un gruppo rimuove solo l’elenco, mai le cartelle.
+
 ## Ricerca e cronologia
 
 Digita tutto o parte del nome di un file o di una cartella nel campo di ricerca, quindi premi Invio o fai clic sulla lente per filtrare la cartella corrente. **Impostazioni > Generale > Filtra durante la digitazione** applica il filtro mentre scrivi. Questo filtro locale non avvia mai Everything automaticamente.
@@ -104,6 +120,17 @@ L’opzione si attiva in **Impostazioni > Integrazione**. Everything viene indiv
 
 [Nilesoft Shell](https://nilesoft.org/) può gestire l’aspetto dei menu di FileSpacer e personalizzarne i comandi. Si consiglia di adattarne la configurazione per un aspetto coerente, in particolare con angoli squadrati nei menu della barra del titolo e della barra degli strumenti.
 
+FileSpacer compone prima il menu della barra del titolo. Nilesoft Shell applica poi le proprie regole, che possono rinominare, spostare, nascondere o aggiungere comandi e hanno quindi la precedenza. Le voci in grigio nell’editor si modificano nei file di configurazione di Nilesoft Shell.
+
+Le nuove azioni di FileSpacer possono essere usate anche in `shell.nss` o in un file importato, con `window.command` e l’ID dell’azione. Per esempio, con la condizione `filespacer_title` definita nel [riferimento di configurazione](nilesoft-shell.md):
+
+```nss
+item(type='*' mode='multiple' where=filespacer_title
+     title='Ripristina la disposizione bloccata' cmd=window.command(1123))
+```
+
+Il riferimento elenca le altre azioni e i relativi ID.
+
 Il [riferimento di configurazione](nilesoft-shell.md) spiega come consentire FileSpacer, mantenere il tema e limitare a Esplora file le regole che lo riguardano. Dopo una modifica, annullare e ripetere la registrazione di Nilesoft Shell la applica ai menu aperti successivamente.
 
 Il tema Modern qui sotto confronta gli angoli predefiniti con quelli squadrati consigliati.
@@ -128,7 +155,7 @@ Gli aggiornamenti si cercano in **Impostazioni > Informazioni**. Scaricamento e 
 
 ## Dati locali
 
-Disposizioni delle cartelle, blocchi, ricerche e cronologia delle cartelle chiuse sono conservati localmente in `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. Le preferenze generali si trovano nel Registro di sistema di Windows, in `HKEY_CURRENT_USER\Software\FileSpacer`. Lo stato salvato può contenere percorsi di cartelle, anche di rete. I file temporanei di aggiornamento e l’elenco delle cartelle da riaprire rimangono in `%TEMP%\FileSpacerUpdate-{GUID}`.
+Disposizioni delle cartelle, blocchi, ricerche e cronologia delle cartelle chiuse sono conservati localmente in `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. Le preferenze generali, il menu della barra del titolo e i gruppi di cartelle si trovano nel Registro di sistema di Windows, in `HKEY_CURRENT_USER\Software\FileSpacer`. Lo stato salvato può contenere percorsi di cartelle, anche di rete. I file temporanei di aggiornamento e l’elenco delle cartelle da riaprire rimangono in `%TEMP%\FileSpacerUpdate-{GUID}`.
 
 **Impostazioni > Informazioni > Manutenzione > Reimposta lo stato di tutte le cartelle** chiude le finestre delle cartelle e ne cancella disposizioni, cronologia e blocchi salvati. File e preferenze generali vengono conservati.
 
