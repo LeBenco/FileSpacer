@@ -192,3 +192,30 @@ BEGIN
   IDS_GROUP_FOLDER_WINDOWS_HELP "Neue Ordnerfenster können entsprechend Ihren Windows-Einstellungen unter einer gemeinsamen Schaltfläche in der Taskleiste gruppiert werden.\n\nIst diese Option deaktiviert, können Ordner einzeln an die Taskleiste angeheftet werden.\n\nDie Änderung gilt nur für danach geöffnete Fenster. Bereits geöffnete Fenster behalten ihre aktuelle Gruppierung."
   IDS_EVERYTHING_EXECUTABLE "Ausführbare Everything-Datei (*.exe)"
 END
+
+STRINGTABLE
+BEGIN
+  IDS_TITLE_MENU_NS_NOTICE "Einige Menüeinträge werden von Nilesoft Shell verwaltet und lassen sich hier nicht ändern."
+  IDS_TITLE_MENU_NS_LINK "Menü in den <a>Konfigurationsdateien von Nilesoft Shell</a> bearbeiten."
+  IDS_TITLE_MENU_NS_TOOLTIP "Von Nilesoft Shell verwaltete Einträge müssen in dessen Konfigurationsdateien geändert werden."
+  IDS_TITLE_MENU_EMPTY "Leeres Menü — eine Aktion aus der rechten Liste hierher ziehen."
+  IDS_TITLE_MENU_RENDER_ERROR "Die Menüvorschau konnte nicht angezeigt werden. Die bisherigen Einstellungen bleiben erhalten."
+  IDS_TITLE_MENU_SAVE_ERROR "Das Menü konnte nicht gespeichert werden."
+  IDS_TITLE_MENU_SETTINGS_ERROR "Der Ordner mit den Einstellungen von Nilesoft Shell konnte nicht geöffnet werden."
+  IDS_TITLE_MENU_SEPARATOR "— Trennlinie —"
+  IDS_TITLE_MENU_OPEN_WINDOWS "Geöffnete Fenster"
+  IDS_TITLE_MENU_WINDOWS_BLOCK "<< Geöffnete Fenster >>"
+  IDS_TITLE_MENU_RESTORE "Gesperrtes Fensterlayout wiederherstellen"
+  IDS_TITLE_MENU_REPLACE "Referenzlayout ersetzen"
+  IDS_TITLE_MENU_FORGET "Layout dieses Ordners verwerfen"
+  IDS_TITLE_MENU_CLOSE_DESCENDANTS "Unterordnerfenster schließen"
+  IDS_TITLE_MENU_CLOSE_OTHERS "Andere Fenster schließen"
+  IDS_TITLE_MENU_FIT "Fenster an Inhalt anpassen"
+  IDS_TITLE_MENU_GROUPS "Ordnergruppe speichern / öffnen"
+  IDS_TITLE_FORGET_CONFIRM "Gespeichertes Layout dieses Ordners verwerfen?\n\nDas Fenster bleibt an seiner Position. Bis zum Schließen wird sein Layout nicht mehr gespeichert. Beim nächsten Öffnen gelten die Standardeinstellungen. Der Suchverlauf bleibt erhalten."
+  IDS_TITLE_REPLACE_CONFIRM "Das gesperrte Layout durch die aktuelle Position, Größe und Ansichtseinstellungen des Fensters ersetzen?"
+  IDS_GROUPS_ERROR "Die Ordnergruppe konnte nicht geladen oder gespeichert werden. Bereits gespeicherte Gruppen bleiben erhalten."
+  IDS_GROUPS_REPLACE "Diese Gruppe durch die aktuell in FileSpacer geöffneten Ordner ersetzen?"
+  IDS_GROUPS_DELETE_CONFIRM "Diese gespeicherte Ordnergruppe löschen? Die Ordner selbst bleiben erhalten."
+  IDS_GROUPS_OPEN_ERROR "Einige Ordner der Gruppe konnten nicht geöffnet werden."
+END
