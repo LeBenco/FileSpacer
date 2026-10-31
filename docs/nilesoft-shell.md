@@ -73,3 +73,22 @@ border.radius = if(
 ```
 
 If you already use a custom radius, replace `default` with its previous value.
+
+## Use FileSpacer actions
+
+Use [`window.command`](https://nilesoft.org/docs/functions/window) with one of the IDs below to add a FileSpacer action, even if it is absent from FileSpacer’s own menu composition. Keep the rule restricted to the title-bar menu with the `filespacer_title` condition defined above. The action’s usual requirements still apply: restoring a locked layout, for example, requires an existing lock.
+
+```nss
+item(type='*' mode='multiple' where=filespacer_title
+     title='Restore the locked layout' cmd=window.command(1123))
+```
+
+| Action | ID |
+| --- | ---: |
+| Restore the locked layout | 1123 |
+| Replace the reference layout | 1124 |
+| Forget this folder’s layout | 1125 |
+| Close descendant windows | 1126 |
+| Close other windows | 1127 |
+| Fit the window to its contents | 1128 |
+| Save / recall a folder group | 1129 |

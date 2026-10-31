@@ -73,3 +73,22 @@ border.radius = if(
 ```
 
 Se já utiliza um raio personalizado, substitua `default` pelo valor anterior.
+
+## Usar as ações do FileSpacer
+
+Usar [`window.command`](https://nilesoft.org/docs/functions/window) com um dos ID abaixo para adicionar uma ação do FileSpacer, mesmo que não conste da composição do seu menu. Limitar a regra ao menu da barra de título com a condição `filespacer_title` definida acima. Mantêm-se os requisitos habituais da ação: por exemplo, repor uma disposição bloqueada exige um bloqueio existente.
+
+```nss
+item(type='*' mode='multiple' where=filespacer_title
+     title='Repor a disposição bloqueada' cmd=window.command(1123))
+```
+
+| Ação | ID |
+| --- | ---: |
+| Repor a disposição bloqueada | 1123 |
+| Substituir a disposição de referência | 1124 |
+| Esquecer a disposição desta pasta | 1125 |
+| Fechar janelas de subpastas | 1126 |
+| Fechar as outras janelas | 1127 |
+| Ajustar a janela ao conteúdo | 1128 |
+| Guardar / abrir um grupo de pastas | 1129 |
