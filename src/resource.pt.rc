@@ -192,3 +192,30 @@ BEGIN
   IDS_GROUP_FOLDER_WINDOWS_HELP "As novas janelas de pastas podem ser agrupadas num único botão da barra de tarefas, de acordo com as definições do Windows.\n\nQuando esta opção está desativada, as pastas podem ser afixadas separadamente na barra de tarefas.\n\nEsta definição aplica-se às janelas abertas após a alteração. As janelas já abertas mantêm o agrupamento atual."
   IDS_EVERYTHING_EXECUTABLE "Executável do Everything (*.exe)"
 END
+
+STRINGTABLE
+BEGIN
+  IDS_TITLE_MENU_NS_NOTICE "Algumas entradas do menu são geridas pelo Nilesoft Shell e não podem ser alteradas aqui."
+  IDS_TITLE_MENU_NS_LINK "Editar o menu nos <a>ficheiros de configuração do Nilesoft Shell</a>."
+  IDS_TITLE_MENU_NS_TOOLTIP "As entradas geridas pelo Nilesoft Shell têm de ser alteradas nos respetivos ficheiros de configuração."
+  IDS_TITLE_MENU_EMPTY "Menu vazio — arraste uma ação da lista à direita."
+  IDS_TITLE_MENU_RENDER_ERROR "Não foi possível apresentar a pré-visualização do menu. As definições existentes foram mantidas."
+  IDS_TITLE_MENU_SAVE_ERROR "Não foi possível guardar o menu."
+  IDS_TITLE_MENU_SETTINGS_ERROR "Não foi possível abrir a pasta das definições do Nilesoft Shell."
+  IDS_TITLE_MENU_SEPARATOR "— Separador —"
+  IDS_TITLE_MENU_OPEN_WINDOWS "Janelas abertas"
+  IDS_TITLE_MENU_WINDOWS_BLOCK "<< Janelas abertas >>"
+  IDS_TITLE_MENU_RESTORE "Repor a disposição bloqueada"
+  IDS_TITLE_MENU_REPLACE "Substituir a disposição de referência"
+  IDS_TITLE_MENU_FORGET "Esquecer a disposição desta pasta"
+  IDS_TITLE_MENU_CLOSE_DESCENDANTS "Fechar janelas de subpastas"
+  IDS_TITLE_MENU_CLOSE_OTHERS "Fechar as outras janelas"
+  IDS_TITLE_MENU_FIT "Ajustar a janela ao conteúdo"
+  IDS_TITLE_MENU_GROUPS "Guardar / abrir um grupo de pastas"
+  IDS_TITLE_FORGET_CONFIRM "Esquecer a disposição desta pasta?\n\nA janela permanece no mesmo sítio, mas a sua disposição deixa de ser guardada até ser fechada. Na próxima abertura serão utilizadas as predefinições. O histórico de pesquisa é mantido."
+  IDS_TITLE_REPLACE_CONFIRM "Substituir a disposição bloqueada pela posição, tamanho e definições de vista atuais da janela?"
+  IDS_GROUPS_ERROR "Não foi possível carregar ou guardar o grupo de pastas. Os grupos existentes foram mantidos."
+  IDS_GROUPS_REPLACE "Substituir este grupo pelas pastas atualmente abertas no FileSpacer?"
+  IDS_GROUPS_DELETE_CONFIRM "Eliminar este grupo de pastas guardado? As pastas serão mantidas."
+  IDS_GROUPS_OPEN_ERROR "Não foi possível abrir algumas pastas do grupo."
+END

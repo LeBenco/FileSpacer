@@ -192,3 +192,30 @@ BEGIN
   IDS_GROUP_FOLDER_WINDOWS_HELP "Le nuove finestre delle cartelle possono essere raggruppate sotto un solo pulsante della barra delle applicazioni, in base alle impostazioni di Windows.\n\nQuando questa opzione è disattivata, le cartelle possono essere aggiunte separatamente alla barra delle applicazioni.\n\nQuesta impostazione si applica alle finestre aperte dopo la modifica. Quelle già aperte mantengono il raggruppamento attuale."
   IDS_EVERYTHING_EXECUTABLE "Eseguibile di Everything (*.exe)"
 END
+
+STRINGTABLE
+BEGIN
+  IDS_TITLE_MENU_NS_NOTICE "Alcune voci del menu sono gestite da Nilesoft Shell e non possono essere modificate qui."
+  IDS_TITLE_MENU_NS_LINK "Modifica il menu nei <a>file di configurazione di Nilesoft Shell</a>."
+  IDS_TITLE_MENU_NS_TOOLTIP "Le voci gestite da Nilesoft Shell devono essere modificate nei suoi file di configurazione."
+  IDS_TITLE_MENU_EMPTY "Menu vuoto — trascina un’azione dall’elenco a destra."
+  IDS_TITLE_MENU_RENDER_ERROR "Impossibile visualizzare l’anteprima del menu. Le impostazioni esistenti sono state mantenute."
+  IDS_TITLE_MENU_SAVE_ERROR "Impossibile salvare il menu."
+  IDS_TITLE_MENU_SETTINGS_ERROR "Impossibile aprire la cartella delle impostazioni di Nilesoft Shell."
+  IDS_TITLE_MENU_SEPARATOR "— Separatore —"
+  IDS_TITLE_MENU_OPEN_WINDOWS "Finestre aperte"
+  IDS_TITLE_MENU_WINDOWS_BLOCK "<< Finestre aperte >>"
+  IDS_TITLE_MENU_RESTORE "Ripristina la disposizione bloccata"
+  IDS_TITLE_MENU_REPLACE "Sostituisci la disposizione di riferimento"
+  IDS_TITLE_MENU_FORGET "Rimuovi la disposizione salvata della cartella"
+  IDS_TITLE_MENU_CLOSE_DESCENDANTS "Chiudi le finestre delle sottocartelle"
+  IDS_TITLE_MENU_CLOSE_OTHERS "Chiudi le altre finestre"
+  IDS_TITLE_MENU_FIT "Adatta la finestra al contenuto"
+  IDS_TITLE_MENU_GROUPS "Salva / apri un gruppo di cartelle"
+  IDS_TITLE_FORGET_CONFIRM "Rimuovere la disposizione salvata di questa cartella?\n\nLa finestra resta al suo posto, ma la disposizione non verrà più salvata fino alla chiusura. Alla prossima apertura verranno usate le impostazioni predefinite. La cronologia delle ricerche viene mantenuta."
+  IDS_TITLE_REPLACE_CONFIRM "Sostituire la disposizione bloccata con la posizione, le dimensioni e le impostazioni di visualizzazione attuali della finestra?"
+  IDS_GROUPS_ERROR "Impossibile caricare o salvare il gruppo di cartelle. I gruppi esistenti sono stati mantenuti."
+  IDS_GROUPS_REPLACE "Sostituire questo gruppo con le cartelle attualmente aperte in FileSpacer?"
+  IDS_GROUPS_DELETE_CONFIRM "Eliminare questo gruppo di cartelle salvato? Le cartelle vengono mantenute."
+  IDS_GROUPS_OPEN_ERROR "Non è stato possibile aprire alcune cartelle del gruppo."
+END
