@@ -70,6 +70,22 @@ Continuam a ser possíveis alterações temporárias; ao reabrir a pasta, regres
 
 Desativar a função pede confirmação e remove todos os bloqueios, incluindo os das pastas fechadas. Voltar a ativá-la não os repõe.
 
+### Personalizar o menu da barra de título
+
+O menu personaliza-se em **Definições > Apresentação > Elementos da interface > Personalizar o menu da barra de título**. Arrastar uma ação da lista à direita para o menu, mover uma entrada para alterar a ordem ou arrastá-la para fora para a remover. **OK** aplica a composição a todas as janelas do FileSpacer; **Cancelar** descarta as alterações. Para repor a composição original, escolher **Predefinições** e confirmar com **OK**.
+
+As entradas geridas pelo Nilesoft Shell não podem ser alteradas aqui, porque as suas regras têm prioridade. Consultar a [integração com o Nilesoft Shell](#nilesoft-shell).
+
+- **Repor a disposição bloqueada** recupera a disposição de referência da janela sem a fechar nem alterar a seleção. **Substituir a disposição de referência** guarda, após confirmação, a posição, o tamanho e as definições de vista atuais como nova referência bloqueada.
+
+- **Esquecer a disposição desta pasta** remove a disposição guardada e o bloqueio, mas mantém o histórico de pesquisa. A janela permanece no mesmo sítio e deixa de guardar a disposição até ser fechada; na próxima abertura são usadas as predefinições. Bloquear uma nova disposição reativa a sua gravação.
+
+- Outras ações fecham as janelas de subpastas ou as outras janelas do FileSpacer e ajustam a janela ao conteúdo.
+
+### Grupos de pastas
+
+**Guardar / abrir um grupo de pastas** guarda as pastas abertas com um nome. Abrir um grupo recupera cada pasta com a respetiva disposição guardada, mantendo as outras janelas abertas. Eliminar um grupo remove apenas a lista, nunca as pastas.
+
 ## Pesquisa e histórico
 
 Introduza todo ou parte do nome de um ficheiro ou de uma pasta e prima Enter ou clique na lupa para filtrar a pasta atual. **Definições > Geral > Filtrar enquanto escreve** aplica o filtro durante a escrita. Este filtro local nunca inicia o Everything automaticamente.
@@ -104,6 +120,17 @@ A opção ativa-se em **Definições > Integração**. O Everything é encontrad
 
 O [Nilesoft Shell](https://nilesoft.org/) pode definir o aspeto dos menus do FileSpacer e personalizar os seus comandos. Recomenda-se adaptar a configuração para uma integração visual coerente, sobretudo com cantos retos nos menus da barra de título e da barra de ferramentas.
 
+O FileSpacer compõe primeiro o menu da barra de título. O Nilesoft Shell aplica depois as suas regras, que podem mudar o nome, mover, ocultar ou adicionar comandos e, por isso, têm prioridade. As entradas a cinzento no editor alteram-se nos ficheiros de configuração do Nilesoft Shell.
+
+As novas ações do FileSpacer também podem ser usadas em `shell.nss` ou num ficheiro importado, com `window.command` e o ID da ação. Por exemplo, com a condição `filespacer_title` definida na [referência de configuração](nilesoft-shell.md):
+
+```nss
+item(type='*' mode='multiple' where=filespacer_title
+     title='Repor a disposição bloqueada' cmd=window.command(1123))
+```
+
+A referência apresenta as restantes ações e os respetivos ID.
+
 A [referência de configuração](nilesoft-shell.md) explica como permitir o FileSpacer, manter o tema e limitar ao Explorador as regras que lhe são específicas. Após uma alteração, anular e repetir o registo do Nilesoft Shell aplica-a aos menus abertos a partir daí.
 
 O tema Modern abaixo compara os cantos predefinidos com os cantos retos recomendados.
@@ -128,7 +155,7 @@ As atualizações procuram-se em **Definições > Acerca de**. A transferência 
 
 ## Dados locais
 
-Disposições de pastas, bloqueios, pesquisas e histórico de pastas fechadas são guardados localmente em `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. As preferências gerais estão no Registo do Windows, em `HKEY_CURRENT_USER\Software\FileSpacer`. O estado guardado pode conter caminhos de pastas, incluindo caminhos de rede. Os ficheiros temporários de atualização e a lista de pastas a reabrir permanecem em `%TEMP%\FileSpacerUpdate-{GUID}`.
+Disposições de pastas, bloqueios, pesquisas e histórico de pastas fechadas são guardados localmente em `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. As preferências gerais, o menu da barra de título e os grupos de pastas estão no Registo do Windows, em `HKEY_CURRENT_USER\Software\FileSpacer`. O estado guardado pode conter caminhos de pastas, incluindo caminhos de rede. Os ficheiros temporários de atualização e a lista de pastas a reabrir permanecem em `%TEMP%\FileSpacerUpdate-{GUID}`.
 
 **Definições > Acerca de > Manutenção > Repor o estado de todas as pastas** fecha as janelas das pastas e elimina as disposições, históricos e bloqueios guardados. Os ficheiros e as preferências gerais são preservados.
 
