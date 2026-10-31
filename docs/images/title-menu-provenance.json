@@ -1,0 +1,509 @@
+{
+  "application": "FileSpacer",
+  "version": "1.3.0",
+  "date": "2026-10-31",
+  "scenario": "Add Restore the locked layout (1123), remove the distinct Reopen Last Closed Window action (1021), save with a real Enter key, then open the native title-bar menu. Each still shows that resulting menu.",
+  "method": "Real Windows host pixels. ScreenToGif 2.43.2 records the cursor, click highlights and its automatic Key strokes task. No image labels, window contents, backgrounds or frames are redrawn or translated after capture.",
+  "build": {
+    "sourceCommit": "253d33e",
+    "configuration": "Debug",
+    "languageSelection": "Resource-only variants relink the same 41 frozen application objects; neutral icons, manifest, version and accelerators are retained. Selected-language and neutral resource payloads match the final main resources.",
+    "baseExecutableSha256": "D212E8597952D90F04120E6B9EDF308220F8DF24A3087D904B060C76E4BF5E5B",
+    "folderDllSha256": "B7437D7D3467A10276BAE289898639A4DCF0F98E87C7E902C989AE9CC990E567",
+    "iconSha256": "49AC9FAA192D7406DD0DC5F13EC25A510968422A437E0A3D38D1DB233134D8E5"
+  },
+  "environment": "Isolated /test mode, fictional localized folder and file names, native menus with FILESPACER_TEST_NILESOFT=0. The default navigation bar keeps the path visible and Reload to its right. Window-state locking is enabled to demonstrate restoration. Windows-owned breadcrumb labels remain French.",
+  "framing": "Original solid #DCE4EE surface behind the real windows, without changing the Windows wallpaper or host resolution. Record the DWM frame union plus 32px of actual screen on each side, including native shadows. Editor width follows the real localized labels; the folder window, gestures and scene remain the same.",
+  "captureTool": {
+    "name": "ScreenToGif",
+    "version": "2.43.2",
+    "archiveSha256": "42A0B53D67ECAE22698B4881FFB2C9C7A9049663F5FBDD2EDB779E1971000664",
+    "normalShutdownExitCode": 2,
+    "normalShutdownSource": "https://github.com/NickeManarin/ScreenToGif/blob/a4d0a67c2131cd048ceec86cd40afc2f1a06f2fd/ScreenToGif/ViewModel/ApplicationViewModel.cs#L577",
+    "verdictNote": "The original capture runner retains FAIL and recorder exit 2. ScreenToGif explicitly calls Shutdown(2) when its last visible window closes. Media quality, native menu assertions and cleanup are evaluated separately; no historical verdict is relabelled."
+  },
+  "restorationGuard": {
+    "NoOwnedCaptureProcesses": true,
+    "FixtureMappingChecked": true,
+    "RecorderSnapshotRestoredAfterExit": true
+  },
+  "qaLimit": "The auxiliary folder-groups screenshots caught the opening fade. They are not published and do not constitute a complete visual clipping/font check of that dialog.",
+  "languages": [
+    {
+      "language": "en-US",
+      "run": "e0a08e96",
+      "case": "90-title-menu-docs/01-en.ps1",
+      "version": "1.3.0",
+      "executableSha256": "AB1636C3E9B9757D535FA2599EF4A7581033548F64EC08D159AEDF1DF6513240",
+      "files": [
+        {
+          "file": "customize-title-menu.gif",
+          "width": 830,
+          "height": 697,
+          "sha256": "9d3f1c1836ab050bd26c54cde5a6b6271b3cfd1d3260f55f0a101e97f696779e",
+          "bytes": 414047,
+          "frames": 26,
+          "durationMs": 17960,
+          "sourceFrames": 270,
+          "framesWithRecordedKeys": 1,
+          "captureBounds": {
+            "left": 85,
+            "top": 78,
+            "width": 830,
+            "height": 697
+          }
+        },
+        {
+          "file": "customized-title-menu.png",
+          "width": 830,
+          "height": 557,
+          "sha256": "d3339fe3dfcf6ad0fa7ef548656625527822cda284f92088df83d4926578a1dd",
+          "bytes": 28775,
+          "captureBounds": {
+            "Left": 85,
+            "Top": 78,
+            "Right": 915,
+            "Bottom": 635,
+            "Width": 830,
+            "Height": 557
+          }
+        }
+      ],
+      "nativeMenuIds": [
+        1120,
+        1008,
+        1100,
+        1123,
+        1121,
+        1122
+      ],
+      "addedCommand": 1123,
+      "removedCommand": 1021,
+      "mediaInspection": {
+        "nativeLocalizedUi": true,
+        "completeFramesAndMargins": true,
+        "enterOverlayVisible": true,
+        "addedAndRemovedActionsVisible": true
+      },
+      "originalCaptureVerdict": {
+        "status": "FAIL",
+        "workerExitCode": 1,
+        "detail": "ScreenToGif returned 2",
+        "recorderExitCode": 2,
+        "recorderExited": true,
+        "scenarioFailure": null,
+        "cleanupSucceeded": true,
+        "cleanupErrors": [],
+        "recorderProfileRestored": true
+      }
+    },
+    {
+      "language": "fr-FR",
+      "run": "e0a08e96",
+      "case": "90-title-menu-docs/02-fr.ps1",
+      "version": "1.3.0",
+      "executableSha256": "436A1C721CAAD00CC7F9279847AED3CB5FFD019EB2CC6A1FB13EE186F0AFAD42",
+      "files": [
+        {
+          "file": "customize-title-menu-fr.gif",
+          "width": 834,
+          "height": 697,
+          "sha256": "65aa6a81045f6624bde87936325393f759a44ef18ca49d8ce056f6398f98ef73",
+          "bytes": 391574,
+          "frames": 25,
+          "durationMs": 17960,
+          "sourceFrames": 270,
+          "framesWithRecordedKeys": 1,
+          "captureBounds": {
+            "left": 85,
+            "top": 78,
+            "width": 834,
+            "height": 697
+          }
+        },
+        {
+          "file": "customized-title-menu-fr.png",
+          "width": 830,
+          "height": 557,
+          "sha256": "1c21144ab5a31fef479536c50ee8e8e78cbab7b7748826c83db3d6bf8aac886c",
+          "bytes": 29971,
+          "captureBounds": {
+            "Left": 85,
+            "Top": 78,
+            "Right": 915,
+            "Bottom": 635,
+            "Width": 830,
+            "Height": 557
+          }
+        }
+      ],
+      "nativeMenuIds": [
+        1120,
+        1008,
+        1100,
+        1123,
+        1121,
+        1122
+      ],
+      "addedCommand": 1123,
+      "removedCommand": 1021,
+      "mediaInspection": {
+        "nativeLocalizedUi": true,
+        "completeFramesAndMargins": true,
+        "enterOverlayVisible": true,
+        "addedAndRemovedActionsVisible": true
+      },
+      "originalCaptureVerdict": {
+        "status": "FAIL",
+        "workerExitCode": 1,
+        "detail": "ScreenToGif returned 2",
+        "recorderExitCode": 2,
+        "recorderExited": true,
+        "scenarioFailure": null,
+        "cleanupSucceeded": true,
+        "cleanupErrors": [],
+        "recorderProfileRestored": true
+      }
+    },
+    {
+      "language": "de-DE",
+      "run": "e0a08e96",
+      "case": "90-title-menu-docs/03-de.ps1",
+      "version": "1.3.0",
+      "executableSha256": "0E68234ECC30F0A5C8593706AA9D7E17B797AC383318FC6F3432AD85F0C3D3DC",
+      "files": [
+        {
+          "file": "customize-title-menu-de.gif",
+          "width": 923,
+          "height": 697,
+          "sha256": "bdbf18a4291d05af43ba11b23576126227270554056c8c2e60304312cffa383e",
+          "bytes": 396240,
+          "frames": 24,
+          "durationMs": 17980,
+          "sourceFrames": 255,
+          "framesWithRecordedKeys": 1,
+          "captureBounds": {
+            "left": 85,
+            "top": 78,
+            "width": 923,
+            "height": 697
+          }
+        },
+        {
+          "file": "customized-title-menu-de.png",
+          "width": 830,
+          "height": 557,
+          "sha256": "5f75b4ad6372870b7aa49d7c76531df434e1e5d88f48fcd0195a778fbe166a07",
+          "bytes": 30387,
+          "captureBounds": {
+            "Left": 85,
+            "Top": 78,
+            "Right": 915,
+            "Bottom": 635,
+            "Width": 830,
+            "Height": 557
+          }
+        }
+      ],
+      "nativeMenuIds": [
+        1120,
+        1008,
+        1100,
+        1123,
+        1121,
+        1122
+      ],
+      "addedCommand": 1123,
+      "removedCommand": 1021,
+      "mediaInspection": {
+        "nativeLocalizedUi": true,
+        "completeFramesAndMargins": true,
+        "enterOverlayVisible": true,
+        "addedAndRemovedActionsVisible": true
+      },
+      "originalCaptureVerdict": {
+        "status": "FAIL",
+        "workerExitCode": 1,
+        "detail": "ScreenToGif returned 2",
+        "recorderExitCode": 2,
+        "recorderExited": true,
+        "scenarioFailure": null,
+        "cleanupSucceeded": true,
+        "cleanupErrors": [],
+        "recorderProfileRestored": true
+      }
+    },
+    {
+      "language": "it-IT",
+      "run": "e0a08e96",
+      "case": "90-title-menu-docs/04-it.ps1",
+      "version": "1.3.0",
+      "executableSha256": "5EDCF0B685FDD88B5B880A00D4DAAD8E9286DC3EEEF7AD7FE80BAF2243B80F89",
+      "files": [
+        {
+          "file": "customize-title-menu-it.gif",
+          "width": 880,
+          "height": 697,
+          "sha256": "ebbf55d9595017f45b4a294ddcc42db2040d4185e7ece28f18241783c5b1484f",
+          "bytes": 366768,
+          "frames": 26,
+          "durationMs": 17950,
+          "sourceFrames": 269,
+          "framesWithRecordedKeys": 1,
+          "captureBounds": {
+            "left": 85,
+            "top": 78,
+            "width": 880,
+            "height": 697
+          }
+        },
+        {
+          "file": "customized-title-menu-it.png",
+          "width": 830,
+          "height": 557,
+          "sha256": "7e3c0f581f19f8194c610cef716d1871b0460726b227d7cfe3537940d5968180",
+          "bytes": 29815,
+          "captureBounds": {
+            "Left": 85,
+            "Top": 78,
+            "Right": 915,
+            "Bottom": 635,
+            "Width": 830,
+            "Height": 557
+          }
+        }
+      ],
+      "nativeMenuIds": [
+        1120,
+        1008,
+        1100,
+        1123,
+        1121,
+        1122
+      ],
+      "addedCommand": 1123,
+      "removedCommand": 1021,
+      "mediaInspection": {
+        "nativeLocalizedUi": true,
+        "completeFramesAndMargins": true,
+        "enterOverlayVisible": true,
+        "addedAndRemovedActionsVisible": true
+      },
+      "originalCaptureVerdict": {
+        "status": "FAIL",
+        "workerExitCode": 1,
+        "detail": "ScreenToGif returned 2",
+        "recorderExitCode": 2,
+        "recorderExited": true,
+        "scenarioFailure": null,
+        "cleanupSucceeded": true,
+        "cleanupErrors": [],
+        "recorderProfileRestored": true
+      }
+    },
+    {
+      "language": "es-ES",
+      "run": "e0a08e96",
+      "case": "90-title-menu-docs/05-es.ps1",
+      "version": "1.3.0",
+      "executableSha256": "882D0AEB6FE3EB70D937D97DABCF0B5B24E62FCBE5BC725F5683B6A6487834B0",
+      "files": [
+        {
+          "file": "customize-title-menu-es.gif",
+          "width": 857,
+          "height": 697,
+          "sha256": "210ffbad036257cf96bdb1b82fec5910164ecb86b971f93928b0998502109ea9",
+          "bytes": 386086,
+          "frames": 24,
+          "durationMs": 17900,
+          "sourceFrames": 263,
+          "framesWithRecordedKeys": 1,
+          "captureBounds": {
+            "left": 85,
+            "top": 78,
+            "width": 857,
+            "height": 697
+          }
+        },
+        {
+          "file": "customized-title-menu-es.png",
+          "width": 830,
+          "height": 557,
+          "sha256": "7355046f13fd9ad9f30dea61a58b24c269435799e18c4254b8154b40db989bd6",
+          "bytes": 30987,
+          "captureBounds": {
+            "Left": 85,
+            "Top": 78,
+            "Right": 915,
+            "Bottom": 635,
+            "Width": 830,
+            "Height": 557
+          }
+        }
+      ],
+      "nativeMenuIds": [
+        1120,
+        1008,
+        1100,
+        1123,
+        1121,
+        1122
+      ],
+      "addedCommand": 1123,
+      "removedCommand": 1021,
+      "mediaInspection": {
+        "nativeLocalizedUi": true,
+        "completeFramesAndMargins": true,
+        "enterOverlayVisible": true,
+        "addedAndRemovedActionsVisible": true
+      },
+      "originalCaptureVerdict": {
+        "status": "FAIL",
+        "workerExitCode": 1,
+        "detail": "ScreenToGif returned 2",
+        "recorderExitCode": 2,
+        "recorderExited": true,
+        "scenarioFailure": null,
+        "cleanupSucceeded": true,
+        "cleanupErrors": [],
+        "recorderProfileRestored": true
+      }
+    },
+    {
+      "language": "pt-PT",
+      "run": "e0a08e96",
+      "case": "90-title-menu-docs/06-pt.ps1",
+      "version": "1.3.0",
+      "executableSha256": "288438E6C1173EF3C841FF324B80875D91A969170820C6C1D6FCB0510AD159C4",
+      "files": [
+        {
+          "file": "customize-title-menu-pt.gif",
+          "width": 830,
+          "height": 697,
+          "sha256": "1fa6109b1a99973e19567b4dffe67e4a0ea7f57dc0b2565688f605e9f993e873",
+          "bytes": 441387,
+          "frames": 26,
+          "durationMs": 17980,
+          "sourceFrames": 270,
+          "framesWithRecordedKeys": 1,
+          "captureBounds": {
+            "left": 85,
+            "top": 78,
+            "width": 830,
+            "height": 697
+          }
+        },
+        {
+          "file": "customized-title-menu-pt.png",
+          "width": 830,
+          "height": 557,
+          "sha256": "7493dd582170f2eba8e43ec73624fb1257f4ba9b9b1eef799489b2bd622bc313",
+          "bytes": 31316,
+          "captureBounds": {
+            "Left": 85,
+            "Top": 78,
+            "Right": 915,
+            "Bottom": 635,
+            "Width": 830,
+            "Height": 557
+          }
+        }
+      ],
+      "nativeMenuIds": [
+        1120,
+        1008,
+        1100,
+        1123,
+        1121,
+        1122
+      ],
+      "addedCommand": 1123,
+      "removedCommand": 1021,
+      "mediaInspection": {
+        "nativeLocalizedUi": true,
+        "completeFramesAndMargins": true,
+        "enterOverlayVisible": true,
+        "addedAndRemovedActionsVisible": true
+      },
+      "originalCaptureVerdict": {
+        "status": "FAIL",
+        "workerExitCode": 1,
+        "detail": "ScreenToGif returned 2",
+        "recorderExitCode": 2,
+        "recorderExited": true,
+        "scenarioFailure": null,
+        "cleanupSucceeded": true,
+        "cleanupErrors": [],
+        "recorderProfileRestored": true
+      }
+    },
+    {
+      "language": "el-GR",
+      "run": "e0a08e96",
+      "case": "90-title-menu-docs/07-el.ps1",
+      "version": "1.3.0",
+      "executableSha256": "97DFED26696F7905EEC61438BEAEA06FAED01D6CBD589DE7028DB0721088F784",
+      "files": [
+        {
+          "file": "customize-title-menu-el.gif",
+          "width": 969,
+          "height": 697,
+          "sha256": "2c754200bcb74fb0b158bf23c06109c4c199d6e7b1fd7b7fbbe155304846d2e2",
+          "bytes": 455886,
+          "frames": 25,
+          "durationMs": 17940,
+          "sourceFrames": 262,
+          "framesWithRecordedKeys": 1,
+          "captureBounds": {
+            "left": 85,
+            "top": 78,
+            "width": 969,
+            "height": 697
+          }
+        },
+        {
+          "file": "customized-title-menu-el.png",
+          "width": 830,
+          "height": 557,
+          "sha256": "15233834cfec081c9d52a5d998011320c184ffd4654a6fd48d0235230ee29e5c",
+          "bytes": 31276,
+          "captureBounds": {
+            "Left": 85,
+            "Top": 78,
+            "Right": 915,
+            "Bottom": 635,
+            "Width": 830,
+            "Height": 557
+          }
+        }
+      ],
+      "nativeMenuIds": [
+        1120,
+        1008,
+        1100,
+        1123,
+        1121,
+        1122
+      ],
+      "addedCommand": 1123,
+      "removedCommand": 1021,
+      "mediaInspection": {
+        "nativeLocalizedUi": true,
+        "completeFramesAndMargins": true,
+        "enterOverlayVisible": true,
+        "addedAndRemovedActionsVisible": true
+      },
+      "originalCaptureVerdict": {
+        "status": "FAIL",
+        "workerExitCode": 1,
+        "detail": "ScreenToGif returned 2",
+        "recorderExitCode": 2,
+        "recorderExited": true,
+        "scenarioFailure": null,
+        "cleanupSucceeded": true,
+        "cleanupErrors": [],
+        "recorderProfileRestored": true
+      }
+    }
+  ]
+}
