@@ -2,6 +2,13 @@
 
 ## Por publicar
 
+## 1.3.0 — 2026-10-31
+
+- Personaliza o menu da barra de título em sete idiomas, com arrastar e largar, predefinições e aparência nativa ou do Nilesoft Shell.
+- Adiciona ações sobre disposições guardadas, ajuste ao conteúdo, fecho de janelas descendentes ou de outras janelas, grupos de pastas com nome e comandos estáveis do Nilesoft.
+- Corrige a desinstalação para que prossiga se a limpeza da ajuda falhar e a deteção de vários processos Explorer na mesma sessão de ambiente de trabalho nos testes da VM.
+- Corrige as junções entre as faces verdes do ícone e atualiza os guias multilingues e as demonstrações do menu.
+
 ## 1.2.3 — 2026-10-30
 
 - Corrige as identidades, as sobreposições de ícones e as notificações de pastas na ordenação mista; conserva as posições livres dos ícones e usa vistas nativas quando o fornecedor está indisponível ou é incompatível.

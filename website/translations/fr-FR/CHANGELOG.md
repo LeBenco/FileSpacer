@@ -2,6 +2,13 @@
 
 ## À venir
 
+## 1.3.0 — 2026-10-31
+
+- Personnaliser le menu de barre de titre dans sept langues, avec glisser-déposer, réglages par défaut et apparence native ou Nilesoft Shell.
+- Ajouter les actions sur les dispositions enregistrées, l’ajustement au contenu, la fermeture des fenêtres descendantes ou des autres fenêtres, les groupes de dossiers nommés et des commandes Nilesoft stables.
+- Corriger la désinstallation pour qu’elle se poursuive si le nettoyage de l’aide échoue, ainsi que la détection de plusieurs processus Explorer dans une même session par les tests VM.
+- Corriger les jointures entre les faces vertes de l’icône et actualiser les guides multilingues et les démonstrations du menu.
+
 ## 1.2.3 — 2026-10-30
 
 - Corriger les identités, les surimpressions d’icônes et les notifications de dossiers du tri mixte ; conserver les positions libres des icônes et utiliser les vues natives si le fournisseur est indisponible ou incompatible.
