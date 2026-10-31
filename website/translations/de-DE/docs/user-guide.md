@@ -76,6 +76,10 @@ Das Menü lässt sich unter **Einstellungen > Anzeige > Oberflächenelemente > T
 
 Von Nilesoft Shell verwaltete Einträge lassen sich hier nicht ändern, da dessen Regeln Vorrang haben. Siehe [Nilesoft-Shell-Integration](#nilesoft-shell).
 
+![Eine Aktion zum Titelleistenmenü hinzufügen und eine andere entfernen.](images/customize-title-menu.gif)
+
+![Das Titelleistenmenü mit der Aktion Gesperrtes Fensterlayout wiederherstellen.](images/customized-title-menu.png)
+
 - **Gesperrtes Fensterlayout wiederherstellen** setzt das aktuelle Fenster auf sein Referenzlayout zurück, ohne es zu schließen oder seine Auswahl zu ändern. **Referenzlayout ersetzen** speichert die aktuelle Position, Größe und Ansicht nach Bestätigung als neue gesperrte Referenz.
 
 - **Layout dieses Ordners verwerfen** entfernt das gespeicherte Layout und die Sperre, behält aber den Suchverlauf. Das Fenster bleibt an seiner Position und speichert bis zum Schließen kein Layout mehr; beim nächsten Öffnen gelten die Standardwerte. Das Sperren eines neuen Layouts aktiviert das Speichern wieder.

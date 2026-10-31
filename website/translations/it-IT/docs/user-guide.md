@@ -76,6 +76,10 @@ Il menu si personalizza in **Impostazioni > Visualizzazione > Elementi dell’in
 
 Le voci gestite da Nilesoft Shell non possono essere modificate qui, perché le sue regole hanno la precedenza. Vedere l’[integrazione con Nilesoft Shell](#nilesoft-shell).
 
+![Aggiunta di un’azione al menu della barra del titolo e rimozione di un’altra.](images/customize-title-menu.gif)
+
+![Il menu della barra del titolo con l’azione Ripristina la disposizione bloccata.](images/customized-title-menu.png)
+
 - **Ripristina la disposizione bloccata** riporta la finestra alla disposizione di riferimento senza chiuderla né cambiarne la selezione. **Sostituisci la disposizione di riferimento** salva, dopo conferma, la posizione, le dimensioni e le impostazioni di visualizzazione attuali come nuovo riferimento bloccato.
 
 - **Rimuovi la disposizione salvata della cartella** elimina la disposizione e il blocco, mantenendo la cronologia delle ricerche. La finestra resta al suo posto e smette di salvare la disposizione fino alla chiusura; all’apertura successiva vengono usati i valori predefiniti. Bloccare una nuova disposizione ne riattiva il salvataggio.

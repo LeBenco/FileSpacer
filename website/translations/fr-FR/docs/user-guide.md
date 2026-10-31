@@ -76,6 +76,10 @@ Le menu se personnalise dans **Paramètres > Affichage > Éléments de l’inter
 
 Les entrées gérées par Nilesoft Shell ne sont pas modifiables ici, car ses règles sont prioritaires. Voir l’[intégration Nilesoft Shell](#nilesoft-shell).
 
+![Ajout d’une action au menu de barre de titre, puis retrait d’une autre.](images/customize-title-menu.gif)
+
+![Le menu de barre de titre avec l’action Rétablir la disposition verrouillée.](images/customized-title-menu.png)
+
 - **Rétablir la disposition verrouillée** ramène la fenêtre à sa disposition de référence, sans la fermer ni changer sa sélection. **Remplacer la disposition de référence** enregistre sa position, sa taille et son affichage actuels comme nouvelle référence verrouillée, après confirmation.
 
 - **Oublier la disposition de ce dossier** retire sa disposition enregistrée et son verrouillage, en conservant l’historique des recherches. La fenêtre reste en place et cesse d’enregistrer sa disposition jusqu’à sa fermeture ; la prochaine ouverture utilise les réglages par défaut. Verrouiller une nouvelle disposition réactive son enregistrement.
