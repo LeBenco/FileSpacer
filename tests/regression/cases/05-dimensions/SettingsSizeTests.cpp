@@ -9,6 +9,7 @@
 
 #include "Settings.h"
 #include "SettingsDialog.h"
+#include "TitleMenu.h"
 #include "UIStrings.h"
 #include <commctrl.h>
 #include <prsht.h>
@@ -42,6 +43,9 @@ TEST_OPTION(MixedFolderSorting, 9)
 #undef TEST_OPTION
 }
 void notifyWindowSettingsChanged() { ++notifications; }
+void openTitleMenuDialog(HWND) {
+    require(false, "title-menu editing is outside the settings dimension harness");
+}
 }
 
 HRESULT CALLBACK dismissError(HWND dialog, UINT message, WPARAM, LPARAM, LONG_PTR) {
