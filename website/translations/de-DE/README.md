@@ -32,6 +32,7 @@ Keine Telemetrie, Nutzungsverfolgung oder Werbung. Update-Prüfungen verbinden s
 - **Den aktuellen Ordner filtern** und seine letzten Suchanfragen wiederverwenden. [Suche und Verlauf](docs/user-guide.md#search-and-history).
 - **Die Auswahl beim Aktivieren eines Fensters beibehalten**, wenn Sie auf dessen Hintergrund klicken. [Auswahl und Aktivierung](docs/user-guide.md#selection-and-activation).
 - **Fensterüberlappungen verringern**, wenn Ordner ohne gespeicherte Position geöffnet werden. [Fensterpositionierung](docs/user-guide.md#window-placement).
+- **Das Titelleistenmenü anpassen** und Gruppen geöffneter Ordner speichern. [Menü anpassen](docs/user-guide.md#titelleistenmenü-anpassen) · [Ordnergruppen](docs/user-guide.md#ordnergruppen).
 
 ## Integration
 

@@ -32,6 +32,7 @@ Aucune télémétrie, aucun suivi d’usage ni publicité. Les vérifications de
 - **Filtrer le dossier courant** et réutiliser ses recherches récentes. [Recherche et historique](docs/user-guide.md#search-and-history).
 - **Conserver la sélection à l’activation d’une fenêtre** en cliquant sur son arrière-plan. [Sélection et activation](docs/user-guide.md#selection-and-activation).
 - **Réduire le chevauchement des fenêtres** lors de l’ouverture de dossiers sans position enregistrée. [Placement des fenêtres](docs/user-guide.md#window-placement).
+- **Personnaliser le menu de la barre de titre** avec des actions sur les fenêtres et leur disposition, et enregistrer des groupes de dossiers ouverts. [Personnalisation du menu](docs/user-guide.md#personnaliser-le-menu-de-la-barre-de-titre) · [Groupes de dossiers](docs/user-guide.md#groupes-de-dossiers).
 
 ## Intégration
 
