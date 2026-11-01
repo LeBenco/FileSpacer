@@ -183,6 +183,8 @@ BEGIN
   IDS_SEARCH_EVERYTHING "Cerca in Everything"
   IDS_SEARCH_MENU "Everything e ricerche recenti"
   IDS_EVERYTHING_ERROR "Impossibile avviare Everything.\nControlla il percorso in Impostazioni > Integrazione.\n\nEseguibile: %1!s!\nErrore %2!u!: %3!s!"
+  IDS_PEEK_ERROR "Impossibile avviare PowerToys Peek.\nL’anteprima di più file richiede PowerToys 0.102 o successivo.\n\nEseguibile: %1!s!\nErrore %2!u!: %3!s!"
+  IDS_PEEK_SETTINGS_ERROR "Impossibile aprire le impostazioni di Peek in PowerToys.\n\n%1!s!"
   IDS_EVERYTHING_AUTO "Rilevamento automatico"
   IDS_EVERYTHING_FOLDER "Cartella corrente e sottocartelle"
   IDS_EVERYTHING_EVERYWHERE "Ovunque"

@@ -183,6 +183,8 @@ BEGIN
   IDS_SEARCH_EVERYTHING "Search in Everything"
   IDS_SEARCH_MENU "Everything and recent searches"
   IDS_EVERYTHING_ERROR "Everything could not be started.\nCheck its path in Settings > Integration.\n\nExecutable: %1!s!\nError %2!u!: %3!s!"
+  IDS_PEEK_ERROR "PowerToys Peek could not be started.\nPreviewing multiple files requires PowerToys 0.102 or later.\n\nExecutable: %1!s!\nError %2!u!: %3!s!"
+  IDS_PEEK_SETTINGS_ERROR "Could not open the Peek settings in PowerToys.\n\n%1!s!"
   IDS_EVERYTHING_AUTO "Automatic detection"
   IDS_EVERYTHING_FOLDER "Current folder and subfolders"
   IDS_EVERYTHING_EVERYWHERE "Everywhere"

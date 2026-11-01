@@ -183,6 +183,8 @@ BEGIN
   IDS_SEARCH_EVERYTHING "Pesquisar no Everything"
   IDS_SEARCH_MENU "Everything e pesquisas recentes"
   IDS_EVERYTHING_ERROR "Não foi possível iniciar o Everything.\nVerifique o caminho em Definições > Integração.\n\nExecutável: %1!s!\nErro %2!u!: %3!s!"
+  IDS_PEEK_ERROR "Não foi possível iniciar o PowerToys Peek.\nA pré-visualização de vários ficheiros requer o PowerToys 0.102 ou posterior.\n\nExecutável: %1!s!\nErro %2!u!: %3!s!"
+  IDS_PEEK_SETTINGS_ERROR "Não foi possível abrir as definições do Peek no PowerToys.\n\n%1!s!"
   IDS_EVERYTHING_AUTO "Deteção automática"
   IDS_EVERYTHING_FOLDER "Pasta atual e subpastas"
   IDS_EVERYTHING_EVERYWHERE "Em todo o lado"
