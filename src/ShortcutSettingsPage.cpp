@@ -13,6 +13,8 @@
 #include <initguid.h>
 #include <oleacc.h>
 #include <atlbase.h>
+#include <shlwapi.h>
+#include <shellapi.h>
 #include <array>
 #include <memory>
 #include <string>
@@ -28,18 +30,40 @@ constexpr int headerIds[] = {IDC_SHORTCUT_MOVE, IDC_SHORTCUT_RESIZE};
 constexpr int enableIds[] = {IDC_SHORTCUT_ENABLE_MOVE, IDC_SHORTCUT_ENABLE_RESIZE};
 constexpr UINT nameIds[] = {IDS_SHORTCUT_MOVE, IDS_SHORTCUT_RESIZE};
 
+void openPowerToysGrabAndMove(HWND owner) {
+    std::wstring executable(32768, L'\0');
+    DWORD length = static_cast<DWORD>(executable.size());
+    const HRESULT found = AssocQueryStringW(ASSOCF_IS_PROTOCOL, ASSOCSTR_EXECUTABLE,
+        L"powertoys", L"open", &executable[0], &length);
+    if (SUCCEEDED(found) && !PathIsRelativeW(executable.c_str())
+            && lstrcmpiW(PathFindFileNameW(executable.c_str()), L"PowerToys.exe") == 0) {
+        SHELLEXECUTEINFOW launch = {sizeof(launch)};
+        launch.fMask = SEE_MASK_FLAG_NO_UI;
+        launch.hwnd = owner; launch.lpVerb = L"open"; launch.lpFile = executable.c_str();
+        launch.lpParameters = L"--open-settings=GrabAndMove"; launch.nShow = SW_SHOWNORMAL;
+        if (ShellExecuteExW(&launch)) return;
+    }
+    MessageBoxW(owner, getString(IDS_SHORTCUT_POWERTOYS_OPEN_ERROR), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
+}
+
 class ShortcutPage {
 public:
     HWND page = nullptr, editor = nullptr;
     WindowShortcuts saved = settings::getWindowShortcuts(), pending = saved;
     int selected = -1, hot = -1;
-    bool recording = false, warning = false;
+    bool recording = false, warning = false, powerToysActive = false;
     UINT captureUp = 0;
     std::array<RECT, 2> frames = {};
     std::array<std::wstring, 2> captions;
     CComPtr<IAccPropServices> accessibility;
     FontPtr icons;
 
+    void updatePowerToysNotice() {
+        SetDlgItemTextW(page, IDC_SHORTCUT_POWERTOYS, getString(IDS_SHORTCUT_POWERTOYS_NOTICE));
+        HWND owner = GetWindow(GetParent(page), GW_OWNER);
+        powerToysActive = settings::powerToysOverridesWindowGestures(owner ? owner : GetParent(page));
+        ShowWindow(GetDlgItem(page, IDC_SHORTCUT_POWERTOYS), powerToysActive ? SW_SHOWNA : SW_HIDE);
+    }
     WindowShortcut &binding(int index) { return index == 0 ? pending.move : pending.resize; }
     const WindowShortcut &previous(int index) const { return index == 0 ? saved.move : saved.resize; }
     HWND child(int id) const { return GetDlgItem(editor, id); }
@@ -53,7 +77,7 @@ public:
             SWP_NOZORDER | SWP_NOACTIVATE);
     }
     void layout() {
-        int y = 24;
+        int y = powerToysActive ? 84 : 24;
         for (int i = 0; i < 2; ++i) {
             const int top = y;
             place(GetDlgItem(page, enableIds[i]), 14, y + 5, 12, 12);
@@ -308,13 +332,17 @@ INT_PTR CALLBACK shortcutsProc(HWND window, UINT message, WPARAM wParam, LPARAM 
             SetWindowSubclass(GetDlgItem(window, headerIds[i]), headerProc, 1, reinterpret_cast<DWORD_PTR>(self));
         }
         SetWindowSubclass(self->child(IDC_SHORTCUT_CAPTURE), captureProc, 1, reinterpret_cast<DWORD_PTR>(self));
-        self->update(); self->layout(); return TRUE;
+        self->updatePowerToysNotice(); self->update(); self->layout(); return TRUE;
     }
     if (!self) return FALSE;
     if (message == WM_COMMAND) { self->command(LOWORD(wParam)); return TRUE; }
     if (message == WM_NOTIFY) {
         const auto notification = reinterpret_cast<NMHDR *>(lParam);
-        if (notification->code == PSN_SETACTIVE) self->update();
+        if (notification->idFrom == IDC_SHORTCUT_POWERTOYS
+                && (notification->code == NM_CLICK || notification->code == NM_RETURN)) {
+            openPowerToysGrabAndMove(GetParent(window)); return TRUE;
+        }
+        if (notification->code == PSN_SETACTIVE) { self->updatePowerToysNotice(); self->update(); self->layout(); }
         else if (notification->code == PSN_KILLACTIVE) {
             const bool invalid = !validShortcuts(self->pending);
             if (invalid) self->explainInvalid();
