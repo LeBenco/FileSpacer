@@ -219,3 +219,9 @@ BEGIN
   IDS_GROUPS_DELETE_CONFIRM "Eliminar este grupo de pastas guardado? As pastas serão mantidas."
   IDS_GROUPS_OPEN_ERROR "Não foi possível abrir algumas pastas do grupo."
 END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Não foi possível abrir as definições do Grab And Move. Abra o PowerToys e selecione Grab And Move."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "O Grab And Move está ativado nas definições do PowerToys. Enquanto esta opção estiver ativada, os atalhos do FileSpacer abaixo não são aplicados. Pode continuar a usá-los adicionando o FileSpacer à <a>lista de exclusão do Grab And Move</a>."
+END

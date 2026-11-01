@@ -219,3 +219,9 @@ BEGIN
   IDS_GROUPS_DELETE_CONFIRM "Να διαγραφεί αυτή η αποθηκευμένη ομάδα φακέλων; Οι φάκελοι θα διατηρηθούν."
   IDS_GROUPS_OPEN_ERROR "Δεν ήταν δυνατό το άνοιγμα ορισμένων φακέλων της ομάδας."
 END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Δεν είναι δυνατό το άνοιγμα των ρυθμίσεων του Grab And Move. Ανοίξτε το PowerToys και επιλέξτε Grab And Move."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Το Grab And Move είναι ενεργοποιημένο στις ρυθμίσεις του PowerToys. Όσο αυτή η επιλογή είναι ενεργή, οι παρακάτω συντομεύσεις του FileSpacer δεν εφαρμόζονται. Μπορείτε να τις χρησιμοποιείτε προσθέτοντας το FileSpacer στη <a>λίστα εξαιρέσεων του Grab And Move</a>."
+END
