@@ -87,6 +87,8 @@ void setLiveNameSearch(bool value);
 DWORD getSearchHistoryLimit();
 bool setSearchHistoryLimit(DWORD value);
 bool getEverythingEnabled();
+bool getPeekEnabled();
+void setPeekEnabled(bool value);
 void setEverythingEnabled(bool value);
 wstr_ptr getEverythingPath(); // Empty selects automatic detection.
 void setEverythingPath(wchar_t *value);
