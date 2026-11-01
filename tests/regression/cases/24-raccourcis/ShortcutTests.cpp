@@ -10,14 +10,52 @@
 #include <objbase.h>
 #include <initguid.h>
 #include <oleacc.h>
+#include <shlobj.h>
+#include <knownfolders.h>
+#include <shlwapi.h>
+#include <shellapi.h>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include <fstream>
 
 using namespace filespacer;
 
 namespace {
 int refusalDialogs = 0;
+std::wstring powerToysLocalAppData;
+HWND powerToysForeground = nullptr;
+int powerToysReads = 0, powerToysLaunches = 0, powerToysErrors = 0;
+HRESULT powerToysAssociation = S_OK;
+BOOL powerToysLaunchResult = TRUE;
+std::wstring powerToysLaunchedPath, powerToysLaunchedArguments;
+HRESULT testKnownFolderPath(REFKNOWNFOLDERID folder, DWORD, HANDLE, PWSTR *path) {
+    ++powerToysReads;
+    if (folder != FOLDERID_LocalAppData || powerToysLocalAppData.empty()) return E_UNEXPECTED;
+    return SHStrDupW(powerToysLocalAppData.c_str(), path);
+}
+BOOL testProcessImage(HANDLE process, DWORD flags, LPWSTR path, PDWORD size) {
+    if (process != GetCurrentProcess()) return QueryFullProcessImageNameW(process, flags, path, size);
+    const wchar_t executable[] = L"C:\\Program Files\\FileSpacer\\FileSpacer.exe";
+    if (wcscpy_s(path, *size, executable)) return FALSE;
+    *size = _countof(executable) - 1; return TRUE;
+}
+HWND testForegroundWindow() { return powerToysForeground; }
+HRESULT testPowerToysAssociation(ASSOCF flags, ASSOCSTR type, LPCWSTR scheme, LPCWSTR verb, LPWSTR path, DWORD *size) {
+    if (flags != ASSOCF_IS_PROTOCOL || type != ASSOCSTR_EXECUTABLE
+            || wcscmp(scheme, L"powertoys") || wcscmp(verb, L"open")) return E_INVALIDARG;
+    if (FAILED(powerToysAssociation)) return powerToysAssociation;
+    const wchar_t executable[] = L"C:\\Program Files\\PowerToys\\PowerToys.exe";
+    if (wcscpy_s(path, *size, executable)) return E_POINTER;
+    *size = _countof(executable); return S_OK;
+}
+BOOL testPowerToysLaunch(SHELLEXECUTEINFOW *launch) {
+    ++powerToysLaunches;
+    powerToysLaunchedPath = launch->lpFile;
+    powerToysLaunchedArguments = launch->lpParameters;
+    return powerToysLaunchResult;
+}
+int testPowerToysError(HWND, LPCWSTR, LPCWSTR, UINT) { ++powerToysErrors; return IDOK; }
 HRESULT CALLBACK dismissRefusal(HWND dialog, UINT message, WPARAM, LPARAM, LONG_PTR) {
     if (message == TDN_CREATED) {
         ++refusalDialogs;
@@ -35,10 +73,24 @@ HRESULT capturedTaskDialog(HWND owner, HINSTANCE instance, LPCWSTR title, LPCWST
     return TaskDialogIndirect(&config, button, nullptr, nullptr);
 }
 }
-// Keep the real page and native error dialog, adding only the acknowledgement
-// callback used by the dimensions harness so exhaustive rejections can finish.
+// Keep production settings, page and native controls. Redirect PowerToys files,
+// process identity and launches at their API boundaries; never use real settings.
+// Acknowledge native refusal dialogs so exhaustive rejections can finish.
 #define TaskDialog capturedTaskDialog
+#define SHGetKnownFolderPath testKnownFolderPath
+#define QueryFullProcessImageNameW testProcessImage
+#define GetForegroundWindow testForegroundWindow
+#include "Settings.cpp"
+#undef GetForegroundWindow
+#undef QueryFullProcessImageNameW
+#define AssocQueryStringW testPowerToysAssociation
+#define ShellExecuteExW testPowerToysLaunch
+#define MessageBoxW testPowerToysError
 #include "ShortcutSettingsPage.cpp"
+#undef MessageBoxW
+#undef ShellExecuteExW
+#undef AssocQueryStringW
+#undef SHGetKnownFolderPath
 #undef TaskDialog
 
 namespace {
@@ -105,6 +157,130 @@ LONG_PTR notify(UINT code) {
     const LONG_PTR result = SendMessageW(page, WM_NOTIFY, 0, reinterpret_cast<LPARAM>(&notification));
     pump(); // Finish dialog/owner notifications before editing the next pair.
     return result;
+}
+void writePowerToysFixture(const std::wstring &path, const char *text) {
+    std::ofstream file(path.c_str(), std::ios::binary);
+    file << text; file.close();
+    require(!file.fail(), "write isolated PowerToys fixture");
+}
+void powerToysLink() {
+    NMHDR link = {}; link.hwndFrom = GetDlgItem(page, IDC_SHORTCUT_POWERTOYS);
+    link.idFrom = IDC_SHORTCUT_POWERTOYS;
+    for (UINT action : {static_cast<UINT>(NM_CLICK), static_cast<UINT>(NM_RETURN)}) {
+        link.code = action;
+        SendMessageW(page, WM_NOTIFY, link.idFrom, reinterpret_cast<LPARAM>(&link));
+    }
+    require(powerToysLaunches == 2 && powerToysErrors == 0, "mouse and keyboard activate the native link");
+    require(powerToysLaunchedPath == L"C:\\Program Files\\PowerToys\\PowerToys.exe"
+        && powerToysLaunchedArguments == L"--open-settings=GrabAndMove", "link uses the registered executable and exact supported page argument");
+    powerToysAssociation = HRESULT_FROM_WIN32(ERROR_NO_ASSOCIATION);
+    SendMessageW(page, WM_NOTIFY, link.idFrom, reinterpret_cast<LPARAM>(&link));
+    require(powerToysLaunches == 2 && powerToysErrors == 1, "missing association reports an error without launching anything");
+    powerToysAssociation = S_OK; powerToysLaunchResult = FALSE;
+    SendMessageW(page, WM_NOTIFY, link.idFrom, reinterpret_cast<LPARAM>(&link));
+    require(powerToysLaunches == 3 && powerToysErrors == 2, "launch failure is reported");
+    powerToysLaunchResult = TRUE;
+}
+void powerToysNotice() {
+    const std::wstring path = powerToysLocalAppData + L"\\Microsoft\\PowerToys\\settings.json";
+    HWND notice = GetDlgItem(page, IDC_SHORTCUT_POWERTOYS);
+    require(notice && !IsWindowVisible(notice), "absent PowerToys settings show no activation notice");
+    require(!settings::powerToysOverridesWindowGestures(sheet), "missing settings are harmless");
+    const std::pair<const char *, bool> cases[] = {
+        {"{\"enabled\":{\"GrabAndMove\":true}}", true},
+        {"\xef\xbb\xbf{\"enabled\":{\"GrabAndMove\":true},\"theme\":\"syst\xc3\xa8me\"}", true},
+        {"{\"enabled\":{\"GrabAndMove\":false}}", false},
+        {"{\"enabled\":{\"FancyZones\":true},\"GrabAndMove\":true}", false},
+        {"{\"enabled\":{\"GrabAndMove\":\"true\"}}", false},
+        {"{\"enabled\":{\"GrabAndMove\":true}", false},
+        {"{\"enabled\":{\"GrabAndMove\":true},\"bad\":\"\xff\"}", false},
+        {"", false}
+    };
+    const DWORD saved = registryValue();
+    for (const auto &test : cases) {
+        writePowerToysFixture(path, test.first);
+        require(settings::powerToysOverridesWindowGestures(sheet) == test.second, "parse actual PowerToys JSON with native Windows parser");
+        require(settings::windowShortcutApplies(DEFAULT_WINDOW_SHORTCUTS.move, GestureButton::Left, GestureAlt, sheet) == !test.second,
+            "PowerToys option suspends and restores application of movement without rewriting the saved binding");
+        require(settings::windowShortcutApplies(DEFAULT_WINDOW_SHORTCUTS.resize, GestureButton::Right, GestureAlt, sheet) == !test.second,
+            "PowerToys option suspends and restores application of resizing without rewriting the saved binding");
+        const int reads = powerToysReads;
+        require(!settings::windowShortcutApplies(DEFAULT_WINDOW_SHORTCUTS.move, GestureButton::Left, GestureCtrl, sheet),
+            "nonmatching gestures remain inapplicable");
+        require(powerToysReads == reads, "nonmatching mouse events do not read PowerToys settings");
+        notify(PSN_SETACTIVE);
+        require((IsWindowVisible(notice) != FALSE) == test.second, "notice refreshes when the Shortcuts page is activated");
+        require(registryValue() == saved, "PowerToys detection leaves FileSpacer shortcuts unchanged");
+        if (test.second) {
+            wchar_t text[512] = {};
+            GetWindowTextW(notice, text, _countof(text));
+            require(std::wstring(text) == getString(IDS_SHORTCUT_POWERTOYS_NOTICE), "complete localized notice is not truncated");
+            require(std::wstring(text).find(L"PowerToys") != std::wstring::npos
+                && std::wstring(text).find(L"FileSpacer") != std::wstring::npos, "notice identifies PowerToys and FileSpacer shortcuts");
+            RECT bounds = {}; GetClientRect(notice, &bounds);
+            SIZE ideal = {};
+            require(SendMessageW(notice, LM_GETIDEALSIZE, bounds.right, reinterpret_cast<LPARAM>(&ideal)) > 0
+                && ideal.cy <= bounds.bottom, "localized markup fits the actual native SysLink control");
+            RECT noticeBounds = {}, moveBounds = {}, resizeBounds = {}, revertBounds = {};
+            GetWindowRect(notice, &noticeBounds);
+            GetWindowRect(GetDlgItem(page, IDC_SHORTCUT_MOVE), &moveBounds);
+            require(noticeBounds.bottom < moveBounds.top, "notice is above both option areas");
+            open(0); click(editor, IDC_SHORTCUT_RECORD);
+            GetWindowRect(GetDlgItem(page, IDC_SHORTCUT_RESIZE), &resizeBounds);
+            GetWindowRect(GetDlgItem(page, IDC_SHORTCUT_REVERT), &revertBounds);
+            require(resizeBounds.bottom < revertBounds.top, "expanded recording editor fits below notice and above Revert");
+            click(editor, IDC_SHORTCUT_RECORD); click(page, IDC_SHORTCUT_MOVE); openSection = -1;
+        }
+    }
+    writePowerToysFixture(path, "{\"enabled\":{\"GrabAndMove\":true}}");
+    notify(PSN_SETACTIVE); powerToysLink();
+    require(DeleteFileW(path.c_str()) != FALSE, "remove only the isolated PowerToys fixture");
+    notify(PSN_SETACTIVE);
+    std::printf("PASS: PowerToys JSON detection, localized notice and tab refresh\n");
+}
+void powerToysExclusions() {
+    const std::wstring general = powerToysLocalAppData + L"\\Microsoft\\PowerToys\\settings.json";
+    const std::wstring module = powerToysLocalAppData + L"\\Microsoft\\PowerToys\\GrabAndMove\\settings.json";
+    writePowerToysFixture(general, "{\"enabled\":{\"GrabAndMove\":true}}");
+    struct ExclusionCase { const char *json; bool overrides; bool foreground; };
+    const ExclusionCase cases[] = {
+        {"{}", true, true},
+        {"{\"properties\":{\"excluded_apps\":{\"value\":\"FileSpacer.exe\"}}}", false, true},
+        {"{\"properties\":{\"excluded_apps\":{\"value\":\"filespacer\"}}}", false, true},
+        {"{\"properties\":{\"excluded_apps\":{\"value\":\"Other.exe\\r\\n \\tFILESPACER.EXE\\n\"}}}", false, true},
+        {"{\"properties\":{\"excluded_apps\":{\"value\":\"FileSpacer.exe \"}}}", true, true},
+        {"{\"properties\":{\"excluded_apps\":{\"value\":\"Spacer\"}}}", true, true},
+        {"{\"properties\":{\"excluded_apps\":{\"value\":\"*FileSpacer.exe\"}}}", true, true},
+        {"{\"properties\":{\"excluded_apps\":{\"value\":\"Program Files\"}}}", true, true},
+        {"{\"properties\":{\"excluded_apps\":{\"value\":\"C:\\\\Program Files\\\\FileSpacer\\\\FileSpacer.exe\"}}}", false, true},
+        {"{\"properties\":{\"excluded_apps\":{\"value\":\"D:\\\\FileSpacer\\\\FileSpacer.exe\"}}}", true, true},
+        {"{\"properties\":{\"excluded_apps\":{\"value\":\"shortcut matrix\"}}}", false, true},
+        {"{\"properties\":{\"excluded_apps_for_modifier\":{\"value\":\"FileSpacer.exe\"}}}", false, true},
+        {"{\"properties\":{\"excluded_apps_for_modifier\":{\"value\":\"FileSpacer.exe\"}}}", true, false},
+        {"{\"properties\":{\"excluded_apps_for_modifier\":{\"value\":\"shortcut matrix\"}}}", false, true},
+        {"{\"properties\":{\"excluded_apps\":{\"value\":23}}}", true, true},
+        {"{broken JSON", true, true}
+    };
+    const DWORD saved = registryValue();
+    for (const auto &test : cases) {
+        writePowerToysFixture(module, test.json);
+        powerToysForeground = test.foreground ? sheet : GetDesktopWindow();
+        require(settings::powerToysOverridesWindowGestures(sheet) == test.overrides, "PowerToys exclusion matching and foreground scope");
+        for (unsigned modifiers = 0; modifiers < 8; ++modifiers) for (unsigned button = 0; button < 3; ++button) {
+            const WindowShortcut binding = {true, modifiers, static_cast<GestureButton>(button)};
+            require(settings::windowShortcutApplies(binding, binding.button, modifiers, sheet)
+                == (validShortcut(binding) && !test.overrides), "all configured button/modifier combinations obey the preventive policy");
+        }
+        notify(PSN_SETACTIVE);
+        require((IsWindowVisible(GetDlgItem(page, IDC_SHORTCUT_POWERTOYS)) != FALSE) == test.overrides,
+            "notice follows the actual per-window suspension and exclusions");
+        require(registryValue() == saved, "exclusions never rewrite FileSpacer shortcut preferences");
+    }
+    powerToysForeground = sheet;
+    require(DeleteFileW(module.c_str()) != FALSE && DeleteFileW(general.c_str()) != FALSE, "remove only isolated PowerToys fixtures");
+    require(settings::windowShortcutApplies(DEFAULT_WINDOW_SHORTCUTS.move, GestureButton::Left, GestureAlt, sheet),
+        "removing the PowerToys option restores configured gestures without a restart");
+    std::printf("PASS: PowerToys app/path/title exclusions, foreground-only modifier exclusions and unchanged preferences\n");
 }
 void registryAndPageMatrix() {
     unsigned valid = 0, invalid = 0;
@@ -255,21 +431,28 @@ bool logHRESULT(long result, const char *, int, const char *) { return SUCCEEDED
 void logLastError(const char *, int, const char *expression) { require(false, expression); }
 namespace filespacer { void notifyWindowSettingsChanged() { ++notifications; } }
 
-int main(int argc, char **argv) {
-    require(argc == 2, "language argument");
-    SetThreadUILanguage(argv[1][0] == 'f' ? MAKELANGID(LANG_FRENCH, SUBLANG_FRENCH) : MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US));
+int wmain(int argc, wchar_t **argv) {
+    require(argc == 3 || argc == 4, "language, isolated local app data and optional notice-only arguments");
+    powerToysLocalAppData = argv[2];
+    const wchar_t *languages[] = {L"en", L"fr", L"de", L"el", L"es", L"it", L"pt"};
+    const LANGID ids[] = {MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), MAKELANGID(LANG_FRENCH, SUBLANG_FRENCH),
+        MAKELANGID(LANG_GERMAN, SUBLANG_GERMAN), MAKELANGID(LANG_GREEK, SUBLANG_GREEK_GREECE),
+        MAKELANGID(LANG_SPANISH, SUBLANG_SPANISH_MODERN), MAKELANGID(LANG_ITALIAN, SUBLANG_ITALIAN),
+        MAKELANGID(LANG_PORTUGUESE, SUBLANG_PORTUGUESE)};
+    for (unsigned i = 0; i < _countof(languages); ++i) if (std::wstring(argv[1]) == languages[i]) SetThreadUILanguage(ids[i]);
     require(SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED)), "COM initialized");
-    INITCOMMONCONTROLSEX controls = {sizeof(controls), ICC_STANDARD_CLASSES};
+    INITCOMMONCONTROLSEX controls = {sizeof(controls), ICC_STANDARD_CLASSES | ICC_LINK_CLASS};
     require(InitCommonControlsEx(&controls) != FALSE, "native controls initialized"); initDPI();
     settings::testMode = true;
     require(settings::setWindowShortcuts(DEFAULT_WINDOW_SHORTCUTS) == ERROR_SUCCESS, "initialize isolated settings");
     PROPSHEETPAGEW definition = {}; definition.dwSize = sizeof(definition); definition.hInstance = GetModuleHandleW(nullptr);
     definition.pszTemplate = MAKEINTRESOURCEW(IDD_SETTINGS_SHORTCUTS); definition.pfnDlgProc = shortcutsProc;
     PROPSHEETHEADERW header = {}; header.dwSize = sizeof(header); header.dwFlags = PSH_MODELESS | PSH_PROPSHEETPAGE;
-    header.hInstance = definition.hInstance; header.pszCaption = L"FileSpacer shortcut matrix"; header.nPages = 1; header.ppsp = &definition;
+    header.hInstance = definition.hInstance; header.pszCaption = L"Window shortcut matrix"; header.nPages = 1; header.ppsp = &definition;
     sheet = reinterpret_cast<HWND>(PropertySheetW(&header));
     require(sheet != nullptr && sheet != reinterpret_cast<HWND>(static_cast<INT_PTR>(-1)), "create production shortcut property page");
     page = PropSheet_GetCurrentPageHwnd(sheet); pump();
+    powerToysForeground = sheet;
     editor = FindWindowExW(page, nullptr, L"#32770", nullptr);
     require(editor != nullptr && !IsWindowVisible(editor), "one initially collapsed shared editor");
     require(GetDlgItem(sheet, 0x3021) != nullptr, "native property sheet Apply button exists");
@@ -285,9 +468,14 @@ int main(int argc, char **argv) {
         require(SUCCEEDED(named) && name && std::wstring(name) == expected.get(), "blank checkbox retains localized accessible name");
         SysFreeString(name); accessible->Release();
     }
+    if (argc == 4) {
+        powerToysNotice(); powerToysExclusions();
+        DestroyWindow(sheet); CoUninitialize();
+        std::printf("PASS: %d notice checks (%ls)\n", checks, argv[1]); return 0;
+    }
     // Bulk combinations use the real page offscreen; the smaller interaction matrix stays visible.
     ShowWindow(sheet, SW_HIDE); registryAndPageMatrix(); ShowWindow(sheet, SW_SHOWNOACTIVATE);
     pump(); interactionMatrix(); engineMatrix();
     require(notifications > 0, "successful Apply sends normal preference notifications");
-    CoUninitialize(); std::printf("PASS: %d checks (%s)\n", checks, argv[1]); return 0;
+    CoUninitialize(); std::printf("PASS: %d checks (%ls)\n", checks, argv[1]); return 0;
 }
