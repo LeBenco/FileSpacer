@@ -182,6 +182,8 @@ BEGIN
   IDS_SEARCH_EVERYTHING "Rechercher dans Everything"
   IDS_SEARCH_MENU "Everything et recherches récentes"
   IDS_EVERYTHING_ERROR "Impossible de lancer Everything.\nVérifiez son chemin dans Paramètres > Intégration.\n\nExécutable : %1!s!\nErreur %2!u! : %3!s!"
+  IDS_PEEK_ERROR "Impossible de lancer PowerToys Peek.\nL’aperçu de plusieurs fichiers nécessite PowerToys 0.102 ou ultérieur.\n\nExécutable : %1!s!\nErreur %2!u! : %3!s!"
+  IDS_PEEK_SETTINGS_ERROR "Impossible d’ouvrir les paramètres Peek dans PowerToys.\n\n%1!s!"
   IDS_EVERYTHING_AUTO "Détection automatique"
   IDS_EVERYTHING_FOLDER "Dossier courant et sous-dossiers"
   IDS_EVERYTHING_EVERYWHERE "Partout"

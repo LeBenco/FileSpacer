@@ -183,6 +183,8 @@ BEGIN
   IDS_SEARCH_EVERYTHING "Αναζήτηση στο Everything"
   IDS_SEARCH_MENU "Everything και πρόσφατες αναζητήσεις"
   IDS_EVERYTHING_ERROR "Δεν ήταν δυνατή η εκκίνηση του Everything.\nΕλέγξτε τη διαδρομή στις Ρυθμίσεις > Ενσωμάτωση.\n\nΕκτελέσιμο: %1!s!\nΣφάλμα %2!u!: %3!s!"
+  IDS_PEEK_ERROR "Δεν ήταν δυνατή η εκκίνηση του PowerToys Peek.\nΗ προεπισκόπηση πολλών αρχείων απαιτεί PowerToys 0.102 ή νεότερο.\n\nΕκτελέσιμο: %1!s!\nΣφάλμα %2!u!: %3!s!"
+  IDS_PEEK_SETTINGS_ERROR "Δεν ήταν δυνατό το άνοιγμα των ρυθμίσεων Peek στο PowerToys.\n\n%1!s!"
   IDS_EVERYTHING_AUTO "Αυτόματος εντοπισμός"
   IDS_EVERYTHING_FOLDER "Τρέχων φάκελος και υποφάκελοι"
   IDS_EVERYTHING_EVERYWHERE "Παντού"
