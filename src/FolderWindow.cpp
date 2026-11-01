@@ -618,8 +618,8 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
         : msg->message == WM_MBUTTONDOWN || msg->message == WM_MBUTTONDBLCLK ? GestureButton::Middle : GestureButton::Right;
     const unsigned modifiers = currentGestureModifiers();
     const WindowShortcuts bindings = settings::getWindowShortcuts();
-    const bool moving = matchesShortcut(bindings.move, button, modifiers);
-    if (!moving && !matchesShortcut(bindings.resize, button, modifiers)) return false;
+    const bool moving = settings::windowShortcutApplies(bindings.move, button, modifiers, hwnd);
+    if (!moving && !settings::windowShortcutApplies(bindings.resize, button, modifiers, hwnd)) return false;
     const HWND owner = hwnd;
     const CComPtr<IShellView> view = shellView;
     const ULONG_PTR generation = viewGeneration;
