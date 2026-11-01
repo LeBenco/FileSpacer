@@ -13,6 +13,7 @@
 #include "WinUtils.h"
 #include "Settings.h"
 #include "Everything.h"
+#include "Peek.h"
 #include "DPI.h"
 #include "UIStrings.h"
 #include <windowsx.h>
@@ -458,6 +459,49 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
     CComPtr<IShellView> view = shellView;
     if (!view)
         return false;
+    if (msg->message == WM_KEYDOWN && msg->wParam == VK_SPACE && settings::getPeekEnabled()
+            && GetKeyState(VK_CONTROL) >= 0 && GetKeyState(VK_SHIFT) >= 0 && GetKeyState(VK_MENU) >= 0) {
+        const ULONG_PTR generation = viewGeneration;
+        const auto current = [&] { return isWindowOperational() && shellView == view && viewGeneration == generation; };
+        HWND root = nullptr;
+        const HWND focus = GetFocus();
+        const HRESULT foundRoot = view->GetWindow(&root);
+        if (!current()) return true;
+        if (SUCCEEDED(foundRoot) && root && focus == msg->hwnd
+                && (focus == root || IsChild(root, focus))) {
+            const LRESULT code = SendMessageW(focus, WM_GETDLGCODE, VK_SPACE, reinterpret_cast<LPARAM>(msg));
+            if (!current() || GetFocus() != focus) return true;
+            // Native rename editors and controls that own Space keep the key.
+            if (!(code & (DLGC_HASSETSEL | DLGC_WANTALLKEYS | DLGC_BUTTON)) && powerToysPeekEnabled()) {
+                const PeekInstallation installation = findPeek();
+                if (!installation.executable.empty()) {
+                    CComQIPtr<IFolderView2> folderView(view);
+                    if (!current()) return true;
+                    CComPtr<IShellItemArray> selection;
+                    if (folderView && SUCCEEDED(folderView->GetSelection(FALSE, &selection))) {
+                        const auto paths = peekPaths(selection);
+                        if (!current() || GetFocus() != focus)
+                            return true;
+                        if (!paths.empty()) {
+                            // Consume repeats as well, without starting extra previews.
+                            if (!(msg->lParam & (1L << 30))) {
+                                const DWORD error = launchPeek(installation, paths);
+                                if (error && current()) {
+                                    const auto detail = getErrorMessage(error);
+                                    const auto message = formatString(IDS_PEEK_ERROR,
+                                        installation.executable.c_str(), error, detail.get());
+                                    MessageBoxW(hwnd, message.get(), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
+                                }
+                            }
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        if (!isWindowOperational() || shellView != view || viewGeneration != generation)
+            return true;
+    }
     if (msg->message == WM_LBUTTONUP || msg->message == WM_KEYUP
             || msg->message == WM_MOUSEWHEEL || msg->message == WM_MOUSEHWHEEL) {
         HWND root = nullptr;
