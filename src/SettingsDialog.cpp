@@ -1,3 +1,4 @@
+#include <common.h>
 #include "SettingsDialog.h"
 #include "Settings.h"
 #include "Everything.h"
@@ -968,6 +969,8 @@ void queueSettings(HWND owner, SettingsPage page) {
 }
 
 void openSettingsDialog(HWND owner, SettingsPage page) {
+    INITCOMMONCONTROLSEX controls = {sizeof(controls), ICC_LINK_CLASS};
+    InitCommonControlsEx(&controls);
     settingsRequest.cancel();
     if (!IsWindow(owner)) return;
     if (settingsDialog) {
