@@ -2,6 +2,7 @@
 #include "SettingsDialog.h"
 #include "Settings.h"
 #include "Everything.h"
+#include "Peek.h"
 #include "FolderStateStore.h"
 #include "CreateItemWindow.h"
 #include "ItemWindow.h"
@@ -727,6 +728,7 @@ static bool searchHistoryLimit(HWND hwnd, DWORD *value) {
 INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
         case WM_INITDIALOG:
+            CheckDlgButton(hwnd, IDC_PEEK_ENABLED, settings::getPeekEnabled() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_EVERYTHING_ENABLED,
                 settings::getEverythingEnabled() ? BST_CHECKED : BST_UNCHECKED);
             SetDlgItemTextW(hwnd, IDC_EVERYTHING_PATH, settings::getEverythingPath().get());
@@ -741,6 +743,14 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             return TRUE;
         case WM_NOTIFY: {
             NMHDR *notif = (NMHDR *)lParam;
+            if (notif->idFrom == IDC_PEEK_SETTINGS && (notif->code == NM_CLICK || notif->code == NM_RETURN)) {
+                const DWORD error = openPeekSettings();
+                if (error) {
+                    const auto errorText = formatString(IDS_PEEK_SETTINGS_ERROR, getErrorMessage(error).get());
+                    MessageBoxW(GetParent(hwnd), errorText.get(), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
+                }
+                return TRUE;
+            }
             if (notif->code == PSN_KILLACTIVE) {
                 SetWindowLongPtr(hwnd, DWLP_MSGRESULT, FALSE);
                 return TRUE;
@@ -755,6 +765,7 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 StrTrimW(path.data(), L" \t");
                 settings::setEverythingPath(path.data());
                 settings::setEverythingEnabled(!!IsDlgButtonChecked(hwnd, IDC_EVERYTHING_ENABLED));
+                settings::setPeekEnabled(!!IsDlgButtonChecked(hwnd, IDC_PEEK_ENABLED));
                 const LRESULT scope = SendDlgItemMessageW(hwnd, IDC_EVERYTHING_SCOPE, CB_GETCURSEL, 0, 0);
                 settings::setEverythingScope(scope == 1 ? settings::EverythingScope::Everywhere
                     : settings::EverythingScope::Folder);
@@ -801,6 +812,7 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 return TRUE;
             }
             if ((LOWORD(wParam) == IDC_EVERYTHING_ENABLED && HIWORD(wParam) == BN_CLICKED)
+                    || (LOWORD(wParam) == IDC_PEEK_ENABLED && HIWORD(wParam) == BN_CLICKED)
                     || (LOWORD(wParam) == IDC_EVERYTHING_SCOPE && HIWORD(wParam) == CBN_SELCHANGE)
                     || (LOWORD(wParam) == IDC_EVERYTHING_PATH && HIWORD(wParam) == EN_CHANGE))
                 PropSheet_Changed(GetParent(hwnd), hwnd);
