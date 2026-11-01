@@ -206,6 +206,7 @@ SETTINGS_BOOL_VALUE(SmartWindowPlacement, L"SmartWindowPlacement", DEFAULT_SMART
 SETTINGS_BOOL_VALUE(KeepSelectionOnActivate, L"KeepSelectionOnActivate", DEFAULT_KEEP_SELECTION_ON_ACTIVATE)
 SETTINGS_BOOL_VALUE(LiveNameSearch, L"LiveNameSearch", DEFAULT_LIVE_NAME_SEARCH)
 SETTINGS_BOOL_VALUE(EverythingEnabled, L"EverythingEnabled", false)
+SETTINGS_BOOL_VALUE(PeekEnabled, L"PeekEnabled", false)
 SETTINGS_STRING_VALUE(EverythingPath, REG_SZ, L"EverythingPath", L"")
 
 DWORD getSearchHistoryLimit() {
