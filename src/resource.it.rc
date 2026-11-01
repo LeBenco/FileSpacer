@@ -219,3 +219,9 @@ BEGIN
   IDS_GROUPS_DELETE_CONFIRM "Eliminare questo gruppo di cartelle salvato? Le cartelle vengono mantenute."
   IDS_GROUPS_OPEN_ERROR "Non è stato possibile aprire alcune cartelle del gruppo."
 END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Impossibile aprire le impostazioni di Grab And Move. Aprire PowerToys e selezionare Grab And Move."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move è attivo nelle impostazioni di PowerToys. Finché questa opzione è attiva, le scorciatoie di FileSpacer qui sotto non vengono applicate. Per continuare a usarle, aggiungere FileSpacer alla <a>lista di esclusione di Grab And Move</a>."
+END

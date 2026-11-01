@@ -219,3 +219,9 @@ BEGIN
   IDS_GROUPS_DELETE_CONFIRM "Diese gespeicherte Ordnergruppe löschen? Die Ordner selbst bleiben erhalten."
   IDS_GROUPS_OPEN_ERROR "Einige Ordner der Gruppe konnten nicht geöffnet werden."
 END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Die Einstellungen von Grab And Move konnten nicht geöffnet werden. Öffnen Sie PowerToys und wählen Sie Grab And Move."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move ist in den PowerToys-Einstellungen aktiviert. Solange diese Option aktiviert ist, werden die folgenden FileSpacer-Gesten nicht angewendet. Um sie weiter zu verwenden, fügen Sie FileSpacer zur <a>Ausschlussliste von Grab And Move</a> hinzu."
+END

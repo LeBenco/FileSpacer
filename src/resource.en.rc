@@ -223,3 +223,9 @@ BEGIN
   IDS_GROUPS_DELETE_CONFIRM "Delete this saved folder group? The folders themselves will be kept."
   IDS_GROUPS_OPEN_ERROR "Some folders in the group could not be opened."
 END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Unable to open Grab And Move settings. Open PowerToys, then select Grab And Move."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move is enabled in PowerToys settings. While this option is enabled, the FileSpacer shortcuts below do not apply. You can keep using FileSpacer shortcuts by adding FileSpacer to the <a>Grab And Move exclusion list</a>."
+END
