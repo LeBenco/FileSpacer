@@ -1,10 +1,17 @@
+#include <common.h>
 #include "Settings.h"
 #include "FolderStateStore.h"
 #include "UIStrings.h"
 #include <strsafe.h>
 #include <atlbase.h>
 #include <shlobj.h>
+#include <shlwapi.h>
+#include <knownfolders.h>
+#include <windows.data.json.h>
+#include <wrl/wrappers/corewrappers.h>
 #include <cwchar>
+
+#pragma comment(lib, "RuntimeObject.lib")
 
 namespace filespacer {
 namespace settings {
@@ -239,6 +246,115 @@ bool getWindowStateLockEnabled() {
     DWORD value = 0;
     getSettingsValue(L"WindowStateLockEnabled", RRF_RT_DWORD, &value, sizeof(value));
     return value != 0;
+}
+
+namespace {
+using JsonObject = ABI::Windows::Data::Json::IJsonObject;
+using namespace Microsoft::WRL::Wrappers;
+
+CComPtr<JsonObject> readPowerToysJson(const std::wstring &path) {
+    CComPtr<IStream> stream;
+    if (FAILED(SHCreateStreamOnFileEx(path.c_str(), STGM_READ | STGM_SHARE_DENY_NONE,
+            0, FALSE, nullptr, &stream))) return {};
+    STATSTG info = {};
+    if (FAILED(stream->Stat(&info, STATFLAG_NONAME)) || info.cbSize.QuadPart == 0
+            || info.cbSize.QuadPart > 1048576) return {};
+    std::string bytes(static_cast<size_t>(info.cbSize.QuadPart), '\0');
+    ULONG read = 0;
+    if (FAILED(stream->Read(&bytes[0], static_cast<ULONG>(bytes.size()), &read))
+            || read != bytes.size()) return {};
+    stream.Release();
+    const int offset = bytes.compare(0, 3, "\xef\xbb\xbf") == 0 ? 3 : 0;
+    const int size = static_cast<int>(bytes.size()) - offset;
+    const int length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, bytes.data() + offset, size, nullptr, 0);
+    if (!length) return {};
+    std::wstring text(length, L'\0');
+    if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, bytes.data() + offset, size, &text[0], length)) return {};
+    CComPtr<ABI::Windows::Data::Json::IJsonObjectStatics> factory;
+    CComPtr<JsonObject> root;
+    if (FAILED(RoGetActivationFactory(HStringReference(RuntimeClass_Windows_Data_Json_JsonObject).Get(), IID_PPV_ARGS(&factory)))
+            || FAILED(factory->Parse(HStringReference(text.c_str(), static_cast<UINT32>(text.size())).Get(), &root))) return {};
+    return root;
+}
+
+std::wstring powerToysWindowTitle(HWND window) {
+    wchar_t text[255] = {};
+    const int length = window ? GetWindowTextW(window, text, _countof(text)) : 0;
+    if (length > 0) CharUpperBuffW(text, length);
+    return text;
+}
+
+struct ProcessHandleDeleter { void operator()(HANDLE handle) const { CloseHandle(handle); } };
+std::wstring powerToysProcessPath(DWORD processId) {
+    std::unique_ptr<void, ProcessHandleDeleter> owned;
+    HANDLE process = GetCurrentProcess();
+    if (processId != GetCurrentProcessId()) {
+        owned.reset(OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId));
+        process = owned.get();
+    }
+    std::wstring path(32768, L'\0');
+    DWORD length = static_cast<DWORD>(path.size());
+    if (!process || !QueryFullProcessImageNameW(process, 0, &path[0], &length)) return {};
+    path.resize(length); CharUpperBuffW(&path[0], length);
+    return path;
+}
+
+bool powerToysExcludes(JsonObject *properties, const wchar_t *name,
+        const std::wstring &processPath, const std::wstring &title) {
+    CComPtr<JsonObject> property;
+    HString value;
+    if (FAILED(properties->GetNamedObject(HStringReference(name).Get(), &property))
+            || FAILED(property->GetNamedString(HStringReference(L"value").Get(), value.GetAddressOf()))) return false;
+    UINT32 length = 0;
+    const wchar_t *buffer = value.GetRawBuffer(&length);
+    if (!length) return false;
+    std::wstring rows(buffer, length);
+    CharUpperBuffW(&rows[0], length);
+    // Same matching rules as PowerToys common/utils/excluded_apps.h and
+    // GrabAndMove::ParseExcludedApps: leading whitespace, literal rows, no glob.
+    for (size_t start = rows.find_first_not_of(L" \t\r\n"); start != std::wstring::npos;) {
+        const size_t end = rows.find_first_of(L"\r\n", start);
+        const std::wstring row = rows.substr(start, end == std::wstring::npos ? end : end - start);
+        const size_t match = processPath.rfind(row), slash = processPath.rfind(L'\\');
+        if ((match != std::wstring::npos && match <= slash + 1 && match + row.size() > slash)
+                || title.find(row) != std::wstring::npos) return true;
+        start = end == std::wstring::npos ? end : rows.find_first_not_of(L" \t\r\n", end);
+    }
+    return false;
+}
+} // namespace
+
+bool powerToysOverridesWindowGestures(HWND window) {
+    CComHeapPtr<wchar_t> localAppData;
+    if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_DONT_VERIFY, nullptr, &localAppData))) return false;
+    const std::wstring directory = std::wstring(localAppData) + L"\\Microsoft\\PowerToys\\";
+    RoInitializeWrapper runtime(RO_INIT_SINGLETHREADED);
+    if (FAILED(runtime)) return false;
+    const auto general = readPowerToysJson(directory + L"settings.json");
+    CComPtr<JsonObject> enabled;
+    boolean active = 0;
+    if (!general || FAILED(general->GetNamedObject(HStringReference(L"enabled").Get(), &enabled))
+            || FAILED(enabled->GetNamedBoolean(HStringReference(L"GrabAndMove").Get(), &active)) || !active) return false;
+    // Saved activation is preventive, even while PowerToys is stopped.
+    // Missing/unreadable module settings cannot establish an exclusion.
+    const auto module = readPowerToysJson(directory + L"GrabAndMove\\settings.json");
+    CComPtr<JsonObject> properties;
+    if (!module || FAILED(module->GetNamedObject(HStringReference(L"properties").Get(), &properties))) return true;
+    const std::wstring executable = powerToysProcessPath(GetCurrentProcessId());
+    if (executable.empty()) return true;
+    if (powerToysExcludes(properties, L"excluded_apps", executable, powerToysWindowTitle(window))) return false;
+    const HWND foreground = GetForegroundWindow();
+    DWORD process = 0;
+    GetWindowThreadProcessId(foreground, &process);
+    // The modifier list is tested on the foreground window by PowerToys;
+    // it is not a global exemption for a background FileSpacer window.
+    return !powerToysExcludes(properties, L"excluded_apps_for_modifier",
+        process == GetCurrentProcessId() ? executable : powerToysProcessPath(process), powerToysWindowTitle(foreground));
+}
+
+bool windowShortcutApplies(const WindowShortcut &binding, GestureButton button, unsigned modifiers, HWND window) {
+    // No JSON I/O for mouse events that do not match a configured gesture.
+    return matchesShortcut(binding, button, modifiers) && !powerToysOverridesWindowGestures(window);
 }
 
 WindowShortcuts getWindowShortcuts() {

@@ -102,6 +102,8 @@ bool getFullNamesOnSelection();
 void setFullNamesOnSelection(bool value);
 LSTATUS resetGlobalOptions();
 WindowShortcuts getWindowShortcuts();
+bool powerToysOverridesWindowGestures(HWND window);
+bool windowShortcutApplies(const WindowShortcut &binding, GestureButton button, unsigned modifiers, HWND window);
 LSTATUS setWindowShortcuts(const WindowShortcuts &value);
 std::vector<int> getTitleMenu();
 LSTATUS setTitleMenu(const std::vector<int> &items);
