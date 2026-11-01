@@ -52,6 +52,7 @@ OBJECTS = \
     $(OUTDIR)\GDIUtils.obj \
     $(OUTDIR)\ItemWindow.obj \
     $(OUTDIR)\PathBar.obj \
+    $(OUTDIR)\Peek.obj \
     $(OUTDIR)\ProxyIcon.obj \
     $(OUTDIR)\ProcessLifetime.obj \
 	$(OUTDIR)\SearchBox.obj \
