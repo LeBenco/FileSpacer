@@ -96,7 +96,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "", IDC_FOLDER_WINDOW_HEIGHT, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 251, 291, 35, 14
 }
 
-IDD_SETTINGS_BROWSER DIALOGEX DISCARDABLE 0, 0, 300, 277
+IDD_SETTINGS_BROWSER DIALOGEX DISCARDABLE 0, 0, 300, 309
 STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
 CAPTION "Intégration"
 FONT 8, "MS Shell Dlg", 400, 0, 0
@@ -117,6 +117,9 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Options de l’Explorateur de fichiers", -1, "Button", BS_GROUPBOX, 7, 213, 286, 35
   CONTROL "Certaines options de l’Explorateur de fichiers s’appliquent aussi aux fenêtres de dossiers de FileSpacer.", -1, "Static", WS_GROUP, 14, 224, 210, 16
   CONTROL "&Options...", IDC_EXPLORER_SETTINGS, "Button", WS_TABSTOP, 231, 224, 55, 14
+  GROUPBOX "PowerToys Peek", -1, 7, 253, 286, 51
+  CONTROL "&Aperçu avec Espace", IDC_PEEK_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 265, 272, 12
+  CONTROL "(Peek doit aussi être activé dans <a>PowerToys</a>)", IDC_PEEK_SETTINGS, "SysLink", WS_TABSTOP, 26, 281, 260, 20
 }
 
 IDD_SETTINGS_ABOUT DIALOGEX DISCARDABLE 0, 0, 300, 277
