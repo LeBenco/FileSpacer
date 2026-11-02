@@ -11,6 +11,7 @@ $ErrorActionPreference='Stop'
 Set-StrictMode -Version 2
 . (Join-Path $PSScriptRoot 'common\Process.ps1')
 . (Join-Path $PSScriptRoot 'common\Results.ps1')
+. (Join-Path $PSScriptRoot 'common\StorageSnapshot.ps1')
 if ($env:OS -ne 'Windows_NT' -or ![Environment]::Is64BitProcess) { throw 'Windows x64 is required.' }
 $ProjectRoot=(Resolve-Path -LiteralPath $ProjectRoot).Path
 $caseRoot=Join-Path $PSScriptRoot 'cases'
@@ -205,12 +206,14 @@ try {
                     }
                 } catch { Write-Warning ('Cannot collect tracked application diagnostics: '+$_.Exception.Message) }
             }
-            if ($status -eq 'FAIL') {
-                $state=Join-Path $testRun 'application-state'
-                [void][IO.Directory]::CreateDirectory($state)
-                foreach ($suffix in @('','-wal','-shm')) {
-                    if (Test-Path -LiteralPath ($database+$suffix)) { Copy-Item -LiteralPath ($database+$suffix) -Destination $state }
-                }
+            try {
+                $image=Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'
+                $remaining=@(Get-Process -Name FileSpacer -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $image })
+                if($remaining.Count){throw 'Application processes remain before SQLite export.'}
+                Copy-TestDatabaseSnapshot $database (Join-Path $testRun 'application-state')
+            } catch {
+                $status='FAIL'
+                $cleanupDetail=(@($cleanupDetail,('SQLite export: '+$_.Exception.Message))|Where-Object{$_}) -join '; '
             }
         }
         try {
