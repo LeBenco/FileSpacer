@@ -124,7 +124,10 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
         finished = true;
         exitCode = success && !failures ? 0 : 3;
         log(L"RESULT: %s persistence, selection, icons, filtering and lifetime; failures=%d", exitCode ? L"FAIL" : L"PASS", failures);
-        if (diagnostic && !success && (phase == Phase::VerifyRestored || phase == Phase::VerifyEmpty)) {
+        // A failed initial enumeration is observed until the watchdog: a late
+        // fill and an absent one are different Shell behaviors. The failure stands.
+        const bool observeInitialContents = !success && phase == Phase::Configure;
+        if (observeInitialContents || (diagnostic && !success && (phase == Phase::VerifyRestored || phase == Phase::VerifyEmpty))) {
             observingFailure = true;
             log(L"DIAG: failure retained, exit stays 3; observing subsequent public events without changing the view");
             PostMessage(window, DIAGNOSTIC, generation, 0);
@@ -156,11 +159,60 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
         int count = -1;
         const HRESULT result = current ? current->ItemCount(SVGIO_ALLVIEW, &count) : E_NOINTERFACE;
         const int expected = phase == Phase::VerifyEmpty ? 0 : 150;
+        log(L"DIAG: items=%d (0x%08lX) after public event; expected=%d, published EnumDone=%llu",
+            count, static_cast<unsigned long>(result), expected,
+            static_cast<unsigned long long>(browser.enumerationSerial()));
         if (SUCCEEDED(result) && count == expected) {
             const auto actual = captureOptions(current, {});
             log(L"DIAG: expected contents returned; exact stored settings=%s; original failure remains FAIL, exit 3",
                 sameView(actual, persisted) ? L"yes" : L"no");
             PostMessage(window, WM_CLOSE, 0, 0);
+        }
+    }
+    // Public environment and direct Shell enumeration of the displayed folder,
+    // logged only after a content mismatch to locate where items disappear.
+    void logEnumerationEnvironment() {
+        CComQIPtr<IFolderView2> folderView(view);
+        if (!folderView) return;
+        HWND viewWindow = nullptr;
+        RECT viewBounds = {};
+        if (SUCCEEDED(view->GetWindow(&viewWindow)) && viewWindow) GetWindowRect(viewWindow, &viewBounds);
+        DWORD folderFlags = 0;
+        const HRESULT flagsResult = folderView->GetCurrentFolderFlags(&folderFlags);
+        CComQIPtr<IShellFolderView> shellFolderView(view);
+        UINT objects = 0;
+        const HRESULT objectsResult = shellFolderView ? shellFolderView->GetObjectCount(&objects) : E_NOINTERFACE;
+        SHELLSTATE state = {};
+        SHGetSetSettings(&state, SSF_SHOWALLOBJECTS | SSF_SHOWSUPERHIDDEN, FALSE);
+        WIN32_FIND_DATAW found = {};
+        unsigned files = 0;
+        HANDLE search = FindFirstFileW((fixture + L"\\*").c_str(), &found);
+        if (search != INVALID_HANDLE_VALUE) {
+            do { if (!(found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) ++files; } while (FindNextFileW(search, &found));
+            FindClose(search);
+        }
+        log(L"DIAG ENV: shell window=%d, ACP=%u, view window=%p visible=%d size=%ldx%ld, folder flags=0x%08lX (0x%08lX), "
+            L"view objects=%u (0x%08lX), show all=%d super hidden=%d, Win32 fixture files=%u, fixture attributes=0x%08lX",
+            GetShellWindow() != nullptr ? 1 : 0, GetACP(), static_cast<void *>(viewWindow),
+            viewWindow && IsWindowVisible(viewWindow) ? 1 : 0, viewBounds.right - viewBounds.left,
+            viewBounds.bottom - viewBounds.top, static_cast<unsigned long>(folderFlags),
+            static_cast<unsigned long>(flagsResult), objects, static_cast<unsigned long>(objectsResult),
+            state.fShowAllObjects ? 1 : 0, state.fShowSuperHidden ? 1 : 0, files,
+            static_cast<unsigned long>(GetFileAttributesW(fixture.c_str())));
+        CComPtr<IShellFolder> folder;
+        const HRESULT bound = folderView->GetFolder(IID_PPV_ARGS(&folder));
+        const DWORD enumFlags[] = {SHCONTF_FOLDERS | SHCONTF_NONFOLDERS,
+            SHCONTF_FOLDERS | SHCONTF_NONFOLDERS | SHCONTF_ENABLE_ASYNC};
+        for (const DWORD flags : enumFlags) {
+            CComPtr<IEnumIDList> enumeration;
+            HRESULT result = SUCCEEDED(bound) ? folder->EnumObjects(window, flags, &enumeration) : bound;
+            unsigned items = 0;
+            if (SUCCEEDED(result) && enumeration) {
+                CComHeapPtr<ITEMID_CHILD> child;
+                while ((result = enumeration->Next(1, &child, nullptr)) == S_OK) { ++items; child.Free(); }
+            }
+            log(L"DIAG ENUM: direct IShellFolder enumeration flags=0x%08lX: items=%u, last result=0x%08lX",
+                static_cast<unsigned long>(flags), items, static_cast<unsigned long>(result));
         }
     }
     bool countIs(int expected, bool canWait = false) {
@@ -181,6 +233,7 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
         log(L"Contents: folder=%s (0x%08lX); populated fixture=%s",
             SUCCEEDED(identity) ? folderName.m_pData : L"<unavailable>",
             static_cast<unsigned long>(identity), fixture.c_str());
+        logEnumerationEnvironment();
         if (canWait && enumDone <= baseline) {
             log(L"WAIT: real EnumDone after presentation mutation; no retry or timer continuation");
             return false;
