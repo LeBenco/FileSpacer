@@ -1,10 +1,10 @@
-﻿# Run prepared regression tests under a standard account on the CI desktop.
+﻿# Run prepared tests with the interactive user's restricted token.
 param([Parameter(Mandatory=$true)][string]$Package,
     [Parameter(Mandatory=$true)][string]$RunDirectory,
     [switch]$Worker,[int]$SessionId=-1)
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version 2
-if($env:GITHUB_ACTIONS-ne'true' -and !$Worker){throw 'CI dispatch is reserved for GitHub Actions.'}
+if(!$Worker -and ($env:GITHUB_ACTIONS-ne'true' -or !$env:ImageOS)){throw 'CI dispatch is reserved for GitHub-hosted images.'}
 $Package=[IO.Path]::GetFullPath($Package)
 $RunDirectory=[IO.Path]::GetFullPath($RunDirectory)
 $resultPath=Join-Path $RunDirectory 'worker-result.json'
@@ -15,7 +15,7 @@ if($Worker){
         $principal=New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
         $record.UserSid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value
         $record.Administrator=$principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-        if($record.Administrator -or $record.UserSid-match'-500$' -or $record.SessionId-ne$SessionId -or ![Environment]::UserInteractive){throw 'Expected a standard account in the same interactive desktop session.'}
+        if($record.Administrator -or $record.SessionId-ne$SessionId -or ![Environment]::UserInteractive){throw 'Expected the same interactive user and session with a limited token.'}
         $env:TEMP=Join-Path $RunDirectory 'temp';$env:TMP=$env:TEMP
         [void][IO.Directory]::CreateDirectory($env:TEMP)
         Add-Type -TypeDefinition @'
@@ -64,13 +64,34 @@ Copy-Item -LiteralPath $PSCommandPath -Destination $workerScript
 $arguments='-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "'+$workerScript+'" -Worker -Package "'+$Package+'" -RunDirectory "'+$RunDirectory+'" -SessionId '+$session
 $exitCode=$null
 $launchStarted=Get-Date
+$providerCreated=$false;$dispatchFailure=$null
+$previousProviderMarker=$env:FS_REGRESSION_CI_PROVIDER
+$machineProvider='Registry::HKEY_LOCAL_MACHINE\Software\Classes\CLSID\{E129740C-52FD-4C7B-98AA-9ED6EBF9A604}'
 Write-Host ('CI launcher user: '+[Security.Principal.WindowsIdentity]::GetCurrent().User.Value)
 try {
+    # UAC is disabled on hosted images, where COM ignores this user's class
+    # registration. Install only the isolated test CLSID for this run.
+    if(Test-Path -LiteralPath $machineProvider){throw 'The isolated CI provider already has a machine registration.'}
+    [void](New-Item -Path $machineProvider -Force);$providerCreated=$true
+    Set-Item -LiteralPath $machineProvider -Value 'FileSpacer isolated CI provider'
+    [void](New-Item -Path ($machineProvider+'\InprocServer32') -Force)
+    $provider=Join-Path $Package 'build\debug\FileSpacerFolder.dll'
+    if(!(Test-Path -LiteralPath $provider -PathType Leaf)){throw 'The prepared provider DLL is missing.'}
+    Set-Item -LiteralPath ($machineProvider+'\InprocServer32') -Value $provider
+    New-ItemProperty -LiteralPath ($machineProvider+'\InprocServer32') -Name ThreadingModel -Value Apartment -PropertyType String -Force|Out-Null
+    [void](New-Item -Path ($machineProvider+'\ShellFolder') -Force)
+    New-ItemProperty -LiteralPath ($machineProvider+'\ShellFolder') -Name Attributes -Value (-1610612736) -PropertyType DWord -Force|Out-Null
+    $access=Get-Acl -LiteralPath $machineProvider
+    $access.AddAccessRule((New-Object Security.AccessControl.RegistryAccessRule([Security.Principal.WindowsIdentity]::GetCurrent().User,[Security.AccessControl.RegistryRights]::FullControl,[Security.AccessControl.InheritanceFlags]::ContainerInherit,[Security.AccessControl.PropagationFlags]::None,[Security.AccessControl.AccessControlType]::Allow)))
+    Set-Acl -LiteralPath $machineProvider -AclObject $access
+    $env:FS_REGRESSION_CI_PROVIDER='true'
+    Write-Host ('CI isolated provider: '+$provider)
     $exitCode=[FileSpacerRegression.CIRestrictedProcess]::Run((Join-Path $PSHOME 'powershell.exe'),$arguments,$RunDirectory,169*60*1000)
     if(!(Test-Path $resultPath)){throw ('CI worker produced no result; exit={0} (0x{0:X8})' -f $exitCode)}
     $record=Get-Content $resultPath -Raw|ConvertFrom-Json
     if($exitCode-ne0 -or $record.Status-ne'PASS' -or $record.RunnerExitCode-ne0 -or $record.Administrator -or $record.SessionId-ne$session){throw ('CI worker failed: '+($record|ConvertTo-Json -Compress))}
 } catch {
+    $dispatchFailure=$_
     $launchError=$_;$missingResult=!(Test-Path $resultPath)
     if(Test-Path $resultPath){$record=Get-Content $resultPath -Raw|ConvertFrom-Json}
     else {$record=[pscustomobject]@{Status='FAIL';SessionId=$null;UserSid=$null;Administrator=$null;RunnerExitCode=$exitCode;Error=$null}}
@@ -87,9 +108,18 @@ try {
     }
     throw $launchError
 } finally {
+    $providerCleanupFailure=$null
+    $env:FS_REGRESSION_CI_PROVIDER=$previousProviderMarker
+    if($providerCreated){try {Remove-Item -LiteralPath $machineProvider -Recurse -Force}catch{$providerCleanupFailure=$_}}
     foreach($name in @('runner.stdout.log','runner.stderr.log')){
         $log=Join-Path $RunDirectory $name
         if(Test-Path $log){Get-Content $log -Tail 55|Write-Host}
+    }
+    if($providerCleanupFailure){
+        $message='CI provider registration cleanup failed: '+$providerCleanupFailure.Exception.Message
+        if(Test-Path $resultPath){$record=Get-Content $resultPath -Raw|ConvertFrom-Json;$record.Status='FAIL';$record.Error=($record.Error+'; '+$message).Trim('; ');$record|ConvertTo-Json|Set-Content $resultPath -Encoding UTF8}
+        if($dispatchFailure){throw (New-Object AggregateException($message,[Exception[]]@($dispatchFailure.Exception,$providerCleanupFailure.Exception)))}
+        throw $providerCleanupFailure
     }
 }
 exit 0
