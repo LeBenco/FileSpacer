@@ -2,11 +2,23 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)][string]$HelpRoot,
-    [string]$CurrentInventory
+    [string]$CurrentInventory,
+    [string]$DiagnosticLog
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1') -ErrorAction Stop
+# nsExec only captures a bounded amount of output. Keep the complete failure
+# in the installer's UTF-16 log without replacing the original exception.
+trap {
+    $cleanupFailure=$_
+    if($DiagnosticLog) {
+        $failureText="PowerShell documentation cleanup failed: $($cleanupFailure.Exception.ToString())`r`n$($cleanupFailure.InvocationInfo.PositionMessage)`r`n$($cleanupFailure.ScriptStackTrace)`r`n"
+        try {[IO.File]::AppendAllText($DiagnosticLog,$failureText,[Text.Encoding]::Unicode)}
+        catch {Write-Warning ('Cannot append the cleanup exception to '+$DiagnosticLog)}
+    }
+    throw $cleanupFailure
+}
 $root=[IO.Path]::GetFullPath($HelpRoot).TrimEnd('\')
 if([IO.Path]::GetFileName($root) -ine 'help'){throw 'Documentation cleanup requires a help directory.'}
 $prefix=$root+'\'
