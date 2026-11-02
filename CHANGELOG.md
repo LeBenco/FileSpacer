@@ -4,6 +4,7 @@
 
 ## 1.3.0 — 2026-10-31
 
+- Add optional PowerToys Peek previews and defer conflicting window gestures to Grab And Move.
 - Customize the title bar menu in seven languages, with drag and drop, defaults and native or Nilesoft Shell appearance.
 - Add saved-layout actions, fit-to-content, closing descendants or other windows, named folder groups and stable Nilesoft commands.
 - Fix help cleanup failures blocking uninstallation and VM tests misidentifying several Explorer processes as separate desktop sessions.
