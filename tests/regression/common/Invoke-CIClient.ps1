@@ -27,9 +27,15 @@ public static class CIDesktop {
     public static extern bool Write(uint action,uint parameter,IntPtr value,uint flags);
 }
 '@
-        if(![CIDesktop]::Read(0x26,0,[ref]$dragOriginal,0)){throw 'Cannot read full-window drag setting.'}
-        $dragPrepared=$true
-        if(![CIDesktop]::Write(0x25,1,[IntPtr]::Zero,2)){throw 'Cannot enable full-window dragging on the CI desktop.'}
+        $selection=Get-Content (Join-Path $Package 'selection.json') -Raw|ConvertFrom-Json
+        $ui=@($selection.Cases|Where-Object {
+            (Get-Content (Join-Path $Package ('tests\regression\cases\'+$_)) -TotalCount 1) -eq '# Test-Category: UI'
+        }).Count-gt0
+        if($ui){
+            if(![CIDesktop]::Read(0x26,0,[ref]$dragOriginal,0)){throw 'Cannot read full-window drag setting.'}
+            $dragPrepared=$true
+            if(![CIDesktop]::Write(0x25,1,[IntPtr]::Zero,2)){throw 'Cannot enable full-window dragging on the CI desktop.'}
+        }
         $packageFiles=Get-Content (Join-Path $Package 'files.json') -Raw | ConvertFrom-Json
         foreach($entry in $packageFiles){
             $file=[IO.Path]::GetFullPath((Join-Path $Package $entry.Path))
@@ -53,11 +59,18 @@ public static class CIDesktop {
 Add-Type -Path (Join-Path $PSScriptRoot 'CIRestrictedProcess.cs')
 $session=[Diagnostics.Process]::GetCurrentProcess().SessionId
 $arguments='-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "'+$PSCommandPath+'" -Worker -Package "'+$Package+'" -RunDirectory "'+$RunDirectory+'" -SessionId '+$session
+$exitCode=$null
 try {
-    $exitCode=[FileSpacerRegression.CIRestrictedProcess]::Run((Join-Path $PSHOME 'powershell.exe'),$arguments,$Package,169*60*1000)
-    if(!(Test-Path $resultPath)){throw ('CI worker produced no result; exit='+$exitCode)}
+    $exitCode=[FileSpacerRegression.CIRestrictedProcess]::Run((Join-Path $PSHOME 'powershell.exe'),$arguments,$Package,169*60*1000,$true)
+    if(!(Test-Path $resultPath)){throw ('CI worker produced no result; exit={0} (0x{0:X8})' -f $exitCode)}
     $record=Get-Content $resultPath -Raw|ConvertFrom-Json
     if($exitCode-ne0 -or $record.Status-ne'PASS' -or $record.RunnerExitCode-ne0 -or $record.Administrator -or $record.SessionId-ne$session){throw ('CI worker failed: '+($record|ConvertTo-Json -Compress))}
+} catch {
+    if(Test-Path $resultPath){$record=Get-Content $resultPath -Raw|ConvertFrom-Json}
+    else {$record=[pscustomobject]@{Status='FAIL';SessionId=$null;Administrator=$null;RunnerExitCode=$exitCode;Error=$null}}
+    $record.Status='FAIL';$record.Error=$_.Exception.Message
+    $record|ConvertTo-Json|Set-Content $resultPath -Encoding UTF8
+    throw
 } finally {
     foreach($name in @('runner.stdout.log','runner.stderr.log')){
         $log=Join-Path $RunDirectory $name
