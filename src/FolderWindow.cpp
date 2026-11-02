@@ -631,6 +631,9 @@ bool FolderWindow::recoverProvisionalView() {
         restoringState = false;
         checkHR(selectionResult); // Selection failure cannot invalidate the known state or keep input disabled.
     }
+    // Closing merges without replaying the native layout. Later close callbacks
+    // must keep the known positions instead of capturing that unreplayed view.
+    if (isClosing) iconRestoreFailed = true;
     getSavedFolderState().view = std::move(recoveredState->view);
     getSavedFolderState().icons = std::move(recoveredState->icons);
     viewStateDirty(FolderState::View | FolderState::Icons);
@@ -2080,10 +2083,17 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         case WM_TIMER:
             if (wParam == TIMER_SAVE_STATE) {
                 KillTimer(hwnd, TIMER_SAVE_STATE);
-                if (provisionalBaseline && provisionalReady && !provisionalRestore) {
+                if (!isWindowOperational()) return 0;
+                if (provisionalBaseline && provisionalReady && !provisionalRestore && provisionalInputBlocked) {
                     const bool observed = captureProvisionalCurrent(true, provisionalInputBlocked);
                     if (observed && provisionalInputBlocked && !provisionalCaptureBusy)
                         blockProvisionalInput(false);
+                }
+                if (provisionalBaseline && !loadFolderState()) {
+                    // Retry unavailable storage without repeatedly capturing the
+                    // provisional layout. Shell readiness still comes from its events.
+                    SetTimer(hwnd, TIMER_SAVE_STATE, 1000, nullptr);
+                    return 0;
                 }
                 persistViewState();
                 saveSearchHistory();
