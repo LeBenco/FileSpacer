@@ -98,10 +98,12 @@ export async function installerInclude(output, names) {
   for (const file of [...names].sort()) {
     const directory = path.posix.dirname(file) === '.' ? '' : path.posix.dirname(file);
     if (directory !== current) {
-      lines.push(`  SetOutPath "$INSTDIR\\help${directory ? '\\' + escape(directory) : ''}"`);
+      lines.push(`  !insertmacro INSTALL_STEP "Create/select help directory: $INSTDIR\\help${directory ? '\\' + escape(directory) : ''}"`);
+      lines.push(`  SetOutPath "$INSTDIR\\help${directory ? '\\' + escape(directory) : ''}"`, '  IfErrors files_failed');
       current = directory;
     }
-    lines.push(`  File "\${FILESPACER_DOCS}\\${escape(file)}"`);
+    lines.push(`  !insertmacro INSTALL_STEP "Extract help file: $INSTDIR\\help\\${escape(file)}"`);
+    lines.push(`  File "\${FILESPACER_DOCS}\\${escape(file)}"`, '  IfErrors files_failed');
   }
   lines.push('!macroend', '', '!macro RemoveDocumentation');
   lines.push('  !insertmacro CleanInstalledDocumentation "Uninstall" uninstall_failed');
