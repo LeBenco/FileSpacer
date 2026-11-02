@@ -26,7 +26,7 @@ if(Test-Path $summaryPath){
         $directory=Join-Path (Join-Path $RunDirectory 'output') ($case.Test -replace '\.ps1$','')
         $log=Join-Path $directory 'output.log'
         if(Test-Path $log){
-            $evidence=@(Get-Content $log | Where-Object { $_ -match '^(FAIL:|Contents:|Factory=|RESULT:)' } | Select-Object -Last 3)
+            $evidence=@(Get-Content $log | Where-Object { $_ -match '^(FAIL:|Contents:|Factory=|FolderBinding=|CanonicalCompare=|Converted=|Expected=|RESULT:)' } | Select-Object -Last 3)
             foreach($line in $evidence){$report.Add('    '+$line)}
         }
     }
