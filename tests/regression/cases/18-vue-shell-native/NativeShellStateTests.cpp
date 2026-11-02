@@ -8,6 +8,7 @@
 #include "DPI.h"
 #include <shlobj.h>
 #include <shlwapi.h>
+#include <commctrl.h>
 #include <initguid.h>
 #include <propkey.h>
 #include <algorithm>
@@ -171,6 +172,15 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
             static_cast<unsigned long long>(enumDone), static_cast<unsigned long long>(baseline));
         if (!checked(hr, L"read native item count")) return false;
         if (actual == expected) return true;
+        CComPtr<IPersistFolder2> folder;
+        CComHeapPtr<ITEMIDLIST_ABSOLUTE> folderID;
+        CComHeapPtr<wchar_t> folderName;
+        HRESULT identity = folderView->GetFolder(IID_PPV_ARGS(&folder));
+        if (SUCCEEDED(identity)) identity = folder->GetCurFolder(&folderID);
+        if (SUCCEEDED(identity)) identity = SHGetNameFromIDList(folderID, SIGDN_DESKTOPABSOLUTEPARSING, &folderName);
+        log(L"Contents: folder=%s (0x%08lX); populated fixture=%s",
+            SUCCEEDED(identity) ? folderName.m_pData : L"<unavailable>",
+            static_cast<unsigned long>(identity), fixture.c_str());
         if (canWait && enumDone <= baseline) {
             log(L"WAIT: real EnumDone after presentation mutation; no retry or timer continuation");
             return false;
@@ -1175,6 +1185,8 @@ public:
 int wmain(int argc, wchar_t **argv) {
     const bool diagnostic = argc == 2 && wcscmp(argv[1], L"--diagnostic") == 0;
     if (argc > 1 && !diagnostic) return 3;
+    INITCOMMONCONTROLSEX controls = {sizeof(controls), ICC_STANDARD_CLASSES | ICC_BAR_CLASSES | ICC_USEREX_CLASSES | ICC_LISTVIEW_CLASSES};
+    if (!InitCommonControlsEx(&controls)) return 3;
     wchar_t executable[32768];
     const DWORD size = GetModuleFileName(nullptr, executable, _countof(executable));
     if (!size || size >= _countof(executable)) return 3;
