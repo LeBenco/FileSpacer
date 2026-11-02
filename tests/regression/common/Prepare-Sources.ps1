@@ -1,5 +1,5 @@
 ﻿param(
-    [Parameter(Mandatory=$true)][ValidateSet('Menu','Shell','Settings','View','Adapters','Geometry','LockBadge','Documentation','JumpLists')][string]$Mode,
+    [Parameter(Mandatory=$true)][ValidateSet('Menu','Shell','Settings','View','Adapters','Geometry','LockBadge','Documentation','JumpLists','StorageRetry')][string]$Mode,
     [Parameter(Mandatory=$true)][string]$ProjectRoot,
     [Parameter(Mandatory=$true)][string]$CaseDirectory,
     [Parameter(Mandatory=$true)][string]$OutputDirectory
@@ -129,6 +129,10 @@ class FolderWindow { public:
         $cases=[IO.File]::ReadAllText((Join-Path $CaseDirectory 'ViewStateCases.inc'))
         Save-Source 'ViewStateTests.cpp' ($prefix+"`n"+$traceDefinition+"`n"+$state+";`n};`n"+$helpers+"`n"+$cases)
     }
+}
+if ($Mode -eq 'StorageRetry') {
+    $source=Read-Source 'FolderWindow.cpp'
+    Save-Source 'SaveStateTimer.inc' (Get-SourceBlock $source 'if (wParam == TIMER_SAVE_STATE)')
 }
 Save-Source 'production-hashes.json' ($hashes | ConvertTo-Json)
 
