@@ -5,6 +5,7 @@
     [ValidateRange(30,3600)][int]$TimeoutSeconds=300,
     [string]$RunDirectory='',
     [string]$VM='',
+    [switch]$CI,
     [switch]$Prepared
 )
 $ErrorActionPreference='Stop'
@@ -14,6 +15,7 @@ Set-StrictMode -Version 2
 . (Join-Path $PSScriptRoot 'common\StorageSnapshot.ps1')
 if ($env:OS -ne 'Windows_NT' -or ![Environment]::Is64BitProcess) { throw 'Windows x64 is required.' }
 $ProjectRoot=(Resolve-Path -LiteralPath $ProjectRoot).Path
+if ($CI -and ($VM -or $Prepared -or $env:GITHUB_ACTIONS -ne 'true')) { throw '-CI requires GitHub Actions and cannot be combined with -VM or -Prepared.' }
 $caseRoot=Join-Path $PSScriptRoot 'cases'
 $preparedSelection=$null
 if ($Prepared) { $preparedSelection=Get-Content -LiteralPath (Join-Path $ProjectRoot 'selection.json') -Raw | ConvertFrom-Json }
@@ -49,6 +51,18 @@ if ($RunDirectory) {
     if (Test-Path -LiteralPath $run) { throw 'The requested result directory already exists; previous results will not be overwritten.' }
 } else { $run=Join-Path $ProjectRoot ('build\regression\'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'-'+[Guid]::NewGuid().ToString('N')) }
 [void][IO.Directory]::CreateDirectory($run)
+if ($CI) {
+    # Reuse the VM package builder, including installer fixtures and the exact
+    # selected helpers. Execute on this disposable runner, without Hyper-V.
+    . (Join-Path $PSScriptRoot 'common\Prepare-Client.ps1')
+    $package=Join-Path $run 'package'
+    [void][IO.Directory]::CreateDirectory($package)
+    [void](Start-Transcript -LiteralPath (Join-Path $run 'preparation.log'))
+    try { New-ClientPackage -Selected $selected -Destination $package -TimeoutSeconds $TimeoutSeconds }
+    finally { [void](Stop-Transcript) }
+    & (Join-Path $PSHOME 'powershell.exe') -NoProfile -ExecutionPolicy Bypass -File (Join-Path $package 'tests\regression\Run-Regression.ps1') -ProjectRoot $package -Prepared -RunDirectory (Join-Path $run 'output')
+    exit $LASTEXITCODE
+}
 $results=New-Object Collections.Generic.List[object]
 $testKey='Software\FileSpacer\Test'
 $database=Join-Path $env:LOCALAPPDATA 'FileSpacer\folder-state-test.sqlite3'
