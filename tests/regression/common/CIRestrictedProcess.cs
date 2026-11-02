@@ -77,7 +77,7 @@ namespace FileSpacerRegression {
                     station=OpenWindowStation("winsta0",false,0x60000);
                     if(station==IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error(),"Open CI window station security");
                     stationAcl=ReadDesktopAcl(station);GrantDesktopAccess(station,stationAcl,0x2037f);
-                    desktop=OpenDesktop("default",0,false,0x60000);
+                    desktop=OpenDesktop("default",0,false,0x60081);
                     if(desktop==IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error(),"Open CI desktop security");
                     desktopAcl=ReadDesktopAcl(desktop);GrantDesktopAccess(desktop,desktopAcl,0x201ff);
                 }
