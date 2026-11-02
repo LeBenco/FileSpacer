@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -21,6 +22,10 @@ struct FolderViewSettings {
     std::vector<SortColumn> sort;
     Key groupBy = {};
     bool groupAscending = false;
+    // Apply observed provisional changes to this known reference, preserving
+    // fields that were unchanged or unavailable in either observation.
+    FolderViewSettings mergeChanges(const FolderViewSettings &baseline,
+        const FolderViewSettings &current, const std::vector<Column> &initialWidths = {}) const;
 };
 
 // A successful access refreshes last_success_at at most once a day (UTC
@@ -49,7 +54,9 @@ struct ClosedWindow {
 // Short write transactions update only requested parts and enforce the used-page quota.
 class FolderStateStore {
 public:
-    explicit FolderStateStore(const char *utf8Path);
+    // Retried UI initialization may skip lock waits. Ready connections always
+    // retain the ordinary operation deadlines.
+    explicit FolderStateStore(const char *utf8Path, bool waitForInitialization = true);
     ~FolderStateStore();
     FolderStateStore(const FolderStateStore &) = delete;
     FolderStateStore &operator=(const FolderStateStore &) = delete;
@@ -69,13 +76,17 @@ public:
     bool remove(const std::string &key);
     bool move(const std::string &oldKey, const std::string &newKey);
     bool readSearchHistory(const std::string &key, unsigned limit, std::vector<std::string> *queries);
-    bool saveSearchHistory(const std::string &key, const std::vector<std::string> &queries, unsigned limit);
+    bool saveSearchHistory(const std::string &key, const std::vector<std::string> &queries, unsigned limit,
+        bool mergeRecent = false);
     bool trimSearchHistory(unsigned limit);
     bool lastClosedWindow(ClosedWindow *window);
     bool takeClosedWindow(ClosedWindow *window);
     bool rememberClosedWindow(const ClosedWindow &window);
     bool returnClosedWindow(const ClosedWindow &window);
 private:
+    class Lock;
+    struct CloseHandle { void operator()(void *handle) const; };
+    bool createMutex(const char *utf8Path);
     bool writeState(const std::string &key, const FolderState &state, uint32_t parts, int lockChange);
     bool readClosedWindow(ClosedWindow *window);
     bool writeClosedWindow(const ClosedWindow &window, bool returning);
@@ -86,6 +97,7 @@ private:
     sqlite3 *db = nullptr;
     bool initialized = false;
     std::string lastError;
+    std::unique_ptr<void, CloseHandle> accessMutex;
 };
 
 #ifdef _WIN32
