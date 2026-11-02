@@ -1,4 +1,4 @@
-# Test-Category: UI
+﻿# Test-Category: UI
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
 . (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
 Add-Type -Path (Join-Path $PSScriptRoot '..\28-apercu-affichage\ViewMenuUi.cs')
