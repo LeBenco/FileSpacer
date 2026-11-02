@@ -81,9 +81,13 @@ try {
     New-ItemProperty -LiteralPath ($machineProvider+'\InprocServer32') -Name ThreadingModel -Value Apartment -PropertyType String -Force|Out-Null
     [void](New-Item -Path ($machineProvider+'\ShellFolder') -Force)
     New-ItemProperty -LiteralPath ($machineProvider+'\ShellFolder') -Name Attributes -Value (-1610612736) -PropertyType DWord -Force|Out-Null
-    $access=Get-Acl -LiteralPath $machineProvider
-    $access.AddAccessRule((New-Object Security.AccessControl.RegistryAccessRule([Security.Principal.WindowsIdentity]::GetCurrent().User,[Security.AccessControl.RegistryRights]::FullControl,[Security.AccessControl.InheritanceFlags]::ContainerInherit,[Security.AccessControl.PropagationFlags]::None,[Security.AccessControl.AccessControlType]::Allow)))
-    Set-Acl -LiteralPath $machineProvider -AclObject $access
+    $key=[Microsoft.Win32.Registry]::LocalMachine.OpenSubKey('Software\Classes\CLSID\{E129740C-52FD-4C7B-98AA-9ED6EBF9A604}',[Microsoft.Win32.RegistryKeyPermissionCheck]::ReadWriteSubTree,([Security.AccessControl.RegistryRights]::ReadPermissions -bor [Security.AccessControl.RegistryRights]::ChangePermissions))
+    if(!$key){throw 'The isolated machine provider key was not created.'}
+    try {
+        $access=$key.GetAccessControl([Security.AccessControl.AccessControlSections]::Access)
+        $access.AddAccessRule((New-Object Security.AccessControl.RegistryAccessRule([Security.Principal.WindowsIdentity]::GetCurrent().User,[Security.AccessControl.RegistryRights]::FullControl,[Security.AccessControl.InheritanceFlags]::ContainerInherit,[Security.AccessControl.PropagationFlags]::None,[Security.AccessControl.AccessControlType]::Allow)))
+        $key.SetAccessControl($access)
+    } finally {$key.Dispose()}
     $env:FS_REGRESSION_CI_PROVIDER='true'
     Write-Host ('CI isolated provider: '+$provider)
     $exitCode=[FileSpacerRegression.CIRestrictedProcess]::Run((Join-Path $PSHOME 'powershell.exe'),$arguments,$RunDirectory,169*60*1000)
