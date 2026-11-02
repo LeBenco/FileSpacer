@@ -223,7 +223,10 @@ private:
     CComPtr<IFolderFilter> nameFilter;
     std::wstring searchText;
     std::vector<std::wstring> searchHistory;
+    std::vector<std::wstring> pendingSearches;
+    bool searchHistoryLoaded = false;
     bool searchHistoryDirty = false;
+    bool loadSearchHistory();
     void rememberSearch(const std::wstring &query);
     void saveSearchHistory();
     void openSearchMenu();
@@ -234,6 +237,28 @@ private:
         std::vector<uint8_t> selection;
         std::vector<uint8_t> icons; // Existing icon-position blob, applied once to the new view.
     };
+    // The native fallback is observable before SQLite can be read. It is not
+    // a saved preference: only later differences may be merged into storage.
+    std::unique_ptr<ShellViewState> provisionalBaseline;
+    std::unique_ptr<ShellViewState> provisionalCurrent;
+    std::shared_ptr<ShellViewState> provisionalRestore;
+    std::vector<FolderViewSettings::Column> provisionalColumnWidths;
+    bool provisionalReady = false;
+    bool provisionalIconsComplete = false, provisionalCaptureBusy = false;
+    bool provisionalRestoreOptionsApplied = false;
+    bool provisionalInputBlocked = false;
+    HWND disabledProvisionalView = nullptr, disabledProvisionalSearch = nullptr;
+    HWND disabledProvisionalToolbar = nullptr;
+    HWND provisionalViewWindow = nullptr;
+    ULONG_PTR disabledProvisionalGeneration = 0;
+    void blockProvisionalInput(bool blocked);
+    bool captureProvisionalBaseline();
+    bool captureProvisionalCurrent(bool icons, bool beforeInput = false);
+    bool recoverProvisionalView();
+    bool watchProvisionalInput(bool watch);
+    static LRESULT CALLBACK provisionalMessageHook(int code, WPARAM removed, LPARAM data);
+    static thread_local HHOOK provisionalHook;
+    static thread_local std::vector<FolderWindow *> provisionalWindows;
 
     struct ViewMenuPreview;
     std::shared_ptr<ViewMenuPreview> viewMenuPreview;
@@ -243,7 +268,15 @@ private:
     std::shared_ptr<ViewMenuPreview> viewMenuRestore;
     ULONG_PTR viewMenuPreviewSerial = 0;
 
-    void loadIconPositions();
+    // Consumption of a restore attempt is not permission to export its fallback.
+    bool iconRestoreFailed = false, iconPositionErrorShown = false;
+    std::unique_ptr<std::vector<uint8_t>> iconChangeBaseline;
+    ULONG_PTR iconChangeEnumeration = 0;
+    void iconPositionError();
+    void iconRestoreResult(HRESULT result);
+    bool observeIconChange();
+    bool captureIconChange();
+    HRESULT loadIconPositions();
     void scheduleStateSave(bool icons = false);
     void synchronizeViewProvider();
     bool viewReady = false;
