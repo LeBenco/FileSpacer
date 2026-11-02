@@ -6,31 +6,50 @@
 
 Dans **Actions > Test FileSpacer regressions > Run workflow**, renseigner `ref`
 avec une branche (`main` par défaut), un tag ou un SHA de commit. `category=All`
-et `pattern=*` exécutent toute la suite ; les mêmes catégories et motifs que
-le lanceur local permettent un passage ciblé. Le workflow est exclusivement
-manuel et ne publie aucune release.
+et `pattern=*` exécutent toute la suite applicative ; les mêmes catégories et
+motifs que le lanceur local permettent un passage ciblé. Le lancement autonome
+est manuel ; la release réutilise aussi ce workflow. Il ne publie aucune release
+et sélectionne exclusivement le périmètre
+`Application` : les tests d'installateur restent disponibles localement, mais
+aucun installateur ni documentation hors ligne n'est construit par ce workflow.
 
-La révision est résolue une seule fois : documentation, application et tests
+La révision est résolue une seule fois : application et tests
 proviennent du même commit. Une ancienne révision doit contenir le lanceur
-`-CI` et les dépendances du workflow ; le banc courant n'est pas greffé sur
+`-CI`, `-Scope`, `-ListOnly` et les dépendances du workflow ; le banc courant n'est pas greffé sur
 des sources anciennes. Le workflow doit être présent sur la branche par défaut
 pour que GitHub propose son lancement manuel.
 
 Sur le runner jetable `windows-2022`, le workflow utilise MSVC/NMAKE pour
-compiler Debug et l'installateur nécessaire aux fixtures. Le mode `-CI` de
+compiler Debug. Le mode `-CI` de
 `Run-Regression.ps1` réutilise la préparation des artefacts du mode VM, puis
-exécute les cas sélectionnés sur le bureau du runner, sans Hyper-V. Il est
+exécute les cas sélectionnés sur le bureau du runner, sans Hyper-V, avec un
+jeton restreint à intégrité moyenne. Le compte, la session et l'absence de
+droits administrateur sont vérifiés. Le paquet et TEMP utilisent des chemins
+courts ; le déplacement avec contenu est activé puis restauré. Le mode est
 réservé à GitHub Actions et incompatible avec `-VM` ou `-Prepared`.
 
 Le résumé donne le SHA testé et le bilan du banc. Les logs de compilation,
 de préparation, les rapports JSON et les captures sont conservés 14 jours
 dans l'artefact `regression-<run>-<tentative>`, même après un échec. Un cas
 bloqué, non exécuté ou un résumé absent empêche la validation. L'environnement
-consigne notamment la résolution et l'élévation du compte : ce passage sur
-Windows Server 2022 ne remplace pas une validation spécifique de Windows 10
-sous le jeton limité de la VM.
+consigne notamment la résolution et l'élévation du compte préparateur ;
+`worker-result.json` donne les droits et la session du processus de test.
+Ce passage sur Windows Server 2022 ne remplace pas une validation spécifique
+de Windows 10. Le résumé liste les cas en échec, leurs codes de sortie et leur
+première erreur, sans masquer les erreurs du worker ou du nettoyage.
+
+La release appelle la même suite applicative comme préalable à sa publication.
+Elle génère ensuite son propre installateur et sa documentation embarquée,
+contrôle la version et publie l'artefact construit, sans suite dédiée de tests
+d'installation. Une construction NSIS réussie n'est pas une validation de
+l'installation réelle. Les erreurs de release gardent un résumé court et un
+artefact de diagnostic distinct.
 
 ### Poste local ou VM dédiée
+
+Pendant un développement, lancer les nouveaux cas et les cas existants concernés
+par la modification. La suite applicative complète est validée sur GitHub ;
+un passage complet local n'est pas un préalable à chaque changement.
 
 Depuis CMD à la racine du projet, fermer FileSpacer et les fenêtres du Panneau
 de configuration, puis lancer :
@@ -61,6 +80,11 @@ explicite de la session ou une politique de sécurité peut toujours bloquer les
 tests ; le lanceur ne déverrouille pas Windows.
 
 Pour sélectionner un périmètre :
+
+`-Scope Application|Installer|All` sélectionne le produit testé ;
+`-Category Internal|UI|All` sélectionne la nature des tests. Le défaut local
+reste `-Scope All`. Les deux filtres se combinent avec `-Pattern`. Le mode
+`-ListOnly` donne la sélection JSON sans compiler ni ouvrir de fenêtre.
 
 ```cmd
 tests.cmd -Category Internal
