@@ -56,9 +56,11 @@ try {
     Assert-Ui ($button.Left -ge $client.Left -and $button.Right -le $client.Right -and $button.Bottom -le $client.Bottom) 'Maintenance is clipped.'
     Assert-Ui ([FileSpacerRegression.Native]::PostMessage($about,0x111,[IntPtr](Get-UiId 'IDC_RESET_FOLDER_STATE'),$maintenance)) 'Cannot invoke maintenance confirmation from About.'
     $dialogProcessId=[uint32]0; [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($other,[ref]$dialogProcessId)
+    Add-Type -Path (Join-Path $PSScriptRoot '..\01-stockage-sqlite\StorageRecoveryUi.cs')
+    $confirmationTitles=@([MutexRecoveryNative]::Messages($script:UiExecutable,(Get-UiId 'IDS_CONFIRM_CAPTION')))
     $confirmation=@{Window=[IntPtr]::Zero}
     Wait-Ui {
-        $dialogs=@([FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,$dialogProcessId) | Where-Object { $_ -ne $script:UiSettings -and [FileSpacerRegression.Native]::IsWindowEnabled($_) -and [FileSpacerRegression.Native]::Text($_) -match '^Confirm' })
+        $dialogs=@([FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,$dialogProcessId) | Where-Object { $_ -ne $script:UiSettings -and [FileSpacerRegression.Native]::IsWindowEnabled($_) -and [FileSpacerRegression.Native]::Text($_) -in $confirmationTitles })
         if ($dialogs.Count -ne 1) { return $false }; $confirmation.Window=$dialogs[0]; $script:PlacementConfirmation=$dialogs[0]; return $true
     } 'maintenance confirmation'
     [void][FileSpacerRegression.Native]::Message($confirmation.Window,0x466,7,0)

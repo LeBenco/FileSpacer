@@ -2,6 +2,7 @@
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
 . (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
 Add-Type -Path (Join-Path $PSScriptRoot 'LockUi.cs')
+Add-Type -Path (Join-Path $PSScriptRoot '..\01-stockage-sqlite\StorageRecoveryUi.cs')
 Add-Type -AssemblyName System.Drawing
 function Save-Caption([IntPtr]$Window,[string]$Name) {
     $rect=[FileSpacerRegression.Native]::Bounds($Window)
@@ -56,13 +57,14 @@ function Enable-Locks([IntPtr]$Window) {
     Assert-Ui ((Get-UiPreference 'WindowStateLockEnabled') -eq 1) 'Feature activation not persisted.'
 }
 function Disable-Locks([IntPtr]$Window,[bool]$Confirm) {
+    $confirmationTitles=@([MutexRecoveryNative]::Messages($script:UiExecutable,(Get-UiId 'IDS_CONFIRM_CAPTION')))
     [void](Show-UiSettings $Window); $page=Set-UiPage 0
     Set-UiCheck $page 'IDC_WINDOW_STATE_LOCK_ENABLED' $false
     Press-UiSettings 4
     $dialog=@{Handle=[IntPtr]::Zero}
     $windowProcessId=[uint32]0; [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($Window,[ref]$windowProcessId)
     Wait-Ui {
-        $dialogs=@([FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,$windowProcessId) | Where-Object { $_ -ne $script:UiSettings -and [FileSpacerRegression.Native]::IsWindowEnabled($_) -and [FileSpacerRegression.Native]::Text($_) -match '^Confirm' })
+        $dialogs=@([FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,$windowProcessId) | Where-Object { $_ -ne $script:UiSettings -and [FileSpacerRegression.Native]::IsWindowEnabled($_) -and [FileSpacerRegression.Native]::Text($_) -in $confirmationTitles })
         if ($dialogs.Count -eq 1) { $dialog.Handle=$dialogs[0]; return $true }; return $false
     } 'native destructive confirmation'
     $script:UiConfirmation=$dialog.Handle
