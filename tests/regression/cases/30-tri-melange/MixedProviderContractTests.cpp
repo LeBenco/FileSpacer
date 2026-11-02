@@ -29,7 +29,9 @@ void checkProvider(const wchar_t *path, const wchar_t *directory, bool modern) {
     std::printf("Factory=0x%08lX\n", static_cast<unsigned long>(created));
     require(SUCCEEDED(created), "Provider factory failed");
     CComPtr<IShellFolder> folder;
-    require(SUCCEEDED(mixed->BindToHandler(nullptr, BHID_SFObject, IID_PPV_ARGS(&folder))), "Provider folder binding failed");
+    const HRESULT bound = mixed->BindToHandler(nullptr, BHID_SFObject, IID_PPV_ARGS(&folder));
+    std::printf("FolderBinding=0x%08lX\n", static_cast<unsigned long>(bound));
+    require(SUCCEEDED(bound), "Provider folder binding failed");
     CComPtr<filespacer::IMixedFolder> current;
     CComPtr<LegacyMixedFolder> legacy;
     const HRESULT currentResult = folder->QueryInterface(IID_PPV_ARGS(&current));
@@ -51,7 +53,17 @@ void checkProvider(const wchar_t *path, const wchar_t *directory, bool modern) {
     const std::wstring expectedPath = std::wstring(directory) + L"\\native.txt";
     require(SUCCEEDED(SHCreateItemFromParsingName(expectedPath.c_str(), nullptr, IID_PPV_ARGS(&expected))), "Expected native item unavailable");
     int comparison = 1;
-    require(SUCCEEDED(converted->Compare(expected, SICHINT_CANONICAL, &comparison)) && comparison == 0,
+    const HRESULT compared = converted->Compare(expected, SICHINT_CANONICAL, &comparison);
+    if (FAILED(compared) || comparison != 0) {
+        CComHeapPtr<wchar_t> convertedName, expectedName;
+        const HRESULT convertedDisplay = converted->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &convertedName);
+        const HRESULT expectedDisplay = expected->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &expectedName);
+        std::printf("CanonicalCompare=0x%08lX; result=%d\nConverted=%ls (0x%08lX)\nExpected=%ls (0x%08lX)\n",
+            static_cast<unsigned long>(compared), comparison,
+            SUCCEEDED(convertedDisplay) ? convertedName.m_pData : L"<unavailable>", static_cast<unsigned long>(convertedDisplay),
+            SUCCEEDED(expectedDisplay) ? expectedName.m_pData : L"<unavailable>", static_cast<unsigned long>(expectedDisplay));
+    }
+    require(SUCCEEDED(compared) && comparison == 0,
         "Converted child has the wrong canonical identity");
     if (!modern) {
         CComHeapPtr<ITEMID_CHILD> nativeChild, viewChild;
