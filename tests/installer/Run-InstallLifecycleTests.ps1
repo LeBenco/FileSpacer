@@ -42,16 +42,17 @@ $shortcutCode = [IO.File]::ReadAllText((Join-Path $root 'installer\ShortcutAppID
 [IO.File]::WriteAllText($shortcutHelper,$shortcutCode,[Text.UTF8Encoding]::new($true))
 $variant = $variant.Replace('!include ShortcutAppID.nsh','!include "'+$shortcutHelper+'"')
 $installer = Join-Path $RunDirectory 'LifecycleInstaller.exe'
+$tracePath = Join-Path $RunDirectory 'installation trace.log'
 $variant = $variant.Replace('OutFile "..\build\FileSpacer-install.exe"', 'OutFile "'+$installer+'"')
 # Exercise actual nsExec launch/nonzero failures without changing the host's PowerShell.
-if([regex]::Matches($variant,'(?m)^    nsExec::ExecToLog ').Count -ne 2){throw 'Expected both production documentation cleanup commands.'}
-$variant = [regex]::Replace($variant, '(?m)^    (nsExec::ExecToLog .*)\r?$', {
+if([regex]::Matches($variant,'(?m)^    nsExec::ExecToStack ').Count -ne 2){throw 'Expected both production documentation cleanup commands.'}
+$variant = [regex]::Replace($variant, '(?m)^    (nsExec::ExecToStack .*)\r?$', {
     param($match)
     @'
     ${If} ${FileExists} "$INSTDIR\missing-powershell.fixture"
-        nsExec::ExecToLog '"$INSTDIR\absent-powershell.exe"'
+        nsExec::ExecToStack '"$INSTDIR\absent-powershell.exe"'
     ${ElseIf} ${FileExists} "$INSTDIR\script-failure.fixture"
-        nsExec::ExecToLog '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -Command "exit 126"'
+        nsExec::ExecToStack '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -Command "exit 126"'
     ${Else}
         @COMMAND@
     ${EndIf}
@@ -77,6 +78,7 @@ $variantPath = Join-Path $RunDirectory 'LifecycleInstaller.nsi'
 & $MakeNSIS /NOCONFIG /WX /V2 $variantPath
 if ($LASTEXITCODE) { throw 'Lifecycle fixture compilation failed.' }
 function Run-FixtureProcess([string]$path,[string]$arguments,[int]$expected=0) {
+    if($path -eq $installer) { $arguments='/Log="'+$tracePath+'" '+$arguments }
     $process=Start-Process -FilePath $path -ArgumentList $arguments -WindowStyle Hidden -PassThru
     try {
         if (!$process.WaitForExit(30000)) { throw "Installer fixture timed out: $path" }
@@ -116,6 +118,11 @@ try {
         if((Get-FileHash -LiteralPath $installedFile -Algorithm SHA256).Hash -ine $entry.Value) { throw "Installed documentation differs: $($entry.Name)" }
     }
     Check-Profile $directory $mode 1
+    $trace=[IO.File]::ReadAllText($tracePath,[Text.Encoding]::Unicode)
+    foreach($entry in @('Setup context: version=','Extract file: ','Extract help file: ',
+        'Write uninstaller: ','Write INI: ','Write registry (SHCTX): ','Saving component StartMenu=1')) {
+        if(!$trace.Contains($entry)){throw "Missing installation trace: $entry"}
+    }
     $installed=$hive.OpenSubKey($registryPrefix+'FileSpacer')
     try {
         if(!$installed -or $installed.GetValue('Install_Dir') -cne $directory -or $installed.GetValue('InstallMode') -cne $mode) { throw 'Installation registration was written under the wrong scope or directory.' }
@@ -231,6 +238,15 @@ try {
             $before[$file.FullName]=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
         }
         Run-FixtureProcess $installer ("/S /CurrentUser /UpdateResult=`"$resultFile`" /D=$directory") 2
+        $trace=[IO.File]::ReadAllText($tracePath,[Text.Encoding]::Unicode)
+        foreach($entry in @('ERROR: documentation Upgrade failed','ERROR: Clean installed documentation before file replacement')) {
+            if(!$trace.Contains($entry)){throw "Missing $scenario failure trace: $entry"}
+        }
+        $expectedExit=if($scenario -eq 'missing-powershell'){'error'}elseif($scenario -eq 'script-failure'){'126'}else{'1'}
+        if(!$trace.Contains('Documentation Upgrade: exit='+$expectedExit+';')){throw "Missing cleanup exit code: $scenario"}
+        if($scenario -eq 'invalid-inventory' -and (!$trace.Contains('PowerShell documentation cleanup failed:') -or !$trace.Contains('FileSpacer-doc-cleanup.ps1'))) {
+            throw 'Full PowerShell cleanup exception or script location missing from persistent log.'
+        }
         if(Test-Path -LiteralPath $resultFile){throw "Failed $scenario upgrade reported success."}
         if(@(Get-ChildItem -LiteralPath $directory -Recurse -File -Force).Count -ne $before.Count){throw "Failed $scenario upgrade changed installed files."}
         foreach($file in $before.Keys) {
@@ -265,6 +281,19 @@ try {
         }
         Write-Host "PASS: $scenario blocks Upgrade before copy; uninstall removes the program, preserves help/inventory and reports both detail and final warnings."
     }
+    # Fail at a real INI write after successful extraction. The log must identify
+    # that precise operation and must not claim success or continue to registry.
+    $directory=Join-Path $RunDirectory 'blocked metadata'
+    [void][IO.Directory]::CreateDirectory((Join-Path $directory 'install-info.ini'))
+    Run-FixtureProcess $installer ("/S /CurrentUser /UpdateResult=`"$resultFile`" /D=$directory") 2
+    $trace=[IO.File]::ReadAllText($tracePath,[Text.Encoding]::Unicode)
+    if(!$trace.Contains("ERROR: Write INI: $directory\install-info.ini [Installation] Mode; NSIS file-operation failure")) {
+        throw 'INI failure did not identify the exact operation.'
+    }
+    if($trace.Contains('Writing registration') -or $trace.Contains('Write registry (SHCTX):') -or (Test-Path -LiteralPath $resultFile)) {
+        throw 'Failed INI write continued installation or reported success.'
+    }
+    Write-Host 'PASS: real INI-write failure logs the exact operation and stops before registration or a success result.'
 } catch { $testError=$_ }
 finally {
     # Delete only the fresh GUID namespaces owned by this run, even on failure.
