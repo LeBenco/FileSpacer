@@ -710,7 +710,7 @@ void ItemWindow::persistViewState() {
     if (stateKey.empty()) return; // No identity, or state expired after qualified access failures.
     if (!loadFolderState() || !updateStateLock()) return; // Do not overwrite unreadable state.
     const uint32_t captured = captureViewState(dirtyViewState);
-    if (!captured) return;
+    if (!captured || layoutForgotten || stateKey.empty()) return; // Native capture can dispatch expiration/forgetting.
     auto store = folderStateStore();
     if (store && store->save(stateKey, savedState, captured)) {
         savedState.present |= captured;
@@ -1911,7 +1911,7 @@ RECT ItemWindow::requestedRect(HMONITOR preferMonitor, HWND source) {
         const HMONITOR monitor = preferMonitor ? preferMonitor
             : MonitorFromWindow(GetForegroundWindow(), MONITOR_DEFAULTTOPRIMARY);
         if (findWindowPlacement(monitor, size, source, rect)) {
-            viewStateDirty(FolderState::Position);
+            if (stateLoaded) viewStateDirty(FolderState::Position);
             return rect;
         }
     }
@@ -1962,7 +1962,7 @@ RECT ItemWindow::requestedRect(HMONITOR preferMonitor, HWND source) {
         checkLE(DestroyWindow(owner));
     }
 
-    viewStateDirty(FolderState::Position);
+    if (stateLoaded) viewStateDirty(FolderState::Position);
     return rect;
 }
 
