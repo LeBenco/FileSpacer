@@ -1,11 +1,13 @@
 ﻿param(
     [string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
     [ValidateSet('All','Internal','UI')][string]$Category='All',
+    [ValidateSet('All','Application','Installer')][string]$Scope='All',
     [string]$Pattern='*',
     [ValidateRange(30,3600)][int]$TimeoutSeconds=300,
     [string]$RunDirectory='',
     [string]$VM='',
     [switch]$CI,
+    [switch]$ListOnly,
     [switch]$Prepared
 )
 $ErrorActionPreference='Stop'
@@ -13,7 +15,6 @@ Set-StrictMode -Version 2
 . (Join-Path $PSScriptRoot 'common\Process.ps1')
 . (Join-Path $PSScriptRoot 'common\Results.ps1')
 . (Join-Path $PSScriptRoot 'common\StorageSnapshot.ps1')
-if ($env:OS -ne 'Windows_NT' -or ![Environment]::Is64BitProcess) { throw 'Windows x64 is required.' }
 $ProjectRoot=(Resolve-Path -LiteralPath $ProjectRoot).Path
 if ($CI -and ($VM -or $Prepared -or $env:GITHUB_ACTIONS -ne 'true')) { throw '-CI requires GitHub Actions and cannot be combined with -VM or -Prepared.' }
 $caseRoot=Join-Path $PSScriptRoot 'cases'
@@ -22,15 +23,23 @@ if ($Prepared) { $preparedSelection=Get-Content -LiteralPath (Join-Path $Project
 $tests=@(Get-ChildItem -LiteralPath $caseRoot -Recurse -File -Filter '*.ps1' | Where-Object { $_.Name -match '^\d{2}-.+\.ps1$' } | Sort-Object FullName)
 $selected=@()
 foreach ($test in $tests) {
-    $relative=$test.FullName.Substring($caseRoot.Length+1)
+    $relative=$test.FullName.Substring($caseRoot.Length+1).Replace('/','\')
     if ($Prepared -and $relative -notin $preparedSelection.Cases) { continue }
     if ($relative -notlike $Pattern) { continue }
     $first=Get-Content -LiteralPath $test.FullName -TotalCount 1
     if ($first -notmatch '^# Test-Category: (Internal|UI)$') { throw "Missing test category: $relative" }
     $kind=$Matches[1]
-    if ($Category -eq 'All' -or $Category -eq $kind) { $selected+=@{ File=$test; Relative=$relative; Category=$kind } }
+    $testScope=if($relative -like '32-installeur\*'){'Installer'}else{'Application'}
+    if (($Scope -eq 'All' -or $Scope -eq $testScope) -and ($Category -eq 'All' -or $Category -eq $kind)) {
+        $selected+=@{ File=$test; Relative=$relative; Category=$kind; Scope=$testScope }
+    }
 }
 if (!$selected.Count) { throw 'No tests matched the requested category/pattern.' }
+if ($ListOnly) {
+    ConvertTo-Json -InputObject @($selected | ForEach-Object { [pscustomobject]@{Test=$_.Relative;Category=$_.Category;Scope=$_.Scope} })
+    exit 0
+}
+if ($env:OS -ne 'Windows_NT' -or ![Environment]::Is64BitProcess) { throw 'Windows x64 is required.' }
 if ($Prepared -and $selected.Count -ne @($preparedSelection.Cases).Count) { throw 'Prepared selection differs from the selected guest cases.' }
 if ($Prepared) { $TimeoutSeconds=[int]$preparedSelection.TimeoutSeconds }
 if ($VM) {
@@ -60,7 +69,7 @@ if ($CI) {
     [void](Start-Transcript -LiteralPath (Join-Path $run 'preparation.log'))
     try { New-ClientPackage -Selected $selected -Destination $package -TimeoutSeconds $TimeoutSeconds }
     finally { [void](Stop-Transcript) }
-    & (Join-Path $PSHOME 'powershell.exe') -NoProfile -ExecutionPolicy Bypass -File (Join-Path $package 'tests\regression\Run-Regression.ps1') -ProjectRoot $package -Prepared -RunDirectory (Join-Path $run 'output')
+    & (Join-Path $PSScriptRoot 'common\Invoke-CIClient.ps1') -Package $package -RunDirectory $run
     exit $LASTEXITCODE
 }
 $results=New-Object Collections.Generic.List[object]
