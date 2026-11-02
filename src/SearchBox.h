@@ -28,6 +28,7 @@ public:
     static void init();
     void create(HWND parent, HWND owner);
     void destroy();
+    HWND windowHandle() const { return hwnd; }
     void place(const RECT &rect, bool resizable = true);
     void setFolderName(const wchar_t *name);
     void setLiveSearch(bool enabled);
