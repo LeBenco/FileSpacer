@@ -40,6 +40,30 @@ int main(int argc, char **argv) {
             require(store.saveSearchHistory("A", recent, 5), "save history A");
             require(store.saveSearchHistory("B", {"other folder"}, 5), "save history B");
             require(history(store, "A") == recent && history(store, "B") == std::vector<std::string>{"other folder"}, "folder isolation/order");
+            require(store.save("pending", state, FolderState::Position), "pending history folder");
+            require(store.saveSearchHistory("pending", {"cached", "removed"}, 5), "seed pending history");
+            // A second connection commits after the UI's initial cache was read.
+            {
+                FolderStateStore other(path);
+                require(other.ready(), "second history client");
+                require(other.saveSearchHistory("pending", {"concurrent", "cached"}, 5), "concurrent history change");
+            }
+            require(store.saveSearchHistory("pending", {"submitted", "submitted", ""}, 5, true), "merge pending queries");
+            require(history(store, "pending") == std::vector<std::string>({"submitted", "concurrent", "cached"}),
+                "pending merge lost a committed addition or resurrected a removed cache entry");
+            require(store.saveSearchHistory("pending", {"cached", "submitted"}, 2, true)
+                && history(store, "pending") == std::vector<std::string>({"cached", "submitted"}), "pending MRU and limit");
+            sql(path, "CREATE TRIGGER fail_pending BEFORE INSERT ON search_history WHEN new.query='blocked' "
+                "BEGIN SELECT RAISE(ABORT,'forced pending failure'); END;");
+            require(!store.saveSearchHistory("pending", {"blocked"}, 5, true)
+                && history(store, "pending") == std::vector<std::string>({"cached", "submitted"}), "failed pending merge lost history");
+            sql(path, "DROP TRIGGER fail_pending;");
+            require(store.saveSearchHistory("pending", {"disabled"}, 0, true)
+                && history(store, "pending").empty(), "disabled pending history was retained");
+            require(store.saveSearchHistory("pending", {"after-clear"}, 5, true)
+                && history(store, "pending") == std::vector<std::string>({"after-clear"}), "cleared history was resurrected");
+            require(store.remove("pending") && store.saveSearchHistory("pending", {"late"}, 5, true)
+                && history(store, "pending").empty(), "pending merge recreated deleted folder history");
             sql(path, "CREATE TRIGGER fail_history BEFORE INSERT ON search_history WHEN new.query='blocked' "
                 "BEGIN SELECT RAISE(ABORT,'forced history failure'); END;");
             require(!store.saveSearchHistory("A", {"blocked"}, 5) && history(store, "A") == recent,
