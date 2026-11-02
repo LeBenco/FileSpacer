@@ -1,4 +1,4 @@
-﻿# Run prepared UI tests with the interactive user's limited token, like the VM.
+﻿# Run prepared regression tests under a standard account on the CI desktop.
 param([Parameter(Mandatory=$true)][string]$Package,
     [Parameter(Mandatory=$true)][string]$RunDirectory,
     [switch]$Worker,[int]$SessionId=-1)
@@ -9,12 +9,13 @@ $Package=[IO.Path]::GetFullPath($Package)
 $RunDirectory=[IO.Path]::GetFullPath($RunDirectory)
 $resultPath=Join-Path $RunDirectory 'worker-result.json'
 if($Worker){
-    $record=[ordered]@{Status='FAIL';SessionId=[Diagnostics.Process]::GetCurrentProcess().SessionId;Administrator=$null;RunnerExitCode=$null;Error=$null}
+    $record=[ordered]@{Status='FAIL';SessionId=[Diagnostics.Process]::GetCurrentProcess().SessionId;UserSid=$null;Administrator=$null;RunnerExitCode=$null;Error=$null}
     $job=$null;$dragOriginal=$false;$dragPrepared=$false
     try {
         $principal=New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+        $record.UserSid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value
         $record.Administrator=$principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-        if($record.Administrator -or $record.SessionId-ne$SessionId -or ![Environment]::UserInteractive){throw 'Expected the same interactive desktop with a limited token.'}
+        if($record.Administrator -or $record.UserSid-match'-500$' -or $record.SessionId-ne$SessionId -or ![Environment]::UserInteractive){throw 'Expected a standard account in the same interactive desktop session.'}
         $env:TEMP=Join-Path $RunDirectory 'temp';$env:TMP=$env:TEMP
         [void][IO.Directory]::CreateDirectory($env:TEMP)
         Add-Type -TypeDefinition @'
@@ -58,19 +59,21 @@ public static class CIDesktop {
 # Build the launcher outside the prepared package; it only starts the worker.
 Add-Type -Path (Join-Path $PSScriptRoot 'CIRestrictedProcess.cs')
 $session=[Diagnostics.Process]::GetCurrentProcess().SessionId
-$arguments='-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "'+$PSCommandPath+'" -Worker -Package "'+$Package+'" -RunDirectory "'+$RunDirectory+'" -SessionId '+$session
+$workerScript=Join-Path $RunDirectory 'worker.ps1'
+Copy-Item -LiteralPath $PSCommandPath -Destination $workerScript
+$arguments='-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "'+$workerScript+'" -Worker -Package "'+$Package+'" -RunDirectory "'+$RunDirectory+'" -SessionId '+$session
 $exitCode=$null
 $launchStarted=Get-Date
 Write-Host ('CI launcher user: '+[Security.Principal.WindowsIdentity]::GetCurrent().User.Value)
 try {
-    $exitCode=[FileSpacerRegression.CIRestrictedProcess]::Run((Join-Path $PSHOME 'powershell.exe'),$arguments,$Package,169*60*1000)
+    $exitCode=[FileSpacerRegression.CIRestrictedProcess]::Run((Join-Path $PSHOME 'powershell.exe'),$arguments,$RunDirectory,169*60*1000)
     if(!(Test-Path $resultPath)){throw ('CI worker produced no result; exit={0} (0x{0:X8})' -f $exitCode)}
     $record=Get-Content $resultPath -Raw|ConvertFrom-Json
     if($exitCode-ne0 -or $record.Status-ne'PASS' -or $record.RunnerExitCode-ne0 -or $record.Administrator -or $record.SessionId-ne$session){throw ('CI worker failed: '+($record|ConvertTo-Json -Compress))}
 } catch {
     $launchError=$_;$missingResult=!(Test-Path $resultPath)
     if(Test-Path $resultPath){$record=Get-Content $resultPath -Raw|ConvertFrom-Json}
-    else {$record=[pscustomobject]@{Status='FAIL';SessionId=$null;Administrator=$null;RunnerExitCode=$exitCode;Error=$null}}
+    else {$record=[pscustomobject]@{Status='FAIL';SessionId=$null;UserSid=$null;Administrator=$null;RunnerExitCode=$exitCode;Error=$null}}
     $record.Status='FAIL';$record.Error=$launchError.Exception.Message
     $record|ConvertTo-Json|Set-Content $resultPath -Encoding UTF8
     if($missingResult){
