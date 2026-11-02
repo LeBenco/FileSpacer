@@ -14,6 +14,7 @@ function Extract([string]$pattern) {
     return $match.Value
 }
 $logic = @(
+    (Extract '!macro WORKER_LOG .*?!macroend'),
     (Extract 'Function \.onSelChange\r?\n.*?FunctionEnd'),
     (Extract '!macro RESTORE_COMPONENT .*?!macroend'),
     (Extract 'Function RestoreInstallChoices\r?\n.*?FunctionEnd'),
@@ -38,6 +39,7 @@ Var upgrading
 Var machineWorker
 Var defaultWritten
 Var checks
+Var logPath
 Section "Start" SecStart
 SectionEnd
 Section "Context" SecContext
@@ -91,6 +93,7 @@ FunctionEnd
 !macroend
 Function .onInit
     SetRegView 64
+    StrCpy $logPath ""
     FileOpen $9 "@RUN@\result.txt" w
     StrCpy $checks 0
     StrCpy $INSTDIR "@RUN@\fixture"
