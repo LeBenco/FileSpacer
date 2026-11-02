@@ -2,7 +2,11 @@
 
 ## Por publicar
 
-## 1.3.0 — 2026-10-31
+## 1.3.0 — 2026-11-02
+
+- Adiciona pré-visualizações opcionais do PowerToys Peek e deixa o Grab And Move tratar os gestos de janela em conflito.
+- Corrige o acesso concorrente ao estado das pastas, preserva alterações durante a recuperação diferida e reduz o redesenho de grandes disposições livres de ícones.
+- Evita movimentos de janela e menus de contexto indesejados após gestos interrompidos.
 
 - Personaliza o menu da barra de título em sete idiomas, com arrastar e largar, predefinições e aparência nativa ou do Nilesoft Shell.
 - Adiciona ações sobre disposições guardadas, ajuste ao conteúdo, fecho de janelas descendentes ou de outras janelas, grupos de pastas com nome e comandos estáveis do Nilesoft.

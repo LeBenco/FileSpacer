@@ -2,7 +2,11 @@
 
 ## Non ancora pubblicato
 
-## 1.3.0 — 2026-10-31
+## 1.3.0 — 2026-11-02
+
+- Aggiunge anteprime facoltative con PowerToys Peek e lascia a Grab And Move la gestione dei gesti della finestra in conflitto.
+- Corregge gli accessi concorrenti allo stato delle cartelle, conserva le modifiche durante il recupero differito e riduce i ridisegni delle grandi disposizioni libere delle icone.
+- Evita spostamenti delle finestre e menu contestuali indesiderati dopo gesti interrotti.
 
 - Personalizzare il menu della barra del titolo in sette lingue, con trascinamento, impostazioni predefinite e aspetto nativo o Nilesoft Shell.
 - Aggiungere azioni per le disposizioni salvate, adattamento al contenuto, chiusura delle finestre discendenti o delle altre finestre, gruppi di cartelle con nome e comandi Nilesoft stabili.

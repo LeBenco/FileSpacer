@@ -2,7 +2,11 @@
 
 ## À venir
 
-## 1.3.0 — 2026-10-31
+## 1.3.0 — 2026-11-02
+
+- Ajouter les aperçus PowerToys Peek facultatifs et laisser Grab And Move traiter les gestes de fenêtre en conflit.
+- Corriger les accès concurrents à l’état des dossiers, préserver les modifications pendant une reprise différée et réduire les redessins des grands placements libres.
+- Corriger les mouvements de fenêtre et les menus contextuels parasites après l’interruption d’un geste.
 
 - Personnaliser le menu de barre de titre dans sept langues, avec glisser-déposer, réglages par défaut et apparence native ou Nilesoft Shell.
 - Ajouter les actions sur les dispositions enregistrées, l’ajustement au contenu, la fermeture des fenêtres descendantes ou des autres fenêtres, les groupes de dossiers nommés et des commandes Nilesoft stables.
