@@ -131,7 +131,8 @@ function Assert-CaptionButtons {
         $y = [int][Math]::Floor(($rect.top + $rect.bottom) / 2.0)
         $target = [FileSpacerWindowTest]::WindowAt($x,$y)
         if ($target -ne $script:window -and [FileSpacerWindowTest]::HitTest($target,$x,$y) -ne -1) {
-            throw "A different window/control covers $($button[2])"
+            $owners=@(Get-Process | Where-Object { $_.MainWindowHandle -eq $target } | ForEach-Object { $_.ProcessName+':'+$_.Id })
+            throw "A different window/control covers $($button[2]); expected=$($script:window), target=$target, point=($x,$y), owners=[$($owners -join ',')]"
         }
         $hit = [FileSpacerWindowTest]::HitTest($script:window,$x,$y)
         if ($hit -ne $button[1]) {
