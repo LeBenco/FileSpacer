@@ -19,6 +19,8 @@ public:
 private:
     void update(POINT point);
     void finish(bool restore, bool swallowRelease);
+    bool handleFinishingMessage(UINT message, WPARAM wParam);
+    void releaseFinishingCapture();
     HWND window = nullptr;
     HWND source = nullptr;
     POINT origin = {};
@@ -30,7 +32,9 @@ private:
     bool completed = false;
     GestureButton button = GestureButton::Right;
     bool move = false;
-    bool swallowButtonUp = false;
+    HWND finishingSource = nullptr;
+    UINT absorbedButtons = 0;
+    UINT swallowButtonUps = 0;
     bool swallowAltUp = false;
 };
 
