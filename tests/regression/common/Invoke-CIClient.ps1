@@ -60,17 +60,28 @@ Add-Type -Path (Join-Path $PSScriptRoot 'CIRestrictedProcess.cs')
 $session=[Diagnostics.Process]::GetCurrentProcess().SessionId
 $arguments='-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "'+$PSCommandPath+'" -Worker -Package "'+$Package+'" -RunDirectory "'+$RunDirectory+'" -SessionId '+$session
 $exitCode=$null
+$launchStarted=Get-Date
 try {
     $exitCode=[FileSpacerRegression.CIRestrictedProcess]::Run((Join-Path $PSHOME 'powershell.exe'),$arguments,$Package,169*60*1000,$true)
     if(!(Test-Path $resultPath)){throw ('CI worker produced no result; exit={0} (0x{0:X8})' -f $exitCode)}
     $record=Get-Content $resultPath -Raw|ConvertFrom-Json
     if($exitCode-ne0 -or $record.Status-ne'PASS' -or $record.RunnerExitCode-ne0 -or $record.Administrator -or $record.SessionId-ne$session){throw ('CI worker failed: '+($record|ConvertTo-Json -Compress))}
 } catch {
+    $launchError=$_;$missingResult=!(Test-Path $resultPath)
     if(Test-Path $resultPath){$record=Get-Content $resultPath -Raw|ConvertFrom-Json}
     else {$record=[pscustomobject]@{Status='FAIL';SessionId=$null;Administrator=$null;RunnerExitCode=$exitCode;Error=$null}}
-    $record.Status='FAIL';$record.Error=$_.Exception.Message
+    $record.Status='FAIL';$record.Error=$launchError.Exception.Message
     $record|ConvertTo-Json|Set-Content $resultPath -Encoding UTF8
-    throw
+    if($missingResult){
+        try {
+            $events=@(Get-WinEvent -FilterHashtable @{LogName='Application';StartTime=$launchStarted;Level=1,2,3} -ErrorAction SilentlyContinue | Select-Object -First 5)
+            foreach($event in $events){
+                $message=$event.Message -replace '\s+',' ';if($message.Length-gt400){$message=$message.Substring(0,400)+'...'}
+                Write-Host ('Windows event {0}/{1}: {2}' -f $event.ProviderName,$event.Id,$message)
+            }
+        } catch {Write-Host ('Windows event diagnostics unavailable: '+$_.Exception.Message)}
+    }
+    throw $launchError
 } finally {
     foreach($name in @('runner.stdout.log','runner.stderr.log')){
         $log=Join-Path $RunDirectory $name
