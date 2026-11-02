@@ -1,0 +1,174 @@
+name: Test FileSpacer regressions
+run-name: Regression tests - ${{ inputs.ref }} - ${{ inputs.category }} - ${{ inputs.pattern }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag or commit SHA to test (uses that revision of sources and tests)'
+        required: true
+        default: main
+        type: string
+      category:
+        description: 'Test category'
+        required: true
+        default: All
+        type: choice
+        options:
+          - All
+          - Internal
+          - UI
+      pattern:
+        description: 'Case pattern, for example 16-redimensionnement-alt\03-*'
+        required: true
+        default: '*'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      sha: ${{ steps.revision.outputs.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - name: Resolve the exact revision
+        id: revision
+        shell: bash
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/build-docs
+        with:
+          target: offline
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: regression-offline-documentation
+          path: |
+            build/offline-docs
+            build/offline-docs.nsh
+          if-no-files-found: error
+
+  regression:
+    needs: documentation
+    runs-on: windows-2022
+    timeout-minutes: 180
+    env:
+      TEST_SHA: ${{ needs.documentation.outputs.sha }}
+      TEST_CATEGORY: ${{ inputs.category }}
+      TEST_PATTERN: ${{ inputs.pattern }}
+      # Keep Windows PowerShell 5.1 modules when the parent uses PowerShell 7.
+      PSModulePath: C:\Windows\System32\WindowsPowerShell\v1.0\Modules
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TEST_SHA }}
+          persist-credentials: false
+
+      - name: Record revision and desktop environment
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Path build/ci -Force | Out-Null
+          $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+          $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+          Add-Type -AssemblyName System.Windows.Forms
+          $environment = [ordered]@{
+            Commit = $env:TEST_SHA
+            Category = $env:TEST_CATEGORY
+            Pattern = $env:TEST_PATTERN
+            OS = (Get-CimInstance Win32_OperatingSystem).Caption
+            ImageVersion = $env:ImageVersion
+            PowerShell = $PSVersionTable.PSVersion.ToString()
+            Interactive = [Environment]::UserInteractive
+            SessionId = [Diagnostics.Process]::GetCurrentProcess().SessionId
+            Administrator = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+            Screens = @([Windows.Forms.Screen]::AllScreens | ForEach-Object { $_.Bounds.ToString() })
+          }
+          $environment | ConvertTo-Json -Depth 4 | Set-Content build/ci/environment.json -Encoding UTF8
+          $environment | Format-List | Out-String | Write-Host
+          if ($env:TEST_CATEGORY -ne 'Internal' -and !$environment.Interactive) {
+            throw 'UI tests require an interactive runner desktop.'
+          }
+          $runner = Get-Content tests/regression/Run-Regression.ps1 -Raw
+          if ($runner -notmatch '\[switch\]\$CI\b') {
+            throw 'This revision predates the -CI launcher. Select a revision containing CI support.'
+          }
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: npm ci --prefix website --ignore-scripts
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: regression-offline-documentation
+          path: build
+
+      - name: Install test dependencies and locate MSVC
+        shell: powershell
+        run: |
+          choco install inkscape imagemagick nsis --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'Build dependency installation failed.' }
+          if ($env:TEST_CATEGORY -ne 'Internal') {
+            choco install everything --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'Everything installation failed.' }
+          }
+          # Chocolatey changes the machine PATH after this process was created.
+          $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 Microsoft.VisualStudio.Component.VC.ATL -property installationPath
+          if ($LASTEXITCODE -ne 0 -or !$vs) { throw 'MSVC x64 with ATL was not found.' }
+          "VS_INSTALL=$vs" | Out-File $env:GITHUB_ENV -Append -Encoding UTF8
+          $env:Path.Split(';') | Where-Object { $_ } | Out-File $env:GITHUB_PATH -Append -Encoding UTF8
+          & $vswhere -latest -products '*' -format json | Set-Content build/ci/msvc.json -Encoding UTF8
+
+      - name: Build Debug and installer test fixtures with MSVC and NMAKE
+        shell: cmd
+        run: |
+          call "%VS_INSTALL%\VC\Auxiliary\Build\vcvars64.bat"
+          if errorlevel 1 exit /b 1
+          nmake.exe /nologo /f Makefile CFG=Debug > build\ci\build-debug.log 2>&1
+          if errorlevel 1 (type build\ci\build-debug.log & exit /b 1)
+          nmake.exe /nologo /f Makefile CFG=Release installer "MAKENSIS=%ProgramFiles(x86)%\NSIS\makensis.exe" > build\ci\build-installer.log 2>&1
+          if errorlevel 1 (type build\ci\build-installer.log & exit /b 1)
+
+      - name: Run the selected regression cases
+        shell: cmd
+        run: |
+          call "%VS_INSTALL%\VC\Auxiliary\Build\vcvars64.bat"
+          if errorlevel 1 exit /b 1
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '.\tests\regression\Run-Regression.ps1' -CI -Category $env:TEST_CATEGORY -Pattern $env:TEST_PATTERN -RunDirectory (Join-Path $env:GITHUB_WORKSPACE 'build\regression\ci')"
+          exit /b %errorlevel%
+
+      - name: Report the result
+        if: always()
+        shell: powershell
+        run: |
+          "Tested commit: $env:TEST_SHA" | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding UTF8
+          $path = 'build/regression/ci/output/summary.json'
+          if (!(Test-Path $path)) {
+            'No regression summary was produced. The suite is not validated.' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding UTF8
+            throw 'Missing regression summary; inspect build and preparation logs.'
+          }
+          $summary = Get-Content $path -Raw | ConvertFrom-Json
+          $summary | Format-List | Out-String | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding UTF8
+          if ($summary.Status -ne 'PASS' -or $summary.Passed -ne $summary.Expected -or $summary.Expected -le 0) {
+            throw 'The selected suite did not pass completely.'
+          }
+
+      - name: Preserve logs, reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: regression-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci
+            build/regression/ci/preparation.log
+            build/regression/ci/output
+          if-no-files-found: warn
+          retention-days: 14
