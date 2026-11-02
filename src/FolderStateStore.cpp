@@ -89,6 +89,80 @@ bool decodeView(const uint8_t *bytes, size_t size, FolderViewSettings *out) {
 }
 }
 
+FolderViewSettings FolderViewSettings::mergeChanges(const FolderViewSettings &baseline,
+        const FolderViewSettings &current, const std::vector<Column> &initialWidths) const {
+    FolderViewSettings merged = *this;
+    auto observed = [&](uint32_t part) { return (baseline.present & current.present & part) != 0; };
+    if (current.present & Mode) {
+        if (!(present & Mode) || (observed(Mode) && current.mode != baseline.mode)) merged.mode = current.mode;
+        if (!(present & Mode) || (observed(Mode) && current.iconSize != baseline.iconSize)) merged.iconSize = current.iconSize;
+        merged.present |= Mode;
+    }
+    if (current.present & Flags) {
+        if (!(present & Flags)) merged.flags = current.flags;
+        else if (observed(Flags)) {
+            const uint32_t changed = baseline.flags ^ current.flags;
+            merged.flags = (flags & ~changed) | (current.flags & changed);
+        }
+        merged.present |= Flags;
+    }
+    if (current.present & Columns) {
+        if (!(present & Columns)) merged.columns = current.columns;
+        else if (observed(Columns)) {
+            auto find = [](const std::vector<Column> &list, const Key &key) {
+                return std::find_if(list.begin(), list.end(), [&](const Column &column) { return column.key == key; });
+            };
+            bool changedOrder = baseline.columns.size() != current.columns.size();
+            for (size_t i = 0; !changedOrder && i < baseline.columns.size(); ++i)
+                changedOrder = baseline.columns[i].key != current.columns[i].key;
+            if (changedOrder) {
+                merged.columns = current.columns;
+                // Columns unknown to the provisional view remain present, in
+                // their saved relative order, after the explicitly chosen list.
+                for (const auto &column : columns)
+                    if (find(baseline.columns, column.key) == baseline.columns.end()
+                            && find(current.columns, column.key) == current.columns.end())
+                        merged.columns.push_back(column);
+            }
+            for (const auto &column : current.columns) {
+                const auto before = find(baseline.columns, column.key), saved = find(columns, column.key);
+                const auto initiallyHidden = find(initialWidths, column.key);
+                const bool changedWidth = column.width <= INT32_MAX && (before != baseline.columns.end()
+                    && before->width <= INT32_MAX ? before->width != column.width
+                    : initiallyHidden != initialWidths.end() && initiallyHidden->width <= INT32_MAX
+                        && initiallyHidden->width != column.width);
+                auto target = std::find_if(merged.columns.begin(), merged.columns.end(),
+                    [&](const Column &value) { return value.key == column.key; });
+                if (target != merged.columns.end()) {
+                    if (changedWidth) target->width = column.width;
+                    else if (saved != columns.end()) target->width = saved->width;
+                } else if (changedWidth) {
+                    merged.columns.push_back(column);
+                }
+            }
+        }
+        merged.present |= Columns;
+    }
+    if (current.present & Sort) {
+        bool changed = baseline.sort.size() != current.sort.size();
+        for (size_t i = 0; !changed && i < baseline.sort.size(); ++i)
+            changed = baseline.sort[i].key != current.sort[i].key || baseline.sort[i].direction != current.sort[i].direction;
+        // The ordered sort chain is one choice; merging individual directions
+        // into another saved chain would change the meaning of that choice.
+        if (!(present & Sort) || (observed(Sort) && changed)) merged.sort = current.sort;
+        merged.present |= Sort;
+    }
+    if (current.present & Group) {
+        if (!(present & Group) || (observed(Group) && (baseline.groupBy != current.groupBy
+                || baseline.groupAscending != current.groupAscending))) {
+            merged.groupBy = current.groupBy;
+            merged.groupAscending = current.groupAscending;
+        }
+        merged.present |= Group;
+    }
+    return merged;
+}
+
 bool FolderStateStore::result(int code) {
     if (code == SQLITE_OK || code == SQLITE_DONE || code == SQLITE_ROW) {
         lastError.clear();
@@ -101,11 +175,86 @@ bool FolderStateStore::execute(const char *sql) {
     return result(sqlite3_exec(db, sql, nullptr, nullptr, nullptr));
 }
 
-FolderStateStore::FolderStateStore(const char *utf8Path) {
-    if (!result(sqlite3_open_v2(utf8Path, &db,
-            SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nullptr)))
-        return;
-    sqlite3_busy_timeout(db, 3000); // Short transactions; allow concurrent process startup.
+void FolderStateStore::CloseHandle::operator()(void *handle) const {
+#ifdef _WIN32
+    ::CloseHandle(handle);
+#else
+    (void)handle;
+#endif
+}
+
+bool FolderStateStore::createMutex(const char *utf8Path) {
+#ifdef _WIN32
+    auto failed = [&]() {
+        const DWORD code = GetLastError();
+        lastError = "Cannot coordinate folder-state database (Windows error " + std::to_string(code) + ")";
+        return false;
+    };
+    const int length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8Path, -1, nullptr, 0);
+    if (!length) return failed();
+    std::vector<wchar_t> path(static_cast<size_t>(length));
+    if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8Path, -1, path.data(), length)) return failed();
+    // Identify the actual file, including aliases, before SQLite can acquire locks.
+    const HANDLE raw = CreateFileW(path.data(), FILE_READ_ATTRIBUTES,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (raw == INVALID_HANDLE_VALUE) return failed();
+    const std::unique_ptr<void, CloseHandle> file(raw);
+    FILE_ID_INFO identity = {};
+    if (!GetFileInformationByHandleEx(file.get(), FileIdInfo, &identity, sizeof(identity))) return failed();
+    std::wstring name = L"Global\\FileSpacer.FolderState." + std::to_wstring(identity.VolumeSerialNumber) + L".";
+    constexpr wchar_t hex[] = L"0123456789abcdef";
+    for (const auto byte : identity.FileId.Identifier) {
+        name.push_back(hex[byte >> 4]);
+        name.push_back(hex[byte & 15]);
+    }
+    accessMutex.reset(CreateMutexExW(nullptr, name.c_str(), 0, SYNCHRONIZE | MUTEX_MODIFY_STATE));
+    if (!accessMutex) return failed();
+#else
+    (void)utf8Path;
+#endif
+    return true;
+}
+
+class FolderStateStore::Lock {
+public:
+    explicit Lock(FolderStateStore &store, unsigned timeout = 3000) : mutex(store.accessMutex.get()) {
+#ifdef _WIN32
+        const DWORD waited = mutex ? WaitForSingleObject(mutex, timeout) : WAIT_FAILED;
+        acquired = waited == WAIT_OBJECT_0 || waited == WAIT_ABANDONED;
+        if (!acquired) {
+            const DWORD code = waited == WAIT_TIMEOUT ? ERROR_TIMEOUT : GetLastError();
+            store.lastError = "Folder-state database mutex wait failed (Windows error " + std::to_string(code) + ")";
+        }
+#else
+        (void)timeout;
+        acquired = true;
+#endif
+    }
+    ~Lock() {
+#ifdef _WIN32
+        if (acquired) ReleaseMutex(mutex);
+#endif
+    }
+    Lock(const Lock &) = delete;
+    Lock &operator=(const Lock &) = delete;
+    explicit operator bool() const { return acquired; }
+private:
+    void *mutex;
+    bool acquired = false;
+};
+
+FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitialization) {
+    if (!createMutex(utf8Path)) return;
+    Lock lock(*this, waitForInitialization ? 3000 : 0);
+    if (!lock) return;
+    const int opened = sqlite3_open_v2(utf8Path, &db,
+        SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nullptr);
+    auto closeOpening = [this](sqlite3 *connection) { sqlite3_close(connection); db = nullptr; };
+    // Failed initialization closes before the constructor's lock is released.
+    // Its destructor must not acquire that lock again after a non-waiting retry.
+    std::unique_ptr<sqlite3, decltype(closeOpening)> opening(db, closeOpening);
+    if (!result(opened)) return;
+    sqlite3_busy_timeout(db, waitForInitialization ? 3000 : 0);
     if (!execute("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;"
             "PRAGMA wal_autocheckpoint=1000; PRAGMA journal_size_limit=8000000;"
             "BEGIN IMMEDIATE;")) return;
@@ -151,14 +300,29 @@ FolderStateStore::FolderStateStore(const char *utf8Path) {
         finishWrite(false);
         return;
     }
-    if (finishWrite(true)) initialized = true;
+    if (finishWrite(true) && result(sqlite3_busy_timeout(db, 3000))) {
+        initialized = true;
+        opening.release();
+    }
 }
 FolderStateStore::~FolderStateStore() {
+    if (!db) return; // A constructor that never opened SQLite has nothing to serialize.
+    // Closing the last connection can checkpoint/unlink WAL. Serialize that too.
+    // Destruction must release SQLite handles even after an operation timed out.
+#ifdef _WIN32
+    // Do not allocate an error string from a destructor if the wait itself fails.
+    const DWORD waited = accessMutex ? WaitForSingleObject(accessMutex.get(), INFINITE) : WAIT_FAILED;
+#endif
     if (db) sqlite3_close(db); // Last connection checkpoints WAL automatically.
+#ifdef _WIN32
+    if (waited == WAIT_OBJECT_0 || waited == WAIT_ABANDONED) ReleaseMutex(accessMutex.get());
+#endif
 }
 
 bool FolderStateStore::read(const std::string &key, FolderState *state) {
     if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock) return false;
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db,
             "SELECT x,y,width,height,view,icons,last_success_at,first_failed_at,maximized,locked "
@@ -207,6 +371,8 @@ bool FolderStateStore::read(const std::string &key, FolderState *state) {
 bool FolderStateStore::contains(const std::string &key, bool *found) {
     *found = false;
     if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock) return false;
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db, "SELECT 1 FROM folder_state WHERE key=?1", -1, &raw, nullptr))) return false;
     Statement statement(raw, sqlite3_finalize);
@@ -228,12 +394,17 @@ bool FolderStateStore::setLocked(const std::string &key, const FolderState &stat
 }
 
 bool FolderStateStore::clearLocks() {
+    if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock) return false;
     return initialized && execute("UPDATE folder_state SET locked=0 WHERE locked!=0");
 }
 
 bool FolderStateStore::writeState(const std::string &key, const FolderState &state,
         uint32_t parts, int lockChange) {
     if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock) return false;
     parts &= FolderState::All;
     if (!parts) return true;
     if (key.empty()) return true;
@@ -292,6 +463,8 @@ bool FolderStateStore::writeState(const std::string &key, const FolderState &sta
 bool FolderStateStore::recordAccess(const std::string &key, bool success, int64_t when, bool *expired) {
     if (expired) *expired = false;
     if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock) return false;
     if (key.empty()) return true;
     if (!execute("BEGIN IMMEDIATE")) return false;
     bool removed = false;
@@ -425,6 +598,8 @@ bool FolderStateStore::enforceQuota() {
 
 bool FolderStateStore::clear(const std::string &key, uint32_t parts) {
     if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock) return false;
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db,
         "UPDATE folder_state SET x=CASE WHEN (?2&1)!=0 AND (locked=0 OR ?2=31) THEN NULL ELSE x END,"
@@ -443,6 +618,8 @@ bool FolderStateStore::clear(const std::string &key, uint32_t parts) {
 
 bool FolderStateStore::remove(const std::string &key) {
     if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock) return false;
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db, "DELETE FROM folder_state WHERE key=?1",
             -1, &raw, nullptr))) return false;
@@ -452,7 +629,9 @@ bool FolderStateStore::remove(const std::string &key) {
 }
 
 bool FolderStateStore::clearAll() {
-    if (!initialized || !execute("BEGIN IMMEDIATE")) return false;
+    if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock || !execute("BEGIN IMMEDIATE")) return false;
     return finishWrite(execute("DELETE FROM folder_state; DELETE FROM closed_windows;"));
 }
 
@@ -481,11 +660,16 @@ bool FolderStateStore::readClosedWindow(ClosedWindow *window) {
 }
 
 bool FolderStateStore::lastClosedWindow(ClosedWindow *window) {
+    if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock) return false;
     return initialized && readClosedWindow(window);
 }
 
 bool FolderStateStore::takeClosedWindow(ClosedWindow *window) {
-    if (!initialized || !execute("BEGIN IMMEDIATE")) return false;
+    if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock || !execute("BEGIN IMMEDIATE")) return false;
     ClosedWindow value;
     bool success = readClosedWindow(&value);
     if (success && value.sequence) {
@@ -502,6 +686,9 @@ bool FolderStateStore::takeClosedWindow(ClosedWindow *window) {
 }
 
 bool FolderStateStore::writeClosedWindow(const ClosedWindow &window, bool returning) {
+    if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock) return false;
     if (!initialized || window.key.empty() || window.parsingName.empty()
             || window.viewState.size() > static_cast<size_t>(INT32_MAX)
             || !execute("BEGIN IMMEDIATE")) return false;
@@ -537,6 +724,9 @@ bool FolderStateStore::returnClosedWindow(const ClosedWindow &window) {
 }
 
 bool FolderStateStore::move(const std::string &oldKey, const std::string &newKey) {
+    if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock) return false;
     if (!initialized) return false;
     if (oldKey == newKey) return true;
     if (!execute("BEGIN IMMEDIATE")) return false;
@@ -576,6 +766,8 @@ bool FolderStateStore::move(const std::string &oldKey, const std::string &newKey
 bool FolderStateStore::readSearchHistory(const std::string &key, unsigned limit,
         std::vector<std::string> *queries) {
     if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock) return false;
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db, "SELECT query FROM search_history WHERE key=?1 "
             "ORDER BY sequence DESC LIMIT ?2", -1, &raw, nullptr))) return false;
@@ -592,9 +784,30 @@ bool FolderStateStore::readSearchHistory(const std::string &key, unsigned limit,
 }
 
 bool FolderStateStore::saveSearchHistory(const std::string &key,
-        const std::vector<std::string> &queries, unsigned limit) {
-    if (!initialized || !execute("BEGIN IMMEDIATE")) return false;
+        const std::vector<std::string> &queries, unsigned limit, bool mergeRecent) {
+    if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock || !execute("BEGIN IMMEDIATE")) return false;
     const bool success = [&]() {
+        std::vector<std::string> merged;
+        if (mergeRecent) {
+            // Only explicit pending queries may precede the latest committed history.
+            // Read under this write transaction so another client cannot be lost
+            // between the read and replacement below.
+            const unsigned maximum = limit > 20 ? 20 : limit;
+            auto append = [&](const std::string &query) {
+                if (!query.empty() && merged.size() < maximum
+                        && std::find(merged.begin(), merged.end(), query) == merged.end())
+                    merged.push_back(query);
+            };
+            for (const auto &query : queries) append(query);
+            if (maximum) {
+                std::vector<std::string> existing;
+                if (!readSearchHistory(key, maximum, &existing)) return false;
+                for (const auto &query : existing) append(query);
+            }
+        }
+        const auto &values = mergeRecent ? merged : queries;
         sqlite3_stmt *raw = nullptr;
         if (!result(sqlite3_prepare_v2(db, "DELETE FROM search_history WHERE key=?1",
                 -1, &raw, nullptr))) return false;
@@ -609,12 +822,12 @@ bool FolderStateStore::saveSearchHistory(const std::string &key,
                 "SELECT ?1,?2 WHERE EXISTS(SELECT 1 FROM folder_state WHERE key=?1)",
                 -1, &raw, nullptr))) return false;
         Statement statement(raw, sqlite3_finalize);
-        const size_t count = (std::min)(queries.size(), static_cast<size_t>(limit > 20 ? 20 : limit));
+        const size_t count = (std::min)(values.size(), static_cast<size_t>(limit > 20 ? 20 : limit));
         for (size_t index = count; index > 0; --index) {
-            if (queries[index - 1].empty()) continue;
+            if (values[index - 1].empty()) continue;
             sqlite3_reset(raw);
             if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))
-                    || !result(sqlite3_bind_text(raw, 2, queries[index - 1].c_str(), -1, SQLITE_TRANSIENT))
+                    || !result(sqlite3_bind_text(raw, 2, values[index - 1].c_str(), -1, SQLITE_TRANSIENT))
                     || !result(sqlite3_step(raw))) return false;
         }
         return true;
@@ -623,7 +836,9 @@ bool FolderStateStore::saveSearchHistory(const std::string &key,
 }
 
 bool FolderStateStore::trimSearchHistory(unsigned limit) {
-    if (!initialized || !execute("BEGIN IMMEDIATE")) return false;
+    if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock || !execute("BEGIN IMMEDIATE")) return false;
     sqlite3_stmt *raw = nullptr;
     bool success = result(sqlite3_prepare_v2(db, "DELETE FROM search_history WHERE sequence NOT IN "
         "(SELECT recent.sequence FROM search_history recent WHERE recent.key=search_history.key "
@@ -653,10 +868,20 @@ std::string folderStateDatabasePath() {
 }
 FolderStateStore *folderStateStore() {
     // /test is parsed before the first folder creation. No worker uses this connection.
-    static const std::string path = folderStateDatabasePath();
-    static const auto store = path.empty() ? std::unique_ptr<FolderStateStore>{}
-        : std::unique_ptr<FolderStateStore>(new FolderStateStore(path.c_str()));
-    return store && store->ready() ? store.get() : nullptr;
+    static std::unique_ptr<FolderStateStore> store;
+    static bool attempted = false;
+    if (!store) {
+        const std::string path = folderStateDatabasePath();
+        if (!path.empty() && !store) {
+            {
+                const bool waitForInitialization = !attempted;
+                attempted = true;
+                std::unique_ptr<FolderStateStore> candidate(new FolderStateStore(path.c_str(), waitForInitialization));
+                if (candidate->ready() && !store) store = std::move(candidate);
+            }
+        }
+    }
+    return store.get(); // Only a ready connection is retained; the next request retries a failure.
 }
 void reportFolderStateError(void *owner) {
     MessageBoxW(static_cast<HWND>(owner), getString(IDS_FOLDER_STATE_ERROR),
