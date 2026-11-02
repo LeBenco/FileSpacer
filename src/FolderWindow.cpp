@@ -1944,7 +1944,9 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         if (pendingSearches.size() > limit) pendingSearches.resize(limit);
         if (!limit) {
             searchHistoryDirty = false;
-            searchHistoryLoaded = false;
+            // This delivered clear snapshot remains authoritative even when
+            // the registry was re-enabled before the message arrived.
+            searchHistoryLoaded = true;
         }
     }
     // Capture and cancellation notifications are sent synchronously, outside
