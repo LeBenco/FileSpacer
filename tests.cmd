@@ -3,6 +3,8 @@ setlocal
 pushd "%~dp0"
 if errorlevel 1 exit /b 1
 rem Local by default. -VM "name" dispatches the filtered suite to a configured VM.
+rem Use Windows PowerShell modules even when launched from PowerShell 7.
+set "PSModulePath=%SystemRoot%\System32\WindowsPowerShell\v1.0\Modules"
 powershell.exe -NoProfile -Command "if (Get-Process FileSpacer -ErrorAction SilentlyContinue) { Write-Error 'Close FileSpacer before building.'; exit 1 }"
 if errorlevel 1 (
     popd
