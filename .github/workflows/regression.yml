@@ -67,6 +67,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.TEST_SHA }}
+          # The legacy-provider regression builds sources from the v1.2.2 tag.
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Record revision and desktop environment
@@ -117,6 +119,21 @@ jobs:
           if ($env:TEST_CATEGORY -ne 'Internal') {
             choco install everything --yes --no-progress
             if ($LASTEXITCODE -ne 0) { throw 'Everything installation failed.' }
+            # Chocolatey starts the default instance; the integration test
+            # requires it closed so it can use its own isolated configuration.
+            $everything = Join-Path $env:ProgramFiles 'Everything\Everything.exe'
+            $session = [Diagnostics.Process]::GetCurrentProcess().SessionId
+            $started = @(Get-Process Everything -ErrorAction SilentlyContinue | Where-Object { $_.SessionId -eq $session })
+            $exitRequest = Start-Process -FilePath $everything -ArgumentList '-exit' -WindowStyle Hidden -PassThru
+            if (!$exitRequest.WaitForExit(15000) -or $exitRequest.ExitCode -ne 0) {
+              throw 'Cannot request the installed Everything instance to exit.'
+            }
+            foreach ($process in $started) {
+              if (!$process.WaitForExit(15000)) { throw 'The installed Everything instance did not exit.' }
+            }
+            if (@(Get-Process Everything -ErrorAction SilentlyContinue | Where-Object { $_.SessionId -eq $session }).Count) {
+              throw 'Everything is still running in the test session.'
+            }
           }
           # Chocolatey changes the machine PATH after this process was created.
           $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
