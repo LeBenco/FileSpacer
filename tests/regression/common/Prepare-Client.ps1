@@ -69,9 +69,17 @@ function New-ClientPackage {
         $file=[IO.Path]::GetFullPath($File)
         if ($Found.ContainsKey($file)) { return }
         $Found[$file]=$true
+        # Its client runtime closure is copied explicitly by New-ClientPackage.
+        # Do not traverse the runner's host-only VM-dispatch branch.
+        if ($file -eq (Join-Path $regression 'Run-Regression.ps1')) { return }
         $ast=Read-TestAst $file
         foreach($literal in $ast.FindAll({param($a) $a -is [Management.Automation.Language.StringConstantExpressionAst]},$true)) {
             $value=$literal.Value
+            # This contract's host branch creates the fixture prepared below.
+            # The client branch only executes that fixture; it never imports
+            # host transport/preparation code or invokes its compilers.
+            if ($file -eq (Join-Path $regression 'cases\00-banc\05-PaquetLanceur.ps1') -and
+                    $value -eq 'tests\regression\common\Prepare-Client.ps1') { continue }
             if ($value -notmatch '\.(ps1|cs)$' -or $value -match '[*?\r\n]') { continue }
             # Most paths are relative to PSScriptRoot; a few helper aliases
             # name a unique CS file in another test group.
@@ -127,6 +135,12 @@ function New-ClientPackage {
     Build-ManagedBundle 'runner' $runnerFiles
     foreach($entry in $Selected) {
         Write-Host ('PREPARE '+$entry.Relative)
+        if ($entry.Relative -eq '00-banc\05-PaquetLanceur.ps1') {
+            # The client contract must not invoke a compiler in the guest.
+            $fixtureCase='00-banc\01-Resultats.ps1'
+            $fixtureSelection=@([pscustomobject]@{Relative=$fixtureCase;Category='Internal';File=(Get-Item -LiteralPath (Join-Path $regression ('cases\'+$fixtureCase)))})
+            New-ClientPackage -Selected $fixtureSelection -Destination (Join-Path $Destination 'prepared\runner-contract') -TimeoutSeconds 60
+        }
         if ($entry.Relative -like '30-tri-melange\05-*') {
             $legacy=& (Join-Path $PSScriptRoot 'Prepare-LegacyMixedProvider.ps1') -ProjectRoot $ProjectRoot
             Copy-PackageFile $legacy
