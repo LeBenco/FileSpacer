@@ -2,6 +2,36 @@
 
 ## Exécution
 
+### GitHub Actions (lancement manuel)
+
+Dans **Actions > Test FileSpacer regressions > Run workflow**, renseigner `ref`
+avec une branche (`main` par défaut), un tag ou un SHA de commit. `category=All`
+et `pattern=*` exécutent toute la suite ; les mêmes catégories et motifs que
+le lanceur local permettent un passage ciblé. Le workflow est exclusivement
+manuel et ne publie aucune release.
+
+La révision est résolue une seule fois : documentation, application et tests
+proviennent du même commit. Une ancienne révision doit contenir le lanceur
+`-CI` et les dépendances du workflow ; le banc courant n'est pas greffé sur
+des sources anciennes. Le workflow doit être présent sur la branche par défaut
+pour que GitHub propose son lancement manuel.
+
+Sur le runner jetable `windows-2022`, le workflow utilise MSVC/NMAKE pour
+compiler Debug et l'installateur nécessaire aux fixtures. Le mode `-CI` de
+`Run-Regression.ps1` réutilise la préparation des artefacts du mode VM, puis
+exécute les cas sélectionnés sur le bureau du runner, sans Hyper-V. Il est
+réservé à GitHub Actions et incompatible avec `-VM` ou `-Prepared`.
+
+Le résumé donne le SHA testé et le bilan du banc. Les logs de compilation,
+de préparation, les rapports JSON et les captures sont conservés 14 jours
+dans l'artefact `regression-<run>-<tentative>`, même après un échec. Un cas
+bloqué, non exécuté ou un résumé absent empêche la validation. L'environnement
+consigne notamment la résolution et l'élévation du compte : ce passage sur
+Windows Server 2022 ne remplace pas une validation spécifique de Windows 10
+sous le jeton limité de la VM.
+
+### Poste local ou VM dédiée
+
 Depuis CMD à la racine du projet, fermer FileSpacer et les fenêtres du Panneau
 de configuration, puis lancer :
 
