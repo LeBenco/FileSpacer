@@ -4,6 +4,7 @@
 
 ## 1.3.0 — 2026-11-02
 
+- Record detailed installer operations, command failures and full documentation-cleanup exceptions in persistent diagnostic logs.
 - Fix concurrent folder-state access, preserve edits during delayed recovery and reduce redraws when restoring large free-icon layouts.
 - Fix stray window movement and unintended context menus after interrupted window gestures.
 
