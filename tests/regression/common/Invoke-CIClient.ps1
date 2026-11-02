@@ -61,8 +61,9 @@ $session=[Diagnostics.Process]::GetCurrentProcess().SessionId
 $arguments='-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "'+$PSCommandPath+'" -Worker -Package "'+$Package+'" -RunDirectory "'+$RunDirectory+'" -SessionId '+$session
 $exitCode=$null
 $launchStarted=Get-Date
+Write-Host ('CI launcher user: '+[Security.Principal.WindowsIdentity]::GetCurrent().User.Value)
 try {
-    $exitCode=[FileSpacerRegression.CIRestrictedProcess]::Run((Join-Path $PSHOME 'powershell.exe'),$arguments,$Package,169*60*1000,$true)
+    $exitCode=[FileSpacerRegression.CIRestrictedProcess]::Run((Join-Path $PSHOME 'powershell.exe'),$arguments,$Package,169*60*1000)
     if(!(Test-Path $resultPath)){throw ('CI worker produced no result; exit={0} (0x{0:X8})' -f $exitCode)}
     $record=Get-Content $resultPath -Raw|ConvertFrom-Json
     if($exitCode-ne0 -or $record.Status-ne'PASS' -or $record.RunnerExitCode-ne0 -or $record.Administrator -or $record.SessionId-ne$session){throw ('CI worker failed: '+($record|ConvertTo-Json -Compress))}
