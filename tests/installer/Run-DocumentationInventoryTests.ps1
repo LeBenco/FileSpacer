@@ -68,3 +68,27 @@ Remove-Item -LiteralPath (Join-Path $help 'build-info.json')
 & $cleanup -HelpRoot $help
 if(!(Test-Path -LiteralPath (Join-Path $help 'obsolete.css'))){throw 'Missing inventory removed unknown content.'}
 Write-Host 'PASS: upgrade, uninstall, modified/unowned files, missing inventory, path escapes, aliases, devices and junctions.'
+
+# Keep a failure larger than nsExec's capture limit, including the script
+# location, and preserve that failure even when its diagnostic log is unwritable.
+$help=Fixture 'diagnostic-log'
+$manifest=Join-Path $help 'build-info.json'
+$longName=('x'*1400)+'-full-exception-end'
+$data=Get-Content -LiteralPath $manifest -Raw|ConvertFrom-Json
+$data.files|Add-Member -NotePropertyName $longName -NotePropertyValue 'invalid digest'
+$data|ConvertTo-Json|Set-Content -LiteralPath $manifest -Encoding UTF8
+$diagnosticLog=Join-Path $RunDirectory 'full exception.log'
+$rejected=$false
+try{& $cleanup -HelpRoot $help -DiagnosticLog $diagnosticLog}catch{$rejected=$true}
+if(!$rejected){throw 'Invalid inventory unexpectedly succeeded with diagnostics enabled.'}
+$diagnostic=[IO.File]::ReadAllText($diagnosticLog,[Text.Encoding]::Unicode)
+if(!$diagnostic.Contains($longName) -or !$diagnostic.Contains('RemoveDocumentation.ps1') -or $diagnostic.Length -le 1024) {
+    throw 'Persistent cleanup diagnostic lost the full exception or its script location.'
+}
+$rejected=$false
+try{& $cleanup -HelpRoot $help -DiagnosticLog $help}catch{
+    $rejected=$_.Exception.Message.Contains('Invalid documentation digest: '+$longName)
+}
+if(!$rejected){throw 'An unwritable diagnostic log replaced the original cleanup failure.'}
+if(!(Test-Path -LiteralPath (Join-Path $help 'index.html'))){throw 'Diagnostic failure changed installed documentation.'}
+Write-Host 'PASS: complete PowerShell exception beyond 1024 characters; original cleanup failure survives an unwritable log.'
