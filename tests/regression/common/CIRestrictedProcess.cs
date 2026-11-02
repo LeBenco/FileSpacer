@@ -2,6 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Security.AccessControl;
+using System.Security.Principal;
 
 namespace FileSpacerRegression {
     // A restricted copy of the caller's token works even on hosted images with
@@ -19,6 +21,7 @@ namespace FileSpacerRegression {
         [DllImport("advapi32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern bool ConvertStringSidToSid(string value,out IntPtr sid);
         [DllImport("advapi32.dll",SetLastError=true)] static extern bool CreateRestrictedToken(IntPtr source,uint flags,uint disabled,SidAttributes[] sids,uint deleted,IntPtr privileges,uint restricted,IntPtr restrictSids,out IntPtr token);
         [DllImport("advapi32.dll",SetLastError=true)] static extern bool SetTokenInformation(IntPtr token,int kind,IntPtr data,uint size);
+        [DllImport("advapi32.dll",SetLastError=true)] static extern bool GetTokenInformation(IntPtr token,int kind,IntPtr data,uint size,out uint needed);
         [DllImport("advapi32.dll")] static extern uint GetLengthSid(IntPtr sid);
         [DllImport("advapi32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern bool CreateProcessAsUser(IntPtr token,string application,StringBuilder command,IntPtr processSecurity,IntPtr threadSecurity,bool inherit,uint flags,IntPtr environment,string directory,ref Startup startup,out ProcessInfo process);
         [DllImport("kernel32.dll",SetLastError=true)] static extern uint WaitForSingleObject(IntPtr handle,uint milliseconds);
@@ -26,6 +29,29 @@ namespace FileSpacerRegression {
         [DllImport("kernel32.dll")] static extern bool TerminateProcess(IntPtr process,uint code);
         [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr handle);
         [DllImport("kernel32.dll")] static extern IntPtr LocalFree(IntPtr memory);
+        static void PrepareDefaultDacl(IntPtr token) {
+            uint needed;
+            GetTokenInformation(token,6,IntPtr.Zero,0,out needed);
+            if(needed==0) throw new Win32Exception(Marshal.GetLastWin32Error(),"Read restricted token default DACL size");
+            IntPtr buffer=Marshal.AllocHGlobal((int)needed),updated=IntPtr.Zero;
+            try {
+                if(!GetTokenInformation(token,6,buffer,needed,out needed)) throw new Win32Exception(Marshal.GetLastWin32Error(),"Read restricted token default DACL");
+                IntPtr existing=Marshal.ReadIntPtr(buffer);
+                if(existing==IntPtr.Zero) return;
+                byte[] bytes=new byte[(ushort)Marshal.ReadInt16(existing,2)];Marshal.Copy(existing,bytes,0,bytes.Length);
+                var acl=new RawAcl(bytes,0);
+                var user=WindowsIdentity.GetCurrent().User;
+                Console.WriteLine("CI original token default DACL: "+new RawSecurityDescriptor(ControlFlags.DiscretionaryAclPresent,user,null,null,acl).GetSddlForm(AccessControlSections.Access));
+                // The built-in Administrator's defaults may grant only the
+                // now-disabled Administrators group and SYSTEM. Child objects
+                // must also remain accessible to this same unprivileged user.
+                acl.InsertAce(acl.Count,new CommonAce(AceFlags.None,AceQualifier.AccessAllowed,0x10000000,user,false,null));
+                bytes=new byte[acl.BinaryLength];acl.GetBinaryForm(bytes,0);
+                updated=Marshal.AllocHGlobal(bytes.Length);Marshal.Copy(bytes,0,updated,bytes.Length);
+                Marshal.WriteIntPtr(buffer,updated);
+                if(!SetTokenInformation(token,6,buffer,(uint)IntPtr.Size)) throw new Win32Exception(Marshal.GetLastWin32Error(),"Set restricted token default DACL");
+            } finally {if(updated!=IntPtr.Zero) Marshal.FreeHGlobal(updated);Marshal.FreeHGlobal(buffer);}
+        }
         public static int Run(string executable,string arguments,string directory,int timeoutMilliseconds) {
             IntPtr source=IntPtr.Zero,token=IntPtr.Zero,admin=IntPtr.Zero,medium=IntPtr.Zero,label=IntPtr.Zero;
             ProcessInfo child=new ProcessInfo();
@@ -34,6 +60,7 @@ namespace FileSpacerRegression {
                 if(!ConvertStringSidToSid("S-1-5-32-544",out admin)) throw new Win32Exception(Marshal.GetLastWin32Error(),"Administrator SID");
                 // DISABLE_MAX_PRIVILEGE; Administrator SID is explicitly deny-only.
                 if(!CreateRestrictedToken(source,1,1,new[]{new SidAttributes{Sid=admin}},0,IntPtr.Zero,0,IntPtr.Zero,out token)) throw new Win32Exception(Marshal.GetLastWin32Error(),"Restrict CI token");
+                PrepareDefaultDacl(token);
                 if(!ConvertStringSidToSid("S-1-16-8192",out medium)) throw new Win32Exception(Marshal.GetLastWin32Error(),"Medium integrity SID");
                 int size=Marshal.SizeOf(typeof(SidAttributes))+(int)GetLengthSid(medium);
                 label=Marshal.AllocHGlobal(size);
