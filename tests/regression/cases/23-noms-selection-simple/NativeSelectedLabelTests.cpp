@@ -24,6 +24,7 @@ class LabelTests : public IServiceProvider, public ICommDlgBrowser2, public IExp
     HWND window = nullptr, viewWindow = nullptr, list = nullptr;
     ULONG_PTR generation = 0;
     bool navigation = false, enumerated = false, queued = false, running = false, closing = false;
+    bool observing = false;
     int failures = 0;
     std::array<POINT, ITEM_COUNT> positions = {};
     bool expect(bool value, const char *description) {
@@ -135,9 +136,15 @@ class LabelTests : public IServiceProvider, public ICommDlgBrowser2, public IExp
         printf("Contents: folder=%ls (0x%08lX)\n", SUCCEEDED(identity) ? folderName.m_pData : L"<unavailable>",
             static_cast<unsigned long>(identity));
         if (!expect(SUCCEEDED(folder->ItemCount(SVGIO_ALLVIEW, &count)) && count == ITEM_COUNT,
-                "real Shell fixture is enumerated")
-                || !expect(SUCCEEDED(folder->GetCurrentViewMode(&mode)) && mode == FVM_ICON,
-                    "production spatial profile uses icon view")) { finish(); return; }
+                "real Shell fixture is enumerated")) {
+            // Keep observing public events until the watchdog: a late fill and
+            // an absent one are different Shell behaviors. The failure stands.
+            logEnvironment("after failed enumeration");
+            observing = true;
+            return;
+        }
+        if (!expect(SUCCEEDED(folder->GetCurrentViewMode(&mode)) && mode == FVM_ICON,
+                "production spatial profile uses icon view")) { finish(); return; }
         folder->SetCurrentFolderFlags(FWF_AUTOARRANGE, 0);
         for (int i = 0; i < ITEM_COUNT; ++i) {
             CComHeapPtr<ITEMID_CHILD> item; folder->Item(i, &item);
@@ -185,6 +192,33 @@ class LabelTests : public IServiceProvider, public ICommDlgBrowser2, public IExp
         finish();
     }
     void finish() { PostMessageW(window, WM_CLOSE, 0, 0); }
+    // Public environment and direct Shell enumeration of the displayed folder,
+    // logged only after a content mismatch to locate where items disappear.
+    void logEnvironment(const char *moment) {
+        CComQIPtr<IFolderView2> folder(view);
+        int count = -1;
+        const HRESULT counted = folder ? folder->ItemCount(SVGIO_ALLVIEW, &count) : E_NOINTERFACE;
+        RECT bounds = {};
+        if (viewWindow) GetWindowRect(viewWindow, &bounds);
+        printf("DIAG %s: items=%d (0x%08lX), shell window=%d, ACP=%u, view visible=%d size=%ldx%ld\n", moment, count,
+            static_cast<unsigned long>(counted), GetShellWindow() != nullptr ? 1 : 0, GetACP(),
+            viewWindow && IsWindowVisible(viewWindow) ? 1 : 0, bounds.right - bounds.left, bounds.bottom - bounds.top);
+        CComPtr<IShellFolder> shellFolder;
+        const HRESULT bound = folder ? folder->GetFolder(IID_PPV_ARGS(&shellFolder)) : E_NOINTERFACE;
+        const DWORD enumFlags[] = {SHCONTF_FOLDERS | SHCONTF_NONFOLDERS,
+            SHCONTF_FOLDERS | SHCONTF_NONFOLDERS | SHCONTF_ENABLE_ASYNC};
+        for (const DWORD flags : enumFlags) {
+            CComPtr<IEnumIDList> enumeration;
+            HRESULT result = SUCCEEDED(bound) ? shellFolder->EnumObjects(window, flags, &enumeration) : bound;
+            unsigned items = 0;
+            if (SUCCEEDED(result) && enumeration) {
+                CComHeapPtr<ITEMID_CHILD> child;
+                while ((result = enumeration->Next(1, &child, nullptr)) == S_OK) { ++items; child.Free(); }
+            }
+            printf("DIAG direct IShellFolder enumeration flags=0x%08lX: items=%u, last result=0x%08lX\n",
+                static_cast<unsigned long>(flags), items, static_cast<unsigned long>(result));
+        }
+    }
 public:
     int exitCode = 3;
     STDMETHODIMP QueryInterface(REFIID id, void **object) override {
@@ -241,10 +275,17 @@ public:
             owner->window = target; SetWindowLongPtrW(target, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(owner));
         }
         if (!owner) return DefWindowProcW(target, message, wp, lp);
-        if (message == DONE && owner->host.isViewNotification(wp)) { owner->enumerated = true; owner->queue(); return 0; }
+        if (message == DONE && owner->host.isViewNotification(wp)) {
+            owner->enumerated = true;
+            if (owner->observing) owner->logEnvironment("after a later EnumDone");
+            owner->queue(); return 0;
+        }
         if (message == READY) return 0;
         if (message == RUN && !owner->running && !owner->closing) { owner->running = true; owner->run(); return 0; }
-        if (message == WM_TIMER) { owner->expect(false, "watchdog"); owner->finish(); return 0; }
+        if (message == WM_TIMER) {
+            if (owner->observing) owner->logEnvironment("at the watchdog");
+            owner->expect(false, "watchdog"); owner->finish(); return 0;
+        }
         if (message == WM_CLOSE) {
             owner->closing = true; KillTimer(target, 1);
             if (owner->viewWindow) RemoveWindowSubclass(owner->viewWindow, observe, 0);
