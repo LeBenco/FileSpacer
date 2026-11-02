@@ -23,14 +23,19 @@ Sur le runner jetable `windows-2022`, le workflow utilise MSVC/NMAKE pour
 compiler Debug. Le mode `-CI` de
 `Run-Regression.ps1` réutilise la préparation des artefacts du mode VM, puis
 exécute les cas sélectionnés sur le bureau du runner, sans Hyper-V, avec un
-compte standard éphémère et son propre profil Windows. Le compte Administrateur
-intégré du runner ne reproduit pas le comportement COM d'un poste client.
-La session et l'absence de droits administrateur sont vérifiées avant les
-installations, puis au lancement des cas. Le mot de passe est généré en mémoire ;
-les droits temporaires du bureau et du répertoire sont restaurés et le compte
-est supprimé au nettoyage. Cette préparation n'est exécutée que sur une image
-GitHub hébergée, jamais sur le PC local. Le paquet et TEMP utilisent des chemins
-courts ; pour les cas UI, le déplacement avec contenu est activé puis restauré. Le mode est
+jeton limité du même utilisateur interactif. La session, l'absence de droits
+administrateur et l'accès à `Shell.Windows()` sont vérifiés avant les
+installations, puis les droits du worker sont revérifiés au lancement des cas.
+La restriction conserve le profil et les données Shell de la session ouverte.
+Sur l'image hébergée où UAC est désactivé, le fournisseur COM est enregistré
+pour la machine sous son seul CLSID de test, puis retiré au nettoyage. Le test
+de compatibilité bascule cette entrée vers la vraie DLL historique et la
+restaure ensuite ; ses assertions restent identiques. Les écritures de
+l'enregistrement utilisateur sont exercées, mais l'activation COM via HKCU
+n'est pas couverte par cet environnement CI : elle nécessite le client Windows
+avec sa configuration UAC habituelle. Cette préparation est réservée aux
+images GitHub hébergées. Le paquet et TEMP utilisent des chemins courts ; pour
+les cas UI, le déplacement avec contenu est activé puis restauré. Le mode est
 réservé à GitHub Actions et incompatible avec `-VM` ou `-Prepared`.
 
 Le résumé donne le SHA testé et le bilan du banc. Les logs de compilation,
