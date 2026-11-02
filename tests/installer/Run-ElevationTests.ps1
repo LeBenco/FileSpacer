@@ -127,6 +127,54 @@ FunctionEnd
 Compile-Probe 'NativeLaunchProbe' ($nativeProbe.Replace('@NATIVE@', $native))
 Run-Probe 'NativeLaunchProbe' '/S' 0
 
+# Exercise the real logger with a successful file, a missing destination and
+# an existing NSIS error. Logging must preserve the first failure and registers.
+$logging = @'
+Unicode True
+Name "Installer logging probe"
+OutFile "@RUN@\@NAME@.exe"
+RequestExecutionLevel user
+SilentInstall silent
+!include LogicLib.nsh
+Var logPath
+@LOGGER@
+Section
+    StrCpy $logPath "@RUN@\logging-probe.log"
+    StrCpy $R8 "saved R8"
+    StrCpy $R9 "saved R9"
+    ClearErrors
+    !insertmacro WORKER_LOG "Unicode log: échec — 日本語"
+    IfErrors failed
+    SetErrors
+    !insertmacro WORKER_LOG "Existing NSIS failure retained"
+    IfErrors +2
+    Goto failed
+    StrCpy $logPath "@RUN@\absent directory\cannot-write.log"
+    SetErrors
+    !insertmacro WORKER_LOG "Unwritable log retains the original failure"
+    IfErrors +2
+    Goto failed
+    ClearErrors
+    !insertmacro WORKER_LOG "Unwritable log must not create a failure"
+    IfErrors failed
+    ${If} $R8 != "saved R8"
+    ${OrIf} $R9 != "saved R9"
+        Goto failed
+    ${EndIf}
+    SetErrorLevel 0
+    Quit
+failed:
+    SetErrorLevel 10
+SectionEnd
+'@
+Compile-Probe 'LoggingProbe' ($logging.Replace('@LOGGER@',(Block '!macro WORKER_LOG .*?!macroend')))
+Run-Probe 'LoggingProbe' '/S' 0
+$loggingText=[IO.File]::ReadAllText((Join-Path $RunDirectory 'logging-probe.log'),[Text.Encoding]::Unicode)
+if(!$loggingText.Contains('Unicode log: échec — 日本語') -or !$loggingText.Contains('Existing NSIS failure retained')) {
+    throw 'Persistent installer log lost Unicode text or the failing operation.'
+}
+Write-Host 'PASS: persistent Unicode log, NSIS error preservation, register preservation and unwritable-log handling.'
+
 $logic = @(
     (Block '!macro WORKER_EXIT .*?!macroend'),
     (Block '!macro WORKER_LOG .*?!macroend'),
@@ -143,6 +191,7 @@ $logic = @(
     (Block 'Function WriteUpdateResult\r?\n.*?FunctionEnd')
 ) -join "`r`n"
 $logic=$logic.Replace('$TEMP\FileSpacer-install-machine.log','@RUN@\worker.log')
+$logic=$logic.Replace('$TEMP\FileSpacer-install.log','@RUN@\setup.log')
 $parent = [regex]::Match($source, 'Call CheckClosed[^\r\n]*\r?\n(?<branch>.*?)(?=    ClearErrors)', 'Singleline').Groups['branch'].Value
 if (!$parent.Contains('Call InstallForAllUsers')) { throw 'Missing machine-install delegation.' }
 $errors = (@($source -split '\r?\n' | Where-Object { $_ -match '^LangString (ERROR_MACHINE(?:_\w+)?|ERROR_INSTALL|ERROR_SCOPE|MACHINE_WAIT|OPEN_LOG) ' }) -join "`r`n")
