@@ -23,9 +23,14 @@ Sur le runner jetable `windows-2022`, le workflow utilise MSVC/NMAKE pour
 compiler Debug. Le mode `-CI` de
 `Run-Regression.ps1` réutilise la préparation des artefacts du mode VM, puis
 exécute les cas sélectionnés sur le bureau du runner, sans Hyper-V, avec un
-jeton restreint à intégrité moyenne. Le compte, la session et l'absence de
-droits administrateur sont vérifiés. Le paquet et TEMP utilisent des chemins
-courts ; le déplacement avec contenu est activé puis restauré. Le mode est
+compte standard éphémère et son propre profil Windows. Le compte Administrateur
+intégré du runner ne reproduit pas le comportement COM d'un poste client.
+La session et l'absence de droits administrateur sont vérifiées avant les
+installations, puis au lancement des cas. Le mot de passe est généré en mémoire ;
+les droits temporaires du bureau et du répertoire sont restaurés et le compte
+est supprimé au nettoyage. Cette préparation n'est exécutée que sur une image
+GitHub hébergée, jamais sur le PC local. Le paquet et TEMP utilisent des chemins
+courts ; pour les cas UI, le déplacement avec contenu est activé puis restauré. Le mode est
 réservé à GitHub Actions et incompatible avec `-VM` ou `-Prepared`.
 
 Le résumé donne le SHA testé et le bilan du banc. Les logs de compilation,
