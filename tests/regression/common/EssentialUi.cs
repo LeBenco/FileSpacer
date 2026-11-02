@@ -263,6 +263,14 @@ namespace FileSpacerRegression {
             }
             positions.Sort(StringComparer.OrdinalIgnoreCase); return String.Join(";",positions.ToArray());
         }
+        public string Position(string name) {
+            IntPtr child=IntPtr.Zero;
+            try {
+                Native.Check(view.Item(IndexOf(name),out child));
+                Point point; Native.Check(view.GetItemPosition(child,out point));
+                return name+"="+point.X+","+point.Y;
+            } finally { if(child!=IntPtr.Zero) Marshal.FreeCoTaskMem(child); }
+        }
         public void Position(string name,int x,int y) {
             IntPtr child=IntPtr.Zero, storage=IntPtr.Zero;
             try {
