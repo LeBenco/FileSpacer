@@ -110,6 +110,18 @@ Il menu di scelta rapida delle cartelle offre **Apri in FileSpacer**, oppure **A
 
 I file si aprono con la consueta applicazione Windows. Anche cartelle di rete, anteprime e comandi aggiunti al menu di scelta rapida seguono il normale funzionamento di Windows. **Opzioni di Esplora file** apre le preferenze comuni delle cartelle, alcune delle quali valgono anche per FileSpacer.
 
+### PowerToys Grab And Move
+
+Quando Grab And Move è attivo nelle impostazioni di PowerToys, i gesti di FileSpacer per spostare e ridimensionare le finestre interessate vengono sospesi, anche se PowerToys è chiuso. Le scorciatoie configurate restano memorizzate.
+
+Per continuare a usare i gesti di FileSpacer, aggiungere `FileSpacer.exe` alle applicazioni escluse di Grab And Move oppure disattivare l’utilità in PowerToys. L’avviso in **Impostazioni > Scelte rapide** contiene un collegamento diretto alle impostazioni di Grab And Move.
+
+### PowerToys Peek
+
+**Anteprima con Spazio**, in **Impostazioni > Integrazione**, apre un’anteprima Peek dei file o delle cartelle selezionati su un’unità o una condivisione di rete premendo solo **Spazio**. L’opzione è disattivata per impostazione predefinita; la digitazione e la rinomina funzionano come di consueto.
+
+Peek deve essere attivato anche in PowerToys; il collegamento **PowerToys** sotto l’opzione apre le relative impostazioni. Questa integrazione richiede PowerToys 0.96 o successivo, e 0.102 o successivo per una selezione multipla.
+
 ### Everything
 
 Un’installazione esistente di [Everything](https://www.voidtools.com/) può essere integrata per avviare ricerche avanzate dal campo di FileSpacer. I risultati si aprono in Everything.

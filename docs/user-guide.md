@@ -110,6 +110,18 @@ The folder context menu offers **Open in FileSpacer**, or **Open in Windows File
 
 File types open with their usual Windows application. Network folders, previews and installed context-menu commands also use Windows' usual handling. **File Explorer options** opens shared folder preferences, some of which affect FileSpacer too.
 
+### PowerToys Grab And Move
+
+When Grab And Move is enabled in PowerToys settings, FileSpacer’s move and resize gestures are suspended for the affected windows, even if PowerToys is not running. The configured shortcuts are kept.
+
+To keep using FileSpacer’s gestures, add `FileSpacer.exe` to Grab And Move’s excluded apps, or turn that utility off in PowerToys. The notice in **Settings > Shortcuts** links directly to Grab And Move settings.
+
+### PowerToys Peek
+
+**Preview with Space**, in **Settings > Integration**, opens a Peek preview of the selected files or folders on a drive or network share by pressing **Space** on its own. The option is off by default; typing and renaming work as usual.
+
+Peek must also be enabled in PowerToys; the **PowerToys** link below the option opens its settings. This integration requires PowerToys 0.96 or later, and 0.102 or later for multiple selections.
+
 ### Everything
 
 An existing [Everything](https://www.voidtools.com/) installation can be integrated to run advanced searches from FileSpacer's search field. Results open in Everything.

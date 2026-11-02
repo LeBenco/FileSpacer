@@ -110,6 +110,18 @@ O menu de contexto das pastas oferece **Abrir no FileSpacer**, ou **Abrir no Exp
 
 Os ficheiros abrem na aplicação habitual do Windows. Pastas de rede, pré-visualizações e comandos acrescentados ao menu de contexto também seguem o funcionamento normal do Windows. **Opções do Explorador de Ficheiros** abre preferências de pastas partilhadas, algumas das quais também se aplicam ao FileSpacer.
 
+### PowerToys Grab And Move
+
+Quando o Grab And Move está ativado nas definições do PowerToys, os gestos do FileSpacer para mover e redimensionar as janelas abrangidas ficam suspensos, mesmo que o PowerToys esteja fechado. Os atalhos configurados ficam guardados.
+
+Para continuar a usar os gestos do FileSpacer, adicionar `FileSpacer.exe` às aplicações excluídas do Grab And Move ou desativar esse utilitário no PowerToys. O aviso em **Definições > Atalhos** inclui uma ligação direta para as definições do Grab And Move.
+
+### PowerToys Peek
+
+**Pré-visualização com Espaço**, em **Definições > Integração**, abre uma pré-visualização Peek dos ficheiros ou pastas selecionados numa unidade ou partilha de rede ao premir apenas **Espaço**. A opção está desativada por defeito; a introdução de texto e a alteração de nomes mantêm o funcionamento habitual.
+
+O Peek também tem de estar ativo no PowerToys; a ligação **PowerToys** sob a opção abre as respetivas definições. Esta integração requer PowerToys 0.96 ou posterior, e 0.102 ou posterior para uma seleção múltipla.
+
 ### Everything
 
 Uma instalação existente do [Everything](https://www.voidtools.com/) pode ser integrada para iniciar pesquisas avançadas a partir do campo do FileSpacer. Os resultados abrem no Everything.
