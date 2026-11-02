@@ -39,7 +39,7 @@ function Assert-Positions([string]$Expected,[string]$Actual) {
     foreach($name in $wanted.Keys){
         Assert-Ui ($found.ContainsKey($name)) ('Missing icon '+$name)
         Assert-Ui ([Math]::Abs([int]$wanted[$name][0]-[int]$found[$name][0]) -le 1 -and
-            [Math]::Abs([int]$wanted[$name][1]-[int]$found[$name][1]) -le 1) ('Saved position replaced for '+$name)
+            [Math]::Abs([int]$wanted[$name][1]-[int]$found[$name][1]) -le 1) ('Saved position replaced for '+$name+'; expected='+($wanted[$name] -join ',')+'; actual='+($found[$name] -join ','))
     }
 }
 $holder=$null;$ready=$null;$release=$null;$failure=$null
