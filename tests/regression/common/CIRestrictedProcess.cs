@@ -34,6 +34,17 @@ namespace FileSpacerRegression {
         [DllImport("user32.dll")] static extern bool CloseDesktop(IntPtr handle);
         [DllImport("user32.dll",SetLastError=true)] static extern bool GetUserObjectSecurity(IntPtr handle,ref uint information,byte[] descriptor,uint size,out uint needed);
         [DllImport("user32.dll",SetLastError=true)] static extern bool SetUserObjectSecurity(IntPtr handle,ref uint information,byte[] descriptor);
+        [DllImport("advapi32.dll")] static extern uint GetSecurityInfo(IntPtr handle,int kind,uint information,IntPtr owner,IntPtr group,IntPtr dacl,IntPtr sacl,out IntPtr descriptor);
+        [DllImport("advapi32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern bool ConvertSecurityDescriptorToStringSecurityDescriptor(IntPtr descriptor,uint revision,uint information,out IntPtr text,IntPtr length);
+        static void ReportDesktopLabel(IntPtr handle,string name) {
+            IntPtr descriptor=IntPtr.Zero,text=IntPtr.Zero;
+            try {
+                uint error=GetSecurityInfo(handle,7,0x10,IntPtr.Zero,IntPtr.Zero,IntPtr.Zero,IntPtr.Zero,out descriptor);
+                if(error!=0){Console.WriteLine("CI "+name+" label query error="+error);return;}
+                if(!ConvertSecurityDescriptorToStringSecurityDescriptor(descriptor,1,0x10,out text,IntPtr.Zero)){Console.WriteLine("CI "+name+" label conversion error="+Marshal.GetLastWin32Error());return;}
+                Console.WriteLine("CI "+name+" integrity: "+Marshal.PtrToStringUni(text));
+            } finally {if(text!=IntPtr.Zero) LocalFree(text);if(descriptor!=IntPtr.Zero) LocalFree(descriptor);}
+        }
         static byte[] ReadDesktopAcl(IntPtr handle) {
             uint information=4,needed;
             GetUserObjectSecurity(handle,ref information,null,0,out needed);
@@ -76,9 +87,11 @@ namespace FileSpacerRegression {
                     // interactive station/desktop, then restore both exact DACLs.
                     station=OpenWindowStation("winsta0",false,0x60000);
                     if(station==IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error(),"Open CI window station security");
+                    ReportDesktopLabel(station,"window station");
                     stationAcl=ReadDesktopAcl(station);GrantDesktopAccess(station,stationAcl,0x2037f);
                     desktop=OpenDesktop("default",0,false,0x60081);
                     if(desktop==IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error(),"Open CI desktop security");
+                    ReportDesktopLabel(desktop,"desktop");
                     desktopAcl=ReadDesktopAcl(desktop);GrantDesktopAccess(desktop,desktopAcl,0x201ff);
                 }
                 var startup=new Startup{Size=Marshal.SizeOf(typeof(Startup)),Desktop="winsta0\\default",Flags=1,Show=0};
