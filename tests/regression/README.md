@@ -23,19 +23,15 @@ Sur le runner jetable `windows-2022`, le workflow utilise MSVC/NMAKE pour
 compiler Debug. Le mode `-CI` de
 `Run-Regression.ps1` réutilise la préparation des artefacts du mode VM, puis
 exécute les cas sélectionnés sur le bureau du runner, sans Hyper-V, avec un
-jeton limité du même utilisateur interactif. La session, l'absence de droits
-administrateur et l'accès à `Shell.Windows()` sont vérifiés avant les
-installations, puis les droits du worker sont revérifiés au lancement des cas.
-La restriction conserve le profil et les données Shell de la session ouverte.
-Sur l'image hébergée où UAC est désactivé, le fournisseur COM est enregistré
-pour la machine sous son seul CLSID de test, puis retiré au nettoyage. Le test
-de compatibilité bascule cette entrée vers la vraie DLL historique et la
-restaure ensuite ; ses assertions restent identiques. Les écritures de
-l'enregistrement utilisateur sont exercées, mais l'activation COM via HKCU
-n'est pas couverte par cet environnement CI : elle nécessite le client Windows
-avec sa configuration UAC habituelle. Cette préparation est réservée aux
-images GitHub hébergées. Le paquet et TEMP utilisent des chemins courts ; pour
-les cas UI, le déplacement avec contenu est activé puis restauré. Le mode est
+jeton limité du même utilisateur interactif, à intégrité moyenne et avec
+`TokenElevation=0`. Le profil et la session restent ceux du bureau ouvert.
+L'absence de droits administrateur et l'accès à `Shell.Windows()` sont vérifiés
+avant les installations, puis les droits du worker sont revérifiés au lancement
+des cas. Le mode utilise l'enregistrement COM utilisateur normal, sans
+préparer de classe machine, de compte ou de permissions du bureau. Il est
+réservé aux images GitHub hébergées. Le paquet et TEMP utilisent des chemins
+courts ; pour les cas UI, le déplacement avec contenu est activé puis restauré.
+La progression du banc est affichée pendant l'exécution. Le mode est
 réservé à GitHub Actions et incompatible avec `-VM` ou `-Prepared`.
 
 Le résumé donne le SHA testé et le bilan du banc. Les logs de compilation,
