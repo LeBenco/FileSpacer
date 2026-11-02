@@ -36,6 +36,7 @@ namespace FileSpacerRegression {
         [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr window,out uint processId);
         [DllImport("user32.dll",SetLastError=true)] static extern bool GetGUIThreadInfo(uint thread,ref GuiInfo info);
         static bool buttonHeld,altHeld,rightButton,middleButton,ctrlHeld,shiftHeld;
+        static bool secondaryRightHeld;
         static DateTime lastRelease=DateTime.MinValue;
 
         static Input Key(ushort key,bool up) {
@@ -127,13 +128,31 @@ namespace FileSpacerRegression {
         public static void ReleaseAlt() {
             if(altHeld) { Trace("releasing Alt"); Send(Key(0x12,true)); altHeld=false; }
         }
+        public static void PressSecondaryRight() {
+            if(!buttonHeld || !middleButton || secondaryRightHeld || GetAsyncKeyState(2)<0)
+                throw new InvalidOperationException("A middle-button gesture with an unpressed secondary right button is required.");
+            secondaryRightHeld=true;
+            var input=new Input(); input.Data.Mouse.Flags=8; Send(input);
+        }
+        public static void ReleaseSecondaryRight() {
+            if(secondaryRightHeld) {
+                var input=new Input(); input.Data.Mouse.Flags=0x10; Send(input);
+                secondaryRightHeld=false; lastRelease=DateTime.UtcNow;
+            }
+        }
+        public static void ReleasePrimary() {
+            if(buttonHeld) { Trace(rightButton?"releasing right":"releasing left"); Send(Button(true)); buttonHeld=false; lastRelease=DateTime.UtcNow; }
+        }
         public static void End() {
-            try { if(buttonHeld) { Trace(rightButton?"releasing right":"releasing left"); Send(Button(true)); buttonHeld=false; lastRelease=DateTime.UtcNow; } }
+            try { ReleasePrimary(); }
             finally {
-                try { ReleaseAlt(); }
+                try { ReleaseSecondaryRight(); }
                 finally {
-                    try { if(shiftHeld) { Send(Key(0x10,true)); shiftHeld=false; } }
-                    finally { if(ctrlHeld) { Send(Key(0x11,true)); ctrlHeld=false; } }
+                    try { ReleaseAlt(); }
+                    finally {
+                        try { if(shiftHeld) { Send(Key(0x10,true)); shiftHeld=false; } }
+                        finally { if(ctrlHeld) { Send(Key(0x11,true)); ctrlHeld=false; } }
+                    }
                 }
             }
         }
@@ -154,6 +173,7 @@ namespace FileSpacerRegression {
             return capture==window || (capture!=IntPtr.Zero && IsChild(window,capture));
         }
         public static bool Moving(IntPtr window) { return Info(window).MoveSize==window; }
+        public static bool MenuActive(IntPtr window) { var info=Info(window); return info.MenuOwner!=IntPtr.Zero || (info.Flags&4)!=0; }
         public static bool Idle(IntPtr window) { var info=Info(window); return info.Capture==IntPtr.Zero && info.MoveSize==IntPtr.Zero; }
         public static string Describe(IntPtr window) {
             var info=Info(window);
