@@ -2,7 +2,11 @@
 
 ## Noch nicht veröffentlicht
 
-## 1.3.0 — 2026-10-31
+## 1.3.0 — 2026-11-02
+
+- Fügt optionale PowerToys-Peek-Vorschauen hinzu und überlässt kollidierende Fenstergesten Grab And Move.
+- Behebt gleichzeitige Zugriffe auf Ordnerzustände, erhält Änderungen bei verzögerter Wiederherstellung und reduziert Neuzeichnungen großer freier Symbolanordnungen.
+- Verhindert unbeabsichtigte Fensterbewegungen und Kontextmenüs nach unterbrochenen Fenstergesten.
 
 - Das Titelleistenmenü in sieben Sprachen anpassen, mit Drag-and-drop, Standardeinstellungen und nativer oder Nilesoft-Shell-Darstellung.
 - Aktionen für gespeicherte Anordnungen, Anpassung an den Inhalt, Schließen untergeordneter oder anderer Fenster, benannte Ordnergruppen und stabile Nilesoft-Befehle hinzufügen.
