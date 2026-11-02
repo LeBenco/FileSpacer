@@ -3,6 +3,7 @@
 #include "ShellViewLabels.h"
 #include <shlobj.h>
 #include <shlwapi.h>
+#include <commctrl.h>
 #include <algorithm>
 #include <array>
 #include <cstdio>
@@ -125,6 +126,14 @@ class LabelTests : public IServiceProvider, public ICommDlgBrowser2, public IExp
     void run() {
         CComQIPtr<IFolderView2> folder(view);
         int count = -1; UINT mode = 0;
+        CComPtr<IPersistFolder2> currentFolder;
+        CComHeapPtr<ITEMIDLIST_ABSOLUTE> folderID;
+        CComHeapPtr<wchar_t> folderName;
+        HRESULT identity = folder->GetFolder(IID_PPV_ARGS(&currentFolder));
+        if (SUCCEEDED(identity)) identity = currentFolder->GetCurFolder(&folderID);
+        if (SUCCEEDED(identity)) identity = SHGetNameFromIDList(folderID, SIGDN_DESKTOPABSOLUTEPARSING, &folderName);
+        printf("Contents: folder=%ls (0x%08lX)\n", SUCCEEDED(identity) ? folderName.m_pData : L"<unavailable>",
+            static_cast<unsigned long>(identity));
         if (!expect(SUCCEEDED(folder->ItemCount(SVGIO_ALLVIEW, &count)) && count == ITEM_COUNT,
                 "real Shell fixture is enumerated")
                 || !expect(SUCCEEDED(folder->GetCurrentViewMode(&mode)) && mode == FVM_ICON,
@@ -251,6 +260,8 @@ public:
 }
 int wmain() {
     if (FAILED(OleInitialize(nullptr))) return 2;
+    INITCOMMONCONTROLSEX controls = {sizeof(controls), ICC_STANDARD_CLASSES | ICC_BAR_CLASSES | ICC_USEREX_CLASSES | ICC_LISTVIEW_CLASSES};
+    if (!InitCommonControlsEx(&controls)) { OleUninitialize(); return 2; }
     wchar_t executable[MAX_PATH] = {};
     GetModuleFileNameW(nullptr, executable, MAX_PATH); PathRemoveFileSpecW(executable);
     const std::wstring fixture = std::wstring(executable) + L"\\labels-fixture";
