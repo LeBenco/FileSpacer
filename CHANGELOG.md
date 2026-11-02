@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-## 1.3.0 — 2026-10-31
+## 1.3.0 — 2026-11-02
+
+- Fix concurrent folder-state access, preserve edits during delayed recovery and reduce redraws when restoring large free-icon layouts.
+- Fix stray window movement and unintended context menus after interrupted window gestures.
 
 - Add optional PowerToys Peek previews and defer conflicting window gestures to Grab And Move.
 - Customize the title bar menu in seven languages, with drag and drop, defaults and native or Nilesoft Shell appearance.
