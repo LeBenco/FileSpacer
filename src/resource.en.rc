@@ -90,6 +90,7 @@ STRINGTABLE {
     IDS_FOLDER_WIDTH_INVALID, "Width must be a whole number of at least %1!d! px."
     IDS_FOLDER_HEIGHT_INVALID,"Height must be a whole number of at least %1!d! px."
     IDS_FOLDER_STATE_ERROR, "FileSpacer could not read or save the folder state database. Check that your local application data folder is writable and that the database is available. Existing data has not been reset."
+    IDS_ICON_POSITION_ERROR, "FileSpacer could not restore or save the icon layout. Existing saved positions have been kept. Current layout changes may not be remembered."
     IDS_BROWSER_SET_FAILED, "Failed to change the default file browser"
     IDS_BROWSER_DIRECTORY, "Folders"
     IDS_BROWSER_COMPRESSED_FOLDER, "Compressed (zipped) folders"

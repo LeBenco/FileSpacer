@@ -90,6 +90,7 @@ STRINGTABLE {
     IDS_FOLDER_WIDTH_INVALID, "A largura tem de ser um número inteiro de, pelo menos, %1!d! px."
     IDS_FOLDER_HEIGHT_INVALID,"A altura tem de ser um número inteiro de, pelo menos, %1!d! px."
     IDS_FOLDER_STATE_ERROR, "O FileSpacer não conseguiu ler ou guardar a base de dados do estado das pastas. Verifique se é possível escrever na pasta de dados locais da aplicação e se a base de dados está disponível. Os dados existentes não foram repostos."
+    IDS_ICON_POSITION_ERROR, "O FileSpacer não conseguiu restaurar ou guardar a disposição dos ícones. As posições já guardadas foram mantidas. As alterações atuais à disposição poderão não ser guardadas."
     IDS_BROWSER_SET_FAILED, "Não foi possível alterar o gestor de ficheiros predefinido"
     IDS_BROWSER_DIRECTORY, "Pastas"
     IDS_BROWSER_COMPRESSED_FOLDER, "Pastas comprimidas (ZIP)"

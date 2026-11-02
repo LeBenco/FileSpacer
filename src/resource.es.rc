@@ -90,6 +90,7 @@ STRINGTABLE {
     IDS_FOLDER_WIDTH_INVALID, "El ancho debe ser un número entero de al menos %1!d! px."
     IDS_FOLDER_HEIGHT_INVALID,"La altura debe ser un número entero de al menos %1!d! px."
     IDS_FOLDER_STATE_ERROR, "FileSpacer no ha podido leer o guardar la base de datos de estados de las carpetas. Comprueba que se pueda escribir en la carpeta de datos locales de la aplicación y que la base de datos esté disponible. Los datos existentes no se han restablecido."
+    IDS_ICON_POSITION_ERROR, "FileSpacer no ha podido restaurar o guardar la disposición de los iconos. Se han conservado las posiciones guardadas. Es posible que los cambios actuales de disposición no se guarden."
     IDS_BROWSER_SET_FAILED, "No se ha podido cambiar el explorador de archivos predeterminado"
     IDS_BROWSER_DIRECTORY, "Carpetas"
     IDS_BROWSER_COMPRESSED_FOLDER, "Carpetas comprimidas (ZIP)"
