@@ -42,7 +42,6 @@ namespace FileSpacerRegression {
                 byte[] bytes=new byte[(ushort)Marshal.ReadInt16(existing,2)];Marshal.Copy(existing,bytes,0,bytes.Length);
                 var acl=new RawAcl(bytes,0);
                 var user=WindowsIdentity.GetCurrent().User;
-                Console.WriteLine("CI original token default DACL: "+new RawSecurityDescriptor(ControlFlags.DiscretionaryAclPresent,user,null,null,acl).GetSddlForm(AccessControlSections.Access));
                 // The built-in Administrator's defaults may grant only the
                 // now-disabled Administrators group and SYSTEM. Child objects
                 // must also remain accessible to this same unprivileged user.
