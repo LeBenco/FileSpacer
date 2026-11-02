@@ -19,6 +19,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  application-tests:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/regression.yml
+    with:
+      ref: ${{ inputs.tag || github.ref }}
+
   documentation:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -40,7 +47,7 @@ jobs:
             build/offline-docs.nsh
 
   release:
-    needs: documentation
+    needs: [documentation, application-tests]
     runs-on: windows-2022
     timeout-minutes: 30
     env:
@@ -152,7 +159,9 @@ jobs:
         run: |
           call "%VS_INSTALL%\VC\Auxiliary\Build\vcvars64.bat"
           if errorlevel 1 exit /b 1
-          nmake.exe /nologo /f Makefile CFG=Release installer "INKSCAPE=%ProgramFiles%\Inkscape\bin\inkscape.com" "MAKENSIS=%ProgramFiles(x86)%\NSIS\makensis.exe"
+          if not exist build\ci mkdir build\ci
+          nmake.exe /nologo /f Makefile CFG=Release installer "INKSCAPE=%ProgramFiles%\Inkscape\bin\inkscape.com" "MAKENSIS=%ProgramFiles(x86)%\NSIS\makensis.exe" > build\ci\build-release.log 2>&1
+          if errorlevel 1 (type build\ci\build-release.log & exit /b 1)
 
       - name: Check the release version
         shell: pwsh
@@ -196,11 +205,36 @@ jobs:
             [System.Text.Encoding]::ASCII
           )
 
+      - name: Summarize release failure
+        if: failure()
+        shell: powershell
+        run: |
+          $lines = @("Release failed: $env:RELEASE_TAG", "Commit: $(git rev-parse HEAD)", 'See the first failed step and the release-diagnostics artifact.')
+          if (Test-Path build/ci/build-release.log) {
+            $lines += @('Build output (last 15 lines):') + @(Get-Content build/ci/build-release.log -Tail 15)
+          }
+          $lines | Write-Host
+          $lines | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding UTF8
+
+      - name: Preserve build diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/ci
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Publish the release, installer and update manifest
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          $actualHash = (Get-FileHash -LiteralPath $env:INSTALLER_PATH -Algorithm SHA256).Hash.ToLowerInvariant()
+          $manifest = Get-Content build/FileSpacer-update.txt
+          if ($actualHash -cne $manifest[4]) {
+            throw 'The installer changed after validation; publication is blocked.'
+          }
           gh release view "$env:RELEASE_TAG" --repo "$env:GITHUB_REPOSITORY" *> $null
 
           if ($LASTEXITCODE -eq 0) {
