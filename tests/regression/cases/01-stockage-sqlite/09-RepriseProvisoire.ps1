@@ -1,6 +1,6 @@
 # Test-Category: UI
 param([string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path,
-    [ValidateSet('plain','filtered','locked','closing')][string]$Scenario='plain',
+    [ValidateSet('plain','filtered','locked','closing','closingLocked')][string]$Scenario='plain',
     [ValidateRange(2,5000)][int]$ItemCount=2,[switch]$MeasureRecovery)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
@@ -77,7 +77,7 @@ try {
     Use-UiView $first {param($view) $view.Position('alpha',350,160);$view.Position('beta',560,280)}
     $reference=Read-Presentation $first
     $reference|ConvertTo-Json -Depth 4|Set-Content (Join-Path $RunDirectory 'reference-view.json') -Encoding UTF8
-    if($Scenario -eq 'locked'){
+    if($Scenario -in @('locked','closingLocked')){
         [void][FileSpacerRegression.Native]::Message($first,0x111,(Get-UiId 'IDM_TOGGLE_STATE_LOCK'),0)
         $lockLabels=@([MutexRecoveryNative]::Messages($script:UiExecutable,(Get-UiId 'IDS_WINDOW_STATE_LOCKED')))
         Wait-Ui {
@@ -91,7 +91,7 @@ try {
     }
     Close-UiFolder $first
     Wait-Ui {@($script:UiProcesses|Where-Object{!$_.HasExited}).Count -eq 0} 'reference process normal exit'
-    if($Scenario -eq 'locked'){
+    if($Scenario -in @('locked','closingLocked')){
         $verifiedReference=Open-UiFolder $folder $ItemCount
         $persistedReference=Read-Presentation $verifiedReference
         $persistedReference|ConvertTo-Json -Depth 5|Set-Content (Join-Path $RunDirectory 'phase-persisted-reference.json') -Encoding UTF8
@@ -221,9 +221,9 @@ try {
     [void]$release.Set()
     Assert-Ui ($holder.Process.WaitForExit(15000)) 'Holder did not release.'
     Assert-Ui ((Complete-RecordedProcess $holder) -eq 0) 'Holder failed.'
-    if($Scenario -eq 'closing'){
+    if($Scenario -in @('closing','closingLocked')){
         $menuBeforeClose=[StorageRecoveryInput]::NativeMenuActive($window)
-        Assert-Ui $menuBeforeClose 'Native menu closed before the closing-path test.'
+        if($Scenario -eq 'closing'){Assert-Ui $menuBeforeClose 'Native menu closed before the closing-path test.'}
         $after=Read-Presentation $window
         Assert-Positions $changed.Positions $after.Positions
         [void][FileSpacerRegression.Native]::Message($window,0x10,0,0)
@@ -275,6 +275,11 @@ try {
                 $witness=Read-Presentation $window -Light -PositionWitness 'beta'
                 return $witness.Enabled -and $witness.WitnessPosition-eq$expectedWitness
             }
+            if($Scenario -eq 'locked'){
+                $lockedWitness=Read-Presentation $window -Light -PositionWitness 'beta'
+                $wantedBeta=@($expected.Split(';')|Where-Object{$_ -like 'beta=*'})
+                return $lockedWitness.Enabled -and $wantedBeta.Count-eq1 -and $lockedWitness.WitnessPosition-eq$wantedBeta[0]
+            }
             return $true
             } 'changed provisional native presentation recovered' 300 25
             if($observer){$observer.Status='PASS'}
@@ -305,7 +310,7 @@ try {
     $reopened=Open-UiFolder $folder $ItemCount
     $persisted=Read-Presentation $reopened
     $persisted|ConvertTo-Json -Depth 5|Set-Content (Join-Path $RunDirectory 'phase-fresh-process.json') -Encoding UTF8
-    if($Scenario -eq 'locked'){
+    if($Scenario -in @('locked','closingLocked')){
         # The saved lock protects geometry/view settings, not icon positions.
         Assert-Positions $expected $persisted.Positions
         Assert-Ui ($persisted.Mode -eq $reference.Mode -and $persisted.IconSize -eq $reference.IconSize) 'Automatic recovery changed the locked reference.'
