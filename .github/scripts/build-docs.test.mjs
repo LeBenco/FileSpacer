@@ -73,6 +73,8 @@ test('installer dispatches removal to the installed inventory', async t => {
   await installerInclude(output, ['index.html', 'fr/index.html', 'fr/assets/a.css']);
   const include = await fs.readFile(output + '.nsh', 'utf8');
   assert.match(include, /File "\$\{FILESPACER_DOCS\}\\fr\\assets\\a.css"/);
+  assert.match(include, /!insertmacro INSTALL_STEP "Extract help file: \$INSTDIR\\help\\fr\\assets\\a.css"\r?\n  File [^\r\n]+\r?\n  IfErrors files_failed/);
+  assert.match(include, /!insertmacro INSTALL_STEP "Create\/select help directory: \$INSTDIR\\help\\fr\\assets"\r?\n  SetOutPath [^\r\n]+\r?\n  IfErrors files_failed/);
   assert.match(include, /!macro RemoveDocumentation\r?\n  !insertmacro CleanInstalledDocumentation "Uninstall" uninstall_failed/);
   assert.doesNotMatch(include, /Delete |RMDir /);
   assert.doesNotMatch(include, /\/r|\*/i);
