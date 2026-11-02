@@ -21,7 +21,15 @@ public static class LockUi {
     [StructLayout(LayoutKind.Sequential)] struct Input { public uint Type; public Union Data; }
     [DllImport("user32.dll")] static extern uint SendInput(uint n,Input[] input,int size);
     public static void Click(IntPtr expected,int x,int y) {
-        if(WindowFromPoint(new Point{X=x,Y=y})!=expected) throw new InvalidOperationException("Caption menu button is covered.");
+        var target=WindowFromPoint(new Point{X=x,Y=y});
+        if(target!=expected) {
+            var owners=new StringBuilder();
+            foreach(var process in System.Diagnostics.Process.GetProcesses()) using(process) {
+                try { if(process.MainWindowHandle==target) owners.Append(process.ProcessName).Append(':').Append(process.Id).Append(';'); }
+                catch(InvalidOperationException) { }
+            }
+            throw new InvalidOperationException("Caption menu button is covered; expected="+expected+", target="+target+", point=("+x+","+y+"), owners=["+owners+"].");
+        }
         if(!SetCursorPos(x,y)) throw new Win32Exception();
         var down=new Input(); down.Data.Mouse.Flags=2;
         var up=new Input(); up.Data.Mouse.Flags=4;
