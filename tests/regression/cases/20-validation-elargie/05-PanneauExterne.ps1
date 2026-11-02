@@ -66,7 +66,24 @@ function Wait-ExternalPanel([string]$Step) {
 }
 function Close-ExternalPanel([IntPtr]$Window) {
     Assert-Ui ($ownedPanels.Contains($Window)) 'Refusing to close an untracked Shell window.'
-    Assert-Ui ([FileSpacerRegression.Native]::PostMessage($Window,0x10,[IntPtr]::Zero,[IntPtr]::Zero)) 'Cannot close the external Control Panel test window.'
+    # The runner's Explorer can have a higher integrity level. Use its public
+    # automation interface instead of sending a cross-integrity WM_CLOSE.
+    $requested=$false
+    for ($index=0; $index -lt $script:UiShellWindows.Count; ++$index) {
+        $registered=$null
+        try {
+            $registered=$script:UiShellWindows.Item($index)
+            if ($null -eq $registered -or [long]$registered.HWND -ne $Window.ToInt64()) { continue }
+            $registered.Quit()
+            $requested=$true
+            break
+        } finally {
+            if ($null -ne $registered -and [Runtime.InteropServices.Marshal]::IsComObject($registered)) {
+                [void][Runtime.InteropServices.Marshal]::ReleaseComObject($registered)
+            }
+        }
+    }
+    Assert-Ui $requested 'Cannot find the tracked external Control Panel window in Shell automation.'
     Wait-Ui { ![FileSpacerRegression.Native]::IsWindow($Window) } 'external test panel closes'
     [void]$ownedPanels.Remove($Window)
 }
