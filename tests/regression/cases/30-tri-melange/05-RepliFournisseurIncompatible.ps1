@@ -13,7 +13,14 @@ $junction=Join-Path $env:LOCALAPPDATA 'FileSpacer\TestShellView.{E129740C-52FD-4
 $junctionExisted=[IO.Directory]::Exists($junction)
 $failure=$null
 $cleanupErrors=New-Object Collections.Generic.List[string]
+$ciServer='Registry::HKEY_LOCAL_MACHINE\Software\Classes\CLSID\{E129740C-52FD-4C7B-98AA-9ED6EBF9A604}\InprocServer32'
+$ciPrevious=$null
+if($env:FS_REGRESSION_CI_PROVIDER-eq'true'){
+    if($env:GITHUB_ACTIONS-ne'true' -or !$env:ImageOS){throw 'Machine test registration is reserved for GitHub-hosted images.'}
+    $ciPrevious=(Get-Item -LiteralPath $ciServer).GetValue('')
+}
 try {
+    if($null-ne$ciPrevious){Set-Item -LiteralPath $ciServer -Value $legacy}
     # Prove that the DLL really implements the old IID/vtable and rejects the
     # current one; an absent DLL or a failed factory is not this regression.
     & (Join-Path $PSScriptRoot '04-ContratFournisseur.ps1') -ProjectRoot $ProjectRoot -ProviderOverride $legacy -Legacy
@@ -24,6 +31,7 @@ try {
     $script:UiExecutable=Join-Path $application 'FileSpacer.exe'
     $provider=Join-Path $application 'FileSpacerFolder.dll'
     Copy-Item -LiteralPath $legacy -Destination $provider
+    if($null-ne$ciPrevious){Set-Item -LiteralPath $ciServer -Value $provider}
     [void](New-Item -Path ($providerKey+'\InprocServer32') -Force)
     Set-Item -LiteralPath ($providerKey+'\InprocServer32') -Value $provider
     New-ItemProperty -LiteralPath ($providerKey+'\InprocServer32') -Name ThreadingModel -Value Apartment -PropertyType String -Force|Out-Null
@@ -79,6 +87,7 @@ try {
     foreach($window in $windows){Close-UiFolder $window}
 } catch {$failure=$_;Write-Host $_.Exception.ToString()} finally {
     try {Stop-Ui -Failure $failure}catch{$cleanupErrors.Add($_.Exception.Message)}
+    if($null-ne$ciPrevious){try {Set-Item -LiteralPath $ciServer -Value $ciPrevious}catch{$cleanupErrors.Add($_.Exception.Message)}}
     try {
         if(Test-Path -LiteralPath $providerKey){Remove-Item -LiteralPath $providerKey -Recurse -Force}
         if($registrationExisted){& reg.exe import $backup|Out-Host;if($LASTEXITCODE){throw 'Provider registry restore failed.'}}
