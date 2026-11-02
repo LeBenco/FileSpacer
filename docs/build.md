@@ -122,6 +122,17 @@ token and never changes that administrator account's personal default manager.
 The uninstaller requests confirmation only for an All users installation.
 Declining confirmation returns the cancellation code expected by the updater.
 
+Setup records its operations in `%TEMP%\FileSpacer-install.log`; the elevated
+worker uses `%TEMP%\FileSpacer-install-machine.log`. `/Log="C:\path\setup.log"`
+overrides the initiating setup log. Each run replaces its previous log. The
+machine worker still uses the machine log passed by its parent. Logs include
+the setup version, scope, paths, component choices, individual file and registry
+operations, and command exit codes. Documentation cleanup appends its complete
+PowerShell exception and script stack to the log; the additional captured command
+output is limited to 1024 characters. File-operation exit code 5 is an installer
+category, not a Windows error code. Logging preserves NSIS's error flag and does
+not turn a logging failure into installation success or failure.
+
 The update relay derives the original directory from the running executable and
 reads its scope from the adjacent `install-info.ini`. If metadata is missing or
 invalid, a registry fallback must match that exact directory in only one scope.
