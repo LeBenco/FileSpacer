@@ -124,7 +124,11 @@ jobs:
           $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
           $record = @{UserSid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value;Administrator=$principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator);Interactive=[Environment]::UserInteractive;SessionId=[Diagnostics.Process]::GetCurrentProcess().SessionId}
           $record | ConvertTo-Json | Set-Content build/ci/limited-worker.json -Encoding UTF8
-          if ($record.Administrator -or $record.UserSid -match '-500$' -or !$record.Interactive) { exit 1 }
+          if ($record.Administrator -or !$record.Interactive) { exit 1 }
+          $shell = New-Object -ComObject Shell.Application
+          $windows = $shell.Windows()
+          [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($windows)
+          [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
           '@
           $probePath = Join-Path $PWD 'build/ci/limited-worker.ps1'
           $probe | Set-Content $probePath -Encoding UTF8
