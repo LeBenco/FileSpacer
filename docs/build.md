@@ -217,6 +217,12 @@ and the NSIS installer on `windows-2022`, verifies the executable version agains
 the tag, and publishes `FileSpacer-X.Y.Z-install.exe` and `FileSpacer-update.txt`
 to the fork's GitHub Release. The workflow can also be run manually for an
 existing tag.
+Publication first requires the application regression workflow to pass on the
+selected revision. Installer regression tests are excluded from these workflows;
+the release still builds the offline documentation and NSIS package and checks
+the package version and hash. A successful package build does not validate a
+real installation or upgrade. Failure summaries and build logs are retained as
+workflow artifacts.
 Ordinary branch pushes do not build or publish an installer. No custom secret is
 needed; the workflow uses GitHub's automatic token.
 
@@ -235,6 +241,14 @@ and publication. Check that it succeeds and that the release contains both the
 versioned installer and `FileSpacer-update.txt`.
 
 ## Regression tests
+
+Use **Actions > Test FileSpacer regressions > Run workflow** to validate the
+application on a branch, tag or commit SHA. The independent workflow is manual,
+with `category` and `pattern` filters, and builds no installer or offline docs.
+For development, run the new and affected cases locally; GitHub runs the full
+application catalogue. The reference local launcher still supports a full run.
+`-Scope Application|Installer|All` combines with `-Category` and `-Pattern`;
+`-ListOnly` returns the selected cases as JSON without building or running them.
 
 `tests.cmd` runs locally by default. Add `-VM AgentWin10` to execute in the
 configured Hyper-V client, while keeping application and test-helper compilation
