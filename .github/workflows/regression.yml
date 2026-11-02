@@ -116,6 +116,25 @@ jobs:
             throw 'This revision predates the -CI launcher. Select a revision containing CI support.'
           }
 
+      - name: Verify the limited worker before installing dependencies
+        shell: powershell
+        run: |
+          Add-Type -Path tests/regression/common/CIRestrictedProcess.cs
+          $probe = @'
+          $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+          $record = @{Administrator=$principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator);Interactive=[Environment]::UserInteractive;SessionId=[Diagnostics.Process]::GetCurrentProcess().SessionId}
+          $record | ConvertTo-Json | Set-Content build/ci/limited-worker.json -Encoding UTF8
+          if ($record.Administrator -or !$record.Interactive) { exit 1 }
+          '@
+          $probePath = Join-Path $PWD 'build/ci/limited-worker.ps1'
+          $probe | Set-Content $probePath -Encoding UTF8
+          $arguments = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $probePath + '"'
+          $exitCode = [FileSpacerRegression.CIRestrictedProcess]::Run((Join-Path $PSHOME 'powershell.exe'),$arguments,$PWD.Path,15000)
+          if ($exitCode -ne 0) { throw ('Limited worker startup failed: {0} (0x{0:X8})' -f $exitCode) }
+          $result = Get-Content build/ci/limited-worker.json -Raw | ConvertFrom-Json
+          $result | Format-List | Out-String | Write-Host
+          if ($result.SessionId -ne [Diagnostics.Process]::GetCurrentProcess().SessionId) { throw 'Limited worker changed desktop session.' }
+
       - name: Install test dependencies and locate MSVC
         shell: powershell
         run: |
