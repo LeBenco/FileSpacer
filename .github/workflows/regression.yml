@@ -189,7 +189,7 @@ jobs:
         if: always()
         shell: powershell
         run: |
-          & ./.github/scripts/Write-RegressionSummary.ps1 -RunDirectory $env:TEST_DIRECTORY -Commit $env:TEST_SHA -Scope $env:TEST_SCOPE
+          & ./tests/regression/common/Write-RegressionSummary.ps1 -RunDirectory $env:TEST_DIRECTORY -Commit $env:TEST_SHA -Scope $env:TEST_SCOPE
 
       - name: Preserve logs, reports and screenshots
         if: always()
