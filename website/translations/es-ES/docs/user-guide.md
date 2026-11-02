@@ -110,6 +110,18 @@ El menú contextual de las carpetas ofrece **Abrir en FileSpacer**, o **Abrir en
 
 Los archivos se abren con su aplicación habitual de Windows. Las carpetas de red, las vistas previas y los comandos añadidos al menú contextual también siguen el funcionamiento de Windows. **Opciones del Explorador de archivos** abre las preferencias compartidas de las carpetas; algunas también afectan a FileSpacer.
 
+### PowerToys Grab And Move
+
+Cuando Grab And Move está activado en la configuración de PowerToys, se suspenden los gestos de FileSpacer para mover y cambiar el tamaño de las ventanas afectadas, aunque PowerToys esté cerrado. Se conservan los métodos abreviados configurados.
+
+Para seguir usando los gestos de FileSpacer, añadir `FileSpacer.exe` a las aplicaciones excluidas de Grab And Move o desactivar esa utilidad en PowerToys. El aviso en **Configuración > Métodos abreviados** incluye un enlace directo a la configuración de Grab And Move.
+
+### PowerToys Peek
+
+**Vista previa con Espacio**, en **Configuración > Integración**, abre una vista previa de Peek de los archivos o carpetas seleccionados en una unidad o un recurso compartido de red al pulsar solo **Espacio**. La opción está desactivada por defecto; la escritura y el cambio de nombre funcionan como siempre.
+
+Peek también debe estar activado en PowerToys; el enlace **PowerToys** bajo la opción abre su configuración. Esta integración requiere PowerToys 0.96 o posterior, y 0.102 o posterior para una selección múltiple.
+
 ### Everything
 
 Una instalación existente de [Everything](https://www.voidtools.com/) se puede integrar para lanzar búsquedas avanzadas desde el campo de FileSpacer. Los resultados se abren en Everything.

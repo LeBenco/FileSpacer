@@ -110,6 +110,18 @@ Le menu contextuel des dossiers propose **Ouvrir dans FileSpacer**, ou **Ouvrir 
 
 Les fichiers s’ouvrent avec leur application Windows habituelle. Dossiers réseau, aperçus et commandes ajoutées au menu contextuel suivent également le fonctionnement de Windows. **Options de l’Explorateur de fichiers** ouvre les préférences de dossiers communes, dont certaines s’appliquent aussi à FileSpacer.
 
+### PowerToys Grab And Move
+
+Lorsque Grab And Move est activé dans les réglages de PowerToys, les gestes FileSpacer de déplacement et de redimensionnement sont suspendus pour les fenêtres concernées, même si PowerToys est fermé. Les raccourcis configurés restent mémorisés.
+
+Pour conserver les gestes de FileSpacer, ajouter `FileSpacer.exe` à la liste des applications exclues de Grab And Move, ou désactiver cet outil dans PowerToys. Dans **Paramètres > Raccourcis**, le lien de l’avis ouvre directement les réglages de Grab And Move.
+
+### PowerToys Peek
+
+**Aperçu avec Espace**, dans **Paramètres > Intégration**, permet d’afficher avec **Espace** seul un aperçu Peek des fichiers ou dossiers sélectionnés sur un disque ou un partage réseau. L’option est désactivée par défaut ; la saisie et le renommage gardent leur fonctionnement habituel.
+
+Peek doit aussi être activé dans PowerToys ; le lien **PowerToys** sous l’option ouvre ses réglages. Cette intégration nécessite PowerToys 0.96 ou plus récent, et 0.102 ou plus récent pour une sélection multiple.
+
 ### Everything
 
 Une installation existante d’[Everything](https://www.voidtools.com/) peut être intégrée pour lancer des recherches avancées depuis le champ de FileSpacer. Les résultats s’ouvrent dans Everything.

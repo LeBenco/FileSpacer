@@ -110,6 +110,18 @@ Das Kontextmenü von Ordnern bietet **In FileSpacer öffnen**, beziehungsweise *
 
 Dateien öffnen sich in der zugeordneten Windows-Anwendung. Auch Netzwerkordner, Vorschauen und installierte Kontextmenübefehle verwenden das gewohnte Windows-Verhalten. **Datei-Explorer-Optionen** öffnet gemeinsame Ordnereinstellungen, von denen einige auch für FileSpacer gelten.
 
+### PowerToys Grab And Move
+
+Wenn Grab And Move in den PowerToys-Einstellungen aktiviert ist, setzt FileSpacer seine Gesten zum Verschieben und zur Größenänderung für die betroffenen Fenster aus, auch wenn PowerToys nicht läuft. Die eingestellten Tastenkombinationen bleiben gespeichert.
+
+Um die FileSpacer-Gesten weiterzuverwenden, `FileSpacer.exe` zur Liste der ausgeschlossenen Apps von Grab And Move hinzufügen oder das Hilfsprogramm in PowerToys deaktivieren. Der Hinweis unter **Einstellungen > Tastenkombinationen** enthält einen direkten Link zu den Einstellungen von Grab And Move.
+
+### PowerToys Peek
+
+**Vorschau mit der Leertaste** unter **Einstellungen > Integration** zeigt mit der **Leertaste** allein eine Peek-Vorschau der ausgewählten Dateien oder Ordner auf einem Laufwerk oder einer Netzwerkfreigabe. Die Option ist standardmäßig deaktiviert; Texteingabe und Umbenennen funktionieren wie gewohnt.
+
+Peek muss auch in PowerToys aktiviert sein; der Link **PowerToys** unter der Option öffnet die zugehörigen Einstellungen. Diese Integration erfordert PowerToys 0.96 oder neuer, bei einer Mehrfachauswahl 0.102 oder neuer.
+
 ### Everything
 
 Ein vorhandenes [Everything](https://www.voidtools.com/) lässt sich einbinden, um erweiterte Suchanfragen direkt aus FileSpacers Suchfeld zu starten. Die Ergebnisse erscheinen in Everything.
