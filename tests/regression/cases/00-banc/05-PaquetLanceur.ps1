@@ -3,11 +3,16 @@ param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')
 $ErrorActionPreference='Stop'
 $RunDirectory=$env:FS_REGRESSION_RUN
 if(!$RunDirectory){throw 'Run this contract through tests.cmd.'}
-. (Join-Path $ProjectRoot 'tests\regression\common\Prepare-Client.ps1')
-$relative='00-banc\01-Resultats.ps1'
-$selected=@([pscustomobject]@{Relative=$relative;Category='Internal';File=(Get-Item -LiteralPath (Join-Path $ProjectRoot ('tests\regression\cases\'+$relative)))})
-$package=Join-Path $RunDirectory 'minimal-package'
-New-ClientPackage -Selected $selected -Destination $package -TimeoutSeconds 60
+if($env:FS_REGRESSION_PREPARED) {
+    $package=Join-Path $ProjectRoot 'prepared\runner-contract'
+    if(!(Test-Path -LiteralPath $package)){throw 'Host-prepared runner contract fixture is missing.'}
+} else {
+    . (Join-Path $ProjectRoot 'tests\regression\common\Prepare-Client.ps1')
+    $relative='00-banc\01-Resultats.ps1'
+    $selected=@([pscustomobject]@{Relative=$relative;Category='Internal';File=(Get-Item -LiteralPath (Join-Path $ProjectRoot ('tests\regression\cases\'+$relative)))})
+    $package=Join-Path $RunDirectory 'minimal-package'
+    New-ClientPackage -Selected $selected -Destination $package -TimeoutSeconds 60
+}
 $execution=Join-Path $RunDirectory 'prepared-execution'
 $runner=Join-Path $package 'tests\regression\Run-Regression.ps1'
 $log=Join-Path $RunDirectory 'prepared-execution.log'
