@@ -21,17 +21,26 @@ InstallDir ""
 ; SPDX-License-Identifier: GPL-3.0-only; Copyright (C) 2026 Benco
 !macro CleanInstalledDocumentation Mode FailureLabel
     IfErrors documentation_failed_${Mode}
+    !insertmacro WORKER_LOG "Documentation ${Mode}: help=$INSTDIR\help; script=$PLUGINSDIR\FileSpacer-doc-cleanup.ps1"
     InitPluginsDir
+    IfErrors documentation_failed_${Mode}
+    !insertmacro WORKER_LOG "Extract cleanup script: $PLUGINSDIR\FileSpacer-doc-cleanup.ps1"
     File /oname=$PLUGINSDIR\FileSpacer-doc-cleanup.ps1 "RemoveDocumentation.ps1"
+    IfErrors documentation_failed_${Mode}
 !if "${Mode}" == "Upgrade"
+    !insertmacro WORKER_LOG "Extract replacement documentation inventory: $PLUGINSDIR\FileSpacer-doc-current.json"
     File /oname=$PLUGINSDIR\FileSpacer-doc-current.json "${FILESPACER_DOCS}\build-info.json"
     IfErrors documentation_failed_${Mode}
-    nsExec::ExecToLog '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\FileSpacer-doc-cleanup.ps1" -HelpRoot "$INSTDIR\help" -CurrentInventory "$PLUGINSDIR\FileSpacer-doc-current.json"'
+    !insertmacro WORKER_LOG "Run documentation ${Mode}: $SYSDIR\WindowsPowerShell\v1.0\powershell.exe; replacement inventory=$PLUGINSDIR\FileSpacer-doc-current.json"
+    nsExec::ExecToStack '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\FileSpacer-doc-cleanup.ps1" -HelpRoot "$INSTDIR\help" -DiagnosticLog "$logPath" -CurrentInventory "$PLUGINSDIR\FileSpacer-doc-current.json"'
 !else
     IfErrors documentation_failed_${Mode}
-    nsExec::ExecToLog '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\FileSpacer-doc-cleanup.ps1" -HelpRoot "$INSTDIR\help"'
+    !insertmacro WORKER_LOG "Run documentation ${Mode}: $SYSDIR\WindowsPowerShell\v1.0\powershell.exe"
+    nsExec::ExecToStack '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\FileSpacer-doc-cleanup.ps1" -HelpRoot "$INSTDIR\help" -DiagnosticLog "$logPath"'
 !endif
     Pop $0
+    Pop $1
+    !insertmacro WORKER_LOG "Documentation ${Mode}: exit=$0; captured output (up to 1024 characters): $1"
     ${If} $0 != 0
         DetailPrint "Documentation cleanup failed: $0"
         Goto documentation_failed_${Mode}
@@ -39,6 +48,7 @@ InstallDir ""
     ClearErrors
     Goto documentation_done_${Mode}
 documentation_failed_${Mode}:
+    !insertmacro WORKER_LOG "ERROR: documentation ${Mode} failed (script extraction, inventory extraction or command execution)."
 !if "${Mode}" == "Upgrade"
     Goto ${FailureLabel}
 !else
@@ -200,20 +210,40 @@ Var processList
 Var logPath
 Var updateResult
 Var documentationCleanupFailed
+Var installStep
 
-; The elevated worker runs silently: it leaves its trace in the log file the
-; parent passed with /Log=, which the parent replays and offers to open.
+; Logging must preserve both the caller's error flag and scratch registers.
+; A logging failure must never hide an installation failure or create one.
 !macro WORKER_LOG TEXT
-    ${If} $machineWorker == 1
-    ${AndIf} $logPath != ""
+    Push $R9
+    Push $R8
+    StrCpy $R8 0
+    ${If} ${Errors}
+        StrCpy $R8 1
+    ${EndIf}
+    ClearErrors
+    DetailPrint "${TEXT}"
+    ${If} $logPath != ""
         FileOpen $R9 "$logPath" a
         ${IfNot} ${Errors}
             FileSeek $R9 0 END
             FileWriteUTF16LE $R9 "${TEXT}$\r$\n"
             FileClose $R9
+        ${Else}
+            DetailPrint "Cannot open installation log: $logPath"
         ${EndIf}
-        ClearErrors
     ${EndIf}
+    ClearErrors
+    ${If} $R8 == 1
+        SetErrors
+    ${EndIf}
+    Pop $R8
+    Pop $R9
+!macroend
+
+!macro INSTALL_STEP TEXT
+    StrCpy $installStep "${TEXT}"
+    !insertmacro WORKER_LOG "Starting: $installStep"
 !macroend
 !include Elevation.nsh
 !include ShortcutAppID.nsh
@@ -500,6 +530,7 @@ Function ${PREFIX}SearchCallback
     Pop $R0 ; process ID
     Pop $R1 ; path
     Pop $R2 ; description
+    !insertmacro WORKER_LOG "Loaded installation target: PID=$R0; module=$R1; description=$R2"
     StrCpy $locked 1
     ${If} $processList != 0
         ${If} $R2 == ""
@@ -540,11 +571,20 @@ FunctionEnd
     ReadRegStr $0 SHCTX "Software\Classes\${TYPE}\shell" ""
     ClearErrors ; A missing default value is normal for a new registration.
     ${If} $0 == ""
+        !insertmacro INSTALL_STEP "Write context registry: Software\Classes\${TYPE}\shell []"
         WriteRegStr SHCTX "Software\Classes\${TYPE}\shell" "" "none"
+        IfErrors context_failed
     ${EndIf}
+    !insertmacro INSTALL_STEP "Write context registry: Software\Classes\${TYPE}\shell\filespacer []"
     WriteRegStr SHCTX "Software\Classes\${TYPE}\shell\filespacer" "" $(CONTEXT_TEXT)
+    IfErrors context_failed
+    !insertmacro INSTALL_STEP "Write context registry: Software\Classes\${TYPE}\shell\filespacer [Icon]"
     WriteRegStr SHCTX "Software\Classes\${TYPE}\shell\filespacer" "Icon" '"$INSTDIR\FileSpacer.exe",0'
+    IfErrors context_failed
+    !insertmacro INSTALL_STEP "Write context registry: Software\Classes\${TYPE}\shell\filespacer\command []"
     WriteRegStr SHCTX "Software\Classes\${TYPE}\shell\filespacer\command" "" '"$INSTDIR\FileSpacer.exe" "${ARG}"'
+    IfErrors context_failed
+    !insertmacro INSTALL_STEP "Write context registry: Software\Classes\${TYPE}\shell\filespacer\command [DelegateExecute]"
     WriteRegStr SHCTX "Software\Classes\${TYPE}\shell\filespacer\command" "DelegateExecute" "${EXECUTE_GUID}"
     IfErrors context_failed
 !macroend
@@ -621,6 +661,15 @@ FunctionEnd
 
 Section "FileSpacer" SecBase
     SectionIn RO
+    !insertmacro WORKER_LOG "Setup context: version=${PRODUCT_VERSION}; scope=$installMode; worker=$machineWorker; language=$LANGUAGE; directory=$INSTDIR; temp=$TEMP; plugins=$PLUGINSDIR; result=$updateResult"
+    Call LogInstallComponents
+    ClearErrors
+    ${GetFileVersion} "$INSTDIR\FileSpacer.exe" $0
+    ${If} ${Errors}
+        StrCpy $0 "unavailable (missing file, unreadable file or absent version resource)"
+    ${EndIf}
+    !insertmacro WORKER_LOG "Existing executable version: $0"
+    ClearErrors
     ; Prevent parallel installations from masking each other's COM registration.
     ; The parent checks the initiating user's HKCU, not an alternate admin's.
     ${If} $machineWorker != 1
@@ -630,6 +679,7 @@ Section "FileSpacer" SecBase
             ReadRegStr $0 HKLM "Software\FileSpacer" "Install_Dir"
         ${EndIf}
         ${If} $0 != ""
+            !insertmacro WORKER_LOG "ERROR: conflicting installation in the other scope: $0"
             MessageBox MB_OK|MB_ICONSTOP $(ERROR_SCOPE) /SD IDOK
             !insertmacro WORKER_EXIT ${EXIT_SCOPE}
             Abort
@@ -661,54 +711,117 @@ Section "FileSpacer" SecBase
     ${EndIf}
     !insertmacro WORKER_LOG "Copying the program files to $INSTDIR (mode $installMode)."
     ClearErrors
+    !insertmacro INSTALL_STEP "Create/select directory: $INSTDIR"
     SetOutPath "$INSTDIR"
     IfErrors files_failed
     SetOverwrite on
+    !insertmacro INSTALL_STEP "Clean installed documentation before file replacement"
     !insertmacro CleanInstalledDocumentation "Upgrade" files_failed
+    IfErrors files_failed
+    !insertmacro INSTALL_STEP "Extract file: $INSTDIR\FileSpacer.exe"
     File "..\build\release\FileSpacer.exe"
+    IfErrors files_failed
+    !insertmacro INSTALL_STEP "Extract file: $INSTDIR\FileSpacerFolder.dll"
     File "..\build\release\FileSpacerFolder.dll"
+    IfErrors files_failed
+    !insertmacro INSTALL_STEP "Extract file: $INSTDIR\LICENSE.txt"
     File /oname=LICENSE.txt "..\LICENSE"
+    IfErrors files_failed
+    !insertmacro INSTALL_STEP "Extract file: $INSTDIR\LockedList-LICENSE.txt"
     File /oname=LockedList-LICENSE.txt "plugins\LockedList.txt"
+    IfErrors files_failed
+    !insertmacro INSTALL_STEP "Extract file: $INSTDIR\Lucide-LICENSE.txt"
     File /oname=Lucide-LICENSE.txt "..\licenses\Lucide-LICENSE.txt"
+    IfErrors files_failed
+    !insertmacro INSTALL_STEP "Extract file: $INSTDIR\SQLite-NOTICE.txt"
     File /oname=SQLite-NOTICE.txt "..\third_party\sqlite\README.txt"
+    IfErrors files_failed
+    !insertmacro INSTALL_STEP "Extract file: $INSTDIR\THIRD_PARTY_NOTICES.md"
     File /oname=THIRD_PARTY_NOTICES.md "..\THIRD_PARTY_NOTICES.md"
+    IfErrors files_failed
+    !insertmacro INSTALL_STEP "Extract file: $INSTDIR\privacy-policy.md"
     File /oname=privacy-policy.md "..\docs\privacy-policy.md"
+    IfErrors files_failed
     !insertmacro InstallDocumentation
+    !insertmacro INSTALL_STEP "Create/select directory: $INSTDIR"
     SetOutPath "$INSTDIR"
+    IfErrors files_failed
+    !insertmacro INSTALL_STEP "Write uninstaller: $INSTDIR\uninstall.exe"
     WriteUninstaller "$INSTDIR\uninstall.exe"
+    IfErrors files_failed
+    !insertmacro INSTALL_STEP "Write INI: $INSTDIR\install-info.ini [Installation] Mode"
     WriteINIStr "$INSTDIR\install-info.ini" "Installation" "Mode" $installMode
+    IfErrors files_failed
+    !insertmacro INSTALL_STEP "Write INI: $INSTDIR\install-info.ini [Installation] Language"
     WriteINIStr "$INSTDIR\install-info.ini" "Installation" "Language" $LANGUAGE
     IfErrors files_failed
-    !insertmacro WORKER_LOG "Files installed; writing the registration for all users."
+    !insertmacro WORKER_LOG "Files installed; writing registration (scope $installMode)."
 
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): Software\FileSpacer [InstallMode]"
     WriteRegStr SHCTX "Software\FileSpacer" "InstallMode" $installMode
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): Software\FileSpacer [Install_Dir]"
     WriteRegStr SHCTX "Software\FileSpacer" "Install_Dir" "$INSTDIR"
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): ${REG_UNINST_KEY} [DisplayName]"
     WriteRegStr SHCTX "${REG_UNINST_KEY}" "DisplayName" "FileSpacer"
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): ${REG_UNINST_KEY} [DisplayVersion]"
     WriteRegStr SHCTX "${REG_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): ${REG_UNINST_KEY} [DisplayIcon]"
     WriteRegStr SHCTX "${REG_UNINST_KEY}" "DisplayIcon" '"$INSTDIR\FileSpacer.exe",0'
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): ${REG_UNINST_KEY} [InstallLocation]"
     WriteRegStr SHCTX "${REG_UNINST_KEY}" "InstallLocation" "$INSTDIR"
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): ${REG_UNINST_KEY} [VersionMajor]"
     WriteRegDWORD SHCTX "${REG_UNINST_KEY}" "VersionMajor" ${PRODUCT_VERSION_1}
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): ${REG_UNINST_KEY} [VersionMinor]"
     WriteRegDWORD SHCTX "${REG_UNINST_KEY}" "VersionMinor" ${PRODUCT_VERSION_2}
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): ${REG_UNINST_KEY} [UninstallString]"
     WriteRegStr SHCTX "${REG_UNINST_KEY}" "UninstallString" '"$INSTDIR\uninstall.exe" /$installMode'
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): ${REG_UNINST_KEY} [QuietUninstallString]"
     WriteRegStr SHCTX "${REG_UNINST_KEY}" "QuietUninstallString" '"$INSTDIR\uninstall.exe" /$installMode /S'
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): ${REG_UNINST_KEY} [NoModify]"
     WriteRegDWORD SHCTX "${REG_UNINST_KEY}" "NoModify" 1
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): ${REG_UNINST_KEY} [NoRepair]"
     WriteRegDWORD SHCTX "${REG_UNINST_KEY}" "NoRepair" 1
+    IfErrors registry_failed
     SectionGetSize ${SecBase} $0
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): ${REG_UNINST_KEY} [EstimatedSize]"
     WriteRegDWORD SHCTX "${REG_UNINST_KEY}" "EstimatedSize" $0
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): ${REG_APPPATH_KEY} []"
     WriteRegStr SHCTX "${REG_APPPATH_KEY}" "" "$INSTDIR\FileSpacer.exe"
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): ${REG_APPPATH_KEY} [DropTarget]"
     WriteRegStr SHCTX "${REG_APPPATH_KEY}" "DropTarget" "${EXECUTE_GUID}"
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): Software\Classes\CLSID\${EXECUTE_GUID} []"
     WriteRegStr SHCTX "Software\Classes\CLSID\${EXECUTE_GUID}" "" "FileSpacer"
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): Software\Classes\CLSID\${EXECUTE_GUID}\LocalServer32 []"
     WriteRegStr SHCTX "Software\Classes\CLSID\${EXECUTE_GUID}\LocalServer32" "" '"$INSTDIR\FileSpacer.exe"'
+    IfErrors registry_failed
+    !insertmacro INSTALL_STEP "Write registry (SHCTX): Software\Classes\CLSID\${EXECUTE_GUID}\LocalServer32 [ServerExecutable]"
     WriteRegStr SHCTX "Software\Classes\CLSID\${EXECUTE_GUID}\LocalServer32" "ServerExecutable" "$INSTDIR\FileSpacer.exe"
     IfErrors registry_failed
     !insertmacro WORKER_LOG "Registration written."
     Goto install_done
 files_failed:
+    !insertmacro WORKER_LOG "ERROR: $installStep; NSIS file-operation failure (exit ${EXIT_FILES}; not a Windows error code)."
     !insertmacro WORKER_LOG "Copying the program files to $INSTDIR failed (exit code ${EXIT_FILES})."
     MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
     !insertmacro WORKER_EXIT ${EXIT_FILES}
     Abort
 registry_failed:
+    !insertmacro WORKER_LOG "ERROR: $installStep; NSIS registry-write failure (exit ${EXIT_REGISTRY})."
     !insertmacro WORKER_LOG "Writing the registration failed (exit code ${EXIT_REGISTRY})."
     MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
     !insertmacro WORKER_EXIT ${EXIT_REGISTRY}
@@ -722,12 +835,16 @@ Section "$(SEC_START)" SecStart
     ${EndIf}
     !insertmacro WORKER_LOG "Creating the Start Menu shortcut."
     ClearErrors
+    !insertmacro INSTALL_STEP "Create shortcut: $SMPROGRAMS\FileSpacer.lnk -> $INSTDIR\FileSpacer.exe"
     CreateShortcut /NoWorkingDir "$SMPROGRAMS\FileSpacer.lnk" "$INSTDIR\FileSpacer.exe"
     IfErrors shortcut_failed
+    !insertmacro INSTALL_STEP "Set shortcut AppUserModelID: $SMPROGRAMS\FileSpacer.lnk"
     Call SetShortcutAppID
     Pop $0
+    !insertmacro WORKER_LOG "Shortcut AppUserModelID HRESULT: $0"
     ${If} $0 != 0
 shortcut_failed:
+        !insertmacro WORKER_LOG "ERROR: $installStep"
         !insertmacro WORKER_LOG "Creating the Start Menu shortcut failed (exit code ${EXIT_SHORTCUT})."
         MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
         !insertmacro WORKER_EXIT ${EXIT_SHORTCUT}
@@ -750,6 +867,7 @@ Section "$(SEC_CONTEXT)" SecContext
     !insertmacro INSTALL_VERB "NetShare" "%1"
     Goto context_done
 context_failed:
+    !insertmacro WORKER_LOG "ERROR: $installStep"
     !insertmacro WORKER_LOG "Registering the folder context menu failed (exit code ${EXIT_CONTEXT})."
     MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
     !insertmacro WORKER_EXIT ${EXIT_CONTEXT}
@@ -770,12 +888,23 @@ Section /o "$(SEC_DEFAULT)" SecDefault
         Goto default_done
     ${EndIf}
     ClearErrors
+    !insertmacro INSTALL_STEP "Set personal default: Software\Classes\Directory\shell"
     WriteRegStr HKCU "Software\Classes\Directory\shell" "" "filespacer"
+    IfErrors default_failed
+    !insertmacro INSTALL_STEP "Set personal default: Software\Classes\CompressedFolder\shell"
     WriteRegStr HKCU "Software\Classes\CompressedFolder\shell" "" "filespacer"
+    IfErrors default_failed
+    !insertmacro INSTALL_STEP "Set personal default: Software\Classes\Drive\shell"
     WriteRegStr HKCU "Software\Classes\Drive\shell" "" "filespacer"
+    IfErrors default_failed
+    !insertmacro INSTALL_STEP "Set personal default: Software\Classes\NetServer\shell"
     WriteRegStr HKCU "Software\Classes\NetServer\shell" "" "filespacer"
+    IfErrors default_failed
+    !insertmacro INSTALL_STEP "Set personal default: Software\Classes\NetShare\shell"
     WriteRegStr HKCU "Software\Classes\NetShare\shell" "" "filespacer"
     IfErrors 0 default_done
+default_failed:
+    !insertmacro WORKER_LOG "ERROR: $installStep"
     System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
     MessageBox MB_OK|MB_ICONSTOP $(ERROR_DEFAULT) /SD IDOK
     SetErrorLevel 2
@@ -787,6 +916,23 @@ Function .onSelChange
     ${If} ${SectionIsSelected} ${SecDefault}
         !insertmacro SelectSection ${SecContext}
     ${EndIf}
+FunctionEnd
+
+; Defined after the optional sections so their IDs are available to NSIS.
+Function LogInstallComponents
+    Push $0
+    Push $1
+    Push $2
+    SectionGetFlags ${SecStart} $0
+    IntOp $0 $0 & ${SF_SELECTED}
+    SectionGetFlags ${SecContext} $1
+    IntOp $1 $1 & ${SF_SELECTED}
+    SectionGetFlags ${SecDefault} $2
+    IntOp $2 $2 & ${SF_SELECTED}
+    !insertmacro WORKER_LOG "Components: StartMenu=$0; ContextMenu=$1; DefaultFileManager=$2"
+    Pop $2
+    Pop $1
+    Pop $0
 FunctionEnd
 
 !macro RESTORE_COMPONENT SECTION KEY
@@ -883,6 +1029,11 @@ Function InitializeInstall
     StrCpy $requestedDirectory $INSTDIR ; NSIS's optional /D=, kept last on the command line.
     ${GetParameters} $parameters
     ClearErrors
+    ${GetOptionsS} $parameters "/Log=" $logPath
+    ${If} ${Errors}
+        StrCpy $logPath "$TEMP\FileSpacer-install.log"
+    ${EndIf}
+    ClearErrors
     ${GetOptionsS} $parameters "/MachineWorker" $0
     ${IfNot} ${Errors}
         StrCpy $machineWorker 1
@@ -894,8 +1045,11 @@ Function InitializeInstall
         ${EndIf}
         ClearErrors
         !insertmacro WORKER_LOG "Elevated worker started with: $parameters"
+        ${GetTime} "" "L" $R0 $R1 $R2 $R3 $R4 $R5 $R6
+        !insertmacro WORKER_LOG "Worker local time: $R2-$R1-$R0 $R4:$R5:$R6"
         UserInfo::GetAccountType
         Pop $0
+        !insertmacro WORKER_LOG "Machine worker token account type: $0"
         ${If} $0 != "Admin"
         ${OrIf} $INSTDIR == ""
             Goto worker_invalid
@@ -920,6 +1074,15 @@ Function InitializeInstall
         Return
     ${EndIf}
     ClearErrors
+    FileOpen $R9 "$logPath" w
+    ${IfNot} ${Errors}
+        FileWriteUTF16LE /BOM $R9 ""
+        FileClose $R9
+    ${EndIf}
+    ClearErrors
+    !insertmacro WORKER_LOG "Setup started: $EXEPATH; parameters=$parameters"
+    ${GetTime} "" "L" $R0 $R1 $R2 $R3 $R4 $R5 $R6
+    !insertmacro WORKER_LOG "Setup local time: $R2-$R1-$R0 $R4:$R5:$R6"
     ${GetOptionsS} $parameters "/UpdateResult=" $updateResult
     ${If} ${Errors}
         StrCpy $updateResult ""
@@ -952,6 +1115,7 @@ Function InitializeInstall
     Call RestoreInstallLanguage
     Return
 worker_invalid:
+    !insertmacro WORKER_LOG "ERROR: invalid machine-worker options or unelevated token; directory=$INSTDIR; parameters=$parameters"
     SetErrorLevel 2
     Quit
 FunctionEnd
@@ -978,6 +1142,7 @@ Function InstallForAllUsers
     SendMessage $R8 ${WM_SETTEXT} 0 "STR:$(MACHINE_WAIT)"
     StrCpy $elevatedParameters "/S /AllUsers /MachineWorker /StartMenu=$0 /ContextMenu=$1 /DefaultFileManager=$2 /Language=$LANGUAGE /Log=$\"$logPath$\" /D=$INSTDIR"
     Call RunElevated
+    !insertmacro WORKER_LOG "Machine worker launch/wait result: $elevatedResult"
     Call ReplayWorkerLog
 FunctionEnd
 
@@ -1043,7 +1208,11 @@ FunctionEnd
 !macro SAVE_COMPONENT SECTION KEY
     SectionGetFlags ${SECTION} $0
     IntOp $0 $0 & ${SF_SELECTED}
+    !insertmacro WORKER_LOG "Saving component ${KEY}=$0 in $INSTDIR\install-info.ini"
     WriteINIStr "$INSTDIR\install-info.ini" "Components" "${KEY}" $0
+    ${If} ${Errors}
+        !insertmacro WORKER_LOG "ERROR: saving component ${KEY}=$0 in $INSTDIR\install-info.ini"
+    ${EndIf}
 !macroend
 
 Function WriteUpdateResult
@@ -1068,6 +1237,7 @@ Function WriteUpdateResult
     ${EndIf}
     Delete "$updateResult"
 result_failed:
+    !insertmacro WORKER_LOG "ERROR: writing installation result: $updateResult"
     MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
     SetErrorLevel 2
     Abort
@@ -1089,7 +1259,9 @@ Section -ApplyOptions
         ; Use the same per-user synchronization as Settings and normal startup.
         ; This also preserves and reflects a default selected before this upgrade.
         ClearErrors
+        !insertmacro WORKER_LOG "Starting user context-menu synchronization: $INSTDIR\FileSpacer.exe /sync-context-menus"
         ExecWait '"$INSTDIR\FileSpacer.exe" /sync-context-menus' $0
+        !insertmacro WORKER_LOG "User context-menu synchronization: exit=$0 (NSIS error flag preserved)."
         ${If} ${Errors}
         ${OrIf} $0 != 0
             MessageBox MB_OK|MB_ICONSTOP $(ERROR_INSTALL) /SD IDOK
