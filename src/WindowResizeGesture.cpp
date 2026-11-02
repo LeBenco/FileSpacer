@@ -5,8 +5,31 @@
 
 namespace filespacer {
 
+namespace {
+UINT buttonDownMask(UINT message, WPARAM wParam) {
+    switch (message) {
+    case WM_LBUTTONDOWN: case WM_LBUTTONDBLCLK: return MK_LBUTTON;
+    case WM_MBUTTONDOWN: case WM_MBUTTONDBLCLK: return MK_MBUTTON;
+    case WM_RBUTTONDOWN: case WM_RBUTTONDBLCLK: return MK_RBUTTON;
+    case WM_XBUTTONDOWN: case WM_XBUTTONDBLCLK:
+        return GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? MK_XBUTTON1 : MK_XBUTTON2;
+    default: return 0;
+    }
+}
+UINT buttonUpMask(UINT message, WPARAM wParam) {
+    switch (message) {
+    case WM_LBUTTONUP: return MK_LBUTTON;
+    case WM_MBUTTONUP: return MK_MBUTTON;
+    case WM_RBUTTONUP: return MK_RBUTTON;
+    case WM_XBUTTONUP:
+        return GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? MK_XBUTTON1 : MK_XBUTTON2;
+    default: return 0;
+    }
+}
+} // namespace
+
 bool WindowResizeGesture::begin(HWND target, HWND control, POINT point, GestureButton trigger, bool moving) {
-    if (source || GetCapture() || IsZoomed(target) || IsIconic(target)
+    if (source || finishingSource || GetCapture() || IsZoomed(target) || IsIconic(target)
             || !(GetWindowLongPtr(target, GWL_STYLE) & WS_THICKFRAME))
         return false;
     RECT bounds = {};
@@ -29,7 +52,8 @@ bool WindowResizeGesture::begin(HWND target, HWND control, POINT point, GestureB
     dragging = false;
     button = trigger;
     move = moving;
-    swallowButtonUp = false;
+    absorbedButtons = 0;
+    swallowButtonUps &= ~gestureButtonMask(trigger);
     swallowAltUp = GetKeyState(VK_MENU) < 0;
     SetCapture(control);
     if (GetCapture() != control) {
@@ -76,23 +100,59 @@ void WindowResizeGesture::finish(bool restore, bool swallowRelease) {
     const RECT bounds = initialBounds;
     const bool changed = dragging;
     const HCURSOR oldCursor = previousCursor;
+    const bool drain = !restore && !swallowRelease && absorbedButtons && GetCapture() == control;
     // Clear state before calls that synchronously dispatch capture/size events.
     source = nullptr;
     window = nullptr;
     dragging = false;
     previousCursor = nullptr;
-    swallowButtonUp = swallowRelease;
+    if (swallowRelease) swallowButtonUps |= absorbedButtons | gestureButtonMask(button);
+    if (drain) finishingSource = control;
+    else absorbedButtons = 0;
     completed = changed;
     if (restore && changed && IsWindow(target))
         SetWindowPos(target, nullptr, bounds.left, bounds.top,
             bounds.right - bounds.left, bounds.bottom - bounds.top,
             SWP_NOZORDER | SWP_NOACTIVATE);
-    if (GetCapture() == control) ReleaseCapture();
+    if (!drain && GetCapture() == control) ReleaseCapture();
     if (changed) SetCursor(oldCursor);
 }
 
-void WindowResizeGesture::cancel() { finish(true, true); }
-void WindowResizeGesture::stop() { finish(false, true); }
+void WindowResizeGesture::releaseFinishingCapture() {
+    const HWND control = finishingSource;
+    finishingSource = nullptr;
+    swallowButtonUps |= absorbedButtons;
+    absorbedButtons = 0;
+    // ReleaseCapture synchronously sends WM_CAPTURECHANGED, including to us.
+    if (control && GetCapture() == control) ReleaseCapture();
+}
+
+void WindowResizeGesture::cancel() { finish(true, true); releaseFinishingCapture(); }
+void WindowResizeGesture::stop() { finish(false, true); releaseFinishingCapture(); }
+
+bool WindowResizeGesture::handleFinishingMessage(UINT message, WPARAM wParam) {
+    if (GetCapture() != finishingSource || message == WM_CAPTURECHANGED
+            || message == WM_CANCELMODE || message == WM_KILLFOCUS
+            || message == WM_DESTROY || message == WM_NCDESTROY) {
+        releaseFinishingCapture();
+        return false;
+    }
+    if ((message == WM_KEYDOWN || message == WM_SYSKEYDOWN) && wParam == VK_ESCAPE) {
+        releaseFinishingCapture();
+        return true;
+    }
+    if (message < WM_MOUSEFIRST || message > WM_MOUSELAST) return false;
+    const UINT down = buttonDownMask(message, wParam);
+    const UINT up = buttonUpMask(message, wParam);
+    const bool consumed = down || (up & absorbedButtons) || message == WM_MOUSEMOVE;
+    // Only DOWNs actually absorbed by us prolong capture. The native MK_*
+    // state also recovers a lost UP on the next mouse message, without a timer.
+    // Retain ownership if that UP is merely late; a new DOWN clears it.
+    swallowButtonUps |= absorbedButtons & ~(LOWORD(wParam) | up);
+    absorbedButtons = (absorbedButtons | down) & LOWORD(wParam) & ~up;
+    if (!absorbedButtons) releaseFinishingCapture();
+    return consumed;
+}
 
 bool WindowResizeGesture::takeCompleted() {
     const bool result = completed;
@@ -108,16 +168,14 @@ bool WindowResizeGesture::handleMessage(UINT message, WPARAM wParam, LPARAM lPar
         swallowAltUp = false;
         return true;
     }
-    if (message == WM_LBUTTONDOWN || message == WM_LBUTTONDBLCLK
-            || message == WM_MBUTTONDOWN || message == WM_MBUTTONDBLCLK
-            || message == WM_RBUTTONDOWN || message == WM_RBUTTONDBLCLK)
-        swallowButtonUp = false;
+    const UINT down = buttonDownMask(message, wParam);
+    const UINT up = buttonUpMask(message, wParam);
+    // A new DOWN supersedes only that button's stale UP, as in PowerToys.
+    const bool swallowUp = (swallowButtonUps & up) != 0;
+    swallowButtonUps &= ~(down | up);
+    if (finishingSource) return handleFinishingMessage(message, wParam) || swallowUp;
     if (!source) {
-        if (swallowButtonUp && message == gestureButtonUp(button)) {
-            swallowButtonUp = false;
-            return true;
-        }
-        return false;
+        return swallowUp;
     }
     if (message == WM_DESTROY || message == WM_NCDESTROY) {
         stop();
@@ -135,12 +193,19 @@ bool WindowResizeGesture::handleMessage(UINT message, WPARAM wParam, LPARAM lPar
         SetCursor(cursor);
         return true;
     }
+    if (message >= WM_MOUSEFIRST && message <= WM_MOUSELAST) {
+        swallowButtonUps |= absorbedButtons & ~(LOWORD(wParam) | up);
+        absorbedButtons = (absorbedButtons | down) & LOWORD(wParam)
+            & ~up & ~gestureButtonMask(button);
+    }
     if (message == WM_MOUSEMOVE || message == gestureButtonUp(button)) {
-        if (GetCapture() != source) { cancel(); return true; }
+        // A button-up still supplies its final point without the trigger bit.
+        // A mouse move without that bit must not update even transiently.
+        if (GetCapture() != source || (message == WM_MOUSEMOVE
+                && !(wParam & gestureButtonMask(button)))) { cancel(); return true; }
         POINT point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
         if (ClientToScreen(source, &point)) update(point);
         if (message == gestureButtonUp(button)) finish(false, false);
-        else if (!(wParam & gestureButtonMask(button))) cancel();
         return true;
     }
     // Reserve the whole gesture; no partial click or wheel reaches the view.
