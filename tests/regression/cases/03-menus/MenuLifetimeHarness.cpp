@@ -259,6 +259,8 @@ struct FolderWindow : ItemWindow {
     };
     std::shared_ptr<ViewMenuPreview> viewMenuPreview, viewMenuRestore;
     bool viewReady = true, initialStateApplied = true, enumerationComplete = true, restoringState = false;
+    bool provisionalInputBlocked = false, provisionalCaptureBusy = false, provisionalBaseline = false;
+    bool captureProvisionalCurrent(bool, bool) { assert(false); return false; }
     enum { TIMER_SAVE_STATE = 2 };
     void viewStateDirty(unsigned) { assert(false); }
     void persistViewState() { assert(false); }
