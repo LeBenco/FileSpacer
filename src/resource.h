@@ -80,6 +80,7 @@
 #define IDS_RESET_FOLDER_STATE_DELETE_ERROR  257
 #define IDS_RESET_FOLDER_STATE_SUCCESS       259
 #define IDS_FOLDER_STATE_ERROR               278
+#define IDS_ICON_POSITION_ERROR              376
 #define IDS_PATH_BAR                         260
 #define IDS_ADDRESS_NOT_FOLDER               261
 #define IDS_QUICK_ACCESS                      262
