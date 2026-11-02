@@ -90,6 +90,7 @@ STRINGTABLE {
     IDS_FOLDER_WIDTH_INVALID, "Die Breite muss eine ganze Zahl von mindestens %1!d! px sein."
     IDS_FOLDER_HEIGHT_INVALID,"Die Höhe muss eine ganze Zahl von mindestens %1!d! px sein."
     IDS_FOLDER_STATE_ERROR, "FileSpacer konnte die Datenbank mit den Ordnerzuständen nicht lesen oder speichern. Prüfen Sie, ob der Ordner mit den lokalen Anwendungsdaten beschreibbar und die Datenbank verfügbar ist. Bestehende Daten wurden nicht zurückgesetzt."
+    IDS_ICON_POSITION_ERROR, "FileSpacer konnte die Symbolanordnung nicht wiederherstellen oder speichern. Bereits gespeicherte Positionen bleiben erhalten. Aktuelle Änderungen der Anordnung werden möglicherweise nicht gespeichert."
     IDS_BROWSER_SET_FAILED, "Standard-Dateibrowser konnte nicht geändert werden"
     IDS_BROWSER_DIRECTORY, "Ordner"
     IDS_BROWSER_COMPRESSED_FOLDER, "Komprimierte (ZIP-)Ordner"
