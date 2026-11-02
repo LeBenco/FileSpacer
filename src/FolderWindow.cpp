@@ -385,6 +385,263 @@ struct FolderWindow::ViewMenuPreview {
 };
 
 thread_local FolderWindow::ViewMenuPreview *FolderWindow::ViewMenuPreview::active = nullptr;
+thread_local HHOOK FolderWindow::provisionalHook = nullptr;
+thread_local std::vector<FolderWindow *> FolderWindow::provisionalWindows;
+
+bool FolderWindow::watchProvisionalInput(bool watch) {
+    auto found = std::find(provisionalWindows.begin(), provisionalWindows.end(), this);
+    if (watch) {
+        if (found != provisionalWindows.end()) return true;
+        if (!provisionalHook)
+            provisionalHook = SetWindowsHookEx(WH_GETMESSAGE, provisionalMessageHook, nullptr, GetCurrentThreadId());
+        if (!provisionalHook) return false;
+        provisionalWindows.push_back(this);
+    } else {
+        if (found != provisionalWindows.end()) provisionalWindows.erase(found);
+        if (provisionalWindows.empty() && provisionalHook && UnhookWindowsHookEx(provisionalHook))
+            provisionalHook = nullptr;
+    }
+    return true;
+}
+
+LRESULT CALLBACK FolderWindow::provisionalMessageHook(int code, WPARAM removed, LPARAM data) {
+    if (code < 0) return CallNextHookEx(nullptr, code, removed, data);
+    if (code == HC_ACTION && removed == PM_REMOVE) {
+        auto msg = reinterpret_cast<MSG *>(data);
+        const bool down = msg->message == WM_LBUTTONDOWN || msg->message == WM_RBUTTONDOWN
+            || msg->message == WM_MBUTTONDOWN || msg->message == WM_POINTERDOWN;
+        const bool key = msg->message == WM_KEYDOWN || msg->message == WM_SYSKEYDOWN;
+        const bool wheel = msg->message == WM_MOUSEWHEEL;
+        const bool up = msg->message == WM_LBUTTONUP;
+        ItemWindow *target = (down || key || wheel || up) ? ItemWindow::fromChildWindow(msg->hwnd) : nullptr;
+        FolderWindow *window = nullptr;
+        for (auto candidate : provisionalWindows)
+            if (static_cast<ItemWindow *>(candidate) == target) { window = candidate; break; }
+        if (window && window->isWindowOperational()) {
+            CComPtr<ItemWindow> keepAlive(window);
+            const bool exit = key && ((msg->wParam == VK_F4 && GetKeyState(VK_MENU) < 0)
+                || msg->wParam == VK_F5 || (msg->wParam == VK_UP && GetKeyState(VK_MENU) < 0));
+            auto consume = [&]() { msg->message = WM_NULL; msg->hwnd = nullptr; msg->wParam = msg->lParam = 0; };
+            const HWND body = window->provisionalViewWindow;
+            const bool inView = body && (msg->hwnd == body || IsChild(body, msg->hwnd));
+            if ((window->provisionalCaptureBusy || (window->provisionalInputBlocked && inView)) && !exit) {
+                // This hook also sees messages retrieved by a nested COM/Shell
+                // loop. They must not mutate the view while its baseline is read.
+                consume();
+            } else if (!exit && window->iconRestoreFailed && !window->provisionalBaseline
+                    && !window->restoringState && !window->viewMenuPreview && !window->viewMenuRestore && inView) {
+                // Failed observations do not consume the user's input or
+                // disable the view. Keep the known reference and warn once.
+                if (up) window->scheduleStateSave(true);
+                else if (!GetCapture() && (down || (key && (msg->wParam == VK_APPS
+                        || (msg->wParam == VK_F10 && GetKeyState(VK_SHIFT) < 0))))) {
+                    GUITHREADINFO info = {sizeof(info)};
+                    if (GetGUIThreadInfo(GetCurrentThreadId(), &info)
+                            && !(info.flags & (GUI_INMENUMODE | GUI_POPUPMENUMODE | GUI_SYSTEMMENUMODE))) {
+                        try { window->observeIconChange(); }
+                        catch (...) { window->iconChangeBaseline.reset(); } // Never unwind through User32.
+                    }
+                }
+            } else if (!exit && window->provisionalReady && !window->restoringState
+                    && !window->viewMenuPreview && !window->viewMenuRestore) {
+                CComPtr<IShellView> source = window->shellView;
+                const ULONG_PTR generation = window->viewGeneration;
+                const HWND recipient = msg->hwnd;
+                if (window->isWindowOperational() && window->shellView == source
+                        && window->viewGeneration == generation && body
+                        && (recipient == body || IsChild(body, recipient))) {
+                    if (up) {
+                        window->viewStateDirty(FolderState::Icons);
+                        SetTimer(window->hwnd, TIMER_SAVE_STATE, 250, nullptr);
+                    } else if (!GetCapture()) {
+                        GUITHREADINFO info = {sizeof(info)};
+                        if (GetGUIThreadInfo(GetCurrentThreadId(), &info)
+                                && !(info.flags & (GUI_INMENUMODE | GUI_POPUPMENUMODE | GUI_SYSTEMMENUMODE))) {
+                            const bool positions = down || (key && (msg->wParam == VK_APPS
+                                || (msg->wParam == VK_F10 && GetKeyState(VK_SHIFT) < 0)));
+                            bool captured = false;
+                            try { captured = window->captureProvisionalCurrent(positions, true); }
+                            catch (...) { captured = false; } // Do not unwind through User32.
+                            if (!captured || !window->isWindowOperational() || window->shellView != source
+                                    || window->viewGeneration != generation || msg->hwnd != recipient
+                                    || ItemWindow::fromChildWindow(recipient) != target) {
+                                consume();
+                                if (window->isWindowOperational() && window->provisionalBaseline) {
+                                    window->blockProvisionalInput(true);
+                                    SetTimer(window->hwnd, TIMER_SAVE_STATE, 250, nullptr);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return CallNextHookEx(nullptr, code, removed, data);
+}
+
+bool FolderWindow::captureProvisionalCurrent(bool icons, bool beforeInput) {
+    if (!provisionalBaseline || !provisionalReady || !provisionalCurrent || provisionalCaptureBusy
+            || restoringState || viewMenuPreview || viewMenuRestore) return false;
+    CComPtr<ItemWindow> keepAlive(this);
+    provisionalCaptureBusy = true;
+    struct CaptureGuard { bool &busy; ~CaptureGuard() { busy = false; } } guard{provisionalCaptureBusy};
+    const HWND owner = hwnd;
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration, enumeration = viewHost.enumerationSerial();
+    auto current = [&]() {
+        return hwnd == owner && source == shellView && viewGeneration == generation
+            && enumeration == viewHost.enumerationSerial() && !getFolderStateKey().empty()
+            && provisionalBaseline && provisionalCurrent;
+    };
+    CComQIPtr<IFolderView2> view(source);
+    if (!owner || !view || !current()) return false;
+    const FolderViewSettings available = captureOptions(view, {});
+    if (!current()) return false;
+    auto options = provisionalCurrent->view.mergeChanges(provisionalCurrent->view, available);
+    if (beforeInput) {
+        auto missing = available;
+        missing.present &= ~provisionalBaseline->view.present;
+        provisionalBaseline->view = provisionalBaseline->view.mergeChanges({}, missing);
+    }
+    const bool spatial = spatialView(view);
+    if (!current()) return false;
+    std::vector<uint8_t> captured;
+    bool capturedIcons = false;
+    if (icons && spatial && searchText.empty()) {
+        CComPtr<IShellFolder> identityFolder;
+        const HRESULT bound = view->GetFolder(IID_PPV_ARGS(&identityFolder));
+        if (FAILED(bound) || !identityFolder || !current()) return false;
+        std::vector<uint8_t> visible;
+        const HRESULT result = captureIconPositions(view, current, false, {}, visible);
+        if (result != S_OK || !current()) return false;
+        if (beforeInput) {
+            std::vector<uint8_t> extended;
+            if (FAILED(extendIconBaseline(provisionalBaseline->icons, visible, extended, identityFolder, current))
+                    || !current()) return false;
+            provisionalBaseline->icons.swap(extended);
+        }
+        // An incomplete observation extends the last complete unfiltered one;
+        // it never replaces that folder's full position set with a subset.
+        if (FAILED(mergeIconChanges(provisionalCurrent->icons, provisionalCurrent->icons,
+                visible, enumerationComplete, captured, identityFolder, current))) return false;
+        if (!current()) return false;
+        capturedIcons = true;
+    }
+    provisionalCurrent->view = std::move(options);
+    if (capturedIcons) {
+        provisionalCurrent->icons.swap(captured);
+        provisionalIconsComplete = enumerationComplete;
+    }
+    return true;
+}
+
+bool FolderWindow::recoverProvisionalView() {
+    if (!provisionalBaseline || !provisionalReady || !provisionalCurrent || !viewReady
+            || !enumerationComplete || restoringState || viewMenuPreview || viewMenuRestore) return false;
+    CComPtr<ItemWindow> keepAlive(this);
+    const HWND owner = hwnd;
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    auto currentView = [&]() { return hwnd == owner && shellView == source && viewGeneration == generation; };
+    auto current = [&]() { return currentView() && !getFolderStateKey().empty()
+        && provisionalBaseline && provisionalCurrent; };
+    CComQIPtr<IFolderView2> view(source);
+    if (!owner || !view || !current()) return false;
+    CComPtr<IShellFolder> identityFolder;
+    const HRESULT bound = view->GetFolder(IID_PPV_ARGS(&identityFolder));
+    if (FAILED(bound) || !identityFolder || !current()) return false;
+    const bool isClosing = !isWindowOperational();
+    if (!isClosing) {
+        GUITHREADINFO info = {sizeof(info)};
+        if (GetCapture() || !GetGUIThreadInfo(GetCurrentThreadId(), &info)
+                || (info.flags & (GUI_INMENUMODE | GUI_POPUPMENUMODE | GUI_SYSTEMMENUMODE))) return false;
+    }
+    if (!provisionalRestore) {
+        if (!captureProvisionalCurrent(true)) return false;
+        if (!current()) return false;
+        auto target = std::unique_ptr<ShellViewState>(new ShellViewState);
+        target->view = getSavedFolderState().view.mergeChanges(provisionalBaseline->view,
+            provisionalCurrent->view, provisionalColumnWidths);
+        const bool complete = provisionalIconsComplete && searchText.empty() && spatialView(view);
+        if (!current()) return false;
+        if (FAILED(mergeIconChanges(getSavedFolderState().icons, provisionalBaseline->icons,
+                provisionalCurrent->icons, complete, target->icons, identityFolder, current))) return false;
+        if (!isClosing && FAILED(captureReopenSelection(source, current, target->selection))) return false;
+        if (!current()) return false;
+        provisionalRestore = std::move(target);
+    }
+    const auto recoveredState = provisionalRestore; // Keep helper arguments alive across expiration callbacks.
+    if (!isClosing) {
+        blockProvisionalInput(true);
+        if (!current() || !isWindowOperational()) return false;
+        struct RestoreGuard {
+            bool &restoring;
+            decltype(currentView) &valid;
+            ~RestoreGuard() { if (valid()) restoring = false; }
+        } restoreGuard{restoringState, currentView};
+        restoringState = true;
+        if (!provisionalRestoreOptionsApplied) {
+            // Consume before native calls; a refill may dispatch another callback.
+            provisionalRestoreOptionsApplied = true;
+            int before = -1, after = -1;
+            const HRESULT counted = view->ItemCount(SVGIO_ALLVIEW, &before);
+            if (!current()) return false;
+            const HRESULT restored = restoreOptions(view, recoveredState->view);
+            if (!current()) return false;
+            viewOptionsEnumerationBaseline = viewHost.enumerationSerial();
+            const HRESULT recounted = view->ItemCount(SVGIO_ALLVIEW, &after);
+            if (!current()) return false;
+            restoringState = false;
+            if (FAILED(restored)) {
+                provisionalRestoreOptionsApplied = false;
+                checkHR(restored);
+                return false; // Never capture a partly restored fallback over SQL.
+            }
+            if (FAILED(counted) || FAILED(recounted) || before != after) {
+                enumerationComplete = false;
+                return false;
+            }
+            restoringState = true;
+        }
+        getSavedFolderState().view = recoveredState->view;
+        getSavedFolderState().icons = recoveredState->icons;
+        viewStateDirty(FolderState::View | FolderState::Icons);
+        if (searchText.empty() && spatialView(view)) {
+            if (!current()) return false;
+            const ULONG_PTR enumeration = viewHost.enumerationSerial();
+            auto iconCurrent = [&]() { return current() && enumerationComplete
+                && viewHost.enumerationSerial() == enumeration; };
+            std::vector<uint8_t> visible, pruned;
+            HRESULT result = captureIconPositions(view, iconCurrent, true, {}, visible);
+            if (SUCCEEDED(result)) result = mergeIconChanges(recoveredState->icons, {}, visible, true,
+                pruned, identityFolder, iconCurrent);
+            if (!iconCurrent()) return false;
+            if (SUCCEEDED(result)) result = restoreIconPositions(view, pruned, iconCurrent);
+            if (!iconCurrent()) return false;
+            // Complete the merge even after a failed application: persistence
+            // uses recoveredState, never the partly positioned view.
+            iconRestoreResult(result);
+            if (!iconCurrent()) return false;
+            if (SUCCEEDED(result)) recoveredState->icons.swap(pruned);
+        }
+        if (!current()) return false;
+        const HRESULT selectionResult = restoreReopenSelection(source, recoveredState->selection, current);
+        if (!current()) return false;
+        restoringState = false;
+        checkHR(selectionResult); // Selection failure cannot invalidate the known state or keep input disabled.
+    }
+    getSavedFolderState().view = std::move(recoveredState->view);
+    getSavedFolderState().icons = std::move(recoveredState->icons);
+    viewStateDirty(FolderState::View | FolderState::Icons);
+    provisionalRestore.reset();
+    provisionalCurrent.reset();
+    provisionalBaseline.reset();
+    provisionalColumnWidths.clear();
+    watchProvisionalInput(iconRestoreFailed);
+    if (!isClosing) blockProvisionalInput(false);
+    return currentView();
+}
 
 bool FolderWindow::hasStatusText() {
     return bottomStatusBar && (GetWindowLongPtr(bottomStatusBar, GWL_STYLE) & WS_VISIBLE);
@@ -447,6 +704,7 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         return true;
     if (!isWindowOperational() || pathBar.hasFocus())
         return false; // The Shell view must not consume Ctrl+C/Ctrl+V from the address.
+    if (provisionalInputBlocked) return false;
     if (activateOnShiftRelease && msg->message == WM_KEYUP && msg->wParam == VK_SHIFT) {
         CComPtr<IShellView> view = shellView;
         if (view)
@@ -711,23 +969,7 @@ void FolderWindow::onCreate() {
     ItemWindow::onCreate();
     const DWORD historyLimit = settings::getSearchHistoryLimit();
     searchBox.setDropdownEnabled(settings::getEverythingEnabled() || historyLimit != 0, settings::getEverythingPath().get());
-    if (historyLimit && !getFolderStateKey().empty()) {
-        auto store = folderStateStore();
-        std::vector<std::string> queries;
-        if (!store || !store->readSearchHistory(getFolderStateKey(), historyLimit, &queries))
-            stateStorageError();
-        else for (const auto &query : queries) {
-            const int length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
-                query.c_str(), -1, nullptr, 0);
-            if (length <= 1) continue;
-            std::wstring value(static_cast<size_t>(length), L'\0');
-            if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, query.c_str(), -1,
-                    &value[0], length)) {
-                value.pop_back();
-                searchHistory.push_back(std::move(value));
-            }
-        }
-    }
+    loadSearchHistory();
     quickAccessIconThread.Attach(new QuickAccessIconThread(hwnd, GetSystemMetrics(SM_CXSMICON)));
     quickAccessIconThread->start();
     placeSearchBox();
@@ -908,6 +1150,12 @@ void FolderWindow::synchronizeViewProvider() {
 
 uint32_t FolderWindow::captureViewState(uint32_t mask) {
     uint32_t captured = ItemWindow::captureViewState(mask);
+    if (provisionalBaseline) {
+        if (!recoverProvisionalView()) return captured;
+        // Closing deliberately merges without replaying the native view. Do
+        // not immediately recapture its fallback over the merged reference.
+        return captured | FolderState::View | FolderState::Icons;
+    }
     if (!viewHost || !viewReady || !initialStateApplied || restoringState || viewMenuPreview
             || getSavedFolderState().firstFailedAt) return captured;
     CComPtr<IShellView> source = shellView;
@@ -926,6 +1174,13 @@ uint32_t FolderWindow::captureViewState(uint32_t mask) {
     }
     // A filtered subset must never replace the complete folder's icon positions.
     if ((mask & FolderState::Icons) && !restoreIconsPending && spatialView(view)) {
+        if (iconRestoreFailed) {
+            captureIconChange();
+            if (!current()) return captured;
+            // Retry only the trusted reference, including an earlier dirty
+            // composition; never recapture the partly applied native layout.
+            return captured | (getSavedFolderState().present & FolderState::Icons);
+        }
         if (!current()) return captured;
         std::vector<uint8_t> bytes;
         const HRESULT result = captureIconPositions(view, current, enumerationComplete,
@@ -942,20 +1197,132 @@ uint32_t FolderWindow::captureViewState(uint32_t mask) {
     return captured;
 }
 
-void FolderWindow::loadIconPositions() {
-    if (!viewHost || !loadFolderState() || !(getSavedFolderState().present & FolderState::Icons)) return;
+void FolderWindow::iconPositionError() {
+    if (iconPositionErrorShown) return;
+    iconPositionErrorShown = true;
+    MessageBoxW(hwnd, getString(IDS_ICON_POSITION_ERROR), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONWARNING);
+}
+
+void FolderWindow::iconRestoreResult(HRESULT result) {
+    iconRestoreFailed = result != S_OK;
+    iconChangeBaseline.reset();
+    if (!iconRestoreFailed) iconPositionErrorShown = false;
+    watchProvisionalInput(provisionalBaseline || iconRestoreFailed);
+    if (FAILED(result)) iconPositionError();
+}
+
+// Observe before input, never use the fallback itself as a saved reference.
+// The existing hook suppresses nested input only while this snapshot is read.
+bool FolderWindow::observeIconChange() {
+    if (!iconRestoreFailed || provisionalCaptureBusy || GetCapture()) return false;
+    captureIconChange(); // Finish the preceding interaction before rebasing.
+    iconChangeBaseline.reset();
+    if (!viewReady || !enumerationComplete || !searchText.empty()) return false;
     CComPtr<IShellView> source = shellView;
-    const ULONG_PTR generation = viewGeneration;
+    const ULONG_PTR generation = viewGeneration, enumeration = viewHost.enumerationSerial();
     auto current = [&]() {
+        return isWindowOperational() && shellView == source && viewGeneration == generation
+            && viewHost.enumerationSerial() == enumeration && enumerationComplete;
+    };
+    provisionalCaptureBusy = true;
+    struct CaptureGuard { bool &busy; ~CaptureGuard() { busy = false; } } guard{provisionalCaptureBusy};
+    CComQIPtr<IFolderView> view(source);
+    if (!current() || !view || !spatialView(view) || !current()) return false;
+    auto baseline = std::make_unique<std::vector<uint8_t>>();
+    const HRESULT result = captureIconPositions(view, current, true, {}, *baseline);
+    if (!current()) return false;
+    if (result != S_OK) { iconPositionError(); return false; }
+    iconChangeBaseline = std::move(baseline);
+    iconChangeEnumeration = enumeration;
+    viewStateDirty(FolderState::Icons);
+    return true;
+}
+
+bool FolderWindow::captureIconChange() {
+    if (!iconChangeBaseline || provisionalCaptureBusy || GetCapture()) return false;
+    // A failed or incomplete observation cannot be attributed to a later input.
+    auto baseline = std::move(iconChangeBaseline);
+    if (viewHost.enumerationSerial() != iconChangeEnumeration) {
+        iconPositionError();
+        return false;
+    }
+    const HWND owner = hwnd;
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration, enumeration = viewHost.enumerationSerial();
+    auto current = [&]() {
+        return hwnd == owner && shellView == source && viewGeneration == generation
+            && viewHost.enumerationSerial() == enumeration && enumerationComplete;
+    };
+    provisionalCaptureBusy = true;
+    struct CaptureGuard { bool &busy; ~CaptureGuard() { busy = false; } } guard{provisionalCaptureBusy};
+    CComQIPtr<IFolderView> view(source);
+    if (!view || !current() || !searchText.empty() || !spatialView(view) || !current()) return false;
+    CComPtr<IShellFolder> folder;
+    HRESULT result = view->GetFolder(IID_PPV_ARGS(&folder));
+    if (!current()) return false;
+    std::vector<uint8_t> observed, merged;
+    if (SUCCEEDED(result)) result = captureIconPositions(view, current, true, {}, observed);
+    if (!current()) return false;
+    if (result == S_OK) result = mergeIconChanges(getSavedFolderState().icons,
+        *baseline, observed, true, merged, folder, current);
+    if (!current()) return false;
+    if (result != S_OK) { iconPositionError(); return false; }
+    getSavedFolderState().icons.swap(merged);
+    viewStateDirty(FolderState::Icons);
+    return true;
+}
+
+HRESULT FolderWindow::loadIconPositions() {
+    if (provisionalBaseline) return S_FALSE;
+    if (!viewHost || !loadFolderState()) return E_PENDING;
+    if (!(getSavedFolderState().present & FolderState::Icons) || getSavedFolderState().icons.empty()) {
+        iconRestoreResult(S_OK);
+        return S_OK;
+    }
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration, enumeration = viewHost.enumerationSerial();
+    auto sameView = [&]() {
         return isWindowOperational() && shellView == source && viewGeneration == generation;
     };
+    auto current = [&]() { return sameView() && enumerationComplete
+        && viewHost.enumerationSerial() == enumeration; };
+    // Keep the old reference protected even if a same-view refill cancels us.
+    iconRestoreFailed = true;
+    watchProvisionalInput(true);
     CComPtr<IFolderView> view;
-    if (SUCCEEDED(viewHost.currentView(IID_PPV_ARGS(&view))) && current() && spatialView(view)
-            && current() && !getSavedFolderState().icons.empty()) {
+    HRESULT result = viewHost.currentView(IID_PPV_ARGS(&view));
+    if (!current()) return E_ABORT;
+    if (SUCCEEDED(result) && spatialView(view) && current()) {
         restoringState = true;
-        checkHR(restoreIconPositions(view, getSavedFolderState().icons, current));
-        if (current()) restoringState = false;
-    }
+        struct RestoreGuard {
+            bool &restoring;
+            std::function<bool()> valid;
+            ~RestoreGuard() { if (valid()) restoring = false; }
+        } restoreGuard{restoringState, sameView};
+        CComPtr<IShellFolder> folder;
+        result = view->GetFolder(IID_PPV_ARGS(&folder));
+        if (!current()) return E_ABORT;
+        std::vector<uint8_t> visible, wanted;
+        if (SUCCEEDED(result)) result = captureIconPositions(view, current,
+            enumerationComplete, {}, visible, !searchText.empty());
+        if (!current()) return E_ABORT;
+        // A vanished item is normal, not a failed native restore. Only a full,
+        // unfiltered observation may remove it from the known reference.
+        if (result == S_OK) result = mergeIconChanges(getSavedFolderState().icons,
+            {}, visible, enumerationComplete, wanted, folder, current);
+        if (!current()) return E_ABORT;
+        if (result == S_OK) {
+            if (wanted != getSavedFolderState().icons) {
+                getSavedFolderState().icons = std::move(wanted);
+                viewStateDirty(FolderState::Icons);
+            }
+            result = restoreIconPositions(view, getSavedFolderState().icons, current);
+        }
+        if (!current()) return E_ABORT;
+        restoringState = false;
+        iconRestoreResult(result);
+    } else if (FAILED(result)) iconRestoreResult(result);
+    return result;
 }
 
 std::vector<uint8_t> FolderWindow::captureReopenViewState() {
@@ -986,6 +1353,7 @@ void FolderWindow::restoreReopenViewState() {
 }
 
 void FolderWindow::onDestroy() {
+    watchProvisionalInput(false);
     if (viewMenuPreview) restoringState = true;
     viewMenuPreview.reset();
     viewMenuRestore.reset();
@@ -1014,6 +1382,14 @@ void FolderWindow::onDestroy() {
 }
 
 bool FolderWindow::onCommand(WORD command) {
+    if (provisionalBaseline && (command == IDM_RESTORE_LAYOUT || command == IDM_REPLACE_LAYOUT
+            || command == IDM_FORGET_LAYOUT || command == IDM_TOGGLE_STATE_LOCK)) {
+        if (provisionalInputBlocked || provisionalCaptureBusy) return true;
+        // Lock capture temporarily clears the cached view before invoking our
+        // virtual capture. Reconcile first, while the SQL reference is intact.
+        persistViewState();
+        if (!isWindowOperational() || provisionalBaseline) return true;
+    }
     switch (command) {
         case IDM_RESTORE_LAYOUT:
             restoreReferenceLayout();
@@ -1165,6 +1541,7 @@ void FolderWindow::placeSearchBox() {
 }
 
 void FolderWindow::applyNameFilter(const wchar_t *text) {
+    if (provisionalInputBlocked || provisionalCaptureBusy) return;
     if (searchText == text) {
         return;
     }
@@ -1173,6 +1550,8 @@ void FolderWindow::applyNameFilter(const wchar_t *text) {
     CComPtr<IShellView> view = shellView;
     if (!isWindowOperational())
         return;
+    if (provisionalBaseline && provisionalReady && searchText.empty()
+            && !captureProvisionalCurrent(true)) return;
     HRESULT hr = filter ? S_OK : E_NOINTERFACE;
     if (SUCCEEDED(hr)) {
         if (searchText.empty() && *text)
@@ -1255,22 +1634,57 @@ void FolderWindow::rememberSearch(const std::wstring &query) {
     searchHistory.erase(std::remove(searchHistory.begin(), searchHistory.end(), query), searchHistory.end());
     searchHistory.insert(searchHistory.begin(), query);
     if (searchHistory.size() > limit) searchHistory.resize(limit);
+    pendingSearches.erase(std::remove(pendingSearches.begin(), pendingSearches.end(), query), pendingSearches.end());
+    pendingSearches.insert(pendingSearches.begin(), query);
+    if (pendingSearches.size() > limit) pendingSearches.resize(limit);
     searchHistoryDirty = true;
     scheduleStateSave();
 }
 
+bool FolderWindow::loadSearchHistory() {
+    const DWORD limit = settings::getSearchHistoryLimit();
+    if (searchHistoryLoaded || !limit || getFolderStateKey().empty()) return true;
+    auto store = folderStateStore();
+    std::vector<std::string> queries;
+    if (!store || !store->readSearchHistory(getFolderStateKey(), limit, &queries)) {
+        stateStorageError();
+        return false;
+    }
+    auto history = pendingSearches;
+    for (const auto &query : queries) {
+        const int length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, query.c_str(), -1, nullptr, 0);
+        if (length <= 1) continue;
+        std::wstring value(static_cast<size_t>(length), L'\0');
+        if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, query.c_str(), -1, &value[0], length)) {
+            value.pop_back();
+            if (std::find(history.begin(), history.end(), value) == history.end())
+                history.push_back(std::move(value));
+        }
+    }
+    if (history.size() > limit) history.resize(limit);
+    searchHistory.swap(history);
+    searchHistoryLoaded = true;
+    return true;
+}
+
 void FolderWindow::saveSearchHistory() {
     if (!searchHistoryDirty || getFolderStateKey().empty()) return;
-    std::vector<std::string> queries;
-    for (const auto &query : searchHistory) queries.push_back(toUtf8(query.c_str()));
     auto store = folderStateStore();
-    if (store && store->saveSearchHistory(getFolderStateKey(), queries, settings::getSearchHistoryLimit()))
+    if (!store) { stateStorageError(); return; }
+    std::vector<std::string> queries;
+    for (const auto &query : pendingSearches) queries.push_back(toUtf8(query.c_str()));
+    if (store->saveSearchHistory(getFolderStateKey(), queries, settings::getSearchHistoryLimit(), true)) {
+        pendingSearches.clear();
         searchHistoryDirty = false;
-    else stateStorageError();
+        searchHistoryLoaded = false;
+        loadSearchHistory();
+    } else stateStorageError();
 }
 
 void FolderWindow::openSearchMenu() {
     CComPtr<ItemWindow> keepAlive(this);
+    if (!isWindowOperational()) return;
+    loadSearchHistory();
     if (!isWindowOperational()) return;
     const DWORD limit = settings::getSearchHistoryLimit();
     if (searchHistory.size() > limit) searchHistory.resize(limit);
@@ -1396,7 +1810,11 @@ void FolderWindow::onSettingsChanged() {
         searchBox.setDropdownEnabled(settings::getEverythingEnabled() || settings::getSearchHistoryLimit() != 0, settings::getEverythingPath().get());
     const DWORD limit = settings::getSearchHistoryLimit();
     if (searchHistory.size() > limit) searchHistory.resize(limit);
-    if (!limit) searchHistoryDirty = false; // The preference already cleared persisted histories.
+    if (pendingSearches.size() > limit) pendingSearches.resize(limit);
+    if (!limit) {
+        searchHistoryDirty = false; // The preference already cleared persisted histories.
+        searchHistoryLoaded = false;
+    }
     if (isWindowOperational())
         setSingleSelectionLabels(shellView, settings::getFullNamesOnSelection());
     if (isWindowOperational() && viewHost)
@@ -1507,6 +1925,14 @@ bool FolderWindow::isBackgroundActivationClick(const MSG *msg) const {
 
 LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     CComPtr<ItemWindow> messageKeepAlive(this);
+    if (message == MSG_EXPIRE_FOLDER_STATE && provisionalBaseline) {
+        const LRESULT result = ItemWindow::handleMessage(message, wParam, lParam); // Invalidates the key first.
+        provisionalBaseline.reset(); provisionalCurrent.reset(); provisionalRestore.reset();
+        provisionalColumnWidths.clear();
+        watchProvisionalInput(false);
+        blockProvisionalInput(false);
+        return result;
+    }
     LPARAM testNamespace = 0;
 #ifdef FILESPACER_DEBUG
     testNamespace = settings::testMode ? 1 : 0;
@@ -1515,7 +1941,11 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             && wParam >= 1 && wParam <= settings::MAX_SEARCH_HISTORY_LIMIT + 1) {
         const size_t limit = static_cast<size_t>(wParam - 1);
         if (searchHistory.size() > limit) searchHistory.resize(limit);
-        if (!limit) searchHistoryDirty = false;
+        if (pendingSearches.size() > limit) pendingSearches.resize(limit);
+        if (!limit) {
+            searchHistoryDirty = false;
+            searchHistoryLoaded = false;
+        }
     }
     // Capture and cancellation notifications are sent synchronously, outside
     // the application's GetMessage/pretranslation loop.
@@ -1648,6 +2078,11 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         case WM_TIMER:
             if (wParam == TIMER_SAVE_STATE) {
                 KillTimer(hwnd, TIMER_SAVE_STATE);
+                if (provisionalBaseline && provisionalReady && !provisionalRestore) {
+                    const bool observed = captureProvisionalCurrent(true, provisionalInputBlocked);
+                    if (observed && provisionalInputBlocked && !provisionalCaptureBusy)
+                        blockProvisionalInput(false);
+                }
                 persistViewState();
                 saveSearchHistory();
                 return 0;
@@ -1782,6 +2217,9 @@ IDispatch * FolderWindow::getShellViewDispatch() {
 }
 
 void FolderWindow::onItemChanged() {
+    if (iconRestoreFailed) captureIconChange();
+    if (provisionalBaseline && provisionalReady && viewReady)
+        captureProvisionalCurrent(true);
     ItemWindow::onItemChanged();
     CComHeapPtr<wchar_t> folderName;
     if (SUCCEEDED(item->GetDisplayName(SIGDN_NORMALDISPLAY, &folderName)))
@@ -1799,7 +2237,8 @@ void FolderWindow::onItemChanged() {
             if (!current()) return;
             // The transient snapshot may hold a filtered subset: it is applied once
             // to the recreated view and never persisted as the folder's placement.
-            if (spatialView(folderView))
+            if (iconRestoreFailed) state->icons = getSavedFolderState().icons;
+            else if (spatialView(folderView))
                 checkHR(captureIconPositions(folderView, current, enumerationComplete, {}, state->icons));
             if (!current()) return;
             checkHR(captureReopenSelection(source, current, state->selection));
@@ -2123,8 +2562,10 @@ HMENU findViewMenu(IContextMenu *const contextMenu, HMENU popupMenu) {
 
 void FolderWindow::openViewMenu(POINT point) {
     CComPtr<ItemWindow> keepAlive(this);
-    if (!isWindowOperational())
+    if (!isWindowOperational() || provisionalInputBlocked || provisionalCaptureBusy)
         return;
+    if (provisionalBaseline && !captureProvisionalCurrent(true, true)) return;
+    if (!isWindowOperational()) return;
     HMENU popupMenu = nullptr;
     CComPtr<IContextMenu> contextMenu = queryBackgroundMenu(&popupMenu);
     auto destroyMenu = [](HMENU handle) { checkLE(DestroyMenu(handle)); };
@@ -2462,6 +2903,7 @@ STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
     initialStateApplied = false;
     restoreIconsPending = true;
     enumerationComplete = false;
+    provisionalRestoreOptionsApplied = false;
     return S_OK;
 }
 
@@ -2498,6 +2940,10 @@ STDMETHODIMP FolderWindow::OnViewCreated(IShellView *const view) {
     CComPtr<ItemWindow> keepAlive(this);
     debugPrintf(L"NATIVE HWND=%p OnViewCreated\n", hwnd);
     shellView = view;
+    iconChangeBaseline.reset();
+    iconRestoreFailed = false;
+    iconPositionErrorShown = false;
+    watchProvisionalInput(provisionalBaseline != nullptr);
     initialEnumerationReady = false;
     viewOptionsApplied = false;
     viewOptionsEnumerationBaseline = 0;
@@ -2518,6 +2964,22 @@ STDMETHODIMP FolderWindow::OnViewCreated(IShellView *const view) {
     if (!current()) return S_OK;
     if (FAILED(observed)) setStatusText(getErrorMessage(observed).get());
 
+    if (provisionalBaseline) provisionalInputBlocked = true;
+    view->GetWindow(&provisionalViewWindow);
+    if (!current()) return S_OK;
+
+    if (!loadFolderState() && !provisionalBaseline)
+        provisionalBaseline.reset(new ShellViewState);
+    if (!current()) return S_OK;
+    if (!provisionalBaseline && (getSavedFolderState().present & FolderState::Icons)
+            && !getSavedFolderState().icons.empty()) {
+        // Known positions remain protected until actually applied, including
+        // a non-spatial presentation that may later become spatial.
+        iconRestoreFailed = true;
+        watchProvisionalInput(true);
+    }
+    if (provisionalBaseline) blockProvisionalInput(true);
+
     if (!current()) return S_OK;
     setSingleSelectionLabels(view, settings::getFullNamesOnSelection());
     if (!current()) return S_OK;
@@ -2525,6 +2987,123 @@ STDMETHODIMP FolderWindow::OnViewCreated(IShellView *const view) {
     finishViewInitialization();
 
     return S_OK;
+}
+
+void FolderWindow::blockProvisionalInput(bool blocked) {
+    provisionalInputBlocked = blocked; // EnableWindow can dispatch messages.
+    const HWND owner = hwnd;
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    auto current = [&]() {
+        return isWindowOperational() && hwnd == owner && shellView == source
+            && viewGeneration == generation && provisionalInputBlocked == blocked;
+    };
+    if (!current()) return;
+    HWND body = nullptr;
+    if (source) source->GetWindow(&body);
+    if (!current()) return;
+    const HWND search = searchBox.windowHandle(), toolbar = getCommandToolbar();
+    if (blocked) {
+        if (body && IsWindowEnabled(body)) {
+            disabledProvisionalView = body;
+            disabledProvisionalGeneration = generation;
+            EnableWindow(body, FALSE);
+            if (!current()) return;
+        }
+        if (search && IsWindowEnabled(search)) {
+            disabledProvisionalSearch = search;
+            EnableWindow(search, FALSE);
+            if (!current()) return;
+        }
+        if (toolbar && SendMessage(toolbar, TB_ISBUTTONENABLED, IDM_VIEW_MENU, 0)) {
+            disabledProvisionalToolbar = toolbar;
+            SendMessage(toolbar, TB_ENABLEBUTTON, IDM_VIEW_MENU, MAKELONG(FALSE, 0));
+        }
+    } else {
+        const HWND oldBody = disabledProvisionalView, oldSearch = disabledProvisionalSearch;
+        const HWND oldToolbar = disabledProvisionalToolbar;
+        const ULONG_PTR oldGeneration = disabledProvisionalGeneration;
+        if (body == oldBody && generation == oldGeneration && IsWindow(body)) {
+            EnableWindow(body, TRUE);
+            if (!provisionalInputBlocked && disabledProvisionalView == oldBody
+                    && disabledProvisionalGeneration == oldGeneration) disabledProvisionalView = nullptr;
+            if (!current()) return;
+        }
+        if (search && search == oldSearch && IsWindow(search)) {
+            EnableWindow(search, TRUE);
+            if (!provisionalInputBlocked && disabledProvisionalSearch == oldSearch) disabledProvisionalSearch = nullptr;
+            if (!current()) return;
+        }
+        if (toolbar && toolbar == oldToolbar && IsWindow(toolbar)) {
+            SendMessage(toolbar, TB_ENABLEBUTTON, IDM_VIEW_MENU, MAKELONG(TRUE, 0));
+            if (!provisionalInputBlocked && disabledProvisionalToolbar == oldToolbar) disabledProvisionalToolbar = nullptr;
+        }
+    }
+}
+
+bool FolderWindow::captureProvisionalBaseline() {
+    if (!provisionalBaseline || provisionalReady) return true;
+    if (provisionalCaptureBusy || !watchProvisionalInput(true)) return false;
+    CComPtr<ItemWindow> keepAlive(this);
+    provisionalCaptureBusy = true;
+    struct CaptureGuard { bool &busy; ~CaptureGuard() { busy = false; } } guard{provisionalCaptureBusy};
+    const HWND owner = hwnd;
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration, enumeration = viewHost.enumerationSerial();
+    auto current = [&]() {
+        return isWindowOperational() && hwnd == owner && shellView == source
+            && viewGeneration == generation && viewHost.enumerationSerial() == enumeration
+            && enumerationComplete && viewReady && !getFolderStateKey().empty()
+            && provisionalBaseline && !provisionalReady;
+    };
+    CComQIPtr<IFolderView2> view(source);
+    if (!view || !current()) return false;
+    ShellViewState observed;
+    observed.view = captureOptions(view, {});
+    constexpr uint32_t required = FolderViewSettings::Mode | FolderViewSettings::Flags;
+    if (!current() || (observed.view.present & required) != required) return false;
+    // Hidden columns can be shown and resized in one native dialog. Record
+    // their widths before that dialog, without treating them as initially visible.
+    std::vector<FolderViewSettings::Column> widths;
+    for (const auto &column : observed.view.columns)
+        if (column.width <= INT32_MAX) widths.push_back(column);
+    CComQIPtr<IColumnManager> manager(view);
+    if (!current()) return false;
+    UINT count = 0;
+    if (manager && SUCCEEDED(manager->GetColumnCount(CM_ENUM_ALL, &count)) && current() && count) {
+        std::vector<PROPERTYKEY> keys(count);
+        if (SUCCEEDED(manager->GetColumns(CM_ENUM_ALL, keys.data(), count)) && current()) {
+            for (const auto &key : keys) {
+                CM_COLUMNINFO info = {sizeof(info), CM_MASK_WIDTH};
+                const HRESULT result = manager->GetColumnInfo(key, &info);
+                if (!current()) return false;
+                // A default/automatic sentinel is not a measured pixel width.
+                if (SUCCEEDED(result) && info.uWidth && info.uWidth <= INT32_MAX) {
+                    FolderViewSettings::Column column;
+                    memcpy(column.key.data(), &key.fmtid, 16);
+                    memcpy(column.key.data() + 16, &key.pid, 4);
+                    column.width = static_cast<uint32_t>(invScaleDPI(static_cast<int>(info.uWidth)));
+                    if (std::none_of(widths.begin(), widths.end(), [&](const FolderViewSettings::Column &value) {
+                            return value.key == column.key; })) widths.push_back(column);
+                }
+            }
+        }
+    }
+    if (!current()) return false;
+    const bool spatial = spatialView(view);
+    if (!current()) return false;
+    if (spatial) {
+        const HRESULT result = captureIconPositions(view, current, true, {}, observed.icons);
+        if (result != S_OK || !current()) return false;
+    }
+    if (!current()) return false;
+    provisionalCurrent.reset(new ShellViewState(observed));
+    provisionalColumnWidths.swap(widths);
+    provisionalIconsComplete = spatial;
+    *provisionalBaseline = std::move(observed);
+    provisionalReady = true;
+    blockProvisionalInput(false);
+    return isWindowOperational() && viewGeneration == generation;
 }
 
 // Navigation and enumeration callbacks can arrive in either order. Complete
@@ -2542,6 +3121,24 @@ void FolderWindow::finishViewInitialization() {
     auto current = [&]() {
         return isWindowOperational() && shellView == view && viewGeneration == generation;
     };
+    if (provisionalRestore) {
+        if (recoverProvisionalView() && current()) scheduleStateSave();
+        return;
+    }
+    if (provisionalBaseline && !provisionalReady) {
+        if (loadFolderState()) {
+            provisionalBaseline.reset(); // SQL returned before any provisional interaction.
+        } else if (!captureProvisionalBaseline()) {
+            return;
+        }
+        if (!current()) return;
+    }
+    if (provisionalBaseline && !storedViewState) {
+        // The observed fallback is ready for use; it is still not a reference
+        // to write or to replay over the settings that have not yet been read.
+        viewOptionsApplied = true;
+        restoreIconsPending = false;
+    }
     if (!viewOptionsApplied) {
         viewOptionsApplied = true; // Consume before calls that can dispatch messages.
         restoringState = true;
@@ -2556,8 +3153,13 @@ void FolderWindow::finishViewInitialization() {
             int before = -1, after = -1;
             const HRESULT beforeResult = folderView->ItemCount(SVGIO_ALLVIEW, &before);
             if (!current()) return;
-            checkHR(restoreOptions(folderView, options));
+            const HRESULT restored = restoreOptions(folderView, options);
             if (!current()) return;
+            if (!checkHR(restored) && provisionalInputBlocked) {
+                restoringState = false;
+                viewOptionsApplied = false;
+                return;
+            }
             viewOptionsEnumerationBaseline = viewHost.enumerationSerial();
             const HRESULT afterResult = folderView->ItemCount(SVGIO_ALLVIEW, &after);
             if (!current()) return;
@@ -2586,15 +3188,18 @@ void FolderWindow::finishViewInitialization() {
             CComQIPtr<IFolderView2> folderView(view);
             if (folderView) {
                 restoringState = true;
-                if (!state->icons.empty() && spatialView(folderView))
-                    checkHR(restoreIconPositions(folderView, state->icons, current));
+                if (!state->icons.empty() && spatialView(folderView)) {
+                    const HRESULT result = restoreIconPositions(folderView, state->icons, current);
+                    if (!current()) return;
+                    iconRestoreResult(result);
+                }
                 if (!current()) return;
                 checkHR(restoreReopenSelection(view, state->selection, current));
                 if (!current()) return;
                 restoringState = false;
             }
         } else if (searchText.empty()) {
-            loadIconPositions();
+            checkHR(loadIconPositions());
         }
     }
     if (!current()) return;
@@ -2604,6 +3209,10 @@ void FolderWindow::finishViewInitialization() {
         onViewReady();
     }
     if (!current()) return;
+    if ((!provisionalBaseline || provisionalReady) && provisionalInputBlocked) {
+        blockProvisionalInput(false); // Reference and its eventual refill are now applied.
+        if (!current()) return;
+    }
     scheduleStateSave();
     updateSelection();
     if (current() && hasStatusText()) updateStatus();
