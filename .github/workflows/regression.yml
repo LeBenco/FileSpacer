@@ -119,16 +119,14 @@ jobs:
           if ($env:TEST_CATEGORY -ne 'Internal') {
             choco install everything --yes --no-progress
             if ($LASTEXITCODE -ne 0) { throw 'Everything installation failed.' }
-            # Chocolatey starts the default instance; the integration test
-            # requires it closed so it can use its own isolated configuration.
+            # Remove installer-started clients from this disposable runner before
+            # tests start. Do not rely on IPC to an instance still initializing.
+            # Match the installed image and session; leave the service alone.
             $everything = Join-Path $env:ProgramFiles 'Everything\Everything.exe'
             $session = [Diagnostics.Process]::GetCurrentProcess().SessionId
-            $started = @(Get-Process Everything -ErrorAction SilentlyContinue | Where-Object { $_.SessionId -eq $session })
-            $exitRequest = Start-Process -FilePath $everything -ArgumentList '-exit' -WindowStyle Hidden -PassThru
-            if (!$exitRequest.WaitForExit(15000) -or $exitRequest.ExitCode -ne 0) {
-              throw 'Cannot request the installed Everything instance to exit.'
-            }
+            $started = @(Get-Process Everything -ErrorAction SilentlyContinue | Where-Object { $_.SessionId -eq $session -and $_.Path -eq $everything })
             foreach ($process in $started) {
+              if (!$process.HasExited) { Stop-Process -InputObject $process -Force -ErrorAction Stop }
               if (!$process.WaitForExit(15000)) { throw 'The installed Everything instance did not exit.' }
             }
             if (@(Get-Process Everything -ErrorAction SilentlyContinue | Where-Object { $_.SessionId -eq $session }).Count) {
