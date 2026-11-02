@@ -55,6 +55,19 @@ void checkProvider(const wchar_t *path, const wchar_t *directory, bool modern) {
     int comparison = 1;
     const HRESULT compared = converted->Compare(expected, SICHINT_CANONICAL, &comparison);
     if (FAILED(compared) || comparison != 0) {
+        // Compare the same native enumeration without passing through the
+        // provider, to distinguish a provider error from the Shell oracle.
+        CComPtr<IShellFolder> nativeFolder;
+        CComPtr<IEnumIDList> nativeEnumeration;
+        CComHeapPtr<ITEMID_CHILD> nativeChild;
+        CComPtr<IShellItem> control;
+        HRESULT controlResult = native->BindToHandler(nullptr, BHID_SFObject, IID_PPV_ARGS(&nativeFolder));
+        if (SUCCEEDED(controlResult)) controlResult = nativeFolder->EnumObjects(nullptr, SHCONTF_NONFOLDERS, &nativeEnumeration);
+        if (SUCCEEDED(controlResult) && nativeEnumeration) controlResult = nativeEnumeration->Next(1, &nativeChild, nullptr);
+        if (controlResult == S_OK && nativeChild) controlResult = SHCreateItemWithParent(nullptr, nativeFolder, nativeChild, IID_PPV_ARGS(&control));
+        int controlComparison = 1;
+        if (SUCCEEDED(controlResult) && control) controlResult = control->Compare(expected, SICHINT_CANONICAL, &controlComparison);
+        std::printf("CanonicalCompare native control=0x%08lX; result=%d\n", static_cast<unsigned long>(controlResult), controlComparison);
         CComHeapPtr<wchar_t> convertedName, expectedName;
         const HRESULT convertedDisplay = converted->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &convertedName);
         const HRESULT expectedDisplay = expected->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &expectedName);
