@@ -19,6 +19,9 @@ try {
         Wait-Ui { try { [IO.File]::ReadAllText($target) -ceq $operation.Contents } catch [IO.IOException] { $false } } 'clipboard operation produces the exact bytes'
         if ($operation.Move) { Wait-Ui { !(Test-Path -LiteralPath (Join-Path $source $operation.Name)) } 'Ctrl+X/Ctrl+V removes the source' }
         else { Assert-Ui (Test-Path -LiteralPath (Join-Path $source $operation.Name)) 'Ctrl+C/Ctrl+V removed the source.' }
+        # The Shell selects the pasted item after the filesystem operation.
+        # Observe that UI completion before activating the source again.
+        Assert-UiSelected $second $operation.Name
     }
     Assert-SearchNames $first @('Copy-me');Assert-SearchNames $second @('Copy-me','Move-me')
     Write-Host 'PASS: real Ctrl+C/X/V copy and move bytes, preserve/remove sources and update both native views.'
