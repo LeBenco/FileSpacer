@@ -866,7 +866,7 @@ std::string folderStateDatabasePath() {
 #endif
     return toUtf8(path.c_str());
 }
-FolderStateStore *folderStateStore() {
+FolderStateStore *folderStateStore(bool waitForInitialization) {
     // /test is parsed before the first folder creation. No worker uses this connection.
     static std::unique_ptr<FolderStateStore> store;
     static bool attempted = false;
@@ -874,9 +874,9 @@ FolderStateStore *folderStateStore() {
         const std::string path = folderStateDatabasePath();
         if (!path.empty() && !store) {
             {
-                const bool waitForInitialization = !attempted;
+                const bool wait = waitForInitialization || !attempted;
                 attempted = true;
-                std::unique_ptr<FolderStateStore> candidate(new FolderStateStore(path.c_str(), waitForInitialization));
+                std::unique_ptr<FolderStateStore> candidate(new FolderStateStore(path.c_str(), wait));
                 if (candidate->ready() && !store) store = std::move(candidate);
             }
         }
