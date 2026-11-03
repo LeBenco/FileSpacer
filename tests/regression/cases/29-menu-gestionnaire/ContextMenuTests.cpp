@@ -33,7 +33,7 @@ bool exists(HKEY root, const std::wstring &key, const wchar_t *name = nullptr) {
 }
 void checkMenu(const wchar_t *type, bool explorer, bool background = false) {
     const std::wstring shell = std::wstring(type) + (background ? L"\\Background\\shell" : L"\\shell");
-    require(exists(HKEY_CLASSES_ROOT, shell + L"\\filespacer", L"ProgrammaticAccessOnly") == explorer,
+    require(exists(HKEY_CLASSES_ROOT, shell + L"\\filespacer", L"ProgrammaticAccessOnly") == (explorer && background),
         "FileSpacer visibility follows the effective default");
     require(exists(HKEY_CLASSES_ROOT, shell + L"\\filespacer.explorer") == explorer,
         "Explorer alternative follows the effective default");
@@ -56,16 +56,37 @@ void checkMenu(const wchar_t *type, bool explorer, bool background = false) {
     DEFCONTEXTMENU context = {}; context.cKeys = 1; context.aKeys = &classKey.m_hKey;
     CComPtr<IContextMenu> menu;
     require(SUCCEEDED(SHCreateDefaultContextMenu(&context, IID_PPV_ARGS(&menu))), "create real Shell menu");
+    if (!background) {
+        const std::wstring competing = shell + L"\\aaa-other-manager";
+        put(HKEY_CLASSES_ROOT, competing, nullptr, L"Other file manager");
+        put(HKEY_CLASSES_ROOT, competing + L"\\command", nullptr, L"other manager command");
+        HMENU defaultPopup = CreatePopupMenu();
+        require(defaultPopup != nullptr, "create default-action menu");
+        const HRESULT defaultResult = menu->QueryContextMenu(defaultPopup, 0, 1, 1000, CMF_DEFAULTONLY);
+        const UINT defaultId = GetMenuDefaultItem(defaultPopup, FALSE, 0);
+        wchar_t defaultVerb[256] = {};
+        const HRESULT defaultName = defaultId == static_cast<UINT>(-1) ? E_FAIL
+            : menu->GetCommandString(defaultId - 1, GCS_VERBW, nullptr,
+                reinterpret_cast<char *>(defaultVerb), _countof(defaultVerb));
+        DestroyMenu(defaultPopup);
+        require(RegDeleteTreeW(HKEY_CLASSES_ROOT, competing.c_str()) == ERROR_SUCCESS, "remove competing manager fixture");
+        require(SUCCEEDED(defaultResult) && SUCCEEDED(defaultName)
+            && lstrcmpiW(defaultVerb, L"filespacer") == 0,
+            "native default-only menu keeps FileSpacer as the opening action");
+    }
+    menu.Release();
+    require(SUCCEEDED(SHCreateDefaultContextMenu(&context, IID_PPV_ARGS(&menu))), "recreate normal Shell menu");
     HMENU popup = CreatePopupMenu();
     require(popup != nullptr, "create undisplayed menu");
     HRESULT queried = menu->QueryContextMenu(popup, 0, 1, 1000, CMF_NORMAL);
     const int count = GetMenuItemCount(popup);
     wchar_t caption[256] = {}, verb[256] = {};
-    const UINT id = GetMenuItemID(popup, 0);
-    GetMenuStringW(popup, 0, caption, _countof(caption), MF_BYPOSITION);
+    const int alternativeIndex = background ? 0 : 1;
+    const UINT id = GetMenuItemID(popup, alternativeIndex);
+    GetMenuStringW(popup, alternativeIndex, caption, _countof(caption), MF_BYPOSITION);
     HRESULT named = menu->GetCommandString(id - 1, GCS_VERBW, nullptr, reinterpret_cast<char *>(verb), _countof(verb));
     DestroyMenu(popup);
-    require(SUCCEEDED(queried) && count == 1 && SUCCEEDED(named), "exactly one FileSpacer-provided visible command");
+    require(SUCCEEDED(queried) && count == (background ? 1 : 2) && SUCCEEDED(named), "both item commands remain visible; background has only the alternative");
     require(lstrcmpW(verb, L"filespacer.explorer") == 0 && lstrcmpW(caption, getString(IDS_OPEN_IN_EXPLORER)) == 0,
         "real Shell displays the Explorer command");
 }
@@ -77,6 +98,7 @@ void fixtures() {
         const std::wstring shell = std::wstring(type) + L"\\shell";
         put(HKEY_CLASSES_ROOT, shell, nullptr, L"none");
         put(HKEY_CLASSES_ROOT, shell + L"\\filespacer", nullptr, L"Open in FileSpacer");
+        put(HKEY_CLASSES_ROOT, shell + L"\\filespacer", L"ProgrammaticAccessOnly", L"");
         put(HKEY_CLASSES_ROOT, shell + L"\\filespacer\\command", nullptr, L"original command");
         put(HKEY_CLASSES_ROOT, shell + L"\\filespacer\\command", L"DelegateExecute", L"original delegate");
     }
@@ -120,7 +142,7 @@ void checkDefaultOpening() {
         SHELLEXECUTEINFOW info = {sizeof(info)};
         info.fMask = mask | SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC | SEE_MASK_FLAG_NO_UI;
         info.hkeyClass = key; info.lpFile = fixture.c_str(); info.nShow = SW_HIDE;
-        require(!!ShellExecuteExW(&info), "ShellExecute resolves the hidden default command");
+        require(!!ShellExecuteExW(&info), "ShellExecute resolves the selected default command");
         Handle process(info.hProcess, CloseHandle);
         require(process && WaitForSingleObject(process.get(), 10000) == WAIT_OBJECT_0, "default invocation completed");
         DWORD code = 1;
@@ -128,6 +150,25 @@ void checkDefaultOpening() {
             && GetFileAttributesW(marker.c_str()) != INVALID_FILE_ATTRIBUTES, "actual subprocess was FileSpacer's command, not the alternative");
         require(!!DeleteFileW(marker.c_str()), "remove launch marker");
     }
+    DEFCONTEXTMENU context = {}; context.cKeys = 1; context.aKeys = &key.m_hKey;
+    CComPtr<IContextMenu> menu;
+    require(SUCCEEDED(SHCreateDefaultContextMenu(&context, IID_PPV_ARGS(&menu))), "create default invocation menu");
+    HMENU popup = CreatePopupMenu();
+    require(popup != nullptr, "create default invocation popup");
+    const HRESULT queried = menu->QueryContextMenu(popup, 0, 1, 1000, CMF_DEFAULTONLY);
+    const UINT defaultId = GetMenuDefaultItem(popup, FALSE, 0);
+    DestroyMenu(popup);
+    require(SUCCEEDED(queried) && defaultId != static_cast<UINT>(-1), "native opening action exists");
+    CMINVOKECOMMANDINFO invocation = {sizeof(invocation)};
+    invocation.fMask = CMIC_MASK_NOASYNC;
+    invocation.lpVerb = MAKEINTRESOURCEA(defaultId - 1);
+    invocation.nShow = SW_HIDE;
+    require(SUCCEEDED(menu->InvokeCommand(&invocation)), "invoke the native default action");
+    for (int attempt = 0; attempt < 200
+            && GetFileAttributesW(marker.c_str()) == INVALID_FILE_ATTRIBUTES; ++attempt) Sleep(50);
+    require(GetFileAttributesW(marker.c_str()) != INVALID_FILE_ATTRIBUTES,
+        "native default action actually ran FileSpacer's command");
+    require(!!DeleteFileW(marker.c_str()), "remove native default invocation marker");
     put(HKEY_CLASSES_ROOT, shell + L"filespacer\\command", nullptr, L"original command");
     put(HKEY_CLASSES_ROOT, shell + L"filespacer\\command", L"DelegateExecute", L"original delegate");
 }
@@ -140,7 +181,7 @@ int wmain(int argc, wchar_t **argv) {
     if (argc == 3) {
         if (lstrcmpW(argv[1], L"/record") != 0) return 2;
         std::unique_ptr<void, decltype(&CloseHandle)> marker(CreateFileW(argv[2], GENERIC_WRITE,
-            0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr), CloseHandle);
+            FILE_SHARE_DELETE, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr), CloseHandle);
         return marker.get() == INVALID_HANDLE_VALUE ? 3 : 0;
     }
     SetThreadUILanguage(argc == 2 && lstrcmpW(argv[1], L"fr") == 0 ? 0x040c : 0x0409);
