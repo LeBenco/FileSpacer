@@ -67,6 +67,8 @@ try {
                 Assert-Ui ([IO.File]::ReadAllText((Join-Path $source $name)) -ceq ('payload-'+$name)) 'Ctrl+drag changed the source bytes.'
             }
         } finally { [FileSpacerRegression.AltDragInput]::End();if ($controlHeld) { [FileSpacerRegression.ShellIntegration]::Control($false);$controlHeld=$false } }
+        # File creation precedes the Shell's final selection/activation work.
+        Assert-UiSelected $second $name
         if ($name -eq 'Drag-copy') { Assert-Ui (Test-Path -LiteralPath (Join-Path $source $name)) 'Ctrl+drag removed the source after releasing Ctrl.' }
     }
     Assert-SearchNames $first @('Drag-copy');Assert-SearchNames $second @('AnchorA','Drag-copy','Drag-move')
