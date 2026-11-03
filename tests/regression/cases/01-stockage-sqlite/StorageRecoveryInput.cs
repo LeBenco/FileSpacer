@@ -21,10 +21,23 @@ public static class StorageRecoveryInput {
     [DllImport("user32.dll")] static extern short GetAsyncKeyState(int key);
     [DllImport("user32.dll",EntryPoint="SendNotifyMessageW",ExactSpelling=true,SetLastError=true)]
     static extern bool SendNotifyMessage(IntPtr window,uint message,UIntPtr wParam,IntPtr lParam);
+    [DllImport("ole32.dll",ExactSpelling=true)]
+    static extern int CoWaitForMultipleHandles(uint flags,uint milliseconds,uint count,IntPtr[] handles,out uint index);
     public static void RequestClose(IntPtr window) {
         // A sent notification reaches a native menu loop without blocking the
         // sender, so the receiver can still make outgoing Shell COM calls.
         if(!SendNotifyMessage(window,0x10,UIntPtr.Zero,IntPtr.Zero))throw new Win32Exception();
+    }
+    public static bool WaitForExit(IntPtr process,uint milliseconds) {
+        if(Thread.CurrentThread.GetApartmentState()!=ApartmentState.STA)
+            throw new InvalidOperationException("The Shell observer must wait in its STA.");
+        // The PowerShell observer owns Shell COM proxies. Keep marshaling calls
+        // dispatching while the product revokes its Shell registration on close.
+        uint index;
+        int result=CoWaitForMultipleHandles(0,milliseconds,1,new[]{process},out index);
+        if(result==unchecked((int)0x80010115))return false; // RPC_S_CALLPENDING: timeout.
+        Marshal.ThrowExceptionForHR(result);
+        return result==0 && index==0;
     }
     static void Button(uint flags) {
         var inputs=new[]{new Input{Data=new Union{Mouse=new Mouse{Flags=flags}}}};
