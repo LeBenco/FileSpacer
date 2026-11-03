@@ -25,6 +25,10 @@ on:
         type: string
 
   workflow_call:
+    outputs:
+      tested_sha:
+        description: 'Exact commit selected for the application tests'
+        value: ${{ jobs.selection.outputs.sha }}
     inputs:
       ref:
         required: true
@@ -201,6 +205,7 @@ jobs:
             ${{ env.TEST_DIRECTORY }}/preparation.log
             ${{ env.TEST_DIRECTORY }}/runner.*.log
             ${{ env.TEST_DIRECTORY }}/worker-result.json
+            ${{ env.TEST_DIRECTORY }}/regression-summary.md
             ${{ env.TEST_DIRECTORY }}/output
           if-no-files-found: warn
           retention-days: 14
