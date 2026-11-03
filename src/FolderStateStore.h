@@ -102,7 +102,8 @@ private:
 
 #ifdef _WIN32
 // Lazy initialization keeps the existing /test mode in a separate database.
-FolderStateStore *folderStateStore();
+// Ordinary retries stay non-blocking; closing can request the usual lock deadline.
+FolderStateStore *folderStateStore(bool waitForInitialization = false);
 // A background reader opens its own connection; it must not use the UI connection.
 std::string folderStateDatabasePath();
 void reportFolderStateError(void *owner);
