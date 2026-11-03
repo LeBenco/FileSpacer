@@ -3,15 +3,36 @@
 Add-Type -Path (Join-Path $PSScriptRoot 'ShellIntegration.cs')
 
 function Focus-ShellFixture([IntPtr]$Window,[string]$Name='') {
-    Activate-Ui $Window
-    $viewWindow=Use-UiView $Window { param($view) if ($Name) { $view.Select($Name) }; $view.Focus(); $view.Window }
-    Wait-Ui { [FileSpacerRegression.ShellIntegration]::ViewFocused($Window,$viewWindow) } 'keyboard focus inside the Shell view'
+    $viewWindow=[IntPtr]::Zero
+    try {
+        Activate-Ui $Window
+        $viewWindow=Use-UiView $Window { param($view) if ($Name) { $view.Select($Name) }; $view.Focus(); $view.Window }
+        Wait-Ui {
+            [FileSpacerRegression.Native]::GetForegroundWindow() -eq $Window -and
+                [FileSpacerRegression.Native]::ActiveWindowInOwningThread($Window) -eq $Window -and
+                [FileSpacerRegression.ShellIntegration]::ViewFocused($Window,$viewWindow)
+        } 'foreground owner and keyboard focus inside the Shell view' 200
+    } catch {
+        $failure=$_
+        try {
+            $evidence=[ordered]@{Owner=$Window.ToInt64();View=$viewWindow.ToInt64();Item=$Name;
+                Foreground=[FileSpacerRegression.Native]::GetForegroundWindow().ToInt64();
+                Active=[FileSpacerRegression.Native]::ActiveWindowInOwningThread($Window).ToInt64();
+                Focus=[FileSpacerRegression.Native]::FocusedWindowInOwningThread($Window).ToInt64();
+                Enabled=[FileSpacerRegression.Native]::IsWindowEnabled($Window);
+                Error=$failure.Exception.Message}
+            Write-Host ('FOCUS DIAGNOSTIC: '+($evidence | ConvertTo-Json -Compress))
+            Save-ShellCoverage 'focus-failure.json' $evidence
+            Save-ShellScreenshot $Window 'focus-failure.png' -WithoutActivation
+        } catch { Write-Warning ('Cannot collect focus diagnostics: '+$_.Exception.Message) }
+        throw $failure
+    }
 }
 function Start-ShellRename([IntPtr]$Window,[string]$Name) {
     Focus-ShellFixture $Window $Name
     $viewWindow=Use-UiView $Window { param($view) $view.Window }
     [FileSpacerRegression.Native]::Keys($Window,0x71,$false,$false)
-    Wait-Ui { [FileSpacerRegression.ShellIntegration]::RenameFocused($Window,$viewWindow) } 'native in-place rename editor inside the Shell view'
+    Wait-Ui { [FileSpacerRegression.ShellIntegration]::RenameFocused($Window,$viewWindow) } 'native in-place rename editor inside the Shell view' 200
     return $viewWindow
 }
 function Set-ShellRenameText([IntPtr]$Window,[IntPtr]$ViewWindow,[string]$Text) {
