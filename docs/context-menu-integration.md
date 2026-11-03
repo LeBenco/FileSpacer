@@ -1,10 +1,11 @@
 # Context-menu file manager switching
 
-The FileSpacer-provided command opens the other file manager. With FileSpacer as
-the default, the menu offers **Open in Windows File Explorer**. Otherwise it offers
-**Open in FileSpacer**. This applies independently to directories, drives, ZIP
-folders, network servers and network shares. A directory's background menu follows
-the directory association.
+With FileSpacer as the default, item menus offer both **Open in FileSpacer** and
+**Open in Windows File Explorer**. The FileSpacer command remains visible so the
+native Shell can select it for the default opening action. Otherwise the menu
+offers **Open in FileSpacer**. This applies independently to directories, drives,
+ZIP folders, network servers and network shares. A directory's background menu
+follows the directory association and shows only the alternative manager command.
 
 ## Implementation
 
@@ -14,9 +15,12 @@ changes that association. It only updates FileSpacer-owned menu registrations
 under the current user's `Software\Classes` subtree, including when the original
 FileSpacer command was installed for all users.
 
-When FileSpacer is the default, its installed `filespacer` verb receives the
-documented `ProgrammaticAccessOnly` value. Its command and COM `DelegateExecute`
-remain intact. A separate `filespacer.explorer` verb launches
+When FileSpacer is the default, synchronization removes `ProgrammaticAccessOnly`
+from item verbs, including values left by older versions. Native
+`CMF_DEFAULTONLY` menus omit programmatic-only verbs and can select another
+program instead, even when the association names `filespacer`. Only the directory
+background verb receives this visibility override. Commands and COM
+`DelegateExecute` values remain intact. A separate `filespacer.explorer` verb launches
 `"%SystemRoot%\explorer.exe" "%1"` (`%V` on a directory background), with the native
 Explorer icon and an English or French caption. Resetting the default removes
 this verb and the visibility override. Windows-owned verbs are unchanged.
@@ -35,6 +39,29 @@ exit code.
 
 Microsoft references: [static and programmatic-only Shell verbs](https://learn.microsoft.com/en-us/windows/win32/shell/context-menu-handlers)
 and [association-change notification](https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shchangenotify).
+
+## Default opening regression validation — 3 November 2026
+
+- The native `CMF_DEFAULTONLY` check failed before the correction. With the fix,
+  the host's group 29 passes **589 checks per language** in English and French,
+  covering all five classes, a competing manager, migration from hidden verbs,
+  both toggle directions and actual subprocess execution of the default action.
+- A separate probe obtained `IContextMenu` from a real host folder using its
+  installed registrations. Before synchronization it selected
+  `filespacer.explorer`; after the corrected Debug binary synchronized, it selected
+  `filespacer`. Original host visibility values were restored afterward.
+- Debug MSVC/NMAKE `/W4` succeeded without warnings. clang-tidy and Cppcheck
+  completed on `Settings.cpp` and `ContextMenuTests.cpp`: **PASS**, with no new
+  diagnostics compared with the original sources under the same configuration.
+  clang-tidy used the actual SDK 10.0.19041.0 and MSVC/ATL 14.44.35207 headers;
+  Cppcheck used its official Windows, ATL and SQLite models with Windows x64 and
+  C++14 Debug definitions, without system-header preprocessing.
+- These checks ran directly on the host. Physical Explorer double-click input
+  could not be validated because the UI control tool failed to capture the
+  window and deliver input. No installer was built or installation changed.
+
+The documented native default-action contract is described in
+[`IContextMenu::QueryContextMenu`](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shlobj_core-icontextmenu-querycontextmenu).
 
 ## Network roots
 
