@@ -84,6 +84,7 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
     bool requested = false, creating = false, closing = false, finished = false;
     const bool diagnostic;
     bool observingFailure = false;
+    bool initialContents = true;
     struct FilterCase { const wchar_t *query; int count; const wchar_t *single; };
     const FilterCase filterCases[5] = {
         {L"ÉLÉMENT-1.TXT", 1, L"élément-1.txt"},
@@ -223,6 +224,14 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
             actual, expected, static_cast<unsigned long>(hr),
             static_cast<unsigned long long>(enumDone), static_cast<unsigned long long>(baseline));
         if (!checked(hr, L"read native item count")) return false;
+        // Creating a native view can publish an empty EnumDone before its
+        // populated completion. Resume only from a subsequent public event;
+        // the watchdog still fails if the fixture never arrives.
+        if (initialContents && expected > 0 && actual == 0) {
+            log(L"WAIT: initial empty completion; require a later public enumeration event");
+            return false;
+        }
+        initialContents = false;
         if (actual == expected) return true;
         CComPtr<IPersistFolder2> folder;
         CComHeapPtr<ITEMIDLIST_ABSOLUTE> folderID;
@@ -1102,6 +1111,7 @@ public:
     STDMETHODIMP Notify(IShellView *, DWORD) override { return S_OK; }
     STDMETHODIMP OnNavigationPending(PCIDLIST_ABSOLUTE) override {
         if (closing || lifetimeTeardown) return E_ABORT;
+        initialContents = true;
         checked(browser.stopObserving(), L"cancel observation before navigation");
         generation = enumDone = 0; navigation = ready = queued = presentationPending = false;
         return S_OK;
