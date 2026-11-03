@@ -135,7 +135,15 @@ class LabelTests : public IServiceProvider, public ICommDlgBrowser2, public IExp
         if (SUCCEEDED(identity)) identity = SHGetNameFromIDList(folderID, SIGDN_DESKTOPABSOLUTEPARSING, &folderName);
         printf("Contents: folder=%ls (0x%08lX)\n", SUCCEEDED(identity) ? folderName.m_pData : L"<unavailable>",
             static_cast<unsigned long>(identity));
-        if (!expect(SUCCEEDED(folder->ItemCount(SVGIO_ALLVIEW, &count)) && count == ITEM_COUNT,
+        const HRESULT counted = folder->ItemCount(SVGIO_ALLVIEW, &count);
+        if (SUCCEEDED(counted) && count == 0) {
+            // Ignore only the transient empty completion at view creation.
+            // Another public EnumDone must arrive; no timer retries the test.
+            printf("WAIT: initial empty completion; require a later public EnumDone\n");
+            enumerated = queued = running = false;
+            return;
+        }
+        if (!expect(SUCCEEDED(counted) && count == ITEM_COUNT,
                 "real Shell fixture is enumerated")) {
             // Keep observing public events until the watchdog: a late fill and
             // an absent one are different Shell behaviors. The failure stands.
