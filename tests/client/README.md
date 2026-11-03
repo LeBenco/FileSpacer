@@ -1,89 +1,97 @@
-# Tests sur un poste client Hyper-V
+# Running tests in a Hyper-V client
 
-## Point d'entrée courant
+The [regression launcher](../regression/README.md) can run the selected cases in
+a dedicated Windows client while the development host remains usable.
 
 ```cmd
-tests.cmd
 tests.cmd -VM AgentWin10
 tests.cmd -VM AgentWin10 -Category Internal -Pattern "26-*"
 tests.cmd -VM AgentWin10 -Category UI -Pattern "16-redimensionnement-alt\03-*"
 ```
 
-L'absence de `-VM` conserve le mode local. Le nom désigne une VM déjà configurée,
-jamais une création implicite. Les filtres sélectionnent les mêmes cas que le banc
-local, avant la préparation. L'application, les tests natifs et les helpers C#
-sont compilés sur l'hôte ; seules leurs dépendances et les scripts sélectionnés
-sont envoyés dans l'invité. Les assemblies et exécutables sont vérifiés par SHA256.
-Les assertions ne changent pas. Un helper absent ou modifié provoque un échec,
-sans compilation invitée et sans repli vers le bureau hôte.
+Without `-VM`, tests run locally. A VM name refers to an existing configured VM;
+the launcher never creates one or falls back to local UI execution.
 
-Le poste client doit être allumé, avec une session graphique ouverte du compte
-de test. Fermer VMConnect, sans fermer la session ni arrêter la VM. Les tests
-s'exécutent sous un jeton limité dans cette session. L'utilisateur peut continuer
-à travailler sur l'hôte. Le contrôleur transfère si nécessaire une session invitée
-déconnectée vers sa console ; il ne déverrouille pas Windows.
+## Prepare the client once
 
-La tâche hôte protégée et les identifiants DPAPI existants sont réutilisés. Pour
-configurer **une nouvelle VM dédiée**, une seule fois et au moment choisi :
+Use a dedicated VM and a test account with a password. The VM must be running
+with that account's graphical session signed in and unlocked. Close VMConnect
+without signing out or shutting down the guest. Cases run under a limited token
+in that session. The controller can reconnect a disconnected session to the
+guest console; it cannot unlock Windows.
+
+At an agreed time, configure a new client from the repository root:
 
 ```cmd
 prepare-client-hyperv.cmd
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\client\Install-HyperVRunner.ps1 -VMName "NomVM"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\client\Install-HyperVRunner.ps1 -VMName "VMName"
 ```
 
-Le compte invité doit avoir un mot de passe. La configuration demande UAC et
-les identifiants Windows invités, puis les conserve chiffrés hors du dépôt.
-Ne pas exécuter cette procédure à chaque test. Une mise à jour du contrôleur
-utilise le même script avec `-UpdateController -VMName "NomVM"`, en conservant
-les identifiants. La version de protocole 2 permet les paquets du banc principal.
-Le contrôleur élevé exécute uniquement ses scripts protégés sur l'hôte ; les
-scénarios du checkout sont exécutés uniquement dans la VM.
+Setup requests UAC approval and the guest credentials. It stores the credentials
+encrypted with Windows DPAPI outside the repository. Ordinary runs reuse this
+configuration without prompts. Do not put passwords in scripts or reports.
 
-Les rapports sont récupérés automatiquement sous
-`build/regression/vm-<id>/output/regression/`, accompagnés des contrôles de
-session, de déploiement, de restauration et des journaux hôte. `-RunDirectory`
-demande une copie à un autre emplacement libre. Les codes de sortie des cas,
-du runner, de la tâche invitée et de la tâche hôte sont vérifiés. Les délais
-maximaux tiennent compte du nombre de cas sélectionnés et de `-TimeoutSeconds`.
-Les scénarios Everything nécessitent Everything dans l'invité ; l'installation
-de l'hôte n'est pas une installation du client. Les préconditions propres à chaque
-cas (écrans, providers Shell, bureau déverrouillé…) restent applicables.
+To update the protected controller while retaining its credentials:
 
-Le 30 octobre 2026, le catalogue complet a passé 132/132 cas dans AgentWin10
-(25 Internal, 107 UI), avec FileSpacer 1.2.3 Debug et un jeton invité limité,
-sans intervention pendant le passage. Le profil de test a été restauré,
-les données de production sont restées inchangées et le nettoyage n'a signalé
-aucune erreur. Les préconditions de session décrites plus haut restent requises.
+```cmd
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\client\Install-HyperVRunner.ps1 -VMName "VMName" -UpdateController
+```
 
-## Diagnostic minimal historique
+Do not reinstall it for each test. A protocol or protected-script mismatch
+fails explicitly and requires this deliberate update.
 
-Le prototype Windows Sandbox a été retiré après les mesures d'interférence avec
-le pointeur hôte et les limitations d'entrée lorsque sa fenêtre est minimisée.
-L'historique des essais et leurs limites sont conservés dans
-[development-history.md](../../docs/development-history.md).
+## Host and guest responsibilities
 
-`prepare-client-hyperv.cmd` et `test-agentwin10.cmd` conservent un diagnostic
-minimal (vrai dossier Shell, redimensionnement Alt-droit, fermeture normale),
-antérieur à l'intégration du banc. Il ne remplace pas `tests.cmd -VM` et son PASS
-ne constitue pas une validation des autres scénarios. `connect-agentwin10.cmd`
-sert uniquement au diagnostic manuel avec authentification Windows.
+Selection happens before preparation. The host compiles the application,
+native tests and C# helpers, then packages only the chosen cases and their
+dependencies. The guest checks executable/assembly SHA256 hashes and preparation
+arguments before running the same scripts and assertions as the local suite.
+A missing or changed helper fails; there is no guest compilation. Visual Studio,
+MSVC and the Windows SDK are not client prerequisites.
 
-La tâche hôte utilise un exécutable .NET sans console, `NoConsoleRunner.exe`,
-pour lancer uniquement son contrôleur PowerShell protégé. Une ancienne fenêtre
-PowerShell masquée pouvait apparaître au premier plan ; le lanceur actuel crée
-le processus avec `CreateNoWindow=true` et capture stdout/stderr et le code de
-sortie. Les sources du dépôt ne sont jamais exécutées élevées sur l'hôte.
+The elevated host task executes only its installed protected controller scripts.
+`NoConsoleRunner.exe` starts that controller without a console and captures its
+stdout, stderr and exit code. Checkout scenarios execute only in the guest, not
+as elevated host scripts. The transport uses PowerShell Direct and an interactive
+guest worker; input is sent to the guest desktop only.
 
-Le contrôle local du choix du bureau ne nécessite aucune VM ni connexion distante :
+Install any scenario-specific prerequisites in the guest. Everything on the host
+does not satisfy an Everything case in the VM. Display layout, DPI, Shell
+providers and external applications must match the case's requirements.
+
+## Reports and diagnosis
+
+Reports are collected automatically under `build/regression/vm-<id>/`:
+
+| Path | Contents |
+| --- | --- |
+| `output/regression/results.json`, `summary.json` | Case results and aggregate outcome. |
+| `output/regression/` | Case logs, application exits and captured evidence. |
+| `output/result.json` | Guest deployment identity, session and restoration checks. |
+| `connection.json`, `smoke.json` | Transport/session results; `smoke.json` is the transport's filename. |
+| `host-controller.stdout.log`, `host-controller.stderr.log` | Host controller output. |
+
+`-RunDirectory` requests a complete copy at another unused destination. Preserve
+all exit codes: case, runner, guest task and host task. Overall deadlines account
+for the selected case count and `-TimeoutSeconds`. A timeout, missing report,
+failed restoration or nonzero worker exit is not a successful run, even if some
+case reports say PASS.
+
+For transport diagnosis, `test-agentwin10.cmd` exercises a real Shell folder,
+Alt-right resizing and normal closure. It does not run the full regression
+catalogue. `connect-agentwin10.cmd` is for manual connection with Windows
+authentication, not unattended test input.
+
+Desktop-session selection can be checked without a VM connection:
 
 ```cmd
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\client\Test-DesktopSession.ps1
 ```
 
-Il exerce la sélection réelle du contrôleur : plusieurs processus Explorer dans
-une même session du compte invité désignent un seul bureau ; aucune session ou
-plusieurs sessions distinctes restent bloquantes.
+It tests the controller's selection logic: multiple Explorer processes in one
+guest-user session still identify one desktop; zero or multiple distinct
+sessions remain blocking conditions.
 
-Références Microsoft : [PowerShell Direct](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/powershell-direct),
-[tâches interactives](https://learn.microsoft.com/en-us/windows/win32/taskschd/security-contexts-for-running-tasks),
-[identifiants chiffrés DPAPI](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/export-clixml?view=powershell-5.1).
+References: [PowerShell Direct](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/powershell-direct),
+[interactive task security](https://learn.microsoft.com/en-us/windows/win32/taskschd/security-contexts-for-running-tasks),
+[DPAPI credential export](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/export-clixml?view=powershell-5.1).
