@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.3.1 — 2026-11-03
+
+- Fix default file-manager opening selecting another application instead of FileSpacer.
+
 ## 1.3.0 — 2026-11-02
 
 - Record detailed installer operations, command failures and full documentation-cleanup exceptions in persistent diagnostic logs.
