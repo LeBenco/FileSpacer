@@ -1,140 +1,67 @@
-# Context-menu file manager switching
+# Default-manager and context-menu integration
 
-With FileSpacer as the default, item menus offer both **Open in FileSpacer** and
-**Open in Windows File Explorer**. The FileSpacer command remains visible so the
-native Shell can select it for the default opening action. Otherwise the menu
-offers **Open in FileSpacer**. This applies independently to directories, drives,
-ZIP folders, network servers and network shares. A directory's background menu
-follows the directory association and shows only the alternative manager command.
+`Settings.cpp` manages FileSpacer's folder associations and alternate-manager
+menu entries. Windows still selects and invokes the default action. For usage,
+see [Windows integration](user-guide.md#windows-integration).
 
-## Implementation
+## Associations and menu visibility
 
-`Settings.cpp` reads the effective `HKEY_CLASSES_ROOT` association, including the
-first verb of a space- or comma-separated default-verb list. Synchronization never
-changes that association. It only updates FileSpacer-owned menu registrations
-under the current user's `Software\Classes` subtree, including when the original
-FileSpacer command was installed for all users.
+Read the effective `HKEY_CLASSES_ROOT` association independently for `Directory`,
+`Drive`, `CompressedFolder`, `NetServer` and `NetShare`. A default verb can be a
+space- or comma-separated ordered list: use its first verb rather than comparing
+the whole string. A server root such as `\\server` is `NetServer`, not
+`Directory`; omitting network classes leaves those targets with another manager.
 
-When FileSpacer is the default, synchronization removes `ProgrammaticAccessOnly`
-from item verbs, including values left by older versions. Native
-`CMF_DEFAULTONLY` menus omit programmatic-only verbs and can select another
-program instead, even when the association names `filespacer`. Only the directory
-background verb receives this visibility override. Commands and COM
-`DelegateExecute` values remain intact. A separate `filespacer.explorer` verb launches
-`"%SystemRoot%\explorer.exe" "%1"` (`%V` on a directory background), with the native
-Explorer icon and an English or French caption. Resetting the default removes
-this verb and the visibility override. Windows-owned verbs are unchanged.
+`setDefaultBrowser()` changes each association independently and reports errors
+per class. `synchronizeContextMenus()` only reconciles FileSpacer-owned menu
+registrations under the current user's `Software\Classes`; it never changes
+the default association or Windows-owned verbs. This also supplies user-level
+overrides for a FileSpacer command installed for all users.
 
-Integration settings synchronize after changing all five associations and retain
-independent error reporting. Normal startup synchronizes again; Debug `/test`
-startup skips this production integration. There is no registry watcher or resident
-helper. The installer calls the same operation through `/sync-context-menus`,
-which exits without opening a window or starting crash recovery. Removing the
-context-menu component or uninstalling also removes the per-user overrides through
-the installer's existing user-hive cleanup.
+When FileSpacer is the default, item menus retain **Open in FileSpacer** and add
+**Open in Windows File Explorer**. Otherwise they offer **Open in FileSpacer**.
+The directory background follows the directory association and shows only the
+alternative manager command.
 
-Unchanged menu values are not rewritten. Changes send `SHCNE_ASSOCCHANGED`;
-startup reports synchronization failures, and the installer checks the helper's
-exit code.
+The visibility distinction matters: `CMF_DEFAULTONLY` omits verbs marked
+`ProgrammaticAccessOnly`, even when the association names that verb. Keep
+FileSpacer's **item** verb visible so Shell default invocation still selects it.
+Apply `ProgrammaticAccessOnly` only to its **background** verb, which is not used
+to open an item. Preserve the registered command and `DelegateExecute` values.
 
-Microsoft references: [static and programmatic-only Shell verbs](https://learn.microsoft.com/en-us/windows/win32/shell/context-menu-handlers)
-and [association-change notification](https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shchangenotify).
+The separate `filespacer.explorer` verb invokes
+`"%SystemRoot%\explorer.exe" "%1"` (`%V` for a background). Resetting the default
+removes this alternate verb and FileSpacer's visibility override. Avoid rewriting
+unchanged values; notify `SHCNE_ASSOCCHANGED` after an actual menu change.
 
-## Default opening regression validation — 3 November 2026
+## Startup, settings and installer boundary
 
-- The native `CMF_DEFAULTONLY` check failed before the correction. With the fix,
-  the host's group 29 passes **589 checks per language** in English and French,
-  covering all five classes, a competing manager, migration from hidden verbs,
-  both toggle directions and actual subprocess execution of the default action.
-- A separate probe obtained `IContextMenu` from a real host folder using its
-  installed registrations. Before synchronization it selected
-  `filespacer.explorer`; after the corrected Debug binary synchronized, it selected
-  `filespacer`. Original host visibility values were restored afterward.
-- Debug MSVC/NMAKE `/W4` succeeded without warnings. clang-tidy and Cppcheck
-  completed on `Settings.cpp` and `ContextMenuTests.cpp`: **PASS**, with no new
-  diagnostics compared with the original sources under the same configuration.
-  clang-tidy used the actual SDK 10.0.19041.0 and MSVC/ATL 14.44.35207 headers;
-  Cppcheck used its official Windows, ATL and SQLite models with Windows x64 and
-  C++14 Debug definitions, without system-header preprocessing.
-- These checks ran directly on the host. Physical Explorer double-click input
-  could not be validated because the UI control tool failed to capture the
-  window and deliver input. No installer was built or installation changed.
+Normal startup synchronizes existing registrations; portable startup installs
+nothing. Debug `/test` skips production synchronization. Integration settings
+synchronize after association changes and retain separate errors for each class.
+Missing installed network verbs require an installation update, not a claim
+that setting the default succeeded fully.
 
-The documented native default-action contract is described in
-[`IContextMenu::QueryContextMenu`](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shlobj_core-icontextmenu-querycontextmenu).
+The installer calls `/sync-context-menus` without opening a folder or starting
+crash recovery, and checks its exit code. Component removal/uninstall removes
+FileSpacer's per-user overrides through the user-hive cleanup. Neither startup
+nor synchronization silently changes a user's default-manager choice.
 
-## Network roots
+## Testing the boundary
 
-Windows classifies a server root such as `\\server` as `NetServer`, and provides
-`NetShare` for network shares. Setting only `Directory`, `Drive` and
-`CompressedFolder` leaves server roots using Explorer's inherited `Folder` command.
-The installer now registers FileSpacer's existing command and COM delegate for
-both network classes; default selection, reset, menu synchronization and uninstall
-cleanup cover them too. Failures are reported separately for each class.
+Group `29-menu-gestionnaire` uses isolated Registry handles and the real
+`SHCreateDefaultContextMenu`. It checks independent class defaults, alternate
+verbs, preservation of commands/COM delegates, failure propagation and native
+default-only selection. Both `ShellExecuteEx` invocation paths launch a real
+test subprocess. Network shortcut resolution exercises the Shell's association
+lookup for the target, not just the `.lnk` file's class.
 
-Update the installed Folder Context Menu component, then select FileSpacer as the
-default again in Integration settings, or choose that option in the updated
-installer. Startup synchronization does not change the user's default choices.
-The Integration page detects missing network verbs and asks for an installation
-update rather than reporting success with incomplete registrations. Portable
-startup still installs nothing.
+These checks do not constitute physical Explorer double-click or installed
+upgrade/uninstall acceptance. Group 19 separately opens/cancels real item and
+background menus. Follow the [regression guide](../tests/regression/README.md)
+for execution and interpretation; keep run-specific results in its artifacts.
 
-These are the documented [predefined Shell object classes](https://learn.microsoft.com/en-us/windows/win32/shell/reg-shell-exts).
-
-### Network regression validation — 27 October 2026
-
-- The extended case failed against the previous implementation, then passed with
-  **484 checks per language** in English and French in `AgentWin10`.
-- A real saved `.lnk` targets `\\localhost`. The native Shell resolves it, and
-  `BHID_AssociationArray` / `IQueryAssociations` confirm that its server target
-  follows the selected manager in both directions under the isolated registry.
-  Menus cover both network classes; independent server/share errors and missing
-  registrations from an older installation are checked too.
-- Debug MSVC/NMAKE `/W4`: successful, no warnings. clang-tidy and Cppcheck completed
-  on `Settings.cpp`, `SettingsDialog.cpp` and `ContextMenuTests.cpp`, including
-  `Settings.h` and `resource.h`, with the Windows x64 configurations described
-  below and an unchanged-source comparison. **REVIEW**: new style suggestions
-  only (arrays, constants, braces, nested conditionals and direct includes); no
-  confirmed new functional defect, timeout or ATL fallback.
-- The installer was not built or run. This validates native shortcut resolution
-  and association lookup with isolated registrations; it does not claim a
-  physical Desktop double-click or an installed upgrade/uninstall test.
-
-## Validation — 27 October 2026
-
-- MSVC/NMAKE Debug, `/W4`: successful, no warnings.
-- `tests.cmd -VM AgentWin10 -Category Internal -Pattern "29-*"`: 324 checks per
-  language. The native test
-  checks both directions, repeated synchronization, separate class defaults,
-  external changes, native verb lists, failure propagation, preserved commands and
-  COM delegates, and the English/French captions. It redirects its own registry
-  handles to a unique tree and deletes that complete tree afterward.
-- Menus are built by the real `SHCreateDefaultContextMenu`, without displaying
-  UI. Both `ShellExecuteEx` paths, with and without `SEE_MASK_INVOKEIDLIST`, execute
-  an actual test subprocess through the hidden default command. These assertions
-  do not constitute a physical double-click test in Explorer.
-- The existing VM case `19-commandes-shell\04-MenusContextuels.ps1` passes:
-  selected-item and background menus open and cancel, preserving view contents
-  and selection. Guest reports confirm restored test state and unchanged
-  production preferences/database.
-- clang-tidy and Cppcheck completed on `Settings.cpp`, `main.cpp` and
-  `ContextMenuTests.cpp`, covering the modified `Settings.h` and `resource.h`.
-  Windows x64, C++14, Debug macros, real SDK 10.0.19041.0 and MSVC/ATL 14.44.35207
-  headers were used for clang-tidy; Cppcheck used its official Windows, ATL and
-  SQLite models without system-header preprocessing. Original application
-  sources were analyzed with the same configuration for comparison.
-- Static verdict: **REVIEW**. No new confirmed functional defect remains.
-  Suggestions remain about trailing return types, braces, constants and includes,
-  and Cppcheck flags `lstrlenW` and test logging parameter names. These are style
-  observations; no unrelated modernization was performed. An unhandled test-entry
-  exception found by Cppcheck was corrected and the analysis rerun. All modified
-  C++ files received both analyses; no ATL fallback or analysis timeout occurred.
-- No installer was built or executed. NSIS preprocessing stopped at the existing
-  `LockedList::AddModule` plugin lookup, before the changed installer sections;
-  installation, upgrade and uninstallation remain untested end to end.
-
-The first test-fixture attempt used a volatile registry parent in the dedicated
-VM. That prevented a later UI runner from creating stable test keys. The empty
-fixture-only parent was verified, recreated as stable and its empty saved test
-key restored. The native test now uses its own complete, nonvolatile tree; the
-subsequent UI run passed with state restoration confirmed.
+References: [Shell verbs](https://learn.microsoft.com/en-us/windows/win32/shell/context-menu-handlers),
+[default-menu construction](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-icontextmenu-querycontextmenu),
+[predefined Shell classes](https://learn.microsoft.com/en-us/windows/win32/shell/reg-shell-exts),
+[association-change notification](https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shchangenotify).
