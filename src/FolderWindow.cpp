@@ -2003,6 +2003,10 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             if (isWindowOperational() && viewHost.isViewNotification(wParam))
                 scheduleStateSave();
             return 0;
+        case MSG_FINISH_VIEW_INITIALIZATION:
+            if (isWindowOperational() && viewHost.isViewNotification(wParam))
+                finishViewInitialization();
+            return 0;
         case MSG_VIEW_MENU_PREVIEW: {
             auto preview = viewMenuPreview;
             if (preview && preview->serial == wParam && isWindowOperational()) preview->update();
@@ -3133,6 +3137,65 @@ void FolderWindow::finishViewInitialization() {
     auto current = [&]() {
         return isWindowOperational() && shellView == view && viewGeneration == generation;
     };
+    if (storedViewState && !initialStateApplied && searchText.empty()) {
+        // A newly created view can publish an empty completion before its real
+        // contents. Do not consume the rename snapshot if the native folder
+        // proves that this empty view is still transitional. A truly empty
+        // folder must remain a valid completed enumeration.
+        const ULONG_PTR enumeration = viewHost.enumerationSerial();
+        bool pendingContents = false;
+        {
+            restoringState = true;
+            struct ProbeGuard {
+                bool &restoring;
+                decltype(current) &valid;
+                ~ProbeGuard() { if (valid()) restoring = false; }
+            } probeGuard{restoringState, current};
+            CComQIPtr<IFolderView2> folderView(view);
+            CComPtr<IShellItem> target = item;
+            int count = -1;
+            SFGAOF attributes = SFGAO_FILESYSTEM;
+            const HRESULT counted = folderView ? folderView->ItemCount(SVGIO_ALLVIEW, &count) : E_NOINTERFACE;
+            if (!current()) return;
+            if (SUCCEEDED(counted) && count == 0 && target
+                    && SUCCEEDED(target->GetAttributes(SFGAO_FILESYSTEM, &attributes))
+                    && (attributes & SFGAO_FILESYSTEM)) {
+                if (!current()) return;
+                CComPtr<IShellFolder> folder;
+                CComHeapPtr<ITEMIDLIST_ABSOLUTE> targetID;
+                HRESULT result = SHGetIDListFromObject(target, &targetID);
+                if (!current()) return;
+                // The merged Desktop has additional view exclusions; its
+                // native enumeration is not evidence of visible contents.
+                if (SUCCEEDED(result) && !ILIsEmpty(targetID))
+                    result = folderView->GetFolder(IID_PPV_ARGS(&folder));
+                else result = E_NOINTERFACE;
+                if (!current()) return;
+                DWORD flags = 0;
+                HWND owner = hwnd;
+                if (SUCCEEDED(result)) result = nameFilter
+                    ? nameFilter->GetEnumFlags(folder, nullptr, &owner, &flags) : E_NOINTERFACE;
+                if (!current()) return;
+                CComPtr<IEnumIDList> contents;
+                if (SUCCEEDED(result)) result = folder->EnumObjects(nullptr, flags & ~static_cast<DWORD>(SHCONTF_ENABLE_ASYNC), &contents);
+                if (!current()) return;
+                CComHeapPtr<ITEMID_CHILD> child;
+                pendingContents = SUCCEEDED(result) && contents && contents->Next(1, &child, nullptr) == S_OK && child;
+            }
+        }
+        if (!current()) return;
+        if (pendingContents) {
+            if (viewHost.enumerationSerial() == enumeration) {
+                viewOptionsEnumerationBaseline = enumeration;
+                enumerationComplete = false;
+            } else if (enumerationComplete) {
+                // A newer public completion arrived reentrantly during the
+                // probe. Continue outside that call, without inventing one.
+                checkLE(PostMessage(hwnd, MSG_FINISH_VIEW_INITIALIZATION, generation, 0));
+            }
+            return;
+        }
+    }
     if (provisionalRestore) {
         if (recoverProvisionalView() && current()) scheduleStateSave();
         return;
