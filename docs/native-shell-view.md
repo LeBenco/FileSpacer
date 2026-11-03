@@ -1,198 +1,145 @@
-# FileSpacer — vue Shell et API publiques
+# Native Shell view architecture
 
-## Architecture retenue
+Read this note before changing view hosting, saved-state restoration or the
+boundary between Shell items and spatial windows. For a broader source map,
+see [Working on FileSpacer](README.md).
 
-FileSpacer conserve la vue système hébergée par `IExplorerBrowser`. Le Shell
-assure le rendu, l'énumération, les images, les modes d'affichage et les commandes
-de fichiers. `ShellViewHost` utilise les interfaces COM publiques ; l'application
-ne cherche plus les contrôles enfants du Shell et ne les sous-classe plus.
-Une adaptation facultative des libellés utilise les notifications ListView
-reçues par la fenêtre publique de la vue et les messages `LVM_*` correspondants.
-L'ancienne vue entièrement réimplémentée
-est abandonnée pour limiter le code de rendu et d'interaction à maintenir.
+## Responsibilities
 
-La configuration spatiale demande `FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING`,
-sans imposer `FVO_VISTALAYOUT`. Les dossiers virtuels choisissent leur présentation
-initiale. Navigation et énumération sont observées par les événements publics ;
-les générations d'observation sont invalidées avant détachement ou fermeture.
-Les temporisations de sauvegarde ne servent pas à déclarer une vue prête.
+`ShellViewHost` embeds `CLSID_ExplorerBrowser`. Windows owns enumeration,
+rendering, icons, view modes and file operations. `FolderWindow` owns spatial
+navigation policy and coordinates persistence. The production options are
+`FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING`, without forcing `FVO_VISTALAYOUT`;
+virtual folders can choose their initial presentation. `EBO_NOPERSISTVIEWSTATE`
+keeps per-folder persistence under FileSpacer's control.
 
-`ShellViewSettings`, `ShellViewSelection` et `ShellViewIcons` raccordent les API
-publiques à la persistance SQLite existante. `ShellViewFilter` fournit le filtre
-par nom. Les formats de stockage existants restent lisibles. Aucune property
-bag par fenêtre ni nouvelle base de registres de vues n'est ajoutée.
+| Component | Responsibility |
+| --- | --- |
+| `ShellViewHost` | Browser lifetime, navigation, view access and public event observation. |
+| `ShellViewSettings` | Capture/apply mode, icon size, flags, columns, sorting and grouping. |
+| `ShellViewSelection` | Selection, focused item and one-shot reopen/scroll snapshot. |
+| `ShellViewIcons` | Native item identities and free icon positions. |
+| `ShellViewFilter` | Name filtering through `IFolderFilter`. |
+| `FolderStateStore` | Independently present state parts, transactions, locking and retention. |
 
-Les commandes de création, renommage, suppression, copie et déplacement passent
-par les mécanismes Shell existants. Les gestes Alt de FileSpacer utilisent
-Win32 et les informations MSAA publiques. Les tests peuvent observer les
-contrôles Windows pour vérifier un geste ; cette instrumentation n'est pas une
-dépendance de l'application aux contrôles internes du Shell.
+View operations use public COM interfaces rather than discovering or
+subclassing Shell child controls. The selected-label background adaptation is
+a narrow exception described below. Tests can inspect controls to observe a
+gesture; that instrumentation is not an application dependency.
 
-## Tri mélangé facultatif
+## Readiness, restoration and lifetime
 
-Dans Affichage → Fichiers, « Mélanger les dossiers et les fichiers dans le tri »
-active un fournisseur de dossier pour les répertoires du système de fichiers.
-Le réglage est désactivé par défaut. Les dossiers virtuels et archives conservent
-leur fournisseur Windows. Le tri agit en vues Détails, Liste et dans les modes à
-icônes lorsque le rangement automatique est actif. En positions libres, le
-fournisseur reste actif et les positions restent libres : aucun changement de
-fournisseur n'accompagne le rangement automatique.
+Navigation completion, view creation and completed enumeration are distinct
+events. `OnViewCreated` does not mean the contents are ready. Observe public
+signals; neither elapsed time nor an item count proves readiness.
 
-`FileSpacerFolder.dll` implémente les interfaces publiques `IShellFolder2` et
-`IPersistFolder2`, et crée la vue native par `SHCreateShellFolderView`.
-`IExplorerBrowser` reste l'hôte. Seule la racine sous la jonction porte un
-identifiant propre au fournisseur, le PIDL absolu du dossier affiché ; les
-éléments du dossier sont les identifiants du dossier Windows sous-jacent,
-transmis tels quels. Énumération, métadonnées, icônes, menus, données de
-transfert et actions sont déléguées à ce dossier sans traduction ; un sous-dossier
-est enveloppé de la même manière. Le fournisseur compare les valeurs de colonnes
-sans ajouter de priorité aux dossiers ; les comparaisons d'identité restent
-celles de Windows.
+Notifications carry a view observation generation. Invalidate it before
+unsubscribing or destroying a view, and ignore queued messages from an earlier
+generation. Consuming a one-shot restoration must happen before reentrant COM
+calls. If applying view settings causes re-enumeration, wait for a subsequent
+enumeration-complete signal before restoring positions/selection or saving.
 
-La racine est un point de jonction Shell interne, `ShellView.{CLSID}`, dans les
-données locales de FileSpacer. Son enregistrement COM est propre à l'utilisateur ;
-aucune entrée n'est ajoutée au Bureau ou à Ce PC. Le mode de test utilise un CLSID
-et un dossier distincts, supprimés par ses scénarios. L'installateur distribue la
-DLL avec l'application et retire l'inscription qu'il possède à la désinstallation.
+Shell calls, menus and refresh can pump messages. Hold the necessary COM
+references across these calls, but also recheck whether the owner window and
+view still exist. A reference protects the C++ object, not its `HWND` or browser
+resources. Route refresh and view verbs through `FolderWindow::refreshView()`
+and `invokeViewCommand()` so navigation-depth guards defer destruction safely.
+A stale continuation must not restore a view or schedule another state save.
 
-Le contrat `IMixedFolder` appartient à FileSpacer et se réduit à `NativeItem` :
-un élément de la vue porte déjà l'identifiant natif, seul son parent diffère, et
-cette méthode rend le vrai objet Shell pour les fenêtres, les commandes externes
-et le statut. Les données SQLite reçoivent les identifiants de la vue tels quels,
-qui sont les identifiants natifs. Ainsi, l'activation, la désactivation et la
-réouverture partagent sélection, focus et positions sans changer le format de la
-base. La vue native s'inscrit aux notifications du dossier réel par
-`SFVM_GETNOTIFY` ; aucune notification n'est relayée.
+Geometry, view settings and icon positions are separate snapshot parts. Capture
+failure must leave the known part intact. In particular, filtered position
+capture returns `S_FALSE`; persist positions only on `S_OK`. Empty, filtered
+or incompletely enumerated contents are not a complete saved icon layout.
+Transient View-menu previews must also stay out of durable state.
 
-Les cas `30-tri-melange` vérifient le tri réel, les changements de préférence,
-les notifications et les commandes Shell existantes avec le fournisseur actif.
-Ils complètent les tests natifs de persistance et de rendu ; leur présence seule
-ne constitue pas une validation de la suite complète.
+Selection and focused item are restored independently, once, without stealing
+keyboard focus. To clear selection, `SelectItem(nullptr, SVSI_DESELECTOTHERS)`
+must not include `SVSI_NOTAKEFOCUS`; that flag belongs on a targeted item.
+Navigating upward does not automatically select the source folder or replace
+the selection of an already-open parent.
 
-[Comparaison de performances et choix du fournisseur conditionnel](validation-mixed-sorting.md).
+## Mixed file/folder sorting
 
-Références : [vue native](https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shcreateshellfolderview),
-[points de jonction](https://learn.microsoft.com/en-us/windows/win32/shell/nse-junction),
-[notifications](https://learn.microsoft.com/en-us/windows/win32/shell/sfvm-getnotify).
+When mixed sorting is enabled for a filesystem folder, `MixedFolder` supplies a
+Shell junction rooted in FileSpacer's local data, with a per-user COM
+registration. `FileSpacerFolder.dll` implements `IShellFolder2` and
+`IPersistFolder2` and creates the native view through `SHCreateShellFolderView`.
+`IExplorerBrowser` remains the host. Virtual folders and archives retain their
+Windows provider. The application and DLL must be deployed together.
 
-## Navigation et Panneau de configuration
+Only the provider root has its own junction identity. Children keep the native
+folder's relative PIDLs unchanged. Enumeration, metadata, icons, context menus,
+transfer objects and file actions delegate to the underlying folder. The
+provider compares column values without the usual folder-first priority;
+identity comparisons remain native. Free-position mode keeps this provider
+active and preserves icon positions without imposing automatic arrangement.
 
-La sélection automatique du dossier d'origine lors d'une remontée est retirée
-pour des raisons d'ergonomie : elle ajoutait un dossier involontaire à une
-sélection faite avec Ctrl et pouvait provoquer l'ouverture des deux dossiers.
-Ce retrait concerne aussi les ancêtres, la barre de chemin et l'accès rapide.
-La sélection d'un parent déjà ouvert et les instantanés de réouverture restent
-conservés ; la remontée ne doit pas les remplacer.
+The private `IMixedFolder::NativeItem` contract crosses FileSpacer's DLL boundary.
+Use `nativeShellItem()` / `nativeViewSelection()` when an operation needs the
+real filesystem item outside the provider. SQLite keeps the native child
+identifiers, allowing the same selection and positions across preference
+changes. Do not wrap or reinterpret child PIDLs. The native view subscribes to
+the real root's changes through `SFVM_GETNOTIFY`, rather than relaying duplicate
+notifications from the junction.
 
-Le Panneau de configuration s'ouvre dans Windows par
-`IOpenControlPanel::Open(nullptr, nullptr, nullptr)`. Les racines sont comparées
-par leurs identités Shell, sans décoder les PIDL ou comparer des noms traduits.
-Le dossier FileSpacer source reste ouvert avec sa sélection. Aucun site de
-navigation déduit ou API privée n'est utilisé pour tenter un hébergement interne.
+Registration and the junction are isolated in `/test` mode. Test cases must
+remove only their own registration and directory. Normal uninstall removes
+the registration owned by FileSpacer.
 
-## Écarts initiaux de 1.1 et comportements rétablis
+## Selected-name background and scrolling
 
-Trois écarts avaient été acceptés pour la release 1.1.0, après validation du
-Panneau externe. Le clic d'activation a ensuite été rétabli ; depuis 1.1.3,
-le fond opaque est également disponible pour un unique nom sélectionné en mode
-Icônes, dans le périmètre décrit ci-dessous.
+`ShellViewLabels.h` optionally fills an opaque background behind the single
+selected item's label in Icons mode. Windows still draws and expands the text.
+Multiple selection, focus-only items and other modes retain native rendering.
 
-- La sélection multiple et les modes autres qu'Icônes conservent le rendu natif.
-  Aucun volet ni dépliage personnalisé de tous les noms sélectionnés n'est livré.
-- La réouverture restaure sélection et focus, puis, en vues Détails et Liste,
-  ramène en haut la première ligne affichée à la fermeture. Capture : première
-  entrée de `IFolderView::Items` dont `GetItemPosition` tombe dans la zone
-  cliente de la fenêtre de vue, sous l'en-tête de colonnes (hauteur lue par le
-  rôle MSAA `ROLE_SYSTEM_COLUMNHEADER`, comme les gestes Alt). Restitution :
-  `SelectItem(SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS)` sur le dernier élément
-  puis sur l'ancre, sous `SetRedraw(FALSE)`, ce qui aligne l'ancre en haut
-  quelles que soient les barres de défilement. Les vues à icônes répondent en
-  coordonnées non défilées : l'ancre y est le premier élément et le mécanisme
-  laisse la vue en haut, comportement standard sans détection. L'offset exact
-  n'est pas restitué : le flux `IShellBrowser::GetViewStateStream` est bien
-  demandé par la vue, mais sous Windows 10 il ne contient que les réglages de
-  présentation. `IFolderView2::GetVisibleItem` énumère tous les éléments de la
-  vue, pas la zone affichée (sonde du 24 octobre 2026) : ne pas s'en servir.
+The adaptation subclasses only the public view window returned by
+`IShellView::GetWindow`, on its own thread. It reads `NM_CUSTOMDRAW` from a
+verified ListView belonging to that view and uses documented ListView reads.
+Check actual selection rather than relying solely on the drawing notification's
+`CDIS_SELECTED`. Preserve `DefSubclassProc` and its result; do not add
+`CDRF_SKIPDEFAULT`. The callback holds no FileSpacer pointer and removes itself
+at `WM_NCDESTROY`.
 
-Le clic d'activation est rétabli depuis l'audit du 24 octobre 2026 : lorsqu'une
-fenêtre est activée par un clic (`WM_ACTIVATE` avec `WA_CLICKACTIVE`), Windows
-publie ensuite le message bouton vers la fenêtre cliquée ; la boucle de messages
-de FileSpacer écarte ce premier `WM_LBUTTONDOWN` quand il vise le fond de la vue
-(rôle MSAA `ROLE_SYSTEM_LIST`), sans Alt, et que la préférence « Conserver la
-sélection à l'activation » est active. Un clic sur un élément, un clic droit, les
-en-têtes et ascenseurs, les gestes Alt et le clic dans une fenêtre déjà active
-gardent leur traitement natif ou FileSpacer. Un rectangle de sélection commencé
-par le clic d'activation est absorbé ; un second appui est nécessaire.
-`WM_MOUSEACTIVATE` n'atteint pas le cadre à travers les fenêtres du Shell et
-n'est donc pas utilisé.
+This notification path is an implementation-dependent rendering adaptation,
+not a general Shell contract for label expansion. If its prerequisites or
+notifications disappear, leave the standard drawing intact. Do not generalize
+it into a custom multi-label renderer or use it for view operations.
 
-## Nom complet en sélection simple (depuis 1.1.3)
+Reopening Details/List views restores a first-visible-row anchor, not an exact
+pixel offset. `ShellViewSelection` finds it from `IFolderView::Items` and item
+positions inside the view's client rectangle, below the accessible column
+header. Restoration ensures the last item, then the anchor, is visible under
+redraw suppression, without taking focus. Icon views use unscrolled positions
+and reopen at the top. Do not treat `IFolderView2::GetVisibleItem` as a viewport
+query, or assume `GetViewStateStream` contains a scroll offset.
 
-L'option existante est réactivée en français et en anglais, sans changer sa
-valeur enregistrée. En vue Icônes, une adaptation facultative de `NM_CUSTOMDRAW`
-remplit le fond du libellé de l'unique élément effectivement sélectionné, puis
-laisse Windows dessiner le texte. Elle ne force ni le dépliage ni le repliage.
-La sélection multiple, le focus seul et les autres modes restent entièrement
-natifs ; Windows peut donc encore y déplier le nom focalisé.
+## Activation and external folders
 
-Le callback sous-classe (`SetWindowSubclass`) la fenêtre de vue fournie par
-`IShellView::GetWindow`, qui appartient au Shell, sur le même thread. Il ne
-recherche pas et ne sous-classe pas les contrôles enfants de cette fenêtre.
-L'émetteur doit être un ListView appartenant à cette vue avant toute lecture de
-sa notification. Les messages documentés du contrôle sont lus sans modifier
-sélection, focus ou placement. La présence d'un ListView découle du profil
-`FVO_CUSTOMPOSITION`, dont la documentation indique qu'il sélectionne l'ancienne
-vue « pour l'instant » : si une version de Windows change ce comportement,
-l'adaptation cesse silencieusement et le rendu reste natif ; le jeu 23 compare
-les images rendues et le détecterait.
+With selection-preserving activation enabled, a plain left click on the
+background of an inactive view activates it without clearing selection. The
+message loop uses `WM_ACTIVATE` / `WA_CLICKACTIVE` and the actual Shell-view hit
+target before discarding that first background button-down. A title-bar click
+must not arm suppression of a later client click. Item clicks, right clicks,
+headers, scrollbars and active-window clicks retain their normal handling.
+`WM_MOUSEACTIVATE` on the outer frame is not a reliable hook through Shell-owned
+windows.
 
-Le traitement du Shell et son résultat sont préservés ; `CDRF_SKIPDEFAULT` n'est
-jamais ajouté. La disparition des notifications, un échec d'installation ou des
-préconditions indisponibles laissent le dessin standard se poursuivre. Aucun
-détecteur de réussite graphique ni reconstruction de vue n'est introduit.
-Le callback sans pointeur vers FileSpacer se retire à `WM_NCDESTROY`.
-Appliquer la préférence met à jour les fenêtres déjà ouvertes.
+Control Panel opens externally through `IOpenControlPanel::Open`. Compare Shell
+identities, not translated names or decoded PIDLs. Keep the source folder and
+its selection intact.
 
-[Validation de cette modification](validation-single-selection-labels.md).
-Les essais exploratoires précédents restent dans
-[le premier rapport](native-label-draw-investigation.md) et
-[le rapport sur la sélection multiple](native-multi-label-investigation.md).
+## Tests and references
 
-## Régression maintenue
-
-La commande de référence est `tests.cmd` ; le catalogue courant figure dans le
-[guide des tests](../tests/regression/README.md). Elle inclut le
-banc Shell réel dans la configuration de production : `18-vue-shell-native/02-Persistance`.
-Il teste les réglages, la sélection, le focus, les positions, le filtrage et la
-destruction/recréation avec SQLite. Ne pas ajouter l'exécution du lanceur natif
-à une exécution complète qui contient déjà ce groupe.
-Le jeu `23-noms-selection-simple/01-Rendu` vérifie séparément le fond opaque
-en sélection simple et le rendu natif identique dans les autres sélections.
-
-Les 50 cas Alt, les commandes Shell, Ce PC, le Panneau externe, la navigation,
-les préférences, les notifications, la fermeture et les autres contrats de
-stockage restent couverts. Les tests internes d'erreurs partielles et de durée
-de vie sont conservés : ils ne se réduisent pas au succès d'une vue réelle.
-
-Les comparaisons de profils ExplorerBrowser, les sondes d'hébergement du Panneau
-et le générateur de bilan ponctuel sont retirés. Les rapports incrémentaux et
-leurs sources restent dans l'historique de la branche de migration. Les tests
-de comportement ne sont pas supprimés pour transformer un échec en succès.
-Le double passage de fermeture initiale selon une préférence de rendu désormais
-inactive est remplacé par quatre fermetures de la vue de production.
-
-Le jeu `13-preferences/01-FenetresOuvertes` vérifie la disponibilité et
-l'application de l'option de libellé, ainsi que la disponibilité du clic
-d'activation ; son passage ciblé est consigné dans la
-[validation de la sélection simple](validation-single-selection-labels.md).
-Le groupe `28-apercu-affichage` couvre les aperçus du menu Affichage et leur
-préférence, ajoutés en 1.1.9. La présence de ces tests ne vaut pas exécution
-complète du catalogue : les résultats datés et leurs limites restent dans
-[l'historique de validation](development-history.md).
-
-## Références
+The [regression guide](../tests/regression/README.md) maps behavior to groups.
+Start with group 18 for real Shell/SQLite persistence, 19 for commands, 21 for
+activation, 23 for selected-name rendering, 28 for transient View previews, and
+`30-tri-melange` for provider boundaries. Injected-failure/lifetime cases cover
+paths that a successful real-view test cannot establish.
 
 - [IExplorerBrowser](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-iexplorerbrowser)
 - [IFolderView2](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-ifolderview2)
 - [FOLDERVIEWOPTIONS](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/ne-shobjidl_core-folderviewoptions)
+- [Native folder views](https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shcreateshellfolderview)
+- [Namespace junctions](https://learn.microsoft.com/en-us/windows/win32/shell/nse-junction)
+- [SFVM_GETNOTIFY](https://learn.microsoft.com/en-us/windows/win32/shell/sfvm-getnotify)
 - [IOpenControlPanel::Open](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-iopencontrolpanel-open)
