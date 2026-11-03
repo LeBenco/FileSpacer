@@ -1,7 +1,7 @@
 ﻿param(
     [string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
     [ValidateSet('All','Internal','UI')][string]$Category='All',
-    [ValidateSet('All','Application','Installer')][string]$Scope='All',
+    [ValidateSet('All','Application')][string]$Scope='All',
     [string]$Pattern='*',
     [ValidateRange(30,3600)][int]$TimeoutSeconds=300,
     [string]$RunDirectory='',
@@ -29,7 +29,7 @@ foreach ($test in $tests) {
     $first=Get-Content -LiteralPath $test.FullName -TotalCount 1
     if ($first -notmatch '^# Test-Category: (Internal|UI)$') { throw "Missing test category: $relative" }
     $kind=$Matches[1]
-    $testScope=if($relative -like '32-installeur\*'){'Installer'}else{'Application'}
+    $testScope='Application'
     if (($Scope -eq 'All' -or $Scope -eq $testScope) -and ($Category -eq 'All' -or $Category -eq $kind)) {
         $selected+=@{ File=$test; Relative=$relative; Category=$kind; Scope=$testScope }
     }
