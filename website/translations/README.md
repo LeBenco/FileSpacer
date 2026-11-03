@@ -65,12 +65,12 @@ not provide a European Portuguese translation in its official
 | Português (Portugal) | Explorador de Ficheiros | pasta | barra de tarefas | atalhos de teclado |
 | Ελληνικά | Εξερεύνηση αρχείων | φάκελος | γραμμή εργασιών | συντομεύσεις πληκτρολογίου |
 
-Style comparison checked on 2026-10-30: [Microsoft File Explorer](https://support.microsoft.com/fr-fr/windows/experience/fileexplorer/file-explorer-in-windows)
+Style references: [Microsoft File Explorer](https://support.microsoft.com/fr-fr/windows/experience/fileexplorer/file-explorer-in-windows)
 for large commercial software, [Everything search](https://www.voidtools.com/support/everything/searching/)
 for a smaller utility, and GNOME Files in [French](https://help.gnome.org/gnome-help/files-browse.html.fr)
 and [German](https://help.gnome.org/gnome-help/files-browse.html.de) for open-source documentation.
 
-Terminology references checked on 2026-10-28:
+Terminology references:
 
 - French: [File Explorer](https://support.microsoft.com/fr-fr/windows/experience/fileexplorer/file-explorer-in-windows), [keyboard shortcuts](https://support.microsoft.com/fr-fr/accessibility/windows/keyboard-shortcuts-in-windows).
 - German: [File Explorer](https://support.microsoft.com/de-de/windows/experience/fileexplorer/file-explorer-in-windows), [keyboard shortcuts](https://support.microsoft.com/de-de/accessibility/windows/keyboard-shortcuts-in-windows).
