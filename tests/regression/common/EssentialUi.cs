@@ -458,7 +458,7 @@ namespace FileSpacerRegression {
             throw new InvalidOperationException("No uncovered caption point is available for an activation click. "+
                 "Target="+window+", bounds=("+rect.Left+","+rect.Top+","+rect.Width+","+rect.Height+
                 "), foreground="+GetForegroundWindow()+", covered samples="+covered+", non-caption samples="+nonCaption+
-                ", last covering HWND="+lastCover+", last hit-test="+lastHit+".");
+                ", last covering HWND="+lastCover+" ("+Class(lastCover)+"), last hit-test="+lastHit+".");
         }
         public static IntPtr ActiveWindowInOwningThread(IntPtr window) {
             uint pid; uint thread=GetWindowThreadProcessId(window,out pid);
