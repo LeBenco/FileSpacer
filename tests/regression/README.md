@@ -10,8 +10,9 @@ et `pattern=*` exécutent toute la suite applicative ; les mêmes catégories et
 motifs que le lanceur local permettent un passage ciblé. Le lancement autonome
 est manuel ; la release réutilise aussi ce workflow. Il ne publie aucune release
 et sélectionne exclusivement le périmètre
-`Application` : les tests d'installateur restent disponibles localement, mais
-aucun installateur ni documentation hors ligne n'est construit par ce workflow.
+`Application` : aucun installateur ni documentation hors ligne n'est construit
+par ce workflow. Les anciens tests d'installateur et d'inventaire documentaire
+ont été retirés du dépôt ; le catalogue est identique en local et sur GitHub.
 
 La révision est résolue une seule fois : application et tests
 proviennent du même commit. Une ancienne révision doit contenir le lanceur
@@ -34,7 +35,13 @@ courts ; pour les cas UI, le déplacement avec contenu est activé puis restaur�
 La progression du banc est affichée pendant l'exécution. Le mode est
 réservé à GitHub Actions et incompatible avec `-VM` ou `-Prepared`.
 
-Le résumé donne le SHA testé et le bilan du banc. Les logs de compilation,
+Le résumé donne le SHA testé et un tableau par catégorie Internal/UI : total,
+réussis, échoués, bloqués et non exécutés. Les cas qui n'ont jamais démarré sont
+comptés séparément lorsque leur catégorie n'est pas disponible. Un second tableau
+liste tous les échecs et blocages avec le nom du cas, le code de sortie et une
+raison courte. Les erreurs du worker et du nettoyage restent invalidantes,
+même si tous les cas ont réussi. La version Markdown est aussi archivée dans
+`regression-summary.md`. Les logs de compilation,
 de préparation, les rapports JSON et les captures sont conservés 14 jours
 dans l'artefact `regression-<run>-<tentative>`, même après un échec. Un cas
 bloqué, non exécuté ou un résumé absent empêche la validation. L'environnement
@@ -44,12 +51,17 @@ Ce passage sur Windows Server 2022 ne remplace pas une validation spécifique
 de Windows 10. Le résumé liste les cas en échec, leurs codes de sortie et leur
 première erreur, sans masquer les erreurs du worker ou du nettoyage.
 
-La release appelle la même suite applicative comme préalable à sa publication.
-Elle génère ensuite son propre installateur et sa documentation embarquée,
+La release appelle la même suite applicative avant toute préparation de documentation
+ou de packaging. Elle génère ensuite son propre installateur et sa documentation embarquée
+depuis le SHA exact sélectionné pour les tests,
 contrôle la version et publie l'artefact construit, sans suite dédiée de tests
 d'installation. Une construction NSIS réussie n'est pas une validation de
 l'installation réelle. Les erreurs de release gardent un résumé court et un
-artefact de diagnostic distinct.
+artefact de diagnostic distinct. En cas d'échec des tests, leur résumé est affiché
+dans l'exécution de release et les travaux suivants sont ignorés. L'appel
+`workflow_call` reste dans cette même exécution : il ne déclenche pas un second
+workflow autonome ni une notification d'exécution supplémentaire. Les emails
+effectifs dépendent des préférences de notification GitHub du destinataire.
 
 ### Poste local ou VM dédiée
 
@@ -87,9 +99,10 @@ tests ; le lanceur ne déverrouille pas Windows.
 
 Pour sélectionner un périmètre :
 
-`-Scope Application|Installer|All` sélectionne le produit testé ;
+`-Scope Application|All` sélectionne la suite applicative ; les deux valeurs
+sont désormais équivalentes, `All` restant accepté pour les appels existants.
 `-Category Internal|UI|All` sélectionne la nature des tests. Le défaut local
-reste `-Scope All`. Les deux filtres se combinent avec `-Pattern`. Le mode
+reste `-Scope All`. Les filtres se combinent avec `-Pattern`. Le mode
 `-ListOnly` donne la sélection JSON sans compiler ni ouvrir de fenêtre.
 
 ```cmd
@@ -148,7 +161,7 @@ l'identité des artefacts préparés. Ils restent nécessaires même après un p
 complet réussi. Les petits lanceurs des groupes 12, 15 et 16 sélectionnent des
 préférences, gestes ou modes distincts : leur taille ne les rend pas temporaires.
 
-Seuls les six fichiers de programmes et scripts de
+Les six fichiers de programmes et scripts de
 [l'étude historique du placement](../placement-simulation/README.md) sont
 supprimés : ils comparaient l'ancienne grille et des prototypes sans appeler le
 placement de production. Les résultats historiques sont conservés. Les deux cas
@@ -195,7 +208,7 @@ conservés dans [l'historique](../../docs/development-history.md).
 
 ## Couverture conservée
 
-Le catalogue courant contient 132 cas : 25 Internal et 107 UI. Ces nombres
+Le catalogue courant contient 156 cas : 33 Internal et 123 UI. Ces nombres
 décrivent les scénarios disponibles, pas un passage complet validé.
 
 Pour le renommage, le banc vérifie le focus dans la fenêtre de la vue Shell,
@@ -206,8 +219,8 @@ Les attentes ne rejouent aucune touche et les échecs conservent leur première 
 
 | Groupe | Jeux | Contrat |
 |---|---:|---|
-| 00-banc | 4 | Rapports, sorties de processus, nettoyage du lanceur, intégrité des artefacts client et refus de saisie de renommage dans le champ de recherche. |
-| 01-stockage-sqlite | 4 | Stockage, identités spatiales, adaptateurs et géométrie. |
+| 00-banc | 6 | Rapports, sorties de processus, nettoyage du lanceur, intégrité et exécution des artefacts client, refus de saisie de renommage dans le champ de recherche et synthèse Markdown GitHub. |
+| 01-stockage-sqlite | 17 | Stockage, identités spatiales, adaptateurs, géométrie et reprise après fermeture ou arrêt brutal. |
 | 02-retention-quota | 1 | Conservation et limites des données. |
 | 03-menus | 1 | Réentrance et durée de vie des commandes de menus. |
 | 04-shell-sta | 1 | Références Shell/STA et durée de vie du processus. |
@@ -217,7 +230,7 @@ Les attentes ne rejouent aucune touche et les échecs conservent leur première 
 | 08-suppression | 2 | Stockage, suppressions directes et d’ancêtres via le Shell ou le système de fichiers, fermeture groupée et réouverture dans un même processus, conservation des fenêtres voisines et nettoyage SQLite. |
 | 09-historique | 2 | Historique des fenêtres fermées ; réessai des Jump Lists après lien ou commit refusé et retour à un ancien modèle après remplacement partiel. |
 | 10-manifeste-maj | 1 | Validation du manifeste de mise à jour. |
-| 11-session-maj | 1 | Conservation de la session pendant une mise à jour. |
+| 11-session-maj | 2 | Conservation de la session pendant une mise à jour. |
 | 12-navigation-spatiale | 6 | Politique Ctrl, parent existant et remontée sans sélection automatique. |
 | 13-preferences | 10 | Apply/Cancel, refus des raccourcis invalides, propagation entre processus, unicité séquentielle et concurrente, réservation en cours d'initialisation/fermeture, appelant fermé et mutex abandonné ; recherche et persistance sous filtre, icône À propos à 48 pixels à 96 DPI. |
 | 14-disposition | 1 | Visibilité et disposition des contrôles de FileSpacer. |
@@ -230,14 +243,16 @@ Les attentes ne rejouent aucune touche et les échecs conservent leur première 
 | 21-clic-activation | 2 | Clic sur le fond d'une fenêtre inactive : activation sans perte de sélection, clic d'élément, préférence désactivée ; activation par la légende suivie d'un clic sur le fond. |
 | 22-verrouillage | 2 | Activation, menu natif, référence visible, géométrie/vue temporaires, placements individuels, déverrouillage, confirmation et suppression globale entre processus, réouverture et redémarrage ; rendu ICO natif, transparence, DPI et couleurs de contraste élevé. |
 | 23-noms-selection-simple | 1 | Fond opaque du libellé natif en sélection simple ; rendu natif conservé en sélection multiple, sans sélection et avec le focus seul ; sélection, positions et captures valides. |
-| 24-raccourcis | 3 | Onglet natif FR/EN, 2 304 couples de réglages, persistance atomique, capture directe, conflits, valeurs par défaut par action, annulation, 64 gestes réels dans deux processus et comparaison des propriétés, de la sélection, de la géométrie et des fichiers avec le Shell sans raccourcis, y compris après mouvement du second appui. |
+| 24-raccourcis | 6 | Onglet natif FR/EN, 2 304 couples de réglages, persistance atomique, capture directe, conflits, valeurs par défaut par action, annulation, 64 gestes réels dans deux processus et comparaison des propriétés, de la sélection, de la géométrie et des fichiers avec le Shell sans raccourcis, y compris après mouvement du second appui. |
 | 25-recherche-integration | 6 | Historique SQLite isolé, migration, entrées Win32, arguments et erreurs, parcours Shell réel, préférences 0/5/20, application Everything réelle, chemin manuel normalisé et suggestions sans chevron au focus/clic. |
 | 26-placement-fenetres | 2 | Fonction pure de placement hybride libre/encombré sur un instantané de fenêtres : préférence libre ou occupée, instantanés distincts, fenêtres hors écran ou rognées, indépendance de l’ordre, bords, coordonnées négatives et tailles ; contrôles fonctionnels sans mesure de temps ni oracle d’optimalité ; libellé et option Général, maintenance À propos, processus distincts, réduction, remplacement spatial et priorité de la position mémorisée sur le vrai Shell. |
 | 28-apercu-affichage | 4 | Aperçus natifs au survol et au clavier, changements de mode et de taille, sortie d’entrée, annulation par Échap ou clic extérieur, validation au clic, modification du dossier par un autre processus, restauration de la vue et préférence Affichage avec Annuler/Appliquer/OK. |
 | 29-menu-gestionnaire | 1 | Bascule vers l’autre gestionnaire dans les menus, défauts indépendants par classe, resynchronisation, ressources EN/FR, commandes et délégations COM conservées, vrais menus Shell et invocation du défaut masqué par les deux voies ShellExecuteEx. |
 | 30-documentation | 1 | Lanceur d'aide local extrait du code de production, langues et replis, erreurs, menus et F1. |
-| 30-tri-melange | 4 | Tri et identités persistées, commandes Shell, dossier affiché renommé/supprimé ; contrat privé du fournisseur et identité canonique d'un enfant réel. |
+| 30-tri-melange | 5 | Tri et identités persistées, commandes Shell, dossier affiché renommé/supprimé ; contrat privé du fournisseur et identité canonique d'un enfant réel. |
 | 31-langues | 1 | Chargement des traductions pour les variantes régionales. |
+| 33-menu-titre | 2 | Personnalisation et actions du menu de la barre de titre. |
+| 35-apercu-peek | 2 | Lancement de Peek, intégration Shell et préférences. |
 
 Le cas `13-preferences/07-APropos.ps1` vérifie l’icône chargée, sa taille adaptée
 au DPI et l’absence de chevauchement des textes. Les comptes du catalogue ne
