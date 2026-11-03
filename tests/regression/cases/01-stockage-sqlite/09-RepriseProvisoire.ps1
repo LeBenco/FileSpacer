@@ -179,6 +179,7 @@ try {
         Wait-Ui {(Read-Presentation $window).Positions -ne $spatialBefore.Positions} 'first native icon drag changed placement' 300
     }
     $changed=Read-Presentation $window
+    $provisionalDpi=[MutexRecoveryNative]::GetDpiForWindow($window)
     $captureAfterObservation=[StorageRecoveryInput]::CaptureOwner($window)
     Assert-Ui ($changed.Selected.Count -eq 1 -and $changed.Selected[0] -eq 'alpha') 'Dragged alpha selection not established.'
     Assert-Ui (!$holder.Process.HasExited -and !$release.WaitOne(0)) 'Provisional changes were made after the outage ended.'
@@ -218,16 +219,20 @@ try {
             Read='One named item position; no full position enumeration';Trigger='Injected PostMessage WM_ACTIVATE/WA_INACTIVE'
         }|ConvertTo-Json|Set-Content (Join-Path $RunDirectory 'witness-before-release.json') -Encoding UTF8
     }
+    if($Scenario -in @('closing','closingLocked')){
+        # Observe while SQL is still unavailable. A COM read after release can
+        # dispatch recovery before the closing path has been requested.
+        $after=Read-Presentation $window
+        Assert-Positions $changed.Positions $after.Positions
+    }
     [void]$release.Set()
     Assert-Ui ($holder.Process.WaitForExit(15000)) 'Holder did not release.'
     Assert-Ui ((Complete-RecordedProcess $holder) -eq 0) 'Holder failed.'
     if($Scenario -in @('closing','closingLocked')){
         $menuBeforeClose=[StorageRecoveryInput]::NativeMenuActive($window)
         if($Scenario -eq 'closing'){Assert-Ui $menuBeforeClose 'Native menu closed before the closing-path test.'}
-        $after=Read-Presentation $window
-        Assert-Positions $changed.Positions $after.Positions
         [StorageRecoveryInput]::RequestClose($window)
-        Wait-Ui {![FileSpacerRegression.Native]::IsWindow($window)} 'close before visible replay'
+        Assert-Ui ([StorageRecoveryInput]::WaitForExit($app.Handle,25000)) 'Timed out: close before visible replay (COM-aware wait).'
     }else{
         $observer=$null;$observerWatch=$null;$observerSamples=New-Object Collections.Generic.List[object]
         if($MeasureRecovery){
@@ -275,7 +280,7 @@ try {
                 $witness=Read-Presentation $window -Light -PositionWitness 'beta'
                 return $witness.Enabled -and $witness.WitnessPosition-eq$expectedWitness
             }
-            if($Scenario -eq 'locked'){
+            if($Scenario -ne 'filtered'){
                 $lockedWitness=Read-Presentation $window -Light -PositionWitness 'beta'
                 $wantedBeta=@($expected.Split(';')|Where-Object{$_ -like 'beta=*'})
                 return $lockedWitness.Enabled -and $wantedBeta.Count-eq1 -and $lockedWitness.WitnessPosition-eq$wantedBeta[0]
@@ -324,7 +329,24 @@ try {
     }
     Wait-Ui {@($script:UiProcesses|Where-Object{!$_.HasExited}).Count -eq 0} 'provisional process normal exit'
     Assert-Ui ((Complete-RecordedProcess $app.RegressionOutput) -eq 0) 'Provisional process did not exit normally.'
+    if($Scenario -in @('closing','closingLocked')){
+        # Check the committed state before a new view can capture anything.
+        $closedSnapshot=Join-Path $RunDirectory 'closed-process-sql'
+        Copy-TestDatabaseSnapshot $database $closedSnapshot
+        $closedExpected=Join-Path $RunDirectory 'expected-before-reopen.txt'
+        [IO.File]::WriteAllText($closedExpected,([string]$provisionalDpi+"`n"+$expected),(New-Object Text.UTF8Encoding($false)))
+        $closedCheck=@(& $helper '--verify-product' (Join-Path $closedSnapshot 'folder-state-test.sqlite3') $key $folder $closedExpected)
+        $closedExit=$LASTEXITCODE
+        $closedCheck|Set-Content (Join-Path $RunDirectory 'closed-process-verification.log') -Encoding UTF8
+        Assert-Ui ($closedExit-eq0) 'Closed provisional process did not persist the expected canonical positions/history before reopening.'
+    }
     $reopened=Open-UiFolder $folder $ItemCount
+    $wantedAlpha=@($expected.Split(';')|Where-Object{$_ -like 'alpha=*'})
+    Assert-Ui ($wantedAlpha.Count-eq1) 'Reopen witness alpha missing.'
+    Wait-Ui {
+        $witness=Read-Presentation $reopened -Light -PositionWitness 'alpha'
+        return $witness.Enabled -and $witness.WitnessPosition-eq$wantedAlpha[0]
+    } 'fresh process restored the moved alpha position' 300 25
     $persisted=Read-Presentation $reopened
     $persisted|ConvertTo-Json -Depth 5|Set-Content (Join-Path $RunDirectory 'phase-fresh-process.json') -Encoding UTF8
     if($Scenario -in @('locked','closingLocked')){
