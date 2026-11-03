@@ -563,9 +563,7 @@ bool FolderWindow::recoverProvisionalView() {
         auto target = std::unique_ptr<ShellViewState>(new ShellViewState);
         target->view = getSavedFolderState().view.mergeChanges(provisionalBaseline->view,
             provisionalCurrent->view, provisionalColumnWidths);
-        // Completeness belongs to the retained unfiltered capture. Applying a
-        // filter later does not turn that full snapshot into a partial one.
-        const bool complete = provisionalIconsComplete;
+        const bool complete = provisionalIconsComplete && searchText.empty() && spatialView(view);
         if (!current()) return false;
         if (FAILED(mergeIconChanges(getSavedFolderState().icons, provisionalBaseline->icons,
                 provisionalCurrent->icons, complete, target->icons, identityFolder, current))) return false;
