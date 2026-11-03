@@ -23,6 +23,24 @@ try {
     $reopened=Open-UiFolder $after 1
     Assert-SearchNames $reopened @('Payload')
     Assert-Ui (@(Find-UiFolder $before).Count -eq 0) 'The obsolete folder identity was reopened.'
-    Write-Host 'PASS: UI rename retargets the existing open folder, preserves its selection/geometry and reopens the new identity.'
+    # A truly empty folder must finish retargeting too: waiting for a later
+    # populated enumeration would leave its restoration pending forever.
+    $emptyBefore=Join-Path $parent 'Empty-before';$emptyAfter=Join-Path $parent 'Empty-after'
+    [void][IO.Directory]::CreateDirectory($emptyBefore)
+    Assert-SearchNames $first @('After','Empty-before')
+    $empty=Open-UiFolder $emptyBefore 0
+    Rename-ShellFixture $first $parent 'Empty-before' 'Empty-after'
+    $emptyRenamed=Track-UiFolder $emptyAfter
+    Assert-Ui ($emptyRenamed -eq $empty) 'Renaming an empty folder replaced its spatial window.'
+    Assert-SearchNames $emptyRenamed @()
+    Use-UiView $emptyRenamed {param($view) $view.SetViewModeAndIconSize(1,64)}
+    Close-UiFolder $emptyRenamed
+    $emptyReopened=Open-UiFolder $emptyAfter 0
+    Assert-SearchNames $emptyReopened @()
+    Wait-Ui {
+        Use-UiView $emptyReopened {param($view) $view.Mode -eq 1 -and $view.IconSize -eq 64}
+    } 'empty renamed folder completed initialization and preserved its view' 200
+    Assert-Ui (@(Find-UiFolder $emptyBefore).Count -eq 0) 'The obsolete empty folder identity was reopened.'
+    Write-Host 'PASS: UI rename preserves selection/geometry, retargets populated and empty folders, and reopens the new identities.'
 } catch { $testFailure=$_;throw }
 finally { Stop-Ui -Failure $testFailure }
