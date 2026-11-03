@@ -297,6 +297,23 @@ try {
         if($Scenario -ne 'filtered'){Assert-Positions $expected $after.Positions}
         Assert-Ui (($after.Selected -join ';') -eq ($selectionBeforeRecovery.Selected -join ';') -and $after.Focused -eq $selectionBeforeRecovery.Focused) 'Recovery replaced current selection/focus.'
         if($Scenario -eq 'filtered'){
+            # Mode and size can already match before asynchronous SQL recovery.
+            # Observe the committed full position set before clearing the filter;
+            # otherwise that refresh races the recovery this scenario must test.
+            $recoveryExpected=Join-Path $RunDirectory 'expected-before-clearing-filter.txt'
+            [IO.File]::WriteAllText($recoveryExpected,([string][MutexRecoveryNative]::GetDpiForWindow($window)+"`n"+$expected),(New-Object Text.UTF8Encoding($false)))
+            $recoveryCheck=Join-Path $RunDirectory 'recovery-sql-verification'
+            Wait-Ui {
+                $check=Start-RecordedProcess -Executable $helper -Arguments ('--verify-product "'+$database+'" "'+$key+'" "'+$folder+'" "'+$recoveryExpected+'"') -OutputPath ($recoveryCheck+'.stdout.log') -ErrorPath ($recoveryCheck+'.stderr.log')
+                try {
+                    if(!$check.Process.WaitForExit(5000)){
+                        $check.Process.Kill();$check.Process.WaitForExit()
+                        [void](Complete-RecordedProcess $check)
+                        throw 'Read-only recovery verification did not finish.'
+                    }
+                    return (Complete-RecordedProcess $check) -eq 0
+                } finally { $check.Process.Dispose() }
+            } 'committed recovered icon positions before clearing the filter' 300 25
             [FileSpacerRegression.Native]::SetText((Get-UiSearchEdit $window),'')
             [void][FileSpacerRegression.Native]::Message((Get-UiSearchSubmit $window),0xf5,0,0)
             Wait-Ui {(Read-Presentation $window -Light).Count -eq $ItemCount} 'full native view after clearing filter' 300
