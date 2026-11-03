@@ -226,7 +226,7 @@ try {
         if($Scenario -eq 'closing'){Assert-Ui $menuBeforeClose 'Native menu closed before the closing-path test.'}
         $after=Read-Presentation $window
         Assert-Positions $changed.Positions $after.Positions
-        [void][FileSpacerRegression.Native]::Message($window,0x10,0,0)
+        Assert-Ui ([FileSpacerRegression.Native]::PostMessage($window,0x10,[IntPtr]::Zero,[IntPtr]::Zero)) 'Cannot request the provisional window close.'
         Wait-Ui {![FileSpacerRegression.Native]::IsWindow($window)} 'close before visible replay'
     }else{
         $observer=$null;$observerWatch=$null;$observerSamples=New-Object Collections.Generic.List[object]
