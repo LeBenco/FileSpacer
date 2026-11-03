@@ -53,7 +53,11 @@ void checkProvider(const wchar_t *path, const wchar_t *directory, bool modern) {
     const std::wstring expectedPath = std::wstring(directory) + L"\\native.txt";
     require(SUCCEEDED(SHCreateItemFromParsingName(expectedPath.c_str(), nullptr, IID_PPV_ARGS(&expected))), "Expected native item unavailable");
     int comparison = 1;
-    const HRESULT compared = converted->Compare(expected, SICHINT_CANONICAL, &comparison);
+    // Enumeration and parsing can carry different filesystem PIDL metadata.
+    // Ask the Shell to resolve that documented case before declaring a mismatch.
+    constexpr SICHINTF identityHint = static_cast<SICHINTF>(SICHINT_CANONICAL)
+        | static_cast<SICHINTF>(SICHINT_TEST_FILESYSPATH_IF_NOT_EQUAL);
+    const HRESULT compared = converted->Compare(expected, identityHint, &comparison);
     if (FAILED(compared) || comparison != 0) {
         // Compare the same native enumeration without passing through the
         // provider, to distinguish a provider error from the Shell oracle.
@@ -66,7 +70,7 @@ void checkProvider(const wchar_t *path, const wchar_t *directory, bool modern) {
         if (SUCCEEDED(controlResult) && nativeEnumeration) controlResult = nativeEnumeration->Next(1, &nativeChild, nullptr);
         if (controlResult == S_OK && nativeChild) controlResult = SHCreateItemWithParent(nullptr, nativeFolder, nativeChild, IID_PPV_ARGS(&control));
         int controlComparison = 1;
-        if (SUCCEEDED(controlResult) && control) controlResult = control->Compare(expected, SICHINT_CANONICAL, &controlComparison);
+        if (SUCCEEDED(controlResult) && control) controlResult = control->Compare(expected, identityHint, &controlComparison);
         std::printf("CanonicalCompare native control=0x%08lX; result=%d\n", static_cast<unsigned long>(controlResult), controlComparison);
         CComHeapPtr<wchar_t> convertedName, expectedName;
         const HRESULT convertedDisplay = converted->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &convertedName);
@@ -78,6 +82,10 @@ void checkProvider(const wchar_t *path, const wchar_t *directory, bool modern) {
     }
     require(SUCCEEDED(compared) && comparison == 0,
         "Converted child has the wrong canonical identity");
+    int parentComparison = 0;
+    const HRESULT parentCompared = converted->Compare(native, identityHint, &parentComparison);
+    require(SUCCEEDED(parentCompared) && parentComparison != 0,
+        "Converted child must remain distinct from its parent folder");
     if (!modern) {
         CComHeapPtr<ITEMID_CHILD> nativeChild, viewChild;
         require(SUCCEEDED(legacy->NativeChild(child, &nativeChild)), "Legacy NativeChild slot failed");
