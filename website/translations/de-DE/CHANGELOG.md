@@ -2,6 +2,10 @@
 
 ## Noch nicht veröffentlicht
 
+## 1.3.1 — 2026-11-03
+
+- Behebt das Öffnen über den Standard-Dateimanager, bei dem eine andere Anwendung anstelle von FileSpacer ausgewählt wurde.
+
 ## 1.3.0 — 2026-11-02
 
 - Fügt optionale PowerToys-Peek-Vorschauen hinzu und überlässt kollidierende Fenstergesten Grab And Move.

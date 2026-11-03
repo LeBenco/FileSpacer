@@ -2,6 +2,10 @@
 
 ## Por publicar
 
+## 1.3.1 — 2026-11-03
+
+- Corrige a abertura com o gestor de ficheiros predefinido que selecionava outra aplicação em vez do FileSpacer.
+
 ## 1.3.0 — 2026-11-02
 
 - Adiciona pré-visualizações opcionais do PowerToys Peek e deixa o Grab And Move tratar os gestos de janela em conflito.
