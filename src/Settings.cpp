@@ -476,8 +476,11 @@ LSTATUS synchronizeMenu(const std::wstring &shell, bool explorer, bool backgroun
         L"%SystemRoot%\\explorer.exe,0", changed);
     if (status == ERROR_SUCCESS) status = setMenuString(alternate + L"\\command", nullptr, REG_EXPAND_SZ,
         background ? L"\"%SystemRoot%\\explorer.exe\" \"%V\"" : L"\"%SystemRoot%\\explorer.exe\" \"%1\"", changed);
-    // Keep the installed command and DelegateExecute intact for default/programmatic opening.
-    if (status == ERROR_SUCCESS) status = setMenuString(userVerb, L"ProgrammaticAccessOnly", REG_SZ, L"", changed);
+    // Default-only Shell menus omit programmatic-only verbs, even the selected default.
+    // Hide only the background entry, which is never used to open an item.
+    if (status == ERROR_SUCCESS) status = background
+        ? setMenuString(userVerb, L"ProgrammaticAccessOnly", REG_SZ, L"", changed)
+        : removeMenuValue(userVerb, changed);
     return status;
 }
 
