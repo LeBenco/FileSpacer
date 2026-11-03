@@ -106,13 +106,6 @@ The helper uses the static C++ runtime and Windows system DLLs only.
 To check its Debug build separately, run `nmake /f Makefile CFG=Debug installer-bitmap`
 from the x64 MSVC developer prompt.
 
-After packaging, the targeted VM test checks pixels captured from the real setup
-and uninstaller dialogs in English and French against a bicubic reference, and
-rejects the old NSIS scaling. Its uninstaller is generated on the host from the
-production script without executing installation sections. The guest only opens
-and cancels the dialogs, using fixture metadata; no installation is performed.
-Run `tests.cmd -VM AgentWin10 -Pattern "32-installeur\*"`.
-
 Setup declares `asInvoker`, so opening it does not request Windows confirmation.
 Choosing All users launches a silent copy with the native `runas` verb only when
 installation begins. The parent passes the directory, language and component
@@ -144,7 +137,7 @@ the executable and its scope metadata before restoring windows there. Cancellati
 and failure restore the original executable; a missing or invalid success result
 retains the saved session and reports an error. Pending sessions are excluded from
 stale-relay cleanup. Test this contract with
-`tests.cmd -VM AgentWin10 -Pattern "11-session-maj\*"` and the isolated NSIS suite.
+`tests.cmd -VM AgentWin10 -Pattern "11-session-maj\*"` for the application side.
 The relay is copied from the running application, so its new selection contract
 is effective after the corrected application has been installed.
 
@@ -157,28 +150,12 @@ is restored during initialization. Revisiting a wizard page keeps edits made in 
 the default manager still requires the context-menu component. Silent upgrades
 preserve the current default association even if it changed after installation.
 
-After packaging, run the isolated NSIS checks from CMD:
-
-```cmd
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\installer\Run-InstallerTests.ps1
-```
-
-The logic harness checks both scopes, legacy migration, invalid metadata,
-language, page revisits and silent/interactive default handling. The native
-launcher probe exercises actual child exit codes and launch failures using
-`open` instead of `runas`. Worker option parsing uses a token-query stub;
-unelevated-token rejection is checked separately when the test itself is not
-elevated. Cancellation and worker failures must propagate to the parent.
-
-The lifecycle harness runs the real installer sections with an inert payload,
-redirected shortcuts and fresh GUID-prefixed registry keys under HKCU. It checks
-Current user installation, silent upgrade, removal of unchecked components and
-native uninstallation, including preservation of an unowned file. Fixtures stay
-under `build\installer-tests`; only the run's registry namespace is removed.
-These tests need permission to write their isolated HKCU keys, not administrator
-rights. They do not modify the user's FileSpacer installation or associations.
-Real UAC consent and the All users lifecycle require the dedicated client VM;
-the probes do not validate those interactions or the application payload.
+The release workflow first requires the application regression suite to pass.
+Only then does it build the offline documentation and NSIS package from the
+tested commit, validate version metadata and prepare the publication artifacts.
+The former standalone installer and documentation-inventory tests have been
+removed. A successful NSIS build checks packaging, not a real installation or
+UAC interaction; those still require manual validation when the installer changes.
 
 ## SQLite
 
@@ -247,7 +224,8 @@ application on a branch, tag or commit SHA. The independent workflow is manual,
 with `category` and `pattern` filters, and builds no installer or offline docs.
 For development, run the new and affected cases locally; GitHub runs the full
 application catalogue. The reference local launcher still supports a full run.
-`-Scope Application|Installer|All` combines with `-Category` and `-Pattern`;
+`-Scope Application|All` combines with `-Category` and `-Pattern` (both scopes
+now select the same application suite);
 `-ListOnly` returns the selected cases as JSON without building or running them.
 
 `tests.cmd` runs locally by default. Add `-VM AgentWin10` to execute in the
