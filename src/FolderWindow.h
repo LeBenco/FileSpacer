@@ -157,7 +157,8 @@ protected:
         MSG_ENUM_READY = WM_APP + 46,
         MSG_ENUM_DONE = WM_APP + 47,
         MSG_VIEW_MENU_PREVIEW = WM_APP + 48,
-        MSG_VIEW_CHANGED = WM_APP + 50
+        MSG_VIEW_CHANGED = WM_APP + 50,
+        MSG_FINISH_VIEW_INITIALIZATION = WM_APP + 51
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
 
