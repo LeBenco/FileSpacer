@@ -1,21 +1,24 @@
 # Building FileSpacer on Windows x64
 
-Target: Windows 10 or later, x64. Use Visual Studio 2022 Build Tools with MSVC,
-ATL, and a Windows SDK. No IDE is required. This project uses MSVC/NMAKE; the
-installer uses NSIS.
+FileSpacer targets Windows 10 or later, x64. It uses MSVC/NMAKE and NSIS, not
+CMake. Run build and test commands from CMD at the repository root. See the
+[developer overview](README.md) for the code map.
 
-## Requirements
+## Dependencies
 
-- Visual Studio 2022 Build Tools, installed in its standard location under
-  `%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools`.
-- Inkscape, normally at `C:\Program Files\Inkscape\bin\inkscape.com`.
-- Python with Pillow, included in the Windows Inkscape distribution. The build
-  uses `python.exe` beside `inkscape.com` by default; set `ICON_PYTHON` to use
-  another Python interpreter with Pillow installed. NumPy is not required.
-- ImageMagick, with the `magick` command available on PATH.
-- NSIS, normally at `%ProgramFiles(x86)%\NSIS\makensis.exe`, for the installer.
+- Visual Studio 2022 Build Tools with MSVC, ATL and a Windows SDK. The launcher
+  expects `%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools`.
+- Inkscape, normally `C:\Program Files\Inkscape\bin\inkscape.com`.
+- Python with Pillow. The Windows Inkscape distribution supplies it; the build
+  uses the adjacent `python.exe`. `ICON_PYTHON` can select another installation.
+- ImageMagick, with `magick` on PATH.
+- NSIS, normally `%ProgramFiles(x86)%\NSIS\makensis.exe`, for packaging.
+- Node.js 22+, Ruby 3.3 and Bundler when generating offline help; see
+  [website and offline builds](../website/README.md#shared-website-and-offline-builds).
 
-In CMD at the project root, close FileSpacer before building:
+## Build and clean
+
+Close FileSpacer before building, then run:
 
 ```cmd
 build.cmd debug
@@ -23,16 +26,19 @@ build.cmd release
 build.cmd installer
 ```
 
-`build.cmd` initializes the x64 environment with `vcvars64.bat` and invokes NMAKE.
-The outputs are `build\debug\FileSpacer.exe`, `build\release\FileSpacer.exe`,
-and `build\FileSpacer-install.exe`. Debug uses `FILESPACER_DEBUG`, `/MTd`, and the
-console subsystem. Release uses `/O2`, `/MT`, and the Windows subsystem.
-Each configuration also builds `FileSpacerFolder.dll` beside the executable.
-Keep the DLL with the application; it provides the optional mixed file/folder
-sort using the native Windows view. The installer includes both binaries.
-Distribute the Release installer.
+`build.cmd` initializes x64 MSVC through `vcvars64.bat` and invokes NMAKE.
+Debug uses `FILESPACER_DEBUG`, `/MTd` and the console subsystem. Release uses
+`/O2`, `/MT` and the Windows subsystem. Project C++ uses `/W4` and C++14.
+Add new translation units to the relevant `OBJECTS` list in `Makefile`.
 
-To override nonstandard tool locations in CMD:
+| Output | Use |
+| --- | --- |
+| `build\debug\FileSpacer.exe` | Development and regression tests. |
+| `build\release\FileSpacer.exe` | Release application. |
+| `FileSpacerFolder.dll` beside either executable | Native-view provider for optional mixed file/folder sorting; keep it with the application. |
+| `build\FileSpacer-install.exe` | Distributable installer. Packaging does not launch it. |
+
+To override nonstandard tool locations:
 
 ```cmd
 set "INKSCAPE=D:\Tools\Inkscape\bin\inkscape.com"
@@ -40,226 +46,135 @@ set "MAKENSIS=D:\Tools\NSIS\makensis.exe"
 build.cmd installer
 ```
 
-The Makefile runs `generate-icon.py` to regenerate `src\res\FileSpacer.ico` with
-ten sizes (16, 20, 24, 32, 40, 48, 64, 96, 128 and 256 pixels). For 16 to 48
-pixels, the script draws the folder using the optical geometry and colors in
-`FOLDER_MASTERS` and `draw_folder`: edges fit each pixel grid, the back is flat,
-and the front has a simplified vertical gradient. It reads the nine projected
-tesseract polygons and their colors from `src\res\FileSpacer.svg`, rasterizes
-them on one shared grid at 32 times the target size, and reduces them with Box
-filtering. The logo coordinates are already in the SVG coordinate system; an
-absent matrix transform is treated as the identity. These small variants are
-recalculated from the script and SVG, without stored PNGs.
-
-The SVG includes the original 4D vertices, their 3D projection and the camera
-parameters in its `tesseract-scene` metadata. The purple-to-green cube edge ratio
-is 11/20 in 3D, before the final 2D projection; the camera uses a 45-degree azimuth,
-30-degree elevation and distance of six outer-cube edges. The ICO generator reads
-the resulting 2D polygons, preserving the accepted geometry at every icon size.
-
-Inkscape renders the four larger sizes directly from the SVG. ImageMagick packs
-32-bit images with alpha, with lossless PNG compression for the 256-pixel image.
-The script checks all ten decoded RGBA images against its generated PNGs before
-replacing the ICO and removes its temporary files. Changes to the SVG, generator
-or Makefile regenerate the icon; a clean build uses the same generation path.
-The small-folder optical masters are specific to the centered 212 x 212 artwork:
-update the script when changing that folder design or its coordinate system.
-
-`build.cmd installer` always repackages the current Release executable and
-accompanying notices; it does not launch the installer.
-
-It also packages the complete offline documentation in `help` beside the
-application. Install the documentation build dependencies and generate the HTML
-as described in [website generation](../website/README.md#shared-website-and-offline-builds).
-The installer target verifies the generated source fingerprint and file hashes,
-reuses a current copy, and otherwise regenerates it. Node.js must be on PATH;
-`NODE` can override its executable. Ruby/Bundler are only needed when regenerating,
-so the release workflow generates the documentation on Linux and transfers the
-verified output to the Windows packaging job from the same workflow and tag.
-The installed documentation needs only the user's browser, with no local server
-or network connection. FileSpacer opens the Windows display language and falls
-back to English if that translation is unavailable.
-
-Packaging also runs `generate-installer-assets.py` with the existing
-Inkscape/Pillow/ImageMagick tools. It decodes the ten native bitmaps of
-`src\res\FileSpacer.ico` without scaling them, then composites a separate purple
-download-arrow badge. `BADGE_MASTERS` defines the badge diameter, white outline,
-shaft, head and height individually for every size. Placement follows each
-bitmap's actual folder bounds, retaining one yellow pixel on the right and
-bottom; the generator checks that the original alpha outline stays intact.
-The SVG remains the source for English and French wizard sidebars. The shared
-native dialog in `installer\wizard-ui.rc` places that illustration on the left
-of every setup and uninstaller page, with a light-gray sidebar and white content.
-Packaging compiles this resource into a build-only DLL for NSIS `ChangeUI` and
-converts the complete changelog into UTF-16 text for the scrollable first page.
-The scope choices and version history appear before the license, components and
-installation directory. All generated resources go into `build\installer-assets`.
-These generated resources are not checked in; the application icon is unchanged.
-
-The installer also builds an x86 `WizardBitmap.dll` with the current MSVC cross
-compiler and Windows SDK. NSIS extracts this helper only into its temporary
-plug-in directory. It uses the GDI+ C++ classes and high-quality bicubic
-interpolation to resize the sidebar to the control's actual pixel dimensions,
-then displays it without further scaling. The same path serves setup and
-uninstallation; the standard NSIS image loader remains a fallback on failure.
-The helper uses the static C++ runtime and Windows system DLLs only.
-To check its Debug build separately, run `nmake /f Makefile CFG=Debug installer-bitmap`
-from the x64 MSVC developer prompt.
-
-Setup declares `asInvoker`, so opening it does not request Windows confirmation.
-Choosing All users launches a silent copy with the native `runas` verb only when
-installation begins. The parent passes the directory, language and component
-choices, waits for the real exit code, and applies personal integration choices
-under the initiating user's account. The machine worker requires an elevated
-token and never changes that administrator account's personal default manager.
-The uninstaller requests confirmation only for an All users installation.
-Declining confirmation returns the cancellation code expected by the updater.
-
-Setup records its operations in `%TEMP%\FileSpacer-install.log`; the elevated
-worker uses `%TEMP%\FileSpacer-install-machine.log`. `/Log="C:\path\setup.log"`
-overrides the initiating setup log. Each run replaces its previous log. The
-machine worker still uses the machine log passed by its parent. Logs include
-the setup version, scope, paths, component choices, individual file and registry
-operations, and command exit codes. Documentation cleanup appends its complete
-PowerShell exception and script stack to the log; the additional captured command
-output is limited to 1024 characters. File-operation exit code 5 is an installer
-category, not a Windows error code. Logging preserves NSIS's error flag and does
-not turn a logging failure into installation success or failure.
-
-The update relay derives the original directory from the running executable and
-reads its scope from the adjacent `install-info.ini`. If metadata is missing or
-invalid, a registry fallback must match that exact directory in only one scope.
-Known scope and directory are passed to setup as initial choices; an unregistered
-local build leaves those choices to the wizard. The initiating NSIS parent writes
-a UTF-16 `/UpdateResult=` file only after all installation sections succeed. It
-contains `[Installation]`, `Mode`, `Executable` and `Complete=1`. The relay validates
-the executable and its scope metadata before restoring windows there. Cancellation
-and failure restore the original executable; a missing or invalid success result
-retains the saved session and reports an error. Pending sessions are excluded from
-stale-relay cleanup. Test this contract with
-`tests.cmd -VM AgentWin10 -Pattern "11-session-maj\*"` for the application side.
-The relay is copied from the running application, so its new selection contract
-is effective after the corrected application has been installed.
-
-The installer saves its three component selections in the existing
-`install-info.ini` under `[Components]`: `StartMenu`, `ContextMenu` and
-`DefaultFileManager`, each `0` or `1`. Upgrades restore them after restoring the
-installation mode and directory. Older installations are migrated
-from their Start Menu shortcut and registered folder commands. The saved language
-is restored during initialization. Revisiting a wizard page keeps edits made in that run; selecting
-the default manager still requires the context-menu component. Silent upgrades
-preserve the current default association even if it changed after installation.
-
-The release workflow first requires the application regression suite to pass.
-Only then does it build the offline documentation and NSIS package from the
-tested commit, validate version metadata and prepare the publication artifacts.
-The former standalone installer and documentation-inventory tests have been
-removed. A successful NSIS build checks packaging, not a real installation or
-UAC interaction; those still require manual validation when the installer changes.
-
-## SQLite
-
-SQLite 3.53.4 is bundled in `third_party\sqlite`. The unmodified upstream
-amalgamation is compiled separately as C and linked statically into FileSpacer.
-No SQLite DLL or command-line tool is required, and the build does not download
-SQLite. See [the SQLite notes](../third_party/sqlite/README.txt) for its origin and archive hash.
-
-SQLite uses `/W3`; project C++ uses `/W4`. `_CRT_SECURE_NO_WARNINGS` applies only
-to SQLite. `SQLITE_OMIT_LOAD_EXTENSION` disables extension loading and
-`SQLITE_DQS=0` requires standard SQL string literals. Default thread safety is
-retained. Both use the same static runtime. Release uses `/OPT:REF /OPT:ICF`.
-
-Running the same command with no source changes should leave the executable up
-to date. Packaging remains forced when the installer target is requested.
+An unchanged build should leave the executable up to date. Requesting the
+installer target always repackages the Release artifacts.
 
 ```cmd
 build.cmd clean
 ```
 
-This removes Debug/Release outputs, the generated ICO, and the installer. It
-preserves source files and user data. The next build regenerates the icon.
+Clean removes Debug/Release outputs, the generated ICO and installer, preserving
+sources and user data. The next build regenerates the icon.
 
-From an x64 developer prompt, inspect binary dependencies with:
+## Generated artwork
+
+`generate-icon.py` produces the ten frames in `src\res\FileSpacer.ico` from the
+SVG and its small-size optical masters. At 16–48 px, the folder is drawn on each
+pixel grid and the SVG's projected tesseract polygons are supersampled, then
+reduced with Box filtering. Inkscape renders the 64–256 px frames. ImageMagick
+packs them; the generator checks decoded RGBA content before atomically replacing
+the ICO. NumPy is not required.
+
+The SVG's 2D polygons are authoritative; the generator does not recompute their
+projection from its 4D/camera metadata. Changing the folder silhouette or its
+212 × 212 coordinate system also requires updating `FOLDER_MASTERS` / `draw_folder`.
+Keep the website's [16 px favicon](../website/README.md) in sync.
+
+Packaging runs `generate-installer-assets.py` for the download badge, sidebars,
+wizard resource DLL and UTF-16 changelog. Generated assets live under
+`build\installer-assets`, not in source control. `installer\wizard-ui.rc`
+defines the shared setup/uninstaller layout. The x86 `WizardBitmap.dll` uses
+GDI+ to scale sidebars to the actual control size, with the NSIS loader as a
+fallback. It is extracted only into NSIS's temporary plug-in directory.
+To check its Debug build from an x64 developer prompt:
+
+```cmd
+nmake /f Makefile CFG=Debug installer-bitmap
+```
+
+## SQLite
+
+The unmodified amalgamation in `third_party\sqlite` is compiled separately as C
+and linked statically. No SQLite DLL, CLI or build-time download is needed.
+See its [origin and build options](../third_party/sqlite/README.txt).
+
+SQLite uses `/W3`, `_CRT_SECURE_NO_WARNINGS`, `SQLITE_OMIT_LOAD_EXTENSION` and
+`SQLITE_DQS=0`, retaining default thread safety and the application's static
+runtime. Release links with `/OPT:REF /OPT:ICF`. From a developer prompt:
 
 ```cmd
 dumpbin /dependents build\release\FileSpacer.exe
 ```
 
-No dependency on `sqlite3.dll` should appear. Windows system DLLs remain required.
+There should be no `sqlite3.dll` dependency; Windows system DLLs remain required.
 
-## GitHub releases
+## Offline help and installer contracts
 
-The release workflow runs only when a new `vX.Y.Z` tag is pushed. It builds Release
-and the NSIS installer on `windows-2022`, verifies the executable version against
-the tag, and publishes `FileSpacer-X.Y.Z-install.exe` and `FileSpacer-update.txt`
-to the fork's GitHub Release. The workflow can also be run manually for an
-existing tag.
-Publication first requires the application regression workflow to pass on the
-selected revision. Installer regression tests are excluded from these workflows;
-the release still builds the offline documentation and NSIS package and checks
-the package version and hash. A successful package build does not validate a
-real installation or upgrade. Failure summaries and build logs are retained as
-workflow artifacts.
-Ordinary branch pushes do not build or publish an installer. No custom secret is
-needed; the workflow uses GitHub's automatic token.
+The installer packages the generated `help` directory. It checks its source
+fingerprint/file hashes and regenerates it when absent, stale or damaged.
+Node.js must be on PATH (`NODE` can override it); Ruby/Bundler are needed only
+for regeneration. The release workflow can transfer verified Linux-generated
+help to Windows packaging from the same tested commit. Installed help needs
+only a browser, with no server or network connection.
 
-To publish from Git Bash, first update both version definitions in
-`src/resource.h` and add the matching section to `CHANGELOG.md`. Commit all
-source, test and documentation changes on `main`. For example:
+Setup starts as `asInvoker`. An All users installation starts an elevated worker
+via `runas` only when installation begins. The initiating parent preserves the
+chosen directory, language and components, waits for the worker's exit code,
+and applies personal associations under the initiating user's account. The
+machine worker must not change the administrator's personal default manager.
+The All users uninstaller also requests elevation. Cancellation must retain
+the exit-code contract expected by the updater.
+
+`install-info.ini` records scope, language and component choices. Under
+`[Components]`, `StartMenu`, `ContextMenu` and `DefaultFileManager` are `0` or `1`.
+Upgrades restore these choices; silent upgrades preserve the effective default
+association even if it changed after installation. The default-manager choice
+requires the context-menu component.
+
+The update relay resolves scope from metadata beside the running executable.
+A Registry fallback must match that exact directory in only one scope. After
+all sections succeed, the initiating setup writes the UTF-16 `/UpdateResult=`
+file with `[Installation]`, `Mode`, `Executable` and `Complete=1`. The relay
+validates the executable and scope before restoring windows there. Cancellation
+or failure restores the original application; an invalid success result keeps
+the saved session and reports an error. Pending sessions must not be removed
+by stale-relay cleanup. Group `11-session-maj` covers the application boundary.
+
+Setup logs to `%TEMP%\FileSpacer-install.log`; its machine worker uses
+`%TEMP%\FileSpacer-install-machine.log`. `/Log="C:\path\setup.log"` overrides
+the initiating log. Each run replaces its log. File-operation exit code 5 is
+an installer category, not a Windows error number. Keep the initial failure,
+cleanup exception/stack and command exit codes when diagnosing installation;
+logging must not change the operation's success/failure state.
+
+An NSIS build verifies packaging, not real installation, UAC, upgrade or
+uninstallation. Validate the affected installed paths when changing them.
+
+## Releases
+
+The release workflow runs for a `vX.Y.Z` tag or a manual dispatch for an existing
+tag. It first requires the application regression suite to pass, then builds
+offline help and the Windows NSIS package from that exact tested SHA. It checks
+the executable version against the tag and publishes
+`FileSpacer-X.Y.Z-install.exe` and `FileSpacer-update.txt` to GitHub Releases.
+Ordinary branch pushes do not publish an installer. The workflow uses GitHub's
+automatic token; no custom release secret is required.
+
+Before publication, update both version definitions in `src/resource.h`, add
+the matching `CHANGELOG.md` section, and commit the intended changes. From Git
+Bash, substitute the intended version:
 
 ```bash
-bash release.sh 1.1.0
+bash release.sh X.Y.Z
 ```
 
-The script requires a clean working tree, checks the remote branch and tag,
-previews the changelog section, then asks for confirmation before pushing `main`
-and the annotated tag. The GitHub Actions workflow performs the installer build
-and publication. Check that it succeeds and that the release contains both the
-versioned installer and `FileSpacer-update.txt`.
+The script requires a clean tree, checks the remote branch/tag, previews the
+changelog and asks for confirmation before pushing `main` and the annotated
+tag. Check the workflow outcome and both release assets afterward. Failure
+summaries/build logs remain workflow artifacts.
 
-## Regression tests
+## Tests
 
-Use **Actions > Test FileSpacer regressions > Run workflow** to validate the
-application on a branch, tag or commit SHA. The independent workflow is manual,
-with `category` and `pattern` filters, and builds no installer or offline docs.
-For development, run the new and affected cases locally; GitHub runs the full
-application catalogue. The reference local launcher still supports a full run.
-`-Scope Application|All` combines with `-Category` and `-Pattern` (both scopes
-now select the same application suite);
-`-ListOnly` returns the selected cases as JSON without building or running them.
-
-`tests.cmd` runs locally by default. Add `-VM AgentWin10` to execute in the
-configured Hyper-V client, while keeping application and test-helper compilation
-on the host. Existing `-Category`, `-Pattern`, `-TimeoutSeconds` and
-`-RunDirectory` options also apply to VM runs. For example:
+Use the [regression guide](../tests/regression/README.md) for local, Hyper-V and
+GitHub execution, case selection, prerequisites and report interpretation.
+For example:
 
 ```cmd
+tests.cmd -Category Internal
 tests.cmd -VM AgentWin10 -Category UI -Pattern "16-redimensionnement-alt\03-*"
 ```
 
-An unconfigured VM fails explicitly. There is no automatic local UI fallback.
-See [the regression guide](../tests/regression/README.md) for setup and reports.
-
-From the project root, close FileSpacer and Control Panel windows, then run:
-
-```cmd
-tests.cmd
-```
-
-This is the reference regression suite, including one real native
-Shell/SQLite persistence test in the production spatial configuration. It
-uses the same MSVC/NMAKE build above. Do not also run the native launcher
-when the full suite already ran group 18.
-The external Everything test requires a closed, installed copy of Everything;
-its fixtures and index are isolated. See the test guide for its prerequisites.
-
-For a targeted run, use `-Category` or `-Pattern`; see
-[the test guide](../tests/regression/README.md). The retained native test can
-also be invoked alone as `test-native-state.cmd --diagnostic`. It uses `/Z7`
-and initializes MSVC x64 itself; no shared compiler PDB is required. The
-exploratory profile comparisons and Control Panel embedding probes have
-been retired. Their sources remain in the migration branch history.
-
-FileSpacer uses the public Shell integration described in
-[the architecture note](native-shell-view.md), which distinguishes the remaining
-native-view limits from behaviors restored since the initial 1.1.0 migration.
+Run affected cases while developing. Tests use Debug and isolated test data;
+never delete the production database to prepare a run. Read the
+[Shell architecture](native-shell-view.md) before changing restoration or view
+lifetime.
