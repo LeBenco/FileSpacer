@@ -588,7 +588,7 @@ void ItemWindow::propStoreWriteString(IPropertyStore *const propStore,
 
 bool ItemWindow::loadFolderState() {
     if (stateLoaded) return true;
-    auto store = folderStateStore();
+    auto store = folderStateStore(closing);
     if (!store || !store->read(stateKey, &savedState)) {
         stateStorageError();
         return false;
@@ -882,11 +882,18 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             if (closing)
                 return 0;
             closing = true;
+            GUITHREADINFO info = {sizeof(info)};
+            const DWORD menuFlags = static_cast<DWORD>(GUI_INMENUMODE)
+                | static_cast<DWORD>(GUI_POPUPMENUMODE) | static_cast<DWORD>(GUI_SYSTEMMENUMODE);
+            if (GetGUIThreadInfo(GetCurrentThreadId(), &info) && (info.flags & menuFlags)
+                    && info.hwndMenuOwner && GetAncestor(info.hwndMenuOwner, GA_ROOT) == hwnd)
+                checkLE(EndMenu());
             if (!onCloseRequest()) {
                 closing = false;
                 cancelPlacementWithdrawal(hwnd);
                 return 0; // don't close
             }
+            if (hwnd && isFolder()) persistViewState(); // Merge while the native view is still available.
             if (message == WM_CLOSE && hwnd && isFolder()) {
                 const HWND closingHwnd = hwnd;
                 CComPtr<IShellItem> currentItem = item;
