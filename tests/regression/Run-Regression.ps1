@@ -1,4 +1,4 @@
-﻿param(
+param(
     [string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
     [ValidateSet('All','Internal','UI')][string]$Category='All',
     [ValidateSet('All','Application')][string]$Scope='All',
@@ -99,6 +99,12 @@ function Write-RegistryTree([Microsoft.Win32.RegistryKey]$Key,$Tree) {
         try { Write-RegistryTree $child $entry.Tree } finally { $child.Dispose() }
     }
 }
+function Write-RegressionProgress($Progress,[string]$Path) {
+    $bytes=[Text.Encoding]::UTF8.GetBytes(($Progress|ConvertTo-Json)+[Environment]::NewLine)
+    # The CI observer keeps a shared read handle while this snapshot is replaced.
+    $stream=[IO.File]::Open($Path,[IO.FileMode]::Create,[IO.FileAccess]::Write,([IO.FileShare]::ReadWrite -bor [IO.FileShare]::Delete))
+    try { $stream.Write($bytes,0,$bytes.Length) } finally { $stream.Dispose() }
+}
 function Initialize-TestPreferences {
     [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($testKey,$false)
     $key=[Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($testKey)
@@ -179,8 +185,7 @@ try {
     foreach ($entry in $selected) {
         $relative=$entry.Relative
         Write-Host "RUN  $relative"
-        @{Expected=$selected.Count;Completed=$results.Count;Current=$relative} | ConvertTo-Json |
-            Set-Content -LiteralPath (Join-Path $run 'progress.json') -Encoding UTF8
+        Write-RegressionProgress @{Expected=$selected.Count;Completed=$results.Count;Current=$relative} (Join-Path $run 'progress.json')
         $relativeDirectory=Join-Path ([IO.Path]::GetDirectoryName($relative)) ([IO.Path]::GetFileNameWithoutExtension($relative))
         $testRun=Join-Path $run $relativeDirectory
         [void][IO.Directory]::CreateDirectory($testRun)
