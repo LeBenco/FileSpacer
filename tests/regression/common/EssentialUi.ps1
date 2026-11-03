@@ -146,6 +146,9 @@ function Activate-Ui([IntPtr]$Window) {
     Assert-Ui ([FileSpacerRegression.Native]::IsWindow($Window)) 'Activation target disappeared.'
     try {
         $accepted=[FileSpacerRegression.Native]::Activate($Window)
+        # SetForegroundWindow notifies the owning thread asynchronously. Wait
+        # for that notification before selecting/focusing through Shell COM.
+        [void][FileSpacerRegression.Native]::Message($Window,0,0,0) # WM_NULL
         Write-Host "STEP: foreground request target=$Window, accepted=$accepted, current=$([FileSpacerRegression.Native]::GetForegroundWindow())"
         try {
             Wait-Ui { [FileSpacerRegression.Native]::GetForegroundWindow() -eq $Window } 'direct foreground activation' 0 1
@@ -162,6 +165,8 @@ function Activate-Ui([IntPtr]$Window) {
     }
     # A verified click was sent: failure to activate is now an observed behavior failure.
     Wait-Ui { [FileSpacerRegression.Native]::GetForegroundWindow() -eq $Window } 'foreground after verified caption click' 0 5
+    [void][FileSpacerRegression.Native]::Message($Window,0,0,0) # WM_NULL
+    Assert-Ui ([FileSpacerRegression.Native]::GetForegroundWindow() -eq $Window) 'Foreground changed while processing caption activation.'
     Write-Host "STEP: activation confirmed for HWND=$Window"
 }
 function Close-UiFolder([IntPtr]$Window) {
