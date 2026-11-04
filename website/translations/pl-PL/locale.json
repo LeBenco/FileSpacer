@@ -1,0 +1,20 @@
+{
+  "name": "Polski",
+  "description": "Przestrzenny menedżer plików dla Windows",
+  "overview": "Przegląd",
+  "user-guide": "Instrukcja użytkownika",
+  "changelog": "Historia zmian",
+  "third-party-notices": "Składniki zewnętrzne",
+  "language": "Język",
+  "navigation": "Nawigacja główna",
+  "submenu": "Podmenu",
+  "search": "Szukaj w FileSpacer",
+  "noResults": "Brak wyników",
+  "repository": "FileSpacer w GitHub",
+  "back": "Wróć na górę",
+  "skip": "Przejdź do treści głównej",
+  "attribution": "Ta witryna korzysta z <a href=\"https://github.com/just-the-docs/just-the-docs\">Just the Docs</a>, motywu dokumentacji dla Jekyll.",
+  "license": "Udostępniane na licencji",
+  "enlargeImage": "Powiększ zrzut ekranu",
+  "closeImage": "Zamknij obraz"
+}
