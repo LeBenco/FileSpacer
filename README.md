@@ -20,8 +20,9 @@ FileSpacer prioritizes a lightweight and uncluttered experience. To address the 
 <a id="privacy"></a>**Privacy:** **No telemetry, usage tracking or advertising**. Update checks contact GitHub; weekly checks are optional and off by default. Downloading and installing require confirmation. [Privacy policy](docs/user-guide.md#privacy).
 
 **Documentation:**
-- [User guide](docs/user-guide.md)
-- [Changelog](CHANGELOG.md)
+
+[![Docs](https://img.shields.io/badge/Docs-User%20Guide-blue)](docs/user-guide.md)
+[![Docs](https://img.shields.io/badge/Docs-Changelog-orange)](CHANGELOG.md)
 
 _FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler), originally created by J. van't Hoog. See [Credits](#license-and-credits) below for details._
 
