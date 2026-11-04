@@ -114,15 +114,23 @@ unowned files in the help directory are preserved.
 
 The Pages workflow builds and checks relevant pull requests. It generates the
 sources once, reads `locales.json`, builds each language and deploys the result.
-No second language list
-needs updating in CI. Pushes to `main` rebuild and deploy when a source document,
-translation, capture, icon, generator or workflow changes. It can also be started
-manually. The workflow does not create application releases, tags or installers.
+No second language list needs updating in CI. Pushes to `main` rebuild and deploy
+when any README, `BUILD.md`, a file under `docs/`, a translation, icon, generator,
+shared documentation action or Pages workflow changes. Pull requests use the same
+path filters and only build the site. It can also be started manually.
+
+Pages and release do not dispatch or call each other: they share the `build-docs`
+action with `web` and `offline` targets respectively. Version-tag pushes only
+start the release workflow, whose offline documentation waits for application
+tests and uses their exact commit. A documentation push does not start an
+application release; changing both documentation and application code in one
+commit still produces a single Pages run for that branch push.
 
 Once the workflow has been pushed, select **Settings > Pages > Source > GitHub
 Actions**. The expected URL is `https://lebenco.github.io/FileSpacer/`; `_config.yml`
 sets that project path so assets and search work under `/FileSpacer/`.
 
 The repository's **About > Website** field can show the published address.
-Changing the included documents requires updating `sources` in `generate.mjs`
-and the workflow's path filters together.
+Changing the included documents requires updating `sources` in `generate.mjs`.
+The Pages path filters already cover all of `docs/` and the README files; add a
+filter if a new generator input lives outside the existing paths.
