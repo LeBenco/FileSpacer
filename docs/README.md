@@ -8,8 +8,9 @@ code, not an API reference. See the [user guide](user-guide.md) for usage.
 ## Start here
 
 1. [Build the application](build.md) with MSVC/NMAKE.
-2. [Run the affected regression tests](../tests/regression/README.md), locally or
-   in a [dedicated Hyper-V client](../tests/client/README.md).
+2. [Run the affected regression tests](../tests/regression/README.md), locally,
+   in a [dedicated Hyper-V client](../tests/client/README.md), or through the
+   [GitHub Actions regression workflow](../tests/regression/README.md#run-on-github).
 3. Read the [Shell architecture](native-shell-view.md) before changing view
    lifetime, restoration or item identities.
 
@@ -64,7 +65,8 @@ Keep UI text in the language resource files and preserve their encodings.
 - [Website and offline help generation](../website/README.md)
 - [Translation maintenance](../website/translations/README.md)
 
-Technical documentation is maintained in English only. Document the current
+English is the source for technical documentation; Polish, Dutch and Ukrainian
+translations are also available in the website translation directories. Document the current
 behavior, constraints and useful debugging entry points. Keep run-specific
 measurements, logs and validation verdicts with their test artifacts rather than
 in these guides.
