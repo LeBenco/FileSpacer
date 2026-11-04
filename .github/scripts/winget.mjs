@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 
-const packageId = 'LeBenco.FileSpacer';
+const packageId = 'Benco.FileSpacer';
 const repository = 'LeBenco/FileSpacer';
 const projectUrl = `https://github.com/${repository}`;
 
@@ -49,7 +49,7 @@ export function manifests({version, url, hash}) {
   return {
     [`${packageId}.yaml`]: common + 'DefaultLocale: en-US\n' + footer('version'),
     [`${packageId}.locale.en-US.yaml`]: common + `PackageLocale: en-US
-Publisher: LeBenco
+Publisher: Benco
 PublisherUrl: ${projectUrl}
 PublisherSupportUrl: ${projectUrl}/issues
 PackageName: FileSpacer
@@ -110,13 +110,14 @@ export async function prepare(tag, output, request = fetch) {
   if (release.draft || release.prerelease || release.tag_name !== tag) {
     throw new Error('Only a published stable release can be submitted.');
   }
-  const existing = await api(`repos/microsoft/winget-pkgs/contents/manifests/l/LeBenco/FileSpacer/${version}`, true);
+  const existing = await api(`repos/microsoft/winget-pkgs/contents/manifests/b/Benco/FileSpacer/${version}`, true);
   if (existing) return 'Already present in winget-pkgs.';
   const query = `repo:microsoft/winget-pkgs is:pr is:open in:title "${packageId}" "${version}"`;
   const pulls = await api(`search/issues?q=${encodeURIComponent(query)}&per_page=100`);
   if (pulls.incomplete_results) throw new Error('GitHub returned incomplete PR search results.');
+  const packagePattern = new RegExp(`(?:^|\\s)${packageId.replaceAll('.', '\\.')}(?=\\s|$)`);
   const versionPattern = new RegExp(`(?:^|\\s)${version.replaceAll('.', '\\.')}(?=\\s|$)`);
-  const existingPull = pulls.items.find(item => item.title.includes(packageId) && versionPattern.test(item.title));
+  const existingPull = pulls.items.find(item => packagePattern.test(item.title) && versionPattern.test(item.title));
   if (existingPull) return `Already submitted: ${existingPull.html_url}`;
   async function download(name) {
     const asset = release.assets.find(item => item.name === name);
