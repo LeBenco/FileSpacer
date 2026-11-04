@@ -72,7 +72,8 @@
       "sourceCommit": "10c4027",
       "language": "fr-FR",
       "demoContentLanguage": "fr",
-      "executableSha256": "116D965E9B629205B52FC9358D5BD9C4B0AE02D4A7561D88085D04E58ECC5F13"
+      "executableSha256": "116D965E9B629205B52FC9358D5BD9C4B0AE02D4A7561D88085D04E58ECC5F13",
+      "supersededBy": "localization-2026-11-04-provenance.json"
     },
     {
       "file": "resize-window-fr.gif",
@@ -107,7 +108,8 @@
       "sourceCommit": "10c4027",
       "language": "fr-FR",
       "demoContentLanguage": "fr",
-      "executableSha256": "116D965E9B629205B52FC9358D5BD9C4B0AE02D4A7561D88085D04E58ECC5F13"
+      "executableSha256": "116D965E9B629205B52FC9358D5BD9C4B0AE02D4A7561D88085D04E58ECC5F13",
+      "supersededBy": "localization-2026-11-04-provenance.json"
     }
   ],
   "animation_recording": "ScreenToGif 2.43.2, real VM screen capture, 15 fps, seven-second loops, built-in key and mouse-event overlays",

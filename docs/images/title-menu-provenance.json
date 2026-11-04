@@ -51,7 +51,8 @@
             "top": 78,
             "width": 830,
             "height": 697
-          }
+          },
+          "supersededBy": "localization-2026-11-04-provenance.json"
         },
         {
           "file": "customized-title-menu.png",
@@ -66,7 +67,8 @@
             "Bottom": 635,
             "Width": 830,
             "Height": 557
-          }
+          },
+          "supersededBy": "localization-2026-11-04-provenance.json"
         }
       ],
       "nativeMenuIds": [
@@ -119,7 +121,8 @@
             "top": 78,
             "width": 834,
             "height": 697
-          }
+          },
+          "supersededBy": "localization-2026-11-04-provenance.json"
         },
         {
           "file": "customized-title-menu-fr.png",
@@ -134,7 +137,8 @@
             "Bottom": 635,
             "Width": 830,
             "Height": 557
-          }
+          },
+          "supersededBy": "localization-2026-11-04-provenance.json"
         }
       ],
       "nativeMenuIds": [
@@ -187,7 +191,8 @@
             "top": 78,
             "width": 923,
             "height": 697
-          }
+          },
+          "supersededBy": "localization-2026-11-04-provenance.json"
         },
         {
           "file": "customized-title-menu-de.png",
@@ -202,7 +207,8 @@
             "Bottom": 635,
             "Width": 830,
             "Height": 557
-          }
+          },
+          "supersededBy": "localization-2026-11-04-provenance.json"
         }
       ],
       "nativeMenuIds": [
@@ -255,7 +261,8 @@
             "top": 78,
             "width": 880,
             "height": 697
-          }
+          },
+          "supersededBy": "localization-2026-11-04-provenance.json"
         },
         {
           "file": "customized-title-menu-it.png",
@@ -270,7 +277,8 @@
             "Bottom": 635,
             "Width": 830,
             "Height": 557
-          }
+          },
+          "supersededBy": "localization-2026-11-04-provenance.json"
         }
       ],
       "nativeMenuIds": [
@@ -323,7 +331,8 @@
             "top": 78,
             "width": 857,
             "height": 697
-          }
+          },
+          "supersededBy": "localization-2026-11-04-provenance.json"
         },
         {
           "file": "customized-title-menu-es.png",
@@ -338,7 +347,8 @@
             "Bottom": 635,
             "Width": 830,
             "Height": 557
-          }
+          },
+          "supersededBy": "localization-2026-11-04-provenance.json"
         }
       ],
       "nativeMenuIds": [
@@ -391,7 +401,8 @@
             "top": 78,
             "width": 830,
             "height": 697
-          }
+          },
+          "supersededBy": "localization-2026-11-04-provenance.json"
         },
         {
           "file": "customized-title-menu-pt.png",
@@ -406,7 +417,8 @@
             "Bottom": 635,
             "Width": 830,
             "Height": 557
-          }
+          },
+          "supersededBy": "localization-2026-11-04-provenance.json"
         }
       ],
       "nativeMenuIds": [
@@ -459,7 +471,8 @@
             "top": 78,
             "width": 969,
             "height": 697
-          }
+          },
+          "supersededBy": "localization-2026-11-04-provenance.json"
         },
         {
           "file": "customized-title-menu-el.png",
@@ -474,7 +487,8 @@
             "Bottom": 635,
             "Width": 830,
             "Height": 557
-          }
+          },
+          "supersededBy": "localization-2026-11-04-provenance.json"
         }
       ],
       "nativeMenuIds": [

@@ -51,7 +51,8 @@
       "sourceCommit": "10c4027",
       "language": "en-US",
       "demoContentLanguage": "en",
-      "executableSha256": "A70C0F9B23ECD5210D0D9D911FD17A90ECE0C7CEFC21DAF8EF80E0559DB88680"
+      "executableSha256": "A70C0F9B23ECD5210D0D9D911FD17A90ECE0C7CEFC21DAF8EF80E0559DB88680",
+      "supersededBy": "localization-2026-11-04-provenance.json"
     },
     {
       "file": "overview.png",
@@ -93,7 +94,8 @@
       "sourceCommit": "10c4027",
       "language": "en-US",
       "demoContentLanguage": "en",
-      "executableSha256": "A70C0F9B23ECD5210D0D9D911FD17A90ECE0C7CEFC21DAF8EF80E0559DB88680"
+      "executableSha256": "A70C0F9B23ECD5210D0D9D911FD17A90ECE0C7CEFC21DAF8EF80E0559DB88680",
+      "supersededBy": "localization-2026-11-04-provenance.json"
     },
     {
       "file": "search.png",
