@@ -90,6 +90,6 @@ jobs:
             throw 'WingetCreate must have a valid Microsoft signature.'
           }
           # submit validates the complete manifest set before creating the PR.
-          & $tool submit --no-open --prtitle "New version: LeBenco.FileSpacer version $($env:RELEASE_TAG.Substring(1))" build/winget
+          & $tool submit --no-open --prtitle "New version: Benco.FileSpacer version $($env:RELEASE_TAG.Substring(1))" build/winget
           if ($LASTEXITCODE -ne 0) { throw 'WinGet validation/submission failed. See WingetCreate diagnostics above.' }
           'WinGet PR submitted. Catalog availability requires approval by microsoft/winget-pkgs.' >> $env:GITHUB_STEP_SUMMARY
