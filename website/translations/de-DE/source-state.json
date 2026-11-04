@@ -2,7 +2,7 @@
   "version": 1,
   "sources": {
     "README.md": {
-      "sourceHash": "0c861560bfc4aeaeb6c55c0c67dfb17305f12acadaeb5c6e8ca92f9166c42489",
+      "sourceHash": "44ef752c852eda26a3d5b40126a22552727836be5e84fac2f755702beac9b1e2",
       "headings": [
         [
           "filespacer",
@@ -132,11 +132,15 @@
       ]
     },
     "CHANGELOG.md": {
-      "sourceHash": "52e2de30b5d065d5c25439fdce2593f225af0d03990ecea376fb4b3b74f97fe1",
+      "sourceHash": "bc5de68e2c7b9b6975332611c42320788ae832d188213221cf41619e5429cba1",
       "headings": [
         [
           "changelog",
           2
+        ],
+        [
+          "unreleased",
+          3
         ],
         [
           "131--2026-11-03",
