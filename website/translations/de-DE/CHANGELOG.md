@@ -1,7 +1,5 @@
 # Versionsverlauf
 
-## Noch nicht veröffentlicht
-
 ## 1.3.1 — 2026-11-03
 
 - Behebt das Öffnen über den Standard-Dateimanager, bei dem eine andere Anwendung anstelle von FileSpacer ausgewählt wurde.

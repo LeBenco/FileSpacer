@@ -1,7 +1,5 @@
 # Changelog
 
-## Unreleased
-
 ## 1.3.1 — 2026-11-03
 
 - Fix default file-manager opening selecting another application instead of FileSpacer.
