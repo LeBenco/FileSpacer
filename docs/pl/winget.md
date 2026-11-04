@@ -18,6 +18,8 @@ Zwykły `GITHUB_TOKEN` nadal wystarcza do publikacji FileSpacer. Dodatkowy PAT s
 
 ## Każde wydanie
 
+Przy pierwszym wkładzie Microsoft może poprosić konto zgłaszające o zaakceptowanie [Contributor License Agreement (CLA)](https://cla.opensource.microsoft.com/). Właściciel konta musi przeczytać umowę i, jeśli ją akceptuje, odpowiedzieć zgodnie z instrukcją bota Microsoft w PR zgłoszenia. Udany workflow WinGet potwierdza zgłoszenie; publikacja w katalogu czeka na akceptację CLA i przegląd Microsoft.
+
 Stosuj [procedurę wydania](build.md#releases). Po sukcesie osobny workflow WinGet pobiera `release-publication` z dokładnie tego przebiegu. Artefakt zapisuje tag także przy ręcznym wydaniu. Następnie:
 
 1. Sprawdza stabilny `vX.Y.Z` i pomija wersje już w `winget-pkgs` lub z otwartym PR zgłoszenia.
