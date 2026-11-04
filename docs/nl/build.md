@@ -96,7 +96,9 @@ Een NSIS-bouw controleert verpakking, geen echte installatie, UAC, upgrade of de
 
 ## Releases
 
-[De releaseworkflow](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/release.yml) start op `vX.Y.Z` of handmatig voor een bestaande tag. Eerst wordt de [regressieworkflow voor de toepassing](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/regression.yml) hergebruikt en moet deze slagen; daarna bouwt hij offlinehulp en Windows-NSIS uit exact de geteste SHA. Hij controleert versie tegen tag en publiceert `FileSpacer-X.Y.Z-install.exe` en `FileSpacer-update.txt` op GitHub Releases. Gewone branchpushes publiceren geen installatieprogramma. GitHubs automatische token volstaat voor de release.
+[De releaseworkflow](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/release.yml) start op `vX.Y.Z` of handmatig voor een bestaande tag. Eerst wordt de [regressieworkflow voor de toepassing](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/regression.yml) hergebruikt en moet deze slagen; daarna bouwt hij offlinehulp en Windows-NSIS uit de geselecteerde, gevalideerde SHA. Hij controleert versie tegen tag en publiceert `FileSpacer-X.Y.Z-install.exe` en `FileSpacer-update.txt` op GitHub Releases. Gewone branchpushes publiceren geen installatieprogramma. GitHubs automatische token volstaat voor de release.
+
+Een overeenkomende PASS voor dezelfde toepassings- en testinvoer kan zonder nieuwe uitvoering worden hergebruikt; zie [de cache voor regressieresultaten](tests/regression/README.md#run-on-github).
 
 Na publicatie dient een aparte WinGet-taak het installatieprogramma bij de communitycatalogus in. Een eenmalig ingesteld `WINGET_TOKEN` is vereist; fouten draaien de GitHub-release niet terug. Zie [WinGet-distributie](winget.md) voor configuratie, controle en herhalen zonder herbouwen.
 
