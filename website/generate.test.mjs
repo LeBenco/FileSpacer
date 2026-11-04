@@ -16,9 +16,13 @@ async function fixture(t) {
   });
   for (const source of ['README.md', 'docs/user-guide.md', 'docs/privacy-policy.md', 'CHANGELOG.md', 'THIRD_PARTY_NOTICES.md', 'src/res/FileSpacer.svg']) {
     await fs.mkdir(path.dirname(path.join(root, source)), {recursive: true});
-    await fs.copyFile(path.join(repository, source), path.join(root, source));
+    const actual = source.startsWith('docs/') ? source.replace('docs/', 'docs/en/') : source;
+    let content = await fs.readFile(path.join(repository, actual));
+    if (source.endsWith('.md')) content = Buffer.from(content.toString('utf8').replaceAll('docs/en/tests/', 'tests/').replaceAll('docs/en/website/', 'website/').replaceAll('docs/en/', 'docs/'));
+    await fs.writeFile(path.join(root, source), content);
   }
-  await fs.cp(path.join(repository, 'docs/images'), path.join(root, 'docs/images'), {recursive: true});
+  await fs.cp(path.join(repository, 'docs/en/images'), path.join(root, 'docs/images'), {recursive: true});
+  await fs.copyFile(path.join(repository, 'docs/fr/images/spatial-windows-fr.png'), path.join(root, 'docs/images/spatial-windows-fr.png'));
   return root;
 }
 test('real documents keep guide nesting, local anchors, images and GitHub references', async t => {
@@ -34,8 +38,8 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
   assert.match(html, /href="#user-guide--moving-and-resizing"/);
   assert.match(html, /href="#user-guide--everything"/);
   assert.match(html, /href="#user-guide--nilesoft-shell"/);
-  assert.match(html, /https:\/\/github\.com\/LeBenco\/FileSpacer\/blob\/main\/docs\/build\.md/);
-  assert.match(html, /https:\/\/github\.com\/LeBenco\/FileSpacer\/blob\/main\/tests\/regression\/README\.md/);
+  assert.match(html, /https:\/\/github\.com\/LeBenco\/FileSpacer\/blob\/main\/docs\/en\/build\.md/);
+  assert.match(html, /https:\/\/github\.com\/LeBenco\/FileSpacer\/blob\/main\/docs\/en\/tests\/regression\/README\.md/);
   assert.doesNotMatch(html, /data-source="(?:docs\/(?:build|native-shell-view)|tests\/)/);
   assert.match(nav, /href="#user-guide--integration"[^]*href="#user-guide--windows-integration"[^]*href="#user-guide--everything"[^]*href="#user-guide--nilesoft-shell"/);
   assert.match(html, /<h4 id="user-guide--everything"/);
@@ -57,7 +61,7 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
   assert.equal(screenshots.length, [...html.matchAll(/<img\b[^>]*src="[^"]+\.(?:png|gif)\?v=[a-f0-9]{12}"/g)].length);
   assert.ok(screenshots.length > 0);
   assert.ok(screenshots.every(([link]) => !link.includes('.svg')));
-  assert.match(html, /screenshot-link" href="assets\/content\/docs\/images\/spatial-windows\.png\?v=[a-f0-9]{12}"/);
+  assert.match(html, /screenshot-link" href="assets\/content\/docs\/en\/images\/spatial-windows\.png\?v=[a-f0-9]{12}"/);
   await fs.access(path.join(output, 'assets/content/src/res/FileSpacer.svg'));
 });
 
@@ -86,6 +90,28 @@ test('the header adds no download button while preserving download links in Mark
   assert.match(header, /https:\/\/github.com\/LeBenco\/FileSpacer/);
   const html = await fs.readFile(path.join(root, 'output/index.html'), 'utf8');
   assert.match(html, /href="https:\/\/github.com\/LeBenco\/FileSpacer\/releases\/latest">Download<\/a>/);
+});
+
+test('language directories use the root English README and require their own images', async t => {
+  const root = await fixture(t);
+  await fs.rename(path.join(root, 'docs'), path.join(root, 'english'));
+  await fs.mkdir(path.join(root, 'docs'));
+  await fs.rename(path.join(root, 'english'), path.join(root, 'docs/en'));
+  const readme = path.join(root, 'README.md');
+  await fs.writeFile(readme, (await fs.readFile(readme, 'utf8')).replaceAll('docs/', 'docs/en/'));
+  await fs.appendFile(readme, '\nCanonical root README.\n');
+  await fs.writeFile(path.join(root, 'docs/en/README.md'), '# Technical index\n\nNot the project overview.\n');
+  await fs.cp(path.join(repository, 'docs/fr'), path.join(root, 'docs/fr'), {recursive: true});
+  const output = path.join(root, 'output');
+  await generate(root, output, {onWarning: () => {}});
+  const english = await fs.readFile(path.join(output, 'index.html'), 'utf8');
+  assert.match(english, /Canonical root README/);
+  assert.doesNotMatch(english, /Not the project overview/);
+  const french = await fs.readFile(path.join(output, '_locales/fr-FR/index.html'), 'utf8');
+  assert.match(french, /assets\/content\/docs\/fr\/images\/spatial-windows-fr\.png/);
+  assert.doesNotMatch(french, /assets\/content\/docs\/en\/images\//);
+  await fs.unlink(path.join(root, 'docs/fr/images/spatial-windows-fr.png'));
+  await assert.rejects(generate(root, output, {onWarning: () => {}}), /Missing localized media \(fr-FR\)/);
 });
 
 test('broken source anchors fail generation instead of publishing broken navigation', async t => {
@@ -125,7 +151,10 @@ async function translatedFixture(t) {
   const root = await fixture(t);
   const target = path.join(root, 'website/translations/fr-FR');
   await fs.mkdir(path.dirname(target), {recursive: true});
-  await fs.cp(path.join(repository, 'website/translations/fr-FR'), target, {recursive: true});
+  await fs.cp(path.join(repository, 'docs/fr'), target, {recursive: true});
+  await fs.mkdir(path.join(target, 'docs'), {recursive: true});
+  await fs.copyFile(path.join(repository, 'docs/fr/nilesoft-shell.md'), path.join(target, 'docs/nilesoft-shell.md'));
+  await fs.copyFile(path.join(repository, 'docs/fr/privacy-policy.md'), path.join(target, 'docs/privacy-policy.md'));
   // Keep policy fixtures independent of whether the live translations lag
   // behind the live English documentation at the time the tests run.
   for (const [source, english, french] of [
@@ -211,7 +240,7 @@ test('all available translations keep recorded section IDs, localized navigation
     const config = await fs.readFile(path.join(directory, '_config.yml'), 'utf8');
     if (!language.path) assert.deepEqual([...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]), englishIds);
     else {
-      const state = JSON.parse(await fs.readFile(path.join(repository, language.source.replace('_locales/', 'website/translations/'), 'source-state.json'), 'utf8'));
+      const state = JSON.parse(await fs.readFile(path.join(repository, 'docs/' + language.path, 'source-state.json'), 'utf8'));
       for (const [, id, source, section] of html.matchAll(/<section aria-labelledby="([^"]+)" data-source="([^"]+)">([^]*?)<\/section>/g)) {
         const expected = state.sources[source].headings.map(([anchor], index) => index ? `${id}--${anchor}` : id);
         assert.deepEqual([...section.matchAll(/<h[2-6] id="([^"]+)"/g)].map(match => match[1]), expected);
@@ -229,12 +258,12 @@ test('all available translations keep recorded section IDs, localized navigation
     for (const [, asset] of html.matchAll(/(?:src|href)="(assets\/content\/[^"?]+)(?:\?[^"]*)?"/g)) {
       await fs.access(path.join(directory, asset));
     }
-    const reference = (language.path ? `website/translations/${language.code}/` : '') + 'docs/nilesoft-shell.md';
+    const reference = `docs/${language.path || 'en'}/nilesoft-shell.md`;
     assert.ok(html.includes('href="https://github.com/LeBenco/FileSpacer/blob/main/' + reference + '"'), 'Nilesoft reference must use the selected language');
     await fs.access(path.join(repository, reference));
   }
-  const localizedImage = await fs.readFile(path.join(output, '_locales/fr-FR/assets/content/docs/images/spatial-windows.png'));
-  assert.deepEqual(localizedImage, await fs.readFile(path.join(repository, 'docs/images/spatial-windows-fr.png')));
+  const localizedImage = await fs.readFile(path.join(output, '_locales/fr-FR/assets/content/docs/fr/images/spatial-windows-fr.png'));
+  assert.deepEqual(localizedImage, await fs.readFile(path.join(repository, 'docs/fr/images/spatial-windows-fr.png')));
 });
 
 test('a translation with a missing document is rejected rather than partially published', async t => {
