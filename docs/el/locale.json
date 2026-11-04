@@ -16,5 +16,6 @@
   "attribution": "Αυτός ο ιστότοπος χρησιμοποιεί το <a href=\"https://github.com/just-the-docs/just-the-docs\">Just the Docs</a>, ένα θέμα τεκμηρίωσης για το Jekyll.",
   "license": "Διανέμεται με την άδεια",
   "enlargeImage": "Μεγέθυνση στιγμιότυπου",
-  "closeImage": "Κλείσιμο εικόνας"
+  "closeImage": "Κλείσιμο εικόνας",
+  "locale": "el-GR"
 }

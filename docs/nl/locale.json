@@ -16,5 +16,6 @@
   "attribution": "Deze site gebruikt <a href=\"https://github.com/just-the-docs/just-the-docs\">Just the Docs</a>, een documentatiethema voor Jekyll.",
   "license": "Verspreid onder de",
   "enlargeImage": "Schermafbeelding vergroten",
-  "closeImage": "Afbeelding sluiten"
+  "closeImage": "Afbeelding sluiten",
+  "locale": "nl-NL"
 }
