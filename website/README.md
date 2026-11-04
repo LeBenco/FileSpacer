@@ -10,7 +10,8 @@ website-only translations live under `website/translations/<language-region>/`.
 Build instructions, tests and technical notes remain on GitHub: links to files
 not included in the site become links to the repository's `main` branch.
 The Nilesoft configuration reference has a translated file for each language;
-its GitHub links follow the selected language. Developer guides remain English.
+its GitHub links follow the selected language. Polish, Dutch and Ukrainian also
+provide translated developer guides; their references use the selected language.
 
 The generator discovers language directories containing `locale.json` and all
 four translated source files, the privacy policy and the localized Nilesoft
@@ -70,7 +71,8 @@ The result under `build/site-source` is Jekyll input, not the finished website.
 English is at its root; the other inputs are under `_locales/<language-region>`.
 `locales.json` describes the discovered builds and their output paths. Build each
 source with Jekyll and merge its result at the manifest's `path`: English at the
-site root, other languages under `/de/`, `/el/`, `/es/`, `/fr/`, `/it/` and `/pt/`.
+site root, other languages under `/de/`, `/el/`, `/es/`, `/fr/`, `/it/`, `/nl/`,
+`/pl/`, `/pt/` and `/uk/`.
 These outputs are generated and ignored by Git. The application build and its
 dependencies are separate from this documentation build.
 
