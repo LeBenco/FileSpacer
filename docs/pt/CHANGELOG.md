@@ -1,9 +1,8 @@
 # Histórico de versões
 
-## Por publicar
+## 1.3.2 — 2026-11-04
 
 - Adicionar polaco, neerlandês e ucraniano à aplicação, ao instalador, ao sítio Web e à documentação do utilizador e técnica.
-- Renovar as demonstrações localizadas com um novo fundo do ambiente de trabalho.
 
 ## 1.3.1 — 2026-11-03
 

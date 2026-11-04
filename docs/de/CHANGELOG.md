@@ -1,9 +1,8 @@
 # Versionsverlauf
 
-## Unveröffentlicht
+## 1.3.2 — 2026-11-04
 
 - Polnisch, Niederländisch und Ukrainisch für Anwendung, Installationsprogramm, Website sowie Benutzer- und Entwicklerdokumentation hinzufügen.
-- Lokalisierte Vorführungen mit einem neuen Desktophintergrund erneuern.
 
 ## 1.3.1 — 2026-11-03
 
