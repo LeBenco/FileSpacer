@@ -36,8 +36,8 @@ async function digest(file, normalize = false) {
 
 export async function sourceDigest(root = repository) {
   const hash = createHash('sha256');
-  const inputs = ['README.md', 'CHANGELOG.md', 'THIRD_PARTY_NOTICES.md', 'docs/user-guide.md', 'docs/privacy-policy.md', 'src/res/FileSpacer.svg'];
-  for (const directory of ['website', 'docs/images', '.github/scripts']) {
+  const inputs = ['README.md', 'CHANGELOG.md', 'THIRD_PARTY_NOTICES.md', 'src/res/FileSpacer.svg'];
+  for (const directory of ['website', 'docs', '.github/scripts']) {
     inputs.push(...(await files(path.join(root, directory))).map(file => directory + '/' + file));
   }
   for (const file of inputs.sort()) hash.update(file + '\0' + await digest(path.join(root, file), true) + '\0');
