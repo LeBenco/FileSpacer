@@ -4,7 +4,9 @@
 
 Główny README i dokumentacja pozostają angielskimi źródłami. Pełne warianty Markdown zasilają witrynę i lokalne odnośniki GitHub; nie dodają wyboru ani linków językowych do README repozytorium.
 
-Każdy katalog język-region zawiera `locale.json` oraz `README.md`, `docs/user-guide.md`, `CHANGELOG.md` i `THIRD_PARTY_NOTICES.md`. Prywatność i konserwacja danych lokalnych mają osobne sekcje instrukcji; `docs/privacy-policy.md` pozostaje krótką polityką GitHub. `docs/nilesoft-shell.md` jest pełnym lokalnym opisem, do którego prowadzi instrukcja, osobno w GitHub. Brak opisu przerywa generowanie zamiast odsyłać po cichu do angielskiego. Generator wykrywa katalogi; źródła angielskie pozostają oryginalne, z etykietami `website/locale.json`.
+Każdy katalog `docs/<language>/` zawiera `locale.json` z lokalizacją język-region oraz `README.md`, `user-guide.md`, `CHANGELOG.md` i `THIRD_PARTY_NOTICES.md`. Prywatność i konserwacja danych lokalnych mają osobne sekcje instrukcji; `privacy-policy.md` pozostaje krótką polityką GitHub. `nilesoft-shell.md` jest pełnym lokalnym opisem, do którego prowadzi instrukcja, osobno w GitHub. Brak opisu przerywa generowanie zamiast odsyłać po cichu do angielskiego. Generator wykrywa katalogi; źródła angielskie pozostają oryginalne, z etykietami `website/locale.json`.
+
+Angielska witryna używa głównych plików README, CHANGELOG.md i THIRD_PARTY_NOTICES.md oraz `docs/en/user-guide.md`. Dokumenty techniczne są w katalogu danej wersji językowej. Pliki o zbieżnych nazwach zachowują podkatalogi: indeks techniczny to `technical/README.md`, a krótki przewodnik kompilacji to `building/BUILD.md`. Przewodniki testów i witryny zachowują swoje podkatalogi. Nazwy plików dokumentów i obrazów pozostają bez zmian.
 
 Przy aktualizacji zachowaj kolejność i hierarchię nagłówków źródła. `source-state.json` zapisuje angielskie skróty treści i ID ostatniej synchronizacji. Angielskie zmiany są publikowane od razu. Tłumaczenia zachowują tekst i ID; nieaktualność daje ostrzeżenia i tabelę workflow zamiast blokady. Wykrywane są też zmiany samego tekstu.
 
@@ -18,7 +20,7 @@ Pominięcie języka zapisuje wszystkie. Zatwierdź wygenerowane pliki stanu z Ma
 
 Zapisane angielskie ID zachowują działanie linków po zmianie nagłówków innego języka. Linki mogą używać tłumaczonego lub oryginalnego slugu. Dokumentacja użytkownika wskazuje plik GitHub wybranego języka. Polski, niderlandzki i ukraiński mają też dokumentację techniczną poza witryną; ich linki wskazują te pliki. Inne języki zachowują źródła angielskie. Zachowuj jawne ID kotwic HTML.
 
-Zachowaj angielskie nazwy obrazów w odnośnikach. Generator podstawia prawdziwe lokalne zrzuty, np. `spatial-windows-de.png`; neutralne logo jest wspólne. Brak zrzutu lub animacji jest błędem. Nie tłumacz tekstu wewnątrz eksportowanych obrazów.
+Stosuj jawne odnośniki względne do własnego katalogu `images/`, zachowując istniejące nazwy i przyrostki, np. `spatial-windows-de.png`. Generator kopiuje wskazane pliki bez dobierania innej nazwy. Neutralne logo jest wspólne. Brak zrzutu lub animacji jest błędem. Nie tłumacz tekstu wewnątrz wyeksportowanych obrazów.
 
 Każdy język jest budowany osobno z tym samym przypiętym Just the Docs, własną nawigacją, indeksem, etykietami i mediami. Workflow wykrywa macierz z `locales.json` generatora.
 
