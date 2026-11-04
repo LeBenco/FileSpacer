@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add Polish, Dutch and Ukrainian to the application, installer, website and user and developer documentation.
+- Refresh localized demonstrations with a new desktop background.
+
 ## 1.3.1 — 2026-11-03
 
 - Fix default file-manager opening selecting another application instead of FileSpacer.

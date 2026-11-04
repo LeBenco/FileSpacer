@@ -1,5 +1,10 @@
 # Histórico de versões
 
+## Por publicar
+
+- Adicionar polaco, neerlandês e ucraniano à aplicação, ao instalador, ao sítio Web e à documentação do utilizador e técnica.
+- Renovar as demonstrações localizadas com um novo fundo do ambiente de trabalho.
+
 ## 1.3.1 — 2026-11-03
 
 - Corrige a abertura com o gestor de ficheiros predefinido que selecionava outra aplicação em vez do FileSpacer.

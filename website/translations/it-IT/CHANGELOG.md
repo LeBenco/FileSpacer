@@ -1,5 +1,10 @@
 # Cronologia delle versioni
 
+## Non ancora pubblicato
+
+- Aggiungere polacco, olandese e ucraino all’applicazione, al programma di installazione, al sito e alla documentazione utente e tecnica.
+- Rinnovare le dimostrazioni localizzate con un nuovo sfondo del desktop.
+
 ## 1.3.1 — 2026-11-03
 
 - Corregge l’apertura con il gestore di file predefinito che selezionava un’altra applicazione al posto di FileSpacer.
