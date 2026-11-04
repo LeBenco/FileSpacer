@@ -18,6 +18,8 @@ Gewoon `GITHUB_TOKEN` volstaat voor FileSpacer-publicatie. De extra PAT dient al
 
 ## Elke release
 
+Bij een eerste bijdrage kan Microsoft het indienende account vragen de [Contributor License Agreement (CLA)](https://cla.opensource.microsoft.com/) te accepteren. De accounteigenaar moet deze lezen en, bij akkoord, antwoorden zoals de Microsoft-beleidsbot in de indienings-PR vraagt. Een geslaagde WinGet-workflow bevestigt de indiening; publicatie in de catalogus wacht op acceptatie van de CLA en de beoordeling door Microsoft.
+
 Volg de [releaseprocedure](build.md#releases). Na succes haalt WinGet `release-publication` uit exact die run. Dit artefact bewaart de tag ook voor handmatige releases. Daarna:
 
 1. Controleert stabiel `vX.Y.Z` en slaat bestaande versies of open inzendings-PR’s over.

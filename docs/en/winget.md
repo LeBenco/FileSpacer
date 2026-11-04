@@ -28,6 +28,13 @@ needed: generated manifests support both the first submission and new versions.
 
 ## Each release
 
+For a first contribution, Microsoft may ask the submitting account to accept its
+[Contributor License Agreement (CLA)](https://cla.opensource.microsoft.com/).
+The account owner must read it and, if they accept, reply as requested by the
+Microsoft policy bot in the submission PR. A successful WinGet workflow confirms
+submission; catalog publication remains pending while the CLA or Microsoft review
+is outstanding.
+
 Follow the existing [release procedure](build.md#releases). Once publication
 succeeds, the independent WinGet workflow downloads `release-publication` from
 that exact successful run. This small artifact records the published tag, also
