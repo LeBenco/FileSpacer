@@ -1,13 +1,14 @@
 name: Publish FileSpacer website
 
 on:
+  # Only branch pushes publish the live site. Release tags build their own
+  # offline documentation with the shared action; neither workflow calls the other.
   push:
     branches: [main]
     paths:
-      - README.md
-      - docs/user-guide.md
-      - docs/images/**
-      - docs/privacy-policy.md
+      - '**/README.md'
+      - BUILD.md
+      - docs/**
       - CHANGELOG.md
       - THIRD_PARTY_NOTICES.md
       - src/res/FileSpacer.svg
@@ -17,10 +18,9 @@ on:
       - .github/workflows/pages.yml
   pull_request:
     paths:
-      - README.md
-      - docs/user-guide.md
-      - docs/images/**
-      - docs/privacy-policy.md
+      - '**/README.md'
+      - BUILD.md
+      - docs/**
       - CHANGELOG.md
       - THIRD_PARTY_NOTICES.md
       - src/res/FileSpacer.svg
