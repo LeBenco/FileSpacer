@@ -138,6 +138,12 @@ export async function buildDocs(target = 'web', output = buildPath(target === 'w
   if (available.error || available.status !== 0) throw new Error('Generating documentation requires Ruby and bundle install in .github/scripts. Existing output was preserved.');
   await fs.rm(source, {recursive: true, force: true});
   const generated = await generate(repository, source);
+  if (generated.warnings.length && process.env.GITHUB_STEP_SUMMARY) {
+    const rows = generated.warnings.map(({language, source}) => `| ${language} | ${source} | Existing translation retained |`);
+    await fs.appendFile(process.env.GITHUB_STEP_SUMMARY,
+      '\n### Translation updates pending\n\nEnglish is up to date. Existing translations and their section links are retained.\n\n'
+      + '| Language | Document | Status |\n| --- | --- | --- |\n' + rows.join('\n') + '\n');
+  }
   await fs.rm(output, {recursive: true, force: true});
   for (const language of generated.languages) {
     const result = spawnSync('ruby', ['-S', 'bundle', 'exec', 'jekyll', 'build', '--trace', '--source', path.join(source, language.source), '--destination', path.join(output, language.path)], {
