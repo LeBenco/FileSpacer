@@ -68,6 +68,13 @@ GitHub Actions uses the [regression workflow](../../../../.github/workflows/regr
 for this same application suite. It can be launched on demand; ordinary branch
 pushes and pull requests do not trigger it.
 
+Before preparing Windows, the workflow fingerprints the application sources and resources,
+dependencies, build inputs, test harness, category and pattern. An exact successful result
+available in GitHub's cache is reused: documentation, screenshots, `install.nsi` and release-note
+changes alone do not rerun the suite. The summary links the original execution and commit;
+packaging still uses the selected revision. Changed inputs or missing, evicted or invalid
+evidence require a new execution. GitHub's cache branch/ref visibility rules apply.
+
 In **Actions > Test FileSpacer regressions > Run workflow**, choose `ref`
 (branch, tag or commit), `category` and `pattern`. `All` / `*` runs the complete
 application suite. The workflow must exist on the default branch for manual
@@ -84,7 +91,7 @@ on Windows 10 or on another required display/provider configuration.
 
 The workflow publishes no installer or offline help. The [release
 workflow](../../../../.github/workflows/release.yml) reuses it as its first job, within
-the release run, then builds documentation and the NSIS package from the tested
+the release run, then builds documentation and the NSIS package from the validated
 SHA. A successful package build is not a real installation or upgrade test.
 
 The Actions summary gives the tested SHA, totals by category and each failure's
