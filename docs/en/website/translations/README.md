@@ -4,16 +4,21 @@ The repository's main README and documentation remain English sources. These
 complete Markdown variants supply the website and localized GitHub references;
 they do not add language links or controls to the repository README.
 
-Each language-region directory contains `locale.json` and the same four source
-paths used by the English site: `README.md`, `docs/user-guide.md`,
+Each translated `docs/<language>/` directory contains `locale.json` (including
+its language-region locale) and four source files: `README.md`, `user-guide.md`,
 `CHANGELOG.md`, and `THIRD_PARTY_NOTICES.md`. Privacy details and local-data
-maintenance belong in separate user-guide sections; `docs/privacy-policy.md`
+maintenance belong in separate user-guide sections; `privacy-policy.md`
 remains a short localized policy for GitHub.
-The directory also contains `docs/nilesoft-shell.md`, a complete localized reference linked
+The directory also contains `nilesoft-shell.md`, a complete localized reference linked
 from the user guide and kept as a separate GitHub document. A missing reference
 fails generation instead of silently linking readers to English.
 The generator discovers these directories. Its English input remains the
-original documents, with interface labels from `website/locale.json`.
+root README, changelog and third-party notices plus `docs/en/user-guide.md`, with
+interface labels from `website/locale.json`. Technical documents also live under
+their language directory. Documents with colliding basenames keep a subdirectory:
+the translated technical index is `technical/README.md`, and the short build
+entry point is `building/BUILD.md`. Test and website guides retain their respective
+subdirectories. Existing document and image basenames are unchanged.
 
 When updating a translation, keep the heading order and hierarchy identical to
 its English reference. Each locale's generated `source-state.json` records the
@@ -44,8 +49,9 @@ Ukrainian also provide translated developer documents outside the website;
 their links use those files. Other languages retain the English technical sources.
 Keep explicit HTML anchor IDs unchanged across languages.
 
-Keep image references under their original English filenames. The generator
-substitutes real language-specific captures such as `spatial-windows-de.png`, while
+Use explicit relative references to the language's own `images/` directory,
+including existing suffixes such as `spatial-windows-de.png`. The generator copies
+the referenced files without inferring another filename, while
 the neutral application logo is shared. It fails when an included capture or
 animation is missing. Do not translate text inside exported images.
 

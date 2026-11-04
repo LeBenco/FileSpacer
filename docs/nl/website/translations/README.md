@@ -4,7 +4,9 @@
 
 Hoofd-README en documentatie blijven Engelse bronnen. Volledige Markdown-varianten leveren site en vertaalde GitHub-referenties; ze voegen geen taalkiezer of links aan de repository-README toe.
 
-Elke taal-regiomap bevat `locale.json`, `README.md`, `docs/user-guide.md`, `CHANGELOG.md` en `THIRD_PARTY_NOTICES.md`. Privacy/lokaal onderhoud hebben aparte handleidingsecties; `docs/privacy-policy.md` blijft kort beleid op GitHub. `docs/nilesoft-shell.md` is de volledige vertaalde referentie uit de handleiding, apart op GitHub. Ontbreken doet generatie falen in plaats van stil naar Engels te linken. De generator ontdekt mappen; Engels gebruikt originelen en `website/locale.json`.
+Elke map `docs/<language>/` bevat `locale.json` met de taal-regiocode, `README.md`, `user-guide.md`, `CHANGELOG.md` en `THIRD_PARTY_NOTICES.md`. Privacy/lokaal onderhoud hebben aparte handleidingsecties; `privacy-policy.md` blijft kort beleid op GitHub. `nilesoft-shell.md` is de volledige vertaalde referentie uit de handleiding, apart op GitHub. Ontbreken doet generatie falen in plaats van stil naar Engels te linken. De generator ontdekt mappen; Engels gebruikt de README, het wijzigingsoverzicht en de derdenvermeldingen uit de hoofdmap, `docs/en/user-guide.md` en `website/locale.json`.
+
+Technische documenten staan in de taalmap. Documenten met dezelfde bestandsnaam behouden een submap: de technische index staat in `technical/README.md` en de korte bouwinstructies in `building/BUILD.md`. Test- en websitegidsen behouden hun eigen submappen. De bestaande bestandsnamen van documenten en afbeeldingen blijven behouden.
 
 Behoud bij updates Engelse kopvolgorde/hiërarchie. `source-state.json` bewaart Engelse inhoudshashes en sectie-ID’s van de laatste synchronisatie. Engels wordt direct gepubliceerd. Vertalingen behouden tekst en ID’s; veroudering geeft waarschuwingen en een tabel in plaats van blokkering. Ook tekstwijzigingen worden ontdekt.
 
@@ -18,7 +20,7 @@ Zonder locale worden alle vastgelegd. Commit bronstatus met Markdown. Registrati
 
 Vastgelegde Engelse ID’s houden links geldig bij gewijzigde vertaalde koppen. Links mogen vertaalde of Engelse slugs gebruiken. Gebruikersdocumentatie linkt naar de gekozen GitHub-taal. Pools, Nederlands en Oekraïens bieden ook technische documenten buiten de site; links gebruiken die. Andere talen behouden Engelse technische bronnen. Behoud expliciete HTML-anker-ID’s.
 
-Behoud Engelse afbeeldingsnamen in verwijzingen. De generator vervangt ze door echte lokale opnamen zoals `spatial-windows-de.png`; het neutrale logo is gedeeld. Ontbrekende opname/animatie faalt. Vertaal geen tekst in geëxporteerde beelden.
+Gebruik expliciete relatieve verwijzingen naar de eigen map `images/`, met bestaande namen en achtervoegsels zoals `spatial-windows-de.png`. De generator kopieert de aangewezen bestanden zonder een andere naam af te leiden. Het neutrale logo wordt gedeeld. Een ontbrekende opname of animatie is een fout. Vertaal geen tekst in geëxporteerde beelden.
 
 Elke taal wordt apart gebouwd met hetzelfde vastgezette Just the Docs, eigen navigatie, index, labels en media. De workflow ontdekt de matrix uit `locales.json`.
 
