@@ -27,7 +27,7 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
     assert.equal(path.dirname(output), os.tmpdir());
     return fs.rm(output, {recursive: true, force: true});
   });
-  const result = await generate(repository, output);
+  const result = await generate(repository, output, {onWarning: () => {}});
   assert.equal(result.documents, 4);
   const html = await fs.readFile(path.join(output, 'index.html'), 'utf8');
   const nav = await fs.readFile(path.join(output, '_includes/components/site_nav.html'), 'utf8');
@@ -76,15 +76,16 @@ test('replacing an image changes both its thumbnail and popup URL while unchange
   assert.equal(imageUrl(after, 'window-menu'), imageUrl(before, 'window-menu'));
 });
 
-test('download version skips unreleased notes and follows the newest release', async t => {
+test('the header adds no download button while preserving download links in Markdown', async t => {
   const root = await fixture(t);
-  await fs.writeFile(path.join(root, 'CHANGELOG.md'), '# Changelog\n\n## Unreleased\n\nPending.\n\n## 9.8.7 — 2026-10-30\n\nReleased.\n');
+  await fs.appendFile(path.join(root, 'README.md'), '\n[Download](https://github.com/LeBenco/FileSpacer/releases/latest)\n');
   await generate(root, path.join(root, 'output'));
   const config = await fs.readFile(path.join(root, 'output/_config.yml'), 'utf8');
-  assert.match(config, /Download v9\.8\.7/);
-  assert.doesNotMatch(config, /\{version\}/);
-  await fs.writeFile(path.join(root, 'CHANGELOG.md'), '# Changelog\n\n## [Unreleased]\n');
-  await assert.rejects(generate(root, path.join(root, 'invalid')), /Missing released version/);
+  const header = config.match(/^aux_links:\n([^]*?)(?=^[^\s])/m)[1];
+  assert.doesNotMatch(header, /releases\/latest|Download/);
+  assert.match(header, /https:\/\/github.com\/LeBenco\/FileSpacer/);
+  const html = await fs.readFile(path.join(root, 'output/index.html'), 'utf8');
+  assert.match(html, /href="https:\/\/github.com\/LeBenco\/FileSpacer\/releases\/latest">Download<\/a>/);
 });
 
 test('broken source anchors fail generation instead of publishing broken navigation', async t => {
@@ -104,21 +105,80 @@ test('repeated headings keep unique IDs and links to numbered occurrences', asyn
   assert.match(html, /href="#user-guide--repeated-topic-1"/);
 });
 
+test('explicit HTML anchors and raw HTML links are resolved without cross-document collisions', async t => {
+  const root = await fixture(t);
+  await fs.appendFile(path.join(root, 'README.md'), '\n<a id="custom-anchor"></a>\n[Jump](#custom-anchor)\n<a href="docs/user-guide.md#custom-anchor">Guide</a>\n<div data-id="not-an-anchor">Data</div>\n');
+  await fs.appendFile(path.join(root, 'docs/user-guide.md'), "\n<div id='custom-anchor'>Target</div>\n");
+  const output = path.join(root, 'output');
+  await generate(root, output);
+  const html = await fs.readFile(path.join(output, 'index.html'), 'utf8');
+  assert.match(html, /id="overview--custom-anchor"/);
+  assert.match(html, /href="#overview--custom-anchor"/);
+  assert.match(html, /id='user-guide--custom-anchor'/);
+  assert.match(html, /href="#user-guide--custom-anchor"/);
+  assert.match(html, /data-id="not-an-anchor"/);
+  await fs.appendFile(path.join(root, 'README.md'), '\n<a id="custom-anchor"></a>\n');
+  await assert.rejects(generate(root, output), /Duplicate source anchor/);
+});
+
 async function translatedFixture(t) {
   const root = await fixture(t);
   const target = path.join(root, 'website/translations/fr-FR');
   await fs.mkdir(path.dirname(target), {recursive: true});
   await fs.cp(path.join(repository, 'website/translations/fr-FR'), target, {recursive: true});
+  // Keep policy fixtures independent of whether the live translations lag
+  // behind the live English documentation at the time the tests run.
+  for (const [source, english, french] of [
+    ['README.md', '# FileSpacer\n\n<img src="docs/images/spatial-windows.png" alt="Folders">\n\n## Features\n\nEnglish.', '# FileSpacer\n\n<img src="docs/images/spatial-windows.png" alt="Dossiers">\n\n## Fonctionnalités\n\nFrançais.'],
+    ['docs/user-guide.md', '# User guide\n\n## Privacy\n\nPolicy.', '# Guide\n\n## Confidentialité\n\nPolitique.'],
+    ['CHANGELOG.md', '# Changelog\n\n## 1.3.1\n\nReleased.', '# Historique\n\n## 1.3.1\n\nPublié.'],
+    ['THIRD_PARTY_NOTICES.md', '# Third-party notices\n\n## Components\n\nCredits.', '# Composants tiers\n\n## Composants\n\nCrédits.'],
+  ]) {
+    await fs.writeFile(path.join(root, source), english + '\n');
+    await fs.writeFile(path.join(target, source), french + '\n');
+  }
+  await generate(root, path.join(root, 'initial'), {recordTranslations: ['fr-FR']});
   return {root, target};
 }
 
-test('all available translations keep English section IDs, localized navigation and their own search configuration', async t => {
+test('English text and structure updates retain translated text and historical section IDs with warnings', async t => {
+  const {root} = await translatedFixture(t);
+  const output = path.join(root, 'output');
+  await generate(root, output);
+  const translated = await fs.readFile(path.join(output, '_locales/fr-FR/index.html'), 'utf8');
+  const messages = [];
+  await fs.appendFile(path.join(root, 'README.md'), '\nFresh English information.\n');
+  let result = await generate(root, output, {onWarning: message => messages.push(message)});
+  assert.equal(result.warnings.length, 1);
+  assert.equal(result.warnings[0].source, 'README.md');
+  assert.equal(messages.length, 1);
+  await fs.appendFile(path.join(root, 'README.md'), '\n## Newly published section\n\nNew English structure.\n');
+  result = await generate(root, output, {onWarning: () => {}});
+  assert.equal(result.warnings.length, 1);
+  assert.match(await fs.readFile(path.join(output, 'index.html'), 'utf8'), /New English structure/);
+  assert.equal(await fs.readFile(path.join(output, '_locales/fr-FR/index.html'), 'utf8'), translated);
+});
+
+test('recording synchronized sources updates only selected locales and clears stale-source warnings', async t => {
+  const {root, target} = await translatedFixture(t);
+  await fs.appendFile(path.join(root, 'README.md'), '\n## New section\n\nEnglish.\n');
+  const output = path.join(root, 'output');
+  await assert.rejects(generate(root, output, {recordTranslations: ['fr-FR']}), /Translation heading/);
+  await fs.appendFile(path.join(target, 'README.md'), '\n## Nouvelle rubrique\n\nFrançais.\n');
+  await generate(root, output, {recordTranslations: ['fr-FR']});
+  const result = await generate(root, output);
+  assert.deepEqual(result.warnings, []);
+  assert.match(await fs.readFile(path.join(output, '_locales/fr-FR/index.html'), 'utf8'), /id="overview--new-section"/);
+  await assert.rejects(generate(root, output, {recordTranslations: ['zz-ZZ']}), /Unknown translation locale/);
+});
+
+test('all available translations keep recorded section IDs, localized navigation and their own search configuration', async t => {
   const output = await fs.mkdtemp(path.join(os.tmpdir(), 'filespacer-languages-'));
   t.after(() => {
     assert.equal(path.dirname(output), os.tmpdir());
     return fs.rm(output, {recursive: true, force: true});
   });
-  const result = await generate(repository, output);
+  const result = await generate(repository, output, {onWarning: () => {}});
   const applicationLanguages = (await fs.readdir(path.join(repository, 'src')))
     .filter(name => /^resource\.[a-z]{2}\.rc$/.test(name))
     .map(name => name.split('.')[1]).sort();
@@ -130,17 +190,26 @@ test('all available translations keep English section IDs, localized navigation 
     const html = await fs.readFile(path.join(directory, 'index.html'), 'utf8');
     const nav = await fs.readFile(path.join(directory, '_includes/components/site_nav.html'), 'utf8');
     const config = await fs.readFile(path.join(directory, '_config.yml'), 'utf8');
-    assert.deepEqual([...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]), englishIds);
+    if (!language.path) assert.deepEqual([...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]), englishIds);
+    else {
+      const state = JSON.parse(await fs.readFile(path.join(repository, language.source.replace('_locales/', 'website/translations/'), 'source-state.json'), 'utf8'));
+      for (const [, id, source, section] of html.matchAll(/<section aria-labelledby="([^"]+)" data-source="([^"]+)">([^]*?)<\/section>/g)) {
+        const expected = state.sources[source].headings.map(([anchor], index) => index ? `${id}--${anchor}` : id);
+        assert.deepEqual([...section.matchAll(/<h[2-6] id="([^"]+)"/g)].map(match => match[1]), expected);
+      }
+    }
     assert.equal((nav.match(/data-language-href=/g) || []).length, result.languages.length);
     assert.ok(nav.indexOf('language-picker') < nav.indexOf('<ul class="nav-list">'));
     assert.ok(nav.includes('hreflang="' + language.code + '"'));
     assert.ok(config.includes('lang: ' + language.code));
     const ui = JSON.parse(config.match(/^fs_ui: (.+)$/m)[1]);
-    assert.match(ui.download, /v\d+\.\d+\.\d+/);
+    assert.equal(ui.download, undefined);
     assert.doesNotMatch(config, /\{version\}/);
     assert.match(html, /class="screenshot-link"[^>]+aria-label="[^"]+"/);
     assert.ok(config.includes('baseurl: /FileSpacer' + (language.path ? '/' + language.path : '')));
-    assert.equal(language.images, result.images);
+    for (const [, asset] of html.matchAll(/(?:src|href)="(assets\/content\/[^"?]+)(?:\?[^"]*)?"/g)) {
+      await fs.access(path.join(directory, asset));
+    }
     const reference = (language.path ? `website/translations/${language.code}/` : '') + 'docs/nilesoft-shell.md';
     assert.ok(html.includes('href="https://github.com/LeBenco/FileSpacer/blob/main/' + reference + '"'), 'Nilesoft reference must use the selected language');
     await fs.access(path.join(repository, reference));
