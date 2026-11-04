@@ -21,7 +21,7 @@ FileSpacer prioritizes a lightweight and uncluttered experience. To address the 
 
 **Documentation:**
 
-[![Docs](https://img.shields.io/badge/Docs-User%20Guide-blue)](docs/user-guide.md)
+[![Docs](https://img.shields.io/badge/Docs-User%20Guide-blue)](docs/en/user-guide.md)
 [![Docs](https://img.shields.io/badge/Docs-Changelog-orange)](CHANGELOG.md)
 
 _FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler), originally created by J. van't Hoog. See [Credits](#license-and-credits) below for details._
