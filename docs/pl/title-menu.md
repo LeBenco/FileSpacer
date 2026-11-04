@@ -2,7 +2,7 @@
 
 # Implementacja menu paska tytułu
 
-Edycję i grupy opisuje [instrukcja użytkownika](user-guide.md#customize-the-title-bar-menu). Zacznij od `TitleMenu.h`, `TitleMenuDialog.cpp`, `TitleMenuRenderer.cpp` i `FolderGroups.cpp`; polecenia obsługuje okno folderu.
+Edycję i grupy opisuje [instrukcja użytkownika](user-guide.md#dostosowanie-menu-paska-tytułu). Zacznij od `TitleMenu.h`, `TitleMenuDialog.cpp`, `TitleMenuRenderer.cpp` i `FolderGroups.cpp`; polecenia obsługuje okno folderu.
 
 <a id="composition-and-rendering"></a>
 

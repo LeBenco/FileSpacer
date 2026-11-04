@@ -2,7 +2,7 @@
 
 # Standaardbestandsbeheerder en snelmenu-integratie
 
-`Settings.cpp` beheert FileSpacers mapkoppelingen en menu-items voor de alternatieve beheerder. Windows kiest en start nog steeds de standaardactie. Zie [Windows-integratie](user-guide.md#windows-integration) voor gebruik.
+`Settings.cpp` beheert FileSpacers mapkoppelingen en menu-items voor de alternatieve beheerder. Windows kiest en start nog steeds de standaardactie. Zie [Windows-integratie](user-guide.md#windows-integratie) voor gebruik.
 
 <a id="associations-and-menu-visibility"></a>
 

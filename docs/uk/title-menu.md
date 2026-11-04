@@ -2,7 +2,7 @@
 
 # Реалізація меню рядка заголовка
 
-Редагування й групи описує [посібник користувача](user-guide.md#customize-the-title-bar-menu). Почніть із `TitleMenu.h`, `TitleMenuDialog.cpp`, `TitleMenuRenderer.cpp` і `FolderGroups.cpp`; робочі команди обробляє вікно папки.
+Редагування й групи описує [посібник користувача](user-guide.md#налаштування-меню-рядка-заголовка). Почніть із `TitleMenu.h`, `TitleMenuDialog.cpp`, `TitleMenuRenderer.cpp` і `FolderGroups.cpp`; робочі команди обробляє вікно папки.
 
 <a id="composition-and-rendering"></a>
 

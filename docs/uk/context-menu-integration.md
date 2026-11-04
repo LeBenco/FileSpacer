@@ -2,7 +2,7 @@
 
 # Типовий файловий менеджер і контекстні меню
 
-`Settings.cpp` керує зіставленнями папок FileSpacer і пунктами альтернативного менеджера. Windows і далі вибирає та викликає типову дію. Використання: [інтеграція з Windows](user-guide.md#windows-integration).
+`Settings.cpp` керує зіставленнями папок FileSpacer і пунктами альтернативного менеджера. Windows і далі вибирає та викликає типову дію. Використання: [інтеграція з Windows](user-guide.md#інтеграція-з-windows).
 
 <a id="associations-and-menu-visibility"></a>
 

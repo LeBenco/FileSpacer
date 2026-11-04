@@ -2,7 +2,7 @@
 
 # Venstergebaren
 
-Configuratie staat in de [gebruikershandleiding](user-guide.md#moving-and-resizing). Begin voor de implementatie in `WindowShortcuts.h`, `ShortcutSettingsPage.cpp`, `Settings.cpp`, `FolderWindow` en `WindowResizeGesture`.
+Configuratie staat in de [gebruikershandleiding](user-guide.md#verplaatsen-en-formaat-wijzigen). Begin voor de implementatie in `WindowShortcuts.h`, `ShortcutSettingsPage.cpp`, `Settings.cpp`, `FolderWindow` en `WindowResizeGesture`.
 
 <a id="binding-and-input-rules"></a>
 

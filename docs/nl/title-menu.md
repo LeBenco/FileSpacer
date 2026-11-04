@@ -2,7 +2,7 @@
 
 # Implementatie van het titelbalkmenu
 
-Zie de [gebruikershandleiding](user-guide.md#customize-the-title-bar-menu) voor bewerken en mapgroepen. Begin in `TitleMenu.h`, `TitleMenuDialog.cpp`, `TitleMenuRenderer.cpp` en `FolderGroups.cpp`; het mapvenster verwerkt de live opdrachten.
+Zie de [gebruikershandleiding](user-guide.md#het-titelbalkmenu-aanpassen) voor bewerken en mapgroepen. Begin in `TitleMenu.h`, `TitleMenuDialog.cpp`, `TitleMenuRenderer.cpp` en `FolderGroups.cpp`; het mapvenster verwerkt de live opdrachten.
 
 <a id="composition-and-rendering"></a>
 

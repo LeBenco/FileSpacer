@@ -6,4 +6,4 @@ Geen telemetrie, gebruiksregistratie of reclame. Updatecontroles maken contact m
 
 [Details in de gebruikershandleiding](user-guide.md#privacy).
 
-[Lokale gegevens](user-guide.md#local-data).
+[Lokale gegevens](user-guide.md#lokale-gegevens).

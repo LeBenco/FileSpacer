@@ -2,7 +2,7 @@
 
 # Wyszukiwanie, historia i Everything
 
-Punkty wejścia: `SearchBox`, `FolderWindow::applyNameFilter`, `ShellViewFilter` i `Everything`. Szczegóły interakcji: [instrukcja użytkownika](user-guide.md#search-and-history).
+Punkty wejścia: `SearchBox`, `FolderWindow::applyNameFilter`, `ShellViewFilter` i `Everything`. Szczegóły interakcji: [instrukcja użytkownika](user-guide.md#wyszukiwanie-i-historia).
 
 <a id="local-filtering-and-suggestions"></a>
 
