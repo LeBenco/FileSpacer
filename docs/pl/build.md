@@ -98,7 +98,9 @@ Kompilacja NSIS sprawdza pakowanie, nie rzeczywistą instalację, UAC, aktualiza
 
 ## Wydania
 
-[Przepływ pracy wydania](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/release.yml) działa dla tagu `vX.Y.Z` lub ręcznie dla istniejącego tagu. Najpierw używa [przepływu pracy regresji aplikacji](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/regression.yml) i wymaga jego powodzenia, potem buduje pomoc offline i NSIS z dokładnego testowanego SHA. Sprawdza wersję programu z tagiem i publikuje `FileSpacer-X.Y.Z-install.exe` oraz `FileSpacer-update.txt` w GitHub Releases. Zwykły push gałęzi nie publikuje instalatora. Używa automatycznego tokenu GitHub, bez własnego sekretu wydania.
+[Przepływ pracy wydania](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/release.yml) działa dla tagu `vX.Y.Z` lub ręcznie dla istniejącego tagu. Najpierw używa [przepływu pracy regresji aplikacji](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/regression.yml) i wymaga jego powodzenia, potem buduje pomoc offline i NSIS z wybranego i zweryfikowanego SHA. Sprawdza wersję programu z tagiem i publikuje `FileSpacer-X.Y.Z-install.exe` oraz `FileSpacer-update.txt` w GitHub Releases. Zwykły push gałęzi nie publikuje instalatora. Używa automatycznego tokenu GitHub, bez własnego sekretu wydania.
+
+Zgodny wynik PASS dla identycznych źródeł aplikacji i testów może być użyty ponownie bez uruchamiania zestawu; zobacz [pamięć podręczną wyników regresji](tests/regression/README.md#run-on-github).
 
 Po publikacji osobny proces WinGet zgłasza instalator do katalogu społeczności. Wymaga jednorazowego sekretu `WINGET_TOKEN`; niepowodzenie nie cofa wydania GitHub. Konfiguracja, przegląd i ponowienia bez kompilacji: [dystrybucja WinGet](winget.md).
 

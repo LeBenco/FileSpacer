@@ -146,11 +146,14 @@ The [release workflow](../../.github/workflows/release.yml) runs for a `vX.Y.Z` 
 or a manual dispatch for an existing tag. It first reuses the [application
 regression workflow](../../.github/workflows/regression.yml) and requires it to pass,
 then builds
-offline help and the Windows NSIS package from that exact tested SHA. It checks
+offline help and the Windows NSIS package from that selected, validated SHA. It checks
 the executable version against the tag and publishes
 `FileSpacer-X.Y.Z-install.exe` and `FileSpacer-update.txt` to GitHub Releases.
 Ordinary branch pushes do not publish an installer. The workflow uses GitHub's
 automatic token; no custom release secret is required.
+
+An exact successful result for unchanged application/test inputs may be reused
+without rerunning the suite; see the [regression result cache](tests/regression/README.md#run-on-github).
 
 After a successful release workflow, a separate WinGet workflow submits the
 installer to the community catalog. It requires the one-time `WINGET_TOKEN`
