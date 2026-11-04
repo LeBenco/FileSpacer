@@ -43,6 +43,12 @@ test('published installer bytes must agree with the updater and GitHub metadata'
 test('both x64 installation scopes preserve NSIS silent and directory arguments', () => {
   const files = manifests({version: '1.2.3', url, hash: hash.toUpperCase()});
   assert.equal(Object.keys(files).length, 3);
+  for (const [name, content] of Object.entries(files)) {
+    const type = content.match(/^ManifestType: (\w+)$/m)[1];
+    const schema = content.match(/^ManifestVersion: ([\d.]+)$/m)[1];
+    assert.equal(content.split('\n')[0],
+      `# yaml-language-server: $schema=https://aka.ms/winget-manifest.${type}.${schema}.schema.json`, name);
+  }
   const manifest = files['Benco.FileSpacer.installer.yaml'];
   assert.match(files['Benco.FileSpacer.yaml'], /^PackageIdentifier: Benco\.FileSpacer$/m);
   assert.match(files['Benco.FileSpacer.locale.en-US.yaml'], /^Publisher: Benco$/m);
