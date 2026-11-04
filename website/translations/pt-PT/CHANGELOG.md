@@ -1,7 +1,5 @@
 # Histórico de versões
 
-## Por publicar
-
 ## 1.3.1 — 2026-11-03
 
 - Corrige a abertura com o gestor de ficheiros predefinido que selecionava outra aplicação em vez do FileSpacer.
