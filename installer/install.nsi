@@ -759,7 +759,7 @@ Section "FileSpacer" SecBase
     File /oname=THIRD_PARTY_NOTICES.md "..\THIRD_PARTY_NOTICES.md"
     IfErrors files_failed
     !insertmacro INSTALL_STEP "Extract file: $INSTDIR\privacy-policy.md"
-    File /oname=privacy-policy.md "..\docs\privacy-policy.md"
+    File /oname=privacy-policy.md "..\docs\en\privacy-policy.md"
     IfErrors files_failed
     !insertmacro InstallDocumentation
     !insertmacro INSTALL_STEP "Create/select directory: $INSTDIR"
