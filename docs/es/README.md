@@ -22,26 +22,26 @@ FileSpacer da prioridad a una experiencia ligera y despejada. Para limitar la ac
 
 **Documentación:**
 
-[![Docs](https://img.shields.io/badge/Docs-Gu%C3%ADa%20de%20uso-blue)](docs/user-guide.md)
+[![Docs](https://img.shields.io/badge/Docs-Gu%C3%ADa%20de%20uso-blue)](user-guide.md)
 [![Docs](https://img.shields.io/badge/Docs-Historial%20de%20versiones-orange)](CHANGELOG.md)
 
 _FileSpacer es una bifurcación de [ChromaFiler](https://github.com/vanjac/chromafiler), creado originalmente por J. van’t Hoog. Consulta los [agradecimientos](#licencia-y-agradecimientos) más abajo para conocer los detalles._
 
 ## Funciones
 
-- **Una ventana por carpeta**, que se activa si la carpeta ya está abierta. Su posición, tamaño, configuración de vista y disposición de iconos se conservan entre aperturas. [Navegación espacial](user-guide.md#window-navigation).
-- **Coloca los iconos libremente**, con las posiciones guardadas y restauradas para cada carpeta. [Disposición de iconos](user-guide.md#icon-layout).
-- **Mueve y cambia el tamaño de las ventanas** desde cualquier punto del área de archivos sin perder la selección. Los gestos del ratón son configurables; por defecto, Alt + arrastrar con el botón izquierdo y Alt + arrastrar con el botón derecho. [Gestos de ventana](user-guide.md#moving-and-resizing).
-- **Cambia entre carpetas abiertas** desde el menú de la barra de título, cierra las ventanas de las carpetas superiores o vuelve a abrir la última ventana cerrada con Ctrl+Mayús+T. [Navegación entre ventanas](user-guide.md#window-navigation).
-- **Bloquea el estado guardado de una ventana**, manteniendo la posibilidad de cambiar temporalmente su posición, tamaño y visualización. [Bloqueo del estado de las ventanas](user-guide.md#locking-a-saved-layout).
-- **Filtra la carpeta actual** y reutiliza sus búsquedas recientes. [Búsqueda e historial](user-guide.md#search-and-history).
-- **Conserva la selección al activar una ventana** haciendo clic en su fondo. [Selección y activación](user-guide.md#selection-and-activation).
-- **Reduce la superposición de ventanas** al abrir carpetas sin una posición guardada. [Colocación de ventanas](user-guide.md#window-placement).
+- **Una ventana por carpeta**, que se activa si la carpeta ya está abierta. Su posición, tamaño, configuración de vista y disposición de iconos se conservan entre aperturas. [Navegación espacial](user-guide.md#navegación-entre-ventanas).
+- **Coloca los iconos libremente**, con las posiciones guardadas y restauradas para cada carpeta. [Disposición de iconos](user-guide.md#disposición-de-iconos).
+- **Mueve y cambia el tamaño de las ventanas** desde cualquier punto del área de archivos sin perder la selección. Los gestos del ratón son configurables; por defecto, Alt + arrastrar con el botón izquierdo y Alt + arrastrar con el botón derecho. [Gestos de ventana](user-guide.md#movimiento-y-cambio-de-tamaño).
+- **Cambia entre carpetas abiertas** desde el menú de la barra de título, cierra las ventanas de las carpetas superiores o vuelve a abrir la última ventana cerrada con Ctrl+Mayús+T. [Navegación entre ventanas](user-guide.md#navegación-entre-ventanas).
+- **Bloquea el estado guardado de una ventana**, manteniendo la posibilidad de cambiar temporalmente su posición, tamaño y visualización. [Bloqueo del estado de las ventanas](user-guide.md#bloqueo-del-estado-guardado).
+- **Filtra la carpeta actual** y reutiliza sus búsquedas recientes. [Búsqueda e historial](user-guide.md#búsqueda-e-historial).
+- **Conserva la selección al activar una ventana** haciendo clic en su fondo. [Selección y activación](user-guide.md#selección-y-activación).
+- **Reduce la superposición de ventanas** al abrir carpetas sin una posición guardada. [Colocación de ventanas](user-guide.md#colocación-de-ventanas).
 - **Personalizar el menú de la barra de título** con acciones para ventanas y disposiciones, y guardar grupos de carpetas abiertas. [Personalización del menú](user-guide.md#personalizar-el-menú-de-la-barra-de-título) · [Grupos de carpetas](user-guide.md#grupos-de-carpetas).
 
 ## Integración
 
-FileSpacer se puede establecer como gestor de archivos predeterminado durante la instalación o después, en la configuración. Los archivos se abren con su aplicación habitual de Windows; las carpetas de red siguen el funcionamiento de Windows. [Integración con Windows](user-guide.md#windows-integration).
+FileSpacer se puede establecer como gestor de archivos predeterminado durante la instalación o después, en la configuración. Los archivos se abren con su aplicación habitual de Windows; las carpetas de red siguen el funcionamiento de Windows. [Integración con Windows](user-guide.md#integración-con-windows).
 
 Con **Everything** se pueden lanzar búsquedas avanzadas desde el campo de FileSpacer, en la carpeta actual y sus subcarpetas o en todos los archivos indexados. Los resultados se abren en Everything. [Integración y uso](user-guide.md#everything).
 

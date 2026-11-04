@@ -22,26 +22,26 @@ FileSpacer privilégie une expérience légère et épurée. Pour limiter l’ac
 
 **Documentation :**
 
-[![Docs](https://img.shields.io/badge/Docs-Guide%20d%E2%80%99utilisation-blue)](docs/user-guide.md)
+[![Docs](https://img.shields.io/badge/Docs-Guide%20d%E2%80%99utilisation-blue)](user-guide.md)
 [![Docs](https://img.shields.io/badge/Docs-Historique%20des%20versions-orange)](CHANGELOG.md)
 
 _FileSpacer est un dérivé de [ChromaFiler](https://github.com/vanjac/chromafiler), créé à l’origine par J. van’t Hoog. Voir les [crédits](#licence-et-crédits) ci-dessous pour plus de détails._
 
 ## Fonctionnalités
 
-- **Une fenêtre unique par dossier**, réactivée si le dossier est déjà ouvert. Sa position, sa taille, ses réglages d’affichage et la disposition des icônes sont conservés d’une ouverture à l’autre. [Navigation spatiale](user-guide.md#window-navigation).
-- **Disposer les icônes librement**, avec une disposition enregistrée et restaurée pour chaque dossier. [Disposition des icônes](user-guide.md#icon-layout).
-- **Déplacer et redimensionner les fenêtres** depuis la zone des fichiers en conservant la sélection. Les raccourcis souris sont configurables ; par défaut, Alt + glisser gauche et Alt + glisser droit. [Gestes de fenêtre](user-guide.md#moving-and-resizing).
-- **Passer d’un dossier ouvert à l’autre** depuis le menu de la barre de titre, fermer les fenêtres parentes ou rouvrir la dernière fenêtre fermée avec Ctrl+Maj+T. [Navigation entre les fenêtres](user-guide.md#window-navigation).
-- **Verrouiller l’état enregistré d’une fenêtre**, tout en permettant des changements temporaires de position, de taille et d’affichage. [Verrouillage de l’état des fenêtres](user-guide.md#locking-a-saved-layout).
-- **Filtrer le dossier courant** et réutiliser ses recherches récentes. [Recherche et historique](user-guide.md#search-and-history).
-- **Conserver la sélection à l’activation d’une fenêtre** en cliquant sur son arrière-plan. [Sélection et activation](user-guide.md#selection-and-activation).
-- **Réduire le chevauchement des fenêtres** lors de l’ouverture de dossiers sans position enregistrée. [Placement des fenêtres](user-guide.md#window-placement).
+- **Une fenêtre unique par dossier**, réactivée si le dossier est déjà ouvert. Sa position, sa taille, ses réglages d’affichage et la disposition des icônes sont conservés d’une ouverture à l’autre. [Navigation spatiale](user-guide.md#navigation-entre-les-fenêtres).
+- **Disposer les icônes librement**, avec une disposition enregistrée et restaurée pour chaque dossier. [Disposition des icônes](user-guide.md#disposition-des-icônes).
+- **Déplacer et redimensionner les fenêtres** depuis la zone des fichiers en conservant la sélection. Les raccourcis souris sont configurables ; par défaut, Alt + glisser gauche et Alt + glisser droit. [Gestes de fenêtre](user-guide.md#déplacement-et-redimensionnement).
+- **Passer d’un dossier ouvert à l’autre** depuis le menu de la barre de titre, fermer les fenêtres parentes ou rouvrir la dernière fenêtre fermée avec Ctrl+Maj+T. [Navigation entre les fenêtres](user-guide.md#navigation-entre-les-fenêtres).
+- **Verrouiller l’état enregistré d’une fenêtre**, tout en permettant des changements temporaires de position, de taille et d’affichage. [Verrouillage de l’état des fenêtres](user-guide.md#verrouillage-de-létat-enregistré).
+- **Filtrer le dossier courant** et réutiliser ses recherches récentes. [Recherche et historique](user-guide.md#recherche-et-historique).
+- **Conserver la sélection à l’activation d’une fenêtre** en cliquant sur son arrière-plan. [Sélection et activation](user-guide.md#sélection-et-activation).
+- **Réduire le chevauchement des fenêtres** lors de l’ouverture de dossiers sans position enregistrée. [Placement des fenêtres](user-guide.md#placement-des-fenêtres).
 - **Personnaliser le menu de la barre de titre** avec des actions sur les fenêtres et leur disposition, et enregistrer des groupes de dossiers ouverts. [Personnalisation du menu](user-guide.md#personnaliser-le-menu-de-la-barre-de-titre) · [Groupes de dossiers](user-guide.md#groupes-de-dossiers).
 
 ## Intégration
 
-FileSpacer peut être défini comme gestionnaire de fichiers par défaut à l’installation ou ensuite dans les paramètres. Les fichiers s’ouvrent avec leur application Windows habituelle ; les dossiers réseau suivent le fonctionnement de Windows. [Intégration Windows](user-guide.md#windows-integration).
+FileSpacer peut être défini comme gestionnaire de fichiers par défaut à l’installation ou ensuite dans les paramètres. Les fichiers s’ouvrent avec leur application Windows habituelle ; les dossiers réseau suivent le fonctionnement de Windows. [Intégration Windows](user-guide.md#intégration-windows).
 
 Avec **Everything**, on peut lancer des recherches avancées depuis le champ de FileSpacer, dans le dossier courant et ses sous-dossiers ou dans tous les fichiers indexés. Les résultats s’ouvrent dans Everything. [Intégration et utilisation](user-guide.md#everything).
 

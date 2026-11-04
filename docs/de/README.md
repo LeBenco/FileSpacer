@@ -22,21 +22,21 @@ FileSpacer legt Wert auf eine schlanke und übersichtliche Bedienung. Damit sich
 
 **Dokumentation:**
 
-[![Docs](https://img.shields.io/badge/Docs-Benutzerhandbuch-blue)](docs/user-guide.md)
+[![Docs](https://img.shields.io/badge/Docs-Benutzerhandbuch-blue)](user-guide.md)
 [![Docs](https://img.shields.io/badge/Docs-Versionsverlauf-orange)](CHANGELOG.md)
 
 _FileSpacer ist eine Abspaltung von [ChromaFiler](https://github.com/vanjac/chromafiler), ursprünglich entwickelt von J. van’t Hoog. Weitere Einzelheiten stehen unten unter [Lizenz und Danksagung](#lizenz-und-danksagung)._
 
 ## Funktionen
 
-- **Ein Fenster pro Ordner**, das bei bereits geöffneten Ordnern wieder aktiviert wird. Position, Größe, Ansichtseinstellungen und Symbolanordnung bleiben beim erneuten Öffnen erhalten. [Räumliche Navigation](user-guide.md#window-navigation).
-- **Symbole frei anordnen.** Ihre Positionen werden für jeden Ordner gespeichert und wiederhergestellt. [Symbolanordnung](user-guide.md#icon-layout).
-- **Fenster von jeder Stelle im Dateibereich aus verschieben und skalieren**, ohne die Auswahl zu verlieren. Die Mausgesten lassen sich anpassen; standardmäßig gelten Alt + Ziehen mit der linken bzw. rechten Maustaste. [Fenstergesten](user-guide.md#moving-and-resizing).
-- **Zwischen geöffneten Ordnern wechseln**, über das Menü in der Titelleiste; übergeordnete Fenster schließen oder das zuletzt geschlossene Fenster mit Strg+Umschalt+T erneut öffnen. [Fensternavigation](user-guide.md#window-navigation).
-- **Den gespeicherten Fensterzustand sperren**, während vorübergehende Änderungen an Position, Größe und Ansicht weiterhin möglich bleiben. [Fensterzustand sperren](user-guide.md#locking-a-saved-layout).
-- **Den aktuellen Ordner filtern** und seine letzten Suchanfragen wiederverwenden. [Suche und Verlauf](user-guide.md#search-and-history).
-- **Die Auswahl beim Aktivieren eines Fensters beibehalten**, wenn Sie auf dessen Hintergrund klicken. [Auswahl und Aktivierung](user-guide.md#selection-and-activation).
-- **Fensterüberlappungen verringern**, wenn Ordner ohne gespeicherte Position geöffnet werden. [Fensterpositionierung](user-guide.md#window-placement).
+- **Ein Fenster pro Ordner**, das bei bereits geöffneten Ordnern wieder aktiviert wird. Position, Größe, Ansichtseinstellungen und Symbolanordnung bleiben beim erneuten Öffnen erhalten. [Räumliche Navigation](user-guide.md#fensternavigation).
+- **Symbole frei anordnen.** Ihre Positionen werden für jeden Ordner gespeichert und wiederhergestellt. [Symbolanordnung](user-guide.md#symbolanordnung).
+- **Fenster von jeder Stelle im Dateibereich aus verschieben und skalieren**, ohne die Auswahl zu verlieren. Die Mausgesten lassen sich anpassen; standardmäßig gelten Alt + Ziehen mit der linken bzw. rechten Maustaste. [Fenstergesten](user-guide.md#verschieben-und-größenänderung).
+- **Zwischen geöffneten Ordnern wechseln**, über das Menü in der Titelleiste; übergeordnete Fenster schließen oder das zuletzt geschlossene Fenster mit Strg+Umschalt+T erneut öffnen. [Fensternavigation](user-guide.md#fensternavigation).
+- **Den gespeicherten Fensterzustand sperren**, während vorübergehende Änderungen an Position, Größe und Ansicht weiterhin möglich bleiben. [Fensterzustand sperren](user-guide.md#gespeicherten-fensterzustand-sperren).
+- **Den aktuellen Ordner filtern** und seine letzten Suchanfragen wiederverwenden. [Suche und Verlauf](user-guide.md#suche-und-verlauf).
+- **Die Auswahl beim Aktivieren eines Fensters beibehalten**, wenn Sie auf dessen Hintergrund klicken. [Auswahl und Aktivierung](user-guide.md#auswahl-und-aktivierung).
+- **Fensterüberlappungen verringern**, wenn Ordner ohne gespeicherte Position geöffnet werden. [Fensterpositionierung](user-guide.md#fensterpositionierung).
 - **Das Titelleistenmenü anpassen** und Gruppen geöffneter Ordner speichern. [Menü anpassen](user-guide.md#titelleistenmenü-anpassen) · [Ordnergruppen](user-guide.md#ordnergruppen).
 
 ## Integration

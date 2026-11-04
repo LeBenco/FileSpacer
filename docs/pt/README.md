@@ -22,26 +22,26 @@ O FileSpacer privilegia uma experiência leve e descomplicada. Para limitar a ac
 
 **Documentação:**
 
-[![Docs](https://img.shields.io/badge/Docs-Guia%20de%20utiliza%C3%A7%C3%A3o-blue)](docs/user-guide.md)
+[![Docs](https://img.shields.io/badge/Docs-Guia%20de%20utiliza%C3%A7%C3%A3o-blue)](user-guide.md)
 [![Docs](https://img.shields.io/badge/Docs-Hist%C3%B3rico%20de%20vers%C3%B5es-orange)](CHANGELOG.md)
 
 _O FileSpacer é uma derivação do [ChromaFiler](https://github.com/vanjac/chromafiler), criado originalmente por J. van’t Hoog. Consulte os [agradecimentos](#licença-e-agradecimentos) abaixo para mais informações._
 
 ## Funcionalidades
 
-- **Uma janela por pasta**, reativada se a pasta já estiver aberta. A posição, o tamanho, as definições de apresentação e a disposição dos ícones são mantidos entre aberturas. [Navegação espacial](user-guide.md#window-navigation).
-- **Disponha os ícones livremente**, com posições guardadas e restauradas para cada pasta. [Disposição dos ícones](user-guide.md#icon-layout).
-- **Mova e redimensione as janelas** a partir de qualquer ponto da área de ficheiros, mantendo a seleção. Os gestos do rato são configuráveis; por predefinição, Alt + arrastar com o botão esquerdo e Alt + arrastar com o botão direito. [Gestos de janela](user-guide.md#moving-and-resizing).
-- **Alterne entre pastas abertas** através do menu da barra de título, feche as janelas das pastas superiores ou reabra a última janela fechada com Ctrl+Shift+T. [Navegação entre janelas](user-guide.md#window-navigation).
-- **Bloqueie o estado guardado de uma janela**, mantendo a possibilidade de alterar temporariamente a posição, o tamanho e a apresentação. [Bloqueio do estado das janelas](user-guide.md#locking-a-saved-layout).
-- **Filtre a pasta atual** e reutilize as pesquisas recentes. [Pesquisa e histórico](user-guide.md#search-and-history).
-- **Conserve a seleção ao ativar uma janela** clicando no fundo. [Seleção e ativação](user-guide.md#selection-and-activation).
-- **Reduza a sobreposição das janelas** ao abrir pastas sem posição guardada. [Posicionamento das janelas](user-guide.md#window-placement).
+- **Uma janela por pasta**, reativada se a pasta já estiver aberta. A posição, o tamanho, as definições de apresentação e a disposição dos ícones são mantidos entre aberturas. [Navegação espacial](user-guide.md#navegação-entre-janelas).
+- **Disponha os ícones livremente**, com posições guardadas e restauradas para cada pasta. [Disposição dos ícones](user-guide.md#disposição-dos-ícones).
+- **Mova e redimensione as janelas** a partir de qualquer ponto da área de ficheiros, mantendo a seleção. Os gestos do rato são configuráveis; por predefinição, Alt + arrastar com o botão esquerdo e Alt + arrastar com o botão direito. [Gestos de janela](user-guide.md#movimento-e-redimensionamento).
+- **Alterne entre pastas abertas** através do menu da barra de título, feche as janelas das pastas superiores ou reabra a última janela fechada com Ctrl+Shift+T. [Navegação entre janelas](user-guide.md#navegação-entre-janelas).
+- **Bloqueie o estado guardado de uma janela**, mantendo a possibilidade de alterar temporariamente a posição, o tamanho e a apresentação. [Bloqueio do estado das janelas](user-guide.md#bloqueio-do-estado-guardado).
+- **Filtre a pasta atual** e reutilize as pesquisas recentes. [Pesquisa e histórico](user-guide.md#pesquisa-e-histórico).
+- **Conserve a seleção ao ativar uma janela** clicando no fundo. [Seleção e ativação](user-guide.md#seleção-e-ativação).
+- **Reduza a sobreposição das janelas** ao abrir pastas sem posição guardada. [Posicionamento das janelas](user-guide.md#posicionamento-das-janelas).
 - **Personalizar o menu da barra de título** com ações para janelas e disposições e guardar grupos de pastas abertas. [Personalização do menu](user-guide.md#personalizar-o-menu-da-barra-de-título) · [Grupos de pastas](user-guide.md#grupos-de-pastas).
 
 ## Integração
 
-O FileSpacer pode ser definido como gestor de ficheiros predefinido na instalação ou mais tarde nas definições. Os ficheiros abrem na aplicação habitual do Windows; as pastas de rede seguem o funcionamento normal do Windows. [Integração com o Windows](user-guide.md#windows-integration).
+O FileSpacer pode ser definido como gestor de ficheiros predefinido na instalação ou mais tarde nas definições. Os ficheiros abrem na aplicação habitual do Windows; as pastas de rede seguem o funcionamento normal do Windows. [Integração com o Windows](user-guide.md#integração-com-o-windows).
 
 Com o **Everything**, é possível iniciar pesquisas avançadas a partir do campo do FileSpacer, na pasta atual e nas subpastas ou em todos os ficheiros indexados. Os resultados abrem no Everything. [Integração e utilização](user-guide.md#everything).
 
