@@ -6,8 +6,8 @@
 # FileSpacer
 
 [![Windows 10+](https://img.shields.io/badge/Windows%2010%2B-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTAgMGgxMXYxMUgwem0xMyAwaDExdjExSDEzem0tMTMgMTNoMTF2MTFIMHptMTMgMGgxMXYxMUgxM3oiLz48L3N2Zz4=)](#system--languages)
-[![No Telemetry](https://img.shields.io/badge/telemetry-none-2ea44f)](docs/user-guide.md#privacy)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![No Telemetry](https://img.shields.io/badge/telemetry-none-2ea44f)](#privacy)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](#License-and-credits)
 
 FileSpacer is a file manager for Windows built around the [spatial paradigm](https://en.wikipedia.org/wiki/Spatial_file_manager): each folder has a single window that remembers its position, size and view settings. This provides [stable visual landmarks](https://www.csse.canterbury.ac.nz/~andy/papers/transforms.pdf), allowing [spatial memory](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/01/p153-robertson.pdf) to help you recognize familiar folders at a glance. In a navigational file manager, the same window displays different folders in succession: its position and dimensions alone cannot identify the current folder, so you need to look at its contents to determine where you are. By preserving distinct landmarks for each folder, the spatial approach can help reduce the cognitive load of finding your way around your files. Tabs are incompatible with the spatial model and will never be added.
 
@@ -17,7 +17,7 @@ FileSpacer prioritizes a lightweight and uncluttered experience. To address the 
 
 <a id="system--languages"></a>**System & Languages:** Windows 10 or later, x64. Available in English, French, German, Italian, Spanish, Portuguese (Portugal) and Greek.
 
-**Privacy:** **No telemetry, usage tracking or advertising**. Update checks contact GitHub; weekly checks are optional and off by default. Downloading and installing require confirmation. [Privacy policy](docs/user-guide.md#privacy).
+<a id="privacy"></a>**Privacy:** **No telemetry, usage tracking or advertising**. Update checks contact GitHub; weekly checks are optional and off by default. Downloading and installing require confirmation. [Privacy policy](docs/user-guide.md#privacy).
 
 **Documentation:**
 - [User guide](docs/user-guide.md)
