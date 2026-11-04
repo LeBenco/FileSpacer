@@ -16,7 +16,7 @@ FileSpacer est un gestionnaire de fichiers pour Windows fondé sur le [paradigme
 
 FileSpacer privilégie une expérience légère et épurée. Pour limiter l’accumulation des fenêtres, un inconvénient connu du paradigme spatial, FileSpacer ferme par défaut la fenêtre source à l’ouverture d’un dossier. Maintenir Ctrl pendant l’ouverture permet de la conserver pour travailler avec plusieurs dossiers à la fois. FileSpacer conserve une interface délibérément sobre, contrairement à certaines interfaces surchargées qui laissent juste assez de place entre les boutons pour entrevoir un fichier.
 
-<a id="system--languages"></a>**Système et langues :** Windows 10 ou version ultérieure, x64. Disponible en anglais, français, allemand, italien, espagnol, portugais (Portugal) et grec.
+<a id="system--languages"></a>**Système et langues :** Windows 10 ou version ultérieure, x64. Disponible en dix langues : anglais, français, allemand, italien, espagnol, portugais (Portugal), grec, polonais, néerlandais et ukrainien.
 
 <a id="privacy"></a>**Confidentialité :** **Aucune télémétrie, aucun suivi d’usage ni publicité.** Les vérifications de mises à jour contactent GitHub ; les vérifications hebdomadaires sont facultatives et désactivées par défaut. Téléchargement et installation demandent confirmation. [Confidentialité](docs/user-guide.md#confidentialité).
 
@@ -53,7 +53,7 @@ Avec **Nilesoft Shell**, les menus de FileSpacer peuvent reprendre ses thèmes e
 
 La compilation utilise MSVC/NMAKE, Visual Studio 2022 Build Tools avec ATL et un SDK Windows, Inkscape et ImageMagick. NSIS est nécessaire pour l’installeur ; SQLite est inclus. Consultez le [guide de compilation](docs/build.md).
 
-Les tests de non-régression associent des scénarios PowerShell à des outils C++ et C# pour les vérifications internes et les tests réels de l’interface Windows et du Shell. Exécutez-les avec `tests.cmd`, en local ou dans une VM Hyper-V configurée. Consultez le [guide des tests](tests/regression/README.md).
+Les tests de non-régression associent des scénarios PowerShell à des outils C++ et C# pour les vérifications internes et les tests réels de l’interface Windows et du Shell. Le [workflow de non-régression GitHub Actions](https://github.com/LeBenco/FileSpacer/actions/workflows/regression.yml) exécute cette suite applicative à la demande et automatiquement avant une publication. Les mêmes cas peuvent être lancés avec `tests.cmd` sur un poste Windows local ou dans une VM Hyper-V configurée. Consultez le [guide des tests](tests/regression/README.md) pour la sélection des cas, les prérequis et les résultats.
 
 ## Licence et crédits
 
