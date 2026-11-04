@@ -63,24 +63,36 @@ function describeLanguage(code, ui, root, base, primary = false) {
   return {code, ui, root, flag, name: ui.name, path: primary ? '' : locale.language, source: primary ? '.' : `_locales/${code}`, url: base + (primary ? '/' : `/${locale.language}/`)};
 }
 
+function sourceFile(language, source) {
+  if (!language.modern) return source;
+  return source.startsWith('docs/')
+    ? (language.primary ? 'docs/en/' : '') + source.slice(5) : source;
+}
+
 export async function generate(repository = path.dirname(template), destination = path.join(repository, 'build/site-source'), options = {}) {
   const config = (await fs.readFile(path.join(template, '_config.yml'), 'utf8')).replaceAll('\r\n', '\n');
   const base = config.match(/^baseurl:\s*(.*)$/m)[1].trim().replace(/\/$/, '');
   const english = JSON.parse(await fs.readFile(path.join(template, 'locale.json'), 'utf8'));
   const languages = [describeLanguage(english.locale, english, repository, base, true)];
-  const translations = path.join(repository, 'website/translations');
+  languages[0].primary = true;
+  languages[0].modern = await exists(path.join(repository, 'docs/en/user-guide.md'));
+  const modernTranslations = languages[0].modern;
+  const translations = path.join(repository, modernTranslations ? 'docs' : 'website/translations');
   if (await exists(translations)) {
     for (const entry of (await fs.readdir(translations, {withFileTypes: true})).sort((a, b) => a.name.localeCompare(b.name, 'en'))) {
       if (!entry.isDirectory()) continue;
       const root = path.join(translations, entry.name);
-      for (const file of ['locale.json', ...sources.map(([source]) => source), ...localizedReferences]) {
+      if (modernTranslations && !await exists(path.join(root, 'locale.json'))) continue;
+      for (const file of ['locale.json', ...sources.map(([source]) => modernTranslations ? source.replace(/^docs\//, '') : source), ...localizedReferences.map(source => modernTranslations ? source.replace(/^docs\//, '') : source)]) {
         if (!await exists(path.join(root, file))) throw new Error(`Incomplete translation ${entry.name}: missing ${file}`);
       }
       const ui = JSON.parse(await fs.readFile(path.join(root, 'locale.json'), 'utf8'));
       for (const key of Object.keys(english).filter(key => key !== 'locale')) {
         if (typeof ui[key] !== 'string' || !ui[key].trim()) throw new Error(`Missing interface translation ${entry.name}: ${key}`);
       }
-      languages.push(describeLanguage(entry.name, ui, root, base));
+      const language = describeLanguage(modernTranslations ? ui.locale : entry.name, ui, root, base);
+      language.modern = modernTranslations;
+      languages.push(language);
     }
   }
   if (new Set(languages.map(language => language.path)).size !== languages.length) throw new Error('Duplicate language routes');
@@ -105,7 +117,7 @@ export async function generate(repository = path.dirname(template), destination 
     const state = language !== languages[0] && !record && await exists(stateFile)
       ? JSON.parse(await fs.readFile(stateFile, 'utf8')).sources : {};
     for (const [source, id] of sources) {
-      const content = await fs.readFile(path.join(language.root, source), 'utf8');
+      const content = await fs.readFile(path.join(language.root, sourceFile(language, source)), 'utf8');
       const tokens = parser.lexer(content);
       const sourceHash = createHash('sha256').update(content.replaceAll('\r\n', '\n')).digest('hex');
       const baseline = state[source];
@@ -116,7 +128,7 @@ export async function generate(repository = path.dirname(template), destination 
         const message = `${language.code}/${source}: English has changed since this translation was synchronized; retaining the existing translation and section links.`;
         warnings.push({language: language.code, source, message});
         if (options.onWarning) options.onWarning(message);
-        else console.warn(process.env.GITHUB_ACTIONS ? `::warning file=website/translations/${language.code}/${source}::${message}` : `WARNING: ${message}`);
+        else console.warn(process.env.GITHUB_ACTIONS ? `::warning file=${path.relative(repository, path.join(language.root, sourceFile(language, source))).split(path.sep).join('/')}::${message}` : `WARNING: ${message}`);
       }
       const anchors = new Map(), counts = new Map(), headings = [];
       parser.walkTokens(tokens, token => {
@@ -159,6 +171,24 @@ export async function generate(repository = path.dirname(template), destination 
       const at = href.indexOf('#');
       const file = decodeURIComponent(at < 0 ? href : href.slice(0, at)).replaceAll('\\', '/');
       const fragment = at < 0 ? '' : decodeURIComponent(href.slice(at + 1));
+      if (language.modern) {
+        const relativeRoot = path.relative(repository, language.root).replaceAll('\\', '/');
+        const actualSource = path.posix.join(relativeRoot, sourceFile(language, source));
+        const actualTarget = file ? path.posix.normalize(path.posix.join(path.posix.dirname(actualSource), file)) : actualSource;
+        if (actualTarget.startsWith('../') || path.posix.isAbsolute(actualTarget)) throw new Error(`Path outside repository: ${href}`);
+        if (image) {
+          const output = `assets/content/${actualTarget}`;
+          assets.set(actualTarget, output);
+          return output;
+        }
+        const entry = [...documents].find(([logical]) => path.posix.join(relativeRoot, sourceFile(language, logical)) === actualTarget);
+        if (!entry && !fragment && actualTarget === path.posix.join(relativeRoot, sourceFile(language, 'docs/privacy-policy.md'))) return '#user-guide--privacy';
+        if (!entry) return 'https://github.com/LeBenco/FileSpacer/blob/main/' + actualTarget.split('/').map(encodeURIComponent).join('/') + (fragment ? '#' + encodeURIComponent(fragment) : '');
+        const doc = entry[1];
+        const anchor = fragment ? doc.anchors.get(fragment) : doc.id;
+        if (!anchor) throw new Error(`Missing heading in ${language.code}/${source}: ${href}`);
+        return '#' + anchor;
+      }
       const target = file ? path.posix.normalize(path.posix.join(path.posix.dirname(source), file)) : source;
       if (target.startsWith('../') || path.posix.isAbsolute(target)) throw new Error(`Path outside repository: ${href}`);
       if (image) {
