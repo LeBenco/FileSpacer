@@ -257,6 +257,21 @@ jobs:
             throw 'Release publication failed.'
           }
 
+          # The independent WinGet workflow reads this from this successful run.
+          $publication = @{ tag = $env:RELEASE_TAG; repository = $env:GITHUB_REPOSITORY }
+          [System.IO.File]::WriteAllText(
+            "$env:GITHUB_WORKSPACE/build/release-publication.json",
+            ($publication | ConvertTo-Json),
+            [System.Text.UTF8Encoding]::new($false)
+          )
+
+      - name: Record the published release for distribution
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-publication
+          path: build/release-publication.json
+          if-no-files-found: error
+
       - name: Summarize release failure
         if: failure()
         shell: powershell
