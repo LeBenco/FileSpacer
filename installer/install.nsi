@@ -118,7 +118,13 @@ UninstPage Custom un.LockedListShow un.LockedListLeave
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "English"
 !insertmacro MUI_LANGUAGE "French"
+!insertmacro MUI_LANGUAGE "Polish"
+!insertmacro MUI_LANGUAGE "Dutch"
+!insertmacro MUI_LANGUAGE "Ukrainian"
 ChangeUI IDD_INST "..\build\installer-assets\wizard-ui.dll"
+!include "language.pl.nsh"
+!include "language.nl.nsh"
+!include "language.uk.nsh"
 
 LangString SCOPE_TITLE ${LANG_ENGLISH} "Install FileSpacer ${PRODUCT_VERSION}"
 LangString SCOPE_TITLE ${LANG_FRENCH} "Installer FileSpacer ${PRODUCT_VERSION}"
@@ -448,7 +454,17 @@ Function .onInit
     SetRegView 64
     Call InitializeInstall
     InitPluginsDir
-    File /oname=$PLUGINSDIR\changelog.txt "..\build\installer-assets\changelog.txt"
+    ${If} $LANGUAGE == ${LANG_FRENCH}
+        File /oname=$PLUGINSDIR\changelog.txt "..\build\installer-assets\changelog-fr.txt"
+    ${ElseIf} $LANGUAGE == ${LANG_POLISH}
+        File /oname=$PLUGINSDIR\changelog.txt "..\build\installer-assets\changelog-pl.txt"
+    ${ElseIf} $LANGUAGE == ${LANG_DUTCH}
+        File /oname=$PLUGINSDIR\changelog.txt "..\build\installer-assets\changelog-nl.txt"
+    ${ElseIf} $LANGUAGE == ${LANG_UKRAINIAN}
+        File /oname=$PLUGINSDIR\changelog.txt "..\build\installer-assets\changelog-uk.txt"
+    ${Else}
+        File /oname=$PLUGINSDIR\changelog.txt "..\build\installer-assets\changelog-en.txt"
+    ${EndIf}
     ; The NSIS host is x86; this worker lets LockedList inspect x64 processes.
     File /oname=$PLUGINSDIR\LockedList64.dll "plugins\LockedList64.dll"
 FunctionEnd
@@ -459,6 +475,9 @@ Function un.onInit
     ReadINIStr $1 "$INSTDIR\install-info.ini" "Installation" "Language"
     ${If} $1 == ${LANG_ENGLISH}
     ${OrIf} $1 == ${LANG_FRENCH}
+    ${OrIf} $1 == ${LANG_POLISH}
+    ${OrIf} $1 == ${LANG_DUTCH}
+    ${OrIf} $1 == ${LANG_UKRAINIAN}
         StrCpy $LANGUAGE $1
     ${EndIf}
     ${If} $installMode == "AllUsers"
@@ -985,6 +1004,9 @@ Function RestoreInstallLanguage
     ReadINIStr $0 "$INSTDIR\install-info.ini" "Installation" "Language"
     ${If} $0 == ${LANG_ENGLISH}
     ${OrIf} $0 == ${LANG_FRENCH}
+    ${OrIf} $0 == ${LANG_POLISH}
+    ${OrIf} $0 == ${LANG_DUTCH}
+    ${OrIf} $0 == ${LANG_UKRAINIAN}
         StrCpy $LANGUAGE $0
     ${EndIf}
     ClearErrors
@@ -1067,6 +1089,9 @@ Function InitializeInstall
         IfErrors worker_invalid
         ${If} $0 != ${LANG_ENGLISH}
         ${AndIf} $0 != ${LANG_FRENCH}
+        ${AndIf} $0 != ${LANG_POLISH}
+        ${AndIf} $0 != ${LANG_DUTCH}
+        ${AndIf} $0 != ${LANG_UKRAINIAN}
             Goto worker_invalid
         ${EndIf}
         StrCpy $LANGUAGE $0
