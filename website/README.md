@@ -39,8 +39,9 @@ theme script so browsers receive search changes after deployment. Retain its
 MIT notice and review it when updating the theme. The repository README has no
 language selector or language links.
 
-Download buttons show the first released version in `CHANGELOG.md`, without a
-network request during generation. Keep `{version}` in each localized label.
+The header only links to the repository. Download links and badges come from
+the Markdown sources; the generator does not add a second download button or
+derive one from the changelog.
 
 PNG and GIF screenshots are small linked thumbnails. A local script opens them
 in a native HTML dialog with a localized close button, Escape, backdrop dismissal
@@ -125,6 +126,11 @@ start the release workflow, whose offline documentation waits for application
 tests and uses their exact commit. A documentation push does not start an
 application release; changing both documentation and application code in one
 commit still produces a single Pages run for that branch push.
+
+English document updates do not wait for translation updates. The shared
+generator retains each translation and its recorded section IDs, and reports
+outdated documents as workflow annotations and a summary table. See the
+[translation guide](translations/README.md) for recording synchronized sources.
 
 Once the workflow has been pushed, select **Settings > Pages > Source > GitHub
 Actions**. The expected URL is `https://lebenco.github.io/FileSpacer/`; `_config.yml`
