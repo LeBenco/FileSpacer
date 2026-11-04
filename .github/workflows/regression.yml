@@ -27,7 +27,7 @@ on:
   workflow_call:
     outputs:
       tested_sha:
-        description: 'Exact commit selected for the application tests'
+        description: 'Selected commit validated by execution or identical application/test inputs'
         value: ${{ jobs.selection.outputs.sha }}
     inputs:
       ref:
@@ -50,6 +50,9 @@ jobs:
     outputs:
       sha: ${{ steps.select.outputs.sha }}
       ui: ${{ steps.select.outputs.ui }}
+      fingerprint: ${{ steps.fingerprint.outputs.fingerprint }}
+      cache_key: ${{ steps.fingerprint.outputs.key }}
+      reuse: ${{ steps.reuse.outputs.reuse }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -69,8 +72,39 @@ jobs:
           "ui=$((@($cases | Where-Object Category -eq 'UI').Count -gt 0).ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
           "Selected $(@($cases).Count) cases, scope=$env:TEST_SCOPE, category=$env:TEST_CATEGORY, pattern=$env:TEST_PATTERN" >> $env:GITHUB_STEP_SUMMARY
 
+      # Older selected revisions without this helper retain the full execution.
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        if: hashFiles('.github/scripts/regression-cache.mjs') != ''
+        with:
+          node-version: 24
+      - id: fingerprint
+        name: Identify application and test inputs
+        if: hashFiles('.github/scripts/regression-cache.mjs') != ''
+        env:
+          TEST_CATEGORY: ${{ inputs.category }}
+          TEST_PATTERN: ${{ inputs.pattern }}
+        run: |
+          node --test .github/scripts/regression-cache.test.mjs
+          node .github/scripts/regression-cache.mjs fingerprint
+      - id: previous
+        name: Restore an exact successful regression result
+        if: steps.fingerprint.outputs.key != ''
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5, Node.js 24
+        with:
+          path: build/ci/regression-pass.json
+          key: ${{ steps.fingerprint.outputs.key }}
+          enableCrossOsArchive: true
+      - id: reuse
+        name: Validate the successful result before reuse
+        if: steps.previous.outputs.cache-hit == 'true'
+        env:
+          TEST_SHA: ${{ steps.select.outputs.sha }}
+          TEST_FINGERPRINT: ${{ steps.fingerprint.outputs.fingerprint }}
+        run: node .github/scripts/regression-cache.mjs validate
+
   regression:
     needs: selection
+    if: needs.selection.outputs.reuse != 'true'
     runs-on: windows-2022
     timeout-minutes: 180
     env:
@@ -194,6 +228,30 @@ jobs:
         shell: powershell
         run: |
           & ./tests/regression/common/Write-RegressionSummary.ps1 -RunDirectory $env:TEST_DIRECTORY -Commit $env:TEST_SHA -Scope $env:TEST_SCOPE
+
+      - name: Record the successful application and test inputs
+        if: success() && needs.selection.outputs.cache_key != ''
+        shell: powershell
+        env:
+          TEST_FINGERPRINT: ${{ needs.selection.outputs.fingerprint }}
+        run: |
+          $record = [ordered]@{
+            version = 1
+            conclusion = 'success'
+            fingerprint = $env:TEST_FINGERPRINT
+            repository = $env:GITHUB_REPOSITORY
+            executedSha = $env:TEST_SHA
+            runId = $env:GITHUB_RUN_ID
+            createdAt = [DateTime]::UtcNow.ToString('o')
+          }
+          $record | ConvertTo-Json | Set-Content build/ci/regression-pass.json -Encoding UTF8
+      - name: Remember the successful regression result
+        if: success() && needs.selection.outputs.cache_key != ''
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5, Node.js 24
+        with:
+          path: build/ci/regression-pass.json
+          key: ${{ needs.selection.outputs.cache_key }}
+          enableCrossOsArchive: true
 
       - name: Preserve logs, reports and screenshots
         if: always()
