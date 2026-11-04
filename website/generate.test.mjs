@@ -141,6 +141,25 @@ async function translatedFixture(t) {
   return {root, target};
 }
 
+test('technical references use an available translation and preserve its section link', async t => {
+  const {root, target} = await translatedFixture(t);
+  const output = path.join(root, 'output');
+  await fs.appendFile(path.join(root, 'README.md'), '\n[Build guide](docs/build.md#releases).\n');
+  await fs.appendFile(path.join(target, 'README.md'), '\n[Guide de compilation](docs/build.md#releases).\n');
+  await generate(root, output, {recordTranslations: ['fr-FR']});
+  const page = path.join(output, '_locales/fr-FR/index.html');
+  const canonical = 'https://github.com/LeBenco/FileSpacer/blob/main/docs/build.md#releases';
+  assert.ok((await fs.readFile(page, 'utf8')).includes(`href="${canonical}"`));
+  const technical = path.join(target, 'docs/build.md');
+  await fs.writeFile(technical, '# Compilation\n\n<a id="releases"></a>\n\n## Publications\n');
+  await generate(root, output);
+  assert.ok((await fs.readFile(page, 'utf8')).includes('href="https://github.com/LeBenco/FileSpacer/blob/main/website/translations/fr-FR/docs/build.md#releases"'));
+  assert.ok((await fs.readFile(path.join(output, 'index.html'), 'utf8')).includes(`href="${canonical}"`));
+  await fs.unlink(technical);
+  await generate(root, output);
+  assert.ok((await fs.readFile(page, 'utf8')).includes(`href="${canonical}"`));
+});
+
 test('English text and structure updates retain translated text and historical section IDs with warnings', async t => {
   const {root} = await translatedFixture(t);
   const output = path.join(root, 'output');
