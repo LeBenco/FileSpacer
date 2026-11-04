@@ -1,9 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.3.2 — 2026-11-04
 
 - Add Polish, Dutch and Ukrainian to the application, installer, website and user and developer documentation.
-- Refresh localized demonstrations with a new desktop background.
 
 ## 1.3.1 — 2026-11-03
 
