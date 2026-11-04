@@ -10,13 +10,16 @@
 namespace {
 struct Case { const wchar_t *language; const wchar_t *expected; };
 const Case cases[] = {
-    {L"en-US", L"Quick access"}, {L"en-GB", L"Quick access"}, {L"nl-NL", L"Quick access"},
+    {L"en-US", L"Quick access"}, {L"en-GB", L"Quick access"}, {L"sv-SE", L"Quick access"},
     {L"fr-FR", L"Accès rapide"}, {L"fr-CA", L"Accès rapide"}, {L"fr-BE", L"Accès rapide"},
     {L"de-DE", L"Schnellzugriff"}, {L"de-AT", L"Schnellzugriff"}, {L"de-CH", L"Schnellzugriff"},
     {L"it-IT", L"Accesso rapido"}, {L"it-CH", L"Accesso rapido"},
     {L"es-ES", L"Acceso rápido"}, {L"es-MX", L"Acceso rápido"}, {L"es-AR", L"Acceso rápido"},
     {L"pt-PT", L"Acesso rápido"}, {L"pt-BR", L"Acesso rápido"},
     {L"el-GR", L"Γρήγορη πρόσβαση"},
+    {L"pl-PL", L"Szybki dostęp"},
+    {L"nl-NL", L"Snelle toegang"}, {L"nl-BE", L"Snelle toegang"},
+    {L"uk-UA", L"Швидкий доступ"},
 };
 }
 
