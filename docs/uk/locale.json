@@ -16,5 +16,6 @@
   "attribution": "Цей сайт використовує <a href=\"https://github.com/just-the-docs/just-the-docs\">Just the Docs</a>, тему документації для Jekyll.",
   "license": "Поширюється за ліцензією",
   "enlargeImage": "Збільшити знімок екрана",
-  "closeImage": "Закрити зображення"
+  "closeImage": "Закрити зображення",
+  "locale": "uk-UA"
 }
