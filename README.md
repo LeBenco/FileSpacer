@@ -1,27 +1,29 @@
 <p align="center">
     <img height="200" alt="FileSpacer" src="src/res/FileSpacer.svg" />
 </p>
+<a href="https://github.com/LeBenco/FileSpacer/releases/latest"><img align="right" src="https://img.shields.io/badge/Download-latest-blue" alt="Download latest release"></a>
 
 # FileSpacer
 
-FileSpacer is a file manager for Windows built around the [spatial paradigm](https://en.wikipedia.org/wiki/Spatial_file_manager): each folder has a single window that remembers its position, size and view settings. This provides [stable visual landmarks](https://www.csse.canterbury.ac.nz/~andy/papers/transforms.pdf), allowing [spatial memory](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/01/p153-robertson.pdf) to help you recognize familiar folders at a glance. In a navigational file manager, the same window displays different folders in succession: its position and dimensions alone cannot identify the current folder, so you need to look at its contents to determine where you are. By preserving distinct landmarks for each folder, the spatial approach can help reduce the cognitive load of finding your way around your files.
+[![Windows 10+](https://img.shields.io/badge/Windows%2010%2B-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTAgMGgxMXYxMUgwem0xMyAwaDExdjExSDEzem0tMTMgMTNoMTF2MTFIMHptMTMgMGgxMXYxMUgxM3oiLz48L3N2Zz4=)](#system--languages)
+[![No Telemetry](https://img.shields.io/badge/telemetry-none-2ea44f)](docs/user-guide.md#privacy)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-To address the accumulation of windows, a recognized drawback of the spatial paradigm, FileSpacer closes the source window by default when a folder is opened. Hold Ctrl while opening a folder to keep the source window open when you want to work with several folders at once.
+FileSpacer is a file manager for Windows built around the [spatial paradigm](https://en.wikipedia.org/wiki/Spatial_file_manager): each folder has a single window that remembers its position, size and view settings. This provides [stable visual landmarks](https://www.csse.canterbury.ac.nz/~andy/papers/transforms.pdf), allowing [spatial memory](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/01/p153-robertson.pdf) to help you recognize familiar folders at a glance. In a navigational file manager, the same window displays different folders in succession: its position and dimensions alone cannot identify the current folder, so you need to look at its contents to determine where you are. By preserving distinct landmarks for each folder, the spatial approach can help reduce the cognitive load of finding your way around your files. Tabs are incompatible with the spatial model and will never be added.
 
 <img src="docs/images/spatial-windows.png" alt="Three non-overlapping folder windows with different sizes, view modes and icon scales, including a free icon layout." width="560">
 
-FileSpacer keeps its interface deliberately understated, unlike some cluttered interfaces that leave just enough room between the buttons to glimpse a file.
+FileSpacer prioritizes a lightweight and uncluttered experience. To address the accumulation of windows, a recognized drawback of the spatial paradigm, FileSpacer closes the source window by default when a folder is opened. Hold Ctrl while opening a folder to keep the source window open when you want to work with several folders at once. FileSpacer also keeps its interface deliberately understated, unlike some cluttered interfaces that leave just enough room between the buttons to glimpse a file.
 
-Tabs are incompatible with the spatial model and will never be added.
+<a id="system--languages"></a>**System & Languages:** Windows 10 or later, x64. Available in English, French, German, Italian, Spanish, Portuguese (Portugal) and Greek.
 
-Windows 10 or later, x64. Available in English, French, German, Italian, Spanish,
-Portuguese (Portugal) and Greek.
+**Privacy:** **No telemetry, usage tracking or advertising**. Update checks contact GitHub; weekly checks are optional and off by default. Downloading and installing require confirmation. [Privacy policy](docs/user-guide.md#privacy).
 
-No telemetry, usage tracking or advertising. Update checks contact GitHub; weekly checks are optional and off by default. Downloading and installing require confirmation. [Privacy](docs/user-guide.md#privacy).
+**Documentation:**
+- [User guide](docs/user-guide.md)
+- [Changelog](CHANGELOG.md)
 
-[Download the latest release](https://github.com/LeBenco/FileSpacer/releases/latest)
-· [User guide](docs/user-guide.md)
-· [Changelog](CHANGELOG.md)
+_FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler), originally created by J. van't Hoog. See [Credits](#license-and-credits) below for details._
 
 ## Features
 
@@ -60,6 +62,8 @@ With **Nilesoft Shell**, FileSpacer's menus can use its themes and custom comman
 
 ## Build
 
+[![Publish FileSpacer](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml/badge.svg)](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml)
+
 Builds use MSVC/NMAKE, Visual Studio 2022 Build Tools with ATL and a Windows SDK,
 Inkscape and ImageMagick. NSIS is required for the installer; SQLite is bundled.
 See the [build guide](docs/build.md).
@@ -69,20 +73,14 @@ internal checks and real Windows UI/Shell tests. Run them through `tests.cmd`,
 locally or in a configured Hyper-V VM.
 See the [test guide](tests/regression/README.md).
 
-[![Publish FileSpacer](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml/badge.svg)](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml)
-
 ## License and credits
 
-FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler),
-created by J. van't Hoog (vanjac). Many thanks to vanjac for the foundation!
+### Copyright and License
+FileSpacer is distributed under the <img align="absbottom" src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"> license.<br>
+Copyright © 2026 Benco for FileSpacer modifications. The complete license is in [LICENSE](LICENSE) in the source tree, or `LICENSE.txt` in the installation folder. FileSpacer comes without warranty; redistribution and modification are permitted under that license.
 
-Copyright © 2026 Benco for FileSpacer modifications;
-original ChromaFiler code © 2023 J. van't Hoog.
+### Fork and Upstream Credits
+FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler) (original ChromaFiler code © 2023 J. van't Hoog.), created by J. van't Hoog (vanjac). Many thanks to vanjac for the foundation!
 
-FileSpacer is distributed under the GNU GPL v3.0. The complete license is in
-[LICENSE](LICENSE) in the source tree, or `LICENSE.txt` in the installation folder.
-FileSpacer comes without warranty; redistribution and modification are permitted
-under that license.
-
-See [third-party notices](THIRD_PARTY_NOTICES.md)
-and the [privacy policy](docs/privacy-policy.md).
+### Third-Party Notices
+See [third-party notices](THIRD_PARTY_NOTICES.md) and the [privacy policy](docs/privacy-policy.md).
