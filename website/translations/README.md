@@ -15,12 +15,33 @@ fails generation instead of silently linking readers to English.
 The generator discovers these directories. Its English input remains the
 original documents, with interface labels from `website/locale.json`.
 
-Keep the heading order and hierarchy identical to English. The generator uses
-the English heading IDs in every language, so switching language preserves the
-section being read and existing public anchors keep working. Links can use
-either a translated heading slug or the original English slug. Referenced user
+When updating a translation, keep the heading order and hierarchy identical to
+its English reference. Each locale's generated `source-state.json` records the
+English content hashes and section IDs used for its last synchronization.
+English edits are published immediately. Translations retain their existing
+text and section IDs; outdated documents produce workflow warnings and a summary
+table instead of blocking publication. Text-only edits are detected too.
+
+After translating the changed documents, record their English reference from
+CMD at the repository root (replace the locale as appropriate):
+
+```cmd
+node website\generate.mjs --record-translation-sources fr-FR
+```
+
+Omit the locale to record all translations. Commit the generated source-state
+files with the updated Markdown. Recording validates matching headings and links;
+it does not translate text or infer whether its meaning is up to date. Do not
+record an English edit until its translation is complete. Missing documents,
+broken links or media and translation structure inconsistent with its recorded
+reference remain errors.
+
+The recorded English IDs keep existing section links working when another
+language's headings change. Links can use either a translated heading slug or
+the original English slug. Referenced user
 documentation links to the selected language's GitHub file. Developer documents
 outside the website still link to the English GitHub source.
+Keep explicit HTML anchor IDs unchanged across languages.
 
 Keep image references under their original English filenames. The generator
 substitutes real language-specific captures such as `spatial-windows-de.png`, while
