@@ -79,7 +79,8 @@
       "sourceCommit": "10c4027",
       "demoContentLanguage": "de",
       "executableSha256": "BAC7D58E7795E420D2C24F21EBDBC2B5D470C5409FE37F3E5DA6D0EDFA3DEA12",
-      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching",
+      "supersededBy": "localization-2026-11-04-provenance.json"
     },
     {
       "file": "resize-window-de.gif",
@@ -113,7 +114,8 @@
       "sourceCommit": "10c4027",
       "demoContentLanguage": "de",
       "executableSha256": "BAC7D58E7795E420D2C24F21EBDBC2B5D470C5409FE37F3E5DA6D0EDFA3DEA12",
-      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching",
+      "supersededBy": "localization-2026-11-04-provenance.json"
     },
     {
       "file": "mixed-sorting-de.png",
@@ -221,7 +223,8 @@
       "sourceCommit": "10c4027",
       "demoContentLanguage": "it",
       "executableSha256": "7A2F7114FB7AF7B52B82D0FC3F5224246A37D35C99CC4B22B6863FE298EE34EF",
-      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching",
+      "supersededBy": "localization-2026-11-04-provenance.json"
     },
     {
       "file": "resize-window-it.gif",
@@ -255,7 +258,8 @@
       "sourceCommit": "10c4027",
       "demoContentLanguage": "it",
       "executableSha256": "7A2F7114FB7AF7B52B82D0FC3F5224246A37D35C99CC4B22B6863FE298EE34EF",
-      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching",
+      "supersededBy": "localization-2026-11-04-provenance.json"
     },
     {
       "file": "mixed-sorting-it.png",
@@ -363,7 +367,8 @@
       "sourceCommit": "10c4027",
       "demoContentLanguage": "es",
       "executableSha256": "8E7A25CAC76031EAEDB1B3E977D92CBF98253624603BB21F5B720B8EC87A6BBA",
-      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching",
+      "supersededBy": "localization-2026-11-04-provenance.json"
     },
     {
       "file": "resize-window-es.gif",
@@ -397,7 +402,8 @@
       "sourceCommit": "10c4027",
       "demoContentLanguage": "es",
       "executableSha256": "8E7A25CAC76031EAEDB1B3E977D92CBF98253624603BB21F5B720B8EC87A6BBA",
-      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching",
+      "supersededBy": "localization-2026-11-04-provenance.json"
     },
     {
       "file": "mixed-sorting-es.png",
@@ -505,7 +511,8 @@
       "sourceCommit": "10c4027",
       "demoContentLanguage": "pt",
       "executableSha256": "9FAA0783A3F3D7F9791866F8CC2545BBEE1EAB0890123DB2278DA1209837A6F2",
-      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching",
+      "supersededBy": "localization-2026-11-04-provenance.json"
     },
     {
       "file": "resize-window-pt.gif",
@@ -539,7 +546,8 @@
       "sourceCommit": "10c4027",
       "demoContentLanguage": "pt",
       "executableSha256": "9FAA0783A3F3D7F9791866F8CC2545BBEE1EAB0890123DB2278DA1209837A6F2",
-      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching",
+      "supersededBy": "localization-2026-11-04-provenance.json"
     },
     {
       "file": "mixed-sorting-pt.png",
@@ -647,7 +655,8 @@
       "sourceCommit": "10c4027",
       "demoContentLanguage": "el",
       "executableSha256": "DC2F1F0BA952953BA24E8C4AD50772707F6554FD32D971BC9908D9824D151F4E",
-      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching",
+      "supersededBy": "localization-2026-11-04-provenance.json"
     },
     {
       "file": "resize-window-el.gif",
@@ -681,7 +690,8 @@
       "sourceCommit": "10c4027",
       "demoContentLanguage": "el",
       "executableSha256": "DC2F1F0BA952953BA24E8C4AD50772707F6554FD32D971BC9908D9824D151F4E",
-      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching"
+      "framing": "Fixed 1000x620 region containing a real folder window and the original solid-color background; no wallpaper image, scaling or UI retouching",
+      "supersededBy": "localization-2026-11-04-provenance.json"
     },
     {
       "file": "mixed-sorting-el.png",
