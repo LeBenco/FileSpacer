@@ -2,25 +2,30 @@
     <img height="200" alt="FileSpacer" src="src/res/FileSpacer.svg" />
 </p>
 
+<a href="https://github.com/LeBenco/FileSpacer/releases/latest"><img align="right" src="https://img.shields.io/badge/Transferir-vers%C3%A3o%20mais%20recente-blue" alt="Transferir versão mais recente"></a>
+
 # FileSpacer
 
-O FileSpacer é um gestor de ficheiros para Windows baseado no [paradigma espacial](https://en.wikipedia.org/wiki/Spatial_file_manager): cada pasta tem uma única janela que memoriza a posição, o tamanho e as definições de apresentação. Isto cria [referências visuais estáveis](https://www.csse.canterbury.ac.nz/~andy/papers/transforms.pdf), permitindo que a [memória espacial](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/01/p153-robertson.pdf) ajude a reconhecer as pastas familiares de relance. Num gestor de ficheiros baseado na navegação, a mesma janela mostra sucessivamente pastas diferentes: a posição e as dimensões, por si só, não identificam a pasta aberta, pelo que é preciso olhar para o conteúdo para saber onde se está. Ao conservar referências distintas para cada pasta, a abordagem espacial pode reduzir o esforço necessário para se orientar entre os seus ficheiros.
+[![Windows 10+](https://img.shields.io/badge/Windows%2010%2B-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTAgMGgxMXYxMUgwem0xMyAwaDExdjExSDEzem0tMTMgMTNoMTF2MTFIMHptMTMgMGgxMXYxMUgxM3oiLz48L3N2Zz4=)](#system--languages)
+[![telemetria: nenhuma](https://img.shields.io/badge/telemetria-nenhuma-2ea44f)](#privacy)
+[![Licença: GPL v3](https://img.shields.io/badge/Licen%C3%A7a-GPLv3-blue.svg)](#licença-e-agradecimentos)
 
-Para limitar a acumulação de janelas, uma desvantagem conhecida do paradigma espacial, o FileSpacer fecha por predefinição a janela de origem ao abrir uma pasta. Mantenha Ctrl premido durante a abertura para a conservar quando quiser trabalhar com várias pastas ao mesmo tempo.
+O FileSpacer é um gestor de ficheiros para Windows baseado no [paradigma espacial](https://en.wikipedia.org/wiki/Spatial_file_manager): cada pasta tem uma única janela que memoriza a posição, o tamanho e as definições de apresentação. Isto cria [referências visuais estáveis](https://www.csse.canterbury.ac.nz/~andy/papers/transforms.pdf), permitindo que a [memória espacial](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/01/p153-robertson.pdf) ajude a reconhecer as pastas familiares de relance. Num gestor de ficheiros baseado na navegação, a mesma janela mostra sucessivamente pastas diferentes: a posição e as dimensões, por si só, não identificam a pasta aberta, pelo que é preciso olhar para o conteúdo para saber onde se está. Ao conservar referências distintas para cada pasta, a abordagem espacial pode reduzir o esforço necessário para se orientar entre os seus ficheiros. Os separadores são incompatíveis com o modelo espacial e nunca serão adicionados.
 
 <img src="docs/images/spatial-windows.png" alt="Três janelas de pastas sem sobreposição, com tamanhos, modos de apresentação e níveis de zoom diferentes, incluindo uma disposição livre de ícones." width="560">
 
-O FileSpacer mantém uma interface deliberadamente sóbria, ao contrário de certas interfaces sobrecarregadas que mal deixam espaço entre os botões para se vislumbrar um ficheiro.
+O FileSpacer privilegia uma experiência leve e descomplicada. Para limitar a acumulação de janelas, uma desvantagem conhecida do paradigma espacial, o FileSpacer fecha por predefinição a janela de origem ao abrir uma pasta. Mantenha Ctrl premido durante a abertura para a conservar quando quiser trabalhar com várias pastas ao mesmo tempo. O FileSpacer mantém uma interface deliberadamente sóbria, ao contrário de certas interfaces sobrecarregadas que mal deixam espaço entre os botões para se vislumbrar um ficheiro.
 
-Os separadores são incompatíveis com o modelo espacial e nunca serão adicionados.
+<a id="system--languages"></a>**Sistema e idiomas:** Windows 10 ou posterior, x64. Disponível em inglês, francês, alemão, italiano, espanhol, português (Portugal) e grego.
 
-Windows 10 ou posterior, x64. Disponível em inglês, francês, alemão, italiano, espanhol, português (Portugal) e grego.
+<a id="privacy"></a>**Privacidade:** **Sem telemetria, monitorização de utilização ou publicidade.** As verificações de atualizações contactam o GitHub; as semanais são opcionais e estão desativadas por predefinição. A transferência e a instalação exigem confirmação. [Privacidade](docs/user-guide.md#privacidade).
 
-Sem telemetria, monitorização de utilização ou publicidade. As verificações de atualizações contactam o GitHub; as semanais são opcionais e estão desativadas por predefinição. A transferência e a instalação exigem confirmação. [Privacidade](docs/user-guide.md#privacidade).
+**Documentação:**
 
-[Transferir a versão mais recente](https://github.com/LeBenco/FileSpacer/releases/latest)
-· [Guia de utilização](docs/user-guide.md)
-· [Histórico de versões](CHANGELOG.md)
+[![Docs](https://img.shields.io/badge/Docs-Guia%20de%20utiliza%C3%A7%C3%A3o-blue)](docs/user-guide.md)
+[![Docs](https://img.shields.io/badge/Docs-Hist%C3%B3rico%20de%20vers%C3%B5es-orange)](CHANGELOG.md)
+
+_O FileSpacer é uma derivação do [ChromaFiler](https://github.com/vanjac/chromafiler), criado originalmente por J. van’t Hoog. Consulte os [agradecimentos](#licença-e-agradecimentos) abaixo para mais informações._
 
 ## Funcionalidades
 
@@ -44,16 +49,20 @@ Com o **Nilesoft Shell**, os menus do FileSpacer podem usar os seus temas e coma
 
 ## Compilação
 
+[![Publish FileSpacer](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml/badge.svg)](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml)
+
 A compilação utiliza MSVC/NMAKE, Visual Studio 2022 Build Tools com ATL e um Windows SDK, Inkscape e ImageMagick. O instalador requer o NSIS; o SQLite está incluído. Consulte o [guia de compilação](docs/build.md).
 
 Os testes de regressão combinam cenários PowerShell com ferramentas C++ e C# para verificações internas e testes reais da interface do Windows e da Shell. Execute-os com `tests.cmd`, localmente ou numa VM Hyper-V configurada. Consulte o [guia dos testes](tests/regression/README.md).
 
 ## Licença e agradecimentos
 
-O FileSpacer é uma derivação do [ChromaFiler](https://github.com/vanjac/chromafiler), criado por J. van’t Hoog (vanjac). Muito obrigado ao vanjac por esta base!
+### Direitos de autor e licença
+O FileSpacer é distribuído ao abrigo da licença <img align="absbottom" src="https://img.shields.io/badge/Licen%C3%A7a-GPLv3-blue.svg" alt="Licença: GPL v3">.<br>
+Copyright © 2026 Benco pelas alterações do FileSpacer. A licença completa encontra-se em [LICENSE](LICENSE) no código-fonte, ou em `LICENSE.txt` na pasta de instalação. O FileSpacer é fornecido sem garantia; a redistribuição e a modificação são permitidas nos termos dessa licença.
 
-Copyright © 2026 Benco pelas alterações do FileSpacer; código original do ChromaFiler © 2023 J. van’t Hoog.
+### Origem do projeto e agradecimentos
+O FileSpacer é uma derivação do [ChromaFiler](https://github.com/vanjac/chromafiler), criado por J. van’t Hoog (vanjac). Muito obrigado ao vanjac por esta base! Código original do ChromaFiler © 2023 J. van’t Hoog.
 
-O FileSpacer é distribuído ao abrigo da GNU GPL v3.0. A licença completa encontra-se em [LICENSE](LICENSE) no código-fonte, ou em `LICENSE.txt` na pasta de instalação. O FileSpacer é fornecido sem garantia; a redistribuição e a modificação são permitidas nos termos dessa licença.
-
+### Avisos relativos a componentes de terceiros
 Consulte os [avisos relativos a componentes de terceiros](THIRD_PARTY_NOTICES.md) e a [política de privacidade](docs/privacy-policy.md).
