@@ -6,7 +6,10 @@ in the user guide. The short standalone privacy policy remains on GitHub; its
 former site anchors still reach the relevant guide sections.
 The original English documents remain
 the source of the English site and the repository documentation. Complete
-website-only translations live under `website/translations/<language-region>/`.
+translations live under `docs/<language>/`, with documents directly in that
+directory and their own images in its `images/` subdirectory. English technical
+and user documents are in `docs/en/`; the English README, changelog and third-party
+notices stay at the repository root as the English website sources.
 Build instructions, tests and technical notes remain on GitHub: links to files
 not included in the site become links to the repository's `main` branch.
 The Nilesoft configuration reference has a translated file for each language;

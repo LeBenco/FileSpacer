@@ -2,7 +2,7 @@
 
 # Website genereren
 
-De site voegt `README.md`, handleiding, wijzigingen en derdenvermeldingen samen. Privacy en lokale gegevens hebben eigen secties. Het korte beleid blijft op GitHub; oude siteankers bereiken de handleiding. Engelse originelen zijn de bron voor site en repository. Volledige vertalingen staan onder `website/translations/<language-region>/`. Bouw, tests en technische notities blijven op GitHub; externe documentlinks gaan naar `main`. Nilesoft heeft per taal een referentie; technische documenten bestaan ook in Pools, Nederlands en Oekraïens.
+De site voegt `README.md`, handleiding, wijzigingen en derdenvermeldingen samen. Privacy en lokale gegevens hebben eigen secties. Het korte beleid blijft op GitHub; oude siteankers bereiken de handleiding. Engelse originelen zijn de bron voor site en repository. Documenten staan rechtstreeks in `docs/<language>/`; elke taal heeft eigen afbeeldingen in de submap `images/`. Engelse documenten staan in `docs/en/`; de Engelse README, wijzigingen en derdenvermeldingen in de hoofdmap blijven de bronnen voor de Engelse site. Bouw, tests en technische notities blijven op GitHub; externe documentlinks gaan naar `main`. Nilesoft heeft per taal een referentie; technische documenten bestaan ook in Pools, Nederlands en Oekraïens.
 
 De generator ontdekt taalmappen met `locale.json`, vier bronnen, privacybeleid en Nilesoft-referentie. Hij maakt de taalkiezer boven navigatie met eigen taalnamen en Unicode-vlaggen. Het meegeleverde OFL-vlaglettertype Noto Color Emoji werkt ook op Windows zonder externe dienst.
 
