@@ -1,0 +1,234 @@
+#include <windows.h>
+#include "resource.h"
+
+LANGUAGE LANG_POLISH, SUBLANG_NEUTRAL
+
+IDR_ITEM_MENU   MENU {
+    MENUITEM    "Dokumentacja\tF1", IDM_HELP
+    MENUITEM    "Ustawienia FileSpacer\tCtrl+,", IDM_SETTINGS
+}
+
+STRINGTABLE {
+    IDS_DOCUMENTATION_ERROR, "Nie można otworzyć dokumentacji lokalnej:\n%1\n\n%2"
+    IDS_CAPTION_COPY_PATH, "Kopiuj ścieżkę"
+    IDS_CAPTION_RENAME, "Zmień nazwę"
+    IDS_CAPTION_PROPERTIES, "Właściwości"
+    IDS_CAPTION_CLOSE_PARENTS, "Zamknij okna nadrzędne"
+    IDS_CAPTION_REOPEN_NAMED, "Otwórz ponownie „%1”\tCtrl+Shift+T"
+    IDS_REOPEN_LAST, "Otwórz ostatnio zamknięte okno"
+    IDS_REOPEN_MENU, "Otwórz ostatnio zamknięte okno\tCtrl+Shift+T"
+    IDS_REOPEN_NAMED, "Otwórz ponownie „%1”"
+    IDS_REOPEN_EMPTY, "Brak zamkniętego okna do ponownego otwarcia."
+    IDS_REOPEN_FAILED, "Nie można ponownie otworzyć folderu:\n%1\n\nPozostaje on w historii zamkniętych okien."
+
+    IDS_QUICK_ACCESS, "Szybki dostęp"
+    IDS_QUICK_ACCESS_UNAVAILABLE, "Szybki dostęp jest niedostępny.\n\nEtap: %1\nKod: 0x%2!08X!\n\nNaciśnij Ctrl+C, aby skopiować komunikat."
+    IDS_QUICK_ACCESS_EMPTY, "Brak przypiętych folderów"
+    IDS_QUICK_ACCESS_OPEN, "Otwieranie Szybkiego dostępu"
+    IDS_QUICK_ACCESS_KEY, "Wyszukiwanie właściwości przypiętych folderów"
+    IDS_QUICK_ACCESS_ENUM, "Wyliczanie elementów"
+    IDS_QUICK_ACCESS_READ, "Odczytywanie elementów"
+    IDS_QUICK_ACCESS_TARGET, "Ustalanie folderów docelowych"
+    IDS_QUICK_ACCESS_MENU, "Tworzenie menu"
+
+    IDS_APP_NAME,           "FileSpacer"
+    IDS_PATH_BAR,           "Adres"
+    IDS_SEARCH_NAME,        "Wyszukaj według nazwy"
+    IDS_SEARCH_CUE,         "Wyszukaj w %1"
+    IDS_SEARCH_APPLY,       "Wyszukaj"
+    IDS_SEARCH_ERROR,       "Nie można zastosować filtru nazw.\n\n%1"
+    IDS_ADDRESS_NOT_FOLDER, "Ten adres nie wskazuje folderu: %1"
+
+    IDS_UNKNOWN_ERROR,      "Nieznany błąd"
+    IDS_ERROR_CAPTION,      "Błąd"
+    IDS_CANT_FIND_ITEM,     "Nie można znaleźć elementu pod ścieżką: %1"
+    IDS_INVALID_CHARS,      "Nazwa pliku nie może zawierać następujących znaków:\n\\ / : * ? "" < > |"
+
+    IDS_SETTINGS_CAPTION,   "Ustawienia FileSpacer"
+    IDS_NO_UPDATE_CAPTION,  "Brak dostępnych aktualizacji"
+    IDS_NO_UPDATE,          "Używasz najnowszej wersji."
+    IDS_UPDATE_CLOSE_BUTTON, "Zamknij"
+    IDS_UPDATE_SEARCH_BUTTON, "&Sprawdź aktualizacje"
+    IDS_UPDATE_INSTALL_BUTTON, "&Zainstaluj FileSpacer v%1"
+    IDS_UPDATE_RELEASE_BUTTON, "Zobacz FileSpacer v%1"
+    IDS_UPDATE_SEARCHING, "Sprawdzanie dostępności nowej wersji…"
+    IDS_UPDATE_AVAILABLE, "Dostępna jest nowa wersja."
+    IDS_UPDATE_DOWNLOADING, "Pobieranie instalatora…"
+    IDS_UPDATE_PROGRESS, "Pobieranie: %1!u! %%"
+    IDS_UPDATE_CLOSING, "Pobrany plik zweryfikowano. Zamykanie okien…"
+    IDS_UPDATE_FAILED, "Aktualizacja nie powiodła się. Możesz spróbować ponownie."
+    IDS_UPDATE_FAILED_DETAIL, "Aktualizacja nie powiodła się: %1"
+    IDS_UPDATE_LEGACY, "Pobierz tę wersję ze strony wydania w GitHub."
+    IDS_UPDATE_BUSY, "Instalacja FileSpacer już trwa."
+    IDS_UPDATE_CONFIRM_TITLE, "Zainstalować nową wersję FileSpacer?"
+    IDS_UPDATE_CONFIRM, "Instalator zostanie pobrany i zweryfikowany. Podczas pobierania możesz nadal używać FileSpacer i anulować operację. Następnie wszystkie okna FileSpacer zostaną zamknięte, a ich położenie i ustawienia zapisane jak zwykle, po czym uruchomi się instalator. Otwarte foldery zostaną ponownie otwarte po zakończeniu lub anulowaniu instalacji.\n\nKontynuować?"
+    IDS_UPDATE_RELAY_FAILED, "Nie można ukończyć aktualizacji lub przywracania okien. Żaden proces nie został wymuszenie zakończony.\n\n%1"
+    IDS_UPDATE_RESTORE_FAILED, "Nie można ponownie otworzyć folderów: %1!u!. Mogły zostać przeniesione, usunięte lub stać się niedostępne. Pozostałe foldery otwarto ponownie."
+    IDS_UPDATE_ERROR,       "Błąd sprawdzania aktualizacji"
+    IDS_UPDATE_NOTIF_TITLE, "Aktualizacja FileSpacer"
+    IDS_UPDATE_NOTIF_INFO,  "Dostępna jest nowa wersja FileSpacer. Kliknij powiadomienie, aby otworzyć stronę pobierania."
+
+    IDS_OPEN_PARENT_COMMAND,"Otwórz folder nadrzędny\n(Alt+Up)"
+    IDS_MENU_COMMAND,       "Menu..."
+    IDS_REFRESH_COMMAND,    "Odśwież\n(Ctrl+R)"
+    IDS_VIEW_COMMAND,       "Widok..."
+
+	IDS_FOLDER_STATUS,          "Elementy: %1!d!"
+	IDS_FOLDER_STATUS_SEL,      "Elementy: %1!d!    zaznaczone: %2!d!"
+	IDS_FOLDER_STATUS_SEL_SIZE, "Elementy: %1!d!    zaznaczone: %2!d!    %3!s!"
+    IDS_FOLDER_ERROR,       "Nie można otworzyć folderu"
+
+    IDS_SUCCESS_CAPTION,    "Powodzenie"
+    IDS_CONFIRM_CAPTION,    "Czy na pewno?"
+    IDS_RESET_FOLDER_STATE_CONFIRM, "Zresetować wszystkie zapisane położenia, rozmiary i ustawienia widoku folderów? Okna folderów FileSpacer zostaną zamknięte i nie otworzą się automatycznie. Okno ustawień zostanie zamknięte, a niezastosowane zmiany odrzucone. Zapisane wcześniej ustawienia aplikacji zostaną zachowane."
+    IDS_RESET_FOLDER_STATE_CLOSE_ERROR, "Nie można zamknąć wszystkich okien FileSpacer. Okno mogło odmówić zamknięcia lub nie odpowiadać. Nie usunięto zapisanego stanu folderów. Niektóre okna mogły już zostać zamknięte."
+    IDS_RESET_FOLDER_STATE_STORAGE_ERROR, "Nie można otworzyć bazy stanu folderów. Nie usunięto zapisanego stanu folderów."
+    IDS_RESET_FOLDER_STATE_DELETE_ERROR, "Nie można zresetować bazy stanu folderów. Usunięcie nie zostało zatwierdzone."
+    IDS_RESET_FOLDER_STATE_SUCCESS, "Zresetowano zapisane położenia, rozmiary i ustawienia widoku folderów. Ustawienia aplikacji zachowano."
+    IDS_FOLDER_WIDTH_LABEL,   "&Szerokość (min: %1!d! px):"
+    IDS_FOLDER_HEIGHT_LABEL,  "&Wysokość (min: %1!d! px):"
+    IDS_FOLDER_WIDTH_INVALID, "Szerokość musi być liczbą całkowitą co najmniej %1!d! px."
+    IDS_FOLDER_HEIGHT_INVALID,"Wysokość musi być liczbą całkowitą co najmniej %1!d! px."
+    IDS_FOLDER_STATE_ERROR, "FileSpacer nie może odczytać ani zapisać bazy stanu folderów. Sprawdź możliwość zapisu w lokalnym folderze danych aplikacji i dostępność bazy. Istniejące dane nie zostały zresetowane."
+    IDS_ICON_POSITION_ERROR, "FileSpacer nie może przywrócić ani zapisać układu ikon. Zachowano dotychczasowe położenia. Bieżące zmiany układu mogą nie zostać zapamiętane."
+    IDS_BROWSER_SET_FAILED, "Nie można zmienić domyślnego menedżera plików"
+    IDS_BROWSER_DIRECTORY, "Foldery"
+    IDS_BROWSER_COMPRESSED_FOLDER, "Foldery skompresowane (zip)"
+    IDS_BROWSER_DRIVE, "Dyski"
+    IDS_BROWSER_NETWORK_SERVER, "Serwery sieciowe"
+    IDS_BROWSER_NETWORK_SHARE, "Udziały sieciowe"
+    IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (błąd %2!lu!)"
+    IDS_BROWSER_ASSOCIATIONS_FAILED, "Nie można zmienić następujących skojarzeń:\n\n%1\n\nUdane zmiany zostały zachowane."
+    IDS_BROWSER_SET,        "FileSpacer ustawiono jako domyślnego menedżera plików. Możesz cofnąć tę zmianę w ustawieniach FileSpacer."
+    IDS_BROWSER_RESET,      "Przywrócono Eksplorator plików jako domyślnego menedżera plików."
+    IDS_REQUIRE_CONTEXT,    "Zainstaluj lub zaktualizuj FileSpacer z włączonym menu kontekstowym folderów, aby zmieniać domyślnego menedżera plików, także dla lokalizacji sieciowych."
+    IDS_BROWSER_SET_CONFIRM,"Eksplorator plików Windows zostanie zastąpiony jako domyślny program do otwierania wszystkich folderów."
+
+    IDS_WELCOME_HEADER,     "Witamy"
+    IDS_WELCOME_BODY,       "Wygląda na to, że używasz FileSpacer po raz pierwszy."
+#if 0 // Deferred public services.
+    IDS_WELCOME_TUTORIAL,   "&Przeczytaj samouczek\nZalecane dla nowych użytkowników"
+#endif
+    IDS_WELCOME_BROWSER,    "&Ustaw jako domyślnego menedżera plików\nZastąp Eksplorator plików"
+    IDS_WELCOME_UPDATE,     "Sprawdzaj &aktualizacje co tydzień"
+
+    IDS_ADMIN_WARNING,      "Próbujesz uruchomić FileSpacer jako administrator. Nie jest to zalecane!\n\nKontynuować mimo to?"
+    IDS_DONT_ASK,           "Nie pytaj ponownie"
+
+// Deferred donation paragraph:
+// If you enjoy FileSpacer, please consider donating to support its development. Click the Donate button above.\r\n
+    IDS_LEGAL_INFO,         "\
+Copyright (c) 2026 Benco (modyfikacje FileSpacer)\r\n\
+FileSpacer jest forkiem ChromaFiler.\r\n\
+Copyright (c) 2023 J. van't Hoog (ChromaFiler)\r\n\
+\r\n\
+GNU General Public License v3.0. Bez gwarancji.\r\n\
+Można rozpowszechniać i modyfikować to oprogramowanie na warunkach GPL.\r\n\
+Zobacz LICENSE.txt w folderze instalacji oraz https://www.gnu.org/licenses/gpl-3.0.html\r\n\
+Projekt źródłowy: https://github.com/vanjac/chromafiler\r\n\
+\r\n\
+Materiały aplikacji:\r\n\
+- SQLite 3.53.4: domena publiczna; https://sqlite.org/\r\n\
+- Lucide / Feather ikony nawigacji: ISC / MIT; https://lucide.dev/license\r\n\
+  Pełne informacje: Lucide-LICENSE.txt w folderze instalacji.\r\n\
+- Segoe Fluent Icons / Segoe MDL2 Assets: Czcionki Microsoft dostarczane z Windows; nierozpowszechniane.\r\n\
+\r\n\
+Instalator zbudowano z użyciem NSIS (Nullsoft Scriptable Install System): https://nsis.sourceforge.io/\r\n\
+Wtyczka LockedList: licencja zlib.\r\n\
+Copyright (c) 2013 Afrow Soft Ltd. Zobacz LockedList-LICENSE.txt.\r\n\
+"
+    IDS_RECOVERY_UNAVAILABLE, "Nie można zainicjować diagnostyki awarii. W tej sesji FileSpacer będzie działać bez niej; ustawienia zachowano."
+    IDS_RESET_CLI_ARGUMENTS, "Użyj /reset-options albo /reset-all bez ścieżki folderu i innych opcji. W wersji Debug możesz dodać /test, aby zresetować tylko dane testowe."
+    IDS_RESET_CLI_BUSY, "Nie można uzyskać wyłącznego dostępu do ustawień. Zamknij wszystkie wystąpienia FileSpacer i sprawdź dostęp do lokalnego folderu danych, a następnie spróbuj ponownie. Nie usunięto żadnych ustawień."
+    IDS_RESET_CLI_FAILED, "Nie można ukończyć resetowania ustawień: %1\n\nCzęść ustawień mogła już zostać zresetowana. Jeśli użyto /reset-all, ustawienia folderów już zresetowano."
+    IDS_RESET_CLI_ALL_DONE, "Zresetowano ustawienia ogólne oraz zapisane położenia, rozmiary i ustawienia widoku folderów. Pliki i skojarzenia Windows zachowano."
+    IDS_RESET_CLI_OPTIONS_DONE, "Zresetowano ustawienia ogólne. Zapisane ustawienia folderów, pliki i skojarzenia Windows zachowano."
+    IDS_RECOVERY_CRASHED, "FileSpacer zatrzymał się po poważnym błędzie. Raport diagnostyczny i zrzut pamięci zapisano w lokalnych danych aplikacji; ustawienia zachowano."
+    IDS_SETTINGS_ACCESS_FAILED, "FileSpacer nie może uzyskać współdzielonego dostępu do ustawień. Może trwać resetowanie lub lokalny folder danych jest niedostępny. Spróbuj ponownie po zakończeniu konserwacji."
+}
+
+
+STRINGTABLE
+BEGIN
+    IDS_OPEN_IN_EXPLORER, "Otwórz w Eksploratorze plików Windows"
+    IDS_CONTEXT_MENU_SYNC_FAILED, "Nie można zaktualizować menu kontekstowych folderów (błąd %1!u!): %2"
+  IDS_LOCK_WINDOW_STATE "Zablokuj stan okna"
+  IDS_UNLOCK_WINDOW_STATE "Odblokuj stan okna"
+  IDS_WINDOW_STATE_LOCKED "Stan okna zablokowany. Zmiany układu są tymczasowe."
+  IDS_DISABLE_STATE_LOCK_CONFIRM "Wyłączenie tej funkcji usunie wszystkie blokady stanu okien. Okna znów będą normalnie zapisywać swój stan. Kontynuować?"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_MOVE "Przenieś okno"
+  IDS_SHORTCUT_RESIZE "Zmień rozmiar okna"
+  IDS_SHORTCUT_DISABLED "wyłączone"
+  IDS_SHORTCUT_LEFT "lewy"
+  IDS_SHORTCUT_MIDDLE "środkowy"
+  IDS_SHORTCUT_RIGHT "prawy"
+  IDS_SHORTCUT_CTRL "Ctrl + "
+  IDS_SHORTCUT_ALT "Alt + "
+  IDS_SHORTCUT_SHIFT "Shift + "
+  IDS_SHORTCUT_DESCRIPTION "%1!s!przeciągnięcie: %2!s!"
+  IDS_SHORTCUT_HEADER "%1!s! (%2!s!)"
+  IDS_SHORTCUT_ACCESSIBLE "Włącz: %1!s!"
+  IDS_SHORTCUT_GENERAL "Niektóre kombinacje są zarezerwowane dla zaznaczania i menu."
+  IDS_SHORTCUT_RESERVED "Kombinacja zarezerwowana. Dodaj Alt lub wybierz środkowy przycisk."
+  IDS_SHORTCUT_CONFLICT "Już przypisano do: %1!s!."
+  IDS_SHORTCUT_RECORD "Wprowadź klawisze i przycisk myszy bezpośrednio..."
+  IDS_SHORTCUT_STOP_RECORD "Ukryj bezpośrednie wprowadzanie"
+  IDS_SHORTCUT_LEFT_HINT "Zarezerwowany dla zaznaczania"
+  IDS_SHORTCUT_RIGHT_HINT "Zarezerwowany dla menu i zaznaczania"
+  IDS_SHORTCUT_SAVE_FAILED "Nie można zapisać skrótów. Poprzednie ustawienia pozostają aktywne."
+  IDS_SHORTCUT_APPLY_REFUSED "Nie można zastosować skrótu dla „%1!s!”."
+  IDS_SEARCH_EVERYTHING "Wyszukaj w Everything"
+  IDS_SEARCH_MENU "Everything i ostatnie wyszukiwania"
+  IDS_EVERYTHING_ERROR "Nie można uruchomić Everything.\nSprawdź ścieżkę w Ustawienia > Integracja.\n\nPlik wykonywalny: %1!s!\nBłąd %2!u!: %3!s!"
+  IDS_PEEK_ERROR "Nie można uruchomić PowerToys Peek.\nPodgląd wielu plików wymaga PowerToys 0.102 lub nowszego.\n\nPlik wykonywalny: %1!s!\nBłąd %2!u!: %3!s!"
+  IDS_PEEK_SETTINGS_ERROR "Nie można otworzyć ustawień Peek w PowerToys.\n\n%1!s!"
+  IDS_EVERYTHING_AUTO "Wykrywanie automatyczne"
+  IDS_EVERYTHING_FOLDER "Bieżący folder i podfoldery"
+  IDS_EVERYTHING_EVERYWHERE "Wszędzie"
+  IDS_EVERYTHING_NOT_FOUND "Nie znaleziono Everything. Zainstaluj program lub ręcznie wybierz jego plik wykonywalny."
+  IDS_SEARCH_HISTORY_INVALID "Wprowadź limit historii wyszukiwania od 0 do 20."
+  IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer umieszcza nowe okna tak, aby ograniczyć nakładanie się okien folderów.\n\nDotyczy folderów bez zapisanego położenia okna lub z położeniem niedostępnym po zmianie ekranu. Nadal dostępne zapisane położenie ma pierwszeństwo."
+  IDS_GROUP_FOLDER_WINDOWS_HELP "Nowe okna folderów można grupować pod jednym przyciskiem paska zadań, zgodnie z ustawieniami paska zadań Windows.\n\nGdy opcja jest wyłączona, foldery można przypinać oddzielnie do paska zadań.\n\nUstawienie dotyczy okien otwartych po zmianie. Już otwarte okna zachowują bieżące grupowanie."
+  IDS_EVERYTHING_EXECUTABLE "Plik wykonywalny Everything (*.exe)"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_TITLE_MENU_NS_NOTICE "Niektórymi pozycjami menu zarządza Nilesoft Shell. Nie można ich zmienić tutaj."
+  IDS_TITLE_MENU_NS_LINK "Edytuj menu w <a>plikach konfiguracji Nilesoft Shell</a>."
+  IDS_TITLE_MENU_NS_TOOLTIP "Pozycje zarządzane przez Nilesoft Shell należy zmieniać w jego plikach konfiguracji."
+  IDS_TITLE_MENU_EMPTY "Puste menu — przeciągnij działanie z listy po prawej."
+  IDS_TITLE_MENU_RENDER_ERROR "Nie można wyświetlić podglądu menu. Dotychczasowe ustawienia zachowano."
+  IDS_TITLE_MENU_SAVE_ERROR "Nie można zapisać menu."
+  IDS_TITLE_MENU_SETTINGS_ERROR "Nie można otworzyć katalogu ustawień Nilesoft Shell."
+  IDS_TITLE_MENU_SEPARATOR "— Separator —"
+  IDS_TITLE_MENU_OPEN_WINDOWS "Otwarte okna"
+  IDS_TITLE_MENU_WINDOWS_BLOCK "<< Otwarte okna >>"
+  IDS_TITLE_MENU_RESTORE "Przywróć zablokowany układ"
+  IDS_TITLE_MENU_REPLACE "Zastąp układ odniesienia"
+  IDS_TITLE_MENU_FORGET "Zapomnij układ tego folderu"
+  IDS_TITLE_MENU_CLOSE_DESCENDANTS "Zamknij okna podrzędne"
+  IDS_TITLE_MENU_CLOSE_OTHERS "Zamknij pozostałe okna"
+  IDS_TITLE_MENU_FIT "Dopasuj okno do zawartości"
+  IDS_TITLE_MENU_GROUPS "Zapisz / przywołaj grupę folderów"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_TITLE_FORGET_CONFIRM "Zapomnieć układ tego folderu?\n\nOkno pozostanie na miejscu, ale jego układ nie będzie zapisywany do zamknięcia. Przy następnym otwarciu zostaną użyte ustawienia domyślne. Historia wyszukiwania zostanie zachowana."
+  IDS_TITLE_REPLACE_CONFIRM "Zastąpić zablokowany układ bieżącym położeniem, rozmiarem i ustawieniami widoku okna?"
+  IDS_GROUPS_ERROR "Nie można odczytać ani zapisać grupy folderów. Dotychczasowe grupy zachowano."
+  IDS_GROUPS_REPLACE "Zastąpić tę grupę folderami obecnie otwartymi w FileSpacer?"
+  IDS_GROUPS_DELETE_CONFIRM "Usunąć zapisaną grupę folderów? Same foldery zostaną zachowane."
+  IDS_GROUPS_OPEN_ERROR "Nie można otworzyć niektórych folderów z grupy."
+END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Nie można otworzyć ustawień Grab And Move. Otwórz PowerToys i wybierz Grab And Move."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move jest włączony w ustawieniach PowerToys. Dopóki ta opcja jest włączona, poniższe skróty FileSpacer nie działają. Aby nadal ich używać, dodaj FileSpacer do <a>listy wykluczeń Grab And Move</a>."
+END
