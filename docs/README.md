@@ -63,7 +63,6 @@ Keep UI text in the language resource files and preserve their encodings.
 - [Default-manager and context-menu integration](context-menu-integration.md)
 - [Website and offline help generation](../website/README.md)
 - [Translation maintenance](../website/translations/README.md)
-- [Screenshot maintenance](images/README.md)
 
 Technical documentation is maintained in English only. Document the current
 behavior, constraints and useful debugging entry points. Keep run-specific
