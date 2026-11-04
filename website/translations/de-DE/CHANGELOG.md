@@ -1,5 +1,10 @@
 # Versionsverlauf
 
+## Unveröffentlicht
+
+- Polnisch, Niederländisch und Ukrainisch für Anwendung, Installationsprogramm, Website sowie Benutzer- und Entwicklerdokumentation hinzufügen.
+- Lokalisierte Vorführungen mit einem neuen Desktophintergrund erneuern.
+
 ## 1.3.1 — 2026-11-03
 
 - Behebt das Öffnen über den Standard-Dateimanager, bei dem eine andere Anwendung anstelle von FileSpacer ausgewählt wurde.
