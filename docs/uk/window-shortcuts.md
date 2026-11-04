@@ -2,7 +2,7 @@
 
 # Жести вікна
 
-Налаштування описує [посібник користувача](user-guide.md#moving-and-resizing). Реалізація починається в `WindowShortcuts.h`, `ShortcutSettingsPage.cpp`, `Settings.cpp`, `FolderWindow` і `WindowResizeGesture`.
+Налаштування описує [посібник користувача](user-guide.md#переміщення-та-змінення-розміру). Реалізація починається в `WindowShortcuts.h`, `ShortcutSettingsPage.cpp`, `Settings.cpp`, `FolderWindow` і `WindowResizeGesture`.
 
 <a id="binding-and-input-rules"></a>
 
