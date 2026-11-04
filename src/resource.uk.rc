@@ -1,0 +1,234 @@
+#include <windows.h>
+#include "resource.h"
+
+LANGUAGE LANG_UKRAINIAN, SUBLANG_NEUTRAL
+
+IDR_ITEM_MENU   MENU {
+    MENUITEM    "Документація\tF1", IDM_HELP
+    MENUITEM    "Настройки FileSpacer\tCtrl+,", IDM_SETTINGS
+}
+
+STRINGTABLE {
+    IDS_DOCUMENTATION_ERROR, "Не вдалося відкрити локальну документацію:\n%1\n\n%2"
+    IDS_CAPTION_COPY_PATH, "Копіювати шлях"
+    IDS_CAPTION_RENAME, "Перейменувати"
+    IDS_CAPTION_PROPERTIES, "Властивості"
+    IDS_CAPTION_CLOSE_PARENTS, "Закрити батьківські вікна"
+    IDS_CAPTION_REOPEN_NAMED, "Знову відкрити «%1»\tCtrl+Shift+T"
+    IDS_REOPEN_LAST, "Знову відкрити останнє закрите вікно"
+    IDS_REOPEN_MENU, "Знову відкрити останнє закрите вікно\tCtrl+Shift+T"
+    IDS_REOPEN_NAMED, "Знову відкрити «%1»"
+    IDS_REOPEN_EMPTY, "Немає закритого вікна для повторного відкриття."
+    IDS_REOPEN_FAILED, "Не вдалося знову відкрити цю папку:\n%1\n\nВона залишається в журналі закритих вікон."
+
+    IDS_QUICK_ACCESS, "Швидкий доступ"
+    IDS_QUICK_ACCESS_UNAVAILABLE, "Швидкий доступ недоступний.\n\nЕтап: %1\nКод: 0x%2!08X!\n\nНатисніть Ctrl+C, щоб скопіювати це повідомлення."
+    IDS_QUICK_ACCESS_EMPTY, "Немає закріплених папок"
+    IDS_QUICK_ACCESS_OPEN, "Відкриття швидкого доступу"
+    IDS_QUICK_ACCESS_KEY, "Пошук властивості закріплених папок"
+    IDS_QUICK_ACCESS_ENUM, "Перелік елементів"
+    IDS_QUICK_ACCESS_READ, "Читання елементів"
+    IDS_QUICK_ACCESS_TARGET, "Визначення цільових папок"
+    IDS_QUICK_ACCESS_MENU, "Створення меню"
+
+    IDS_APP_NAME,           "FileSpacer"
+    IDS_PATH_BAR,           "Адреса"
+    IDS_SEARCH_NAME,        "Пошук за іменем"
+    IDS_SEARCH_CUE,         "Пошук у %1"
+    IDS_SEARCH_APPLY,       "Пошук"
+    IDS_SEARCH_ERROR,       "Не вдалося застосувати фільтр імен.\n\n%1"
+    IDS_ADDRESS_NOT_FOLDER, "Ця адреса не є папкою: %1"
+
+    IDS_UNKNOWN_ERROR,      "Невідома помилка"
+    IDS_ERROR_CAPTION,      "Помилка"
+    IDS_CANT_FIND_ITEM,     "Не вдалося знайти елемент за шляхом: %1"
+    IDS_INVALID_CHARS,      "Ім’я файлу не може містити такі символи:\n\\ / : * ? "" < > |"
+
+    IDS_SETTINGS_CAPTION,   "Настройки FileSpacer"
+    IDS_NO_UPDATE_CAPTION,  "Немає доступних оновлень"
+    IDS_NO_UPDATE,          "Ви використовуєте найновішу версію."
+    IDS_UPDATE_CLOSE_BUTTON, "Закрити"
+    IDS_UPDATE_SEARCH_BUTTON, "&Перевірити наявність оновлень"
+    IDS_UPDATE_INSTALL_BUTTON, "&Інсталювати FileSpacer v%1"
+    IDS_UPDATE_RELEASE_BUTTON, "Переглянути FileSpacer v%1"
+    IDS_UPDATE_SEARCHING, "Перевірка наявності нової версії…"
+    IDS_UPDATE_AVAILABLE, "Доступна нова версія."
+    IDS_UPDATE_DOWNLOADING, "Завантаження інсталятора…"
+    IDS_UPDATE_PROGRESS, "Завантаження: %1!u! %%"
+    IDS_UPDATE_CLOSING, "Завантажений файл перевірено. Закриття вікон…"
+    IDS_UPDATE_FAILED, "Не вдалося виконати оновлення. Можна спробувати ще раз."
+    IDS_UPDATE_FAILED_DETAIL, "Не вдалося виконати оновлення: %1"
+    IDS_UPDATE_LEGACY, "Завантажте цю версію зі сторінки випуску на GitHub."
+    IDS_UPDATE_BUSY, "Інсталяція FileSpacer вже триває."
+    IDS_UPDATE_CONFIRM_TITLE, "Інсталювати нову версію FileSpacer?"
+    IDS_UPDATE_CONFIRM, "Інсталятор буде завантажено й перевірено. Під час завантаження можна продовжувати користуватися FileSpacer і скасувати операцію. Потім усі вікна FileSpacer закриються зі збереженням положення й настройок, як зазвичай, і почнеться інсталяція. Відкриті папки відкриються знову після завершення або скасування інсталяції.\n\nПродовжити?"
+    IDS_UPDATE_RELAY_FAILED, "Не вдалося завершити оновлення або відновлення вікон. Жоден процес не було завершено примусово.\n\n%1"
+    IDS_UPDATE_RESTORE_FAILED, "Не вдалося знову відкрити папки: %1!u!. Можливо, їх переміщено, видалено або вони недоступні. Решту папок відкрито знову."
+    IDS_UPDATE_ERROR,       "Помилка перевірки оновлень"
+    IDS_UPDATE_NOTIF_TITLE, "Оновлення FileSpacer"
+    IDS_UPDATE_NOTIF_INFO,  "Доступна нова версія FileSpacer. Клацніть це сповіщення, щоб відкрити сторінку завантаження."
+
+    IDS_OPEN_PARENT_COMMAND,"Відкрити батьківську папку\n(Alt+Up)"
+    IDS_MENU_COMMAND,       "Меню..."
+    IDS_REFRESH_COMMAND,    "Оновити\n(Ctrl+R)"
+    IDS_VIEW_COMMAND,       "Подання..."
+
+	IDS_FOLDER_STATUS,          "Елементів: %1!d!"
+	IDS_FOLDER_STATUS_SEL,      "Елементів: %1!d!    вибрано: %2!d!"
+	IDS_FOLDER_STATUS_SEL_SIZE, "Елементів: %1!d!    вибрано: %2!d!    %3!s!"
+    IDS_FOLDER_ERROR,       "Не вдалося відкрити папку"
+
+    IDS_SUCCESS_CAPTION,    "Успіх"
+    IDS_CONFIRM_CAPTION,    "Ви впевнені?"
+    IDS_RESET_FOLDER_STATE_CONFIRM, "Скинути всі збережені положення, розміри й настройки подання папок? Вікна папок FileSpacer закриються й не відкриються автоматично. Діалогове вікно настройок закриється, а незастосовані зміни буде відкинуто. Раніше збережені настройки програми залишаться."
+    IDS_RESET_FOLDER_STATE_CLOSE_ERROR, "Не вдалося закрити всі вікна FileSpacer. Можливо, вікно відмовилося закриватися або не відповідає. Збережений стан папок не видалено. Деякі вікна вже могли закритися."
+    IDS_RESET_FOLDER_STATE_STORAGE_ERROR, "Не вдалося відкрити базу даних стану папок. Збережений стан папок не видалено."
+    IDS_RESET_FOLDER_STATE_DELETE_ERROR, "Не вдалося скинути базу даних стану папок. Видалення не було зафіксовано."
+    IDS_RESET_FOLDER_STATE_SUCCESS, "Збережені положення, розміри й настройки подання папок скинуто. Настройки програми збережено."
+    IDS_FOLDER_WIDTH_LABEL,   "&Ширина (мін.: %1!d! пкс):"
+    IDS_FOLDER_HEIGHT_LABEL,  "&Висота (мін.: %1!d! пкс):"
+    IDS_FOLDER_WIDTH_INVALID, "Ширина має бути цілим числом не менше %1!d! пкс."
+    IDS_FOLDER_HEIGHT_INVALID,"Висота має бути цілим числом не менше %1!d! пкс."
+    IDS_FOLDER_STATE_ERROR, "FileSpacer не вдалося прочитати або зберегти базу даних стану папок. Перевірте доступність бази та можливість запису до локальної папки даних програми. Наявні дані не скинуто."
+    IDS_ICON_POSITION_ERROR, "FileSpacer не вдалося відновити або зберегти розташування піктограм. Наявні збережені положення залишено. Поточні зміни розташування можуть не зберегтися."
+    IDS_BROWSER_SET_FAILED, "Не вдалося змінити файловий менеджер за замовчуванням"
+    IDS_BROWSER_DIRECTORY, "Папки"
+    IDS_BROWSER_COMPRESSED_FOLDER, "Стиснуті папки (ZIP)"
+    IDS_BROWSER_DRIVE, "Диски"
+    IDS_BROWSER_NETWORK_SERVER, "Мережеві сервери"
+    IDS_BROWSER_NETWORK_SHARE, "Мережеві спільні ресурси"
+    IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (помилка %2!lu!)"
+    IDS_BROWSER_ASSOCIATIONS_FAILED, "Не вдалося змінити такі зіставлення:\n\n%1\n\nУспішні зміни збережено."
+    IDS_BROWSER_SET,        "FileSpacer встановлено як файловий менеджер за замовчуванням. Цю зміну можна скасувати в настройках FileSpacer."
+    IDS_BROWSER_RESET,      "Файловий провідник відновлено як файловий менеджер за замовчуванням."
+    IDS_REQUIRE_CONTEXT,    "Інсталюйте або оновіть FileSpacer з увімкненим контекстним меню папок, щоб змінювати файловий менеджер за замовчуванням, зокрема для мережевих розташувань."
+    IDS_BROWSER_SET_CONFIRM,"Файловий провідник Windows буде замінено як програму за замовчуванням для відкриття всіх папок."
+
+    IDS_WELCOME_HEADER,     "Вітаємо"
+    IDS_WELCOME_BODY,       "Схоже, ви вперше використовуєте FileSpacer."
+#if 0 // Deferred public services.
+    IDS_WELCOME_TUTORIAL,   "&Прочитати посібник\nРекомендовано новим користувачам"
+#endif
+    IDS_WELCOME_BROWSER,    "&Зробити файловим менеджером за замовчуванням\nЗамінити Файловий провідник"
+    IDS_WELCOME_UPDATE,     "Перевіряти &оновлення щотижня"
+
+    IDS_ADMIN_WARNING,      "Ви намагаєтеся запустити FileSpacer від імені адміністратора. Це не рекомендовано!\n\nУсе одно продовжити?"
+    IDS_DONT_ASK,           "Більше не запитувати"
+
+// Deferred donation paragraph:
+// If you enjoy FileSpacer, please consider donating to support its development. Click the Donate button above.\r\n
+    IDS_LEGAL_INFO,         "\
+Copyright (c) 2026 Benco (зміни FileSpacer)\r\n\
+FileSpacer є відгалуженням ChromaFiler.\r\n\
+Copyright (c) 2023 J. van't Hoog (ChromaFiler)\r\n\
+\r\n\
+GNU General Public License v3.0. Без гарантій.\r\n\
+Можна поширювати й змінювати цю програму на умовах GPL.\r\n\
+Див. LICENSE.txt у папці інсталяції та https://www.gnu.org/licenses/gpl-3.0.html\r\n\
+Оригінальний проєкт: https://github.com/vanjac/chromafiler\r\n\
+\r\n\
+Матеріали програми:\r\n\
+- SQLite 3.53.4: суспільне надбання; https://sqlite.org/\r\n\
+- Lucide / Feather піктограми навігації: ISC / MIT; https://lucide.dev/license\r\n\
+  Повні повідомлення: Lucide-LICENSE.txt у папці інсталяції.\r\n\
+- Segoe Fluent Icons / Segoe MDL2 Assets: Шрифти Microsoft, що постачаються з Windows; не поширюються повторно.\r\n\
+\r\n\
+Інсталятор створено за допомогою NSIS (Nullsoft Scriptable Install System): https://nsis.sourceforge.io/\r\n\
+Компонент LockedList: ліцензія zlib.\r\n\
+Copyright (c) 2013 Afrow Soft Ltd. Див. LockedList-LICENSE.txt.\r\n\
+"
+    IDS_RECOVERY_UNAVAILABLE, "Не вдалося ініціалізувати діагностику аварій. У цьому сеансі FileSpacer працюватиме без неї; ваші настройки збережено."
+    IDS_RESET_CLI_ARGUMENTS, "Використовуйте /reset-options або /reset-all без шляху до папки чи інших параметрів. У Debug можна додати /test, щоб скинути лише тестові дані."
+    IDS_RESET_CLI_BUSY, "Не вдалося отримати монопольний доступ до настройок. Закрийте всі екземпляри FileSpacer, перевірте доступ до локальної папки даних і повторіть спробу. Жодних настройок не видалено."
+    IDS_RESET_CLI_FAILED, "Не вдалося завершити скидання настройок: %1\n\nДеякі настройки вже могли скинутися. Якщо використано /reset-all, настройки папок уже скинуто."
+    IDS_RESET_CLI_ALL_DONE, "Загальні настройки та збережені положення, розміри й настройки подання папок скинуто. Ваші файли та зіставлення Windows збережено."
+    IDS_RESET_CLI_OPTIONS_DONE, "Загальні настройки скинуто. Збережені настройки папок, ваші файли та зіставлення Windows залишено."
+    IDS_RECOVERY_CRASHED, "FileSpacer зупинився через серйозну помилку. Діагностичний звіт і дамп пам’яті збережено в локальних даних програми; ваші настройки залишено."
+    IDS_SETTINGS_ACCESS_FAILED, "FileSpacer не може отримати спільний доступ до настройок. Можливо, триває скидання або локальна папка даних недоступна. Повторіть спробу після завершення обслуговування."
+}
+
+
+STRINGTABLE
+BEGIN
+    IDS_OPEN_IN_EXPLORER, "Відкрити у Файловому провіднику Windows"
+    IDS_CONTEXT_MENU_SYNC_FAILED, "Не вдалося оновити контекстні меню папок (помилка %1!u!): %2"
+  IDS_LOCK_WINDOW_STATE "Заблокувати стан вікна"
+  IDS_UNLOCK_WINDOW_STATE "Розблокувати стан вікна"
+  IDS_WINDOW_STATE_LOCKED "Стан вікна заблоковано. Зміни розташування тимчасові."
+  IDS_DISABLE_STATE_LOCK_CONFIRM "Вимкнення цієї функції видалить усі блокування стану вікон. Вікна знову зберігатимуть свій стан як зазвичай. Продовжити?"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_MOVE "Перемістити вікно"
+  IDS_SHORTCUT_RESIZE "Змінити розмір вікна"
+  IDS_SHORTCUT_DISABLED "вимкнено"
+  IDS_SHORTCUT_LEFT "ліва"
+  IDS_SHORTCUT_MIDDLE "середня"
+  IDS_SHORTCUT_RIGHT "права"
+  IDS_SHORTCUT_CTRL "Ctrl + "
+  IDS_SHORTCUT_ALT "Alt + "
+  IDS_SHORTCUT_SHIFT "Shift + "
+  IDS_SHORTCUT_DESCRIPTION "%1!s!перетягування: %2!s!"
+  IDS_SHORTCUT_HEADER "%1!s! (%2!s!)"
+  IDS_SHORTCUT_ACCESSIBLE "Увімкнути: %1!s!"
+  IDS_SHORTCUT_GENERAL "Деякі сполучення зарезервовано для вибору та меню."
+  IDS_SHORTCUT_RESERVED "Зарезервоване сполучення. Додайте Alt або виберіть середню кнопку."
+  IDS_SHORTCUT_CONFLICT "Уже призначено для дії «%1!s!»."
+  IDS_SHORTCUT_RECORD "Безпосередньо введіть клавіші й кнопку миші..."
+  IDS_SHORTCUT_STOP_RECORD "Приховати безпосереднє введення"
+  IDS_SHORTCUT_LEFT_HINT "Зарезервовано для вибору"
+  IDS_SHORTCUT_RIGHT_HINT "Зарезервовано для меню та вибору"
+  IDS_SHORTCUT_SAVE_FAILED "Не вдалося зберегти сполучення. Попередні настройки залишаються чинними."
+  IDS_SHORTCUT_APPLY_REFUSED "Не вдалося застосувати сполучення для дії «%1!s!»."
+  IDS_SEARCH_EVERYTHING "Пошук в Everything"
+  IDS_SEARCH_MENU "Everything і останні пошукові запити"
+  IDS_EVERYTHING_ERROR "Не вдалося запустити Everything.\nПеревірте шлях у Настройки > Інтеграція.\n\nВиконуваний файл: %1!s!\nПомилка %2!u!: %3!s!"
+  IDS_PEEK_ERROR "Не вдалося запустити PowerToys Peek.\nДля попереднього перегляду кількох файлів потрібна версія PowerToys 0.102 або новіша.\n\nВиконуваний файл: %1!s!\nПомилка %2!u!: %3!s!"
+  IDS_PEEK_SETTINGS_ERROR "Не вдалося відкрити настройки Peek у PowerToys.\n\n%1!s!"
+  IDS_EVERYTHING_AUTO "Автоматичне виявлення"
+  IDS_EVERYTHING_FOLDER "Поточна папка та вкладені папки"
+  IDS_EVERYTHING_EVERYWHERE "Усюди"
+  IDS_EVERYTHING_NOT_FOUND "Everything не знайдено. Інсталюйте його або виберіть виконуваний файл вручну."
+  IDS_SEARCH_HISTORY_INVALID "Укажіть обмеження журналу пошуку від 0 до 20."
+  IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer розміщує нові вікна так, щоб зменшити перекриття з іншими вікнами папок.\n\nЦе стосується папок без збереженого положення вікна або з положенням, недоступним після зміни дисплея. Придатне збережене положення має пріоритет."
+  IDS_GROUP_FOLDER_WINDOWS_HELP "Нові вікна папок можна групувати під однією кнопкою панелі завдань відповідно до настройок панелі завдань Windows.\n\nКоли цей параметр вимкнено, папки можна закріплювати на панелі завдань окремо.\n\nНастройка застосовується до вікон, відкритих після зміни. Уже відкриті вікна зберігають поточне групування."
+  IDS_EVERYTHING_EXECUTABLE "Виконуваний файл Everything (*.exe)"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_TITLE_MENU_NS_NOTICE "Деякими пунктами меню керує Nilesoft Shell. Тут їх змінити не можна."
+  IDS_TITLE_MENU_NS_LINK "Редагуйте меню у <a>файлах конфігурації Nilesoft Shell</a>."
+  IDS_TITLE_MENU_NS_TOOLTIP "Пункти, якими керує Nilesoft Shell, потрібно змінювати в його файлах конфігурації."
+  IDS_TITLE_MENU_EMPTY "Порожнє меню — перетягніть дію зі списку праворуч."
+  IDS_TITLE_MENU_RENDER_ERROR "Не вдалося відобразити попередній перегляд меню. Ваші наявні настройки збережено."
+  IDS_TITLE_MENU_SAVE_ERROR "Не вдалося зберегти меню."
+  IDS_TITLE_MENU_SETTINGS_ERROR "Не вдалося відкрити каталог настройок Nilesoft Shell."
+  IDS_TITLE_MENU_SEPARATOR "— Роздільник —"
+  IDS_TITLE_MENU_OPEN_WINDOWS "Відкриті вікна"
+  IDS_TITLE_MENU_WINDOWS_BLOCK "<< Відкриті вікна >>"
+  IDS_TITLE_MENU_RESTORE "Відновити заблоковане розташування"
+  IDS_TITLE_MENU_REPLACE "Замінити еталонне розташування"
+  IDS_TITLE_MENU_FORGET "Забути розташування цієї папки"
+  IDS_TITLE_MENU_CLOSE_DESCENDANTS "Закрити вікна вкладених папок"
+  IDS_TITLE_MENU_CLOSE_OTHERS "Закрити інші вікна"
+  IDS_TITLE_MENU_FIT "Припасувати вікно до вмісту"
+  IDS_TITLE_MENU_GROUPS "Зберегти / відкрити групу папок"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_TITLE_FORGET_CONFIRM "Забути розташування цієї папки?\n\nВікно залишиться на місці, але його розташування не зберігатиметься до закриття. Наступного разу буде використано настройки за замовчуванням. Журнал пошуку збережеться."
+  IDS_TITLE_REPLACE_CONFIRM "Замінити заблоковане розташування поточним положенням, розміром і настройками подання вікна?"
+  IDS_GROUPS_ERROR "Не вдалося прочитати або зберегти групу папок. Наявні групи збережено."
+  IDS_GROUPS_REPLACE "Замінити цю групу папками, які зараз відкрито у FileSpacer?"
+  IDS_GROUPS_DELETE_CONFIRM "Видалити цю збережену групу папок? Самі папки залишаться."
+  IDS_GROUPS_OPEN_ERROR "Не вдалося відкрити деякі папки групи."
+END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Не вдалося відкрити настройки Grab And Move. Відкрийте PowerToys і виберіть Grab And Move."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move увімкнено в настройках PowerToys. Доки цей параметр увімкнено, наведені нижче сполучення FileSpacer не діють. Щоб і далі ними користуватися, додайте FileSpacer до <a>списку виключень Grab And Move</a>."
+END
