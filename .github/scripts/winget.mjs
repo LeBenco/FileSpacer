@@ -45,10 +45,11 @@ export function installerMetadata(release, tag, update, installer) {
 
 export function manifests({version, url, hash}) {
   const common = `PackageIdentifier: ${packageId}\nPackageVersion: ${version}\n`;
+  const header = type => `# yaml-language-server: $schema=https://aka.ms/winget-manifest.${type}.1.9.0.schema.json\n\n`;
   const footer = type => `ManifestType: ${type}\nManifestVersion: 1.9.0\n`;
   return {
-    [`${packageId}.yaml`]: common + 'DefaultLocale: en-US\n' + footer('version'),
-    [`${packageId}.locale.en-US.yaml`]: common + `PackageLocale: en-US
+    [`${packageId}.yaml`]: header('version') + common + 'DefaultLocale: en-US\n' + footer('version'),
+    [`${packageId}.locale.en-US.yaml`]: header('defaultLocale') + common + `PackageLocale: en-US
 Publisher: Benco
 PublisherUrl: ${projectUrl}
 PublisherSupportUrl: ${projectUrl}/issues
@@ -63,7 +64,7 @@ Tags:
   - spatial
 ReleaseNotesUrl: ${projectUrl}/releases/tag/v${version}
 ` + footer('defaultLocale'),
-    [`${packageId}.installer.yaml`]: common + `InstallerType: nullsoft
+    [`${packageId}.installer.yaml`]: header('installer') + common + `InstallerType: nullsoft
 MinimumOSVersion: 10.0.0.0
 UpgradeBehavior: install
 ProductCode: FileSpacer
