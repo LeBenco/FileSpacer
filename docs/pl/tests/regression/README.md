@@ -55,11 +55,13 @@ Host kompiluje aplikację i wybrane pomocniki natywne/C# przed transferem. Klien
 
 GitHub Actions używa [przepływu pracy regresji](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/regression.yml) do uruchamiania tego samego zestawu testów aplikacji. Można go uruchomić na żądanie; zwykłe wypchnięcia gałęzi i pull requesty go nie wyzwalają.
 
+Przed przygotowaniem Windows przepływ pracy oblicza skrót źródeł i zasobów aplikacji, zależności, konfiguracji kompilacji, zestawu testów, kategorii i wzorca. Zgodny wynik PASS dostępny w pamięci podręcznej GitHub jest używany ponownie: same zmiany dokumentacji, zrzutów ekranu, `install.nsi` lub informacji o wydaniu nie uruchamiają zestawu ponownie. Podsumowanie zawiera odnośnik do pierwotnego wykonania i commitu; pakowanie nadal używa wybranej rewizji. Zmiana danych wejściowych albo brak, usunięcie lub nieprawidłowy zapis wyniku wymaga nowego wykonania. Obowiązują zasady widoczności pamięci podręcznej GitHub dla gałęzi i referencji.
+
 W **Actions > Test FileSpacer regressions > Run workflow** wybierz `ref` (gałąź/tag/commit), `category` i `pattern`. `All` / `*` uruchamia całość. Workflow musi istnieć na gałęzi domyślnej, a wybrana rewizja zawierać potrzebny workflow i runner; testy nie są brane z innego drzewa.
 
 Workflow raz ustala rewizję, kompiluje Debug na `windows-2022` i uruchamia przygotowane przypadki na interaktywnym pulpicie. `-CI` działa tylko na hostowanych runnerach GitHub, bez `-VM`/`-Prepared`. Ten sam użytkownik działa z ograniczonym tokenem średniej integralności; przygotowanie sprawdza `Shell.Windows()` i token. COM jest rejestrowany dla użytkownika. Nie zastępuje to Windows 10 ani innych wymaganych ekranów/dostawców.
 
-Workflow nie publikuje instalatora ani pomocy offline. [Przepływ pracy wydania](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/release.yml) używa go jako pierwszego zadania w tym samym przebiegu, a następnie buduje dokumentację i NSIS z testowanego SHA. Udane pakowanie nie jest testem instalacji lub aktualizacji.
+Workflow nie publikuje instalatora ani pomocy offline. [Przepływ pracy wydania](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/release.yml) używa go jako pierwszego zadania w tym samym przebiegu, a następnie buduje dokumentację i NSIS z zatwierdzonego SHA. Udane pakowanie nie jest testem instalacji lub aktualizacji.
 
 Podsumowanie Actions podaje SHA, liczby kategorii, kod wyjścia i pierwszy błąd. Logi, JSON, zrzuty i `regression-summary.md` są przechowywane 14 dni w `regression-<run>-<attempt>`, także po błędach. Błędy pomocnika i sprzątania unieważniają wynik mimo udanych przypadków.
 

@@ -55,11 +55,13 @@ De host bouwt toepassing en gekozen native/C#-helpers vóór overdracht. De clie
 
 GitHub Actions gebruikt de [regressieworkflow](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/regression.yml) voor dezelfde toepassingstests. Deze kan op verzoek worden gestart; gewone branchpushes en pull requests activeren hem niet.
 
+Vóór de voorbereiding van Windows berekent de werkstroom een hash van de toepassingsbroncode en resources, afhankelijkheden, bouwinvoer, het testharnas, de categorie en het patroon. Een exact overeenkomende PASS in de GitHub-cache wordt hergebruikt: wijzigingen aan alleen documentatie, schermafbeeldingen, `install.nsi` of releaseopmerkingen starten de suite niet opnieuw. Het overzicht verwijst naar de oorspronkelijke uitvoering en commit; het pakket gebruikt de geselecteerde revisie. Gewijzigde invoer of ontbrekend, verwijderd of ongeldig bewijs vereist een nieuwe uitvoering. De GitHub-regels voor zichtbaarheid van caches per branch/ref blijven gelden.
+
 Kies onder **Actions > Test FileSpacer regressions > Run workflow** `ref` (branch/tag/commit), `category` en `pattern`. `All` / `*` draait alles. Handmatige start vereist de workflow op de standaardbranch. De gekozen revisie moet workflow en runner bevatten; tests komen niet uit een andere checkout.
 
 De workflow bepaalt de revisie eenmaal, bouwt Debug op `windows-2022` en draait voorbereide tests op het interactieve bureaublad. `-CI` werkt alleen op GitHub-hosted runners, niet met `-VM`/`-Prepared`. Dezelfde interactieve gebruiker krijgt een beperkt medium-integriteitstoken; voorbereiding controleert `Shell.Windows()` en token. COM-registratie is per gebruiker. Dit vervangt geen Windows 10- of andere vereiste configuratietests.
 
-De workflow publiceert geen installatieprogramma of offlinehulp. De [releaseworkflow](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/release.yml) hergebruikt hem als eerste taak binnen dezelfde releaserun en bouwt vervolgens documentatie en NSIS uit de geteste SHA. Geslaagde verpakking is geen echte installatie- of upgradetest.
+De workflow publiceert geen installatieprogramma of offlinehulp. De [releaseworkflow](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/release.yml) hergebruikt hem als eerste taak binnen dezelfde releaserun en bouwt vervolgens documentatie en NSIS uit de gevalideerde SHA. Geslaagde verpakking is geen echte installatie- of upgradetest.
 
 Actions toont SHA, totalen per categorie, afsluitcodes en eerste fouten. Logboeken, JSON, beelden en `regression-summary.md` blijven 14 dagen in `regression-<run>-<attempt>`, ook na fouten. Worker-/opruimfouten blijven ongeldig maken ondanks geslaagde cases.
 
