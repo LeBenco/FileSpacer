@@ -64,6 +64,10 @@ one-time setup, desktop requirements and transport diagnostics.
 
 ## Run on GitHub
 
+GitHub Actions uses the [regression workflow](../../.github/workflows/regression.yml)
+for this same application suite. It can be launched on demand; ordinary branch
+pushes and pull requests do not trigger it.
+
 In **Actions > Test FileSpacer regressions > Run workflow**, choose `ref`
 (branch, tag or commit), `category` and `pattern`. `All` / `*` runs the complete
 application suite. The workflow must exist on the default branch for manual
@@ -78,8 +82,9 @@ preparation and worker checks verify access to `Shell.Windows()` and the actual
 token. COM registration is per user. This environment does not replace tests
 on Windows 10 or on another required display/provider configuration.
 
-The workflow publishes no installer or offline help. The release workflow calls
-this suite first, then builds documentation and the NSIS package from the tested
+The workflow publishes no installer or offline help. The [release
+workflow](../../.github/workflows/release.yml) reuses it as its first job, within
+the release run, then builds documentation and the NSIS package from the tested
 SHA. A successful package build is not a real installation or upgrade test.
 
 The Actions summary gives the tested SHA, totals by category and each failure's
