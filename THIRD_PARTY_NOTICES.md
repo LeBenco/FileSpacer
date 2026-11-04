@@ -2,7 +2,7 @@
 
 FileSpacer is based on [ChromaFiler](https://github.com/vanjac/chromafiler),
 Copyright (c) 2023 J. van't Hoog, distributed under the
-[GNU General Public License v3.0](LICENSE).
+[GNU General Public License v3.0](https://github.com/LeBenco/FileSpacer/blob/main/LICENSE).
 
 ## SQLite
 
@@ -17,7 +17,7 @@ In the toolbar, the **up arrow** opens the **parent folder**, and the
 from **Lucide** (`arrow-up` and `rotate-cw`). The up-arrow icon originally comes
 from **Feather**.
 
-See [licenses/Lucide-LICENSE.txt](licenses/Lucide-LICENSE.txt) for the complete
+See [licenses/Lucide-LICENSE.txt](https://github.com/LeBenco/FileSpacer/blob/main/licenses/Lucide-LICENSE.txt) for the complete
 ISC and MIT notices in the source tree, or `Lucide-LICENSE.txt` in the installation
 folder. See <https://lucide.dev/license>.
 
@@ -31,7 +31,7 @@ controls, GDI+, and other system components are supplied by Windows.
 
 The NSIS installer uses the LockedList plug-in, Copyright (c) 2013 Afrow Soft Ltd,
 under the zlib license. The complete notice is in
-[installer/plugins/LockedList.txt](installer/plugins/LockedList.txt) and is
+[installer/plugins/LockedList.txt](https://github.com/LeBenco/FileSpacer/blob/main/installer/plugins/LockedList.txt) and is
 included as `LockedList-LICENSE.txt` with the installed program. See
 <https://nsis.sourceforge.io/LockedList_plug-in>.
 
