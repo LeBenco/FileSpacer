@@ -1,10 +1,10 @@
 <p align="center">
     <img height="200" alt="FileSpacer" src="src/res/FileSpacer.svg" />
 </p>
-<a href="https://github.com/LeBenco/FileSpacer/releases/latest"><img align="right" src="https://img.shields.io/badge/Download-latest-blue" alt="Download latest release"></a>
 
 # FileSpacer
 
+[![Download latest](https://img.shields.io/badge/Download-latest-blue)](https://github.com/LeBenco/FileSpacer/releases/latest) &emsp;
 [![Windows 10+](https://img.shields.io/badge/Windows%2010%2B-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTAgMGgxMXYxMUgwem0xMyAwaDExdjExSDEzem0tMTMgMTNoMTF2MTFIMHptMTMgMGgxMXYxMUgxM3oiLz48L3N2Zz4=)](#system--languages)
 [![No Telemetry](https://img.shields.io/badge/telemetry-none-2ea44f)](#privacy)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](#license-and-credits)
