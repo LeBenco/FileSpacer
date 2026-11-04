@@ -22,6 +22,8 @@ runs:
     - shell: bash
       run: npm test --prefix website
     - shell: bash
+      run: node website/check-links.mjs
+    - shell: bash
       env:
         DOCS_TARGET: ${{ inputs.target }}
       run: node .github/scripts/build-docs.mjs --target "$DOCS_TARGET"
