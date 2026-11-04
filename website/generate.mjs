@@ -56,14 +56,10 @@ function describeLanguage(code, ui, root, base, primary = false) {
   return {code, ui, root, flag, name: ui.name, path: primary ? '' : locale.language, source: primary ? '.' : `_locales/${code}`, url: base + (primary ? '/' : `/${locale.language}/`)};
 }
 
-export async function generate(repository = path.dirname(template), destination = path.join(repository, 'build/site-source')) {
-  const changelog = await fs.readFile(path.join(repository, 'CHANGELOG.md'), 'utf8');
-  const version = changelog.match(/^##\s+\[?v?(\d+\.\d+\.\d+(?:-[\w.-]+)?)\]?(?=\s|$)/m)?.[1];
-  if (!version) throw new Error('Missing released version in CHANGELOG.md');
+export async function generate(repository = path.dirname(template), destination = path.join(repository, 'build/site-source'), options = {}) {
   const config = (await fs.readFile(path.join(template, '_config.yml'), 'utf8')).replaceAll('\r\n', '\n');
   const base = config.match(/^baseurl:\s*(.*)$/m)[1].trim().replace(/\/$/, '');
   const english = JSON.parse(await fs.readFile(path.join(template, 'locale.json'), 'utf8'));
-  english.download = english.download.replace('{version}', 'v' + version);
   const languages = [describeLanguage(english.locale, english, repository, base, true)];
   const translations = path.join(repository, 'website/translations');
   if (await exists(translations)) {
@@ -77,18 +73,38 @@ export async function generate(repository = path.dirname(template), destination 
       for (const key of Object.keys(english).filter(key => key !== 'locale')) {
         if (typeof ui[key] !== 'string' || !ui[key].trim()) throw new Error(`Missing interface translation ${entry.name}: ${key}`);
       }
-      ui.download = ui.download.replace('{version}', 'v' + version);
       languages.push(describeLanguage(entry.name, ui, root, base));
     }
   }
   if (new Set(languages.map(language => language.path)).size !== languages.length) throw new Error('Duplicate language routes');
+  for (const locale of options.recordTranslations || []) {
+    if (!languages.some(language => language.code === locale && language !== languages[0])) throw new Error(`Unknown translation locale: ${locale}`);
+  }
   const parser = new Marked({gfm: true});
   const canonical = new Map();
   const results = [];
+  const warnings = [], snapshots = [];
   for (const language of languages) {
     const documents = new Map();
+    const record = language !== languages[0] && options.recordTranslations
+      && (!options.recordTranslations.length || options.recordTranslations.includes(language.code));
+    const stateFile = path.join(language.root, 'source-state.json');
+    const state = language !== languages[0] && !record && await exists(stateFile)
+      ? JSON.parse(await fs.readFile(stateFile, 'utf8')).sources : {};
     for (const [source, id] of sources) {
-      const tokens = parser.lexer(await fs.readFile(path.join(language.root, source), 'utf8'));
+      const content = await fs.readFile(path.join(language.root, source), 'utf8');
+      const tokens = parser.lexer(content);
+      const sourceHash = createHash('sha256').update(content.replaceAll('\r\n', '\n')).digest('hex');
+      const baseline = state[source];
+      const reference = baseline ? baseline.headings.map(([anchor, depth], index) => ({
+        anchor, depth, id: index === 0 ? id : `${id}--${anchor}`,
+      })) : canonical.get(source)?.headings;
+      if (baseline && baseline.sourceHash !== canonical.get(source).sourceHash) {
+        const message = `${language.code}/${source}: English has changed since this translation was synchronized; retaining the existing translation and section links.`;
+        warnings.push({language: language.code, source, message});
+        if (options.onWarning) options.onWarning(message);
+        else console.warn(process.env.GITHUB_ACTIONS ? `::warning file=website/translations/${language.code}/${source}::${message}` : `WARNING: ${message}`);
+      }
       const anchors = new Map(), counts = new Map(), headings = [];
       parser.walkTokens(tokens, token => {
         if (token.type !== 'heading') return;
@@ -96,22 +112,34 @@ export async function generate(repository = path.dirname(template), destination 
         counts.set(original, count + 1);
         const originalId = original + (count ? `-${count}` : '');
         const first = headings.length === 0 && token.depth === 1;
-        const target = canonical.get(source)?.headings[headings.length];
+        const target = reference?.[headings.length];
         if (language !== languages[0] && (!target || target.depth !== Math.min(6, token.depth + 1))) throw new Error(`Translation heading structure differs from English: ${language.code}/${source}`);
         token.siteId = target?.id || (first ? id : `${id}--${originalId}`);
         token.siteDepth = Math.min(6, token.depth + 1);
         token.siteTitle = first ? language.ui[id] : null;
         anchors.set(originalId, token.siteId);
-        headings.push({id: token.siteId, title: token.siteTitle || text(token.text), depth: token.siteDepth});
+        headings.push({id: token.siteId, anchor: originalId, title: token.siteTitle || text(token.text), depth: token.siteDepth});
       });
       if (headings[0]?.depth !== 2) throw new Error(`Missing top-level title: ${source}`);
       if (language !== languages[0]) {
-        if (headings.length !== canonical.get(source).headings.length) throw new Error(`Translation heading count differs from English: ${language.code}/${source}`);
-        for (const [anchor, target] of canonical.get(source).anchors) if (!anchors.has(anchor)) anchors.set(anchor, target);
+        if (headings.length !== reference.length) throw new Error(`Translation heading count differs from its source reference: ${language.code}/${source}. Synchronize the translation, then record its sources.`);
+        for (const target of reference) if (!anchors.has(target.anchor)) anchors.set(target.anchor, target.id);
       }
-      documents.set(source, {source, id, tokens, anchors, headings});
+      // Explicit HTML anchors are valid Markdown targets too. Namespace them
+      // by document so that independently authored pages can reuse an ID.
+      parser.walkTokens(tokens, token => {
+        if (token.type !== 'html') return;
+        for (const match of token.text.matchAll(/\sid\s*=\s*(["'])([^"']+)\1/gi)) {
+          if (anchors.has(match[2])) throw new Error(`Duplicate source anchor: ${source}#${match[2]}`);
+          anchors.set(match[2], `${id}--${match[2]}`);
+        }
+      });
+      documents.set(source, {source, id, tokens, anchors, headings, sourceHash});
     }
     if (language === languages[0]) for (const [source, doc] of documents) canonical.set(source, doc);
+    if (record) snapshots.push([stateFile, {version: 1, sources: Object.fromEntries([...canonical].map(([source, doc]) => [source, {
+      sourceHash: doc.sourceHash, headings: doc.headings.map(heading => [heading.anchor, heading.depth]),
+    }]))}]);
     const assets = new Map();
     function resolve(source, href, image = false) {
       if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(href)) return href;
@@ -141,7 +169,9 @@ export async function generate(repository = path.dirname(template), destination 
     for (const doc of documents.values()) {
       parser.walkTokens(doc.tokens, token => {
         if (token.type === 'link' || token.type === 'image') token.href = resolve(doc.source, token.href, token.type === 'image');
-        if (token.type === 'html') token.text = token.text.replace(/(<img\b[^>]*\bsrc=")([^"]+)(")/g, (_, before, href, after) => before + resolve(doc.source, href, true) + after);
+        if (token.type === 'html') token.text = token.text
+          .replace(/(\s)id\s*=\s*(["'])([^"']+)\2/gi, (_, space, quote, anchor) => `${space}id=${quote}${escape(doc.anchors.get(anchor))}${quote}`)
+          .replace(/(<(?:a|img)\b[^>]*\b(href|src)\s*=\s*)(["'])(.*?)\3/gi, (_, before, attribute, quote, href) => before + quote + resolve(doc.source, href, attribute.toLowerCase() === 'src') + quote);
       });
       const renderer = new Marked({gfm: true, renderer: {
         heading(token) {
@@ -158,8 +188,8 @@ export async function generate(repository = path.dirname(template), destination 
       const alt = img.match(/\balt="([^"]*)"/)?.[1] || '';
       return `<a class="screenshot-link" href="${src}" aria-label="${escape(language.ui.enlargeImage)}: ${alt}">${img}</a>`;
     });
-    const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
-    const missing = [...html.matchAll(/<a\b[^>]*href="#([^"]+)"/g)].filter(match => !ids.includes(match[1]));
+    const ids = [...html.matchAll(/\sid\s*=\s*(["'])([^"']+)\1/g)].map(match => match[2]);
+    const missing = [...html.matchAll(/<a\b[^>]*\shref\s*=\s*(["'])#([^"']+)\1/g)].filter(match => !ids.includes(match[2]));
     if (new Set(ids).size !== ids.length || missing.length) throw new Error('Duplicate heading IDs or broken internal links');
     const output = path.join(destination, language.source);
     await fs.mkdir(output, {recursive: true});
@@ -169,7 +199,7 @@ export async function generate(repository = path.dirname(template), destination 
     let localizedConfig = config.replace(/^baseurl:.*$/m, 'baseurl: ' + language.url.replace(/\/$/, ''))
       .replace(/^description:.*$/m, 'description: ' + JSON.stringify(language.ui.description))
       .replace(/^back_to_top_text:.*$/m, 'back_to_top_text: ' + JSON.stringify(language.ui.back))
-      .replace(/^aux_links:\n[\s\S]*?(?=^[^\s])/m, `aux_links:\n  ${JSON.stringify(language.ui.download)}:\n    - https://github.com/LeBenco/FileSpacer/releases/latest\n  ${JSON.stringify(language.ui.repository)}:\n    - https://github.com/LeBenco/FileSpacer\n`);
+      .replace(/^aux_links:\n[\s\S]*?(?=^[^\s])/m, `aux_links:\n  ${JSON.stringify(language.ui.repository)}:\n    - https://github.com/LeBenco/FileSpacer\n`);
     localizedConfig += `\nlang: ${language.code}\nfs_ui: ${JSON.stringify(language.ui)}\n`;
     await fs.writeFile(path.join(output, '_config.yml'), localizedConfig);
     await fs.writeFile(path.join(output, '_includes/components/site_nav.html'), `<nav aria-label="${escape(language.ui.navigation)}" id="site-nav" class="site-nav">${languagePicker(language, languages)}<ul class="nav-list">${[...documents.values()].map(doc => navigation(doc.headings, language.ui)).join('')}</ul></nav>\n`);
@@ -186,9 +216,12 @@ export async function generate(repository = path.dirname(template), destination 
     results.push({code: language.code, path: language.path, source: language.source, documents: documents.size, headings: ids.length, images: assets.size});
   }
   await fs.writeFile(path.join(destination, 'locales.json'), json(results));
-  return {...results[0], languages: results, destination};
+  for (const [file, snapshot] of snapshots) await fs.writeFile(file, json(snapshot));
+  return {...results[0], languages: results, warnings, destination};
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  console.log(json(await generate()));
+  const args = process.argv.slice(2);
+  if (args.length && args[0] !== '--record-translation-sources') throw new Error('Usage: node website/generate.mjs [--record-translation-sources [locale...]]');
+  console.log(json(await generate(undefined, undefined, args.length ? {recordTranslations: args.slice(1)} : {})));
 }
