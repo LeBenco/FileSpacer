@@ -12,6 +12,13 @@ const sources = [
   ['THIRD_PARTY_NOTICES.md', 'third-party-notices'],
 ];
 const localizedReferences = ['docs/nilesoft-shell.md', 'docs/privacy-policy.md'];
+const technicalReferences = [
+  'BUILD.md', 'docs/README.md', 'docs/build.md', 'docs/native-shell-view.md',
+  'docs/context-menu-integration.md', 'docs/search-integration.md',
+  'docs/title-menu.md', 'docs/window-shortcuts.md', 'docs/winget.md',
+  'tests/client/README.md', 'tests/regression/README.md',
+  'website/README.md', 'website/translations/README.md',
+];
 const privacyAliases = {
   'user-guide--settings-and-updates': ['privacy-policy--update-checks'],
   'user-guide--local-data': ['privacy-policy--local-data', 'privacy-policy--resetting-preferences'],
@@ -85,6 +92,12 @@ export async function generate(repository = path.dirname(template), destination 
   const results = [];
   const warnings = [], snapshots = [];
   for (const language of languages) {
+    language.references = new Set(localizedReferences);
+    if (language !== languages[0]) {
+      for (const reference of technicalReferences) {
+        if (await exists(path.join(language.root, reference))) language.references.add(reference);
+      }
+    }
     const documents = new Map();
     const record = language !== languages[0] && options.recordTranslations
       && (!options.recordTranslations.length || options.recordTranslations.includes(language.code));
@@ -157,7 +170,7 @@ export async function generate(repository = path.dirname(template), destination 
       const doc = documents.get(target);
       if (!doc) {
         if (target === 'docs/privacy-policy.md' && !fragment) return '#user-guide--privacy';
-        const reference = language !== languages[0] && localizedReferences.includes(target)
+        const reference = language !== languages[0] && language.references.has(target)
           ? `website/translations/${language.code}/${target}` : target;
         return 'https://github.com/LeBenco/FileSpacer/blob/main/' + reference.split('/').map(encodeURIComponent).join('/') + (fragment ? '#' + encodeURIComponent(fragment) : '');
       }
