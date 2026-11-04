@@ -16,7 +16,7 @@ FileSpacer ist ein Dateimanager für Windows nach dem [räumlichen Prinzip](http
 
 FileSpacer legt Wert auf eine schlanke und übersichtliche Bedienung. Damit sich nicht zu viele Fenster ansammeln – ein bekannter Nachteil dieses Prinzips –, schließt FileSpacer beim Öffnen eines Ordners standardmäßig das Ausgangsfenster. Halten Sie beim Öffnen Strg gedrückt, um es geöffnet zu lassen, wenn Sie mit mehreren Ordnern gleichzeitig arbeiten möchten. FileSpacer hält seine Oberfläche bewusst zurückhaltend, während manche überladenen Oberflächen zwischen all den Schaltflächen gerade noch einen Blick auf eine Datei erlauben.
 
-<a id="system--languages"></a>**System und Sprachen:** Windows 10 oder neuer, x64. Verfügbar auf Englisch, Französisch, Deutsch, Italienisch, Spanisch, Portugiesisch (Portugal) und Griechisch.
+<a id="system--languages"></a>**System und Sprachen:** Windows 10 oder neuer, x64. In zehn Sprachen verfügbar: Englisch, Französisch, Deutsch, Italienisch, Spanisch, Portugiesisch (Portugal), Griechisch, Polnisch, Niederländisch und Ukrainisch.
 
 <a id="privacy"></a>**Datenschutz:** **Keine Telemetrie, Nutzungsverfolgung oder Werbung.** Update-Prüfungen verbinden sich mit GitHub; wöchentliche Prüfungen sind optional und standardmäßig aus. Herunterladen und Installieren erfordern eine Bestätigung. [Datenschutz](docs/user-guide.md#datenschutz).
 
@@ -53,7 +53,7 @@ Mit **Nilesoft Shell** können FileSpacers Menüs dessen Designs und angepasste 
 
 Zum Kompilieren werden MSVC/NMAKE, Visual Studio 2022 Build Tools mit ATL und einem Windows SDK, Inkscape sowie ImageMagick verwendet. Für das Installationsprogramm wird NSIS benötigt; SQLite ist enthalten. Siehe [Build-Anleitung](docs/build.md).
 
-Die Regressionstests verbinden PowerShell-Szenarien mit C++- und C#-Hilfsprogrammen für interne Prüfungen und echte Windows-Oberflächen- und Shell-Tests. Führen Sie sie mit `tests.cmd` lokal oder in einer eingerichteten Hyper-V-VM aus. Siehe [Testanleitung](tests/regression/README.md).
+Die Regressionstests verbinden PowerShell-Szenarien mit C++- und C#-Hilfsprogrammen für interne Prüfungen und echte Windows-Oberflächen- und Shell-Tests. Der [Regressionsworkflow in GitHub Actions](https://github.com/LeBenco/FileSpacer/actions/workflows/regression.yml) führt diese Anwendungstests auf Anfrage und automatisch vor einer Veröffentlichung aus. Dieselben Fälle lassen sich mit `tests.cmd` auf einem lokalen Windows-Desktop oder in einer eingerichteten Hyper-V-VM ausführen. Fallauswahl, Voraussetzungen und Ergebnisse beschreibt die [Testanleitung](tests/regression/README.md).
 
 ## Lizenz und Danksagung
 

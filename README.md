@@ -15,7 +15,7 @@ FileSpacer is a file manager for Windows built around the [spatial paradigm](htt
 
 FileSpacer prioritizes a lightweight and uncluttered experience. To address the accumulation of windows, a recognized drawback of the spatial paradigm, FileSpacer closes the source window by default when a folder is opened. Hold Ctrl while opening a folder to keep the source window open when you want to work with several folders at once. FileSpacer also keeps its interface deliberately understated, unlike some cluttered interfaces that leave just enough room between the buttons to glimpse a file.
 
-<a id="system--languages"></a>**System & Languages:** Windows 10 or later, x64. Available in English, French, German, Italian, Spanish, Portuguese (Portugal) and Greek.
+<a id="system--languages"></a>**System & Languages:** Windows 10 or later, x64. Available in ten languages: English, French, German, Italian, Spanish, Portuguese (Portugal), Greek, Polish, Dutch and Ukrainian.
 
 <a id="privacy"></a>**Privacy:** **No telemetry, usage tracking or advertising**. Update checks contact GitHub; weekly checks are optional and off by default. Downloading and installing require confirmation. [Privacy policy](docs/user-guide.md#privacy).
 
@@ -69,10 +69,7 @@ Builds use MSVC/NMAKE, Visual Studio 2022 Build Tools with ATL and a Windows SDK
 Inkscape and ImageMagick. NSIS is required for the installer; SQLite is bundled.
 See the [build guide](docs/build.md).
 
-Regression tests combine PowerShell scenarios with C++ and C# helpers for
-internal checks and real Windows UI/Shell tests. Run them through `tests.cmd`,
-locally or in a configured Hyper-V VM.
-See the [test guide](tests/regression/README.md).
+Regression tests combine PowerShell scenarios with C++ and C# helpers for internal checks and real Windows UI/Shell tests. The [GitHub Actions regression workflow](https://github.com/LeBenco/FileSpacer/actions/workflows/regression.yml) runs this application suite on demand and automatically before a release. The same cases can be run with `tests.cmd` on a local Windows desktop or in a configured Hyper-V VM. See the [test guide](tests/regression/README.md) for case selection, prerequisites and results.
 
 ## License and credits
 
