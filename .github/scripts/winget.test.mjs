@@ -43,7 +43,9 @@ test('published installer bytes must agree with the updater and GitHub metadata'
 test('both x64 installation scopes preserve NSIS silent and directory arguments', () => {
   const files = manifests({version: '1.2.3', url, hash: hash.toUpperCase()});
   assert.equal(Object.keys(files).length, 3);
-  const manifest = files['LeBenco.FileSpacer.installer.yaml'];
+  const manifest = files['Benco.FileSpacer.installer.yaml'];
+  assert.match(files['Benco.FileSpacer.yaml'], /^PackageIdentifier: Benco\.FileSpacer$/m);
+  assert.match(files['Benco.FileSpacer.locale.en-US.yaml'], /^Publisher: Benco$/m);
   for (const scope of ['user', 'machine']) assert.match(manifest, new RegExp(`Scope: ${scope}`));
   for (const mode of ['CurrentUser', 'AllUsers']) assert.ok(manifest.includes(`Custom: /${mode}`));
   assert.equal(manifest.match(/Architecture: x64/g).length, 2);
@@ -59,14 +61,17 @@ test('first publication generates all manifests from public release assets witho
   const request = async (address, options) => {
     requests.push(address);
     if (address.includes('/releases/tags/')) return Response.json(release);
-    if (address.includes('/contents/manifests/')) return new Response('', {status: 404});
+    if (address.includes('/contents/manifests/')) {
+      assert.ok(address.endsWith('/manifests/b/Benco/FileSpacer/1.2.3'));
+      return new Response('', {status: 404});
+    }
     if (address.includes('/search/issues')) return Response.json({items: [], incomplete_results: false});
     assert.equal(options, undefined);
     return new Response(address === url ? installer : update);
   };
   assert.equal(await prepare('v1.2.3', output, request), null);
   assert.equal((await fs.readdir(output)).length, 3);
-  assert.ok((await fs.readFile(path.join(output, 'LeBenco.FileSpacer.installer.yaml'), 'utf8')).includes(hash.toUpperCase()));
+  assert.ok((await fs.readFile(path.join(output, 'Benco.FileSpacer.installer.yaml'), 'utf8')).includes(hash.toUpperCase()));
   assert.equal(requests.length, 5);
 });
 
@@ -75,10 +80,28 @@ test('retries skip merged versions and open PRs; API failures never mean package
     const request = async address => {
       if (address.includes('/releases/tags/')) return Response.json(release);
       if (address.includes('/contents/manifests/')) return merged ? Response.json([]) : new Response('', {status: 404});
-      if (address.includes('/search/issues')) return Response.json({items: [{title: 'New version: LeBenco.FileSpacer version 1.2.3', html_url: 'https://github.com/microsoft/winget-pkgs/pull/123'}]});
+      if (address.includes('/search/issues')) return Response.json({items: [{title: 'New version: Benco.FileSpacer version 1.2.3', html_url: 'https://github.com/microsoft/winget-pkgs/pull/123'}]});
       assert.fail('A retry must not download or write manifests.');
     };
     assert.match(await prepare('v1.2.3', 'unused', request), /Already/);
   }
   await assert.rejects(prepare('v1.2.3', 'unused', async () => new Response('', {status: 403})), /403/);
+});
+
+test('an open PR for the previous publisher does not suppress the Benco submission', async t => {
+  const output = await fs.mkdtemp(path.join(os.tmpdir(), 'filespacer-winget-'));
+  t.after(() => fs.rm(output, {recursive: true, force: true}));
+  const request = async address => {
+    if (address.includes('/releases/tags/')) return Response.json(release);
+    if (address.includes('/contents/manifests/')) return new Response('', {status: 404});
+    if (address.includes('/search/issues')) {
+      assert.ok(decodeURIComponent(address).includes('"Benco.FileSpacer"'));
+      return Response.json({items: [{title: 'New version: LeBenco.FileSpacer version 1.2.3'}]});
+    }
+    return new Response(address === url ? installer : update);
+  };
+  assert.equal(await prepare('v1.2.3', output, request), null);
+  assert.deepEqual((await fs.readdir(output)).sort(), [
+    'Benco.FileSpacer.installer.yaml', 'Benco.FileSpacer.locale.en-US.yaml', 'Benco.FileSpacer.yaml'
+  ]);
 });
