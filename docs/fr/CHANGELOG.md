@@ -1,9 +1,8 @@
 # Historique des versions
 
-## Non publié
+## 1.3.2 — 2026-11-04
 
 - Ajouter le polonais, le néerlandais et l’ukrainien à l’application, à l’installateur, au site et aux documentations utilisateur et technique.
-- Renouveler les démonstrations localisées avec un nouveau fond d’écran.
 
 ## 1.3.1 — 2026-11-03
 

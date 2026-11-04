@@ -1,9 +1,8 @@
 # Cronologia delle versioni
 
-## Non ancora pubblicato
+## 1.3.2 — 2026-11-04
 
 - Aggiungere polacco, olandese e ucraino all’applicazione, al programma di installazione, al sito e alla documentazione utente e tecnica.
-- Rinnovare le dimostrazioni localizzate con un nuovo sfondo del desktop.
 
 ## 1.3.1 — 2026-11-03
 

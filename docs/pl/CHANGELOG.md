@@ -1,9 +1,8 @@
 # Historia zmian
 
-## Niewydane
+## 1.3.2 — 2026-11-04
 
 - Dodano język polski, niderlandzki i ukraiński do aplikacji, instalatora, witryny oraz dokumentacji użytkownika i technicznej.
-- Odświeżono zlokalizowane prezentacje z nowym tłem pulpitu.
 
 ## 1.3.1 — 2026-11-03
 

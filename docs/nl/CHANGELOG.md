@@ -1,9 +1,8 @@
 # Wijzigingsgeschiedenis
 
-## Nog niet uitgebracht
+## 1.3.2 — 2026-11-04
 
 - Pools, Nederlands en Oekraïens toegevoegd aan de toepassing, het installatieprogramma, de website en de gebruikers- en ontwikkelaarsdocumentatie.
-- Gelokaliseerde demonstraties vernieuwd met een nieuwe bureaubladachtergrond.
 
 ## 1.3.1 — 2026-11-03
 
