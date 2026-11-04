@@ -1,0 +1,234 @@
+#include <windows.h>
+#include "resource.h"
+
+LANGUAGE LANG_DUTCH, SUBLANG_NEUTRAL
+
+IDR_ITEM_MENU   MENU {
+    MENUITEM    "Documentatie\tF1", IDM_HELP
+    MENUITEM    "FileSpacer-instellingen\tCtrl+,", IDM_SETTINGS
+}
+
+STRINGTABLE {
+    IDS_DOCUMENTATION_ERROR, "Kan de lokale documentatie niet openen:\n%1\n\n%2"
+    IDS_CAPTION_COPY_PATH, "Pad kopiëren"
+    IDS_CAPTION_RENAME, "Naam wijzigen"
+    IDS_CAPTION_PROPERTIES, "Eigenschappen"
+    IDS_CAPTION_CLOSE_PARENTS, "Bovenliggende vensters sluiten"
+    IDS_CAPTION_REOPEN_NAMED, "‘%1’ opnieuw openen\tCtrl+Shift+T"
+    IDS_REOPEN_LAST, "Laatst gesloten venster opnieuw openen"
+    IDS_REOPEN_MENU, "Laatst gesloten venster opnieuw openen\tCtrl+Shift+T"
+    IDS_REOPEN_NAMED, "‘%1’ opnieuw openen"
+    IDS_REOPEN_EMPTY, "Geen gesloten venster om opnieuw te openen."
+    IDS_REOPEN_FAILED, "Kan deze map niet opnieuw openen:\n%1\n\nDe map blijft in de geschiedenis van gesloten vensters staan."
+
+    IDS_QUICK_ACCESS, "Snelle toegang"
+    IDS_QUICK_ACCESS_UNAVAILABLE, "Snelle toegang is niet beschikbaar.\n\nStap: %1\nCode: 0x%2!08X!\n\nDruk op Ctrl+C om dit bericht te kopiëren."
+    IDS_QUICK_ACCESS_EMPTY, "Geen vastgemaakte mappen"
+    IDS_QUICK_ACCESS_OPEN, "Snelle toegang openen"
+    IDS_QUICK_ACCESS_KEY, "Eigenschap voor vastgemaakte mappen zoeken"
+    IDS_QUICK_ACCESS_ENUM, "Items opsommen"
+    IDS_QUICK_ACCESS_READ, "Items lezen"
+    IDS_QUICK_ACCESS_TARGET, "Doelmappen bepalen"
+    IDS_QUICK_ACCESS_MENU, "Menu maken"
+
+    IDS_APP_NAME,           "FileSpacer"
+    IDS_PATH_BAR,           "Adres"
+    IDS_SEARCH_NAME,        "Zoeken op naam"
+    IDS_SEARCH_CUE,         "Zoeken in %1"
+    IDS_SEARCH_APPLY,       "Zoeken"
+    IDS_SEARCH_ERROR,       "Kan het naamfilter niet toepassen.\n\n%1"
+    IDS_ADDRESS_NOT_FOLDER, "Dit adres is geen map: %1"
+
+    IDS_UNKNOWN_ERROR,      "Onbekende fout"
+    IDS_ERROR_CAPTION,      "Fout"
+    IDS_CANT_FIND_ITEM,     "Kan het item op dit pad niet vinden: %1"
+    IDS_INVALID_CHARS,      "Een bestandsnaam mag de volgende tekens niet bevatten:\n\\ / : * ? "" < > |"
+
+    IDS_SETTINGS_CAPTION,   "FileSpacer-instellingen"
+    IDS_NO_UPDATE_CAPTION,  "Geen updates beschikbaar"
+    IDS_NO_UPDATE,          "U gebruikt de nieuwste versie."
+    IDS_UPDATE_CLOSE_BUTTON, "Sluiten"
+    IDS_UPDATE_SEARCH_BUTTON, "Naar updates &zoeken"
+    IDS_UPDATE_INSTALL_BUTTON, "FileSpacer v%1 &installeren"
+    IDS_UPDATE_RELEASE_BUTTON, "FileSpacer v%1 bekijken"
+    IDS_UPDATE_SEARCHING, "Controleren op een nieuwe versie…"
+    IDS_UPDATE_AVAILABLE, "Er is een nieuwe versie beschikbaar."
+    IDS_UPDATE_DOWNLOADING, "Installatieprogramma downloaden…"
+    IDS_UPDATE_PROGRESS, "Downloaden: %1!u! %%"
+    IDS_UPDATE_CLOSING, "Download gecontroleerd. Vensters sluiten…"
+    IDS_UPDATE_FAILED, "De update is mislukt. U kunt het opnieuw proberen."
+    IDS_UPDATE_FAILED_DETAIL, "Update mislukt: %1"
+    IDS_UPDATE_LEGACY, "Download deze versie vanaf de releasepagina op GitHub."
+    IDS_UPDATE_BUSY, "Er wordt al een installatie van FileSpacer uitgevoerd."
+    IDS_UPDATE_CONFIRM_TITLE, "De nieuwe versie van FileSpacer installeren?"
+    IDS_UPDATE_CONFIRM, "Het installatieprogramma wordt gedownload en gecontroleerd. Tijdens het downloaden kunt u FileSpacer blijven gebruiken en annuleren. Daarna worden alle FileSpacer-vensters gesloten, waarbij hun posities en instellingen zoals gebruikelijk worden opgeslagen, en begint de installatie. Geopende mappen worden na voltooiing of annulering van de installatie opnieuw geopend.\n\nDoorgaan?"
+    IDS_UPDATE_RELAY_FAILED, "De update of het herstellen van vensters kon niet worden voltooid. Er is geen proces geforceerd beëindigd.\n\n%1"
+    IDS_UPDATE_RESTORE_FAILED, "%1!u! map(pen) konden niet opnieuw worden geopend. Ze zijn mogelijk verplaatst, verwijderd of niet meer beschikbaar. De overige mappen zijn opnieuw geopend."
+    IDS_UPDATE_ERROR,       "Fout bij het zoeken naar updates"
+    IDS_UPDATE_NOTIF_TITLE, "FileSpacer-update"
+    IDS_UPDATE_NOTIF_INFO,  "Er is een nieuwe versie van FileSpacer beschikbaar. Klik op deze melding om de downloadpagina te openen."
+
+    IDS_OPEN_PARENT_COMMAND,"Bovenliggende map openen\n(Alt+Up)"
+    IDS_MENU_COMMAND,       "Menu..."
+    IDS_REFRESH_COMMAND,    "Vernieuwen\n(Ctrl+R)"
+    IDS_VIEW_COMMAND,       "Beeld..."
+
+	IDS_FOLDER_STATUS,          "%1!d! items"
+	IDS_FOLDER_STATUS_SEL,      "%1!d! items    %2!d! geselecteerd"
+	IDS_FOLDER_STATUS_SEL_SIZE, "%1!d! items    %2!d! geselecteerd    %3!s!"
+    IDS_FOLDER_ERROR,       "Kan de map niet openen"
+
+    IDS_SUCCESS_CAPTION,    "Voltooid"
+    IDS_CONFIRM_CAPTION,    "Weet u het zeker?"
+    IDS_RESET_FOLDER_STATE_CONFIRM, "Alle opgeslagen posities, afmetingen en weergave-instellingen van mappen opnieuw instellen? De mapvensters van FileSpacer worden gesloten en niet automatisch opnieuw geopend. Het instellingenvenster wordt gesloten en niet-toegepaste wijzigingen gaan verloren. Eerder opgeslagen toepassingsinstellingen blijven behouden."
+    IDS_RESET_FOLDER_STATE_CLOSE_ERROR, "Kan niet alle FileSpacer-vensters sluiten. Een venster heeft mogelijk geweigerd te sluiten of reageert niet. Er is geen opgeslagen mapstatus verwijderd. Sommige vensters zijn mogelijk al gesloten."
+    IDS_RESET_FOLDER_STATE_STORAGE_ERROR, "Kan de database met mapstatussen niet openen. Er is geen opgeslagen mapstatus verwijderd."
+    IDS_RESET_FOLDER_STATE_DELETE_ERROR, "Kan de database met mapstatussen niet opnieuw instellen. De verwijdering is niet vastgelegd."
+    IDS_RESET_FOLDER_STATE_SUCCESS, "Opgeslagen posities, afmetingen en weergave-instellingen van mappen zijn opnieuw ingesteld. Toepassingsinstellingen zijn behouden."
+    IDS_FOLDER_WIDTH_LABEL,   "&Breedte (min: %1!d! px):"
+    IDS_FOLDER_HEIGHT_LABEL,  "&Hoogte (min: %1!d! px):"
+    IDS_FOLDER_WIDTH_INVALID, "De breedte moet een geheel getal van minstens %1!d! px zijn."
+    IDS_FOLDER_HEIGHT_INVALID,"De hoogte moet een geheel getal van minstens %1!d! px zijn."
+    IDS_FOLDER_STATE_ERROR, "FileSpacer kon de database met mapstatussen niet lezen of opslaan. Controleer of de lokale map met toepassingsgegevens beschrijfbaar is en de database beschikbaar is. Bestaande gegevens zijn niet opnieuw ingesteld."
+    IDS_ICON_POSITION_ERROR, "FileSpacer kon de pictogramindeling niet herstellen of opslaan. Bestaande opgeslagen posities zijn behouden. Huidige wijzigingen in de indeling worden mogelijk niet onthouden."
+    IDS_BROWSER_SET_FAILED, "Kan de standaardbestandsbeheerder niet wijzigen"
+    IDS_BROWSER_DIRECTORY, "Mappen"
+    IDS_BROWSER_COMPRESSED_FOLDER, "Gecomprimeerde (gezipte) mappen"
+    IDS_BROWSER_DRIVE, "Stations"
+    IDS_BROWSER_NETWORK_SERVER, "Netwerkservers"
+    IDS_BROWSER_NETWORK_SHARE, "Netwerkshares"
+    IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (fout %2!lu!)"
+    IDS_BROWSER_ASSOCIATIONS_FAILED, "De volgende koppelingen konden niet worden gewijzigd:\n\n%1\n\nGeslaagde wijzigingen zijn behouden."
+    IDS_BROWSER_SET,        "FileSpacer is ingesteld als standaardbestandsbeheerder. U kunt dit ongedaan maken in de instellingen van FileSpacer."
+    IDS_BROWSER_RESET,      "Bestandenverkenner is hersteld als standaardbestandsbeheerder."
+    IDS_REQUIRE_CONTEXT,    "Installeer of werk FileSpacer bij met het mapsnelmenu ingeschakeld om de standaardbestandsbeheerder te kunnen wijzigen, ook voor netwerklocaties."
+    IDS_BROWSER_SET_CONFIRM,"Hiermee wordt Windows Bestandenverkenner vervangen als standaardprogramma voor het openen van alle mappen."
+
+    IDS_WELCOME_HEADER,     "Welkom"
+    IDS_WELCOME_BODY,       "U lijkt FileSpacer voor het eerst te gebruiken."
+#if 0 // Deferred public services.
+    IDS_WELCOME_TUTORIAL,   "&Zelfstudie lezen\nAanbevolen voor nieuwe gebruikers"
+#endif
+    IDS_WELCOME_BROWSER,    "&Instellen als standaardbestandsbeheerder\nBestandenverkenner vervangen"
+    IDS_WELCOME_UPDATE,     "Wekelijks naar &updates zoeken"
+
+    IDS_ADMIN_WARNING,      "U probeert FileSpacer als administrator uit te voeren. Dit wordt niet aanbevolen!\n\nToch doorgaan?"
+    IDS_DONT_ASK,           "Niet opnieuw vragen"
+
+// Deferred donation paragraph:
+// If you enjoy FileSpacer, please consider donating to support its development. Click the Donate button above.\r\n
+    IDS_LEGAL_INFO,         "\
+Copyright (c) 2026 Benco (FileSpacer-wijzigingen)\r\n\
+FileSpacer is een fork van ChromaFiler.\r\n\
+Copyright (c) 2023 J. van't Hoog (ChromaFiler)\r\n\
+\r\n\
+GNU General Public License v3.0. Zonder garantie.\r\n\
+U mag deze software verspreiden en wijzigen onder de GPL.\r\n\
+Zie LICENSE.txt in de installatiemap en https://www.gnu.org/licenses/gpl-3.0.html\r\n\
+Oorspronkelijk project: https://github.com/vanjac/chromafiler\r\n\
+\r\n\
+Toepassingsmateriaal:\r\n\
+- SQLite 3.53.4: publiek domein; https://sqlite.org/\r\n\
+- Lucide / Feather navigatiepictogrammen: ISC / MIT; https://lucide.dev/license\r\n\
+  Volledige vermeldingen: Lucide-LICENSE.txt in de installatiemap.\r\n\
+- Segoe Fluent Icons / Segoe MDL2 Assets: Microsoft-lettertypen geleverd door Windows; niet opnieuw verspreid.\r\n\
+\r\n\
+Installatieprogramma gebouwd met NSIS (Nullsoft Scriptable Install System): https://nsis.sourceforge.io/\r\n\
+LockedList-plug-in: zlib-licentie.\r\n\
+Copyright (c) 2013 Afrow Soft Ltd. Zie LockedList-LICENSE.txt.\r\n\
+"
+    IDS_RECOVERY_UNAVAILABLE, "Kan de crashdiagnostiek niet initialiseren. FileSpacer werkt deze sessie zonder diagnostiek; uw voorkeuren zijn behouden."
+    IDS_RESET_CLI_ARGUMENTS, "Gebruik /reset-options of /reset-all zonder mappad of andere opties. In Debug kunt u /test toevoegen om alleen testgegevens opnieuw in te stellen."
+    IDS_RESET_CLI_BUSY, "Kan geen exclusieve toegang tot de instellingen krijgen. Sluit alle exemplaren van FileSpacer en controleer de toegang tot de lokale gegevensmap. Probeer het daarna opnieuw. Er zijn geen instellingen verwijderd."
+    IDS_RESET_CLI_FAILED, "Het opnieuw instellen van voorkeuren kon niet worden voltooid: %1\n\nSommige voorkeuren zijn mogelijk al opnieuw ingesteld. Bij /reset-all zijn de mapinstellingen al opnieuw ingesteld."
+    IDS_RESET_CLI_ALL_DONE, "Algemene voorkeuren en opgeslagen posities, afmetingen en weergave-instellingen van mappen zijn opnieuw ingesteld. Uw bestanden en Windows-koppelingen zijn behouden."
+    IDS_RESET_CLI_OPTIONS_DONE, "Algemene voorkeuren zijn opnieuw ingesteld. Opgeslagen mapinstellingen, uw bestanden en Windows-koppelingen zijn behouden."
+    IDS_RECOVERY_CRASHED, "FileSpacer is gestopt na een ernstige fout. Een diagnostisch rapport en een geheugendump zijn opgeslagen in de lokale toepassingsgegevens; uw voorkeuren zijn behouden."
+    IDS_SETTINGS_ACCESS_FAILED, "FileSpacer kan geen gedeelde toegang tot de instellingen krijgen. Mogelijk worden deze opnieuw ingesteld of is de lokale gegevensmap ontoegankelijk. Probeer het opnieuw nadat het onderhoud is voltooid."
+}
+
+
+STRINGTABLE
+BEGIN
+    IDS_OPEN_IN_EXPLORER, "Openen in Windows Bestandenverkenner"
+    IDS_CONTEXT_MENU_SYNC_FAILED, "Kan de mapsnelmenu’s niet bijwerken (fout %1!u!): %2"
+  IDS_LOCK_WINDOW_STATE "Vensterstatus vergrendelen"
+  IDS_UNLOCK_WINDOW_STATE "Vensterstatus ontgrendelen"
+  IDS_WINDOW_STATE_LOCKED "Vensterstatus vergrendeld. Wijzigingen in de indeling zijn tijdelijk."
+  IDS_DISABLE_STATE_LOCK_CONFIRM "Als u deze functie uitschakelt, worden alle vensterstatusvergrendelingen verwijderd. Vensters slaan hun status weer normaal op. Wilt u doorgaan?"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_MOVE "Venster verplaatsen"
+  IDS_SHORTCUT_RESIZE "Vensterformaat wijzigen"
+  IDS_SHORTCUT_DISABLED "uitgeschakeld"
+  IDS_SHORTCUT_LEFT "links"
+  IDS_SHORTCUT_MIDDLE "midden"
+  IDS_SHORTCUT_RIGHT "rechts"
+  IDS_SHORTCUT_CTRL "Ctrl + "
+  IDS_SHORTCUT_ALT "Alt + "
+  IDS_SHORTCUT_SHIFT "Shift + "
+  IDS_SHORTCUT_DESCRIPTION "%1!s!slepen %2!s!"
+  IDS_SHORTCUT_HEADER "%1!s! (%2!s!)"
+  IDS_SHORTCUT_ACCESSIBLE "Inschakelen: %1!s!"
+  IDS_SHORTCUT_GENERAL "Sommige combinaties zijn gereserveerd voor selectie en menu’s."
+  IDS_SHORTCUT_RESERVED "Gereserveerde combinatie. Voeg Alt toe of kies de middelste knop."
+  IDS_SHORTCUT_CONFLICT "Al toegewezen aan %1!s!."
+  IDS_SHORTCUT_RECORD "Toetsen en muisknop rechtstreeks invoeren..."
+  IDS_SHORTCUT_STOP_RECORD "Rechtstreekse invoer verbergen"
+  IDS_SHORTCUT_LEFT_HINT "Gereserveerd voor selectie"
+  IDS_SHORTCUT_RIGHT_HINT "Gereserveerd voor menu’s en selectie"
+  IDS_SHORTCUT_SAVE_FAILED "De sneltoetsen konden niet worden opgeslagen. De vorige instellingen blijven actief."
+  IDS_SHORTCUT_APPLY_REFUSED "De sneltoets voor ‘%1!s!’ kan niet worden toegepast."
+  IDS_SEARCH_EVERYTHING "Zoeken in Everything"
+  IDS_SEARCH_MENU "Everything en recente zoekopdrachten"
+  IDS_EVERYTHING_ERROR "Kan Everything niet starten.\nControleer het pad onder Instellingen > Integratie.\n\nUitvoerbaar bestand: %1!s!\nFout %2!u!: %3!s!"
+  IDS_PEEK_ERROR "Kan PowerToys Peek niet starten.\nVoor een voorbeeld van meerdere bestanden is PowerToys 0.102 of nieuwer vereist.\n\nUitvoerbaar bestand: %1!s!\nFout %2!u!: %3!s!"
+  IDS_PEEK_SETTINGS_ERROR "Kan de Peek-instellingen in PowerToys niet openen.\n\n%1!s!"
+  IDS_EVERYTHING_AUTO "Automatisch detecteren"
+  IDS_EVERYTHING_FOLDER "Huidige map en submappen"
+  IDS_EVERYTHING_EVERYWHERE "Overal"
+  IDS_EVERYTHING_NOT_FOUND "Everything is niet gevonden. Installeer het of selecteer het uitvoerbare bestand handmatig."
+  IDS_SEARCH_HISTORY_INVALID "Voer een limiet voor de zoekgeschiedenis van 0 tot 20 in."
+  IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer plaatst nieuwe vensters zo dat ze andere mapvensters zo min mogelijk overlappen.\n\nDit geldt voor mappen zonder opgeslagen vensterpositie of waarvan de opgeslagen positie na een beeldschermwijziging niet meer bereikbaar is. Een nog bruikbare opgeslagen positie heeft voorrang."
+  IDS_GROUP_FOLDER_WINDOWS_HELP "Nieuwe mapvensters kunnen onder één taakbalkknop worden gegroepeerd, volgens uw Windows-taakbalkinstellingen.\n\nAls deze optie uitstaat, kunnen mappen afzonderlijk aan de taakbalk worden vastgemaakt.\n\nDeze instelling geldt voor vensters die na de wijziging worden geopend. Al geopende vensters behouden hun huidige taakbalkgroepering."
+  IDS_EVERYTHING_EXECUTABLE "Uitvoerbaar bestand van Everything (*.exe)"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_TITLE_MENU_NS_NOTICE "Sommige menu-items worden beheerd door Nilesoft Shell en kunnen hier niet worden gewijzigd."
+  IDS_TITLE_MENU_NS_LINK "Bewerk het menu in <a>de configuratiebestanden van Nilesoft Shell</a>."
+  IDS_TITLE_MENU_NS_TOOLTIP "Items die door Nilesoft Shell worden beheerd, moeten in de configuratiebestanden worden gewijzigd."
+  IDS_TITLE_MENU_EMPTY "Leeg menu — sleep een actie uit de lijst rechts."
+  IDS_TITLE_MENU_RENDER_ERROR "Het menuvoorbeeld kon niet worden weergegeven. Uw bestaande instellingen zijn behouden."
+  IDS_TITLE_MENU_SAVE_ERROR "Het menu kon niet worden opgeslagen."
+  IDS_TITLE_MENU_SETTINGS_ERROR "De instellingenmap van Nilesoft Shell kon niet worden geopend."
+  IDS_TITLE_MENU_SEPARATOR "— Scheidingsteken —"
+  IDS_TITLE_MENU_OPEN_WINDOWS "Geopende vensters"
+  IDS_TITLE_MENU_WINDOWS_BLOCK "<< Geopende vensters >>"
+  IDS_TITLE_MENU_RESTORE "Vergrendelde indeling herstellen"
+  IDS_TITLE_MENU_REPLACE "Referentie-indeling vervangen"
+  IDS_TITLE_MENU_FORGET "Indeling van deze map vergeten"
+  IDS_TITLE_MENU_CLOSE_DESCENDANTS "Onderliggende vensters sluiten"
+  IDS_TITLE_MENU_CLOSE_OTHERS "Andere vensters sluiten"
+  IDS_TITLE_MENU_FIT "Venster aan inhoud aanpassen"
+  IDS_TITLE_MENU_GROUPS "Mapgroep opslaan / oproepen"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_TITLE_FORGET_CONFIRM "De indeling van deze map vergeten?\n\nHet venster blijft op zijn plaats, maar de indeling wordt niet meer opgeslagen totdat het sluit. De volgende keer worden de standaardinstellingen gebruikt. De zoekgeschiedenis blijft behouden."
+  IDS_TITLE_REPLACE_CONFIRM "De vergrendelde indeling vervangen door de huidige positie, afmetingen en weergave-instellingen van het venster?"
+  IDS_GROUPS_ERROR "De mapgroep kon niet worden gelezen of opgeslagen. Bestaande groepen zijn behouden."
+  IDS_GROUPS_REPLACE "Deze groep vervangen door de momenteel geopende mappen in FileSpacer?"
+  IDS_GROUPS_DELETE_CONFIRM "Deze opgeslagen mapgroep verwijderen? De mappen zelf blijven behouden."
+  IDS_GROUPS_OPEN_ERROR "Sommige mappen in de groep konden niet worden geopend."
+END
+
+STRINGTABLE
+BEGIN
+  IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Kan de instellingen van Grab And Move niet openen. Open PowerToys en selecteer Grab And Move."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move is ingeschakeld in de PowerToys-instellingen. Zolang deze optie is ingeschakeld, gelden de onderstaande FileSpacer-sneltoetsen niet. U kunt ze blijven gebruiken door FileSpacer toe te voegen aan de <a>uitsluitingslijst van Grab And Move</a>."
+END
