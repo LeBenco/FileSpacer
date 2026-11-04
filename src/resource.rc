@@ -66,6 +66,12 @@ IDR_ITEM_ACCEL  ACCELERATORS {
 #include "dialog.pt.rc"
 #include "resource.el.rc"
 #include "dialog.el.rc"
+#include "resource.pl.rc"
+#include "dialog.pl.rc"
+#include "resource.nl.rc"
+#include "dialog.nl.rc"
+#include "resource.uk.rc"
+#include "dialog.uk.rc"
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDR_TITLE_MENU_BACKDROP BITMAP "res\\title-menu-backdrop.bmp"
