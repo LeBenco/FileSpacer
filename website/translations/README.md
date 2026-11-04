@@ -1,8 +1,8 @@
 # Website translations
 
-The repository's main README and documentation remain English. These complete
-Markdown variants are inputs for the website only; they do not add language
-links or controls to the repository README.
+The repository's main README and documentation remain English sources. These
+complete Markdown variants supply the website and localized GitHub references;
+they do not add language links or controls to the repository README.
 
 Each language-region directory contains `locale.json` and the same four source
 paths used by the English site: `README.md`, `docs/user-guide.md`,
@@ -39,8 +39,9 @@ reference remain errors.
 The recorded English IDs keep existing section links working when another
 language's headings change. Links can use either a translated heading slug or
 the original English slug. Referenced user
-documentation links to the selected language's GitHub file. Developer documents
-outside the website still link to the English GitHub source.
+documentation links to the selected language's GitHub file. Polish, Dutch and
+Ukrainian also provide translated developer documents outside the website;
+their links use those files. Other languages retain the English technical sources.
 Keep explicit HTML anchor IDs unchanged across languages.
 
 Keep image references under their original English filenames. The generator
@@ -85,6 +86,9 @@ not provide a European Portuguese translation in its official
 | Español | Explorador de archivos | carpeta | barra de tareas | métodos abreviados de teclado |
 | Português (Portugal) | Explorador de Ficheiros | pasta | barra de tarefas | atalhos de teclado |
 | Ελληνικά | Εξερεύνηση αρχείων | φάκελος | γραμμή εργασιών | συντομεύσεις πληκτρολογίου |
+| Polski | Eksplorator plików | folder | pasek zadań | skróty klawiaturowe |
+| Nederlands | Bestandenverkenner | map | taakbalk | sneltoetsen |
+| Українська | Файловий провідник | папка | панель завдань | сполучення клавіш |
 
 Style references: [Microsoft File Explorer](https://support.microsoft.com/fr-fr/windows/experience/fileexplorer/file-explorer-in-windows)
 for large commercial software, [Everything search](https://www.voidtools.com/support/everything/searching/)
@@ -99,6 +103,9 @@ Terminology references:
 - Spanish: [File Explorer](https://support.microsoft.com/es-es/windows/experience/fileexplorer/file-explorer-in-windows), [keyboard shortcuts](https://support.microsoft.com/es-es/accessibility/windows/keyboard-shortcuts-in-windows).
 - European Portuguese: [File Explorer](https://support.microsoft.com/pt-pt/windows/experience/fileexplorer/file-explorer-in-windows), [keyboard shortcuts](https://support.microsoft.com/pt-pt/accessibility/windows/keyboard-shortcuts-in-windows).
 - Greek: [File Explorer](https://support.microsoft.com/el-gr/windows/experience/fileexplorer/file-explorer-in-windows), [keyboard shortcuts](https://support.microsoft.com/el-gr/accessibility/windows/keyboard-shortcuts-in-windows).
+- Polish: [File Explorer](https://support.microsoft.com/pl-pl/windows/experience/fileexplorer/file-explorer-in-windows), [keyboard shortcuts](https://support.microsoft.com/pl-pl/accessibility/windows/keyboard-shortcuts-in-windows).
+- Dutch: [File Explorer](https://support.microsoft.com/nl-nl/windows/experience/fileexplorer/file-explorer-in-windows), [keyboard shortcuts](https://support.microsoft.com/nl-nl/accessibility/windows/keyboard-shortcuts-in-windows).
+- Ukrainian: [File Explorer](https://support.microsoft.com/uk-ua/windows/experience/fileexplorer/file-explorer-in-windows), [keyboard shortcuts](https://support.microsoft.com/uk-ua/accessibility/windows/keyboard-shortcuts-in-windows).
 - [Microsoft localization style guides](https://learn.microsoft.com/en-us/globalization/reference/microsoft-style-guides).
 - [Windows icon handlers in Portuguese](https://learn.microsoft.com/pt-pt/windows/win32/shell/how-to-create-icon-handlers).
 - [CC0 public-domain terminology in Greek](https://creativecommons.org/publicdomain/zero/1.0/deed.el).
