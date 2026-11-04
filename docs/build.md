@@ -142,8 +142,10 @@ uninstallation. Validate the affected installed paths when changing them.
 
 ## Releases
 
-The release workflow runs for a `vX.Y.Z` tag or a manual dispatch for an existing
-tag. It first requires the application regression suite to pass, then builds
+The [release workflow](../.github/workflows/release.yml) runs for a `vX.Y.Z` tag
+or a manual dispatch for an existing tag. It first reuses the [application
+regression workflow](../.github/workflows/regression.yml) and requires it to pass,
+then builds
 offline help and the Windows NSIS package from that exact tested SHA. It checks
 the executable version against the tag and publishes
 `FileSpacer-X.Y.Z-install.exe` and `FileSpacer-update.txt` to GitHub Releases.
@@ -171,8 +173,9 @@ summaries/build logs remain workflow artifacts.
 
 ## Tests
 
-Use the [regression guide](../tests/regression/README.md) for local, Hyper-V and
-GitHub execution, case selection, prerequisites and report interpretation.
+Use the [regression guide](../tests/regression/README.md) for the same application
+suite on a local Windows desktop, in Hyper-V or through GitHub Actions, including
+case selection, prerequisites and report interpretation.
 For example:
 
 ```cmd
