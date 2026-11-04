@@ -150,6 +150,12 @@ the executable version against the tag and publishes
 Ordinary branch pushes do not publish an installer. The workflow uses GitHub's
 automatic token; no custom release secret is required.
 
+After a successful release workflow, a separate WinGet workflow submits the
+installer to the community catalog. It requires the one-time `WINGET_TOKEN`
+secret; submission failures do not undo the GitHub release.
+See [WinGet distribution](winget.md) for setup,
+review, and retries without rebuilding the application.
+
 Before publication, update both version definitions in `src/resource.h`, add
 the matching `CHANGELOG.md` section, and commit the intended changes. From Git
 Bash, substitute the intended version:
