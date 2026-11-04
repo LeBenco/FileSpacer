@@ -7,7 +7,7 @@
 [![Nieuwste versie downloaden](https://img.shields.io/badge/Downloaden-nieuwste%20versie-blue)](https://github.com/LeBenco/FileSpacer/releases/latest) &emsp;
 [![Windows 10+](https://img.shields.io/badge/Windows%2010%2B-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTAgMGgxMXYxMUgwem0xMyAwaDExdjExSDEzem0tMTMgMTNoMTF2MTFIMHptMTMgMGgxMXYxMUgxM3oiLz48L3N2Zz4=)](#system--languages)
 [![Geen telemetrie](https://img.shields.io/badge/telemetrie-geen-2ea44f)](#privacy)
-[![Licentie: GPL v3](https://img.shields.io/badge/Licentie-GPLv3-blue.svg)](#license-and-credits)
+[![Licentie: GPL v3](https://img.shields.io/badge/Licentie-GPLv3-blue.svg)](#licentie-en-dankbetuigingen)
 
 FileSpacer is een bestandsbeheerder voor Windows volgens het [ruimtelijke model](https://en.wikipedia.org/wiki/Spatial_file_manager): elke map heeft één venster dat zijn positie, afmetingen en weergave-instellingen onthoudt. Dit biedt [vaste visuele herkenningspunten](https://www.csse.canterbury.ac.nz/~andy/papers/transforms.pdf), waardoor het [ruimtelijk geheugen](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/01/p153-robertson.pdf) vertrouwde mappen in één oogopslag helpt herkennen. In een navigerende bestandsbeheerder toont hetzelfde venster achtereenvolgens verschillende mappen: positie en afmetingen identificeren de huidige map niet, dus moet u naar de inhoud kijken. Door herkenningspunten per map te bewaren kan de ruimtelijke aanpak de cognitieve belasting bij het terugvinden van bestanden verminderen. Tabbladen passen niet bij het ruimtelijke model en zullen nooit worden toegevoegd.
 
@@ -21,26 +21,26 @@ FileSpacer kiest voor een lichte, overzichtelijke ervaring. Om de opeenstapeling
 
 **Documentatie:**
 
-[![Documentatie](https://img.shields.io/badge/Docs-Handleiding-blue)](docs/user-guide.md)
+[![Documentatie](https://img.shields.io/badge/Docs-Handleiding-blue)](user-guide.md)
 [![Documentatie](https://img.shields.io/badge/Docs-Wijzigingen-orange)](CHANGELOG.md)
 
-_FileSpacer is een fork van [ChromaFiler](https://github.com/vanjac/chromafiler), oorspronkelijk gemaakt door J. van't Hoog. Zie de [vermeldingen](#license-and-credits) voor details._
+_FileSpacer is een fork van [ChromaFiler](https://github.com/vanjac/chromafiler), oorspronkelijk gemaakt door J. van't Hoog. Zie de [vermeldingen](#licentie-en-dankbetuigingen) voor details._
 
 ## Functies
 
-- **Eén venster per map**, hergebruikt als de map al open is. Positie, afmetingen, weergave-instellingen en pictogramindeling worden hersteld. [Ruimtelijke navigatie](user-guide.md#window-navigation).
-- **Pictogrammen vrij plaatsen**, met opgeslagen en herstelde posities per map. [Pictogramindeling](user-guide.md#icon-layout).
-- **Vensters verplaatsen en het formaat wijzigen** vanuit het hele bestandsgebied, met behoud van selectie. Muisgebaren zijn instelbaar; standaard Alt + slepen met links en Alt + slepen met rechts. [Venstergebaren](user-guide.md#moving-and-resizing).
-- **Schakelen tussen geopende mappen** via het titelbalkmenu, bovenliggende vensters sluiten of het laatst gesloten venster opnieuw openen met Ctrl+Shift+T. [Vensternavigatie](user-guide.md#window-navigation).
-- **Een opgeslagen vensterindeling vergrendelen**, terwijl tijdelijke wijzigingen in positie, afmetingen en weergave mogelijk blijven. [Vergrendeling](user-guide.md#locking-a-saved-layout).
-- **De huidige map filteren** en recente zoekopdrachten hergebruiken. [Zoeken en geschiedenis](user-guide.md#search-and-history).
-- **Selectie behouden bij activering** door op de achtergrond te klikken. [Selectie en activering](user-guide.md#selection-and-activation).
-- **Overlap beperken** bij mappen zonder opgeslagen positie. [Vensterplaatsing](user-guide.md#window-placement).
-- **Het titelbalkmenu aanpassen** met indelings- en vensteracties en benoemde groepen geopende mappen opslaan. [Menu aanpassen](user-guide.md#customize-the-title-bar-menu) · [Mapgroepen](user-guide.md#folder-groups).
+- **Eén venster per map**, hergebruikt als de map al open is. Positie, afmetingen, weergave-instellingen en pictogramindeling worden hersteld. [Ruimtelijke navigatie](user-guide.md#navigeren-tussen-vensters).
+- **Pictogrammen vrij plaatsen**, met opgeslagen en herstelde posities per map. [Pictogramindeling](user-guide.md#pictogramindeling).
+- **Vensters verplaatsen en het formaat wijzigen** vanuit het hele bestandsgebied, met behoud van selectie. Muisgebaren zijn instelbaar; standaard Alt + slepen met links en Alt + slepen met rechts. [Venstergebaren](user-guide.md#verplaatsen-en-formaat-wijzigen).
+- **Schakelen tussen geopende mappen** via het titelbalkmenu, bovenliggende vensters sluiten of het laatst gesloten venster opnieuw openen met Ctrl+Shift+T. [Vensternavigatie](user-guide.md#navigeren-tussen-vensters).
+- **Een opgeslagen vensterindeling vergrendelen**, terwijl tijdelijke wijzigingen in positie, afmetingen en weergave mogelijk blijven. [Vergrendeling](user-guide.md#een-opgeslagen-indeling-vergrendelen).
+- **De huidige map filteren** en recente zoekopdrachten hergebruiken. [Zoeken en geschiedenis](user-guide.md#zoeken-en-geschiedenis).
+- **Selectie behouden bij activering** door op de achtergrond te klikken. [Selectie en activering](user-guide.md#selectie-en-activering).
+- **Overlap beperken** bij mappen zonder opgeslagen positie. [Vensterplaatsing](user-guide.md#vensterplaatsing).
+- **Het titelbalkmenu aanpassen** met indelings- en vensteracties en benoemde groepen geopende mappen opslaan. [Menu aanpassen](user-guide.md#het-titelbalkmenu-aanpassen) · [Mapgroepen](user-guide.md#mapgroepen).
 
 ## Integratie
 
-FileSpacer kan tijdens installatie of later in Instellingen als standaardbestandsbeheerder worden ingesteld. Bestanden openen in hun gebruikelijke Windows-toepassingen; netwerkmappen gebruiken de Windows-afhandeling. [Windows-integratie](user-guide.md#windows-integration).
+FileSpacer kan tijdens installatie of later in Instellingen als standaardbestandsbeheerder worden ingesteld. Bestanden openen in hun gebruikelijke Windows-toepassingen; netwerkmappen gebruiken de Windows-afhandeling. [Windows-integratie](user-guide.md#windows-integratie).
 
 Met **Everything** start u geavanceerde zoekopdrachten vanuit het FileSpacer-zoekveld, in de huidige map met submappen of in alle geïndexeerde bestanden. Resultaten openen in Everything. [Integratie en gebruik](user-guide.md#everything).
 
