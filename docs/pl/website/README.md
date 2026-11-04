@@ -2,7 +2,7 @@
 
 # Generowanie witryny
 
-Witryna łączy `README.md`, instrukcję, historię i informacje o składnikach. Prywatność i dane lokalne mają osobne sekcje instrukcji. Krótka polityka pozostaje w GitHub; dawne kotwice witryny prowadzą do instrukcji. Angielskie oryginały są źródłem witryny i dokumentacji repozytorium. Pełne tłumaczenia są w `website/translations/<language-region>/`. Kompilacja, testy i notatki techniczne pozostają w GitHub; linki do plików spoza witryny prowadzą do `main`. Opis Nilesoft ma wersję dla każdego języka; dokumenty techniczne są dostępne także po polsku, niderlandzku i ukraińsku.
+Witryna łączy `README.md`, instrukcję, historię i informacje o składnikach. Prywatność i dane lokalne mają osobne sekcje instrukcji. Krótka polityka pozostaje w GitHub; dawne kotwice witryny prowadzą do instrukcji. Angielskie oryginały są źródłem witryny i dokumentacji repozytorium. Dokumenty znajdują się bezpośrednio w `docs/<language>/`, a obrazy każdej wersji językowej w jej podkatalogu `images/`. Dokumenty angielskie są w `docs/en/`; angielskie README, historia zmian i informacje o składnikach w korzeniu repozytorium pozostają źródłami angielskiej witryny. Kompilacja, testy i notatki techniczne pozostają w GitHub; linki do plików spoza witryny prowadzą do `main`. Opis Nilesoft ma wersję dla każdego języka; dokumenty techniczne są dostępne także po polsku, niderlandzku i ukraińsku.
 
 Generator wykrywa katalogi języków z `locale.json`, czterema źródłami, polityką i opisem Nilesoft. Tworzy wybór języka nad nawigacją, używając własnych nazw i flag Unicode. Dołączona czcionka flag Noto Color Emoji na licencji OFL działa również w Windows bez usługi zewnętrznej.
 
