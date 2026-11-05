@@ -24,6 +24,10 @@ public:
     HRESULT currentView(REFIID iid, void **view) const;
     HRESULT navigate(IShellItem *item, bool mixFolders = false, bool isolated = false);
     bool mixedSortingPreference() const { return mixedSorting; }
+    // Re-arms the provider route for the process after an unavailable or
+    // incompatible provider disabled it; called when the mixed-sorting
+    // preference is applied, so the next navigation tries the provider again.
+    static void resetMixedProviderAvailability();
     HRESULT lockNavigation(bool locked);
     HRESULT setFilter(IFolderFilter *filter);
     HRESULT setBounds(RECT bounds);

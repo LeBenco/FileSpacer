@@ -14,12 +14,39 @@ const EXPLORER_BROWSER_OPTIONS BROWSER_OPTIONS =
     EBO_NOBORDER | EBO_NOTRAVELLOG | EBO_NOPERSISTVIEWSTATE;
 // Shared across hosts so a notification cannot match another window after HWND reuse.
 std::atomic<ULONG_PTR> nextViewGeneration{0};
-// A mismatched or unavailable provider must not keep failing later navigations.
+// A mismatched or unavailable provider must not keep failing later navigations;
+// applying the preference re-arms the route (resetMixedProviderAvailability).
 std::atomic<bool> mixedProviderDisabled{false};
+#ifdef FILESPACER_DEBUG
+// Developer notice, untranslated, once per process, when the mixed sort asked
+// for is silently replaced by the native view. It runs on its own thread so no
+// modal loop re-enters a navigation, and never in /test mode (isolated), where
+// the bench asserts that the fallback shows no dialog.
+std::atomic<bool> developerNoticeShown{false};
+DWORD WINAPI showDeveloperNotice(LPVOID text) {
+    MessageBoxW(nullptr, static_cast<const wchar_t *>(text), L"FileSpacer debug build",
+        MB_OK | MB_ICONINFORMATION | MB_SETFOREGROUND);
+    return 0;
+}
+void reportNativeFallback(bool elevated, bool isolated) {
+    debugPrintf(L"Mixed sorting requested but %s; using native view\n",
+        elevated ? L"the process is elevated" : L"the provider is disabled for this process");
+    if (isolated || developerNoticeShown.exchange(true)) return;
+    const wchar_t *text = elevated
+        ? L"Mixed file/folder sorting is enabled, but this process is elevated: Windows ignores "
+          L"per-user COM classes, so the native view is used."
+        : L"Mixed file/folder sorting is enabled, but its provider (FileSpacerFolder.dll) was "
+          L"unavailable or incompatible earlier in this process: the native view is used until "
+          L"the preference is applied again or FileSpacer restarts.";
+    const std::unique_ptr<void, decltype(&CloseHandle)> thread(
+        CreateThread(nullptr, 0, showDeveloperNotice, const_cast<wchar_t *>(text), 0, nullptr), &CloseHandle);
+}
+#endif
 // A process elevated through UAC does not load per-user COM classes
 // (https://learn.microsoft.com/windows/win32/com/the-com-elevation-moniker),
-// and the mixed-sort provider only exists through its HKCU registration:
-// such a process keeps the native view instead of failing every navigation.
+// and the mixed-sort provider is registered per user unless installed for all
+// users: such a process keeps the native view instead of failing every
+// navigation (kept as the rule even with a per-machine registration).
 bool processElevated() {
     static const bool elevated = [] {
         HANDLE rawToken = nullptr;
@@ -257,6 +284,10 @@ HRESULT ShellViewHost::navigate(IShellItem *item, bool mixFolders, bool isolated
     mixedSorting = mixFolders;
     CComPtr<IShellItem> target = item;
     bool custom = false;
+#ifdef FILESPACER_DEBUG
+    if (mixFolders && (processElevated() || mixedProviderDisabled.load()))
+        reportNativeFallback(processElevated(), isolated);
+#endif
     if (mixFolders && !processElevated() && !mixedProviderDisabled.load()) {
         SFGAOF attributes = 0;
         const SFGAOF required = SFGAO_FOLDER | SFGAO_FILESYSTEM;
@@ -301,6 +332,8 @@ HRESULT ShellViewHost::navigate(IShellItem *item, bool mixFolders, bool isolated
     }
     return current->BrowseToObject(target, SBSP_ABSOLUTE);
 }
+
+void ShellViewHost::resetMixedProviderAvailability() { mixedProviderDisabled.store(false); }
 
 HRESULT ShellViewHost::lockNavigation(bool locked) {
     CComPtr<IExplorerBrowser> current = browser;
