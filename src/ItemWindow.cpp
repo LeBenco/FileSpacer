@@ -933,6 +933,11 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
                 checkLE(DestroyIcon(iconSmall));
                 FILESPACER_MEMLEAK_FREE;
             }
+            for (HICON retired : retiredIcons) {
+                checkLE(DestroyIcon(retired));
+                FILESPACER_MEMLEAK_FREE;
+            }
+            retiredIcons.clear();
             hwnd = nullptr;
             if (windowLifetime) {
                 windowLifetime = false;
@@ -1113,13 +1118,21 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
         }
         case MSG_UPDATE_ICONS: {
             // Copy under the lock; WM_SETICON may repaint and dispatch outside it.
+            // The icon thread never destroys an icon: the ones it replaced are
+            // destroyed here, once the window and the proxy reference the current ones.
             AcquireSRWLockExclusive(&iconLock);
             const HICON bigIcon = iconLarge, smallIcon = iconSmall;
+            std::vector<HICON> retired;
+            retired.swap(retiredIcons);
             ReleaseSRWLockExclusive(&iconLock);
             SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)bigIcon);
             SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)smallIcon);
             proxyIcon.setIcon(smallIcon);
             updateTaskbar();
+            for (HICON icon : retired) {
+                checkLE(DestroyIcon(icon));
+                FILESPACER_MEMLEAK_FREE;
+            }
 
             autoSizeProxy(clientSize(hwnd).cx);
             return 0;
@@ -1138,8 +1151,9 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
         validationPending = false;
         if (!isWindowOperational()) return 0;
         CComPtr<ItemWindow> keepAlive(this);
-        if (wParam) recordFolderAccess(S_OK);
-        else resolveItem(); // Gone: the Shell confirms it, then relocates or closes.
+        // The worker's result stands: no second, synchronous check on this thread.
+        if (wParam == ERROR_SUCCESS) recordFolderAccess(S_OK);
+        else itemUnreachable(HRESULT_FROM_WIN32(static_cast<DWORD>(wParam)));
         return 0;
     }
 
@@ -2196,8 +2210,12 @@ VOID CALLBACK ItemWindow::validateItemPath(PTP_CALLBACK_INSTANCE, void *const co
     // Pool thread: only the copied path is touched, and the posted result is
     // discarded by its receiver when the asking window or item has changed.
     std::unique_ptr<ItemValidation> validation(static_cast<ItemValidation *>(context));
-    const bool exists = GetFileAttributesW(validation->path.c_str()) != INVALID_FILE_ATTRIBUTES;
-    PostMessageW(validation->window, itemValidatedMessage, exists ? 1 : 0,
+    DWORD error = ERROR_SUCCESS; // Else the Windows error the receiver records as an access failure.
+    if (GetFileAttributesW(validation->path.c_str()) == INVALID_FILE_ATTRIBUTES) {
+        error = GetLastError();
+        if (error == ERROR_SUCCESS) error = ERROR_FILE_NOT_FOUND;
+    }
+    PostMessageW(validation->window, itemValidatedMessage, error,
         static_cast<LPARAM>(validation->token));
 }
 
@@ -2211,6 +2229,13 @@ bool ItemWindow::resolveItem() {
         recordFolderAccess(validation);
         return true;
     }
+    return itemUnreachable(validation);
+}
+
+// The item failed validation with this result: a link is followed to a moved
+// target; otherwise the failure is recorded and the window closes.
+bool ItemWindow::itemUnreachable(HRESULT validation) {
+    if (closing || deleted) return true;
     if (link) {
         checkHR(link->Resolve(nullptr, SLR_NO_UI));
 
@@ -2958,19 +2983,15 @@ void ItemWindow::IconThread::run() {
     if (!isStopped()) {
         AcquireSRWLockExclusive(&callbackWindow->iconLock);
         callbackWindow->taskbarIconResource = std::move(relaunchIcon);
-        if (callbackWindow->iconLarge) {
-            checkLE(DestroyIcon(callbackWindow->iconLarge));
-            FILESPACER_MEMLEAK_FREE;
-        }
+        // The window thread may be setting the previous icons from a copy taken
+        // under the lock: it destroys them with MSG_UPDATE_ICONS, not this thread.
+        if (callbackWindow->iconLarge) callbackWindow->retiredIcons.push_back(callbackWindow->iconLarge);
         callbackWindow->iconLarge = fileInfo.hIcon;
         if (fileInfo.hIcon) {
             FILESPACER_MEMLEAK_ALLOC;
         }
     
-        if (callbackWindow->iconSmall) {
-            checkLE(DestroyIcon(callbackWindow->iconSmall));
-            FILESPACER_MEMLEAK_FREE;
-        }
+        if (callbackWindow->iconSmall) callbackWindow->retiredIcons.push_back(callbackWindow->iconSmall);
         callbackWindow->iconSmall = hIconSmall;
         if (hIconSmall) {
             FILESPACER_MEMLEAK_ALLOC;
