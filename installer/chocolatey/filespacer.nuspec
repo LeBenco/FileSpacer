@@ -5,7 +5,7 @@
     <version>@VERSION@</version>
     <title>FileSpacer</title>
     <authors>Benco</authors>
-    <projectUrl>https://github.com/LeBenco/FileSpacer</projectUrl>
+    <projectUrl>https://lebenco.github.io/FileSpacer/</projectUrl>
     <packageSourceUrl>https://github.com/LeBenco/FileSpacer/tree/main/installer/chocolatey</packageSourceUrl>
     <projectSourceUrl>https://github.com/LeBenco/FileSpacer</projectSourceUrl>
     <docsUrl>https://lebenco.github.io/FileSpacer/</docsUrl>
