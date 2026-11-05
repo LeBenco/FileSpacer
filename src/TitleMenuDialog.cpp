@@ -2,7 +2,6 @@
 #include <common.h>
 #include "TitleMenu.h"
 #include "Settings.h"
-#include "SettingsDialog.h"
 #include "UIStrings.h"
 #include "dialog.h"
 #include <windowsx.h>
@@ -143,7 +142,7 @@ struct App {
     unsigned drops = 0;
     bool blockedTipActive = false, dragging = false, closePending = false;
     bool frameAlpha = false, frameDecorated = false, frameSimplified = false, nilesoftModified = false;
-    bool menuActive = false, measuringStack = false, moveRejected = false;
+    bool menuActive = false, measuringStack = false, moveRejected = false, rendering = false;
     ~App() {
         if (frame) DeleteObject(frame);
         if (!directory.empty()) {
@@ -260,7 +259,7 @@ class Target : public IDropTarget {
     DWORD allowed = DROPEFFECT_NONE;
     ~Target() = default;
     DWORD desiredEffect() const {
-        if (!valid || (removing && incoming.sourceIndex < 0)) return DROPEFFECT_NONE;
+        if (!valid || app.rendering || (removing && incoming.sourceIndex < 0)) return DROPEFFECT_NONE;
         if (incoming.sourceIndex < 0 && incoming.command != SEPARATOR
                 && std::find(app.items.begin(), app.items.end(), incoming.command) != app.items.end()) return DROPEFFECT_NONE;
         return (removing || incoming.sourceIndex >= 0 ? DROPEFFECT_MOVE : DROPEFFECT_COPY) & allowed;
@@ -326,15 +325,21 @@ public:
         ++app.drops; setInsertion(app, -1);
 
         if (!app.nilesoftPath.empty() && app.pendingMove >= 0) {
-            refreshPreview(app);
-            if (app.moveRejected) *effect = DROPEFFECT_NONE;
+            // The rendering dispatches messages under the DoDragDrop loop. The
+            // editor outlives the dialog; this target may be revoked meanwhile.
+            AddRef();
+            App &editor = app;
+            refreshPreview(editor);
+            const bool rejected = editor.moveRejected;
+            Release();
+            if (rejected) *effect = DROPEFFECT_NONE;
         } else PostMessageW(app.window, RENDER_FRAME, 0, 0);
         return S_OK;
     }
 };
 
 void startDrag(App &app, int command, int sourceIndex) {
-    if (app.dragging || command < 0 || command >= LABEL_COUNT) return;
+    if (app.dragging || app.rendering || command < 0 || command >= LABEL_COUNT) return;
     trackBlockedTip(app, false);
     app.dragging = true;
     const unsigned drops = app.drops;
@@ -360,31 +365,43 @@ void startDrag(App &app, int command, int sourceIndex) {
     }
     if (app.closePending) PostMessageW(app.window, WM_CLOSE, 0, 0);
 }
+LSTATUS readRegistryString(HKEY key, const wchar_t *subkey, const wchar_t *value, std::wstring &text) {
+    DWORD bytes = 0;
+    LSTATUS status = RegGetValueW(key, subkey, value, RRF_RT_REG_SZ, nullptr, nullptr, &bytes);
+    auto read = [&]() {
+        text.assign(std::max(bytes, static_cast<DWORD>(sizeof(wchar_t))) / sizeof(wchar_t), L'\0');
+        bytes = static_cast<DWORD>(text.size() * sizeof(wchar_t));
+        return RegGetValueW(key, subkey, value, RRF_RT_REG_SZ, nullptr, &text[0], &bytes);
+    };
+    if (status == ERROR_SUCCESS) status = read();
+    // An expanded REG_EXPAND_SZ value may exceed the size reported first.
+    if (status == ERROR_MORE_DATA) status = read();
+    if (status != ERROR_SUCCESS) { text.clear(); return status; }
+    text.resize(wcslen(text.c_str()));
+    return ERROR_SUCCESS;
+}
+
 std::wstring installedNilesoft() {
 #ifdef FILESPACER_DEBUG
     if (!titleMenuExtensionEnabled()) return L"";
 #endif
-    wchar_t clsid[128] = {}, path[32768] = {}; DWORD bytes = sizeof(clsid);
-    if (RegGetValueW(HKEY_CLASSES_ROOT, L"Directory\\shellex\\ContextMenuHandlers\\ @nilesoft.shell",
-            nullptr, RRF_RT_REG_SZ, nullptr, clsid, &bytes) != ERROR_SUCCESS) return L"";
-    const std::wstring key = std::wstring(L"CLSID\\") + clsid + L"\\InprocServer32";
-    bytes = sizeof(path);
-    if (RegGetValueW(HKEY_CLASSES_ROOT, key.c_str(), nullptr, RRF_RT_REG_SZ,
-            nullptr, path, &bytes) != ERROR_SUCCESS) return L"";
-    return GetFileAttributesW(path) != INVALID_FILE_ATTRIBUTES ? path : L"";
+    std::wstring path;
+    if (FAILED(findTitleMenuExtension(nullptr, &path))) return L"";
+    return GetFileAttributesW(path.c_str()) != INVALID_FILE_ATTRIBUTES ? path : L"";
 }
 
 std::wstring nilesoftSettingsDirectory(const std::wstring &module) {
     // NS selects an existing HKCU config file before falling back to shell.nss
     // beside its module. Follow that selection when opening its settings.
-    std::wstring file = module;
-    wchar_t config[32768] = {}, full[32768] = {}; DWORD bytes = sizeof(config);
-    if (RegGetValueW(HKEY_CURRENT_USER, L"Software\\Nilesoft\\Shell", L"config",
-            RRF_RT_REG_SZ, nullptr, config, &bytes) == ERROR_SUCCESS && config[0]) {
-        const DWORD attributes = GetFileAttributesW(config);
+    std::wstring file = module, config;
+    if (readRegistryString(HKEY_CURRENT_USER, L"Software\\Nilesoft\\Shell", L"config", config) == ERROR_SUCCESS
+            && !config.empty()) {
+        const DWORD attributes = GetFileAttributesW(config.c_str());
         if (attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY)) {
-            const DWORD length = GetFullPathNameW(config, _countof(full), full, nullptr);
-            if (length && length < _countof(full)) file.assign(full, length);
+            std::wstring full(GetFullPathNameW(config.c_str(), 0, nullptr, nullptr), L'\0');
+            const DWORD length = full.empty() ? 0
+                : GetFullPathNameW(config.c_str(), static_cast<DWORD>(full.size()), &full[0], nullptr);
+            if (length && length < full.size()) file.assign(full, 0, length);
         }
     }
     const size_t separator = file.find_last_of(L"\\/");
@@ -408,6 +425,42 @@ HBITMAP loadFrame(const std::wstring &path, LONG width, LONG height, void **pixe
     const size_t bytes = static_cast<size_t>(width) * static_cast<size_t>(height) * 4;
     if (frame && fread(*pixels, 1, bytes, file) != bytes) { DeleteObject(frame); frame = nullptr; }
     fclose(file); return frame;
+}
+
+// Waits for the private renderer while the dialog keeps dispatching its
+// messages. Commands that would start another rendering or validate the draft
+// are ignored meanwhile (app.rendering); Cancel and closing abort the wait.
+// The deadline is a watchdog only: it can fail the preview, never pass it.
+bool waitForRenderer(App &app, HANDLE process) {
+    const ULONGLONG deadline = GetTickCount64() + 8000;
+    bool finished = false;
+    app.rendering = true;
+    for (;;) {
+        const ULONGLONG now = GetTickCount64();
+        if (now >= deadline) break;
+        const DWORD wait = MsgWaitForMultipleObjectsEx(1, &process, static_cast<DWORD>(deadline - now),
+            QS_ALLINPUT, MWMO_INPUTAVAILABLE);
+        if (wait == WAIT_OBJECT_0) { finished = true; break; }
+        if (wait != WAIT_OBJECT_0 + 1) break;
+        MSG message = {};
+        bool alive = IsWindow(app.window) != FALSE;
+        while (alive && !app.closePending && PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE)) {
+            if (message.message == WM_QUIT) { PostQuitMessage(static_cast<int>(message.wParam)); alive = false; break; }
+            if (!IsDialogMessageW(app.window, &message)) {
+                TranslateMessage(&message); DispatchMessageW(&message);
+            }
+            alive = IsWindow(app.window) != FALSE;
+        }
+        // A destroyed dialog leaves its state alone; a pending close ends the wait.
+        if (!alive || app.closePending) break;
+    }
+    app.rendering = false;
+    if (!finished) {
+        // A failed private experiment must not leave a hidden menu process running.
+        TerminateProcess(process, 99);
+        WaitForSingleObject(process, 2000);
+    }
+    return finished;
 }
 
 void refreshPreview(App &app) {
@@ -459,7 +512,8 @@ void refreshPreview(App &app) {
     if (!app.desktop) { app.renderError = 32;  return; }
     // NS evaluates the real executable name, separately from this editor.
     wchar_t modulePath[32768] = {};
-    GetModuleFileNameW(nullptr, modulePath, _countof(modulePath));
+    const DWORD moduleLength = GetModuleFileNameW(nullptr, modulePath, _countof(modulePath));
+    if (!checkLE(moduleLength && moduleLength < _countof(modulePath))) { app.renderError = 33; return; }
     const std::wstring executable = std::wstring(modulePath);
     std::wstring command = L"\"" + executable + L"\" /render-title-menu \"" + directory + L"\" \"" + app.nilesoftPath + L"\"";
     RECT position = {}; GetWindowRect(app.window, &position);
@@ -473,11 +527,11 @@ void refreshPreview(App &app) {
     }
     std::unique_ptr<void, decltype(&CloseHandle)> processHandle(process.hProcess, CloseHandle);
     std::unique_ptr<void, decltype(&CloseHandle)> threadHandle(process.hThread, CloseHandle);
-    if (WaitForSingleObject(processHandle.get(), 8000) != WAIT_OBJECT_0) {
-        // A failed private experiment must not leave a hidden menu process running.
-        TerminateProcess(processHandle.get(), 99);
-        WaitForSingleObject(processHandle.get(), 2000);
-        app.renderError = 34;  return;
+    if (!waitForRenderer(app, processHandle.get())) {
+        app.renderError = 34;
+        // A close requested during a drag is posted by startDrag once it ends.
+        if (app.closePending && !app.dragging) PostMessageW(app.window, WM_CLOSE, 0, 0);
+        return;
     }
     DWORD exitCode = 0;
     if (!GetExitCodeProcess(processHandle.get(), &exitCode) || exitCode) {
@@ -793,6 +847,7 @@ LRESULT CALLBACK previewProc(HWND window, UINT message, WPARAM wParam, LPARAM lP
     }
     if (message == WM_LBUTTONDOWN || message == WM_LBUTTONDBLCLK) {
         SetFocus(window);
+        if (app->rendering) return 0;
         app->pressedPoint = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)}; app->pressedRow = -1;
         POINT itemPoint = {app->pressedPoint.x - PREVIEW_X, app->pressedPoint.y - PREVIEW_Y + app->scrollY};
         for (size_t i = 0; i < app->rows.size(); ++i)
@@ -822,6 +877,7 @@ LRESULT CALLBACK previewProc(HWND window, UINT message, WPARAM wParam, LPARAM lP
 LRESULT CALLBACK catalogInput(HWND window, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR data) {
     App &app = *reinterpret_cast<App *>(data);
     if (message == WM_LBUTTONDOWN || message == WM_LBUTTONDBLCLK) {
+        if (app.rendering) return 0;
         app.catalogPoint = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
         LVHITTESTINFO hit = {}; hit.pt = app.catalogPoint;
         const int row = ListView_SubItemHitTest(window, &hit);
@@ -896,30 +952,35 @@ INT_PTR CALLBACK dialogProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         if (FAILED(RegisterDragDrop(app->preview, menuTarget)) || FAILED(RegisterDragDrop(window, removeTarget))) {
             EndDialog(window, IDCANCEL); return TRUE;
         }
-        refreshCatalog(*app); refreshPreview(*app);
-        PostMessageW(window, RENDER_FRAME, 1, 0);
+        // The first rendering runs once the dialog is shown and its owner disabled,
+        // since the wait dispatches messages.
+        refreshCatalog(*app);
+        PostMessageW(window, RENDER_FRAME, 0, 0);
         return TRUE;
     }
     if (!app) return FALSE;
     switch (message) {
         case RENDER_FRAME:
+            if (app->rendering) return TRUE;
             if (!wParam) refreshPreview(*app);
             EnableWindow(GetDlgItem(window, IDOK), !app->renderError);
-            if (app->renderError) MessageBoxW(window, getString(IDS_TITLE_MENU_RENDER_ERROR),
+            if (app->renderError && !app->closePending) MessageBoxW(window, getString(IDS_TITLE_MENU_RENDER_ERROR),
                 getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
             return TRUE;
         case WM_COMMAND:
             if (LOWORD(wParam) == IDC_TITLE_MENU_DEFAULT) {
+                if (app->rendering) return TRUE;
                 app->items = defaultTitleMenu(); app->nsForcedCommands.clear(); app->pendingMove = -1;
                 refreshCatalog(*app); PostMessageW(window, RENDER_FRAME, 0, 0); return TRUE;
             }
             if (LOWORD(wParam) == IDOK) {
-                if (app->dragging || app->renderError) return TRUE;
+                if (app->dragging || app->rendering || app->renderError) return TRUE;
                 if (settings::setTitleMenu(app->items) != ERROR_SUCCESS) {
                     MessageBoxW(window, getString(IDS_TITLE_MENU_SAVE_ERROR), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
                     return TRUE;
                 }
-                notifyWindowSettingsChanged(); EndDialog(window, IDOK); return TRUE;
+                // Windows reread the composition when opening the menu: no broadcast.
+                EndDialog(window, IDOK); return TRUE;
             }
             if (LOWORD(wParam) == IDCANCEL) { SendMessageW(window, WM_CLOSE, 0, 0); return TRUE; }
             break;
@@ -950,7 +1011,7 @@ INT_PTR CALLBACK dialogProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
             EndPaint(window, &paint); return TRUE;
         }
         case WM_CLOSE:
-            if (app->dragging) app->closePending = true;
+            if (app->dragging || app->rendering) app->closePending = true;
             else EndDialog(window, IDCANCEL);
             return TRUE;
         case WM_DESTROY:
@@ -974,17 +1035,30 @@ bool titleMenuExtensionEnabled() {
     return true;
 }
 
+HRESULT findTitleMenuExtension(CLSID *clsid, std::wstring *module) {
+    std::wstring text;
+    LSTATUS status = readRegistryString(HKEY_CLASSES_ROOT,
+        L"Directory\\shellex\\ContextMenuHandlers\\ @nilesoft.shell", nullptr, text);
+    if (status != ERROR_SUCCESS) return HRESULT_FROM_WIN32(status);
+    CLSID parsed = {};
+    const HRESULT result = CLSIDFromString(text.c_str(), &parsed);
+    if (FAILED(result)) return result;
+    if (module) {
+        status = readRegistryString(HKEY_CLASSES_ROOT, (L"CLSID\\" + text + L"\\InprocServer32").c_str(),
+            nullptr, *module);
+        if (status != ERROR_SUCCESS) return HRESULT_FROM_WIN32(status);
+    }
+    if (clsid) *clsid = parsed;
+    return S_OK;
+}
+
 HRESULT activateTitleMenuExtension(IClassFactory **factory) {
     if (!factory) return E_POINTER;
     *factory = nullptr;
     if (!titleMenuExtensionEnabled()) return S_FALSE;
-    wchar_t text[128] = {}; DWORD bytes = sizeof(text); CLSID clsid = {};
-    const LSTATUS status = RegGetValueW(HKEY_CLASSES_ROOT,
-        L"Directory\\shellex\\ContextMenuHandlers\\ @nilesoft.shell", nullptr,
-        RRF_RT_REG_SZ, nullptr, text, &bytes);
-    if (status != ERROR_SUCCESS) return HRESULT_FROM_WIN32(status);
-    const HRESULT parsed = CLSIDFromString(text, &clsid);
-    if (FAILED(parsed)) return parsed;
+    CLSID clsid = {};
+    const HRESULT found = findTitleMenuExtension(&clsid, nullptr);
+    if (FAILED(found)) return found;
     return CoGetClassObject(clsid, CLSCTX_INPROC_SERVER, nullptr, IID_IClassFactory,
         reinterpret_cast<void **>(factory));
 }
@@ -992,11 +1066,19 @@ HRESULT activateTitleMenuExtension(IClassFactory **factory) {
 void openTitleMenuDialog(HWND owner) {
     App app;
     GUID id = {}; wchar_t name[40] = {}, path[MAX_PATH] = {};
-    const DWORD length = GetTempPathW(_countof(path), path);
-    if (FAILED(CoCreateGuid(&id)) || !StringFromGUID2(id, name, _countof(name))
-            || !length || length >= _countof(path)) return;
-    app.directory = std::wstring(path) + L"FileSpacerMenu-" + name;
-    if (!CreateDirectoryW(app.directory.c_str(), nullptr)) return;
+    const DWORD length = checkLE(GetTempPathW(_countof(path), path));
+    bool ready = length && length < _countof(path) && checkHR(CoCreateGuid(&id))
+        && StringFromGUID2(id, name, _countof(name));
+    if (ready) {
+        app.directory = std::wstring(path) + L"FileSpacerMenu-" + name;
+        ready = checkLE(CreateDirectoryW(app.directory.c_str(), nullptr)) != FALSE;
+        if (!ready) app.directory.clear(); // Nothing was created to remove.
+    }
+    if (!ready) {
+        MessageBoxW(owner, getString(IDS_TITLE_MENU_RENDER_ERROR), getString(IDS_ERROR_CAPTION),
+            MB_OK | MB_ICONERROR);
+        return;
+    }
     DialogBoxParamW(GetModuleHandleW(nullptr), MAKEINTRESOURCEW(IDD_TITLE_MENU), owner,
         dialogProc, reinterpret_cast<LPARAM>(&app));
 }
