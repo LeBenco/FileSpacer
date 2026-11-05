@@ -155,13 +155,14 @@ automatic token; no custom release secret is required.
 An exact successful result for unchanged application/test inputs may be reused
 without rerunning the suite; see the [regression result cache](tests/regression/README.md#run-on-github).
 
-After a successful release workflow, a separate WinGet workflow submits the
+Distribution is opt-in: by default, a release is published only on GitHub.
+When selected, a separate WinGet workflow submits the
 installer to the community catalog. It requires the one-time `WINGET_TOKEN`
 secret; submission failures do not undo the GitHub release.
 See [WinGet distribution](winget.md) for setup,
 review, and retries without rebuilding the application.
 
-Chocolatey distribution also runs independently after a successful release. It
+When selected, Chocolatey distribution also runs independently after a successful release. It
 uses the `CHOCO_API_KEY` secret, builds and smoke-tests the `filespacer` package,
 then submits it for community moderation. See [Chocolatey distribution](chocolatey.md)
 for setup, validation, and manual retries.
@@ -172,12 +173,41 @@ Bash, substitute the intended version:
 
 ```bash
 bash release.sh X.Y.Z
+bash release.sh X.Y.Z --distribute winget
+bash release.sh X.Y.Z --distribute chocolatey
+bash release.sh X.Y.Z --distribute winget --distribute chocolatey
+```
+
+The first command selects no distribution; `--distribute none` makes this explicit.
+Repeat `--distribute` to select several channels. `none` cannot be combined with
+a channel; repeated channels are deduplicated. The script records the explicit
+list in the tag annotation as `FileSpacer-Distribution: winget,chocolatey`
+(or `none`), so a release retry retains the selection. Tags without this field
+also default to no automatic distribution. If tagging with Git directly, use:
+
+```bash
+git tag -a vX.Y.Z -m "FileSpacer X.Y.Z" -m "FileSpacer-Distribution: winget,chocolatey"
+git push origin vX.Y.Z
 ```
 
 The script requires a clean tree, checks the remote branch/tag, previews the
-changelog and asks for confirmation before pushing `main` and the annotated
+changelog and selected channels, and asks for confirmation before pushing `main` and the annotated
 tag. Check the workflow outcome and both release assets afterward. Failure
 summaries/build logs remain workflow artifacts.
+
+An existing GitHub release can be distributed later: run **Submit FileSpacer to
+WinGet** and/or **Submit FileSpacer to Chocolatey**, selecting `main` and its
+published tag. A manual dispatch explicitly selects that channel regardless of
+the original tag preference, and reuses the published installer and SHA-256.
+From a client with GitHub CLI installed:
+
+```bash
+gh workflow run winget.yml --ref main -f tag=vX.Y.Z
+gh workflow run chocolatey.yml --ref main -f tag=vX.Y.Z
+```
+
+Do not rerun the release-generation workflow merely to submit to a catalog:
+it rebuilds and can replace release assets, invalidating existing catalog checksums.
 
 ## Tests
 
