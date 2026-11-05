@@ -158,7 +158,11 @@ protected:
         MSG_ENUM_DONE = WM_APP + 47,
         MSG_VIEW_MENU_PREVIEW = WM_APP + 48,
         MSG_VIEW_CHANGED = WM_APP + 50,
-        MSG_FINISH_VIEW_INITIALIZATION = WM_APP + 51
+        MSG_FINISH_VIEW_INITIALIZATION = WM_APP + 51,
+        // WPARAM: storageWaitSerial. The folder-state mutex another process held was released.
+        MSG_STORAGE_AVAILABLE = WM_APP + 52,
+        // Deferred synchronizeViewProvider(), posted when a guard that refused it clears.
+        MSG_SYNCHRONIZE_VIEW_PROVIDER = WM_APP + 53
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
 
@@ -283,6 +287,27 @@ private:
     HRESULT loadIconPositions(bool pruneMissing = true);
     void scheduleStateSave(bool icons = false);
     void synchronizeViewProvider();
+    bool providerSyncPending = false; // A refused synchronizeViewProvider() to replay once its guard clears.
+
+    // Unavailable storage of a provisional window: wait for the named mutex
+    // another process holds (a signalable object) instead of polling it.
+    // Learn: RegisterWaitForSingleObject does not support a mutex, so a thread
+    // of our own waits on it, releases it at once and posts MSG_STORAGE_AVAILABLE.
+    class StorageWaitThread : public StoppableThread {
+    public:
+        StorageWaitThread(HWND ownerWindow, HANDLE mutexHandle, ULONG_PTR waitSerial);
+        ~StorageWaitThread() override;
+    private:
+        void run() override;
+        HWND owner;
+        HANDLE mutex; // Duplicated handle owned by this object; the store's own may close.
+        ULONG_PTR serial;
+    };
+    CComPtr<StorageWaitThread> storageWait;
+    ULONG_PTR storageWaitSerial = 0;
+    unsigned storageRetryDelay = 0; // Growing, bounded delay for SQLITE_BUSY alone (no Windows event).
+    void scheduleStorageRetry();
+    void cancelStorageWait();
     bool viewReady = false;
     bool enumerationComplete = false;
     bool restoringState = false;
