@@ -10,7 +10,11 @@ if(!$executable) {
     $executable=[IO.File]::ReadAllText($detection,[Text.Encoding]::Unicode)
 }
 function Expect-LaunchError([IntPtr]$Window,[string]$Path) {
+    # Apply only accepts an existing executable path; the stand-in is removed
+    # afterwards so the launch itself fails on the stored path.
     Set-SearchOptions $Window $true 5 $Path
+    Remove-Item -LiteralPath $Path
+    Assert-Ui ([string](Get-UiPreference 'EverythingPath') -ceq $Path) 'The stand-in Everything path was not stored.'
     Submit-Search $Window 'keep' @('keep.txt')
     Select-SearchMenu $Window 0
     $ownerId=[uint32]0;[void][FileSpacerRegression.Native]::GetWindowThreadProcessId($Window,[ref]$ownerId)
@@ -59,7 +63,11 @@ try {
     [IO.File]::WriteAllText((Join-Path $sub 'subkeep.txt'),'fixture')
     [IO.File]::WriteAllText((Join-Path $script:UiRoot 'outside-keep.txt'),'fixture')
     $window=Open-UiFolder $folder 3
-    Expect-LaunchError $window (Join-Path $script:UiRoot 'absent\Everything.exe')
+    $absent=Join-Path $script:UiRoot 'absent\Everything.exe'
+    Expect-EverythingPathRefused $window $absent
+    [void](New-Item -ItemType Directory -Path (Split-Path $absent -Parent))
+    [IO.File]::WriteAllText($absent,'fixture')
+    Expect-LaunchError $window $absent
     [void](Show-UiSettings $window);$page=Set-UiPage 3
     [void][FileSpacerRegression.Native]::Message([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_EVERYTHING_DETECT')),0xf5,0,0)
     $detected=[FileSpacerRegression.Native]::Text([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_EVERYTHING_PATH')))
@@ -114,7 +122,7 @@ try {
     }
     $installedHashAfter=if(Test-Path -LiteralPath $installedConfig){(Get-FileHash -LiteralPath $installedConfig -Algorithm SHA256).Hash}else{''}
     Assert-Ui ($installedHashAfter -ceq $installedHash) 'Installed Everything bootstrap settings changed during the isolated test.'
-    Write-Host 'PASS: real Everything 1.4, installed automatic detection, isolated executable/bootstrap, manual Unicode path, both scopes, exact visible queries, quote/metacharacter transfer, unchanged installed settings, success reset and explicit failure preserving local search.'
+    Write-Host 'PASS: real Everything 1.4, absent path refused when applying, installed automatic detection, isolated executable/bootstrap, manual Unicode path, both scopes, exact visible queries, quote/metacharacter transfer, unchanged installed settings, success reset and explicit failure preserving local search.'
 } catch { $testFailure=$_; throw }
 finally {
     try {

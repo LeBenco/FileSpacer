@@ -15,6 +15,34 @@ function Set-SearchOptions([IntPtr]$Window,[bool]$Everything,[int]$Limit,[string
     Press-UiSettings 3
     Wait-Ui { (Get-UiPreference 'SearchHistoryLimit') -eq $Limit -and (Get-UiPreference 'EverythingEnabled') -eq [int]$Everything } 'search preferences applied'
 }
+# Apply refuses a typed Everything path that is relative, not an .exe or names no
+# file: an explicit error naming the path, the sheet left open with the focus on
+# the field, and the stored preference unchanged.
+function Expect-EverythingPathRefused([IntPtr]$Window,[string]$Path) {
+    $before=[string](Get-UiPreference 'EverythingPath')
+    $sheet=Show-UiSettings $Window; $page=Set-UiPage 3
+    $edit=[FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_EVERYTHING_PATH'))
+    Assert-Ui ($edit -ne [IntPtr]::Zero) 'Everything path field is missing from Integration settings.'
+    [FileSpacerRegression.Native]::SetText($edit,$Path)
+    Press-UiSettings 4
+    $ownerId=[uint32]0;[void][FileSpacerRegression.Native]::GetWindowThreadProcessId($Window,[ref]$ownerId)
+    $found=@{Dialog=[IntPtr]::Zero}
+    Wait-Ui {
+        $dialogs=@([FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,$ownerId) | Where-Object { $_ -ne $sheet })
+        if ($dialogs.Count -ne 1) { return $false };$found.Dialog=$dialogs[0];return $true
+    } 'Everything path refusal dialog'
+    $text=(@([FileSpacerRegression.Native]::Children($found.Dialog,'Static') | ForEach-Object { [FileSpacerRegression.Native]::Text($_) }) -join ' ')
+    Write-Host ('DIAG: path refusal dialog text=['+$text+'] refused path=['+$Path+']')
+    Assert-Ui ($text.Contains('Everything') -and $text.Contains($Path)) 'Path refusal is not explicit.'
+    $ok=Get-UiControl $found.Dialog 'Button'
+    [void][FileSpacerRegression.Native]::PostMessage($ok,0xf5,[IntPtr]::Zero,[IntPtr]::Zero)
+    Wait-Ui { ![FileSpacerRegression.Native]::IsWindow($found.Dialog) } 'path refusal dismissed'
+    Assert-Ui ([FileSpacerRegression.Native]::IsWindow($sheet)) 'The refused Apply closed the preferences.'
+    Wait-Ui { [FileSpacerRegression.Native]::FocusedWindowInOwningThread($sheet) -eq $edit } 'focus returned to the Everything path field'
+    $stored=[string](Get-UiPreference 'EverythingPath')
+    Assert-Ui ($stored -ceq $before) ('A refused Everything path was stored: ['+$stored+']')
+    Press-UiSettings 5
+}
 function Show-SearchMenu([IntPtr]$Window) {
     Activate-Ui $Window
     [FileSpacerRegression.Native]::Keys($Window,0x46,$true,$false) # Ctrl+F
