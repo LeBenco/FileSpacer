@@ -1,8 +1,9 @@
 name: Publish FileSpacer website
 
 on:
-  # Branch pushes and explicit dispatches publish the live site. After a release,
-  # the release-links workflow dispatches a refresh following its README commit.
+  workflow_run:
+    workflows: [Publish FileSpacer]
+    types: [completed]
   push:
     branches: [main]
     paths:
@@ -38,12 +39,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  update-links:
+    if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: true
+      - name: Test installer link updates
+        run: python3 .github/scripts/update-release-links.test.py
+      - name: Update links to the latest published installer
+        run: |
+          mkdir -p build
+          gh api "repos/$GH_REPO/releases/latest" > build/latest-release.json
+          python3 .github/scripts/update-release-links.py build/latest-release.json
+      - name: Commit and push updated links
+        run: |
+          tag=$(jq -r .tag_name build/latest-release.json)
+          git config user.name Benco
+          git config user.email 76206340+LeBenco@users.noreply.github.com
+          git add -- README.md docs/*/README.md
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(readme): link the $tag installer"
+          fi
+          git add -- docs/*/source-state.json
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(translations): record the updated installer link reference"
+          fi
+          git push origin "HEAD:$DEFAULT_BRANCH"
+
   build:
+    needs: update-links
+    if: always() && !cancelled() && (needs.update-links.result == 'success' || needs.update-links.result == 'skipped') && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # Read main after the link update; PRs still build their merge ref.
+          ref: ${{ github.event_name == 'workflow_run' && github.event.repository.default_branch || github.ref }}
           persist-credentials: false
       - uses: ./.github/actions/build-docs
         with:
