@@ -18,14 +18,40 @@ keeps per-folder persistence under FileSpacer's control.
 | `ShellViewHost` | Browser lifetime, navigation, view access and public event observation. |
 | `ShellViewSettings` | Capture/apply mode, icon size, flags, columns, sorting and grouping. |
 | `ShellViewSelection` | Selection, focused item and one-shot reopen/scroll snapshot. |
-| `ShellViewIcons` | Native item identities and free icon positions. |
+| `ShellViewIcons` | Native item identities, free icon positions and the batch redraw guard. |
 | `ShellViewFilter` | Name filtering through `IFolderFilter`. |
 | `FolderStateStore` | Independently present state parts, transactions, locking and retention. |
 
-View operations use public COM interfaces rather than discovering or
-subclassing Shell child controls. The selected-label background adaptation is
-a narrow exception described below. Tests can inspect controls to observe a
-gesture; that instrumentation is not an application dependency.
+View operations use public COM interfaces. Exactly two narrow exceptions touch
+Shell-owned windows; both are optional implementation dependencies that fall
+back to native behavior when a prerequisite is missing:
+
+- Selected-label background (`ShellViewLabels.h`, described below): subclasses
+  only the public view window returned by `IShellView::GetWindow`, reads
+  `NM_CUSTOMDRAW` notifications and documented ListView state. It discovers no
+  child control and sends nothing to one.
+- Icon redraw guard (`IconRedrawGuard` in `ShellViewIcons.cpp`): around one
+  `SelectAndPositionItems` batch of saved free positions, it withholds the
+  Shell's internal `WM_SETREDRAW(TRUE)` resumes so that
+  `IFolderView2::SetRedraw(FALSE)` stays effective for the whole batch.
+  Discovery is limited to a single `WC_LISTVIEW` child of the
+  `IShellView::GetWindow` window, on the same thread and in the same process.
+  The view and the control must be visible, redraw must not already be
+  disabled (`SysSetRedraw` property) and no earlier guard may be installed;
+  otherwise the batch runs under `SetRedraw` alone. The guard never changes
+  the control's state: `SetRedraw(FALSE)` removes `WS_VISIBLE` (the documented
+  `WM_SETREDRAW` effect), `SetRedraw(TRUE)` restores it, and only then does the
+  guard request the withheld repaint on the public view window
+  (`RedrawWindow` with `RDW_ALLCHILDREN`, as the `WM_SETREDRAW` contract
+  prescribes). If `SetRedraw(TRUE)` fails, the subclass is removed and nothing
+  is sent to the control. Measured reason: restoring 5,000 positions took
+  about 3.7 s with the guard against about 162 s under the public interface
+  alone, whose suspension the Shell resumed inside the batch. Group 18 covers
+  this restoration.
+
+Do not generalize either exception to other view operations, which remain COM
+calls. Tests can inspect controls to observe a gesture; that instrumentation is
+not an application dependency.
 
 ## Readiness, restoration and lifetime
 
@@ -61,8 +87,11 @@ the selection of an already-open parent.
 ## Mixed file/folder sorting
 
 When mixed sorting is enabled for a filesystem folder, `MixedFolder` supplies a
-Shell junction rooted in FileSpacer's local data, with a per-user COM
-registration. `FileSpacerFolder.dll` implements `IShellFolder2` and
+Shell junction rooted in FileSpacer's local data, with a COM registration
+written by the installer through `DllRegisterServer` (HKLM for all users, HKCU
+per user) or, once per process, by the application in HKCU when the effective
+registration names neither the DLL beside the executable nor a copy of the
+same file version. `FileSpacerFolder.dll` implements `IShellFolder2` and
 `IPersistFolder2` and creates the native view through `SHCreateShellFolderView`.
 `IExplorerBrowser` remains the host. Virtual folders and archives retain their
 Windows provider. The application and DLL must be deployed together.
