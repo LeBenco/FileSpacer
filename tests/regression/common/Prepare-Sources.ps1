@@ -1,5 +1,5 @@
 ﻿param(
-    [Parameter(Mandatory=$true)][ValidateSet('Menu','Shell','Settings','View','Adapters','Geometry','LockBadge','Documentation','JumpLists','StorageRetry')][string]$Mode,
+    [Parameter(Mandatory=$true)][ValidateSet('Menu','Shell','Settings','View','Adapters','Geometry','LockBadge','Documentation','JumpLists','StorageRetry','ItemValidation')][string]$Mode,
     [Parameter(Mandatory=$true)][string]$ProjectRoot,
     [Parameter(Mandatory=$true)][string]$CaseDirectory,
     [Parameter(Mandatory=$true)][string]$OutputDirectory
@@ -54,6 +54,14 @@ function Save-Source([string]$Name,[string]$Text) {
 }
 [void][IO.Directory]::CreateDirectory($OutputDirectory)
 switch ($Mode) {
+    'ItemValidation' {
+        $source=Read-Source 'ItemWindow.cpp'
+        $pieces=@(Get-SourceBlock $source 'struct ItemValidation {')
+        foreach ($signature in @('HRESULT saveValidationLink(', 'bool linkTargetMoved(', 'VOID CALLBACK ItemWindow::validateItemPath(')) {
+            $pieces+=Get-SourceBlock $source $signature
+        }
+        Save-Source 'ItemValidationProduction.inc' (($pieces[0]+';')+"`n"+($pieces[1..3] -join "`n"))
+    }
     'JumpLists' {
         $source=Read-Source 'ClosedWindows.cpp'
         Save-Source 'JumpListProduction.inc' (Get-SourceBlock $source 'void updateReopenJumpLists()')
