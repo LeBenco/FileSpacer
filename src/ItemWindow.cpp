@@ -151,6 +151,21 @@ UINT ItemWindow::settingsChangedMessage = 0;
 UINT ItemWindow::closeDescendantsMessage = 0;
 UINT ItemWindow::itemValidatedMessage = 0;
 
+// Shared by the asking window and the pool work item: the window may be gone,
+// or on another item, when the worker finishes, and the worker never touches
+// the window. Only copies are read on the pool thread.
+struct ItemValidation {
+    HWND window = nullptr;
+    UINT token = 0;
+    std::wstring path;
+    CComHeapPtr<ITEMIDLIST> idList; // The item, for the search of a moved target.
+    void *target = nullptr; // The ITEMIDLIST found elsewhere, exchanged atomically.
+    ItemValidation() = default;
+    ItemValidation(const ItemValidation &) = delete;
+    ItemValidation &operator=(const ItemValidation &) = delete;
+    ~ItemValidation() { CoTaskMemFree(target); }
+};
+
 CComPtr<ItemWindow> ItemWindow::activeWindow;
 
 // Lucide arrow-up / rotate-cw (stroke 3, refresh rotated -90 degrees).
@@ -1149,11 +1164,17 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
         // one asked by a destroyed window whose HWND this window reused.
         if (!validationPending || static_cast<UINT>(lParam) != validationToken) return 0;
         validationPending = false;
+        const std::shared_ptr<ItemValidation> result = std::move(pendingValidation);
         if (!isWindowOperational()) return 0;
         CComPtr<ItemWindow> keepAlive(this);
-        // The worker's result stands: no second, synchronous check on this thread.
-        if (wParam == ERROR_SUCCESS) recordFolderAccess(S_OK);
-        else itemUnreachable(HRESULT_FROM_WIN32(static_cast<DWORD>(wParam)));
+        // The worker's result stands: no second check, no search on this thread.
+        if (wParam == ERROR_SUCCESS) {
+            recordFolderAccess(S_OK);
+            return 0;
+        }
+        CComHeapPtr<ITEMIDLIST> target;
+        if (result) target.Attach(static_cast<ITEMIDLIST *>(InterlockedExchangePointer(&result->target, nullptr)));
+        itemUnreachable(HRESULT_FROM_WIN32(static_cast<DWORD>(wParam)), target);
         return 0;
     }
 
@@ -2179,13 +2200,23 @@ void ItemWindow::handleShellChange(LONG event, PCIDLIST_ABSOLUTE oldID,
 }
 
 namespace {
-// Owned by the pool work item: no object reference, the window may be gone.
-struct ItemValidation {
-    HWND window = nullptr;
-    UINT token = 0;
-    std::wstring path;
-};
 UINT nextValidationToken = 0; // UI thread only; distinct across windows.
+
+// After a failed validation, the Shell's search for a moved target
+// (IShellLink::Resolve without UI, bounded by its documented 3 s default):
+// the target's PIDL, only when it differs from the current one.
+bool linkTargetMoved(IShellLink *link, const ITEMIDLIST *current, ITEMIDLIST **target) {
+    checkHR(link->Resolve(nullptr, SLR_NO_UI));
+    CComHeapPtr<ITEMIDLIST> found;
+    CComPtr<IShellFolder> desktopFolder;
+    if (!checkHR(link->GetIDList(&found)) || !checkHR(SHGetDesktopFolder(&desktopFolder))) return false;
+    HRESULT compared;
+    if (!checkHR(compared = desktopFolder->CompareIDs(SHCIDS_CANONICALONLY, current, found))
+            || (short)HRESULT_CODE(compared) == 0)
+        return false;
+    *target = found.Detach();
+    return true;
+}
 } // namespace
 
 void ItemWindow::validateItem() {
@@ -2195,28 +2226,49 @@ void ItemWindow::validateItem() {
         resolveItem(); // Virtual items keep the synchronous Shell validation.
         return;
     }
-    std::unique_ptr<ItemValidation> validation(new ItemValidation{hwnd, ++nextValidationToken, path.m_pData});
-    validationToken = validation->token;
-    ItemValidation *const work = validation.release(); // The callback frees it.
+    auto pending = std::make_shared<ItemValidation>();
+    pending->window = hwnd;
+    pending->token = ++nextValidationToken;
+    pending->path = path.m_pData;
+    if (link) checkHR(SHGetIDListFromObject(item, &pending->idList)); // Searched like the link would be.
+    auto *const work = new std::shared_ptr<ItemValidation>(pending); // The callback frees its reference.
     if (!checkLE(TrySubmitThreadpoolCallback(validateItemPath, work, nullptr))) {
-        validation.reset(work); // Not submitted: still owned here.
+        delete work; // Not submitted: still owned here.
         resolveItem();
         return;
     }
+    validationToken = pending->token;
+    pendingValidation = std::move(pending);
     validationPending = true;
 }
 
 VOID CALLBACK ItemWindow::validateItemPath(PTP_CALLBACK_INSTANCE, void *const context) {
-    // Pool thread: only the copied path is touched, and the posted result is
-    // discarded by its receiver when the asking window or item has changed.
-    std::unique_ptr<ItemValidation> validation(static_cast<ItemValidation *>(context));
+    // Pool thread: only the copied path and PIDL are touched, and the posted
+    // result is discarded by its receiver when the asking window or item has changed.
+    const std::unique_ptr<std::shared_ptr<ItemValidation>> owner(
+        static_cast<std::shared_ptr<ItemValidation> *>(context));
+    ItemValidation &pending = **owner;
     DWORD error = ERROR_SUCCESS; // Else the Windows error the receiver records as an access failure.
-    if (GetFileAttributesW(validation->path.c_str()) == INVALID_FILE_ATTRIBUTES) {
+    if (GetFileAttributesW(pending.path.c_str()) == INVALID_FILE_ATTRIBUTES) {
         error = GetLastError();
         if (error == ERROR_SUCCESS) error = ERROR_FILE_NOT_FOUND;
     }
-    PostMessageW(validation->window, itemValidatedMessage, error,
-        static_cast<LPARAM>(validation->token));
+    if (error != ERROR_SUCCESS && pending.idList) {
+        // The search for a moved target runs here, not on the window thread,
+        // on this thread's own apartment and its own link object.
+        if (SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE))) {
+            {
+                CComPtr<IShellLink> link;
+                ITEMIDLIST *target = nullptr;
+                if (SUCCEEDED(link.CoCreateInstance(__uuidof(ShellLink)))
+                        && SUCCEEDED(link->SetIDList(pending.idList))
+                        && linkTargetMoved(link, pending.idList, &target))
+                    InterlockedExchangePointer(&pending.target, target);
+            }
+            CoUninitialize();
+        }
+    }
+    PostMessageW(pending.window, itemValidatedMessage, error, static_cast<LPARAM>(pending.token));
 }
 
 bool ItemWindow::resolveItem() {
@@ -2229,34 +2281,23 @@ bool ItemWindow::resolveItem() {
         recordFolderAccess(validation);
         return true;
     }
-    return itemUnreachable(validation);
+    // Explicit refreshes and virtual items keep this synchronous search.
+    CComHeapPtr<ITEMIDLIST> currentIDList, target;
+    if (link && checkHR(SHGetIDListFromObject(item, &currentIDList)))
+        linkTargetMoved(link, currentIDList, &target);
+    return itemUnreachable(validation, target);
 }
 
-// The item failed validation with this result: a link is followed to a moved
-// target; otherwise the failure is recorded and the window closes.
-bool ItemWindow::itemUnreachable(HRESULT validation) {
+// The item failed validation with this result: the window follows the target
+// found elsewhere, if any; otherwise the failure is recorded and it closes.
+bool ItemWindow::itemUnreachable(HRESULT validation, ITEMIDLIST *const target) {
     if (closing || deleted) return true;
-    if (link) {
-        checkHR(link->Resolve(nullptr, SLR_NO_UI));
-
-        CComHeapPtr<ITEMIDLIST> currentIDList, newIDList;
-        CComPtr<IShellFolder> desktopFolder;
-        if (checkHR(SHGetIDListFromObject(item, &currentIDList))
-                && checkHR(link->GetIDList(&newIDList))
-                && checkHR(SHGetDesktopFolder(&desktopFolder))) {
-            HRESULT compareHR;
-            if (checkHR(compareHR = desktopFolder->CompareIDs(SHCIDS_CANONICALONLY,
-                    currentIDList, newIDList))) {
-                if ((short)HRESULT_CODE(compareHR) != 0) {
-                    debugPrintf(L"Item has moved!\n");
-                    CComPtr<IShellItem> newItem;
-                    if (checkHR(SHCreateItemFromIDList(newIDList, IID_PPV_ARGS(&newItem)))) {
-                        item = newItem; // itemMoved() is unnecessary since we can reuse link
-                        onItemChanged();
-                        return false;
-                    }
-                }
-            }
+    if (target) {
+        debugPrintf(L"Item has moved!\n");
+        CComPtr<IShellItem> newItem;
+        if (checkHR(SHCreateItemFromIDList(target, IID_PPV_ARGS(&newItem)))) {
+            itemMoved(newItem); // Rebuilds the link on the new location.
+            return false;
         }
     }
 
@@ -2280,6 +2321,9 @@ void ItemWindow::itemMoved(IShellItem *const newItem) {
 }
 
 void ItemWindow::onItemChanged() {
+    // A check of the former item in flight no longer concerns this window.
+    validationPending = false;
+    pendingValidation.reset();
     // Local NTFS identities survive rename/move; path-based identities follow the new path.
     std::wstring property = folderWindowProperty(getFolderIdentity(item));
     if (!property.empty() && property != identityProperty

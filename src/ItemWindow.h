@@ -7,6 +7,7 @@
 #include "PathBar.h"
 #include "WinUtils.h"
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 #include <windows.h>
@@ -16,6 +17,7 @@
 namespace filespacer {
 
 enum class FolderOpenResult;
+struct ItemValidation;
 
 class ItemWindow : public WindowImpl, public UnknownImpl {
     friend FolderOpenResult openFolderWindow(IShellItem *, HMONITOR, int, const ClosedWindow *, HWND);
@@ -53,7 +55,7 @@ public:
     // attempt to relocate item if it has been renamed, moved, or deleted
     // return true if item has not changed
     bool resolveItem();
-    bool itemUnreachable(HRESULT validation);
+    bool itemUnreachable(HRESULT validation, ITEMIDLIST *target);
 
     virtual bool handleTopLevelMessage(MSG *msg);
 
@@ -176,12 +178,14 @@ private:
     void openParent(bool closeSource);
 
     // Activation revalidates the item; a file-system path is checked off the UI
-    // thread, one check in flight per window, and the result reaches
-    // handleMessage with a process-wide token (an HWND can be reused).
+    // thread (and a moved target searched for there), one check in flight per
+    // window, and the result reaches handleMessage with a process-wide token
+    // (an HWND can be reused). A change of item drops the check in flight.
     void validateItem();
     static VOID CALLBACK validateItemPath(PTP_CALLBACK_INSTANCE instance, void *context);
     bool validationPending = false;
     UINT validationToken = 0;
+    std::shared_ptr<ItemValidation> pendingValidation; // Shared with the worker, which never touches the window.
 
     void updateTaskbar(); // Properties belong to the visible folder window.
 
