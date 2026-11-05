@@ -15,6 +15,7 @@ struct CrashData {
     DWORD magic, process, thread;
     LONG busy;
     BOOL test;
+    DWORD64 imageBase; // Of the executable, so a report without dump still locates the fault.
     EXCEPTION_RECORD exception;
     CONTEXT context;
 };
@@ -52,7 +53,10 @@ void message(UINT id, UINT icon = MB_ICONINFORMATION) {
 // No allocation, registry writes, UI or C++ stack unwinding in the faulting thread.
 // The healthy helper writes the minidump while this thread waits in the filter.
 LONG WINAPI unhandledException(EXCEPTION_POINTERS *info) {
-    if (crash && helperProcess && InterlockedCompareExchange(&crash->busy, 1, 0) == 0) {
+    // The handles may already be closed by static destruction (a crash during
+    // process teardown): the shared record is still mapped, and the helper
+    // notices the parent's death with a busy record even if the event is gone.
+    if (crash && crash->magic == MAGIC && InterlockedCompareExchange(&crash->busy, 1, 0) == 0) {
         crash->thread = GetCurrentThreadId();
         crash->exception = *info->ExceptionRecord;
         crash->exception.ExceptionRecord = nullptr;
@@ -82,15 +86,19 @@ void runHelper(HANDLE parent, HANDLE map, HANDLE event, HANDLE completed) {
     const bool valid = data->magic == MAGIC && GetProcessId(parent) == data->process;
     HANDLE waits[] = {event, parent};
     const DWORD wait = valid ? WaitForMultipleObjects(2, waits, FALSE, INFINITE) : WAIT_FAILED;
-    if (wait != WAIT_OBJECT_0 || !data->busy) { UnmapViewOfFile(data); return; }
+    // A parent that died with a busy record crashed after closing its event
+    // (process teardown): report what the record holds, without a dump.
+    const bool parentGone = wait == WAIT_OBJECT_0 + 1;
+    if ((wait != WAIT_OBJECT_0 && !parentGone) || !data->busy) { UnmapViewOfFile(data); return; }
 #ifdef FILESPACER_DEBUG
     settings::testMode = !!data->test;
 #endif
     std::wstring report = L"FileSpacer crash diagnostics\r\n";
     wchar_t details[256];
-    StringCchPrintfW(details, _countof(details), L"Code: 0x%08lX\r\nAddress: 0x%llX\r\nThread: %lu\r\n",
+    StringCchPrintfW(details, _countof(details),
+        L"Code: 0x%08lX\r\nAddress: 0x%llX\r\nImage base: 0x%llX\r\nThread: %lu\r\n%s",
         data->exception.ExceptionCode, reinterpret_cast<DWORD64>(data->exception.ExceptionAddress),
-        data->thread);
+        data->imageBase, data->thread, parentGone ? L"Process: exited before signaling (teardown)\r\n" : L"");
     report += details;
     const auto directory = dataDirectory();
     const wchar_t *kind = data->test ? L"test" : L"normal";
@@ -120,10 +128,11 @@ void runHelper(HANDLE parent, HANDLE map, HANDLE event, HANDLE completed) {
             writeFile(directory + details, report.data(),
                 static_cast<DWORD>(report.size() * sizeof(wchar_t)));
     }
+    const bool test = !!data->test;
     UnmapViewOfFile(data);
     SetEvent(completed);
     if (WaitForSingleObject(parent, 30000) != WAIT_OBJECT_0) return;
-    message(IDS_RECOVERY_CRASHED, MB_ICONERROR);
+    if (!test) message(IDS_RECOVERY_CRASHED, MB_ICONERROR); // The bench reads the report, not a dialog.
 }
 } // namespace
 
@@ -187,7 +196,15 @@ bool handleCommandLine(int argc, wchar_t **argv, int *exitCode) {
         MessageBoxW(nullptr, text.get(), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
         *exitCode = 4; return true;
     }
-    message(resetAll ? IDS_RESET_CLI_ALL_DONE : IDS_RESET_CLI_OPTIONS_DONE);
+    if (resetAll) { message(IDS_RESET_CLI_ALL_DONE); *exitCode = 0; return true; }
+    // /reset-all already emptied the state database. /reset-options keeps the
+    // folder state but releases its locks; an unavailable database leaves the
+    // Registry reset in place and is reported instead of failing the command.
+    auto store = folderStateStore();
+    if (!store || !store->clearLocks()) {
+        message(IDS_RESET_CLI_OPTIONS_LOCKS_FAILED, MB_ICONWARNING); *exitCode = 5; return true;
+    }
+    message(IDS_RESET_CLI_OPTIONS_DONE);
     *exitCode = 0; return true;
 }
 
@@ -208,6 +225,7 @@ bool start() {
     if (!crash) return false;
     *crash = {};
     crash->magic = MAGIC; crash->process = GetCurrentProcessId();
+    crash->imageBase = reinterpret_cast<DWORD64>(GetModuleHandleW(nullptr));
 #ifdef FILESPACER_DEBUG
     crash->test = settings::testMode;
 #endif
