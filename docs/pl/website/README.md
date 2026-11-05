@@ -59,7 +59,9 @@ Offline zawiera odcisk źródeł, skróty plików i języki. Pakowanie instalato
 
 Pages buduje i sprawdza odpowiednie PR. Generuje źródła raz, czyta `locales.json`, buduje każdy język i wdraża. CI nie ma drugiej listy języków. Push na `main` przebudowuje przy zmianach dowolnego README, `BUILD.md`, `docs/`, tłumaczeń, ikon, generatora, wspólnej akcji lub workflow Pages. PR używają tych samych filtrów i tylko budują. Można uruchamiać ręcznie.
 
-Pages i wydanie nie uruchamiają się wzajemnie: współdzielą `build-docs` z celami `web` i `offline`. Tagi uruchamiają tylko wydanie; pomoc offline czeka na testy i używa ich commitu. Push dokumentacji nie wydaje aplikacji; zmiany obu w jednym commicie nadal dają jeden Pages run dla push gałęzi.
+Pages uruchamia się też po udanym wydaniu przez `workflow_run`. Przed budowaniem domyślnej gałęzi po push, ręcznym starcie lub udanym wydaniu ten sam workflow zmienia wyłącznie `href` kotwicy `last-release-url` we wszystkich README. Parser HTML zachowuje tłumaczenia i formatowanie oraz aktualizuje zsynchronizowane odwołania README. Zatwierdza rzeczywiste zmiany, a następnie buduje zaktualizowaną gałąź. PR tylko budują i nic nie zapisują. Nie ma osobnego workflow odnośników ani rekurencyjnego dispatch.
+
+Pages i wydanie współdzielą `build-docs` z celami `web` i `offline`. Tagi uruchamiają wydanie; pomoc offline czeka na testy i używa ich commitu. Push dokumentacji nie wydaje aplikacji; zmiany obu w jednym commicie nadal dają jeden Pages run dla push gałęzi.
 
 Angielskie aktualizacje nie czekają na tłumaczenia. Generator zachowuje tekst i zapisane ID, zgłaszając nieaktualność adnotacjami i tabelą workflow. Rejestrowanie źródeł: [przewodnik tłumaczeń](translations/README.md).
 
