@@ -88,8 +88,9 @@ the selection of an already-open parent.
 
 When mixed sorting is enabled for a filesystem folder, `MixedFolder` supplies a
 Shell junction rooted in FileSpacer's local data, with a COM registration
-written by the installer through `DllRegisterServer` (HKLM for all users, HKCU
-per user) or, once per process, by the application in HKCU when the effective
+written by the installer through `regsvr32` (`DllRegisterServer`, HKLM, for all
+users; `/n /i:user` reaching `DllInstall`, HKCU, for the current user, whatever
+the installer's elevation) or, once per process, by the application in HKCU when the effective
 registration names neither the DLL beside the executable nor a copy of the
 same file version. `FileSpacerFolder.dll` implements `IShellFolder2` and
 `IPersistFolder2` and creates the native view through `SHCreateShellFolderView`.

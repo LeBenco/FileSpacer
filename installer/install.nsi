@@ -831,12 +831,18 @@ Section "FileSpacer" SecBase
     !insertmacro INSTALL_STEP "Write registry (SHCTX): Software\Classes\CLSID\${EXECUTE_GUID}\LocalServer32 [ServerExecutable]"
     WriteRegStr SHCTX "Software\Classes\CLSID\${EXECUTE_GUID}\LocalServer32" "ServerExecutable" "$INSTDIR\FileSpacer.exe"
     IfErrors registry_failed
-    ; The mixed-sorting provider registers itself (DllRegisterServer): HKLM from
-    ; the elevated worker (all users), HKCU otherwise (current user). The NSIS
-    ; host is x86: without redirection, $SYSDIR\regsvr32.exe is the x64 one.
+    ; The mixed-sorting provider registers itself in the scope of this setup:
+    ; DllRegisterServer writes HKLM from the elevated worker (all users);
+    ; "/n /i:user" reaches its DllInstall, which writes HKCU (current user)
+    ; whether or not this process happens to be elevated. The NSIS host is x86:
+    ; without redirection, $SYSDIR\regsvr32.exe is the x64 one.
     !insertmacro INSTALL_STEP "Register COM server ($installMode): $INSTDIR\FileSpacerFolder.dll"
     ${DisableX64FSRedirection}
-    ExecWait '"$SYSDIR\regsvr32.exe" /s "$INSTDIR\FileSpacerFolder.dll"' $0
+    ${If} $installMode == "AllUsers"
+        ExecWait '"$SYSDIR\regsvr32.exe" /s "$INSTDIR\FileSpacerFolder.dll"' $0
+    ${Else}
+        ExecWait '"$SYSDIR\regsvr32.exe" /s /n /i:user "$INSTDIR\FileSpacerFolder.dll"' $0
+    ${EndIf}
     ${EnableX64FSRedirection}
     !insertmacro WORKER_LOG "Mixed-sorting provider registration: regsvr32 exit=$0 (NSIS error flag preserved)."
     ${If} ${Errors}
