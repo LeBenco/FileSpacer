@@ -59,7 +59,9 @@ Offline bevat bronvingerafdruk, bestandshashes en talen. Verpakken controleert d
 
 Pages bouwt en controleert relevante PR’s, genereert bronnen eenmaal, leest `locales.json`, bouwt elke taal en deployt. Geen tweede taallijst in CI. Pushes naar `main` herbouwen bij wijzigingen aan README’s, `BUILD.md`, `docs/`, vertalingen, iconen, generator, gedeelde actie of Pages-workflow. PR’s gebruiken dezelfde filters en bouwen alleen. Handmatige start is mogelijk.
 
-Pages en release starten elkaar niet: ze delen `build-docs` met doelen `web` en `offline`. Tags starten alleen release; offlinehulp wacht op tests en gebruikt hun commit. Documentatiepushes maken geen applicatierelease; beide in één commit geven nog steeds één Pages-run per branchpush.
+Pages start ook na een geslaagde release via `workflow_run`. Vóór het bouwen van de standaardbranch bij een push, handmatige start of geslaagde release werkt dezelfde workflow alleen de `href` van `last-release-url` in alle README’s bij. De HTML-parser behoudt vertalingen en opmaak en werkt gesynchroniseerde README-referenties bij. Hij commit echte wijzigingen en bouwt daarna de bijgewerkte branch. PR’s bouwen alleen en schrijven niets. Een aparte linkworkflow of recursieve dispatch is niet nodig.
+
+Pages en release delen `build-docs` met doelen `web` en `offline`. Tags starten release; offlinehulp wacht op tests en gebruikt hun commit. Documentatiepushes maken geen applicatierelease; beide in één commit geven nog steeds één Pages-run per branchpush.
 
 Engelse updates wachten niet op vertalingen. De generator bewaart tekst en vastgelegde ID’s en meldt veroudering met annotaties en een tabel. Zie de [vertaalgids](translations/README.md) voor bronregistratie.
 

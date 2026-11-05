@@ -60,7 +60,7 @@ test('unpublished releases, wrong assets and inconsistent update checksums canno
 });
 
 test('PowerShell package helpers reject x86 and uninstall only the machine installation', async t => {
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'filespacer-chocolatey-helpers-'));
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'filespacer chocolatey helpers '));
   t.after(() => fs.rm(directory, {recursive: true, force: true}));
   await fs.writeFile(path.join(directory, 'uninstall.exe'), 'fixture; never executed');
   const quote = text => `'${text.replaceAll("'", "''")}'`;
@@ -80,7 +80,7 @@ function Install-ChocolateyPackage {
 function Get-UninstallRegistryKey { param($SoftwareName) return $script:keys }
 function Uninstall-ChocolateyPackage {
     param($PackageName, $FileType, $File, $SilentArgs, $ValidExitCodes)
-    if ($File -cne (Join-Path $directory 'uninstall.exe') -or $SilentArgs -cne '/S /AllUsers' -or $ValidExitCodes.Count -ne 1 -or $ValidExitCodes[0] -ne 0) { throw 'Invalid uninstall arguments' }
+    if ($File -cne (Join-Path $directory 'uninstall.exe') -or $SilentArgs -cne "/S /AllUsers _?=$directory" -or $ValidExitCodes.Count -ne 1 -or $ValidExitCodes[0] -ne 0) { throw 'Invalid uninstall arguments' }
     $script:uninstallCalls++
 }
 . ${quote(path.join(templates, 'chocolateyinstall.ps1'))}
@@ -97,6 +97,8 @@ if ($script:uninstallCalls -ne 0) { throw 'Personal installation must be preserv
 $script:keys = @($personal, $machine)
 . ${quote(path.join(templates, 'chocolateyuninstall.ps1'))}
 if ($script:uninstallCalls -ne 1) { throw 'Machine uninstaller was not called once' }
+if (Test-Path -LiteralPath (Join-Path $directory 'uninstall.exe')) { throw 'In-place uninstaller was not removed after exit' }
+if (!(Test-Path -LiteralPath $directory)) { throw 'A non-empty installation directory must be preserved' }
 $script:keys = @($machine, $machine)
 $rejected = $false
 try { . ${quote(path.join(templates, 'chocolateyuninstall.ps1'))} } catch { $rejected = $true }

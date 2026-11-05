@@ -2,7 +2,7 @@
 
 # Dystrybucja WinGet
 
-GitHub Actions zgłasza `Benco.FileSpacer` do publicznego [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs) po udanym **Publish FileSpacer** (`workflow_run`). Dystrybucja ma osobny przebieg i wynik; jej błąd nie zmienia sukcesu wydania. Workflow można też uruchomić dla już opublikowanego stabilnego tagu.
+GitHub Actions zgłasza `Benco.FileSpacer` do publicznego [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs) po udanym **Publish FileSpacer** (`workflow_run`), jeżeli WinGet został jawnie wybrany przez `release.sh X.Y.Z --distribute winget`. Domyślnie nie ma automatycznej dystrybucji. Powtarzaj `--distribute`, aby wybrać kilka kanałów; wybór jest zapisany w adnotacji tagu i artefakcie `release-publication`. Brak wyboru również oznacza brak automatycznego zgłoszenia. Ręczne uruchomienie dla opublikowanego stabilnego tagu jawnie wybiera WinGet, nawet jeżeli tag pierwotnie wskazywał `none`. Dystrybucja ma osobny wynik; jej błąd nie zmienia sukcesu wydania.
 
 <a id="one-time-setup"></a>
 
