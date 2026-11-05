@@ -114,6 +114,10 @@ struct FolderWindow::ViewMenuPreview {
     UINT pendingCommand = 0; // Entry outside the modes, run after the preview is cancelled.
     UINT chosenCommand = 0; // Mode retained when the menu closed: 0 for the initial one.
     bool tracking = true, posted = false, busy = false;
+    // The final apply() failed without any refill: no EnumDone replays it. The
+    // session still withholds saving the preview, but its initial selection
+    // no longer describes the view.
+    bool restoreFailed = false;
     const ULONG_PTR enumerationBaseline; // Serial when the menu opened; earlier EnumDone are stale.
     std::vector<std::vector<uint8_t>> positionChunks;
     size_t nextPositionChunk = 0;
@@ -365,6 +369,7 @@ struct FolderWindow::ViewMenuPreview {
         chosenCommand = mode && command != initialCommand ? command : 0;
         if (!chosenCommand) finishPositions();
         const bool applying = chosenCommand != currentCommand;
+        const ULONG_PTR enumerationBefore = owner.viewHost.enumerationSerial();
         apply(chosenCommand);
         if (!current()) return;
         if (!mode) pendingCommand = command;
@@ -380,8 +385,12 @@ struct FolderWindow::ViewMenuPreview {
         // and the preview still showing is not persisted meanwhile.
         FolderWindow &window = owner;
         const bool settled = chosenCommand == currentCommand;
-        if (window.viewMenuPreview.get() == this && (!settled || !window.enumerationComplete))
+        if (window.viewMenuPreview.get() == this && (!settled || !window.enumerationComplete)) {
             window.viewMenuRestore = window.viewMenuPreview;
+            if (!settled && window.enumerationComplete
+                    && window.viewHost.enumerationSerial() == enumerationBefore)
+                restoreFailed = true;
+        }
         window.viewMenuPreview.reset();
         if (settled) window.scheduleStateSave();
     }
@@ -602,7 +611,12 @@ bool FolderWindow::recoverProvisionalView() {
                 return false; // Never capture a partly restored fallback over SQL.
             }
             if (FAILED(counted) || FAILED(recounted) || before != after) {
+                // Not proven as a refill: keep the window usable until the
+                // EnumDone that completes the view. The merge is recomputed
+                // then, so interactions made meanwhile are still observed.
                 enumerationComplete = false;
+                provisionalRestore.reset();
+                blockProvisionalInput(false);
                 return false;
             }
             restoringState = true;
@@ -647,6 +661,10 @@ bool FolderWindow::recoverProvisionalView() {
     // A closing window never re-registers with the input hook after onDestroy removed it.
     watchProvisionalInput(!isClosing && iconRestoreFailed);
     if (!isClosing) blockProvisionalInput(false);
+    if (!isClosing && providerSyncPending && currentView()) {
+        providerSyncPending = false; // Replayed outside this restoration, not from within it.
+        checkLE(PostMessage(hwnd, MSG_SYNCHRONIZE_VIEW_PROVIDER, 0, 0));
+    }
     return currentView();
 }
 
@@ -1055,6 +1073,62 @@ FolderWindow::QuickAccessIconThread::~QuickAccessIconThread() {
         DeleteObject(bitmap);
 }
 
+FolderWindow::StorageWaitThread::StorageWaitThread(HWND ownerWindow, HANDLE mutexHandle, ULONG_PTR waitSerial)
+        : owner(ownerWindow), mutex(mutexHandle), serial(waitSerial) {}
+
+FolderWindow::StorageWaitThread::~StorageWaitThread() {
+    checkLE(CloseHandle(mutex));
+}
+
+void FolderWindow::StorageWaitThread::run() {
+    // The stop event comes first: when both are signaled the wait reports the
+    // lowest index (WaitForMultipleObjects, Learn), so a stopped wait never
+    // takes the mutex. A satisfied (or abandoned) mutex wait grants ownership
+    // to this thread: give it back at once, this thread only signals.
+    HANDLE handles[] = {stopEvent, mutex};
+    const DWORD waited = WaitForMultipleObjects(_countof(handles), handles, FALSE, INFINITE);
+    if (waited != WAIT_OBJECT_0 + 1 && waited != WAIT_ABANDONED_0 + 1) return;
+    checkLE(ReleaseMutex(mutex));
+    AcquireSRWLockShared(&stopLock);
+    if (!isStopped()) PostMessage(owner, MSG_STORAGE_AVAILABLE, serial, 0);
+    ReleaseSRWLockShared(&stopLock);
+}
+
+// Storage was unavailable for a provisional window. The named mutex another
+// process holds is waited on (its release is the public event); only
+// SQLITE_BUSY, which has no Windows event, is retried on a growing, bounded
+// delay. Any other failure waits for the next save request, as before.
+void FolderWindow::scheduleStorageRetry() {
+    if (storageWait) return; // The pending wait already covers this window.
+    if (void *held = folderStateBlockingMutex()) {
+        HANDLE duplicate = nullptr;
+        if (checkLE(DuplicateHandle(GetCurrentProcess(), held, GetCurrentProcess(), &duplicate,
+                0, FALSE, DUPLICATE_SAME_ACCESS))) {
+            storageWait.Attach(new StorageWaitThread(hwnd, duplicate, ++storageWaitSerial));
+            storageWait->start();
+            storageRetryDelay = 0;
+            return;
+        }
+        // A failed duplication falls back to the bounded delay below.
+    } else if (!folderStateBusy()) {
+        storageRetryDelay = 0;
+        // Storage may have been reopened meanwhile (another window succeeded
+        // while the error was reported): continue from the queue, not from here.
+        if (folderStateStore()) checkLE(PostMessage(hwnd, MSG_STORAGE_AVAILABLE, ++storageWaitSerial, 0));
+        return;
+    }
+    storageRetryDelay = storageRetryDelay ? (std::min)(storageRetryDelay * 2, 16000u) : 1000u;
+    SetTimer(hwnd, TIMER_SAVE_STATE, storageRetryDelay, nullptr);
+}
+
+void FolderWindow::cancelStorageWait() {
+    if (storageWait) {
+        storageWait->stop();
+        storageWait.Release();
+    }
+    storageRetryDelay = 0;
+}
+
 HBITMAP FolderWindow::QuickAccessIconThread::takeBitmap() {
     AcquireSRWLockExclusive(&stopLock);
     HBITMAP result = bitmap;
@@ -1156,9 +1230,15 @@ void FolderWindow::scheduleStateSave(bool icons) {
 // view's identifiers are the native ones in both, so the existing transfer
 // carries positions, selection and focus across whatever the layout.
 void FolderWindow::synchronizeViewProvider() {
-    if (!isWindowOperational() || !viewReady || !initialStateApplied || restoringState
-            || viewMenuPreview || navigationDepth) return;
-    if (settings::getMixedFolderSorting() == viewHost.mixedSortingPreference()) return;
+    if (!isWindowOperational()) return;
+    const bool differs = settings::getMixedFolderSorting() != viewHost.mixedSortingPreference();
+    if (!viewReady || !initialStateApplied || restoringState || viewMenuPreview || navigationDepth) {
+        // Replayed when the initialization or restoration in progress completes.
+        providerSyncPending = differs;
+        return;
+    }
+    providerSyncPending = false;
+    if (!differs) return;
     CComPtr<ItemWindow> keepAlive(this);
     viewStateDirty(FolderState::Icons);
     persistViewState();
@@ -1344,7 +1424,7 @@ HRESULT FolderWindow::loadIconPositions(bool pruneMissing) {
 
 std::vector<uint8_t> FolderWindow::captureReopenViewState() {
     const auto &session = viewMenuPreview ? viewMenuPreview : viewMenuRestore;
-    if (session) return session->initial.selection;
+    if (session && !session->restoreFailed) return session->initial.selection;
     // Closing is already set: use HWND/view identity rather than isWindowOperational.
     const HWND owner = hwnd;
     CComPtr<IShellView> view = shellView;
@@ -1377,6 +1457,8 @@ void FolderWindow::onDestroy() {
     resizeGesture.stop();
     checkHR(viewHost.stopObserving());
     KillTimer(hwnd, TIMER_SAVE_STATE);
+    cancelStorageWait();
+    providerSyncPending = false;
     viewStateDirty(FolderState::Icons);
     persistViewState();
     saveSearchHistory();
@@ -1954,6 +2036,7 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         const LRESULT result = ItemWindow::handleMessage(message, wParam, lParam); // Invalidates the key first.
         provisionalBaseline.reset(); provisionalCurrent.reset(); provisionalRestore.reset();
         provisionalColumnWidths.clear();
+        cancelStorageWait(); // Nothing provisional is left to recover.
         watchProvisionalInput(false);
         blockProvisionalInput(false);
         return result;
@@ -2028,6 +2111,20 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         case MSG_FINISH_VIEW_INITIALIZATION:
             if (isWindowOperational() && viewHost.isViewNotification(wParam))
                 finishViewInitialization();
+            return 0;
+        case MSG_STORAGE_AVAILABLE:
+            if (wParam == storageWaitSerial && isWindowOperational()) {
+                cancelStorageWait();
+                if (!provisionalBaseline) return 0;
+                if (!loadFolderState()) scheduleStorageRetry(); // Taken again meanwhile: wait again.
+                else {
+                    persistViewState();
+                    saveSearchHistory();
+                }
+            }
+            return 0;
+        case MSG_SYNCHRONIZE_VIEW_PROVIDER:
+            if (isWindowOperational()) synchronizeViewProvider();
             return 0;
         case MSG_VIEW_MENU_PREVIEW: {
             auto preview = viewMenuPreview;
@@ -2116,11 +2213,13 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
                         blockProvisionalInput(false);
                 }
                 if (provisionalBaseline && !loadFolderState()) {
-                    // Retry unavailable storage without repeatedly capturing the
+                    // Unavailable storage: wait for its release event (or back
+                    // off on SQLITE_BUSY) without repeatedly capturing the
                     // provisional layout. Shell readiness still comes from its events.
-                    SetTimer(hwnd, TIMER_SAVE_STATE, 1000, nullptr);
+                    scheduleStorageRetry();
                     return 0;
                 }
+                storageRetryDelay = 0;
                 persistViewState();
                 saveSearchHistory();
                 return 0;
@@ -2931,6 +3030,8 @@ STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
     viewMenuPreview.reset();
     viewMenuRestore.reset();
     cancelAltGesture();
+    cancelStorageWait();
+    providerSyncPending = false;
     debugPrintf(L"NATIVE HWND=%p OnNavigationPending\n", hwnd);
     checkHR(viewHost.stopObserving());
     viewGeneration = 0;
@@ -3284,9 +3385,14 @@ void FolderWindow::finishViewInitialization() {
             if (!current()) return;
             restoringState = false;
             // Counts invalidate an earlier completion; they never establish
-            // initial readiness (an enumerated empty folder is valid).
+            // initial readiness (an enumerated empty folder is valid). Nor do
+            // they prove a refill (a change notification dispatched meanwhile
+            // also moves them): the window stays usable, and the next EnumDone
+            // completes this initialization.
             if (FAILED(beforeResult) || FAILED(afterResult) || before != after) {
                 enumerationComplete = false;
+                if ((!provisionalBaseline || provisionalReady) && provisionalInputBlocked)
+                    blockProvisionalInput(false);
                 return;
             }
         }
@@ -3337,6 +3443,10 @@ void FolderWindow::finishViewInitialization() {
     scheduleStateSave();
     updateSelection();
     if (current() && hasStatusText()) updateStatus();
+    if (current() && providerSyncPending) {
+        providerSyncPending = false; // Replayed outside this callback, not from within it.
+        checkLE(PostMessage(hwnd, MSG_SYNCHRONIZE_VIEW_PROVIDER, 0, 0));
+    }
 }
 
 /* IDispatch */
