@@ -2,7 +2,7 @@
 
 # WinGet-distributie
 
-GitHub Actions dient `Benco.FileSpacer` in bij [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs) nadat **Publish FileSpacer** slaagt (`workflow_run`). Distributie heeft een aparte uitvoering en resultaat; falen verandert de geslaagde release niet. Handmatig starten kan voor een bestaande gepubliceerde stabiele tag.
+GitHub Actions dient `Benco.FileSpacer` in bij [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs) nadat **Publish FileSpacer** slaagt (`workflow_run`) en WinGet expliciet is geselecteerd met `release.sh X.Y.Z --distribute winget`. Standaard vindt geen automatische distributie plaats. Herhaal `--distribute` om meerdere kanalen te kiezen; de keuze staat in de tagannotatie en het artefact `release-publication`. Ontbrekende selectie betekent ook geen automatische inzending. Handmatig starten voor een bestaande gepubliceerde stabiele tag selecteert WinGet wel, ook als de tag oorspronkelijk `none` koos. Distributie heeft een apart resultaat; falen verandert de geslaagde release niet.
 
 <a id="one-time-setup"></a>
 
