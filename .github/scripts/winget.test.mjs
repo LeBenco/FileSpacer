@@ -58,6 +58,10 @@ test('both x64 installation scopes preserve NSIS silent and directory arguments'
   assert.equal(manifest.match(/SilentWithProgress: \/S/g).length, 2);
   assert.equal(manifest.match(/InstallLocation: \/D=<INSTALLPATH>/g).length, 2);
   assert.ok(!manifest.includes('/DefaultFileManager'));
+  const userInstaller = manifest.split('Scope: user')[1].split('  - Architecture:')[0];
+  assert.doesNotMatch(userInstaller, /ElevationRequirement:/,
+    'Per-user installation must also be permitted from an elevated terminal.');
+  assert.match(manifest.split('Scope: machine')[1], /ElevationRequirement: elevationRequired/);
 });
 
 test('first publication generates all manifests from public release assets without sending API credentials', async t => {
