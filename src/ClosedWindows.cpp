@@ -167,6 +167,101 @@ std::wstring jumpListFolderIcon(IShellItem *item) {
     return std::wstring(stock.szPath) + L"," + std::to_wstring(stock.iIcon);
 }
 
+// Memory only, like the fingerprint below, and touched only under the update
+// mutex: every start validates and extracts once, then reuses what this
+// process already checked.
+int64_t validatedSequence = 0;
+std::string validatedParsingName;
+bool validatedFolder = false;
+std::wstring validatedIcon;
+struct PinnedIconStamp { std::wstring parsingName; uint64_t stamp = 0; }; // desktop.ini last write
+std::vector<PinnedIconStamp> pinnedIconStamps; // The local pins this process extracted.
+
+// SFGAO_VALIDATE may reach the network: the last closed folder is validated
+// once per closure (sequence and parsing name), not at every refresh.
+bool reopenFolderIcon(const ClosedWindow &last, std::wstring *icon) {
+    if (last.sequence != validatedSequence || last.parsingName != validatedParsingName) {
+        CComPtr<IShellItem> folder;
+        SFGAOF attributes = 0;
+        validatedFolder = SUCCEEDED(SHCreateItemFromParsingName(closedWindowPath(last).c_str(),
+                nullptr, IID_PPV_ARGS(&folder)))
+            && SUCCEEDED(folder->GetAttributes(SFGAO_FOLDER | SFGAO_VALIDATE, &attributes))
+            && (attributes & SFGAO_FOLDER);
+        validatedIcon = validatedFolder ? jumpListFolderIcon(folder) : std::wstring();
+        validatedSequence = last.sequence;
+        validatedParsingName = last.parsingName;
+    }
+    *icon = validatedIcon;
+    return validatedFolder;
+}
+
+enum class PinLocation { Virtual, Local, Remote };
+
+// Decided from the parsing name and the drive type alone: nothing opens the folder.
+PinLocation pinLocation(const std::wstring &parsingName) {
+    if (PathIsUNCW(parsingName.c_str())) return PinLocation::Remote;
+    const int drive = PathGetDriveNumberW(parsingName.c_str());
+    if (drive < 0) return PinLocation::Virtual;
+    wchar_t root[] = L"A:\\";
+    root[0] = static_cast<wchar_t>(L'A' + drive);
+    switch (GetDriveTypeW(root)) {
+        case DRIVE_REMOVABLE: case DRIVE_FIXED: case DRIVE_CDROM: case DRIVE_RAMDISK:
+            return PinLocation::Local;
+        default:
+            return PinLocation::Remote; // Unknown or unmounted roots are not touched either.
+    }
+}
+
+// Last write of the folder's desktop.ini (0 when absent): the file a local
+// icon customization goes through.
+uint64_t desktopIniStamp(const std::wstring &folder) {
+    std::wstring path = L"\\\\?\\" + folder;
+    if (path.back() != L'\\') path += L'\\';
+    path += L"desktop.ini";
+    WIN32_FILE_ATTRIBUTE_DATA data = {};
+    if (!GetFileAttributesExW(path.c_str(), GetFileExInfoStandard, &data)) return 0;
+    return (static_cast<uint64_t>(data.ftLastWriteTime.dwHighDateTime) << 32)
+        | data.ftLastWriteTime.dwLowDateTime;
+}
+
+// The ICO folderRelaunchIcon saved for this folder, if any: same name, same cache.
+std::wstring cachedFolderIcon(const std::wstring &parsingName) {
+    const std::wstring id = folderTaskbarID(parsingName.c_str());
+    CComHeapPtr<wchar_t> localAppData;
+    if (id.empty() || FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &localAppData)))
+        return {};
+    const std::wstring file = std::wstring(localAppData) + L"\\FileSpacer\\FolderIcons\\" + id + L".ico";
+    return GetFileAttributesW(file.c_str()) == INVALID_FILE_ATTRIBUTES ? std::wstring() : file;
+}
+
+// Extracting an icon opens the folder. A pin whose ICO is cached skips it
+// unless its desktop.ini changed since this process last extracted it. A
+// remote pin is never checked (a custom icon changed there stays stale until
+// a window of that folder rewrites the cache); a virtual pin always extracts.
+std::wstring pinnedFolderIcon(IShellItem *folder, const std::wstring &parsingName) {
+    const std::wstring cached = cachedFolderIcon(parsingName);
+    if (!cached.empty()) {
+        switch (pinLocation(parsingName)) {
+            case PinLocation::Remote:
+                return cached + L",0";
+            case PinLocation::Local: {
+                const uint64_t stamp = desktopIniStamp(parsingName);
+                for (auto &known : pinnedIconStamps) {
+                    if (known.parsingName != parsingName) continue;
+                    if (known.stamp == stamp) return cached + L",0";
+                    known.stamp = stamp;
+                    return jumpListFolderIcon(folder);
+                }
+                pinnedIconStamps.push_back({parsingName, stamp});
+                break;
+            }
+            case PinLocation::Virtual:
+                break;
+        }
+    }
+    return jumpListFolderIcon(folder);
+}
+
 bool makeJumpListLink(const wchar_t *executable, const wchar_t *arguments,
         const wchar_t *name, const std::wstring &icon, IShellLinkW **result) {
     CComPtr<IShellLinkW> link;
@@ -325,8 +420,12 @@ void updateReopenJumpLists() {
     // after acquiring the mutex, so an older refresh cannot overwrite a newer one.
     HANDLE mutex = CreateMutexW(nullptr, FALSE, L"Local\\FileSpacer.JumpListUpdate");
     if (!mutex) return;
-    const DWORD waited = WaitForSingleObject(mutex, INFINITE);
-    if (waited == WAIT_OBJECT_0 || waited == WAIT_ABANDONED) {
+    // Bounded: the holder may be validating a network folder. A skipped refresh
+    // is redone by the next trigger, and the process can exit meanwhile.
+    const DWORD waited = WaitForSingleObject(mutex, 10000);
+    if (waited == WAIT_TIMEOUT) {
+        debugPrintf(L"Jump List refresh skipped: update mutex still held after 10 s\n");
+    } else if (waited == WAIT_OBJECT_0 || waited == WAIT_ABANDONED) {
         [&]() {
             std::vector<wchar_t> executable(32768);
             const DWORD length = GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size()));
@@ -340,18 +439,10 @@ void updateReopenJumpLists() {
             if (last.sequence)
                 reopenName = formatString(IDS_REOPEN_NAMED, closedWindowName(last).c_str()).get();
             bool canReopen = canReopenClosedWindow(last);
-            std::wstring reopenIcon;
-            if (canReopen) {
-                CComPtr<IShellItem> folder;
-                SFGAOF attributes = 0;
-                canReopen = SUCCEEDED(SHCreateItemFromParsingName(closedWindowPath(last).c_str(),
-                        nullptr, IID_PPV_ARGS(&folder)))
-                    && SUCCEEDED(folder->GetAttributes(SFGAO_FOLDER | SFGAO_VALIDATE, &attributes))
-                    && (attributes & SFGAO_FOLDER);
-                if (canReopen) reopenIcon = jumpListFolderIcon(folder);
-            }
 
-            struct Destination { std::wstring parsingName, name, icon; };
+            // The pinned folders come from Explorer's own cache; only their names
+            // are read here, their icons after the fingerprint below.
+            struct Destination { std::wstring parsingName, name, icon; CComPtr<IShellItem> folder; };
             std::vector<CComPtr<IShellItem>> folders;
             std::vector<Destination> pinned;
             UINT stage = 0;
@@ -360,7 +451,7 @@ void updateReopenJumpLists() {
                     CComHeapPtr<wchar_t> name, parsingName;
                     if (SUCCEEDED(folder->GetDisplayName(SIGDN_NORMALDISPLAY, &name))
                             && SUCCEEDED(folder->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &parsingName)))
-                        pinned.push_back({parsingName.m_pData, name.m_pData, jumpListFolderIcon(folder)});
+                        pinned.push_back({parsingName.m_pData, name.m_pData, std::wstring(), folder});
                 }
             }
             CRegKey application;
@@ -388,14 +479,15 @@ void updateReopenJumpLists() {
                     else ++it;
                 }
             }
-            // Skip the rebuild when nothing it is built from has changed.
+            // Skip the rebuild when nothing it is built from has changed. Nothing
+            // above opened a folder: validation and icons come after this gate.
             JumpListModel model;
             model.add(executable.data());
             model.add(getString(IDS_QUICK_ACCESS));
             model.add(canReopen ? reopenName.c_str() : L"");
-            model.add(reopenIcon);
+            model.add(std::to_wstring(last.sequence));
             model.add(wide(last.key));
-            for (const auto &entry : pinned) { model.add(entry.parsingName); model.add(entry.name); model.add(entry.icon); }
+            for (const auto &entry : pinned) { model.add(entry.parsingName); model.add(entry.name); }
             for (const auto &appID : appIDs) {
                 model.add(appID);
                 std::vector<std::wstring> removedNames;
@@ -405,6 +497,9 @@ void updateReopenJumpLists() {
             const uint64_t fingerprint = model.fingerprint();
             if (built && fingerprint == builtFingerprint) return;
             built = false; // A partial replacement also invalidates the previous model.
+            std::wstring reopenIcon;
+            if (canReopen) canReopen = reopenFolderIcon(last, &reopenIcon);
+            for (auto &entry : pinned) entry.icon = pinnedFolderIcon(entry.folder, entry.parsingName);
             std::vector<CComPtr<IShellLinkW>> destinations;
             bool complete = true;
             for (const auto &entry : pinned) {
