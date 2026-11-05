@@ -35,6 +35,11 @@ public:
     static void expireFolderState(HWND hwnd);
     static UINT settingsChangedMessage;
     static UINT closeDescendantsMessage;
+    // Posted by validateItem's worker, possibly after this window is gone, so
+    // registered rather than WM_USER-based: a window of another class that
+    // reused the HWND ignores it. WPARAM: nonzero if the file-system path
+    // still exists, LPARAM: the token of the check that was asked.
+    static UINT itemValidatedMessage;
     static ItemWindow *fromChildWindow(HWND window);
 
     ItemWindow(IShellItem *item, const std::wstring &identity);
@@ -168,6 +173,14 @@ private:
     LRESULT hitTestNCA(POINT cursor);
 
     void openParent(bool closeSource);
+
+    // Activation revalidates the item; a file-system path is checked off the UI
+    // thread, one check in flight per window, and the result reaches
+    // handleMessage with a process-wide token (an HWND can be reused).
+    void validateItem();
+    static VOID CALLBACK validateItemPath(PTP_CALLBACK_INSTANCE instance, void *context);
+    bool validationPending = false;
+    UINT validationToken = 0;
 
     void updateTaskbar(); // Properties belong to the visible folder window.
 
