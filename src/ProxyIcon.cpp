@@ -7,6 +7,7 @@
 #include "resource.h"
 #include "UIStrings.h"
 #include "Settings.h"
+#include "TitleMenu.h"
 #include <windowsx.h>
 #include <shlobj.h>
 #include <vssym32.h>
@@ -211,7 +212,13 @@ LRESULT CALLBACK ProxyIcon::captionProc(HWND window, UINT message,
     if (message == WM_COMMAND && !lParam) {
         // Nilesoft Shell's window.command targets this menu owner. Queue the
         // same stable command on the real host instead of running it in NS.
-        PostMessageW(GetParent(window), WM_COMMAND, wParam, 0);
+        // Only the documented title-menu actions are relayed.
+        const UINT command = LOWORD(wParam);
+        for (int entry = 0; entry < TITLE_SEPARATOR; ++entry) {
+            if (titleMenuCommand(entry) != command) continue;
+            PostMessageW(GetParent(window), WM_COMMAND, command, 0);
+            break;
+        }
         return 0;
     }
     if (message == WM_NCHITTEST)
