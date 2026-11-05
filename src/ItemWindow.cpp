@@ -159,6 +159,7 @@ struct ItemValidation {
     UINT token = 0;
     std::wstring path;
     CComHeapPtr<ITEMIDLIST> idList; // The item, for the search of a moved target.
+    std::vector<uint8_t> linkState; // Opaque IPersistStream data, never an apartment-bound interface.
     void *target = nullptr; // The ITEMIDLIST found elsewhere, exchanged atomically.
     ItemValidation() = default;
     ItemValidation(const ItemValidation &) = delete;
@@ -2202,6 +2203,29 @@ void ItemWindow::handleShellChange(LONG event, PCIDLIST_ABSOLUTE oldID,
 namespace {
 UINT nextValidationToken = 0; // UI thread only; distinct across windows.
 
+// Shell links document IPersistStream persistence. Keep the original link's
+// tracking data: SetIDList on a new link after a move cannot recreate it.
+HRESULT saveValidationLink(IShellLink *link, std::vector<uint8_t> &bytes) {
+    CComQIPtr<IPersistStream> persistence(link);
+    if (!persistence) return E_NOINTERFACE;
+    CComPtr<IStream> stream;
+    stream.Attach(SHCreateMemStream(nullptr, 0));
+    if (!stream) return E_OUTOFMEMORY;
+    HRESULT result = persistence->Save(stream, FALSE);
+    if (FAILED(result)) return result;
+    ULARGE_INTEGER size = {};
+    result = IStream_Size(stream, &size);
+    if (FAILED(result)) return result;
+    if (size.QuadPart > INT32_MAX) return E_OUTOFMEMORY;
+    LARGE_INTEGER beginning = {};
+    result = stream->Seek(beginning, STREAM_SEEK_SET, nullptr);
+    if (FAILED(result)) return result;
+    std::vector<uint8_t> saved(static_cast<size_t>(size.QuadPart));
+    result = IStream_Read(stream, saved.data(), static_cast<ULONG>(saved.size()));
+    if (SUCCEEDED(result)) bytes = std::move(saved);
+    return result;
+}
+
 // After a failed validation, the Shell's search for a moved target
 // (IShellLink::Resolve without UI, bounded by its documented 3 s default):
 // the target's PIDL, only when it differs from the current one.
@@ -2221,8 +2245,14 @@ bool linkTargetMoved(IShellLink *link, const ITEMIDLIST *current, ITEMIDLIST **t
 
 void ItemWindow::validateItem() {
     if (closing || deleted || validationPending) return; // one check in flight
+    CComPtr<ItemWindow> keepAlive(this);
+    const UINT generation = validationToken; // Preparation can dispatch a change of item.
+    CComPtr<IShellItem> checkedItem = item;
+    CComPtr<IShellLink> checkedLink = link;
     CComHeapPtr<wchar_t> path;
-    if (FAILED(item->GetDisplayName(SIGDN_FILESYSPATH, &path))) {
+    const HRESULT named = checkedItem->GetDisplayName(SIGDN_FILESYSPATH, &path);
+    if (!isWindowOperational() || generation != validationToken) return;
+    if (FAILED(named)) {
         resolveItem(); // Virtual items keep the synchronous Shell validation.
         return;
     }
@@ -2230,7 +2260,11 @@ void ItemWindow::validateItem() {
     pending->window = hwnd;
     pending->token = ++nextValidationToken;
     pending->path = path.m_pData;
-    if (link) checkHR(SHGetIDListFromObject(item, &pending->idList)); // Searched like the link would be.
+    if (checkedLink) {
+        if (!checkHR(SHGetIDListFromObject(checkedItem, &pending->idList))
+                || !checkHR(saveValidationLink(checkedLink, pending->linkState))) return;
+    }
+    if (!isWindowOperational() || generation != validationToken) return;
     auto *const work = new std::shared_ptr<ItemValidation>(pending); // The callback frees its reference.
     if (!checkLE(TrySubmitThreadpoolCallback(validateItemPath, work, nullptr))) {
         delete work; // Not submitted: still owned here.
@@ -2253,17 +2287,21 @@ VOID CALLBACK ItemWindow::validateItemPath(PTP_CALLBACK_INSTANCE, void *const co
         error = GetLastError();
         if (error == ERROR_SUCCESS) error = ERROR_FILE_NOT_FOUND;
     }
-    if (error != ERROR_SUCCESS && pending.idList) {
+    if (error != ERROR_SUCCESS && pending.idList && !pending.linkState.empty()) {
         // The search for a moved target runs here, not on the window thread,
         // on this thread's own apartment and its own link object.
         if (SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE))) {
             {
                 CComPtr<IShellLink> link;
-                ITEMIDLIST *target = nullptr;
-                if (SUCCEEDED(link.CoCreateInstance(__uuidof(ShellLink)))
-                        && SUCCEEDED(link->SetIDList(pending.idList))
-                        && linkTargetMoved(link, pending.idList, &target))
-                    InterlockedExchangePointer(&pending.target, target);
+                CComPtr<IStream> stream;
+                stream.Attach(SHCreateMemStream(pending.linkState.data(), static_cast<UINT>(pending.linkState.size())));
+                if (stream && SUCCEEDED(link.CoCreateInstance(__uuidof(ShellLink)))) {
+                    CComQIPtr<IPersistStream> persistence(link);
+                    ITEMIDLIST *target = nullptr;
+                    if (persistence && SUCCEEDED(persistence->Load(stream))
+                            && linkTargetMoved(link, pending.idList, &target))
+                        InterlockedExchangePointer(&pending.target, target);
+                }
             }
             CoUninitialize();
         }
@@ -2321,6 +2359,8 @@ void ItemWindow::itemMoved(IShellItem *const newItem) {
 }
 
 void ItemWindow::onItemChanged() {
+    // Invalidate preparations too: saving the link can dispatch a change of item.
+    validationToken = ++nextValidationToken;
     // A check of the former item in flight no longer concerns this window.
     validationPending = false;
     pendingValidation.reset();
