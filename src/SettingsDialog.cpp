@@ -13,6 +13,7 @@
 #include "WinUtils.h"
 #include "UIStrings.h"
 #include "DPI.h"
+#include "ShellViewHost.h"
 #include <atlbase.h>
 #include <prsht.h>
 #include <shellapi.h>
@@ -632,6 +633,9 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::setUpButtonEnabled(upButtonEnabled);
                 settings::setViewButtonEnabled(viewButtonEnabled);
                 settings::setMixedFolderSorting(mixedFolderSorting);
+                // Applying the preference gives a provider disabled for the
+                // process another chance at the next navigation.
+                if (mixedFolderSorting) ShellViewHost::resetMixedProviderAvailability();
                 settings::setFullNamesOnSelection(fullNamesOnSelection);
                 settings::setViewMenuPreviewEnabled(viewMenuPreviewEnabled);
                 if (windowSettingsChanged)
@@ -763,6 +767,24 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 StrTrimW(path.data(), L" \t");
                 PathUnquoteSpacesW(path.data());
                 StrTrimW(path.data(), L" \t");
+                // Refuse at apply time what launchEverything refuses at search
+                // time (relative path, extension other than .exe), and a path
+                // naming no file. An empty field keeps automatic detection.
+                if (path[0]) {
+                    const DWORD attributes = GetFileAttributesW(path.data());
+                    if (PathIsRelativeW(path.data())
+                            || _wcsicmp(PathFindExtensionW(path.data()), L".exe") != 0
+                            || attributes == INVALID_FILE_ATTRIBUTES
+                            || (attributes & FILE_ATTRIBUTE_DIRECTORY)) {
+                        const auto text = formatString(IDS_EVERYTHING_PATH_INVALID, path.data());
+                        MessageBoxW(GetParent(hwnd), text.get(), getString(IDS_ERROR_CAPTION),
+                            MB_OK | MB_ICONERROR);
+                        SetFocus(GetDlgItem(hwnd, IDC_EVERYTHING_PATH));
+                        SendDlgItemMessageW(hwnd, IDC_EVERYTHING_PATH, EM_SETSEL, 0, -1);
+                        SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
+                        return TRUE;
+                    }
+                }
                 settings::setEverythingPath(path.data());
                 settings::setEverythingEnabled(!!IsDlgButtonChecked(hwnd, IDC_EVERYTHING_ENABLED));
                 settings::setPeekEnabled(!!IsDlgButtonChecked(hwnd, IDC_PEEK_ENABLED));
@@ -970,8 +992,13 @@ void queueSettings(HWND owner, SettingsPage page) {
     settingsRequest.identity = GetWindowLongPtrW(owner, GWLP_USERDATA);
     settingsRequest.page = page;
     settingsRequest.lifetime = ItemWindow::fromChildWindow(owner);
-    // The timer retries the reservation; elapsed time never grants ownership.
-    // A thread timer also observes a closed owner instead of retaining it forever.
+    // Documented exception to the "no catch-up timer" principle (docs/en/build.md):
+    // this 50 ms thread timer polls the Local\ mutex held by another FileSpacer
+    // process whose property sheet is not visible yet. No public event marks that
+    // sheet's appearance across processes, and the mutex cannot be awaited from
+    // the message loop. Elapsed time never grants ownership: each tick retries
+    // openSettingsDialog, which finds the remote sheet or acquires the mutex, and
+    // the request ends when the owner window closes or its identity changes.
     settingsRequest.timer = SetTimer(nullptr, 0, 50, retrySettings);
     if (checkLE(settingsRequest.timer != 0)) {
         lockProcess();
