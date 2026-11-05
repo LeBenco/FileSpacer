@@ -41,7 +41,9 @@
 
 namespace filespacer {
 
-FolderWindow::~FolderWindow() = default;
+FolderWindow::~FolderWindow() {
+    watchProvisionalInput(false); // The hook must never compare a destroyed window.
+}
 
 static constexpr int BOTTOM_STATUS_HEIGHT_DIP = 23;
 // Coalesce selection notifications before updating the selected item and status.
@@ -82,8 +84,9 @@ void FolderWindow::init() {
         CComPtr<IShellItem> item;
         if (SUCCEEDED(SHCreateItemFromParsingName(HIDDEN_ITEM_PARSE_NAMES[i], nullptr,
                 IID_PPV_ARGS(&item)))) {
-            checkHR(CComQIPtr<IParentAndItem>(item)
-                ->GetParentAndItem(nullptr, nullptr, &hiddenItemIDs[i]));
+            CComQIPtr<IParentAndItem> parentAndItem(item);
+            if (parentAndItem)
+                checkHR(parentAndItem->GetParentAndItem(nullptr, nullptr, &hiddenItemIDs[i]));
         }
     }
 }
@@ -276,18 +279,18 @@ struct FolderWindow::ViewMenuPreview {
         const HRESULT counted = view->ItemCount(SVGIO_ALLVIEW, &before);
         if (!current()) { busy = false; return; }
         const ULONG_PTR baseline = owner.viewHost.enumerationSerial();
-        ++owner.navigationDepth;
         HRESULT result;
         if (command) {
             auto info = owner.makeInvokeInfo(static_cast<int>(command - IDM_SHELL_FIRST), POINT{});
             info.hwnd = owner.hwnd;
-            result = invokeShellCommand(context, reinterpret_cast<CMINVOKECOMMANDINFO *>(&info));
+            result = owner.invokeViewCommand(context, reinterpret_cast<CMINVOKECOMMANDINFO *>(&info));
         } else {
             FolderViewSettings presentation = initial.view;
             presentation.present &= FolderViewSettings::Mode | FolderViewSettings::Flags;
+            ++owner.navigationDepth; // Restoring options can refill and dispatch like a verb.
             result = restoreOptions(view, presentation);
+            owner.resumeDeferredClose();
         }
-        owner.resumeDeferredClose();
         if (SUCCEEDED(result)) currentCommand = command;
         if (current()) {
             const HRESULT recounted = view->ItemCount(SVGIO_ALLVIEW, &after);
@@ -641,7 +644,8 @@ bool FolderWindow::recoverProvisionalView() {
     provisionalCurrent.reset();
     provisionalBaseline.reset();
     provisionalColumnWidths.clear();
-    watchProvisionalInput(iconRestoreFailed);
+    // A closing window never re-registers with the input hook after onDestroy removed it.
+    watchProvisionalInput(!isClosing && iconRestoreFailed);
     if (!isClosing) blockProvisionalInput(false);
     return currentView();
 }
@@ -733,26 +737,31 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
             const LRESULT code = SendMessageW(focus, WM_GETDLGCODE, VK_SPACE, reinterpret_cast<LPARAM>(msg));
             if (!current() || GetFocus() != focus) return true;
             // Native rename editors and controls that own Space keep the key.
-            if (!(code & (DLGC_HASSETSEL | DLGC_WANTALLKEYS | DLGC_BUTTON)) && powerToysPeekEnabled()) {
-                const PeekInstallation installation = findPeek();
-                if (!installation.executable.empty()) {
-                    CComQIPtr<IFolderView2> folderView(view);
-                    if (!current()) return true;
-                    CComPtr<IShellItemArray> selection;
-                    if (folderView && SUCCEEDED(folderView->GetSelection(FALSE, &selection))) {
-                        const auto paths = peekPaths(selection);
-                        if (!current() || GetFocus() != focus)
-                            return true;
-                        if (!paths.empty()) {
-                            // Consume repeats as well, without starting extra previews.
-                            if (!(msg->lParam & (1L << 30))) {
-                                const DWORD error = launchPeek(installation, paths);
-                                if (error && current()) {
-                                    const auto detail = getErrorMessage(error);
-                                    const auto message = formatString(IDS_PEEK_ERROR,
-                                        installation.executable.c_str(), error, detail.get());
-                                    MessageBoxW(hwnd, message.get(), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
-                                }
+            if (!(code & (DLGC_HASSETSEL | DLGC_WANTALLKEYS | DLGC_BUTTON))) {
+                // The native selection first: PowerToys configuration files are
+                // only read once there is something to preview, and never for repeats.
+                CComQIPtr<IFolderView2> folderView(view);
+                if (!current()) return true;
+                CComPtr<IShellItemArray> selection;
+                if (folderView && SUCCEEDED(nativeViewSelection(folderView, FALSE, &selection)) && selection) {
+                    const auto paths = peekPaths(selection);
+                    if (!current() || GetFocus() != focus)
+                        return true;
+                    if (!paths.empty()) {
+                        // Repeats of a press that started a preview are consumed
+                        // without re-reading the configuration or starting another.
+                        if (msg->lParam & (1L << 30)) return peekPressActive;
+                        peekPressActive = false;
+                        const PeekInstallation installation = powerToysPeekEnabled() ? findPeek() : PeekInstallation{};
+                        if (!current() || GetFocus() != focus) return true;
+                        if (!installation.executable.empty()) {
+                            peekPressActive = true;
+                            const DWORD error = launchPeek(installation, paths);
+                            if (error && current()) {
+                                const auto detail = getErrorMessage(error);
+                                const auto message = formatString(IDS_PEEK_ERROR,
+                                    installation.executable.c_str(), error, detail.get());
+                                MessageBoxW(hwnd, message.get(), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
                             }
                             return true;
                         }
@@ -826,7 +835,9 @@ void FolderWindow::cancelAltGesture() {
 
 bool FolderWindow::handleAltMouseMessage(MSG *msg) {
     if (handleResizeMessage(msg->message, msg->wParam, msg->lParam)) return true;
-    if (msg->message == WM_SYSKEYDOWN && msg->wParam == VK_MENU) suppressAltUp = false;
+    // Auto-repeat (bit 30 of lParam: key already down) is not a new Alt press.
+    if (msg->message == WM_SYSKEYDOWN && msg->wParam == VK_MENU && !(msg->lParam & (1 << 30)))
+        suppressAltUp = false;
     if (msg->message == WM_SYSKEYUP && msg->wParam == VK_MENU && suppressAltUp) {
         suppressAltUp = false;
         return true;
@@ -1128,6 +1139,9 @@ void FolderWindow::scheduleStateSave(bool icons) {
             // the provider stays the same. Restore once, before any capture.
             if (spatial) {
                 restoreIconsPending = searchText.empty();
+                // No EnumDone establishes this observation's completeness: a
+                // saved position absent from the view is kept, never pruned.
+                restoreIconsUnpruned = restoreIconsPending;
                 finishViewInitialization(); // Otherwise the next EnumDone finishes it.
                 if (!isWindowOperational() || generation != viewGeneration) return;
             }
@@ -1275,7 +1289,7 @@ bool FolderWindow::captureIconChange() {
     return true;
 }
 
-HRESULT FolderWindow::loadIconPositions() {
+HRESULT FolderWindow::loadIconPositions(bool pruneMissing) {
     if (provisionalBaseline) return S_FALSE;
     if (!viewHost || !loadFolderState()) return E_PENDING;
     if (!(getSavedFolderState().present & FolderState::Icons) || getSavedFolderState().icons.empty()) {
@@ -1312,7 +1326,7 @@ HRESULT FolderWindow::loadIconPositions() {
         // A vanished item is normal, not a failed native restore. Only a full,
         // unfiltered observation may remove it from the known reference.
         if (result == S_OK) result = mergeIconChanges(getSavedFolderState().icons,
-            {}, visible, enumerationComplete, wanted, folder, current);
+            {}, visible, enumerationComplete && pruneMissing, wanted, folder, current);
         if (!current()) return E_ABORT;
         if (result == S_OK) {
             if (wanted != getSavedFolderState().icons) {
@@ -1502,9 +1516,12 @@ void FolderWindow::fitWindowToContents() {
     if (!GetClientRect(body, &viewRect) || !GetWindowRect(hwnd, &windowRect)) return;
     MONITORINFO monitor = {sizeof(monitor)};
     if (!GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &monitor)) return;
-    const LONG width = (std::min<LONG>)(rectWidth(monitor.rcWork), (std::max<LONG>)(GetSystemMetrics(SM_CXMINTRACK),
+    const UINT dpi = GetDpiForWindow(hwnd);
+    const LONG width = (std::min<LONG>)(rectWidth(monitor.rcWork),
+        (std::max<LONG>)(GetSystemMetricsForDpi(SM_CXMINTRACK, dpi),
         content.cx + rectWidth(windowRect) - rectWidth(viewRect) + scaleDPI(12)));
-    const LONG height = (std::min<LONG>)(rectHeight(monitor.rcWork), (std::max<LONG>)(GetSystemMetrics(SM_CYMINTRACK),
+    const LONG height = (std::min<LONG>)(rectHeight(monitor.rcWork),
+        (std::max<LONG>)(GetSystemMetricsForDpi(SM_CYMINTRACK, dpi),
         content.cy + rectHeight(windowRect) - rectHeight(viewRect) + scaleDPI(12)));
     const LONG x = (std::max<LONG>)(monitor.rcWork.left, (std::min<LONG>)(windowRect.left, monitor.rcWork.right - width));
     const LONG y = (std::max<LONG>)(monitor.rcWork.top, (std::min<LONG>)(windowRect.top, monitor.rcWork.bottom - height));
@@ -1676,7 +1693,12 @@ void FolderWindow::saveSearchHistory() {
     if (!store) { stateStorageError(); return; }
     std::vector<std::string> queries;
     for (const auto &query : pendingSearches) queries.push_back(toUtf8(query.c_str()));
-    if (store->saveSearchHistory(getFolderStateKey(), queries, settings::getSearchHistoryLimit(), true)) {
+    bool stateMissing = false;
+    if (store->saveSearchHistory(getFolderStateKey(), queries, settings::getSearchHistoryLimit(), true,
+            &stateMissing)) {
+        // No folder state row yet (its access record is still pending): the
+        // queries stay pending for the save that follows that record.
+        if (stateMissing) return;
         pendingSearches.clear();
         searchHistoryDirty = false;
         searchHistoryLoaded = false;
@@ -2912,12 +2934,14 @@ STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
     debugPrintf(L"NATIVE HWND=%p OnNavigationPending\n", hwnd);
     checkHR(viewHost.stopObserving());
     viewGeneration = 0;
+    provisionalViewWindow = nullptr; // The previous view's HWND may be reused.
     viewReady = false;
     initialEnumerationReady = false;
     viewOptionsApplied = false;
     viewOptionsEnumerationBaseline = 0;
     initialStateApplied = false;
     restoreIconsPending = true;
+    restoreIconsUnpruned = false;
     enumerationComplete = false;
     provisionalRestoreOptionsApplied = false;
     return S_OK;
@@ -2965,6 +2989,7 @@ STDMETHODIMP FolderWindow::OnViewCreated(IShellView *const view) {
     viewOptionsEnumerationBaseline = 0;
     initialStateApplied = false;
     restoreIconsPending = true;
+    restoreIconsUnpruned = false;
     restoringState = true;
     viewReady = false;
     enumerationComplete = false;
@@ -2981,7 +3006,8 @@ STDMETHODIMP FolderWindow::OnViewCreated(IShellView *const view) {
     if (FAILED(observed)) setStatusText(getErrorMessage(observed).get());
 
     if (provisionalBaseline) provisionalInputBlocked = true;
-    view->GetWindow(&provisionalViewWindow);
+    HWND body = nullptr;
+    provisionalViewWindow = SUCCEEDED(view->GetWindow(&body)) ? body : nullptr;
     if (!current()) return S_OK;
 
     if (!loadFolderState() && !provisionalBaseline)
@@ -3020,13 +3046,19 @@ void FolderWindow::blockProvisionalInput(bool blocked) {
     if (!current()) return;
     const HWND search = searchBox.windowHandle(), toolbar = getCommandToolbar();
     if (blocked) {
+        // EnableWindow(FALSE) sets a contained keyboard focus to NULL (Window
+        // Features, Learn): remember which control held it to give it back.
+        const HWND focus = GetFocus();
+        disabledProvisionalFocus = nullptr;
         if (body && IsWindowEnabled(body)) {
+            if (focus && (focus == body || IsChild(body, focus))) disabledProvisionalFocus = body;
             disabledProvisionalView = body;
             disabledProvisionalGeneration = generation;
             EnableWindow(body, FALSE);
             if (!current()) return;
         }
         if (search && IsWindowEnabled(search)) {
+            if (focus && (focus == search || IsChild(search, focus))) disabledProvisionalFocus = search;
             disabledProvisionalSearch = search;
             EnableWindow(search, FALSE);
             if (!current()) return;
@@ -3039,16 +3071,29 @@ void FolderWindow::blockProvisionalInput(bool blocked) {
         const HWND oldBody = disabledProvisionalView, oldSearch = disabledProvisionalSearch;
         const HWND oldToolbar = disabledProvisionalToolbar;
         const ULONG_PTR oldGeneration = disabledProvisionalGeneration;
+        const HWND oldFocus = disabledProvisionalFocus;
+        disabledProvisionalFocus = nullptr;
+        // Give the focus back only where disabling took it: the window is still
+        // active and nothing else received it meanwhile.
+        auto focusLost = [&]() { return GetActiveWindow() == owner && GetFocus() == nullptr; };
         if (body == oldBody && generation == oldGeneration && IsWindow(body)) {
             EnableWindow(body, TRUE);
             if (!provisionalInputBlocked && disabledProvisionalView == oldBody
                     && disabledProvisionalGeneration == oldGeneration) disabledProvisionalView = nullptr;
             if (!current()) return;
+            if (oldFocus == body && focusLost()) {
+                checkHR(source->UIActivate(SVUIA_ACTIVATE_FOCUS));
+                if (!current()) return;
+            }
         }
         if (search && search == oldSearch && IsWindow(search)) {
             EnableWindow(search, TRUE);
             if (!provisionalInputBlocked && disabledProvisionalSearch == oldSearch) disabledProvisionalSearch = nullptr;
             if (!current()) return;
+            if (oldFocus == search && focusLost()) {
+                SetFocus(search);
+                if (!current()) return;
+            }
         }
         if (toolbar && toolbar == oldToolbar && IsWindow(toolbar)) {
             SendMessage(toolbar, TB_ENABLEBUTTON, IDM_VIEW_MENU, MAKELONG(TRUE, 0));
@@ -3096,8 +3141,7 @@ bool FolderWindow::captureProvisionalBaseline() {
                 // A default/automatic sentinel is not a measured pixel width.
                 if (SUCCEEDED(result) && info.uWidth && info.uWidth <= INT32_MAX) {
                     FolderViewSettings::Column column;
-                    memcpy(column.key.data(), &key.fmtid, 16);
-                    memcpy(column.key.data() + 16, &key.pid, 4);
+                    column.key = viewSettingsKey(key);
                     column.width = static_cast<uint32_t>(invScaleDPI(static_cast<int>(info.uWidth)));
                     if (std::none_of(widths.begin(), widths.end(), [&](const FolderViewSettings::Column &value) {
                             return value.key == column.key; })) widths.push_back(column);
@@ -3258,6 +3302,8 @@ void FolderWindow::finishViewInitialization() {
     }
     if (restoreIconsPending) {
         restoreIconsPending = false;
+        const bool pruneMissing = !restoreIconsUnpruned;
+        restoreIconsUnpruned = false;
         if (initial && storedViewState) {
             auto state = std::move(storedViewState);
             CComQIPtr<IFolderView2> folderView(view);
@@ -3274,7 +3320,7 @@ void FolderWindow::finishViewInitialization() {
                 restoringState = false;
             }
         } else if (searchText.empty()) {
-            checkHR(loadIconPositions());
+            checkHR(loadIconPositions(pruneMissing));
         }
     }
     if (!current()) return;
