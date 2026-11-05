@@ -20,6 +20,14 @@ FileSpacer legt Wert auf eine schlanke und übersichtliche Bedienung. Damit sich
 
 <a id="privacy"></a>**Datenschutz:** **Keine Telemetrie, Nutzungsverfolgung oder Werbung.** Update-Prüfungen verbinden sich mit GitHub; wöchentliche Prüfungen sind optional und standardmäßig aus. Herunterladen und Installieren erfordern eine Bestätigung. [Datenschutz](user-guide.md#datenschutz).
 
+**Installation:**
+
+- [Manuelle Installation](https://github.com/LeBenco/FileSpacer/releases/latest): `FileSpacer-X.Y.Z-install.exe` herunterladen und ausführen.
+- **WinGet:** `winget install --id Benco.FileSpacer --exact`
+- **Chocolatey** (Terminal als Administrator): `choco install filespacer -y`
+
+Die WinGet- und Chocolatey-Pakete warten auf die Freigabe in den jeweiligen Katalogen.
+
 **Dokumentation:**
 
 [![Docs](https://img.shields.io/badge/Docs-Benutzerhandbuch-blue)](user-guide.md)
