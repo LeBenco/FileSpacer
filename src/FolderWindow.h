@@ -206,12 +206,14 @@ private:
     MSG deferredGestureClick = {};
     ULONG_PTR deferredGestureGeneration = 0;
     bool suppressAltUp = false;
+    bool peekPressActive = false; // The current Space press started a preview: its repeats are consumed.
 
     ClosedWindow reopeningWindow;
     bool initialEnumerationReady = false;
     bool viewOptionsApplied = false;
     bool initialStateApplied = false;
     bool restoreIconsPending = false;
+    bool restoreIconsUnpruned = false; // Restore after a Shell mode change: no EnumDone proves completeness.
     bool spatialLayout = false;
     ULONG_PTR viewGeneration = 0;
     ULONG_PTR viewOptionsEnumerationBaseline = 0;
@@ -250,6 +252,7 @@ private:
     bool provisionalInputBlocked = false;
     HWND disabledProvisionalView = nullptr, disabledProvisionalSearch = nullptr;
     HWND disabledProvisionalToolbar = nullptr;
+    HWND disabledProvisionalFocus = nullptr; // Control whose keyboard focus EnableWindow(FALSE) cleared.
     HWND provisionalViewWindow = nullptr;
     ULONG_PTR disabledProvisionalGeneration = 0;
     void blockProvisionalInput(bool blocked);
@@ -277,7 +280,7 @@ private:
     void iconRestoreResult(HRESULT result);
     bool observeIconChange();
     bool captureIconChange();
-    HRESULT loadIconPositions();
+    HRESULT loadIconPositions(bool pruneMissing = true);
     void scheduleStateSave(bool icons = false);
     void synchronizeViewProvider();
     bool viewReady = false;
