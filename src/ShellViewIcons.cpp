@@ -43,9 +43,24 @@ HRESULT decodePositions(const std::vector<uint8_t> &bytes, std::vector<IconPosit
 // Some Shell implementations resume it inside SelectAndPositionItems. Retain
 // those resumes only for this batch, on an unambiguous native child. Discovery
 // is an optional implementation dependency: unsupported views stay native.
+//
+// Documented second exception to the public-interfaces rule
+// (docs/en/native-shell-view.md): 5,000 saved positions were restored in
+// about 3.7 s with this guard against about 162 s under
+// IFolderView2::SetRedraw alone. Invariant: during the batch the control has
+// no WS_VISIBLE, the documented effect of the WM_SETREDRAW(FALSE) that
+// SetRedraw(FALSE) passes to DefWindowProc. The guard never changes that
+// state itself: it only withholds the Shell's internal WM_SETREDRAW(TRUE)
+// resumes, then lets IFolderView2::SetRedraw(TRUE) restore the style. That
+// message only re-adds WS_VISIBLE, so the repaint withheld with the resumes
+// is requested afterwards on the public view window (RedrawWindow with
+// RDW_ALLCHILDREN, the repaint the WM_SETREDRAW contract prescribes). If
+// SetRedraw(TRUE) fails, the subclass is removed and nothing is sent to the
+// control.
 class IconRedrawGuard {
     struct State {
         HWND window = nullptr;
+        HWND view = nullptr;
         bool holding = true;
         bool detachedOwner = false;
     };
@@ -95,6 +110,7 @@ public:
                 || GetWindowSubclass(search.window, subclass, 1, &existing)) return;
         state.reset(new State);
         state->window = search.window;
+        state->view = parent;
         if (!SetWindowSubclass(search.window, subclass, 1, reinterpret_cast<DWORD_PTR>(state.get()))) {
             state.reset();
             return;
@@ -112,14 +128,14 @@ public:
         HRESULT result = S_OK;
         // WM_NCDESTROY clears window before a handle can be reused. Resume our
         // original control even when the caller's active generation changed.
+        // Only the Shell resumes its control; a failure leaves it untouched.
         if (state->window) {
             result = redraw->SetRedraw(TRUE);
-            if (FAILED(result) && state->window)
-                SendMessageW(state->window, WM_SETREDRAW, TRUE, 0);
             if (state->window) {
-                RedrawWindow(state->window, nullptr, nullptr,
-                    RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
                 if (RemoveWindowSubclass(state->window, subclass, 1)) state->window = nullptr;
+                if (SUCCEEDED(result))
+                    RedrawWindow(state->view, nullptr, nullptr,
+                        RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
             }
         }
         if (state->window) {
