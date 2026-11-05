@@ -19,6 +19,14 @@ FileSpacer kiest voor een lichte, overzichtelijke ervaring. Om de opeenstapeling
 
 <a id="privacy"></a>**Privacy:** **Geen telemetrie, gebruiksregistratie of reclame**. Updatecontroles maken contact met GitHub; wekelijkse controles zijn optioneel en staan standaard uit. Downloaden en installeren vereisen bevestiging. [Privacybeleid](user-guide.md#privacy).
 
+**Installatie:**
+
+- [Handmatige installatie](https://github.com/LeBenco/FileSpacer/releases/latest): download `FileSpacer-X.Y.Z-install.exe` en voer het uit.
+- **WinGet:** `winget install --id Benco.FileSpacer --exact`
+- **Chocolatey** (terminal als administrator): `choco install filespacer -y`
+
+De WinGet- en Chocolatey-pakketten wachten op goedkeuring in de bijbehorende catalogi.
+
 **Documentatie:**
 
 [![Documentatie](https://img.shields.io/badge/Docs-Handleiding-blue)](user-guide.md)
