@@ -161,6 +161,11 @@ secret; submission failures do not undo the GitHub release.
 See [WinGet distribution](winget.md) for setup,
 review, and retries without rebuilding the application.
 
+Chocolatey distribution also runs independently after a successful release. It
+uses the `CHOCO_API_KEY` secret, builds and smoke-tests the `filespacer` package,
+then submits it for community moderation. See [Chocolatey distribution](chocolatey.md)
+for setup, validation, and manual retries.
+
 Before publication, update both version definitions in `src/resource.h`, add
 the matching `CHANGELOG.md` section, and commit the intended changes. From Git
 Bash, substitute the intended version:
