@@ -104,8 +104,7 @@ void recordFolderPathFailure(const wchar_t *path, HRESULT result) {
     if (!path || !*path || !isFolderAccessFailure(result)) return;
     const std::wstring property = folderWindowProperty(getPathFolderIdentity(path));
     if (property.empty()) return; // No heuristic lookup of an unavailable local identity.
-    std::string key; // ASCII window-property name.
-    for (wchar_t character : property) key.push_back(static_cast<char>(character));
+    const std::string key = folderStateKey(property);
     auto store = folderStateStore();
     bool expired = false;
     if (!store || !store->recordAccess(key, false, static_cast<int64_t>(std::time(nullptr)), &expired)) {
