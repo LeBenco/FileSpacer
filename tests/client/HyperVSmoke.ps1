@@ -56,6 +56,29 @@ try {
     $report.DesktopProcesses=@(Get-Process LogonUI,LockApp,explorer,rdpclip -ErrorAction SilentlyContinue | Select-Object ProcessName,Id,SessionId)
     if($report.SessionQuery-notmatch'(?m)^>\s*console\s'){throw 'The guest session is not attached to its console after preparation.'}
     if(@(Get-Process FileSpacer -ErrorAction SilentlyContinue).Count){throw 'Close existing guest FileSpacer processes before the smoke test.'}
+    if($Regression){
+        # The guest signs in with Everything's installed client started automatically.
+        # Like the GitHub workflow, stop it in this session before any case runs:
+        # ask the instance to exit through its own command line, then force it,
+        # and fail if an instance remains (the real Everything case needs none).
+        $report.EverythingShutdown=@()
+        $session=[Diagnostics.Process]::GetCurrentProcess().SessionId
+        foreach($process in @(Get-Process Everything -ErrorAction SilentlyContinue | Where-Object { $_.SessionId -eq $session })){
+            $entry=[ordered]@{ProcessId=$process.Id;Path=$null;Method=$null;Exited=$false}
+            try{$entry.Path=$process.Path}catch{}
+            try{
+                if($entry.Path -and !$process.HasExited){
+                    $exitRequest=Start-Process -FilePath $entry.Path -ArgumentList '-exit' -PassThru -WindowStyle Hidden
+                    [void]$exitRequest.WaitForExit(15000)
+                    if($process.WaitForExit(15000)){$entry.Method='-exit'}
+                }
+                if(!$process.HasExited){Stop-Process -InputObject $process -Force -ErrorAction Stop;if($process.WaitForExit(15000)){$entry.Method='Stop-Process'}}
+                $entry.Exited=$process.HasExited
+            }catch{$entry.Error=$_.Exception.Message}
+            $report.EverythingShutdown+=@([pscustomobject]$entry)
+        }
+        if(@(Get-Process Everything -ErrorAction SilentlyContinue | Where-Object { $_.SessionId -eq $session }).Count){throw 'Everything is still running in the guest test session.'}
+    }
     if(!$Regression){
     $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($testKey)
     if($key){$key.Dispose();throw 'The guest already has /test preferences; they will not be replaced.'}
