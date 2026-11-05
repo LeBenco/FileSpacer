@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>filespacer</id>
+    <version>@VERSION@</version>
+    <title>FileSpacer</title>
+    <authors>Benco</authors>
+    <projectUrl>https://github.com/LeBenco/FileSpacer</projectUrl>
+    <packageSourceUrl>https://github.com/LeBenco/FileSpacer/tree/main/installer/chocolatey</packageSourceUrl>
+    <projectSourceUrl>https://github.com/LeBenco/FileSpacer</projectSourceUrl>
+    <docsUrl>https://lebenco.github.io/FileSpacer/</docsUrl>
+    <bugTrackerUrl>https://github.com/LeBenco/FileSpacer/issues</bugTrackerUrl>
+    <licenseUrl>https://github.com/LeBenco/FileSpacer/blob/v@VERSION@/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <summary>A spatial file manager for Windows.</summary>
+    <description>FileSpacer is a spatial file manager for Windows 10 and later (x64), forked from ChromaFiler. Each folder has its own window, retaining its size, position, view settings and icon positions. It supports multilingual interfaces, title-bar menus, configurable shortcuts and optional Everything search integration.
+
+This package downloads the official GitHub installer, verifies its SHA-256 and installs for all users. Existing native upgrade choices are preserved.</description>
+    <releaseNotes>https://github.com/LeBenco/FileSpacer/releases/tag/v@VERSION@</releaseNotes>
+    <tags>filespacer spatial file-manager windows explorer</tags>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
