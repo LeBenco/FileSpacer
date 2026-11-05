@@ -20,6 +20,14 @@ O FileSpacer privilegia uma experiência leve e descomplicada. Para limitar a ac
 
 <a id="privacy"></a>**Privacidade:** **Sem telemetria, monitorização de utilização ou publicidade.** As verificações de atualizações contactam o GitHub; as semanais são opcionais e estão desativadas por predefinição. A transferência e a instalação exigem confirmação. [Privacidade](user-guide.md#privacidade).
 
+**Instalação:**
+
+- [Instalação manual](https://github.com/LeBenco/FileSpacer/releases/latest): transferir e executar `FileSpacer-X.Y.Z-install.exe`.
+- **WinGet:** `winget install --id Benco.FileSpacer --exact`
+- **Chocolatey** (terminal como administrador): `choco install filespacer -y`
+
+Os pacotes WinGet e Chocolatey aguardam aprovação nos respetivos catálogos.
+
 **Documentação:**
 
 [![Docs](https://img.shields.io/badge/Docs-Guia%20de%20utiliza%C3%A7%C3%A3o-blue)](user-guide.md)
