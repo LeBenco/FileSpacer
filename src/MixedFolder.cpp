@@ -41,8 +41,10 @@ HRESULT nativeViewSelection(IFolderView2 *view, BOOL noneMeansFolder, IShellItem
     CComPtr<IShellItemArray> selected;
     HRESULT hr = view->GetSelection(noneMeansFolder, &selected);
     if (FAILED(hr) || !selected) return hr;
+    CComPtr<IShellFolder> folder;
     CComPtr<IMixedFolder> mixed;
-    if (FAILED(view->GetFolder(IID_PPV_ARGS(&mixed)))) return selected.CopyTo(out);
+    if (FAILED(view->GetFolder(IID_PPV_ARGS(&folder))) || FAILED(folder->QueryInterface(IID_PPV_ARGS(&mixed))))
+        return selected.CopyTo(out);
     DWORD count = 0;
     hr = selected->GetCount(&count);
     if (FAILED(hr)) return hr;
