@@ -20,6 +20,14 @@
 
 <a id="privacy"></a>**Απόρρητο:** **Χωρίς τηλεμετρία, παρακολούθηση χρήσης ή διαφημίσεις.** Οι έλεγχοι ενημερώσεων επικοινωνούν με το GitHub· οι εβδομαδιαίοι είναι προαιρετικοί και απενεργοποιημένοι από προεπιλογή. Η λήψη και η εγκατάσταση απαιτούν επιβεβαίωση. [Προστασία προσωπικών δεδομένων](user-guide.md#προστασία-προσωπικών-δεδομένων).
 
+**Εγκατάσταση:**
+
+- [Χειροκίνητη εγκατάσταση](https://github.com/LeBenco/FileSpacer/releases/latest): λήψη και εκτέλεση του `FileSpacer-X.Y.Z-install.exe`.
+- **WinGet:** `winget install --id Benco.FileSpacer --exact`
+- **Chocolatey** (τερματικό με δικαιώματα διαχειριστή): `choco install filespacer -y`
+
+Τα πακέτα WinGet και Chocolatey αναμένουν έγκριση στους αντίστοιχους καταλόγους.
+
 **Τεκμηρίωση:**
 
 [![Docs](https://img.shields.io/badge/Docs-%CE%9F%CE%B4%CE%B7%CE%B3%CF%8C%CF%82%20%CF%87%CF%81%CE%AE%CF%83%CE%B7%CF%82-blue)](user-guide.md)
