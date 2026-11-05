@@ -374,17 +374,29 @@ int main(int argc, char **argv) {
         {
             Child held(path, "hold");
             Handle started = event(held.prefix, L".started"), done = event(held.prefix, L".done");
-            bool read = false;
+            // Reads rely on WAL alone: a held mutex never delays them. Writes
+            // still wait for it and complete once it is released.
             FolderState value;
-            std::thread request([&]() { SetEvent(started.get()); read = store.read("known", &value); SetEvent(done.get()); });
+            const ULONGLONG readStarted = GetTickCount64();
+            const bool read = store.read("known", &value);
+            const ULONGLONG readElapsed = GetTickCount64() - readStarted;
+            bool saved = false;
+            std::thread request([&]() {
+                SetEvent(started.get());
+                saved = store.save("known", original, FolderState::Position);
+                SetEvent(done.get());
+            });
             const bool began = WaitForSingleObject(started.get(), 10000) == WAIT_OBJECT_0;
             const bool blocked = WaitForSingleObject(done.get(), 150) == WAIT_TIMEOUT;
             try { held.finish(); }
             catch (...) { SetEvent(held.release.get()); request.join(); throw; }
             request.join();
-            require(began && blocked && read && value.icons == original.icons, "blocking/release lost state or did not block");
+            require(read && readElapsed < 1500 && value.icons == original.icons,
+                "read under a held mutex was delayed or lost state");
+            require(began && blocked && saved, "write under a held mutex did not block or failed after release");
+            check(store);
         }
-        std::cout << "PASS blocking and controlled release\n";
+        std::cout << "PASS lock-free read, blocking write and controlled release\n";
         {
             Child held(path, "hold");
             FolderState defaults;
@@ -480,11 +492,17 @@ int main(int argc, char **argv) {
             {
                 Child held(path, "hold");
                 FolderState sentinel = original;
-                const ULONGLONG started = GetTickCount64();
+                ULONGLONG started = GetTickCount64();
                 const bool read = recovered.read("known", &sentinel);
+                const ULONGLONG readElapsed = GetTickCount64() - started;
+                started = GetTickCount64();
+                const bool saved = recovered.save("known", original, FolderState::Position);
                 const ULONGLONG elapsed = GetTickCount64() - started;
+                const std::string error = recovered.error();
                 held.finish();
-                require(!read && elapsed >= 2500 && sentinel.icons == original.icons,
+                require(read && readElapsed < 1500 && sentinel.icons == original.icons,
+                    "ready connection delayed a read behind the held mutex");
+                require(!saved && elapsed >= 2500 && error.find("1460") != std::string::npos,
                     "ready connection did not retain its ordinary mutex deadline");
             }
             {
@@ -512,6 +530,27 @@ int main(int argc, char **argv) {
             check(store);
         }
         std::cout << "PASS external SQLite writer, rollback, preservation and retry\n";
+        {
+            // One wait bound per operation: the mutex wait and SQLite's busy
+            // handler share the 3 s budget instead of adding up (3 s + 3 s).
+            // The mutex is released after 1.5 s while the SQLite lock stays
+            // held: the write fails on the SQLite lock within the shared budget.
+            Child external(path, "external");
+            Child held(path, "hold");
+            std::thread releasing([&]() { Sleep(1500); SetEvent(held.release.get()); });
+            const ULONGLONG started = GetTickCount64();
+            const bool saved = store.save("known", original, FolderState::Position);
+            const ULONGLONG elapsed = GetTickCount64() - started;
+            const std::string error = store.error();
+            releasing.join();
+            held.finish();
+            external.finish();
+            require(!saved && error.find("locked") != std::string::npos, "released mutex did not reach the SQLite lock");
+            require(elapsed >= 2500 && elapsed < 4200, "mutex wait and SQLite busy timeout were added up");
+            check(store);
+            std::cout << "OBS shared_wait_budget_ms=" << elapsed << '\n';
+        }
+        std::cout << "PASS single wait bound shared by the mutex and SQLite\n";
         fairness(store, path, "hot1"); fairness(store, path, "hot3");
         sqlite3 *db = nullptr;
         require(sqlite3_open(path.c_str(), &db) == SQLITE_OK, "integrity open");
