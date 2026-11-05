@@ -108,6 +108,15 @@ namespace FileSpacerRegression {
         [PreserveSig] int Reset();
         [PreserveSig] int Clone(out EnumPidls copy);
     }
+    // IColumnManager, implemented by DefView's IShellView in Details mode.
+    [ComImport, Guid("d8ec27bb-3f3b-4042-b10a-4acfd924d453"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface ColumnManager {
+        [PreserveSig] int SetColumnInfo(IntPtr key, IntPtr info);
+        [PreserveSig] int GetColumnInfo(IntPtr key, IntPtr info);
+        [PreserveSig] int GetColumnCount(uint flags, out uint count);
+        [PreserveSig] int GetColumns(uint flags, IntPtr keys, uint count);
+        [PreserveSig] int SetColumns(IntPtr keys, uint count);
+    }
     public sealed class ViewProbe : IDisposable {
         FolderView view; ShellView shellView; IntPtr parent;
         internal ViewProbe(FolderView folderView, ShellView activeView) {
@@ -133,6 +142,52 @@ namespace FileSpacerRegression {
             IntPtr memory=Marshal.AllocHGlobal(Marshal.SizeOf(typeof(SortColumn)));
             try { Marshal.StructureToPtr(column,memory,false); Native.Check(((FolderView2)view).SetSortColumns(memory,1)); }
             finally { Marshal.FreeHGlobal(memory); }
+        }
+        // Any property column; returns the duration of the synchronous SetSortColumns call in milliseconds.
+        public double SortByColumn(Guid format,uint id,bool ascending) {
+            var column=new SortColumn { Format=format, Id=id, Direction=ascending?1:-1 };
+            IntPtr memory=Marshal.AllocHGlobal(Marshal.SizeOf(typeof(SortColumn)));
+            try {
+                Marshal.StructureToPtr(column,memory,false);
+                var watch=System.Diagnostics.Stopwatch.StartNew();
+                Native.Check(((FolderView2)view).SetSortColumns(memory,1));
+                return watch.Elapsed.TotalMilliseconds;
+            } finally { Marshal.FreeHGlobal(memory); }
+        }
+        [StructLayout(LayoutKind.Sequential)] struct PropertyKey { public Guid Format; public uint Id; }
+        // CM_ENUM_VISIBLE (0x2) columns, as "fmtid:pid" strings in display order.
+        public string[] VisibleColumns() {
+            var manager=(ColumnManager)shellView; uint count;
+            Native.Check(manager.GetColumnCount(2,out count));
+            int size=Marshal.SizeOf(typeof(PropertyKey));
+            IntPtr keys=Marshal.AllocHGlobal(size*Math.Max(1,(int)count));
+            try {
+                Native.Check(manager.GetColumns(2,keys,count));
+                var names=new string[count];
+                for(int i=0;i<count;++i) {
+                    var key=(PropertyKey)Marshal.PtrToStructure(IntPtr.Add(keys,i*size),typeof(PropertyKey));
+                    names[i]=key.Format.ToString("D")+":"+key.Id;
+                }
+                return names;
+            } finally { Marshal.FreeHGlobal(keys); }
+        }
+        // Raw interface pointer on the view's folder (IFolderView::GetFolder); the caller releases it.
+        public IntPtr FolderInterface(Guid iid) { IntPtr pointer; Native.Check(view.GetFolder(ref iid,out pointer)); return pointer; }
+        // Append a column to the visible Details columns (no change when already visible).
+        public void ShowColumn(Guid format,uint id) {
+            var manager=(ColumnManager)shellView; uint count;
+            Native.Check(manager.GetColumnCount(2,out count));
+            int size=Marshal.SizeOf(typeof(PropertyKey));
+            IntPtr keys=Marshal.AllocHGlobal(size*((int)count+1));
+            try {
+                Native.Check(manager.GetColumns(2,keys,count));
+                for(int i=0;i<count;++i) {
+                    var key=(PropertyKey)Marshal.PtrToStructure(IntPtr.Add(keys,i*size),typeof(PropertyKey));
+                    if(key.Format==format && key.Id==id) return;
+                }
+                Marshal.StructureToPtr(new PropertyKey{Format=format,Id=id},IntPtr.Add(keys,(int)count*size),false);
+                Native.Check(manager.SetColumns(keys,count+1));
+            } finally { Marshal.FreeHGlobal(keys); }
         }
         public int IconSize { get { uint mode; int size; Native.Check(((FolderView2)view).GetViewModeAndIconSize(out mode,out size)); return size; } }
         public bool AutoArrange {
