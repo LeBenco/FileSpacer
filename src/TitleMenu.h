@@ -5,6 +5,7 @@
 #include <unknwn.h>
 #include "resource.h"
 #include <algorithm>
+#include <string>
 #include <vector>
 
 namespace filespacer {
@@ -42,6 +43,9 @@ inline UINT titleMenuCommand(int entry) {
 void openTitleMenuDialog(HWND owner);
 void openFolderGroupsDialog(HWND owner);
 bool titleMenuExtensionEnabled();
+// Reads the Nilesoft Shell handler registration: its class ID and, when
+// requested, its InprocServer32 module path. Either output may be null.
+HRESULT findTitleMenuExtension(CLSID *clsid, std::wstring *module);
 HRESULT activateTitleMenuExtension(IClassFactory **factory);
 // Runs before normal application startup, on the editor's private desktop.
 int renderTitleMenu(const wchar_t *directory, const wchar_t *nilesoft, POINT origin);
