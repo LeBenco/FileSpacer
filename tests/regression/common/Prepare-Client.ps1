@@ -145,6 +145,14 @@ function New-ClientPackage {
             $legacy=& (Join-Path $PSScriptRoot 'Prepare-LegacyMixedProvider.ps1') -ProjectRoot $ProjectRoot
             Copy-PackageFile $legacy
         }
+        if ($entry.Relative -like '31-langues\02-*') {
+            # The mnemonic check reads the ten resource scripts of each kind.
+            foreach($script in @(Get-ChildItem -LiteralPath (Join-Path $ProjectRoot 'src') -File | Where-Object { $_.Name -match '^(dialog|resource)\.[a-z]{2}\.rc$' })) { Copy-PackageFile $script.FullName }
+        }
+        if ($entry.Relative -like '30-tri-melange\06-*') {
+            # Probe variants of the current provider, compiled on the host from patched copies.
+            foreach($variant in @(& (Join-Path $PSScriptRoot 'Prepare-SlowColumnMixedProvider.ps1') -ProjectRoot $ProjectRoot)) { Copy-PackageFile $variant }
+        }
         $dependencies=@{}
         Get-Dependencies $entry.File.FullName $dependencies
         foreach($file in @($dependencies.Keys | Sort-Object)) {
