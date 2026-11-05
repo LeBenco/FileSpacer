@@ -16,7 +16,7 @@ std::wstring registry;
 CComPtr<IShellItem> pinnedFolder;
 uint64_t builtFingerprint = 0;
 bool built = false, purged = false, failLink = true, failCommit = false;
-unsigned linkCalls = 0, commitCalls = 0;
+unsigned linkCalls = 0, commitCalls = 0, iconCalls = 0;
 size_t destinationCount = 0;
 std::vector<std::wstring> removed;
 void require(bool value, const char *message) { if (!value) throw std::runtime_error(message); }
@@ -28,7 +28,8 @@ bool openJumpListKey(const wchar_t *appID, CRegKey *key) {
 bool jumpListKeyStale(FolderStateStore &, const wchar_t *) { return false; }
 bool canReopenClosedWindow(const ClosedWindow &) { return false; }
 std::wstring folderArguments(const wchar_t *folder) { return std::wstring(L"/test \"") + folder + L"\""; }
-std::wstring jumpListFolderIcon(IShellItem *) { return L"fixture icon"; }
+bool reopenFolderIcon(const ClosedWindow &, std::wstring *) { return false; }
+std::wstring pinnedFolderIcon(IShellItem *, const std::wstring &) { ++iconCalls; return L"fixture icon"; }
 bool removedDestinationNames(const wchar_t *, std::vector<std::wstring> *names) { *names = removed; return true; }
 bool makeJumpListLink(const wchar_t *, const wchar_t *, const wchar_t *,
         const std::wstring &, IShellLinkW **out) {
@@ -77,6 +78,7 @@ void run(const wchar_t *path, const wchar_t *folder) {
         require(linkCalls == 2 && commitCalls == 2 && destinationCount == 1, "Unchanged input did not retry a partial update");
         updateReopenJumpLists();
         require(linkCalls == 2 && commitCalls == 2, "A complete unchanged update was not cached");
+        require(iconCalls == 2, "A cached update still extracted the pinned icons");
         removed.push_back(L"temporary model"); failLink = true;
         updateReopenJumpLists();
         require(commitCalls == 3 && destinationCount == 0, "Partial replacement was not reached");
@@ -90,6 +92,7 @@ void run(const wchar_t *path, const wchar_t *folder) {
         require(commitCalls == 6 && destinationCount == 1, "An unsuccessful commit was cached");
         updateReopenJumpLists();
         require(commitCalls == 6, "Successful retry did not restore caching");
+        require(iconCalls == 6, "Icons were extracted outside a rebuild");
     } catch (...) {
         pinnedFolder.Release();
         const LSTATUS cleanup = RegDeleteTreeW(HKEY_CURRENT_USER, registry.c_str());
