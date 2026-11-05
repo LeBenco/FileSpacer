@@ -19,6 +19,14 @@ FileSpacer надає перевагу легкості й простоті. Щ�
 
 <a id="privacy"></a>**Конфіденційність:** **Без телеметрії, відстеження використання чи реклами**. Перевірки оновлень звертаються до GitHub; щотижневі перевірки необов’язкові й за замовчуванням вимкнені. Завантаження й інсталяція потребують підтвердження. [Політика конфіденційності](user-guide.md#конфіденційність).
 
+**Встановлення:**
+
+- [Встановлення вручну](https://github.com/LeBenco/FileSpacer/releases/latest): завантажте й запустіть `FileSpacer-X.Y.Z-install.exe`.
+- **WinGet:** `winget install --id Benco.FileSpacer --exact`
+- **Chocolatey** (термінал із правами адміністратора): `choco install filespacer -y`
+
+Пакети WinGet і Chocolatey очікують на схвалення у відповідних каталогах.
+
 **Документація:**
 
 [![Документація](https://img.shields.io/badge/Docs-Guide-blue)](user-guide.md)
