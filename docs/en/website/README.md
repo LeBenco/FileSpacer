@@ -125,8 +125,17 @@ when any README, `BUILD.md`, a file under `docs/`, a translation, icon, generato
 shared documentation action or Pages workflow changes. Pull requests use the same
 path filters and only build the site. It can also be started manually.
 
-Pages and release do not dispatch or call each other: they share the `build-docs`
-action with `web` and `offline` targets respectively. Version-tag pushes only
+After a successful release, the Pages workflow also runs through `workflow_run`.
+Before building the default branch on a push, manual run or successful release,
+it updates the `href` of the reserved `last-release-url` anchor in every README
+from the latest published installer. The Python HTML parser preserves translated
+text and formatting; synchronized README source references advance with the URL.
+It commits actual changes using the automatic token, then builds the updated
+branch in the same run. Pull requests only build and never write to the branch.
+There is no separate release-link workflow or recursive workflow dispatch.
+
+Pages and release share the `build-docs`
+action with `web` and `offline` targets respectively. Version-tag pushes
 start the release workflow, whose offline documentation waits for application
 tests and uses their exact commit. A documentation push does not start an
 application release; changing both documentation and application code in one
