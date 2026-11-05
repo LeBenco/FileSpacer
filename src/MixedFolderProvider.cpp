@@ -66,15 +66,6 @@ LSTATUS unregisterClass(HKEY root, const wchar_t *id) {
     const LSTATUS status = SHDeleteKeyW(root, key);
     return status == ERROR_FILE_NOT_FOUND ? ERROR_SUCCESS : status;
 }
-bool processElevated() {
-    HANDLE rawToken = nullptr;
-    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &rawToken)) return false;
-    const std::unique_ptr<void, decltype(&CloseHandle)> token(rawToken, &CloseHandle);
-    TOKEN_ELEVATION elevation = {};
-    DWORD size = sizeof(elevation);
-    return GetTokenInformation(token.get(), TokenElevation, &elevation, sizeof(elevation), &size)
-        && elevation.TokenIsElevated != 0;
-}
 bool fileVersion(const wchar_t *file, ULONGLONG *out) {
     DWORD ignored = 0;
     const DWORD bytes = GetFileVersionInfoSizeW(file, &ignored);
@@ -450,29 +441,32 @@ extern "C" HRESULT WINAPI DllGetClassObject(REFCLSID clsid, REFIID iid, void **o
 extern "C" HRESULT WINAPI DllCanUnloadNow() { return !objects.load() && !serverLocks.load() ? S_OK : S_FALSE; }
 
 // Self-registration of the shipped class (the test class belongs to /test mode
-// and is written by CreateMixedFolderItem only). The entries go to
-// HKEY_LOCAL_MACHINE when the caller is elevated and that root accepts the
-// write (installation for all users), otherwise to HKEY_CURRENT_USER
-// (installation for the current user, regsvr32 by an ordinary account).
-extern "C" HRESULT WINAPI DllRegisterServer() {
+// and is written by CreateMixedFolderItem only), with the documented scopes:
+// DllRegisterServer and DllUnregisterServer are per machine (HKEY_LOCAL_MACHINE,
+// installation for all users); "regsvr32 /n /i:user" reaches DllInstall for the
+// per-user entries (HKEY_CURRENT_USER, installation for the current user). The
+// scope is the caller's choice, never inferred from its elevation: an elevated
+// per-user installation must not leave per-machine entries behind.
+static HRESULT registerProvider(HKEY root, bool install) {
     wchar_t id[40], path[MAX_PATH];
     if (!StringFromGUID2(providerClass, id, ARRAYSIZE(id))) return SELFREG_E_CLASS;
+    if (!install) return unregisterClass(root, id) == ERROR_SUCCESS ? S_OK : SELFREG_E_CLASS;
     const DWORD length = GetModuleFileNameW(moduleInstance, path, ARRAYSIZE(path));
     if (!length || length == ARRAYSIZE(path)) return SELFREG_E_CLASS;
-    if (processElevated() && registerClass(HKEY_LOCAL_MACHINE, id, path) == ERROR_SUCCESS) return S_OK;
-    return registerClass(HKEY_CURRENT_USER, id, path) == ERROR_SUCCESS ? S_OK : SELFREG_E_CLASS;
+    return registerClass(root, id, path) == ERROR_SUCCESS ? S_OK : SELFREG_E_CLASS;
 }
-// Removes the caller's per-user entries and, when elevated, the per-machine
-// ones. Entries of other accounts are left to the installer.
+extern "C" HRESULT WINAPI DllRegisterServer() {
+    return registerProvider(HKEY_LOCAL_MACHINE, true);
+}
 extern "C" HRESULT WINAPI DllUnregisterServer() {
-    wchar_t id[40];
-    if (!StringFromGUID2(providerClass, id, ARRAYSIZE(id))) return SELFREG_E_CLASS;
-    LSTATUS status = unregisterClass(HKEY_CURRENT_USER, id);
-    if (processElevated()) {
-        const LSTATUS machine = unregisterClass(HKEY_LOCAL_MACHINE, id);
-        if (status == ERROR_SUCCESS) status = machine;
-    }
-    return status == ERROR_SUCCESS ? S_OK : SELFREG_E_CLASS;
+    return registerProvider(HKEY_LOCAL_MACHINE, false);
+}
+// Without a command line, regsvr32 calls this after DllRegisterServer: nothing
+// more to do. Only "user" is a setup procedure of this DLL.
+extern "C" HRESULT WINAPI DllInstall(BOOL install, PCWSTR commandLine) {
+    if (!commandLine || !*commandLine) return S_OK;
+    if (_wcsicmp(commandLine, L"user") != 0) return E_INVALIDARG;
+    return registerProvider(HKEY_CURRENT_USER, install != FALSE);
 }
 
 extern "C" HRESULT WINAPI CreateMixedFolderItem(BOOL isolated, IShellItem *item, IShellItem **out) {
