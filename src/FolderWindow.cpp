@@ -354,9 +354,14 @@ struct FolderWindow::ViewMenuPreview {
         else restoreDetails();
         if (!current()) return;
         // Releasing the record may destroy this session: only the window is used after it.
-        if (chosenCommand != currentCommand) { window.viewMenuRestore.reset(); return; }
+        if (chosenCommand != currentCommand) {
+            window.viewMenuRestore.reset();
+            window.replayProviderSync();
+            return;
+        }
         if (window.enumerationComplete) window.viewMenuRestore.reset(); // Else another refill was observed.
         window.scheduleStateSave();
+        if (!window.viewMenuRestore) window.replayProviderSync();
     }
 
     void finish(UINT command) {
@@ -393,6 +398,9 @@ struct FolderWindow::ViewMenuPreview {
         }
         window.viewMenuPreview.reset();
         if (settled) window.scheduleStateSave();
+        // A preference changed while the menu was open: synchronized now that
+        // it is closed, unless a refill still running replays it on completion.
+        if (!window.viewMenuRestore) window.replayProviderSync();
     }
 };
 
@@ -661,11 +669,17 @@ bool FolderWindow::recoverProvisionalView() {
     // A closing window never re-registers with the input hook after onDestroy removed it.
     watchProvisionalInput(!isClosing && iconRestoreFailed);
     if (!isClosing) blockProvisionalInput(false);
-    if (!isClosing && providerSyncPending && currentView()) {
-        providerSyncPending = false; // Replayed outside this restoration, not from within it.
-        checkLE(PostMessage(hwnd, MSG_SYNCHRONIZE_VIEW_PROVIDER, 0, 0));
-    }
+    if (!isClosing && currentView()) replayProviderSync(); // Outside this restoration, not from within it.
     return currentView();
+}
+
+// A provider synchronization deferred by synchronizeViewProvider() runs once
+// the step that deferred it is over, from the message queue rather than from
+// within that step's callback.
+void FolderWindow::replayProviderSync() {
+    if (!providerSyncPending || !isWindowOperational()) return;
+    providerSyncPending = false;
+    checkLE(PostMessage(hwnd, MSG_SYNCHRONIZE_VIEW_PROVIDER, 0, 0));
 }
 
 bool FolderWindow::hasStatusText() {
@@ -2116,8 +2130,13 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             if (wParam == storageWaitSerial && isWindowOperational()) {
                 cancelStorageWait();
                 if (!provisionalBaseline) return 0;
-                if (!loadFolderState()) scheduleStorageRetry(); // Taken again meanwhile: wait again.
-                else {
+                if (!loadFolderState()) {
+                    // Taken again meanwhile (or still busy): wait again. Any
+                    // other failure of an open store is not retried from here,
+                    // which would repost this message without end: the next
+                    // save request reads again, as before.
+                    if (folderStateBlockingMutex() || folderStateBusy()) scheduleStorageRetry();
+                } else {
                     persistViewState();
                     saveSearchHistory();
                 }
@@ -3443,10 +3462,7 @@ void FolderWindow::finishViewInitialization() {
     scheduleStateSave();
     updateSelection();
     if (current() && hasStatusText()) updateStatus();
-    if (current() && providerSyncPending) {
-        providerSyncPending = false; // Replayed outside this callback, not from within it.
-        checkLE(PostMessage(hwnd, MSG_SYNCHRONIZE_VIEW_PROVIDER, 0, 0));
-    }
+    if (current()) replayProviderSync(); // Outside this callback, not from within it.
 }
 
 /* IDispatch */
