@@ -135,6 +135,7 @@ class FolderWindow { public:
 if ($Mode -eq 'StorageRetry') {
     $source=Read-Source 'FolderWindow.cpp'
     Save-Source 'SaveStateTimer.inc' (Get-SourceBlock $source 'if (wParam == TIMER_SAVE_STATE)')
+    Save-Source 'StorageRetry.inc' (Get-SourceBlock $source 'void FolderWindow::scheduleStorageRetry()')
 }
 Save-Source 'production-hashes.json' ($hashes | ConvertTo-Json)
 
