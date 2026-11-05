@@ -5,13 +5,13 @@
 #include <utility>
 
 namespace filespacer {
-namespace {
-FolderViewSettings::Key stateKey(const PROPERTYKEY &key) {
+FolderViewSettings::Key viewSettingsKey(const PROPERTYKEY &key) {
     FolderViewSettings::Key result = {};
     std::memcpy(result.data(), &key.fmtid, 16);
     std::memcpy(result.data() + 16, &key.pid, 4);
     return result;
 }
+namespace {
 PROPERTYKEY propertyKey(const FolderViewSettings::Key &key) {
     PROPERTYKEY result = {};
     std::memcpy(&result.fmtid, key.data(), 16);
@@ -55,7 +55,7 @@ FolderViewSettings captureOptions(IFolderView2 *view, const FolderViewSettings &
             CM_COLUMNINFO info = {sizeof(info), CM_MASK_WIDTH};
             if (FAILED(manager->GetColumnInfo(key, &info))) { complete = false; break; }
             FolderViewSettings::Column column;
-            column.key = stateKey(key);
+            column.key = viewSettingsKey(key);
             column.width = static_cast<uint32_t>(invScaleDPI(static_cast<int>(info.uWidth)));
             columns.push_back(column);
         }
@@ -68,7 +68,7 @@ FolderViewSettings captureOptions(IFolderView2 *view, const FolderViewSettings &
             state.sort.clear();
             for (const auto &column : columns) {
                 FolderViewSettings::SortColumn sort;
-                sort.key = stateKey(column.propkey); sort.direction = column.direction;
+                sort.key = viewSettingsKey(column.propkey); sort.direction = column.direction;
                 state.sort.push_back(sort);
             }
             state.present |= FolderViewSettings::Sort;
@@ -78,7 +78,7 @@ FolderViewSettings captureOptions(IFolderView2 *view, const FolderViewSettings &
     BOOL ascending = FALSE;
     HRESULT groupResult = view->GetGroupBy(&group, &ascending);
     if (SUCCEEDED(groupResult)) {
-        state.groupBy = groupResult == S_FALSE ? FolderViewSettings::Key{} : stateKey(group);
+        state.groupBy = groupResult == S_FALSE ? FolderViewSettings::Key{} : viewSettingsKey(group);
         state.groupAscending = groupResult == S_OK && ascending != FALSE;
         state.present |= FolderViewSettings::Group;
     }
