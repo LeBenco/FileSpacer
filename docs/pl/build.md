@@ -102,15 +102,22 @@ Kompilacja NSIS sprawdza pakowanie, nie rzeczywistą instalację, UAC, aktualiza
 
 Zgodny wynik PASS dla identycznych źródeł aplikacji i testów może być użyty ponownie bez uruchamiania zestawu; zobacz [pamięć podręczną wyników regresji](tests/regression/README.md#run-on-github).
 
-Po publikacji osobny proces WinGet zgłasza instalator do katalogu społeczności. Wymaga jednorazowego sekretu `WINGET_TOKEN`; niepowodzenie nie cofa wydania GitHub. Konfiguracja, przegląd i ponowienia bez kompilacji: [dystrybucja WinGet](winget.md).
+Dystrybucja jest opcjonalna: domyślnie wydanie trafia tylko do GitHub. Jeśli wybrano WinGet, osobny proces zgłasza instalator; wymaga sekretu `WINGET_TOKEN`, a niepowodzenie nie cofa wydania. Zobacz [dystrybucję WinGet](winget.md). Kanał `chocolatey` używa `CHOCO_API_KEY`.
 
 Przed publikacją zaktualizuj obie definicje wersji w `src/resource.h`, dodaj sekcję `CHANGELOG.md` i zatwierdź zamierzone zmiany. W Git Bash podstaw wersję:
 
 ```bash
 bash release.sh X.Y.Z
+bash release.sh X.Y.Z --distribute winget
+bash release.sh X.Y.Z --distribute chocolatey
+bash release.sh X.Y.Z --distribute winget --distribute chocolatey
 ```
 
-Skrypt wymaga czystego drzewa, sprawdza zdalną gałąź/tag, pokazuje historię i prosi o potwierdzenie przed wypchnięciem `main` i tagu z adnotacją. Potem sprawdź workflow i oba artefakty. Podsumowania błędów i logi pozostają artefaktami workflow.
+Brak opcji oznacza brak kanałów; `--distribute none` wskazuje to jawnie i nie może występować z kanałem. Powtarzaj opcję dla kilku kanałów; duplikaty są usuwane. Adnotacja tagu zachowuje wybór jako `FileSpacer-Distribution: winget,chocolatey` albo `none`; brak tego pola również wyłącza automatyczną dystrybucję.
+
+Skrypt wymaga czystego drzewa, sprawdza zdalną gałąź/tag, pokazuje zmiany i kanały oraz prosi o potwierdzenie przed wypchnięciem `main` i tagu z adnotacją. Potem sprawdź workflow i oba artefakty. Podsumowania błędów i logi pozostają artefaktami workflow.
+
+Istniejące wydanie można zgłosić później przez **Submit FileSpacer to WinGet** i/lub **Submit FileSpacer to Chocolatey**, wybierając `main` oraz opublikowany tag. Ręczny start wybiera dany kanał niezależnie od wcześniejszej decyzji i używa tego samego instalatora oraz SHA-256. Przykład: `gh workflow run winget.yml --ref main -f tag=vX.Y.Z` lub ta sama komenda z `chocolatey.yml`. Nie uruchamiaj w tym celu ponownie generowania wydania: może ono zastąpić instalator i unieważnić sumy kontrolne katalogów.
 
 <a id="tests"></a>
 
