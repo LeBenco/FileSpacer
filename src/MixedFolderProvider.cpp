@@ -154,10 +154,10 @@ class Folder : public IShellFolder2, public IPersistFolder2, public IMixedFolder
 public:
     explicit Folder(REFCLSID value) : clsid(value) { ++objects; }
     ~Folder() { --objects; }
-    HRESULT bind(PCIDLIST_ABSOLUTE native, PCIDLIST_ABSOLUTE shown) {
+    HRESULT bind(PCIDLIST_ABSOLUTE native, PCIDLIST_ABSOLUTE shown, IBindCtx *context) {
         nativeRoot.Attach(ILCloneFull(native)); viewRoot.Attach(ILCloneFull(shown));
         if (!nativeRoot || !viewRoot) return E_OUTOFMEMORY;
-        const HRESULT hr = SHBindToObject(nullptr, nativeRoot, nullptr, IID_PPV_ARGS(&source));
+        const HRESULT hr = SHBindToObject(nullptr, nativeRoot, context, IID_PPV_ARGS(&source));
         if (SUCCEEDED(hr)) { source->QueryInterface(IID_PPV_ARGS(&sourceIcons)); source->QueryInterface(IID_PPV_ARGS(&sourceOverlays)); }
         return hr;
     }
@@ -182,7 +182,7 @@ public:
     }
     STDMETHODIMP GetCurFolder(PIDLIST_ABSOLUTE *out) override {
         if (!out) return E_POINTER; *out = nullptr;
-        if (!viewRoot) return E_UNEXPECTED;
+        if (!viewRoot) return S_FALSE;
         *out = ILCloneFull(viewRoot); return *out ? S_OK : E_OUTOFMEMORY;
     }
     // An item of the view carries the native identifier; only its parent differs.
@@ -211,9 +211,11 @@ public:
         if (!out) return E_POINTER; *out = nullptr;
         if (source) return source->ParseDisplayName(hwnd, context, name, eaten, out, attributes);
         CComHeapPtr<ITEMIDLIST_ABSOLUTE> native;
-        const HRESULT hr = SHParseDisplayName(name, context, &native, attributes ? *attributes : 0, attributes);
+        HRESULT hr = SHParseDisplayName(name, context, &native, attributes ? *attributes : 0, attributes);
         if (FAILED(hr)) return hr;
-        return wrapItem(native, absoluteItem, reinterpret_cast<PITEMID_CHILD *>(out));
+        hr = wrapItem(native, absoluteItem, reinterpret_cast<PITEMID_CHILD *>(out));
+        if (SUCCEEDED(hr) && eaten) *eaten = static_cast<ULONG>(wcslen(name));
+        return hr;
     }
     STDMETHODIMP EnumObjects(HWND hwnd, SHCONTF flags, IEnumIDList **out) override {
         if (!out) return E_POINTER; *out = nullptr;
@@ -229,7 +231,7 @@ public:
         if (!folderInterface(iid)) return SHBindToObject(nullptr, native, context, iid, out);
         shown.Attach(ILCombine(viewRoot, id)); if (!shown) return E_OUTOFMEMORY;
         auto *folder = new(std::nothrow) Folder(clsid); if (!folder) return E_OUTOFMEMORY;
-        hr = folder->bind(native, shown);
+        hr = folder->bind(native, shown, context);
         if (SUCCEEDED(hr)) hr = folder->QueryInterface(iid, out);
         folder->Release(); return hr;
     }
@@ -386,7 +388,10 @@ extern "C" HRESULT WINAPI CreateMixedFolderItem(BOOL isolated, IShellItem *item,
     if (status == ERROR_SUCCESS) status = ensureStringValue(server, L"ThreadingModel", L"Apartment");
     if (status == ERROR_SUCCESS) status = shell.Create(registration, L"ShellFolder");
     if (status == ERROR_SUCCESS) status = ensureDWORDValue(shell, L"Attributes", SFGAO_FOLDER | SFGAO_HASSUBFOLDER);
-    if (status != ERROR_SUCCESS) return HRESULT_FROM_WIN32(status);
+    // The class registration is independent of the item: its failure is reported
+    // with the self-registration code so the caller can tell it from a failure
+    // of the junction or of the folder shown.
+    if (status != ERROR_SUCCESS) return SELFREG_E_CLASS;
     // A documented filesystem junction keeps the namespace root internal to the
     // application's data directory, without a Desktop/This PC namespace entry.
     CComHeapPtr<wchar_t> localData;
