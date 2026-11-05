@@ -56,7 +56,9 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
         // from its public MSAA role, as for the Alt gestures; no header gives 0.
         LONG topInset = 0;
         POINT probe = {2, 2};
-        if (ClientToScreen(viewWindow, &probe)) {
+        // An overlapping window would answer for the probe: only the view itself is asked.
+        const HWND probed = ClientToScreen(viewWindow, &probe) ? WindowFromPoint(probe) : nullptr;
+        if (probed && (probed == viewWindow || IsChild(viewWindow, probed))) {
             CComPtr<IAccessible> accessible;
             CComVariant child, role;
             result = AccessibleObjectFromPoint(probe, &accessible, &child);
@@ -187,6 +189,12 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
             result = folderView->Item(count - 1, &last);
             if (!current()) return E_ABORT;
         }
+        // Redraw returns on every exit, including an abandoned restoration on a live view.
+        struct RedrawGuard {
+            IFolderView2 *view;
+            bool held;
+            ~RedrawGuard() { if (held) view->SetRedraw(TRUE); }
+        } redraw{folderView, true};
         folderView->SetRedraw(FALSE);
         if (!current()) return E_ABORT;
         // Revealing an item must retain its selection bit: otherwise scrolling
@@ -205,6 +213,7 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         }
         record(reveal(anchor));
         if (!current()) return E_ABORT;
+        redraw.held = false;
         folderView->SetRedraw(TRUE);
         if (!current()) return E_ABORT;
     }
