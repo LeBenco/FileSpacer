@@ -155,7 +155,7 @@ bool chooseFolder(HWND owner, CComHeapPtr<wchar_t> &pathOut) {
         return false;
     if (!checkHR(openDialog->SetOptions(opts | FOS_PICKFOLDERS | FOS_ALLNONSTORAGEITEMS)))
         return false;
-    if (!checkHR(openDialog->Show(GetParent(owner))))
+    if (!checkHR(openDialog->Show(owner)))
         return false;
     CComPtr<IShellItem> item;
     if (!checkHR(openDialog->GetResult(&item)))
