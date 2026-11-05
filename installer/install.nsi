@@ -831,6 +831,18 @@ Section "FileSpacer" SecBase
     !insertmacro INSTALL_STEP "Write registry (SHCTX): Software\Classes\CLSID\${EXECUTE_GUID}\LocalServer32 [ServerExecutable]"
     WriteRegStr SHCTX "Software\Classes\CLSID\${EXECUTE_GUID}\LocalServer32" "ServerExecutable" "$INSTDIR\FileSpacer.exe"
     IfErrors registry_failed
+    ; The mixed-sorting provider registers itself (DllRegisterServer): HKLM from
+    ; the elevated worker (all users), HKCU otherwise (current user). The NSIS
+    ; host is x86: without redirection, $SYSDIR\regsvr32.exe is the x64 one.
+    !insertmacro INSTALL_STEP "Register COM server ($installMode): $INSTDIR\FileSpacerFolder.dll"
+    ${DisableX64FSRedirection}
+    ExecWait '"$SYSDIR\regsvr32.exe" /s "$INSTDIR\FileSpacerFolder.dll"' $0
+    ${EnableX64FSRedirection}
+    !insertmacro WORKER_LOG "Mixed-sorting provider registration: regsvr32 exit=$0 (NSIS error flag preserved)."
+    ${If} ${Errors}
+    ${OrIf} $0 != 0
+        Goto registry_failed
+    ${EndIf}
     !insertmacro WORKER_LOG "Registration written."
     Goto install_done
 files_failed:
@@ -1294,6 +1306,14 @@ Section -ApplyOptions
             Abort
         ${EndIf}
     ${EndIf}
+    ${If} $installMode == "AllUsers"
+    ${AndIf} $machineWorker != 1
+        ; HKCU precedes HKLM in HKCR: a per-user registration left by an earlier
+        ; per-user run or a portable copy would mask the worker's per-machine one.
+        ; Only the unelevated parent reaches the initiating user's HKCU.
+        !insertmacro WORKER_LOG "Removing the current user's residual mixed-sorting provider registration (HKCU)."
+        DeleteRegKey HKCU "Software\Classes\CLSID\{4FDD0CE1-6FD0-441C-AD2D-6DD056610DE3}"
+    ${EndIf}
     System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
     ${If} $delegated == 1
         Goto options_done ; The elevated worker already persisted all checkboxes.
@@ -1331,6 +1351,13 @@ provider_removed:
     ${If} $0 == "$INSTDIR\FileSpacerFolder.dll"
         DeleteRegKey HKCU "Software\Classes\CLSID\{4FDD0CE1-6FD0-441C-AD2D-6DD056610DE3}"
         RMDir "$LOCALAPPDATA\FileSpacer\ShellView.{4FDD0CE1-6FD0-441C-AD2D-6DD056610DE3}"
+    ${EndIf}
+    ; The per-machine registration written by DllRegisterServer for all users.
+    ${If} $installMode == "AllUsers"
+        ReadRegStr $0 HKLM "Software\Classes\CLSID\{4FDD0CE1-6FD0-441C-AD2D-6DD056610DE3}\InprocServer32" ""
+        ${If} $0 == "$INSTDIR\FileSpacerFolder.dll"
+            DeleteRegKey HKLM "Software\Classes\CLSID\{4FDD0CE1-6FD0-441C-AD2D-6DD056610DE3}"
+        ${EndIf}
     ${EndIf}
     Delete "$INSTDIR\LICENSE.txt"
     Delete "$INSTDIR\LockedList-LICENSE.txt"
