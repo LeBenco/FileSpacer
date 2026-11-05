@@ -53,6 +53,7 @@ public:
     // attempt to relocate item if it has been renamed, moved, or deleted
     // return true if item has not changed
     bool resolveItem();
+    bool itemUnreachable(HRESULT validation);
 
     virtual bool handleTopLevelMessage(MSG *msg);
 
@@ -238,6 +239,9 @@ private:
 
     SRWLOCK iconLock = SRWLOCK_INIT;
     HICON iconLarge = nullptr, iconSmall = nullptr;
+    // Replaced by the icon thread while the window thread may still be setting
+    // them: destroyed by the window thread once it has set their replacements.
+    std::vector<HICON> retiredIcons;
     std::wstring taskbarAppID; // UI thread; also used by SHAddToRecentDocs
     std::wstring taskbarIconResource; // protected by iconLock, like the icons
 
