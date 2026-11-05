@@ -2,9 +2,14 @@
 
 GitHub Actions submits `Benco.FileSpacer` to the public
 [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs) repository
-when **Publish FileSpacer** completes successfully (`workflow_run`). Distribution
+when **Publish FileSpacer** completes successfully (`workflow_run`) and WinGet
+was explicitly selected with `release.sh X.Y.Z --distribute winget`. Distribution
 has its own run and result; failure does not change the successful release run.
-The workflow can also be dispatched for an existing published stable release tag.
+The default is no automatic catalog distribution. Repeat `--distribute` to select
+several channels; the selection is recorded in the annotated tag and carried in
+`release-publication`. Missing selection metadata also means no automatic submission.
+The workflow can also be dispatched for an existing published stable release tag;
+that explicit request selects WinGet even if the tag originally selected none.
 
 ## One-time setup
 
@@ -37,7 +42,8 @@ is outstanding.
 
 Follow the existing [release procedure](build.md#releases). Once publication
 succeeds, the independent WinGet workflow downloads `release-publication` from
-that exact successful run. This small artifact records the published tag, also
+that exact successful run and skips submission unless its channel is selected.
+This small artifact records the published tag and channel list, also
 for releases started manually with a tag input. It then:
 
 1. Checks that the tag is a stable `vX.Y.Z` release, and skips versions already
@@ -66,6 +72,8 @@ open **Actions > Submit FileSpacer to WinGet > Run workflow**, select the defaul
 branch, and enter the published
 tag. This retries only distribution, without rebuilding or republishing the
 application. A missing secret also fails explicitly, after retaining manifests.
+From a client, the equivalent explicit request is
+`gh workflow run winget.yml --ref main -f tag=vX.Y.Z`.
 This manual entry point also supports releases made before the metadata artifact
 was introduced, or published outside the normal release workflow. Failed or
 cancelled release workflows do not submit anything.
