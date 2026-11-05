@@ -10,10 +10,13 @@
 
 namespace filespacer {
 
-// Everything the Jump Lists are built from, in build order. Every field is
-// length-prefixed, so two different models never serialize alike and an equal
-// fingerprint can only come from an unchanged model (false positives are
-// harmless: they only trigger a rebuild).
+// The inputs the Jump Lists are built from, in build order: the closure
+// history, the pinned folders' names and the registry, all read without
+// opening a folder. Icons derive from these and are only extracted once the
+// fingerprint differs from the last build. Every field is length-prefixed, so
+// two different models never serialize alike and an equal fingerprint can only
+// come from an unchanged model (false positives are harmless: they only
+// trigger a rebuild).
 struct JumpListModel {
     std::wstring text;
     void add(const std::wstring &field) { text += std::to_wstring(field.size()); text += L':'; text += field; }
