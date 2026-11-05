@@ -287,6 +287,7 @@ private:
     HRESULT loadIconPositions(bool pruneMissing = true);
     void scheduleStateSave(bool icons = false);
     void synchronizeViewProvider();
+    void replayProviderSync();
     bool providerSyncPending = false; // A refused synchronizeViewProvider() to replay once its guard clears.
 
     // Unavailable storage of a provisional window: wait for the named mutex
