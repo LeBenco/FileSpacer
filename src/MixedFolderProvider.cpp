@@ -9,6 +9,8 @@
 #include <atomic>
 #include <cstring>
 #include <limits>
+#include <memory>
+#include <vector>
 
 namespace filespacer {
 namespace {
@@ -17,6 +19,9 @@ const CLSID testProviderClass = {0xe129740c,0x52fd,0x4c7b,{0x98,0xaa,0x9e,0xd6,0
 const GUID itemSignature = {0x3e07595c,0x9b09,0x45ba,{0xb8,0xe3,0x20,0x68,0x9d,0x72,0x91,0x2a}};
 HINSTANCE moduleInstance = nullptr;
 std::atomic<long> objects{0}, serverLocks{0};
+// Per process and per class (shipped, test): the effective registration has
+// been checked, and written when needed, by CreateMixedFolderItem.
+std::atomic<bool> registrationVerified[2]{};
 constexpr USHORT absoluteItem = 1;
 constexpr LONG changeEvents = SHCNE_CREATE | SHCNE_DELETE | SHCNE_MKDIR | SHCNE_RMDIR
     | SHCNE_RENAMEITEM | SHCNE_RENAMEFOLDER | SHCNE_ATTRIBUTES | SHCNE_UPDATEITEM | SHCNE_UPDATEDIR;
@@ -24,8 +29,8 @@ constexpr LONG changeEvents = SHCNE_CREATE | SHCNE_DELETE | SHCNE_MKDIR | SHCNE_
 struct ItemHeader { USHORT cb; GUID signature; USHORT version; USHORT kind; };
 #pragma pack(pop)
 
-// The per-user registration is rewritten only when a value differs, so an
-// ordinary navigation no longer writes the Registry once it matches this module.
+// A registration value is rewritten only when it differs, so re-registering
+// a matching module writes nothing.
 LSTATUS ensureStringValue(CRegKey &key, const wchar_t *name, const wchar_t *value) {
     wchar_t current[MAX_PATH];
     ULONG length = ARRAYSIZE(current);
@@ -37,6 +42,69 @@ LSTATUS ensureDWORDValue(CRegKey &key, const wchar_t *name, DWORD value) {
     DWORD current = 0;
     if (key.QueryDWORDValue(name, current) == ERROR_SUCCESS && current == value) return ERROR_SUCCESS;
     return key.SetDWORDValue(name, value);
+}
+
+// The documented in-process server entries of one class under one root:
+// HKEY_LOCAL_MACHINE for all users, HKEY_CURRENT_USER for the interactive user.
+// Shared by DllRegisterServer (installer) and CreateMixedFolderItem (portable).
+LSTATUS registerClass(HKEY root, const wchar_t *id, const wchar_t *path) {
+    wchar_t key[100];
+    swprintf_s(key, L"Software\\Classes\\CLSID\\%s", id);
+    CRegKey registration, server, shell;
+    LSTATUS status = registration.Create(root, key);
+    if (status == ERROR_SUCCESS) status = ensureStringValue(registration, nullptr, L"FileSpacer");
+    if (status == ERROR_SUCCESS) status = server.Create(registration, L"InprocServer32");
+    if (status == ERROR_SUCCESS) status = ensureStringValue(server, nullptr, path);
+    if (status == ERROR_SUCCESS) status = ensureStringValue(server, L"ThreadingModel", L"Apartment");
+    if (status == ERROR_SUCCESS) status = shell.Create(registration, L"ShellFolder");
+    if (status == ERROR_SUCCESS) status = ensureDWORDValue(shell, L"Attributes", SFGAO_FOLDER | SFGAO_HASSUBFOLDER);
+    return status;
+}
+LSTATUS unregisterClass(HKEY root, const wchar_t *id) {
+    wchar_t key[100];
+    swprintf_s(key, L"Software\\Classes\\CLSID\\%s", id);
+    const LSTATUS status = SHDeleteKeyW(root, key);
+    return status == ERROR_FILE_NOT_FOUND ? ERROR_SUCCESS : status;
+}
+bool processElevated() {
+    HANDLE rawToken = nullptr;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &rawToken)) return false;
+    const std::unique_ptr<void, decltype(&CloseHandle)> token(rawToken, &CloseHandle);
+    TOKEN_ELEVATION elevation = {};
+    DWORD size = sizeof(elevation);
+    return GetTokenInformation(token.get(), TokenElevation, &elevation, sizeof(elevation), &size)
+        && elevation.TokenIsElevated != 0;
+}
+bool fileVersion(const wchar_t *file, ULONGLONG *out) {
+    DWORD ignored = 0;
+    const DWORD bytes = GetFileVersionInfoSizeW(file, &ignored);
+    if (!bytes) return false;
+    std::vector<BYTE> data(bytes);
+    if (!GetFileVersionInfoW(file, 0, bytes, data.data())) return false;
+    VS_FIXEDFILEINFO *version = nullptr;
+    UINT size = 0;
+    if (!VerQueryValueW(data.data(), L"\\", reinterpret_cast<void **>(&version), &size)
+            || size < sizeof(*version) || version->dwSignature != VS_FFI_SIGNATURE)
+        return false;
+    *out = (static_cast<ULONGLONG>(version->dwFileVersionMS) << 32) | version->dwFileVersionLS;
+    return true;
+}
+// Whether the effective registration (the HKCR view merges HKCU over HKLM)
+// already names this module, or a module of the same file version elsewhere,
+// typically an installation's per-machine registration seen by a copy of it.
+// REG_EXPAND_SZ values are expanded by SHRegGetValue before the comparison.
+bool registrationMatches(const wchar_t *id, const wchar_t *path, bool acceptSameVersion) {
+    wchar_t key[100], registered[MAX_PATH], full[MAX_PATH];
+    swprintf_s(key, L"CLSID\\%s\\InprocServer32", id);
+    DWORD bytes = sizeof(registered);
+    if (SHRegGetValueW(HKEY_CLASSES_ROOT, key, nullptr, SRRF_RT_REG_SZ, nullptr, registered, &bytes) != ERROR_SUCCESS)
+        return false;
+    const DWORD length = GetFullPathNameW(registered, ARRAYSIZE(full), full, nullptr);
+    if (!length || length >= ARRAYSIZE(full)) return false;
+    if (_wcsicmp(full, path) == 0) return true;
+    ULONGLONG registeredVersion = 0, ownVersion = 0;
+    return acceptSameVersion && fileVersion(full, &registeredVersion) && fileVersion(path, &ownVersion)
+        && registeredVersion == ownVersion;
 }
 
 // Only the root identifier under the junction is our own: it carries the
@@ -327,8 +395,17 @@ public:
         if (!source) return E_NOTIMPL;
         const HRESULT hr = source->GetDefaultColumnState(column, out);
         if (SUCCEEDED(hr)) {
+            // Folders and files are interleaved on every column. The folder's
+            // own CompareIDs serves the columns carried by the item identifiers;
+            // a slow column (handler-served values such as Dimensions) keeps
+            // PREFER_VARCMP so that DefView compares the values it already
+            // fetched: the VM probe (30-tri-melange/06) showed it then still
+            // honours NOSORTBYFOLDERNESS, with ~30 CompareIDs instead of ~1000
+            // and no transient empty view.
             *out |= static_cast<SHCOLSTATEF>(SHCOLSTATE_NOSORTBYFOLDERNESS);
-            *out &= ~static_cast<SHCOLSTATEF>(SHCOLSTATE_PREFER_VARCMP | SHCOLSTATE_PREFER_FMTCMP);
+            *out &= ~static_cast<SHCOLSTATEF>(SHCOLSTATE_PREFER_FMTCMP);
+            if (!(*out & static_cast<SHCOLSTATEF>(SHCOLSTATE_SLOW)))
+                *out &= ~static_cast<SHCOLSTATEF>(SHCOLSTATE_PREFER_VARCMP);
         }
         return hr;
     }
@@ -372,26 +449,56 @@ extern "C" HRESULT WINAPI DllGetClassObject(REFCLSID clsid, REFIID iid, void **o
 }
 extern "C" HRESULT WINAPI DllCanUnloadNow() { return !objects.load() && !serverLocks.load() ? S_OK : S_FALSE; }
 
+// Self-registration of the shipped class (the test class belongs to /test mode
+// and is written by CreateMixedFolderItem only). The entries go to
+// HKEY_LOCAL_MACHINE when the caller is elevated and that root accepts the
+// write (installation for all users), otherwise to HKEY_CURRENT_USER
+// (installation for the current user, regsvr32 by an ordinary account).
+extern "C" HRESULT WINAPI DllRegisterServer() {
+    wchar_t id[40], path[MAX_PATH];
+    if (!StringFromGUID2(providerClass, id, ARRAYSIZE(id))) return SELFREG_E_CLASS;
+    const DWORD length = GetModuleFileNameW(moduleInstance, path, ARRAYSIZE(path));
+    if (!length || length == ARRAYSIZE(path)) return SELFREG_E_CLASS;
+    if (processElevated() && registerClass(HKEY_LOCAL_MACHINE, id, path) == ERROR_SUCCESS) return S_OK;
+    return registerClass(HKEY_CURRENT_USER, id, path) == ERROR_SUCCESS ? S_OK : SELFREG_E_CLASS;
+}
+// Removes the caller's per-user entries and, when elevated, the per-machine
+// ones. Entries of other accounts are left to the installer.
+extern "C" HRESULT WINAPI DllUnregisterServer() {
+    wchar_t id[40];
+    if (!StringFromGUID2(providerClass, id, ARRAYSIZE(id))) return SELFREG_E_CLASS;
+    LSTATUS status = unregisterClass(HKEY_CURRENT_USER, id);
+    if (processElevated()) {
+        const LSTATUS machine = unregisterClass(HKEY_LOCAL_MACHINE, id);
+        if (status == ERROR_SUCCESS) status = machine;
+    }
+    return status == ERROR_SUCCESS ? S_OK : SELFREG_E_CLASS;
+}
+
 extern "C" HRESULT WINAPI CreateMixedFolderItem(BOOL isolated, IShellItem *item, IShellItem **out) {
     if (!item || !out) return E_POINTER; *out = nullptr;
     const CLSID &clsid = isolated ? testProviderClass : providerClass;
-    wchar_t id[40], key[100], path[MAX_PATH], parsing[MAX_PATH];
+    wchar_t id[40], path[MAX_PATH], parsing[MAX_PATH];
     if (!StringFromGUID2(clsid, id, ARRAYSIZE(id))) return E_FAIL;
     const DWORD length = GetModuleFileNameW(moduleInstance, path, ARRAYSIZE(path));
     if (!length || length == ARRAYSIZE(path)) return HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
-    swprintf_s(key, L"Software\\Classes\\CLSID\\%s", id);
-    CRegKey registration, server, shell;
-    LSTATUS status = registration.Create(HKEY_CURRENT_USER, key);
-    if (status == ERROR_SUCCESS) status = ensureStringValue(registration, nullptr, L"FileSpacer");
-    if (status == ERROR_SUCCESS) status = server.Create(registration, L"InprocServer32");
-    if (status == ERROR_SUCCESS) status = ensureStringValue(server, nullptr, path);
-    if (status == ERROR_SUCCESS) status = ensureStringValue(server, L"ThreadingModel", L"Apartment");
-    if (status == ERROR_SUCCESS) status = shell.Create(registration, L"ShellFolder");
-    if (status == ERROR_SUCCESS) status = ensureDWORDValue(shell, L"Attributes", SFGAO_FOLDER | SFGAO_HASSUBFOLDER);
-    // The class registration is independent of the item: its failure is reported
+    // The effective registration is read once per process and class. One that
+    // already names this module (or, for the shipped class only, the same file
+    // version elsewhere) is used without writing anything. Otherwise the
+    // per-user registration is written, as for a portable copy; HKCU precedes
+    // HKLM in the HKCR view, so it also overrides a per-machine registration of
+    // another build. The test class always requires this exact module so a
+    // bench never activates another checkout's DLL of the same version. The
+    // class registration is independent of the item: its failure is reported
     // with the self-registration code so the caller can tell it from a failure
     // of the junction or of the folder shown.
-    if (status != ERROR_SUCCESS) return SELFREG_E_CLASS;
+    std::atomic<bool> &verified = registrationVerified[isolated ? 1 : 0];
+    if (!verified.load()) {
+        if (!registrationMatches(id, path, !isolated)
+                && registerClass(HKEY_CURRENT_USER, id, path) != ERROR_SUCCESS)
+            return SELFREG_E_CLASS;
+        verified.store(true);
+    }
     // A documented filesystem junction keeps the namespace root internal to the
     // application's data directory, without a Desktop/This PC namespace entry.
     CComHeapPtr<wchar_t> localData;
