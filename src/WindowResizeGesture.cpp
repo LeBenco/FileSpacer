@@ -163,7 +163,8 @@ bool WindowResizeGesture::takeCompleted() {
 bool WindowResizeGesture::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     // Alt belongs to the completed gesture too: releasing it must not activate
     // the menu after the right button has already been released.
-    if (message == WM_SYSKEYDOWN && wParam == VK_MENU) swallowAltUp = false;
+    // Auto-repeat (bit 30 of lParam: key already down) is not a new Alt press.
+    if (message == WM_SYSKEYDOWN && wParam == VK_MENU && !(lParam & (1 << 30))) swallowAltUp = false;
     if (message == WM_SYSKEYUP && wParam == VK_MENU && swallowAltUp) {
         swallowAltUp = false;
         return true;
