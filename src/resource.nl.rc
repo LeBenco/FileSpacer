@@ -140,7 +140,8 @@ Copyright (c) 2013 Afrow Soft Ltd. Zie LockedList-LICENSE.txt.\r\n\
     IDS_RESET_CLI_BUSY, "Kan geen exclusieve toegang tot de instellingen krijgen. Sluit alle exemplaren van FileSpacer en controleer de toegang tot de lokale gegevensmap. Probeer het daarna opnieuw. Er zijn geen instellingen verwijderd."
     IDS_RESET_CLI_FAILED, "Het opnieuw instellen van voorkeuren kon niet worden voltooid: %1\n\nSommige voorkeuren zijn mogelijk al opnieuw ingesteld. Bij /reset-all zijn de mapinstellingen al opnieuw ingesteld."
     IDS_RESET_CLI_ALL_DONE, "Algemene voorkeuren en opgeslagen posities, afmetingen en weergave-instellingen van mappen zijn opnieuw ingesteld. Uw bestanden en Windows-koppelingen zijn behouden."
-    IDS_RESET_CLI_OPTIONS_DONE, "Algemene voorkeuren zijn opnieuw ingesteld. Opgeslagen mapinstellingen, uw bestanden en Windows-koppelingen zijn behouden."
+    IDS_RESET_CLI_OPTIONS_DONE, "Algemene voorkeuren zijn opnieuw ingesteld en de vergrendelingen van opgeslagen mapstatussen zijn opgeheven. Opgeslagen posities, afmetingen en weergave-instellingen van mappen, uw bestanden en Windows-koppelingen zijn behouden."
+    IDS_RESET_CLI_OPTIONS_LOCKS_FAILED, "Algemene voorkeuren zijn opnieuw ingesteld, maar de vergrendelingen van opgeslagen mapstatussen konden niet worden opgeheven omdat de database met mapstatussen niet kon worden bijgewerkt. Opgeslagen posities, afmetingen en weergave-instellingen van mappen, uw bestanden en Windows-koppelingen zijn behouden."
     IDS_RECOVERY_CRASHED, "FileSpacer is gestopt na een ernstige fout. Een diagnostisch rapport en een geheugendump zijn opgeslagen in de lokale toepassingsgegevens; uw voorkeuren zijn behouden."
     IDS_SETTINGS_ACCESS_FAILED, "FileSpacer kan geen gedeelde toegang tot de instellingen krijgen. Mogelijk worden deze opnieuw ingesteld of is de lokale gegevensmap ontoegankelijk. Probeer het opnieuw nadat het onderhoud is voltooid."
 }
@@ -188,6 +189,7 @@ BEGIN
   IDS_EVERYTHING_FOLDER "Huidige map en submappen"
   IDS_EVERYTHING_EVERYWHERE "Overal"
   IDS_EVERYTHING_NOT_FOUND "Everything is niet gevonden. Installeer het of selecteer het uitvoerbare bestand handmatig."
+  IDS_EVERYTHING_PATH_INVALID "Het pad naar Everything kan niet worden toegepast: %1!s!\n\nVoer het volledige pad van een bestaand Everything.exe-bestand in of laat het veld leeg voor automatische detectie."
   IDS_SEARCH_HISTORY_INVALID "Voer een limiet voor de zoekgeschiedenis van 0 tot 20 in."
   IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer plaatst nieuwe vensters zo dat ze andere mapvensters zo min mogelijk overlappen.\n\nDit geldt voor mappen zonder opgeslagen vensterpositie of waarvan de opgeslagen positie na een beeldschermwijziging niet meer bereikbaar is. Een nog bruikbare opgeslagen positie heeft voorrang."
   IDS_GROUP_FOLDER_WINDOWS_HELP "Nieuwe mapvensters kunnen onder één taakbalkknop worden gegroepeerd, volgens uw Windows-taakbalkinstellingen.\n\nAls deze optie uitstaat, kunnen mappen afzonderlijk aan de taakbalk worden vastgemaakt.\n\nDeze instelling geldt voor vensters die na de wijziging worden geopend. Al geopende vensters behouden hun huidige taakbalkgroepering."

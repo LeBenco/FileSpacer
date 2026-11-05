@@ -140,7 +140,8 @@ Copyright (c) 2013 Afrow Soft Ltd. Siehe LockedList-LICENSE.txt.\r\n\
     IDS_RESET_CLI_BUSY, "Für das Zurücksetzen konnte kein exklusiver Zugriff auf die Einstellungen erlangt werden. Schließen Sie alle FileSpacer-Instanzen, prüfen Sie den Zugriff auf den lokalen Datenordner und versuchen Sie es erneut. Keine Einstellungen wurden gelöscht."
     IDS_RESET_CLI_FAILED, "Die Einstellungen konnten nicht vollständig zurückgesetzt werden: %1\n\nEinige Einstellungen wurden möglicherweise bereits zurückgesetzt. Bei Verwendung von /reset-all wurden die Ordnerzustände bereits zurückgesetzt."
     IDS_RESET_CLI_ALL_DONE, "Globale Einstellungen sowie gespeicherte Fensterpositionen, -größen und Ansichten wurden zurückgesetzt. Ihre Dateien und Windows-Zuordnungen bleiben erhalten."
-    IDS_RESET_CLI_OPTIONS_DONE, "Globale Einstellungen wurden zurückgesetzt. Gespeicherte Ordnerzustände, Ihre Dateien und Windows-Zuordnungen bleiben erhalten."
+    IDS_RESET_CLI_OPTIONS_DONE, "Globale Einstellungen wurden zurückgesetzt und die Sperren gespeicherter Ordnerzustände aufgehoben. Gespeicherte Fensterpositionen, -größen und Ansichten, Ihre Dateien und Windows-Zuordnungen bleiben erhalten."
+    IDS_RESET_CLI_OPTIONS_LOCKS_FAILED, "Globale Einstellungen wurden zurückgesetzt, aber die Sperren gespeicherter Ordnerzustände konnten nicht aufgehoben werden, da die Datenbank der Ordnerzustände nicht aktualisiert werden konnte. Gespeicherte Fensterpositionen, -größen und Ansichten, Ihre Dateien und Windows-Zuordnungen bleiben erhalten."
     IDS_RECOVERY_CRASHED, "FileSpacer wurde nach einem schwerwiegenden Fehler beendet. Ein Diagnosebericht und ein Speicherabbild wurden im lokalen Anwendungsdatenordner gespeichert; Ihre Einstellungen bleiben erhalten."
     IDS_SETTINGS_ACCESS_FAILED, "FileSpacer kann nicht auf die Einstellungen zugreifen. Möglicherweise läuft ein Zurücksetzen, oder der lokale Datenordner ist nicht erreichbar. Versuchen Sie es nach Abschluss der Wartung erneut."
 }
@@ -188,6 +189,7 @@ BEGIN
   IDS_EVERYTHING_FOLDER "Aktueller Ordner und Unterordner"
   IDS_EVERYTHING_EVERYWHERE "Überall"
   IDS_EVERYTHING_NOT_FOUND "Everything wurde nicht gefunden. Installieren Sie es oder wählen Sie die ausführbare Datei manuell aus."
+  IDS_EVERYTHING_PATH_INVALID "Der Everything-Pfad kann nicht übernommen werden: %1!s!\n\nGeben Sie den vollständigen Pfad einer vorhandenen Everything.exe an oder lassen Sie das Feld für die automatische Erkennung leer."
   IDS_SEARCH_HISTORY_INVALID "Geben Sie einen Wert zwischen 0 und 20 für den Suchverlauf ein."
   IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer platziert neue Fenster so, dass sie andere Ordnerfenster möglichst wenig überlappen.\n\nDas gilt für Ordner ohne gespeicherte Fensterposition oder wenn eine gespeicherte Position nach einem Wechsel der Bildschirmanordnung nicht mehr erreichbar ist. Eine weiterhin nutzbare gespeicherte Position hat Vorrang."
   IDS_GROUP_FOLDER_WINDOWS_HELP "Neue Ordnerfenster können entsprechend Ihren Windows-Einstellungen unter einer gemeinsamen Schaltfläche in der Taskleiste gruppiert werden.\n\nIst diese Option deaktiviert, können Ordner einzeln an die Taskleiste angeheftet werden.\n\nDie Änderung gilt nur für danach geöffnete Fenster. Bereits geöffnete Fenster behalten ihre aktuelle Gruppierung."

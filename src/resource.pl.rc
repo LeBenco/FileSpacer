@@ -140,7 +140,8 @@ Copyright (c) 2013 Afrow Soft Ltd. Zobacz LockedList-LICENSE.txt.\r\n\
     IDS_RESET_CLI_BUSY, "Nie można uzyskać wyłącznego dostępu do ustawień. Zamknij wszystkie wystąpienia FileSpacer i sprawdź dostęp do lokalnego folderu danych, a następnie spróbuj ponownie. Nie usunięto żadnych ustawień."
     IDS_RESET_CLI_FAILED, "Nie można ukończyć resetowania ustawień: %1\n\nCzęść ustawień mogła już zostać zresetowana. Jeśli użyto /reset-all, ustawienia folderów już zresetowano."
     IDS_RESET_CLI_ALL_DONE, "Zresetowano ustawienia ogólne oraz zapisane położenia, rozmiary i ustawienia widoku folderów. Pliki i skojarzenia Windows zachowano."
-    IDS_RESET_CLI_OPTIONS_DONE, "Zresetowano ustawienia ogólne. Zapisane ustawienia folderów, pliki i skojarzenia Windows zachowano."
+    IDS_RESET_CLI_OPTIONS_DONE, "Zresetowano ustawienia ogólne i zdjęto blokady zapisanych stanów folderów. Zapisane położenia, rozmiary i ustawienia widoku folderów, pliki i skojarzenia Windows zachowano."
+    IDS_RESET_CLI_OPTIONS_LOCKS_FAILED, "Zresetowano ustawienia ogólne, ale nie udało się zdjąć blokad zapisanych stanów folderów, ponieważ nie można było zaktualizować bazy danych stanów folderów. Zapisane położenia, rozmiary i ustawienia widoku folderów, pliki i skojarzenia Windows zachowano."
     IDS_RECOVERY_CRASHED, "FileSpacer zatrzymał się po poważnym błędzie. Raport diagnostyczny i zrzut pamięci zapisano w lokalnych danych aplikacji; ustawienia zachowano."
     IDS_SETTINGS_ACCESS_FAILED, "FileSpacer nie może uzyskać współdzielonego dostępu do ustawień. Może trwać resetowanie lub lokalny folder danych jest niedostępny. Spróbuj ponownie po zakończeniu konserwacji."
 }
@@ -188,6 +189,7 @@ BEGIN
   IDS_EVERYTHING_FOLDER "Bieżący folder i podfoldery"
   IDS_EVERYTHING_EVERYWHERE "Wszędzie"
   IDS_EVERYTHING_NOT_FOUND "Nie znaleziono Everything. Zainstaluj program lub ręcznie wybierz jego plik wykonywalny."
+  IDS_EVERYTHING_PATH_INVALID "Nie można zastosować ścieżki Everything: %1!s!\n\nPodaj pełną ścieżkę istniejącego pliku Everything.exe albo pozostaw pole puste, aby włączyć automatyczne wykrywanie."
   IDS_SEARCH_HISTORY_INVALID "Wprowadź limit historii wyszukiwania od 0 do 20."
   IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer umieszcza nowe okna tak, aby ograniczyć nakładanie się okien folderów.\n\nDotyczy folderów bez zapisanego położenia okna lub z położeniem niedostępnym po zmianie ekranu. Nadal dostępne zapisane położenie ma pierwszeństwo."
   IDS_GROUP_FOLDER_WINDOWS_HELP "Nowe okna folderów można grupować pod jednym przyciskiem paska zadań, zgodnie z ustawieniami paska zadań Windows.\n\nGdy opcja jest wyłączona, foldery można przypinać oddzielnie do paska zadań.\n\nUstawienie dotyczy okien otwartych po zmianie. Już otwarte okna zachowują bieżące grupowanie."
