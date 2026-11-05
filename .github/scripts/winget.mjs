@@ -74,7 +74,6 @@ AppsAndFeaturesEntries:
 Installers:
   - Architecture: x64
     Scope: user
-    ElevationRequirement: elevationProhibited
     InstallerUrl: ${url}
     InstallerSha256: ${hash}
     InstallerSwitches:
