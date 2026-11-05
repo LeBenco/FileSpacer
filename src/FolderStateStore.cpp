@@ -219,12 +219,15 @@ class FolderStateStore::Lock {
 public:
     explicit Lock(FolderStateStore &store, unsigned timeout = 3000) : mutex(store.accessMutex.get()) {
 #ifdef _WIN32
-        const DWORD waited = mutex ? WaitForSingleObject(mutex, timeout) : WAIT_FAILED;
-        acquired = waited == WAIT_OBJECT_0 || waited == WAIT_ABANDONED;
-        if (!acquired) {
-            const DWORD code = waited == WAIT_TIMEOUT ? ERROR_TIMEOUT : GetLastError();
-            store.lastError = "Folder-state database mutex wait failed (Windows error " + std::to_string(code) + ")";
+        DWORD waited = WAIT_FAILED, code = ERROR_INVALID_HANDLE; // No mutex: nothing was called.
+        if (mutex) {
+            waited = WaitForSingleObject(mutex, timeout);
+            if (waited == WAIT_FAILED) code = GetLastError();
+            else if (waited == WAIT_TIMEOUT) code = ERROR_TIMEOUT;
         }
+        acquired = waited == WAIT_OBJECT_0 || waited == WAIT_ABANDONED;
+        if (!acquired)
+            store.lastError = "Folder-state database mutex wait failed (Windows error " + std::to_string(code) + ")";
 #else
         (void)timeout;
         acquired = true;
@@ -277,7 +280,8 @@ FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitializat
         finishWrite(false);
         return;
     }
-    if ((schema == 2 && !execute("ALTER TABLE folder_state ADD COLUMN maximized INTEGER;"))
+    // An up-to-date schema needs no DDL and no user_version write.
+    if (schema != 6 && ((schema == 2 && !execute("ALTER TABLE folder_state ADD COLUMN maximized INTEGER;"))
             || !execute("CREATE TABLE IF NOT EXISTS folder_state("
             "key TEXT PRIMARY KEY NOT NULL, x INTEGER, y INTEGER, width INTEGER, height INTEGER,"
             "view BLOB, icons BLOB, last_success_at INTEGER NOT NULL DEFAULT 0,"
@@ -291,7 +295,7 @@ FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitializat
             "UNIQUE(key,query));"
             "CREATE TRIGGER IF NOT EXISTS delete_search_history AFTER DELETE ON folder_state "
             "BEGIN DELETE FROM search_history WHERE key=old.key; END;"
-            "PRAGMA user_version=6;")) {
+            "PRAGMA user_version=6;"))) {
         finishWrite(false);
         return;
     }
@@ -383,6 +387,22 @@ bool FolderStateStore::contains(const std::string &key, bool *found) {
     return true;
 }
 
+bool FolderStateStore::readLocked(const std::string &key, bool *locked) {
+    *locked = false;
+    if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock) return false;
+    sqlite3_stmt *raw = nullptr;
+    if (!result(sqlite3_prepare_v2(db, "SELECT locked FROM folder_state WHERE key=?1", -1, &raw, nullptr)))
+        return false;
+    Statement statement(raw, sqlite3_finalize);
+    if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))) return false;
+    const int code = sqlite3_step(raw);
+    if (!result(code)) return false;
+    *locked = code == SQLITE_ROW && sqlite3_column_int(raw, 0) != 0;
+    return true;
+}
+
 bool FolderStateStore::save(const std::string &key, const FolderState &state, uint32_t parts) {
     return writeState(key, state, parts, -1);
 }
@@ -397,7 +417,7 @@ bool FolderStateStore::clearLocks() {
     if (!initialized) return false;
     Lock lock(*this);
     if (!lock) return false;
-    return initialized && execute("UPDATE folder_state SET locked=0 WHERE locked!=0");
+    return execute("UPDATE folder_state SET locked=0 WHERE locked!=0");
 }
 
 bool FolderStateStore::writeState(const std::string &key, const FolderState &state,
@@ -663,7 +683,7 @@ bool FolderStateStore::lastClosedWindow(ClosedWindow *window) {
     if (!initialized) return false;
     Lock lock(*this);
     if (!lock) return false;
-    return initialized && readClosedWindow(window);
+    return readClosedWindow(window);
 }
 
 bool FolderStateStore::takeClosedWindow(ClosedWindow *window) {
@@ -689,7 +709,7 @@ bool FolderStateStore::writeClosedWindow(const ClosedWindow &window, bool return
     if (!initialized) return false;
     Lock lock(*this);
     if (!lock) return false;
-    if (!initialized || window.key.empty() || window.parsingName.empty()
+    if (window.key.empty() || window.parsingName.empty()
             || window.viewState.size() > static_cast<size_t>(INT32_MAX)
             || !execute("BEGIN IMMEDIATE")) return false;
     bool success = [&]() {
@@ -727,7 +747,6 @@ bool FolderStateStore::move(const std::string &oldKey, const std::string &newKey
     if (!initialized) return false;
     Lock lock(*this);
     if (!lock) return false;
-    if (!initialized) return false;
     if (oldKey == newKey) return true;
     if (!execute("BEGIN IMMEDIATE")) return false;
     sqlite3_stmt *raw = nullptr;
@@ -773,7 +792,8 @@ bool FolderStateStore::readSearchHistory(const std::string &key, unsigned limit,
             "ORDER BY sequence DESC LIMIT ?2", -1, &raw, nullptr))) return false;
     Statement statement(raw, sqlite3_finalize);
     if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))
-            || !result(sqlite3_bind_int(raw, 2, limit > 20 ? 20 : static_cast<int>(limit)))) return false;
+            || !result(sqlite3_bind_int(raw, 2, static_cast<int>((std::min)(limit, MAX_STORED_SEARCH_HISTORY)))))
+        return false;
     std::vector<std::string> values;
     int code;
     while ((code = sqlite3_step(raw)) == SQLITE_ROW)
@@ -784,17 +804,33 @@ bool FolderStateStore::readSearchHistory(const std::string &key, unsigned limit,
 }
 
 bool FolderStateStore::saveSearchHistory(const std::string &key,
-        const std::vector<std::string> &queries, unsigned limit, bool mergeRecent) {
+        const std::vector<std::string> &queries, unsigned limit, bool mergeRecent, bool *stateMissing) {
+    if (stateMissing) *stateMissing = false;
     if (!initialized) return false;
     Lock lock(*this);
     if (!lock || !execute("BEGIN IMMEDIATE")) return false;
     const bool success = [&]() {
+        {
+            // Never recreate a folder state removed by maintenance or a confirmed
+            // deletion; a state never written yet keeps its queries pending.
+            sqlite3_stmt *probe = nullptr;
+            if (!result(sqlite3_prepare_v2(db, "SELECT 1 FROM folder_state WHERE key=?1", -1, &probe, nullptr)))
+                return false;
+            Statement statement(probe, sqlite3_finalize);
+            if (!result(sqlite3_bind_text(probe, 1, key.c_str(), -1, SQLITE_TRANSIENT))) return false;
+            const int code = sqlite3_step(probe);
+            if (!result(code)) return false;
+            if (code != SQLITE_ROW) {
+                if (stateMissing) *stateMissing = true;
+                return true;
+            }
+        }
         std::vector<std::string> merged;
         if (mergeRecent) {
             // Only explicit pending queries may precede the latest committed history.
             // Read under this write transaction so another client cannot be lost
             // between the read and replacement below.
-            const unsigned maximum = limit > 20 ? 20 : limit;
+            const unsigned maximum = (std::min)(limit, MAX_STORED_SEARCH_HISTORY);
             auto append = [&](const std::string &query) {
                 if (!query.empty() && merged.size() < maximum
                         && std::find(merged.begin(), merged.end(), query) == merged.end())
@@ -817,12 +853,12 @@ bool FolderStateStore::saveSearchHistory(const std::string &key,
                     || !result(sqlite3_step(raw))) return false;
         }
         raw = nullptr;
-        // Never recreate a folder state removed by maintenance or a confirmed deletion.
         if (!result(sqlite3_prepare_v2(db, "INSERT OR IGNORE INTO search_history(key,query) "
                 "SELECT ?1,?2 WHERE EXISTS(SELECT 1 FROM folder_state WHERE key=?1)",
                 -1, &raw, nullptr))) return false;
         Statement statement(raw, sqlite3_finalize);
-        const size_t count = (std::min)(values.size(), static_cast<size_t>(limit > 20 ? 20 : limit));
+        const size_t count = (std::min)(values.size(),
+            static_cast<size_t>((std::min)(limit, MAX_STORED_SEARCH_HISTORY)));
         for (size_t index = count; index > 0; --index) {
             if (values[index - 1].empty()) continue;
             sqlite3_reset(raw);
@@ -845,13 +881,16 @@ bool FolderStateStore::trimSearchHistory(unsigned limit) {
         "ORDER BY recent.sequence DESC LIMIT ?1)", -1, &raw, nullptr));
     {
         Statement statement(raw, sqlite3_finalize);
-        if (success) success = result(sqlite3_bind_int(raw, 1, limit > 20 ? 20 : static_cast<int>(limit)))
+        if (success) success = result(sqlite3_bind_int(raw, 1,
+                static_cast<int>((std::min)(limit, MAX_STORED_SEARCH_HISTORY))))
             && result(sqlite3_step(raw));
     }
     return finishWrite(success);
 }
 
 #if defined(_WIN32) && !defined(FILESPACER_STORAGE_TEST)
+static_assert(settings::MAX_SEARCH_HISTORY_LIMIT == MAX_STORED_SEARCH_HISTORY,
+    "The search history preference limit must match the rows kept per folder");
 std::string folderStateDatabasePath() {
     CComHeapPtr<wchar_t> local;
     if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_CREATE, nullptr, &local)))
