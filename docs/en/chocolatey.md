@@ -1,9 +1,13 @@
 # Chocolatey distribution
 
 The **Submit FileSpacer to Chocolatey** workflow runs independently when
-**Publish FileSpacer** finishes successfully. It can also be started manually
+**Publish FileSpacer** finishes successfully and Chocolatey was explicitly selected
+with `release.sh X.Y.Z --distribute chocolatey`. Repeat `--distribute` to select
+several channels; no option means no automatic catalog distribution.
+It can also be started manually
 with a published stable `vX.Y.Z` tag, including releases made before this
-workflow was introduced. A failed or cancelled release does not submit a package.
+workflow was introduced. A manual run explicitly selects Chocolatey regardless of
+the tag's original preference. A failed or cancelled release does not submit a package.
 
 ## Setup
 
@@ -15,7 +19,8 @@ with the name **CHOCO_API_KEY**. Do not commit or log the key.
 The workflow and templates must be pushed to the default branch before automatic
 distribution can run. GitHub loads the `workflow_run` listener and distribution
 code from that branch. The existing release workflow already supplies the
-`release-publication` artifact containing the exact published tag.
+`release-publication` artifact containing the exact published tag and channel list.
+Automatic runs skip submission if Chocolatey is not selected or the list is absent.
 
 ## Publication
 
@@ -53,6 +58,8 @@ created by distribution, and its failure does not change the successful release.
 
 For a distribution failure, open **Actions > Submit FileSpacer to Chocolatey >
 Run workflow**, choose the default branch, and enter the already published tag.
+The equivalent client command is
+`gh workflow run chocolatey.yml --ref main -f tag=vX.Y.Z`.
 Enable **dry_run** to validate packaging, installation and uninstallation without
 submitting anything or using the API key.
 This rebuilds the package from the same public release assets. It does not rebuild
