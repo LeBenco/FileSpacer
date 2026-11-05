@@ -54,16 +54,23 @@ struct ClosedWindow {
 
 // The main SQLite connection is UI-only; background readers open their own connection.
 // Short write transactions update only requested parts and enforce the used-page quota.
+// Writes, opening/migration and closing are serialized across processes by a
+// named mutex; reads rely on WAL alone (readers and writers never block each other).
 class FolderStateStore {
 public:
     // Retried UI initialization may skip lock waits. Ready connections always
-    // retain the ordinary operation deadlines.
+    // retain the ordinary operation deadline (one bound per operation).
     explicit FolderStateStore(const char *utf8Path, bool waitForInitialization = true);
     ~FolderStateStore();
     FolderStateStore(const FolderStateStore &) = delete;
     FolderStateStore &operator=(const FolderStateStore &) = delete;
     bool ready() const { return initialized; }
     const std::string &error() const { return lastError; }
+    // Diagnosis of the last wait: the named mutex another process held (owned
+    // by this object; duplicate it to wait on it elsewhere), or null when it
+    // was acquired. busy() reports SQLite's own lock contention instead.
+    void *blockingMutex() const { return mutexBlocked ? accessMutex.get() : nullptr; }
+    bool busy() const { return sqliteBusy; }
     bool read(const std::string &key, FolderState *state);
     bool readLocked(const std::string &key, bool *locked); // An absent row is not locked.
     bool contains(const std::string &key, bool *found);
@@ -96,10 +103,12 @@ private:
     bool writeClosedWindow(const ClosedWindow &window, bool returning);
     bool execute(const char *sql);
     bool result(int code);
+    bool beginRead(); // Reads take no mutex; they only get the operation deadline.
     bool enforceQuota();
     bool finishWrite(bool success);
     sqlite3 *db = nullptr;
     bool initialized = false;
+    bool mutexBlocked = false, sqliteBusy = false;
     std::string lastError;
     std::unique_ptr<void, CloseHandle> accessMutex;
 };
@@ -108,6 +117,11 @@ private:
 // Lazy initialization keeps the existing /test mode in a separate database.
 // Ordinary retries stay non-blocking; closing can request the usual lock deadline.
 FolderStateStore *folderStateStore(bool waitForInitialization = false);
+// After a failed folderStateStore(): the named mutex another process held,
+// kept until the next attempt (duplicate it to wait on it), or null; and
+// whether SQLite itself reported a busy database (no Windows event exists).
+void *folderStateBlockingMutex();
+bool folderStateBusy();
 // A background reader opens its own connection; it must not use the UI connection.
 std::string folderStateDatabasePath();
 void reportFolderStateError(void *owner);
