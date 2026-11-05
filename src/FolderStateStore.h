@@ -28,10 +28,12 @@ struct FolderViewSettings {
         const FolderViewSettings &current, const std::vector<Column> &initialWidths = {}) const;
 };
 
-// A successful access refreshes last_success_at at most once a day (UTC
-// anniversary of the stored value); a failure, or the success ending a
-// failure period, is always recorded.
+// A successful access refreshes last_success_at at most once per
+// SUCCESS_REFRESH_SECONDS (a sliding window since the stored value); a
+// failure, or the success ending a failure period, is always recorded.
 constexpr int64_t SUCCESS_REFRESH_SECONDS = 24 * 60 * 60;
+// Search queries kept per folder; the preference limit never exceeds it.
+constexpr unsigned MAX_STORED_SEARCH_HISTORY = 20;
 
 struct FolderState {
     enum Part : uint32_t { Position = 1, Size = 2, View = 4, Icons = 8, Maximized = 16, All = 31 };
@@ -63,6 +65,7 @@ public:
     bool ready() const { return initialized; }
     const std::string &error() const { return lastError; }
     bool read(const std::string &key, FolderState *state);
+    bool readLocked(const std::string &key, bool *locked); // An absent row is not locked.
     bool contains(const std::string &key, bool *found);
     bool save(const std::string &key, const FolderState &state, uint32_t parts);
     // Capture and change the lock in one transaction. Ordinary saves consult the stored lock.
@@ -76,8 +79,9 @@ public:
     bool remove(const std::string &key);
     bool move(const std::string &oldKey, const std::string &newKey);
     bool readSearchHistory(const std::string &key, unsigned limit, std::vector<std::string> *queries);
+    // stateMissing reports a committed no-op: no folder_state row exists yet for this key.
     bool saveSearchHistory(const std::string &key, const std::vector<std::string> &queries, unsigned limit,
-        bool mergeRecent = false);
+        bool mergeRecent = false, bool *stateMissing = nullptr);
     bool trimSearchHistory(unsigned limit);
     bool lastClosedWindow(ClosedWindow *window);
     bool takeClosedWindow(ClosedWindow *window);
