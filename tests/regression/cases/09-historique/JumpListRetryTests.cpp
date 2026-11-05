@@ -17,6 +17,7 @@ CComPtr<IShellItem> pinnedFolder;
 uint64_t builtFingerprint = 0;
 bool built = false, purged = false, failLink = true, failCommit = false;
 unsigned linkCalls = 0, commitCalls = 0, iconCalls = 0;
+uint64_t iconStamp = 0; // The pinned folder's desktop.ini stamp as production would read it.
 size_t destinationCount = 0;
 std::vector<std::wstring> removed;
 void require(bool value, const char *message) { if (!value) throw std::runtime_error(message); }
@@ -28,8 +29,9 @@ bool openJumpListKey(const wchar_t *appID, CRegKey *key) {
 bool jumpListKeyStale(FolderStateStore &, const wchar_t *) { return false; }
 bool canReopenClosedWindow(const ClosedWindow &) { return false; }
 std::wstring folderArguments(const wchar_t *folder) { return std::wstring(L"/test \"") + folder + L"\""; }
-bool reopenFolderIcon(const ClosedWindow &, std::wstring *) { return false; }
-std::wstring pinnedFolderIcon(IShellItem *, const std::wstring &) { ++iconCalls; return L"fixture icon"; }
+bool reopenFolderIcon(const ClosedWindow &, uint64_t, std::wstring *) { return false; }
+uint64_t localIconStamp(const std::wstring &) { return iconStamp; }
+std::wstring pinnedFolderIcon(IShellItem *, const std::wstring &, uint64_t) { ++iconCalls; return L"fixture icon"; }
 bool removedDestinationNames(const wchar_t *, std::vector<std::wstring> *names) { *names = removed; return true; }
 bool makeJumpListLink(const wchar_t *, const wchar_t *, const wchar_t *,
         const std::wstring &, IShellLinkW **out) {
@@ -93,6 +95,11 @@ void run(const wchar_t *path, const wchar_t *folder) {
         updateReopenJumpLists();
         require(commitCalls == 6, "Successful retry did not restore caching");
         require(iconCalls == 6, "Icons were extracted outside a rebuild");
+        iconStamp = 1; // The pinned folder's desktop.ini changed: its icon may have.
+        updateReopenJumpLists();
+        require(commitCalls == 7 && iconCalls == 7, "A changed local icon customization did not rebuild");
+        updateReopenJumpLists();
+        require(commitCalls == 7 && iconCalls == 7, "An unchanged icon customization was not cached");
     } catch (...) {
         pinnedFolder.Release();
         const LSTATUS cleanup = RegDeleteTreeW(HKEY_CURRENT_USER, registry.c_str());
