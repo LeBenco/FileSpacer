@@ -48,19 +48,18 @@ struct SearchBox::IconState {
 
         std::unique_ptr<std::remove_pointer_t<HICON>, decltype(&DestroyIcon)> loaded(
             found ? extractEverythingIcon(path, work->pixels) : nullptr, DestroyIcon);
-        HWND notify = nullptr;
         AcquireSRWLockExclusive(&work->lock);
         if (work->owner) {
             work->icon.swap(loaded); // Destroy the old icon after releasing the lock.
             work->executable = std::move(path);
             work->stamp = attributes;
-            notify = work->owner;
+            // Post under the lock: resetEverythingIcon clears the owner under this same lock before
+            // the window is gone, so the handle cannot have been recycled here. PostMessageW never
+            // blocks, and this registered message carries no data; it only invalidates a live list.
+            PostMessageW(work->owner, searchIconReadyMessage, 0, 0);
         }
         work->loading = false;
         ReleaseSRWLockExclusive(&work->lock);
-        // Notify after unlocking: drawing never waits for the resource worker.
-        // This registered message carries no data and only invalidates a live list.
-        if (notify) PostMessageW(notify, searchIconReadyMessage, 0, 0);
         return 0;
     }
 };
