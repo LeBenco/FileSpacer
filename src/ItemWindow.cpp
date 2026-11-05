@@ -149,6 +149,7 @@ static BOOL compositionEnabled = FALSE;
 HACCEL ItemWindow::accelTable;
 UINT ItemWindow::settingsChangedMessage = 0;
 UINT ItemWindow::closeDescendantsMessage = 0;
+UINT ItemWindow::itemValidatedMessage = 0;
 
 CComPtr<ItemWindow> ItemWindow::activeWindow;
 
@@ -272,6 +273,7 @@ int ItemWindow::cascadeSize() {
 void ItemWindow::init() {
     settingsChangedMessage = checkLE(RegisterWindowMessage(L"FileSpacer.SettingsChanged"));
     closeDescendantsMessage = checkLE(RegisterWindowMessageW(L"FileSpacer.CloseDescendants"));
+    itemValidatedMessage = checkLE(RegisterWindowMessageW(L"FileSpacer.ItemValidated"));
     ProxyIcon::init();
     PathBar::init();
 
@@ -1129,6 +1131,18 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
         }
     }
 
+    if (itemValidatedMessage && message == itemValidatedMessage) {
+        // Another token is stale: a check this window no longer waits for, or
+        // one asked by a destroyed window whose HWND this window reused.
+        if (!validationPending || static_cast<UINT>(lParam) != validationToken) return 0;
+        validationPending = false;
+        if (!isWindowOperational()) return 0;
+        CComPtr<ItemWindow> keepAlive(this);
+        if (wParam) recordFolderAccess(S_OK);
+        else resolveItem(); // Gone: the Shell confirms it, then relocates or closes.
+        return 0;
+    }
+
     return DefWindowProc(hwnd, message, wParam, lParam);
 }
 
@@ -1640,7 +1654,7 @@ void ItemWindow::onActivate(WORD state, HWND prevWindow) {
     if (state != WA_INACTIVE) {
         activeWindow = this;
         if (firstActivate)
-            resolveItem();
+            validateItem();
         firstActivate = true;
         // Quick access pins change in other processes: an activation coming from
         // another FileSpacer window cannot have changed the Jump Lists.
@@ -2148,6 +2162,43 @@ void ItemWindow::handleShellChange(LONG event, PCIDLIST_ABSOLUTE oldID,
             resolveItem();
         }
     }
+}
+
+namespace {
+// Owned by the pool work item: no object reference, the window may be gone.
+struct ItemValidation {
+    HWND window = nullptr;
+    UINT token = 0;
+    std::wstring path;
+};
+UINT nextValidationToken = 0; // UI thread only; distinct across windows.
+} // namespace
+
+void ItemWindow::validateItem() {
+    if (closing || deleted || validationPending) return; // one check in flight
+    CComHeapPtr<wchar_t> path;
+    if (FAILED(item->GetDisplayName(SIGDN_FILESYSPATH, &path))) {
+        resolveItem(); // Virtual items keep the synchronous Shell validation.
+        return;
+    }
+    std::unique_ptr<ItemValidation> validation(new ItemValidation{hwnd, ++nextValidationToken, path.m_pData});
+    validationToken = validation->token;
+    ItemValidation *const work = validation.release(); // The callback frees it.
+    if (!checkLE(TrySubmitThreadpoolCallback(validateItemPath, work, nullptr))) {
+        validation.reset(work); // Not submitted: still owned here.
+        resolveItem();
+        return;
+    }
+    validationPending = true;
+}
+
+VOID CALLBACK ItemWindow::validateItemPath(PTP_CALLBACK_INSTANCE, void *const context) {
+    // Pool thread: only the copied path is touched, and the posted result is
+    // discarded by its receiver when the asking window or item has changed.
+    std::unique_ptr<ItemValidation> validation(static_cast<ItemValidation *>(context));
+    const bool exists = GetFileAttributesW(validation->path.c_str()) != INVALID_FILE_ATTRIBUTES;
+    PostMessageW(validation->window, itemValidatedMessage, exists ? 1 : 0,
+        static_cast<LPARAM>(validation->token));
 }
 
 bool ItemWindow::resolveItem() {
