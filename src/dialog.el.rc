@@ -84,7 +84,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Εμφάνιση κουμπιού Επά&νω", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 99, 130, 14
   CONTROL "Εμφάνιση γραμμής &διαδρομής", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 113, 272, 14
   CONTROL "Εμφάνιση κουμπιού &Ανανέωση", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 127, 130, 14
-  CONTROL "Εμφάνιση κουμπιού &Προβολή", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 127, 130, 14
+  CONTROL "Εμφάνιση κουμπιού Π&ροβολή", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 127, 130, 14
   CONTROL "Τα παραπάνω στοιχεία εμφανίζονται όταν η γραμμή εργαλείων είναι ορατή.", -1, "Static", WS_GROUP, 14, 143, 272, 16
   CONTROL "Αρχεία", -1, "Button", BS_GROUPBOX, 7, 169, 286, 56
   CONTROL "Εμφάνιση πλήρους &ονόματος επιλεγμένου αρχείου (όχι σε πολλαπλή επιλογή)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 181, 272, 20
@@ -145,7 +145,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Αυτόματος εβδομαδιαίος έλεγχος ενημερώσεων", IDC_AUTO_UPDATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 7, 85, 286, 14
   CONTROL "", IDC_LEGAL_INFO, "Edit", ES_MULTILINE|ES_READONLY|WS_VSCROLL|WS_BORDER|WS_TABSTOP, 7, 106, 286, 125
   CONTROL "Συντήρηση", -1, "Button", BS_GROUPBOX, 7, 239, 286, 28
-  CONTROL "&Επαναφορά κατάστασης όλων των φακέλων...", IDC_RESET_FOLDER_STATE, "Button", WS_TABSTOP, 14, 250, 220, 14
+  CONTROL "Επαναφορά &κατάστασης όλων των φακέλων...", IDC_RESET_FOLDER_STATE, "Button", WS_TABSTOP, 14, 250, 220, 14
 }
 
 IDD_UPDATE_PROGRESS DIALOGEX DISCARDABLE 0, 0, 300, 98

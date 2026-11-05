@@ -60,7 +60,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Informatie over vensterplaatsing", IDC_SMART_WINDOW_PLACEMENT_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 79, 12, 14
   CONTROL "Venstervergrendeling", -1, "Button", BS_GROUPBOX, 7, 100, 286, 44
   CONTROL "Vensterstatus&vergrendeling inschakelen", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 111, 272, 12
-  CONTROL "&Slotje in de titelbalk van vergrendelde mappen tonen", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
+  CONTROL "Slotje in de &titelbalk van vergrendelde mappen tonen", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
   CONTROL "Zoekvak", -1, "Button", BS_GROUPBOX, 7, 148, 286, 52
   CONTROL "Filteren tijdens het t&ypen", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 159, 272, 12
   LTEXT "Recente zoekopdrachten per map (0–20; 0 schakelt geschiedenis uit)", -1, 14, 177, 222, 16
@@ -84,13 +84,13 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Knop &Omhoog tonen", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 99, 130, 14
   CONTROL "&Padbalk tonen", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 113, 272, 14
   CONTROL "Knop &Vernieuwen tonen", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 127, 130, 14
-  CONTROL "Knop &Beeld tonen", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 127, 130, 14
+  CONTROL "Knop B&eeld tonen", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 127, 130, 14
   CONTROL "Deze elementen zijn zichtbaar wanneer de werkbalk wordt getoond.", -1, "Static", WS_GROUP, 14, 143, 272, 16
   CONTROL "Bestanden", -1, "Button", BS_GROUPBOX, 7, 169, 286, 56
   CONTROL "Volledige &naam van geselecteerd bestand tonen (niet bij meervoudige selectie)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 181, 272, 20
-  CONTROL "Mappen en bestanden &samen sorteren", IDC_MIXED_FOLDER_SORTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 205, 272, 14
+  CONTROL "&Mappen en bestanden samen sorteren", IDC_MIXED_FOLDER_SORTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 205, 272, 14
   CONTROL "Menu Beeld", -1, "Button", BS_GROUPBOX, 7, 232, 286, 38
-  CONTROL "&Weergavemodi vooraf bekijken in het menu Beeld", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 244, 272, 20
+  CONTROL "Weer&gavemodi vooraf bekijken in het menu Beeld", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 244, 272, 20
   CONTROL "Standaardvensterformaat", -1, "Button", BS_GROUPBOX, 7, 277, 286, 35
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 294, 88, 8
   CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 291, 35, 14
@@ -181,7 +181,7 @@ BEGIN
   LISTBOX IDC_GROUPS_LIST, 10, 37, 280, 94, LBS_NOTIFY | WS_BORDER | WS_VSCROLL | WS_TABSTOP
   LTEXT "Groeps&naam:", -1, 10, 141, 80, 9
   EDITTEXT IDC_GROUPS_NAME, 94, 137, 196, 14, ES_AUTOHSCROLL | WS_TABSTOP
-  PUSHBUTTON "Geopende mappen &opslaan", IDC_GROUPS_SAVE, 10, 160, 166, 15
+  PUSHBUTTON "Geopende mappen op&slaan", IDC_GROUPS_SAVE, 10, 160, 166, 15
   PUSHBUTTON "&Verwijderen", IDC_GROUPS_DELETE, 185, 160, 105, 15
   DEFPUSHBUTTON "&Oproepen", IDC_GROUPS_RECALL, 132, 188, 76, 15
   PUSHBUTTON "Sluiten", IDCANCEL, 214, 188, 76, 15

@@ -143,7 +143,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Recherche automatique chaque se&maine", IDC_AUTO_UPDATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 7, 85, 286, 14
   CONTROL "", IDC_LEGAL_INFO, "Edit", ES_MULTILINE|ES_READONLY|WS_VSCROLL|WS_BORDER|WS_TABSTOP, 7, 106, 286, 125
   CONTROL "Maintenance", -1, "Button", BS_GROUPBOX, 7, 239, 286, 28
-  CONTROL "Ré&initialiser l’état de tous les dossiers...", IDC_RESET_FOLDER_STATE, "Button", WS_TABSTOP, 14, 250, 220, 14
+  CONTROL "Réinitialiser l’état de &tous les dossiers...", IDC_RESET_FOLDER_STATE, "Button", WS_TABSTOP, 14, 250, 220, 14
 }
 
 IDD_UPDATE_PROGRESS DIALOGEX DISCARDABLE 0, 0, 300, 98

@@ -80,8 +80,8 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Pokaż pasek &narzędzi", IDC_TOOLBAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 35, 272, 14
   PUSHBUTTON "Dostosuj menu paska tytułu", IDC_TITLE_MENU_EDIT, 14, 51, 272, 14
   CONTROL "Elementy paska narzędzi", -1, "Button", BS_GROUPBOX, 7, 85, 286, 77
-  CONTROL "Pokaż &Szybki dostęp", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 99, 130, 14
-  CONTROL "Pokaż przycisk &W górę", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 99, 130, 14
+  CONTROL "Pokaż Szybki &dostęp", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 99, 130, 14
+  CONTROL "Pokaż przycisk W &górę", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 99, 130, 14
   CONTROL "Pokaż pasek ś&cieżki", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 113, 272, 14
   CONTROL "Pokaż przycisk &Odśwież", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 127, 130, 14
   CONTROL "Pokaż przycisk W&idok", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 127, 130, 14
@@ -145,7 +145,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "A&utomatycznie sprawdzaj aktualizacje co tydzień", IDC_AUTO_UPDATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 7, 85, 286, 14
   CONTROL "", IDC_LEGAL_INFO, "Edit", ES_MULTILINE|ES_READONLY|WS_VSCROLL|WS_BORDER|WS_TABSTOP, 7, 106, 286, 125
   CONTROL "Konserwacja", -1, "Button", BS_GROUPBOX, 7, 239, 286, 28
-  CONTROL "&Zresetuj stan wszystkich folderów...", IDC_RESET_FOLDER_STATE, "Button", WS_TABSTOP, 14, 250, 220, 14
+  CONTROL "Z&resetuj stan wszystkich folderów...", IDC_RESET_FOLDER_STATE, "Button", WS_TABSTOP, 14, 250, 220, 14
 }
 
 IDD_UPDATE_PROGRESS DIALOGEX DISCARDABLE 0, 0, 300, 98
