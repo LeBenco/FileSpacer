@@ -1,0 +1,56 @@
+name: Update latest release links
+
+on:
+  workflow_run:
+    workflows: [Publish FileSpacer]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: release-links
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: true
+      - name: Test installer link updates
+        run: python3 .github/scripts/update-release-links.test.py
+      - name: Read the latest published release and update all README links
+        run: |
+          mkdir -p build
+          # Query the current latest release, even when an older release was retried.
+          gh api "repos/$GH_REPO/releases/latest" > build/latest-release.json
+          python3 .github/scripts/update-release-links.py build/latest-release.json
+      - name: Commit and push updated links
+        run: |
+          tag=$(jq -r .tag_name build/latest-release.json)
+          git config user.name Benco
+          git config user.email 76206340+LeBenco@users.noreply.github.com
+          git add -- README.md docs/*/README.md
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(readme): link the $tag installer"
+          fi
+          git add -- docs/*/source-state.json
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(translations): record the updated installer link reference"
+          fi
+          # A normal push refuses concurrent changes; never force-update the branch.
+          git push origin "HEAD:$DEFAULT_BRANCH"
+      - name: Refresh the website with the updated README links
+        # GITHUB_TOKEN pushes do not trigger the website's push listener.
+        run: gh workflow run pages.yml --ref "$DEFAULT_BRANCH"
