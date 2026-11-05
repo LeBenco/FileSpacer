@@ -21,7 +21,7 @@ FileSpacer надає перевагу легкості й простоті. Щ�
 
 **Встановлення:**
 
-- [Встановлення вручну](https://github.com/LeBenco/FileSpacer/releases/latest): завантажте й запустіть `FileSpacer-X.Y.Z-install.exe`.
+- **Встановлення вручну:** завантажте й запустіть <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.3.2/FileSpacer-1.3.2-install.exe" id="last-release-url">інсталятор останньої версії</a>.
 - **WinGet:** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (термінал із правами адміністратора): `choco install filespacer -y`
 
