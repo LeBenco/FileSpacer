@@ -83,13 +83,25 @@ BOOL WINAPI observeLayerUpdate(HWND window, HDC destination, POINT *position, SI
 bool observeLayers(HMODULE module) {
     // The PE import table is read only until the one UpdateLayeredWindow slot is
     // made writable. The DLL file and the User32 export are never patched.
+    // Every header field is bounded before it is read: an unexpected image
+    // uses the explicit opaque fallback, like a missing import.
     const auto base = reinterpret_cast<BYTE *>(module);
+    MEMORY_BASIC_INFORMATION region = {};
+    if (VirtualQuery(base, &region, sizeof(region)) != sizeof(region) || region.State != MEM_COMMIT
+            || region.Type != MEM_IMAGE || (region.Protect & (PAGE_NOACCESS | PAGE_GUARD))
+            || region.RegionSize < sizeof(IMAGE_DOS_HEADER)) return false;
     const auto dos = reinterpret_cast<const IMAGE_DOS_HEADER *>(base);
-    if (dos->e_magic != IMAGE_DOS_SIGNATURE) return false;
+    if (dos->e_magic != IMAGE_DOS_SIGNATURE || dos->e_lfanew < static_cast<LONG>(sizeof(*dos))
+            || static_cast<ULONGLONG>(dos->e_lfanew) + sizeof(IMAGE_NT_HEADERS64) > region.RegionSize) return false;
     const auto nt = reinterpret_cast<const IMAGE_NT_HEADERS64 *>(base + dos->e_lfanew);
-    if (nt->Signature != IMAGE_NT_SIGNATURE || nt->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC) return false;
+    if (nt->Signature != IMAGE_NT_SIGNATURE
+            || static_cast<size_t>(nt->FileHeader.SizeOfOptionalHeader) < sizeof(nt->OptionalHeader)
+            || nt->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC
+            || nt->OptionalHeader.NumberOfRvaAndSizes <= static_cast<DWORD>(IMAGE_DIRECTORY_ENTRY_IMPORT)) return false;
+    const DWORD imageSize = nt->OptionalHeader.SizeOfImage;
     const auto entry = nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
-    if (!entry.VirtualAddress || entry.Size < sizeof(IMAGE_IMPORT_DESCRIPTOR)) return false;
+    if (!entry.VirtualAddress || entry.Size < sizeof(IMAGE_IMPORT_DESCRIPTOR)
+            || static_cast<ULONGLONG>(entry.VirtualAddress) + entry.Size > imageSize) return false;
     const auto imports = reinterpret_cast<const IMAGE_IMPORT_DESCRIPTOR *>(base + entry.VirtualAddress);
     decltype(&UpdateLayeredWindow) original = &UpdateLayeredWindow, replacement = &observeLayerUpdate;
     ULONGLONG address = 0;
@@ -97,9 +109,9 @@ bool observeLayers(HMODULE module) {
     std::memcpy(&address, &original, sizeof(address));
     for (size_t index = 0; index < entry.Size / sizeof(*imports) && imports[index].Name; ++index) {
         const DWORD offset = imports[index].FirstThunk;
-        if (!offset || offset >= nt->OptionalHeader.SizeOfImage) continue;
+        if (!offset || offset >= imageSize) continue;
         const auto slots = reinterpret_cast<IMAGE_THUNK_DATA64 *>(base + offset);
-        const size_t count = (nt->OptionalHeader.SizeOfImage - offset) / sizeof(*slots);
+        const size_t count = (imageSize - offset) / sizeof(*slots);
         for (size_t slot = 0; slot < count && slots[slot].u1.Function; ++slot) {
             if (slots[slot].u1.Function != address) continue;
             DWORD protection = 0;
@@ -110,6 +122,18 @@ bool observeLayers(HMODULE module) {
         }
     }
     return false;
+}
+
+bool sameModulePath(const std::wstring &registered, const std::wstring &argument) {
+    auto full = [](const std::wstring &path) {
+        std::wstring result(GetFullPathNameW(path.c_str(), 0, nullptr, nullptr), L'\0');
+        const DWORD length = result.empty() ? 0
+            : GetFullPathNameW(path.c_str(), static_cast<DWORD>(result.size()), &result[0], nullptr);
+        if (!length || length >= result.size()) return path;
+        result.resize(length);
+        return result;
+    };
+    return lstrcmpiW(full(registered).c_str(), full(argument).c_str()) == 0;
 }
 
 bool writeBitmap(const std::wstring &path, const BITMAPINFO &info, const void *pixels) {
@@ -338,25 +362,20 @@ int render(const std::wstring &directory, const std::wstring &dll, POINT origin)
         if (!InsertMenuItemW(renderer.menu, static_cast<UINT>(-1), TRUE, &item)) renderer.error = 6;
     }
     if (!dll.empty()) {
-        HMODULE module = LoadLibraryExW(dll.c_str(), nullptr, LOAD_WITH_ALTERED_SEARCH_PATH);
-        if (!module) renderer.error = 7;
+        // Only the handler registered for the Shell is ever loaded, through COM:
+        // the command-line path is checked against that registration, not used.
+        CLSID clsid = {}; std::wstring registered;
+        if (FAILED(findTitleMenuExtension(&clsid, &registered))) renderer.error = 8;
+        else if (!sameModulePath(registered, dll)) renderer.error = 22;
         else {
-            observeLayers(module); // An unavailable layer capture uses the explicit opaque fallback.
-            wchar_t clsidText[128] = {}; DWORD bytes = sizeof(clsidText); CLSID clsid = {};
-            if (RegGetValueW(HKEY_CLASSES_ROOT, L"Directory\\shellex\\ContextMenuHandlers\\ @nilesoft.shell",
-                    nullptr, RRF_RT_REG_SZ, nullptr, clsidText, &bytes) != ERROR_SUCCESS
-                    || FAILED(CLSIDFromString(clsidText, &clsid))) renderer.error = 8;
-            else {
-                const FARPROC address = GetProcAddress(module, "DllGetClassObject");
-                using Factory = HRESULT (STDAPICALLTYPE *)(REFCLSID, REFIID, void **);
-                Factory factory = nullptr;
-                static_assert(sizeof(factory) == sizeof(address), "Windows function pointer representation");
-                std::memcpy(&factory, &address, sizeof(factory));
-                CComPtr<IClassFactory> unused;
-                if (factory) factory(clsid, IID_PPV_ARGS(&unused)); else renderer.error = 9;
-            }
+            CComPtr<IClassFactory> unused;
+            HMODULE nilesoftModule = nullptr;
+            if (FAILED(CoGetClassObject(clsid, CLSCTX_INPROC_SERVER, nullptr, IID_PPV_ARGS(&unused)))) renderer.error = 7;
+            // This reference keeps the module mapped until exit, as the former
+            // LoadLibrary did: NS hooks stay loaded until exit. An unavailable
+            // layer capture uses the explicit opaque fallback.
+            else if (checkLE(GetModuleHandleExW(0, registered.c_str(), &nilesoftModule))) observeLayers(nilesoftModule);
         }
-        // The private renderer exits immediately; NS hooks stay loaded until exit.
     }
     observedRenderer = &renderer;
     if (!renderer.error) TrackPopupMenuEx(renderer.menu, TPM_LEFTALIGN | TPM_TOPALIGN, origin.x + 48, origin.y + 48, owner, nullptr);
