@@ -45,7 +45,6 @@ STRINGTABLE {
     IDS_INVALID_CHARS,      "Een bestandsnaam mag de volgende tekens niet bevatten:\n\\ / : * ? "" < > |"
 
     IDS_SETTINGS_CAPTION,   "FileSpacer-instellingen"
-    IDS_NO_UPDATE_CAPTION,  "Geen updates beschikbaar"
     IDS_NO_UPDATE,          "U gebruikt de nieuwste versie."
     IDS_UPDATE_CLOSE_BUTTON, "Sluiten"
     IDS_UPDATE_SEARCH_BUTTON, "Naar updates &zoeken"
@@ -64,7 +63,6 @@ STRINGTABLE {
     IDS_UPDATE_CONFIRM, "Het installatieprogramma wordt gedownload en gecontroleerd. Tijdens het downloaden kunt u FileSpacer blijven gebruiken en annuleren. Daarna worden alle FileSpacer-vensters gesloten, waarbij hun posities en instellingen zoals gebruikelijk worden opgeslagen, en begint de installatie. Geopende mappen worden na voltooiing of annulering van de installatie opnieuw geopend.\n\nDoorgaan?"
     IDS_UPDATE_RELAY_FAILED, "De update of het herstellen van vensters kon niet worden voltooid. Er is geen proces geforceerd beëindigd.\n\n%1"
     IDS_UPDATE_RESTORE_FAILED, "%1!u! map(pen) konden niet opnieuw worden geopend. Ze zijn mogelijk verplaatst, verwijderd of niet meer beschikbaar. De overige mappen zijn opnieuw geopend."
-    IDS_UPDATE_ERROR,       "Fout bij het zoeken naar updates"
     IDS_UPDATE_NOTIF_TITLE, "FileSpacer-update"
     IDS_UPDATE_NOTIF_INFO,  "Er is een nieuwe versie van FileSpacer beschikbaar. Klik op deze melding om de downloadpagina te openen."
 

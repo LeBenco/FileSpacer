@@ -45,7 +45,6 @@ STRINGTABLE {
     IDS_INVALID_CHARS,      "Der Dateiname darf folgende Zeichen nicht enthalten:\n\\ / : * ? "" < > |"
 
     IDS_SETTINGS_CAPTION,   "FileSpacer-Einstellungen"
-    IDS_NO_UPDATE_CAPTION,  "Keine Updates verfügbar"
     IDS_NO_UPDATE,          "Sie verwenden die neueste Version."
     IDS_UPDATE_CLOSE_BUTTON, "Schließen"
     IDS_UPDATE_SEARCH_BUTTON, "Nach &Updates suchen"
@@ -64,7 +63,6 @@ STRINGTABLE {
     IDS_UPDATE_CONFIRM, "Das Installationsprogramm wird heruntergeladen und überprüft. Während des Downloads können Sie FileSpacer weiter verwenden und den Vorgang abbrechen. Anschließend werden alle FileSpacer-Fenster geschlossen. Ihre Positionen und Einstellungen werden wie gewohnt gespeichert, bevor die Installation startet. Geöffnete Ordner werden nach Abschluss oder Abbruch der Installation erneut geöffnet.\n\nFortfahren?"
     IDS_UPDATE_RELAY_FAILED, "Das Update oder die Wiederherstellung der Fenster konnte nicht abgeschlossen werden. Kein Prozess wurde zwangsweise beendet.\n\n%1"
     IDS_UPDATE_RESTORE_FAILED, "%1!u! Ordner konnten nicht erneut geöffnet werden. Sie wurden möglicherweise verschoben oder gelöscht oder sind nicht verfügbar. Die übrigen Ordner wurden erneut geöffnet."
-    IDS_UPDATE_ERROR,       "Fehler bei der Suche nach Updates"
     IDS_UPDATE_NOTIF_TITLE, "FileSpacer-Update"
     IDS_UPDATE_NOTIF_INFO,  "Eine neue Version von FileSpacer ist verfügbar. Klicken Sie auf diese Benachrichtigung, um die Downloadseite zu öffnen."
 
