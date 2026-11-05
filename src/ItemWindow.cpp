@@ -59,6 +59,9 @@ std::unique_ptr<std::remove_pointer<HWND>::type, decltype(&DestroyWindow)>
 ULONG ancestorNotifyID = 0;
 // Main STA only. Each published window owns its native-window COM reference.
 std::vector<ItemWindow *> ancestorNotifyWindows;
+// Title-menu entries of the open windows: above the Shell menu range
+// (IDM_SHELL_FIRST..LAST), below the separators (0xE000 + composition index).
+const UINT TITLE_WINDOW_COMMAND_FIRST = 0x8000;
 }
 
 static HBITMAP captionCommandBitmap(const wchar_t *glyph, int size, COLORREF color);
@@ -274,6 +277,8 @@ void ItemWindow::init() {
 
     HINSTANCE hInstance = GetModuleHandle(nullptr);
 
+    checkHR(DwmIsCompositionEnabled(&compositionEnabled)); // Read before the class style depends on it.
+
     WNDCLASS itemClass = {};
     itemClass.lpfnWndProc = windowProc;
     itemClass.hInstance = hInstance;
@@ -307,8 +312,6 @@ void ItemWindow::init() {
     toolbarHostClass.hbrBackground =
         GetSysColorBrush(IsWindows10OrGreater() ? COLOR_WINDOW : COLOR_3DFACE);
     RegisterClass(&toolbarHostClass);
-
-    checkHR(DwmIsCompositionEnabled(&compositionEnabled));
 
     if (compositionEnabled) {
         RECT adjustedRect = {};
@@ -359,6 +362,9 @@ void ItemWindow::uninit() {
     ProxyIcon::uninit();
     if (symbolFont)
         DeleteFont(symbolFont);
+    if (statusFont)
+        DeleteFont(statusFont);
+    statusFont = nullptr;
     if (navigationGraphicsToken) {
         for (auto &path : navigationIconPaths) {
             delete path;
@@ -384,9 +390,7 @@ ItemWindow::ItemWindow(IShellItem *const item, const std::wstring &identity)
           identityProperty(folderWindowProperty(identity)),
           proxyIcon(this) {
     taskbarGrouped = settings::getGroupFolderWindows();
-    // The window property is an ASCII prefix followed by a hexadecimal digest.
-    for (wchar_t character : identityProperty)
-        stateKey.push_back(static_cast<char>(character));
+    stateKey = folderStateKey(identityProperty);
 }
 
 const wchar_t * ItemWindow::className() const {
@@ -587,9 +591,29 @@ void ItemWindow::propStoreWriteString(IPropertyStore *const propStore,
 }
 
 bool ItemWindow::loadFolderState() {
-    if (stateLoaded) return true;
-    auto store = folderStateStore(closing);
-    if (!store || !store->read(stateKey, &savedState)) {
+    if (stateLoaded && pendingMoveKey.empty()) return true;
+    // Closing may wait for unavailable storage once; the later close callbacks
+    // (view destruction, window destruction) must not repeat that wait.
+    const bool wait = closing && !closingStoreWaited;
+    if (closing) closingStoreWaited = true;
+    auto store = folderStateStore(wait);
+    if (!store) {
+        stateStorageError();
+        return false;
+    }
+    if (!pendingMoveKey.empty()) {
+        // A rename during unavailability: move the row before reading or writing the new key.
+        if (!store->move(pendingMoveKey, stateKey)) {
+            stateStorageError();
+            return false;
+        }
+        pendingMoveKey.clear();
+        if (stateLoaded) {
+            storageErrorShown = false;
+            return true;
+        }
+    }
+    if (!store->read(stateKey, &savedState)) {
         stateStorageError();
         return false;
     }
@@ -610,10 +634,7 @@ void ItemWindow::recordFolderAccess(HRESULT result) {
     const bool success = SUCCEEDED(result);
     if (!success && !isFolderAccessFailure(result)) return;
     // A successful access, unlike a delayed save, may recreate an age-expired state.
-    if (success && stateKey.empty()) {
-        for (wchar_t character : identityProperty)
-            stateKey.push_back(static_cast<char>(character));
-    }
+    if (success && stateKey.empty()) stateKey = folderStateKey(identityProperty);
     if (stateKey.empty() || !loadFolderState()) return;
     const int64_t now = static_cast<int64_t>(std::time(nullptr));
     // Activations are frequent: a success already recorded today, with no
@@ -640,32 +661,15 @@ void ItemWindow::recordFolderAccess(HRESULT result) {
     storageErrorShown = false;
 }
 
-void ItemWindow::resetViewState(uint32_t mask) {
-    auto store = folderStateStore();
-    if (!store || !store->clear(stateKey, mask)) {
-        stateStorageError();
-        return;
-    }
-    savedState.present &= ~mask;
-    if (mask & FolderState::View) savedState.view = {};
-    if (mask & FolderState::Icons) savedState.icons.clear();
-    if (mask & FolderState::Maximized) savedState.maximized = false;
-    viewStateClean(mask);
-}
-
-void ItemWindow::resetViewState() {
-    resetViewState(FolderState::All);
-}
-
 bool ItemWindow::updateStateLock() {
-    FolderState current;
+    bool locked = false;
     auto store = folderStateStore();
     const bool wasLocked = stateLocked;
-    if (!store || !store->read(stateKey, &current)) {
+    if (!store || !store->readLocked(stateKey, &locked)) {
         stateStorageError();
         return false;
     }
-    stateLocked = settings::getWindowStateLockEnabled() && current.locked;
+    stateLocked = settings::getWindowStateLockEnabled() && locked;
     if (wasLocked && !stateLocked) viewStateDirty(FolderState::All);
     if (wasLocked != stateLocked) {
         proxyIcon.setLocked(stateLocked);
@@ -893,6 +897,9 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
                 cancelPlacementWithdrawal(hwnd);
                 return 0; // don't close
             }
+            // Withdraw the identity now: another process opening this folder
+            // must create its own window rather than activate a closing one.
+            RemovePropW(hwnd, identityProperty.c_str());
             if (hwnd && isFolder()) persistViewState(); // Merge while the native view is still available.
             if (message == WM_CLOSE && hwnd && isFolder()) {
                 const HWND closingHwnd = hwnd;
@@ -1103,11 +1110,13 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             return 0;
         }
         case MSG_UPDATE_ICONS: {
+            // Copy under the lock; WM_SETICON may repaint and dispatch outside it.
             AcquireSRWLockExclusive(&iconLock);
-            SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)iconLarge);
-            SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)iconSmall);
-            proxyIcon.setIcon(iconSmall);
+            const HICON bigIcon = iconLarge, smallIcon = iconSmall;
             ReleaseSRWLockExclusive(&iconLock);
+            SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)bigIcon);
+            SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)smallIcon);
+            proxyIcon.setIcon(smallIcon);
             updateTaskbar();
 
             autoSizeProxy(clientSize(hwnd).cx);
@@ -2199,12 +2208,13 @@ void ItemWindow::onItemChanged() {
     std::wstring property = folderWindowProperty(getFolderIdentity(item));
     if (!property.empty() && property != identityProperty
             && SetPropW(hwnd, property.c_str(), reinterpret_cast<HANDLE>(1))) {
-        std::string newKey;
-        for (wchar_t character : property)
-            newKey.push_back(static_cast<char>(character));
+        const std::string newKey = folderStateKey(property);
         auto store = folderStateStore();
-        if (!store || !store->move(stateKey, newKey))
+        if (!store || !store->move(stateKey, newKey)) {
+            // The stored row keeps the oldest unmoved key until storage returns.
+            if (pendingMoveKey.empty()) pendingMoveKey = stateKey;
             stateStorageError();
+        }
         stateKey = newKey;
         RemovePropW(hwnd, identityProperty.c_str());
         identityProperty = std::move(property);
@@ -2540,30 +2550,37 @@ void ItemWindow::openCaptionMenu(POINT pos) {
     }
     const auto composition = settings::getTitleMenu();
     std::vector<int> menuOrder;
-    auto append = [&](UINT command, const wchar_t *name, HBITMAP bitmap, bool enabled) {
+    auto compositionIndex = [&](int entry) {
+        const auto requested = std::find(composition.begin(), composition.end(), entry);
+        return requested == composition.end() ? -1 : static_cast<int>(requested - composition.begin());
+    };
+    auto entryOf = [](UINT command) {
+        if (command >= TITLE_WINDOW_COMMAND_FIRST) return static_cast<int>(TITLE_OPEN_WINDOWS);
+        for (int candidate = 0; candidate < TITLE_SEPARATOR; ++candidate)
+            if (titleMenuCommand(candidate) == command) return candidate;
+        return -1;
+    };
+    // Glyph bitmaps are rendered only for entries present in the composition.
+    auto append = [&](UINT command, const wchar_t *name, const wchar_t *glyph, bool enabled,
+            HBITMAP ready = nullptr) {
+        const int order = compositionIndex(entryOf(command));
+        if (order < 0) { if (ready) DeleteObject(ready); return false; }
+        HBITMAP bitmap = ready ? ready : glyph ? captionCommandBitmap(glyph, iconSize, iconColor) : nullptr;
         MENUITEMINFO info = {sizeof(info)};
         info.fMask = MIIM_ID | MIIM_STRING | MIIM_BITMAP | MIIM_STATE;
         info.wID = command;
         info.dwTypeData = const_cast<wchar_t *>(name);
         info.hbmpItem = bitmap;
         info.fState = enabled ? MFS_ENABLED : MFS_DISABLED;
-        int entry = TITLE_OPEN_WINDOWS;
-        if (command < 20000) {
-            entry = -1;
-            for (int candidate = 0; candidate < TITLE_SEPARATOR; ++candidate)
-                if (titleMenuCommand(candidate) == command) { entry = candidate; break; }
-        }
-        const auto requested = std::find(composition.begin(), composition.end(), entry);
-        if (requested == composition.end()) { if (bitmap) DeleteObject(bitmap); return; }
-        const int order = static_cast<int>(requested - composition.begin());
         const auto position = std::upper_bound(menuOrder.begin(), menuOrder.end(), order);
         if (!InsertMenuItemW(menu, static_cast<UINT>(position - menuOrder.begin()), TRUE, &info)) {
             if (bitmap) DeleteObject(bitmap);
-            return;
+            return false;
         }
         menuOrder.insert(position, order);
         if (bitmap)
             bitmaps.push_back(bitmap);
+        return true;
     };
     CComHeapPtr<wchar_t> path;
     if (FAILED(item->GetDisplayName(SIGDN_FILESYSPATH, &path)) && isWindowOperational())
@@ -2574,17 +2591,14 @@ void ItemWindow::openCaptionMenu(POINT pos) {
     item->GetAttributes(SFGAO_CANRENAME, &attributes);
     if (!isWindowOperational())
         return;
-    append(IDM_CAPTION_COPY_PATH, getString(IDS_CAPTION_COPY_PATH),
-        captionCommandBitmap(MDL2_COPY_PATH, iconSize, iconColor), path != nullptr);
-    append(IDM_RENAME_PROXY, getString(IDS_CAPTION_RENAME),
-        captionCommandBitmap(MDL2_RENAME, iconSize, iconColor), (attributes & SFGAO_CANRENAME) != 0);
+    append(IDM_CAPTION_COPY_PATH, getString(IDS_CAPTION_COPY_PATH), MDL2_COPY_PATH, path != nullptr);
+    append(IDM_RENAME_PROXY, getString(IDS_CAPTION_RENAME), MDL2_RENAME, (attributes & SFGAO_CANRENAME) != 0);
     if (isFolder() && settings::getWindowStateLockEnabled()) {
         updateStateLock();
         append(IDM_TOGGLE_STATE_LOCK,
             getString(stateLocked ? IDS_UNLOCK_WINDOW_STATE : IDS_LOCK_WINDOW_STATE), nullptr, true);
     }
-    append(IDM_CAPTION_PROPERTIES, getString(IDS_CAPTION_PROPERTIES),
-        captionCommandBitmap(MDL2_PROPERTIES, iconSize, iconColor), true);
+    append(IDM_CAPTION_PROPERTIES, getString(IDS_CAPTION_PROPERTIES), MDL2_PROPERTIES, true);
     if (isFolder()) {
         const auto parentProperties = getParentWindowProperties();
         if (!isWindowOperational())
@@ -2599,8 +2613,7 @@ void ItemWindow::openCaptionMenu(POINT pos) {
                 break;
             }
         }
-        append(IDM_CAPTION_CLOSE_PARENTS, getString(IDS_CAPTION_CLOSE_PARENTS),
-            captionCommandBitmap(MDL2_CLOSE_PARENTS, iconSize, iconColor), canCloseParents);
+        append(IDM_CAPTION_CLOSE_PARENTS, getString(IDS_CAPTION_CLOSE_PARENTS), MDL2_CLOSE_PARENTS, canCloseParents);
     }
     ClosedWindow lastClosed;
     auto store = folderStateStore();
@@ -2617,11 +2630,8 @@ void ItemWindow::openCaptionMenu(POINT pos) {
         reopenLabel = formatString(IDS_CAPTION_REOPEN_NAMED, name.c_str()).get();
     }
     const bool canReopen = canReopenClosedWindow(lastClosed);
-    if (canReopen) {
-        append(IDM_REOPEN_WINDOW, reopenLabel.c_str(), captionCommandBitmap(MDL2_FOLDER, iconSize, iconColor),
-            true);
+    if (canReopen && append(IDM_REOPEN_WINDOW, reopenLabel.c_str(), MDL2_FOLDER, true))
         reopenIcons.start(hwnd, menu, iconSize, {closedWindowPath(lastClosed)}, IDM_REOPEN_WINDOW);
-    }
     append(IDM_SETTINGS, getString(IDS_SETTINGS_CAPTION), nullptr, true);
     if (isFolder()) {
         append(IDM_RESTORE_LAYOUT, getString(IDS_TITLE_MENU_RESTORE), nullptr, stateLocked);
@@ -2632,36 +2642,44 @@ void ItemWindow::openCaptionMenu(POINT pos) {
     }
     append(IDM_CLOSE_OTHERS, getString(IDS_TITLE_MENU_CLOSE_OTHERS), nullptr, !entries.empty());
     append(IDM_FOLDER_GROUPS, getString(IDS_TITLE_MENU_GROUPS), nullptr, true);
-    CComPtr<IWICImagingFactory> factory;
-    factory.CoCreateInstance(CLSID_WICImagingFactory);
-    if (!isWindowOperational())
-        return;
-    for (size_t index = 0; index < entries.size() && isWindowOperational(); ++index) {
-        std::wstring label;
-        for (wchar_t character : entries[index].title) {
-            label += character;
-            if (character == L'&')
-                label += L'&';
+    if (compositionIndex(TITLE_OPEN_WINDOWS) >= 0 && !entries.empty()) {
+        CComPtr<IWICImagingFactory> factory;
+        factory.CoCreateInstance(CLSID_WICImagingFactory);
+        if (!isWindowOperational())
+            return;
+        for (size_t index = 0; index < entries.size() && isWindowOperational(); ++index) {
+            std::wstring label;
+            for (wchar_t character : entries[index].title) {
+                label += character;
+                if (character == L'&')
+                    label += L'&';
+            }
+            const HBITMAP bitmap = factory ? captionWindowBitmap(factory, entries[index].window, iconSize)
+                : nullptr;
+            append((UINT)index + TITLE_WINDOW_COMMAND_FIRST, label.c_str(), MDL2_FOLDER, true, bitmap);
         }
-        HBITMAP bitmap = factory ? captionWindowBitmap(factory, entries[index].window, iconSize)
-            : nullptr;
-        if (!bitmap)
-            bitmap = captionCommandBitmap(MDL2_FOLDER, iconSize, iconColor);
-        append((UINT)index + 20000, label.c_str(), bitmap, true);
     }
     if (!isWindowOperational())
         return;
+    std::vector<int> separators; // Composition indices already inserted as separators.
     for (size_t index = 0; index < composition.size(); ++index) {
         if (composition[index] != TITLE_SEPARATOR) continue;
         const auto position = std::upper_bound(menuOrder.begin(), menuOrder.end(), static_cast<int>(index));
         // Do not leave separators at either edge when conditional actions or
         // the dynamic open-window block have no entries in this context.
         if (position == menuOrder.begin() || position == menuOrder.end()) continue;
+        // Nor two consecutive separators when the entries between them are absent.
+        auto isSeparator = [&](int order) {
+            return std::find(separators.begin(), separators.end(), order) != separators.end();
+        };
+        if (isSeparator(*(position - 1)) || isSeparator(*position)) continue;
         MENUITEMINFOW separator = {sizeof(separator)};
         separator.fMask = MIIM_FTYPE | MIIM_ID; separator.fType = MFT_SEPARATOR;
         separator.wID = static_cast<UINT>(0xe000 + index);
-        if (InsertMenuItemW(menu, static_cast<UINT>(position - menuOrder.begin()), TRUE, &separator))
+        if (InsertMenuItemW(menu, static_cast<UINT>(position - menuOrder.begin()), TRUE, &separator)) {
             menuOrder.insert(position, static_cast<int>(index));
+            separators.push_back(static_cast<int>(index));
+        }
     }
     if (!GetMenuItemCount(menu)) return;
     CComPtr<IClassFactory> titleExtension;
@@ -2673,8 +2691,8 @@ void ItemWindow::openCaptionMenu(POINT pos) {
     if (!isWindowOperational())
         return;
 
-    if (command >= 20000 && (size_t)(command - 20000) < entries.size()) {
-        const HWND target = entries[command - 20000].window;
+    if (command >= TITLE_WINDOW_COMMAND_FIRST && (size_t)(command - TITLE_WINDOW_COMMAND_FIRST) < entries.size()) {
+        const HWND target = entries[command - TITLE_WINDOW_COMMAND_FIRST].window;
         wchar_t windowClass[64] = {};
         // The selected window may have closed while the popup was open.
         if (GetClassName(target, windowClass, (int)ARRAYSIZE(windowClass))
