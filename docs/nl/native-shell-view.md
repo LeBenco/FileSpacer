@@ -15,11 +15,16 @@ Lees dit vóór wijzigingen aan weergavehosting, statusherstel of de grens tusse
 | `ShellViewHost` | Browserlevensduur, navigatie, toegang en publieke gebeurtenissen. |
 | `ShellViewSettings` | Modus, pictogramgrootte, vlaggen, kolommen, sortering en groepering vastleggen/toepassen. |
 | `ShellViewSelection` | Selectie, focus en eenmalige heropen-/scrollmomentopname. |
-| `ShellViewIcons` | Native identiteiten en vrije pictogramposities. |
+| `ShellViewIcons` | Native identiteiten, vrije pictogramposities en de hertekenbewaking per batch. |
 | `ShellViewFilter` | Naamfilter via `IFolderFilter`. |
 | `FolderStateStore` | Onafhankelijke statusdelen, transacties, vergrendeling en bewaring. |
 
-Weergavebewerkingen gebruiken publieke COM-interfaces in plaats van Shell-kindbesturingselementen te zoeken of te subclassen. De labelachtergrond is een beperkte uitzondering, hieronder beschreven. Tests mogen besturingselementen inspecteren; die instrumentatie is geen toepassingsafhankelijkheid.
+Weergavebewerkingen gebruiken publieke COM-interfaces. Precies twee beperkte uitzonderingen raken vensters van de Shell; beide zijn optionele implementatieafhankelijkheden die terugvallen op native gedrag zodra een voorwaarde ontbreekt:
+
+- Labelachtergrond (`ShellViewLabels.h`, hieronder beschreven): subclasst alleen het publieke venster van `IShellView::GetWindow`, leest `NM_CUSTOMDRAW`-meldingen en gedocumenteerde ListView-toestand. Ze zoekt geen kindbesturingselement en stuurt er niets naartoe.
+- Hertekenbewaking voor pictogrammen (`IconRedrawGuard` in `ShellViewIcons.cpp`): rond één `SelectAndPositionItems`-batch met opgeslagen vrije posities houdt ze de interne `WM_SETREDRAW(TRUE)`-hervattingen van de Shell tegen, zodat `IFolderView2::SetRedraw(FALSE)` voor de hele batch van kracht blijft. De zoektocht is beperkt tot één enkel `WC_LISTVIEW`-kind van het `IShellView::GetWindow`-venster, op dezelfde thread en in hetzelfde proces. Weergave en besturingselement moeten zichtbaar zijn, hertekenen mag niet al uitgeschakeld zijn (eigenschap `SysSetRedraw`) en er mag geen eerdere bewaking geïnstalleerd zijn; anders loopt de batch alleen onder `SetRedraw`. De bewaking wijzigt nooit zelf de toestand van het besturingselement: `SetRedraw(FALSE)` verwijdert `WS_VISIBLE` (het gedocumenteerde `WM_SETREDRAW`-effect), `SetRedraw(TRUE)` herstelt het, en pas daarna vraagt de bewaking het tegengehouden hertekenen aan op het publieke weergavevenster (`RedrawWindow` met `RDW_ALLCHILDREN`, zoals het `WM_SETREDRAW`-contract voorschrijft). Mislukt `SetRedraw(TRUE)`, dan wordt de subclass verwijderd zonder iets naar het besturingselement te sturen. Gemeten reden: het herstellen van 5.000 posities duurde ongeveer 3,7 s met de bewaking tegenover ongeveer 162 s met alleen de publieke interface, waarvan de Shell de onderbreking binnen de batch hervatte. Groep 18 dekt dit herstel.
+
+Generaliseer geen van beide uitzonderingen naar andere weergavebewerkingen; die blijven COM-aanroepen. Tests mogen besturingselementen inspecteren om een gebaar waar te nemen; die instrumentatie is geen toepassingsafhankelijkheid.
 
 <a id="readiness-restoration-and-lifetime"></a>
 

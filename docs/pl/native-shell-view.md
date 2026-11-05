@@ -15,11 +15,16 @@ Przeczytaj przed zmianą hostowania widoku, odtwarzania stanu lub granicy międz
 | `ShellViewHost` | Czas życia przeglądarki, nawigacja, dostęp i publiczne zdarzenia. |
 | `ShellViewSettings` | Odczyt/stosowanie trybu, rozmiaru ikon, flag, kolumn, sortowania i grupowania. |
 | `ShellViewSelection` | Zaznaczenie, fokus i jednorazowa migawka otwarcia/przewinięcia. |
-| `ShellViewIcons` | Natywne tożsamości i swobodne pozycje ikon. |
+| `ShellViewIcons` | Natywne tożsamości, swobodne pozycje ikon i strażnik przerysowania partii. |
 | `ShellViewFilter` | Filtr nazw przez `IFolderFilter`. |
 | `FolderStateStore` | Niezależne części stanu, transakcje, blokady i retencja. |
 
-Operacje widoku używają publicznych interfejsów COM zamiast wyszukiwania i podklasowania kontrolek potomnych powłoki. Wąskim wyjątkiem jest opisane niżej tło zaznaczonej etykiety. Testy mogą obserwować kontrolki podczas gestów; ta instrumentacja nie jest zależnością aplikacji.
+Operacje widoku używają publicznych interfejsów COM. Dokładnie dwa wąskie wyjątki dotykają okien należących do powłoki; oba są opcjonalnymi zależnościami implementacyjnymi, które wracają do zachowania natywnego, gdy brakuje warunku wstępnego:
+
+- Tło zaznaczonej etykiety (`ShellViewLabels.h`, opisane niżej): podklasowuje tylko publiczne okno zwracane przez `IShellView::GetWindow`, odczytuje powiadomienia `NM_CUSTOMDRAW` i udokumentowany stan ListView. Nie wyszukuje kontrolki potomnej i niczego do niej nie wysyła.
+- Strażnik przerysowania ikon (`IconRedrawGuard` w `ShellViewIcons.cpp`): wokół jednej partii `SelectAndPositionItems` z zapisanymi swobodnymi pozycjami wstrzymuje wewnętrzne wznowienia `WM_SETREDRAW(TRUE)` powłoki, aby `IFolderView2::SetRedraw(FALSE)` obowiązywało przez całą partię. Wyszukiwanie ogranicza się do jednej kontrolki potomnej `WC_LISTVIEW` okna `IShellView::GetWindow`, w tym samym wątku i procesie. Widok i kontrolka muszą być widoczne, przerysowanie nie może być już wyłączone (właściwość `SysSetRedraw`) i nie może być zainstalowany wcześniejszy strażnik; w przeciwnym razie partia działa wyłącznie pod `SetRedraw`. Strażnik nigdy sam nie zmienia stanu kontrolki: `SetRedraw(FALSE)` usuwa `WS_VISIBLE` (udokumentowany skutek `WM_SETREDRAW`), `SetRedraw(TRUE)` go przywraca, a dopiero potem strażnik żąda wstrzymanego przerysowania na publicznym oknie widoku (`RedrawWindow` z `RDW_ALLCHILDREN`, jak nakazuje kontrakt `WM_SETREDRAW`). Jeśli `SetRedraw(TRUE)` się nie powiedzie, podklasa jest usuwana bez wysyłania czegokolwiek do kontrolki. Zmierzony powód: odtworzenie 5 000 pozycji trwało około 3,7 s ze strażnikiem wobec około 162 s z samym interfejsem publicznym, którego zawieszenie powłoka wznawiała wewnątrz partii. Grupa 18 obejmuje to odtwarzanie.
+
+Nie uogólniaj żadnego z tych wyjątków na inne operacje widoku, które pozostają wywołaniami COM. Testy mogą obserwować kontrolki podczas gestów; ta instrumentacja nie jest zależnością aplikacji.
 
 <a id="readiness-restoration-and-lifetime"></a>
 
