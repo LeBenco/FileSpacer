@@ -71,7 +71,8 @@ switch ($Mode) {
     }
     'Adapters' {
         $settings=Read-Source 'ShellViewSettings.cpp'
-        $helpers=Get-SourceBlock $settings "namespace {`nFolderViewSettings::Key stateKey"
+        $helpers=Get-SourceBlock $settings 'FolderViewSettings::Key viewSettingsKey('
+        $helpers+="`n"+(Get-SourceBlock $settings "namespace {`nPROPERTYKEY propertyKey")
         foreach ($signature in @('bool sameView(', 'FolderViewSettings captureOptions(', 'HRESULT restoreOptions(')) {
             $helpers+="`n"+(Get-SourceBlock $settings $signature)
         }
@@ -118,7 +119,8 @@ switch ($Mode) {
         $header=Read-Source 'FolderWindow.h'
         $state=Get-SourceBlock $header '    struct ShellViewState'
         $settings=Read-Source 'ShellViewSettings.cpp'
-        $helpers=Get-SourceBlock $settings "namespace {`nFolderViewSettings::Key stateKey"
+        $helpers=Get-SourceBlock $settings 'FolderViewSettings::Key viewSettingsKey('
+        $helpers+="`n"+(Get-SourceBlock $settings "namespace {`nPROPERTYKEY propertyKey")
         foreach ($signature in @('bool sameView(', 'FolderViewSettings captureOptions(', 'HRESULT restoreOptions(')) {
             $helpers+="`n"+(Get-SourceBlock $settings $signature)
         }
