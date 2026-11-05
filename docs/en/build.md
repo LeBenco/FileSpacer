@@ -225,3 +225,20 @@ Run affected cases while developing. Tests use Debug and isolated test data;
 never delete the production database to prepare a run. Read the
 [Shell architecture](native-shell-view.md) before changing restoration or view
 lifetime.
+
+## Documented exceptions to the design principles
+
+FileSpacer waits for public events instead of polling on a timer. Two bounded
+polling timers are accepted exceptions:
+
+- `src/SettingsDialog.cpp` retries every 50 ms the `Local\` mutex that
+  reserves the Preferences dialog while another FileSpacer process holds it
+  with a property sheet not yet visible, because no public cross-process event
+  announces that sheet and the mutex cannot be awaited from the message loop;
+  the retry stops when the remote sheet is found, the mutex is acquired or the
+  requesting window closes.
+- `src/UpdateInstaller.cpp` samples every 200 ms the update worker's completion
+  flag and received byte count, because the worker deliberately holds no window
+  handle to post to (the page or progress dialog may be destroyed first) and
+  the same tick refreshes the progress percentage; sampling stops at
+  completion, cancellation or window destruction.
