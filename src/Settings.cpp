@@ -398,9 +398,10 @@ bool setWindowStateLockEnabled(bool value) {
 
 
 LSTATUS resetGlobalOptions() {
-    if (!setWindowStateLockEnabled(false)) return ERROR_WRITE_FAULT;
     // Delete current/future preference values, preserving version metadata and subkeys
     // (including the separate Debug /test namespace). Windows associations are elsewhere.
+    // Folder state locks live in the state database; /reset-options releases them
+    // separately so an unavailable database still leaves the Registry reset.
     HKEY raw = nullptr;
     LSTATUS status = RegOpenKeyExW(HKEY_CURRENT_USER, KEY_SETTINGS, 0,
         KEY_QUERY_VALUE | KEY_SET_VALUE, &raw);
