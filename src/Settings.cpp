@@ -122,14 +122,14 @@ wstr_ptr getSettingsString(const wchar_t *name, DWORD type, const wchar_t *defau
     DWORD size;
     if (!RegGetValue(HKEY_CURRENT_USER, KEY_SETTINGS, name, type, nullptr, nullptr, &size)) {
         wstr_ptr buffer(new wchar_t[size / sizeof(wchar_t)]);
-        RegGetValue(HKEY_CURRENT_USER, KEY_SETTINGS, name, type, nullptr, buffer.get(), &size);
-        return buffer;
-    } else {
-        DWORD count = lstrlen(defaultValue) + 1;
-        wstr_ptr buffer(new wchar_t[count]);
-        CopyMemory(buffer.get(), defaultValue, count * sizeof(wchar_t));
-        return buffer;
+        // The value may grow between the two reads (ERROR_MORE_DATA leaves the buffer undefined).
+        if (!RegGetValue(HKEY_CURRENT_USER, KEY_SETTINGS, name, type, nullptr, buffer.get(), &size))
+            return buffer;
     }
+    DWORD count = lstrlen(defaultValue) + 1;
+    wstr_ptr buffer(new wchar_t[count]);
+    CopyMemory(buffer.get(), defaultValue, count * sizeof(wchar_t));
+    return buffer;
 }
 
 void setSettingsString(const wchar_t *name, DWORD type, const wchar_t *value) {
@@ -476,6 +476,11 @@ LSTATUS synchronizeMenu(const std::wstring &shell, bool explorer, bool backgroun
         L"%SystemRoot%\\explorer.exe,0", changed);
     if (status == ERROR_SUCCESS) status = setMenuString(alternate + L"\\command", nullptr, REG_EXPAND_SZ,
         background ? L"\"%SystemRoot%\\explorer.exe\" \"%V\"" : L"\"%SystemRoot%\\explorer.exe\" \"%1\"", changed);
+    // A verb left without "command" would still be listed by the Shell: never keep a partial write.
+    if (status != ERROR_SUCCESS) {
+        RegDeleteTreeW(HKEY_CURRENT_USER, alternate.c_str());
+        return status;
+    }
     // Default-only Shell menus omit programmatic-only verbs, even the selected default.
     // Hide only the background entry, which is never used to open an item.
     if (status == ERROR_SUCCESS) status = background
