@@ -100,15 +100,22 @@ Een NSIS-bouw controleert verpakking, geen echte installatie, UAC, upgrade of de
 
 Een overeenkomende PASS voor dezelfde toepassings- en testinvoer kan zonder nieuwe uitvoering worden hergebruikt; zie [de cache voor regressieresultaten](tests/regression/README.md#run-on-github).
 
-Na publicatie dient een aparte WinGet-taak het installatieprogramma bij de communitycatalogus in. Een eenmalig ingesteld `WINGET_TOKEN` is vereist; fouten draaien de GitHub-release niet terug. Zie [WinGet-distributie](winget.md) voor configuratie, controle en herhalen zonder herbouwen.
+Distributie is optioneel: standaard verschijnt de release alleen op GitHub. Indien geselecteerd dient een aparte WinGet-taak het installatieprogramma in. Hiervoor is `WINGET_TOKEN` vereist; fouten draaien de release niet terug. Zie [WinGet-distributie](winget.md). Het kanaal `chocolatey` gebruikt `CHOCO_API_KEY`.
 
 Werk vóór publicatie beide versiedefinities in `src/resource.h` bij, voeg de juiste `CHANGELOG.md`-sectie toe en commit de bedoelde wijzigingen. Vul in Git Bash de versie in:
 
 ```bash
 bash release.sh X.Y.Z
+bash release.sh X.Y.Z --distribute winget
+bash release.sh X.Y.Z --distribute chocolatey
+bash release.sh X.Y.Z --distribute winget --distribute chocolatey
 ```
 
-Het script vereist een schone werkboom, controleert externe branch/tag, toont wijzigingen en vraagt bevestiging vóór push van `main` en de geannoteerde tag. Controleer daarna workflow en beide bestanden. Foutsamenvattingen en bouwlogboeken blijven workflowartefacten.
+Zonder optie wordt geen kanaal geselecteerd; `--distribute none` maakt dit expliciet en kan niet met een kanaal worden gecombineerd. Herhaal de optie voor meerdere kanalen; duplicaten worden verwijderd. De tagannotatie bewaart de keuze als `FileSpacer-Distribution: winget,chocolatey` of `none`; zonder dit veld is automatische distributie ook uitgeschakeld.
+
+Het script vereist een schone werkboom, controleert externe branch/tag, toont wijzigingen en kanalen en vraagt bevestiging vóór push van `main` en de geannoteerde tag. Controleer daarna workflow en beide bestanden. Foutsamenvattingen en bouwlogboeken blijven workflowartefacten.
+
+Een bestaande release kan later worden ingediend via **Submit FileSpacer to WinGet** en/of **Submit FileSpacer to Chocolatey**, met branch `main` en de gepubliceerde tag. Handmatig starten selecteert dat kanaal ongeacht de oorspronkelijke keuze en hergebruikt installer en SHA-256. Gebruik bijvoorbeeld `gh workflow run winget.yml --ref main -f tag=vX.Y.Z` of dezelfde opdracht met `chocolatey.yml`. Herstart hiervoor niet de releasegeneratie: die kan de installer vervangen en cataloguschecksums ongeldig maken.
 
 ## Tests
 
