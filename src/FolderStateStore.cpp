@@ -20,6 +20,8 @@
 namespace filespacer {
 namespace {
 using Statement = std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)>;
+// Single wait bound of one operation, shared by the mutex wait and SQLite's busy handler.
+constexpr unsigned OPERATION_WAIT_MS = 3000;
 
 void appendInt(std::vector<uint8_t> &bytes, uint32_t value) {
     for (unsigned i = 0; i < 4; ++i)
@@ -164,12 +166,17 @@ FolderViewSettings FolderViewSettings::mergeChanges(const FolderViewSettings &ba
 }
 
 bool FolderStateStore::result(int code) {
+    sqliteBusy = code == SQLITE_BUSY; // Extended result codes are not enabled on this connection.
     if (code == SQLITE_OK || code == SQLITE_DONE || code == SQLITE_ROW) {
         lastError.clear();
         return true;
     }
     lastError = db ? sqlite3_errmsg(db) : sqlite3_errstr(code);
     return false;
+}
+bool FolderStateStore::beginRead() {
+    if (!initialized) return false;
+    return result(sqlite3_busy_timeout(db, static_cast<int>(OPERATION_WAIT_MS)));
 }
 bool FolderStateStore::execute(const char *sql) {
     return result(sqlite3_exec(db, sql, nullptr, nullptr, nullptr));
@@ -215,24 +222,34 @@ bool FolderStateStore::createMutex(const char *utf8Path) {
     return true;
 }
 
+// Write-side serialization. One operation waits at most `timeout` in total:
+// the mutex wait consumes part of it and SQLite's busy handler gets the rest
+// (the two bounds are never added). Reads do not take the mutex (WAL).
 class FolderStateStore::Lock {
 public:
-    explicit Lock(FolderStateStore &store, unsigned timeout = 3000) : mutex(store.accessMutex.get()) {
+    explicit Lock(FolderStateStore &store, unsigned timeout = OPERATION_WAIT_MS)
+        : mutex(store.accessMutex.get()), left(timeout) {
 #ifdef _WIN32
         DWORD waited = WAIT_FAILED, code = ERROR_INVALID_HANDLE; // No mutex: nothing was called.
         if (mutex) {
+            const ULONGLONG started = GetTickCount64();
             waited = WaitForSingleObject(mutex, timeout);
+            const ULONGLONG elapsed = GetTickCount64() - started;
+            left = elapsed < timeout ? timeout - static_cast<unsigned>(elapsed) : 0;
             if (waited == WAIT_FAILED) code = GetLastError();
             else if (waited == WAIT_TIMEOUT) code = ERROR_TIMEOUT;
         }
         acquired = waited == WAIT_OBJECT_0 || waited == WAIT_ABANDONED;
+        store.mutexBlocked = waited == WAIT_TIMEOUT;
         if (!acquired)
             store.lastError = "Folder-state database mutex wait failed (Windows error " + std::to_string(code) + ")";
+        else if (store.db) sqlite3_busy_timeout(store.db, static_cast<int>(left));
 #else
-        (void)timeout;
         acquired = true;
+        if (store.db) sqlite3_busy_timeout(store.db, static_cast<int>(left));
 #endif
     }
+    unsigned remaining() const { return left; } // Budget left for SQLite after the mutex wait.
     ~Lock() {
 #ifdef _WIN32
         if (acquired) ReleaseMutex(mutex);
@@ -243,12 +260,13 @@ public:
     explicit operator bool() const { return acquired; }
 private:
     void *mutex;
+    unsigned left;
     bool acquired = false;
 };
 
 FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitialization) {
     if (!createMutex(utf8Path)) return;
-    Lock lock(*this, waitForInitialization ? 3000 : 0);
+    Lock lock(*this, waitForInitialization ? OPERATION_WAIT_MS : 0);
     if (!lock) return;
     const int opened = sqlite3_open_v2(utf8Path, &db,
         SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nullptr);
@@ -257,7 +275,7 @@ FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitializat
     // Its destructor must not acquire that lock again after a non-waiting retry.
     std::unique_ptr<sqlite3, decltype(closeOpening)> opening(db, closeOpening);
     if (!result(opened)) return;
-    sqlite3_busy_timeout(db, waitForInitialization ? 3000 : 0);
+    sqlite3_busy_timeout(db, static_cast<int>(lock.remaining())); // The lock could not set it before the open.
     if (!execute("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;"
             "PRAGMA wal_autocheckpoint=1000; PRAGMA journal_size_limit=8000000;"
             "BEGIN IMMEDIATE;")) return;
@@ -304,18 +322,20 @@ FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitializat
         finishWrite(false);
         return;
     }
-    if (finishWrite(true) && result(sqlite3_busy_timeout(db, 3000))) {
-        initialized = true;
+    if (finishWrite(true)) {
+        initialized = true; // Each operation sets its own busy timeout from its remaining budget.
         opening.release();
     }
 }
 FolderStateStore::~FolderStateStore() {
     if (!db) return; // A constructor that never opened SQLite has nothing to serialize.
-    // Closing the last connection can checkpoint/unlink WAL. Serialize that too.
+    // Closing the last connection can checkpoint/unlink WAL. Serialize that too,
+    // but only for the ordinary bound: the checkpoint is itself protected by
+    // SQLite's file locks, so a holder that never releases cannot block exit.
     // Destruction must release SQLite handles even after an operation timed out.
 #ifdef _WIN32
     // Do not allocate an error string from a destructor if the wait itself fails.
-    const DWORD waited = accessMutex ? WaitForSingleObject(accessMutex.get(), INFINITE) : WAIT_FAILED;
+    const DWORD waited = accessMutex ? WaitForSingleObject(accessMutex.get(), OPERATION_WAIT_MS) : WAIT_FAILED;
 #endif
     if (db) sqlite3_close(db); // Last connection checkpoints WAL automatically.
 #ifdef _WIN32
@@ -324,9 +344,7 @@ FolderStateStore::~FolderStateStore() {
 }
 
 bool FolderStateStore::read(const std::string &key, FolderState *state) {
-    if (!initialized) return false;
-    Lock lock(*this);
-    if (!lock) return false;
+    if (!beginRead()) return false;
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db,
             "SELECT x,y,width,height,view,icons,last_success_at,first_failed_at,maximized,locked "
@@ -374,9 +392,7 @@ bool FolderStateStore::read(const std::string &key, FolderState *state) {
 
 bool FolderStateStore::contains(const std::string &key, bool *found) {
     *found = false;
-    if (!initialized) return false;
-    Lock lock(*this);
-    if (!lock) return false;
+    if (!beginRead()) return false;
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db, "SELECT 1 FROM folder_state WHERE key=?1", -1, &raw, nullptr))) return false;
     Statement statement(raw, sqlite3_finalize);
@@ -389,9 +405,7 @@ bool FolderStateStore::contains(const std::string &key, bool *found) {
 
 bool FolderStateStore::readLocked(const std::string &key, bool *locked) {
     *locked = false;
-    if (!initialized) return false;
-    Lock lock(*this);
-    if (!lock) return false;
+    if (!beginRead()) return false;
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db, "SELECT locked FROM folder_state WHERE key=?1", -1, &raw, nullptr)))
         return false;
@@ -680,9 +694,7 @@ bool FolderStateStore::readClosedWindow(ClosedWindow *window) {
 }
 
 bool FolderStateStore::lastClosedWindow(ClosedWindow *window) {
-    if (!initialized) return false;
-    Lock lock(*this);
-    if (!lock) return false;
+    if (!beginRead()) return false;
     return readClosedWindow(window);
 }
 
@@ -784,9 +796,7 @@ bool FolderStateStore::move(const std::string &oldKey, const std::string &newKey
 
 bool FolderStateStore::readSearchHistory(const std::string &key, unsigned limit,
         std::vector<std::string> *queries) {
-    if (!initialized) return false;
-    Lock lock(*this);
-    if (!lock) return false;
+    if (!beginRead()) return false;
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db, "SELECT query FROM search_history WHERE key=?1 "
             "ORDER BY sequence DESC LIMIT ?2", -1, &raw, nullptr))) return false;
@@ -905,6 +915,11 @@ std::string folderStateDatabasePath() {
 #endif
     return toUtf8(path.c_str());
 }
+namespace {
+// The last failed UI initialization, kept only for its diagnosis: the mutex
+// handle a waiting window duplicates, and SQLite's busy report.
+std::unique_ptr<FolderStateStore> failedStore;
+}
 FolderStateStore *folderStateStore(bool waitForInitialization) {
     // /test is parsed before the first folder creation. No worker uses this connection.
     static std::unique_ptr<FolderStateStore> store;
@@ -917,10 +932,18 @@ FolderStateStore *folderStateStore(bool waitForInitialization) {
                 attempted = true;
                 std::unique_ptr<FolderStateStore> candidate(new FolderStateStore(path.c_str(), wait));
                 if (candidate->ready() && !store) store = std::move(candidate);
+                else if (!candidate->ready()) failedStore = std::move(candidate);
             }
         }
     }
+    if (store) failedStore.reset();
     return store.get(); // Only a ready connection is retained; the next request retries a failure.
+}
+void *folderStateBlockingMutex() {
+    return failedStore ? failedStore->blockingMutex() : nullptr;
+}
+bool folderStateBusy() {
+    return failedStore && failedStore->busy();
 }
 void reportFolderStateError(void *owner) {
     MessageBoxW(static_cast<HWND>(owner), getString(IDS_FOLDER_STATE_ERROR),
