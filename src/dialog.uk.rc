@@ -60,7 +60,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Відомості про розміщення вікон", IDC_SMART_WINDOW_PLACEMENT_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 79, 12, 14
   CONTROL "Блокування вікон", -1, "Button", BS_GROUPBOX, 7, 100, 286, 44
   CONTROL "Увімкнути &блокування стану вікон", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 111, 272, 12
-  CONTROL "Показувати &замок у рядку заголовка заблокованих папок", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
+  CONTROL "Показувати замок у &рядку заголовка заблокованих папок", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
   CONTROL "Поле пошуку", -1, "Button", BS_GROUPBOX, 7, 148, 286, 52
   CONTROL "Фільтрувати під час &введення", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 159, 272, 12
   LTEXT "Останні запити на папку (0–20; 0 вимикає журнал)", -1, 14, 177, 222, 16
@@ -76,18 +76,18 @@ CAPTION "Відображення"
 FONT 8, "MS Shell Dlg", 400, 0, 0
 {
   CONTROL "Елементи інтерфейсу", -1, "Button", BS_GROUPBOX, 7, 7, 286, 71
-  CONTROL "Показувати рядок &стану", IDC_STATUS_TEXT_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 21, 272, 14
+  CONTROL "Показувати рядок с&тану", IDC_STATUS_TEXT_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 21, 272, 14
   CONTROL "Показувати панель &інструментів", IDC_TOOLBAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 35, 272, 14
   PUSHBUTTON "Налаштувати меню рядка заголовка", IDC_TITLE_MENU_EDIT, 14, 51, 272, 14
   CONTROL "Елементи панелі інструментів", -1, "Button", BS_GROUPBOX, 7, 85, 286, 77
-  CONTROL "Показувати &Швидкий доступ", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 99, 130, 14
-  CONTROL "Показувати кнопку &Вгору", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 99, 130, 14
-  CONTROL "Показувати рядок &шляху", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 113, 272, 14
+  CONTROL "Показувати Швидкий &доступ", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 99, 130, 14
+  CONTROL "Показувати кнопку В&гору", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 99, 130, 14
+  CONTROL "Показувати рядок ш&ляху", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 113, 272, 14
   CONTROL "Показувати кнопку &Оновити", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 127, 130, 14
   CONTROL "Показувати кнопку &Подання", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 127, 130, 14
   CONTROL "Ці елементи видимі, коли показано панель інструментів.", -1, "Static", WS_GROUP, 14, 143, 272, 16
   CONTROL "Файли", -1, "Button", BS_GROUPBOX, 7, 169, 286, 56
-  CONTROL "Показувати повне &ім’я вибраного файлу (не для кількох вибраних)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 181, 272, 20
+  CONTROL "Показувати повне ім’я вибраного &файлу (не для кількох вибраних)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 181, 272, 20
   CONTROL "&Сортувати папки й файли разом", IDC_MIXED_FOLDER_SORTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 205, 272, 14
   CONTROL "Меню Подання", -1, "Button", BS_GROUPBOX, 7, 232, 286, 38
   CONTROL "Попередній перегляд &режимів відображення в меню Подання", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 244, 272, 20
@@ -107,7 +107,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL 32516, -1, "Static", SS_ICON, 14, 21, 0, 0
   CONTROL "Замінити Файловий провідник як програму за замовчуванням для відкриття всіх папок.", -1, "Static", WS_GROUP, 42, 22, 244, 24
   CONTROL "&Зробити менеджером за замовчуванням", IDC_SET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 56, 272, 14
-  CONTROL "&Відновити менеджер за замовчуванням", IDC_RESET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 77, 272, 14
+  CONTROL "Відновити &менеджер за замовчуванням", IDC_RESET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 77, 272, 14
   GROUPBOX "Everything (зовнішня програма)", -1, 7, 111, 286, 97
   CONTROL "Додати пошук &Everything до поля пошуку", IDC_EVERYTHING_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 123, 272, 12
   LTEXT "Виконуваний файл (порожньо = автоматичне виявлення)", -1, 14, 138, 272, 9
@@ -183,6 +183,6 @@ BEGIN
   EDITTEXT IDC_GROUPS_NAME, 94, 137, 196, 14, ES_AUTOHSCROLL | WS_TABSTOP
   PUSHBUTTON "&Зберегти відкриті папки", IDC_GROUPS_SAVE, 10, 160, 166, 15
   PUSHBUTTON "&Видалити", IDC_GROUPS_DELETE, 185, 160, 105, 15
-  DEFPUSHBUTTON "&Відкрити", IDC_GROUPS_RECALL, 132, 188, 76, 15
+  DEFPUSHBUTTON "Ві&дкрити", IDC_GROUPS_RECALL, 132, 188, 76, 15
   PUSHBUTTON "Закрити", IDCANCEL, 214, 188, 76, 15
 END

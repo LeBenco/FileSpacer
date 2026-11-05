@@ -80,10 +80,10 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Mostrar barra de &herramientas", IDC_TOOLBAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 35, 272, 14
   PUSHBUTTON "Personalizar el menú de la barra de título", IDC_TITLE_MENU_EDIT, 14, 51, 272, 14
   CONTROL "Elementos de la barra de herramientas", -1, "Button", BS_GROUPBOX, 7, 85, 286, 77
-  CONTROL "Mostrar &Acceso rápido", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 99, 130, 14
+  CONTROL "Mostrar Acceso rápi&do", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 99, 130, 14
   CONTROL "Mostrar botón &Subir", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 99, 130, 14
   CONTROL "Mostrar barra de &ruta de acceso", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 113, 272, 14
-  CONTROL "Mostrar botón Ac&tualizar", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 127, 130, 14
+  CONTROL "Mostrar botón Act&ualizar", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 127, 130, 14
   CONTROL "Mostrar botón &Vista", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 127, 130, 14
   CONTROL "Estos elementos son visibles cuando se muestra la barra de herramientas.", -1, "Static", WS_GROUP, 14, 143, 272, 16
   CONTROL "Archivos", -1, "Button", BS_GROUPBOX, 7, 169, 286, 56

@@ -80,7 +80,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Mostrar barra de &ferramentas", IDC_TOOLBAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 35, 272, 14
   PUSHBUTTON "Personalizar o menu da barra de título", IDC_TITLE_MENU_EDIT, 14, 51, 272, 14
   CONTROL "Elementos da barra de ferramentas", -1, "Button", BS_GROUPBOX, 7, 85, 286, 77
-  CONTROL "Mostrar &Acesso rápido", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 99, 130, 14
+  CONTROL "Mostrar Acesso &rápido", IDC_QUICK_ACCESS_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 99, 130, 14
   CONTROL "Mostrar botão &Subir", IDC_UP_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 99, 130, 14
   CONTROL "Mostrar barra de &caminho", IDC_PATH_BAR_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 113, 272, 14
   CONTROL "Mostrar botão A&tualizar", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 127, 130, 14
