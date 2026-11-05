@@ -36,7 +36,10 @@ with the normal installer first.
 Before submission, GitHub runs unit tests, builds the `.nupkg` using `choco pack`,
 and tests actual installation and uninstallation on the disposable Windows runner.
 The uninstall script targets only the machine-wide FileSpacer registration and
-calls its native uninstaller with `/S /AllUsers`. A personal installation is not
+calls its native uninstaller with `/S /AllUsers _?=<installation directory>`.
+The documented NSIS `_?=` option makes that call wait for the actual uninstall;
+after it exits, the package removes the remaining uninstaller and the directory
+only if it is empty. A personal installation is not
 selected by that script. The key is exposed only to the final `choco push` step.
 Package sources and the `.nupkg` are retained as a workflow artifact for review.
 
