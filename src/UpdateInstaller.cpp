@@ -24,6 +24,12 @@
 namespace filespacer {
 namespace {
 const wchar_t INSTALL_EVENT[] = L"Local\\FileSpacer.UpdateInstall";
+// Documented exception to the "no catch-up timer" principle (docs/en/build.md):
+// this 200 ms window timer polls the worker's done flag and byte count. The
+// worker deliberately holds no HWND (the page or progress dialog may be
+// destroyed first, see WM_NCDESTROY), so it cannot post a completion message;
+// the same tick refreshes the download percentage. Polling stops when the job
+// completes, is cancelled, or the window is destroyed.
 const UINT_PTR UPDATE_TIMER = 0x46535550;
 HWND progressDialog = nullptr; // Main STA only, modeless and independent of folder owners.
 
