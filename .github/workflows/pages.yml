@@ -1,8 +1,8 @@
 name: Publish FileSpacer website
 
 on:
-  # Only branch pushes publish the live site. Release tags build their own
-  # offline documentation with the shared action; neither workflow calls the other.
+  # Branch pushes and explicit dispatches publish the live site. After a release,
+  # the release-links workflow dispatches a refresh following its README commit.
   push:
     branches: [main]
     paths:
