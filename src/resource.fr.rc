@@ -140,7 +140,8 @@ Copyright (c) 2013 Afrow Soft Ltd. Voir LockedList-LICENSE.txt.\r\n\
     IDS_RESET_CLI_BUSY, "La réinitialisation n’a pas pu obtenir un accès exclusif aux réglages. Fermez toutes les instances de FileSpacer et vérifiez l’accès au dossier de ses données locales, puis réessayez. Aucun réglage n’a été supprimé."
     IDS_RESET_CLI_FAILED, "La réinitialisation des options n’a pas pu être terminée : %1\n\nCertaines options ont peut-être déjà été réinitialisées. Si /reset-all a été utilisé, les réglages des dossiers ont déjà été réinitialisés."
     IDS_RESET_CLI_ALL_DONE, "Les options globales et les positions, tailles et réglages d’affichage mémorisés des dossiers ont été réinitialisés. Vos fichiers et les associations Windows ont été conservés."
-    IDS_RESET_CLI_OPTIONS_DONE, "Les options globales ont été réinitialisées. Les réglages mémorisés des dossiers, vos fichiers et les associations Windows ont été conservés."
+    IDS_RESET_CLI_OPTIONS_DONE, "Les options globales ont été réinitialisées et les verrous des états mémorisés des dossiers ont été levés. Les positions, tailles et réglages d’affichage mémorisés des dossiers, vos fichiers et les associations Windows ont été conservés."
+    IDS_RESET_CLI_OPTIONS_LOCKS_FAILED, "Les options globales ont été réinitialisées, mais les verrous des états mémorisés des dossiers n’ont pas pu être levés, car la base des états des dossiers n’a pas pu être mise à jour. Les positions, tailles et réglages d’affichage mémorisés des dossiers, vos fichiers et les associations Windows ont été conservés."
     IDS_RECOVERY_CRASHED, "FileSpacer s’est arrêté à la suite d’une erreur grave. Un rapport de diagnostic et un fichier mémoire ont été enregistrés dans les données locales de l’application ; vos préférences ont été conservées."
     IDS_SETTINGS_ACCESS_FAILED, "FileSpacer ne peut pas obtenir l’accès partagé à ses réglages. Une réinitialisation est peut-être en cours, ou le dossier des données locales est inaccessible. Réessayez après la fin de l’opération de maintenance."
 }
@@ -187,6 +188,7 @@ BEGIN
   IDS_EVERYTHING_FOLDER "Dossier courant et sous-dossiers"
   IDS_EVERYTHING_EVERYWHERE "Partout"
   IDS_EVERYTHING_NOT_FOUND "Everything est introuvable. Installez-le ou sélectionnez son exécutable manuellement."
+  IDS_EVERYTHING_PATH_INVALID "Le chemin d’Everything ne peut pas être appliqué : %1!s!\n\nIndiquez le chemin complet d’un fichier Everything.exe existant, ou laissez le champ vide pour la détection automatique."
   IDS_SEARCH_HISTORY_INVALID "Saisissez une limite d’historique comprise entre 0 et 20."
   IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer place les nouvelles fenêtres de manière à minimiser le recouvrement des autres fenêtres de dossiers.\n\nCe placement s’applique aux dossiers sans position de fenêtre enregistrée, ainsi qu’aux positions devenues inaccessibles après un changement d’écran. Une position mémorisée encore utilisable reste prioritaire."
   IDS_GROUP_FOLDER_WINDOWS_HELP "Les nouvelles fenêtres de dossiers peuvent être regroupées sous un même bouton de la barre des tâches, selon les paramètres de regroupement de Windows.\n\nSi cette option est désactivée, les dossiers peuvent être épinglés séparément dans la barre des tâches.\n\nCe réglage s’applique aux prochaines fenêtres ouvertes. Les fenêtres déjà ouvertes conservent leur regroupement actuel."

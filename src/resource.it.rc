@@ -140,7 +140,8 @@ Copyright (c) 2013 Afrow Soft Ltd. Vedi LockedList-LICENSE.txt.\r\n\
     IDS_RESET_CLI_BUSY, "Impossibile ottenere l'accesso esclusivo alle impostazioni per la reimpostazione. Chiudi tutte le istanze di FileSpacer, verifica l'accesso alla cartella dei dati locali e riprova. Nessuna impostazione è stata eliminata."
     IDS_RESET_CLI_FAILED, "Impossibile completare la reimpostazione delle preferenze: %1\n\nAlcune preferenze potrebbero essere già state reimpostate. Se è stato usato /reset-all, le impostazioni delle cartelle sono già state reimpostate."
     IDS_RESET_CLI_ALL_DONE, "Le preferenze globali e le posizioni, le dimensioni e le impostazioni di visualizzazione salvate delle cartelle sono state reimpostate. I tuoi file e le associazioni di Windows sono stati conservati."
-    IDS_RESET_CLI_OPTIONS_DONE, "Le preferenze globali sono state reimpostate. Le impostazioni salvate delle cartelle, i tuoi file e le associazioni di Windows sono stati conservati."
+    IDS_RESET_CLI_OPTIONS_DONE, "Le preferenze globali sono state reimpostate e i blocchi degli stati salvati delle cartelle sono stati rimossi. Le posizioni, le dimensioni e le impostazioni di visualizzazione salvate delle cartelle, i tuoi file e le associazioni di Windows sono stati conservati."
+    IDS_RESET_CLI_OPTIONS_LOCKS_FAILED, "Le preferenze globali sono state reimpostate, ma i blocchi degli stati salvati delle cartelle non sono stati rimossi perché non è stato possibile aggiornare il database degli stati delle cartelle. Le posizioni, le dimensioni e le impostazioni di visualizzazione salvate delle cartelle, i tuoi file e le associazioni di Windows sono stati conservati."
     IDS_RECOVERY_CRASHED, "FileSpacer si è arrestato dopo un errore grave. Un rapporto diagnostico e un dump della memoria sono stati salvati nei dati locali dell'applicazione; le tue preferenze sono state conservate."
     IDS_SETTINGS_ACCESS_FAILED, "FileSpacer non riesce a ottenere l'accesso condiviso alle impostazioni. Potrebbe essere in corso una reimpostazione oppure la cartella dei dati locali potrebbe non essere accessibile. Riprova al termine della manutenzione."
 }
@@ -188,6 +189,7 @@ BEGIN
   IDS_EVERYTHING_FOLDER "Cartella corrente e sottocartelle"
   IDS_EVERYTHING_EVERYWHERE "Ovunque"
   IDS_EVERYTHING_NOT_FOUND "Everything non è stato trovato. Installalo o seleziona manualmente il file eseguibile."
+  IDS_EVERYTHING_PATH_INVALID "Il percorso di Everything non può essere applicato: %1!s!\n\nInserisci il percorso completo di un file Everything.exe esistente oppure lascia il campo vuoto per il rilevamento automatico."
   IDS_SEARCH_HISTORY_INVALID "Inserisci un limite per la cronologia delle ricerche compreso tra 0 e 20."
   IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer posiziona le nuove finestre riducendo al minimo la sovrapposizione con le altre finestre delle cartelle.\n\nQuesto vale per le cartelle senza una posizione della finestra salvata o la cui posizione salvata non è più accessibile dopo una modifica della configurazione dello schermo. Una posizione salvata ancora utilizzabile ha la precedenza."
   IDS_GROUP_FOLDER_WINDOWS_HELP "Le nuove finestre delle cartelle possono essere raggruppate sotto un solo pulsante della barra delle applicazioni, in base alle impostazioni di Windows.\n\nQuando questa opzione è disattivata, le cartelle possono essere aggiunte separatamente alla barra delle applicazioni.\n\nQuesta impostazione si applica alle finestre aperte dopo la modifica. Quelle già aperte mantengono il raggruppamento attuale."

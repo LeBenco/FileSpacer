@@ -140,7 +140,8 @@ Copyright (c) 2013 Afrow Soft Ltd. Consulte LockedList-LICENSE.txt.\r\n\
     IDS_RESET_CLI_BUSY, "Não foi possível obter acesso exclusivo às definições para as repor. Feche todas as instâncias do FileSpacer, verifique o acesso à pasta de dados locais e tente novamente. Nenhuma definição foi eliminada."
     IDS_RESET_CLI_FAILED, "Não foi possível concluir a reposição das preferências: %1\n\nAlgumas preferências podem já ter sido repostas. Se utilizou /reset-all, as definições das pastas já foram repostas."
     IDS_RESET_CLI_ALL_DONE, "As preferências globais e as posições, dimensões e definições de visualização guardadas das pastas foram repostas. Os seus ficheiros e associações do Windows foram preservados."
-    IDS_RESET_CLI_OPTIONS_DONE, "As preferências globais foram repostas. As definições de pastas guardadas, os seus ficheiros e as associações do Windows foram preservados."
+    IDS_RESET_CLI_OPTIONS_DONE, "As preferências globais foram repostas e os bloqueios dos estados guardados das pastas foram levantados. As posições, dimensões e definições de visualização guardadas das pastas, os seus ficheiros e as associações do Windows foram preservados."
+    IDS_RESET_CLI_OPTIONS_LOCKS_FAILED, "As preferências globais foram repostas, mas os bloqueios dos estados guardados das pastas não puderam ser levantados porque não foi possível atualizar a base de dados dos estados das pastas. As posições, dimensões e definições de visualização guardadas das pastas, os seus ficheiros e as associações do Windows foram preservados."
     IDS_RECOVERY_CRASHED, "O FileSpacer parou após um erro grave. Foram guardados um relatório de diagnóstico e um despejo de memória nos dados locais da aplicação; as suas preferências foram preservadas."
     IDS_SETTINGS_ACCESS_FAILED, "O FileSpacer não consegue obter acesso partilhado às definições. Pode estar em curso uma reposição ou a pasta de dados locais pode estar inacessível. Tente novamente após a conclusão da manutenção."
 }
@@ -188,6 +189,7 @@ BEGIN
   IDS_EVERYTHING_FOLDER "Pasta atual e subpastas"
   IDS_EVERYTHING_EVERYWHERE "Em todo o lado"
   IDS_EVERYTHING_NOT_FOUND "O Everything não foi encontrado. Instale-o ou selecione manualmente o executável."
+  IDS_EVERYTHING_PATH_INVALID "O caminho do Everything não pode ser aplicado: %1!s!\n\nIndique o caminho completo de um ficheiro Everything.exe existente ou deixe o campo vazio para a deteção automática."
   IDS_SEARCH_HISTORY_INVALID "Introduza um limite do histórico de pesquisas entre 0 e 20."
   IDS_SMART_WINDOW_PLACEMENT_HELP "O FileSpacer coloca as novas janelas de modo a minimizar a sobreposição com outras janelas de pastas.\n\nIsto aplica-se a pastas sem uma posição de janela guardada ou cuja posição já não é acessível após uma alteração da configuração dos ecrãs. Uma posição guardada ainda utilizável tem prioridade."
   IDS_GROUP_FOLDER_WINDOWS_HELP "As novas janelas de pastas podem ser agrupadas num único botão da barra de tarefas, de acordo com as definições do Windows.\n\nQuando esta opção está desativada, as pastas podem ser afixadas separadamente na barra de tarefas.\n\nEsta definição aplica-se às janelas abertas após a alteração. As janelas já abertas mantêm o agrupamento atual."
