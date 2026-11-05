@@ -42,8 +42,6 @@ public:
     virtual SIZE requestedSize();
     virtual RECT requestedRect(HMONITOR preferMonitor, HWND source = nullptr); // called for root windows
 
-    void resetViewState(); // call immediately after constructing to reset all view state properties
-
     void close(bool remember = true);
     void setForeground();
 
@@ -99,7 +97,6 @@ protected:
     bool loadFolderState();
     FolderState &getSavedFolderState() { return savedState; }
     const std::string &getFolderStateKey() const { return stateKey; }
-    void resetViewState(uint32_t mask);
     void persistViewState();
     virtual uint32_t captureViewState(uint32_t mask);
     void stateStorageError();
@@ -197,9 +194,11 @@ private:
 
     CComPtr<IShellLink> link;
     std::string stateKey;
+    std::string pendingMoveKey; // Previous key whose row could not be moved yet.
     FolderState savedState;
     ClosedWindow closingWindow;
     bool stateLoaded = false;
+    bool closingStoreWaited = false;
     bool storageErrorShown = false;
     bool deleted = false; // The item is gone: never recreate its state nor revalidate it.
     uint32_t dirtyViewState = 0; // FolderState::Part flags
