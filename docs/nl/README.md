@@ -21,7 +21,7 @@ FileSpacer kiest voor een lichte, overzichtelijke ervaring. Om de opeenstapeling
 
 **Installatie:**
 
-- [Handmatige installatie](https://github.com/LeBenco/FileSpacer/releases/latest): download `FileSpacer-X.Y.Z-install.exe` en voer het uit.
+- **Handmatige installatie:** download <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.3.2/FileSpacer-1.3.2-install.exe" id="last-release-url">het installatieprogramma van de nieuwste versie</a> en voer het uit.
 - **WinGet:** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (terminal als administrator): `choco install filespacer -y`
 
