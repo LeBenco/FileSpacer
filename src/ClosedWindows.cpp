@@ -177,10 +177,14 @@ std::wstring validatedIcon;
 struct PinnedIconStamp { std::wstring parsingName; uint64_t stamp = 0; }; // desktop.ini last write
 std::vector<PinnedIconStamp> pinnedIconStamps; // The local pins this process extracted.
 
+uint64_t validatedStamp = 0;
+
 // SFGAO_VALIDATE may reach the network: the last closed folder is validated
-// once per closure (sequence and parsing name), not at every refresh.
-bool reopenFolderIcon(const ClosedWindow &last, std::wstring *icon) {
-    if (last.sequence != validatedSequence || last.parsingName != validatedParsingName) {
+// once per closure (sequence and parsing name), not at every refresh. Its
+// icon is extracted again when its desktop.ini changed (stamp, 0 unless local).
+bool reopenFolderIcon(const ClosedWindow &last, uint64_t stamp, std::wstring *icon) {
+    if (last.sequence != validatedSequence || last.parsingName != validatedParsingName
+            || stamp != validatedStamp) {
         CComPtr<IShellItem> folder;
         SFGAOF attributes = 0;
         validatedFolder = SUCCEEDED(SHCreateItemFromParsingName(closedWindowPath(last).c_str(),
@@ -190,6 +194,7 @@ bool reopenFolderIcon(const ClosedWindow &last, std::wstring *icon) {
         validatedIcon = validatedFolder ? jumpListFolderIcon(folder) : std::wstring();
         validatedSequence = last.sequence;
         validatedParsingName = last.parsingName;
+        validatedStamp = stamp;
     }
     *icon = validatedIcon;
     return validatedFolder;
@@ -224,6 +229,12 @@ uint64_t desktopIniStamp(const std::wstring &folder) {
         | data.ftLastWriteTime.dwLowDateTime;
 }
 
+// The input a local icon customization changes, read before the rebuild
+// fingerprint so that it triggers a rebuild; 0 where nothing is checked.
+uint64_t localIconStamp(const std::wstring &parsingName) {
+    return pinLocation(parsingName) == PinLocation::Local ? desktopIniStamp(parsingName) : 0;
+}
+
 // The ICO folderRelaunchIcon saved for this folder, if any: same name, same cache.
 std::wstring cachedFolderIcon(const std::wstring &parsingName) {
     const std::wstring id = folderTaskbarID(parsingName.c_str());
@@ -235,17 +246,17 @@ std::wstring cachedFolderIcon(const std::wstring &parsingName) {
 }
 
 // Extracting an icon opens the folder. A pin whose ICO is cached skips it
-// unless its desktop.ini changed since this process last extracted it. A
-// remote pin is never checked (a custom icon changed there stays stale until
-// a window of that folder rewrites the cache); a virtual pin always extracts.
-std::wstring pinnedFolderIcon(IShellItem *folder, const std::wstring &parsingName) {
+// unless its desktop.ini changed (stamp from localIconStamp) since this
+// process last extracted it. A remote pin is never checked (a custom icon
+// changed there stays stale until a window of that folder rewrites the
+// cache); a virtual pin always extracts.
+std::wstring pinnedFolderIcon(IShellItem *folder, const std::wstring &parsingName, uint64_t stamp) {
     const std::wstring cached = cachedFolderIcon(parsingName);
     if (!cached.empty()) {
         switch (pinLocation(parsingName)) {
             case PinLocation::Remote:
                 return cached + L",0";
             case PinLocation::Local: {
-                const uint64_t stamp = desktopIniStamp(parsingName);
                 for (auto &known : pinnedIconStamps) {
                     if (known.parsingName != parsingName) continue;
                     if (known.stamp == stamp) return cached + L",0";
@@ -441,8 +452,13 @@ void updateReopenJumpLists() {
             bool canReopen = canReopenClosedWindow(last);
 
             // The pinned folders come from Explorer's own cache; only their names
-            // are read here, their icons after the fingerprint below.
-            struct Destination { std::wstring parsingName, name, icon; CComPtr<IShellItem> folder; };
+            // and the stamps of their local desktop.ini are read here, their
+            // icons after the fingerprint below.
+            struct Destination {
+                std::wstring parsingName, name, icon;
+                CComPtr<IShellItem> folder;
+                uint64_t stamp = 0;
+            };
             std::vector<CComPtr<IShellItem>> folders;
             std::vector<Destination> pinned;
             UINT stage = 0;
@@ -480,14 +496,22 @@ void updateReopenJumpLists() {
                 }
             }
             // Skip the rebuild when nothing it is built from has changed. Nothing
-            // above opened a folder: validation and icons come after this gate.
+            // above opened a folder: validation and icons come after this gate,
+            // but a local icon customization (desktop.ini) is part of the input.
+            const uint64_t reopenStamp = canReopen ? localIconStamp(closedWindowPath(last)) : 0;
+            for (auto &entry : pinned) entry.stamp = localIconStamp(entry.parsingName);
             JumpListModel model;
             model.add(executable.data());
             model.add(getString(IDS_QUICK_ACCESS));
             model.add(canReopen ? reopenName.c_str() : L"");
             model.add(std::to_wstring(last.sequence));
             model.add(wide(last.key));
-            for (const auto &entry : pinned) { model.add(entry.parsingName); model.add(entry.name); }
+            model.add(std::to_wstring(reopenStamp));
+            for (const auto &entry : pinned) {
+                model.add(entry.parsingName);
+                model.add(entry.name);
+                model.add(std::to_wstring(entry.stamp));
+            }
             for (const auto &appID : appIDs) {
                 model.add(appID);
                 std::vector<std::wstring> removedNames;
@@ -498,8 +522,8 @@ void updateReopenJumpLists() {
             if (built && fingerprint == builtFingerprint) return;
             built = false; // A partial replacement also invalidates the previous model.
             std::wstring reopenIcon;
-            if (canReopen) canReopen = reopenFolderIcon(last, &reopenIcon);
-            for (auto &entry : pinned) entry.icon = pinnedFolderIcon(entry.folder, entry.parsingName);
+            if (canReopen) canReopen = reopenFolderIcon(last, reopenStamp, &reopenIcon);
+            for (auto &entry : pinned) entry.icon = pinnedFolderIcon(entry.folder, entry.parsingName, entry.stamp);
             std::vector<CComPtr<IShellLinkW>> destinations;
             bool complete = true;
             for (const auto &entry : pinned) {
