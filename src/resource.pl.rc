@@ -45,7 +45,6 @@ STRINGTABLE {
     IDS_INVALID_CHARS,      "Nazwa pliku nie może zawierać następujących znaków:\n\\ / : * ? "" < > |"
 
     IDS_SETTINGS_CAPTION,   "Ustawienia FileSpacer"
-    IDS_NO_UPDATE_CAPTION,  "Brak dostępnych aktualizacji"
     IDS_NO_UPDATE,          "Używasz najnowszej wersji."
     IDS_UPDATE_CLOSE_BUTTON, "Zamknij"
     IDS_UPDATE_SEARCH_BUTTON, "&Sprawdź aktualizacje"
@@ -64,7 +63,6 @@ STRINGTABLE {
     IDS_UPDATE_CONFIRM, "Instalator zostanie pobrany i zweryfikowany. Podczas pobierania możesz nadal używać FileSpacer i anulować operację. Następnie wszystkie okna FileSpacer zostaną zamknięte, a ich położenie i ustawienia zapisane jak zwykle, po czym uruchomi się instalator. Otwarte foldery zostaną ponownie otwarte po zakończeniu lub anulowaniu instalacji.\n\nKontynuować?"
     IDS_UPDATE_RELAY_FAILED, "Nie można ukończyć aktualizacji lub przywracania okien. Żaden proces nie został wymuszenie zakończony.\n\n%1"
     IDS_UPDATE_RESTORE_FAILED, "Nie można ponownie otworzyć folderów: %1!u!. Mogły zostać przeniesione, usunięte lub stać się niedostępne. Pozostałe foldery otwarto ponownie."
-    IDS_UPDATE_ERROR,       "Błąd sprawdzania aktualizacji"
     IDS_UPDATE_NOTIF_TITLE, "Aktualizacja FileSpacer"
     IDS_UPDATE_NOTIF_INFO,  "Dostępna jest nowa wersja FileSpacer. Kliknij powiadomienie, aby otworzyć stronę pobierania."
 
@@ -85,7 +83,7 @@ STRINGTABLE {
     IDS_RESET_FOLDER_STATE_STORAGE_ERROR, "Nie można otworzyć bazy stanu folderów. Nie usunięto zapisanego stanu folderów."
     IDS_RESET_FOLDER_STATE_DELETE_ERROR, "Nie można zresetować bazy stanu folderów. Usunięcie nie zostało zatwierdzone."
     IDS_RESET_FOLDER_STATE_SUCCESS, "Zresetowano zapisane położenia, rozmiary i ustawienia widoku folderów. Ustawienia aplikacji zachowano."
-    IDS_FOLDER_WIDTH_LABEL,   "&Szerokość (min: %1!d! px):"
+    IDS_FOLDER_WIDTH_LABEL,   "S&zerokość (min: %1!d! px):"
     IDS_FOLDER_HEIGHT_LABEL,  "&Wysokość (min: %1!d! px):"
     IDS_FOLDER_WIDTH_INVALID, "Szerokość musi być liczbą całkowitą co najmniej %1!d! px."
     IDS_FOLDER_HEIGHT_INVALID,"Wysokość musi być liczbą całkowitą co najmniej %1!d! px."
