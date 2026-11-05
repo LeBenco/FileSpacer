@@ -14,5 +14,12 @@ $uninstaller = Join-Path $keys[0].InstallLocation 'uninstall.exe'
 if (!(Test-Path -LiteralPath $uninstaller -PathType Leaf)) {
     throw "FileSpacer uninstaller is missing: $uninstaller"
 }
+# NSIS must run in place so the helper waits for the actual uninstall process.
+# _?= must remain last and unquoted, including when the directory contains spaces.
 Uninstall-ChocolateyPackage -PackageName $env:ChocolateyPackageName -FileType 'exe' `
-    -File $uninstaller -SilentArgs '/S /AllUsers' -ValidExitCodes @(0)
+    -File $uninstaller -SilentArgs "/S /AllUsers _?=$($keys[0].InstallLocation)" -ValidExitCodes @(0)
+# In-place NSIS cannot delete its own executable until the process has exited.
+Remove-Item -LiteralPath $uninstaller -Force
+if (!(Get-ChildItem -LiteralPath $keys[0].InstallLocation -Force | Select-Object -First 1)) {
+    Remove-Item -LiteralPath $keys[0].InstallLocation
+}

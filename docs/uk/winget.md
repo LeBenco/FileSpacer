@@ -2,7 +2,7 @@
 
 # Поширення через WinGet
 
-GitHub Actions подає `Benco.FileSpacer` до публічного [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs) після успішного **Publish FileSpacer** (`workflow_run`). Поширення має окремі запуск і результат; помилка не змінює успіх випуску. Можливий ручний запуск для вже опублікованого стабільного тега.
+GitHub Actions подає `Benco.FileSpacer` до публічного [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs) після успішного **Publish FileSpacer** (`workflow_run`), якщо WinGet явно вибрано командою `release.sh X.Y.Z --distribute winget`. Типово автоматичне поширення вимкнено. Повторюйте `--distribute`, щоб вибрати кілька каналів; вибір зберігається в анотації тега й артефакті `release-publication`. Відсутній вибір також означає відсутність автоматичного подання. Ручний запуск для вже опублікованого стабільного тега явно вибирає WinGet, навіть якщо тег спочатку містив `none`. Поширення має окремий результат; помилка не змінює успіх випуску.
 
 <a id="one-time-setup"></a>
 

@@ -1,13 +1,56 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ "$#" -ne 1 ]; then
-    echo "Usage: ./release.sh <version>"
-    echo "Example: ./release.sh 1.0.4"
+usage() {
+    echo "Usage: ./release.sh <version> [--distribute winget|chocolatey|none]..."
+    echo "Default: GitHub release only (none). Repeat --distribute to select several channels."
+    echo "Example: ./release.sh 1.3.3 --distribute winget --distribute chocolatey"
+}
+
+if [ "$#" -eq 1 ] && [[ "$1" == --help || "$1" == -h ]]; then
+    usage
+    exit 0
+fi
+if [ "$#" -lt 1 ]; then
+    usage
     exit 1
 fi
 
 VERSION="$1"
+shift
+DISTRIBUTION=none
+EXPLICIT_NONE=false
+while [ "$#" -gt 0 ]; do
+    if [ "$1" != --distribute ] || [ "$#" -lt 2 ]; then
+        usage >&2
+        exit 1
+    fi
+    case "$2" in
+        none)
+            if [ "$DISTRIBUTION" != none ]; then
+                echo "Error: none cannot be combined with a distribution channel." >&2
+                exit 1
+            fi
+            EXPLICIT_NONE=true
+            ;;
+        winget|chocolatey)
+            if [ "$EXPLICIT_NONE" = true ]; then
+                echo "Error: none cannot be combined with a distribution channel." >&2
+                exit 1
+            fi
+            if [ "$DISTRIBUTION" = none ]; then
+                DISTRIBUTION="$2"
+            elif [[ ",$DISTRIBUTION," != *",$2,"* ]]; then
+                DISTRIBUTION+=",$2"
+            fi
+            ;;
+        *)
+            echo "Error: unknown distribution channel '$2'. Expected winget, chocolatey or none." >&2
+            exit 1
+            ;;
+    esac
+    shift 2
+done
 TAG="v$VERSION"
 CHANGELOG="CHANGELOG.md"
 
@@ -95,6 +138,7 @@ fi
 
 echo
 echo "Release $TAG"
+echo "Distribution: $DISTRIBUTION"
 echo "------------------------------------------------------------------------"
 printf '%s\n' "$NOTES"
 echo "------------------------------------------------------------------------"
@@ -117,7 +161,7 @@ esac
 
 git push origin main
 
-git tag -a "$TAG" -m "FileSpacer $VERSION"
+git tag -a "$TAG" -m "FileSpacer $VERSION" -m "FileSpacer-Distribution: $DISTRIBUTION"
 git push origin "$TAG"
 
 echo
