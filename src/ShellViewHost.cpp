@@ -272,16 +272,29 @@ HRESULT ShellViewHost::navigate(IShellItem *item, bool mixFolders, bool isolated
             custom = !ILIsEmpty(id);
         }
         if (custom) {
+            // Only a provider that cannot be loaded, registered, activated or
+            // that lacks the contract disables the route for the process. Any
+            // other failure (folder identifier, native binding) belongs to this
+            // folder and keeps the native view for this navigation only.
             CComPtr<IShellItem> mixed;
             hr = mixedFolderItem(item, isolated, &mixed);
+            bool incompatible = hr == HRESULT_FROM_WIN32(ERROR_MOD_NOT_FOUND)
+                || hr == HRESULT_FROM_WIN32(ERROR_PROC_NOT_FOUND) || hr == SELFREG_E_CLASS;
             CComPtr<IShellFolder> folder;
-            if (SUCCEEDED(hr)) hr = mixed->BindToHandler(nullptr, BHID_SFObject, IID_PPV_ARGS(&folder));
+            if (SUCCEEDED(hr)) {
+                hr = mixed->BindToHandler(nullptr, BHID_SFObject, IID_PPV_ARGS(&folder));
+                incompatible = hr == REGDB_E_CLASSNOTREG || hr == CLASS_E_CLASSNOTAVAILABLE;
+            }
             CComPtr<IMixedFolder> contract;
-            if (SUCCEEDED(hr)) hr = folder->QueryInterface(IID_PPV_ARGS(&contract));
+            if (SUCCEEDED(hr)) {
+                hr = folder->QueryInterface(IID_PPV_ARGS(&contract));
+                incompatible = hr == E_NOINTERFACE;
+            }
             if (SUCCEEDED(hr)) target = mixed;
             else {
-                mixedProviderDisabled.store(true);
-                debugPrintf(L"Mixed provider unavailable or incompatible: HRESULT=0x%08lX; using native view\n",
+                if (incompatible) mixedProviderDisabled.store(true);
+                debugPrintf(L"Mixed provider %s: HRESULT=0x%08lX; using native view\n",
+                    incompatible ? L"unavailable or incompatible" : L"failed for this folder",
                     static_cast<unsigned long>(hr));
             }
         }
