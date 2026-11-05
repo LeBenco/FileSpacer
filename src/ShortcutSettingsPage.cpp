@@ -296,7 +296,7 @@ INT_PTR CALLBACK editorProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
     }
     auto self = reinterpret_cast<ShortcutPage *>(GetWindowLongPtrW(window, GWLP_USERDATA));
     if (!self) return FALSE;
-    if (message == WM_COMMAND) { self->command(LOWORD(wParam)); return TRUE; }
+    if (message == WM_COMMAND && HIWORD(wParam) == BN_CLICKED) { self->command(LOWORD(wParam)); return TRUE; }
     if (message == WM_CTLCOLORSTATIC && self->warning
             && GetDlgCtrlID(reinterpret_cast<HWND>(lParam)) == IDC_SHORTCUT_FEEDBACK) {
         const HDC context = reinterpret_cast<HDC>(wParam);
@@ -335,7 +335,7 @@ INT_PTR CALLBACK shortcutsProc(HWND window, UINT message, WPARAM wParam, LPARAM 
         self->updatePowerToysNotice(); self->update(); self->layout(); return TRUE;
     }
     if (!self) return FALSE;
-    if (message == WM_COMMAND) { self->command(LOWORD(wParam)); return TRUE; }
+    if (message == WM_COMMAND && HIWORD(wParam) == BN_CLICKED) { self->command(LOWORD(wParam)); return TRUE; }
     if (message == WM_NOTIFY) {
         const auto notification = reinterpret_cast<NMHDR *>(lParam);
         if (notification->idFrom == IDC_SHORTCUT_POWERTOYS
