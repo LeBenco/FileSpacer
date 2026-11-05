@@ -34,6 +34,7 @@ SQLITE_OBJECT = $(OUTDIR)\sqlite3.obj
 
 TARGET = $(OUTDIR)\FileSpacer.exe
 RESOURCE = $(OUTDIR)\resource.res
+PROVIDER_RESOURCE = $(OUTDIR)\MixedFolderProvider.res
 ICON_SVG = src\res\FileSpacer.svg
 ICON_ICO = src\res\FileSpacer.ico
 LOCK_BADGE_ICO = src\res\window-state-lock.ico
@@ -89,8 +90,13 @@ $(OUTDIR):
 $(TARGET): $(OBJECTS) $(SQLITE_OBJECT) $(RESOURCE) $(OUTDIR)\FileSpacerFolder.dll Makefile
 	cl.exe /nologo /Fe$(TARGET) $(OBJECTS) $(SQLITE_OBJECT) $(RESOURCE) /link /incremental:no /manifest:no /debug /pdb:$(OUTDIR)\FileSpacer.pdb $(LINKFLAGS) Uuid.lib
 
-$(OUTDIR)\FileSpacerFolder.dll: src\MixedFolderProvider.cpp src\MixedFolder.h src\common.h src\MixedFolderProvider.def Makefile
-	cl.exe $(CXXFLAGS) /DSTRICT_TYPED_ITEMIDS /Fd$(OUTDIR)\MixedFolder-compiler.pdb /Fo$(OUTDIR)\MixedFolderProvider.obj /LD /Fe$@ src\MixedFolderProvider.cpp /link /incremental:no /debug /pdb:$(OUTDIR)\FileSpacerFolder.pdb /def:src\MixedFolderProvider.def User32.lib Shell32.lib Shlwapi.lib Ole32.lib OleAut32.lib Propsys.lib Uuid.lib
+$(OUTDIR)\FileSpacerFolder.dll: src\MixedFolderProvider.cpp src\MixedFolder.h src\common.h src\MixedFolderProvider.def $(PROVIDER_RESOURCE) Makefile
+	cl.exe $(CXXFLAGS) /DSTRICT_TYPED_ITEMIDS /Fd$(OUTDIR)\MixedFolder-compiler.pdb /Fo$(OUTDIR)\MixedFolderProvider.obj /LD /Fe$@ src\MixedFolderProvider.cpp $(PROVIDER_RESOURCE) /link /incremental:no /debug /pdb:$(OUTDIR)\FileSpacerFolder.pdb /def:src\MixedFolderProvider.def User32.lib Shell32.lib Shlwapi.lib Ole32.lib OleAut32.lib Propsys.lib Uuid.lib Version.lib
+
+# The provider carries the application's version so a registration pointing
+# at another copy can be compared by file version.
+$(PROVIDER_RESOURCE): src\MixedFolderProvider.rc src\resource.h src\dialog.h Makefile
+	rc.exe /D _UNICODE /D UNICODE /n /I src /fo $(PROVIDER_RESOURCE) src\MixedFolderProvider.rc
 
 # Header changes rebuild all C++ files; source changes rebuild only their objects.
 $(OBJECTS): src\*.h $(SQLITE_DIR)\sqlite3.h Makefile

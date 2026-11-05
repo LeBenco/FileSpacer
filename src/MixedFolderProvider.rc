@@ -1,0 +1,27 @@
+#include <windows.h>
+#include "resource.h"
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+
+1 VERSIONINFO
+    FILEVERSION     FILESPACER_VERSION
+    PRODUCTVERSION  FILESPACER_VERSION
+    FILEOS          VOS_NT_WINDOWS32
+    FILETYPE        VFT_DLL
+{
+    BLOCK "StringFileInfo" {
+        BLOCK "040904B0" {
+            VALUE "CompanyName", "FileSpacer\0"
+            VALUE "FileDescription", "FileSpacer mixed file/folder sorting provider\0"
+            VALUE "FileVersion", FILESPACER_VERSION_STRING
+            VALUE "InternalName", "FileSpacerFolder\0"
+            VALUE "LegalCopyright", "Copyright (c) 2026 Benco; original ChromaFiler (c) 2023 J. van't Hoog\0"
+            VALUE "OriginalFilename", "FileSpacerFolder.dll\0"
+            VALUE "ProductName", "FileSpacer\0"
+            VALUE "ProductVersion", FILESPACER_VERSION_STRING
+        }
+    }
+    BLOCK "VarFileInfo" {
+        VALUE "Translation", 0x0409, 0x04B0
+    }
+}
