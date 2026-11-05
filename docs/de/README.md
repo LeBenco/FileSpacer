@@ -22,7 +22,7 @@ FileSpacer legt Wert auf eine schlanke und übersichtliche Bedienung. Damit sich
 
 **Installation:**
 
-- [Manuelle Installation](https://github.com/LeBenco/FileSpacer/releases/latest): `FileSpacer-X.Y.Z-install.exe` herunterladen und ausführen.
+- **Manuelle Installation:** <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.3.2/FileSpacer-1.3.2-install.exe" id="last-release-url">das Installationsprogramm der neuesten Version</a> herunterladen und ausführen.
 - **WinGet:** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (Terminal als Administrator): `choco install filespacer -y`
 

@@ -22,7 +22,7 @@ FileSpacer privilégie une expérience légère et épurée. Pour limiter l’ac
 
 **Installation :**
 
-- [Installation manuelle](https://github.com/LeBenco/FileSpacer/releases/latest) : télécharger et exécuter `FileSpacer-X.Y.Z-install.exe`.
+- **Installation manuelle :** télécharger et exécuter <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.3.2/FileSpacer-1.3.2-install.exe" id="last-release-url">l’installateur de la dernière version</a>.
 - **WinGet :** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (terminal administrateur) : `choco install filespacer -y`
 
