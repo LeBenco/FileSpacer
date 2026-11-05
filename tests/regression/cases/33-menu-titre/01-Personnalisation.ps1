@@ -13,6 +13,9 @@ function Button([IntPtr]$Window,[int]$Id){[TitleMenuUi]::Click([FileSpacerRegres
 function Editor {
     $page=Set-UiPage 1
     [TitleMenuUi]::Capture($script:UiSettings,(Join-Path $env:FS_REGRESSION_RUN 'preferences-display.png'))
+    # A foreign foreground window makes the real click fail as covered: activate
+    # the sheet first (caption click when Windows denies the transfer), as other cases do.
+    Activate-Ui $script:UiSettings
     Button $page (Get-UiId 'IDC_TITLE_MENU_EDIT')
     $found=@{Value=[IntPtr]::Zero}
     Wait-Ui {$d=@([FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,0)|Where-Object{[FileSpacerRegression.Native]::GetDlgItem($_,(Get-UiId 'IDC_TITLE_MENU_ACTIONS'))-ne[IntPtr]::Zero});if($d.Count-eq1){$found.Value=$d[0];return $true};return $false} 'title menu editor'
