@@ -2,4 +2,6 @@ LIBRARY FileSpacerFolder
 EXPORTS
     DllGetClassObject PRIVATE
     DllCanUnloadNow PRIVATE
+    DllRegisterServer PRIVATE
+    DllUnregisterServer PRIVATE
     CreateMixedFolderItem
