@@ -45,7 +45,6 @@ STRINGTABLE {
     IDS_INVALID_CHARS,      "O nome do ficheiro não pode conter os seguintes caracteres:\n\\ / : * ? "" < > |"
 
     IDS_SETTINGS_CAPTION,   "Definições do FileSpacer"
-    IDS_NO_UPDATE_CAPTION,  "Não existem atualizações disponíveis"
     IDS_NO_UPDATE,          "Está a utilizar a versão mais recente."
     IDS_UPDATE_CLOSE_BUTTON, "Fechar"
     IDS_UPDATE_SEARCH_BUTTON, "&Procurar atualizações"
@@ -64,7 +63,6 @@ STRINGTABLE {
     IDS_UPDATE_CONFIRM, "O instalador será transferido e verificado. Pode continuar a utilizar o FileSpacer e cancelar durante a transferência. Depois, todas as janelas do FileSpacer serão fechadas, guardando as posições e definições como habitualmente, e a instalação será iniciada. As pastas abertas serão reabertas depois de a instalação terminar ou ser cancelada.\n\nContinuar?"
     IDS_UPDATE_RELAY_FAILED, "Não foi possível concluir a atualização ou o restauro das janelas. Nenhum processo foi terminado à força.\n\n%1"
     IDS_UPDATE_RESTORE_FAILED, "Não foi possível reabrir %1!u! pastas. Podem ter sido movidas, eliminadas ou estar indisponíveis. As restantes pastas foram reabertas."
-    IDS_UPDATE_ERROR,       "Erro ao procurar atualizações"
     IDS_UPDATE_NOTIF_TITLE, "Atualização do FileSpacer"
     IDS_UPDATE_NOTIF_INFO,  "Está disponível uma nova versão do FileSpacer. Clique nesta notificação para abrir a página de transferência."
 
