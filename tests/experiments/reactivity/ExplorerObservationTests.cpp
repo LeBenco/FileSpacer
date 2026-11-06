@@ -175,7 +175,16 @@ HRESULT measure(Target &t,const char *app,int n,int repetition,const char *opera
 #ifdef FILESPACER_VISUAL_TIMING
     HWND body=nullptr;require(SUCCEEDED(t.shell->GetWindow(&body))&&body,"Visible view unavailable");
     const std::string visualLabel=std::string(app)+"-"+operation+"-"+std::to_string(repetition);
-    presentation::Observation visible(body,presentation::outputRoot+L"\\"+std::wstring(visualLabel.begin(),visualLabel.end()));
+    std::unique_ptr<presentation::Observation> visible;
+    if(presentation::pointer)presentation::pointer->park();
+    const RECT actualRegion=presentation::measuredRegion(body);presentation::requireUncovered(body,actualRegion);
+    static UINT referenceDpi=0;const UINT dpi=GetDpiForWindow(body);if(!referenceDpi)referenceDpi=dpi;require(dpi&&dpi==referenceDpi,"Comparison DPI differs between applications");
+    FILE *geometry=nullptr;require(_wfopen_s(&geometry,(presentation::outputRoot+L"\\viewport.csv").c_str(),L"ab")==0,"Viewport log unavailable");
+    std::unique_ptr<FILE,decltype(&std::fclose)> geometryFile(geometry,&std::fclose);require(std::fseek(geometry,0,SEEK_END)==0,"Viewport log seek failed");
+    if(std::ftell(geometry)==0)std::fputs("app,operation,repetition,left,top,width,height,view_width,view_height,dpi,desktop_region,cursor_x,cursor_y\n",geometry);
+    RECT viewBounds={};POINT cursor={};GetWindowRect(body,&viewBounds);GetCursorPos(&cursor);
+    std::fprintf(geometry,"%s,%s,%d,%ld,%ld,%ld,%ld,%ld,%ld,%u,%d,%ld,%ld\n",app,operation,repetition,actualRegion.left,actualRegion.top,actualRegion.right-actualRegion.left,actualRegion.bottom-actualRegion.top,viewBounds.right-viewBounds.left,viewBounds.bottom-viewBounds.top,dpi,presentation::desktopRegion?1:0,cursor.x,cursor.y);require(std::fclose(geometryFile.release())==0,"Viewport log close failed");
+    if(presentation::enabled)visible=std::make_unique<presentation::Observation>(body,presentation::outputRoot+L"\\"+std::wstring(visualLabel.begin(),visualLabel.end()));
 #endif
     Handle process(OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,FALSE,t.processId),&CloseHandle);
     const double before=cpu(process.get());
@@ -209,11 +218,11 @@ HRESULT measure(Target &t,const char *app,int n,int repetition,const char *opera
     }
     const double began=now();
 #ifdef FILESPACER_VISUAL_TIMING
-    visible.begin();
+    if(visible)visible->begin();
 #endif
     HRESULT result=action();const double duration=now()-began;
 #ifdef FILESPACER_VISUAL_TIMING
-    visible.apiReturned();
+    if(visible)visible->apiReturned();
 #endif
     completed.store(true);if(sampler.joinable())sampler.join();
     pump(500);stop.store(true);
@@ -227,7 +236,7 @@ HRESULT measure(Target &t,const char *app,int n,int repetition,const char *opera
     row(app,n,repetition,operation,result,duration,lag,timeouts,cpu(process.get())-before,
         (t.sink?t.sink->enumerated:0)-enumeration,(t.sink?t.sink->changed:0)-changed,count,selected);
 #ifdef FILESPACER_VISUAL_TIMING
-    visible.finish();
+    if(visible)visible->finish();else if(presentation::pointer)presentation::pointer->verify();
 #endif
     return result;
 }
@@ -306,11 +315,18 @@ void run(const std::wstring &root,const std::wstring &fixture){
     }
     std::fclose(csv);csv=nullptr;std::fclose(waits);waits=nullptr;
 }
-void runSelectionComparison(const std::wstring &root,const std::wstring &fixture,FOLDERVIEWMODE requestedMode){
+struct ViewSpec{const wchar_t *name;FOLDERVIEWMODE mode;int iconSize;constexpr ViewSpec(const wchar_t *label,FOLDERVIEWMODE representation,int size)noexcept:name(label),mode(representation),iconSize(size){}};
+constexpr ViewSpec viewSpecs[]={
+    {L"extra-large",FVM_ICON,256},{L"large",FVM_ICON,96},{L"medium",FVM_ICON,48},{L"small",FVM_SMALLICON,16},
+    {L"list",FVM_LIST,16},{L"details",FVM_DETAILS,16},{L"tiles",FVM_TILE,48},{L"content",FVM_CONTENT,32}};
+const ViewSpec *findSpec(const wchar_t *name){for(const auto &spec:viewSpecs)if(std::wcscmp(spec.name,name)==0)return &spec;return nullptr;}
+void runSelectionComparison(const std::wstring &root,const std::wstring &fixture,const ViewSpec &spec){
     captureEvents=false;captureSnapshots=false;observationRoot=root;
-    const bool list=requestedMode==FVM_LIST;
-    require(_wfopen_s(&csv,(root+(list?L"\\list.csv":L"\\details.csv")).c_str(),L"wb")==0,"Selection CSV unavailable");
+    require(_wfopen_s(&csv,(root+L"\\"+spec.name+L".csv").c_str(),L"wb")==0,"Selection CSV unavailable");
     require(_wfopen_s(&waits,(root+L"\\wait-chains.csv").c_str(),L"wb")==0,"Wait log unavailable");
+    FILE *capabilities=nullptr;require(_wfopen_s(&capabilities,(root+L"\\capabilities.csv").c_str(),L"wb")==0,"Capabilities CSV unavailable");
+    std::unique_ptr<FILE,decltype(&std::fclose)> capabilityFile(capabilities,&std::fclose);
+    std::fputs("app,repetition,view,status,hresult,requested_mode,actual_mode,requested_size,actual_size,width,height,dpi\n",capabilities);
     std::fputs("app,items,repetition,operation,hresult,call_ms,max_ping_ms,ping_timeouts,cpu_ms,enum_events,change_events,observed_items,observed_selection\n",csv);
     const std::wstring oldDirectory=root+L"\\baseline",newDirectory=root+L"\\prototype";
     require(!!CreateDirectoryW(oldDirectory.c_str(),nullptr)&&!!CreateDirectoryW(newDirectory.c_str(),nullptr),"Binary directories unavailable");
@@ -320,7 +336,11 @@ void runSelectionComparison(const std::wstring &root,const std::wstring &fixture
     const std::wstring executables[]={oldDirectory+L"\\FileSpacer.exe",newDirectory+L"\\FileSpacer.exe",std::wstring(system)+L"\\explorer.exe"};
     const char *labels[]={"FileSpacer-baseline","FileSpacer-hybrid","Explorer"};
     CComPtr<IShellWindows> windows;require(SUCCEEDED(windows.CoCreateInstance(CLSID_ShellWindows)),"ShellWindows unavailable");
-    for(int repetition=0;repetition<3;++repetition)for(int order=0;order<3;++order){
+    int repetitions=3;
+#ifdef FILESPACER_VISUAL_TIMING
+    if(presentation::protocolOnly)repetitions=1;
+#endif
+    for(int repetition=0;repetition<repetitions;++repetition)for(int order=0;order<3;++order){
         const int app=(order+repetition)%3;Target t;
         launch(executables[app],std::wstring(app<2?L"/test ":L"")+L"\""+fixture+L"\"",root+L"\\launch-"+std::to_wstring(app)+L"-"+std::to_wstring(repetition)+L".log");
         const ULONGLONG deadline=GetTickCount64()+45000;
@@ -328,28 +348,45 @@ void runSelectionComparison(const std::wstring &root,const std::wstring &fixture
         require(!!t.window,"No registered view");
         int count=0;while(GetTickCount64()<deadline){t.view->ItemCount(SVGIO_ALLVIEW,&count);if(count==5000)break;pump(10);}
         require(count==5000,"Incomplete fixture");
-        require(SUCCEEDED(t.view->SetViewModeAndIconSize(requestedMode,16)),"Requested view mode unavailable");pump(500);
+        const HRESULT requested=t.view->SetViewModeAndIconSize(spec.mode,spec.iconSize);pump(500);
         t.disconnect();require(findView(windows,fixture,app<2,t),"Current comparison view unavailable");
+        FOLDERVIEWMODE mode=FVM_AUTO;int iconSize=0;const HRESULT readMode=t.view->GetViewModeAndIconSize(&mode,&iconSize);
+        const bool supported=SUCCEEDED(requested)&&SUCCEEDED(readMode)&&mode==spec.mode&&iconSize==spec.iconSize;
+        if(!supported){
+            std::fprintf(capabilities,"%s,%d,%ls,UNSUPPORTED,0x%08lX,%d,%d,%d,%d,0,0,0\n",labels[app],repetition,spec.name,static_cast<unsigned long>(FAILED(requested)?requested:readMode),static_cast<int>(spec.mode),static_cast<int>(mode),spec.iconSize,iconSize);std::fflush(capabilities);
+            std::printf("UNSUPPORTED %ls %s mode=%d size=%d requested=%d/%d\n",spec.name,labels[app],static_cast<int>(mode),iconSize,static_cast<int>(spec.mode),spec.iconSize);
+            HWND frame=t.window;t.disconnect();PostMessageW(frame,WM_CLOSE,0,0);const ULONGLONG close=GetTickCount64()+20000;while(IsWindow(frame)&&GetTickCount64()<close)pump(10);require(!IsWindow(frame),"Unsupported-view window did not close");t.window=nullptr;continue;
+        }
+#ifdef FILESPACER_VISUAL_TIMING
+        presentation::fitView(t.shell,t.window);
+        SetForegroundWindow(t.window);if(presentation::pointer)presentation::pointer->park();
+#endif
         SORTCOLUMN sort={PKEY_ItemNameDisplay,SORT_ASCENDING};require(SUCCEEDED(t.view->SetSortColumns(&sort,1)),"Sort rejected");pump(500);
-        UINT mode=0;require(SUCCEEDED(t.view->GetCurrentViewMode(&mode))&&mode==static_cast<UINT>(requestedMode),"Wrong representation");
+        require(SUCCEEDED(t.view->GetViewModeAndIconSize(&mode,&iconSize))&&mode==spec.mode&&iconSize==spec.iconSize,"Wrong representation");
+        HWND body=nullptr;RECT bounds={};require(SUCCEEDED(t.shell->GetWindow(&body))&&GetWindowRect(body,&bounds),"View bounds unavailable");
+        std::fprintf(capabilities,"%s,%d,%ls,SUPPORTED,0x00000000,%d,%d,%d,%d,%ld,%ld,%u\n",labels[app],repetition,spec.name,static_cast<int>(spec.mode),static_cast<int>(mode),spec.iconSize,iconSize,bounds.right-bounds.left,bounds.bottom-bounds.top,GetDpiForWindow(body));std::fflush(capabilities);
         std::vector<std::unique_ptr<ITEMID_CHILD,decltype(&CoTaskMemFree)>> owned;std::vector<PCUITEMID_CHILD> ids;
         CComPtr<IEnumIDList> items;require(SUCCEEDED(t.view->Items(SVGIO_ALLVIEW,IID_PPV_ARGS(&items))),"No items");
         for(int i=0;i<5000;++i){CComHeapPtr<ITEMID_CHILD> id;require(items->Next(1,&id,nullptr)==S_OK,"Short enumeration");ids.push_back(id);owned.emplace_back(id.Detach(),&CoTaskMemFree);}
         t.subscribe();require(SUCCEEDED(t.shell->SelectItem(nullptr,SVSI_DESELECTOTHERS)),"Initial clear failed");pump(500);
         FILE *tree=nullptr;const std::wstring treeFile=root+L"\\windows-"+std::to_wstring(app)+L"-"+std::to_wstring(repetition)+L".txt";
         if(_wfopen_s(&tree,treeFile.c_str(),L"wb")==0){EnumChildWindows(t.window,windowObserved,reinterpret_cast<LPARAM>(tree));std::fclose(tree);}
-        for(const int selected:{100,500,1000,2500,5000}){
+        std::vector<int> counts={100,500,1000,2500,5000};
+#ifdef FILESPACER_VISUAL_TIMING
+        if(presentation::protocolOnly)counts={2};
+#endif
+        for(const int selected:counts){
             const std::string select="select_"+std::to_string(selected),clear="clear_"+std::to_string(selected);
             require(SUCCEEDED(measure(t,labels[app],5000,repetition,select.c_str(),[&](){return t.view->SelectAndPositionItems(selected,ids.data(),nullptr,SVSI_SELECT|SVSI_NOTAKEFOCUS);})),"Selection failed");
             int actual=-1;require(SUCCEEDED(t.view->ItemCount(SVGIO_SELECTION,&actual))&&actual==selected,"Wrong selected count");
             require(SUCCEEDED(measure(t,labels[app],5000,repetition,clear.c_str(),[&](){return t.shell->SelectItem(nullptr,SVSI_DESELECTOTHERS);})),"Clear failed");
             require(SUCCEEDED(t.view->ItemCount(SVGIO_SELECTION,&actual))&&actual==0,"Selection not cleared");
-            require(SUCCEEDED(t.view->GetCurrentViewMode(&mode))&&mode==static_cast<UINT>(requestedMode),"Representation changed during measurement");
+            require(SUCCEEDED(t.view->GetViewModeAndIconSize(&mode,&iconSize))&&mode==spec.mode&&iconSize==spec.iconSize,"Representation changed during measurement");
         }
         HWND frame=t.window;t.disconnect();PostMessageW(frame,WM_CLOSE,0,0);
         const ULONGLONG closeDeadline=GetTickCount64()+20000;while(IsWindow(frame)&&GetTickCount64()<closeDeadline)pump(10);
         require(!IsWindow(frame),"Window not closed");t.window=nullptr;pump(500);
-        std::printf("%s %s repetition %d mode=%u verified\n",list?"LIST":"DETAILS",labels[app],repetition,mode);std::fflush(stdout);
+        std::printf("VIEW %ls %s repetition %d mode=%d size=%d verified\n",spec.name,labels[app],repetition,static_cast<int>(mode),iconSize);std::fflush(stdout);
     }
     std::fclose(csv);csv=nullptr;std::fclose(waits);waits=nullptr;
 }
@@ -358,7 +395,7 @@ int wmain(int argc,wchar_t **argv){
     if((argc!=3&&argc!=4) || FAILED(CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED)))return 2;
     captureEvents=argc==3||std::wcscmp(argv[3],L"no-events")!=0;
     QueryPerformanceFrequency(&frequency);int result=0;
-    try{if(argc==4&&(std::wcscmp(argv[3],L"details")==0||std::wcscmp(argv[3],L"list")==0))runSelectionComparison(argv[1],argv[2],std::wcscmp(argv[3],L"list")==0?FVM_LIST:FVM_DETAILS);else{run(argv[1],argv[2]);require(snapshotCount.load()>=2,"Insufficient process snapshots");}}
+    try{const ViewSpec *spec=argc==4?findSpec(argv[3]):nullptr;if(spec)runSelectionComparison(argv[1],argv[2],*spec);else{run(argv[1],argv[2]);require(snapshotCount.load()>=2,"Insufficient process snapshots");}}
     catch(const std::exception &e){std::fprintf(stderr,"FAIL: %s\n",e.what());result=1;}
     if(csv)std::fclose(csv);if(waits)std::fclose(waits);CoUninitialize();return result;
 }
