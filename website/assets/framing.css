@@ -45,6 +45,10 @@
   hyphens: auto;
 }
 
+.main-content main ul > li {
+  position: relative;
+}
+
 /* Purple and green faces of the logo, with readable contrast. */
 #site-nav .nav-list-link,
 #site-nav .nav-list-expander,
