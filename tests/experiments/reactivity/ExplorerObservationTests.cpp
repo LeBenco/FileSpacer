@@ -287,9 +287,10 @@ void run(const std::wstring &root,const std::wstring &fixture){
     }
     std::fclose(csv);csv=nullptr;std::fclose(waits);waits=nullptr;
 }
-void runDetails(const std::wstring &root,const std::wstring &fixture){
+void runSelectionComparison(const std::wstring &root,const std::wstring &fixture,FOLDERVIEWMODE requestedMode){
     captureEvents=false;captureSnapshots=false;observationRoot=root;
-    require(_wfopen_s(&csv,(root+L"\\details.csv").c_str(),L"wb")==0,"Details CSV unavailable");
+    const bool list=requestedMode==FVM_LIST;
+    require(_wfopen_s(&csv,(root+(list?L"\\list.csv":L"\\details.csv")).c_str(),L"wb")==0,"Selection CSV unavailable");
     require(_wfopen_s(&waits,(root+L"\\wait-chains.csv").c_str(),L"wb")==0,"Wait log unavailable");
     std::fputs("app,items,repetition,operation,hresult,call_ms,max_ping_ms,ping_timeouts,cpu_ms,enum_events,change_events,observed_items,observed_selection\n",csv);
     const std::wstring oldDirectory=root+L"\\baseline",newDirectory=root+L"\\prototype";
@@ -308,10 +309,10 @@ void runDetails(const std::wstring &root,const std::wstring &fixture){
         require(!!t.window,"No registered view");
         int count=0;while(GetTickCount64()<deadline){t.view->ItemCount(SVGIO_ALLVIEW,&count);if(count==5000)break;pump(10);}
         require(count==5000,"Incomplete fixture");
-        require(SUCCEEDED(t.view->SetViewModeAndIconSize(FVM_DETAILS,16)),"Details unavailable");pump(500);
-        t.disconnect();require(findView(windows,fixture,app<2,t),"Current Details view unavailable");
+        require(SUCCEEDED(t.view->SetViewModeAndIconSize(requestedMode,16)),"Requested view mode unavailable");pump(500);
+        t.disconnect();require(findView(windows,fixture,app<2,t),"Current comparison view unavailable");
         SORTCOLUMN sort={PKEY_ItemNameDisplay,SORT_ASCENDING};require(SUCCEEDED(t.view->SetSortColumns(&sort,1)),"Sort rejected");pump(500);
-        UINT mode=0;require(SUCCEEDED(t.view->GetCurrentViewMode(&mode))&&mode==FVM_DETAILS,"Wrong representation");
+        UINT mode=0;require(SUCCEEDED(t.view->GetCurrentViewMode(&mode))&&mode==static_cast<UINT>(requestedMode),"Wrong representation");
         std::vector<std::unique_ptr<ITEMID_CHILD,decltype(&CoTaskMemFree)>> owned;std::vector<PCUITEMID_CHILD> ids;
         CComPtr<IEnumIDList> items;require(SUCCEEDED(t.view->Items(SVGIO_ALLVIEW,IID_PPV_ARGS(&items))),"No items");
         for(int i=0;i<5000;++i){CComHeapPtr<ITEMID_CHILD> id;require(items->Next(1,&id,nullptr)==S_OK,"Short enumeration");ids.push_back(id);owned.emplace_back(id.Detach(),&CoTaskMemFree);}
@@ -324,11 +325,12 @@ void runDetails(const std::wstring &root,const std::wstring &fixture){
             int actual=-1;require(SUCCEEDED(t.view->ItemCount(SVGIO_SELECTION,&actual))&&actual==selected,"Wrong selected count");
             require(SUCCEEDED(measure(t,labels[app],5000,repetition,clear.c_str(),[&](){return t.shell->SelectItem(nullptr,SVSI_DESELECTOTHERS);})),"Clear failed");
             require(SUCCEEDED(t.view->ItemCount(SVGIO_SELECTION,&actual))&&actual==0,"Selection not cleared");
+            require(SUCCEEDED(t.view->GetCurrentViewMode(&mode))&&mode==static_cast<UINT>(requestedMode),"Representation changed during measurement");
         }
         HWND frame=t.window;t.disconnect();PostMessageW(frame,WM_CLOSE,0,0);
         const ULONGLONG closeDeadline=GetTickCount64()+20000;while(IsWindow(frame)&&GetTickCount64()<closeDeadline)pump(10);
         require(!IsWindow(frame),"Window not closed");t.window=nullptr;pump(500);
-        std::printf("DETAILS %s repetition %d verified\n",labels[app],repetition);std::fflush(stdout);
+        std::printf("%s %s repetition %d mode=%u verified\n",list?"LIST":"DETAILS",labels[app],repetition,mode);std::fflush(stdout);
     }
     std::fclose(csv);csv=nullptr;std::fclose(waits);waits=nullptr;
 }
@@ -337,7 +339,7 @@ int wmain(int argc,wchar_t **argv){
     if((argc!=3&&argc!=4) || FAILED(CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED)))return 2;
     captureEvents=argc==3||std::wcscmp(argv[3],L"no-events")!=0;
     QueryPerformanceFrequency(&frequency);int result=0;
-    try{if(argc==4&&std::wcscmp(argv[3],L"details")==0)runDetails(argv[1],argv[2]);else{run(argv[1],argv[2]);require(snapshotCount.load()>=2,"Insufficient process snapshots");}}
+    try{if(argc==4&&(std::wcscmp(argv[3],L"details")==0||std::wcscmp(argv[3],L"list")==0))runSelectionComparison(argv[1],argv[2],std::wcscmp(argv[3],L"list")==0?FVM_LIST:FVM_DETAILS);else{run(argv[1],argv[2]);require(snapshotCount.load()>=2,"Insufficient process snapshots");}}
     catch(const std::exception &e){std::fprintf(stderr,"FAIL: %s\n",e.what());result=1;}
     if(csv)std::fclose(csv);if(waits)std::fclose(waits);CoUninitialize();return result;
 }
