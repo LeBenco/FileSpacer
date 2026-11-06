@@ -962,3 +962,100 @@ logs are retained only under ignored build/rejected-selection-dispatch and the
 run directory; it was removed from the active experimental drivers. The validated
 six-case probes remain unchanged. No product backend or new runtime abstraction
 was added for a candidate that fails qualification.
+
+### Remaining functional qualification, 6 November 2026
+
+The affected Debug application regression groups were executed in AgentWin10:
+
+| Group | Final result | Host report directory under build/regression |
+| --- | --- | --- |
+| 28-apercu-affichage | 4/4 PASS | remaining-preview-20261106 |
+| 18-vue-shell-native | 2/2 PASS | remaining-18-vue-shell-native-20261106 |
+| 07-fenetres | 7/7 PASS | remaining-07-fenetres-20261106 |
+| 14-disposition | 1/1 PASS | remaining-14-disposition-20261106 |
+| 17-fermeture-interactions | 1/1 PASS | remaining-close-20261106-r2 |
+| 19-commandes-shell | 6/6 PASS | remaining-19-commandes-shell-20261106; remaining-drag-20261106-r2 |
+
+The 21 distinct cases pass; this is not the entire regression suite. The first
+closure and drag/drop runs failed before their gestures because their fixtures
+required SysListView32. Both now reuse the existing bounded public UI Automation
+item/background target helpers. The real right-click/menu/Alt+F4 and move/Ctrl-copy
+gestures and their process-exit, bytes, identities and view assertions remain.
+The reruns actually exercised those operations. No product source was changed.
+
+The new ArrangementTransitions native probe uses the production ShellViewHost,
+ShellViewIcons and ShellViewSelection functions against the real guest Shell.
+It does not enable a new product profile policy. Run
+experiment-arrangementtransitions-f545afb0f8d44c5883d9c34323f0e75d records:
+
+* All twelve roundtrips between classic free placement and the six modern
+  automatically arranged representations pass: extra-large, large, medium,
+  small, tiles and content, each with keyboard focus inside and outside the view.
+* Every return checks all 5,000 saved coordinates, the two selected identities,
+  GetSelection(FALSE), logical and keyboard focus, and rejection/consumption of
+  a snapshot from an obsolete view generation.
+* The additional full-selection roundtrip preserves all 5,000 selected identities
+  and coordinates, the selection array, logical focus and keyboard focus.
+
+This functional fixture explicitly Refreshes each configured view and waits for
+a new public EnumDone event before restoring state. A representation change alone
+does not guarantee a new enumeration event. Two initial versions of the probe
+incorrectly waited for callbacks after a representation-only change and timed
+out; those runs are not candidate failures or successful qualifications. The
+passing roundtrips establish restoration after controlled reenumeration, not a
+refresh-free product transition or a performance result. The application preview
+tests above cover the current product policy, not an integrated six-view policy.
+
+The initial reorder attempt in that full run failed its foreground precondition.
+The isolated rerun now activates the owned test window by a verified title-bar
+click when SetForegroundWindow is refused. A subsequent WinEvent-only gate also
+proved unsuitable: Windows does not itself emit the drag/drop start/end events;
+the application must do so ([Microsoft event constants](https://learn.microsoft.com/en-us/windows/win32/winauto/event-constants)).
+These events remain diagnostics. The final gesture checks observed mouse capture,
+release/idle state, the exact selected source identity and unchanged fixture
+identities, then compares the visible positions of twenty medium-icon items.
+The reference must actually reorder before the comparison can qualify anything.
+
+Final reorder-only run:
+experiment-arrangementtransitions-e686ef60ced0414b98a114d02095ad93,
+VM run c6f9cea4efeb4eef96765450f426dcfe:
+
+| Automatically arranged medium icons | Capture and release | Source and 20 identities | Visual order changes |
+| --- | --- | --- | --- |
+| Classic profile 6 | PASS | PASS | yes |
+| Modern profile 0 | PASS | PASS | no |
+
+The qualification therefore correctly returns FAIL: the modern arranged profile
+loses manual drag reordering that the classic profile supports. This is a real
+behavioral difference, not a gesture setup failure. It does not invalidate the
+passing saved-free-coordinate roundtrips. Other icon sizes/tiles/content were not
+physically reordered in this comparison. Do not integrate a blanket modern
+arranged-view policy on the strength of the timing gains and restoration tests.
+Preserving this interaction still needs a solution or an explicit product choice.
+
+Reproduce from CMD in this worktree:
+
+```bat
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case ArrangementTransitions -TimeoutSeconds 900
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case ArrangementTransitions -ReorderOnly -TimeoutSeconds 300
+```
+
+ReorderOnly skips the already validated transition portion; it does not disable
+the reference or candidate assertions. The probe deliberately fails while this
+interaction differs. No instruction patch, object-offset call, private production
+backend, security relaxation or new dependency is introduced.
+
+The Debug application build and the final native helper compile with MSVC /W4
+without new compiler warnings. Both clang-tidy and Cppcheck completed on the new
+ArrangementTransitionsTests.cpp, Windows x64/C++14, using SDK 10.0.19041.0 and
+MSVC/ATL 14.44.35207 for clang-tidy and official windows/microsoft_atl/sqlite3
+models for Cppcheck. No timeout, parser failure or ATL coverage reduction.
+Static verdict REVIEW: SDK flag-combination enum warnings, signed flag operations,
+intentional .cpp test reuse, adjacent scalar parameters, name shadowing and iterator
+initialization style; Cppcheck also warns about the fully initialized Mode aggregate members.
+No confirmed new functional defect in the probe is left uncorrected. The unchanged
+PlacementTests.cpp shadow warning is reported separately by the same include path.
+Probe corrections made during validation include the ATL final-class limitation,
+the SDK's non-const outer pointer parameter, explicit readiness, window ownership,
+activation and mouse-capture evidence. Logs: build/reactivity/transitions-analysis.
+The static REVIEW is independent of the intentional candidate qualification FAIL.
