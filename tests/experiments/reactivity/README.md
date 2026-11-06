@@ -374,3 +374,334 @@ Run recovery in the guest with the original output directory if its watchdog
 interrupts the case. The binary backup identifies the original Desktop PIDLs,
 positions, selection, flags and the GUID prefix of the owned fixture. Recovery
 never closes the Desktop or removes files outside that prefix.
+
+## Large spatial selections: investigation on 2026-11-06
+
+The workstation v3 archive stopped during ExtraLarge after 48 display samples
+(pointer parking window covered). It does not validate the other seven views.
+The first complete common 5,000-item repetition shows a substantial remaining
+gap. It must not be described as parity with Explorer. Workstation presentation
+measurements and the VM's API timings below are different measurements.
+
+For that common repetition, final observed display latencies are:
+
+| Operation, 5,000 items | Classic FS | Hybrid FS | Explorer |
+|---|---:|---:|---:|
+| Select | 884.267 ms | 890.853 ms | 90.586 ms |
+| Clear | 778.273 ms | 799.982 ms | 30.187 ms |
+
+The corresponding API times are 859.360/857.012/34.581 ms for select and
+756.474/764.930/3.410 ms for clear (classic/hybrid/Explorer). Most of this
+workstation gap precedes presentation. These are individual samples, not medians.
+
+### Evidence and rejected shortcuts
+
+The controlled runs use the real Shell, a 5,000-file isolated fixture,
+800 x 400 view, 96 DPI and ExtraLarge icons (FVM_ICON, 256). Checks cover
+selected identities, logical focus and keyboard focus. Qualifying spatial profiles
+also check all 5,000 free coordinates; profiles lacking that contract are not
+spatial candidates.
+No internal HWND manipulation or private Shell command is used.
+
+`SelectionStrategies` compares public batch selection, public SetRedraw, the
+documented legacy IShellFolderView selection commands, and folder options 6
+(custom position/order), 2 (position), 4 (order), and 0 (default). The default
+profile is faster but provides no custom-position contract. Removing custom
+ordering while retaining custom positioning does not close the gap. Neither
+public redraw suppression nor the legacy bulk command gives a decisive gain.
+OLECMDID_SELECTALL is unavailable on the tested view, so it is skipped. The
+legacy interface is diagnostic only and is not introduced into the product.
+
+For profile 6, ordinary batch selection/clear medians (3 repetitions, milliseconds)
+from `experiment-selectionstrategies-7a22b5d65a414c7db6ae7a70c43a2664` are:
+
+| Items | Select | Clear |
+|---:|---:|---:|
+| 100 | 4.92 | 3.49 |
+| 500 | 53.44 | 33.73 |
+| 1,000 | 106.64 | 104.70 |
+| 2,500 | 355.03 | 398.57 |
+| 5,000 | 1,390.43 | 1,736.16 |
+
+The growth is superlinear in this experiment. This is evidence about the tested
+Shell implementation, not proof of a particular internal algorithm.
+
+`SelectionIndexes` also checks index-based calls and forward/reverse orders.
+Reverse orders make later calls on the same view much slower (one subsequent
+clear reaches 141 seconds). Those contaminated medians are not used as speedup
+claims. `SelectionFresh` repeats each candidate in a fresh native process, in
+alternating order: 5,000-item medians are 1,868.67/1,922.76 ms for batch,
+1,713.61/2,317.03 for forward indexes, 1,936.86/2,418.23 for indexes with public
+redraw suppression, and 1,630.34/1,822.81 for a host that never creates view
+automation. Index mapping costs another 28–65 ms outside those timings.
+The overlapping ranges provide no decisive replacement for the batch path.
+
+`SelectionCallbacks` separately detaches/re-attaches the automation observer:
+1,169.85/2,089.10 ms with it and 1,175.75/1,902.35 without it. Removing observers
+does not explain the order-of-magnitude workstation gap. A temporary switch to
+Details and back (`SelectionMode`) fails the free-coordinate invariant; that
+candidate is rejected rather than delivered. Enumerating the current selection
+in batches of 128 also gives no measurable improvement and is discarded.
+
+`SelectionKeyboard` compares three fresh-process repetitions of batch selection
+with actual Ctrl+A routed through IShellView::TranslateAccelerator. The final run
+`experiment-selectionkeyboard-52fbecea8abf403c87af43e8a13a12b3` passes all six
+cases: selection medians are 1,328.73 ms for batch and 922.89 ms for Ctrl+A.
+The respective ranges are 975.25–1,412.10 and 880.28–970.90 ms. All positions,
+selected identities and both forms of focus pass. This gesture measurement
+includes input dispatch and is not identical to timing one API call.
+Clear uses the same native call in both arms; its differing timings are not an
+optimization. FileSpacer already routes the view's keyboard shortcuts to the
+Shell (`FolderWindow::handleTopLevelMessage`); no simulated-input selection is
+introduced into the application. Initial attempts failed to obtain foreground.
+The final test dismisses guest menus with Escape and clicks only an exposed
+caption belonging to its own fixture, restoring the guest cursor afterwards.
+
+`VisualTiming -VisualScenario ProfileIcons` records public PSS thread snapshots
+during 5,000-item operations, without GPU capture. Exact guest images and symbols
+are retained for offline stack inspection. Slow clear stacks enter
+`shell32!_AreSelectedItemsEqual`, `CSelectionManager::DeselectItem` and the native
+`CListViewHost` selection-change path. FileSpacer's label subclass occurs as a
+forwarder; this does not establish that label drawing is the cause. Select stacks
+with broken unwinds or large symbol offsets are not used to infer an algorithm.
+Sampling perturbs timings, so these profiling times are not benchmark results.
+
+Together, the controlled hosts and stacks point to work inside the native
+custom-position view path. The observed renderer classes are not public API
+guarantees and are not used to choose an undocumented shortcut. There is no
+demonstrated standard bulk-selection fix for the remaining full-selection gap.
+
+### Experimental optimization: restore only selection differences
+
+`src/ShellViewSelection.cpp` retains the exact-same-selection shortcut. For a
+changed selection it prepares the complete difference before changing the view,
+retains common opaque PIDLs, deselects only extras and selects only missing items
+in snapshot order. Pure additions use public GetSelectionState without cloning
+the current selection. Disjoint replacements and providers without a usable
+selection enumeration retain the original clear/reselect path. Opaque PIDLs
+are not decoded: equal bytes can be retained; different encodings are resolved
+by the Shell through the original per-item operations.
+
+Logical/keyboard focus and cancellation checks remain in place. Version-1
+snapshots remain readable; the scroll correction below adds an optional version-2 payload. Owned deselection PIDLs use unique_ptr with CoTaskMemFree;
+an experimental unsafe move of CComHeapPtr was caught by the native test and
+corrected before delivery. Batch addition was also discarded after a stale-PIDL
+test exposed different behavior; additions retain the original SelectItem calls.
+
+This helps restoring an existing large selection during view changes/reuse.
+It does not make selecting or clearing all 5,000 items from scratch faster.
+Comparing the entire current/target set adds linear work when the sets differ;
+it is not a promise that every replacement is faster.
+
+`SelectionReference.inc` freezes the exact helper from revision 514f6f0.
+`SelectionPaired` compiles both implementations into the same process and
+alternates their order, restoring the same starting selection before each call.
+The cases cover remove one, add one, unchanged, clear all, full selection and
+disjoint replacement. Each timed operation is followed by identity, coordinate
+and focus checks. `SelectionOptimized` repeats this with MSVC /O2, /MTd and
+_ITERATOR_DEBUG_LEVEL=0 for both implementations. This is an optimized helper,
+not a full Release application nor a physical display-latency measurement.
+The script scopes CL to native-helper compilation and restores its prior value.
+
+Final optimized paired run
+`experiment-selectionoptimized-259a47fea98647409453e2136e4b0af9` passes all
+36 operations. Medians of three alternating repetitions, API milliseconds:
+
+| Restoration | Reference | Difference-based | Change in time |
+|---|---:|---:|---:|
+| Remove one from 5,000 | 2,575.23 | 424.32 | -83.5% |
+| Add one to 4,999 | 2,573.80 | 212.05 | -91.8% |
+| Unchanged 4,999 | 176.80 | 133.01 | same existing path; variability |
+| Clear 5,000 | 1,481.09 | 1,313.72 | same native operation; variability |
+| Select 5,000 from empty | 1,169.37 | 1,105.98 | same addition path; variability |
+| Replace disjoint sets of 2,500 | 847.27 | 883.89 | +4.3% (comparison overhead) |
+
+VM timings vary substantially between runs; the comparison is within the same
+process/configuration, not against an earlier VM session. Another paired run
+obtained approximately 80% and 94% reductions for the two incremental cases.
+Only the incremental reductions are attributed to the new implementation.
+
+`SelectionErrors` checks cancellation before mutation (selection and all positions
+retained), then deletes one owned fixture, waits for real Shell refresh, seeds a
+known surviving free layout and checks restoration of an old 5,000-item snapshot:
+all 4,999 surviving identities and coordinates must remain correct.
+
+Reproduce through the normal VM transport, for example:
+
+```bat
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case SelectionOptimized -TimeoutSeconds 900
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case SelectionErrors -TimeoutSeconds 900
+```
+
+The previously shipped workstation actors are frozen; they do not include this
+new restoration optimization. No new workstation display measurements or package
+are implied by the VM API benchmarks.
+
+### Scroll correction and validation
+
+The reopening failure was reproduced before this change at revision 514f6f0:
+57.2486546965741 percent before closing, 0 after reopening. The fast Details
+view returns E_NOTIMPL for GetItemPosition. The old test required SysListView32;
+its replacement uses the independent, public UI Automation ScrollPattern from a
+bounded MTA observer in the external test process. It still fails on the old
+product and passes on the corrected application, without applying any scroll
+correction from the test.
+
+The product takes the documented [in-process IAccessibleEx client route](https://learn.microsoft.com/en-us/windows/win32/winauto/using-iaccessibleex-from-a-client):
+IAccessible, IServiceProvider, IAccessibleEx, IRawElementProviderSimple,
+GetPatternProvider(UIA_ScrollPatternId), IScrollProvider. No IUIAutomation client
+engine, worker thread, polling timer, private window class or synthetic input
+is introduced into FileSpacer. Only the public IShellView window and its MSAA
+accessibility tree are queried. Discovery is bounded to 128 objects / depth 8
+and follows supported interfaces, not names or child-window layout.
+
+When GetItemPosition is unavailable, capture stores both percentage axes and the
+current view mode in a version-2 payload (24 additional bytes). The old version-1
+anchor format remains unchanged/readable. Restore applies percentages only to
+the captured presentation, after selection and focus; it leaves non-scrollable
+axes untouched. All COM boundaries retain the view-generation checks. A closed
+or replaced generation is abandoned synchronously. Nonfinite or truncated scroll
+payloads are rejected before changing the view. No slow-profile fallback occurs.
+
+A percentage represents relative location, not item identity. Folder content,
+sort or geometry changes can change the items at that location. That limitation
+is accepted in favor of the fast native view and a small synchronous adaptation.
+The classic profile does not expose this in-process ScrollPattern in the tested
+system; it retains its existing item-anchor path. An incoming percentage whose
+new provider does not expose the optional pattern is not applied, rather than
+inventing a control protocol or failing the other state restoration.
+
+`ScrollPercent` is a separate external-client feasibility probe. It deliberately
+applies a correction after recording the old reopening failure and therefore is
+not a product regression-test PASS. On 200 / 5,000 files its capture medians were
+8.24 / 5.87 ms, and its correction medians 47.14 / 50.01 ms (3 repetitions;
+first external UIA capture 159.77 ms). These include a fresh MTA thread and client
+lookup, not the chosen in-process product implementation. CSV numeric output is
+now invariant-culture; the first archived run uses French decimal commas.
+
+`ScrollProvider` exercises the real production functions and the in-process
+provider on the GUI thread. The final run
+`experiment-scrollprovider-d35c07db549d41b4b545d0332ebe0116` passes 3 repetitions
+each for vertical Details and horizontal List on 5,000 files. Median complete
+snapshot capture / restore: 2.480 / 0.512 ms in Details and 3.155 / 0.674 ms in
+List. Each snapshot contains one selected/focused identity. The native provider
+itself is the independent oracle for percentage quantization. Selection,
+logical focus and keyboard focus are checked, plus cancellation, truncated/NaN
+payload rejection, and actual native-view destruction during provider discovery.
+The first provider lookup ranged from 11 to 95 ms across these VM runs; warmed
+lookups were approximately 0.3–0.6 ms. No universal startup bound is implied.
+
+MSVC Debug and the optimized comparison build (/O2 /Zi /MT with /test enabled)
+pass /W4 without new warnings. Targeted AgentWin10 product checks:
+
+* `scroll-provider-reopen-final`: real Details reopen; 57.24865% becomes 57.24784%,
+  selection remains empty. The external observer applies no correction.
+* `scroll-provider-persistence-final`: the existing real Shell persistence,
+  selection, icons, filtering and eight teardown/recreation cases pass, including
+  independently assembled version-1 snapshots.
+* `scroll-provider-preview-final`: all four view-menu preview, option, keyboard
+  and external-file cases pass.
+* `ScrollProvider`: the two-axis / lifetime / invalid-data checks above pass.
+
+This is targeted coverage, not a full-suite pass. Filesystem namespace extensions
+and another Windows installation still require their own capability validation.
+
+Clang-tidy and Cppcheck complete on every changed C++ unit and the frozen reference,
+with the reference .inc covered through its caller. Analyses use Windows x64,
+C++14, real MSVC/ATL 14.44.35207 and SDK 10.0.19041.0 headers for clang-tidy, and
+Cppcheck's official windows/microsoft_atl/sqlite3 models. No timeout, crash,
+parser failure or reduced ATL analysis occurs. Static verdict remains REVIEW:
+
+* New in-process code: clang-tidy suggests moving an ATL CComPtr assignment.
+  This is a performance/style suggestion; the explicit retained reference is safe.
+* Selection-difference code: signed-mask and three STL-algorithm style suggestions.
+* Probe: Cppcheck reports pointerOutOfBounds on the NaN mutation after a vector
+  reassignment. The independently copied `saved` vector is checked to be at least
+  44 bytes, reassignment restores that size, and the 8-byte write at offset 28
+  ends at byte 36. Both native cases execute this check successfully; clang-tidy
+  does not report it. This remains documented for REVIEW, without suppressing it.
+* Existing documented enum-mask, .cpp reuse, RAII-state and other probe diagnostics
+  remain. Before/after analysis confirms the older ignored-HRESULT diagnostic.
+
+The experimental ownership bug and the probe's signed OBJID / enum-to-UINT build
+warnings were corrected, then the affected checks were rerun. Logs are in
+`build/reactivity/scroll-analysis`; baseline source before the scroll adaptation
+is retained separately for comparison. The main checkout remains unchanged.
+
+### Refreshed eight-view comparison after the scroll correction
+
+AgentWin10, 6 November 2026. Both FileSpacer actors use the same optimized
+/O2 /Zi /MT configuration with /test isolation. The classic actor is revision
+20a03f1; the current actor contains the differential selection and scroll changes
+above. SHA-256 of the compared executables:
+
+* Classic: B6EC7719091D68752D73D2271C595DB40EA15AC3585E18FC0078C3D5E05DD5AF.
+* Current: C3BB41325CCEFB9C19647690FEFA0A891269B4A211E14C3BBCBA07D59B1FC04E.
+
+Every actor exposes the requested mode and icon size at exactly 800 x 400 pixels,
+96 DPI. The table gives three-repetition medians for 5,000 text files. Positive
+time reduction means faster than classic; negative means slower. A ratio above
+one means slower than Explorer. Decimal commas are used below.
+
+These are synchronous public API times, not composed-frame/display latency or
+keyboard gesture timings. select_5000 uses SelectAndPositionItems from an empty
+selection; clear_5000 uses the native deselect-all operation. They do not measure
+the incremental snapshot-restoration path optimized above.
+
+| View | Operation | Classic ms | Current ms | Explorer ms | Time reduction vs classic | Current / Explorer |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| extra-large | select_5000 | 2435,156 | 2533,197 | 94,618 | -4,0% | 26,77x |
+| extra-large | clear_5000 | 1703,110 | 1706,406 | 1,667 | -0,2% | 1023,64x |
+| large | select_5000 | 2399,763 | 2504,904 | 179,473 | -4,4% | 13,96x |
+| large | clear_5000 | 1553,215 | 1423,114 | 2,946 | 8,4% | 483,07x |
+| medium | select_5000 | 2359,499 | 2351,249 | 289,148 | 0,3% | 8,13x |
+| medium | clear_5000 | 1309,033 | 1641,449 | 3,892 | -25,4% | 421,75x |
+| small | select_5000 | 2203,028 | 1956,653 | 218,749 | 11,2% | 8,94x |
+| small | clear_5000 | 1728,637 | 1486,410 | 3,181 | 14,0% | 467,28x |
+| list | select_5000 | 973,676 | 820,472 | 784,512 | 15,7% | 1,05x |
+| list | clear_5000 | 1380,918 | 7,427 | 8,183 | 99,5% | 0,91x |
+| details | select_5000 | 1129,956 | 140,621 | 124,442 | 87,6% | 1,13x |
+| details | clear_5000 | 1736,307 | 2,032 | 2,313 | 99,9% | 0,88x |
+| tiles | select_5000 | 4163,533 | 3475,972 | 171,559 | 16,5% | 20,26x |
+| tiles | clear_5000 | 2053,361 | 1611,871 | 3,188 | 21,5% | 505,61x |
+| content | select_5000 | 3572,563 | 3497,878 | 95,307 | 2,1% | 36,70x |
+| content | clear_5000 | 1783,432 | 1640,417 | 2,126 | 8,0% | 771,60x |
+
+Details and List approach Explorer, but spatial presentations remain substantially
+slower for these bulk operations. The scroll correction does not change those
+native selection paths. Small before/after changes in unchanged spatial paths
+must not be attributed to that correction; VM timing variability remains visible,
+including the slower medium-icon clear. Explorer's very short clears make the
+ratios large: absolute spatial clear times here remain approximately 1.4–1.7 s.
+
+Data provenance and failures are preserved explicitly:
+
+* experiment-visualtiming-858d0e76dfcc480aa148f0f65594120f reached its 900-second
+  watchdog during Content. It is a FAIL overall, not an eight-view PASS. Its other
+  seven views each contain all 90 result rows and nine verified capabilities.
+* experiment-visualtiming-e671d046667547b686d79d81f31054fc reran Content alone
+  with ContentCpu and passed, with all 90 rows and nine verified capabilities.
+* The combined eight-view source contains 720 complete result rows and 72
+  supported, matching-geometry capabilities. HRESULTs, observed item/selection
+  counts, the three actor repetitions and both executable hashes were checked
+  for every view. The unfinished Content portion of the first run is excluded.
+* A subsequent largest-only AllViewsApi attempt, VM run
+  05e20ef542e545bca0ce41d318518711, stopped after 80.25 seconds with
+  "Pointer parking window is covered" during extra-large icons. This is a failed
+  benchmark precondition, not a product crash or a successful comparison. Its
+  partial timings are excluded from the table. It does not replace either run.
+
+AllViewsApi now limits the common matrix to 5,000 selected items, retaining three
+alternating repetitions and all eight views to fit the existing 900-second
+watchdog. The ordinary per-view scenarios and ContentCpu retain the five input
+sizes. No GPU display timing is measured by these CPU/API scenarios:
+
+```bat
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case VisualTiming -VisualScenario AllViewsApi -TimeoutSeconds 900
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case VisualTiming -VisualScenario ContentCpu -TimeoutSeconds 900
+```
+
+The largest-only routing and initial operations executed before that precondition
+failure; its complete eight-view execution is not validated. The two final C++
+benchmark units were rerun through clang-tidy and Cppcheck after these routing
+changes; both analyses completed, with the documented probe/style REVIEW points.
