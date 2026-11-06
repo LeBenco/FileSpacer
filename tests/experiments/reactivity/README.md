@@ -1261,3 +1261,83 @@ Changing the graphics API alone does not establish a fix for the measured
 selection data-structure cost. Keeping the modern Shell view with provider-owned
 sort ranks is another, smaller UI change to prototype, with arbitrary free
 coordinates still a separate requirement.
+
+### Lightweight independent controls and optional Shell placement probe (2026-11-06)
+
+The scope is deliberately limited: occasional operations on thousands of icons
+do not justify replacing the file manager's view implementation. No product
+source is changed by these experiments.
+
+`DirectListViewTests.cpp` owns an ordinary Win32 ListView, without CDefView or
+FileSpacer's implementation. It compares stored text, callback text and an
+owner-data control at 100, 500, 1,000, 2,500 and 5,000 items. All use real names
+and shared system icons from an isolated 5,000-file fixture, with a 800x400
+client area and 48px icons on AgentWin10. Run from CMD:
+
+```cmd
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case DirectListView -TimeoutSeconds 900
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case DirectShellPlacement -TimeoutSeconds 900
+```
+
+The final direct-control run `fe5dde081db6478b849ef3a07544d220` passed. At 5,000
+items, selection/clear values below are medians of three API measurements;
+placement is one sample, including synchronous CPU redraw and message pumping.
+These are not compositor/pixel latency measurements or equivalent Explorer/FS
+feature comparisons.
+
+| Control storage | Select all (ms) | Clear all (ms) | Move all, batched + CPU redraw (ms) |
+| --- | ---: | ---: | ---: |
+| Stored text | 32.803 | 31.258 | 62.049 |
+| Callback text | 30.331 | 30.655 | 46.124 |
+| Owner-data witness | 0.029 | 0.333 | Unsupported |
+
+For stored/callback controls, moving all items without batching took
+5,529.924/5,052.025 ms including CPU redraw. Batching uses documented
+WM_SETREDRAW and a complete RedrawWindow invalidation. Moving 16 items with
+batching took 18.341/16.522 ms including CPU redraw. An earlier complete run
+`b9ce7d077e1c4c7a97e80841ab23ce66` measured 52.497/50.603 ms for the batched
+5,000-item move, illustrating normal run variation. This confirms the value of
+batching on an owned control; it does not establish that more redraw suppression
+on an existing Shell view removes its selection-manager cost.
+
+The checks cover exact selection identities, keyboard/logical focus, individual
+selection deltas and all coordinates after placement. Physical mouse drags move
+two selected items in each nonvirtual control and verify all 5,000 coordinates.
+Native IDataObject conversion back to two exact Shell identities, IContextMenu
+population and obtaining the folder IDropTarget also pass in all configurations.
+No file operation is executed. External OLE drag/drop, live drag images,
+clipboard commands, rename, change notifications, persistence, other view modes
+and complete accessibility behavior are not integrated or qualified here. The
+simple same-control drag is not a complete file-manager drag/drop implementation.
+
+`DirectShellPlacementTests.cpp` tests a potentially smaller adaptation: retain
+the Shell host and bind its child ListView indexes to public Shell identities.
+Finding that child is not a documented Shell hosting contract. The first attempt
+`6f87b5916de3467587e2631593213125` failed canonical position validation; its full
+identity binding also cost 262.063 ms, versus 12.910 ms for public position
+capture and 10.954 ms for direct capture. The Shell child is LVS_OWNERDATA, for
+which the positioning messages are explicitly unsupported. The final probe
+checks that style before binding or writing. Run
+`2b6aeb8020a0485ab9860e614376c3cb` passed the refusal protocol: candidate
+REJECTED, original canonical positions unchanged. It does not execute a fallback
+placement; the existing public path remains unchanged. No private method or
+unchecked binary layout is used.
+
+Decision: do not integrate either replacement or the rejected shortcut. An
+owned ListView is fast but still requires taking over many Shell interactions.
+Owner-data cannot replace documented free placement. A custom Shell provider
+for sort ranks, WinUI or a Direct2D surface would exceed this lightweight scope.
+Keep the present product architecture and the already tested targeted changes.
+
+Both standalone sources built in Debug with MSVC /W4 without new warnings.
+Final clang-tidy and Cppcheck completed with the real Windows SDK/MSVC/ATL
+headers for clang-tidy and the official Windows/ATL models for Cppcheck.
+Static analysis: REVIEW. Remaining diagnostics concern signed Win32 flags,
+integer/Win32 parameter conversions, enum storage size, a const pointer
+suggestion, and reuse of the independent host's .cpp (including its valid
+FOLDERVIEWOPTIONS bitmask cast). No confirmed new functional defect remains.
+The label-copy HRESULT is now checked while allowing normal truncation, and
+the system image dimensions must be returned successfully. The final VM run
+and both analyzers cover those final changes. Raw reports remain under
+`build/regression/vm-<run-id>`; analyzer logs are under
+`build/reactivity/direct-list-analysis`.
