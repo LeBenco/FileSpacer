@@ -50,7 +50,7 @@ void manifest(const wchar_t *path) {
         std::printf("%lX\n", age);
     }
 }
-void stack(const wchar_t *path, ULONG thread, const wchar_t *symbols) {
+void stack(const wchar_t *path, ULONG thread, const wchar_t *symbols, const wchar_t *commands) {
     CComPtr<IDebugClient> client; need(SUCCEEDED(DebugCreate(__uuidof(IDebugClient), reinterpret_cast<void **>(&client))), "DebugCreate failed");
     CComPtr<OutputSink> output; output.Attach(new OutputSink);
     need(SUCCEEDED(client->SetOutputCallbacks(output)), "Cannot install output");
@@ -71,6 +71,11 @@ void stack(const wchar_t *path, ULONG thread, const wchar_t *symbols) {
                 && SUCCEEDED(names->GetModuleParameters(1, &base, 0, &parameters)))
             std::printf("FRAME %lu address=%016llX module=%016llX symbol_type=%lu\n", i, frames[i].InstructionOffset, base, parameters.SymbolType);
     }
+    if (commands) {
+        CComQIPtr<IDebugControl4> extended(client);
+        need(extended && SUCCEEDED(extended->ExecuteWide(DEBUG_OUTCTL_THIS_CLIENT, commands, DEBUG_EXECUTE_DEFAULT)),
+            "Diagnostic debugger command failed");
+    }
     client->EndSession(DEBUG_END_PASSIVE);
     client->SetOutputCallbacks(nullptr);
 }
@@ -78,7 +83,7 @@ void stack(const wchar_t *path, ULONG thread, const wchar_t *symbols) {
 int wmain(int argc, wchar_t **argv) {
     try {
         if (argc == 3 && std::wcscmp(argv[1], L"manifest") == 0) manifest(argv[2]);
-        else if (argc == 4) stack(argv[1], std::wcstoul(argv[2], nullptr, 10), argv[3]);
+        else if (argc == 4 || argc == 5) stack(argv[1], std::wcstoul(argv[2], nullptr, 10), argv[3], argc == 5 ? argv[4] : nullptr);
         else return 2;
     } catch (const std::exception &e) { std::fprintf(stderr, "FAIL: %s\n", e.what()); return 1; }
     return 0;
