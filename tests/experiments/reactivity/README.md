@@ -1482,3 +1482,163 @@ saving. Total ranges overlap (1,842.636--2,401.313 ms without comparison;
 1,843.162--2,322.589 ms with it). The exact no-op guard remains useful for the
 separately measured settings-only action; no claim is made that every combination
 or every measured repetition is faster.
+
+## Modern Explorer's selection protocol (2026-11-06)
+
+The priority of this investigation was the procedure used by Explorer for the
+six representations where the classic Shell backend remains slow. No FileSpacer
+product code or spatial behavior was changed in this phase.
+
+### Evidence and scope
+
+Matched Microsoft images and public symbols were inspected first:
+
+* ExplorerFrame.dll 10.0.19041.6280, SHA256
+  `D681298EBC2261F8FA388301FA42E71A364744D374E474922CFCE596922EB9D1`.
+* Shell32.dll 10.0.19041.6456, SHA256
+  `936C33A8283196A070AA6F844A65A29A8F99F760EAE0016754C1CBF17D62BDB7`.
+
+An independent native probe then attached to an isolated Explorer folder in
+AgentWin10. It refused the desktop Explorer process, a process hosting another
+folder window, an existing debugger, occupied debug registers, or unmatched
+image signatures. Four hardware execution breakpoints observed the view's UI
+thread through documented Windows debugger APIs. No executable instructions
+were patched and no private method was called by the probe.
+
+Run `1bf0603f96cf42e7b44d7333ad636c1e` recorded Explorer PID 5844, UI thread 4884,
+88 breakpoint events, and successful debugger detachment. Each representation
+contained the same fixture of 5,000 files. The probe exercised a real Ctrl+A,
+global clear after warming selection snapshots, and a one-item select/deselect
+cycle. It checked `ItemCount(SVGIO_SELECTION)`, a fresh `GetSelection(FALSE)`,
+complete `Items(SVGIO_SELECTION)` enumeration, and the selection data object's
+item count through `SHCreateShellItemArrayFromDataObject`.
+
+| Explorer representation | Actual mode / icon size | Select-all state changes | Calls selecting the collection root | Clear state changes | Clear observer / Shell callback | Public-state checks |
+| --- | --- | ---: | ---: | ---: | --- | --- |
+| Extra-large icons | FVM_ICON / 256 | 1 | 1 | 1 | 1 / 1 | PASS |
+| Large icons | FVM_ICON / 96 | 1 | 1 | 1 | 1 / 1 | PASS |
+| Medium icons | FVM_ICON / 48 | 1 | 1 | 1 | 1 / 1 | PASS |
+| Small icons | FVM_SMALLICON / 16 | 1 | 1 | 1 | 1 / 1 | PASS |
+| Tiles | FVM_TILE / 48 | 1 | 1 | 1 | 1 / 1 | PASS |
+| Content | FVM_CONTENT / 32 | 1 | 1 | 1 | 1 / 1 | PASS |
+
+The focused item remained index 0 across complete clear in all six views.
+This is logical item focus, not a measurement of physical keyboard focus.
+The debugger affects execution time: these traces establish procedure and
+coherence, not new performance numbers or visible-presentation latency.
+
+The guest regression summary reports one case passed, zero failed. The overall
+controller result is **BLOCKED**: copying an artifact back was refused by the
+antivirus. The text logs were recovered. The detection was not bypassed, and
+the diagnostic binary is not a product dependency. ETW permission probes were
+denied; subsequent UAC requests were cancelled before an elevated collector
+started. Neither guest UAC settings nor host security settings were changed.
+
+Raw text evidence is retained locally under
+`build/regression/vm-1bf0603f96cf42e7b44d7333ad636c1e/output/regression/36-reactivity-prototype/34-ExplorerProtocol/`
+(`output.log`, `hardware-trace.log`). The decoded counts and matched-symbol
+disassembly are under `build/observation/explorer-procedure/`. The earlier
+Explorer minidump has an invalid captured unwind; its displayed stack frames
+are not evidence of an executed selection path. Its matching module images
+remain usable for disassembly, independently corroborated by this live trace.
+
+### The sequence now identified
+
+1. **Global command.** The keyboard command reaches `CItemsView::Select`, which
+   queries an internal selection interface and dispatches operation 5 for all,
+   operation 4 for clear. The live trace observes one
+   `CSelectionState::_ApplySelectionChange` call for each global operation.
+2. **Compact logical state.** Select-all calls `_SingleSelect` with the
+   collection's root, verified at the function entry in all six views.
+   `_Select` distinguishes a root/group from an individual item, and the
+   `_SelectGroup` / `_IsSelectedByParentChain` code implements inherited group
+   selection. Thus this operation does not require inserting 5,000 independent
+   selected entries into the classic manager's linear array. Clear uses the
+   state/maps clearing path. Partial select/deselect uses operations 6 and 7.
+3. **Invalidate inner snapshots.** `_ApplySelectionChange` releases the cached
+   selection arrays. Before each warmed clear, all five observed cache slots
+   were populated (mask 31). Their release is identified in the matched code;
+   the probe did not reread those slots at the observer entry.
+4. **Update display state as a group.** A real change calls
+   `CSelectionManager::OnSelectionChanged` once. Disassembly shows a DirectUI
+   defer scope, traversal of the existing UI element tree, and updates of the
+   elements' Selected property. This proves a traversal of UI children; it
+   does not establish that every such child is visible or quantify realization.
+5. **Notify the enclosing Shell view.** `UIItemsView::GetListControlHost` returns
+   the host whose slot 7 is `CDefView::OnItemStateChanged`. The live trace
+   resolves the vtable and caller and observes one callback after each global
+   change. At this call site, the code supplies old state 0 and new state 1:
+   a global selection-change notification, including for clear. The callback
+   invalidates the enclosing view's cached selection arrays and conditionally
+   propagates state change to its host. A populated outer selection cache
+   (mask 1) was observed on entry after each warmed clear; subsequent fresh
+   public queries consistently reported no selected items.
+6. **Finish interaction notifications.** The same host's slot 29 resolves to
+   `CDefView::CancelDelayActivation`; the alternative operation-9 branch uses
+   slot 30, `ProcessDelayActivation`. The normal path calls the former after
+   the state notification. The manager then notifies its internal spy client,
+   fires `UIItemsView::SelectionChanged`, and ends the DirectUI defer scope.
+   These final steps are identified in matched code; they were not separate
+   breakpoint targets in this run.
+
+This identifies the missing boundary in the rejected direct-clear experiment:
+changing the inner selection manager alone does not invalidate the outer
+`CDefView` selection snapshots. Matching the display is insufficient; the
+public selection representations must change coherently too. This run does
+not validate a repaired private-clear implementation in FileSpacer.
+
+### Public contracts and private implementation
+
+The probe's folder discovery, selection/count/enumeration/data-object queries,
+mode changes, and debugger operations use documented Windows interfaces.
+The algorithm, operation numbers, DirectUI classes, object layouts, and host
+interface are internal implementation details of the matched Windows build.
+Public C++ visibility in a Microsoft PDB does not make a method a public API.
+
+The host has IID `ca9a60fb-ec04-4b21-ae64-e8271f479bec` in the matched
+`CDefView` QISearch table. Its table entry returns the subobject at offset
+0x148; the vtable's slot 7 is `OnItemStateChanged`, 29 is
+`CancelDelayActivation`, and 30 is `ProcessDelayActivation`. The observed
+runtime addresses match this table. The callback releases the outer caches
+at subobject offsets 0x2d0 / 0x2d8, equivalent to full-object offsets
+0x418 / 0x420 used by `_GetSelection`.
+
+`QueryInterface` is a documented discovery mechanism; this IID and its method
+contract remain undocumented. A later prototype can investigate a typed COM
+query/callback instead of deriving callback addresses from raw object offsets.
+Availability, ABI validation, fallback behavior and end-to-end correctness
+still require testing; no production capability or safety guarantee follows
+from this identification. The private selection-state interface used by
+`CItemsView::Select` is a different IID,
+`09d5d1a0-4710-4b64-88b8-df66c7d8c990`.
+
+The remaining boundary is material: the classic renderer still owns its
+different selection representation. Reproducing the modern command/notification
+sequence cannot by itself replace the classic manager's quadratic membership
+checks. The next small experiment is now precisely defined for clear: combine
+the fast inner clear with the actual enclosing-view notification, then verify
+fresh arrays, enumeration, data objects, focus and normal follow-up operations.
+Select-all still needs its own safe path; no new speedup is claimed here.
+
+### Spatial opportunities kept for later
+
+The useful concepts are root/group selection with exceptions, lazy selection
+snapshots, one global change notification, and grouped display updates. They
+could also benefit a free-position view: logical selection need not depend on
+coordinates or persisted ordering. They are not public switches that can be
+enabled on the existing classic Shell selection manager. No spatial renderer,
+placement persistence, or drag/drop behavior was modified to pursue them.
+
+The temporary native probe compiled as MSVC Debug / C++14 /W4 without warnings.
+clang-tidy and Cppcheck both completed with real SDK/MSVC/ATL headers for the
+former and the official Windows/ATL/SQLite models for the latter. Prototype
+analysis is **REVIEW** for include-of-cpp reuse, Windows enum/address warnings,
+bounded offset arithmetic, and Cppcheck aggregate-initializer false positives;
+no new confirmed defect remains in the observed selection behavior. Diagnostics
+already present in the included observation helper were compared separately.
+Review after the recorded run also identified a debugger-shutdown race: detach
+must await the requested DebugBreakProcess event, rather than a hardware hit
+already in flight. The archived source was adjusted, but this diagnostic-only
+adjustment was not rerun. It is not a validated or delivered debugger tool.
+The experimental sources and launcher edits were retired after recording the
+evidence; only this documentation is delivered, with no new C++ product code.
