@@ -1341,3 +1341,144 @@ the system image dimensions must be returned successfully. The final VM run
 and both analyzers cover those final changes. Raw reports remain under
 `build/regression/vm-<run-id>`; analyzer logs are under
 `build/reactivity/direct-list-analysis`.
+
+### Small optimizations retaining the Shell view (2026-11-06)
+
+`LightweightShellTests.cpp` exercises the production positioning/settings helpers
+in the existing independent Shell host. `SettingsReference.inc` freezes
+`src/ShellViewSettings.cpp` at 6f21f37 for the alternating before/after comparison.
+The runner's `LightweightShell` case accepts `-LightweightScenario placement`,
+`placement-close`, `settings`, `status`, `notifications` or `combined`. All use the dedicated
+AgentWin10 VM and isolated 5,000-file fixtures; no host UI input is taken.
+
+The retained changes are deliberately small: two production source files, no
+new view implementation, background worker, cache or private Shell method.
+
+| Targeted operation | Reference median | Candidate median | Decision |
+| --- | ---: | ---: | --- |
+| Restore 5,000 positions while yielding between chunks | 21,877.112 ms, chunks of 32 | 8,421.625 ms, chunks of 128 | Retain 128 while tracking the menu |
+| Finish 4,872 pending positions after one 128-item chunk | 8,071.583 ms, separate chunks | 1,593.278 ms, merged suffix | Retain one call once the menu closes |
+| Reapply an identical complete presentation | 42.757 ms | 0.169 ms | Retain strict comparison before applying |
+| Sum selected file sizes | 36.654 ms synchronous | 47.256 ms with 64-item chunks | Do not integrate |
+| Model 5,000 application notification callbacks | 13.383 ms | 0.553 ms with one scheduling pass | Do not integrate; synthetic callback model only |
+
+Placement/closing medians use three alternating repetitions; settings and
+notifications use five. Placement timings include CPU repaint/message pumping;
+the closing case pumps after the synchronous suffix, matching its purpose.
+These are targeted Shell measurements, not complete menu/pixel latency or an
+equivalent Explorer comparison. The rows describe different operations and must
+not be added together as independent speedups for one action.
+
+The chunk-size experiment also measured 512-item chunks at 3,056.101 ms total,
+but their longest steps reached 316--340 ms. A complete 5,000-item call took
+1,542.654 ms and blocked throughout. With 128-item chunks, total time falls by
+61.5%, but a step averages about 211 ms versus 139 ms at size 32; measured maxima
+were 240--255 ms versus 258--393 ms. This is a total-time/responsiveness tradeoff,
+not a guarantee of a shorter individual step. Small-folder interaction remains
+covered by the existing 300-item UI scenarios.
+
+At menu close the old code already drained the entire pending queue without
+yielding. `ViewMenuPreview::finishPositions` now concatenates only the unconsumed
+serialized position records, retaining the same order, identities and coordinates,
+and uses the existing guarded `advancePositions` path once. It neither replays
+already-consumed items nor changes generation/closure checks. The suffix test
+verifies all 5,000 final coordinates, both selected identities and both focus
+states after every arm. Its isolated measured saving is about 6.48 seconds.
+
+`restoreOptions` skips setters only when a fresh capture exactly matches the
+entire requested snapshot. A different or incompletely captured state retains
+the previous application path. Changed sort direction, return to the original
+settings, partial snapshots and free coordinates after the unchanged fast path
+are checked. Existing per-item coordinate and selection difference optimizations
+are retained.
+
+The status experiment obtains the real native selection and validates all 5,000
+names and the exact 318,120-byte sum. Fractionation reduces the longest work
+segments to 1.4--3.4 ms but increases total work in the final run. It does not
+bound an individual slow property provider. No asynchronous status machinery or
+cache keyed only by selection count is justified by this local-text-file result.
+The existing status update already waits for its coalesced selection update.
+
+The notification experiment models COM identity checks, current-view/profile
+queries and timer scheduling. It does not measure FolderWindow callbacks or
+prove that FileSpacer receives 5,000 such callbacks. The largest modeled gain is
+about 13 ms; it cannot explain the remaining seconds in native spatial selection.
+No changes to notification delivery or debounce semantics are retained.
+
+Native reports:
+
+* Placement: `6c6c9a04581140dfa1c26a46369ffa24`, PASS.
+* Pending close: `54d2f01daa504042b73261e4aa1a493d`, PASS.
+* Final production settings comparison: `38d255cf9b8746edbe883e2fd3404905`, PASS.
+* Final status timing: `ad6cac2062874ad6bd00d7d7680b7149`, PASS.
+* Notification model: `b5899583943e49689e4c752375337e9b`, PASS.
+
+Some launches were blocked by another checkout holding the shared VM lock;
+their prepared packages were run after that lock was released. No other test
+was interrupted, and an unexecuted launch is not a native-test failure or PASS.
+
+Product validation passed the preview group (5/5), native persistence and the
+5,000-position redraw scenario (2/2), window lifecycle/reopen scenarios (7/7)
+and close-during-menu scenario (1/1). The first large preview run reused the full
+300-item lifecycle at 5,000 items. The final dedicated `28/05` instead targets
+closing immediately after the original mode becomes visible, without waiting
+for its progressive position restoration; it checks all positions, selection
+and focus, then reopens and checks persistence. The entire preview group passed
+again after adding the merged suffix, in
+`e1c9eb858c4a417284ac90da72a62643`. Its large-case 7,507 ms cancellation log
+includes automation, polling and complete state readback, and is not the native
+placement time or a physical display-latency measurement.
+Close-during-menu was also rerun after the suffix change:
+`f065b8ecf2b6473a85f60815c3d50ce6`, 1/1 PASS. Earlier unchanged-path reports are
+`fc2a308fb2f344d681775bddcb00ebd6` (native, 2/2) and
+`279bd82004c545aaa623532a5d77cbbe` (windows, 7/7).
+
+Debug builds completed with MSVC /W4 without new warnings. Both clang-tidy and
+Cppcheck completed on the two changed product units, the experiment and its
+included frozen reference. Real SDK 10.0.19041.0 and MSVC/ATL 14.44.35207 headers
+were used for clang-tidy; Cppcheck used its official Windows/ATL models. Comparing
+with the pre-change product units found no new diagnostics. In particular, the
+Cppcheck mutex deallocation diagnostic in the unchanged storage-wait function
+also occurs in the baseline and is outside this change. No parser failure or
+coverage reduction was needed. Overall static verdict: REVIEW for the experiment's
+stylistic diagnostics (bounded iterator conversions, vector capacity, signed
+Win32 flags, helper-source inclusion and a shadowed parameter in the reused host).
+No new confirmed functional defect remains. Logs are in
+`build/reactivity/lightweight-shell-analysis`, `lightweight-shell-merged-analysis`
+and `lightweight-shell-combined-final-analysis`.
+
+#### Combined effects
+
+`combined` runs all eight combinations, three times in alternating order, with
+the same 5,000 items, target coordinates, selection/focus and complete settings.
+Each arm reapplies the unchanged settings, restores exactly 256 icons while the
+menu is notionally tracked, then closes and finishes the remaining 4,744.
+Chunk serialization and baseline setup are outside the measured interval; setter
+queries, suffix concatenation and CPU repaint/pumping are inside. All 24 runs
+passed exact final coordinate, selected-identity, focus and settings checks.
+Report: `57f939550c5c47e79ea2f0bcc3d3db2e`, PASS.
+
+| Tracking chunk | Merge pending close | Compare settings | Median complete workflow (ms) |
+| ---: | --- | --- | ---: |
+| 32 | No | No | 17,850.450 |
+| 32 | No | Yes | 17,465.334 |
+| 32 | Yes | No | 2,604.217 |
+| 32 | Yes | Yes | 2,654.333 |
+| 128 | No | No | 7,292.337 |
+| 128 | No | Yes | 6,978.942 |
+| 128 | Yes | No | 1,863.852 |
+| 128 | Yes | Yes | 1,961.424 |
+
+The two placement changes do combine: 17.85 s becomes 1.86 s in this controlled
+workflow. All retained changes together measure 1.96 s, about 89.0% less time
+than the reference (9.1 times faster). The independent speedup factors must not
+be multiplied: merging already eliminates most repeated layouts, so larger
+tracking chunks then save work only in the prefix before closing.
+
+Settings comparison still reduces its own measured phase from 38.253 to
+0.185 ms in the merged/128 arms. It does not demonstrate an additional total
+workflow improvement here: native prefix/closing variation exceeds that small
+saving. Total ranges overlap (1,842.636--2,401.313 ms without comparison;
+1,843.162--2,322.589 ms with it). The exact no-op guard remains useful for the
+separately measured settings-only action; no claim is made that every combination
+or every measured repetition is faster.
