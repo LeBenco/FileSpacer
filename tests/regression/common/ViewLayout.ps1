@@ -1,4 +1,4 @@
-﻿# Only the existing-parent game needs UI Automation. Windows PowerShell uses the built-in .NET Framework assemblies.
+# External layout and scroll observers use the built-in Windows PowerShell/.NET Framework assemblies.
 try {
     Add-Type -AssemblyName UIAutomationClient
     Add-Type -AssemblyName UIAutomationTypes
