@@ -1,13 +1,13 @@
 param(
-    [ValidateSet('Placement','ObserveExplorer','CompareDetails','DesktopPlacement','CachedViews')][string]$Case='CompareDetails',
+    [ValidateSet('Placement','ObserveExplorer','CompareDetails','CompareList','DesktopPlacement','CachedViews')][string]$Case='CompareDetails',
     [ValidateRange(30,900)][int]$TimeoutSeconds=300
 )
 $ErrorActionPreference='Stop'
 $project=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
 $stage=[IO.Path]::GetFullPath((Join-Path $project 'tests\regression\cases\36-reactivity-prototype'))
 if(Test-Path -LiteralPath $stage){throw 'The temporary experiment case directory already exists; it will not be overwritten.'}
-$patterns=@{Placement='01-*';ObserveExplorer='02-*';CompareDetails='03-*';DesktopPlacement='04-*';CachedViews='06-*'}
-$files=@('01-Placement.ps1','02-ObserveExplorer.ps1','03-CompareDetails.ps1','04-DesktopPlacement.ps1','06-CachedViews.ps1','Fixture.ps1',
+$patterns=@{Placement='01-*';ObserveExplorer='02-*';CompareDetails='03-*';CompareList='07-*';DesktopPlacement='04-*';CachedViews='06-*'}
+$files=@('01-Placement.ps1','02-ObserveExplorer.ps1','03-CompareDetails.ps1','04-DesktopPlacement.ps1','06-CachedViews.ps1','07-CompareList.ps1','Fixture.ps1',
     'PlacementTests.cpp','ExplorerObservationTests.cpp','ExplorerObservationTests.rc','DesktopPlacementTests.cpp','DesktopPlacementTests.rc','CachedViewTests.cpp','DumpStacks.cpp')
 foreach($name in $files){if(!(Test-Path -LiteralPath (Join-Path $PSScriptRoot $name))){throw ('Missing experiment source: '+$name)}}
 foreach($directory in @('baseline','hybrid')){foreach($name in @('FileSpacer.exe','FileSpacerFolder.dll')){
