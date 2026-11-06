@@ -24,6 +24,8 @@ Cases:
 
 * `CompareDetails`: three alternating rounds, 5,000 files, selecting and clearing
   100, 500, 1,000, 2,500 and 5,000 items. Checks the resulting selection counts.
+* `CompareList`: the same comparison in List mode, with the requested mode checked
+  initially and after every selection/clear pair. Run with `-Case CompareList`.
 * `ObserveExplorer`: observes the original FileSpacer build and Explorer through
   public COM interfaces, captures coherent process snapshots, and copies the exact
   relevant module images for later stack analysis. Times collected with snapshots
@@ -69,6 +71,8 @@ within each experiment. The table uses medians from the final runs.
 | --- | ---: | ---: | ---: |
 | Select 5,000 in Details | 635.480 ms | 85.233 ms | 90.415 ms |
 | Clear 5,000 in Details | 913.037 ms | 1.533 ms | 2.132 ms |
+| Select 5,000 in List | 1,094.629 ms | 584.610 ms | 848.346 ms |
+| Clear 5,000 in List | 1,509.782 ms | 5.709 ms | 7.475 ms |
 | Return to spatial layout, two selected items | Recreate: 1,732.901 ms | Retain: 5.096 ms | Not measured |
 | Position 16 among 100, public API | Controlled spatial host: 17.813 ms | Not applicable | Desktop: 8.070 ms |
 
@@ -77,6 +81,24 @@ logical focus and keyboard focus on each switch. Creating the second live host
 added 1,789,952 private bytes in that run. Earlier runs observed about 2.4 to
 2.6 MB; allocation history and fixture details matter. Retaining browsers also
 retains resources and potentially duplicates work on file notifications.
+
+List improves large selection by 46.6% (1.87 times faster) and large clear by
+99.62% (264 times faster), but its smaller selections regress. Median selection
+times in the same List run:
+
+| Selected items among 5,000 | Reference | Prototype | Explorer |
+| --- | ---: | ---: | ---: |
+| 100 | 7.029 ms | 19.448 ms | 29.068 ms |
+| 500 | 32.481 ms | 72.873 ms | 103.017 ms |
+| 1,000 | 71.450 ms | 122.016 ms | 167.721 ms |
+| 2,500 | 319.539 ms | 308.466 ms | 444.053 ms |
+
+This is a measured tradeoff, not an across-the-board List improvement. The List
+case reuses the optimized executable identities below, alternates all three
+applications, checks `FVM_LIST` (3) throughout and verifies all requested selection
+counts and empty selections. Its observer and snapshots are disabled during the
+timings. List and Details figures come from separate runs; comparisons within
+each row are the relevant before/after measurements.
 
 The product prototype uses the default view options for Details/List in ordinary
 filesystem folders, and explicit custom positioning/ordering for spatial modes.
@@ -132,6 +154,7 @@ Public contracts used or considered:
 Local evidence under `build/regression`:
 
 * `experiment-comparedetails-4997dc4336c947ae951de19a0f6b4da2` (PASS).
+* `experiment-comparelist-3792a00af8484d74abdaaa7b0c031938` (PASS, 90 timed operations, nine verified List sessions).
 * `experiment-cachedviews-c55167daa72d4fa8b6983de887cf668c` (PASS).
 * `experiment-desktopplacement-a9edf3ae9c504768b74415da2ae08cee` (PASS, Desktop restoration verified).
 * `experiment-placement-03d533ca7be64b0bb01bc9604f48d84b` (PASS, every coordinate and selection/focus checked).
@@ -185,6 +208,15 @@ it was not introduced by this prototype. Full logs and comparison results are in
 `build/reactivity/spatial-analysis`. Diagnostic-worker catches, monitor cleanup,
 and the debugger mapping's RAII ownership were tightened during analysis; no
 product refactoring was performed to silence style suggestions.
+
+The List extension changes only the experiment, its driver and this record.
+MSVC `/W4` compiled the probe without new warnings; the application Debug build
+also succeeds. Clang-tidy and Cppcheck completed for the changed observation unit
+and its Desktop including unit, plus both versions from `40fcc38` for comparison.
+No new diagnostic remains after accounting for the renamed comparison function
+and diagnostic paths. The earlier REVIEW items above remain unchanged; no product
+behavior was changed to hide the measured List regressions. This comparison is
+recorded under `build/reactivity/list-analysis`.
 
 The Desktop probe includes an explicit `recover` mode:
 
