@@ -71,7 +71,8 @@ const UINT WM_GETISHELLBROWSER_COMPAT = WM_USER + 7;
 
 static CComHeapPtr<ITEMID_CHILD> hiddenItemIDs[_countof(HIDDEN_ITEM_PARSE_NAMES)];
 
-bool FolderWindow::spatialView(IFolderView *const folderView) {
+bool FolderWindow::spatialView(IFolderView *const folderView) const {
+    if (hybridViewEligible && viewProfile == FVO_DEFAULT) return false;
     UINT viewMode;
     return folderView->GetAutoArrange() == S_FALSE
         && checkHR(folderView->GetCurrentViewMode(&viewMode))
@@ -815,7 +816,10 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
     const bool escape = msg->message == WM_CHAR && msg->wParam == VK_ESCAPE;
     HWND escapeFocus = escape ? GetFocus() : nullptr;
     // Let the Shell handle its own accelerators, including rename cancellation.
-    if (view->TranslateAccelerator(msg) == S_OK)
+    ++navigationDepth;
+    const HRESULT translated = view->TranslateAccelerator(msg);
+    resumeDeferredClose();
+    if (translated == S_OK)
         return true;
     if (!isWindowOperational())
         return true;
@@ -1063,8 +1067,26 @@ void FolderWindow::onCreate() {
     browserRect.bottom -= bottomStatusHeight;
     browserRect.bottom += CAPTION_HEIGHT; // initial rect is wrong
 
-    if (!checkHR(viewHost.initialize(hwnd, browserRect, folderSettings(),
-            static_cast<IServiceProvider *>(this), this)))
+    FOLDERSETTINGS initial = folderSettings();
+    SFGAOF attributes = SFGAO_FILESYSTEM | SFGAO_STREAM;
+    hybridViewEligible = SUCCEEDED(item->GetAttributes(attributes, &attributes))
+        && (attributes & SFGAO_FILESYSTEM) && !(attributes & SFGAO_STREAM);
+    if (!isWindowOperational()) return;
+    if (hybridViewEligible) {
+        CComHeapPtr<ITEMIDLIST> id;
+        hybridViewEligible = SUCCEEDED(SHGetIDListFromObject(item, &id)) && id && !ILIsEmpty(id);
+    }
+    if (!isWindowOperational()) return;
+    if (hybridViewEligible && loadFolderState()
+            && (getSavedFolderState().view.present & FolderViewSettings::Mode)) {
+        const auto mode = getSavedFolderState().view.mode;
+        if (mode == FVM_AUTO || (mode >= FVM_FIRST && mode <= FVM_LAST))
+            initial.ViewMode = static_cast<UINT>(mode);
+    }
+    if (!isWindowOperational()) return;
+    viewProfile = profileForMode(initial.ViewMode);
+    if (!checkHR(viewHost.initialize(hwnd, browserRect, initial,
+            static_cast<IServiceProvider *>(this), this, viewProfile)))
         return;
     CComPtr<IFolderFilter> filter;
     auto concreteFilter = new FolderNameFilter(L"", hiddenItemIDs, _countof(hiddenItemIDs));
@@ -1240,6 +1262,90 @@ void FolderWindow::scheduleStateSave(bool icons) {
     SetTimer(hwnd, TIMER_SAVE_STATE, 250, nullptr);
 }
 
+FOLDERVIEWOPTIONS FolderWindow::profileForMode(UINT mode) const {
+    return hybridViewEligible && (mode == FVM_DETAILS || mode == FVM_LIST)
+        ? FVO_DEFAULT : static_cast<FOLDERVIEWOPTIONS>(FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING);
+}
+
+void FolderWindow::requestViewProfile() {
+    if (!hybridViewEligible || !isWindowOperational()) return;
+    viewProfilePending = true;
+    if (viewProfilePosted) return;
+    viewProfilePosted = PostMessageW(hwnd, MSG_SYNCHRONIZE_VIEW_PROFILE, 0, 0) != FALSE;
+}
+
+void FolderWindow::synchronizeViewProfile() {
+    viewProfilePosted = false;
+    if (!hybridViewEligible || !isWindowOperational() || !viewReady || !initialStateApplied
+            || !enumerationComplete || restoringState || viewProfileChanging || navigationDepth
+            || viewMenuDepth || viewMenuPreview || viewMenuRestore || provisionalBaseline) return;
+    GUITHREADINFO gui = {sizeof(gui)};
+    if (!GetGUIThreadInfo(GetCurrentThreadId(), &gui)
+            || (gui.flags & (GUI_INMENUMODE | GUI_POPUPMENUMODE | GUI_SYSTEMMENUMODE))) return;
+    CComPtr<ItemWindow> keepAlive(this);
+    viewProfilePending = false;
+    ++navigationDepth;
+    struct Navigation {
+        FolderWindow &owner;
+        ~Navigation() { owner.resumeDeferredClose(); }
+    } navigation{*this};
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    auto current = [&]() { return isWindowOperational() && shellView == source && viewGeneration == generation; };
+    CComPtr<IFolderView2> view;
+    if (FAILED(viewHost.currentView(IID_PPV_ARGS(&view))) || !current()) return;
+    auto state = std::make_unique<ShellViewState>();
+    state->view = captureOptions(view, getSavedFolderState().view);
+    if (!current() || !(state->view.present & FolderViewSettings::Mode)) return;
+    const auto desired = viewMenuRequested
+        ? static_cast<FOLDERVIEWOPTIONS>(FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING)
+        : profileForMode(static_cast<UINT>(state->view.mode));
+    if (desired == viewProfile) return;
+    // Reuse the complete capture path, including protection of positions that
+    // could not yet be restored. A profile change must not trust a partial grid.
+    viewStateDirty(FolderState::Icons);
+    persistViewState();
+    if (!current() || deferredCloseMessage) return;
+    state->icons = getSavedFolderState().icons;
+    if (FAILED(captureReopenSelection(source, current, state->selection)) || !current() || deferredCloseMessage) return;
+    HWND body = nullptr;
+    source->GetWindow(&body);
+    if (!current()) return;
+    const HWND focus = GetFocus();
+    pendingKeyboardView = body && focus && (focus == body || IsChild(body, focus));
+    pendingKeyboardControl = pendingKeyboardView ? nullptr : focus;
+    if (!sameView(state->view, getSavedFolderState().view)) {
+        getSavedFolderState().view = state->view;
+        getSavedFolderState().present |= FolderState::View;
+        viewStateDirty(FolderState::View);
+    }
+    storedViewState = std::move(state);
+    viewProfileChanging = true;
+    restoringState = true;
+    KillTimer(hwnd, TIMER_SAVE_STATE);
+    KillTimer(hwnd, TIMER_UPDATE_SELECTION);
+    viewReady = false;
+    checkHR(viewHost.stopObserving());
+    shellView.Release();
+    checkHR(viewHost.destroy());
+    if (!isWindowOperational() || deferredCloseMessage) return;
+    viewProfile = desired;
+    RECT bounds = windowBody();
+    if (hasStatusText()) bounds.bottom -= scaleDPI(BOTTOM_STATUS_HEIGHT_DIP);
+    FOLDERSETTINGS initial = {static_cast<UINT>(storedViewState->view.mode), storedViewState->view.flags};
+    HRESULT result = viewHost.initialize(hwnd, bounds, initial, static_cast<IServiceProvider *>(this), this, viewProfile);
+    if (SUCCEEDED(result) && isWindowOperational()) result = viewHost.setFilter(nameFilter);
+    if (SUCCEEDED(result) && isWindowOperational()) result = browseToItem();
+    if (!isWindowOperational()) return;
+    if (SUCCEEDED(result)) result = viewHost.lockNavigation(true);
+    if (!checkHR(result)) {
+        viewProfileChanging = false;
+        restoringState = false;
+        viewMenuRequested = false;
+        setStatusText(getString(IDS_FOLDER_ERROR));
+    }
+}
+
 // A changed preference recreates the view through the other provider; the
 // view's identifiers are the native ones in both, so the existing transfer
 // carries positions, selection and focus across whatever the layout.
@@ -1267,7 +1373,7 @@ uint32_t FolderWindow::captureViewState(uint32_t mask) {
         // not immediately recapture its fallback over the merged reference.
         return captured | FolderState::View | FolderState::Icons;
     }
-    if (!viewHost || !viewReady || !initialStateApplied || restoringState || viewMenuPreview
+    if (!viewHost || !viewReady || !initialStateApplied || restoringState || viewMenuPreview || viewProfileChanging
             || getSavedFolderState().firstFailedAt) return captured;
     CComPtr<IShellView> source = shellView;
     const ULONG_PTR generation = viewGeneration;
@@ -1277,6 +1383,9 @@ uint32_t FolderWindow::captureViewState(uint32_t mask) {
     if (FAILED(viewHost.currentView(IID_PPV_ARGS(&view))) || !current()) return captured;
     FolderViewSettings options = captureOptions(view, getSavedFolderState().view);
     if (!current()) return captured;
+    const bool profileMismatch = (options.present & FolderViewSettings::Mode)
+        && profileForMode(static_cast<UINT>(options.mode)) != viewProfile;
+    if (profileMismatch) requestViewProfile();
     if (options.present && (!(getSavedFolderState().present & FolderState::View)
             || !sameView(options, getSavedFolderState().view) || (mask & FolderState::View))) {
         getSavedFolderState().view = std::move(options);
@@ -1284,7 +1393,7 @@ uint32_t FolderWindow::captureViewState(uint32_t mask) {
         captured |= FolderState::View;
     }
     // A filtered subset must never replace the complete folder's icon positions.
-    if ((mask & FolderState::Icons) && !restoreIconsPending && spatialView(view)) {
+    if ((mask & FolderState::Icons) && !profileMismatch && !restoreIconsPending && spatialView(view)) {
         if (iconRestoreFailed) {
             captureIconChange();
             if (!current()) return captured;
@@ -1464,6 +1573,8 @@ void FolderWindow::restoreReopenViewState() {
 }
 
 void FolderWindow::onDestroy() {
+    viewMenuRequested = false;
+    viewProfilePosted = false;
     watchProvisionalInput(false);
     if (viewMenuPreview) restoringState = true;
     viewMenuPreview.reset();
@@ -2007,6 +2118,7 @@ void FolderWindow::resumeDeferredClose() {
     deferredCloseMessage = 0;
     if (closeMessage)
         checkLE(PostMessageW(hwnd, closeMessage, 0, 0));
+    else if (viewProfilePending) requestViewProfile();
 }
 
 // Verbs of the view's own menus (Refresh, New) reload the view and dispatch
@@ -2119,8 +2231,21 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             }
             return 0;
         case MSG_VIEW_CHANGED:
-            if (isWindowOperational() && viewHost.isViewNotification(wParam))
+            if (isWindowOperational() && viewHost.isViewNotification(wParam)) {
                 scheduleStateSave();
+                requestViewProfile();
+            }
+            return 0;
+        case MSG_SYNCHRONIZE_VIEW_PROFILE:
+            synchronizeViewProfile();
+            return 0;
+        case MSG_OPEN_PENDING_VIEW_MENU:
+            if (viewMenuRequested && viewGeneration == wParam && isWindowOperational()
+                    && initialStateApplied && !viewProfileChanging) {
+                viewMenuRequested = false;
+                if (GetForegroundWindow() == hwnd) openViewMenu(pendingViewMenuPoint);
+                else requestViewProfile();
+            }
             return 0;
         case MSG_FINISH_VIEW_INITIALIZATION:
             if (isWindowOperational() && viewHost.isViewNotification(wParam))
@@ -2221,6 +2346,7 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         }
         case WM_EXITMENULOOP:
             scheduleStateSave();
+            requestViewProfile();
             break;
         case WM_TIMER:
             if (wParam == TIMER_SAVE_STATE) {
@@ -2720,6 +2846,17 @@ void FolderWindow::openViewMenu(POINT point) {
     CComPtr<ItemWindow> keepAlive(this);
     if (!isWindowOperational() || provisionalInputBlocked || provisionalCaptureBusy)
         return;
+    if (hybridViewEligible && viewProfile == FVO_DEFAULT) {
+        viewMenuRequested = true;
+        pendingViewMenuPoint = point;
+        requestViewProfile();
+        return;
+    }
+    ++viewMenuDepth;
+    struct MenuScope {
+        FolderWindow &owner;
+        ~MenuScope() { --owner.viewMenuDepth; owner.requestViewProfile(); }
+    } menuScope{*this};
     if (provisionalBaseline && !captureProvisionalCurrent(true, true)) return;
     if (!isWindowOperational()) return;
     HMENU popupMenu = nullptr;
@@ -3071,7 +3208,7 @@ STDMETHODIMP FolderWindow::OnNavigationComplete(PCIDLIST_ABSOLUTE) {
     CComPtr<ItemWindow> keepAlive(this);
     debugPrintf(L"NATIVE HWND=%p OnNavigationComplete\n", hwnd);
     recordFolderAccess(S_OK);
-    if (shellView && GetActiveWindow() == hwnd) {
+    if (shellView && !viewProfileChanging && GetActiveWindow() == hwnd) {
         CComPtr<IShellView> view = shellView;
         checkHR(view->UIActivate(SVUIA_ACTIVATE_FOCUS));
     }
@@ -3454,6 +3591,16 @@ void FolderWindow::finishViewInitialization() {
         if (!current()) return;
         onViewReady();
     }
+    if (initial && viewProfileChanging && current()) {
+        viewProfileChanging = false;
+        const HWND focus = GetFocus();
+        if (GetActiveWindow() == hwnd && (!focus || focus == hwnd)) {
+            if (pendingKeyboardView) checkHR(view->UIActivate(SVUIA_ACTIVATE_FOCUS));
+            else if (pendingKeyboardControl && IsWindow(pendingKeyboardControl)) SetFocus(pendingKeyboardControl);
+        }
+        pendingKeyboardControl = nullptr;
+        pendingKeyboardView = false;
+    }
     if (!current()) return;
     if ((!provisionalBaseline || provisionalReady) && provisionalInputBlocked) {
         blockProvisionalInput(false); // Reference and its eventual refill are now applied.
@@ -3461,8 +3608,12 @@ void FolderWindow::finishViewInitialization() {
     }
     scheduleStateSave();
     updateSelection();
-    if (current() && hasStatusText()) updateStatus();
     if (current()) replayProviderSync(); // Outside this callback, not from within it.
+    if (current()) {
+        if (viewMenuRequested && viewProfile != FVO_DEFAULT)
+            checkLE(PostMessageW(hwnd, MSG_OPEN_PENDING_VIEW_MENU, viewGeneration, 0));
+        else requestViewProfile();
+    }
 }
 
 /* IDispatch */
