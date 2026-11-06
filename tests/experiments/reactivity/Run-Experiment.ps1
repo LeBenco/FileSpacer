@@ -1,6 +1,7 @@
 param(
     [ValidateSet('Placement','ObserveExplorer','CompareDetails','CompareList','DesktopPlacement','ProfilePlacement','VisualTiming','CachedViews')][string]$Case='CompareDetails',
-    [ValidateRange(30,900)][int]$TimeoutSeconds=300
+    [ValidateRange(30,900)][int]$TimeoutSeconds=300,
+    [ValidateSet('SelfTest','ExtraLarge','Large','Medium','Small','Details','List','Tiles','Content','Placement','Protocol','PlacementProtocol')][string]$VisualScenario='SelfTest'
 )
 $ErrorActionPreference='Stop'
 $project=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
@@ -18,7 +19,16 @@ $written=@()
 [void][IO.Directory]::CreateDirectory($stage)
 Push-Location -LiteralPath $project
 try{
-    foreach($name in $files){$target=Join-Path $stage $name;Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination $target;$written+=$target}
+    foreach($name in $files){
+        $target=Join-Path $stage $name;Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination $target;$written+=$target
+        if($Case-eq'VisualTiming'-and$name-eq'09-VisualTiming.ps1'-and$VisualScenario-ne'SelfTest'){
+            # Host environment variables are not inherited by the VM controller.
+            # Select the scenario in the owned staged driver before preparation/hashing.
+            $text=[IO.File]::ReadAllText($target);$default="else{'SelfTest'}"
+            if(!$text.Contains($default)){throw 'Visual scenario default no longer matches the staging contract.'}
+            [IO.File]::WriteAllText($target,$text.Replace($default,"else{'"+$VisualScenario+"'}"),[Text.UTF8Encoding]::new($false))
+        }
+    }
     & $env:ComSpec /d /c tests.cmd -VM AgentWin10 -Pattern ('36-reactivity-prototype\'+$patterns[$Case]) -TimeoutSeconds $TimeoutSeconds -RunDirectory $output
     $result=$LASTEXITCODE
 }finally{
