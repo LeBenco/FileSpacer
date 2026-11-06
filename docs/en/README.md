@@ -56,6 +56,18 @@ Keep UI text in the language resource files and preserve their encodings.
   returning. A COM reference keeps the C++ object alive, not its window or view.
   Recheck lifetime and observation generation before continuing.
 
+## Local data
+
+Folder layouts, locks, search history and closed-folder history are stored in
+`%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. General preferences, title-menu
+composition and folder groups are in the Windows Registry under
+`HKEY_CURRENT_USER\Software\FileSpacer`. Saved state can contain folder paths,
+including network paths. Temporary update files and the session's folder list
+are under `%TEMP%\FileSpacerUpdate-{GUID}`.
+
+Use the [user guide's reset procedures](user-guide.md#local-data) for maintenance.
+Do not edit a live database or reset production data to prepare regression tests.
+
 ## Focused notes
 
 - [Search, history and Everything](search-integration.md)
