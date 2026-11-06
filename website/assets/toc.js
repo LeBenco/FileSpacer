@@ -16,4 +16,9 @@ function selectHeading() {
   }
 }
 window.addEventListener('hashchange', selectHeading);
-document.addEventListener('DOMContentLoaded', selectHeading);
+document.addEventListener('DOMContentLoaded', () => {
+  selectHeading();
+  document.getElementById('back-to-top')?.addEventListener('click', () => {
+    document.querySelector('.main-content-wrap')?.scrollTo({top: 0});
+  });
+});
