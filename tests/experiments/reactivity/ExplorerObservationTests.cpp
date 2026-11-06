@@ -128,6 +128,8 @@ void row(const char *app,int n,int repetition,const char *operation,HRESULT hr,d
 std::wstring observationRoot;
 bool captureEvents = true;
 bool captureSnapshots = true;
+bool profileSelection = false;
+bool comparisonLargestOnly = false;
 std::atomic<unsigned> snapshotCount{0};
 void captureImages(HANDLE process){
     const std::wstring directory=observationRoot+L"\\images";CreateDirectoryW(directory.c_str(),nullptr);
@@ -208,7 +210,7 @@ HRESULT measure(Target &t,const char *app,int n,int repetition,const char *opera
     for(auto &count:receivedEvents)count.store(0);
     hook=captureEvents?SetWinEventHook(EVENT_OBJECT_REORDER,EVENT_OBJECT_LOCATIONCHANGE,nullptr,eventObserved,t.processId,0,WINEVENT_OUTOFCONTEXT):nullptr;
     require(!captureEvents||hook,"Accessibility observer unavailable");
-    const bool observe=captureSnapshots&&n==5000&&repetition==0&&(std::string(operation)=="select_batch"||std::string(operation)=="clear_selection"||std::string(operation)=="position_16");
+    const bool observe=captureSnapshots&&n==5000&&repetition==0&&(std::string(operation)=="select_batch"||std::string(operation)=="clear_selection"||std::string(operation)=="position_16"||(profileSelection&&(std::string(operation)=="select_5000"||std::string(operation)=="clear_5000")));
     if(observe){
         const std::string label=std::string(app)+"-"+operation;
         const std::wstring file=observationRoot+L"\\"+std::wstring(label.begin(),label.end())+L".dmp";
@@ -321,7 +323,7 @@ constexpr ViewSpec viewSpecs[]={
     {L"list",FVM_LIST,16},{L"details",FVM_DETAILS,16},{L"tiles",FVM_TILE,48},{L"content",FVM_CONTENT,32}};
 const ViewSpec *findSpec(const wchar_t *name){for(const auto &spec:viewSpecs)if(std::wcscmp(spec.name,name)==0)return &spec;return nullptr;}
 void runSelectionComparison(const std::wstring &root,const std::wstring &fixture,const ViewSpec &spec){
-    captureEvents=false;captureSnapshots=false;observationRoot=root;
+    captureEvents=false;captureSnapshots=profileSelection;observationRoot=root;
     require(_wfopen_s(&csv,(root+L"\\"+spec.name+L".csv").c_str(),L"wb")==0,"Selection CSV unavailable");
     require(_wfopen_s(&waits,(root+L"\\wait-chains.csv").c_str(),L"wb")==0,"Wait log unavailable");
     FILE *capabilities=nullptr;require(_wfopen_s(&capabilities,(root+L"\\capabilities.csv").c_str(),L"wb")==0,"Capabilities CSV unavailable");
@@ -337,6 +339,7 @@ void runSelectionComparison(const std::wstring &root,const std::wstring &fixture
     const char *labels[]={"FileSpacer-baseline","FileSpacer-hybrid","Explorer"};
     CComPtr<IShellWindows> windows;require(SUCCEEDED(windows.CoCreateInstance(CLSID_ShellWindows)),"ShellWindows unavailable");
     int repetitions=3;
+    if(profileSelection)repetitions=1;
 #ifdef FILESPACER_VISUAL_TIMING
     if(presentation::protocolOnly)repetitions=1;
 #endif
@@ -372,6 +375,7 @@ void runSelectionComparison(const std::wstring &root,const std::wstring &fixture
         FILE *tree=nullptr;const std::wstring treeFile=root+L"\\windows-"+std::to_wstring(app)+L"-"+std::to_wstring(repetition)+L".txt";
         if(_wfopen_s(&tree,treeFile.c_str(),L"wb")==0){EnumChildWindows(t.window,windowObserved,reinterpret_cast<LPARAM>(tree));std::fclose(tree);}
         std::vector<int> counts={100,500,1000,2500,5000};
+        if(profileSelection||comparisonLargestOnly)counts={5000};
 #ifdef FILESPACER_VISUAL_TIMING
         if(presentation::protocolOnly)counts={2};
 #endif
