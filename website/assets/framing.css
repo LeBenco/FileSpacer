@@ -39,6 +39,12 @@
   white-space: nowrap;
 }
 
+.main-content main p:not(:has(img)),
+.main-content main li {
+  text-align: justify;
+  hyphens: auto;
+}
+
 /* Purple and green faces of the logo, with readable contrast. */
 #site-nav .nav-list-link,
 #site-nav .nav-list-expander,
