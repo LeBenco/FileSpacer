@@ -705,3 +705,215 @@ The largest-only routing and initial operations executed before that preconditio
 failure; its complete eight-view execution is not validated. The two final C++
 benchmark units were rerun through clang-tidy and Cppcheck after these routing
 changes; both analyses completed, with the documented probe/style REVIEW points.
+## Selection internals: measured explanation and standard candidates
+
+Further investigation on 6 November 2026. Product sources are unchanged in this
+step. The new SelectionInternalsTests helper runs in fresh processes through the
+same dedicated AgentWin10 transport, with the real native Shell and 5,000 owned
+files. A test-only subclass on the public IShellView HWND counts forwarded
+LVN_ITEMCHANGED, LVN_ODSTATECHANGED and NM_CUSTOMDRAW messages and the time spent
+in their original handlers. It does not suppress or rewrite notifications.
+Child ListView discovery, raw control messages, vtable addresses and numeric
+DefView command IDs are explicitly diagnostic and are not product dependencies.
+
+### What consumes the time
+
+SelectionInternals passed in
+experiment-selectioninternals-d7b8d08596934d949199c4f14b5ef71d. For the spatial
+profile 6 (CUSTOMPOSITION | CUSTOMORDERING), one diagnostic 5,000-item batch
+selection took 2,510.854 ms: 5,000 item-change notifications consumed 1,902.318 ms,
+with zero custom-draw notifications during that call. Clear took 1,340.322 ms:
+its single global item-change notification consumed 1,245.864 ms, also with zero
+custom-draw notifications. One notification can therefore contain the expensive
+loop; notification count alone does not describe the algorithm.
+
+The native control was owner-data (LVS_OWNERDATA). A raw global control selection
+and the legacy public IShellFolderView::Select each emitted one notification and
+selected all identities correctly, but still took approximately 0.8–0.9 s and
+left clear at 1.2–1.6 s in that pilot. Disabling animations and scroll tips
+(profile 54) retained the same expensive path. IFolderView::SelectItem(-1, ...)
+returned E_INVALIDARG: the undocumented negative-index hypothesis is rejected.
+Native numeric commands improve selection in that pilot but do not close the
+gap; inversion clears one item at a time and is no useful clear replacement.
+
+Offline analysis uses the exact previously captured guest process snapshots and
+module images from experiment-visualtiming-219c9590394b482b92528a0cf564b23a,
+matching Microsoft PDBs and the Debug Engine. DumpStacks now accepts an optional
+Unicode debugger-command argument after the normal dump/thread/symbol-path
+arguments. The Explorer snapshot's unwind is insufficient for a useful selection
+stack; no execution path is inferred from its broken frames. Its loaded, matching
+ExplorerFrame image can still be disassembled and its symbols inspected.
+
+Observed implementations in this Windows build:
+
+* The custom-position renderer uses shell32!CSelectionManager. SelectItem calls
+  IsSelected, then _FindSelected, which scans its DSA entries and invokes
+  _AreSelectedItemsEqual for each candidate before appending a new entry.
+* Its _OnClearSelection loops over selected entries, resolves their view indexes,
+  calls _OnSelectionChange / DeselectItem (another linear search), then finally
+  calls ClearSelection. This final global clear does not avoid the earlier work.
+* Explorer's modern renderer exposes explorerframe!CItemsView and CSelectionState.
+  The inspected _DeselectAll clears CItemMap / CSimpleHashTable containers through
+  RemoveAll. This is a different selection representation from the legacy DSA.
+  The matching ExplorerFrame image is 10.0.19041.6280; Shell32 is 10.0.19041.6456.
+  These private implementations explain observations on this build, not future
+  Windows contracts or callable product interfaces.
+
+### Direct comparison counts and causal check
+
+SelectionComparisonCounts passed in
+experiment-selectioncomparisoncounts-905d4bc6efba48eda8ede2591ea30f49. The driver
+requires AgentWin10 and pins the captured Shell32 image to SHA-256
+936C33A8283196A070AA6F844A65A29A8F99F760EAE0016754C1CBF17D62BDB7.
+The helper verifies the private entry bytes and installs a process-local
+breakpoint on the neutral REX prefix of _AreSelectedItemsEqual. The original
+instruction remains semantically intact; the original code and protection are
+restored on scope exit. No system file or another process is patched.
+
+| Selected items | Spatial select comparisons | Spatial clear comparisons | Modern comparisons in this legacy function |
+| ---: | ---: | ---: | ---: |
+| 100 | 4,950 | 10,000 | 0 |
+| 200 | 19,900 | 40,000 | 0 |
+| 500 | 124,750 | 250,000 | 0 |
+
+The measured counts are n(n-1)/2 and n squared. Extending those observed paths to
+5,000 predicts 12,497,500 and 25,000,000 comparisons; those 5,000-item counts were
+not measured with breakpoints. Breakpoint-instrumented durations are deliberately
+excluded from performance comparisons. Public selection arrays, selected
+identities, all 5,000 free coordinates and both focus states pass afterwards.
+
+SelectionCausal passed three alternating fresh-process repetitions in
+experiment-selectioncausal-58ba9cd321644908bc63f0fff3c28382. A second, strictly
+private probe temporarily bypasses IsSelected only for selection from empty,
+and DeselectItem only while the native global clear will finish with ClearSelection.
+Code bytes are restored before validating the public state. These ablations do
+not implement general selection semantics and are not proposed for the product.
+
+| Spatial 5,000-item operation | Original median ms | Private ablation median ms | Time reduction |
+| --- | ---: | ---: | ---: |
+| Select | 1,126.796 | 380.126 | 66.3% |
+| Clear | 1,318.229 | 109.566 | 91.7% |
+
+Every operation retained the expected selected identities, all 5,000 coordinates,
+logical focus and keyboard focus. This makes the internal lookup cost causal,
+while the remaining latency shows it is not the only cost. It is an experimental
+result for this exact binary, not a supported optimization or a display-latency
+measurement. The private probes are separate test executables; FileSpacer does
+not contain or install their patches.
+
+### Public API candidates and six-view control
+
+SelectionMatrix passed in
+experiment-selectionmatrix-8c96acb85952409580d0f983f9b8fbaf. Each view/profile pair
+has three fresh-process repetitions, with profile order alternating. Values below
+are medians of synchronous API time in a minimal native host at 800 x 400 / 96 DPI,
+not the full FileSpacer/Explorer actor comparison above. Free coordinates are
+seeded and checked for the four legacy icon modes; Tiles/Content check identities
+and focus but are not a placement validation. Profile 0 has no free-position
+contract and no free-position check. The first four extra-large diagnostic cases
+are excluded from the repeated matrix medians.
+
+| View | Spatial select ms | Modern select ms | Spatial clear ms | Modern clear ms |
+| --- | ---: | ---: | ---: | ---: |
+| extra-large | 1,470.944 | 54.039 | 1,794.858 | 1.492 |
+| large | 1,158.375 | 152.581 | 1,614.035 | 2.653 |
+| medium | 1,255.255 | 263.837 | 1,403.996 | 3.597 |
+| small | 1,255.431 | 205.179 | 1,274.622 | 2.565 |
+| tiles | 3,558.004 | 144.019 | 1,252.749 | 2.559 |
+| content | 3,113.931 | 72.574 | 1,272.310 | 4.786 |
+
+The same matrix rejects public batch deselection and clearing via a snapshot
+IShellItemArray as improvements: one diagnostic extra-large clear was 1,581.639 ms
+through the original call, 1,891.083 via batch deselect, 2,516.119 via the selection
+array, and 17,221.978 with its reverse order. They retain the expensive native
+manager rather than replacing it.
+
+SelectionAccessibility passed its investigation protocol in
+experiment-selectionaccessibility-abd4b738018f4b5486c2c2142e993c96:
+
+* Public IAccessible::accSelect per item preserves identities, coordinates and
+  focus, but costs 1,607.141 / 1,697.734 ms (select / clear), versus
+  1,217.776 / 1,293.468 for the batch control in that diagnostic run.
+* Raw per-item ListView calls also provide no gain: 1,336.911 / 1,789.097 ms.
+* The accessible-range candidate selects only 4,993 expected identities because
+  the native anchor remains relevant. It is explicitly REJECTED, not a valid
+  fast selection. The investigation passing means this rejection was recorded;
+  it does not qualify every tested candidate.
+* The first two attempts stopped on the newly added selection-array consistency
+  assertion for the normal batch control. The native empty GetSelection(FALSE)
+  returns ERROR_NOT_FOUND with a null array on this installation. The final
+  assertion accepts that observed empty representation only with zero visible
+  selected items; nonempty selections still require a matching real array.
+
+SelectionAutoArrange passed three alternating repetitions in
+experiment-selectionautoarrange-e5ff360fd7904b00b1e151097ee343be. With automatic
+arrangement verified on both profiles, extra-large selection is 2,204.056 ms in
+profile 6 versus 52.801 ms in profile 0; clear is 1,331.605 versus 1.400 ms.
+The legacy automatic-layout selection produces 4,993 custom-draw notifications
+in addition to its 5,000 selection notifications, unlike the free-layout pilot.
+Modern GetItemPosition returns E_NOTIMPL. This isolates a standard performance
+opportunity for automatically arranged views, without claiming free positioning.
+
+### What can be adapted
+
+The supported candidate is broader use of the modern profile where custom
+positioning and ordering are not required. The public FVO_CUSTOMPOSITION contract
+must remain explicit when those features are needed; silently selecting FVO_DEFAULT
+for every icon view would remove that guarantee. A profile chosen from arrangement
+requirements is a concrete follow-up, requiring validation of drag reordering,
+retention of saved free coordinates, preview/cancel, focus and lifecycle transitions
+before any product change. No such extension is delivered by this investigation.
+
+A native bulk selection can reduce PIDL conversion and per-item notification work,
+but the legacy manager still performs quadratic membership checks. FileSpacer's
+existing Ctrl+A already reaches the native path. No tested public route removes
+the demonstrated quadratic cost while retaining the current free-position view.
+The matching native probes and isolated fixture form a reproducible case for a
+Windows implementation fix. The private lookup and container layouts above must
+not become FileSpacer runtime dependencies.
+
+Relevant public contracts:
+[FOLDERVIEWOPTIONS](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl/ne-shobjidl-folderviewoptions),
+[LVN_ITEMCHANGED](https://learn.microsoft.com/en-us/windows/win32/controls/lvn-itemchanged),
+[IAccessible::accSelect](https://learn.microsoft.com/en-us/windows/win32/api/oleacc/nf-oleacc-iaccessible-accselect),
+[SELFLAG](https://learn.microsoft.com/en-us/windows/win32/winauto/selflag),
+[GetSelection](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifolderview2-getselection).
+
+The normal Debug application build, the /W4 native helpers and the offline
+DumpStacks build complete without new compiler warnings after correcting the
+probe's initial macro collision, command constants and GetSelection signature.
+No complete regression-suite PASS is implied. New source paths are confined to
+the experimental helpers, drivers, entry-point reuse and this investigation log.
+Static analysis of SelectionInternalsTests.cpp, SelectionStrategiesTests.cpp and
+DumpStacks.cpp completed through both clang-tidy and Cppcheck, Windows x64 / C++14,
+with real SDK 10.0.19041.0 / MSVC+ATL 14.44.35207 headers for clang-tidy and official
+windows/microsoft_atl/sqlite3 Cppcheck models. All six invocations completed
+successfully, without parser failure, timeout or reduced ATL coverage. Verdict:
+REVIEW for new probe/style diagnostics (integer/pointer conversions at Win32
+callback boundaries, signed flag masks, adjacent string parameters, .cpp reuse,
+and Cppcheck's pointer-to-const suggestion). No new confirmed functional defect
+is reported. Existing include/enum/RAII-reference diagnostics are comparable to
+the earlier analyses. No production C++ file changes in this step. Logs:
+build/reactivity/internals-analysis.
+
+The six investigation cases 22–27 pass their recorded protocols. The first probe
+compile failed on an include/main macro collision and missing SDK command names;
+the next matrix preparation failed on the GetSelection signature. Both were
+corrected before VM execution. The two failed accessibility assertions and their
+empty-selection diagnosis remain recorded above. The final runs provide the
+stated evidence; no failed or rejected candidate is counted as an optimization.
+
+Reproduce from CMD in the experimental worktree:
+
+```bat
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case SelectionInternals -TimeoutSeconds 900
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case SelectionMatrix -TimeoutSeconds 900
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case SelectionAccessibility -TimeoutSeconds 300
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case SelectionComparisonCounts -TimeoutSeconds 300
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case SelectionCausal -TimeoutSeconds 300
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case SelectionAutoArrange -TimeoutSeconds 300
+```
+
+The two private cases deliberately refuse a different guest Shell image. They
+must be re-investigated against matching images and symbols before any RVA or
+signature change; changing the hash alone would not validate the instrumentation.
