@@ -2,14 +2,15 @@
 
 ## Navigation entre les fenêtres
 
-Un dossier possède une seule fenêtre. Rouvrir un dossier déjà ouvert ramène sa fenêtre au premier plan ; position, taille, affichage et disposition des icônes sont mémorisés. Déplacer ou renommer un dossier conserve sa disposition.
+FileSpacer propose une interface fluide, sobre et personnalisable, fondée sur le paradigme spatial :
 
+- **Un dossier, une fenêtre.** Rouvrir un dossier déjà ouvert ramène sa fenêtre au premier plan. Sa position, sa taille, son affichage et la disposition de ses icônes sont mémorisés, même après déplacement ou renommage du dossier.
 - Ouvrir un dossier ou son parent ferme par défaut la fenêtre source. Ctrl inverse ce comportement une fois ; le réglage se change dans **Paramètres > Général**. Ouvrir plusieurs dossiers sélectionnés conserve la fenêtre source.
-- Le menu à côté du titre permet de passer d’un dossier ouvert à l’autre. **Fermer les fenêtres parentes** ferme ses ancêtres ouverts, en conservant les autres dossiers.
-- **Ctrl+Maj+T** rouvre le dernier dossier fermé sans fermer le dossier courant. La même commande existe dans le menu du titre et la liste de raccourcis de la barre des tâches ; cette dernière permet de remonter plus loin dans les fermetures. La disposition et la sélection sont restaurées, ainsi que la première ligne visible dans les modes Détails et Liste.
+- Le menu à côté du titre permet de passer d’un dossier ouvert à l’autre. **Fermer les fenêtres parentes** ferme ses ancêtres ouverts.
+- **Ctrl+Maj+T** rouvre le dernier dossier fermé avec sa disposition et sa sélection. La commande existe aussi dans le menu du titre et la liste de raccourcis de la barre des tâches ; cette dernière permet de remonter plus loin dans les fermetures.
 - La liste de raccourcis ouvre également les dossiers épinglés dans l’Accès rapide de l’Explorateur de fichiers.
 
-Revenir au parent ne sélectionne pas le dossier qui vient d’être quitté. Un parent déjà ouvert conserve sa sélection. Le Panneau de configuration s’ouvre dans sa propre fenêtre Windows.
+Revenir au parent ne sélectionne pas le dossier qui vient d’être quitté. Un parent déjà ouvert conserve sa sélection.
 
 ![Le menu du titre, avec les commandes de navigation et de disposition enregistrée.](images/window-menu-fr.png)
 
@@ -21,25 +22,23 @@ Les fichiers et sous-dossiers peuvent être disposés librement en mode Icônes 
 
 ### Options d’affichage
 
-**Afficher le nom complet d’un fichier sélectionné**, dans **Paramètres > Affichage**, rend un nom sélectionné entièrement lisible en mode Icônes. L’option est activée par défaut et ne change ni les sélections multiples ni les autres modes.
+**Afficher le nom complet d’un fichier sélectionné**, dans **Paramètres > Affichage**, rend entièrement lisible le nom de l’unique fichier sélectionné en mode Icônes.
 
 ![Un nom de fichier long, sélectionné et affiché en entier en mode Icônes.](images/selected-name-fr.png)
 
-**Prévisualiser les modes d’affichage dans le menu Affichage**, également activé par défaut, montre chaque mode au survol. Un clic le conserve ; Échap ou la sortie de l’aperçu restaure l’affichage initial. Un aperçu ne remplace jamais la disposition enregistrée.
+**Prévisualiser les modes d’affichage dans le menu Affichage** montre chaque mode au survol. Un clic le conserve ; Échap ou la sortie de l’aperçu restaure l’affichage initial. L’aperçu reste temporaire et ne remplace pas la disposition enregistrée.
 
-**Mélanger les dossiers et les fichiers dans le tri** les trie ensemble, comme sous [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) et [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). L’option est désactivée par défaut dans **Paramètres > Affichage > Fichiers**. Elle concerne les modes Détails, Liste et Icônes réorganisées automatiquement ; les dispositions libres sont conservées. Les dossiers virtuels et les archives gardent l’ordre de Windows.
+**Mélanger les dossiers et les fichiers dans le tri** les trie ensemble, comme sous [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) et [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). L’option se trouve dans **Paramètres > Affichage > Fichiers** et concerne les modes Détails, Liste et Icônes réorganisées automatiquement. Les dossiers virtuels et les archives gardent l’ordre de Windows.
 
 ![Dossiers et fichiers mélangés dans le même ordre alphabétique.](images/mixed-sorting-fr.png)
 
-La visibilité de la barre d’outils et de la barre d’état se règle également dans les paramètres.
-
 ### Placement des fenêtres
 
-Les dossiers sans position enregistrée s’ouvrent dans l’espace libre, ou avec un chevauchement réduit si la place manque. Les positions enregistrées restent prioritaires. **Paramètres > Général > Placer les nouvelles fenêtres dans l’espace libre** est activé par défaut ; sa désactivation utilise le placement de Windows sans déplacer les fenêtres existantes.
+Les dossiers sans position enregistrée s’ouvrent dans l’espace libre, ou avec un chevauchement réduit si la place manque. Ce placement se règle dans **Paramètres > Général > Placer les nouvelles fenêtres dans l’espace libre**.
 
 ### Sélection et activation
 
-**Conserver la sélection lors d’un clic sur une fenêtre inactive**, dans **Paramètres > Général**, permet d’activer un dossier par un clic sur son arrière-plan sans effacer sa sélection. Un second appui commence un rectangle de sélection. Les clics sur les éléments, les clics droits et les gestes de fenêtre gardent leur fonctionnement habituel.
+**Conserver la sélection lors d’un clic sur une fenêtre inactive**, dans **Paramètres > Général**, permet d’activer un dossier par un clic sur son arrière-plan sans effacer sa sélection. Un second appui commence un rectangle de sélection.
 
 ## Gestion des fenêtres
 
@@ -56,9 +55,9 @@ Une fenêtre peut être déplacée ou redimensionnée en faisant glisser depuis 
 
 ![Redimensionner une fenêtre avec Alt et un glisser du bouton droit.](images/resize-window-fr.gif)
 
-La sélection est conservée. Échap annule le geste. Champs de texte, en-têtes, barres de défilement, barres d’outils et menus gardent leur fonctionnement normal ; Alt + double-clic ouvre les propriétés d’un élément.
+La sélection est conservée. Échap annule le geste.
 
-Chaque action possède son raccourci personnalisable dans **Paramètres > Raccourcis**. Les boutons gauche et droit nécessitent Alt ; le bouton central peut aussi s’utiliser sans Alt. Les modificateurs doivent correspondre exactement ; les combinaisons réservées ou en double sont refusées. Les changements s’appliquent aux fenêtres ouvertes ; Rétablir revient aux derniers raccourcis appliqués et Annuler abandonne les modifications en attente.
+Chaque action possède son raccourci personnalisable dans **Paramètres > Raccourcis**. Les boutons gauche et droit nécessitent Alt ; le bouton central peut aussi s’utiliser sans Alt.
 
 ### Verrouillage de l’état enregistré
 
@@ -66,13 +65,13 @@ Le verrouillage conserve la position, la taille et l’affichage d’un dossier 
 
 <img src="images/locked-title-fr.png" alt="Gros plan du titre du dossier et de son badge de cadenas." width="280">
 
-Les changements temporaires restent possibles ; rouvrir le dossier rétablit l’état verrouillé. Les positions individuelles des icônes continuent de s’enregistrer. **Déverrouiller l’état de la fenêtre** conserve la disposition actuelle. Masquer le badge ne supprime pas le verrouillage.
+Les changements temporaires restent possibles ; rouvrir le dossier rétablit l’état verrouillé. Les positions individuelles des icônes continuent de s’enregistrer. **Déverrouiller l’état de la fenêtre** conserve la disposition actuelle.
 
 Désactiver la fonction demande confirmation et supprime tous les verrouillages, y compris ceux des dossiers fermés. La réactiver ne les restaure pas.
 
 ### Personnaliser le menu de la barre de titre
 
-Le menu se personnalise dans **Paramètres > Affichage > Éléments de l’interface > Modifier le menu de barre de titre**. Faire glisser une action depuis la droite pour l’ajouter au menu, déplacer une entrée pour changer son ordre ou la glisser en dehors pour la retirer. **OK** applique la composition à toutes les fenêtres de FileSpacer ; **Annuler** abandonne les changements. **Réglages par défaut** permet de retrouver la composition d’origine, à valider avec **OK**.
+Le menu se personnalise dans **Paramètres > Affichage > Éléments de l’interface > Modifier le menu de barre de titre**. Faire glisser une action depuis la droite pour l’ajouter au menu, déplacer une entrée pour changer son ordre ou la glisser en dehors pour la retirer.
 
 Les entrées gérées par Nilesoft Shell ne sont pas modifiables ici, car ses règles sont prioritaires. Voir l’[intégration Nilesoft Shell](#nilesoft-shell).
 
@@ -80,23 +79,21 @@ Les entrées gérées par Nilesoft Shell ne sont pas modifiables ici, car ses r�
 
 ![Le menu de barre de titre avec l’action Rétablir la disposition verrouillée.](images/customized-title-menu-fr.png)
 
-- **Rétablir la disposition verrouillée** ramène la fenêtre à sa disposition de référence, sans la fermer ni changer sa sélection. **Remplacer la disposition de référence** enregistre sa position, sa taille et son affichage actuels comme nouvelle référence verrouillée, après confirmation.
+- **Rétablir la disposition verrouillée** ramène la fenêtre à sa disposition de référence. **Remplacer la disposition de référence** enregistre la disposition actuelle comme nouvelle référence verrouillée, après confirmation.
 
-- **Oublier la disposition de ce dossier** retire sa disposition enregistrée et son verrouillage, en conservant l’historique des recherches. La fenêtre reste en place et cesse d’enregistrer sa disposition jusqu’à sa fermeture ; la prochaine ouverture utilise les réglages par défaut. Verrouiller une nouvelle disposition réactive son enregistrement.
-
-- D’autres actions ferment les fenêtres des sous-dossiers, ferment les autres fenêtres de FileSpacer ou ajustent la fenêtre à son contenu.
+- **Oublier la disposition de ce dossier** efface sa disposition et son verrouillage, en conservant l’historique des recherches. L’enregistrement reste suspendu dans la fenêtre courante jusqu’à sa fermeture ; la prochaine ouverture utilise les réglages par défaut. Verrouiller une nouvelle disposition réactive l’enregistrement.
 
 ### Groupes de dossiers
 
-**Enregistrer / rappeler un groupe de dossiers** conserve les dossiers ouverts sous un nom. Rappeler un groupe rouvre chaque dossier avec sa propre disposition enregistrée, sans fermer les autres fenêtres. Supprimer un groupe efface uniquement la liste, jamais les dossiers.
+**Enregistrer / rappeler un groupe de dossiers** conserve les dossiers ouverts sous un nom. Rappeler le groupe les rouvre avec leurs dispositions enregistrées.
 
 ## Recherche et historique
 
-Saisir tout ou partie du nom d’un fichier ou d’un dossier, puis appuyer sur Entrée ou cliquer sur la loupe pour filtrer le dossier courant. **Filtrer pendant la saisie**, dans **Paramètres > Général**, applique le filtre au fur et à mesure. Ce filtre local ne lance jamais Everything automatiquement.
+Saisir tout ou partie d’un nom de fichier ou de dossier, puis appuyer sur Entrée pour filtrer le dossier courant. **Filtrer pendant la saisie**, dans **Paramètres > Général**, applique le filtre au fur et à mesure.
 
-Le champ propose les recherches récentes et, lorsque l’intégration est activée, **Rechercher dans Everything**. Haut/Bas et Entrée choisissent une suggestion ; Entrée sans suggestion sélectionnée applique le filtre local. Échap ferme la liste sans effacer le texte ; Ctrl+F active le champ.
+Le champ propose les recherches récentes et, si l’intégration est activée, **Rechercher dans Everything** pour une recherche externe. Entrée sans suggestion sélectionnée applique le filtre local. Ctrl+F active le champ.
 
-L’historique conserve par défaut cinq recherches différentes validées par dossier. Sa limite se règle de 0 à 20 dans les paramètres généraux ; 0 l’efface et le désactive. La saisie seule n’ajoute pas d’entrée. [Everything](#everything) permet de chercher dans les sous-dossiers ou dans tous les fichiers indexés.
+L’historique est propre à chaque dossier. Le nombre de recherches validées conservées se règle dans les paramètres généraux ; 0 efface et désactive l’historique. [Everything](#everything) permet de chercher dans les sous-dossiers ou dans tous les fichiers indexés.
 
 ![Le champ de recherche avec Everything et les suggestions de recherches récentes.](images/search-fr.png)
 
@@ -108,27 +105,27 @@ FileSpacer peut être défini comme gestionnaire de fichiers par défaut à l’
 
 Le menu contextuel des dossiers propose **Ouvrir dans FileSpacer**, ou **Ouvrir dans l’Explorateur de fichiers Windows** lorsque FileSpacer est le gestionnaire par défaut. Il fonctionne aussi sur les lecteurs, dossiers ZIP, emplacements réseau et arrière-plans de dossier, sans imposer de changer l’application par défaut.
 
-Les fichiers s’ouvrent avec leur application Windows habituelle. Dossiers réseau, aperçus et commandes ajoutées au menu contextuel suivent également le fonctionnement de Windows. **Options de l’Explorateur de fichiers** ouvre les préférences de dossiers communes, dont certaines s’appliquent aussi à FileSpacer.
+**Options de l’Explorateur de fichiers** ouvre les préférences de dossiers communes, dont certaines s’appliquent aussi à FileSpacer.
 
 ### PowerToys Grab And Move
 
-Lorsque Grab And Move est activé dans les réglages de PowerToys, les gestes FileSpacer de déplacement et de redimensionnement sont suspendus pour les fenêtres concernées, même si PowerToys est fermé. Les raccourcis configurés restent mémorisés.
+Lorsque Grab And Move est activé dans les réglages de PowerToys, les gestes FileSpacer de déplacement et de redimensionnement sont suspendus pour les fenêtres concernées, même si PowerToys est fermé.
 
-Pour conserver les gestes de FileSpacer, ajouter `FileSpacer.exe` à la liste des applications exclues de Grab And Move, ou désactiver cet outil dans PowerToys. Dans **Paramètres > Raccourcis**, le lien de l’avis ouvre directement les réglages de Grab And Move.
+Pour conserver les gestes de FileSpacer, ajouter `FileSpacer.exe` à la liste des applications exclues de Grab And Move, ou désactiver cet outil dans PowerToys.
 
 ### PowerToys Peek
 
-**Aperçu avec Espace**, dans **Paramètres > Intégration**, permet d’afficher avec **Espace** seul un aperçu Peek des fichiers ou dossiers sélectionnés sur un disque ou un partage réseau. L’option est désactivée par défaut ; la saisie et le renommage gardent leur fonctionnement habituel.
+**Aperçu avec Espace**, dans **Paramètres > Intégration**, ouvre un aperçu Peek des fichiers ou dossiers sélectionnés avec **Espace** seul. L’option est désactivée par défaut.
 
-Peek doit aussi être activé dans PowerToys ; le lien **PowerToys** sous l’option ouvre ses réglages. Cette intégration nécessite PowerToys 0.96 ou plus récent, et 0.102 ou plus récent pour une sélection multiple.
+Peek doit aussi être activé dans PowerToys. Cette intégration nécessite PowerToys 0.96 ou plus récent, et 0.102 ou plus récent pour une sélection multiple.
 
 ### Everything
 
 Une installation existante d’[Everything](https://www.voidtools.com/) peut être intégrée pour lancer des recherches avancées depuis le champ de FileSpacer. Les résultats s’ouvrent dans Everything.
 
-L’option s’active dans **Paramètres > Intégration**. Everything peut être retrouvé automatiquement ou avec **Détecter** ; une version portable peut être choisie manuellement. La portée est le dossier courant et ses sous-dossiers, ou **Partout** ; les dossiers virtuels nécessitent Partout.
+L’option s’active dans **Paramètres > Intégration**, avec détection automatique d’Everything ou choix manuel d’une version portable. La portée est le dossier courant et ses sous-dossiers, ou **Partout** ; les dossiers virtuels nécessitent Partout.
 
-Choisir **Rechercher dans Everything** transmet la requête saisie, avec la syntaxe d’Everything. Un lancement réussi efface le champ et le filtre local de FileSpacer ; une erreur les conserve pour un nouvel essai.
+Choisir **Rechercher dans Everything** lance la recherche externe avec la syntaxe d’Everything. Un lancement réussi efface le champ et le filtre local de FileSpacer.
 
 ![Une requête dans FileSpacer et les résultats correspondants dans Everything, à côté.](images/everything-search-fr.png)
 
@@ -138,16 +135,12 @@ Choisir **Rechercher dans Everything** transmet la requête saisie, avec la synt
 
 FileSpacer compose d’abord le menu de la barre de titre. Nilesoft Shell applique ensuite ses règles, qui peuvent renommer, déplacer, masquer ou ajouter des commandes et ont donc priorité. Les entrées grisées dans l’éditeur se modifient dans les fichiers de configuration de Nilesoft Shell.
 
-Les nouvelles actions de FileSpacer s’utilisent aussi dans `shell.nss` ou un fichier importé, avec `window.command` et l’identifiant de l’action. Par exemple, avec la condition `filespacer_title` définie dans la [référence de configuration](nilesoft-shell.md) :
+Les actions de FileSpacer sont utilisables dans la configuration de Nilesoft Shell. La [référence de configuration](nilesoft-shell.md) donne les réglages et les identifiants des actions. Exemple avec la condition `filespacer_title` qui y est définie :
 
 ```nss
 item(type='*' mode='multiple' where=filespacer_title
      title='Rétablir la disposition verrouillée' cmd=window.command(1123))
 ```
-
-La référence donne les autres actions et leurs identifiants.
-
-La [référence de configuration](nilesoft-shell.md) explique comment autoriser FileSpacer, conserver le thème et limiter à l’Explorateur les règles qui lui sont réservées. Après une modification, désenregistrer puis réenregistrer Nilesoft Shell l’applique aux menus nouvellement ouverts.
 
 Le thème Modern ci-dessous compare ses coins par défaut aux coins carrés recommandés.
 
@@ -165,17 +158,17 @@ Le thème Modern ci-dessous compare ses coins par défaut aux coins carrés reco
 
 ## Paramètres et mises à jour
 
-Ctrl+, ouvre les paramètres, même si la barre d’outils est masquée. L’interface suit la langue d’affichage de Windows, avec l’anglais comme repli ; un changement de langue nécessite un redémarrage. F1 ouvre le guide installé, également disponible hors connexion.
+Ctrl+, ouvre les paramètres ; F1 ouvre le guide hors connexion. L’interface suit la langue d’affichage de Windows ; un changement de langue nécessite un redémarrage.
 
-Les mises à jour se recherchent dans **Paramètres > À propos**. Le téléchargement et l’installation nécessitent une confirmation ; l’installation n’est jamais automatique. Les dossiers précédemment ouverts retrouvent ensuite leur disposition enregistrée. Les vérifications hebdomadaires sont facultatives et désactivées par défaut ; elles s’activent dans À propos.
+Les mises à jour se recherchent dans **Paramètres > À propos**, où les vérifications hebdomadaires facultatives peuvent aussi être activées. Elles sont désactivées par défaut. Le téléchargement et l’installation nécessitent une confirmation. Les dossiers précédemment ouverts retrouvent ensuite leur disposition enregistrée.
 
 ## Données locales
 
-Dispositions des dossiers, verrouillages, recherches et historique des dossiers fermés sont conservés dans `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. Les préférences générales, le menu de la barre de titre et les groupes de dossiers se trouvent dans le registre Windows, sous `HKEY_CURRENT_USER\Software\FileSpacer`. L’état enregistré peut contenir des chemins de dossiers, y compris réseau. Les fichiers temporaires de mise à jour et la liste des dossiers à rouvrir restent dans `%TEMP%\FileSpacerUpdate-{GUID}`.
+Dispositions, verrouillages, historiques et préférences sont conservés localement. Les emplacements de stockage sont décrits dans la [note technique de dépannage](../en/README.md#local-data) (en anglais).
 
 **Paramètres > À propos > Maintenance > Réinitialiser l’état de tous les dossiers** ferme les fenêtres de dossiers et efface leurs dispositions, historiques et verrouillages. Les fichiers et les préférences générales sont conservés.
 
-Pour le dépannage, `FileSpacer.exe /reset-options` réinitialise les préférences générales ; `/reset-all` efface aussi l’état des dossiers. Aucune de ces commandes ne supprime les fichiers, ne change les associations Windows ni n’efface les rapports de diagnostic existants.
+Pour le dépannage, `FileSpacer.exe /reset-options` réinitialise les préférences générales ; `/reset-all` efface aussi l’état des dossiers. Ces commandes conservent les fichiers.
 
 ## Confidentialité
 

@@ -2,14 +2,15 @@
 
 ## Fensternavigation
 
-Jeder Ordner hat ein Fenster, das sich Position, Größe und Ansichtseinstellungen merkt. Wird ein bereits geöffneter Ordner erneut geöffnet, aktiviert FileSpacer dessen Fenster. Beim Verschieben oder Umbenennen des Ordners bleibt die gespeicherte Anordnung erhalten.
+FileSpacer bietet eine flüssige, schlichte und anpassbare Oberfläche nach dem räumlichen Prinzip:
 
+- **Ein Ordner, ein Fenster.** Erneutes Öffnen eines bereits geöffneten Ordners bringt sein Fenster nach vorn. Position, Größe, Ansichtseinstellungen und Symbolanordnung bleiben auch nach dem Verschieben oder Umbenennen des Ordners erhalten.
 - Beim Öffnen eines Ordners oder seines übergeordneten Ordners wird das Ausgangsfenster standardmäßig geschlossen. Halten Sie Strg gedrückt, um dies einmalig umzukehren, oder ändern Sie den Standard unter **Einstellungen > Allgemein**. Beim Öffnen mehrerer ausgewählter Ordner bleibt das Ausgangsfenster geöffnet.
-- Über das Menü neben dem Ordnertitel wechseln Sie zwischen geöffneten Ordnern. **Übergeordnete Fenster schließen** schließt die geöffneten Vorgänger dieses Ordners, lässt andere Ordner aber geöffnet.
-- **Strg+Umschalt+T** oder **Zuletzt geschlossenes Fenster erneut öffnen** im Titelleistenmenü oder in der Sprungliste der Taskleiste öffnet einen geschlossenen Ordner erneut, ohne das aktuelle Fenster zu schließen. Anordnung und Auswahl werden wiederhergestellt; in den Ansichten Details und Liste auch die zuvor erste sichtbare Zeile. Der Taskleistenbefehl kann nacheinander weiter zurückliegende Schließvorgänge rückgängig machen.
+- Das Menü neben dem Ordnertitel wechselt zwischen geöffneten Ordnern. **Übergeordnete Fenster schließen** schließt die geöffneten übergeordneten Ordnerfenster.
+- **Strg+Umschalt+T** öffnet den zuletzt geschlossenen Ordner mit seiner Anordnung und Auswahl erneut. Der Befehl steht auch im Titelleistenmenü und in der Sprungliste der Taskleiste; dort lassen sich weiter zurückliegende Ordner aufrufen.
 - Über die Sprungliste der Taskleiste lassen sich auch Ordner öffnen, die im Schnellzugriff des Datei-Explorers angeheftet sind.
 
-Beim Wechsel zum übergeordneten Ordner wird der Ausgangsordner nicht ausgewählt. Ein bereits geöffnetes übergeordnetes Fenster behält seine Auswahl. Die Systemsteuerung öffnet sich in einem eigenen Windows-Fenster.
+Beim Wechsel zum übergeordneten Ordner wird der Ausgangsordner nicht ausgewählt. Ein bereits geöffnetes übergeordnetes Fenster behält seine Auswahl.
 
 ![Das Ordnertitelmenü mit Fensternavigation und Sperre des gespeicherten Fensterzustands.](images/window-menu-de.png)
 
@@ -21,25 +22,23 @@ In einer Symbolansicht können Sie Dateien und Unterordner frei platzieren, wenn
 
 ### Ansichtsoptionen
 
-**Vollständigen Namen einer ausgewählten Datei anzeigen** unter **Einstellungen > Anzeige** zeigt einen einzelnen ausgewählten Namen in der Symbolansicht vollständig an. Die Option ist standardmäßig aktiviert; Mehrfachauswahl und andere Ansichten bleiben unverändert.
+**Vollständigen Namen einer ausgewählten Datei anzeigen** unter **Einstellungen > Anzeige** macht den Namen einer einzelnen ausgewählten Datei in der Symbolansicht vollständig lesbar.
 
 ![Ein langer ausgewählter Dateiname wird in der Symbolansicht vollständig angezeigt.](images/selected-name-de.png)
 
-**Ansichtsmodi im Ansichtsmenü vorab anzeigen**, ebenfalls standardmäßig aktiviert, zeigt beim Darüberfahren eine Vorschau. Ein Klick übernimmt die Ansicht; Esc oder das Verlassen der Vorschau stellt die ursprüngliche Ansicht wieder her. Die gespeicherte Anordnung wird dabei nicht überschrieben.
+**Ansichtsmodi im Ansichtsmenü vorab anzeigen** zeigt den jeweiligen Modus beim Darüberfahren an. Ein Klick übernimmt ihn; Esc oder das Verlassen der Vorschau stellt die ursprüngliche Ansicht wieder her. Die Vorschau ist vorübergehend und ersetzt nicht die gespeicherte Anordnung.
 
-**Ordner und Dateien beim Sortieren mischen** sortiert beide gemeinsam, wie unter [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) und [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Die Option ist unter **Einstellungen > Anzeige > Dateien** standardmäßig deaktiviert. Sie gilt für Details, Liste und automatisch angeordnete Symbole; freie Anordnungen bleiben erhalten. Virtuelle Ordner und Archive behalten die Windows-Sortierung.
+**Ordner und Dateien beim Sortieren mischen** sortiert beide gemeinsam, wie unter [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) und [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Die Option unter **Einstellungen > Anzeige > Dateien** gilt für Details, Liste und automatisch angeordnete Symbole. Virtuelle Ordner und Archive behalten die Windows-Sortierung.
 
 ![Ordner und Dateien in einer gemeinsamen alphabetischen Reihenfolge.](images/mixed-sorting-de.png)
 
-Auch die Sichtbarkeit von Symbolleiste und Statusleiste lässt sich in den Einstellungen ändern.
-
 ### Fensterpositionierung
 
-**Einstellungen > Allgemein > Neue Fenster auf freiem Platz anordnen** ist standardmäßig aktiviert. Ordner ohne gespeicherte Position öffnen sich auf freiem Platz; ist keiner mehr verfügbar, werden Überlappungen möglichst klein gehalten. Gespeicherte Positionen haben Vorrang. Bei deaktivierter Option verwendet FileSpacer die Standardpositionierung von Windows, ohne vorhandene Fenster zu verschieben.
+Ordner ohne gespeicherte Position öffnen sich auf freiem Platz oder mit möglichst geringer Überlappung, wenn der Platz nicht reicht. Die Einstellung befindet sich unter **Einstellungen > Allgemein > Neue Fenster auf freiem Platz anordnen**.
 
 ### Auswahl und Aktivierung
 
-Wenn **Einstellungen > Allgemein > Auswahl beim Klicken auf inaktives Fenster beibehalten** aktiviert ist, aktiviert ein Klick auf den Hintergrund eines inaktiven Ordnerfensters dieses Fenster, ohne die Auswahl aufzuheben. Mit einem zweiten Drücken beginnen Sie ein Auswahlrechteck. Klicks auf Elemente, Rechtsklicks und Fenstergesten verhalten sich wie gewohnt.
+Wenn **Einstellungen > Allgemein > Auswahl beim Klicken auf inaktives Fenster beibehalten** aktiviert ist, aktiviert ein Klick auf den Hintergrund eines inaktiven Ordnerfensters dieses Fenster, ohne die Auswahl aufzuheben. Mit einem zweiten Drücken beginnen Sie ein Auswahlrechteck.
 
 ## Fenster verwalten
 
@@ -56,9 +55,9 @@ Fenster lassen sich durch Ziehen im Dateibereich verschieben oder in der Größe
 
 ![Fenstergröße mit Alt und der rechten Maustaste ändern.](images/resize-window-de.gif)
 
-Die Auswahl bleibt erhalten. Esc bricht den Vorgang ab. Textfelder, Spaltenköpfe, Bildlaufleisten, Symbolleisten und Menüs funktionieren wie gewohnt; Alt + Doppelklick öffnet die Eigenschaften eines Elements.
+Die Auswahl bleibt erhalten. Esc bricht den Vorgang ab.
 
-Unter **Einstellungen > Tastenkombinationen** lässt sich jede Aktion einzeln konfigurieren. Linke und rechte Maustaste erfordern Alt; die mittlere funktioniert auch ohne Alt. Zusatztasten müssen genau übereinstimmen; reservierte oder doppelte Belegungen werden abgelehnt. Änderungen gelten auch für offene Fenster. Zurücksetzen stellt die zuletzt übernommenen Belegungen wieder her, Abbrechen verwirft ausstehende Änderungen.
+Unter **Einstellungen > Tastenkombinationen** lässt sich jede Aktion einzeln konfigurieren. Linke und rechte Maustaste erfordern Alt; die mittlere funktioniert auch ohne Alt.
 
 ### Gespeicherten Fensterzustand sperren
 
@@ -66,13 +65,13 @@ Eine Sperre hält Position, Größe und Ansicht eines Ordners für das erneute �
 
 <img src="images/locked-title-de.png" alt="Nahaufnahme des Ordnertitels mit Schlosssymbol." width="280">
 
-Vorübergehende Änderungen bleiben möglich; beim erneuten Öffnen kehrt der gesperrte Zustand zurück. Einzelne Symbolpositionen werden weiterhin gespeichert. **Fensterzustand entsperren** behält die aktuelle Anordnung bei. Das Ausblenden des Schlosses hebt die Sperre nicht auf.
+Vorübergehende Änderungen bleiben möglich; beim erneuten Öffnen kehrt der gesperrte Zustand zurück. Einzelne Symbolpositionen werden weiterhin gespeichert. **Fensterzustand entsperren** behält die aktuelle Anordnung bei.
 
 Das Deaktivieren der Funktion erfordert eine Bestätigung und entfernt alle Sperren, auch bei geschlossenen Ordnern. Erneutes Aktivieren stellt sie nicht wieder her.
 
 ### Titelleistenmenü anpassen
 
-Das Menü lässt sich unter **Einstellungen > Anzeige > Oberflächenelemente > Titelleistenmenü anpassen** bearbeiten. Eine Aktion aus der rechten Liste in das Menü ziehen, einen Eintrag verschieben, um die Reihenfolge zu ändern, oder aus dem Menü ziehen, um ihn zu entfernen. **OK** übernimmt die Zusammenstellung für alle FileSpacer-Fenster; **Abbrechen** verwirft die Änderungen. Mit **Standardwerte** die ursprüngliche Zusammenstellung wiederherstellen und anschließend mit **OK** übernehmen.
+Das Menü lässt sich unter **Einstellungen > Anzeige > Oberflächenelemente > Titelleistenmenü anpassen** bearbeiten. Eine Aktion aus der rechten Liste in das Menü ziehen, einen Eintrag verschieben, um die Reihenfolge zu ändern, oder aus dem Menü ziehen, um ihn zu entfernen.
 
 Von Nilesoft Shell verwaltete Einträge lassen sich hier nicht ändern, da dessen Regeln Vorrang haben. Siehe [Nilesoft-Shell-Integration](#nilesoft-shell).
 
@@ -80,23 +79,21 @@ Von Nilesoft Shell verwaltete Einträge lassen sich hier nicht ändern, da desse
 
 ![Das Titelleistenmenü mit der Aktion Gesperrtes Fensterlayout wiederherstellen.](images/customized-title-menu-de.png)
 
-- **Gesperrtes Fensterlayout wiederherstellen** setzt das aktuelle Fenster auf sein Referenzlayout zurück, ohne es zu schließen oder seine Auswahl zu ändern. **Referenzlayout ersetzen** speichert die aktuelle Position, Größe und Ansicht nach Bestätigung als neue gesperrte Referenz.
+- **Gesperrtes Fensterlayout wiederherstellen** stellt die Referenzanordnung des Fensters wieder her. **Referenzlayout ersetzen** speichert nach Bestätigung die aktuelle Anordnung als neue gesperrte Referenz.
 
-- **Layout dieses Ordners verwerfen** entfernt das gespeicherte Layout und die Sperre, behält aber den Suchverlauf. Das Fenster bleibt an seiner Position und speichert bis zum Schließen kein Layout mehr; beim nächsten Öffnen gelten die Standardwerte. Das Sperren eines neuen Layouts aktiviert das Speichern wieder.
-
-- Weitere Aktionen schließen Unterordnerfenster oder die anderen FileSpacer-Fenster und passen das Fenster an seinen Inhalt an.
+- **Layout dieses Ordners verwerfen** löscht die gespeicherte Anordnung und Sperre, behält aber den Suchverlauf. Im aktuellen Fenster bleibt das Speichern bis zum Schließen ausgesetzt; beim nächsten Öffnen gelten die Standardeinstellungen. Das Sperren einer neuen Anordnung aktiviert das Speichern wieder.
 
 ### Ordnergruppen
 
-**Ordnergruppe speichern / öffnen** speichert die geöffneten Ordner unter einem Namen. Beim Öffnen einer Gruppe erhält jeder Ordner sein eigenes gespeichertes Layout; andere Fenster bleiben geöffnet. Das Löschen einer Gruppe entfernt nur die Liste, niemals die Ordner.
+**Ordnergruppe speichern / öffnen** speichert die geöffneten Ordner unter einem Namen. Beim Aufrufen der Gruppe öffnen sie sich mit ihren gespeicherten Anordnungen.
 
 ## Suche und Verlauf
 
-Geben Sie den Namen einer Datei oder eines Ordners ganz oder teilweise in das Suchfeld ein und drücken Sie die Eingabetaste oder klicken Sie auf die Lupe, um den aktuellen Ordner zu filtern. **Einstellungen > Allgemein > Beim Eingeben filtern** wendet den Filter bereits während der Eingabe an. Dieser lokale Filter startet Everything niemals automatisch.
+Geben Sie einen Datei- oder Ordnernamen ganz oder teilweise ein und drücken Sie die Eingabetaste, um den aktuellen Ordner zu filtern. **Einstellungen > Allgemein > Beim Eingeben filtern** wendet den Filter bereits während der Eingabe an.
 
-Beim Aktivieren des Felds werden die letzten Suchanfragen und, falls aktiviert, **In Everything suchen** angezeigt. Wählen Sie mit Pfeil nach oben/unten und der Eingabetaste oder per Mausklick einen Eintrag aus. Ohne ausgewählten Vorschlag wendet die Eingabetaste den lokalen Filter an. Esc schließt die Liste, ohne den Text zu löschen; Strg+F aktiviert das Feld erneut.
+Das Feld bietet letzte Suchanfragen und bei aktivierter Integration **In Everything suchen** für eine externe Suche an. Ohne ausgewählten Vorschlag wendet die Eingabetaste den lokalen Filter an. Strg+F aktiviert das Feld.
 
-Standardmäßig speichert jeder Ordner fünf unterschiedliche bestätigte Suchanfragen. In den allgemeinen Einstellungen können Sie die Grenze zwischen 0 und 20 festlegen; 0 leert und deaktiviert den Verlauf. Reines Tippen legt keinen Eintrag an. Siehe [Everything](#everything) für die Suche in Unterordnern oder allen indizierten Dateien.
+Der Suchverlauf wird pro Ordner geführt. Die Anzahl gespeicherter bestätigter Suchanfragen lässt sich in den allgemeinen Einstellungen festlegen; 0 leert und deaktiviert den Verlauf. [Everything](#everything) durchsucht auch Unterordner oder alle indizierten Dateien.
 
 ![Suchvorschläge mit Everything und letzten Suchanfragen zu fiktiven Projektdateien.](images/search-de.png)
 
@@ -108,27 +105,27 @@ FileSpacer lässt sich bei der Installation oder später unter **Einstellungen >
 
 Das Kontextmenü von Ordnern bietet **In FileSpacer öffnen**, beziehungsweise **Im Windows-Datei-Explorer öffnen**, wenn FileSpacer der Standard ist. Das gilt auch für Laufwerke, ZIP-Ordner, Netzwerkadressen und Ordnerhintergründe; die Standardanwendung muss dafür nicht geändert werden.
 
-Dateien öffnen sich in der zugeordneten Windows-Anwendung. Auch Netzwerkordner, Vorschauen und installierte Kontextmenübefehle verwenden das gewohnte Windows-Verhalten. **Datei-Explorer-Optionen** öffnet gemeinsame Ordnereinstellungen, von denen einige auch für FileSpacer gelten.
+**Datei-Explorer-Optionen** öffnet gemeinsame Ordnereinstellungen, von denen einige auch für FileSpacer gelten.
 
 ### PowerToys Grab And Move
 
-Wenn Grab And Move in den PowerToys-Einstellungen aktiviert ist, setzt FileSpacer seine Gesten zum Verschieben und zur Größenänderung für die betroffenen Fenster aus, auch wenn PowerToys nicht läuft. Die eingestellten Tastenkombinationen bleiben gespeichert.
+Wenn Grab And Move in den PowerToys-Einstellungen aktiviert ist, setzt FileSpacer seine Gesten zum Verschieben und zur Größenänderung für die betroffenen Fenster aus, auch wenn PowerToys nicht läuft.
 
-Um die FileSpacer-Gesten weiterzuverwenden, `FileSpacer.exe` zur Liste der ausgeschlossenen Apps von Grab And Move hinzufügen oder das Hilfsprogramm in PowerToys deaktivieren. Der Hinweis unter **Einstellungen > Tastenkombinationen** enthält einen direkten Link zu den Einstellungen von Grab And Move.
+Um die FileSpacer-Gesten weiterzuverwenden, `FileSpacer.exe` zur Liste der ausgeschlossenen Apps von Grab And Move hinzufügen oder das Hilfsprogramm in PowerToys deaktivieren.
 
 ### PowerToys Peek
 
-**Vorschau mit der Leertaste** unter **Einstellungen > Integration** zeigt mit der **Leertaste** allein eine Peek-Vorschau der ausgewählten Dateien oder Ordner auf einem Laufwerk oder einer Netzwerkfreigabe. Die Option ist standardmäßig deaktiviert; Texteingabe und Umbenennen funktionieren wie gewohnt.
+**Vorschau mit der Leertaste** unter **Einstellungen > Integration** öffnet mit der **Leertaste** allein eine Peek-Vorschau ausgewählter Dateien oder Ordner. Die Option ist standardmäßig deaktiviert.
 
-Peek muss auch in PowerToys aktiviert sein; der Link **PowerToys** unter der Option öffnet die zugehörigen Einstellungen. Diese Integration erfordert PowerToys 0.96 oder neuer, bei einer Mehrfachauswahl 0.102 oder neuer.
+Peek muss auch in PowerToys aktiviert sein. Die Integration erfordert PowerToys 0.96 oder neuer, für Mehrfachauswahl 0.102 oder neuer.
 
 ### Everything
 
 Ein vorhandenes [Everything](https://www.voidtools.com/) lässt sich einbinden, um erweiterte Suchanfragen direkt aus FileSpacers Suchfeld zu starten. Die Ergebnisse erscheinen in Everything.
 
-Die Option wird unter **Einstellungen > Integration** aktiviert. Everything wird automatisch oder mit **Erkennen** gefunden; eine portable Ausgabe lässt sich manuell auswählen. Gesucht wird im aktuellen Ordner samt Unterordnern oder **Überall**. Virtuelle Ordner erfordern Überall.
+Die Option wird unter **Einstellungen > Integration** aktiviert. Everything wird automatisch erkannt; eine portable Ausgabe lässt sich manuell auswählen. Als Suchbereich stehen der aktuelle Ordner mit Unterordnern oder **Überall** zur Verfügung; virtuelle Ordner erfordern Überall.
 
-**In Everything suchen** übergibt die eingegebene Anfrage in Everything-Syntax. Nach einem erfolgreichen Start werden FileSpacers Suchfeld und lokaler Filter geleert; bei einem Fehler bleiben beide für einen neuen Versuch erhalten.
+**In Everything suchen** startet die externe Suche mit der Everything-Syntax. Nach erfolgreichem Start werden das Suchfeld und der lokale Filter in FileSpacer geleert.
 
 ![Eine Suchanfrage in FileSpacer und daneben die passenden Ergebnisse in Everything.](images/everything-search-de.png)
 
@@ -138,16 +135,12 @@ Die Option wird unter **Einstellungen > Integration** aktiviert. Everything wird
 
 FileSpacer stellt zunächst das Titelleistenmenü zusammen. Danach wendet Nilesoft Shell seine Regeln an, die Befehle umbenennen, verschieben, ausblenden oder hinzufügen können und somit Vorrang haben. Grau dargestellte Einträge werden in den Konfigurationsdateien von Nilesoft Shell geändert.
 
-Die neuen FileSpacer-Aktionen lassen sich auch in `shell.nss` oder einer importierten Datei verwenden: mit `window.command` und der ID der Aktion. Beispiel mit der in der [Konfigurationsreferenz](nilesoft-shell.md) definierten Bedingung `filespacer_title`:
+FileSpacer-Aktionen lassen sich in der Nilesoft-Shell-Konfiguration verwenden. Die [Konfigurationsreferenz](nilesoft-shell.md) enthält Einstellungen und Aktions-IDs. Beispiel mit der dort definierten Bedingung `filespacer_title`:
 
 ```nss
 item(type='*' mode='multiple' where=filespacer_title
      title='Gesperrtes Fensterlayout wiederherstellen' cmd=window.command(1123))
 ```
-
-Die Referenz enthält die weiteren Aktionen und ihre IDs.
-
-Die [Konfigurationsreferenz](nilesoft-shell.md) beschreibt die Freigabe für FileSpacer, das Beibehalten des Designs und die Beschränkung Explorer-spezifischer Regeln. Nach Änderungen wendet erneutes Ab- und Anmelden von Nilesoft Shell die Konfiguration auf neu geöffnete Menüs an.
 
 Das folgende Modern-Design vergleicht die standardmäßigen Ecken mit den empfohlenen eckigen Menüs.
 
@@ -165,17 +158,17 @@ Das folgende Modern-Design vergleicht die standardmäßigen Ecken mit den empfoh
 
 ## Einstellungen und Updates
 
-Strg+, öffnet die Einstellungen auch bei ausgeblendeter Symbolleiste. Die Oberfläche folgt der Windows-Anzeigesprache, ersatzweise Englisch; ein Sprachwechsel erfordert einen Neustart. F1 öffnet das installierte Handbuch, das auch offline verfügbar ist.
+Strg+, öffnet die Einstellungen; F1 öffnet das Offline-Handbuch. Die Oberfläche folgt der Windows-Anzeigesprache; ein Sprachwechsel erfordert einen Neustart.
 
-Unter **Einstellungen > Info** lassen sich Updates suchen. Herunterladen und Installieren erfordern eine Bestätigung; die Installation erfolgt niemals automatisch. Anschließend werden die zuvor geöffneten Ordner mit ihrer gespeicherten Anordnung wiederhergestellt. Die optionalen wöchentlichen Prüfungen sind standardmäßig aus und können unter Info aktiviert werden.
+Unter **Einstellungen > Info** lassen sich Updates suchen und optionale wöchentliche Prüfungen aktivieren. Diese sind standardmäßig deaktiviert. Herunterladen und Installieren erfordern eine Bestätigung. Anschließend öffnen sich die zuvor geöffneten Ordner mit ihrer gespeicherten Anordnung.
 
 ## Lokale Daten
 
-Ordneranordnungen, Sperren, Suchanfragen und der Verlauf geschlossener Ordner liegen lokal in `%LOCALAPPDATA%\FileSpacer\folder-state.sqlite3`. Allgemeine Einstellungen, das Titelleistenmenü und Ordnergruppen stehen in der Windows-Registrierung unter `HKEY_CURRENT_USER\Software\FileSpacer`. Der gespeicherte Zustand kann Ordnerpfade einschließlich Netzwerkpfaden enthalten. Temporäre Update-Dateien und die Liste der wieder zu öffnenden Ordner bleiben unter `%TEMP%\FileSpacerUpdate-{GUID}`.
+Anordnungen, Sperren, Verläufe und Einstellungen werden lokal gespeichert. Die Speicherorte sind im [technischen Hinweis zur Fehlerbehebung](../en/README.md#local-data) beschrieben (auf Englisch).
 
 **Einstellungen > Info > Wartung > Alle Ordnerzustände zurücksetzen** schließt die Ordnerfenster und löscht deren gespeicherte Anordnungen, Verläufe und Sperren. Dateien und allgemeine Einstellungen bleiben erhalten.
 
-Zur Fehlerbehebung setzt `FileSpacer.exe /reset-options` allgemeine Einstellungen zurück; `/reset-all` löscht zusätzlich die gespeicherten Ordnerzustände. Beide Befehle lassen Dateien, Windows-Dateizuordnungen und vorhandene Diagnoseberichte unverändert.
+Zur Fehlerbehebung setzt `FileSpacer.exe /reset-options` allgemeine Einstellungen zurück; `/reset-all` löscht zusätzlich die gespeicherten Ordnerzustände. Dateien bleiben bei diesen Befehlen erhalten.
 
 ## Datenschutz
 
