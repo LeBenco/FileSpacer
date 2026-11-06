@@ -1,0 +1,4 @@
+101 RCDATA "build/baseline/FileSpacer.exe"
+102 RCDATA "build/baseline/FileSpacerFolder.dll"
+103 RCDATA "build/hybrid/FileSpacer.exe"
+104 RCDATA "build/hybrid/FileSpacerFolder.dll"
