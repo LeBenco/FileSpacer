@@ -5,16 +5,23 @@
 int visualMain(int argc,wchar_t **argv){
     if(argc!=4)return 2;
     presentation::outputRoot=argv[1];
+    if(std::wcscmp(argv[3],L"icons-cpu")==0||std::wcscmp(argv[3],L"profile-icons")==0||std::wcscmp(argv[3],L"content-cpu")==0){
+        presentation::enabled=false;profileSelection=std::wcscmp(argv[3],L"profile-icons")==0;
+        const wchar_t *operation=std::wcscmp(argv[3],L"content-cpu")==0?L"content":L"extra-large";
+        wchar_t *arguments[]={argv[0],argv[1],argv[2],const_cast<wchar_t *>(operation)};
+        const int status=comparisonProbeMain(4,arguments);if(!status&&profileSelection)require(snapshotCount.load()>=2,"Insufficient selection stack captures");return status;
+    }
     if(findSpec(argv[3]))return comparisonProbeMain(argc,argv);
     if(std::wcscmp(argv[3],L"api")==0)return desktopProbeMain(argc,argv);
     if(std::wcscmp(argv[3],L"placement-protocol")==0){presentation::enabled=false;wchar_t operation[]=L"api";wchar_t *arguments[]={argv[0],argv[1],argv[2],operation};return desktopProbeMain(4,arguments);}
-    if(std::wcscmp(argv[3],L"protocol")==0){
-        presentation::enabled=false;presentation::protocolOnly=true;
+    if(std::wcscmp(argv[3],L"protocol")==0||std::wcscmp(argv[3],L"api-all-views")==0){
+        const bool api=std::wcscmp(argv[3],L"api-all-views")==0;
+        presentation::enabled=false;presentation::protocolOnly=!api;comparisonLargestOnly=api;
         for(const auto &spec:viewSpecs){
             std::wstring root=std::wstring(argv[1])+L"\\"+spec.name;require(CreateDirectoryW(root.c_str(),nullptr)!=FALSE,"Protocol output directory unavailable");presentation::outputRoot=root;
             wchar_t *arguments[]={argv[0],&root[0],argv[2],const_cast<wchar_t *>(spec.name)};const int status=comparisonProbeMain(4,arguments);if(status)return status;
         }
-        std::puts("PASS eight-view setup protocol: geometry, pointer and selection; no GPU display timing measured");return 0;
+        std::puts(api?"PASS eight-view API comparison; no GPU display timing measured":"PASS eight-view setup protocol: geometry, pointer and selection; no GPU display timing measured");return 0;
     }
     if(std::wcscmp(argv[3],L"self-test")!=0)return 2;
     int result=0;HWND window=nullptr;
