@@ -277,7 +277,7 @@ Initialization requests one public repaint after duplication is ready, outside
 the measured operation. The self-test changes its known background at that point:
 the first desktop frame is not assumed to arrive on an otherwise static display.
 
-The ROI is clipped to the display work area and checked at nine points for another
+The ROI must fit the display work area and is checked at nine points for another
 covering window. This is an occupancy check, not a proof that every pixel stayed
 unoccluded. The workstation must remain free. The image reference is observational:
 at least 1.5 s after API return, at least 500 ms of unchanged ROI pixels, and a
@@ -295,12 +295,74 @@ new shadow warning corrected. The frame-history self-test checks that an early
 temporary match is not mistaken for the final continuous image, and that an
 unchanged image has no invented latency. AgentWin10 creates the duplication but
 supplies zero desktop frames, so GPU/pixel validation fails explicitly rather than
-falling back to API time. Real-frame timing remains to be validated by the packaged
-autotest on the free workstation. Clang-tidy and Cppcheck cover the changed
+falling back to API time. The subsequent workstation run passed the GPU autotest
+on an NVIDIA RTX 2000 Ada Generation Laptop GPU; its unequal Explorer viewport
+and delayed infotips motivated the equal-viewport protocol below.
+Clang-tidy and Cppcheck cover the changed
 observation/Desktop units plus the visual unit, including the new header. Static
 verdict remains REVIEW for the documented existing diagnostics and new non-defect
 suggestions on the initialized D3D output enum and a loop/algorithm style choice.
 No confirmed new defect remains; no product source changed in this extension.
+
+## Equal-viewport workstation comparison
+
+The new launcher defaults to `All`: one composed-pixel self-test, all eight
+presentations (extra-large, large, medium and small icons, List, Details, Tiles,
+Content), then placement. Each selection presentation uses the same 800 x 400
+physical-pixel public `IShellView::GetWindow` rectangle, including its native view
+chrome, on the primary monitor at matching DPI. The outer application frames may
+have different sizes. Setup adjusts each frame through `SetWindowPos`; dimensions
+are checked again for every measured operation. A mismatch fails instead of
+silently clipping the larger Explorer view.
+
+`capabilities.csv` records requested/read-back modes, icon sizes and HRESULTs.
+An unavailable or differently normalized mode is explicitly `UNSUPPORTED` and
+has no timing samples; successful execution must not be interpreted as coverage
+of an unsupported presentation. `viewport.csv` records the ROI, full view size,
+DPI and parked cursor position. The launcher aggregates these files and timing
+samples under a unique `results/comparison-*` directory.
+
+A blank owned topmost window parks the pointer outside the measured rectangle;
+the original position is restored on exit. This avoids delayed Shell infotips
+without changing user preferences. Placement uses the documented Shell
+[MinimizeAll](https://learn.microsoft.com/en-us/windows/win32/shell/ishelldispatch-minimizeall)
+and [UndoMinimizeALL](https://learn.microsoft.com/en-us/windows/win32/shell/ishelldispatch-undominimizeall)
+commands around the Desktop stage, retaining the visibility check and logging
+the covering HWND, class, title and PID on failure. The Desktop cannot be resized:
+it uses an 800 x 400 primary-monitor ROI while the controlled spatial host's
+whole public view is 800 x 400. The full Desktop geometry remains separately
+logged; equal ROI does not imply equal full Desktop size.
+
+`Run-Experiment.ps1 -Case VisualTiming -VisualScenario Protocol` verifies the
+eight-view setup, exact geometry, pointer and selection counts in AgentWin10
+without GPU capture. `PlacementProtocol` exercises the corresponding Desktop
+visibility/restoration and spatial-host setup. The driver selects the requested
+default in its owned temporary staged script before normal package hashing,
+because host environment variables are not inherited by the VM controller.
+These diagnostic scenarios do not provide composed-frame timings.
+
+Final validation (2026-11-06): MSVC Debug and the native `/W4` build pass without
+new warnings. AgentWin10's `experiment-visualtiming-f1f31ec2b2114f36a8c17cd58e39b7b3`
+passes all 24 application/presentation pairs at 800 x 400, 96 DPI, with exact
+mode/icon read-back and 48 selection/clear checks. The final viewport CSVs are
+parsed and checked for row count, dimensions and DPI.
+`experiment-visualtiming-1c2d3e6a13d041ef902e5d727062965f` passes all six placement
+operations with all 100 coordinates checked after each operation; Desktop state
+restoration is verified twice and `UndoMinimizeALL` succeeds. Desktop ROI and
+host view are both 800 x 400; full Desktop size is separately logged as 1024 x 768.
+This validates setup and restoration, not new GPU timings on the VM.
+
+Clang-tidy and Cppcheck finish for all three changed C++ units, with the visual
+unit covering the changed capture header and its real Windows/ATL dependencies.
+Compared with the preceding analysis, new diagnostics are Cppcheck's `find_if`
+style suggestion and `seekOnAppendedFile`. The seek queries the end position
+with `ftell` to emit exactly one CSV header; it does not attempt to change the
+append write position. The final VM CSVs confirm a single header and the expected
+rows. These are retained for REVIEW, together with the previously documented
+diagnostics; no confirmed new defect remains. The log-header correction was made
+after inspecting the first VM run, then both diagnostic scenarios were rerun.
+Logs and the preceding-analysis comparison are under
+`build/reactivity/presentation-analysis` and `presentation-analysis-before-v3`.
 
 The Desktop probe includes an explicit `recover` mode:
 
