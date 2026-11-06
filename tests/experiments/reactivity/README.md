@@ -869,8 +869,10 @@ but the legacy manager still performs quadratic membership checks. FileSpacer's
 existing Ctrl+A already reaches the native path. No tested public route removes
 the demonstrated quadratic cost while retaining the current free-position view.
 The matching native probes and isolated fixture form a reproducible case for a
-Windows implementation fix. The private lookup and container layouts above must
-not become FileSpacer runtime dependencies.
+Windows implementation fix. An optional internal optimization needs a negligible
+compatibility check and a native
+fallback before mutation when unavailable. Version matching alone does not qualify
+its functional, lifecycle or security behavior.
 
 Relevant public contracts:
 [FOLDERVIEWOPTIONS](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl/ne-shobjidl-folderviewoptions),
@@ -917,3 +919,46 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reacti
 The two private cases deliberately refuse a different guest Shell image. They
 must be re-investigated against matching images and symbols before any RVA or
 signature change; changing the hash alone would not validate the instrumentation.
+
+### Optional dispatch: compatibility cost and rejected direct binding
+
+An optimized operation may use a nonpublic mechanism when its absence or failed
+compatibility check simply retains the existing implementation. Check overhead
+must be negligible. Prefer a fixed, immutable table of typed, compiled operations,
+with an independent choice for selection, clear and placement. Cache process-wide
+compatibility once, then validate view-specific capabilities at creation and
+respect view lifetime/generation. A class hierarchy can carry state if several
+backends eventually justify it; changing the dispatch shape does not establish
+the safety of an internal call.
+
+Security qualification also applies: no executable address derived from folder
+contents, user-controlled identifiers or other untrusted data; no weakening of
+process protection for a runtime optimization; no selection of a backend solely
+because its code address or signature happens to match. Typed function pointers
+to compiled functions and normal C++ virtual dispatch both require correct
+signatures and lifetimes. The experimental instruction patches remain isolated
+causal probes, not product backends.
+
+A subsequent direct-method prototype tested a two-entry dispatch with the native
+clear as its default. An in-memory PE/PDB fingerprint, entry bytes and object
+checks selected an exact-build internal ClearSelection binding. The unknown-path
+arm retained the original call. No instruction was rewritten by this prototype.
+The run experiment-selectiondispatch-3171ba53ca3c476ab873b33493556fc9 is FAIL:
+
+* Forced absence: first check 1.500 microseconds; repeated dispatch choice
+  0.046 microseconds. Original selection/clear and all invariants pass.
+* Detected candidate: first check 24.300 microseconds; repeated compatibility
+  check 1.644 microseconds (1,000 iterations). These are VM samples, not a
+  startup guarantee on another machine.
+* Direct cache clear followed by native clear returns in 95.184 ms and leaves
+  zero visibly selected items, but GetSelection(FALSE) still returns the previous
+  5,000-item array. The consistency assertion correctly rejects it.
+
+This demonstrates that cheap detection and fallback alone are insufficient.
+The missed Shell cache/notification contract remains unresolved, and the direct
+object-offset/method binding has not qualified for production security or lifetime
+handling. No improvement is claimed from this failed candidate. Its source and
+logs are retained only under ignored build/rejected-selection-dispatch and the
+run directory; it was removed from the active experimental drivers. The validated
+six-case probes remain unchanged. No product backend or new runtime abstraction
+was added for a candidate that fails qualification.
