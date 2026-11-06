@@ -2,7 +2,7 @@
 
 ## Navigation entre les fenêtres
 
-FileSpacer propose une interface fluide, sobre et personnalisable, fondée sur le paradigme spatial :
+FileSpacer propose une interface fluide, sobre et personnalisable, basée sur le paradigme spatial :
 
 - **Un dossier, une fenêtre.** Rouvrir un dossier déjà ouvert ramène sa fenêtre au premier plan. Sa position, sa taille, son affichage et la disposition de ses icônes sont mémorisés, même après déplacement ou renommage du dossier.
 - Ouvrir un dossier ou son parent ferme par défaut la fenêtre source. Ctrl inverse ce comportement une fois ; le réglage se change dans **Paramètres > Général**. Ouvrir plusieurs dossiers sélectionnés conserve la fenêtre source.
