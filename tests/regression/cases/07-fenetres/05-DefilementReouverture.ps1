@@ -1,11 +1,14 @@
-﻿# Test-Category: UI
+# Test-Category: UI
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
 . (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
-function Get-TopIndex([IntPtr]$Window) {
-    # LVM_GETTOPINDEX, read-only bench query on the classic ListView: the real scroll position.
-    $lists=@([FileSpacerRegression.Native]::Children((Use-UiView $Window {param($v) $v.Window}),'SysListView32'))
-    Assert-Ui ($lists.Count -eq 1) 'Exactly one classic ListView is required.'
-    return [FileSpacerRegression.Native]::Message($lists[0],0x1027,0,0)
+. (Join-Path $PSScriptRoot '..\..\common\ViewLayout.ps1')
+function Get-ScrollPercent([IntPtr]$Window) {
+    $view=Use-UiView $Window {param($v) $v.Window}
+    $processId=[uint32]0
+    [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($Window,[ref]$processId)
+    $percent=[FileSpacerRegression.ViewLayout]::VerticalScrollPercent($view,[int]$processId)
+    Write-Host "MEASURE: HWND=$Window vertical_scroll_percent=$percent"
+    return $percent
 }
 $testFailure=$null
 try {
@@ -20,18 +23,20 @@ try {
     Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($otherWindow,[IntPtr]::Zero,($work.Right-310),($work.Bottom-210),300,200,0x14)) 'Cannot place the other window.'
     Activate-Ui $window
     Assert-Ui ((Use-UiView $window {param($v) $v.Mode}) -eq 4) 'The fixture must open in Details view.'
+    $initial=Get-ScrollPercent $window
     # Scroll by revealing an item far down the list, without selecting or focusing it.
     Use-UiView $window {param($v) $v.Reveal('item-120.txt')}
     $seen=@{Before=-1; After=-1}
-    Wait-Ui { $seen.Before=Get-TopIndex $window; $seen.Before -gt 0 } 'the list scrolled after revealing a far item' 300 5
-    Write-Host "STEP: top index before closing: $($seen.Before)"
+    Wait-Ui { $seen.Before=Get-ScrollPercent $window; $seen.Before -gt $initial } 'the list scrolled after revealing a far item' 300 5
+    Write-Host "STEP: vertical scroll percent before closing: $($seen.Before)"
     Assert-UiSelected $window ''
     Close-UiFolder $window
     Assert-Ui ([FileSpacerRegression.Native]::PostMessage($otherWindow,0x111,[IntPtr](Get-UiId 'IDM_REOPEN_WINDOW'),[IntPtr]::Zero)) 'Reopen command failed.'
     $window=Track-UiFolder $folder
     Wait-Ui { (Use-UiView $window {param($v) $v.Count}) -eq 200 } 'reopened folder enumerated' 0 10
-    # Same saved window size: revealing the saved last displayed item restores the same top row.
-    Wait-Ui { $seen.After=Get-TopIndex $window; $seen.After -eq $seen.Before } ('reopened top index '+$seen.Before+' (last observed: '+$seen.After+')') 500 10
+    # With 200 rows, 0.5 percent of the scroll range is less than one row.
+    # Preserve the visible rows without requiring an exact sub-row pixel offset.
+    Wait-Ui { $seen.After=Get-ScrollPercent $window; [Math]::Abs($seen.After-$seen.Before) -lt 0.5 } ('reopened scroll percent '+$seen.Before+' (last observed: '+$seen.After+')') 500 10
     Assert-UiSelected $window ''
     Write-Host 'PASS: reopening a closed Details window restores its scroll position without selecting anything.'
 } catch { $testFailure=$_; throw }
