@@ -21,6 +21,10 @@
 #include <processsnapshot.h>
 #include <dbghelp.h>
 #include <psapi.h>
+#include <cstring>
+#ifdef FILESPACER_VISUAL_TIMING
+#include "PresentationTiming.h"
+#endif
 
 namespace {
 using Handle = std::unique_ptr<void, decltype(&CloseHandle)>;
@@ -168,6 +172,11 @@ BOOL CALLBACK windowObserved(HWND window,LPARAM context){
     std::fwprintf(out,L"%p\t%ls\tstyle=%08llX\n",window,name,static_cast<unsigned long long>(GetWindowLongPtrW(window,GWL_STYLE)));return TRUE;
 }
 HRESULT measure(Target &t,const char *app,int n,int repetition,const char *operation,const std::function<HRESULT()> &action){
+#ifdef FILESPACER_VISUAL_TIMING
+    HWND body=nullptr;require(SUCCEEDED(t.shell->GetWindow(&body))&&body,"Visible view unavailable");
+    const std::string visualLabel=std::string(app)+"-"+operation+"-"+std::to_string(repetition);
+    presentation::Observation visible(body,presentation::outputRoot+L"\\"+std::wstring(visualLabel.begin(),visualLabel.end()));
+#endif
     Handle process(OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,FALSE,t.processId),&CloseHandle);
     const double before=cpu(process.get());
     std::atomic<bool> stop{false},monitorDone{false},completed{false};double lag=0;unsigned timeouts=0;bool probed=false;
@@ -198,7 +207,14 @@ HRESULT measure(Target &t,const char *app,int n,int repetition,const char *opera
         FILE *tree=nullptr;const std::wstring treeFile=observationRoot+L"\\"+std::wstring(label.begin(),label.end())+L"-windows.txt";
         if(_wfopen_s(&tree,treeFile.c_str(),L"wb")==0){windowObserved(t.window,reinterpret_cast<LPARAM>(tree));EnumChildWindows(t.window,windowObserved,reinterpret_cast<LPARAM>(tree));std::fclose(tree);}
     }
-    const double began=now();HRESULT result=action();const double duration=now()-began;
+    const double began=now();
+#ifdef FILESPACER_VISUAL_TIMING
+    visible.begin();
+#endif
+    HRESULT result=action();const double duration=now()-began;
+#ifdef FILESPACER_VISUAL_TIMING
+    visible.apiReturned();
+#endif
     completed.store(true);if(sampler.joinable())sampler.join();
     pump(500);stop.store(true);
     // A controlled native host uses this STA too: serve its last WM_NULL before
@@ -210,6 +226,9 @@ HRESULT measure(Target &t,const char *app,int n,int repetition,const char *opera
     int count=-1,selected=-1;t.view->ItemCount(SVGIO_ALLVIEW,&count);t.view->ItemCount(SVGIO_SELECTION,&selected);
     row(app,n,repetition,operation,result,duration,lag,timeouts,cpu(process.get())-before,
         (t.sink?t.sink->enumerated:0)-enumeration,(t.sink?t.sink->changed:0)-changed,count,selected);
+#ifdef FILESPACER_VISUAL_TIMING
+    visible.finish();
+#endif
     return result;
 }
 void extract(int id,const std::wstring &path){
