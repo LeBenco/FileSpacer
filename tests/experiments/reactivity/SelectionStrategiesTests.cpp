@@ -229,7 +229,10 @@ void selectionRestore(const wchar_t *root,const wchar_t *path,bool errorsOnly,bo
     }
 }
 }
-int wmain(int argc,wchar_t **argv){
+#ifndef FILESPACER_SELECTION_PROBE_MAIN
+#define FILESPACER_SELECTION_PROBE_MAIN wmain
+#endif
+int FILESPACER_SELECTION_PROBE_MAIN(int argc,wchar_t **argv){
 #ifdef FILESPACER_SELECTION_OPTIMIZED
     std::puts("BUILD /O2; C++14; debug CRT /MTd; _ITERATOR_DEBUG_LEVEL=0; reference and candidate share the same build");std::fflush(stdout);
 #endif
