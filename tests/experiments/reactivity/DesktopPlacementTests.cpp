@@ -9,6 +9,8 @@
 namespace {
 constexpr DWORD positionFlags = FWF_AUTOARRANGE | FWF_SNAPTOGRID;
 bool apiOnly=false;
+bool profilePositions=false;
+SIZE desktopSize={};int desktopIconSize=0;
 constexpr int spatialItems=100;
 struct Desktop {
     CComPtr<IShellView> shell;
@@ -101,10 +103,40 @@ void restoreDesktop(const std::wstring &root){
 std::atomic<bool> dragEnded{false};std::atomic<DWORD> dragEndTick{0};
 void CALLBACK dragObserved(HWINEVENTHOOK,DWORD event,HWND,LONG,LONG,DWORD,DWORD tick){if(event==EVENT_SYSTEM_DRAGDROPEND){dragEndTick.store(tick);dragEnded.store(true);}}
 void mouseButton(DWORD flags){INPUT input={};input.type=INPUT_MOUSE;input.mi.dwFlags=flags;require(SendInput(1,&input,sizeof(input))==1,"Mouse input rejected");}
+void profilePlacement(IFolderView2 *view,HWND body,std::vector<PCUITEMID_CHILD> &ids,const std::vector<POINT> &points,const std::wstring &root,const char *label){
+    DWORD pid=0;const DWORD thread=GetWindowThreadProcessId(body,&pid);const std::string name(label);const std::wstring wide(name.begin(),name.end());
+    std::atomic<bool> stop{false},done{false},started{false};std::atomic<unsigned> iterations{0};
+    std::thread sampler([&](){
+        try{
+            while(!started.load()&&!stop.load())Sleep(1);
+            for(int sample=0;sample<5&&!stop.load();++sample){
+                const unsigned before=iterations.load();
+                snapshot(pid,thread,root+L"\\"+wide+L"-position-sample-"+std::to_wstring(sample)+L".dmp");
+                std::printf("PROFILE %s sample=%d iterations_before=%u iterations_after=%u\n",label,sample,before,iterations.load());std::fflush(stdout);
+            }
+        }catch(const std::exception &error){std::fprintf(stderr,"Position profiling failed: %s\n",error.what());}
+        done.store(true);
+    });
+    struct Sampling{std::atomic<bool>&stop,&done;std::thread &worker;~Sampling(){stop.store(true);while(!done.load())pump(5);if(worker.joinable())worker.join();}}sampling{stop,done,sampler};
+    std::vector<POINT> shifted(16);const ULONGLONG deadline=GetTickCount64()+45000;unsigned count=0;
+    while(!done.load()&&GetTickCount64()<deadline){
+        for(size_t i=0;i<shifted.size();++i)shifted[i]={points[i].x+((count%2)?16:32),points[i].y+16};
+        started.store(true);
+        require(SUCCEEDED(view->SelectAndPositionItems(16,ids.data(),shifted.data(),SVSI_POSITIONITEM|SVSI_NOSTATECHANGE)),"Diagnostic positioning failed");
+        iterations.store(++count);pump(0);
+    }
+    require(done.load()&&count>0,"Position profiling exceeded its watchdog");
+    for(size_t i=0;i<ids.size();++i){POINT actual={};const POINT expected=i<16?shifted[i]:points[i];require(SUCCEEDED(view->GetItemPosition(ids[i],&actual))&&actual.x==expected.x&&actual.y==expected.y,"Diagnostic positioning changed an unexpected coordinate");}
+    std::printf("PROFILE %s completed iterations=%u; all %zu coordinates verified; diagnostic timings excluded\n",label,count,ids.size());std::fflush(stdout);
+}
 void dragPlacement(IShellView *shell,IFolderView2 *view,HWND frame,std::vector<PCUITEMID_CHILD> &ids,const std::wstring &root,const char *label,bool guardedSeed=false){
     require(ids.size()==spatialItems,"Wrong drag fixture size");require(SUCCEEDED(view->SetCurrentFolderFlags(positionFlags,0))&&view->GetAutoArrange()==S_FALSE,"Free placement unavailable");
     HWND body=nullptr;require(SUCCEEDED(shell->GetWindow(&body)),"No view window");
     RECT bounds={};GetClientRect(body,&bounds);POINT position={(bounds.right-bounds.left)/2,(bounds.bottom-bounds.top)/2};
+    FOLDERVIEWMODE mode=FVM_AUTO;int iconSize=0;DWORD flags=0;
+    require(SUCCEEDED(view->GetViewModeAndIconSize(&mode,&iconSize))&&SUCCEEDED(view->GetCurrentFolderFlags(&flags)),"View metadata unavailable");
+    std::printf("METADATA %s mode=%d icon_size=%d dpi=%u view_client=%ldx%ld flags=0x%08lX\n",label,static_cast<int>(mode),iconSize,GetDpiForWindow(body),bounds.right-bounds.left,bounds.bottom-bounds.top,flags);std::fflush(stdout);
+    if(std::strcmp(label,"Explorer-Desktop")==0){desktopSize={bounds.right-bounds.left,bounds.bottom-bounds.top};desktopIconSize=iconSize;}
     std::vector<POINT> points(ids.size(),position);
     if(apiOnly)for(size_t i=0;i<points.size();++i){const POINT p={30+static_cast<LONG>(i%10)*70,30+static_cast<LONG>(i/10)*50};points[i]=filespacer::scaleDPI(filespacer::invScaleDPI(p));}
     DWORD pid=0;const DWORD thread=GetWindowThreadProcessId(body,&pid);
@@ -140,7 +172,9 @@ void dragPlacement(IShellView *shell,IFolderView2 *view,HWND frame,std::vector<P
             require(SUCCEEDED(measure(target,label,spatialItems,repetition,"position_16",[&](){return view->SelectAndPositionItems(16,ids.data(),partial.data(),SVSI_POSITIONITEM|SVSI_NOSTATECHANGE);})),"Public icon move failed");
             for(size_t i=0;i<ids.size();++i){POINT actual={};const POINT expected=i<16?partial[i]:points[i];require(SUCCEEDED(view->GetItemPosition(ids[i],&actual))&&actual.x==expected.x&&actual.y==expected.y,"Coordinate verification failed");}
             std::printf("API %s repetition=%d all %d coordinates verified\n",label,repetition,spatialItems);std::fflush(stdout);
-        }return;
+        }
+        if(profilePositions)profilePlacement(view,body,ids,points,root,label);
+        return;
     }
     require(SUCCEEDED(shell->SelectItem(nullptr,SVSI_DESELECTOTHERS))&&SUCCEEDED(view->SelectAndPositionItems(spatialItems,ids.data(),nullptr,SVSI_SELECT|SVSI_NOTAKEFOCUS)),"Drag selection failed");pump(500);
     int selected=0;require(SUCCEEDED(view->ItemCount(SVGIO_SELECTION,&selected))&&selected==spatialItems,"Incomplete drag selection");
@@ -218,24 +252,34 @@ struct HostEvents:IExplorerBrowserEvents{
     STDMETHODIMP OnNavigationFailed(PCIDLIST_ABSOLUTE)override{return S_OK;}
     STDMETHODIMP OnViewCreated(IShellView *)override{return S_OK;}
 };
-void runSpatialHost(const std::wstring &root,const std::wstring &fixture){
+void runSpatialHost(const std::wstring &root,const std::wstring &fixture,bool positionOnly=false){
     filespacer::initDPI();WNDCLASSW wc={};wc.hInstance=GetModuleHandleW(nullptr);wc.lpfnWndProc=DefWindowProcW;wc.lpszClassName=L"FileSpacer Spatial Placement Host";require(RegisterClassW(&wc)!=0,"Host class unavailable");
     struct Frame{HWND window=nullptr;filespacer::ShellViewHost host;~Frame(){host.destroy();if(window)DestroyWindow(window);UnregisterClassW(L"FileSpacer Spatial Placement Host",GetModuleHandleW(nullptr));}}frame;
     frame.window=CreateWindowW(wc.lpszClassName,L"Spatial placement control",WS_OVERLAPPEDWINDOW|WS_VISIBLE,50,50,850,600,nullptr,nullptr,wc.hInstance,nullptr);require(!!frame.window,"Host frame unavailable");
     RECT bounds={};GetClientRect(frame.window,&bounds);FOLDERSETTINGS initial={FVM_ICON,FWF_AUTOARRANGE|FWF_NOWEBVIEW|FWF_NOHEADERINALLVIEWS};CComPtr<HostEvents> events;events.Attach(new HostEvents);
-    require(SUCCEEDED(frame.host.initialize(frame.window,bounds,initial,nullptr,events)),"Production host initialization failed");
+    const auto profile=positionOnly?FVO_CUSTOMPOSITION:static_cast<FOLDERVIEWOPTIONS>(FVO_CUSTOMPOSITION|FVO_CUSTOMORDERING);
+    require(SUCCEEDED(frame.host.initialize(frame.window,bounds,initial,nullptr,events,profile)),"Production host initialization failed");
     CComPtr<IShellItem> folder;require(SUCCEEDED(SHCreateItemFromParsingName(fixture.c_str(),nullptr,IID_PPV_ARGS(&folder)))&&SUCCEEDED(frame.host.navigate(folder,false,true)),"Host fixture unavailable");
     CComPtr<IFolderView2> view;int count=0;const ULONGLONG deadline=GetTickCount64()+45000;
     do{view.Release();if(SUCCEEDED(frame.host.currentView(IID_PPV_ARGS(&view))))view->ItemCount(SVGIO_ALLVIEW,&count);if(count==spatialItems)break;pump(20);}while(GetTickCount64()<deadline);require(view&&count==spatialItems,"Host fixture incomplete");
     CComQIPtr<IShellView> shell(view);require(!!shell,"Host view unavailable");CComPtr<IEnumIDList> items;require(SUCCEEDED(view->Items(SVGIO_ALLVIEW,IID_PPV_ARGS(&items))),"Host enumeration unavailable");
     std::vector<std::unique_ptr<ITEMID_CHILD,decltype(&CoTaskMemFree)>> owned;std::vector<PCUITEMID_CHILD> ids;
     for(int i=0;i<spatialItems;++i){CComHeapPtr<ITEMID_CHILD> id;require(items->Next(1,&id,nullptr)==S_OK,"Short host enumeration");ids.push_back(id);owned.emplace_back(id.Detach(),&CoTaskMemFree);}
-    dragPlacement(shell,view,frame.window,ids,root,"FileSpacer-native-host",true);
+    dragPlacement(shell,view,frame.window,ids,root,positionOnly?"FileSpacer-position-only":"FileSpacer-native-host",true);
+    if(profilePositions&&!positionOnly){
+        require(desktopSize.cx>0&&desktopSize.cy>0&&desktopIconSize>0,"Desktop geometry metadata unavailable");
+        RECT outer={0,0,desktopSize.cx,desktopSize.cy};require(AdjustWindowRectEx(&outer,WS_OVERLAPPEDWINDOW,FALSE,0)!=FALSE,"Matched geometry unavailable");
+        require(SetWindowPos(frame.window,nullptr,0,0,outer.right-outer.left,outer.bottom-outer.top,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE)!=FALSE,"Matched frame resize failed");
+        GetClientRect(frame.window,&bounds);require(SUCCEEDED(frame.host.setBounds(bounds)),"Matched host resize failed");
+        require(SUCCEEDED(view->SetViewModeAndIconSize(FVM_ICON,desktopIconSize)),"Matched icon size unavailable");pump(500);
+        dragPlacement(shell,view,frame.window,ids,root,"FileSpacer-larger-host",true);
+    }
 }
 }
-int wmain(int argc,wchar_t **argv){
+int desktopProbeMain(int argc,wchar_t **argv){
     if((argc!=3&&argc!=4)||FAILED(OleInitialize(nullptr)))return 2;QueryPerformanceFrequency(&frequency);int result=0;
-    apiOnly=argc==4&&std::wcscmp(argv[3],L"api")==0;
+    profilePositions=argc==4&&std::wcscmp(argv[3],L"profile")==0;
+    apiOnly=profilePositions||(argc==4&&std::wcscmp(argv[3],L"api")==0);
     const std::wstring root=argv[1];observationRoot=root;filespacer::initDPI();
     try{
         if(std::wcscmp(argv[2],L"recover")==0)restoreDesktop(root);
@@ -245,8 +289,11 @@ int wmain(int argc,wchar_t **argv){
             require(_wfopen_s(&waits,(root+L"\\wait-chains.csv").c_str(),L"wb")==0,"No wait-chain log");
             std::fputs(apiOnly?"app,items,repetition,operation,hresult,call_ms,max_ping_ms,ping_timeouts,cpu_ms,enum_events,change_events,observed_items,observed_selection\n":"app,repetition,positions_observed_ms,max_ping_ms,ping_timeouts,drag_end_event,drag_end_ms\n",csv);
             try{runDesktop(root);}catch(const std::exception &error){std::fprintf(stderr,"Desktop experiment failed: %s\n",error.what());restoreDesktop(root);throw;}
-            restoreDesktop(root);if(apiOnly)runSpatialHost(root,argv[2]);else runFileSpacer(root,argv[2]);std::fclose(csv);csv=nullptr;
+            restoreDesktop(root);if(apiOnly){runSpatialHost(root,argv[2]);if(profilePositions)runSpatialHost(root,argv[2],true);}else runFileSpacer(root,argv[2]);std::fclose(csv);csv=nullptr;
         }
     }catch(const std::exception &error){std::fprintf(stderr,"FAIL: %s\n",error.what());result=1;}
     if(csv){std::fclose(csv);csv=nullptr;}if(waits){std::fclose(waits);waits=nullptr;}OleUninitialize();return result;
 }
+#ifndef FILESPACER_VISUAL_TIMING
+int wmain(int argc,wchar_t **argv){return desktopProbeMain(argc,argv);}
+#endif
