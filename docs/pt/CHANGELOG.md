@@ -21,10 +21,10 @@
 
 ## 1.2.3 — 2026-10-30
 
-- Corrige as identidades, as sobreposições de ícones e as notificações de pastas na ordenação mista; conserva as posições livres dos ícones e usa vistas nativas quando o fornecedor está indisponível ou é incompatível.
+- Corrige as identidades, as sobreposições de ícones e as notificações de pastas na ordenação mista. Conserva as posições livres dos ícones e usa vistas nativas quando o fornecedor está indisponível ou é incompatível.
 - Garante uma única janela de Preferências entre processos e corrige a validação dos atalhos, os caminhos do Everything, as teclas de acesso e as traduções regionais.
 - Corrige o fecho de pastas, os cliques de ativação e a reposição após a pré-visualização do menu Ver.
-- Corrige a atualização das Jump Lists e os diagnósticos do instalador; conserva os ficheiros de ajuda do utilizador durante atualizações e a desinstalação.
+- Corrige a atualização das Jump Lists e os diagnósticos do instalador. Conserva os ficheiros de ajuda do utilizador durante atualizações e a desinstalação.
 - Inclui ajuda multilingue offline através de F1 e Acerca de e atualiza os guias de configuração traduzidos e as referências do Nilesoft Shell.
 
 ## 1.2.2 — 2026-10-28
@@ -48,10 +48,10 @@
 
 - Pede confirmação do Windows apenas ao instalar ou desinstalar para todos os utilizadores e aplica as escolhas pessoais de integração ao utilizador que iniciou a instalação.
 - Mostra o histórico completo de versões num painel Novidades com deslocamento, ao lado das opções de instalação no primeiro ecrã.
-- Corrige a reposição das escolhas dos componentes durante as atualizações; restaura as seleções guardadas e conserva o gestor de ficheiros predefinido nas atualizações silenciosas.
+- Corrige a reposição das escolhas dos componentes durante as atualizações. Restaura as seleções guardadas e conserva o gestor de ficheiros predefinido nas atualizações silenciosas.
 - Usa a mesma barra lateral do FileSpacer, o logótipo grande e a paleta cinzento-claro e branca em todos os ecrãs de instalação e desinstalação. Dá ao instalador um ícone próprio, composto pelos mapas de bits nativos da aplicação e por uma seta de transferência otimizada separadamente para cada tamanho, conservando um rebordo amarelo fino à direita e em baixo da pasta.
 - Corrige falhas ao encerrar causadas pela inicialização antecipada de dados de pastas locais ao thread em threads de trabalho tardias da Shell.
-- Oferece Abrir no Explorador de Ficheiros do Windows nos menus de contexto das pastas quando o FileSpacer é predefinido, e Abrir no FileSpacer no caso contrário; atualiza os menus ao mudar a escolha, após a instalação e no arranque.
+- Oferece Abrir no Explorador de Ficheiros do Windows nos menus de contexto das pastas quando o FileSpacer é predefinido, e Abrir no FileSpacer no caso contrário. Atualiza os menus ao mudar a escolha, após a instalação e no arranque.
 - Corrige a abertura de atalhos de servidores e partilhas de rede no Explorador de Ficheiros quando o FileSpacer é predefinido. Atualize o componente do menu de contexto das pastas e volte a selecionar o FileSpacer como predefinido para ativar a integração de rede.
 - Aumenta o ícone da aplicação no separador Acerca de para 48 píxeis à escala de 100 %, com o texto ao lado.
 - Mantém os títulos das janelas maximizadas totalmente visíveis e estende a barra de ferramentas por toda a largura disponível.
@@ -97,7 +97,7 @@
 ## 1.1.5 — 2026-10-26
 
 - Corrige a criação involuntária de um atalho após Alt + duplo clique seguido de movimento do rato. Conserva as propriedades nativas, a seleção e o foco sem reproduzir uma pressão mantida de um botão.
-- Corrige os testes dos tempos nativos do duplo clique e dos alvos físicos do rato; compara propriedades, seleção, foco, âncora da seleção, geometria e conteúdo das pastas com e sem gestos de janela, incluindo combinações Ctrl/Shift.
+- Corrige os testes dos tempos nativos do duplo clique e dos alvos físicos do rato. Compara propriedades, seleção, foco, âncora da seleção, geometria e conteúdo das pastas com e sem gestos de janela, incluindo combinações Ctrl/Shift.
 - Isola o executável real de teste do Everything e o respetivo INI de arranque para que a definição de administrador instalada pelo utilizador não possa redirecionar pesquisas de teste nem pedir elevação de privilégios. Verifica que as definições instaladas ficam inalteradas.
 - Mantém o ambiente de trabalho ativo e suspende temporariamente a proteção de ecrã durante os testes de interface, repondo o estado inicial na limpeza, mesmo após falhas nos testes.
 
@@ -111,7 +111,7 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 - Mostra automaticamente o Everything e as pesquisas recentes ao ativar o campo existente, sem um botão adicional. Conserva a pesquisa nativa, a filtragem imediata e a reutilização de consultas locais.
 - Memoriza por predefinição cinco pesquisas recentes por pasta entre sessões, com um limite de zero a vinte independente do Everything. Conserva os dados existentes e limpa o histórico segundo a política prudente do estado das pastas.
 - Mostra o ícone do executável do Everything no tamanho adequado, com extração em segundo plano e uma cache em memória atualizada quando o executável muda.
-- Adiciona testes de regressão de armazenamento isolado, migração e integração real Shell/Everything; torna o leitor de testes da Shell robusto perante alterações da vista por filtros sucessivos.
+- Adiciona testes de regressão de armazenamento isolado, migração e integração real Shell/Everything. Torna o leitor de testes da Shell robusto perante alterações da vista por filtros sucessivos.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
 
@@ -119,7 +119,7 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 
 - Adiciona o separador Atalhos às definições para configurar ou desativar os gestos de movimento e redimensionamento com teclas modificadoras e os botões esquerdo, central ou direito, com captura direta e validação de conflitos.
 - Deixa a gestão de Alt + duplo clique nas propriedades à vista nativa do Explorador.
-- Restaura os nomes completos sobre fundo opaco para um único elemento selecionado no modo Ícones. As seleções múltiplas conservam a apresentação nativa do Windows; o texto da preferência esclarece agora o seu âmbito.
+- Restaura os nomes completos sobre fundo opaco para um único elemento selecionado no modo Ícones. As seleções múltiplas conservam a apresentação nativa do Windows. O texto da preferência esclarece agora o seu âmbito.
 - Adiciona testes exaustivos dos atalhos e dos gestos reais do rato, com recursos de definições franceses e ingleses.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.1.2...v1.1.3)
@@ -131,7 +131,7 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 - Confirma a desativação global do bloqueio, remove os bloqueios guardados de pastas abertas e fechadas e retoma o armazenamento normal entre processos.
 - Amplia os testes de regressão às transições do bloqueio, falhas de persistência, restauro da Shell e apresentação nativa do indicador.
 - Reabrir uma pasta fechada com Ctrl+Shift+T ou as Listas de Atalhos volta a colocar no topo dos modos Detalhes e Lista a linha que aí se encontrava ao fechar.
-- O diagnóstico de falhas continua a escrever um minidump e um relatório nos dados locais da aplicação; remove a atribuição à antiga apresentação de nomes completos, a alteração automática da respetiva preferência e o reinício.
+- O diagnóstico de falhas continua a escrever um minidump e um relatório nos dados locais da aplicação. Remove a atribuição à antiga apresentação de nomes completos, a alteração automática da respetiva preferência e o reinício.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.1.1...v1.1.2)
 
@@ -150,7 +150,7 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 - Abre o Painel de Controlo numa janela própria do Windows, conservando a pasta de origem e a seleção.
 - Remove a seleção automática da pasta de origem ao subir a uma pasta superior por motivos ergonómicos: seleções posteriores com Ctrl não devem abrir ambas as pastas por engano.
 - Aceita três diferenças nesta versão: não estão disponíveis a apresentação personalizada de nomes selecionados completos sobre fundo opaco, a conservação da seleção na ativação nem a reposição exata do deslocamento. Desativa os dois controlos de definições inativos, mantendo as preferências guardadas.
-- Simplifica os testes de regressão em torno da configuração nativa de produção da Shell; retira comparações exploratórias de perfis, sondas de incorporação e relatórios reservados à migração.
+- Simplifica os testes de regressão em torno da configuração nativa de produção da Shell. Retira comparações exploratórias de perfis, sondas de incorporação e relatórios reservados à migração.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
 

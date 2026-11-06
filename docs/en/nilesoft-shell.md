@@ -43,11 +43,11 @@ Use the corresponding `where` and `type` properties on your rules:
 | Selected files or folders | `filespacer_context` | `'file\|dir'` |
 | Folder background         | `filespacer_context` | `'back'`      |
 
-Use `mode='multiple'` for rules that should remain available across selection states. `process.name` omits `.exe`; `window.parent.name` identifies a window class.
+Use `mode='multiple'` for rules that should remain available across selection states. `process.name` omits `.exe`. `window.parent.name` identifies a window class.
 
 ## Target an existing menu entry
 
-Nilesoft's general `modify(find=...)` mechanism matches an entry by its label. Combine it with `where` to limit the change to a menu; `|` separates alternative labels and `*` is a wildcard:
+Nilesoft's general `modify(find=...)` mechanism matches an entry by its label. Combine it with `where` to limit the change to a menu. `|` separates alternative labels and `*` is a wildcard:
 
 ```nss
 modify(type='*' mode='multiple' where=filespacer_title

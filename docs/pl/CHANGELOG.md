@@ -25,10 +25,10 @@
 - Wygładzono logo panelu bocznego instalatora i deinstalatora przez wysokiej jakości skalowanie do bieżącego rozmiaru.
 - Zachowano cytowane argumenty podwyższenia uprawnień, aby aktualizacja dla wszystkich uruchamiała cichego pomocnika zamiast ponownie otwierać instalator.
 - Domyślnie aktualizowana jest instalacja źródłowa, a okna przywracane dokładnym programem zgłoszonym przez instalator, także przy współistnieniu instalacji osobistej i dla wszystkich.
-- Naprawiono tożsamości sortowania mieszanego, nakładki i powiadomienia; zachowano swobodne położenia ikon i widok natywny przy niedostępnym lub niezgodnym dostawcy.
+- Naprawiono tożsamości sortowania mieszanego, nakładki i powiadomienia. Zachowano swobodne położenia ikon i widok natywny przy niedostępnym lub niezgodnym dostawcy.
 - Naprawiono unikalność ustawień między procesami, walidację skrótów, ścieżki Everything, klawisze dostępu i warianty regionalne.
 - Naprawiono zamykanie folderów, kliknięcia aktywacji i przywracanie podglądu menu Widok.
-- Naprawiono odświeżanie list szybkiego dostępu i diagnostykę instalatora; zachowano pliki pomocy użytkownika przy aktualizacji i deinstalacji.
+- Naprawiono odświeżanie list szybkiego dostępu i diagnostykę instalatora. Zachowano pliki pomocy użytkownika przy aktualizacji i deinstalacji.
 - Dołączono wielojęzyczną pomoc offline przez F1 i Informacje oraz odświeżono lokalne przewodniki instalacji i Nilesoft Shell.
 
 ## 1.2.2 — 2026-10-28
@@ -50,12 +50,12 @@
 
 ## 1.1.10 — 2026-10-27
 
-- Potwierdzenie Windows jest wymagane tylko przy instalacji i deinstalacji dla wszystkich użytkowników; osobiste ustawienia dotyczą użytkownika uruchamiającego instalator.
+- Potwierdzenie Windows jest wymagane tylko przy instalacji i deinstalacji dla wszystkich użytkowników. Osobiste ustawienia dotyczą użytkownika uruchamiającego instalator.
 - Pełna historia wersji jest wyświetlana w przewijanym panelu Nowości obok opcji na pierwszym ekranie instalacji.
-- Naprawiono reset wyboru składników przy aktualizacji; przywracane są zapisane wybory, a ciche aktualizacje zachowują domyślnego menedżera.
+- Naprawiono reset wyboru składników przy aktualizacji. Przywracane są zapisane wybory, a ciche aktualizacje zachowują domyślnego menedżera.
 - Ujednolicono panel FileSpacer, duże logo i jasnoszaro-białą paletę wszystkich ekranów instalacji i deinstalacji. Osobna ikona instalatora łączy natywne bitmapy programu i zoptymalizowaną strzałkę pobierania dla każdego rozmiaru, zachowując cienki żółty brzeg po prawej i na dole folderu.
 - Naprawiono awarie zamykania wywołane wczesną inicjalizacją danych lokalnych wątku na późnych wątkach roboczych powłoki.
-- Menu folderów oferuje otwarcie w Eksploratorze plików Windows, gdy FileSpacer jest domyślny, a inaczej w FileSpacer; synchronizacja następuje po zmianie domyślnego programu, instalacji i uruchomieniu.
+- Menu folderów oferuje otwarcie w Eksploratorze plików Windows, gdy FileSpacer jest domyślny, a inaczej w FileSpacer. Synchronizacja następuje po zmianie domyślnego programu, instalacji i uruchomieniu.
 - Naprawiono skróty serwerów i udziałów sieciowych otwierające Eksplorator mimo domyślnego FileSpacer. Zaktualizuj składnik menu kontekstowego folderów i ponownie wybierz FileSpacer jako domyślny.
 - Powiększono ikonę w Informacjach do 48 pikseli przy skali 100%, z tekstem obok.
 - Zachowano pełną widoczność tytułów zmaksymalizowanych okien i rozciągnięto pasek narzędzi na całą szerokość.
@@ -76,7 +76,7 @@
 - Dodano ukrywanie kłódki zablokowanych folderów bez zmiany blokady zapisanego stanu.
 - Strony ustawień i kontrolki skrótów używają natywnego tła motywu Windows.
 - Rozmieszczanie okien i grupowanie paska zadań wyjaśniają standardowe etykietki narzędzi Windows obok opcji.
-- Powiązano ustawienia z oknem folderu, które je otworzyło; jego zamknięcie odrzuca oczekujące zmiany. Potwierdzona konserwacja zamyka ustawienia bez stosowania zmian.
+- Powiązano ustawienia z oknem folderu, które je otworzyło. Jego zamknięcie odrzuca oczekujące zmiany. Potwierdzona konserwacja zamyka ustawienia bez stosowania zmian.
 - Uporządkowano README wokół nawigacji przestrzennej i funkcji, z badaniami, odnośnikiem do wydania, osobnymi przewodnikami kompilacji i Nilesoft oraz rozbudowaną dokumentacją.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.7...v1.1.8)
@@ -115,7 +115,7 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 - Everything i ostatnie wyszukiwania pojawiają się automatycznie po wejściu w istniejące pole, bez dodatkowego przycisku. Zachowano natywne wyszukiwanie, natychmiastowy filtr i historię lokalną.
 - Domyślnie zapamiętywanych jest pięć wyszukiwań na folder między sesjami, od 0 do 20 niezależnie od Everything. Zachowano dane i konserwatywną politykę czyszczenia historii.
 - Ikona programu Everything jest wyświetlana we właściwym rozmiarze, pobierana w tle i buforowana z odświeżaniem po zmianie programu.
-- Dodano izolowane testy magazynu, migracji i prawdziwej powłoki/Everything; uodporniono czytnik testowy na kolejne zmiany filtrów.
+- Dodano izolowane testy magazynu, migracji i prawdziwej powłoki/Everything. Uodporniono czytnik testowy na kolejne zmiany filtrów.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
 
@@ -123,7 +123,7 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 
 - Dodano kartę Skróty do ustawiania lub wyłączania gestów przez modyfikatory i lewy, środkowy lub prawy przycisk, z bezpośrednim przechwyceniem i kontrolą konfliktów.
 - Obsługa Właściwości przez Alt + dwukrotne kliknięcie pozostaje w natywnym widoku Eksploratora.
-- Przywrócono pełne etykiety na nieprzezroczystym tle dla jednego zaznaczonego elementu w widoku ikon. Wielokrotny wybór zachowuje renderowanie Windows; opcja wyjaśnia zakres.
+- Przywrócono pełne etykiety na nieprzezroczystym tle dla jednego zaznaczonego elementu w widoku ikon. Wielokrotny wybór zachowuje renderowanie Windows. Opcja wyjaśnia zakres.
 - Dodano wyczerpujące testy konfiguracji skrótów i rzeczywistych gestów z francuskimi i angielskimi zasobami.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.2...v1.1.3)
@@ -135,7 +135,7 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 - Globalne wyłączenie blokad wymaga potwierdzenia, usuwa blokady otwartych i zamkniętych folderów i przywraca zapis między procesami.
 - Rozszerzono testy zmian blokad, błędów zapisu, odtwarzania powłoki i natywnej kłódki.
 - Ponowne otwarcie okna przez Ctrl+Shift+T lub listę szybkiego dostępu przewija Szczegóły i Listę do wiersza widocznego u góry przy zamknięciu.
-- Diagnostyka nadal zapisuje minizrzut i raport lokalnie; usunięto przypisywanie awarii staremu renderowaniu nazw, automatyczną zmianę opcji i restart.
+- Diagnostyka nadal zapisuje minizrzut i raport lokalnie. Usunięto przypisywanie awarii staremu renderowaniu nazw, automatyczną zmianę opcji i restart.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.1...v1.1.2)
 
@@ -154,7 +154,7 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 - Panel sterowania otwiera się w natywnym oknie Windows z zachowaniem folderu źródłowego i zaznaczenia.
 - Usunięto automatyczne zaznaczanie opuszczonego folderu przy przejściu wyżej: kolejne zaznaczenia Ctrl nie mogą przypadkowo otwierać obu folderów.
 - W tym wydaniu zaakceptowano brak pełnych własnych etykiet na nieprzezroczystym tle, zachowania zaznaczenia przy aktywacji i dokładnego przewinięcia po otwarciu. Wyłączono dwa nieaktywne ustawienia, zachowując wartości.
-- Uproszczono testy wokół produkcyjnej konfiguracji natywnej powłoki; wycofano porównania profili, sondy osadzania i raporty migracji.
+- Uproszczono testy wokół produkcyjnej konfiguracji natywnej powłoki. Wycofano porównania profili, sondy osadzania i raporty migracji.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
 
@@ -228,7 +228,7 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 - Włączono natywne minimalizowanie i maksymalizowanie oraz naprawiono przyciski tytułu zmaksymalizowanych okien.
 - Stan maksymalizacji jest zapisywany osobno od zwykłej geometrii, z automatyczną migracją bazy.
 - Zastosowano natywne animacje paska zadań i właściwości ponownego uruchamiania każdego folderu.
-- Grupowanie paska zadań dotyczy nowo utworzonych okien; wyjaśniono to w ustawieniach.
+- Grupowanie paska zadań dotyczy nowo utworzonych okien. Wyjaśniono to w ustawieniach.
 - Umożliwiono usuwanie otwartych folderów i ich zapisanego stanu.
 - Aplikacja i pomocnik odtwarzania nie blokują już folderów swoim katalogiem roboczym.
 - Zachowano bezwzględne ścieżki i tryb testowy Debug podczas odtwarzania po awarii.

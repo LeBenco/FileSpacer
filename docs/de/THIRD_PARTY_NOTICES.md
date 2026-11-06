@@ -8,7 +8,7 @@ SQLite 3.53.4 wird statisch in die Anwendung eingebunden. Es ist gemeinfrei. Die
 
 ## Symbole der Schaltflächen Aufwärts und Aktualisieren (Lucide und Feather)
 
-In der Symbolleiste öffnet der **Pfeil nach oben** den **übergeordneten Ordner**; der **kreisförmige Pfeil** **aktualisiert den Ordnerinhalt**. Beide Symbole sind angepasste Versionen der **Lucide**-Symbole `arrow-up` und `rotate-cw`. Das Symbol mit dem Pfeil nach oben stammt ursprünglich aus **Feather**.
+In der Symbolleiste öffnet der **Pfeil nach oben** den **übergeordneten Ordner**. Der **kreisförmige Pfeil** **aktualisiert den Ordnerinhalt**. Beide Symbole sind angepasste Versionen der **Lucide**-Symbole `arrow-up` und `rotate-cw`. Das Symbol mit dem Pfeil nach oben stammt ursprünglich aus **Feather**.
 
 Die vollständigen ISC- und MIT-Hinweise stehen in [licenses/Lucide-LICENSE.txt](../../licenses/Lucide-LICENSE.txt) im Quelltext oder `Lucide-LICENSE.txt` im Installationsordner. Siehe <https://lucide.dev/license>.
 

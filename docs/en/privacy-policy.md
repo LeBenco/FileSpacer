@@ -1,6 +1,6 @@
 # Privacy policy
 
-No telemetry, usage tracking or advertising. Update checks contact GitHub; weekly checks are optional and off by default. Downloading and installing require confirmation.
+No telemetry, usage tracking or advertising. Update checks contact GitHub. Weekly checks are optional and off by default. Downloading and installing require confirmation.
 
 [Details in the user guide](https://github.com/LeBenco/FileSpacer/blob/main/docs/en/user-guide.md#privacy).
 

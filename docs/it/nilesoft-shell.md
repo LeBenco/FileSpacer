@@ -43,11 +43,11 @@ Usa nelle regole le proprietà `where` e `type` corrispondenti:
 | File o cartelle selezionati | `filespacer_context` | `'file\|dir'` |
 | Sfondo della cartella | `filespacer_context` | `'back'` |
 
-Usa `mode='multiple'` per le regole che devono rimanere disponibili indipendentemente dallo stato della selezione. `process.name` non comprende `.exe`; `window.parent.name` identifica una classe di finestra.
+Usa `mode='multiple'` per le regole che devono rimanere disponibili indipendentemente dallo stato della selezione. `process.name` non comprende `.exe`. `window.parent.name` identifica una classe di finestra.
 
 ## Individuare una voce di menu esistente
 
-Il meccanismo generale `modify(find=...)` di Nilesoft trova una voce in base alla sua etichetta. Combinalo con `where` per limitare la modifica a un menu; `|` separa le etichette alternative e `*` è un carattere jolly:
+Il meccanismo generale `modify(find=...)` di Nilesoft trova una voce in base alla sua etichetta. Combinalo con `where` per limitare la modifica a un menu. `|` separa le etichette alternative e `*` è un carattere jolly:
 
 ```nss
 modify(type='*' mode='multiple' where=filespacer_title

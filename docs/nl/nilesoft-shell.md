@@ -51,13 +51,13 @@ Gebruik de bijbehorende eigenschappen `where` en `type` in uw regels:
 | Geselecteerde bestanden of mappen | `filespacer_context` | `'file\|dir'` |
 | Mapachtergrond | `filespacer_context` | `'back'` |
 
-Gebruik `mode='multiple'` voor regels die bij elke selectiestatus beschikbaar moeten blijven. `process.name` laat `.exe` weg; `window.parent.name` identificeert een vensterklasse.
+Gebruik `mode='multiple'` voor regels die bij elke selectiestatus beschikbaar moeten blijven. `process.name` laat `.exe` weg. `window.parent.name` identificeert een vensterklasse.
 
 <a id="target-an-existing-menu-entry"></a>
 
 ## Een bestaand menu-item kiezen
 
-Het algemene mechanisme `modify(find=...)` van Nilesoft zoekt op het label van een item. Combineer het met `where` om de wijziging tot een menu te beperken; `|` scheidt alternatieve labels en `*` is een jokerteken:
+Het algemene mechanisme `modify(find=...)` van Nilesoft zoekt op het label van een item. Combineer het met `where` om de wijziging tot een menu te beperken. `|` scheidt alternatieve labels en `*` is een jokerteken:
 
 ```nss
 modify(type='*' mode='multiple' where=filespacer_title

@@ -43,11 +43,11 @@ Usa las propiedades `where` y `type` correspondientes en tus reglas:
 | Archivos o carpetas seleccionados | `filespacer_context` | `'file\|dir'` |
 | Fondo de la carpeta | `filespacer_context` | `'back'` |
 
-Usa `mode='multiple'` para las reglas que deban seguir disponibles con cualquier estado de selección. `process.name` no incluye `.exe`; `window.parent.name` identifica una clase de ventana.
+Usa `mode='multiple'` para las reglas que deban seguir disponibles con cualquier estado de selección. `process.name` no incluye `.exe`. `window.parent.name` identifica una clase de ventana.
 
 ## Identificar una entrada de menú existente
 
-El mecanismo general `modify(find=...)` de Nilesoft identifica una entrada por su etiqueta. Combínalo con `where` para limitar el cambio a un menú; `|` separa etiquetas alternativas y `*` es un comodín:
+El mecanismo general `modify(find=...)` de Nilesoft identifica una entrada por su etiqueta. Combínalo con `where` para limitar el cambio a un menú. `|` separa etiquetas alternativas y `*` es un comodín:
 
 ```nss
 modify(type='*' mode='multiple' where=filespacer_title

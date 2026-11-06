@@ -18,7 +18,7 @@ O FileSpacer privilegia uma experiência leve e descomplicada. Para limitar a ac
 
 <a id="system--languages"></a>**Sistema e idiomas:** Windows 10 ou posterior, x64. Disponível em dez idiomas: inglês, francês, alemão, italiano, espanhol, português (Portugal), grego, polaco, neerlandês e ucraniano.
 
-<a id="privacy"></a>**Privacidade:** **Sem telemetria, monitorização de utilização ou publicidade.** As verificações de atualizações contactam o GitHub; as semanais são opcionais e estão desativadas por predefinição. A transferência e a instalação exigem confirmação. [Privacidade](user-guide.md#privacidade).
+<a id="privacy"></a>**Privacidade:** **Sem telemetria, monitorização de utilização ou publicidade.** As verificações de atualizações contactam o GitHub. As semanais são opcionais e estão desativadas por predefinição. A transferência e a instalação exigem confirmação. [Privacidade](user-guide.md#privacidade).
 
 **Instalação:**
 
@@ -39,7 +39,7 @@ _O FileSpacer é uma derivação do [ChromaFiler](https://github.com/vanjac/chro
 
 - **Uma janela por pasta**, reativada se a pasta já estiver aberta. A posição, o tamanho, as definições de apresentação e a disposição dos ícones são mantidos entre aberturas. [Navegação espacial](user-guide.md#navegação-entre-janelas).
 - **Disponha os ícones livremente**, com posições guardadas e restauradas para cada pasta. [Disposição dos ícones](user-guide.md#disposição-dos-ícones).
-- **Mova e redimensione as janelas** a partir de qualquer ponto da área de ficheiros, mantendo a seleção. Os gestos do rato são configuráveis; por predefinição, Alt + arrastar com o botão esquerdo e Alt + arrastar com o botão direito. [Gestos de janela](user-guide.md#movimento-e-redimensionamento).
+- **Mova e redimensione as janelas** a partir de qualquer ponto da área de ficheiros, mantendo a seleção. Os gestos do rato são configuráveis, com Alt + arrastar com o botão esquerdo e Alt + arrastar com o botão direito por predefinição. [Gestos de janela](user-guide.md#movimento-e-redimensionamento).
 - **Alterne entre pastas abertas** através do menu da barra de título, feche as janelas das pastas superiores ou reabra a última janela fechada com Ctrl+Shift+T. [Navegação entre janelas](user-guide.md#navegação-entre-janelas).
 - **Bloqueie o estado guardado de uma janela**, mantendo a possibilidade de alterar temporariamente a posição, o tamanho e a apresentação. [Bloqueio do estado das janelas](user-guide.md#bloqueio-do-estado-guardado).
 - **Filtre a pasta atual** e reutilize as pesquisas recentes. [Pesquisa e histórico](user-guide.md#pesquisa-e-histórico).
@@ -49,7 +49,7 @@ _O FileSpacer é uma derivação do [ChromaFiler](https://github.com/vanjac/chro
 
 ## Integração
 
-O FileSpacer pode ser definido como gestor de ficheiros predefinido na instalação ou mais tarde nas definições. Os ficheiros abrem na aplicação habitual do Windows; as pastas de rede seguem o funcionamento normal do Windows. [Integração com o Windows](user-guide.md#integração-com-o-windows).
+O FileSpacer pode ser definido como gestor de ficheiros predefinido na instalação ou mais tarde nas definições. Os ficheiros abrem na aplicação habitual do Windows. As pastas de rede seguem o funcionamento normal do Windows. [Integração com o Windows](user-guide.md#integração-com-o-windows).
 
 Com o **Everything**, é possível iniciar pesquisas avançadas a partir do campo do FileSpacer, na pasta atual e nas subpastas ou em todos os ficheiros indexados. Os resultados abrem no Everything. [Integração e utilização](user-guide.md#everything).
 
@@ -59,7 +59,7 @@ Com o **Nilesoft Shell**, os menus do FileSpacer podem usar os seus temas e coma
 
 [![Publish FileSpacer](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml/badge.svg)](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml)
 
-A compilação utiliza MSVC/NMAKE, Visual Studio 2022 Build Tools com ATL e um Windows SDK, Inkscape e ImageMagick. O instalador requer o NSIS; o SQLite está incluído. Consulte o [guia de compilação](../en/build.md).
+A compilação utiliza MSVC/NMAKE, Visual Studio 2022 Build Tools com ATL e um Windows SDK, Inkscape e ImageMagick. O instalador requer o NSIS. O SQLite está incluído. Consulte o [guia de compilação](../en/build.md).
 
 Os testes de regressão combinam cenários PowerShell com ferramentas C++ e C# para verificações internas e testes reais da interface do Windows e da Shell. O [workflow de regressão do GitHub Actions](https://github.com/LeBenco/FileSpacer/actions/workflows/regression.yml) executa esta suite da aplicação a pedido e automaticamente antes de uma publicação. Os mesmos casos podem ser executados com `tests.cmd` num ambiente de trabalho Windows local ou numa VM Hyper-V configurada. O [guia dos testes](../en/tests/regression/README.md) explica a seleção de casos, os pré-requisitos e os resultados.
 
@@ -67,7 +67,7 @@ Os testes de regressão combinam cenários PowerShell com ferramentas C++ e C# p
 
 ### Direitos de autor e licença
 O FileSpacer é distribuído ao abrigo da licença <img align="absbottom" src="https://img.shields.io/badge/Licen%C3%A7a-GPLv3-blue.svg" alt="Licença: GPL v3">.<br>
-Copyright © 2026 Benco pelas alterações do FileSpacer. A licença completa encontra-se em [LICENSE](../../LICENSE) no código-fonte, ou em `LICENSE.txt` na pasta de instalação. O FileSpacer é fornecido sem garantia; a redistribuição e a modificação são permitidas nos termos dessa licença.
+Copyright © 2026 Benco pelas alterações do FileSpacer. A licença completa encontra-se em [LICENSE](../../LICENSE) no código-fonte, ou em `LICENSE.txt` na pasta de instalação. O FileSpacer é fornecido sem garantia. A redistribuição e a modificação são permitidas nos termos dessa licença.
 
 ### Origem do projeto e agradecimentos
 O FileSpacer é uma derivação do [ChromaFiler](https://github.com/vanjac/chromafiler), criado por J. van’t Hoog (vanjac). Muito obrigado ao vanjac por esta base! Código original do ChromaFiler © 2023 J. van’t Hoog.

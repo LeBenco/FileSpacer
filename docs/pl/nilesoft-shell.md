@@ -51,13 +51,13 @@ Użyj odpowiednich właściwości `where` i `type` w regułach:
 | Zaznaczone pliki lub foldery | `filespacer_context` | `'file\|dir'` |
 | Tło folderu | `filespacer_context` | `'back'` |
 
-Użyj `mode='multiple'` dla reguł dostępnych niezależnie od zaznaczenia. `process.name` pomija `.exe`; `window.parent.name` identyfikuje klasę okna.
+Użyj `mode='multiple'` dla reguł dostępnych niezależnie od zaznaczenia. `process.name` pomija `.exe`. `window.parent.name` identyfikuje klasę okna.
 
 <a id="target-an-existing-menu-entry"></a>
 
 ## Wybór istniejącej pozycji menu
 
-Ogólny mechanizm `modify(find=...)` Nilesoft dopasowuje pozycję według etykiety. Połącz go z `where`, aby ograniczyć zmianę do menu; `|` oddziela alternatywne etykiety, a `*` jest symbolem wieloznacznym:
+Ogólny mechanizm `modify(find=...)` Nilesoft dopasowuje pozycję według etykiety. Połącz go z `where`, aby ograniczyć zmianę do menu. `|` oddziela alternatywne etykiety, a `*` jest symbolem wieloznacznym:
 
 ```nss
 modify(type='*' mode='multiple' where=filespacer_title
