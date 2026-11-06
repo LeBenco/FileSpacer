@@ -132,13 +132,22 @@ void profilePlacement(IFolderView2 *view,HWND body,std::vector<PCUITEMID_CHILD> 
 void dragPlacement(IShellView *shell,IFolderView2 *view,HWND frame,std::vector<PCUITEMID_CHILD> &ids,const std::wstring &root,const char *label,bool guardedSeed=false){
     require(ids.size()==spatialItems,"Wrong drag fixture size");require(SUCCEEDED(view->SetCurrentFolderFlags(positionFlags,0))&&view->GetAutoArrange()==S_FALSE,"Free placement unavailable");
     HWND body=nullptr;require(SUCCEEDED(shell->GetWindow(&body)),"No view window");
+#ifdef FILESPACER_VISUAL_TIMING
+    presentation::desktopRegion=std::strcmp(label,"Explorer-Desktop")==0;
+    struct RegionScope{~RegionScope(){presentation::desktopRegion=false;}}regionScope;
+    if(presentation::pointer)presentation::pointer->park();
+#endif
     RECT bounds={};GetClientRect(body,&bounds);POINT position={(bounds.right-bounds.left)/2,(bounds.bottom-bounds.top)/2};
     FOLDERVIEWMODE mode=FVM_AUTO;int iconSize=0;DWORD flags=0;
     require(SUCCEEDED(view->GetViewModeAndIconSize(&mode,&iconSize))&&SUCCEEDED(view->GetCurrentFolderFlags(&flags)),"View metadata unavailable");
     std::printf("METADATA %s mode=%d icon_size=%d dpi=%u view_client=%ldx%ld flags=0x%08lX\n",label,static_cast<int>(mode),iconSize,GetDpiForWindow(body),bounds.right-bounds.left,bounds.bottom-bounds.top,flags);std::fflush(stdout);
     if(std::strcmp(label,"Explorer-Desktop")==0){desktopSize={bounds.right-bounds.left,bounds.bottom-bounds.top};desktopIconSize=iconSize;}
     std::vector<POINT> points(ids.size(),position);
-    if(apiOnly)for(size_t i=0;i<points.size();++i){const POINT p={30+static_cast<LONG>(i%10)*70,30+static_cast<LONG>(i/10)*50};points[i]=filespacer::scaleDPI(filespacer::invScaleDPI(p));}
+    POINT origin={};
+#ifdef FILESPACER_VISUAL_TIMING
+    if(presentation::desktopRegion){const RECT work=presentation::workArea();origin={work.left,work.top};require(ScreenToClient(body,&origin)!=FALSE,"Cannot locate primary Desktop region");}
+#endif
+    if(apiOnly)for(size_t i=0;i<points.size();++i){const POINT p={origin.x+30+static_cast<LONG>(i%10)*70,origin.y+30+static_cast<LONG>(i/10)*50};points[i]=filespacer::scaleDPI(filespacer::invScaleDPI(p));}
     DWORD pid=0;const DWORD thread=GetWindowThreadProcessId(body,&pid);
     std::atomic<bool> seedDone{false};const std::string name(label);const std::wstring wideName(name.begin(),name.end());
     std::thread seedSampler;
@@ -263,6 +272,10 @@ void runSpatialHost(const std::wstring &root,const std::wstring &fixture,bool po
     CComPtr<IFolderView2> view;int count=0;const ULONGLONG deadline=GetTickCount64()+45000;
     do{view.Release();if(SUCCEEDED(frame.host.currentView(IID_PPV_ARGS(&view))))view->ItemCount(SVGIO_ALLVIEW,&count);if(count==spatialItems)break;pump(20);}while(GetTickCount64()<deadline);require(view&&count==spatialItems,"Host fixture incomplete");
     CComQIPtr<IShellView> shell(view);require(!!shell,"Host view unavailable");CComPtr<IEnumIDList> items;require(SUCCEEDED(view->Items(SVGIO_ALLVIEW,IID_PPV_ARGS(&items))),"Host enumeration unavailable");
+#ifdef FILESPACER_VISUAL_TIMING
+    require(desktopIconSize>0&&SUCCEEDED(view->SetViewModeAndIconSize(FVM_ICON,desktopIconSize)),"Matching Desktop icon size unavailable");
+    presentation::fitView(shell,frame.window,[&](){RECT client={};require(GetClientRect(frame.window,&client)&&SUCCEEDED(frame.host.setBounds(client)),"Cannot resize the spatial host view");});
+#endif
     std::vector<std::unique_ptr<ITEMID_CHILD,decltype(&CoTaskMemFree)>> owned;std::vector<PCUITEMID_CHILD> ids;
     for(int i=0;i<spatialItems;++i){CComHeapPtr<ITEMID_CHILD> id;require(items->Next(1,&id,nullptr)==S_OK,"Short host enumeration");ids.push_back(id);owned.emplace_back(id.Detach(),&CoTaskMemFree);}
     dragPlacement(shell,view,frame.window,ids,root,positionOnly?"FileSpacer-position-only":"FileSpacer-native-host",true);
@@ -288,8 +301,23 @@ int desktopProbeMain(int argc,wchar_t **argv){
             require(_wfopen_s(&csv,(root+(apiOnly?L"\\positions.csv":L"\\drag.csv")).c_str(),L"wb")==0,"No placement CSV");
             require(_wfopen_s(&waits,(root+L"\\wait-chains.csv").c_str(),L"wb")==0,"No wait-chain log");
             std::fputs(apiOnly?"app,items,repetition,operation,hresult,call_ms,max_ping_ms,ping_timeouts,cpu_ms,enum_events,change_events,observed_items,observed_selection\n":"app,repetition,positions_observed_ms,max_ping_ms,ping_timeouts,drag_end_event,drag_end_ms\n",csv);
-            try{runDesktop(root);}catch(const std::exception &error){std::fprintf(stderr,"Desktop experiment failed: %s\n",error.what());restoreDesktop(root);throw;}
-            restoreDesktop(root);if(apiOnly){runSpatialHost(root,argv[2]);if(profilePositions)runSpatialHost(root,argv[2],true);}else runFileSpacer(root,argv[2]);std::fclose(csv);csv=nullptr;
+            {
+#ifdef FILESPACER_VISUAL_TIMING
+                CComPtr<IShellDispatch> desktopCommand;require(SUCCEEDED(desktopCommand.CoCreateInstance(CLSID_Shell)),"Desktop visibility commands unavailable");
+                struct RestoreWindows{
+                    IShellDispatch *shell;bool active=false;explicit RestoreWindows(IShellDispatch *value):shell(value){}
+                    HRESULT restore(){active=false;const HRESULT hr=shell->UndoMinimizeALL();std::printf("DESKTOP UndoMinimizeALL hr=0x%08lX\n",static_cast<unsigned long>(hr));return hr;}
+                    ~RestoreWindows(){if(active&&FAILED(restore()))std::fprintf(stderr,"Desktop window restoration failed\n");}
+                }restoreWindows(desktopCommand);
+                require(SUCCEEDED(desktopCommand->MinimizeAll()),"Cannot uncover Desktop with MinimizeAll");restoreWindows.active=true;pump(500);if(presentation::pointer)presentation::pointer->park();
+#endif
+                try{runDesktop(root);}catch(const std::exception &error){std::fprintf(stderr,"Desktop experiment failed: %s\n",error.what());restoreDesktop(root);throw;}
+                restoreDesktop(root);
+#ifdef FILESPACER_VISUAL_TIMING
+                require(SUCCEEDED(restoreWindows.restore()),"Cannot restore windows after Desktop measurement");
+#endif
+            }
+            if(apiOnly){runSpatialHost(root,argv[2]);if(profilePositions)runSpatialHost(root,argv[2],true);}else runFileSpacer(root,argv[2]);std::fclose(csv);csv=nullptr;
         }
     }catch(const std::exception &error){std::fprintf(stderr,"FAIL: %s\n",error.what());result=1;}
     if(csv){std::fclose(csv);csv=nullptr;}if(waits){std::fclose(waits);waits=nullptr;}OleUninitialize();return result;
