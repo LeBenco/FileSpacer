@@ -145,7 +145,8 @@ struct FolderWindow::ViewMenuPreview {
             result = stream->Seek(zero, STREAM_SEEK_CUR, &at);
             if (FAILED(result) || at.QuadPart > initial.icons.size()) return FAILED(result) ? result : E_INVALIDARG;
             offset = static_cast<size_t>(at.QuadPart);
-            if (++count == 32 || offset == initial.icons.size()) {
+            // Measured compromise: fewer repeated Shell layouts, while still yielding to the menu.
+            if (++count == 128 || offset == initial.icons.size()) {
                 positionChunks.emplace_back(initial.icons.data() + first, initial.icons.data() + offset);
                 first = offset;
                 count = 0;
@@ -170,6 +171,16 @@ struct FolderWindow::ViewMenuPreview {
     }
 
     void finishPositions() {
+        if (!busy && !tracking && current() && !currentCommand && nextPositionChunk < positionChunks.size()) {
+            // Closing already drains every remaining chunk synchronously. Combine
+            // only those records to avoid repeating the Shell layout at each step.
+            std::vector<uint8_t> remaining;
+            remaining.reserve(initial.icons.size());
+            for (size_t i = nextPositionChunk; i < positionChunks.size(); ++i)
+                remaining.insert(remaining.end(), positionChunks[i].begin(), positionChunks[i].end());
+            positionChunks.resize(nextPositionChunk + 1);
+            positionChunks[nextPositionChunk].swap(remaining);
+        }
         while (!busy && current() && !currentCommand && nextPositionChunk < positionChunks.size()) advancePositions();
     }
 
