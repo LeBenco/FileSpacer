@@ -43,11 +43,11 @@ Utiliser les propriétés `where` et `type` correspondantes dans les règles :
 | Fichiers ou dossiers sélectionnés | `filespacer_context` | `'file\|dir'` |
 | Arrière-plan du dossier | `filespacer_context` | `'back'` |
 
-Utiliser `mode='multiple'` pour que les règles restent disponibles quel que soit l’état de sélection. `process.name` ne comprend pas `.exe` ; `window.parent.name` identifie une classe de fenêtre.
+Utiliser `mode='multiple'` pour que les règles restent disponibles quel que soit l’état de sélection. `process.name` ne comprend pas `.exe`. `window.parent.name` identifie une classe de fenêtre.
 
 ## Cibler une entrée de menu existante
 
-Le mécanisme général `modify(find=...)` de Nilesoft identifie une entrée par son libellé. Le combiner avec `where` pour limiter la modification à un menu ; `|` sépare les libellés possibles et `*` est un caractère générique :
+Le mécanisme général `modify(find=...)` de Nilesoft identifie une entrée par son libellé. Le combiner avec `where` pour limiter la modification à un menu. `|` sépare les libellés possibles et `*` est un caractère générique :
 
 ```nss
 modify(type='*' mode='multiple' where=filespacer_title
@@ -58,7 +58,7 @@ Consulter la [référence de configuration de Nilesoft](https://nilesoft.org/doc
 
 ## Apparence recommandée des menus
 
-Les coins carrés sont recommandés pour les menus de la barre de titre et de la barre d’outils, afin de les assortir aux boutons de FileSpacer. Ajouter ce réglage à le bloc `theme { ... }` existant :
+Les coins carrés sont recommandés pour les menus de la barre de titre et de la barre d’outils, afin de les assortir aux boutons de FileSpacer. Ajouter ce réglage au bloc `theme { ... }` existant :
 
 ```nss
 border.radius = if(

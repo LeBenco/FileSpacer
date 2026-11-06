@@ -5,9 +5,9 @@
 FileSpacer oferuje płynny, prosty i konfigurowalny interfejs oparty na modelu przestrzennym:
 
 - **Jeden folder, jedno okno.** Ponowne otwarcie już otwartego folderu przenosi jego okno na pierwszy plan. Położenie, rozmiar, widok i układ ikon są zapamiętywane również po przeniesieniu folderu lub zmianie jego nazwy.
-- Otwarcie folderu lub folderu nadrzędnego domyślnie zamyka okno źródłowe. Ctrl jednorazowo odwraca to zachowanie; ustawienie domyślne można zmienić w **Ustawienia > Ogólne**. Otwarcie kilku zaznaczonych folderów zachowuje okno źródłowe.
+- Otwarcie folderu lub folderu nadrzędnego domyślnie zamyka okno źródłowe. Przytrzymanie klawisza Ctrl podczas otwierania folderu pozostawia okno źródłowe otwarte. Domyślne zachowanie można zmienić w **Ustawienia > Ogólne**. Otwarcie kilku zaznaczonych folderów zachowuje okno źródłowe.
 - Menu obok tytułu pozwala przełączać się między otwartymi folderami. **Zamknij okna nadrzędne** zamyka otwarte okna folderów nadrzędnych.
-- **Ctrl+Shift+T** otwiera ostatnio zamknięty folder z jego układem i zaznaczeniem. Polecenie jest też w menu tytułu i na liście szybkiego dostępu na pasku zadań; ta ostatnia pozwala sięgnąć do wcześniej zamkniętych folderów.
+- **Ctrl+Shift+T** otwiera ostatnio zamknięty folder z jego układem i zaznaczeniem. Polecenie jest też w menu tytułu i na liście szybkiego dostępu na pasku zadań. Ta ostatnia pozwala sięgnąć do wcześniej zamkniętych folderów.
 - Lista szybkiego dostępu na pasku zadań otwiera też foldery przypięte w Szybkim dostępie Eksploratora plików.
 
 Przejście do folderu nadrzędnego nie zaznacza właśnie opuszczonego folderu. Już otwarty folder nadrzędny zachowuje zaznaczenie.
@@ -26,7 +26,7 @@ Opcja **Pokaż pełną nazwę zaznaczonego pliku** w **Ustawienia > Wyświetlani
 
 ![Długa nazwa zaznaczonego pliku wyświetlona w całości w widoku ikon.](images/selected-name-pl.png)
 
-Opcja **Podgląd trybów wyświetlania w menu Widok** pokazuje każdy tryb po wskazaniu go myszą. Kliknięcie go zatwierdza; Escape lub opuszczenie podglądu przywraca pierwotny widok. Podgląd jest tymczasowy i nie zastępuje zapisanego układu.
+Opcja **Podgląd trybów wyświetlania w menu Widok** pokazuje każdy tryb po wskazaniu go myszą. Kliknięcie go zatwierdza. Escape lub opuszczenie podglądu przywraca pierwotny widok. Podgląd jest tymczasowy i nie zastępuje zapisanego układu.
 
 Opcja **Sortuj foldery i pliki razem** stosuje wspólną kolejność, jak w [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) i [Linuksie](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Znajduje się w **Ustawienia > Wyświetlanie > Pliki** i dotyczy widoków Szczegóły, Lista oraz automatycznie rozmieszczanych ikon. Foldery wirtualne i archiwa zachowują kolejność Windows.
 
@@ -38,7 +38,7 @@ Foldery bez zapisanego położenia otwierają się w wolnym miejscu lub z ograni
 
 ### Zaznaczenie i aktywacja
 
-**Zachowaj zaznaczenie po kliknięciu nieaktywnego okna** w **Ustawienia > Ogólne** pozwala kliknięciem tła aktywować folder bez utraty zaznaczenia. Drugie naciśnięcie rozpoczyna prostokąt zaznaczenia.
+**Zachowaj zaznaczenie po kliknięciu nieaktywnego okna** w **Ustawienia > Ogólne** pozwala kliknięciem tła aktywować folder bez utraty zaznaczenia. Gdy okno jest już aktywne, kliknięcie i przeciągnięcie po jego tle pozwala narysować prostokąt zaznaczenia.
 
 ## Zarządzanie oknami
 
@@ -57,7 +57,7 @@ Okno można przenieść lub zmienić jego rozmiar, przeciągając w dowolnym mie
 
 Zaznaczenie pozostaje bez zmian. Escape anuluje gest.
 
-Każde działanie ma osobny skrót w **Ustawienia > Skróty**. Lewy i prawy przycisk wymagają Alt; środkowy działa też bez niego.
+Każde działanie ma osobny skrót w **Ustawienia > Skróty**. Lewy i prawy przycisk wymagają Alt. Środkowy działa też bez niego.
 
 ### Blokowanie zapisanego układu
 
@@ -65,7 +65,7 @@ Blokada zachowuje położenie, rozmiar i ustawienia widoku folderu do przywróce
 
 <img src="images/locked-title-pl.png" alt="Zbliżenie tytułu folderu z oznaczeniem kłódki." width="280">
 
-Tymczasowe zmiany pozostają możliwe; ponowne otwarcie przywraca zablokowany układ. Położenia poszczególnych ikon nadal zapisują się normalnie. **Odblokuj stan okna** zachowuje bieżący układ.
+Tymczasowe zmiany pozostają możliwe. Ponowne otwarcie przywraca zablokowany układ. Położenia poszczególnych ikon nadal zapisują się normalnie. **Odblokuj stan okna** zachowuje bieżący układ.
 
 Wyłączenie funkcji wymaga potwierdzenia i usuwa wszystkie blokady, także dla zamkniętych folderów. Ponowne włączenie ich nie przywraca.
 
@@ -81,7 +81,7 @@ Pozycji zarządzanych przez Nilesoft Shell nie można zmieniać tutaj, ponieważ
 
 - **Przywróć zablokowany układ** przywraca oknu układ odniesienia. **Zastąp układ odniesienia** po potwierdzeniu zapisuje bieżący układ jako nowy zablokowany układ odniesienia.
 
-- **Zapomnij układ tego folderu** usuwa zapisany układ i blokadę, zachowując historię wyszukiwania. Zapisywanie pozostaje wstrzymane w bieżącym oknie do jego zamknięcia; kolejne otwarcie używa ustawień domyślnych. Zablokowanie nowego układu wznawia zapisywanie.
+- **Zapomnij układ tego folderu** usuwa zapisany układ i blokadę, zachowując historię wyszukiwania. Zapisywanie pozostaje wstrzymane w bieżącym oknie do jego zamknięcia. Kolejne otwarcie używa ustawień domyślnych. Zablokowanie nowego układu wznawia zapisywanie.
 
 ### Grupy folderów
 
@@ -93,7 +93,7 @@ Wpisz całą nazwę pliku lub folderu albo jej część i naciśnij Enter, aby p
 
 Pole proponuje ostatnie wyszukiwania oraz, przy włączonej integracji, **Wyszukaj w Everything** do wyszukiwania zewnętrznego. Enter bez wybranej sugestii stosuje filtr lokalny. Ctrl+F aktywuje pole.
 
-Każdy folder ma własną historię. Liczbę zachowywanych zatwierdzonych wyszukiwań ustawia się w ustawieniach ogólnych; 0 czyści i wyłącza historię. [Everything](#everything) pozwala szukać w podfolderach lub we wszystkich zindeksowanych plikach.
+Każdy folder ma własną historię. Liczbę zachowywanych zatwierdzonych wyszukiwań ustawia się w ustawieniach ogólnych. 0 czyści i wyłącza historię. [Everything](#everything) pozwala szukać w podfolderach lub we wszystkich zindeksowanych plikach.
 
 ![Pole wyszukiwania z Everything i sugestiami ostatnich wyszukiwań.](images/search-pl.png)
 
@@ -123,7 +123,7 @@ Peek musi być też włączony w PowerToys. Integracja wymaga PowerToys 0.96 lub
 
 Istniejącą instalację [Everything](https://www.voidtools.com/) można zintegrować, aby wykonywać zaawansowane wyszukiwania z pola FileSpacer. Wyniki otwierają się w Everything.
 
-Opcję włącza się w **Ustawienia > Integracja**, z automatycznym wykrywaniem Everything lub ręcznym wskazaniem wersji przenośnej. Zakres obejmuje bieżący folder z podfolderami albo **Wszędzie**; foldery wirtualne wymagają opcji Wszędzie.
+Opcję włącza się w **Ustawienia > Integracja**, z automatycznym wykrywaniem Everything lub ręcznym wskazaniem wersji przenośnej. Wyszukiwanie obejmuje bieżący folder i podfoldery, a po wybraniu **Wszędzie** wszystkie zindeksowane pliki. Dla folderów wirtualnych trzeba wybrać Wszędzie.
 
 **Wyszukaj w Everything** uruchamia wyszukiwanie zewnętrzne ze składnią Everything. Udane uruchomienie czyści pole i lokalny filtr FileSpacer.
 
@@ -142,7 +142,7 @@ item(type='*' mode='multiple' where=filespacer_title
      title='Przywróć zablokowany układ' cmd=window.command(1123))
 ```
 
-Poniższy motyw Modern porównuje domyślne narożniki z zalecanymi prostokątnymi.
+Poniższe zrzuty ekranu pokazują motyw Modern z domyślnymi narożnikami oraz z zalecanymi prostokątnymi.
 
 **Menu nawigacji**
 
@@ -158,7 +158,7 @@ Poniższy motyw Modern porównuje domyślne narożniki z zalecanymi prostokątny
 
 ## Ustawienia i aktualizacje
 
-Ctrl+, otwiera Ustawienia; F1 otwiera przewodnik offline. Interfejs używa języka wyświetlania Windows; zmiana języka wymaga ponownego uruchomienia aplikacji.
+Ctrl+, otwiera Ustawienia. F1 otwiera przewodnik offline. Interfejs używa języka wyświetlania Windows. Zmiana języka wymaga ponownego uruchomienia aplikacji.
 
 Aktualizacje sprawdza się w **Ustawienia > Informacje**, gdzie można też włączyć opcjonalne cotygodniowe sprawdzanie, domyślnie wyłączone. Pobieranie i instalacja wymagają potwierdzenia. Następnie wcześniej otwarte foldery wracają z zapisanymi układami.
 
@@ -168,11 +168,11 @@ Układy, blokady, historie i preferencje są przechowywane lokalnie. Lokalizacje
 
 **Ustawienia > Informacje > Konserwacja > Zresetuj stan wszystkich folderów** zamyka okna folderów i usuwa ich zapisane układy, historię i blokady. Pliki i ustawienia ogólne pozostają zachowane.
 
-Do rozwiązywania problemów `FileSpacer.exe /reset-options` resetuje ustawienia ogólne; `/reset-all` usuwa też zapisany stan folderów. Te polecenia zachowują pliki.
+Do rozwiązywania problemów `FileSpacer.exe /reset-options` resetuje ustawienia ogólne. `/reset-all` usuwa też zapisany stan folderów. Te polecenia zachowują pliki.
 
 ## Prywatność
 
-FileSpacer nie stosuje telemetrii, śledzenia użycia ani reklam. Raporty awarii nie są wysyłane automatycznie. Raporty diagnostyczne pozostają w `%LOCALAPPDATA%\FileSpacer`; ich udostępnianie jest opcjonalne i może ujawniać ścieżki plików lub fragmenty pamięci procesu.
+FileSpacer nie stosuje telemetrii, śledzenia użycia ani reklam. Raporty awarii nie są wysyłane automatycznie. Raporty diagnostyczne pozostają w `%LOCALAPPDATA%\FileSpacer`. Ich udostępnianie jest opcjonalne i może ujawniać ścieżki plików lub fragmenty pamięci procesu.
 
 Sprawdzanie aktualizacji i pobieranie łączą się z GitHub przez HTTPS. GitHub otrzymuje zwykłe informacje o połączeniu, w tym adres IP i wersję aplikacji, ale nie stan folderów, ścieżki plików ani raporty diagnostyczne.
 

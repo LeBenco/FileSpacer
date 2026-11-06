@@ -8,7 +8,7 @@ SQLite 3.53.4 est lié statiquement à l’application. Il appartient au domaine
 
 ## Icônes des boutons Remonter et Actualiser (Lucide et Feather)
 
-Dans la barre d’outils, la **flèche vers le haut** permet de **remonter au dossier parent** ; la **flèche circulaire** permet d’**actualiser le contenu du dossier**. Ces deux icônes sont adaptées de **Lucide** (`arrow-up` et `rotate-cw`). La flèche vers le haut provient à l’origine de **Feather**.
+Dans la barre d’outils, la **flèche vers le haut** permet de **remonter au dossier parent**. La **flèche circulaire** permet d’**actualiser le contenu du dossier**. Ces deux icônes sont adaptées de **Lucide** (`arrow-up` et `rotate-cw`). La flèche vers le haut provient à l’origine de **Feather**.
 
 Consultez [licenses/Lucide-LICENSE.txt](../../licenses/Lucide-LICENSE.txt) pour les mentions ISC et MIT complètes dans les sources, ou `Lucide-LICENSE.txt` dans le dossier d’installation. Voir <https://lucide.dev/license>.
 

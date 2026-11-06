@@ -5,9 +5,9 @@
 FileSpacer propose une interface fluide, sobre et personnalisable, basée sur le paradigme spatial :
 
 - **Un dossier, une fenêtre.** Rouvrir un dossier déjà ouvert ramène sa fenêtre au premier plan. Sa position, sa taille, son affichage et la disposition de ses icônes sont mémorisés, même après déplacement ou renommage du dossier.
-- Ouvrir un dossier ou son parent ferme par défaut la fenêtre source. Ctrl inverse ce comportement une fois ; le réglage se change dans **Paramètres > Général**. Ouvrir plusieurs dossiers sélectionnés conserve la fenêtre source.
-- Le menu à côté du titre permet de passer d’un dossier ouvert à l’autre. **Fermer les fenêtres parentes** ferme ses ancêtres ouverts.
-- **Ctrl+Maj+T** rouvre le dernier dossier fermé avec sa disposition et sa sélection. La commande existe aussi dans le menu du titre et la liste de raccourcis de la barre des tâches ; cette dernière permet de remonter plus loin dans les fermetures.
+- Ouvrir un dossier ou son parent ferme par défaut la fenêtre source. Maintenir Ctrl pendant l’ouverture d’un dossier garde la fenêtre source ouverte. Le comportement par défaut se règle dans **Paramètres > Général**. Ouvrir plusieurs dossiers sélectionnés conserve la fenêtre source.
+- Le menu à côté du titre permet de passer d’un dossier ouvert à l’autre. **Fermer les fenêtres parentes** ferme les fenêtres des dossiers situés plus haut dans l’arborescence.
+- **Ctrl+Maj+T** rouvre le dernier dossier fermé avec sa disposition et sa sélection. La commande existe aussi dans le menu du titre. La liste de raccourcis de la barre des tâches permet de rouvrir ce dossier ou ceux fermés plus tôt.
 - La liste de raccourcis ouvre également les dossiers épinglés dans l’Accès rapide de l’Explorateur de fichiers.
 
 Revenir au parent ne sélectionne pas le dossier qui vient d’être quitté. Un parent déjà ouvert conserve sa sélection.
@@ -26,7 +26,7 @@ Les fichiers et sous-dossiers peuvent être disposés librement en mode Icônes 
 
 ![Un nom de fichier long, sélectionné et affiché en entier en mode Icônes.](images/selected-name-fr.png)
 
-**Prévisualiser les modes d’affichage dans le menu Affichage** montre chaque mode au survol. Un clic le conserve ; Échap ou la sortie de l’aperçu restaure l’affichage initial. L’aperçu reste temporaire et ne remplace pas la disposition enregistrée.
+**Prévisualiser les modes d’affichage dans le menu Affichage** montre chaque mode au survol. Cliquer sur un mode l’applique. Échap ou la sortie de l’aperçu restaure l’affichage initial. L’aperçu reste temporaire et ne remplace pas la disposition enregistrée.
 
 **Mélanger les dossiers et les fichiers dans le tri** les trie ensemble, comme sous [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) et [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). L’option se trouve dans **Paramètres > Affichage > Fichiers** et concerne les modes Détails, Liste et Icônes réorganisées automatiquement. Les dossiers virtuels et les archives gardent l’ordre de Windows.
 
@@ -38,7 +38,7 @@ Les dossiers sans position enregistrée s’ouvrent dans l’espace libre, ou av
 
 ### Sélection et activation
 
-**Conserver la sélection lors d’un clic sur une fenêtre inactive**, dans **Paramètres > Général**, permet d’activer un dossier par un clic sur son arrière-plan sans effacer sa sélection. Un second appui commence un rectangle de sélection.
+**Conserver la sélection lors d’un clic sur une fenêtre inactive**, dans **Paramètres > Général**, permet d’activer un dossier par un clic sur son arrière-plan sans effacer sa sélection. Une fois la fenêtre active, un clic-glisser permet de tracer un rectangle de sélection.
 
 ## Gestion des fenêtres
 
@@ -57,7 +57,7 @@ Une fenêtre peut être déplacée ou redimensionnée en faisant glisser depuis 
 
 La sélection est conservée. Échap annule le geste.
 
-Chaque action possède son raccourci personnalisable dans **Paramètres > Raccourcis**. Les boutons gauche et droit nécessitent Alt ; le bouton central peut aussi s’utiliser sans Alt.
+Chaque action possède son raccourci personnalisable dans **Paramètres > Raccourcis**. Les boutons gauche et droit nécessitent Alt. Le bouton central peut aussi s’utiliser sans Alt.
 
 ### Verrouillage de l’état enregistré
 
@@ -65,13 +65,13 @@ Le verrouillage conserve la position, la taille et l’affichage d’un dossier 
 
 <img src="images/locked-title-fr.png" alt="Gros plan du titre du dossier et de son badge de cadenas." width="280">
 
-Les changements temporaires restent possibles ; rouvrir le dossier rétablit l’état verrouillé. Les positions individuelles des icônes continuent de s’enregistrer. **Déverrouiller l’état de la fenêtre** conserve la disposition actuelle.
+Les changements temporaires restent possibles. Rouvrir le dossier rétablit l’état verrouillé. Les positions individuelles des icônes continuent de s’enregistrer. **Déverrouiller l’état de la fenêtre** conserve la disposition actuelle.
 
 Désactiver la fonction demande confirmation et supprime tous les verrouillages, y compris ceux des dossiers fermés. La réactiver ne les restaure pas.
 
 ### Personnaliser le menu de la barre de titre
 
-Le menu se personnalise dans **Paramètres > Affichage > Éléments de l’interface > Modifier le menu de barre de titre**. Faire glisser une action depuis la droite pour l’ajouter au menu, déplacer une entrée pour changer son ordre ou la glisser en dehors pour la retirer.
+Le menu se personnalise dans **Paramètres > Affichage > Éléments de l’interface > Modifier le menu de barre de titre**. Faire glisser une action depuis la liste de droite pour l’ajouter au menu, déplacer une entrée pour changer son ordre ou la faire glisser hors du menu pour la retirer.
 
 Les entrées gérées par Nilesoft Shell ne sont pas modifiables ici, car ses règles sont prioritaires. Voir l’[intégration Nilesoft Shell](#nilesoft-shell).
 
@@ -81,7 +81,7 @@ Les entrées gérées par Nilesoft Shell ne sont pas modifiables ici, car ses r�
 
 - **Rétablir la disposition verrouillée** ramène la fenêtre à sa disposition de référence. **Remplacer la disposition de référence** enregistre la disposition actuelle comme nouvelle référence verrouillée, après confirmation.
 
-- **Oublier la disposition de ce dossier** efface sa disposition et son verrouillage, en conservant l’historique des recherches. L’enregistrement reste suspendu dans la fenêtre courante jusqu’à sa fermeture ; la prochaine ouverture utilise les réglages par défaut. Verrouiller une nouvelle disposition réactive l’enregistrement.
+- **Oublier la disposition de ce dossier** efface sa disposition et son verrouillage, en conservant l’historique des recherches. L’enregistrement reste suspendu dans la fenêtre courante jusqu’à sa fermeture. La prochaine ouverture utilise les réglages par défaut. Verrouiller une nouvelle disposition réactive l’enregistrement.
 
 ### Groupes de dossiers
 
@@ -93,7 +93,7 @@ Saisir tout ou partie d’un nom de fichier ou de dossier, puis appuyer sur Entr
 
 Le champ propose les recherches récentes et, si l’intégration est activée, **Rechercher dans Everything** pour une recherche externe. Entrée sans suggestion sélectionnée applique le filtre local. Ctrl+F active le champ.
 
-L’historique est propre à chaque dossier. Le nombre de recherches validées conservées se règle dans les paramètres généraux ; 0 efface et désactive l’historique. [Everything](#everything) permet de chercher dans les sous-dossiers ou dans tous les fichiers indexés.
+L’historique est propre à chaque dossier. Le nombre de recherches validées conservées se règle dans les paramètres généraux. 0 efface et désactive l’historique. [Everything](#everything) permet de chercher dans les sous-dossiers ou dans tous les fichiers indexés.
 
 ![Le champ de recherche avec Everything et les suggestions de recherches récentes.](images/search-fr.png)
 
@@ -123,7 +123,7 @@ Peek doit aussi être activé dans PowerToys. Cette intégration nécessite Powe
 
 Une installation existante d’[Everything](https://www.voidtools.com/) peut être intégrée pour lancer des recherches avancées depuis le champ de FileSpacer. Les résultats s’ouvrent dans Everything.
 
-L’option s’active dans **Paramètres > Intégration**, avec détection automatique d’Everything ou choix manuel d’une version portable. La portée est le dossier courant et ses sous-dossiers, ou **Partout** ; les dossiers virtuels nécessitent Partout.
+L’option s’active dans **Paramètres > Intégration**, avec détection automatique d’Everything ou choix manuel d’une version portable. La recherche porte sur le dossier courant et ses sous-dossiers, ou sur tous les fichiers indexés avec **Partout**. Pour les dossiers virtuels, choisir Partout.
 
 Choisir **Rechercher dans Everything** lance la recherche externe avec la syntaxe d’Everything. Un lancement réussi efface le champ et le filtre local de FileSpacer.
 
@@ -142,7 +142,7 @@ item(type='*' mode='multiple' where=filespacer_title
      title='Rétablir la disposition verrouillée' cmd=window.command(1123))
 ```
 
-Le thème Modern ci-dessous compare ses coins par défaut aux coins carrés recommandés.
+Les captures suivantes montrent le thème Modern avec ses coins par défaut et avec les coins carrés recommandés.
 
 **Menu de navigation**
 
@@ -158,9 +158,9 @@ Le thème Modern ci-dessous compare ses coins par défaut aux coins carrés reco
 
 ## Paramètres et mises à jour
 
-Ctrl+, ouvre les paramètres ; F1 ouvre le guide hors connexion. L’interface suit la langue d’affichage de Windows ; un changement de langue nécessite un redémarrage.
+Ctrl+, ouvre les paramètres. F1 ouvre le guide hors connexion. L’interface suit la langue d’affichage de Windows. Un changement de langue nécessite un redémarrage.
 
-Les mises à jour se recherchent dans **Paramètres > À propos**, où les vérifications hebdomadaires facultatives peuvent aussi être activées. Elles sont désactivées par défaut. Le téléchargement et l’installation nécessitent une confirmation. Les dossiers précédemment ouverts retrouvent ensuite leur disposition enregistrée.
+On peut rechercher des mises à jour dans **Paramètres > À propos** et y activer les vérifications hebdomadaires. Elles sont désactivées par défaut. Le téléchargement et l’installation nécessitent une confirmation. Les dossiers précédemment ouverts retrouvent ensuite leur disposition enregistrée.
 
 ## Données locales
 
@@ -168,11 +168,11 @@ Dispositions, verrouillages, historiques et préférences sont conservés locale
 
 **Paramètres > À propos > Maintenance > Réinitialiser l’état de tous les dossiers** ferme les fenêtres de dossiers et efface leurs dispositions, historiques et verrouillages. Les fichiers et les préférences générales sont conservés.
 
-Pour le dépannage, `FileSpacer.exe /reset-options` réinitialise les préférences générales ; `/reset-all` efface aussi l’état des dossiers. Ces commandes conservent les fichiers.
+Pour le dépannage, `FileSpacer.exe /reset-options` réinitialise les préférences générales. `/reset-all` efface aussi l’état des dossiers. Ces commandes conservent les fichiers.
 
 ## Confidentialité
 
-FileSpacer ne contient ni télémétrie, ni suivi d’usage, ni publicité. Aucun rapport de plantage n’est envoyé automatiquement. Les éventuels rapports restent dans `%LOCALAPPDATA%\FileSpacer` ; leur partage est facultatif et peut révéler des chemins de fichiers ou des portions de mémoire d’un processus.
+FileSpacer ne contient ni télémétrie, ni suivi d’usage, ni publicité. Aucun rapport de plantage n’est envoyé automatiquement. Les éventuels rapports restent dans `%LOCALAPPDATA%\FileSpacer`. Leur partage est facultatif et peut révéler des chemins de fichiers ou des portions de mémoire d’un processus.
 
 Les recherches de mises à jour et les téléchargements contactent GitHub en HTTPS. GitHub reçoit les informations habituelles de connexion, dont l’adresse IP et la version de l’application, mais aucun état de dossier, chemin de fichier ou rapport de diagnostic.
 

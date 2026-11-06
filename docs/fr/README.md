@@ -18,7 +18,7 @@ FileSpacer privilégie une expérience légère et épurée. Pour limiter l’ac
 
 <a id="system--languages"></a>**Système et langues :** Windows 10 ou version ultérieure, x64. Disponible en dix langues : anglais, français, allemand, italien, espagnol, portugais (Portugal), grec, polonais, néerlandais et ukrainien.
 
-<a id="privacy"></a>**Confidentialité :** **Aucune télémétrie, aucun suivi d’usage ni publicité.** Les vérifications de mises à jour contactent GitHub ; les vérifications hebdomadaires sont facultatives et désactivées par défaut. Téléchargement et installation demandent confirmation. [Confidentialité](user-guide.md#confidentialité).
+<a id="privacy"></a>**Confidentialité :** **Aucune télémétrie, aucun suivi d’usage ni publicité.** Les vérifications de mises à jour contactent GitHub. Les vérifications hebdomadaires sont facultatives et désactivées par défaut. Téléchargement et installation demandent confirmation. [Confidentialité](user-guide.md#confidentialité).
 
 **Installation :**
 
@@ -39,7 +39,7 @@ _FileSpacer est un dérivé de [ChromaFiler](https://github.com/vanjac/chromafil
 
 - **Une fenêtre unique par dossier**, réactivée si le dossier est déjà ouvert. Sa position, sa taille, ses réglages d’affichage et la disposition des icônes sont conservés d’une ouverture à l’autre. [Navigation spatiale](user-guide.md#navigation-entre-les-fenêtres).
 - **Disposer les icônes librement**, avec une disposition enregistrée et restaurée pour chaque dossier. [Disposition des icônes](user-guide.md#disposition-des-icônes).
-- **Déplacer et redimensionner les fenêtres** depuis la zone des fichiers en conservant la sélection. Les raccourcis souris sont configurables ; par défaut, Alt + glisser gauche et Alt + glisser droit. [Gestes de fenêtre](user-guide.md#déplacement-et-redimensionnement).
+- **Déplacer et redimensionner les fenêtres** depuis la zone des fichiers en conservant la sélection. Les raccourcis souris sont configurables, avec Alt + glisser gauche et Alt + glisser droit par défaut. [Gestes de fenêtre](user-guide.md#déplacement-et-redimensionnement).
 - **Passer d’un dossier ouvert à l’autre** depuis le menu de la barre de titre, fermer les fenêtres parentes ou rouvrir la dernière fenêtre fermée avec Ctrl+Maj+T. [Navigation entre les fenêtres](user-guide.md#navigation-entre-les-fenêtres).
 - **Verrouiller l’état enregistré d’une fenêtre**, tout en permettant des changements temporaires de position, de taille et d’affichage. [Verrouillage de l’état des fenêtres](user-guide.md#verrouillage-de-létat-enregistré).
 - **Filtrer le dossier courant** et réutiliser ses recherches récentes. [Recherche et historique](user-guide.md#recherche-et-historique).
@@ -49,7 +49,7 @@ _FileSpacer est un dérivé de [ChromaFiler](https://github.com/vanjac/chromafil
 
 ## Intégration
 
-FileSpacer peut être défini comme gestionnaire de fichiers par défaut à l’installation ou ensuite dans les paramètres. Les fichiers s’ouvrent avec leur application Windows habituelle ; les dossiers réseau suivent le fonctionnement de Windows. [Intégration Windows](user-guide.md#intégration-windows).
+FileSpacer peut être défini comme gestionnaire de fichiers par défaut à l’installation ou ensuite dans les paramètres. Les fichiers s’ouvrent avec leur application Windows habituelle. Les dossiers réseau suivent le fonctionnement de Windows. [Intégration Windows](user-guide.md#intégration-windows).
 
 Avec **Everything**, on peut lancer des recherches avancées depuis le champ de FileSpacer, dans le dossier courant et ses sous-dossiers ou dans tous les fichiers indexés. Les résultats s’ouvrent dans Everything. [Intégration et utilisation](user-guide.md#everything).
 
@@ -59,7 +59,7 @@ Avec **Nilesoft Shell**, les menus de FileSpacer peuvent reprendre ses thèmes e
 
 [![Publish FileSpacer](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml/badge.svg)](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml)
 
-La compilation utilise MSVC/NMAKE, Visual Studio 2022 Build Tools avec ATL et un SDK Windows, Inkscape et ImageMagick. NSIS est nécessaire pour l’installeur ; SQLite est inclus. Consultez le [guide de compilation](../en/build.md).
+La compilation utilise MSVC/NMAKE, Visual Studio 2022 Build Tools avec ATL et un SDK Windows, Inkscape et ImageMagick. NSIS est nécessaire pour l’installeur. SQLite est inclus. Consultez le [guide de compilation](../en/build.md).
 
 Les tests de non-régression associent des scénarios PowerShell à des outils C++ et C# pour les vérifications internes et les tests réels de l’interface Windows et du Shell. Le [workflow de non-régression GitHub Actions](https://github.com/LeBenco/FileSpacer/actions/workflows/regression.yml) exécute cette suite applicative à la demande et automatiquement avant une publication. Les mêmes cas peuvent être lancés avec `tests.cmd` sur un poste Windows local ou dans une VM Hyper-V configurée. Consultez le [guide des tests](../en/tests/regression/README.md) pour la sélection des cas, les prérequis et les résultats.
 
@@ -67,7 +67,7 @@ Les tests de non-régression associent des scénarios PowerShell à des outils C
 
 ### Droits d’auteur et licence
 FileSpacer est distribué sous la licence <img align="absbottom" src="https://img.shields.io/badge/Licence-GPLv3-blue.svg" alt="Licence: GPL v3">.<br>
-Copyright © 2026 Benco pour les modifications de FileSpacer. La licence complète se trouve dans [LICENSE](../../LICENSE) dans les sources, ou `LICENSE.txt` dans le dossier d’installation. FileSpacer est fourni sans garantie ; sa redistribution et sa modification sont autorisées dans les conditions de cette licence.
+Copyright © 2026 Benco pour les modifications de FileSpacer. La licence complète se trouve dans [LICENSE](../../LICENSE) dans les sources, ou `LICENSE.txt` dans le dossier d’installation. FileSpacer est fourni sans garantie. Sa redistribution et sa modification sont autorisées dans les conditions de cette licence.
 
 ### Origine du projet et crédits
 FileSpacer est un dérivé de [ChromaFiler](https://github.com/vanjac/chromafiler), créé par J. van’t Hoog (vanjac). Un grand merci à vanjac pour cette base ! Code ChromaFiler d’origine © 2023 J. van’t Hoog.

@@ -5,9 +5,9 @@
 FileSpacer offre un’interfaccia fluida, sobria e personalizzabile, basata sul paradigma spaziale:
 
 - **Una cartella, una finestra.** Riaprire una cartella già aperta porta la sua finestra in primo piano. Posizione, dimensioni, vista e disposizione delle icone vengono ricordate anche dopo aver spostato o rinominato la cartella.
-- Aprire una cartella o la cartella superiore chiude per impostazione predefinita la finestra di origine. Tieni premuto Ctrl per invertire questo comportamento una volta, oppure cambia l’impostazione in **Impostazioni > Generale**. Aprire più cartelle selezionate mantiene aperta la finestra di origine.
+- Aprire una cartella o la cartella superiore chiude per impostazione predefinita la finestra di origine. Tenendo premuto Ctrl mentre si apre una cartella, la finestra di origine rimane aperta. L’impostazione predefinita si cambia in **Impostazioni > Generale**. Aprire più cartelle selezionate mantiene aperta la finestra di origine.
 - Il menu accanto al titolo permette di passare tra le cartelle aperte. **Chiudi le finestre delle cartelle superiori** chiude le finestre aperte delle cartelle che la contengono.
-- **Ctrl+Maiusc+T** riapre l’ultima cartella chiusa con la sua disposizione e selezione. Il comando è disponibile anche nel menu del titolo e nella Jump List della barra delle applicazioni; quest’ultima permette di risalire alle chiusure precedenti.
+- **Ctrl+Maiusc+T** riapre l’ultima cartella chiusa con la sua disposizione e selezione. Il comando è disponibile anche nel menu del titolo. La Jump List della barra delle applicazioni permette di riaprire questa cartella o altre chiuse in precedenza.
 - La Jump List della barra delle applicazioni apre anche le cartelle aggiunte ad Accesso rapido in Esplora file.
 
 Passare alla cartella superiore non seleziona quella da cui provieni. Una cartella superiore già aperta conserva la propria selezione.
@@ -26,7 +26,7 @@ Nelle visualizzazioni a icone puoi posizionare liberamente file e sottocartelle 
 
 ![Un nome di file lungo, selezionato e visibile per intero nella vista a icone.](images/selected-name-it.png)
 
-**Mostra l’anteprima delle modalità nel menu Visualizza** mostra ogni modalità al passaggio del puntatore. Un clic la conferma; Esc o l’uscita dall’anteprima ripristina la vista iniziale. L’anteprima è temporanea e non sostituisce la disposizione salvata.
+**Mostra l’anteprima delle modalità nel menu Visualizza** mostra ogni modalità al passaggio del puntatore. Un clic la conferma. Esc o l’uscita dall’anteprima ripristina la vista iniziale. L’anteprima è temporanea e non sostituisce la disposizione salvata.
 
 **Mescola cartelle e file nell’ordinamento** li ordina insieme, come su [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) e [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). L’opzione si trova in **Impostazioni > Visualizzazione > File** e si applica a Dettagli, Elenco e alle icone disposte automaticamente. Cartelle virtuali e archivi mantengono l’ordinamento di Windows.
 
@@ -38,7 +38,7 @@ Le cartelle senza posizione salvata si aprono nello spazio libero o, se non bast
 
 ### Selezione e attivazione
 
-Con **Impostazioni > Generale > Mantieni la selezione facendo clic su una finestra inattiva** attivo, un clic sullo sfondo di una cartella inattiva ne attiva la finestra senza cancellare la selezione. Premi una seconda volta per iniziare un rettangolo di selezione.
+Con **Impostazioni > Generale > Mantieni la selezione facendo clic su una finestra inattiva** attivo, un clic sullo sfondo di una cartella inattiva ne attiva la finestra senza cancellare la selezione. Una volta attiva la finestra, fare clic e trascinare sullo sfondo permette di tracciare un rettangolo di selezione.
 
 ## Gestione delle finestre
 
@@ -57,7 +57,7 @@ Una finestra può essere spostata o ridimensionata trascinando nell’area dei f
 
 La selezione rimane intatta. Esc annulla il gesto.
 
-Ogni azione ha una combinazione personalizzabile in **Impostazioni > Scelte rapide**. I pulsanti sinistro e destro richiedono Alt; quello centrale funziona anche senza Alt.
+Ogni azione ha una combinazione personalizzabile in **Impostazioni > Scelte rapide**. I pulsanti sinistro e destro richiedono Alt. Quello centrale funziona anche senza Alt.
 
 ### Blocco dello stato salvato
 
@@ -65,13 +65,13 @@ Il blocco conserva posizione, dimensioni e vista di una cartella per la successi
 
 <img src="images/locked-title-it.png" alt="Dettaglio del titolo della cartella con il lucchetto." width="280">
 
-Sono comunque possibili modifiche temporanee; riaprendo la cartella si ripristina lo stato bloccato. Le posizioni delle singole icone continuano a essere salvate. **Sblocca lo stato della finestra** mantiene la disposizione attuale.
+Sono comunque possibili modifiche temporanee. Riaprendo la cartella si ripristina lo stato bloccato. Le posizioni delle singole icone continuano a essere salvate. **Sblocca lo stato della finestra** mantiene la disposizione attuale.
 
 Disattivare la funzione richiede conferma e rimuove tutti i blocchi, anche dalle cartelle chiuse. Riattivarla non li ripristina.
 
 ### Personalizzare il menu della barra del titolo
 
-Il menu si personalizza in **Impostazioni > Visualizzazione > Elementi dell’interfaccia > Personalizza il menu della barra del titolo**. Trascinare un’azione dall’elenco a destra nel menu, spostare una voce per cambiarne l’ordine o trascinarla fuori per rimuoverla.
+Il menu si personalizza in **Impostazioni > Visualizzazione > Elementi dell’interfaccia > Personalizza il menu della barra del titolo**. Trascinare un’azione dall’elenco a destra nel menu, spostare una voce per cambiarne l’ordine o trascinarla fuori dal menu per rimuoverla.
 
 Le voci gestite da Nilesoft Shell non possono essere modificate qui, perché le sue regole hanno la precedenza. Vedere l’[integrazione con Nilesoft Shell](#nilesoft-shell).
 
@@ -81,7 +81,7 @@ Le voci gestite da Nilesoft Shell non possono essere modificate qui, perché le 
 
 - **Ripristina la disposizione bloccata** riporta la finestra alla disposizione di riferimento. **Sostituisci la disposizione di riferimento** salva la disposizione attuale come nuovo riferimento bloccato, dopo conferma.
 
-- **Rimuovi la disposizione salvata della cartella** elimina la disposizione salvata e il blocco, mantenendo la cronologia delle ricerche. Il salvataggio resta sospeso nella finestra corrente fino alla chiusura; all’apertura successiva vengono usati i valori predefiniti. Bloccare una nuova disposizione riattiva il salvataggio.
+- **Rimuovi la disposizione salvata della cartella** elimina la disposizione salvata e il blocco, mantenendo la cronologia delle ricerche. Il salvataggio resta sospeso nella finestra corrente fino alla chiusura. All’apertura successiva vengono usati i valori predefiniti. Bloccare una nuova disposizione riattiva il salvataggio.
 
 ### Gruppi di cartelle
 
@@ -93,7 +93,7 @@ Digitare tutto o parte del nome di un file o di una cartella, quindi premere Inv
 
 Il campo propone le ricerche recenti e, se l’integrazione è attiva, **Cerca in Everything** per una ricerca esterna. Invio senza un suggerimento selezionato applica il filtro locale. Ctrl+F attiva il campo.
 
-La cronologia è distinta per cartella. Il numero di ricerche confermate da conservare si regola nelle impostazioni generali; 0 svuota e disattiva la cronologia. [Everything](#everything) permette di cercare nelle sottocartelle o in tutti i file indicizzati.
+La cronologia è distinta per cartella. Il numero di ricerche confermate da conservare si regola nelle impostazioni generali. 0 svuota e disattiva la cronologia. [Everything](#everything) permette di cercare nelle sottocartelle o in tutti i file indicizzati.
 
 ![Suggerimenti di ricerca con Everything e query recenti per file di progetto fittizi.](images/search-it.png)
 
@@ -123,7 +123,7 @@ Peek deve essere attivato anche in PowerToys. L’integrazione richiede PowerToy
 
 Un’installazione esistente di [Everything](https://www.voidtools.com/) può essere integrata per avviare ricerche avanzate dal campo di FileSpacer. I risultati si aprono in Everything.
 
-L’opzione si attiva in **Impostazioni > Integrazione**, con rilevamento automatico di Everything o scelta manuale di una copia portatile. La ricerca comprende la cartella corrente e le sottocartelle, oppure **Ovunque**; le cartelle virtuali richiedono Ovunque.
+L’opzione si attiva in **Impostazioni > Integrazione**, con rilevamento automatico di Everything o scelta manuale di una copia portatile. La ricerca comprende la cartella corrente e le sottocartelle, oppure tutti i file indicizzati con **Ovunque**. Per le cartelle virtuali è necessario scegliere Ovunque.
 
 **Cerca in Everything** avvia la ricerca esterna con la sintassi di Everything. Un avvio riuscito svuota il campo e il filtro locale di FileSpacer.
 
@@ -142,7 +142,7 @@ item(type='*' mode='multiple' where=filespacer_title
      title='Ripristina la disposizione bloccata' cmd=window.command(1123))
 ```
 
-Il tema Modern qui sotto confronta gli angoli predefiniti con quelli squadrati consigliati.
+Le immagini qui sotto mostrano il tema Modern con gli angoli predefiniti e con quelli squadrati consigliati.
 
 **Menu di navigazione**
 
@@ -158,7 +158,7 @@ Il tema Modern qui sotto confronta gli angoli predefiniti con quelli squadrati c
 
 ## Impostazioni e aggiornamenti
 
-Ctrl+, apre le impostazioni; F1 apre la guida offline. L’interfaccia segue la lingua di visualizzazione di Windows; un cambio di lingua richiede il riavvio.
+Ctrl+, apre le impostazioni. F1 apre la guida offline. L’interfaccia segue la lingua di visualizzazione di Windows. Un cambio di lingua richiede il riavvio.
 
 Gli aggiornamenti si cercano in **Impostazioni > Informazioni**, dove si possono attivare anche i controlli settimanali facoltativi, disattivati per impostazione predefinita. Scaricamento e installazione richiedono conferma. Al termine si riaprono le cartelle precedenti con le disposizioni salvate.
 
@@ -168,11 +168,11 @@ Disposizioni, blocchi, cronologie e preferenze sono conservati localmente. I per
 
 **Impostazioni > Informazioni > Manutenzione > Reimposta lo stato di tutte le cartelle** chiude le finestre delle cartelle e ne cancella disposizioni, cronologia e blocchi salvati. File e preferenze generali vengono conservati.
 
-Per la risoluzione dei problemi, `FileSpacer.exe /reset-options` reimposta le preferenze generali; `/reset-all` cancella anche lo stato salvato delle cartelle. Questi comandi conservano i file.
+Per la risoluzione dei problemi, `FileSpacer.exe /reset-options` reimposta le preferenze generali. `/reset-all` cancella anche lo stato salvato delle cartelle. Questi comandi conservano i file.
 
 ## Privacy
 
-FileSpacer non contiene telemetria, monitoraggio dell’utilizzo o pubblicità. I rapporti sugli arresti anomali non vengono inviati automaticamente. Gli eventuali rapporti diagnostici rimangono in `%LOCALAPPDATA%\FileSpacer`; condividerli è facoltativo e può rivelare percorsi di file o parti della memoria del processo.
+FileSpacer non contiene telemetria, monitoraggio dell’utilizzo o pubblicità. I rapporti sugli arresti anomali non vengono inviati automaticamente. Gli eventuali rapporti diagnostici rimangono in `%LOCALAPPDATA%\FileSpacer`. Condividerli è facoltativo e può rivelare percorsi di file o parti della memoria del processo.
 
 I controlli degli aggiornamenti e i download contattano GitHub tramite HTTPS. GitHub riceve le normali informazioni di connessione, compresi indirizzo IP e versione dell’applicazione, ma nessuno stato di cartella, percorso di file o rapporto diagnostico.
 

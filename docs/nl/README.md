@@ -17,7 +17,7 @@ FileSpacer kiest voor een lichte, overzichtelijke ervaring. Om de opeenstapeling
 
 <a id="system--languages"></a>**Systeem en talen:** Windows 10 of nieuwer, x64. Tien talen: Engels, Frans, Duits, Italiaans, Spaans, Portugees (Portugal), Grieks, Pools, Nederlands en Oekraïens.
 
-<a id="privacy"></a>**Privacy:** **Geen telemetrie, gebruiksregistratie of reclame**. Updatecontroles maken contact met GitHub; wekelijkse controles zijn optioneel en staan standaard uit. Downloaden en installeren vereisen bevestiging. [Privacybeleid](user-guide.md#privacy).
+<a id="privacy"></a>**Privacy:** **Geen telemetrie, gebruiksregistratie of reclame**. Updatecontroles maken contact met GitHub. Wekelijkse controles zijn optioneel en staan standaard uit. Downloaden en installeren vereisen bevestiging. [Privacybeleid](user-guide.md#privacy).
 
 **Installatie:**
 
@@ -38,7 +38,7 @@ _FileSpacer is een fork van [ChromaFiler](https://github.com/vanjac/chromafiler)
 
 - **Eén venster per map**, hergebruikt als de map al open is. Positie, afmetingen, weergave-instellingen en pictogramindeling worden hersteld. [Ruimtelijke navigatie](user-guide.md#navigeren-tussen-vensters).
 - **Pictogrammen vrij plaatsen**, met opgeslagen en herstelde posities per map. [Pictogramindeling](user-guide.md#pictogramindeling).
-- **Vensters verplaatsen en het formaat wijzigen** vanuit het hele bestandsgebied, met behoud van selectie. Muisgebaren zijn instelbaar; standaard Alt + slepen met links en Alt + slepen met rechts. [Venstergebaren](user-guide.md#verplaatsen-en-formaat-wijzigen).
+- **Vensters verplaatsen en het formaat wijzigen** vanuit het hele bestandsgebied, met behoud van selectie. Muisgebaren zijn instelbaar, met standaard Alt + slepen met links en Alt + slepen met rechts. [Venstergebaren](user-guide.md#verplaatsen-en-formaat-wijzigen).
 - **Schakelen tussen geopende mappen** via het titelbalkmenu, bovenliggende vensters sluiten of het laatst gesloten venster opnieuw openen met Ctrl+Shift+T. [Vensternavigatie](user-guide.md#navigeren-tussen-vensters).
 - **Een opgeslagen vensterindeling vergrendelen**, terwijl tijdelijke wijzigingen in positie, afmetingen en weergave mogelijk blijven. [Vergrendeling](user-guide.md#een-opgeslagen-indeling-vergrendelen).
 - **De huidige map filteren** en recente zoekopdrachten hergebruiken. [Zoeken en geschiedenis](user-guide.md#zoeken-en-geschiedenis).
@@ -48,7 +48,7 @@ _FileSpacer is een fork van [ChromaFiler](https://github.com/vanjac/chromafiler)
 
 ## Integratie
 
-FileSpacer kan tijdens installatie of later in Instellingen als standaardbestandsbeheerder worden ingesteld. Bestanden openen in hun gebruikelijke Windows-toepassingen; netwerkmappen gebruiken de Windows-afhandeling. [Windows-integratie](user-guide.md#windows-integratie).
+FileSpacer kan tijdens installatie of later in Instellingen als standaardbestandsbeheerder worden ingesteld. Bestanden openen in hun gebruikelijke Windows-toepassingen. Netwerkmappen gebruiken de Windows-afhandeling. [Windows-integratie](user-guide.md#windows-integratie).
 
 Met **Everything** start u geavanceerde zoekopdrachten vanuit het FileSpacer-zoekveld, in de huidige map met submappen of in alle geïndexeerde bestanden. Resultaten openen in Everything. [Integratie en gebruik](user-guide.md#everything).
 
@@ -58,7 +58,7 @@ Met **Nilesoft Shell** kunnen de menu’s thema’s en aangepaste opdrachten geb
 
 [![FileSpacer publiceren](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml/badge.svg)](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml)
 
-Bouwen gebruikt MSVC/NMAKE, Visual Studio 2022 Build Tools met ATL en een Windows SDK, Inkscape en ImageMagick. NSIS is nodig voor het installatieprogramma; SQLite is meegeleverd. Zie de [bouwhandleiding](build.md).
+Bouwen gebruikt MSVC/NMAKE, Visual Studio 2022 Build Tools met ATL en een Windows SDK, Inkscape en ImageMagick. NSIS is nodig voor het installatieprogramma. SQLite is meegeleverd. Zie de [bouwhandleiding](build.md).
 
 Regressietests combineren PowerShell-scenario’s met C++- en C#-helpers voor interne controles en echte Windows-interface- en Shell-tests. De [regressieworkflow in GitHub Actions](https://github.com/LeBenco/FileSpacer/actions/workflows/regression.yml) voert deze toepassingstests op verzoek en automatisch vóór een publicatie uit. Dezelfde gevallen kunnen met `tests.cmd` op een lokaal Windows-bureaublad of in een geconfigureerde Hyper-V-VM worden uitgevoerd. De [testhandleiding](tests/regression/README.md) beschrijft de casusselectie, vereisten en resultaten.
 
@@ -66,7 +66,7 @@ Regressietests combineren PowerShell-scenario’s met C++- en C#-helpers voor in
 
 ### Auteursrecht en licentie
 FileSpacer wordt verspreid onder de <img align="absbottom" src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="Licentie: GPL v3">-licentie.<br>
-Copyright © 2026 Benco voor de wijzigingen aan FileSpacer. De volledige licentie staat in [LICENSE](../../LICENSE) in de broncode, of in `LICENSE.txt` in de installatiemap. FileSpacer wordt zonder garantie geleverd; verspreiding en wijziging zijn onder deze licentie toegestaan.
+Copyright © 2026 Benco voor de wijzigingen aan FileSpacer. De volledige licentie staat in [LICENSE](../../LICENSE) in de broncode, of in `LICENSE.txt` in de installatiemap. FileSpacer wordt zonder garantie geleverd. Verspreiding en wijziging zijn onder deze licentie toegestaan.
 
 ### Fork en dank aan het oorspronkelijke project
 FileSpacer is een fork van [ChromaFiler](https://github.com/vanjac/chromafiler) (oorspronkelijke ChromaFiler-code © 2023 J. van't Hoog), gemaakt door J. van't Hoog (vanjac). Veel dank aan vanjac voor de basis!

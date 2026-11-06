@@ -25,10 +25,10 @@
 - Smooth the installer and uninstaller sidebar logo with high-quality image scaling at the current display size.
 - Preserve quoted elevation arguments so an all-users update starts its silent worker instead of reopening the installer.
 - Update the originating installation by default and restore windows with the exact executable reported by setup, including when personal and all-users installations coexist.
-- Fix mixed sorting identities, overlays and folder notifications; keep free icon positions and use native views when the provider is unavailable or incompatible.
+- Fix mixed sorting identities, overlays and folder notifications. Keep free icon positions and use native views when the provider is unavailable or incompatible.
 - Fix Preferences uniqueness across processes, shortcut validation, Everything paths, keyboard mnemonics and regional translations.
 - Fix folder closing, activation clicks and View menu preview restoration.
-- Fix Jump List refreshes and installer diagnostics; preserve user help files during upgrades and uninstallation.
+- Fix Jump List refreshes and installer diagnostics. Preserve user help files during upgrades and uninstallation.
 - Bundle multilingual offline help through F1 and About, and refresh localized setup guides and Nilesoft Shell references.
 
 ## 1.2.2 — 2026-10-28
@@ -52,10 +52,10 @@
 
 - Request Windows confirmation only when installing or uninstalling for all users, and apply personal integration choices to the user who started setup.
 - Show the complete version history in a scrollable What's new panel beside the installation choices on the first installer screen.
-- Fix upgrades resetting installer component choices; restore the saved selections and preserve the current default file manager during silent upgrades.
+- Fix upgrades resetting installer component choices. Restore the saved selections and preserve the current default file manager during silent upgrades.
 - Use the same FileSpacer sidebar, large logo and light-gray and white palette on every installer and uninstaller screen. Give the installer a distinct icon composed from the application's native bitmaps and a separately optimized download-arrow badge at every size, retaining a thin yellow rim at the folder's right and bottom edges.
 - Fix shutdown crashes caused by eager initialization of thread-local folder data on late Shell worker threads.
-- Offer Open in Windows File Explorer in folder context menus when FileSpacer is the default file manager, and Open in FileSpacer otherwise; update the menus when changing the default, after installation and at startup.
+- Offer Open in Windows File Explorer in folder context menus when FileSpacer is the default file manager, and Open in FileSpacer otherwise. Update the menus when changing the default, after installation and at startup.
 - Fix network server and share shortcuts opening in Windows File Explorer when FileSpacer is the default file manager. Update the installed Folder Context Menu component and select FileSpacer as default again to enable network integration.
 - Enlarge the About tab's application icon to 48 pixels at 100% scaling, with text positioned beside it.
 - Keep maximized window titles fully visible and stretch the toolbar across the available width.
@@ -115,7 +115,7 @@ This release builds on 1.1.3, which already provides configurable keyboard/mouse
 - Show Everything and recent searches automatically when entering the existing search field, without an extra button. Keep native search, instant filtering and local recent-query reuse.
 - Remember five recent searches per folder across sessions by default, configurable from zero to twenty independently of Everything. Preserve existing folder/search data and clean history with the existing conservative folder-state policy.
 - Display Everything's executable icon at the appropriate size, with background extraction and a memory cache refreshed when its executable changes.
-- Add isolated storage, migration and real Shell/Everything regression coverage; make the Shell test reader robust while successive filters change the view.
+- Add isolated storage, migration and real Shell/Everything regression coverage. Make the Shell test reader robust while successive filters change the view.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
 
@@ -135,7 +135,7 @@ This release builds on 1.1.3, which already provides configurable keyboard/mouse
 - Confirm global disabling of window state locking, clear locks for open and closed folders, and resume normal saving across processes.
 - Extend regression coverage for lock transitions, persistence failures, Shell restoration and native badge rendering.
 - Reopening a closed window (Ctrl+Shift+T, Jump List) scrolls Details and List views back to the row that was at the top when the window was closed.
-- Crash diagnostics keep writing a minidump and a report to the application's local data; the attribution to the former full-name rendering, its automatic preference change and restart are removed.
+- Crash diagnostics keep writing a minidump and a report to the application's local data. The attribution to the former full-name rendering, its automatic preference change and restart are removed.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.1...v1.1.2)
 
@@ -154,7 +154,7 @@ This release builds on 1.1.3, which already provides configurable keyboard/mouse
 - Open Control Panel in its native Windows window while preserving the source folder and selection.
 - Remove automatic origin-folder selection when navigating to a parent or ancestor for ergonomic reasons: subsequent Ctrl selections must not accidentally open both folders.
 - Accept three behavior differences in this release: custom full selected names with opaque backgrounds, selection preservation on activation click, and exact reopened scroll offsets are unavailable. Disable the two inactive Settings controls while retaining their saved preferences.
-- Streamline regression coverage around the production native Shell configuration; retire exploratory profile comparisons, embedding probes and migration-only reporting.
+- Streamline regression coverage around the production native Shell configuration. Retire exploratory profile comparisons, embedding probes and migration-only reporting.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
 
