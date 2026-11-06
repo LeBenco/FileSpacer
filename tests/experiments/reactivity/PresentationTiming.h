@@ -9,6 +9,50 @@
 namespace presentation {
 inline LONGLONG tick(){LARGE_INTEGER value={};QueryPerformanceCounter(&value);return value.QuadPart;}
 inline void check(bool value,const char *why){if(!value)throw std::runtime_error(why);}
+static bool enabled=true,protocolOnly=false,desktopRegion=false;
+static const SIZE viewport={800,400};
+inline void pumpUi(DWORD duration){const ULONGLONG end=GetTickCount64()+duration;do{MSG message;while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){TranslateMessage(&message);DispatchMessageW(&message);}if(GetTickCount64()>=end)break;Sleep(5);}while(true);}
+inline RECT workArea(){MONITORINFO info={sizeof(info)};check(GetMonitorInfoW(MonitorFromPoint(POINT{0,0},MONITOR_DEFAULTTOPRIMARY),&info)!=FALSE,"Primary display unavailable");return info.rcWork;}
+struct PointerParking {
+    HWND window=nullptr;POINT original={},expected={};
+    PointerParking(){
+        check(GetCursorPos(&original)!=FALSE,"Cannot save pointer position");const RECT work=workArea();
+        WNDCLASSW type={};type.hInstance=GetModuleHandleW(nullptr);type.lpfnWndProc=DefWindowProcW;type.lpszClassName=L"FileSpacer Pointer Parking";type.hbrBackground=GetSysColorBrush(COLOR_WINDOW);
+        check(RegisterClassW(&type)!=0,"Cannot register pointer parking window");
+        window=CreateWindowExW(WS_EX_TOPMOST|WS_EX_TOOLWINDOW|WS_EX_NOACTIVATE,type.lpszClassName,L"",WS_POPUP|WS_VISIBLE,work.right-24,work.bottom-24,20,20,nullptr,nullptr,type.hInstance,nullptr);
+        if(!window)UnregisterClassW(type.lpszClassName,type.hInstance);
+        check(window!=nullptr,"Cannot create pointer parking window");expected={work.right-14,work.bottom-14};
+    }
+    ~PointerParking(){if(window)DestroyWindow(window);UnregisterClassW(L"FileSpacer Pointer Parking",GetModuleHandleW(nullptr));SetCursorPos(original.x,original.y);}
+    PointerParking(const PointerParking&)=delete;PointerParking&operator=(const PointerParking&)=delete;
+    void park(){ShowWindow(window,SW_SHOWNOACTIVATE);check(SetWindowPos(window,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE)!=FALSE,"Cannot expose pointer parking window");check(SetCursorPos(expected.x,expected.y)!=FALSE,"Cannot park pointer");check(WindowFromPoint(expected)==window,"Pointer parking window is covered");}
+    void verify(){POINT actual={};check(GetCursorPos(&actual)&&actual.x==expected.x&&actual.y==expected.y,"Pointer moved during the measurement");}
+};
+static PointerParking *pointer=nullptr;
+inline void fitView(IShellView *view,HWND frame,const std::function<void()> &resized={}){
+    const RECT work=workArea();if(IsZoomed(frame)||IsIconic(frame))ShowWindow(frame,SW_RESTORE);
+    for(int attempt=0;attempt<8;++attempt){
+        HWND body=nullptr;RECT region={},outer={};check(SUCCEEDED(view->GetWindow(&body))&&GetWindowRect(body,&region)&&GetWindowRect(frame,&outer),"Cannot read view geometry");
+        if(region.right-region.left==viewport.cx&&region.bottom-region.top==viewport.cy&&region.left>=work.left&&region.top>=work.top&&region.right<=work.right&&region.bottom<=work.bottom-28)return;
+        const LONG width=outer.right-outer.left+viewport.cx-(region.right-region.left),height=outer.bottom-outer.top+viewport.cy-(region.bottom-region.top);
+        check(width>0&&height>0&&width<=work.right-work.left&&height<=work.bottom-work.top-32,"Display is too small for the common viewport and application chrome");
+        check(SetWindowPos(frame,nullptr,work.left+(work.right-work.left-width)/2,work.top,width,height,SWP_NOZORDER|SWP_NOACTIVATE)!=FALSE,"Cannot resize comparison frame");if(resized)resized();pumpUi(50);
+    }
+    throw std::runtime_error("Application did not reach the required 800x400 Shell view rectangle");
+}
+inline RECT measuredRegion(HWND body){
+    RECT region={};check(GetWindowRect(body,&region)!=FALSE,"Cannot locate visible view");const RECT work=workArea();
+    if(desktopRegion){region={work.left,work.top,work.left+viewport.cx,work.top+viewport.cy};}
+    check(region.right-region.left==viewport.cx&&region.bottom-region.top==viewport.cy,"Measured view dimensions differ from 800x400");
+    check(region.left>=work.left&&region.top>=work.top&&region.right<=work.right&&region.bottom<=work.bottom-28,"Measured region is outside the reserved display work area");return region;
+}
+inline bool uncovered(HWND body,RECT region,bool diagnostic){
+    const HWND frame=GetAncestor(body,GA_ROOT);
+    for(int y=1;y<=3;++y)for(int x=1;x<=3;++x){const POINT point={region.left+(region.right-region.left)*x/4,region.top+(region.bottom-region.top)*y/4};HWND hit=WindowFromPoint(point);
+        if(GetAncestor(hit,GA_ROOT)!=frame){if(diagnostic){wchar_t name[128]={},title[256]={};DWORD pid=0;GetClassNameW(hit,name,128);GetWindowTextW(GetAncestor(hit,GA_ROOT),title,256);GetWindowThreadProcessId(hit,&pid);std::fprintf(stderr,"OCCLUSION point=%ld,%ld body=%p expected_root=%p hit=%p root=%p pid=%lu class=%ls title=%ls\n",point.x,point.y,body,frame,hit,GetAncestor(hit,GA_ROOT),pid,name,title);}return false;}}
+    return true;
+}
+inline void requireUncovered(HWND body,RECT region){const ULONGLONG end=GetTickCount64()+2000;while(!uncovered(body,region,false)&&GetTickCount64()<end)pumpUi(10);check(uncovered(body,region,true),"Measured view is covered; see OCCLUSION diagnostics");}
 using Digest=std::array<unsigned char,32>;
 struct Image {LONGLONG presented=0;UINT accumulated=0;Digest digest={};};
 struct Boundaries {LONGLONG firstChange=0,finalImage=0;bool returnedToBaseline=false;};
@@ -21,17 +65,16 @@ inline Boundaries boundaries(const std::vector<Image> &images,LONGLONG start){
     return result;
 }
 struct Observation {
-    RECT region={};std::wstring prefix;std::vector<Image> images;
+    HWND observedWindow=nullptr;RECT region={};std::wstring prefix;std::vector<Image> images;
     std::vector<unsigned char> firstPixels,lastPixels;std::string failure;
     std::atomic<bool> initialized{false},ready{false},done{false},stop{false};
     std::atomic<LONGLONG> began{0},returned{0};std::thread worker;
     LONGLONG rate=0;UINT width=0,height=0;unsigned lost=0;bool quiet=false;
-    Observation(HWND body,const std::wstring &path,const std::function<void()> &initialPaint={}):prefix(path){
+    Observation(HWND body,const std::wstring &path,const std::function<void()> &initialPaint={},bool selfTest=false):observedWindow(body),prefix(path){
         check(GetWindowRect(body,&region)!=FALSE,"Cannot locate visible view");
         MONITORINFO monitor={sizeof(monitor)};check(GetMonitorInfoW(MonitorFromRect(&region,MONITOR_DEFAULTTONULL),&monitor)!=FALSE,"No display work area");
-        RECT visible={};check(IntersectRect(&visible,&region,&monitor.rcWork)!=FALSE,"View has no visible work area");region=visible;
-        const HWND frame=GetAncestor(body,GA_ROOT);
-        for(int y=1;y<=3;++y)for(int x=1;x<=3;++x){const POINT point={region.left+(region.right-region.left)*x/4,region.top+(region.bottom-region.top)*y/4};check(GetAncestor(WindowFromPoint(point),GA_ROOT)==frame,"View is covered by another window; leave the measurement desktop free");}
+        if(!selfTest)region=measuredRegion(body);
+        if(pointer)pointer->park();requireUncovered(body,region);
         LARGE_INTEGER frequency={};QueryPerformanceFrequency(&frequency);rate=frequency.QuadPart;
         worker=std::thread([this](){try{capture();}catch(const std::exception &error){failure=error.what();}done.store(true);ready.store(true);});
         const LONGLONG deadline=tick()+rate*10;
@@ -117,6 +160,7 @@ struct Observation {
     void finish(){
         while(!done.load()){MSG message;while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){TranslateMessage(&message);DispatchMessageW(&message);}Sleep(1);}
         if(worker.joinable())worker.join();check(failure.empty(),failure.c_str());check(!images.empty(),"No desktop image observed");
+        if(pointer)pointer->verify();requireUncovered(observedWindow,region);
         const LONGLONG start=began.load();check(start&&returned.load(),"Missing operation markers");
         const auto result=boundaries(images,start);const LONGLONG firstChange=result.firstChange,finalImage=result.finalImage;
         const char *quality=!quiet?"UNSTABLE":!firstChange?"NO_VISIBLE_CHANGE":result.returnedToBaseline?"RETURNED_TO_BASELINE":lost?"COALESCED_UPPER_BOUND":"OBSERVED";
