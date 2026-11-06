@@ -1124,3 +1124,140 @@ final logs are under build/reactivity/ordering-analysis-after. Verdict REVIEW fo
 new signed flag-expression and adjacent-path-parameter style diagnostics; no new
 confirmed functional defect or missing analysis coverage. No private calls,
 executable patches or additional dependencies were introduced.
+
+### Independent order-transfer prototype, 6 November 2026
+
+OrderTransferTests.cpp is a separate Win32/COM executable. It directly creates
+CLSID_ExplorerBrowser and uses its public interfaces; it links no FileSpacer
+production .cpp, provider, selection/position helper, settings or SQLite code.
+The common header supplies only the project's Win32 target/Unicode definitions.
+The existing VM transport and owned text-file fixture generator are reused.
+
+The minimum functional question is whether a real manual reorder performed in
+the classic view can survive in a genuinely fast modern view. Each scenario has
+a unique 5,000-file directory, a fresh modern timing control and a classic view.
+A physical mouse drag changes the classic order. The experiment checks observed
+capture/release and the exact source identity, then requires that the enumerated
+order actually changed. IFolderView::Items with SVGIO_FLAG_VIEWORDER captures all
+5,000 relative parsing names; comparisons check both the complete identity set
+and its order. A native call reporting successful option changes is insufficient.
+
+Three strategies are tested, each with EBO_NOPERSISTVIEWSTATE enabled and disabled:
+
+| Strategy | Before explicit refresh | After refresh | After modern reopen | Fast operations? |
+| --- | --- | --- | --- | --- |
+| Set options from 6 to 0 on the existing browser | manual order retained | manual order lost | not exercised | no |
+| Create modern view while retaining classic view | manual order lost | manual order lost | manual order lost | yes |
+| SaveViewState, destroy classic, create modern | manual order lost | manual order lost | manual order lost | yes |
+
+The first strategy returns profile=0 but keeps the same canonical view identity,
+GetItemPosition still succeeds, and the selection/clear costs remain high. It
+does not qualify as a transition to the fast engine. Refresh loses the manual
+order without delivering that engine's performance. In contrast, freshly created
+modern views return E_NOTIMPL for GetItemPosition and have fast clear operations,
+but have already lost the manual order before any explicit Refresh. Explicit
+SaveViewState returns S_OK in both persistence variants and does not resolve it.
+The retained classic source still has the exact manual order after the modern
+view trials, so declining that trial and retaining the source is feasible in
+this fixture. That preserves behavior, without obtaining the modern speed gain.
+
+Authoritative final observations:
+
+* vm-cc4b09dd728a45ce8f589ba9e7ec57e2, also copied to
+  experiment-ordertransfer-5e5ff3f6a8764ea589d62782f76ce9fa: fresh and toggle,
+  both persistence variants, all selection and cleared-array checks pass.
+* vm-e8e2d478c7e2409c9d4847d6787c0a7a, also copied to
+  experiment-ordertransfer-73b7bc7c91a246b98331d401eb260a5c: explicit save/close
+  handoff, both persistence variants, all protocol checks pass.
+
+The earlier vm-e850ea0a4b5844a49335584342bac662 pilot has the same observations
+but predates the explicit empty GetSelection array assertion. In final result
+lines, -1 denotes a stage not exercised (toggle reopen and retained fallback
+after destroying the source); it must not be read as a measured failure.
+
+All six scenarios complete their observation protocol, but none qualifies the
+proposed optimization. There is consequently no FileSpacer integration.
+The six scenarios use medium icons; no conclusion about other Windows versions
+or transferring arbitrary free coordinates follows from this experiment.
+
+Each timing stage makes three public selection/clear calls, verifying exact
+selected identities and both full/empty GetSelection arrays outside the measured
+calls. The counts are all 5,000. In the final handoff run, modern control clear
+medians are 3.424 / 3.727 ms (persistence disabled/enabled), classic clear medians
+1,413.269 / 1,270.473 ms, and the new modern view clear medians 3.474 / 3.422 ms.
+The latter speed is unusable for this proposal because the order is gone.
+Save/close/create, order verification, immediate paint and DwmFlush together take
+591.310 / 402.472 ms in that run. Snapshot capture in the preceding final four
+scenarios takes 14.024–19.685 ms; checking the full state has additional cost.
+These are local VM samples, not negligible-cost compatibility guarantees.
+
+RedrawWindow and DwmFlush provide a paint/composition barrier for outstanding
+updates. They are not a full first-stable-image or physical display measurement.
+There is no new Explorer side-by-side display benchmark in this step. FileSpacer
+and Explorer's earlier workstation timings must not be numerically mixed with
+this standalone Debug executable's API timings.
+
+Reproduce the complete six-case observation or just the save/close extension:
+
+```bat
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case OrderTransfer -TimeoutSeconds 900
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case OrderTransfer -HandoffOnly -TimeoutSeconds 900
+```
+
+MSVC Debug and the standalone helper compile without new /W4 warnings. clang-tidy
+and Cppcheck both complete on OrderTransferTests.cpp with Windows x64/C++14,
+real SDK 10.0.19041.0 and MSVC/ATL 14.44.35207 headers for clang-tidy, official
+windows/microsoft_atl/sqlite3 models for Cppcheck (sqlite is unused by this helper).
+No parse failure, timeout, reduced ATL coverage or missing analyzed file.
+Verdict REVIEW for new signed-flag operations and adjacent scalar parameters;
+no confirmed new functional defect remains. Logs: build/reactivity/order-transfer-analysis.
+
+### User-visible latency cases and measured population limits
+
+Here, 100 ms is an explicitly chosen practical reference, not a universal
+perception threshold. Distinguish selected count from total directory size.
+The progressive measurements below select subsets inside a fixed 5,000-file
+directory. They do not measure the opening time of a directory of that size.
+
+| User action | Population with measured evidence | Interpretation |
+| --- | --- | --- |
+| Select in classic spatial view | 1,000 selected: 79.952 ms; 2,500: 302.694 ms; 5,000: 1,075.773 ms | First measured point above 100 ms is 2,500; actual crossing between 1,000 and 2,500 in this series |
+| Clear classic spatial selection | 1,000: 73.956 ms; 2,500: 409.811 ms; 5,000: 1,809.309 ms | Same measured bracket; not a per-view threshold for all six modes |
+| Select in hybrid List | 500: 72.873 ms; 1,000: 122.016 ms | Crossing between 500 and 1,000 in the existing progressive List experiment |
+| Select in hybrid Details | Around 5,000, 85.233 ms in the earlier controlled run and 140.621 ms in the refreshed workstation comparison | Exact threshold not established; separate runs, not a fitted population curve |
+| Clear hybrid Details/List | 5,000: 2.032 / 7.427 ms in the refreshed comparison | No 100 ms issue demonstrated up to this population |
+| Restore a slightly changed large selection | 4,999/5,000 selected, adding/removing one: 212.05 / 424.32 ms after optimization | Still above 100 ms at 5,000; smaller-count threshold unmeasured |
+| Move free icons | 16 moved among 100: about 18–27 ms; 16 among 5,000: 132.359 ms with the existing guard | Noticeable cost established at the large population; crossing unmeasured |
+| Restore all free positions | 5,000: 1,301.635 ms with the existing guard | Smaller-population threshold unmeasured |
+| Change profile / preview / reopen spatial state | Existing controlled recreation: 1,732.901 ms at 5,000 files | Not a general first-folder-open timing; threshold unmeasured |
+| Restore scroll in fast Details/List | 5,000: warmed complete captures 2.480 / 3.155 ms, restores 0.512 / 0.674 ms | No warmed latency issue demonstrated at 5,000; initial provider discovery 11–95 ms in those runs |
+| Initial folder opening and loading icons/thumbnails | No complete progressive first-usable-display series in this investigation | No defensible count threshold yet |
+
+The classic spatial progression uses the batch-shell-clear rows from
+experiment-selectionstrategies-7a22b5d65a414c7db6ae7a70c43a2664 (medians of three).
+List, placement, restoration and scroll evidence is detailed in their earlier
+sections. Exact per-mode thresholds cannot be manufactured from 5,000-item-only
+measurements. Actual folder contents, geometry and machine also affect latency.
+
+The target is near-Explorer responsiveness for shared operations. A spatial
+feature's need for classic hosting explains a coupled slowdown; it does not
+justify treating slow ordinary selection as an unavoidable spatial feature.
+Explorer itself takes hundreds of milliseconds for large List selections in the
+controlled comparisons, so parity is distinct from universally instant response.
+
+Alternatives to classic Shell hosting remain architectural proposals, not tested
+replacements. A directly owned normal Win32 ListView could reuse native selection,
+keyboard navigation and icon positioning while avoiding CDefView's additional
+selection bookkeeping. Its suitability for every FileSpacer layout and gesture
+still needs a small independent benchmark and interaction qualification. The
+virtual LVS_OWNERDATA variant supports icon/list/report views but explicitly
+does not support LVM_SETITEMPOSITION, so it is not a documented free-position
+replacement ([Microsoft ListView overview](https://learn.microsoft.com/en-us/windows/win32/controls/list-view-controls-overview)).
+A Direct2D/DirectWrite surface would allow more control over spatial drawing
+and virtualization but would require more input and accessibility implementation.
+Both approaches could retain documented Shell objects for file operations,
+menus and drag/drop ([GetUIObjectOf](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ishellfolder-getuiobjectof)).
+Changing the graphics API alone does not establish a fix for the measured
+selection data-structure cost. Keeping the modern Shell view with provider-owned
+sort ranks is another, smaller UI change to prototype, with arbitrary free
+coordinates still a separate requirement.
