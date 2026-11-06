@@ -2,10 +2,12 @@ param(
     [ValidateSet('Placement','ObserveExplorer','CompareDetails','CompareList','DesktopPlacement','ProfilePlacement','VisualTiming','CachedViews','SelectionStrategies','SelectionIndexes','SelectionCallbacks','SelectionFresh','SelectionRestore','SelectionErrors','SelectionPaired','SelectionOptimized','SelectionMode','SelectionKeyboard','ScrollPercent','ScrollProvider','SelectionInternals','SelectionMatrix','SelectionAccessibility','SelectionComparisonCounts','SelectionCausal','SelectionAutoArrange','ArrangementTransitions')][string]$Case='CompareDetails',
     [ValidateRange(30,900)][int]$TimeoutSeconds=300,
     [ValidateSet('SelfTest','ExtraLarge','Large','Medium','Small','Details','List','Tiles','Content','Placement','Protocol','PlacementProtocol','IconsCpu','ProfileIcons','AllViewsApi','ContentCpu')][string]$VisualScenario='SelfTest',
-    [switch]$ReorderOnly
+    [switch]$ReorderOnly,
+    [switch]$ProfileMatrix
 )
 $ErrorActionPreference='Stop'
 if($ReorderOnly-and$Case-ne'ArrangementTransitions'){throw 'ReorderOnly belongs to ArrangementTransitions.'}
+if($ProfileMatrix-and($Case-ne'ArrangementTransitions'-or$ReorderOnly)){throw 'ProfileMatrix belongs to ArrangementTransitions and excludes ReorderOnly.'}
 $project=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
 $stage=[IO.Path]::GetFullPath((Join-Path $project 'tests\regression\cases\36-reactivity-prototype'))
 if(Test-Path -LiteralPath $stage){throw 'The temporary experiment case directory already exists; it will not be overwritten.'}
@@ -23,6 +25,11 @@ Push-Location -LiteralPath $project
 try{
     foreach($name in $files){
         $target=Join-Path $stage $name;Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination $target;$written+=$target
+        if($ProfileMatrix-and$name-eq'29-ArrangementTransitions.ps1'){
+            $text=[IO.File]::ReadAllText($target);$default='[switch]$ProfileMatrix'
+            if(!$text.Contains($default)){throw 'Profile matrix selection no longer matches the staging contract.'}
+            [IO.File]::WriteAllText($target,$text.Replace($default,$default+'=$true'),[Text.UTF8Encoding]::new($false))
+        }
         if($ReorderOnly-and$name-eq'29-ArrangementTransitions.ps1'){
             $text=[IO.File]::ReadAllText($target);$default='[switch]$ReorderOnly'
             if(!$text.Contains($default)){throw 'Reorder selection no longer matches the staging contract.'}
