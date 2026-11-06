@@ -1642,3 +1642,61 @@ already in flight. The archived source was adjusted, but this diagnostic-only
 adjustment was not rerun. It is not a validated or delivered debugger tool.
 The experimental sources and launcher edits were retired after recording the
 evidence; only this documentation is delivered, with no new C++ product code.
+
+## Manual clear-and-notify candidate
+
+`SelectionClearTests.cpp` is a separate, unvalidated candidate for the classic
+renderer. It hosts FileSpacer's real `ShellViewHost`, compares normal clear,
+private clear plus the observed aggregate host notification, and a forced
+public fallback. It does not modify FileSpacer product code. The private route
+is restricted to the inspected Shell32 image, its CodeView identity, expected
+function prologues, and matching view/host/manager vtables. Missing capability
+uses the public clear; a candidate never exercised is a failed coverage check,
+not evidence of acceleration. No executable instructions are patched.
+
+The memory reader copies exactly `sizeof(Value)` into a trivially copyable local
+value with an explicit representation conversion. PE debug-directory bounds,
+the System32 module path, all three private entry prologues, and the selection
+manager's QueryInterface/AddRef/Release targets are checked. Interface discovery
+adopts the reference acquired by QueryInterface. Application dispatch uses an
+ordinary branch; only the three inspected private operations retain typed,
+validated function pointers. These checks do not make the private ABI a Windows
+contract or establish the candidate's runtime correctness.
+
+Prepare and deploy the manual package, without executing the candidate:
+
+```cmd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case PrepareManualClear -TimeoutSeconds 180
+```
+
+The guest's Desktop receives `Tester effacement FileSpacer - <id>.cmd`; its
+payload stays in the dedicated guest project under `C:\FileSpacerTests`.
+Reprovisioning updates an existing generated launcher only when its complete
+contents match the generator, preserving edited or unrelated Desktop files.
+The deployment receipt is `manual-package.json` and states
+`TestsExecuted=false`. Opening that launcher manually requests UAC in the
+visible guest session, runs six representations with 5,000 owned fixture files,
+three arms and three repetitions (54 rows), and creates a timestamped results
+directory and ZIP beside the payload. It checks for an active automated guest
+task before starting; run it only when the VM is otherwise available.
+
+Checks cover exact identities in both `GetSelection(FALSE/TRUE)` snapshots,
+selected enumeration and data objects, sampled per-item state, available item
+positions, logical focus, keyboard-focus HWND and a subsequent ordinary
+selection. The CSV records synchronous `clear_api_ms`, not visible completion.
+Optional Shell-Core event stacks are collected with a unique WPR instance in
+bounded memory; timings include that instrumentation when enabled. Existing
+trace sessions and security settings are not changed. Functional failure,
+unsupported acceleration, timeout or cleanup failure does not become PASS.
+
+The native Debug / C++14 /W4 build is clean. clang-tidy and Cppcheck both finish
+on the standalone source, including its private-binding header, with no
+diagnostics in the new files. The remaining clang-tidy reserved-identifier
+message on `_WIN32_WINNT` is reproduced by a separate minimal unit including
+the unchanged `common.h`; Microsoft explicitly prescribes this configuration
+macro in [Using the Windows Headers](https://learn.microsoft.com/windows/win32/winprog/using-the-windows-headers).
+It is a confirmed pre-existing configuration false positive, not a pointer
+finding. No checks are disabled. Static verdict: **PASS**, separately from the
+runtime candidate, which remains **NOT RUN** until the manual session.
+Analysis logs are under `build/reactivity/selection-clear-analysis/` and the
+configuration control under `build/reactivity/selection-clear-common-baseline/`.
