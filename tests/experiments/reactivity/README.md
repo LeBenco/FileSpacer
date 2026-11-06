@@ -1059,3 +1059,68 @@ Probe corrections made during validation include the ATL final-class limitation,
 the SDK's non-const outer pointer parameter, explicit readiness, window ownership,
 activation and mouse-capture evidence. Logs: build/reactivity/transitions-analysis.
 The static REVIEW is independent of the intentional candidate qualification FAIL.
+
+### Can ordering alone preserve the fast profile? 6 November 2026
+
+The documented options can be requested independently: FVO_CUSTOMPOSITION=2 and
+FVO_CUSTOMORDERING=4. The latter explicitly enables dragging items to reorder
+them. However, [IFolderViewOptions](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl/nn-shobjidl-ifolderviewoptions)
+documents that requesting the older view's capabilities currently selects that
+older view; a future Windows implementation may satisfy the same request using
+the newer view. A successful flag request is not evidence that the fast engine
+was retained. [FOLDERVIEWOPTIONS](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl/ne-shobjidl-folderviewoptions)
+is the capability contract; do not substitute FVO_VISTALAYOUT as a shortcut.
+
+ArrangementTransitions -ProfileMatrix now compares all four combinations with
+the same existing real twenty-item drag fixture and a separate 5,000-item timing
+fixture. Medium icons, automatic arrangement, 800x400 requested view bounds and
+the same MSVC /W4 Debug helper are used for every profile. Selection and clear
+are timed around the public calls only, with three repetitions. These are VM API
+durations, not full presentation timings or a free-workstation comparison.
+Selected identities, GetSelection arrays, clear state and logical/keyboard focus
+are verified outside the timed regions.
+
+VM run cc0080e78dcb4f92998b1818b6331c2a passes the comparison protocol. Medians:
+
+| Options | Native reorder | Select 5,000, ms | Clear, ms |
+| --- | --- | ---: | ---: |
+| Position + ordering (6) | yes | 1061.569 | 777.668 |
+| Ordering only (4) | yes | 1030.208 | 749.378 |
+| Position only (2) | yes | 1074.096 | 821.275 |
+| Default (0) | no | 152.665 | 2.461 |
+
+Ordering alone restores the interaction but also the expensive selection path.
+The position-only row describes this guest's observed behavior; use the explicit
+ordering contract when that interaction is required. No measured combination
+provides both the fast operation times and native manual ordering. Matrix PASS
+does not overturn the original candidate qualification FAIL; the original strict
+reorder assertion remains in the default and reorder-only modes.
+
+The first new driver attempt failed before invoking the native executable on a
+PowerShell branch separator; it was corrected. A second dispatch encountered the
+VM mutex held by a request from another checkout. Its already prepared package
+was subsequently dispatched through the existing Invoke-HyperVRunner interface
+once the other controller completed. No competing request or lock was terminated
+or bypassed. Authoritative results are under build/regression/vm-cc0080e78dcb4f92998b1818b6331c2a.
+
+```bat
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-Experiment.ps1 -Case ArrangementTransitions -ProfileMatrix -TimeoutSeconds 900
+```
+
+ProfileMatrix and ReorderOnly are mutually exclusive. No product policy changes
+are delivered by this investigation. Keeping the fast profile for fixed-sort
+views while using the classic profile for custom placement/order remains a hybrid
+fallback proposal, not a repair of the modern view's native ordering. Switching
+the view in the middle of a native drag is not validated and must not be treated
+as transparent. Keeping identical gestures and fast custom ordering would require
+another prototype, such as explicit order management through a folder provider,
+with its drop delegation, persistence, cancellation and performance qualified.
+
+The Debug application and final native helper build without new /W4 warnings.
+Both required analyses completed on ArrangementTransitionsTests.cpp with the
+same Windows x64/C++14 toolchain and real headers/models stated above. Baseline
+logs and source were preserved under build/reactivity/ordering-analysis-before;
+final logs are under build/reactivity/ordering-analysis-after. Verdict REVIEW for
+new signed flag-expression and adjacent-path-parameter style diagnostics; no new
+confirmed functional defect or missing analysis coverage. No private calls,
+executable patches or additional dependencies were introduced.
