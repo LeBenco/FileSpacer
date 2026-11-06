@@ -51,13 +51,13 @@ $filespacer_context = (filespacer && !filespacer_title && !filespacer_toolbar)
 | Вибрані файли або папки | `filespacer_context` | `'file\|dir'` |
 | Тло папки | `filespacer_context` | `'back'` |
 
-Використовуйте `mode='multiple'` для правил, доступних незалежно від вибору. `process.name` не містить `.exe`; `window.parent.name` визначає клас вікна.
+Використовуйте `mode='multiple'` для правил, доступних незалежно від вибору. `process.name` не містить `.exe`. `window.parent.name` визначає клас вікна.
 
 <a id="target-an-existing-menu-entry"></a>
 
 ## Вибір наявного пункту меню
 
-Загальний механізм Nilesoft `modify(find=...)` знаходить пункт за написом. Поєднуйте його з `where`, щоб обмежити зміну певним меню; `|` розділяє альтернативні написи, а `*` є символом узагальнення:
+Загальний механізм Nilesoft `modify(find=...)` знаходить пункт за написом. Поєднуйте його з `where`, щоб обмежити зміну певним меню. `|` розділяє альтернативні написи, а `*` є символом узагальнення:
 
 ```nss
 modify(type='*' mode='multiple' where=filespacer_title

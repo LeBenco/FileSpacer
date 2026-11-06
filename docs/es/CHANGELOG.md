@@ -21,10 +21,10 @@
 
 ## 1.2.3 — 2026-10-30
 
-- Corrige las identidades, las superposiciones de iconos y las notificaciones de carpetas con el orden mixto; conserva las posiciones libres de los iconos y usa vistas nativas cuando el proveedor no está disponible o es incompatible.
+- Corrige las identidades, las superposiciones de iconos y las notificaciones de carpetas con el orden mixto. Conserva las posiciones libres de los iconos y usa vistas nativas cuando el proveedor no está disponible o es incompatible.
 - Garantiza una sola ventana de Preferencias entre procesos y corrige la validación de atajos, las rutas de Everything, las teclas de acceso y las traducciones regionales.
 - Corrige el cierre de carpetas, los clics de activación y la restauración tras la vista previa del menú Ver.
-- Corrige la actualización de las Jump Lists y los diagnósticos del instalador; conserva los archivos de ayuda del usuario durante las actualizaciones y la desinstalación.
+- Corrige la actualización de las Jump Lists y los diagnósticos del instalador. Conserva los archivos de ayuda del usuario durante las actualizaciones y la desinstalación.
 - Incluye ayuda multilingüe sin conexión mediante F1 y Acerca de, y actualiza las guías de configuración traducidas y las referencias de Nilesoft Shell.
 
 ## 1.2.2 — 2026-10-28
@@ -48,10 +48,10 @@
 
 - Solicita la confirmación de Windows solo al instalar o desinstalar para todos los usuarios y aplica las opciones personales de integración al usuario que inició la instalación.
 - Muestra el historial completo de versiones en un panel Novedades con desplazamiento junto a las opciones de la primera pantalla del instalador.
-- Corrige el restablecimiento de los componentes elegidos durante las actualizaciones; recupera las selecciones guardadas y conserva el gestor de archivos predeterminado en las actualizaciones silenciosas.
+- Corrige el restablecimiento de los componentes elegidos durante las actualizaciones. Recupera las selecciones guardadas y conserva el gestor de archivos predeterminado en las actualizaciones silenciosas.
 - Usa la misma barra lateral de FileSpacer, el logotipo grande y la paleta gris claro y blanca en todas las pantallas del instalador y del desinstalador. Asigna al instalador un icono propio, compuesto por los mapas de bits nativos de la aplicación y un distintivo de flecha de descarga optimizado por separado para cada tamaño, manteniendo un borde amarillo fino a la derecha y abajo de la carpeta.
 - Corrige cierres inesperados al salir provocados por la inicialización anticipada de datos de carpetas locales al hilo en hilos de trabajo tardíos del shell.
-- Ofrece Abrir en el Explorador de archivos de Windows en los menús contextuales de carpetas cuando FileSpacer es predeterminado, y Abrir en FileSpacer en caso contrario; actualiza los menús al cambiar la opción, después de instalar y al iniciar.
+- Ofrece Abrir en el Explorador de archivos de Windows en los menús contextuales de carpetas cuando FileSpacer es predeterminado, y Abrir en FileSpacer en caso contrario. Actualiza los menús al cambiar la opción, después de instalar y al iniciar.
 - Corrige la apertura de accesos directos a servidores y recursos compartidos de red en el Explorador de archivos cuando FileSpacer es predeterminado. Actualiza el componente del menú contextual de carpetas y vuelve a seleccionar FileSpacer como predeterminado para activar la integración de red.
 - Amplía el icono de la aplicación de Acerca de a 48 píxeles con escala del 100 %, colocando el texto a su lado.
 - Mantiene completamente visibles los títulos de las ventanas maximizadas y extiende la barra de herramientas por todo el ancho disponible.
@@ -97,7 +97,7 @@
 ## 1.1.5 — 2026-10-26
 
 - Corrige la creación involuntaria de un acceso directo después de Alt + doble clic seguido de un movimiento del ratón. Conserva las propiedades nativas, la selección y el foco sin reproducir una pulsación mantenida.
-- Corrige las pruebas de los tiempos nativos de doble clic y los destinos físicos del ratón; compara propiedades, selección, foco, anclaje de la selección, geometría y contenidos de carpetas con y sin gestos de ventana, incluidas las combinaciones Ctrl/Mayús.
+- Corrige las pruebas de los tiempos nativos de doble clic y los destinos físicos del ratón. Compara propiedades, selección, foco, anclaje de la selección, geometría y contenidos de carpetas con y sin gestos de ventana, incluidas las combinaciones Ctrl/Mayús.
 - Aísla el ejecutable real de prueba de Everything y su INI de inicio para que la opción de administrador instalada por el usuario no pueda redirigir las búsquedas de prueba ni solicitar una elevación de privilegios. Comprueba que la configuración instalada no cambie.
 - Mantiene activo el escritorio y suspende temporalmente el protector de pantalla durante las pruebas de interfaz, restaurando el estado inicial durante la limpieza incluso después de errores.
 
@@ -111,7 +111,7 @@ Esta versión se basa en la 1.1.3, que ya ofrece gestos configurables de teclado
 - Muestra automáticamente Everything y las búsquedas recientes al activar el cuadro existente, sin añadir un botón. Conserva la búsqueda nativa, el filtro inmediato y la reutilización de consultas locales.
 - Recuerda de forma predeterminada cinco búsquedas recientes por carpeta entre sesiones, con un límite de cero a veinte independiente de Everything. Conserva los datos existentes y limpia el historial según la política prudente del estado de carpetas.
 - Muestra el icono del ejecutable de Everything al tamaño adecuado, con extracción en segundo plano y una caché en memoria que se actualiza al cambiar el ejecutable.
-- Añade pruebas de regresión para almacenamiento aislado, migración e integración real Shell/Everything; hace más robusto el lector de pruebas del shell cuando los filtros sucesivos cambian la vista.
+- Añade pruebas de regresión para almacenamiento aislado, migración e integración real Shell/Everything. Hace más robusto el lector de pruebas del shell cuando los filtros sucesivos cambian la vista.
 
 [Todos los cambios](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
 
@@ -119,7 +119,7 @@ Esta versión se basa en la 1.1.3, que ya ofrece gestos configurables de teclado
 
 - Añade la pestaña Métodos abreviados a la configuración para personalizar o desactivar los gestos de movimiento y cambio de tamaño con teclas modificadoras y los botones izquierdo, central o derecho, captura directa y validación de conflictos.
 - Deja a la vista nativa del Explorador la gestión de Alt + doble clic para abrir las propiedades.
-- Restaura los nombres completos con fondo opaco para un único elemento seleccionado en la vista Iconos. Las selecciones múltiples conservan el aspecto nativo de Windows; el texto de la preferencia precisa ahora su ámbito.
+- Restaura los nombres completos con fondo opaco para un único elemento seleccionado en la vista Iconos. Las selecciones múltiples conservan el aspecto nativo de Windows. El texto de la preferencia precisa ahora su ámbito.
 - Añade pruebas exhaustivas de los métodos abreviados y de los gestos reales del ratón, con recursos de configuración franceses e ingleses.
 
 [Todos los cambios](https://github.com/LeBenco/FileSpacer/compare/v1.1.2...v1.1.3)
@@ -131,7 +131,7 @@ Esta versión se basa en la 1.1.3, que ya ofrece gestos configurables de teclado
 - Confirma la desactivación global del bloqueo, elimina los bloqueos guardados de carpetas abiertas y cerradas y reanuda el guardado normal entre procesos.
 - Amplía las pruebas de regresión a transiciones del bloqueo, errores de persistencia, restauración del shell y representación nativa del distintivo.
 - Volver a abrir una carpeta cerrada con Ctrl+Mayús+T o las listas de accesos directos restaura en Detalles y Lista la fila que estaba arriba al cerrarla.
-- El diagnóstico de cierres inesperados sigue escribiendo un minivolcado y un informe en los datos locales de la aplicación; elimina la atribución a la antigua representación de nombres completos, el cambio automático de su preferencia y el reinicio.
+- El diagnóstico de cierres inesperados sigue escribiendo un minivolcado y un informe en los datos locales de la aplicación. Elimina la atribución a la antigua representación de nombres completos, el cambio automático de su preferencia y el reinicio.
 
 [Todos los cambios](https://github.com/LeBenco/FileSpacer/compare/v1.1.1...v1.1.2)
 
@@ -150,7 +150,7 @@ Esta versión se basa en la 1.1.3, que ya ofrece gestos configurables de teclado
 - Abre el Panel de control en una ventana propia de Windows, conservando la carpeta de origen y su selección.
 - Elimina la selección automática de la carpeta de origen al subir a una carpeta superior por motivos ergonómicos: las selecciones posteriores con Ctrl no deben abrir ambas carpetas por error.
 - Acepta tres diferencias en esta versión: no están disponibles la representación personalizada de nombres seleccionados completos con fondo opaco, la conservación de la selección al activar ni la restauración exacta del desplazamiento. Desactiva los dos controles de configuración inactivos, conservando sus preferencias guardadas.
-- Simplifica las pruebas de regresión alrededor de la configuración nativa de producción del shell; retira las comparaciones exploratorias de perfiles, las pruebas de integración de controles y los informes reservados a la migración.
+- Simplifica las pruebas de regresión alrededor de la configuración nativa de producción del shell. Retira las comparaciones exploratorias de perfiles, las pruebas de integración de controles y los informes reservados a la migración.
 
 [Todos los cambios](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
 
