@@ -1,0 +1,29 @@
+param(
+    [ValidateSet('Placement','ObserveExplorer','CompareDetails','DesktopPlacement','CachedViews')][string]$Case='CompareDetails',
+    [ValidateRange(30,900)][int]$TimeoutSeconds=300
+)
+$ErrorActionPreference='Stop'
+$project=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
+$stage=[IO.Path]::GetFullPath((Join-Path $project 'tests\regression\cases\36-reactivity-prototype'))
+if(Test-Path -LiteralPath $stage){throw 'The temporary experiment case directory already exists; it will not be overwritten.'}
+$patterns=@{Placement='01-*';ObserveExplorer='02-*';CompareDetails='03-*';DesktopPlacement='04-*';CachedViews='06-*'}
+$files=@('01-Placement.ps1','02-ObserveExplorer.ps1','03-CompareDetails.ps1','04-DesktopPlacement.ps1','06-CachedViews.ps1','Fixture.ps1',
+    'PlacementTests.cpp','ExplorerObservationTests.cpp','ExplorerObservationTests.rc','DesktopPlacementTests.cpp','DesktopPlacementTests.rc','CachedViewTests.cpp','DumpStacks.cpp')
+foreach($name in $files){if(!(Test-Path -LiteralPath (Join-Path $PSScriptRoot $name))){throw ('Missing experiment source: '+$name)}}
+foreach($directory in @('baseline','hybrid')){foreach($name in @('FileSpacer.exe','FileSpacerFolder.dll')){
+    if(!(Test-Path -LiteralPath (Join-Path $project ('build\'+$directory+'\'+$name)))){throw ('Build variant unavailable: '+$directory+'\'+$name)}
+}}
+$output='build\regression\experiment-'+$Case.ToLowerInvariant()+'-'+[Guid]::NewGuid().ToString('N')
+$written=@()
+[void][IO.Directory]::CreateDirectory($stage)
+Push-Location -LiteralPath $project
+try{
+    foreach($name in $files){$target=Join-Path $stage $name;Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination $target;$written+=$target}
+    & $env:ComSpec /d /c tests.cmd -VM AgentWin10 -Pattern ('36-reactivity-prototype\'+$patterns[$Case]) -TimeoutSeconds $TimeoutSeconds -RunDirectory $output
+    $result=$LASTEXITCODE
+}finally{
+    Pop-Location
+    foreach($target in $written){Remove-Item -LiteralPath $target -Force}
+    if(@(Get-ChildItem -LiteralPath $stage -Force).Count-eq0){Remove-Item -LiteralPath $stage}
+}
+exit $result
