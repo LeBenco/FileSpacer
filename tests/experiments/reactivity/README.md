@@ -37,6 +37,13 @@ Cases:
   production spatial Shell host, using 100 owned icons. It saves the original
   Desktop state before creating its fixture and verifies restoration afterwards.
   This experiment deliberately does not represent a 5,000-item Desktop.
+* `ProfilePlacement`: retain the bounded Desktop backup/recovery protocol, record
+  actual view geometry, icon size, DPI and flags, and collect five coherent stack
+  samples per host while positions alternate. Compare the normal host, a larger
+  host and a new host initialized with custom positioning alone. Sampled-loop
+  timings are diagnostic; the preceding three calls are measured without PSS.
+* `VisualTiming`: the composed-frame autotest. The prepared workstation package
+  also runs Details, List and bounded placement with Desktop Duplication.
 * `CachedViews`: a controlled comparison of retaining a live spatial browser
   versus recreating it. Two public `IExplorerBrowser` hosts use application-owned
   panels in one top-level window. Checks every one of 5,000 positions, the two
@@ -217,6 +224,83 @@ No new diagnostic remains after accounting for the renamed comparison function
 and diagnostic paths. The earlier REVIEW items above remain unchanged; no product
 behavior was changed to hide the measured List regressions. This comparison is
 recorded under `build/reactivity/list-analysis`.
+
+## Further placement observation and composed-frame instrumentation
+
+The additional captures in
+`experiment-profileplacement-d1c0a82c66104901978bb3f9c3dbc7cb` and
+`experiment-profileplacement-5115bbd2397b4788b220b6371fc63c4b` pass, including Desktop
+restoration. They confirm that both views use 48-pixel icons at 96 DPI. The Desktop
+view is 1,024 x 768; the original controlled view is 834 x 561. Increasing the host
+window leaves a 1,024 x 749 public view client in these captures, so the historical
+`matched-host` label in their files must not be read as exact viewport matching.
+The current diagnostic labels that variant `larger-host`.
+
+Several useful controlled-host stacks go through `CListViewHost::SetItemPosition`,
+`_ClearArrangeFeedback`, `SetHeaderFlags` and header-control notifications, including
+theme/header invalidation work. Public symbols sometimes assign very large offsets
+to nearby functions; those names and broken stack prefixes are not interpreted as
+exact algorithms. Useful Desktop samples show list-view painting and label work
+outside a `SelectAndPositionItems` stack. This establishes that an API return does
+not establish completed presentation; it does not measure the physical display.
+
+Testing `FVO_CUSTOMPOSITION` without `FVO_CUSTOMORDERING` did not remove the feedback
+path or improve timings. In the second run, moving 16 among 100 took 9.159 ms on
+the Desktop, 18.521 ms in the normal host, 26.550 ms in the larger host and
+20.923 ms in the position-only host (three-call medians, before sampling).
+Every owned coordinate is verified. No flag or internal header manipulation was
+added to the product. Decoded diagnostic stacks are under
+`build/observation/placement` and `build/observation/position-only`.
+
+Build the standalone workstation package from CMD with:
+
+```bat
+tests\experiments\reactivity\Prepare-VisualPackage.cmd
+```
+
+This reuses the existing prepared regression package and MSVC build procedure.
+The default output is `build\visual-timing\package`; use a fresh parent directory
+for another build. The package contains its native executable and embedded
+optimized reference/prototype actors, and needs no compiler on the measurement
+machine. Its launcher runs a composed-pixel self-test before any requested
+scenario and retains the existing test-state isolation/restoration. See
+`MESURES-VISUELLES.txt` for commands, output interpretation and Desktop recovery.
+
+`PresentationTiming.h` uses the public
+[Desktop Duplication API](https://learn.microsoft.com/en-us/windows/win32/direct3ddxgi/desktop-dup-api),
+with [LastPresentTime](https://learn.microsoft.com/en-us/windows/win32/api/dxgi1_2/ns-dxgi1_2-dxgi_outdupl_frame_info)
+QPC timestamps and SHA-256 comparisons of the visible view ROI. It records API
+duration, first observed pixel change and the beginning of the final continuous
+run matching the last quiet image. Per-frame timestamps/hashes and before/final
+BMPs are preserved; the launcher creates `presentation-summary.csv`.
+Initialization requests one public repaint after duplication is ready, outside
+the measured operation. The self-test changes its known background at that point:
+the first desktop frame is not assumed to arrive on an otherwise static display.
+
+The ROI is clipped to the display work area and checked at nine points for another
+covering window. This is an occupancy check, not a proof that every pixel stayed
+unoccluded. The workstation must remain free. The image reference is observational:
+at least 1.5 s after API return, at least 500 ms of unchanged ROI pixels, and a
+5 s maximum after return. It does not claim that all asynchronous work is done.
+It covers the existing selection/clear and 16-icon positioning operations, not a
+complete first-folder-open or mode-switch benchmark.
+
+No visible change produces no display latency; an unstable or reverted image
+produces no final latency. Accumulated frames mark a conservative upper bound.
+The instrumentation changes CPU/GPU load and must be kept separate from uncaptured
+timings. These are composed-image observations, not monitor scan-out measurements.
+
+Validation: the final native instrumentation compiles with MSVC `/W4`, with the
+new shadow warning corrected. The frame-history self-test checks that an early
+temporary match is not mistaken for the final continuous image, and that an
+unchanged image has no invented latency. AgentWin10 creates the duplication but
+supplies zero desktop frames, so GPU/pixel validation fails explicitly rather than
+falling back to API time. Real-frame timing remains to be validated by the packaged
+autotest on the free workstation. Clang-tidy and Cppcheck cover the changed
+observation/Desktop units plus the visual unit, including the new header. Static
+verdict remains REVIEW for the documented existing diagnostics and new non-defect
+suggestions on the initialized D3D output enum and a loop/algorithm style choice.
+No confirmed new defect remains; no product source changed in this extension.
 
 The Desktop probe includes an explicit `recover` mode:
 
