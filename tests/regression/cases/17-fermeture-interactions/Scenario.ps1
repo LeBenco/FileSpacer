@@ -66,11 +66,7 @@ try {
     Use-UiView $window {param($v) $v.Focus(); $v.Select('AnchorA'); $v.Select('AnchorB',$true)}
     Assert-UiSelected $window 'AnchorA;AnchorB'
     $viewWindow=Use-UiView $window {param($v) $v.Window}
-    $lists=@([FileSpacerRegression.Native]::Children($viewWindow,'SysListView32'))
-    Assert-Ui ($lists.Count -eq 1) 'Exactly one native ListView is required.'; $list=$lists[0]
-    $index=Use-UiView $window {param($v) $v.IndexOf('OtherC')}
-    $nativeItem=[FileSpacerRegression.NativeTargets]::Item($list,$index,3,$false,$false)
-    $itemPoint=Point-At $nativeItem.X $nativeItem.Y
+    $itemPoint=[FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,'OtherC')
     $before=[FileSpacerRegression.Native]::Bounds($window); $state.Before=$before
     $phase='opening item context menu with the right button'
     [FileSpacerRegression.AltDragInput]::BeginRight($window,$itemPoint,$false,$false)
