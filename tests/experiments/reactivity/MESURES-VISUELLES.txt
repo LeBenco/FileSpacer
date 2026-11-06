@@ -1,0 +1,72 @@
+Mesures visuelles FileSpacer / Explorateur - prototype experimental
+
+Decompresser le paquet dans un dossier de test au chemin court sur le poste
+Windows 10/11 x64 qui sera laisse libre.
+Aucun compilateur ni installation de FileSpacer n'est necessaire.
+Une session graphique ouverte, deverrouillee, avec un affichage actif est requise.
+Fermer FileSpacer et les autres fenetres susceptibles de couvrir les vues mesurees.
+Utiliser un affichage non pivote. Chaque vue doit tenir sur un seul ecran.
+
+Dans CMD, depuis le dossier extrait :
+
+  Run-Visual.cmd SelfTest
+  Run-Visual.cmd Details
+  Run-Visual.cmd List
+  Run-Visual.cmd Placement
+
+Chaque scenario commence automatiquement par SelfTest. S'il echoue, le scenario
+demande n'est pas execute. Laisser la souris, le clavier et l'affichage au banc
+jusqu'a la fin. Details et List prennent quelques minutes chacun.
+
+Details/List : trois repetitions alternees sur 5000 fichiers texte isoles,
+selection puis deselection de 100, 500, 1000, 2500 et 5000 elements. Les memes
+binaires optimises de reference et du prototype sont embarques dans la sonde.
+
+Placement : 16 icones deplacees parmi 100, sur le vrai Bureau puis dans un hote
+spatial controle. La sonde sauvegarde et restaure les positions, la selection et
+les flags originaux du Bureau. Elle refuse un Bureau contenant deja 100 elements
+ou plus. Ne pas ajouter/deplacer de fichiers sur le Bureau pendant ce scenario.
+
+Le banc existant isole les preferences et la base /test et les restaure ensuite.
+Chaque execution ecrit un nouveau dossier results/visual-... : conserver ce
+dossier complet, meme en cas d'echec. Il contient presentation-summary.csv.
+
+Pour chaque operation, les fichiers *-presentation.csv donnent :
+  api_ms              : duree de l'appel mesure ;
+  first_changed_ms    : premiere image observee differente de l'image initiale ;
+  final_observed_ms   : debut de la derniere suite d'images correspondant a la
+                        derniere image calme observee ;
+  quality             : qualite et limites de cette observation ;
+  coalesced_frames    : images accumulees par Windows avant lecture.
+
+Les *-frames.csv conservent les horodatages et empreintes SHA-256 des images.
+Les *-before.bmp et *-final.bmp montrent la zone effectivement mesuree.
+
+OBSERVED signifie une image composee observee par Desktop Duplication, pas une
+mesure du delai materiel de l'ecran. COALESCED_UPPER_BOUND signale une borne haute
+car des images intermediaires ont pu etre manquees. NO_VISIBLE_CHANGE ne fournit
+aucune latence d'affichage. UNSTABLE et RETURNED_TO_BASELINE ne prouvent pas une
+image finale et leur colonne final_observed_ms reste vide.
+
+L'observation dure au minimum 1,5 seconde apres retour de l'API et attend 500 ms
+sans changement de pixels dans la zone. Elle s'arrete a 5 secondes apres retour.
+Cette derniere image calme est une reference observee : elle ne garantit pas
+qu'une miniature distante ou un autre travail asynchrone ne se terminera pas
+plus tard. Les tests portent sur des fichiers texte. Seule la partie visible de
+la vue, limitee a la zone de travail de l'ecran, est observee.
+
+L'instrumentation GPU et les copies d'images ont un cout. Ces mesures visuelles
+doivent rester separees des temps d'API collectes sans capture.
+
+La sonde est compilee avec MSVC /W4. Sa logique de chronologie a un autotest.
+La VM de developpement ne fournit aucune image DXGI apres DuplicateOutput :
+l'autotest GPU y echoue explicitement, sans inventer de temps de presentation.
+L'autotest sur ce poste est donc requis avant d'interpreter des chiffres.
+
+Si un watchdog interrompt Placement, garder desktop-backup.bin et les journaux.
+Le binaire VisualTimingTests.exe peut etre relance avec :
+  VisualTimingTests.exe "dossier-contenant-desktop-backup.bin" recover api
+Il est disponible sous prepared/native-0. La recuperation ne supprime que les
+fichiers appartenant au prefixe GUID sauvegarde, puis verifie l'etat du Bureau.
+
+Analyse statique : REVIEW ; details dans README-experiments.md.
