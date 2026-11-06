@@ -25,15 +25,15 @@
 - Zijbalklogo van installatie- en verwijderprogramma vloeiender gemaakt met hoogwaardige schaling naar de actuele schermgrootte.
 - Geciteerde verhogingsargumenten behouden zodat updates voor alle gebruikers de stille worker starten in plaats van het installatieprogramma opnieuw te openen.
 - Standaard de oorspronkelijke installatie bijgewerkt en vensters hersteld met exact het door setup gemelde programma, ook bij persoonlijke en algemene installaties naast elkaar.
-- Identiteiten, overlays en mapmeldingen bij gemengd sorteren hersteld; vrije pictogramposities behouden en native weergaven gebruikt bij ontbrekende of incompatibele provider.
+- Identiteiten, overlays en mapmeldingen bij gemengd sorteren hersteld. Vrije pictogramposities behouden en native weergaven gebruikt bij ontbrekende of incompatibele provider.
 - Uniciteit van Instellingen tussen processen, sneltoetsvalidatie, Everything-paden, toegangstoetsen en regionale vertalingen hersteld.
 - Mapsluiting, activeringsklikken en herstel na menuvoorbeelden van Beeld verholpen.
-- Vernieuwen van Jump Lists en installatiediagnostiek hersteld; eigen helpbestanden behouden bij upgrades en de-installatie.
+- Vernieuwen van Jump Lists en installatiediagnostiek hersteld. Eigen helpbestanden behouden bij upgrades en de-installatie.
 - Meertalige offlinehulp via F1 en Info meegeleverd en vertaalde installatiehandleidingen en Nilesoft-referenties vernieuwd.
 
 ## 1.2.2 — 2026-10-28
 
-- Gebruik van de aangepaste mapprovider bij vrije pictogramindelingen hersteld. Vrije plaatsing gebruikt de native provider; vastleggen van een gesorteerde indeling schakelt providers met behoud van pictogramposities, selectie en focus.
+- Gebruik van de aangepaste mapprovider bij vrije pictogramindelingen hersteld. Vrije plaatsing gebruikt de native provider. Vastleggen van een gesorteerde indeling schakelt providers met behoud van pictogramposities, selectie en focus.
 
 ## 1.2.1 — 2026-10-28
 
@@ -50,12 +50,12 @@
 
 ## 1.1.10 — 2026-10-27
 
-- Windows-bevestiging alleen bij installatie/verwijdering voor alle gebruikers gevraagd; persoonlijke integratie toegepast op de gebruiker die setup startte.
+- Windows-bevestiging alleen bij installatie/verwijdering voor alle gebruikers gevraagd. Persoonlijke integratie toegepast op de gebruiker die setup startte.
 - Volledige versiegeschiedenis in een schuifbaar Nieuw-paneel naast de keuzes op het eerste installatiescherm getoond.
-- Reset van componentkeuzes bij upgrades verholpen; opgeslagen keuzes hersteld en standaardbeheerder bij stille upgrades behouden.
+- Reset van componentkeuzes bij upgrades verholpen. Opgeslagen keuzes hersteld en standaardbeheerder bij stille upgrades behouden.
 - Op elk installatie-/verwijderingsscherm dezelfde FileSpacer-zijbalk, groot logo en lichtgrijs-wit palet gebruikt. Een apart installatiepictogram combineert native bitmaps met een per formaat geoptimaliseerde downloadpijl en behoudt een dunne gele rand rechts en onder aan de map.
 - Afsluitcrashes door vroege initialisatie van threadlokale mapgegevens op late Shell-werkthreads verholpen.
-- Mapsnelmenu’s bieden openen in Windows Bestandenverkenner als FileSpacer de standaard is, anders in FileSpacer; bijgewerkt na standaardwijziging, installatie en opstarten.
+- Mapsnelmenu’s bieden openen in Windows Bestandenverkenner als FileSpacer de standaard is, anders in FileSpacer. Bijgewerkt na standaardwijziging, installatie en opstarten.
 - Netwerkserver-/sharesnelkoppelingen die ondanks standaard FileSpacer in Verkenner openden hersteld. Werk de mapsnelmenucomponent bij en kies FileSpacer opnieuw als standaard voor netwerkintegratie.
 - Toepassingspictogram onder Info vergroot tot 48 pixels bij 100%, met tekst ernaast.
 - Titels van gemaximaliseerde vensters volledig zichtbaar gehouden en werkbalk over de beschikbare breedte uitgerekt.
@@ -76,7 +76,7 @@
 - Optie toegevoegd om het slotje te verbergen zonder de opgeslagen statusvergrendeling te wijzigen.
 - Native Windows-thema-achtergronden gebruikt op instellingenpagina’s en sneltoetsbesturingselementen.
 - Vensterplaatsing en taakbalkgroepering toegelicht met standaard Windows-knopinfo naast de opties.
-- Instellingen aan het aanroepende mapvenster gekoppeld; sluiten verwerpt openstaande wijzigingen. Bevestigd mapstatusonderhoud sluit instellingen zonder die wijzigingen toe te passen.
+- Instellingen aan het aanroepende mapvenster gekoppeld. Sluiten verwerpt openstaande wijzigingen. Bevestigd mapstatusonderhoud sluit instellingen zonder die wijzigingen toe te passen.
 - README rond ruimtelijke navigatie en functies georganiseerd, met onderzoeksbronnen, nieuwste-releasekoppeling, aparte bouw-/Nilesoft-gidsen en uitgebreidere documentatie.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.7...v1.1.8)
@@ -101,7 +101,7 @@
 ## 1.1.5 — 2026-10-26
 
 - Onbedoelde snelkoppeling na Alt + dubbelklik en muisbeweging verholpen. Native Eigenschappen, selectie en focus behouden zonder een ingedrukte knop opnieuw af te spelen.
-- Regressiedekking voor native dubbelkliktiming en fysieke muisdoelen gecorrigeerd; Eigenschappen, selectie, focus, anker, geometrie en inhoud vergeleken met gebaren uit/aan, inclusief Ctrl/Shift.
+- Regressiedekking voor native dubbelkliktiming en fysieke muisdoelen gecorrigeerd. Eigenschappen, selectie, focus, anker, geometrie en inhoud vergeleken met gebaren uit/aan, inclusief Ctrl/Shift.
 - Echte Everything-testprogramma en bootstrap-INI geïsoleerd zodat de geïnstalleerde administratoroptie zoekopdrachten niet omleidt of verhoging start. Gecontroleerd dat geïnstalleerde instellingen ongewijzigd blijven.
 - Bureaublad wakker gehouden en schermbeveiliging tijdelijk opgeschort tijdens UI-tests, met herstel bij opruimen, ook na fouten.
 
@@ -115,7 +115,7 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Everything en recente zoekopdrachten automatisch bij betreden van het bestaande zoekveld getoond, zonder extra knop. Native zoeken, direct filteren en lokale herhaling behouden.
 - Standaard vijf recente zoekopdrachten per map tussen sessies onthouden, instelbaar 0–20 los van Everything. Bestaande gegevens en voorzichtig bewaarbeleid voor geschiedenis behouden.
 - Everything-programmapictogram op passende grootte getoond, met extractie op de achtergrond en cachevernieuwing bij programmawijziging.
-- Geïsoleerde opslag-, migratie- en echte Shell/Everything-tests toegevoegd; de Shell-testlezer bestand gemaakt tegen opeenvolgende filterwijzigingen.
+- Geïsoleerde opslag-, migratie- en echte Shell/Everything-tests toegevoegd. De Shell-testlezer bestand gemaakt tegen opeenvolgende filterwijzigingen.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
 
@@ -123,7 +123,7 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 
 - Tab Sneltoetsen toegevoegd om gebaren in te stellen of uit te schakelen met wijzigingstoetsen en links/midden/rechts, directe invoervastlegging en conflictcontrole.
 - Afhandeling van Eigenschappen via Alt + dubbelklik aan de native Verkenner-weergave overgelaten.
-- Volledige labels op ondoorzichtige achtergrond voor één geselecteerd item in pictogramweergave hersteld. Meervoudige selectie blijft native; voorkeur beschrijft dit bereik.
+- Volledige labels op ondoorzichtige achtergrond voor één geselecteerd item in pictogramweergave hersteld. Meervoudige selectie blijft native. Voorkeur beschrijft dit bereik.
 - Uitgebreide sneltoetsconfiguratie- en echte muisgebarentests toegevoegd, met Franse en Engelse instellingenresources.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.2...v1.1.3)
@@ -135,7 +135,7 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Globaal uitschakelen van vergrendeling bevestigd, sloten voor open/gesloten mappen gewist en normale opslag tussen processen hervat.
 - Dekking voor vergrendelingsovergangen, opslagfouten, Shell-herstel en native slotweergave uitgebreid.
 - Opnieuw openen via Ctrl+Shift+T of Jump List schuift Details/Lijst terug naar de rij die bij sluiten bovenaan stond.
-- Crashdiagnostiek blijft lokaal minidump en rapport schrijven; toeschrijving aan vroegere naamweergave, automatische voorkeurwijziging en herstart verwijderd.
+- Crashdiagnostiek blijft lokaal minidump en rapport schrijven. Toeschrijving aan vroegere naamweergave, automatische voorkeurwijziging en herstart verwijderd.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.1...v1.1.2)
 
@@ -154,7 +154,7 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Configuratiescherm in het eigen Windows-venster geopend met behoud van bronmap en selectie.
 - Automatische selectie van de bronmap bij omhoog navigeren verwijderd: volgende Ctrl-selecties mogen niet onbedoeld beide mappen openen.
 - Drie verschillen geaccepteerd: eigen volledige geselecteerde namen met ondoorzichtige achtergrond, selectiebehoud bij activering en exacte heropende schuifposities ontbreken. Twee inactieve opties uitgeschakeld met behoud van voorkeuren.
-- Regressiedekking op de native productieconfiguratie gericht; verkennende profielvergelijkingen, inbeddingsproeven en migratierapportage verwijderd.
+- Regressiedekking op de native productieconfiguratie gericht. Verkennende profielvergelijkingen, inbeddingsproeven en migratierapportage verwijderd.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
 
@@ -242,7 +242,7 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 
 - Eerste FileSpacer-release voor Windows 10 of nieuwer, x64, gebaseerd op ChromaFiler.
 - Ruimtelijke navigatie met één venster per map en blijvende positie, afmetingen, weergave en pictogramposities in SQLite.
-- Mapverplaatsingen en naamswijzigingen gevolgd; bestaand venster geactiveerd bij opnieuw openen.
+- Mapverplaatsingen en naamswijzigingen gevolgd. Bestaand venster geactiveerd bij opnieuw openen.
 - Bronvenster standaard gesloten bij openen van een map of ouder, instelbaar en eenmalig omkeerbaar met Ctrl.
 - Broodkruimel- en bewerkbare padbalk plus naamfilter met optioneel filteren tijdens typen toegevoegd.
 - Instelbare werkbalkelementen, onderste statusbalk en taakbalkgroepering geboden.

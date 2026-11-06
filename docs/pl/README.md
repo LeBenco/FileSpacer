@@ -17,7 +17,7 @@ FileSpacer stawia na lekkość i przejrzystość. Aby ograniczyć gromadzenie ok
 
 <a id="system--languages"></a>**System i języki:** Windows 10 lub nowszy, x64. Dziesięć języków: angielski, francuski, niemiecki, włoski, hiszpański, portugalski (Portugalia), grecki, polski, niderlandzki i ukraiński.
 
-<a id="privacy"></a>**Prywatność:** **Bez telemetrii, śledzenia użycia i reklam**. Sprawdzanie aktualizacji łączy się z GitHub; cotygodniowe sprawdzanie jest opcjonalne i domyślnie wyłączone. Pobieranie i instalacja wymagają potwierdzenia. [Polityka prywatności](user-guide.md#prywatność).
+<a id="privacy"></a>**Prywatność:** **Bez telemetrii, śledzenia użycia i reklam**. Sprawdzanie aktualizacji łączy się z GitHub. Cotygodniowe sprawdzanie jest opcjonalne i domyślnie wyłączone. Pobieranie i instalacja wymagają potwierdzenia. [Polityka prywatności](user-guide.md#prywatność).
 
 **Instalacja:**
 
@@ -38,7 +38,7 @@ _FileSpacer jest forkiem [ChromaFiler](https://github.com/vanjac/chromafiler), p
 
 - **Jedno okno na folder**, używane ponownie, gdy folder jest otwarty. Przywracane są położenie, rozmiar, ustawienia widoku i układ ikon. [Nawigacja przestrzenna](user-guide.md#nawigacja-między-oknami).
 - **Dowolne rozmieszczanie ikon**, z zapisem i przywracaniem dla każdego folderu. [Układ ikon](user-guide.md#układ-ikon).
-- **Przenoszenie i zmiana rozmiaru okien** z dowolnego miejsca obszaru plików, z zachowaniem zaznaczenia. Gesty myszy są konfigurowalne; domyślne to Alt + lewy i Alt + prawy przycisk z przeciągnięciem. [Gesty okna](user-guide.md#przenoszenie-i-zmiana-rozmiaru).
+- **Przenoszenie i zmiana rozmiaru okien** z dowolnego miejsca obszaru plików, z zachowaniem zaznaczenia. Gesty myszy są konfigurowalne. Domyślne to Alt + lewy i Alt + prawy przycisk z przeciągnięciem. [Gesty okna](user-guide.md#przenoszenie-i-zmiana-rozmiaru).
 - **Przełączanie otwartych folderów** z menu tytułu, zamykanie okien nadrzędnych i ponowne otwieranie ostatniego zamkniętego okna przez Ctrl+Shift+T. [Nawigacja](user-guide.md#nawigacja-między-oknami).
 - **Blokowanie zapisanego układu okna**, z możliwością tymczasowych zmian położenia, rozmiaru i widoku. [Blokowanie](user-guide.md#blokowanie-zapisanego-układu).
 - **Filtrowanie bieżącego folderu** i ponowne użycie ostatnich wyszukiwań. [Wyszukiwanie i historia](user-guide.md#wyszukiwanie-i-historia).
@@ -48,7 +48,7 @@ _FileSpacer jest forkiem [ChromaFiler](https://github.com/vanjac/chromafiler), p
 
 ## Integracja
 
-FileSpacer można ustawić jako domyślny menedżer plików podczas instalacji lub później w ustawieniach. Pliki otwierają się w zwykłych aplikacjach Windows; foldery sieciowe korzystają z obsługi Windows. [Integracja z Windows](user-guide.md#integracja-z-windows).
+FileSpacer można ustawić jako domyślny menedżer plików podczas instalacji lub później w ustawieniach. Pliki otwierają się w zwykłych aplikacjach Windows. Foldery sieciowe korzystają z obsługi Windows. [Integracja z Windows](user-guide.md#integracja-z-windows).
 
 **Everything** umożliwia zaawansowane wyszukiwanie z pola FileSpacer w bieżącym folderze i podfolderach lub we wszystkich indeksowanych plikach. Wyniki otwierają się w Everything. [Integracja i użycie](user-guide.md#everything).
 
@@ -58,7 +58,7 @@ FileSpacer można ustawić jako domyślny menedżer plików podczas instalacji l
 
 [![Publikacja FileSpacer](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml/badge.svg)](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml)
 
-Kompilacja wymaga MSVC/NMAKE, Visual Studio 2022 Build Tools z ATL i Windows SDK, Inkscape oraz ImageMagick. Instalator wymaga NSIS; SQLite jest dołączony. Zobacz [przewodnik kompilacji](build.md).
+Kompilacja wymaga MSVC/NMAKE, Visual Studio 2022 Build Tools z ATL i Windows SDK, Inkscape oraz ImageMagick. Instalator wymaga NSIS. SQLite jest dołączony. Zobacz [przewodnik kompilacji](build.md).
 
 Testy regresji łączą scenariusze PowerShell z pomocnikami C++ i C# do kontroli wewnętrznych oraz rzeczywistych testów interfejsu i powłoki Windows. [Przepływ pracy regresji w GitHub Actions](https://github.com/LeBenco/FileSpacer/actions/workflows/regression.yml) uruchamia ten zestaw testów aplikacji na żądanie i automatycznie przed wydaniem. Te same przypadki można uruchomić przez `tests.cmd` na lokalnym pulpicie Windows lub w skonfigurowanej maszynie wirtualnej Hyper-V. [Przewodnik testów](tests/regression/README.md) opisuje wybór przypadków, wymagania i wyniki.
 
@@ -66,7 +66,7 @@ Testy regresji łączą scenariusze PowerShell z pomocnikami C++ i C# do kontrol
 
 ### Prawa autorskie i licencja
 FileSpacer jest udostępniany na licencji <img align="absbottom" src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="Licencja: GPL v3">.<br>
-Copyright © 2026 Benco za modyfikacje FileSpacer. Pełny tekst licencji znajduje się w pliku [LICENSE](../../LICENSE) w źródłach lub `LICENSE.txt` w folderze instalacyjnym. FileSpacer jest dostarczany bez gwarancji; redystrybucja i modyfikacje są dozwolone na warunkach tej licencji.
+Copyright © 2026 Benco za modyfikacje FileSpacer. Pełny tekst licencji znajduje się w pliku [LICENSE](../../LICENSE) w źródłach lub `LICENSE.txt` w folderze instalacyjnym. FileSpacer jest dostarczany bez gwarancji. Redystrybucja i modyfikacje są dozwolone na warunkach tej licencji.
 
 ### Fork i podziękowania dla oryginalnego projektu
 FileSpacer jest forkiem [ChromaFiler](https://github.com/vanjac/chromafiler) (oryginalny kod ChromaFiler © 2023 J. van't Hoog), którego autorem jest J. van't Hoog (vanjac). Dziękujemy vanjac za tę podstawę!

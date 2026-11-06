@@ -18,7 +18,7 @@ FileSpacer privilegia un’esperienza leggera e ordinata. Per limitare l’accum
 
 <a id="system--languages"></a>**Sistema e lingue:** Windows 10 o versioni successive, x64. Disponibile in dieci lingue: inglese, francese, tedesco, italiano, spagnolo, portoghese (Portogallo), greco, polacco, neerlandese e ucraino.
 
-<a id="privacy"></a>**Privacy:** **Nessuna telemetria, monitoraggio dell’utilizzo o pubblicità.** I controlli degli aggiornamenti contattano GitHub; quelli settimanali sono facoltativi e disattivati per impostazione predefinita. Scaricamento e installazione richiedono conferma. [Privacy](user-guide.md#privacy).
+<a id="privacy"></a>**Privacy:** **Nessuna telemetria, monitoraggio dell’utilizzo o pubblicità.** I controlli degli aggiornamenti contattano GitHub. Quelli settimanali sono facoltativi e disattivati per impostazione predefinita. Scaricamento e installazione richiedono conferma. [Privacy](user-guide.md#privacy).
 
 **Installazione:**
 
@@ -39,7 +39,7 @@ _FileSpacer è un fork di [ChromaFiler](https://github.com/vanjac/chromafiler), 
 
 - **Una finestra per ogni cartella**, riattivata se la cartella è già aperta. Posizione, dimensioni, impostazioni di visualizzazione e disposizione delle icone vengono ripristinate a ogni riapertura. [Navigazione spaziale](user-guide.md#navigazione-tra-finestre).
 - **Disponi liberamente le icone**: le posizioni vengono salvate e ripristinate per ogni cartella. [Disposizione delle icone](user-guide.md#disposizione-delle-icone).
-- **Sposta e ridimensiona le finestre** da qualsiasi punto dell’area dei file, senza perdere la selezione. I gesti del mouse sono configurabili; quelli predefiniti sono Alt + trascinamento con il pulsante sinistro e Alt + trascinamento con il pulsante destro. [Gesti per le finestre](user-guide.md#spostamento-e-ridimensionamento).
+- **Sposta e ridimensiona le finestre** da qualsiasi punto dell’area dei file, senza perdere la selezione. I gesti del mouse sono configurabili. Quelli predefiniti sono Alt + trascinamento con il pulsante sinistro e Alt + trascinamento con il pulsante destro. [Gesti per le finestre](user-guide.md#spostamento-e-ridimensionamento).
 - **Passa da una cartella aperta all’altra** dal menu della barra del titolo, chiudi le finestre delle cartelle superiori o riapri l’ultima finestra chiusa con Ctrl+Maiusc+T. [Navigazione tra finestre](user-guide.md#navigazione-tra-finestre).
 - **Blocca lo stato salvato di una finestra**, mantenendo la possibilità di modificarne temporaneamente posizione, dimensioni e visualizzazione. [Blocco dello stato](user-guide.md#blocco-dello-stato-salvato).
 - **Filtra la cartella corrente** e riutilizza le ricerche recenti. [Ricerca e cronologia](user-guide.md#ricerca-e-cronologia).
@@ -49,7 +49,7 @@ _FileSpacer è un fork di [ChromaFiler](https://github.com/vanjac/chromafiler), 
 
 ## Integrazione
 
-FileSpacer può essere impostato come gestore di file predefinito durante l’installazione o in seguito nelle impostazioni. I file si aprono con la consueta applicazione Windows; le cartelle di rete seguono il normale funzionamento di Windows. [Integrazione con Windows](user-guide.md#integrazione-con-windows).
+FileSpacer può essere impostato come gestore di file predefinito durante l’installazione o in seguito nelle impostazioni. I file si aprono con la consueta applicazione Windows. Le cartelle di rete seguono il normale funzionamento di Windows. [Integrazione con Windows](user-guide.md#integrazione-con-windows).
 
 Con **Everything** si possono avviare ricerche avanzate dal campo di FileSpacer, nella cartella corrente e nelle sottocartelle oppure in tutti i file indicizzati. I risultati si aprono in Everything. [Integrazione e utilizzo](user-guide.md#everything).
 
@@ -59,7 +59,7 @@ Con **Nilesoft Shell**, i menu di FileSpacer possono usare i suoi temi e comandi
 
 [![Publish FileSpacer](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml/badge.svg)](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml)
 
-La compilazione usa MSVC/NMAKE, Visual Studio 2022 Build Tools con ATL e un Windows SDK, Inkscape e ImageMagick. Per il programma di installazione è necessario NSIS; SQLite è incluso. Consulta la [guida alla compilazione](../en/build.md).
+La compilazione usa MSVC/NMAKE, Visual Studio 2022 Build Tools con ATL e un Windows SDK, Inkscape e ImageMagick. Per il programma di installazione è necessario NSIS. SQLite è incluso. Consulta la [guida alla compilazione](../en/build.md).
 
 I test di regressione combinano scenari PowerShell con strumenti C++ e C# per le verifiche interne e i test reali dell’interfaccia Windows e della shell. Il [workflow di regressione GitHub Actions](https://github.com/LeBenco/FileSpacer/actions/workflows/regression.yml) esegue questa suite applicativa su richiesta e automaticamente prima di una pubblicazione. Gli stessi casi possono essere eseguiti con `tests.cmd` su un desktop Windows locale o in una VM Hyper-V configurata. La [guida ai test](../en/tests/regression/README.md) descrive selezione dei casi, prerequisiti e risultati.
 
@@ -67,7 +67,7 @@ I test di regressione combinano scenari PowerShell con strumenti C++ e C# per le
 
 ### Copyright e licenza
 FileSpacer è distribuito con la licenza <img align="absbottom" src="https://img.shields.io/badge/Licenza-GPLv3-blue.svg" alt="Licenza: GPL v3">.<br>
-Copyright © 2026 Benco per le modifiche di FileSpacer. La licenza completa si trova in [LICENSE](../../LICENSE) nei sorgenti oppure in `LICENSE.txt` nella cartella di installazione. FileSpacer viene fornito senza garanzia; la ridistribuzione e la modifica sono consentite alle condizioni della licenza.
+Copyright © 2026 Benco per le modifiche di FileSpacer. La licenza completa si trova in [LICENSE](../../LICENSE) nei sorgenti oppure in `LICENSE.txt` nella cartella di installazione. FileSpacer viene fornito senza garanzia. La ridistribuzione e la modifica sono consentite alle condizioni della licenza.
 
 ### Origine del progetto e riconoscimenti
 FileSpacer è un fork di [ChromaFiler](https://github.com/vanjac/chromafiler), creato da J. van’t Hoog (vanjac). Un grande grazie a vanjac per questa base! Codice ChromaFiler originale © 2023 J. van’t Hoog.

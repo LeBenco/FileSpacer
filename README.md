@@ -17,7 +17,7 @@ FileSpacer prioritizes a lightweight and uncluttered experience. To address the 
 
 <a id="system--languages"></a>**System & Languages:** Windows 10 or later, x64. Available in ten languages: English, French, German, Italian, Spanish, Portuguese (Portugal), Greek, Polish, Dutch and Ukrainian.
 
-<a id="privacy"></a>**Privacy:** **No telemetry, usage tracking or advertising**. Update checks contact GitHub; weekly checks are optional and off by default. Downloading and installing require confirmation. [Privacy policy](docs/en/user-guide.md#privacy).
+<a id="privacy"></a>**Privacy:** **No telemetry, usage tracking or advertising**. Update checks contact GitHub. Weekly checks are optional and off by default. Downloading and installing require confirmation. [Privacy policy](docs/en/user-guide.md#privacy).
 
 **Install:**
 
@@ -42,7 +42,7 @@ _FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler), o
 - **Arrange icons freely**, with their positions saved and restored for each
   folder. [Icon layout](docs/en/user-guide.md#icon-layout).
 - **Move and resize windows** from anywhere in the file area, preserving
-  selection. Mouse shortcuts are configurable; defaults are Alt + left drag
+  selection. Mouse shortcuts are configurable. Defaults are Alt + left drag
   and Alt + right drag. [Window gestures](docs/en/user-guide.md#moving-and-resizing).
 - **Switch between open folders** from the title-bar menu, close parent
   windows, or reopen the last closed window with Ctrl+Shift+T.
@@ -63,7 +63,7 @@ _FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler), o
 
 ## Integration
 
-FileSpacer can be set as the default file manager during installation or later in Settings. Files open with their usual Windows applications; network folders use Windows' usual handling. [Windows integration](docs/en/user-guide.md#windows-integration).
+FileSpacer can be set as the default file manager during installation or later in Settings. Files open with their usual Windows applications. Network folders use Windows' usual handling. [Windows integration](docs/en/user-guide.md#windows-integration).
 
 With **Everything**, advanced searches can be launched from FileSpacer's search field, in the current folder and its subfolders or across all indexed files. Results open in Everything. [Integration and usage](docs/en/user-guide.md#everything).
 
@@ -74,7 +74,7 @@ With **Nilesoft Shell**, FileSpacer's menus can use its themes and custom comman
 [![Publish FileSpacer](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml/badge.svg)](https://github.com/LeBenco/FileSpacer/actions/workflows/release.yml)
 
 Builds use MSVC/NMAKE, Visual Studio 2022 Build Tools with ATL and a Windows SDK,
-Inkscape and ImageMagick. NSIS is required for the installer; SQLite is bundled.
+Inkscape and ImageMagick. NSIS is required for the installer. SQLite is bundled.
 See the [build guide](docs/en/build.md).
 
 Regression tests combine PowerShell scenarios with C++ and C# helpers for internal checks and real Windows UI/Shell tests. The [GitHub Actions regression workflow](https://github.com/LeBenco/FileSpacer/actions/workflows/regression.yml) runs this application suite on demand and automatically before a release. The same cases can be run with `tests.cmd` on a local Windows desktop or in a configured Hyper-V VM. See the [test guide](docs/en/tests/regression/README.md) for case selection, prerequisites and results.
@@ -83,7 +83,7 @@ Regression tests combine PowerShell scenarios with C++ and C# helpers for intern
 
 ### Copyright and License
 FileSpacer is distributed under the <img align="absbottom" src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"> license.<br>
-Copyright © 2026 Benco for FileSpacer modifications. The complete license is in [LICENSE](LICENSE) in the source tree, or `LICENSE.txt` in the installation folder. FileSpacer comes without warranty; redistribution and modification are permitted under that license.
+Copyright © 2026 Benco for FileSpacer modifications. The complete license is in [LICENSE](LICENSE) in the source tree, or `LICENSE.txt` in the installation folder. FileSpacer comes without warranty. Redistribution and modification are permitted under that license.
 
 ### Fork and Upstream Credits
 FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler) (original ChromaFiler code © 2023 J. van't Hoog.), created by J. van't Hoog (vanjac). Many thanks to vanjac for the foundation!

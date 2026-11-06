@@ -21,10 +21,10 @@
 
 ## 1.2.3 — 2026-10-30
 
-- Correggere identità, sovrapposizioni delle icone e notifiche delle cartelle nell’ordinamento misto; conservare le posizioni libere delle icone e usare le viste native quando il provider non è disponibile o è incompatibile.
+- Correggere identità, sovrapposizioni delle icone e notifiche delle cartelle nell’ordinamento misto. Conservare le posizioni libere delle icone e usare le viste native quando il provider non è disponibile o è incompatibile.
 - Garantire una sola finestra Preferenze tra processi e correggere la convalida delle scorciatoie, i percorsi di Everything, i tasti di accesso e le traduzioni regionali.
 - Correggere la chiusura delle cartelle, i clic di attivazione e il ripristino dopo un’anteprima nel menu Visualizza.
-- Correggere gli aggiornamenti delle Jump List e la diagnostica dell’installazione; conservare i file di aiuto dell’utente durante aggiornamenti e disinstallazione.
+- Correggere gli aggiornamenti delle Jump List e la diagnostica dell’installazione. Conservare i file di aiuto dell’utente durante aggiornamenti e disinstallazione.
 - Includere l’aiuto multilingue offline tramite F1 e Informazioni e aggiornare le guide di configurazione tradotte e i riferimenti di Nilesoft Shell.
 
 ## 1.2.2 — 2026-10-28
@@ -48,10 +48,10 @@
 
 - Richiedere la conferma di Windows soltanto per installare o disinstallare per tutti gli utenti, applicando le scelte personali di integrazione all’utente che ha avviato l’installazione.
 - Mostrare la cronologia completa delle versioni in un pannello Novità scorrevole accanto alle opzioni di installazione nella prima schermata.
-- Correggere la reimpostazione delle scelte dei componenti durante gli aggiornamenti; ripristinare le selezioni salvate e conservare il gestore di file predefinito durante gli aggiornamenti non interattivi.
+- Correggere la reimpostazione delle scelte dei componenti durante gli aggiornamenti. Ripristinare le selezioni salvate e conservare il gestore di file predefinito durante gli aggiornamenti non interattivi.
 - Usare la stessa barra laterale FileSpacer, il logo grande e la combinazione grigio chiaro e bianco in tutte le schermate di installazione e disinstallazione. Assegnare al programma di installazione un’icona distinta, composta dalle bitmap native dell’applicazione e da una freccia di download ottimizzata separatamente per ogni dimensione, mantenendo un sottile bordo giallo a destra e in basso della cartella.
 - Correggere gli arresti anomali alla chiusura causati dall’inizializzazione anticipata di dati delle cartelle locali al thread nei thread di lavoro tardivi della shell.
-- Proporre Apri in Esplora file di Windows nei menu di scelta rapida delle cartelle quando FileSpacer è predefinito, altrimenti Apri in FileSpacer; aggiornare i menu al cambio della preferenza, dopo l’installazione e all’avvio.
+- Proporre Apri in Esplora file di Windows nei menu di scelta rapida delle cartelle quando FileSpacer è predefinito, altrimenti Apri in FileSpacer. Aggiornare i menu al cambio della preferenza, dopo l’installazione e all’avvio.
 - Correggere l’apertura dei collegamenti a server e condivisioni di rete in Esplora file quando FileSpacer è predefinito. Aggiornare il componente del menu di scelta rapida delle cartelle e impostare di nuovo FileSpacer come predefinito per abilitare l’integrazione di rete.
 - Portare a 48 pixel, con scala al 100%, l’icona dell’applicazione nella scheda Informazioni, disponendo il testo accanto.
 - Mantenere interamente visibili i titoli delle finestre ingrandite ed estendere la barra degli strumenti per tutta la larghezza disponibile.
@@ -111,7 +111,7 @@ Questa versione si basa sulla 1.1.3, che offre già gesti configurabili da tasti
 - Mostrare automaticamente Everything e le ricerche recenti all’attivazione della casella esistente, senza un pulsante aggiuntivo. Conservare ricerca nativa, filtro immediato e riutilizzo delle query locali.
 - Ricordare per impostazione predefinita cinque ricerche recenti per cartella tra le sessioni, con un limite da zero a venti indipendente da Everything. Conservare i dati esistenti e pulire la cronologia secondo i criteri prudenti già usati per lo stato delle cartelle.
 - Mostrare l’icona dell’eseguibile Everything alla dimensione appropriata, con estrazione in background e cache in memoria aggiornata quando cambia l’eseguibile.
-- Aggiungere test di regressione per archiviazione isolata, migrazione e integrazione reale Shell/Everything; rendere robusto il lettore di test della shell quando filtri successivi cambiano la visualizzazione.
+- Aggiungere test di regressione per archiviazione isolata, migrazione e integrazione reale Shell/Everything. Rendere robusto il lettore di test della shell quando filtri successivi cambiano la visualizzazione.
 
 [Tutte le modifiche](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
 
@@ -126,7 +126,7 @@ Questa versione si basa sulla 1.1.3, che offre già gesti configurabili da tasti
 
 ## 1.1.2 — 2026-10-25
 
-- Aggiungere il blocco facoltativo della geometria e della visualizzazione salvate di una finestra dal menu del titolo. Restano possibili le modifiche temporanee; le posizioni delle singole icone continuano a essere salvate normalmente.
+- Aggiungere il blocco facoltativo della geometria e della visualizzazione salvate di una finestra dal menu del titolo. Restano possibili le modifiche temporanee. Le posizioni delle singole icone continuano a essere salvate normalmente.
 - Mostrare un lucchetto Small & Flat sulle icone delle cartelle bloccate, con ICO nativi multirisoluzione, adattamento ai DPI e colori a contrasto elevato.
 - Confermare la disattivazione globale del blocco, rimuovere quelli salvati per cartelle aperte e chiuse e riprendere il normale salvataggio tra i processi.
 - Estendere i test di regressione a transizioni di blocco, errori di salvataggio, ripristino della shell e rendering nativo del lucchetto.
@@ -150,7 +150,7 @@ Questa versione si basa sulla 1.1.3, che offre già gesti configurabili da tasti
 - Aprire il Pannello di controllo nella propria finestra Windows, conservando cartella di origine e selezione.
 - Rimuovere la selezione automatica della cartella di origine quando si passa a una cartella superiore per ragioni ergonomiche: ulteriori selezioni con Ctrl non devono aprire accidentalmente entrambe le cartelle.
 - Accettare tre differenze in questa versione: non sono disponibili nomi selezionati completi personalizzati su sfondo opaco, conservazione della selezione all’attivazione e ripristino esatto dello scorrimento. Disattivare i due controlli delle impostazioni inattivi, mantenendo le preferenze salvate.
-- Semplificare i test di regressione attorno alla configurazione nativa di produzione della shell; ritirare confronti esplorativi tra profili, verifiche di incorporamento e rapporti riservati alla migrazione.
+- Semplificare i test di regressione attorno alla configurazione nativa di produzione della shell. Ritirare confronti esplorativi tra profili, verifiche di incorporamento e rapporti riservati alla migrazione.
 
 [Tutte le modifiche](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
 

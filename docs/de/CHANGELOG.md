@@ -21,10 +21,10 @@
 
 ## 1.2.3 — 2026-10-30
 
-- Identitäten, Symbolüberlagerungen und Ordnerbenachrichtigungen bei gemischter Sortierung korrigieren; freie Symbolpositionen erhalten und die native Ansicht verwenden, wenn der Anbieter fehlt oder inkompatibel ist.
+- Identitäten, Symbolüberlagerungen und Ordnerbenachrichtigungen bei gemischter Sortierung korrigieren. Freie Symbolpositionen erhalten und die native Ansicht verwenden, wenn der Anbieter fehlt oder inkompatibel ist.
 - Prozessübergreifend nur ein Einstellungsfenster zulassen sowie Tastenkürzelprüfung, Everything-Pfade, Zugriffstasten und regionale Übersetzungen korrigieren.
 - Das Schließen von Ordnerfenstern, Aktivierungsklicks und die Wiederherstellung nach einer Vorschau im Menü Ansicht korrigieren.
-- Sprunglistenaktualisierungen und Installationsdiagnosen korrigieren; eigene Hilfedateien bei Updates und der Deinstallation erhalten.
+- Sprunglistenaktualisierungen und Installationsdiagnosen korrigieren. Eigene Hilfedateien bei Updates und der Deinstallation erhalten.
 - Mehrsprachige Offlinehilfe über F1 und Info mitliefern sowie übersetzte Einrichtungsanleitungen und Nilesoft-Shell-Referenzen aktualisieren.
 
 ## 1.2.2 — 2026-10-28
@@ -33,7 +33,7 @@
 
 ## 1.2.1 — 2026-10-28
 
-- Kurzzeitig angezeigte Standardsymbole beim Öffnen gemischt sortierter Ordner verringern. Sichtbare Symbole vor dem Einblenden der nativen Ansicht im Windows-Cache vorbereiten; die Wartezeit für langsame Symbolhandler bleibt begrenzt.
+- Kurzzeitig angezeigte Standardsymbole beim Öffnen gemischt sortierter Ordner verringern. Sichtbare Symbole vor dem Einblenden der nativen Ansicht im Windows-Cache vorbereiten. Die Wartezeit für langsame Symbolhandler bleibt begrenzt.
 
 ## 1.2.0 — 2026-10-28
 
@@ -49,7 +49,7 @@
 - Die Windows-Bestätigung nur bei Installation oder Deinstallation für alle Benutzer anfordern. Persönliche Integrationsentscheidungen auf den Benutzer anwenden, der das Installationsprogramm gestartet hat.
 - Auf der ersten Installationsseite den vollständigen Versionsverlauf in einem Bildlaufbereich neben den Installationsoptionen anzeigen.
 - Das Zurücksetzen der Komponentenauswahl bei Upgrades beheben. Gespeicherte Auswahlen wiederherstellen und bei unbeaufsichtigten Upgrades den aktuellen Standard-Dateimanager beibehalten.
-- In allen Installations- und Deinstallationsschritten dieselbe FileSpacer-Seitenleiste mit großem Logo und hellgrau-weißer Farbgebung verwenden. Dem Installationsprogramm ein eigenes Symbol aus den nativen Anwendungsbitmaps und einem für jede Größe separat optimierten Download-Pfeil geben; am rechten und unteren Ordnerrand bleibt ein schmaler gelber Saum erhalten.
+- In allen Installations- und Deinstallationsschritten dieselbe FileSpacer-Seitenleiste mit großem Logo und hellgrau-weißer Farbgebung verwenden. Dem Installationsprogramm ein eigenes Symbol aus den nativen Anwendungsbitmaps und einem für jede Größe separat optimierten Download-Pfeil geben. Am rechten und unteren Ordnerrand bleibt ein schmaler gelber Saum erhalten.
 - Abstürze beim Beenden beheben, die durch eine vorzeitige Initialisierung threadlokaler Ordnerdaten in spät gestarteten Shell-Arbeitsthreads verursacht wurden.
 - In Ordnerkontextmenüs Im Windows-Datei-Explorer öffnen anbieten, wenn FileSpacer der Standard ist, andernfalls In FileSpacer öffnen. Die Menüs beim Wechsel der Vorgabe, nach der Installation und beim Start aktualisieren.
 - Das Öffnen von Netzwerkserver- und Freigabeverknüpfungen im Datei-Explorer trotz FileSpacer als Standard korrigieren. Zum Aktivieren der Netzwerkintegration die Kontextmenükomponente aktualisieren und FileSpacer erneut als Standard auswählen.
@@ -67,7 +67,7 @@
 
 ## 1.1.8 — 2026-10-27
 
-- Anwendungssymbol und README-Logo durch eine Tesseraktprojektion mit einem Verhältnis von 11/20 zwischen violetten und grünen Würfelkanten ersetzen; optimierte kleine Symbolgrößen beibehalten.
+- Anwendungssymbol und README-Logo durch eine Tesseraktprojektion mit einem Verhältnis von 11/20 zwischen violetten und grünen Würfelkanten ersetzen. Optimierte kleine Symbolgrößen beibehalten.
 - Englische und französische Einstellungsbezeichnungen präzisieren und Fenstersperroptionen zusammenfassen.
 - Eine Option zum Ausblenden des Schlosssymbols gesperrter Fenster hinzufügen, ohne ihre Zustandssperre zu ändern.
 - In Einstellungsseiten und Tastenkombinationsfeldern native Windows-Theme-Hintergründe verwenden.
@@ -119,14 +119,14 @@ Diese Version baut auf 1.1.3 auf, die bereits konfigurierbare Tastatur-/Mausgest
 
 - Eine Einstellungsseite für Tastenkombinationen zum Konfigurieren oder Deaktivieren der Verschiebe- und Skaliergesten hinzufügen. Unterstützt Zusatztasten und linke, mittlere oder rechte Maustaste, direkte Eingabe und Konfliktprüfung.
 - Alt + Doppelklick auf Eigenschaften der nativen Explorer-Ansicht überlassen.
-- Vollständige Namen auf deckendem Hintergrund für ein einzelnes ausgewähltes Element in der Symbolansicht wiederherstellen. Mehrfachauswahlen behalten die native Windows-Darstellung; die Einstellungsbezeichnung beschreibt diesen Geltungsbereich jetzt ausdrücklich.
+- Vollständige Namen auf deckendem Hintergrund für ein einzelnes ausgewähltes Element in der Symbolansicht wiederherstellen. Mehrfachauswahlen behalten die native Windows-Darstellung. Die Einstellungsbezeichnung beschreibt diesen Geltungsbereich jetzt ausdrücklich.
 - Umfassende Tests der Tastenkombinationen und echter Mausgesten mit französischen und englischen Einstellungsressourcen ergänzen.
 
 [Alle Änderungen](https://github.com/LeBenco/FileSpacer/compare/v1.1.2...v1.1.3)
 
 ## 1.1.2 — 2026-10-25
 
-- Die optionale Sperre der gespeicherten Fenstergeometrie und Ansicht über das Titelleistenmenü hinzufügen. Vorübergehende Änderungen bleiben möglich; einzelne Symbolpositionen werden weiterhin normal gespeichert.
+- Die optionale Sperre der gespeicherten Fenstergeometrie und Ansicht über das Titelleistenmenü hinzufügen. Vorübergehende Änderungen bleiben möglich. Einzelne Symbolpositionen werden weiterhin normal gespeichert.
 - Ein Small-&-Flat-Schlosssymbol auf gesperrten Ordnersymbolen anzeigen, mit nativen mehrstufigen ICO-Dateien, DPI-Skalierung und Kontrastfarben.
 - Die globale Deaktivierung bestätigen lassen, Sperren offener und geschlossener Ordner entfernen und normales prozessübergreifendes Speichern wieder aufnehmen.
 - Die Regressionstests auf Sperrübergänge, Speicherfehler, Shell-Wiederherstellung und native Symboldarstellung erweitern.

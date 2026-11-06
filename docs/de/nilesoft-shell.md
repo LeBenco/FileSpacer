@@ -43,11 +43,11 @@ Verwenden Sie in den Regeln die passenden Eigenschaften `where` und `type`:
 | Ausgewählte Dateien oder Ordner | `filespacer_context` | `'file\|dir'` |
 | Ordnerhintergrund | `filespacer_context` | `'back'` |
 
-Verwenden Sie `mode='multiple'` für Regeln, die unabhängig vom Auswahlzustand verfügbar bleiben sollen. `process.name` enthält kein `.exe`; `window.parent.name` bezeichnet eine Fensterklasse.
+Verwenden Sie `mode='multiple'` für Regeln, die unabhängig vom Auswahlzustand verfügbar bleiben sollen. `process.name` enthält kein `.exe`. `window.parent.name` bezeichnet eine Fensterklasse.
 
 ## Einen bestehenden Menüeintrag ansprechen
 
-Der allgemeine Nilesoft-Mechanismus `modify(find=...)` findet einen Eintrag anhand seiner Beschriftung. Kombinieren Sie ihn mit `where`, um die Änderung auf ein Menü zu beschränken. `|` trennt alternative Beschriftungen; `*` ist ein Platzhalter:
+Der allgemeine Nilesoft-Mechanismus `modify(find=...)` findet einen Eintrag anhand seiner Beschriftung. Kombinieren Sie ihn mit `where`, um die Änderung auf ein Menü zu beschränken. `|` trennt alternative Beschriftungen. `*` ist ein Platzhalter:
 
 ```nss
 modify(type='*' mode='multiple' where=filespacer_title

@@ -2,7 +2,7 @@
   "version": 1,
   "sources": {
     "README.md": {
-      "sourceHash": "835d7bbcba55bce160ee545abdde1b64bcf2cb571c5930fe2e187be4f4fa7d17",
+      "sourceHash": "e122a0fec625d2894ac620052e134f481745553d0210e92fa7ab0fff4ac880e7",
       "headings": [
         [
           "filespacer",
@@ -39,7 +39,7 @@
       ]
     },
     "docs/user-guide.md": {
-      "sourceHash": "47497651cef49536f739bf93783f561bab95e0f78380a20b75cb69e686d117d0",
+      "sourceHash": "ca9b55994ba68e0f2ae558be1853232fa1501875c5d865b01eb2ba0a3083eec4",
       "headings": [
         [
           "using-filespacer",
@@ -132,7 +132,7 @@
       ]
     },
     "CHANGELOG.md": {
-      "sourceHash": "f5012a28334b9faf26fc7370e8777e9476b0352bfd176250bea443ea377aee5c",
+      "sourceHash": "5e0365a4efcee539696a55659e730a106140563e58abbf2886dcfcfddb18af4e",
       "headings": [
         [
           "changelog",

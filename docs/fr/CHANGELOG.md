@@ -21,10 +21,10 @@
 
 ## 1.2.3 — 2026-10-30
 
-- Corriger les identités, les surimpressions d’icônes et les notifications de dossiers du tri mixte ; conserver les positions libres des icônes et utiliser les vues natives si le fournisseur est indisponible ou incompatible.
+- Corriger les identités, les surimpressions d’icônes et les notifications de dossiers du tri mixte. Conserver les positions libres des icônes et utiliser les vues natives si le fournisseur est indisponible ou incompatible.
 - Garantir une seule fenêtre Préférences entre processus et corriger la validation des raccourcis, les chemins Everything, les mnémoniques clavier et les traductions régionales.
 - Corriger la fermeture des dossiers, les clics d’activation et la restauration après un aperçu du menu Affichage.
-- Corriger les rafraîchissements des Jump Lists et les diagnostics de l’installeur ; conserver les fichiers d’aide utilisateur pendant les mises à niveau et la désinstallation.
+- Corriger les rafraîchissements des Jump Lists et les diagnostics de l’installeur. Conserver les fichiers d’aide utilisateur pendant les mises à niveau et la désinstallation.
 - Intégrer l’aide multilingue hors ligne par F1 et À propos, et actualiser les guides de configuration traduits et les références Nilesoft Shell.
 
 ## 1.2.2 — 2026-10-28
@@ -48,10 +48,10 @@
 
 - Demander la confirmation Windows uniquement pour une installation ou une désinstallation pour tous les utilisateurs, et appliquer les choix personnels d’intégration à l’utilisateur ayant démarré l’installation.
 - Afficher l’historique complet des versions dans un panneau défilant Nouveautés à côté des choix d’installation sur le premier écran.
-- Corriger la réinitialisation des choix de composants lors des mises à niveau ; restaurer les sélections enregistrées et conserver le gestionnaire de fichiers par défaut pendant les mises à niveau silencieuses.
+- Corriger la réinitialisation des choix de composants lors des mises à niveau. Restaurer les sélections enregistrées et conserver le gestionnaire de fichiers par défaut pendant les mises à niveau silencieuses.
 - Utiliser la même barre latérale FileSpacer, le grand logo et la palette gris clair et blanc sur tous les écrans de l’installeur et du désinstalleur. Donner à l’installeur une icône distincte composée des bitmaps natifs de l’application et d’un badge de flèche de téléchargement optimisé séparément à chaque taille, en conservant un fin liseré jaune à droite et en bas du dossier.
 - Corriger les plantages à l’arrêt dus à l’initialisation prématurée de données locales de thread sur des threads de travail tardifs du Shell.
-- Proposer Ouvrir dans l’Explorateur de fichiers Windows dans les menus contextuels de dossiers lorsque FileSpacer est le gestionnaire par défaut, et Ouvrir dans FileSpacer dans le cas contraire ; actualiser les menus lors du changement de gestionnaire, après l’installation et au démarrage.
+- Proposer Ouvrir dans l’Explorateur de fichiers Windows dans les menus contextuels de dossiers lorsque FileSpacer est le gestionnaire par défaut, et Ouvrir dans FileSpacer dans le cas contraire. Actualiser les menus lors du changement de gestionnaire, après l’installation et au démarrage.
 - Corriger l’ouverture des raccourcis de serveurs et partages réseau dans l’Explorateur de fichiers Windows lorsque FileSpacer est le gestionnaire par défaut. Mettre à jour le composant de menu contextuel des dossiers et sélectionner à nouveau FileSpacer par défaut pour activer l’intégration réseau.
 - Agrandir l’icône de l’application de l’onglet À propos à 48 pixels à l’échelle 100 %, avec le texte à côté.
 - Garder les titres des fenêtres maximisées entièrement visibles et étendre la barre d’outils sur toute la largeur disponible.
@@ -97,7 +97,7 @@
 ## 1.1.5 — 2026-10-26
 
 - Corriger la création involontaire d’un raccourci lorsqu’un Alt + double-clic est suivi d’un déplacement de souris. Préserver les propriétés natives, la sélection et le focus sans rejouer un appui maintenu.
-- Corriger la couverture de non-régression du délai natif de double-clic et des cibles physiques de la souris ; comparer les propriétés, la sélection, le focus, l’ancre de sélection, la géométrie et le contenu des dossiers avec et sans gestes de fenêtre, y compris avec Ctrl/Maj.
+- Corriger la couverture de non-régression du délai natif de double-clic et des cibles physiques de la souris. Comparer les propriétés, la sélection, le focus, l’ancre de sélection, la géométrie et le contenu des dossiers avec et sans gestes de fenêtre, y compris avec Ctrl/Maj.
 - Isoler l’exécutable réel de test Everything et son fichier INI de démarrage afin que le réglage administrateur installé de l’utilisateur ne puisse pas rediriger les recherches de test ni déclencher une élévation. Vérifier que les paramètres installés restent inchangés.
 - Maintenir le poste éveillé et suspendre temporairement l’économiseur d’écran pendant les tests d’interface, en restaurant leur état initial pendant le nettoyage, même après un échec.
 
@@ -111,7 +111,7 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Afficher automatiquement Everything et les recherches récentes à l’activation du champ de recherche existant, sans bouton supplémentaire. Conserver la recherche native, le filtrage instantané et la réutilisation des requêtes locales.
 - Mémoriser par défaut cinq recherches récentes par dossier entre les sessions, avec une limite de zéro à vingt indépendante d’Everything. Préserver les données existantes et nettoyer l’historique selon la politique prudente de conservation de l’état des dossiers.
 - Afficher l’icône de l’exécutable Everything à la taille appropriée, avec extraction en arrière-plan et cache mémoire actualisé lorsque l’exécutable change.
-- Ajouter des tests de stockage isolé, de migration et d’intégration réelle Shell/Everything ; rendre le lecteur de tests du Shell robuste lorsque des filtres successifs modifient la vue.
+- Ajouter des tests de stockage isolé, de migration et d’intégration réelle Shell/Everything. Rendre le lecteur de tests du Shell robuste lorsque des filtres successifs modifient la vue.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
 
@@ -119,7 +119,7 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 
 - Ajouter un onglet Raccourcis aux paramètres pour configurer ou désactiver les gestes de déplacement et de redimensionnement avec les touches modificatrices et les boutons gauche, central ou droit, avec saisie directe et validation des conflits.
 - Laisser la gestion d’Alt + double-clic sur les propriétés à la vue native de l’Explorateur.
-- Restaurer les noms complets sur fond opaque pour un seul élément sélectionné en mode Icônes. Les sélections multiples conservent le rendu natif Windows ; le libellé de la préférence précise maintenant cette portée.
+- Restaurer les noms complets sur fond opaque pour un seul élément sélectionné en mode Icônes. Les sélections multiples conservent le rendu natif Windows. Le libellé de la préférence précise maintenant cette portée.
 - Ajouter des tests exhaustifs de configuration des raccourcis et de gestes réels de souris, avec les ressources de paramètres françaises et anglaises.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.2...v1.1.3)
@@ -131,7 +131,7 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Confirmer la désactivation globale du verrouillage, supprimer les verrouillages enregistrés des dossiers ouverts et fermés et reprendre l’enregistrement normal entre les processus.
 - Étendre les tests de non-régression aux transitions de verrouillage, aux échecs d’enregistrement, à la restauration du Shell et au rendu natif du badge.
 - Rouvrir un dossier fermé avec Ctrl+Maj+T ou les listes de raccourcis restaure en modes Détails et Liste la ligne qui se trouvait en haut à sa fermeture.
-- Les diagnostics de plantage continuent d’écrire un minidump et un rapport dans les données locales de l’application ; l’attribution à l’ancien rendu des noms complets, le changement automatique de préférence et le redémarrage sont supprimés.
+- Les diagnostics de plantage continuent d’écrire un minidump et un rapport dans les données locales de l’application. L’attribution à l’ancien rendu des noms complets, le changement automatique de préférence et le redémarrage sont supprimés.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.1...v1.1.2)
 
@@ -150,7 +150,7 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Ouvrir le Panneau de configuration dans sa propre fenêtre Windows en conservant le dossier source et sa sélection.
 - Supprimer la sélection automatique du dossier d’origine lors de la navigation vers un parent ou un ancêtre pour des raisons ergonomiques : une sélection ultérieure avec Ctrl ne doit pas ouvrir accidentellement les deux dossiers.
 - Accepter trois différences dans cette version : le rendu personnalisé des noms sélectionnés complets sur fond opaque, la conservation de la sélection à l’activation et la restauration exacte du défilement sont indisponibles. Désactiver les deux contrôles de paramètres inactifs tout en conservant leurs préférences enregistrées.
-- Simplifier les tests de non-régression autour de la configuration native de production du Shell ; retirer les comparaisons exploratoires de profils, les sondes d’intégration et les rapports réservés à la migration.
+- Simplifier les tests de non-régression autour de la configuration native de production du Shell. Retirer les comparaisons exploratoires de profils, les sondes d’intégration et les rapports réservés à la migration.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
 
