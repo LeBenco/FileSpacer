@@ -2,7 +2,7 @@
 
 # Пошук, журнал і Everything
 
-Почніть із `SearchBox`, `FolderWindow::applyNameFilter`, `ShellViewFilter` і `Everything`. Взаємодія: [посібник користувача](user-guide.md#пошук-і-журнал).
+Почніть із `SearchBox`, `FolderWindow::applyNameFilter`, `ShellViewFilter` і `Everything`. Взаємодія: [посібник користувача](user-guide.md#search-and-history).
 
 <a id="local-filtering-and-suggestions"></a>
 

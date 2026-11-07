@@ -4,6 +4,6 @@
 
 Bez telemetrii, śledzenia użycia i reklam. Sprawdzanie aktualizacji łączy się z GitHub. Cotygodniowe sprawdzanie jest opcjonalne i domyślnie wyłączone. Pobieranie i instalacja wymagają potwierdzenia.
 
-[Szczegóły w instrukcji użytkownika](user-guide.md#prywatność).
+[Szczegóły w instrukcji użytkownika](user-guide.md#privacy).
 
-[Dane lokalne](user-guide.md#dane-lokalne).
+[Dane lokalne](user-guide.md#local-data).
