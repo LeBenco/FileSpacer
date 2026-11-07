@@ -15,7 +15,7 @@ function Build-NativeTest {
         [Parameter(Mandatory=$true)][string]$CaseDirectory,
         [string[]]$ProductionSources=@(), [switch]$Sqlite, [switch]$Storage,
         [ValidateSet('','Menu','Shell','Settings','View','Adapters','Geometry','LockBadge','Documentation','JumpLists','StorageRetry','ItemValidation')][string]$Extract='',
-        [switch]$Resources, [switch]$CommonControls, [string[]]$Libraries=@(),
+        [switch]$Resources, [switch]$CommonControls, [switch]$ControlFlowGuard, [string[]]$Libraries=@(),
         [ValidateSet('c++14','c++17')][string]$Standard='c++17', [string[]]$Defines=@(),
         [string]$OutputDirectory='')
     $output=Join-Path $RunDirectory $Name
@@ -34,6 +34,7 @@ function Build-NativeTest {
         ('/I'+(Join-Path $ProjectRoot 'src')), ('/I'+$CaseDirectory), ('/I'+$output),
         ('/Fo'+$output+'\\'), ('/Fe'+$exe))
     if ($Storage) { $arguments+='/DFILESPACER_STORAGE_TEST' }
+    if ($ControlFlowGuard) { $arguments+='/guard:cf' }
     foreach ($define in $Defines) { $arguments+=('/D'+$define) }
     if ($Sqlite) {
         $sqliteDirectory=Join-Path $ProjectRoot 'third_party\sqlite'
@@ -52,6 +53,7 @@ function Build-NativeTest {
     $arguments+=@('/link','/subsystem:console','/incremental:no','/debug',('/pdb:'+(Join-Path $output ($Name+'.pdb'))),'User32.lib',
         '/manifest:embed',('/manifestinput:'+(Join-Path $PSScriptRoot 'TestExecutable.manifest')))
     if ($Resources -or $CommonControls) { $arguments+="/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'" }
+    if ($ControlFlowGuard) { $arguments+='/guard:cf' }
     $arguments+=$Libraries
     # Suppress success-stream compiler output: only the executable path is returned.
     Invoke-Compiler $arguments | Out-Host
