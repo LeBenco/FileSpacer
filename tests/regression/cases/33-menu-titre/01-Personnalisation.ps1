@@ -51,6 +51,7 @@ function ActualMenu([IntPtr]$Window,[bool]$CopyPresent){
     $popup=@{Value=[IntPtr]::Zero}
     Wait-Ui {$items=@([FileSpacerRegression.Native]::Top('#32768',[NullString]::Value,0));if($items.Count-eq1){$popup.Value=$items[0];return $true};return $false} 'actual title popup'
     $ids=[TitleMenuUi]::MenuIds($popup.Value)
+    Assert-Ui ($ids-notcontains1125) 'A retired command remains in the real title menu.'
     Assert-Ui (($ids-contains(Get-UiId 'IDM_CAPTION_COPY_PATH'))-eq$CopyPresent) 'The real title menu did not apply the validated composition.'
     [FileSpacerRegression.Native]::Keys($Window,0x1b,$false,$false)
     Wait-Ui {![FileSpacerRegression.Native]::IsWindow($popup.Value)} 'actual title popup closed'
@@ -67,6 +68,9 @@ try {
     [void](Show-UiSettings $window)
     [void](Editor)
     Assert-Ui (!(Has-Copy)) 'An action already in the menu must be absent from the catalog.'
+    $catalog=[FileSpacerRegression.Native]::GetDlgItem($script:editor,(Get-UiId 'IDC_TITLE_MENU_ACTIONS'))
+    $labels=@([TitleMenuUi]::Catalog($catalog))
+    Assert-Ui ($labels.Count-eq8 -and @($labels|Where-Object{[string]::IsNullOrWhiteSpace($_)}).Count-eq0) 'The catalog contains a retired action or an empty slot.'
     $point=Copy-Point;$rect=[FileSpacerRegression.Native]::Bounds($script:editor)
     # Outside the entire dialog, rather than over the catalog: the last requested gesture.
     [TitleMenuUi]::Drag($point.Window,$point.X,$point.Y,($rect.Right+24),($rect.Top+60),$false)
