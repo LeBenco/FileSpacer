@@ -41,21 +41,21 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
   assert.match(html, /https:\/\/github\.com\/LeBenco\/FileSpacer\/blob\/main\/docs\/en\/build\.md/);
   assert.match(html, /https:\/\/github\.com\/LeBenco\/FileSpacer\/blob\/main\/docs\/en\/tests\/regression\/README\.md/);
   assert.doesNotMatch(html, /data-source="(?:docs\/(?:build|native-shell-view)|tests\/)/);
-  assert.match(nav, /href="#user-guide--integration"/);
-  assert.doesNotMatch(nav, /href="#(?:user-guide--(?:windows-integration|everything|nilesoft-shell)|overview--copyright-and-license)"/);
-  assert.match(html, /<h4 id="user-guide--everything"/);
-  const windows = html.match(/<h3 id="user-guide--managing-windows">[^]*?(?=<h3 |<\/section>)/)?.[0];
-  assert.ok(windows, 'The user guide groups window controls under Managing windows');
-  assert.match(windows, /<h4 id="user-guide--moving-and-resizing"/);
-  assert.match(windows, /<h4 id="user-guide--locking-a-saved-layout"/);
+  assert.match(nav, /href="#user-guide--customization"/);
+  assert.doesNotMatch(nav, /href="#(?:user-guide--(?:integration|windows-integration|everything|nilesoft-shell)|overview--copyright-and-license)"/);
+  assert.match(html, /<div id="user-guide--everything"><\/div>/);
+  const windows = html.match(/<h3 id="user-guide--window-navigation-and-layout">[^]*?(?=<h3 |<\/section>)/)?.[0];
+  assert.ok(windows, 'The user guide groups window navigation and locking');
+  assert.match(windows, /<div id="user-guide--locking-a-saved-layout"><\/div>/);
+  assert.match(html, /<div id="user-guide--moving-and-resizing"><\/div>/);
   assert.match(html, /href="#user-guide--locking-a-saved-layout"/);
   assert.match(html, /assets\/content\/src\/res\/FileSpacer\.svg/);
   assert.doesNotMatch(nav, /href="#privacy-policy"/);
   assert.match(nav, /href="#user-guide--privacy"/);
   for (const [alias, target] of [
-    ['privacy-policy', 'privacy'], ['privacy-policy--local-data', 'local-data'],
-    ['privacy-policy--resetting-preferences', 'local-data'],
-    ['privacy-policy--update-checks', 'settings-and-updates'],
+    ['privacy-policy', 'privacy'], ['privacy-policy--local-data', 'updates-and-troubleshooting'],
+    ['privacy-policy--resetting-preferences', 'updates-and-troubleshooting'],
+    ['privacy-policy--update-checks', 'updates-and-troubleshooting'],
     ['privacy-policy--windows-and-external-applications', 'privacy'],
   ]) assert.ok(html.includes(`id="${alias}" data-alias-for="user-guide--${target}"`));
   const screenshots = [...html.matchAll(/<a class="screenshot-link"[^>]+><img\b[^>]+><\/a>/g)];
@@ -78,7 +78,7 @@ test('replacing an image changes both its thumbnail and popup URL while unchange
   const updated = imageUrl(after, 'spatial-windows');
   assert.notEqual(updated, imageUrl(before, 'spatial-windows'));
   assert.ok(after.includes(`src="${updated}"`));
-  assert.equal(imageUrl(after, 'window-menu'), imageUrl(before, 'window-menu'));
+  assert.equal(imageUrl(after, 'selected-name'), imageUrl(before, 'selected-name'));
 });
 
 test('the header adds no download button while preserving download links in Markdown', async t => {
