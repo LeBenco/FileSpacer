@@ -22,7 +22,8 @@ template<class T> bool read(const void *address,T &value) {
 }
 enum Field : unsigned char {OnClear,Select,Purge,Init,QueryService,Notify,Cancel,HostQI,EnumGlobal,DeleteGlobal,
     Callback,NotifyTable,HostTable,HostQueryObject,ViewQueryObject,ManagerTable,ManagerQI,Retain,Release,
-    HostOffset,ManagerOffset,ArrayOffset,NotifySlot,CancelSlot,Procedure,ArrayGetter,FieldCount};
+    HostOffset,ManagerOffset,ArrayOffset,NotifySlot,CancelSlot,Procedure,ArrayGetter,
+    NativeWindowProcedure,NativeInsertSlot,NativeInsert,NativeSelectOne,NativeNotify,FieldCount};
 inline bool writable(const void *pointer,SIZE_T length) {
     const auto *cursor=static_cast<const unsigned char *>(pointer);
     if(length>(std::numeric_limits<ULONG_PTR>::max)()-reinterpret_cast<ULONG_PTR>(cursor))return false;
@@ -76,6 +77,8 @@ struct Image {
     bool clearViaCount=false;
     bool manualEnumeration=false;DWORD dataOffset=0,strideOffset=0;
     bool supported=false;const char *reason="missing discovery data";
+    bool selectAllSupported=false;
+    DWORD ignoredStateOffset=0;
     bool range(DWORD rva,SIZE_T length)const{return rva<size&&length<=size-rva;}
     bool cfg(DWORD rva)const {
         IMAGE_DOS_HEADER dos={};IMAGE_NT_HEADERS64 nt={};
@@ -220,6 +223,46 @@ struct Image {
                 ||!read(result.base+result.fields[NotifyTable]+sizeof(void *)*result.fields[CancelSlot],target)
                 ||target!=result.base+result.fields[Cancel])return result;
         if(!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_PIN,path.c_str(),&module))return result;
+        // Optional global-selection capability. Unknown compiler forms keep
+        // the independently qualified clear capability and native selection.
+        unsigned char insert[110]={},select[128]={};void *insertTarget=nullptr;
+        const unsigned char insertPrefix[]={0x48,0x89,0x5c,0x24,0x20,0x55,0x56,0x57,0x48,0x83,0xec,0x20,0x49,0x8b,0xe8,0x8b,0xfa,0x48,0x8b,0xd9};
+        const unsigned char append[]={0x8d,0x48,0x01,0x48,0x8b,0xd5,0x89,0x0b,0x8b,0x4b,0x14,0x44,0x8b,0xc1,0x0f,0xaf,0xcf,0x48,0x03,0x4b,0x08,0xe8};
+        if(result.range(result.fields[NativeWindowProcedure],128)&&result.fields[NativeWindowProcedure]
+                &&result.cfg(result.fields[NativeWindowProcedure])&&result.cfg(result.fields[NativeInsert])
+                &&result.range(result.fields[NativeInsert],sizeof(insert))&&result.range(result.fields[NativeSelectOne],sizeof(select))
+                &&result.range(result.fields[NativeInsertSlot],sizeof(insertTarget))
+                &&read(result.base+result.fields[NativeInsertSlot],insertTarget)&&insertTarget==result.base+result.fields[NativeInsert]
+                &&read(result.base+result.fields[NativeInsert],insert)&&read(result.base+result.fields[NativeSelectOne],select)
+                &&std::memcmp(insert,insertPrefix,sizeof(insertPrefix))==0
+                &&std::memcmp(insert+0x40,append,sizeof(append))==0&&insert[0x68]==0xc3
+                &&result.dataOffset==8&&result.strideOffset==20) {
+            unsigned calls=0;
+            for(size_t i=0;i+21<=sizeof(select);++i) {
+                const unsigned char arguments[]={0x4c,0x8d,0x44,0x24,0x20,0xba,0xff,0xff,0xff,0x7f,0x48,0xff,0x15};
+                if(select[i]!=0x48||select[i+1]!=0x8b||select[i+2]!=0x4b||select[i+3]!=result.fields[ArrayOffset]
+                        ||std::memcmp(select+i+4,arguments,sizeof(arguments))!=0)continue;
+                LONG delta=0;std::memcpy(&delta,select+i+17,4);
+                if(static_cast<LONGLONG>(result.fields[NativeSelectOne])+static_cast<LONGLONG>(i)+21+delta==result.fields[NativeInsertSlot])++calls;
+            }
+            // Respect the two native state-notification guards. They are set
+            // while Windows synchronizes its own selection; those notices
+            // must never be turned into a new user selection by our observer.
+            unsigned char notices[2048]={};unsigned guards=0;DWORD member=0;
+            if(calls==1&&result.fields[NativeNotify]&&result.range(result.fields[NativeNotify],sizeof(notices))
+                    &&read(result.base+result.fields[NativeNotify],notices)) {
+                for(size_t i=0;i+12<=sizeof(notices);++i) {
+                    if(notices[i]!=0xf7||notices[i+1]!=0x83||notices[i+6]!=0||notices[i+7]!=0x20
+                            ||notices[i+8]!=0||notices[i+9]!=0
+                            ||(notices[i+10]!=0x75&&(notices[i+10]!=0x0f||notices[i+11]!=0x85)))continue;
+                    DWORD field=0;std::memcpy(&field,notices+i+2,4);
+                    if(field>4092||field%4||(guards&&field!=member)){guards=0;break;}
+                    member=field;++guards;
+                }
+            }
+            result.selectAllSupported=guards==2;
+            if(result.selectAllSupported)result.ignoredStateOffset=member;
+        }
         result.supported=true;result.reason="current-image symbols and loaded operands agree; CFG enabled";
         return result;
     }

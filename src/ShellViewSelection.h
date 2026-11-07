@@ -14,17 +14,20 @@ void initializeShellSelectionClear(const wchar_t *cacheRoot = nullptr, bool back
 // Bind once when a new view's initial presentation is ready. An unbound or
 // unsupported view uses the public API. A call retains its binding through
 // reentrant callbacks; reset detaches before releasing the COM references.
+// A qualified classic view also handles native global-selection notifications
+// in linear time; ordinary selection and unsupported contexts remain native.
 class ShellSelectionClear {
 public:
     void bind(IShellView *view, const std::function<bool()> &current);
-    void reset() { binding.reset(); }
+    void reset();
     bool accelerated() const;
+    uint64_t acceleratedSelectAllCount() const;
     bool backingBufferReleased(bool &known) const;
     HRESULT clear(IShellView *view, const std::function<bool()> &current,
         bool *applied = nullptr) const;
 private:
     struct Binding;
-    std::shared_ptr<const Binding> binding;
+    std::shared_ptr<Binding> binding;
 };
 
 // current is synchronous and must reject a closed or replaced view. The
