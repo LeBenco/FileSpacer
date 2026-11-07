@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Place new windows using the normal size and position of existing FileSpacer windows, including maximized, minimized and snapped windows.
+
 ## 1.3.2 — 2026-11-04
 
 - Add Polish, Dutch and Ukrainian to the application, installer, website and user and developer documentation.
