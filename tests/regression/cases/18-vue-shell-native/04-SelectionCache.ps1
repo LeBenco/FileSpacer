@@ -12,7 +12,7 @@ if($LASTEXITCODE-ne0){throw 'Missing cache did not select public fallback.'}
 & $cacheTest --live $cache > (Join-Path $RunDirectory 'cache-lifecycle.log') 2> (Join-Path $RunDirectory 'cache-lifecycle-errors.log')
 if($LASTEXITCODE-ne0){throw ('Native discovery/qualification/cache lifecycle failed: '+$LASTEXITCODE)}
 $data=@(Get-ChildItem -LiteralPath $cache -Filter '*.bin' -File)
-if($data.Count-ne1-or$data[0].Length-ne140){throw 'No unique qualified cache.'}
+if($data.Count-ne1-or$data[0].Length-ne160){throw 'No unique qualified cache.'}
 $timestamp=$data[0].LastWriteTimeUtc
 & $cacheTest --build-cache $cache > (Join-Path $RunDirectory 'reuse-cache.log')
 if($LASTEXITCODE-ne0-or(Get-Item -LiteralPath $data[0].FullName).LastWriteTimeUtc-ne$timestamp){throw 'An unchanged DLL recomputed the qualified cache.'}
@@ -43,11 +43,11 @@ foreach($fault in @(@{Name='identity';Offset=12},@{Name='callback';Offset=76},@{
     & $cacheTest --fallback $bad > (Join-Path $RunDirectory ('fallback-'+$fault.Name+'.log'))
     if($LASTEXITCODE-ne0){throw ('Invalid cache accepted: '+$fault.Name)}
 }
-. (Join-Path $ProjectRoot 'tests\experiments\reactivity\Fixture.ps1')
+. (Join-Path $PSScriptRoot '..\..\..\experiments\reactivity\Fixture.ps1')
 $fixture=New-ReactivityFixture $ProjectRoot 5000
 try {
     $env:FS_SELECTION_PRODUCT_CACHE=$cache;$env:FS_SELECTION_HEADLESS='1'
-    Remove-Item Env:\FS_SELECTION_FIXTURE_64,Env:\FS_SELECTION_SMOKE,Env:\FS_SELECTION_ONLY_MEDIUM -ErrorAction SilentlyContinue
+    Remove-Item Env:\FS_SELECTION_FIXTURE_64,Env:\FS_SELECTION_SMOKE,Env:\FS_SELECTION_ONLY_MEDIUM,Env:\FS_SELECTION_ALL_ONLY -ErrorAction SilentlyContinue
     $output=Join-Path $RunDirectory 'production-selection'
     [void][IO.Directory]::CreateDirectory($output)
     & $matrix $output $fixture --allow-host > (Join-Path $RunDirectory 'production-selection.log') 2> (Join-Path $RunDirectory 'production-selection-errors.log')
