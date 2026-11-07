@@ -116,7 +116,7 @@ struct Image {
         data.read(magic,sizeof(magic));data.read(reinterpret_cast<char *>(&expectedSize),sizeof(expectedSize));
         data.read(reinterpret_cast<char *>(&guid),sizeof(guid));data.read(reinterpret_cast<char *>(&age),sizeof(age));
         data.read(reinterpret_cast<char *>(&count),sizeof(count));
-        if(!data||std::memcmp(magic,"FSDISC01",8)!=0||count!=FieldCount){result.reason="invalid discovery schema";return result;}
+        if(!data||std::memcmp(magic,"FSDISC02",8)!=0||count!=FieldCount){result.reason="invalid discovery schema";return result;}
         data.read(reinterpret_cast<char *>(result.fields.data()),sizeof(result.fields));
         if(!data||data.peek()!=std::char_traits<char>::eof()){result.reason="truncated or trailing discovery data";return result;}
         wchar_t system[MAX_PATH]={},loaded[MAX_PATH]={};
