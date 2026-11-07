@@ -1,0 +1,228 @@
+Content, remaining latency and persistent scrolling, 2026-11-07
+==============================================================
+
+Scope
+-----
+AgentWin10, Windows 10 19045, 5000 files, Debug x64. Hosted and Explorer views
+have an 800x400 viewport. These are focused probes, not another complete suite.
+The host now uses FS's FWF_NOWEBVIEW and FWF_NOHEADERINALLVIEWS as well as
+FWF_AUTOARRANGE. Historical tables lacking those flags remain historical data.
+
+Real Content
+------------
+Classic FVM_CONTENT reports mode 8, but uses SysListView32 and a tile layout.
+The exact VM image's CListViewHost::_SetViewMode maps both mode 6 and mode 8
+to native tile view. Screenshots confirm this; the old forced Content row was
+neither a reachable FS command nor an actual modern Content view.
+
+FVO_DEFAULT produces real full-width Content rows through DirectUIHWND, as in
+Explorer. The existing modern selection and ScrollPattern code works with it.
+
+Observed final composed image, two focused trials, milliseconds:
+
+                         First trial       Focus explicitly seeded at item 7
+FS host, classic alias       317.270                       332.199
+FS host, real Content         54.191                        61.721
+Explorer, real Content        62.985                        41.924
+
+All identities, retained arrays and focus checks pass. Each final-image value
+is one observation, with no coalesced frame. These establish comparable latency
+on this control, not that either application is generally faster. Content can
+reuse the existing modern backend; a future FS command must request that profile.
+No Content menu entry is added in this change.
+
+The three remaining investigations
+---------------------------------
+1. Complete-selection capture in free icons still spends time in native spatial
+   enumeration. An indexed-geometry anchor prototype reduced a regular-layout
+   capture from 371.919 to 99.172 ms and matched the native anchor identity.
+   It is not adopted: the stronger irregular-layout paired run stopped at a
+   pointer-parking precondition, before validating the candidate. Its reference
+   captures were 560.726 / 548.004 / 542.735 ms. No paired gain is claimed there.
+   The final shared-viewport implementation below supersedes this prototype.
+
+2. Arranged Tiles returns from selection restoration in about 30-41 ms, but
+   its final image was observed at 302-333 ms, against Explorer's 39-48 ms.
+   First changed images at about 47-54 ms already show all visible rows selected;
+   the later image adds type/size metadata after a scroll to different rows.
+   The original restoration's last-item/anchor detour triggers native timer 4
+   at about 250 ms. Matched-image disassembly identifies
+   CListViewHost::_OnScrollTimerExpired and its deferred-provider callbacks.
+
+   Removing the anchor entirely gives 85-95 ms, but loses restoration and was
+   rejected. Keeping one anchor reveal gives 48.511 ms when no real viewport
+   displacement is needed. The stronger displaced-viewport test did not prove
+   the required original position; that variant is not delivered as a fix.
+   The final viewport-only path below instead restores measured coordinates.
+   New selection snapshots now use that shared viewport; the legacy anchor
+   protocol remains only for old snapshots and unsupported capture contexts.
+   Calling the private scroll-timer callback has not been implemented or tested.
+
+3. First GetSelection(FALSE) in free icons remains about 235-277 ms. A public
+   prototype reads each item's geometry once, sorts the cached coordinates,
+   rotates the sequence to the focused item and calls SHCreateShellItemArray.
+   With focus at item 7 it took 25.917 / 28.083 / 32.240 ms, against native
+   252.522 / 246.919 / 277.494 ms in the same trial. Ordered identities match;
+   both arrays retain their original contents after native deselection.
+   It is not integrated into FS or injected into the Shell's cache. Partial
+   selections, grouping and broader variants still need qualification before
+   using it in nativeViewSelection. External Shell consumers remain native.
+
+Persistent scrolling: cause and delivered implementation
+-------------------------------------------------------
+Normal per-folder state had no viewport field. Selection/scroll snapshots were
+only consumed by the closed-window-history command, not an ordinary folder open.
+Schema 7 adds a nullable scroll column and independent read/update operations.
+Existing layout/view/icon blobs are preserved. Updates never create a missing
+folder row, do not freeze navigation under a layout lock, and skip identical
+bytes. Rekey/reset/deletion/quota semantics remain attached to the folder row.
+
+The dedicated snapshot is 48 bytes, containing mode, icon size and either DPI
+and client coordinates, or public ScrollPattern percentages. Classic views use
+LVM_GETITEMRECT for item 0 and one LVM_SCROLL delta, on a unique current-process,
+current-thread ListView whose mode/count match the COM view. Modern views use
+the existing public in-process IScrollProvider. No file enumeration is needed.
+
+The control-composition dependency is optional, not a guaranteed Shell COM
+contract. Unsupported/mismatched contexts keep their native position. There is
+no new private function, DLL offset, patch or symbol-discovery requirement.
+Changed contents/layout/DPI imply best-effort restoration, as agreed.
+
+Visible LVM_SCROLL initially took about 200-300 ms in classic views. Suspending
+redraw for the single delta, then resuming it, removes that animation. All 36
+native round trips pass across 12 profiles: the seven available FS modes, free
+icons, free Tiles, real modern Content and classic List/Details fallback controls.
+They check the exact viewport blob, selected identity, logical/keyboard focus,
+cancellation, invalid version and truncated input.
+
+Final API-return timings, three samples per profile, milliseconds:
+  Classic capture: generally 0.05-0.6; largest final native sample below 1.
+  Classic restore: approximately 6-33 (classic Details about 1).
+  Modern List/Details/Content restore: approximately 0.4-0.6.
+  Modern capture after provider initialization: approximately 0.6-1.1.
+  First modern provider access: 82.628 in this run.
+These are incremental API timings, not whole-window or composed-image latency.
+Complete-selection capture now embeds the same viewport, as described below.
+
+FS captures on close, preserves a View-menu preview's original viewport, and
+applies once after presentation, free positions and optional reopen selection.
+Refresh and renderer recreation do not replay it. Filtered/provisional state
+does not replace the trusted viewport. Ordinary reopen restores both axes and
+does not select files.
+
+Validation and evidence
+-----------------------
+Content/profile controls:
+  experiment-layoutpaths-5600f104f61b4b1e87738feeccd1d0ef
+  experiment-layoutpaths-d7e8b2589c4c41db9207b6189824ec37
+Indexed regular-layout anchor: experiment-indexedanchor-b60da683d1244c58ade2524995bce291
+Irregular reference / parking failure: experiment-indexedanchor-fa74ddb9dd354182b5c189b572acc3be
+Tiles counterfactual: experiment-tileanchor-3f0ae37f6831402f95cbb0e48c7e20ca
+Single-reveal trial: experiment-tilereveal-28f7f416f2fd4c9989bbcfe5e5579868
+Displaced-viewport failures:
+  experiment-tilereveal-d7cc885defaa4a59b8b4cd4bccbbc6f3
+  experiment-tilereveal-726c4d9def6f44dd8bf5b69ee8d01e60
+
+Initial viewport timing: experiment-scrollstate-115d5390aae94605ae7e41675d224ddc
+Final viewport timing: experiment-scrollstate-f95f8bfa36a346de93d00ac2dd382c07
+The preceding viewport run 0be47bf49e6143d4b5a853552a33005b timed out during the
+larger free-layout preparation; it is not counted as a pass. A native journal
+and a two-item free-layout preparation keep that setup outside the operation.
+
+Ordinary FS reopen: scroll-persistence-ui-verified, PASS, nine configurations
+with 200 files each, including both free layouts, empty selection and no replay
+of the stored position on refresh. The independent observer uses public UIA
+scroll percentages on both axes. Bounds are 0.5 percent with unchanged content.
+Earlier observer failures are retained: an all-items-visible layout helper was
+unsuitable for scrolling, then renderer recreation invalidated automation
+objects. The final observer polls for actual available data; it never repeats
+the command or accepts absence as a matching position.
+
+Legacy closed-window reopen passed in scroll-persistence-ui-final (case 05);
+its accompanying earlier case 08 observer failure remains a separate failure.
+SQLite viewport, locking, rekey, rollback, missing-row and schema-six migration
+checks passed in scroll-storage, including eight concurrent writer processes.
+
+Temporary counterfactual drivers and their frozen source were retired
+under build/layout-paths/retired; LayoutPaths and ScrollState remain reproducible
+through the existing VM runner. No host UI is automated.
+
+Shared viewport in selection snapshots (delivered, format 3)
+------------------------------------------------------------
+The new helper replaces the spatially sorted anchor capture and the last-item /
+anchor detour. The 20-byte header is followed by the 48-byte viewport, then the
+optional focused PIDL and selected PIDLs. Decoding validates the whole snapshot
+before selection changes. Formats 1 and 2 remain readable; capture still uses
+the old protocol if the optional viewport capability is unavailable. Explicit
+history/transient restoration takes precedence over the ordinary saved viewport.
+
+Initial format-3 comparison, same corrected 5000-item fixture with irregular
+free positions and focused item 7:
+  Free complete capture: 305.697 / 321.686 / 323.378 ms before,
+                          3.284 /   3.930 /   2.777 ms after.
+  Arranged Tiles final composed image: about 302-333 ms before,
+                         84.103 ms after, Explorer 38.692 ms in this trial.
+  Modern Content final image: 54.237 ms, Explorer 31.794 ms.
+  Native free first GetSelection: 232.345 / 233.136 / 233.392 ms.
+  Public array prototype:          23.033 /  23.037 /  22.885 ms.
+These are observed samples, not statistical application-wide guarantees. Each
+final-image result has zero coalesced frames. Capture and array values measure
+API time; the public array prototype is still not integrated into FS.
+
+Evidence:
+  before: experiment-layoutpaths-159c902dab8243aa8615b2c4a14febdd
+  after:  experiment-layoutpaths-bb64aa40fcf644ca85d2edd4750c0c78
+The follow-up also displaces the viewport before repetitions 1 and 2, checks its
+exact restoration, and preserves every selected identity, retained array, all
+5000 irregular free positions and logical/keyboard focus. Its results follow.
+Final displaced-viewport trial:
+  experiment-layoutpaths-de7a9c7c4ca24b83b398430290f1437c, PASS.
+  21 restorations and 3 public-array proofs; all exact viewport, identity,
+  retained-array, free-position and focus assertions pass. The displaced trials
+  also wait after API return to reject delayed viewport drift.
+  Free capture: 4.983 / 6.578 / 5.176 ms.
+  Tiles final composed image: 69.987 ms; Explorer 37.710 ms.
+  Modern Content: 63.298 ms; Explorer 31.720 ms.
+  Free first native array: 232.507 / 229.914 / 229.917 ms.
+  Public array prototype: 21.871 / 22.607 / 22.367 ms, exact order retained.
+
+The two preceding displacement runs (experiment-layoutpaths-9b64811b54274a57bdcae64e234ed733
+and -97a206492f41432caf514198527e59b8) failed the fixture precondition: a second
+reveal of the same distant identity did not move modern Content away from zero.
+They are retained as failures, not counted as passing restoration evidence.
+The final fixture issues one reveal per trial, to distinct distant identities;
+it still requires measured displacement and exact restoration. It does not
+repeat a failed command, relax the expected result or force the foreground.
+
+Focused verification of the delivered source
+--------------------------------------------
+Debug MSVC/NMAKE build: PASS, no new /W4 warning.
+  build/layout-paths/build-v3.log and verify-v3-final.log (last FolderWindow build).
+SQLite migration/persistence/concurrent writers: PASS, scroll-storage-final.
+  A 48-byte viewport update including FULL commit took 12.0307 ms; read 0.1366 ms
+  in one sample. Unchanged bytes avoid the UPDATE.
+Native Shell persistence and independently assembled v1/v2 compatibility:
+  PASS, scroll-v3-native, including malformed v3 rejection before mutation.
+Ordinary and explicit-history FS reopen: PASS, scroll-v3-reopen, cases 07/05+08;
+  08 checks all nine available configurations and no replay on refresh.
+Menu previews: PASS, scroll-v3-preview, cases 28/01+03.
+Public provider, production v3 selection/scroll, cancellation and destroyed-view
+  checks: PASS, experiment-scrollprovider-fc213fef3221488c89e0e76aa3dd1e25.
+These are targeted validations on the real Shell; no complete-suite claim.
+
+Both clang-tidy and Cppcheck completed for every changed C++ unit and the
+modified headers through their includers, with real SDK/MSVC/ATL headers for
+clang-tidy and official Windows/ATL/SQLite models for Cppcheck. Win64, C++14
+production/experiments and C++17 for the native regression executables.
+Final evidence: build/integration/static-scroll-final (unchanged units),
+static-scroll-v3, static-scroll-history-priority, static-scroll-tests-distinct.
+No required unit is left unanalyzed, no timeout or analyzer crash occurred.
+Verdict REVIEW: aggregate-constructor advisories on explicitly initialized
+records, fields read through the legacy binary serializer, and RAII redraw-guard
+state produce stylistic/false-positive diagnostics. No confirmed new defect
+remains. Cppcheck's mutex deallocuse report in FolderWindow is also present in
+the exact c3aa8e9 source (static-scroll-baseline); it is not introduced here.
+The storage test checks fopen failure with its throwing require helper; Cppcheck
+still reports possible null use. No product refactoring or check suppression was
+introduced to silence these diagnostics. The initial benchmark spelling and
+fixture observer defects were corrected; their failed runs remain distinguishable.
