@@ -255,6 +255,31 @@ data objects, sorting, focus and subsequent operations. Case 06 uses visible
 establish composed-frame presentation latency or full-application parity with
 Explorer.
 
+## Complete-selection reads in free layouts
+
+Guarded `nativeViewSelection` calls use a public complete-selection snapshot for
+ungrouped free Icon/SmallIcon views with at least 128 selected items. The helper
+reads child IDs and positions once, sorts cached coordinates, starts at the
+focused item and constructs an ordinary array with `SHCreateShellItemArray`.
+The selected/all counts and focus must still match after capture. Coordinate
+ties, partial/empty selections, grouping, other modes and unavailable methods
+retain native `GetSelection`; cancellation rejects the stale operation.
+
+This helper lives in `ShellViewSelection`, together with the native-array reader
+and its existing mixed-provider conversion. The pure folder/item adapters remain
+in `MixedFolder`. The declaration keeps its existing call form; callers without
+a lifetime/generation guard keep native access. Folder-window status, selected
+item, Peek and default-command calls supply that guard. Returned arrays own
+their snapshots and preserve the provider's native-item conversion.
+
+This optimization uses public APIs, has no symbol-discovery dependency and keeps
+no persistent item cache. It does not populate the Shell's own selection cache
+or accelerate its independent commands. `SelectionArray` tests the production
+reader, exact ordered identities, attributes, data-object round trips, retained
+arrays, geometry, focus, rejection and cancellation. `PublicFallback` separately
+measures public-only clear/restoration and the following array read against
+Explorer at equal viewport dimensions.
+
 ## Persistent viewport
 
 Ordinary folder opens restore a separate 48-byte viewport snapshot, after the
