@@ -52,9 +52,9 @@ that fall back to native behavior when a prerequisite is missing:
   optional private selection-cache access and a qualified native callback for
   global Select All. Their absence retains public Shell selection operations.
 
-Do not generalize these exceptions to other view operations, which remain COM
-calls. Tests can inspect controls to observe a gesture; that instrumentation is
-not an application dependency.
+The additional optional viewport adapter below is limited to recording and
+restoring scrolling. Other view operations remain COM calls. Tests can inspect
+controls to observe a gesture; that instrumentation is not an application dependency.
 
 ## Mouse gestures across Shell renderers
 
@@ -172,13 +172,16 @@ not a general Shell contract for label expansion. If its prerequisites or
 notifications disappear, leave the standard drawing intact. Do not generalize
 it into a custom multi-label renderer or use it for view operations.
 
-Reopening Details/List views restores a first-visible-row anchor, not an exact
-pixel offset. `ShellViewSelection` finds it from `IFolderView::Items` and item
-positions inside the view's client rectangle, below the accessible column
-header. Restoration ensures the last item, then the anchor, is visible under
-redraw suppression, without taking focus. Icon views use unscrolled positions
-and reopen at the top. Do not treat `IFolderView2::GetVisibleItem` as a viewport
-query, or assume `GetViewStateStream` contains a scroll offset.
+Selection snapshots now embed the shared viewport described below (format 3),
+before the optional focus and selected PIDLs. This avoids spatial enumeration
+for an anchor and the last-item/anchor scroll detour. Both old formats remain
+readable. If the viewport adapter is unavailable, capture retains the legacy
+anchor/percentage protocol. Its classic anchor comes from `IFolderView::Items`
+and positions inside the client rectangle, below the accessible header; it is
+restored by revealing the last item, then the anchor under redraw suppression.
+This legacy fallback does not promise an exact pixel offset. Do not treat
+`IFolderView2::GetVisibleItem` as a viewport query, or assume `GetViewStateStream`
+contains a scroll offset.
 
 
 
@@ -251,6 +254,37 @@ data objects, sorting, focus and subsequent operations. Case 06 uses visible
 800-by-400 views and checks sampled icon positions. API-return timings do not
 establish composed-frame presentation latency or full-application parity with
 Explorer.
+
+## Persistent viewport
+
+Ordinary folder opens restore a separate 48-byte viewport snapshot, after the
+saved presentation and free positions are applied. This is independent of the
+closed-window history and does not select files or restore keyboard focus.
+The snapshot is consumed once for the window; refresh and renderer recreation
+do not replay it. An explicit closed-window or transient selection snapshot
+takes precedence. Unreadable/provisional state and filtered views never replace
+the saved viewport. A closing View-menu preview retains its original viewport.
+
+Modern views use the existing in-process public `IScrollProvider`. Classic
+views optionally use a unique, visible `SysListView32` in the Shell view's own
+process and UI thread, with matching view type and item count. The documented
+`LVM_GETITEMRECT` and `LVM_SCROLL` messages save and restore the first item's
+client coordinates. One pixel displacement runs under `IFolderView2::SetRedraw`
+to avoid native scrolling animation; drawing resumes on cancellation too.
+There is no per-file traversal. DPI is recorded, and incompatible presentation
+or unavailable capabilities leave the native viewport unchanged.
+
+Recognizing that child control is an optional dependency on Shell composition,
+not a guaranteed Shell COM contract. No additional private Windows function,
+offset or executable patch is introduced. With changed folder contents, layout
+or DPI, restoration remains best effort rather than preserving a semantic item.
+
+Database schema 7 adds a nullable `scroll` column, preserving existing view and
+icon blobs. Closing updates an existing folder only; viewport saving ignores
+the layout lock because scrolling is navigation. Rekeying carries the snapshot;
+view reset, deletion, expiry and quota eviction discard it with the folder state.
+Tests `07-fenetres/08-DefilementPersistant` and the independent real-Shell
+`ScrollState` experiment cover this behavior and its incremental cost.
 
 ## Activation and external folders
 
