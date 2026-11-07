@@ -1,3 +1,5 @@
+<a id="using-filespacer"></a>
+
 # Using FileSpacer
 
 FileSpacer remembers each window’s position and appearance between visits. Folders return to their familiar places, like objects arranged on a desk. It also offers configurable shortcuts, quick actions and an uncluttered, customizable interface.
@@ -5,6 +7,8 @@ FileSpacer remembers each window’s position and appearance between visits. Fol
 <div id="windows-integration"></div>
 
 FileSpacer can be set as the default file manager during installation, or under **Settings > Integration** with **Set as default browser**. Folder context menus offer **Open in FileSpacer**, or **Open in Windows File Explorer** when FileSpacer is the default.
+
+<a id="window-navigation-and-layout"></a>
 
 ## Window navigation and layout
 
@@ -32,6 +36,8 @@ The menu beside the title switches between open folders and closes parent window
 
 **Save / recall a folder group** in the title menu reopens several folders together with their saved layouts.
 
+<a id="folder-contents-and-display"></a>
+
 ## Folder contents and display
 
 <div id="view-and-layout"></div>
@@ -53,7 +59,11 @@ In the same settings, **Show the full name of a selected file** makes the entire
 
 By default, clicking the background of an inactive window clears its selection, as in File Explorer. **Keep the current selection when clicking an inactive window** under **Settings > General** activates it without losing the selection.
 
+<a id="customization"></a>
+
 ## Customization
+
+<a id="changing-the-interface"></a>
 
 ### Changing the interface
 
@@ -82,6 +92,8 @@ Entries managed by Nilesoft Shell are changed in its configuration because its r
 
 Selection is preserved and Escape cancels the gesture. Customize shortcuts under **Settings > Shortcuts**. The left and right buttons require Alt. The middle button can be used alone.
 
+<a id="integration"></a>
+
 ### Integration
 
 <div id="search-and-history"></div>
@@ -99,7 +111,7 @@ Selection is preserved and Escape cancels the gesture. Customize shortcuts under
 
 FileSpacer builds the title-bar menu, then Nilesoft Shell applies its rules, which take priority. See the [configuration reference](nilesoft-shell.md) for visual settings and access to FileSpacer actions.
 
-Square corners are recommended for title-bar and toolbar menus.
+[Square corners](nilesoft-shell.md#recommended-menu-appearance) are recommended for title-bar and toolbar menus.
 
 **Navigation menu**
 
@@ -107,7 +119,7 @@ Square corners are recommended for title-bar and toolbar menus.
 | --- | --- |
 | <img src="images/nilesoft-navigation-default.png" alt="Navigation menu with default rounded corners." width="320"> | <img src="images/nilesoft-navigation-adapted.png" alt="The same menu with square corners." width="320"> |
 
-**Main menu (…)**
+**Main menu**
 
 | Default corners | Recommended square corners |
 | --- | --- |
@@ -123,6 +135,8 @@ Square corners are recommended for title-bar and toolbar menus.
 
 **Grab And Move** moves and resizes windows from their contents. When enabled, FileSpacer’s equivalent gestures are suspended even if PowerToys is closed. To keep them available, exclude `FileSpacer.exe` in Grab And Move or turn off that tool.
 
+<a id="updates-and-troubleshooting"></a>
+
 ## Updates and troubleshooting
 
 <div id="settings-and-updates"></div>
@@ -134,6 +148,8 @@ Square corners are recommended for title-bar and toolbar menus.
 On the same page, **Maintenance > Reset all folder state** closes windows and clears their layouts, history and locks. Files and general preferences are preserved.
 
 Preference resets and advanced troubleshooting are covered in the [technical note](README.md#local-data).
+
+<a id="privacy"></a>
 
 ## Privacy
 
