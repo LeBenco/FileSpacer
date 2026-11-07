@@ -9,6 +9,7 @@ IDR_ITEM_MENU   MENU {
 }
 
 STRINGTABLE {
+    IDS_GLOBAL_THUMBNAILS, "Vignettes (réglage Windows global)"
     IDS_DOCUMENTATION_ERROR, "Impossible d’ouvrir la documentation locale :\n%1\n\n%2"
     IDS_CAPTION_COPY_PATH, "Copier le chemin"
     IDS_CAPTION_RENAME, "Renommer"
