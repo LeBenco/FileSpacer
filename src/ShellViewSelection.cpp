@@ -28,12 +28,26 @@ struct ReopenViewHeader {
 // Existing blob layout: header, optional anchor (first displayed item), optional focus, selection.
 constexpr uint32_t REOPEN_ANCHOR = 2, REOPEN_FOCUS = 4;
 constexpr uint32_t REOPEN_SCROLL = 8;
+constexpr uint32_t REOPEN_VIEWPORT = 16;
+struct ViewScrollState {
+    uint32_t version = 1, kind = 0, mode = 0;
+    int32_t iconSize = 0, x = 0, y = 0;
+    uint32_t dpi = 0, reserved = 0;
+    double horizontal = UIA_ScrollPatternNoScroll, vertical = UIA_ScrollPatternNoScroll;
+};
+static_assert(sizeof(ViewScrollState) == 48, "Viewport storage format");
 struct ReopenScroll {
     double horizontal = UIA_ScrollPatternNoScroll, vertical = UIA_ScrollPatternNoScroll;
     UINT mode = 0, reserved = 0;
 };
 bool validScrollPercent(double value) {
     return std::isfinite(value) && (value == UIA_ScrollPatternNoScroll || (value >= 0 && value <= 100));
+}
+bool validViewScroll(const ViewScrollState &state) {
+    return state.version == 1 && !state.reserved && state.kind >= 1 && state.kind <= 2
+        && state.mode >= FVM_FIRST && state.mode <= FVM_LAST && state.iconSize > 0
+        && (state.kind != 1 || (state.dpi && state.dpi <= INT32_MAX))
+        && (state.kind != 2 || (validScrollPercent(state.horizontal) && validScrollPercent(state.vertical)));
 }
 
 // Microsoft documents this provider-access route for clients already in-process.
@@ -402,7 +416,14 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
         if (!current()) return E_ABORT;
         if (SUCCEEDED(result) && focused) header.flags |= REOPEN_FOCUS;
     }
-    // Scroll anchor: the first item whose reported position lies inside the view's
+    std::vector<uint8_t> viewport;
+    result = captureViewScroll(view, current, viewport);
+    if (!current()) return E_ABORT;
+    if (result == S_OK) {
+        header.version = 3;
+        header.flags |= REOPEN_VIEWPORT;
+    }
+    // Legacy fallback: the first item whose reported position lies inside the view's
     // client area. Report and list views answer in client coordinates, so this is
     // the first displayed row. Views answering in unscrolled layout coordinates
     // (icons) yield the first item of the folder, which restoring leaves at the
@@ -414,7 +435,7 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
     RECT client = {};
     result = view->GetWindow(&viewWindow);
     if (!current()) return E_ABORT;
-    if (SUCCEEDED(result) && viewWindow && GetClientRect(viewWindow, &client)
+    if (viewport.empty() && SUCCEEDED(result) && viewWindow && GetClientRect(viewWindow, &client)
             && client.right > 0 && client.bottom > 0) {
         // A column header covers the top of the client area; the rows under it
         // report non-negative positions but are not displayed. Its height comes
@@ -485,6 +506,8 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
     stream.Attach(SHCreateMemStream(nullptr, 0));
     if (!stream) return E_OUTOFMEMORY;
     result = IStream_Write(stream, &header, sizeof(header));
+    if (SUCCEEDED(result) && (header.flags & REOPEN_VIEWPORT))
+        result = IStream_Write(stream, viewport.data(), static_cast<ULONG>(viewport.size()));
     if (SUCCEEDED(result) && (header.flags & REOPEN_SCROLL))
         result = IStream_Write(stream, &scroll, sizeof(scroll));
     if (SUCCEEDED(result) && (header.flags & REOPEN_ANCHOR))
@@ -623,11 +646,21 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
     ReopenViewHeader header;
     HRESULT result = IStream_Read(stream, &header, sizeof(header));
     if (FAILED(result)) return result;
-    if ((header.version != 1 && header.version != 2)
-            || (header.flags & ~(header.version == 1 ? 7u : 15u))
+    if ((header.version != 1 && header.version != 2 && header.version != 3)
+            || (header.flags & ~(header.version == 1 ? 7u : header.version == 2 ? 15u : REOPEN_FOCUS | REOPEN_VIEWPORT))
+            || (header.version == 3 && !(header.flags & REOPEN_VIEWPORT))
             || ((header.flags & REOPEN_SCROLL) && (header.flags & REOPEN_ANCHOR))
             || header.selected > bytes.size() / 2)
         return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+    std::vector<uint8_t> viewport;
+    if (header.flags & REOPEN_VIEWPORT) {
+        ViewScrollState state;
+        result = IStream_Read(stream, &state, sizeof(state));
+        if (FAILED(result)) return result;
+        if (!validViewScroll(state)) return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+        viewport.resize(sizeof(state));
+        std::memcpy(viewport.data(), &state, sizeof(state));
+    }
     ReopenScroll scroll;
     if (header.flags & REOPEN_SCROLL) {
         result = IStream_Read(stream, &scroll, sizeof(scroll));
@@ -862,7 +895,7 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         if (SUCCEEDED(result)) {
             // A focus-only SelectItem otherwise includes SVSI_DESELECT (zero).
             record(view->SelectItem(focused, (selection & SVSI_SELECT) | SVSI_FOCUSED
-                | (anchor || scrollPattern ? 0 : SVSI_ENSUREVISIBLE) | SVSI_NOTAKEFOCUS));
+                | (anchor || scrollPattern || !viewport.empty() ? 0 : SVSI_ENSUREVISIBLE) | SVSI_NOTAKEFOCUS));
             if (!current()) return E_ABORT;
         }
     }
@@ -878,6 +911,160 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         if (!current()) return E_ABORT;
         record(result);
     }
+    if (!viewport.empty()) {
+        record(restoreViewScroll(view, viewport, current));
+        if (!current()) return E_ABORT;
+    }
     return restored;
+}
+namespace {
+struct ScrollListSearch { HWND window = nullptr; unsigned count = 0; };
+BOOL CALLBACK findScrollList(HWND window, LPARAM data) {
+    wchar_t name[32] = {}; DWORD process = 0;
+    if (GetClassNameW(window, name, _countof(name)) && wcscmp(name, WC_LISTVIEWW) == 0
+            && GetWindowThreadProcessId(window, &process) == GetCurrentThreadId()
+            && process == GetCurrentProcessId()) {
+        auto &search = *reinterpret_cast<ScrollListSearch *>(data);
+        search.window = window; ++search.count;
+    }
+    return TRUE;
+}
+HWND scrollList(IFolderView2 *view, HWND parent, UINT mode, const std::function<bool()> &current) {
+    DWORD process = 0;
+    if (GetWindowThreadProcessId(parent, &process) != GetCurrentThreadId()
+            || process != GetCurrentProcessId()) return nullptr;
+    ScrollListSearch search;
+    EnumChildWindows(parent, findScrollList, reinterpret_cast<LPARAM>(&search));
+    if (!current() || search.count != 1 || !IsWindowVisible(search.window)
+            || GetPropW(search.window, L"SysSetRedraw")) return nullptr;
+    int expected = -1;
+    switch (mode) {
+        case FVM_ICON: expected = LV_VIEW_ICON; break;
+        case FVM_SMALLICON: expected = LV_VIEW_SMALLICON; break;
+        case FVM_LIST: expected = LV_VIEW_LIST; break;
+        case FVM_DETAILS: expected = LV_VIEW_DETAILS; break;
+        case FVM_TILE: case FVM_CONTENT: expected = LV_VIEW_TILE; break;
+        default: return nullptr;
+    }
+    const int actual = static_cast<int>(ListView_GetView(search.window));
+    if (!current() || actual != expected) return nullptr;
+    int count = 0;
+    const HRESULT result = view->ItemCount(SVGIO_ALLVIEW, &count);
+    if (!current() || FAILED(result) || count <= 0) return nullptr;
+    const int nativeCount = ListView_GetItemCount(search.window);
+    return current() && nativeCount == count ? search.window : nullptr;
+}
+}
+
+HRESULT captureViewScroll(IShellView *view, const std::function<bool()> &current, std::vector<uint8_t> &bytes) {
+    bytes.clear();
+    if (!view) return E_POINTER;
+    if (!current()) return E_ABORT;
+    CComQIPtr<IFolderView2> folder(view);
+    if (!current()) return E_ABORT;
+    if (!folder) return S_FALSE;
+    ViewScrollState state;
+    FOLDERVIEWMODE mode = FVM_AUTO;
+    int iconSize = 0;
+    HRESULT result = folder->GetViewModeAndIconSize(&mode, &iconSize);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || mode < FVM_FIRST || mode > FVM_LAST || iconSize <= 0) return S_FALSE;
+    state.mode = static_cast<uint32_t>(mode); state.iconSize = iconSize;
+    HWND window = nullptr;
+    result = view->GetWindow(&window);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || !window) return S_FALSE;
+    const HWND list = scrollList(folder, window, state.mode, current);
+    if (!current()) return E_ABORT;
+    if (list) {
+        RECT first = {};
+        const BOOL located = ListView_GetItemRect(list, 0, &first, LVIR_BOUNDS);
+        if (!current()) return E_ABORT;
+        state.dpi = GetDpiForWindow(list);
+        if (!located || first.right <= first.left || first.bottom <= first.top
+                || !state.dpi || state.dpi > INT32_MAX) return S_FALSE;
+        state.kind = 1; state.x = first.left; state.y = first.top;
+    } else {
+        CComPtr<IScrollProvider> pattern;
+        result = getScrollPattern(window, current, &pattern);
+        if (!current()) return E_ABORT;
+        if (SUCCEEDED(result)) result = pattern->get_HorizontalScrollPercent(&state.horizontal);
+        if (!current()) return E_ABORT;
+        if (SUCCEEDED(result)) result = pattern->get_VerticalScrollPercent(&state.vertical);
+        if (!current()) return E_ABORT;
+        if (FAILED(result) || !validScrollPercent(state.horizontal) || !validScrollPercent(state.vertical)) return S_FALSE;
+        state.kind = 2;
+    }
+    bytes.resize(sizeof(state));
+    std::memcpy(bytes.data(), &state, sizeof(state));
+    return S_OK;
+}
+
+HRESULT restoreViewScroll(IShellView *view, const std::vector<uint8_t> &bytes, const std::function<bool()> &current) {
+    if (bytes.empty()) return S_FALSE;
+    if (!view) return E_POINTER;
+    if (!current()) return E_ABORT;
+    if (bytes.size() != sizeof(ViewScrollState)) return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+    ViewScrollState state;
+    std::memcpy(&state, bytes.data(), sizeof(state));
+    if (!validViewScroll(state))
+        return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+    CComQIPtr<IFolderView2> folder(view);
+    if (!current()) return E_ABORT;
+    if (!folder) return S_FALSE;
+    FOLDERVIEWMODE mode = FVM_AUTO; int iconSize = 0;
+    HRESULT result = folder->GetViewModeAndIconSize(&mode, &iconSize);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || static_cast<uint32_t>(mode) != state.mode || iconSize != state.iconSize) return S_FALSE;
+    HWND window = nullptr;
+    result = view->GetWindow(&window);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || !window) return S_FALSE;
+    if (state.kind == 1) {
+        const HWND list = scrollList(folder, window, state.mode, current);
+        if (!current()) return E_ABORT;
+        if (!list) return S_FALSE;
+        RECT first = {};
+        const BOOL located = ListView_GetItemRect(list, 0, &first, LVIR_BOUNDS);
+        if (!current()) return E_ABORT;
+        const UINT dpi = GetDpiForWindow(list);
+        if (!located || !dpi || dpi > INT32_MAX) return S_FALSE;
+        const int64_t x = static_cast<int64_t>(first.left) - static_cast<int64_t>(state.x) * dpi / state.dpi;
+        const int64_t y = static_cast<int64_t>(first.top) - static_cast<int64_t>(state.y) * dpi / state.dpi;
+        if (x < INT32_MIN || x > INT32_MAX || y < INT32_MIN || y > INT32_MAX) return S_FALSE;
+        if (!x && !y) return S_OK;
+        // A visible native ListView animates LVM_SCROLL for roughly 200 ms.
+        // One explicit pixel delta needs no intermediate frame or layout query.
+        struct Resume {
+            IFolderView2 *view;
+            bool held = false;
+            ~Resume() { if (held) view->SetRedraw(TRUE); }
+        } redraw{folder};
+        redraw.held = SUCCEEDED(folder->SetRedraw(FALSE));
+        if (!current()) return E_ABORT;
+        const BOOL scrolled = ListView_Scroll(list, static_cast<int>(x), static_cast<int>(y));
+        if (!current()) return E_ABORT;
+        HRESULT resumed = S_OK;
+        if (redraw.held) {
+            redraw.held = false;
+            resumed = folder->SetRedraw(TRUE);
+            if (!current()) return E_ABORT;
+            if (SUCCEEDED(resumed)) RedrawWindow(window, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+        }
+        return !current() ? E_ABORT : FAILED(resumed) ? resumed : scrolled ? S_OK : S_FALSE;
+    }
+    CComPtr<IScrollProvider> pattern;
+    result = getScrollPattern(window, current, &pattern);
+    if (!current()) return E_ABORT;
+    if (FAILED(result)) return S_FALSE;
+    BOOL horizontal = FALSE, vertical = FALSE;
+    result = pattern->get_HorizontallyScrollable(&horizontal);
+    if (!current()) return E_ABORT;
+    if (SUCCEEDED(result)) result = pattern->get_VerticallyScrollable(&vertical);
+    if (!current()) return E_ABORT;
+    if (FAILED(result)) return S_FALSE;
+    if (horizontal || vertical) result = pattern->SetScrollPercent(horizontal ? state.horizontal : UIA_ScrollPatternNoScroll,
+        vertical ? state.vertical : UIA_ScrollPatternNoScroll);
+    return !current() ? E_ABORT : result;
 }
 } // namespace filespacer
