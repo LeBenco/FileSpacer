@@ -37,7 +37,7 @@ _FileSpacer ist eine Abspaltung von [ChromaFiler](https://github.com/vanjac/chro
 
 ## Funktionen
 
-- **[Ein Fenster pro Ordner](user-guide.md#fensternavigation)**. Position, Größe, Ansichtsmodus und Symbolpositionen werden gespeichert. Symbole lassen sich frei anordnen oder am [klassischen Raster ausrichten](user-guide.md#symbolanordnung).
+- **Ein Fenster pro Ordner**. Position, Größe, Ansichtsmodus und Symbolpositionen [werden gespeichert](user-guide.md#fensternavigation). Symbole lassen sich frei anordnen oder am [klassischen Raster ausrichten](user-guide.md#symbolanordnung).
 - **Automatische Fensteranordnung**. Beim Öffnen eines anderen Ordners wird das Ausgangsfenster standardmäßig geschlossen. Fenster ohne gespeicherte Position werden so platziert, dass sie sich [möglichst wenig überlappen](user-guide.md#fensterpositionierung).
 - **Fenster verwalten**. Fenster mit [Mausgesten](user-guide.md#verschieben-und-größenänderung) verschieben oder ihre Größe ändern. [Ordnergruppen](user-guide.md#ordnergruppen) speichern und erneut öffnen. [Die Fensteranordnung sperren](user-guide.md#gespeicherten-fensterzustand-sperren).
 

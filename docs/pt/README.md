@@ -37,7 +37,7 @@ _O FileSpacer é uma derivação do [ChromaFiler](https://github.com/vanjac/chro
 
 ## Funcionalidades
 
-- **[Uma janela por pasta](user-guide.md#navegação-entre-janelas)**. A posição, o tamanho, o modo de apresentação e as posições dos ícones são memorizados. Os ícones podem ser dispostos livremente ou alinhados pela [grelha clássica](user-guide.md#disposição-dos-ícones).
+- **Uma janela por pasta**. A posição, o tamanho, o modo de apresentação e as posições dos ícones [são memorizados](user-guide.md#navegação-entre-janelas). Os ícones podem ser dispostos livremente ou alinhados pela [grelha clássica](user-guide.md#disposição-dos-ícones).
 - **Organização automática das janelas**. Ao abrir outra pasta, a janela de origem é fechada por predefinição. As janelas sem posição guardada são colocadas de forma a [limitar a sobreposição](user-guide.md#posicionamento-das-janelas).
 - **Gerir as janelas**. Mover ou redimensionar as janelas com [gestos do rato](user-guide.md#movimento-e-redimensionamento). Guardar e reabrir [grupos de pastas](user-guide.md#grupos-de-pastas). [Bloquear a disposição das janelas](user-guide.md#bloqueio-do-estado-guardado).
 
