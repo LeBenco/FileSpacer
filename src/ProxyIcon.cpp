@@ -35,10 +35,10 @@ const BYTE PROXY_BUTTON_STYLE = BTNS_WHOLEDROPDOWN | BTNS_NOPREFIX;
 static HFONT captionFont = nullptr;
 
 // Native ICO loading selects a DPI-sized image on every supported Windows version.
-static bool drawLockBadge(HDC dc, int x, int y, int size, COLORREF color, bool highContrast) {
+static bool drawLockBadge(int resource, HDC dc, int x, int y, int size, COLORREF color, bool highContrast) {
     std::unique_ptr<std::remove_pointer_t<HICON>, decltype(&DestroyIcon)> icon(
         static_cast<HICON>(LoadImage(GetModuleHandle(nullptr),
-            MAKEINTRESOURCE(IDR_LOCK_BADGE_ICON), IMAGE_ICON, size, size, 0)), DestroyIcon);
+            MAKEINTRESOURCE(resource), IMAGE_ICON, size, size, 0)), DestroyIcon);
     if (!icon) return false;
     if (highContrast) {
         // DrawState's monochrome conversion loses alpha-only ICO masks. Preserve
@@ -97,10 +97,17 @@ void ProxyIcon::create(HWND parent, wchar_t *title, int top, int height) {
         SS_OWNERDRAW | SS_NOPREFIX | WS_VISIBLE | WS_CHILD,
         0, 0, 0, 0, parent, nullptr, GetModuleHandle(nullptr), nullptr));
     SetWindowSubclass(caption, captionProc, 0, (DWORD_PTR)this);
-    lockBadge = checkLE(CreateWindowEx(exStyle, L"STATIC", getString(IDS_WINDOW_STATE_LOCKED),
-        SS_OWNERDRAW | SS_NOPREFIX | WS_CHILD,
+    lockBadge = checkLE(CreateWindowEx(exStyle, TOOLBARCLASSNAME, nullptr,
+        TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_TOOLTIPS
+            | CCS_NOPARENTALIGN | CCS_NORESIZE | CCS_NODIVIDER | WS_CHILD,
         0, 0, 0, 0, parent, nullptr, GetModuleHandle(nullptr), nullptr));
     SetWindowSubclass(lockBadge, captionProc, 0, (DWORD_PTR)this);
+    SendMessage(lockBadge, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_MIXEDBUTTONS);
+    SendMessage(lockBadge, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
+    SendMessage(lockBadge, TB_SETBITMAPSIZE, 0, 0);
+    TBBUTTON lockButton = {I_IMAGENONE, IDM_TOGGLE_STATE_LOCK, 0,
+        BTNS_BUTTON | BTNS_NOPREFIX, {}, 0, (INT_PTR)getString(IDS_LOCK_WINDOW_STATE)};
+    SendMessage(lockBadge, TB_ADDBUTTONS, 1, (LPARAM)&lockButton);
     toolbar = checkLE(CreateWindowEx(exStyle, TOOLBARCLASSNAME, nullptr,
         TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_TOOLTIPS
             | CCS_NOPARENTALIGN | CCS_NORESIZE | CCS_NODIVIDER | WS_VISIBLE | WS_CHILD,
@@ -135,7 +142,7 @@ void ProxyIcon::destroy() {
 }
 
 bool ProxyIcon::isToolbarWindow(HWND window) const {
-    return toolbar && window == toolbar;
+    return window && (window == toolbar || window == lockBadge);
 }
 
 HWND ProxyIcon::getMenuOwner() const {
@@ -143,6 +150,34 @@ HWND ProxyIcon::getMenuOwner() const {
 }
 
 bool ProxyIcon::drawMenuButton(const NMCUSTOMDRAW &draw) {
+    if (draw.hdr.hwndFrom == lockBadge && draw.dwItemSpec == IDM_TOGGLE_STATE_LOCK) {
+        const int saved = SaveDC(draw.hdc);
+        FillRect(draw.hdc, &draw.rc, GetSysColorBrush(COLOR_WINDOW));
+        const bool clickable = settings::getWindowStateLockClickEnabled();
+        const int state = clickable && (draw.uItemState & CDIS_SELECTED) ? TS_PRESSED
+            : clickable && (draw.uItemState & CDIS_HOT) ? TS_HOT : TS_NORMAL;
+        HTHEME theme = OpenThemeData(lockBadge, L"Toolbar");
+        if (theme) {
+            DrawThemeBackground(theme, draw.hdc, TP_BUTTON, state, &draw.rc, nullptr);
+            CloseThemeData(theme);
+        } else if (state != TS_NORMAL) {
+            RECT edge = draw.rc;
+            DrawEdge(draw.hdc, &edge, state == TS_PRESSED ? BDR_SUNKENOUTER : BDR_RAISEDINNER,
+                BF_RECT);
+        }
+        HIGHCONTRAST contrast = {sizeof(contrast)};
+        const bool highContrast = SystemParametersInfo(SPI_GETHIGHCONTRAST,
+            sizeof(contrast), &contrast, 0) && (contrast.dwFlags & HCF_HIGHCONTRASTON);
+        const int iconSize = GetSystemMetrics(SM_CXSMICON);
+        drawLockBadge(stateLocked ? IDR_LOCK_BADGE_ICON : IDR_UNLOCK_BADGE_ICON,
+            draw.hdc, draw.rc.left + PROXY_PADDING.cx,
+            draw.rc.top + (rectHeight(draw.rc) - iconSize) / 2,
+            iconSize, GetSysColor(COLOR_WINDOWTEXT), highContrast);
+        if (clickable && (draw.uItemState & CDIS_FOCUS))
+            DrawFocusRect(draw.hdc, &draw.rc);
+        RestoreDC(draw.hdc, saved);
+        return true;
+    }
     if (draw.dwItemSpec != IDM_PROXY_BUTTON)
         return false;
     HTHEME theme = OpenThemeData(toolbar, L"Toolbar");
@@ -201,8 +236,13 @@ void ProxyIcon::setLocked(bool locked) {
         SetWindowText(caption, description.c_str());
         InvalidateRect(caption, nullptr, FALSE);
     }
-    if (lockBadge)
+    if (lockBadge) {
+        TBBUTTONINFO info = {sizeof(info), TBIF_TEXT};
+        info.pszText = const_cast<wchar_t *>(getString(
+            locked ? IDS_UNLOCK_WINDOW_STATE : IDS_LOCK_WINDOW_STATE));
+        SendMessage(lockBadge, TB_SETBUTTONINFO, IDM_TOGGLE_STATE_LOCK, (LPARAM)&info);
         InvalidateRect(lockBadge, nullptr, FALSE);
+    }
 }
 
 void ProxyIcon::setIcon(HICON icon) {
@@ -214,7 +254,8 @@ void ProxyIcon::setIcon(HICON icon) {
 // The passive label is part of the native caption hit-test area. Windows handles
 // moving, activation and double-click maximization; no simulated dragging is used.
 LRESULT CALLBACK ProxyIcon::captionProc(HWND window, UINT message,
-        WPARAM wParam, LPARAM lParam, UINT_PTR id, DWORD_PTR) {
+        WPARAM wParam, LPARAM lParam, UINT_PTR id, DWORD_PTR refData) {
+    auto proxy = reinterpret_cast<ProxyIcon *>(refData);
     if (message == WM_COMMAND && !lParam) {
         // Nilesoft Shell's window.command targets this menu owner. Queue the
         // same stable command on the real host instead of running it in NS.
@@ -227,7 +268,8 @@ LRESULT CALLBACK ProxyIcon::captionProc(HWND window, UINT message,
         }
         return 0;
     }
-    if (message == WM_NCHITTEST)
+    if (message == WM_NCHITTEST && (window != proxy->lockBadge
+            || !settings::getWindowStateLockEnabled() || !settings::getWindowStateLockClickEnabled()))
         return HTTRANSPARENT;
     if (message == WM_NCDESTROY)
         RemoveWindowSubclass(window, captionProc, id);
@@ -235,8 +277,7 @@ LRESULT CALLBACK ProxyIcon::captionProc(HWND window, UINT message,
 }
 
 bool ProxyIcon::drawTitle(const DRAWITEMSTRUCT *draw) {
-    if (draw->CtlType != ODT_STATIC || !draw->hwndItem
-            || (draw->hwndItem != caption && draw->hwndItem != lockBadge))
+    if (!caption || draw->hwndItem != caption || draw->CtlType != ODT_STATIC)
         return false;
     const int saved = SaveDC(draw->hDC);
     FillRect(draw->hDC, &draw->rcItem, GetSysColorBrush(
@@ -254,16 +295,6 @@ bool ProxyIcon::drawTitle(const DRAWITEMSTRUCT *draw) {
         GetThemeColor(theme, TP_BUTTON, TS_NORMAL, TMT_TEXTCOLOR, &color);
     SetTextColor(draw->hDC, color);
     const int iconSize = GetSystemMetrics(SM_CXSMICON);
-    if (draw->hwndItem == lockBadge) {
-        if (stateLocked && settings::getWindowStateLockBadgeEnabled())
-            drawLockBadge(draw->hDC, PROXY_PADDING.cx,
-                (rectHeight(draw->rcItem) - iconSize) / 2, iconSize, color, highContrast);
-        if (theme)
-            CloseThemeData(theme);
-        makeBitmapOpaque(draw->hDC, draw->rcItem);
-        RestoreDC(draw->hDC, saved);
-        return true;
-    }
     if (captionIcon)
         DrawIconEx(draw->hDC, PROXY_PADDING.cx,
             (rectHeight(draw->rcItem) - iconSize) / 2, captionIcon,
@@ -306,7 +337,9 @@ void ProxyIcon::setPressedState(bool pressed) {
 void ProxyIcon::autoSize(LONG parentWidth, LONG captionLeft, LONG captionRight) {
     if (!caption || !toolbar)
         return;
-    const bool showLockBadge = stateLocked && settings::getWindowStateLockBadgeEnabled();
+    const bool showLockBadge = outer->isFolder() && settings::getWindowStateLockEnabled()
+        && (stateLocked ? settings::getWindowStateLockBadgeEnabled()
+            : settings::getWindowStateUnlockBadgeEnabled());
     const int badgeWidth = 2 * PROXY_PADDING.cx + GetSystemMetrics(SM_CXSMICON);
     const LONG titleLeft = showLockBadge ? captionLeft + badgeWidth : captionLeft;
     HDC dc = GetDC(caption);
@@ -342,10 +375,14 @@ void ProxyIcon::autoSize(LONG parentWidth, LONG captionLeft, LONG captionRight) 
                     (outer->CAPTION_HEIGHT - hiddenTop - rectHeight(rect)) / 2);
         }
     }
-    if (lockBadge)
+    if (lockBadge) {
+        SendMessage(lockBadge, TB_ENABLEBUTTON, IDM_TOGGLE_STATE_LOCK,
+            MAKELPARAM(showLockBadge && settings::getWindowStateLockClickEnabled(), 0));
+        SendMessage(lockBadge, TB_SETBUTTONSIZE, 0, MAKELPARAM(badgeWidth, rectHeight(rect)));
         SetWindowPos(lockBadge, nullptr, captionLeft, top,
             min(badgeWidth, max(0, parentWidth - captionLeft - captionRight)), rectHeight(rect),
             SWP_NOZORDER | SWP_NOACTIVATE | (showLockBadge ? SWP_SHOWWINDOW : SWP_HIDEWINDOW));
+    }
     SetWindowPos(caption, nullptr, actualLeft, top, labelWidth, rectHeight(rect),
         SWP_NOZORDER | SWP_NOACTIVATE);
     SetWindowPos(toolbar, nullptr, actualLeft + labelWidth, top,
