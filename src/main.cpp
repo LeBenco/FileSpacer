@@ -1,6 +1,8 @@
 #include "main.h"
 #include "FolderWindow.h"
 #include "ShellUtils.h"
+#include "ShellViewSelection.h"
+#include "ShellSelectionRuntime.h"
 #include "CreateItemWindow.h"
 #include "ClosedWindows.h"
 #include "Settings.h"
@@ -193,6 +195,20 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     int maintenanceExit = 0, recoveryArgc = 0;
     wchar_t **recoveryArgv = CommandLineToArgvW(GetCommandLineW(), &recoveryArgc);
     if (!recoveryArgv) return 1;
+#ifdef FILESPACER_DEBUG
+    if (recoveryArgc == 4 && lstrcmpiW(recoveryArgv[1], L"/test") == 0
+            && lstrcmpiW(recoveryArgv[2], L"/selection-discovery") == 0) {
+        const std::wstring root = recoveryArgv[3];
+        LocalFree(recoveryArgv);
+        SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+        return selectionDetail::runWorker(root.c_str());
+    }
+#endif
+    if (recoveryArgc == 2 && lstrcmpiW(recoveryArgv[1], L"/selection-discovery") == 0) {
+        LocalFree(recoveryArgv);
+        SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+        return selectionDetail::runWorker();
+    }
     if (recoveryArgc == 6 && lstrcmpiW(recoveryArgv[1], L"/render-title-menu") == 0) {
         const POINT origin = { _wtol(recoveryArgv[4]), _wtol(recoveryArgv[5]) };
         const int result = renderTitleMenu(recoveryArgv[2], recoveryArgv[3], origin);
@@ -252,6 +268,12 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
 
     if (!checkHR(OleInitialize(0))) // needed for drag/drop
         return 0;
+
+#ifdef FILESPACER_DEBUG
+    if (settings::testMode) initializeShellSelectionClear(L"", false);
+    else
+#endif
+        initializeShellSelectionClear();
 
     // Auto-reset notification: a modal loop cannot consume this wakeup.
     // Keep it alive until every Shell/application Release has finished signaling.
