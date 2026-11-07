@@ -2,6 +2,7 @@
 
 ## Sin publicar
 
+- Restaurar la posición de desplazamiento de una carpeta al volver a abrir su ventana.
 - Colocar las ventanas nuevas según el tamaño y la posición normales de las ventanas existentes de FileSpacer, incluidas las maximizadas, minimizadas o acopladas.
 - Aceleración masiva de «Seleccionar todo» y de la deselección de miles de archivos en las vistas clásicas del Shell. Esta optimización utiliza funciones privadas de Windows cuya disponibilidad y comportamiento no están garantizados. Si faltan o son incompatibles, FileSpacer recurre automática y silenciosamente a las funciones públicas, sin las mejoras de rendimiento.
 

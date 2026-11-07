@@ -2,6 +2,7 @@
 
 ## Nieopublikowane
 
+- Przywracać pozycję przewijania folderu po ponownym otwarciu jego okna.
 - Rozmieszczanie nowych okien na podstawie normalnego rozmiaru i położenia istniejących okien FileSpacer, również zmaksymalizowanych, zminimalizowanych lub przyciągniętych do krawędzi.
 - Ogromne przyspieszenie operacji „Zaznacz wszystko” i odznaczania tysięcy plików w klasycznych widokach powłoki. Optymalizacja korzysta z prywatnych funkcji systemu Windows, których dostępność i działanie nie są gwarantowane. Jeśli tych funkcji brakuje lub są niezgodne, FileSpacer automatycznie i bez komunikatów wraca do funkcji publicznych, bez korzyści z przyspieszenia.
 
