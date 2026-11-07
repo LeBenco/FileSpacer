@@ -2,7 +2,7 @@
 
 # Zoeken, geschiedenis en Everything
 
-Begin in `SearchBox`, `FolderWindow::applyNameFilter`, `ShellViewFilter` en `Everything`. Interactiedetails staan in de [gebruikershandleiding](user-guide.md#zoeken-en-geschiedenis).
+Begin in `SearchBox`, `FolderWindow::applyNameFilter`, `ShellViewFilter` en `Everything`. Interactiedetails staan in de [gebruikershandleiding](user-guide.md#search-and-history).
 
 <a id="local-filtering-and-suggestions"></a>
 

@@ -2,7 +2,7 @@
 
 # Domyślny menedżer i menu kontekstowe
 
-`Settings.cpp` zarządza skojarzeniami folderów FileSpacer i pozycjami alternatywnego menedżera. Windows nadal wybiera i wywołuje działanie domyślne. Użycie: [integracja z Windows](user-guide.md#integracja-z-windows).
+`Settings.cpp` zarządza skojarzeniami folderów FileSpacer i pozycjami alternatywnego menedżera. Windows nadal wybiera i wywołuje działanie domyślne. Użycie: [integracja z Windows](user-guide.md#windows-integration).
 
 <a id="associations-and-menu-visibility"></a>
 
