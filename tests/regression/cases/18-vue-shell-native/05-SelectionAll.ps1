@@ -6,8 +6,8 @@ $ErrorActionPreference='Stop'
 $cacheTest=Build-NativeTest -Name SelectionCacheTests -CaseDirectory $PSScriptRoot -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','MixedFolder.cpp','ShellViewHost.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib')
 $matrix=Build-NativeTest -Name ProductionSelectionTests -CaseDirectory $PSScriptRoot -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','MixedFolder.cpp','ShellViewHost.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib','D3d11.lib','Dxgi.lib','Bcrypt.lib','Wtsapi32.lib')
 $cache=Join-Path $RunDirectory 'selection-cache';[void][IO.Directory]::CreateDirectory($cache)
-& $cacheTest --live $cache > (Join-Path $RunDirectory 'discovery.log') 2> (Join-Path $RunDirectory 'discovery-errors.log')
-if($LASTEXITCODE-ne0){throw 'Global-selection discovery/qualification failed.'}
+$code=Invoke-NativeProgram $cacheTest @('--live',$cache) (Join-Path $RunDirectory 'discovery.log') (Join-Path $RunDirectory 'discovery-errors.log')
+if($code-ne0){throw 'Global-selection discovery/qualification failed.'}
 $records=@(Get-ChildItem -LiteralPath $cache -Filter '*.bin' -File)
 if($records.Count-ne1-or$records[0].Length-ne160){throw 'Qualified selection descriptor absent.'}
 $fallback=Join-Path $RunDirectory 'without-select';[void][IO.Directory]::CreateDirectory($fallback)
@@ -24,8 +24,8 @@ try {
   $output=Join-Path $RunDirectory $arm[0];[void][IO.Directory]::CreateDirectory($output)
   $env:FS_SELECTION_PRODUCT_CACHE=$arm[1]
   $log=Join-Path $output 'selection.log'
-  & $matrix $output $fixture --allow-host > $log 2> (Join-Path $output 'errors.log')
-  if($LASTEXITCODE-ne0){throw ('Global-selection matrix failed: '+$arm[0])}
+  $code=Invoke-NativeProgram $matrix @($output,$fixture,'--allow-host') $log (Join-Path $output 'errors.log')
+  if($code-ne0){throw ('Global-selection matrix failed: '+$arm[0])}
   if(@(Select-String -LiteralPath $log -Pattern '^SELECT_ALL ').Count-ne9){throw 'Global-selection representation coverage incomplete.'}
   if(@(Select-String -LiteralPath $log -Pattern '^PARTIAL_ALL ').Count-ne27){throw 'Partial-to-all representation coverage incomplete.'}
  }
