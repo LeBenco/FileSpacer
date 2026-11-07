@@ -1,14 +1,20 @@
 #include "ShellViewSelection.h"
+#include "ShellSelectionRuntime.h"
 #include <atlbase.h>
 #include <shlobj.h>
 #include <shlwapi.h>
 #include <oleacc.h>
 #include <UIAutomation.h>
 #include <cmath>
+#include <cstring>
+#include <new>
+#include <type_traits>
+#include <utility>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <atomic>
 #pragma comment(lib, "Oleacc.lib")
 
 namespace filespacer {
@@ -112,6 +118,125 @@ HRESULT getScrollPattern(HWND window, const std::function<bool()> &current, IScr
     return findScrollPattern(accessible, current, 0, visited, out);
 }
 }
+
+using NotifyFunction=HRESULT(STDMETHODCALLTYPE *)(IUnknown *,UINT,UINT);
+using CancelFunction=HRESULT(STDMETHODCALLTYPE *)(IUnknown *);
+struct ShellSelectionClear::Binding {
+        mutable std::atomic<bool> usable{true};
+        CComPtr<IShellView> source;CComPtr<IFolderView2> folder;CComPtr<IUnknown> host,manager,notification;
+        using Enumerate=void(WINAPI *)(HDSA,PFNDAENUMCALLBACK,void *);
+        using Erase=BOOL(WINAPI *)(HDSA);
+        Enumerate enumerate=nullptr;Erase erase=nullptr;
+        PFNDAENUMCALLBACK callback=nullptr;NotifyFunction notify=nullptr;CancelFunction cancel=nullptr;
+    };
+
+void initializeShellSelectionClear(const wchar_t *cacheRoot,bool background) { selectionDetail::initialize(cacheRoot,background); }
+bool ShellSelectionClear::accelerated()const {const auto value=binding;return value && value->usable.load();}
+
+    bool ShellSelectionClear::backingBufferReleased(bool &known)const {
+        using namespace selectionDetail;known=false;const auto value=binding;const Image &module=image();
+        if(!value||!module.dataOffset)return false;
+        HDSA array=nullptr;void *data=nullptr;
+        if(!read(reinterpret_cast<unsigned char *>(value->manager.p)+module.fields[ArrayOffset],array))return false;
+        if(!array){known=true;return true;}
+        if(!read(reinterpret_cast<unsigned char *>(array)+module.dataOffset,data))return false;
+        known=true;return data==nullptr;
+    }
+    void ShellSelectionClear::bind(IShellView *source,const std::function<bool()> &current) try {
+        using namespace selectionDetail;reset();const Image &module=image();
+        if(!source||!current()||!module.supported)return;
+        auto value=std::make_shared<Binding>();value->source=source;
+        CComQIPtr<IServiceProvider> services(source);void *rawHost=nullptr;
+        const GUID service={0xc30e04c9,0x7d34,0x4ad0,{0xa1,0xdc,0xaf,0xff,0xae,0xc1,0xb2,0x52}};
+        const GUID control={0xc401f7ac,0x9572,0x42cd,{0xae,0x05,0x3b,0xd0,0x84,0x27,0x0c,0xb1}};
+        if(!services||!current()||FAILED(services->QueryService(service,control,&rawHost)))return;
+        value->host.Attach(static_cast<IUnknown *>(rawHost));
+        void *table=nullptr;IUnknown *manager=nullptr;
+        if(!current()||!read(value->host.p,table)||table!=module.base+module.fields[HostTable]
+                ||!read(reinterpret_cast<unsigned char *>(value->host.p)+module.fields[ManagerOffset],manager)||!manager
+                ||!read(manager,table)||table!=module.base+module.fields[ManagerTable])return;
+        for(size_t slot=0;slot<3;++slot){void *method=nullptr;
+            if(!read(static_cast<unsigned char *>(table)+8*slot,method)||method!=module.base+module.fields[ManagerQI+slot])return;}
+        value->manager=manager;
+        if(!current()||FAILED(source->QueryInterface(IID_PPV_ARGS(&value->folder))))return;
+        const GUID notification={0xca9a60fb,0xec04,0x4b21,{0xae,0x64,0xe8,0x27,0x1f,0x47,0x9b,0xec}};
+        void *rawNotification=nullptr;
+        if(!current()||FAILED(source->QueryInterface(notification,&rawNotification)))return;
+        value->notification.Attach(static_cast<IUnknown *>(rawNotification));
+        if(!current()||!read(value->notification.p,table)||table!=module.base+module.fields[NotifyTable]
+                ||(!module.manualEnumeration&&(!module.enumerate||!module.erase))){
+            return;}
+        value->callback=reinterpret_cast<PFNDAENUMCALLBACK>(module.base+module.fields[Callback]);
+        value->enumerate=reinterpret_cast<Binding::Enumerate>(module.enumerate);
+        value->erase=reinterpret_cast<Binding::Erase>(module.erase);
+        value->notify=reinterpret_cast<NotifyFunction>(module.base+module.fields[Notify]);
+        value->cancel=reinterpret_cast<CancelFunction>(module.base+module.fields[Cancel]);
+        if(current())binding=std::move(value);
+    } catch(const std::bad_alloc &) { binding.reset(); }
+    HRESULT ShellSelectionClear::clear(IShellView *source,const std::function<bool()> &current,bool *applied)const {
+        using namespace selectionDetail;if(applied)*applied=false;if(!source)return E_POINTER;
+        if(!current())return E_ABORT;
+        CComPtr<IShellView> keepView(source);
+        const auto native=[&](){
+            if(!current())return E_ABORT;
+            const HRESULT result=source->SelectItem(nullptr,SVSI_DESELECTOTHERS);
+            return current()?result:E_ABORT;
+        };
+        const auto value=binding;
+        if(!value||!value->usable.load()||value->source.p!=source)return native();
+        const auto reject=[&](){value->usable.store(false);return native();};
+        const Image &module=image();IUnknown *manager=nullptr;HDSA array=nullptr;int count=-1,selected=-1;
+        const HRESULT counted=value->folder->ItemCount(SVGIO_SELECTION,&selected);
+        if(!current())return E_ABORT;
+        if(FAILED(counted))return reject();
+        if(selected<=0)return native();
+        if(!read(reinterpret_cast<unsigned char *>(value->host.p)+module.fields[ManagerOffset],manager)||manager!=value->manager.p
+                ||!read(reinterpret_cast<unsigned char *>(manager)+module.fields[ArrayOffset],array)||!array
+                ||!read(array,count)||count!=selected)return reject();
+        if(module.clearViaCount&&(reinterpret_cast<ULONG_PTR>(array)%alignof(LONG)!=0||!writable(array,sizeof(LONG))))return reject();
+        // Same DSA implementation and callback as Shell32. Finish the purge
+        // phase even if callback releases reenter. Never retry after mutation.
+        if(module.manualEnumeration){ArraySnapshot snapshot;
+            if(!snapshotArray(array,module.dataOffset,module.strideOffset,snapshot)||snapshot.count!=selected||snapshot.stride!=16||!snapshot.data
+                    ||!writable(snapshot.data,static_cast<SIZE_T>(selected)*snapshot.stride))return reject();
+            const unsigned char *verified=snapshot.data;int verifiedCount=selected;
+            for(int index=0;index<snapshot.count;++index){
+                if(!value->callback(snapshot.data+static_cast<SIZE_T>(index)*snapshot.stride,nullptr))break;
+                if(!current())return E_ABORT;
+                IUnknown *sameManager=nullptr;HDSA sameArray=nullptr;
+                if(!read(reinterpret_cast<unsigned char *>(value->host.p)+module.fields[ManagerOffset],sameManager)||sameManager!=manager
+                        ||!read(reinterpret_cast<unsigned char *>(manager)+module.fields[ArrayOffset],sameArray)||sameArray!=array
+                        ||!snapshotArray(array,module.dataOffset,module.strideOffset,snapshot)||snapshot.count<0
+                        ||(snapshot.count>0&&(snapshot.stride!=16||!snapshot.data)))return E_ABORT;
+                if(snapshot.count>0&&(snapshot.data!=verified||snapshot.count>verifiedCount)){
+                    if(!writable(snapshot.data,static_cast<SIZE_T>(snapshot.count)*snapshot.stride))return E_ABORT;
+                    verified=snapshot.data;verifiedCount=snapshot.count;
+                }
+            }
+        }else value->enumerate(array,value->callback,nullptr);
+        BOOL erased=TRUE;
+        if(module.clearViaCount){
+            // Experimental internal data write, not a public API contract.
+            // Public native clear then reaches its own zero-count purge, using
+            // its own allocator and a direct, CFG-compatible internal call.
+            if(!current())return E_ABORT;
+            HDSA same=nullptr;IUnknown *sameManager=nullptr;
+            if(!read(reinterpret_cast<unsigned char *>(value->host.p)+module.fields[ManagerOffset],sameManager)||sameManager!=manager
+                    ||!read(reinterpret_cast<unsigned char *>(manager)+module.fields[ArrayOffset],same)||same!=array)return E_ABORT;
+            InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);
+        }else erased=value->erase(array);
+        if(applied)*applied=true;
+        if(!erased)return E_FAIL;
+        if(!current())return E_ABORT;
+        const HRESULT cleared=native();
+        if(!current())return E_ABORT;
+        const HRESULT notified=value->notify(value->notification,0,1);
+        if(!current())return E_ABORT;
+        const HRESULT cancelled=value->cancel(value->notification);
+        if(FAILED(cleared)||FAILED(notified)||FAILED(cancelled))value->usable.store(false);
+        return !current()?E_ABORT:FAILED(cleared)?cleared:FAILED(notified)?notified:cancelled;
+    }
+
 
 HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &current,
         std::vector<uint8_t> &bytes) {
@@ -257,7 +382,7 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
 }
 
 HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
-        const std::function<bool()> &current) {
+        const std::function<bool()> &current, const ShellSelectionClear *clear) {
     std::vector<uint8_t> bytes;
     bytes.swap(pending);
     if (bytes.empty()) return S_FALSE;
@@ -435,7 +560,7 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         }
         if (!planned) {
             // Providers without a usable selection enumeration keep the original path.
-            result = view->SelectItem(nullptr, SVSI_DESELECTOTHERS);
+            result = clear ? clear->clear(view, current) : view->SelectItem(nullptr, SVSI_DESELECTOTHERS);
             if (!current()) return E_ABORT;
             if (FAILED(result)) return result;
         } else {
