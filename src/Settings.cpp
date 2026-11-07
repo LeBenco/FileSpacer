@@ -243,6 +243,8 @@ void setEverythingScope(EverythingScope value) {
 SETTINGS_BOOL_VALUE(MixedFolderSorting, L"MixedFolderSorting", false)
 SETTINGS_BOOL_VALUE(FullNamesOnSelection, L"FullNamesOnSelection", DEFAULT_FULL_NAMES_ON_SELECTION)
 SETTINGS_BOOL_VALUE(WindowStateLockBadgeEnabled, L"WindowStateLockBadgeEnabled", true)
+SETTINGS_BOOL_VALUE(WindowStateUnlockBadgeEnabled, L"WindowStateUnlockBadgeEnabled", false)
+SETTINGS_BOOL_VALUE(WindowStateLockClickEnabled, L"WindowStateLockClickEnabled", false)
 
 
 bool getWindowStateLockEnabled() {

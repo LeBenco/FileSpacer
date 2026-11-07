@@ -56,16 +56,18 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Ne pas perdre la sélection quand on &clique sur une fenêtre en arrière-plan", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 66, 272, 12
   CONTROL "Placer les nouvelles fenêtres sur un &espace libre", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 80, 250, 12
   CONTROL "Informations sur le placement des fenêtres", IDC_SMART_WINDOW_PLACEMENT_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 79, 12, 14
-  CONTROL "Verrouillage des fenêtres", -1, "Button", BS_GROUPBOX, 7, 100, 286, 44
+  CONTROL "Verrouillage des fenêtres", -1, "Button", BS_GROUPBOX, 7, 100, 286, 72
   CONTROL "Activer le &verrouillage de l’état des fenêtres", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 111, 272, 12
-  CONTROL "Afficher un verrou dans la &barre de titre pour les dossiers verrouillés", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
-  CONTROL "Champ de recherche", -1, "Button", BS_GROUPBOX, 7, 148, 286, 52
-  CONTROL "Filtrer pendant la &saisie", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 159, 272, 12
-  LTEXT "Recherches récentes par dossier (0 à 20 ; 0 désactive)", -1, 14, 177, 222, 16
-  EDITTEXT IDC_SEARCH_HISTORY_LIMIT, 246, 176, 40, 14, ES_NUMBER|WS_TABSTOP
-  CONTROL "Barre des tâches", -1, "Button", BS_GROUPBOX, 7, 204, 286, 30
-  CONTROL "Regrouper les fenêtres dans la barre des &tâches", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 215, 250, 12
-  CONTROL "Informations sur le regroupement des fenêtres", IDC_GROUP_FOLDER_WINDOWS_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 214, 12, 14
+  CONTROL "Afficher un cadenas &ouvert dans la barre de titre", IDC_WINDOW_STATE_UNLOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
+  CONTROL "Afficher un verrou dans la &barre de titre pour les dossiers verrouillés", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 139, 272, 12
+  CONTROL "Changer le verrouillage par un clic sur l’&icône", IDC_WINDOW_STATE_LOCK_CLICK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 153, 272, 12
+  CONTROL "Champ de recherche", -1, "Button", BS_GROUPBOX, 7, 176, 286, 52
+  CONTROL "Filtrer pendant la &saisie", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 187, 272, 12
+  LTEXT "Recherches récentes par dossier (0 à 20 ; 0 désactive)", -1, 14, 205, 222, 16
+  EDITTEXT IDC_SEARCH_HISTORY_LIMIT, 246, 204, 40, 14, ES_NUMBER|WS_TABSTOP
+  CONTROL "Barre des tâches", -1, "Button", BS_GROUPBOX, 7, 232, 286, 30
+  CONTROL "Regrouper les fenêtres dans la barre des &tâches", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 243, 250, 12
+  CONTROL "Informations sur le regroupement des fenêtres", IDC_GROUP_FOLDER_WINDOWS_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 242, 12, 14
 }
 
 IDD_SETTINGS_DISPLAY DIALOGEX DISCARDABLE 0, 0, 300, 317
