@@ -21,7 +21,6 @@ Podgląd używa rzeczywistego renderera Windows/Nilesoft w jednorazowym procesie
 ## Granice działań
 
 - Przywracanie zablokowanego układu stosuje geometrię i widok przez istniejący widok bez utraty zaznaczenia. Zastąpienie wzorca przechwytuje bieżący układ przy istniejącej blokadzie i wymaga potwierdzenia.
-- Zapomnienie układu usuwa układ/blokadę, zachowując historię. Bieżące okno nie zapisuje go do zamknięcia, chyba że jawnie zablokowano nowy układ.
 - Zamykanie okien podrzędnych/pozostałych używa zwykłego zamykania i zapisu, także między procesami. Dopasowanie używa natywnych pozycji, odstępów i widocznych szerokości kolumn, w granicach obszaru roboczego monitora.
 - Grupy przechowują nazwane listy niezależnie od menu. Przywołanie otwiera/aktywuje foldery z ich układem, zachowując inne okna. Usunięcie grupy nie usuwa folderów; reset ustawień ogólnych nie czyści grup.
 
@@ -48,7 +47,6 @@ Właściciel menu przekazuje polecenie do rzeczywistego okna folderu; kontrole c
 | Ustawienia FileSpacer | 1009 |
 | Przywróć zablokowany układ | 1123 |
 | Zastąp układ odniesienia | 1124 |
-| Zapomnij układ tego folderu | 1125 |
 | Zamknij okna podrzędne | 1126 |
 | Zamknij pozostałe okna | 1127 |
 | Dopasuj okno do zawartości | 1128 |

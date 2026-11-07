@@ -34,8 +34,6 @@ acrylic.
 - Restore the locked layout applies saved geometry/view options through the
   existing view without destroying its selection. Replace reference captures
   the current layout under an existing lock and requires confirmation.
-- Forget folder layout clears its layout/lock, retaining search history. The
-  current window does not resave it until closure unless explicitly locked anew.
 - Close descendant/other windows uses normal close processing and persistence,
   including across processes. Fit to contents uses native item positions,
   spacing and visible column widths, bounded by the monitor work area.
@@ -71,7 +69,6 @@ for menu scoping and visual settings.
 | Preferences | 1009 |
 | Restore locked layout | 1123 |
 | Replace reference layout | 1124 |
-| Forget folder layout | 1125 |
 | Close descendant windows | 1126 |
 | Close other windows | 1127 |
 | Fit window to contents | 1128 |

@@ -21,7 +21,6 @@ Het voorbeeld gebruikt de echte Windows/Nilesoft-renderer in een tijdelijk FileS
 ## Actiegrenzen
 
 - Vergrendelde indeling herstellen past opgeslagen geometrie/weergave toe via de bestaande weergave zonder selectie te verliezen. Referentie vervangen legt de huidige indeling vast onder een bestaande vergrendeling en vereist bevestiging.
-- Indeling vergeten wist indeling/vergrendeling en behoudt zoekgeschiedenis. Het huidige venster slaat niet opnieuw op tot sluiting, tenzij expliciet opnieuw vergrendeld.
 - Onderliggende/andere vensters sluiten gebruikt normale sluiting en opslag, ook tussen processen. Aan inhoud aanpassen gebruikt native posities, tussenruimte en zichtbare kolombreedten, begrensd door het monitorwerkgebied.
 - Mapgroepen bewaren benoemde lijsten los van het menu. Oproepen opent/activeert elke map met haar eigen indeling en houdt andere vensters open. Groepen verwijderen verwijdert geen mappen; algemene voorkeuren resetten wist geen groepen.
 
@@ -48,7 +47,6 @@ De menu-eigenaar stuurt de opdracht door naar het echte mapvenster; levensduur-,
 | FileSpacer-instellingen | 1009 |
 | Vergrendelde indeling herstellen | 1123 |
 | Referentie-indeling vervangen | 1124 |
-| Indeling van deze map vergeten | 1125 |
 | Onderliggende vensters sluiten | 1126 |
 | Andere vensters sluiten | 1127 |
 | Venster aan inhoud aanpassen | 1128 |
