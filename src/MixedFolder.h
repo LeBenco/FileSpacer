@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <shobjidl.h>
 #include <atlbase.h>
+#include <functional>
 
 namespace filespacer {
 // FileSpacer's own COM contract at the provider DLL boundary. Shell clients use
@@ -15,5 +16,7 @@ MIDL_INTERFACE("91D72DCF-DE04-4CED-995C-A4870EB11D32") IMixedFolder : public IUn
 
 HRESULT mixedFolderItem(IShellItem *item, bool isolated, IShellItem **out);
 HRESULT nativeShellItem(IShellItem *item, IShellItem **out);
-HRESULT nativeViewSelection(IFolderView2 *view, BOOL noneMeansFolder, IShellItemArray **out);
+// A guarded caller can use public complete-set capture; absent guards keep native access.
+HRESULT nativeViewSelection(IFolderView2 *view, BOOL noneMeansFolder, IShellItemArray **out,
+    const std::function<bool()> &current = {});
 }
