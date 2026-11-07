@@ -226,3 +226,8 @@ The storage test checks fopen failure with its throwing require helper; Cppcheck
 still reports possible null use. No product refactoring or check suppression was
 introduced to silence these diagnostics. The initial benchmark spelling and
 fixture observer defects were corrected; their failed runs remain distinguishable.
+
+Follow-up: SelectionArrayResults.txt records the broader public-array prototype
+qualification. It preserves native ordering, attributes and data-object retention
+in 27 positive trials and qualifies conservative rejection in 15 other cases.
+The application array-access implementation remains unchanged.
