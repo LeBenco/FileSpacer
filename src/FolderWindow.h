@@ -4,6 +4,7 @@
 #include "ItemWindow.h"
 #include "SearchBox.h"
 #include "ShellViewHost.h"
+#include "ShellViewSelection.h"
 #include "WindowResizeGesture.h"
 #include <memory>
 #include <vector>
@@ -344,6 +345,8 @@ private:
     HIMAGELIST quickAccessImages = nullptr;
 
     ShellViewHost viewHost;
+    ShellSelectionClear selectionClear;
+    bool selectionBindingPending = false;
     bool hybridViewEligible = false;
     FOLDERVIEWOPTIONS viewProfile = FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING;
     bool viewProfilePending = false, viewProfilePosted = false, viewProfileChanging = false;
