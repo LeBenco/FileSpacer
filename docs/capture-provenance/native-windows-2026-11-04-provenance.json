@@ -30,19 +30,19 @@
     "singleContinuousMoveOrResize": true
   },
   "retainedFrenchStills": [
-    "docs/fr/images/customized-title-menu-fr.png",
-    "docs/fr/images/display-fr.png",
-    "docs/fr/images/everything-search-fr.png",
-    "docs/fr/images/locked-title-fr.png",
-    "docs/fr/images/mixed-sorting-fr.png",
-    "docs/fr/images/nilesoft-main-menu-adapted-fr.png",
-    "docs/fr/images/nilesoft-main-menu-default-fr.png",
-    "docs/fr/images/nilesoft-navigation-adapted-fr.png",
-    "docs/fr/images/nilesoft-navigation-default-fr.png",
-    "docs/fr/images/overview-fr.png",
-    "docs/fr/images/search-fr.png",
-    "docs/fr/images/selected-name-fr.png",
-    "docs/fr/images/window-menu-fr.png"
+    "docs/fr/images/customized-title-menu.png",
+    "docs/fr/images/display.png",
+    "docs/fr/images/everything-search.png",
+    "docs/fr/images/locked-title.png",
+    "docs/fr/images/mixed-sorting.png",
+    "docs/fr/images/nilesoft-main-menu-adapted.png",
+    "docs/fr/images/nilesoft-main-menu-default.png",
+    "docs/fr/images/nilesoft-navigation-adapted.png",
+    "docs/fr/images/nilesoft-navigation-default.png",
+    "docs/fr/images/overview.png",
+    "docs/fr/images/search.png",
+    "docs/fr/images/selected-name.png",
+    "docs/fr/images/window-menu.png"
   ],
   "languages": [
     {
@@ -52,19 +52,19 @@
       "captured": "2026-11-04T18:49:16.4162135Z",
       "files": [
         {
-          "file": "docs/fr/images/customize-title-menu-fr.gif",
+          "file": "docs/fr/images/customize-title-menu.gif",
           "sha256": "eaa7366f93405a741b0e6b0791ed8e1a66a0bc19dca24f8a43dc0f6d143b55d5"
         },
         {
-          "file": "docs/fr/images/move-window-fr.gif",
+          "file": "docs/fr/images/move-window.gif",
           "sha256": "a5ff22c5369856263a37ee4631d66714f6e15e9dfc85d289d2c4884d716c3cbc"
         },
         {
-          "file": "docs/fr/images/resize-window-fr.gif",
+          "file": "docs/fr/images/resize-window.gif",
           "sha256": "34057d6cda97c93d22226944bd3b76e6b8b0f7d0dae5cfe5fc8baf477915ec14"
         },
         {
-          "file": "docs/fr/images/spatial-windows-fr.png",
+          "file": "docs/fr/images/spatial-windows.png",
           "sha256": "798d6ff5eb0899bb15cc3f736ff7788eae441c5175765a6a57c10a3ede66d79c"
         }
       ]
@@ -152,67 +152,67 @@
       "captured": "2026-11-04T20:03:38.1934649Z",
       "files": [
         {
-          "file": "docs/pt/images/customize-title-menu-pt.gif",
+          "file": "docs/pt/images/customize-title-menu.gif",
           "sha256": "6c14ef4f2615a318539b0550bb0a21e51a2366183f3578592deb6d0600a06332"
         },
         {
-          "file": "docs/pt/images/customized-title-menu-pt.png",
+          "file": "docs/pt/images/customized-title-menu.png",
           "sha256": "d4339dc47c315c84287ce5ebad9a4c90daeabedd5a44e741c653f0b0c379ec4a"
         },
         {
-          "file": "docs/pt/images/everything-search-pt.png",
+          "file": "docs/pt/images/everything-search.png",
           "sha256": "b0b628a9ad238c165db42149f5624e0693eba7d824f0109fddc91bbbef81673d"
         },
         {
-          "file": "docs/pt/images/locked-title-pt.png",
+          "file": "docs/pt/images/locked-title.png",
           "sha256": "58074eacd0e191f11162056ddc95b56042a6564270f4813cddb11f3e88b6d09d"
         },
         {
-          "file": "docs/pt/images/mixed-sorting-pt.png",
+          "file": "docs/pt/images/mixed-sorting.png",
           "sha256": "7559958e582bfaac673b316ff1b0a196501bcf6583a2a1811c1a35cebedf8ac2"
         },
         {
-          "file": "docs/pt/images/move-window-pt.gif",
+          "file": "docs/pt/images/move-window.gif",
           "sha256": "f0d222ec089083f1f1c4e0377a91e2735ad22d43b4e728b7e5ce2e6701920080"
         },
         {
-          "file": "docs/pt/images/nilesoft-main-menu-adapted-pt.png",
+          "file": "docs/pt/images/nilesoft-main-menu-adapted.png",
           "sha256": "11f7c041746512db8c955bb5de04b9d12e52a1627ac6a3106e38908f9b120b18"
         },
         {
-          "file": "docs/pt/images/nilesoft-main-menu-default-pt.png",
+          "file": "docs/pt/images/nilesoft-main-menu-default.png",
           "sha256": "b95f7f9e86ce291f20d264b35437acea347326ee240bb5be2e6c3853bf600970"
         },
         {
-          "file": "docs/pt/images/nilesoft-navigation-adapted-pt.png",
+          "file": "docs/pt/images/nilesoft-navigation-adapted.png",
           "sha256": "49bd9783d99de159bd498a809a8cda80b3ab184eabfa2e0b46f712fa72875c4c"
         },
         {
-          "file": "docs/pt/images/nilesoft-navigation-default-pt.png",
+          "file": "docs/pt/images/nilesoft-navigation-default.png",
           "sha256": "2731fe0ded745cca951f393ff69b9ca0f30e9d4b6168c86e736a015d91d4b916"
         },
         {
-          "file": "docs/pt/images/overview-pt.png",
+          "file": "docs/pt/images/overview.png",
           "sha256": "74e492e5c97f7cee03b0f50dc5a61545b463802cedd7457245ea3abb0fb64f25"
         },
         {
-          "file": "docs/pt/images/resize-window-pt.gif",
+          "file": "docs/pt/images/resize-window.gif",
           "sha256": "4c586f21b9bd432fc50a2f62fa82a71bc938cf60375d7e3ccffd37a821c13cf3"
         },
         {
-          "file": "docs/pt/images/search-pt.png",
+          "file": "docs/pt/images/search.png",
           "sha256": "4afb31848a41b89333be4840027847f8f9311f87d9e7394ac2f834458e322b51"
         },
         {
-          "file": "docs/pt/images/selected-name-pt.png",
+          "file": "docs/pt/images/selected-name.png",
           "sha256": "fae9015328708322a903bffa24a53e1eb87f92956790f632a048fb6d2f9699c1"
         },
         {
-          "file": "docs/pt/images/spatial-windows-pt.png",
+          "file": "docs/pt/images/spatial-windows.png",
           "sha256": "c843f095b7cb7c95f542051a15ecb4398dccfae10edbed2b5f78d20139757ed2"
         },
         {
-          "file": "docs/pt/images/window-menu-pt.png",
+          "file": "docs/pt/images/window-menu.png",
           "sha256": "19473636554a549ab76e8fbd8219a928a1b48b1640b1007010ce8ababc06e6de"
         }
       ]
@@ -224,67 +224,67 @@
       "captured": "2026-11-04T20:34:29.4389861Z",
       "files": [
         {
-          "file": "docs/el/images/customize-title-menu-el.gif",
+          "file": "docs/el/images/customize-title-menu.gif",
           "sha256": "bc416b7323b54a69731f2bcb7a9b8d6d3d76b5eaee2a45ead205b3dd95525a2a"
         },
         {
-          "file": "docs/el/images/customized-title-menu-el.png",
+          "file": "docs/el/images/customized-title-menu.png",
           "sha256": "ba5434f37162a24dba61357896a82518d163ab21c9db56ad196fb2d3d6ab9b1c"
         },
         {
-          "file": "docs/el/images/everything-search-el.png",
+          "file": "docs/el/images/everything-search.png",
           "sha256": "7d2a00071436ed00611e63c9c38033b55815a4e9957c14e2c910b93869af4e3b"
         },
         {
-          "file": "docs/el/images/locked-title-el.png",
+          "file": "docs/el/images/locked-title.png",
           "sha256": "e1f48b670c1b46dc6419cb9ff309c7d2bd24fe79d3f6f73cc2d1d5eaacd9c32d"
         },
         {
-          "file": "docs/el/images/mixed-sorting-el.png",
+          "file": "docs/el/images/mixed-sorting.png",
           "sha256": "438b6596e8eddadf942a3d4e7a01516025564179ada7d5ad2d5a477783bdbe02"
         },
         {
-          "file": "docs/el/images/move-window-el.gif",
+          "file": "docs/el/images/move-window.gif",
           "sha256": "a96c7da76c034d08c1e24a915705c23ab3a9efa05feba126a60790064b17af54"
         },
         {
-          "file": "docs/el/images/nilesoft-main-menu-adapted-el.png",
+          "file": "docs/el/images/nilesoft-main-menu-adapted.png",
           "sha256": "07b98ea88f06b40d64c31f81af421d091c9d7e1df636dd7d42d62725295aa925"
         },
         {
-          "file": "docs/el/images/nilesoft-main-menu-default-el.png",
+          "file": "docs/el/images/nilesoft-main-menu-default.png",
           "sha256": "8068e4c0796db542ee6f65aac3058c564b9c96df8784e43d0f77cf54134fe1fc"
         },
         {
-          "file": "docs/el/images/nilesoft-navigation-adapted-el.png",
+          "file": "docs/el/images/nilesoft-navigation-adapted.png",
           "sha256": "17245141384c7465aeddb9ecffbd856f3213fb935fc73dea3d5904d381d3b438"
         },
         {
-          "file": "docs/el/images/nilesoft-navigation-default-el.png",
+          "file": "docs/el/images/nilesoft-navigation-default.png",
           "sha256": "52657d1b4ee22a167f0a22a407fe05dad55caa2d3c68a32ad8222405717d3436"
         },
         {
-          "file": "docs/el/images/overview-el.png",
+          "file": "docs/el/images/overview.png",
           "sha256": "2ae0ee9568c33aa2b6b4b12f9a247ded0ff7826018a1407c513479139b1ba76d"
         },
         {
-          "file": "docs/el/images/resize-window-el.gif",
+          "file": "docs/el/images/resize-window.gif",
           "sha256": "fa5b82e9fdfc26161f063846e7d72d5d5f3fd6e3827d5726635b8e71de349088"
         },
         {
-          "file": "docs/el/images/search-el.png",
+          "file": "docs/el/images/search.png",
           "sha256": "a55599808d95c092697352d8e5c976bef79693d61e444c378be727c55a935f37"
         },
         {
-          "file": "docs/el/images/selected-name-el.png",
+          "file": "docs/el/images/selected-name.png",
           "sha256": "ca3b2fc9862e55a9f8a5c4d635550d3e86f63deda292f31ee24d0aa28f157b65"
         },
         {
-          "file": "docs/el/images/spatial-windows-el.png",
+          "file": "docs/el/images/spatial-windows.png",
           "sha256": "7fe29ff2c76cc864e92dd306f76ee7f8c6d610ba6a53686cec164164ec9a71e6"
         },
         {
-          "file": "docs/el/images/window-menu-el.png",
+          "file": "docs/el/images/window-menu.png",
           "sha256": "c5c21094e6dc1b7cb764a424654996fa68e62b31837a222211675d0bac76736a"
         }
       ]
@@ -296,71 +296,71 @@
       "captured": "2026-11-04T20:40:07.6845531Z",
       "files": [
         {
-          "file": "docs/pl/images/customize-title-menu-pl.gif",
+          "file": "docs/pl/images/customize-title-menu.gif",
           "sha256": "fd11d7addea39acf1aa428f2a120d6aa2eef191f471fe40150c21ae8dbfe2cd5"
         },
         {
-          "file": "docs/pl/images/customized-title-menu-pl.png",
+          "file": "docs/pl/images/customized-title-menu.png",
           "sha256": "afc1b3f72b6bd4056680191cce6be59176484f1e11c59897cf624e10b59e810e"
         },
         {
-          "file": "docs/pl/images/display-pl.png",
+          "file": "docs/pl/images/display.png",
           "sha256": "9e2df1becc0cda05439bef0a234445874a3eff9d5b99dc8cb48a2bb64daf5a17"
         },
         {
-          "file": "docs/pl/images/everything-search-pl.png",
+          "file": "docs/pl/images/everything-search.png",
           "sha256": "1f94cb149281d0de54d6980bdb39856e56d2b9279482ec74d1de03d74a895d5d"
         },
         {
-          "file": "docs/pl/images/locked-title-pl.png",
+          "file": "docs/pl/images/locked-title.png",
           "sha256": "5c6e47def53813f5f05c0177e42c0ac176535c648b023a4f074e94847cd2c664"
         },
         {
-          "file": "docs/pl/images/mixed-sorting-pl.png",
+          "file": "docs/pl/images/mixed-sorting.png",
           "sha256": "2fa179a57e1fff59ee39babcf5279e733c1f23b54359ed3e792e682c8416aa15"
         },
         {
-          "file": "docs/pl/images/move-window-pl.gif",
+          "file": "docs/pl/images/move-window.gif",
           "sha256": "d0fd339d4379499f41509b46049a7ffbf00c52143e5a76f262c15304bbe3c17f"
         },
         {
-          "file": "docs/pl/images/nilesoft-main-menu-adapted-pl.png",
+          "file": "docs/pl/images/nilesoft-main-menu-adapted.png",
           "sha256": "f9eb73778692569b3834b08474ee1c7593317bee5b3e9767353dbc5037b8f42d"
         },
         {
-          "file": "docs/pl/images/nilesoft-main-menu-default-pl.png",
+          "file": "docs/pl/images/nilesoft-main-menu-default.png",
           "sha256": "c2b879db773ade095f5ba5fffb2d83e814949daa95507da099df0a03cb8df8bb"
         },
         {
-          "file": "docs/pl/images/nilesoft-navigation-adapted-pl.png",
+          "file": "docs/pl/images/nilesoft-navigation-adapted.png",
           "sha256": "348336871fe21a9b5ff59f3f235a7adaef3cb517c348e8df9dd2e9f5a15c6879"
         },
         {
-          "file": "docs/pl/images/nilesoft-navigation-default-pl.png",
+          "file": "docs/pl/images/nilesoft-navigation-default.png",
           "sha256": "54d340a113bad94b33842f3a684a659ac4be09b31d9a67c7319502ca42b8f753"
         },
         {
-          "file": "docs/pl/images/overview-pl.png",
+          "file": "docs/pl/images/overview.png",
           "sha256": "601bbee6f8d681d4509ebfaa483a331ff0245c399a4b60f5062a5f9f7d642c67"
         },
         {
-          "file": "docs/pl/images/resize-window-pl.gif",
+          "file": "docs/pl/images/resize-window.gif",
           "sha256": "78c1404b3ce086da3090b04504aff52c9b0e4f1e6edb3828f050ccd0405b7e67"
         },
         {
-          "file": "docs/pl/images/search-pl.png",
+          "file": "docs/pl/images/search.png",
           "sha256": "940846146b3cbf6efb0859da05bc0f4c9d5f2dc47019a27d0e58f95c6f625545"
         },
         {
-          "file": "docs/pl/images/selected-name-pl.png",
+          "file": "docs/pl/images/selected-name.png",
           "sha256": "00c46fcb8a7cc1c00982b65c515a08e0729fde6e577d119d89bdaf2f10d04ea5"
         },
         {
-          "file": "docs/pl/images/spatial-windows-pl.png",
+          "file": "docs/pl/images/spatial-windows.png",
           "sha256": "ae8ee3fa28e3fb76f5967aa61265f94b9ae12cc2c1755c008c69030a96cb98dc"
         },
         {
-          "file": "docs/pl/images/window-menu-pl.png",
+          "file": "docs/pl/images/window-menu.png",
           "sha256": "930124c3ee3d9a1af766ca941ed5b6e724aaab560c028d34ffbf326b288b64e6"
         }
       ]
@@ -372,71 +372,71 @@
       "captured": "2026-11-04T20:50:10.4881530Z",
       "files": [
         {
-          "file": "docs/nl/images/customize-title-menu-nl.gif",
+          "file": "docs/nl/images/customize-title-menu.gif",
           "sha256": "0faa14b787d268b07ced25cc09d788064a9de3019181e071e1e32e148f59582d"
         },
         {
-          "file": "docs/nl/images/customized-title-menu-nl.png",
+          "file": "docs/nl/images/customized-title-menu.png",
           "sha256": "876a7f22910ceabd7a4ef2bc03341c608566aaaca99a07d29f4e8752b3420901"
         },
         {
-          "file": "docs/nl/images/display-nl.png",
+          "file": "docs/nl/images/display.png",
           "sha256": "6262c415f466ffc87fe53f71785723e8e5d9a0b588e87895145636201f5912c6"
         },
         {
-          "file": "docs/nl/images/everything-search-nl.png",
+          "file": "docs/nl/images/everything-search.png",
           "sha256": "54a014b026a7b6f501b27eb1fc987bcb1cf6232536b72c16495e6664780873b1"
         },
         {
-          "file": "docs/nl/images/locked-title-nl.png",
+          "file": "docs/nl/images/locked-title.png",
           "sha256": "e8537094ccad4f4acc0583a64b967f1b88bb0c8c37008c045d77eaa7da2fc781"
         },
         {
-          "file": "docs/nl/images/mixed-sorting-nl.png",
+          "file": "docs/nl/images/mixed-sorting.png",
           "sha256": "4c91c53bbd0ed3e6b08eddf7155c4208e7e5e8071a378cc069ef82eb37d4a29b"
         },
         {
-          "file": "docs/nl/images/move-window-nl.gif",
+          "file": "docs/nl/images/move-window.gif",
           "sha256": "fd59859d13c27a3c6bf0914aebba84d0443a1ebef16cb0303916c9ca1226efc1"
         },
         {
-          "file": "docs/nl/images/nilesoft-main-menu-adapted-nl.png",
+          "file": "docs/nl/images/nilesoft-main-menu-adapted.png",
           "sha256": "da308cb839e517ece5e5408d0fae6d5f358b75fdb14ea9a8d866e5822882698d"
         },
         {
-          "file": "docs/nl/images/nilesoft-main-menu-default-nl.png",
+          "file": "docs/nl/images/nilesoft-main-menu-default.png",
           "sha256": "2134f8342c9b02d0db91ba5c8bfbdfd2600ab8be06521734cc38c3f62d6d03af"
         },
         {
-          "file": "docs/nl/images/nilesoft-navigation-adapted-nl.png",
+          "file": "docs/nl/images/nilesoft-navigation-adapted.png",
           "sha256": "34e0b66b9d3d6452fbfedced94a7dd29aafe9087c9ac9e000b4878ec9298e420"
         },
         {
-          "file": "docs/nl/images/nilesoft-navigation-default-nl.png",
+          "file": "docs/nl/images/nilesoft-navigation-default.png",
           "sha256": "81153ffeb47479ffe429f11140339d1c1f6cba8c06a892465ca062a7a727b376"
         },
         {
-          "file": "docs/nl/images/overview-nl.png",
+          "file": "docs/nl/images/overview.png",
           "sha256": "0e3ca62bf692c6019a1c8240b4bbb5b258641d9f8ab431d1d7ed5daee96c4bf3"
         },
         {
-          "file": "docs/nl/images/resize-window-nl.gif",
+          "file": "docs/nl/images/resize-window.gif",
           "sha256": "a3bcd94e69e21c4d880ab2dba7e4e64b4c0904760ef25d3632685d22e3d374bc"
         },
         {
-          "file": "docs/nl/images/search-nl.png",
+          "file": "docs/nl/images/search.png",
           "sha256": "672d1c4b6d6f5938cc0a874ef9261e9b041369fedb111be8e846cceb18784a0e"
         },
         {
-          "file": "docs/nl/images/selected-name-nl.png",
+          "file": "docs/nl/images/selected-name.png",
           "sha256": "f1225743720813329bd1a4b3775dee6ef29f677db6a86d966e4e6a2b80ab11a2"
         },
         {
-          "file": "docs/nl/images/spatial-windows-nl.png",
+          "file": "docs/nl/images/spatial-windows.png",
           "sha256": "70f3245f3541899ed1fca7075e53daec9f2a4f0df8109df4d688ac4558aaf0aa"
         },
         {
-          "file": "docs/nl/images/window-menu-nl.png",
+          "file": "docs/nl/images/window-menu.png",
           "sha256": "cda261b8595ec93113207c9e4d0d9640ef680af27292248e18e9377ca7046ffc"
         }
       ]
@@ -448,71 +448,71 @@
       "captured": "2026-11-04T20:55:59.2023605Z",
       "files": [
         {
-          "file": "docs/uk/images/customize-title-menu-uk.gif",
+          "file": "docs/uk/images/customize-title-menu.gif",
           "sha256": "2210b8c63c676881bdc231252e7270b60c1c07352ec49c88a058b96935703c12"
         },
         {
-          "file": "docs/uk/images/customized-title-menu-uk.png",
+          "file": "docs/uk/images/customized-title-menu.png",
           "sha256": "1c5520e88768daeaa97bdb5d7e4a52d149c46971d8afbef4bcbd24160037bd9b"
         },
         {
-          "file": "docs/uk/images/display-uk.png",
+          "file": "docs/uk/images/display.png",
           "sha256": "96ff86fdba01fc693942ea214039ffc6740a9739063bf6089a4556a24ccfed62"
         },
         {
-          "file": "docs/uk/images/everything-search-uk.png",
+          "file": "docs/uk/images/everything-search.png",
           "sha256": "943991e6005669df8ecfff641671d785c60d5277cedf09bb429803c402dca868"
         },
         {
-          "file": "docs/uk/images/locked-title-uk.png",
+          "file": "docs/uk/images/locked-title.png",
           "sha256": "31968a700ead2eeb54bb8fcd8e1cd6c7cd116c3604100f3d20e1b36d64e4017e"
         },
         {
-          "file": "docs/uk/images/mixed-sorting-uk.png",
+          "file": "docs/uk/images/mixed-sorting.png",
           "sha256": "a7dcb0b74de3c2a42326363708d5753f0642130d3d8309af2957e30aff4ba2b8"
         },
         {
-          "file": "docs/uk/images/move-window-uk.gif",
+          "file": "docs/uk/images/move-window.gif",
           "sha256": "f97664a90dbaf18058b632b373b3d5174da62db3dd0337993ba8144b2e206fdf"
         },
         {
-          "file": "docs/uk/images/nilesoft-main-menu-adapted-uk.png",
+          "file": "docs/uk/images/nilesoft-main-menu-adapted.png",
           "sha256": "4b4da3a3ff1f3e50eaed903526591d2ba3b22544fe729934e2c371ea7fcb5b4d"
         },
         {
-          "file": "docs/uk/images/nilesoft-main-menu-default-uk.png",
+          "file": "docs/uk/images/nilesoft-main-menu-default.png",
           "sha256": "e59d713a6cbf8210a545f2ea71dc790b417ea22fce3adbde609560009e3311e2"
         },
         {
-          "file": "docs/uk/images/nilesoft-navigation-adapted-uk.png",
+          "file": "docs/uk/images/nilesoft-navigation-adapted.png",
           "sha256": "71c1bbd03703fd2916ecaef8a09afb4eea61732ca9427ce4e0977eb64095e264"
         },
         {
-          "file": "docs/uk/images/nilesoft-navigation-default-uk.png",
+          "file": "docs/uk/images/nilesoft-navigation-default.png",
           "sha256": "2643738f2eaf7244a4fffb2389382126258e3477354164712cbc2f0db58a7203"
         },
         {
-          "file": "docs/uk/images/overview-uk.png",
+          "file": "docs/uk/images/overview.png",
           "sha256": "ab2697240fb2b3926245ba093f75a63ad526d74052b640cc5460ef523f0b5acb"
         },
         {
-          "file": "docs/uk/images/resize-window-uk.gif",
+          "file": "docs/uk/images/resize-window.gif",
           "sha256": "4bc24d37cad76356ac74a6cf587ad45f3835da024ac4f9c8e6faa15a08708f43"
         },
         {
-          "file": "docs/uk/images/search-uk.png",
+          "file": "docs/uk/images/search.png",
           "sha256": "c803f6a37a4874dcc157c8c620b01118caf544929fcc1eeaa6471b44784b898c"
         },
         {
-          "file": "docs/uk/images/selected-name-uk.png",
+          "file": "docs/uk/images/selected-name.png",
           "sha256": "33e25c5a0daeab6a69c8fc1199d852de0e33361b518344209f09c4d752cc1f6d"
         },
         {
-          "file": "docs/uk/images/spatial-windows-uk.png",
+          "file": "docs/uk/images/spatial-windows.png",
           "sha256": "597ff3e25e2923e6e056450805f610ad38dc0852aaf8ad6e1b47f46ac4a1d7b6"
         },
         {
-          "file": "docs/uk/images/window-menu-uk.png",
+          "file": "docs/uk/images/window-menu.png",
           "sha256": "e067cca957eee2e87ba6965999ebcf9ed6ce3df25bf1e83a5b2cfc5dcc471ecb"
         }
       ]
@@ -524,67 +524,67 @@
       "captured": "2026-11-04T21:02:28.8360026Z",
       "files": [
         {
-          "file": "docs/de/images/customize-title-menu-de.gif",
+          "file": "docs/de/images/customize-title-menu.gif",
           "sha256": "ac1d2546aad88fbfe807b589147f7ddcfca9f033abc82349f7a45a940368581a"
         },
         {
-          "file": "docs/de/images/customized-title-menu-de.png",
+          "file": "docs/de/images/customized-title-menu.png",
           "sha256": "d3fb74b769dab049c0883abf70ce1cf5f90782f71764958cdc3c68685c70e019"
         },
         {
-          "file": "docs/de/images/everything-search-de.png",
+          "file": "docs/de/images/everything-search.png",
           "sha256": "3d7e05204037cd5ca3225b7920b1de86a3f82b8c375fe5a8f68e5f5e6e321f0e"
         },
         {
-          "file": "docs/de/images/locked-title-de.png",
+          "file": "docs/de/images/locked-title.png",
           "sha256": "68f12389c9803a87772649b6cc2609f2d5e0e792a8558551458ed629d885fade"
         },
         {
-          "file": "docs/de/images/mixed-sorting-de.png",
+          "file": "docs/de/images/mixed-sorting.png",
           "sha256": "1358188358011728ed1f93f4b180f23fa4231d73ffc262e12f5e3da21fcf75ee"
         },
         {
-          "file": "docs/de/images/move-window-de.gif",
+          "file": "docs/de/images/move-window.gif",
           "sha256": "d53dfe2b22b448e92ddeed36fd0e85c6f6e1677698e8b717afaa9c2b1e46661f"
         },
         {
-          "file": "docs/de/images/nilesoft-main-menu-adapted-de.png",
+          "file": "docs/de/images/nilesoft-main-menu-adapted.png",
           "sha256": "862591f4660c275dde659de6b3de107bd390198a17eaa8f1efcec7346f585de1"
         },
         {
-          "file": "docs/de/images/nilesoft-main-menu-default-de.png",
+          "file": "docs/de/images/nilesoft-main-menu-default.png",
           "sha256": "29b62f6333ea58ea144f7f1f59614a8a6674156fcc908f2dff0c813746eb15cc"
         },
         {
-          "file": "docs/de/images/nilesoft-navigation-adapted-de.png",
+          "file": "docs/de/images/nilesoft-navigation-adapted.png",
           "sha256": "529267b2fbfa8814ca10003d54654f79f8661b10404a0a72f9e86ef6828cc991"
         },
         {
-          "file": "docs/de/images/nilesoft-navigation-default-de.png",
+          "file": "docs/de/images/nilesoft-navigation-default.png",
           "sha256": "8cd1dd150612abc015c3d3d02436316a4c568bb9d9dff210e8566eac8511b390"
         },
         {
-          "file": "docs/de/images/overview-de.png",
+          "file": "docs/de/images/overview.png",
           "sha256": "6ab54d894134fb8a064f8b52c9d6340cc70d1314ca8bbb6db986dc29aaf5d04a"
         },
         {
-          "file": "docs/de/images/resize-window-de.gif",
+          "file": "docs/de/images/resize-window.gif",
           "sha256": "7e2e0b08f091075aa60c45f31cdb9603d30940ff781e0fc0cb538bb73193bf1b"
         },
         {
-          "file": "docs/de/images/search-de.png",
+          "file": "docs/de/images/search.png",
           "sha256": "b2390a7d2e12bcbe60df58e1172ef915280a08080e45ceea29f06f7d69985267"
         },
         {
-          "file": "docs/de/images/selected-name-de.png",
+          "file": "docs/de/images/selected-name.png",
           "sha256": "2101eca45be127e997330297469c2cdecf5e3dc82a38dd34c7f0a55058cf5aab"
         },
         {
-          "file": "docs/de/images/spatial-windows-de.png",
+          "file": "docs/de/images/spatial-windows.png",
           "sha256": "e94e01da657141d7beb7b7b1bc017af12bf389b6b64d3afbe95c98eebc6f0cfe"
         },
         {
-          "file": "docs/de/images/window-menu-de.png",
+          "file": "docs/de/images/window-menu.png",
           "sha256": "6953cd814eb70442463e645713d519aefb07d03a8f15a9f42dc1c62759255ac5"
         }
       ]
@@ -596,67 +596,67 @@
       "captured": "2026-11-04T21:09:06.3322128Z",
       "files": [
         {
-          "file": "docs/it/images/customize-title-menu-it.gif",
+          "file": "docs/it/images/customize-title-menu.gif",
           "sha256": "609f62e321f40f879876bf3268ed53a37944d14a35e99e7fddf40153bd371a2d"
         },
         {
-          "file": "docs/it/images/customized-title-menu-it.png",
+          "file": "docs/it/images/customized-title-menu.png",
           "sha256": "b656162f3d211503b2c349ee3192147c80404c5c7e4e1b8d52f05dd0a817af9d"
         },
         {
-          "file": "docs/it/images/everything-search-it.png",
+          "file": "docs/it/images/everything-search.png",
           "sha256": "b27ad9fca2c0f838cc42e84332356c569a0d09728872fa20d1560d5b87d9f3b8"
         },
         {
-          "file": "docs/it/images/locked-title-it.png",
+          "file": "docs/it/images/locked-title.png",
           "sha256": "b158e049506fbf63768abd4962a431237c2afecea1a5ffbd7c37fb425bfc95aa"
         },
         {
-          "file": "docs/it/images/mixed-sorting-it.png",
+          "file": "docs/it/images/mixed-sorting.png",
           "sha256": "43fb257023daff4f50bd7b91b1d4c4103c758a932ffb61ceff6346dfc2711288"
         },
         {
-          "file": "docs/it/images/move-window-it.gif",
+          "file": "docs/it/images/move-window.gif",
           "sha256": "6e2e8d599924d720bd185061eddb38e0b4a6b33a2bb125402a418a1bbd800737"
         },
         {
-          "file": "docs/it/images/nilesoft-main-menu-adapted-it.png",
+          "file": "docs/it/images/nilesoft-main-menu-adapted.png",
           "sha256": "5e125f9c9a99e753690c2be481c9875efd0bff445e9f2b4f71d87a509ed9602c"
         },
         {
-          "file": "docs/it/images/nilesoft-main-menu-default-it.png",
+          "file": "docs/it/images/nilesoft-main-menu-default.png",
           "sha256": "b07a6488a2dd9eae87c5fc87952cd1c300b8771d2c951b6ff915de4120b8e587"
         },
         {
-          "file": "docs/it/images/nilesoft-navigation-adapted-it.png",
+          "file": "docs/it/images/nilesoft-navigation-adapted.png",
           "sha256": "abe3143aac304a415c27c900bd5cb4cf7fab5e90fdc492914ce3575082ea3cc0"
         },
         {
-          "file": "docs/it/images/nilesoft-navigation-default-it.png",
+          "file": "docs/it/images/nilesoft-navigation-default.png",
           "sha256": "9234ce399a36d77b2e3272dfe861a500d54c75a035d8919a6f79383611ec8643"
         },
         {
-          "file": "docs/it/images/overview-it.png",
+          "file": "docs/it/images/overview.png",
           "sha256": "957e20299e7f78145bf866f2006d2d2c534814def84acc014f7894621d4923c2"
         },
         {
-          "file": "docs/it/images/resize-window-it.gif",
+          "file": "docs/it/images/resize-window.gif",
           "sha256": "db2c9c73dc37378a5d82027ff4536a8834949b20229d1671471243d61eab5581"
         },
         {
-          "file": "docs/it/images/search-it.png",
+          "file": "docs/it/images/search.png",
           "sha256": "2ae91783cd8f5ff6db5faecb983eb0095404fa43a7af23093511e294fe9d027d"
         },
         {
-          "file": "docs/it/images/selected-name-it.png",
+          "file": "docs/it/images/selected-name.png",
           "sha256": "cda900bb609897cfd4ad78660f9a5109aa457e3d21f9b0e39fb5b6a61978769a"
         },
         {
-          "file": "docs/it/images/spatial-windows-it.png",
+          "file": "docs/it/images/spatial-windows.png",
           "sha256": "191240a0293d76f5db1bc11cd31bb47aad5731c83a1cc7a875c72de87ca04f6b"
         },
         {
-          "file": "docs/it/images/window-menu-it.png",
+          "file": "docs/it/images/window-menu.png",
           "sha256": "d7fbbe21426ac6cfdd03c69f92c5a5b115e0e0006b07acb605a9061651c0e49b"
         }
       ]
@@ -668,67 +668,67 @@
       "captured": "2026-11-04T21:15:03.3776338Z",
       "files": [
         {
-          "file": "docs/es/images/customize-title-menu-es.gif",
+          "file": "docs/es/images/customize-title-menu.gif",
           "sha256": "31c5e17fd8dbb64b7b6ec2c547c54f1d8ba5994453237160a8ec7a1a505907d7"
         },
         {
-          "file": "docs/es/images/customized-title-menu-es.png",
+          "file": "docs/es/images/customized-title-menu.png",
           "sha256": "ab7c40991a91924eb3807672ccf0dda6fc284cf08342354b5dc2c041b3a263b9"
         },
         {
-          "file": "docs/es/images/everything-search-es.png",
+          "file": "docs/es/images/everything-search.png",
           "sha256": "53e423fc74096660d7ee8d282cc00940d38ff1aac3ce1bcb81e8a669dc9c752e"
         },
         {
-          "file": "docs/es/images/locked-title-es.png",
+          "file": "docs/es/images/locked-title.png",
           "sha256": "a1204c548be3207c372cc9b18db8f86fa400ee07bb86205556f33c1e4d843323"
         },
         {
-          "file": "docs/es/images/mixed-sorting-es.png",
+          "file": "docs/es/images/mixed-sorting.png",
           "sha256": "8ae1d99674e950ccae4260f28f02f3d7dfeed5bc3048fec5eb72f4bc65947b3a"
         },
         {
-          "file": "docs/es/images/move-window-es.gif",
+          "file": "docs/es/images/move-window.gif",
           "sha256": "6b143837145a2aa1de2e8c998e94c87e32b711f444735a3788dc10847dafa52f"
         },
         {
-          "file": "docs/es/images/nilesoft-main-menu-adapted-es.png",
+          "file": "docs/es/images/nilesoft-main-menu-adapted.png",
           "sha256": "61aee49d788bb721fa3a07c3173bd961cecf5f37830d28ec1ab8932ba6b40481"
         },
         {
-          "file": "docs/es/images/nilesoft-main-menu-default-es.png",
+          "file": "docs/es/images/nilesoft-main-menu-default.png",
           "sha256": "9b895bf154b862bed60411e3dc90bef1b2ed55e545478d1df7c62aa777cbcd47"
         },
         {
-          "file": "docs/es/images/nilesoft-navigation-adapted-es.png",
+          "file": "docs/es/images/nilesoft-navigation-adapted.png",
           "sha256": "4a1d4d3fbe6d745ce706bd586b3cb43ff3608c494ec4908aa56df5522fb0dfac"
         },
         {
-          "file": "docs/es/images/nilesoft-navigation-default-es.png",
+          "file": "docs/es/images/nilesoft-navigation-default.png",
           "sha256": "33c4dcd860f3e1ebbedc92d9a14068176dafff67825d97bbed5248dde165f0a2"
         },
         {
-          "file": "docs/es/images/overview-es.png",
+          "file": "docs/es/images/overview.png",
           "sha256": "3055bc3c184cc282f7fbd5d08d61d06b0209d50e242aa4673802ace59860024e"
         },
         {
-          "file": "docs/es/images/resize-window-es.gif",
+          "file": "docs/es/images/resize-window.gif",
           "sha256": "104bb872eac0532b41d7cb4a5c07ed042fa92c4537cc48a780bbdee47ddf1433"
         },
         {
-          "file": "docs/es/images/search-es.png",
+          "file": "docs/es/images/search.png",
           "sha256": "3c3dcf7725d77fa380eb8624479288564e7ea2e9d2b5b79f9dbe69e5f31a9c02"
         },
         {
-          "file": "docs/es/images/selected-name-es.png",
+          "file": "docs/es/images/selected-name.png",
           "sha256": "aa5a99860ca5d01452636879af4fb9ed8742947afd6f132e79d3f1414ee4cde1"
         },
         {
-          "file": "docs/es/images/spatial-windows-es.png",
+          "file": "docs/es/images/spatial-windows.png",
           "sha256": "8a59e02b8c2153445f61d817609158194c5e67505fbbc3eb4a51fd707c47026f"
         },
         {
-          "file": "docs/es/images/window-menu-es.png",
+          "file": "docs/es/images/window-menu.png",
           "sha256": "325ded9ac717cd1706425315d2d7173f79293b2d18ded2eb08e482db85c933d3"
         }
       ]
