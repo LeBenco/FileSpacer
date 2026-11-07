@@ -1,6 +1,7 @@
 #include "FolderWindow.h"
 #include "ShellViewSettings.h"
 #include "ShellViewSelection.h"
+#include "ShellSelectionRuntime.h"
 #include "MixedFolder.h"
 #include "ShellViewIcons.h"
 #include "ShellViewFilter.h"
@@ -281,7 +282,7 @@ struct FolderWindow::ViewMenuPreview {
         }
         if (current()) {
             auto selection = initial.selection;
-            checkHR(restoreReopenSelection(source, selection, valid));
+            checkHR(restoreReopenSelection(source, selection, valid, &owner.selectionClear));
         }
         owner.resumeDeferredClose();
     }
@@ -663,7 +664,7 @@ bool FolderWindow::recoverProvisionalView() {
             if (SUCCEEDED(result)) recoveredState->icons.swap(pruned);
         }
         if (!current()) return false;
-        const HRESULT selectionResult = restoreReopenSelection(source, recoveredState->selection, current);
+        const HRESULT selectionResult = restoreReopenSelection(source, recoveredState->selection, current, &selectionClear);
         if (!current()) return false;
         restoringState = false;
         checkHR(selectionResult); // Selection failure cannot invalidate the known state or keep input disabled.
@@ -956,7 +957,9 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
                     if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
                 }
                 if (click.wParam & MK_CONTROL) {
-                    checkHR(view->SelectItem(nullptr, SVSI_DESELECTOTHERS));
+                    checkHR(selectionClear.clear(view, [&]() {
+                        return isWindowOperational() && shellView == view && viewGeneration == generation;
+                    }));
                     if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
                     for (const auto &id : previousSelection) {
                         checkHR(view->SelectItem(id, SVSI_SELECT | SVSI_NOTAKEFOCUS));
@@ -1579,7 +1582,7 @@ void FolderWindow::restoreReopenViewState() {
     CComPtr<IShellView> view = shellView;
     const ULONG_PTR generation = viewGeneration;
     auto valid = [&]() { return isWindowOperational() && shellView == view && viewGeneration == generation; };
-    checkHR(restoreReopenSelection(view, bytes, valid));
+    checkHR(restoreReopenSelection(view, bytes, valid, &selectionClear));
     if (valid()) updateSelection();
 }
 
@@ -1608,6 +1611,7 @@ void FolderWindow::onDestroy() {
     }
     // Release cached Shell interfaces even if an external COM client keeps
     // the host object alive after its native window has closed.
+    selectionClear.reset();
     shellView.Release();
     selected.Release();
     viewReady = false;
@@ -2129,7 +2133,13 @@ void FolderWindow::resumeDeferredClose() {
     deferredCloseMessage = 0;
     if (closeMessage)
         checkLE(PostMessageW(hwnd, closeMessage, 0, 0));
-    else if (viewProfilePending) requestViewProfile();
+    else {
+        if (selectionBindingPending) {
+            selectionBindingPending = false;
+            checkLE(PostMessageW(hwnd, selectionDetail::readyMessage(), 0, 0));
+        }
+        if (viewProfilePending) requestViewProfile();
+    }
 }
 
 // Verbs of the view's own menus (Refresh, New) reload the view and dispatch
@@ -2169,6 +2179,19 @@ bool FolderWindow::isBackgroundActivationClick(const MSG *msg) const {
 
 LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     CComPtr<ItemWindow> messageKeepAlive(this);
+    if (message >= 0xC000 && message == selectionDetail::readyMessage()) {
+        if (!isWindowOperational()) return 0;
+        if (navigationDepth) { selectionBindingPending = true; return 0; }
+        if (viewReady && initialStateApplied && shellView) {
+            CComPtr<IShellView> view = shellView;
+            const ULONG_PTR generation = viewGeneration;
+            auto current = [&] { return isWindowOperational() && shellView == view && viewGeneration == generation; };
+            ++navigationDepth;
+            selectionClear.bind(view, current);
+            resumeDeferredClose();
+        }
+        return 0;
+    }
     if (message == MSG_EXPIRE_FOLDER_STATE && provisionalBaseline) {
         const LRESULT result = ItemWindow::handleMessage(message, wParam, lParam); // Invalidates the key first.
         provisionalBaseline.reset(); provisionalCurrent.reset(); provisionalRestore.reset();
@@ -2500,9 +2523,19 @@ void FolderWindow::updateStatus() {
 }
 
 void FolderWindow::clearSelection() {
-    if (shellView)
-        checkHR(shellView->SelectItem(nullptr, SVSI_DESELECTOTHERS)); // keep focus
-    selected = nullptr; // in case this happened in the background
+    CComPtr<ItemWindow> keepAlive(this);
+    CComPtr<IShellView> view = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    auto current = [&]() {
+        return isWindowOperational() && shellView == view && viewGeneration == generation;
+    };
+    if (!current()) return;
+    if (view) {
+        ++navigationDepth;
+        checkHR(selectionClear.clear(view, current)); // keep logical and keyboard focus
+        resumeDeferredClose();
+    }
+    if (current()) selected = nullptr; // in case this happened in the background
 }
 
 IDispatch * FolderWindow::getShellViewDispatch() {
@@ -2540,6 +2573,7 @@ void FolderWindow::onItemChanged() {
         }
 
         checkHR(viewHost.stopObserving());
+        selectionClear.reset();
         shellView = nullptr;
         checkHR(viewHost.lockNavigation(false)); // temporarily enable navigation
         HRESULT hr = browseToItem();
@@ -3202,6 +3236,7 @@ STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
     debugPrintf(L"NATIVE HWND=%p OnNavigationPending\n", hwnd);
     checkHR(viewHost.stopObserving());
     viewGeneration = 0;
+    selectionClear.reset();
     provisionalViewWindow = nullptr; // The previous view's HWND may be reused.
     viewReady = false;
     initialEnumerationReady = false;
@@ -3247,6 +3282,7 @@ STDMETHODIMP FolderWindow::OnNavigationFailed(PCIDLIST_ABSOLUTE) {
 STDMETHODIMP FolderWindow::OnViewCreated(IShellView *const view) {
     CComPtr<ItemWindow> keepAlive(this);
     debugPrintf(L"NATIVE HWND=%p OnViewCreated\n", hwnd);
+    selectionClear.reset();
     shellView = view;
     iconChangeBaseline.reset();
     iconRestoreFailed = false;
@@ -3568,6 +3604,8 @@ void FolderWindow::finishViewInitialization() {
     const bool initial = !initialStateApplied;
     initialStateApplied = true;
     if (initial) {
+        selectionClear.bind(view, current);
+        if (!current()) return;
         CComQIPtr<IFolderView> folderView(view);
         if (!folderView || !current()) return;
         spatialLayout = spatialView(folderView);
@@ -3588,7 +3626,7 @@ void FolderWindow::finishViewInitialization() {
                     iconRestoreResult(result);
                 }
                 if (!current()) return;
-                checkHR(restoreReopenSelection(view, state->selection, current));
+                checkHR(restoreReopenSelection(view, state->selection, current, &selectionClear));
                 if (!current()) return;
                 restoringState = false;
             }
