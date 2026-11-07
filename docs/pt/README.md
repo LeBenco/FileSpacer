@@ -37,16 +37,9 @@ _O FileSpacer é uma derivação do [ChromaFiler](https://github.com/vanjac/chro
 
 ## Funcionalidades
 
-- **Uma janela por pasta**, reativada se a pasta já estiver aberta. A posição, o tamanho, as definições de apresentação e a disposição dos ícones são mantidos entre aberturas. [Navegação espacial](user-guide.md#navegação-entre-janelas).
-- **Evitar a acumulação de janelas**: ao abrir uma pasta, a janela de origem é fechada por predefinição. [Navegação entre janelas](user-guide.md#navegação-entre-janelas).
-- **Disponha os ícones livremente**, com posições guardadas e restauradas para cada pasta. [Disposição dos ícones](user-guide.md#disposição-dos-ícones).
-- **Mova e redimensione as janelas** a partir de qualquer ponto da área de ficheiros, mantendo a seleção. Os gestos do rato são configuráveis, com Alt + arrastar com o botão esquerdo e Alt + arrastar com o botão direito por predefinição. [Gestos de janela](user-guide.md#movimento-e-redimensionamento).
-- **Alterne entre pastas abertas** através do menu da barra de título, feche as janelas das pastas superiores ou reabra a última janela fechada com Ctrl+Shift+T. [Navegação entre janelas](user-guide.md#navegação-entre-janelas).
-- **Bloqueie o estado guardado de uma janela**, mantendo a possibilidade de alterar temporariamente a posição, o tamanho e a apresentação. [Bloqueio do estado das janelas](user-guide.md#bloqueio-do-estado-guardado).
-- **Filtre a pasta atual** e reutilize as pesquisas recentes. [Pesquisa e histórico](user-guide.md#pesquisa-e-histórico).
-- **Conserve a seleção ao ativar uma janela** clicando no fundo. [Seleção e ativação](user-guide.md#seleção-e-ativação).
-- **Reduza a sobreposição das janelas** ao abrir pastas sem posição guardada. [Posicionamento das janelas](user-guide.md#posicionamento-das-janelas).
-- **Personalizar o menu da barra de título** com ações para janelas e disposições e guardar grupos de pastas abertas. [Personalização do menu](user-guide.md#personalizar-o-menu-da-barra-de-título) · [Grupos de pastas](user-guide.md#grupos-de-pastas).
+- **[Uma janela por pasta](user-guide.md#navegação-entre-janelas)**. A posição, o tamanho, o modo de apresentação e as posições dos ícones são memorizados. Os ícones podem ser dispostos livremente ou alinhados pela [grelha clássica](user-guide.md#disposição-dos-ícones).
+- **Organização automática das janelas**. Ao abrir outra pasta, a janela de origem é fechada por predefinição. As janelas sem posição guardada são colocadas de forma a [limitar a sobreposição](user-guide.md#posicionamento-das-janelas).
+- **Gerir as janelas**. Mover ou redimensionar as janelas com [gestos do rato](user-guide.md#movimento-e-redimensionamento). Guardar e reabrir [grupos de pastas](user-guide.md#grupos-de-pastas). [Bloquear a disposição das janelas](user-guide.md#bloqueio-do-estado-guardado).
 
 ## Integração
 

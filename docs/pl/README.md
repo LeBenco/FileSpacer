@@ -36,16 +36,9 @@ _FileSpacer jest forkiem [ChromaFiler](https://github.com/vanjac/chromafiler), p
 
 ## Funkcje
 
-- **Jedno okno na folder**, używane ponownie, gdy folder jest otwarty. Przywracane są położenie, rozmiar, ustawienia widoku i układ ikon. [Nawigacja przestrzenna](user-guide.md#nawigacja-między-oknami).
-- **Ograniczanie liczby otwartych okien**: otwarcie folderu domyślnie zamyka okno źródłowe. [Nawigacja między oknami](user-guide.md#nawigacja-między-oknami).
-- **Dowolne rozmieszczanie ikon**, z zapisem i przywracaniem dla każdego folderu. [Układ ikon](user-guide.md#układ-ikon).
-- **Przenoszenie i zmiana rozmiaru okien** z dowolnego miejsca obszaru plików, z zachowaniem zaznaczenia. Gesty myszy są konfigurowalne. Domyślne to Alt + lewy i Alt + prawy przycisk z przeciągnięciem. [Gesty okna](user-guide.md#przenoszenie-i-zmiana-rozmiaru).
-- **Przełączanie otwartych folderów** z menu tytułu, zamykanie okien nadrzędnych i ponowne otwieranie ostatniego zamkniętego okna przez Ctrl+Shift+T. [Nawigacja](user-guide.md#nawigacja-między-oknami).
-- **Blokowanie zapisanego układu okna**, z możliwością tymczasowych zmian położenia, rozmiaru i widoku. [Blokowanie](user-guide.md#blokowanie-zapisanego-układu).
-- **Filtrowanie bieżącego folderu** i ponowne użycie ostatnich wyszukiwań. [Wyszukiwanie i historia](user-guide.md#wyszukiwanie-i-historia).
-- **Zachowanie zaznaczenia przy aktywacji okna** kliknięciem tła. [Zaznaczenie i aktywacja](user-guide.md#zaznaczenie-i-aktywacja).
-- **Ograniczenie nakładania okien** folderów bez zapisanego położenia. [Rozmieszczanie](user-guide.md#rozmieszczanie-okien).
-- **Dostosowanie menu paska tytułu** działaniami układu i okien oraz zapisywanie nazwanych grup folderów. [Menu](user-guide.md#dostosowanie-menu-paska-tytułu) · [Grupy](user-guide.md#grupy-folderów).
+- **[Jedno okno na folder](user-guide.md#nawigacja-między-oknami)**. Położenie, rozmiar, tryb widoku i pozycje ikon są zapamiętywane. Ikony można rozmieszczać dowolnie lub wyrównywać do [klasycznej siatki](user-guide.md#układ-ikon).
+- **Automatyczne rozmieszczanie okien**. Otwarcie innego folderu domyślnie zamyka okno źródłowe. Okna bez zapisanego położenia są rozmieszczane tak, aby [ograniczyć ich nakładanie się](user-guide.md#rozmieszczanie-okien).
+- **Zarządzanie oknami**. Przenoszenie i zmiana rozmiaru okien za pomocą [gestów myszy](user-guide.md#przenoszenie-i-zmiana-rozmiaru). Zapisywanie i ponowne otwieranie [grup folderów](user-guide.md#grupy-folderów). [Blokowanie układu okien](user-guide.md#blokowanie-zapisanego-układu).
 
 ## Integracja
 

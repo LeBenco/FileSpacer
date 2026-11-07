@@ -36,33 +36,9 @@ _FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler), o
 
 ## Features
 
-- **One window per folder**, reused if the folder is already open. Its position,
-  size, view settings and icon layout are restored between visits.
-  [Spatial navigation](docs/en/user-guide.md#window-navigation).
-- **Keep the number of open windows in check**: opening a folder closes the
-  source window by default.
-  [Window navigation](docs/en/user-guide.md#window-navigation).
-- **Arrange icons freely**, with their positions saved and restored for each
-  folder. [Icon layout](docs/en/user-guide.md#icon-layout).
-- **Move and resize windows** from anywhere in the file area, preserving
-  selection. Mouse shortcuts are configurable. Defaults are Alt + left drag
-  and Alt + right drag. [Window gestures](docs/en/user-guide.md#moving-and-resizing).
-- **Switch between open folders** from the title-bar menu, close parent
-  windows, or reopen the last closed window with Ctrl+Shift+T.
-  [Window navigation](docs/en/user-guide.md#window-navigation).
-- **Lock a window's saved layout** while allowing temporary changes to its
-  position, size and view settings.
-  [Window state locking](docs/en/user-guide.md#locking-a-saved-layout).
-- **Filter the current folder** and reuse its recent searches.
-  [Search and history](docs/en/user-guide.md#search-and-history).
-- **Preserve selection when activating a window** by clicking its background.
-  [Selection and activation](docs/en/user-guide.md#selection-and-activation).
-- **Reduce overlap between windows** when opening folders without a saved
-  position. [Window placement](docs/en/user-guide.md#window-placement).
-- **Customize the title-bar menu** with layout and window actions, and save
-  named groups of open folders.
-  [Menu customization](docs/en/user-guide.md#customize-the-title-bar-menu) ·
-  [Folder groups](docs/en/user-guide.md#folder-groups).
+- **[One window per folder](docs/en/user-guide.md#window-navigation)**. Its position, size, view mode and icon positions are remembered. Icons can be arranged freely or aligned to the [standard positioning grid](docs/en/user-guide.md#icon-layout).
+- **Automatic window organization**. Opening another folder closes the source window by default. Windows without a saved position are placed to [limit overlap](docs/en/user-guide.md#window-placement).
+- **Manage windows**. Move or resize windows using [mouse shortcuts](docs/en/user-guide.md#moving-and-resizing). Save and reopen [groups of folders](docs/en/user-guide.md#folder-groups). [Lock window layouts](docs/en/user-guide.md#locking-a-saved-layout).
 
 ## Integration
 
