@@ -36,7 +36,7 @@ _FileSpacer jest forkiem [ChromaFiler](https://github.com/vanjac/chromafiler), p
 
 ## Funkcje
 
-- **[Jedno okno na folder](user-guide.md#nawigacja-między-oknami)**. Położenie, rozmiar, tryb widoku i pozycje ikon są zapamiętywane. Ikony można rozmieszczać dowolnie lub wyrównywać do [klasycznej siatki](user-guide.md#układ-ikon).
+- **Jedno okno na folder**. Położenie, rozmiar, tryb widoku i pozycje ikon [są zapamiętywane](user-guide.md#nawigacja-między-oknami). Ikony można rozmieszczać dowolnie lub wyrównywać do [klasycznej siatki](user-guide.md#układ-ikon).
 - **Automatyczne rozmieszczanie okien**. Otwarcie innego folderu domyślnie zamyka okno źródłowe. Okna bez zapisanego położenia są rozmieszczane tak, aby [ograniczyć ich nakładanie się](user-guide.md#rozmieszczanie-okien).
 - **Zarządzanie oknami**. Przenoszenie i zmiana rozmiaru okien za pomocą [gestów myszy](user-guide.md#przenoszenie-i-zmiana-rozmiaru). Zapisywanie i ponowne otwieranie [grup folderów](user-guide.md#grupy-folderów). [Blokowanie układu okien](user-guide.md#blokowanie-zapisanego-układu).
 
