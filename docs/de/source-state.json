@@ -132,11 +132,15 @@
       ]
     },
     "CHANGELOG.md": {
-      "sourceHash": "5e0365a4efcee539696a55659e730a106140563e58abbf2886dcfcfddb18af4e",
+      "sourceHash": "5dc0b5fa99bff27afecaea59cddb454cc1f6e6814536955a503f1b665ac3a370",
       "headings": [
         [
           "changelog",
           2
+        ],
+        [
+          "unreleased",
+          3
         ],
         [
           "132--2026-11-04",
