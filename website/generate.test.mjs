@@ -22,7 +22,7 @@ async function fixture(t) {
     await fs.writeFile(path.join(root, source), content);
   }
   await fs.cp(path.join(repository, 'docs/en/images'), path.join(root, 'docs/images'), {recursive: true});
-  await fs.copyFile(path.join(repository, 'docs/fr/images/spatial-windows-fr.png'), path.join(root, 'docs/images/spatial-windows-fr.png'));
+  await fs.copyFile(path.join(repository, 'docs/fr/images/spatial-windows.png'), path.join(root, 'docs/images/spatial-windows-fr.png'));
   return root;
 }
 test('real documents keep guide nesting, local anchors, images and GitHub references', async t => {
@@ -62,7 +62,7 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
   assert.equal(screenshots.length, [...html.matchAll(/<img\b[^>]*src="[^"]+\.(?:png|gif)\?v=[a-f0-9]{12}"/g)].length);
   assert.ok(screenshots.length > 0);
   assert.ok(screenshots.every(([link]) => !link.includes('.svg')));
-  assert.match(html, /screenshot-link" href="assets\/content\/docs\/en\/images\/spatial-windows\.png\?v=[a-f0-9]{12}"/);
+  assert.match(html, /screenshot-link" href="assets\/content\/docs\/images\/spatial-windows\.png\?v=[a-f0-9]{12}"/);
   await fs.access(path.join(output, 'assets/content/src/res/FileSpacer.svg'));
 });
 
@@ -138,9 +138,11 @@ test('language directories use the root English README and require their own ima
   assert.match(english, /Canonical root README/);
   assert.doesNotMatch(english, /Not the project overview/);
   const french = await fs.readFile(path.join(output, '_locales/fr-FR/index.html'), 'utf8');
-  assert.match(french, /assets\/content\/docs\/fr\/images\/spatial-windows-fr\.png/);
-  assert.doesNotMatch(french, /assets\/content\/docs\/en\/images\//);
-  await fs.unlink(path.join(root, 'docs/fr/images/spatial-windows-fr.png'));
+  assert.match(french, /assets\/content\/docs\/images\/spatial-windows\.png/);
+  const localized = await fs.readFile(path.join(output, '_locales/fr-FR/assets/content/docs/images/spatial-windows.png'));
+  assert.deepEqual(localized, await fs.readFile(path.join(root, 'docs/fr/images/spatial-windows.png')));
+  assert.notDeepEqual(localized, await fs.readFile(path.join(root, 'docs/en/images/spatial-windows.png')));
+  await fs.unlink(path.join(root, 'docs/fr/images/spatial-windows.png'));
   await assert.rejects(generate(root, output, {onWarning: () => {}}), /Missing localized media \(fr-FR\)/);
 });
 
@@ -175,6 +177,23 @@ test('explicit HTML anchors and raw HTML links are resolved without cross-docume
   assert.match(html, /data-id="not-an-anchor"/);
   await fs.appendFile(path.join(root, 'README.md'), '\n<a id="custom-anchor"></a>\n');
   await assert.rejects(generate(root, output), /Duplicate source anchor/);
+});
+
+test('explicit English heading anchors survive title edits without adding empty source-anchor paragraphs', async t => {
+  const root = await fixture(t);
+  const file = path.join(root, 'docs/user-guide.md');
+  await fs.appendFile(file, '\n<a id="stable-display-settings"></a>\n\n## Initial wording\n\n[Settings](#stable-display-settings)\n');
+  const output = path.join(root, 'output');
+  await generate(root, output);
+  const first = await fs.readFile(path.join(output, 'index.html'), 'utf8');
+  assert.match(first, /<h3 id="user-guide--stable-display-settings">/);
+  assert.match(first, /href="#user-guide--stable-display-settings"/);
+  assert.doesNotMatch(first, /<p><a id="user-guide--stable-display-settings"><\/a><\/p>/);
+  await fs.writeFile(file, (await fs.readFile(file, 'utf8')).replace('## Initial wording', '## Entirely different wording'));
+  await generate(root, output);
+  const updated = await fs.readFile(path.join(output, 'index.html'), 'utf8');
+  assert.match(updated, /<h3 id="user-guide--stable-display-settings">/);
+  assert.ok(updated.includes('Entirely different wording'));
 });
 
 async function translatedFixture(t) {
@@ -292,8 +311,8 @@ test('all available translations keep recorded section IDs, localized navigation
     assert.ok(html.includes('href="https://github.com/LeBenco/FileSpacer/blob/main/' + reference + '"'), 'Nilesoft reference must use the selected language');
     await fs.access(path.join(repository, reference));
   }
-  const localizedImage = await fs.readFile(path.join(output, '_locales/fr-FR/assets/content/docs/fr/images/spatial-windows-fr.png'));
-  assert.deepEqual(localizedImage, await fs.readFile(path.join(repository, 'docs/fr/images/spatial-windows-fr.png')));
+  const localizedImage = await fs.readFile(path.join(output, '_locales/fr-FR/assets/content/docs/images/spatial-windows.png'));
+  assert.deepEqual(localizedImage, await fs.readFile(path.join(repository, 'docs/fr/images/spatial-windows.png')));
 });
 
 test('a translation with a missing document is rejected rather than partially published', async t => {
