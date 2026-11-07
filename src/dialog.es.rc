@@ -58,16 +58,18 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Mantener la selección al hacer clic en una ventana &inactiva", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 66, 272, 12
   CONTROL "Colocar ventanas &nuevas en espacios libres", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 80, 250, 12
   CONTROL "Información sobre la ubicación de las ventanas", IDC_SMART_WINDOW_PLACEMENT_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 79, 12, 14
-  CONTROL "Bloqueo de ventanas", -1, "Button", BS_GROUPBOX, 7, 100, 286, 44
+  CONTROL "Bloqueo de ventanas", -1, "Button", BS_GROUPBOX, 7, 100, 286, 72
   CONTROL "Activar el &bloqueo del estado de las ventanas", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 111, 272, 12
-  CONTROL "Mostrar un candado en la barra de &título de carpetas bloqueadas", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
-  CONTROL "Cuadro de búsqueda", -1, "Button", BS_GROUPBOX, 7, 148, 286, 52
-  CONTROL "&Filtrar mientras se escribe", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 159, 272, 12
-  LTEXT "Búsquedas recientes por carpeta (0–20; 0 desactiva el historial)", -1, 14, 177, 222, 16
-  EDITTEXT IDC_SEARCH_HISTORY_LIMIT, 246, 176, 40, 14, ES_NUMBER|WS_TABSTOP
-  CONTROL "Barra de tareas", -1, "Button", BS_GROUPBOX, 7, 204, 286, 30
-  CONTROL "A&grupar ventanas de carpetas en la barra de tareas", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 215, 250, 12
-  CONTROL "Información sobre la agrupación en la barra de tareas", IDC_GROUP_FOLDER_WINDOWS_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 214, 12, 14
+  CONTROL "Mostrar un candado abierto en la barra de título", IDC_WINDOW_STATE_UNLOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
+  CONTROL "Mostrar un candado en la barra de &título de carpetas bloqueadas", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 139, 272, 12
+  CONTROL "Cambiar el bloqueo al hacer clic en el icono", IDC_WINDOW_STATE_LOCK_CLICK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 153, 272, 12
+  CONTROL "Cuadro de búsqueda", -1, "Button", BS_GROUPBOX, 7, 176, 286, 52
+  CONTROL "&Filtrar mientras se escribe", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 187, 272, 12
+  LTEXT "Búsquedas recientes por carpeta (0–20; 0 desactiva el historial)", -1, 14, 205, 222, 16
+  EDITTEXT IDC_SEARCH_HISTORY_LIMIT, 246, 204, 40, 14, ES_NUMBER|WS_TABSTOP
+  CONTROL "Barra de tareas", -1, "Button", BS_GROUPBOX, 7, 232, 286, 30
+  CONTROL "A&grupar ventanas de carpetas en la barra de tareas", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 243, 250, 12
+  CONTROL "Información sobre la agrupación en la barra de tareas", IDC_GROUP_FOLDER_WINDOWS_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 242, 12, 14
 }
 
 IDD_SETTINGS_DISPLAY DIALOGEX DISCARDABLE 0, 0, 300, 317
