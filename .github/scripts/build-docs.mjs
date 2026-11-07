@@ -5,6 +5,7 @@ import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {generate} from '../../website/generate.mjs';
+import {fetchReleaseDates} from '../../website/releases.mjs';
 
 const scripts = path.dirname(fileURLToPath(import.meta.url));
 const repository = path.resolve(scripts, '../..');
@@ -114,7 +115,10 @@ export async function installerInclude(output, names) {
 export async function buildDocs(target = 'web', output = buildPath(target === 'web' ? 'build/site' : 'build/offline-docs')) {
   if (!['web', 'offline'].includes(target)) throw new Error('Use --target web or --target offline');
   output = buildPath(output);
-  const sourceHash = await sourceDigest();
+  const releaseDates = target === 'web' ? await fetchReleaseDates() : undefined;
+  const inputsHash = await sourceDigest();
+  const sourceHash = releaseDates
+    ? createHash('sha256').update(inputsHash + '\0' + JSON.stringify(releaseDates)).digest('hex') : inputsHash;
   let cached;
   try {
     cached = JSON.parse(await fs.readFile(path.join(output, 'build-info.json'), 'utf8'));
@@ -137,7 +141,7 @@ export async function buildDocs(target = 'web', output = buildPath(target === 'w
   const available = spawnSync('ruby', ['-S', 'bundle', 'exec', 'jekyll', '--version'], {cwd: scripts, env: environment, stdio: 'pipe'});
   if (available.error || available.status !== 0) throw new Error('Generating documentation requires Ruby and bundle install in .github/scripts. Existing output was preserved.');
   await fs.rm(source, {recursive: true, force: true});
-  const generated = await generate(repository, source);
+  const generated = await generate(repository, source, {releaseDates});
   if (generated.warnings.length && process.env.GITHUB_STEP_SUMMARY) {
     const rows = generated.warnings.map(({language, source}) => `| ${language} | ${source} | Existing translation retained |`);
     await fs.appendFile(process.env.GITHUB_STEP_SUMMARY,
