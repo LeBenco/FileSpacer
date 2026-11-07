@@ -28,6 +28,7 @@ IDR_RT_MANIFEST1 RT_MANIFEST "res\\FileSpacer.exe.manifest"
 
 IDR_APP_ICON    ICON    "res\\FileSpacer.ico"
 IDR_LOCK_BADGE_ICON ICON "res\\window-state-lock.ico"
+IDR_UNLOCK_BADGE_ICON ICON "res\\window-state-unlock.ico"
 
 
 IDR_ITEM_ACCEL  ACCELERATORS {
