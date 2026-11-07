@@ -48,7 +48,9 @@ private:
     void cancelRename();
 
     static LRESULT CALLBACK captionProc(HWND window, UINT message,
-        WPARAM wParam, LPARAM lParam, UINT_PTR id, DWORD_PTR);
+        WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR);
+    static LRESULT CALLBACK lockBadgeProc(HWND window, UINT message,
+        WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR);
 
     // window subclasses
     static LRESULT CALLBACK renameBoxProc(HWND hwnd, UINT message,
