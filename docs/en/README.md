@@ -65,7 +65,9 @@ composition and folder groups are in the Windows Registry under
 including network paths. Temporary update files and the session's folder list
 are under `%TEMP%\FileSpacerUpdate-{GUID}`.
 
-Use the [user guide's reset procedures](user-guide.md#local-data) for maintenance.
+For the in-app reset, see [updates and troubleshooting](user-guide.md#updates-and-troubleshooting).
+For troubleshooting, `FileSpacer.exe /reset-options` resets general preferences.
+`FileSpacer.exe /reset-all` also clears folder state. Neither command deletes files.
 Do not edit a live database or reset production data to prepare regression tests.
 
 ## Focused notes
