@@ -720,7 +720,6 @@ void ItemWindow::toggleStateLock(bool replaceReference) {
         return;
     }
     savedState.present |= captured;
-    layoutForgotten = false;
     viewStateClean(captured);
     storageErrorShown = false;
     updateStateLock();
@@ -728,11 +727,10 @@ void ItemWindow::toggleStateLock(bool replaceReference) {
 }
 
 void ItemWindow::persistViewState() {
-    if (layoutForgotten) return;
     if (stateKey.empty()) return; // No identity, or state expired after qualified access failures.
     if (!loadFolderState() || !updateStateLock()) return; // Do not overwrite unreadable state.
     const uint32_t captured = captureViewState(dirtyViewState);
-    if (!captured || layoutForgotten || stateKey.empty()) return; // Native capture can dispatch expiration/forgetting.
+    if (!captured || stateKey.empty()) return; // Native capture can dispatch expiration.
     auto store = folderStateStore();
     if (store && store->save(stateKey, savedState, captured)) {
         savedState.present |= captured;
@@ -742,19 +740,6 @@ void ItemWindow::persistViewState() {
     } else {
         stateStorageError(); // Failed writes remain dirty for the next event or close.
     }
-}
-
-void ItemWindow::forgetLayout() {
-    CComPtr<ItemWindow> keepAlive(this);
-    if (!isFolder() || !isWindowOperational() || stateKey.empty()) return;
-    if (MessageBoxW(hwnd, getString(IDS_TITLE_FORGET_CONFIRM), getString(IDS_APP_NAME),
-            MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2) != IDYES || !isWindowOperational()) return;
-    auto store = folderStateStore();
-    if (!store || !store->clear(stateKey, FolderState::All)) { stateStorageError(); return; }
-    savedState.present = 0; savedState.view = {}; savedState.icons.clear(); savedState.locked = false;
-    layoutForgotten = true;
-    viewStateClean(FolderState::All);
-    updateStateLock();
 }
 
 uint32_t ItemWindow::captureViewState(uint32_t mask) {
@@ -2796,7 +2781,6 @@ void ItemWindow::openCaptionMenu(POINT pos) {
     if (isFolder()) {
         append(IDM_RESTORE_LAYOUT, getString(IDS_TITLE_MENU_RESTORE), nullptr, stateLocked);
         append(IDM_REPLACE_LAYOUT, getString(IDS_TITLE_MENU_REPLACE), nullptr, stateLocked);
-        append(IDM_FORGET_LAYOUT, getString(IDS_TITLE_MENU_FORGET), nullptr, !stateKey.empty());
         append(IDM_CLOSE_DESCENDANTS, getString(IDS_TITLE_MENU_CLOSE_DESCENDANTS), nullptr, true);
         append(IDM_FIT_CONTENT, getString(IDS_TITLE_MENU_FIT), nullptr, true);
     }
