@@ -357,11 +357,11 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
         const DWORD focusFlags = SVSI_FOCUSED | SVSI_NOTAKEFOCUS | (selectionCase == 0 ? SVSI_SELECT : SVSI_DESELECT);
         if (!checked(folderView->SelectItem(focusIndex, focusFlags), L"set selected or unselected snapshot focus") || !selectionIs()) return false;
         if (!checked(captureReopenSelection(view, current, selectionBlob), L"capture through production reopen-selection code")) return false;
-        if (!expect(selectionBlob.size() >= 20, L"capture retains the existing version-1 header layout")) return false;
+        if (!expect(selectionBlob.size() >= 68, L"capture contains the header and shared viewport")) return false;
         uint32_t header[3] = {};
         std::memcpy(header, selectionBlob.data(), sizeof(header));
-        if (!expect(header[0] == 1 && header[1] == indices.size() && (header[2] == 4 || header[2] == 6),
-                L"version, selection count, optional anchor and focus flags are preserved without a format migration")) return false;
+        if (!expect(header[0] == 3 && header[1] == indices.size() && header[2] == 20,
+                L"version-3 capture preserves the selection count, focus and shared viewport")) return false;
         {
             FolderStateStore store(database.c_str());
             ClosedWindow snapshot;
@@ -407,12 +407,15 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
             skip.QuadPart = 20;
             uint32_t savedFlags = 0;
             std::memcpy(&savedFlags, selectionBlob.data() + 8, sizeof(savedFlags));
+            if (savedFlags & 16) skip.QuadPart += 48;
             if (!expect(saved != nullptr, L"reopen the production snapshot")
                     || !checked(saved->Seek(skip, STREAM_SEEK_SET, nullptr), L"skip the version-1 header")
                     || ((savedFlags & 2) && !checked(IStream_ReadPidl(saved, &savedAnchor), L"read the production anchor PIDL"))
                     || !checked(saved->Seek(LARGE_INTEGER{}, STREAM_SEEK_CUR, &rest), L"locate the saved focus and selection PIDLs")) return false;
             auto header = std::vector<uint8_t>(selectionBlob.begin(), selectionBlob.begin() + 20);
+            const uint32_t version = 1;
             const uint32_t flags = 6;
+            std::memcpy(header.data(), &version, sizeof(version));
             std::memcpy(header.data() + 8, &flags, sizeof(flags));
             if (!checked(IStream_Write(stream, header.data(), static_cast<ULONG>(header.size())), L"write original version-1 header")
                     || !checked(IStream_WritePidl(stream, anchor), L"write legacy anchor through the Shell serializer")
@@ -426,6 +429,20 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
             if (!checked(IStream_Read(stream, legacy.data(), static_cast<ULONG>(legacy.size())), L"read independently assembled legacy fixture")
                     || !checked(restoreReopenSelection(view, legacy, current), L"restore the existing version-1 legacy anchor format")
                     || !expect(legacy.empty(), L"legacy snapshot is consumed once") || !selectionIs()) return false;
+            // Independent version-2 fixture: percentages were stored before the PIDLs.
+            struct LegacyScroll { double horizontal, vertical; uint32_t mode, reserved; };
+            UINT mode = 0;
+            if (!checked(folderView->GetCurrentViewMode(&mode), L"read the legacy scroll mode")) return false;
+            const LegacyScroll scroll = {-1, -1, mode, 0};
+            const uint32_t version2 = 2, flags2 = 12;
+            std::memcpy(header.data(), &version2, sizeof(version2));
+            std::memcpy(header.data() + 8, &flags2, sizeof(flags2));
+            legacy = header;
+            const auto *scrollBytes = reinterpret_cast<const uint8_t *>(&scroll);
+            legacy.insert(legacy.end(), scrollBytes, scrollBytes + sizeof(scroll));
+            legacy.insert(legacy.end(), selectionBlob.begin() + static_cast<size_t>(rest.QuadPart), selectionBlob.end());
+            if (!checked(restoreReopenSelection(view, legacy, current), L"restore an independently assembled version-2 snapshot")
+                    || !expect(legacy.empty(), L"version-2 snapshot is consumed once") || !selectionIs()) return false;
         }
         auto invalid = selectionBlob;
         invalid.resize(sizeof(uint32_t));
@@ -435,6 +452,11 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
         invalid.pop_back();
         result = restoreReopenSelection(view, invalid, current);
         if (!expect(FAILED(result) && invalid.empty(), L"truncated PIDL data fails before clearing the current selection") || !selectionIs()) return false;
+        invalid = selectionBlob;
+        const uint32_t invalidViewportVersion = 0;
+        std::memcpy(invalid.data() + 20, &invalidViewportVersion, sizeof(invalidViewportVersion));
+        result = restoreReopenSelection(view, invalid, current);
+        if (!expect(FAILED(result) && invalid.empty(), L"invalid shared viewport fails before clearing selection") || !selectionIs()) return false;
         invalid = selectionBlob;
         const uint32_t unknownFlags = 8;
         std::memcpy(invalid.data() + 8, &unknownFlags, sizeof(unknownFlags));
