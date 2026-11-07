@@ -1,5 +1,12 @@
 ﻿# Use Process.Start on the actual Process instance so its exit code is retained.
 # Stdout and stderr are drained concurrently to avoid blocking a noisy child.
+function Join-ProcessArguments([string[]]$Arguments) {
+    # Quote for the Windows command-line parser, without invoking a shell.
+    return (@($Arguments | ForEach-Object {
+        '"'+[regex]::Replace([regex]::Replace($_,'(\\*)"','$1$1\"'),'(\\+)$','$1$1')+'"'
+    }) -join ' ')
+}
+
 function Start-RecordedProcess {
     param([string]$Executable,[string]$Arguments,[string]$OutputPath,[string]$ErrorPath)
     $process=New-Object Diagnostics.Process
