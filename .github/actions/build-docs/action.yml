@@ -26,4 +26,5 @@ runs:
     - shell: bash
       env:
         DOCS_TARGET: ${{ inputs.target }}
+        GH_TOKEN: ${{ github.token }}
       run: node .github/scripts/build-docs.mjs --target "$DOCS_TARGET"
