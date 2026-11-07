@@ -120,7 +120,7 @@ struct RestoreHost : SelectionHost {
         need(frame != nullptr, "Cannot create restoration fixture");
         need(WTSRegisterSessionNotification(frame, NOTIFY_FOR_THIS_SESSION) != FALSE, "Cannot observe session");
         RECT bounds = {}; GetClientRect(frame, &bounds);
-        const FOLDERSETTINGS settings = {static_cast<UINT>(mode), FWF_AUTOARRANGE}; events.Attach(new ViewEvents);
+        const FOLDERSETTINGS settings = {static_cast<UINT>(mode), FWF_AUTOARRANGE | FWF_NOWEBVIEW | FWF_NOHEADERINALLVIEWS}; events.Attach(new ViewEvents);
         need(SUCCEEDED(host.initialize(frame, bounds, settings, nullptr, events, profile)), "Cannot initialize profile");
         CComPtr<IShellItem> folder;
         need(SUCCEEDED(SHCreateItemFromParsingName(path, nullptr, IID_PPV_ARGS(&folder)))
@@ -373,6 +373,7 @@ void restoreMatrix(const wchar_t *output, const wchar_t *fixture, bool explorer,
     }
 }
 }
+#ifndef RESTORE_PATH_DRIVER
 int wmain(int argc, wchar_t **argv) {
     if (argc == 4 && wcscmp(argv[1], L"/test") == 0 && wcscmp(argv[2], L"/selection-discovery") == 0)
         return selectionDiscovery::runWorker(argv[3]);
@@ -404,3 +405,4 @@ int wmain(int argc, wchar_t **argv) {
     } catch (const std::exception &error) { std::fprintf(stderr, "FAIL: %s\n", error.what()); result = 1; }
     UnregisterClassW(type.lpszClassName, type.hInstance); CoUninitialize(); return result;
 }
+#endif
