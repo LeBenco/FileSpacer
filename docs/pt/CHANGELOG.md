@@ -1,5 +1,9 @@
 # Histórico de versões
 
+## Por publicar
+
+- Aceleração massiva da seleção e da desseleção de milhares de ficheiros nas vistas clássicas do Shell. Esta otimização utiliza funções privadas do Windows cuja disponibilidade e comportamento não são garantidos. Se estas funções estiverem ausentes ou forem incompatíveis, o FileSpacer recorre automática e silenciosamente às funções públicas, sem os ganhos de desempenho.
+
 ## 1.3.2 — 2026-11-04
 
 - Adicionar polaco, neerlandês e ucraniano à aplicação, ao instalador, ao sítio Web e à documentação do utilizador e técnica.
