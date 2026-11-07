@@ -56,7 +56,7 @@ private:
 
     ItemWindow * const outer;
 
-    HWND caption = nullptr, toolbar = nullptr, renameBox = nullptr;
+    HWND caption = nullptr, toolbar = nullptr, renameBox = nullptr, lockBadge = nullptr;
     int normalTop = 0;
     bool stateLocked = false;
     HICON captionIcon = nullptr; // Borrowed from ItemWindow.
