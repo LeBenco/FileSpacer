@@ -18,9 +18,9 @@ node website\generate.mjs --record-translation-sources fr-FR
 
 Pominięcie języka zapisuje wszystkie. Zatwierdź wygenerowane pliki stanu z Markdown. Rejestracja waliduje nagłówki i linki; nie tłumaczy ani nie ocenia aktualności znaczenia. Nie zapisuj angielskiej zmiany przed ukończeniem tłumaczenia. Brak dokumentów, zepsute linki/media i niezgodność struktury z zapisanym źródłem nadal są błędami.
 
-Zapisane angielskie ID zachowują działanie linków po zmianie nagłówków innego języka. Linki mogą używać tłumaczonego lub oryginalnego slugu. Dokumentacja użytkownika wskazuje plik GitHub wybranego języka. Polski, niderlandzki i ukraiński mają też dokumentację techniczną poza witryną; ich linki wskazują te pliki. Inne języki zachowują źródła angielskie. Zachowuj jawne ID kotwic HTML.
+Każdy nagłówek ma bezpośrednio przed sobą jawny angielski identyfikator, np. `<a id="recommended-menu-appearance"></a>`. Identyfikatory muszą być takie same we wszystkich językach i używane w odnośnikach. Zmiana tłumaczenia nagłówka nie zmienia identyfikatora. Dawne przetłumaczone identyfikatory pozostają dostępne dla istniejących odnośników. Dokumentacja użytkownika prowadzi do pliku GitHub w wybranym języku. Odnośniki techniczne korzystają z tłumaczenia, jeśli jest dostępne, lub ze źródła angielskiego.
 
-Stosuj jawne odnośniki względne do własnego katalogu `images/`, zachowując istniejące nazwy i przyrostki, np. `spatial-windows-de.png`. Generator kopiuje wskazane pliki bez dobierania innej nazwy. Neutralne logo jest wspólne. Brak zrzutu lub animacji jest błędem. Nie tłumacz tekstu wewnątrz wyeksportowanych obrazów.
+W katalogach poszczególnych języków stosuj takie same nazwy plików bez przyrostka językowego, np. `images/spatial-windows.png`. Język wskazuje katalog `docs/<language>/`. Względne adresy obrazów na stronie również są jednakowe. Generator kopiuje właściwe pliki dla danego języka i zgłasza błąd, jeśli brakuje zrzutu. Logo aplikacji jest wspólne.
 
 Każdy język jest budowany osobno z tym samym przypiętym Just the Docs, własną nawigacją, indeksem, etykietami i mediami. Workflow wykrywa macierz z `locales.json` generatora.
 

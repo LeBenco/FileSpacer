@@ -18,9 +18,9 @@ node website\generate.mjs --record-translation-sources fr-FR
 
 Zonder locale worden alle vastgelegd. Commit bronstatus met Markdown. Registratie valideert koppen/links, vertaalt niet en beoordeelt geen inhoudelijke actualiteit. Registreer Engelse wijzigingen pas na vertalen. Ontbrekende documenten, gebroken links/media en structuurverschillen met de vastgelegde bron blijven fouten.
 
-Vastgelegde Engelse ID’s houden links geldig bij gewijzigde vertaalde koppen. Links mogen vertaalde of Engelse slugs gebruiken. Gebruikersdocumentatie linkt naar de gekozen GitHub-taal. Pools, Nederlands en Oekraïens bieden ook technische documenten buiten de site; links gebruiken die. Andere talen behouden Engelse technische bronnen. Behoud expliciete HTML-anker-ID’s.
+Elke kop heeft direct ervoor een expliciet Engels anker, bijvoorbeeld `<a id="recommended-menu-appearance"></a>`. Gebruik in elke taal dezelfde ID’s en verwijs ernaar in alle links. Vertaalde koppen kunnen veranderen zonder hun ankers te wijzigen. Oude vertaalde ankers blijven bruikbaar voor bestaande links. Gebruikersdocumentatie verwijst naar het GitHub-bestand in de gekozen taal. Technische verwijzingen gebruiken een vertaling als die beschikbaar is, anders de Engelse bron.
 
-Gebruik expliciete relatieve verwijzingen naar de eigen map `images/`, met bestaande namen en achtervoegsels zoals `spatial-windows-de.png`. De generator kopieert de aangewezen bestanden zonder een andere naam af te leiden. Het neutrale logo wordt gedeeld. Een ontbrekende opname of animatie is een fout. Vertaal geen tekst in geëxporteerde beelden.
+Gebruik in elke taalmap dezelfde bestandsnamen zonder taalachtervoegsel, bijvoorbeeld `images/spatial-windows.png`. De map `docs/<language>/` geeft de taal aan. Ook de relatieve afbeeldings-URL’s op de site zijn gelijk. De generator kopieert de echte vertaalde bestanden en meldt een fout als een opname ontbreekt. Het toepassingslogo wordt gedeeld.
 
 Elke taal wordt apart gebouwd met hetzelfde vastgezette Just the Docs, eigen navigatie, index, labels en media. De workflow ontdekt de matrix uit `locales.json`.
 
