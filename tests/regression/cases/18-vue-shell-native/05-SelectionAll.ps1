@@ -1,6 +1,6 @@
 # Test-Category: UI
-# Real hidden Shell views, isolated fixtures/cache, no input injection.
-param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
+# Real Shell views (hidden by default), isolated fixtures/cache, no input injection.
+param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path,[switch]$Presented)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot '..\..\common\Native.ps1')
 $cacheTest=Build-NativeTest -Name SelectionCacheTests -CaseDirectory $PSScriptRoot -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','MixedFolder.cpp','ShellViewHost.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib','D3d11.lib','Dxgi.lib','Bcrypt.lib','Wtsapi32.lib')
@@ -18,6 +18,7 @@ $bytes=[IO.File]::ReadAllBytes($records[0].FullName)
 $fixture=New-ReactivityFixture $ProjectRoot 5000
 try {
  $env:FS_SELECTION_ALL_ONLY='1';$env:FS_SELECTION_HEADLESS='1'
+ if($Presented){Remove-Item Env:\FS_SELECTION_HEADLESS -ErrorAction SilentlyContinue}
  Remove-Item Env:\FS_SELECTION_FIXTURE_64,Env:\FS_SELECTION_SMOKE,Env:\FS_SELECTION_ONLY_MEDIUM -ErrorAction SilentlyContinue
  foreach($arm in @(@('qualified',$cache),@('missing-select-capability',$fallback))){
   $output=Join-Path $RunDirectory $arm[0];[void][IO.Directory]::CreateDirectory($output)
@@ -26,5 +27,6 @@ try {
   & $matrix $output $fixture --allow-host > $log 2> (Join-Path $output 'errors.log')
   if($LASTEXITCODE-ne0){throw ('Global-selection matrix failed: '+$arm[0])}
   if(@(Select-String -LiteralPath $log -Pattern '^SELECT_ALL ').Count-ne9){throw 'Global-selection representation coverage incomplete.'}
+  if(@(Select-String -LiteralPath $log -Pattern '^PARTIAL_ALL ').Count-ne27){throw 'Partial-to-all representation coverage incomplete.'}
  }
 }finally{Remove-ReactivityFixture $ProjectRoot $fixture}
