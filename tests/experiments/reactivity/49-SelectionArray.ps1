@@ -11,5 +11,5 @@ try {
  $code=Invoke-NativeProgram $candidate @($RunDirectory,$fixture,$cache) (Join-Path $RunDirectory 'native-output.log') (Join-Path $RunDirectory 'native-errors.log')
  if($code-ne0){throw ('Selection array investigation failed: '+$code)}
  $log=Join-Path $RunDirectory 'native-output.log'
- if(@(Select-String -LiteralPath $log -Pattern '^ARRAY .* exact_order=1 data_object=1 retained=1 positions=1$').Count-ne27-or@(Select-String -LiteralPath $log -Pattern '^FALLBACK .* unchanged=1$').Count-ne15-or@(Select-String -LiteralPath $log -Pattern '^EXPLORER rep=').Count-ne3){throw 'Incomplete array qualification.'}
+ if(@(Select-String -LiteralPath $log -Pattern '^ARRAY .* exact_order=1 data_object=1 retained=1 positions=1$').Count-ne27-or@(Select-String -LiteralPath $log -Pattern '^FALLBACK .* unchanged=1$').Count-ne15-or@(Select-String -LiteralPath $log -Pattern '^EXPLORER rep=').Count-ne3-or@(Select-String -LiteralPath $log -Pattern '^QUALIFIED mode=free-tiles .* applied=[01] identities=1 positions=1 focus=1$').Count-ne12){throw 'Incomplete array qualification.'}
 } finally {Remove-ReactivityFixture $ProjectRoot $fixture}
