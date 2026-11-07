@@ -106,6 +106,16 @@ must not include `SVSI_NOTAKEFOCUS`; that flag belongs on a targeted item.
 Navigating upward does not automatically select the source folder or replace
 the selection of an already-open parent.
 
+For changed selections of at least 128 items, a saved complete selection can
+use `IShellFolderView::Select(SFVS_SELECT_ALLITEMS)`. An exact bijection of opaque
+child PIDLs must match the current view first, and the selected identities are
+checked again after the call. Duplicate, missing or differently encoded identities,
+unsupported interfaces and failed operations retain the per-item restoration.
+View-generation checks still apply after every external call. The qualified
+Select All binding is reused when available; otherwise the public bulk operation
+is used for arranged views. Free placement retains its ordinary public path
+unless that binding is qualified. Focus and scroll restoration remain separate.
+
 ## Mixed file/folder sorting
 
 When mixed sorting is enabled for a filesystem folder, `MixedFolder` supplies a
