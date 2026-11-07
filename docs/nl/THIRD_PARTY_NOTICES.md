@@ -1,10 +1,16 @@
+<a id="third-party-notices"></a>
+
 # Vermeldingen van derden
 
 FileSpacer is gebaseerd op [ChromaFiler](https://github.com/vanjac/chromafiler), Copyright (c) 2023 J. van't Hoog, verspreid onder de [GNU General Public License v3.0](../../LICENSE).
 
+<a id="sqlite"></a>
+
 ## SQLite
 
 SQLite 3.53.4 is statisch in de toepassing gekoppeld en behoort tot het publieke domein. De ongewijzigde bronnen en hun herkomst staan in `third_party/sqlite`. Zie <https://sqlite.org/copyright.html>.
+
+<a id="up-and-refresh-button-icons-lucide-and-feather"></a>
 
 ## Pictogrammen Omhoog en Vernieuwen (Lucide en Feather)
 
@@ -12,15 +18,21 @@ Op de werkbalk opent de **pijl omhoog** de **bovenliggende map** en **vernieuwt 
 
 Zie [licenses/Lucide-LICENSE.txt](../../licenses/Lucide-LICENSE.txt) voor de volledige ISC- en MIT-vermeldingen in de broncode, of `Lucide-LICENSE.txt` in de installatiemap. Zie <https://lucide.dev/license>.
 
+<a id="windows-fonts-and-components"></a>
+
 ## Windows-lettertypen en -onderdelen
 
 Sommige interfacetekens gebruiken Microsofts Segoe MDL2 Assets-lettertype dat met Windows is geïnstalleerd. FileSpacer verspreidt dit lettertype niet. Windows Shell, algemene besturingselementen, GDI+ en andere systeemonderdelen worden door Windows geleverd.
+
+<a id="installer"></a>
 
 ## Installatieprogramma
 
 Het NSIS-installatieprogramma gebruikt de LockedList-plug-in, Copyright (c) 2013 Afrow Soft Ltd, onder de zlib-licentie. De volledige vermelding staat in [installer/plugins/LockedList.txt](../../installer/plugins/LockedList.txt) en wordt als `LockedList-LICENSE.txt` bij het programma geïnstalleerd. Zie <https://nsis.sourceforge.io/LockedList_plug-in>.
 
 De AppUserModelID van de snelkoppeling wordt ingesteld door FileSpacers `ShortcutAppID.nsh` met Windows COM-macro’s van NSIS. De voormalige submodule `nsis-shortcut-properties` wordt niet gebruikt. Material Design Icons en de vroegere meegeleverde Segoe-lettertypedeelverzameling worden niet gebruikt.
+
+<a id="small--flat-lock-icon"></a>
 
 ## Small & Flat-slotpictogram
 

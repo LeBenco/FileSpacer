@@ -1,3 +1,5 @@
+<a id="chocolatey-distribution"></a>
+
 # Chocolatey distribution
 
 The **Submit FileSpacer to Chocolatey** workflow runs independently when
@@ -8,6 +10,8 @@ It can also be started manually
 with a published stable `vX.Y.Z` tag, including releases made before this
 workflow was introduced. A manual run explicitly selects Chocolatey regardless of
 the tag's original preference. A failed or cancelled release does not submit a package.
+
+<a id="setup"></a>
 
 ## Setup
 
@@ -21,6 +25,8 @@ distribution can run. GitHub loads the `workflow_run` listener and distribution
 code from that branch. The existing release workflow already supplies the
 `release-publication` artifact containing the exact published tag and channel list.
 Automatic runs skip submission if Chocolatey is not selected or the list is absent.
+
+<a id="publication"></a>
 
 ## Publication
 
@@ -54,6 +60,8 @@ availability. Check the [package page](https://community.chocolatey.org/packages
 and respond to any maintainer feedback. No new version tag or GitHub release is
 created by distribution, and its failure does not change the successful release.
 
+<a id="retry-and-use"></a>
+
 ## Retry and use
 
 For a distribution failure, open **Actions > Submit FileSpacer to Chocolatey >
@@ -76,6 +84,8 @@ choco install filespacer --yes
 choco upgrade filespacer --yes
 choco uninstall filespacer --yes
 ```
+
+<a id="local-checks"></a>
 
 ## Local checks
 

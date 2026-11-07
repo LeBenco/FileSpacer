@@ -1,10 +1,16 @@
+<a id="third-party-notices"></a>
+
 # Drittanbieterhinweise
 
 FileSpacer basiert auf [ChromaFiler](https://github.com/vanjac/chromafiler), Copyright (c) 2023 J. van’t Hoog, veröffentlicht unter der [GNU General Public License v3.0](../../LICENSE).
 
+<a id="sqlite"></a>
+
 ## SQLite
 
 SQLite 3.53.4 wird statisch in die Anwendung eingebunden. Es ist gemeinfrei. Die unveränderten Quellen und ihre Herkunft sind in `third_party/sqlite` enthalten. Siehe <https://sqlite.org/copyright.html>.
+
+<a id="up-and-refresh-button-icons-lucide-and-feather"></a>
 
 ## Symbole der Schaltflächen Aufwärts und Aktualisieren (Lucide und Feather)
 
@@ -12,15 +18,21 @@ In der Symbolleiste öffnet der **Pfeil nach oben** den **übergeordneten Ordner
 
 Die vollständigen ISC- und MIT-Hinweise stehen in [licenses/Lucide-LICENSE.txt](../../licenses/Lucide-LICENSE.txt) im Quelltext oder `Lucide-LICENSE.txt` im Installationsordner. Siehe <https://lucide.dev/license>.
 
+<a id="windows-fonts-and-components"></a>
+
 ## Windows-Schriftarten und -Komponenten
 
 Einige Oberflächensymbole verwenden die mit Windows installierte Microsoft-Schriftart Segoe MDL2 Assets. FileSpacer liefert diese Schriftart nicht mit. Windows Shell, allgemeine Steuerelemente, GDI+ und weitere Systemkomponenten werden von Windows bereitgestellt.
+
+<a id="installer"></a>
 
 ## Installationsprogramm
 
 Das NSIS-Installationsprogramm verwendet das LockedList-Plug-in, Copyright (c) 2013 Afrow Soft Ltd, unter der zlib-Lizenz. Der vollständige Hinweis steht in [installer/plugins/LockedList.txt](../../installer/plugins/LockedList.txt) und liegt als `LockedList-LICENSE.txt` im Installationsordner bei. Siehe <https://nsis.sourceforge.io/LockedList_plug-in>.
 
 Die AppUserModelID von Verknüpfungen wird durch FileSpacers `ShortcutAppID.nsh` mithilfe der Windows-COM-Makros von NSIS festgelegt. Das frühere Untermodul `nsis-shortcut-properties` wird nicht verwendet. Material Design Icons und der früher enthaltene Segoe-Schriftartauszug werden ebenfalls nicht verwendet.
+
+<a id="small--flat-lock-icon"></a>
 
 ## Small-&-Flat-Schlosssymbol
 

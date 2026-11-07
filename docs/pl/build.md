@@ -66,6 +66,8 @@ Pakowanie uruchamia `generate-installer-assets.py` dla strzałki pobierania, pan
 nmake /f Makefile CFG=Debug installer-bitmap
 ```
 
+<a id="sqlite"></a>
+
 ## SQLite
 
 Niezmieniony kod zbiorczy w `third_party\sqlite` jest kompilowany osobno jako C i łączony statycznie. Nie potrzeba DLL SQLite, CLI ani pobierania przy kompilacji. Zobacz [pochodzenie i opcje](https://github.com/LeBenco/FileSpacer/blob/main/third_party/sqlite/README.txt).

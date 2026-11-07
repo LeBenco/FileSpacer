@@ -1,8 +1,12 @@
+<a id="building-filespacer-on-windows-x64"></a>
+
 # Building FileSpacer on Windows x64
 
 FileSpacer targets Windows 10 or later, x64. It uses MSVC/NMAKE and NSIS, not
 CMake. Run build and test commands from CMD at the repository root. See the
 [developer overview](README.md) for the code map.
+
+<a id="dependencies"></a>
 
 ## Dependencies
 
@@ -15,6 +19,8 @@ CMake. Run build and test commands from CMD at the repository root. See the
 - NSIS, normally `%ProgramFiles(x86)%\NSIS\makensis.exe`, for packaging.
 - Node.js 22+, Ruby 3.3 and Bundler when generating offline help; see
   [website and offline builds](website/README.md#shared-website-and-offline-builds).
+
+<a id="build-and-clean"></a>
 
 ## Build and clean
 
@@ -56,6 +62,8 @@ build.cmd clean
 Clean removes Debug/Release outputs, the generated ICO and installer, preserving
 sources and user data. The next build regenerates the icon.
 
+<a id="generated-artwork"></a>
+
 ## Generated artwork
 
 `generate-icon.py` produces the ten frames in `src\res\FileSpacer.ico` from the
@@ -82,6 +90,8 @@ To check its Debug build from an x64 developer prompt:
 nmake /f Makefile CFG=Debug installer-bitmap
 ```
 
+<a id="sqlite"></a>
+
 ## SQLite
 
 The unmodified amalgamation in `third_party\sqlite` is compiled separately as C
@@ -97,6 +107,8 @@ dumpbin /dependents build\release\FileSpacer.exe
 ```
 
 There should be no `sqlite3.dll` dependency; Windows system DLLs remain required.
+
+<a id="offline-help-and-installer-contracts"></a>
 
 ## Offline help and installer contracts
 
@@ -139,6 +151,8 @@ logging must not change the operation's success/failure state.
 
 An NSIS build verifies packaging, not real installation, UAC, upgrade or
 uninstallation. Validate the affected installed paths when changing them.
+
+<a id="releases"></a>
 
 ## Releases
 
@@ -208,6 +222,8 @@ gh workflow run chocolatey.yml --ref main -f tag=vX.Y.Z
 
 Do not rerun the release-generation workflow merely to submit to a catalog:
 it rebuilds and can replace release assets, invalidating existing catalog checksums.
+
+<a id="tests"></a>
 
 ## Tests
 

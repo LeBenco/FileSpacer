@@ -1,10 +1,16 @@
+<a id="third-party-notices"></a>
+
 # Σημειώσεις για στοιχεία τρίτων
 
 Το FileSpacer βασίζεται στο [ChromaFiler](https://github.com/vanjac/chromafiler), Copyright (c) 2023 J. van’t Hoog, το οποίο διανέμεται με την άδεια [GNU General Public License v3.0](../../LICENSE).
 
+<a id="sqlite"></a>
+
 ## SQLite
 
 Το SQLite 3.53.4 συνδέεται στατικά με την εφαρμογή και διατίθεται ως κοινό κτήμα. Ο αμετάβλητος πηγαίος κώδικας και οι πληροφορίες προέλευσής του βρίσκονται στο `third_party/sqlite`. Δείτε <https://sqlite.org/copyright.html>.
+
+<a id="up-and-refresh-button-icons-lucide-and-feather"></a>
 
 ## Εικονίδια των κουμπιών Επάνω και Ανανέωση (Lucide και Feather)
 
@@ -12,15 +18,21 @@
 
 Δείτε το [licenses/Lucide-LICENSE.txt](../../licenses/Lucide-LICENSE.txt) για τις πλήρεις γνωστοποιήσεις ISC και MIT στον πηγαίο κώδικα ή το `Lucide-LICENSE.txt` στον φάκελο εγκατάστασης. Δείτε <https://lucide.dev/license>.
 
+<a id="windows-fonts-and-components"></a>
+
 ## Γραμματοσειρές και στοιχεία των Windows
 
 Ορισμένα εικονίδια της διεπαφής χρησιμοποιούν τη γραμματοσειρά Microsoft Segoe MDL2 Assets που εγκαθίσταται με τα Windows. Το FileSpacer δεν αναδιανέμει αυτή τη γραμματοσειρά. Το Windows Shell, τα κοινά στοιχεία ελέγχου, το GDI+ και τα υπόλοιπα στοιχεία συστήματος παρέχονται από τα Windows.
+
+<a id="installer"></a>
 
 ## Πρόγραμμα εγκατάστασης
 
 Το πρόγραμμα εγκατάστασης NSIS χρησιμοποιεί το πρόσθετο LockedList, Copyright (c) 2013 Afrow Soft Ltd, με την άδεια zlib. Η πλήρης γνωστοποίηση βρίσκεται στο [installer/plugins/LockedList.txt](../../installer/plugins/LockedList.txt) και περιλαμβάνεται ως `LockedList-LICENSE.txt` στον φάκελο εγκατάστασης. Δείτε <https://nsis.sourceforge.io/LockedList_plug-in>.
 
 Το AppUserModelID των συντομεύσεων ορίζεται από το `ShortcutAppID.nsh` του FileSpacer, χρησιμοποιώντας τις μακροεντολές Windows COM του NSIS. Το παλιό submodule `nsis-shortcut-properties` δεν χρησιμοποιείται. Δεν χρησιμοποιούνται το Material Design Icons ούτε το υποσύνολο της γραμματοσειράς Segoe που περιλαμβανόταν παλαιότερα.
+
+<a id="small--flat-lock-icon"></a>
 
 ## Εικονίδιο λουκέτου Small & Flat
 

@@ -1,10 +1,16 @@
+<a id="third-party-notices"></a>
+
 # Avisos sobre componentes de terceros
 
 FileSpacer está basado en [ChromaFiler](https://github.com/vanjac/chromafiler), Copyright (c) 2023 J. van’t Hoog, distribuido bajo la [GNU General Public License v3.0](../../LICENSE).
 
+<a id="sqlite"></a>
+
 ## SQLite
 
 SQLite 3.53.4 está enlazado estáticamente con la aplicación y es de dominio público. El código fuente sin modificar y su procedencia se encuentran en `third_party/sqlite`. Consulta <https://sqlite.org/copyright.html>.
+
+<a id="up-and-refresh-button-icons-lucide-and-feather"></a>
 
 ## Iconos de los botones Subir y Actualizar (Lucide y Feather)
 
@@ -12,15 +18,21 @@ En la barra de herramientas, la **flecha hacia arriba** abre la **carpeta superi
 
 Consulta [licenses/Lucide-LICENSE.txt](../../licenses/Lucide-LICENSE.txt) para los avisos ISC y MIT completos del código fuente, o `Lucide-LICENSE.txt` en la carpeta de instalación. Consulta <https://lucide.dev/license>.
 
+<a id="windows-fonts-and-components"></a>
+
 ## Fuentes y componentes de Windows
 
 Algunos iconos de la interfaz usan la fuente Microsoft Segoe MDL2 Assets instalada con Windows. FileSpacer no redistribuye esta fuente. Windows Shell, los controles comunes, GDI+ y los demás componentes del sistema los proporciona Windows.
+
+<a id="installer"></a>
 
 ## Instalador
 
 El instalador NSIS usa el complemento LockedList, Copyright (c) 2013 Afrow Soft Ltd, bajo la licencia zlib. El aviso completo está en [installer/plugins/LockedList.txt](../../installer/plugins/LockedList.txt) y se incluye como `LockedList-LICENSE.txt` en la carpeta de instalación. Consulta <https://nsis.sourceforge.io/LockedList_plug-in>.
 
 El AppUserModelID de los accesos directos lo establece `ShortcutAppID.nsh` de FileSpacer usando las macros Windows COM de NSIS. No se usa el antiguo submódulo `nsis-shortcut-properties`. Tampoco se usan Material Design Icons ni el subconjunto de la fuente Segoe incluido anteriormente.
+
+<a id="small--flat-lock-icon"></a>
 
 ## Icono de candado Small & Flat
 

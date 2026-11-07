@@ -1,12 +1,20 @@
+<a id="changelog"></a>
+
 # Wijzigingsgeschiedenis
+
+<a id="132--2026-11-04"></a>
 
 ## 1.3.2 — 2026-11-04
 
 - Pools, Nederlands en Oekraïens toegevoegd aan de toepassing, het installatieprogramma, de website en de gebruikers- en ontwikkelaarsdocumentatie.
 
+<a id="131--2026-11-03"></a>
+
 ## 1.3.1 — 2026-11-03
 
 - Opgelost dat openen via de standaardbestandsbeheerder een andere toepassing dan FileSpacer koos.
+
+<a id="130--2026-11-02"></a>
 
 ## 1.3.0 — 2026-11-02
 
@@ -20,6 +28,8 @@
 - Help-opruimfouten die de-installatie blokkeerden en VM-tests die meerdere Verkenner-processen als aparte sessies zagen verholpen.
 - Naden tussen groene pictogramvlakken verholpen en meertalige handleidingen en menudemonstraties vernieuwd.
 
+<a id="123--2026-10-30"></a>
+
 ## 1.2.3 — 2026-10-30
 
 - Zijbalklogo van installatie- en verwijderprogramma vloeiender gemaakt met hoogwaardige schaling naar de actuele schermgrootte.
@@ -31,13 +41,19 @@
 - Vernieuwen van Jump Lists en installatiediagnostiek hersteld. Eigen helpbestanden behouden bij upgrades en de-installatie.
 - Meertalige offlinehulp via F1 en Info meegeleverd en vertaalde installatiehandleidingen en Nilesoft-referenties vernieuwd.
 
+<a id="122--2026-10-28"></a>
+
 ## 1.2.2 — 2026-10-28
 
 - Gebruik van de aangepaste mapprovider bij vrije pictogramindelingen hersteld. Vrije plaatsing gebruikt de native provider. Vastleggen van een gesorteerde indeling schakelt providers met behoud van pictogramposities, selectie en focus.
 
+<a id="121--2026-10-28"></a>
+
 ## 1.2.1 — 2026-10-28
 
 - Tijdelijke algemene pictogrammen bij gemengd sorteren verminderd. Zichtbare pictogrammen worden vóór het tonen in de Windows-cache voorbereid, met begrensd wachten op trage pictogramhandlers.
+
+<a id="120--2026-10-28"></a>
 
 ## 1.2.0 — 2026-10-28
 
@@ -47,6 +63,8 @@
 - Onlinehandleiding uitgebreid met Engelse en Franse schermafbeeldingen, venstergebaren en Nilesoft-menuvergelijkingen.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.10...v1.2.0)
+
+<a id="1110--2026-10-27"></a>
 
 ## 1.1.10 — 2026-10-27
 
@@ -63,11 +81,15 @@
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.9...v1.1.10)
 
+<a id="119--2026-10-27"></a>
+
 ## 1.1.9 — 2026-10-27
 
 - Weergavemodi vooraf getoond bij aanwijzen in Beeld, met geleidelijk herstel bij annuleren en standaard ingeschakelde optie onder Weergave.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.8...v1.1.9)
+
+<a id="118--2026-10-27"></a>
 
 ## 1.1.8 — 2026-10-27
 
@@ -81,12 +103,16 @@
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.7...v1.1.8)
 
+<a id="117--2026-10-26"></a>
+
 ## 1.1.7 — 2026-10-26
 
 - Overlap van nieuwe vensters met exacte geometrie en eerst vrije ruimte zoeken beperkt. Algemene optie hernoemd naar ‘Vensteroverlap minimaliseren’.
 - Optionele standaardbeheerderkeuze toegevoegd aan Engelse/Franse setup, met uitleg voor later inschakelen of terugdraaien onder Integratie.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.6...v1.1.7)
+
+<a id="116--2026-10-26"></a>
 
 ## 1.1.6 — 2026-10-26
 
@@ -98,6 +124,8 @@
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.5...v1.1.6)
 
+<a id="115--2026-10-26"></a>
+
 ## 1.1.5 — 2026-10-26
 
 - Onbedoelde snelkoppeling na Alt + dubbelklik en muisbeweging verholpen. Native Eigenschappen, selectie en focus behouden zonder een ingedrukte knop opnieuw af te spelen.
@@ -106,6 +134,8 @@
 - Bureaublad wakker gehouden en schermbeveiliging tijdelijk opgeschort tijdens UI-tests, met herstel bij opruimen, ook na fouten.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.4...v1.1.5)
+
+<a id="114--2026-10-25"></a>
 
 ## 1.1.4 — 2026-10-25
 
@@ -119,6 +149,8 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
 
+<a id="113--2026-10-25"></a>
+
 ## 1.1.3 — 2026-10-25
 
 - Tab Sneltoetsen toegevoegd om gebaren in te stellen of uit te schakelen met wijzigingstoetsen en links/midden/rechts, directe invoervastlegging en conflictcontrole.
@@ -127,6 +159,8 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Uitgebreide sneltoetsconfiguratie- en echte muisgebarentests toegevoegd, met Franse en Engelse instellingenresources.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.2...v1.1.3)
+
+<a id="112--2026-10-25"></a>
 
 ## 1.1.2 — 2026-10-25
 
@@ -139,12 +173,16 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.1...v1.1.2)
 
+<a id="111--2026-10-24"></a>
+
 ## 1.1.1 — 2026-10-24
 
 - Selectiebehoudende activeringsklik hersteld: eerste klik op lege achtergrond van inactieve map activeert zonder selectie te wissen (optie opnieuw ingeschakeld).
 - Crash bij sluiten tijdens Shell-vernieuwing verholpen (Vernieuwen, naamfilter, verbs Vernieuwen/Nieuw).
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.0...v1.1.1)
+
+<a id="110--2026-10-24"></a>
 
 ## 1.1.0 — 2026-10-24
 
@@ -158,6 +196,8 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
 
+<a id="108--2026-10-22"></a>
+
 ## 1.0.8 — 2026-10-22
 
 - Mapvensters vanuit het bestandsgebied verplaatst met Alt + links slepen en formaat gewijzigd met Alt + rechts, met selectiebehoud.
@@ -168,6 +208,8 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.7...v1.0.8)
 
+<a id="107--2026-10-20"></a>
+
 ## 1.0.7 — 2026-10-20
 
 - Bron-submap geselecteerd bij openen van bovenliggende mappen, met selectiebehoud in reeds geopende vensters.
@@ -177,11 +219,15 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.6...v1.0.7)
 
+<a id="106--2026-10-11"></a>
+
 ## 1.0.6 — 2026-10-11
 
 - Geopende mappen na een update vanuit de app automatisch hersteld met opgeslagen posities, afmetingen en weergave.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.5...v1.0.6)
+
+<a id="105--2026-10-11"></a>
 
 ## 1.0.5 — 2026-10-11
 
@@ -191,6 +237,8 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Downloadmetadata van het installatieprogramma bij elke release gepubliceerd.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.4...v1.0.5)
+
+<a id="104--2026-10-11"></a>
 
 ## 1.0.4 — 2026-10-11
 
@@ -202,6 +250,8 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.3...v1.0.4)
 
+<a id="103--2026-10-11"></a>
+
 ## 1.0.3 — 2026-10-11
 
 - Handmatige en optionele wekelijkse updatecontroles via FileSpacer GitHub Releases hersteld, standaard uitgeschakeld.
@@ -211,6 +261,8 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Native Shell-afhandeling van Alt + dubbelklik en Alt+Enter op mappen behouden.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.2...v1.0.3)
+
+<a id="102--2026-10-11"></a>
 
 ## 1.0.2 — 2026-10-11
 
@@ -222,6 +274,8 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Releaseworkflow toegestaan het installatieprogramma van een bestaande release te vervangen.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.1...v1.0.2)
+
+<a id="101--2026-10-09"></a>
 
 ## 1.0.1 — 2026-10-09
 
@@ -237,6 +291,8 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Handmatige releasepublicatie ondersteund en versie in installatienamen opgenomen.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.0...v1.0.1)
+
+<a id="100--2026-10-09"></a>
 
 ## 1.0.0 — 2026-10-09
 

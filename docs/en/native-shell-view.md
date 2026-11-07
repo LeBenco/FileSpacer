@@ -1,8 +1,12 @@
+<a id="native-shell-view-architecture"></a>
+
 # Native Shell view architecture
 
 Read this note before changing view hosting, saved-state restoration or the
 boundary between Shell items and spatial windows. For a broader source map,
 see [Working on FileSpacer](README.md).
+
+<a id="responsibilities"></a>
 
 ## Responsibilities
 
@@ -26,6 +30,8 @@ View operations use public COM interfaces rather than discovering or
 subclassing Shell child controls. The selected-label background adaptation is
 a narrow exception described below. Tests can inspect controls to observe a
 gesture; that instrumentation is not an application dependency.
+
+<a id="readiness-restoration-and-lifetime"></a>
 
 ## Readiness, restoration and lifetime
 
@@ -58,6 +64,8 @@ must not include `SVSI_NOTAKEFOCUS`; that flag belongs on a targeted item.
 Navigating upward does not automatically select the source folder or replace
 the selection of an already-open parent.
 
+<a id="mixed-filefolder-sorting"></a>
+
 ## Mixed file/folder sorting
 
 When mixed sorting is enabled for a filesystem folder, `MixedFolder` supplies a
@@ -86,6 +94,8 @@ Registration and the junction are isolated in `/test` mode. Test cases must
 remove only their own registration and directory. Normal uninstall removes
 the registration owned by FileSpacer.
 
+<a id="selected-name-background-and-scrolling"></a>
+
 ## Selected-name background and scrolling
 
 `ShellViewLabels.h` optionally fills an opaque background behind the single
@@ -113,6 +123,8 @@ redraw suppression, without taking focus. Icon views use unscrolled positions
 and reopen at the top. Do not treat `IFolderView2::GetVisibleItem` as a viewport
 query, or assume `GetViewStateStream` contains a scroll offset.
 
+<a id="activation-and-external-folders"></a>
+
 ## Activation and external folders
 
 With selection-preserving activation enabled, a plain left click on the
@@ -127,6 +139,8 @@ windows.
 Control Panel opens externally through `IOpenControlPanel::Open`. Compare Shell
 identities, not translated names or decoded PIDLs. Keep the source folder and
 its selection intact.
+
+<a id="tests-and-references"></a>
 
 ## Tests and references
 

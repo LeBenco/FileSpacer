@@ -1,10 +1,16 @@
+<a id="third-party-notices"></a>
+
 # Note sui componenti di terze parti
 
 FileSpacer è basato su [ChromaFiler](https://github.com/vanjac/chromafiler), Copyright (c) 2023 J. van’t Hoog, distribuito con licenza [GNU General Public License v3.0](../../LICENSE).
 
+<a id="sqlite"></a>
+
 ## SQLite
 
 SQLite 3.53.4 è collegato staticamente all’applicazione ed è di pubblico dominio. I sorgenti non modificati e le informazioni sulla loro provenienza si trovano in `third_party/sqlite`. Vedi <https://sqlite.org/copyright.html>.
+
+<a id="up-and-refresh-button-icons-lucide-and-feather"></a>
 
 ## Icone dei pulsanti Su e Aggiorna (Lucide e Feather)
 
@@ -12,15 +18,21 @@ Nella barra degli strumenti, la **freccia verso l’alto** apre la **cartella su
 
 Vedi [licenses/Lucide-LICENSE.txt](../../licenses/Lucide-LICENSE.txt) per le note ISC e MIT complete nei sorgenti, oppure `Lucide-LICENSE.txt` nella cartella di installazione. Vedi <https://lucide.dev/license>.
 
+<a id="windows-fonts-and-components"></a>
+
 ## Tipi di carattere e componenti di Windows
 
 Alcune icone dell’interfaccia usano il tipo di carattere Microsoft Segoe MDL2 Assets installato con Windows. FileSpacer non lo ridistribuisce. Windows Shell, i controlli comuni, GDI+ e gli altri componenti di sistema sono forniti da Windows.
+
+<a id="installer"></a>
 
 ## Programma di installazione
 
 Il programma di installazione NSIS usa il plug-in LockedList, Copyright (c) 2013 Afrow Soft Ltd, con licenza zlib. La nota completa si trova in [installer/plugins/LockedList.txt](../../installer/plugins/LockedList.txt) ed è inclusa come `LockedList-LICENSE.txt` nella cartella di installazione. Vedi <https://nsis.sourceforge.io/LockedList_plug-in>.
 
 L’AppUserModelID dei collegamenti viene impostato da `ShortcutAppID.nsh` di FileSpacer usando le macro Windows COM di NSIS. Il precedente sottomodulo `nsis-shortcut-properties` non viene usato. Non vengono usati Material Design Icons né il sottoinsieme del tipo di carattere Segoe incluso in passato.
+
+<a id="small--flat-lock-icon"></a>
 
 ## Icona del lucchetto Small & Flat
 

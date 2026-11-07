@@ -66,6 +66,8 @@ Clean видаляє результати Debug/Release, згенеровани�
 nmake /f Makefile CFG=Debug installer-bitmap
 ```
 
+<a id="sqlite"></a>
+
 ## SQLite
 
 Незмінений об’єднаний код у `third_party\sqlite` збирається окремо як C і компонується статично. DLL SQLite, CLI чи завантаження під час збирання не потрібні. Див. [походження й параметри](https://github.com/LeBenco/FileSpacer/blob/main/third_party/sqlite/README.txt).

@@ -1,8 +1,12 @@
+<a id="default-manager-and-context-menu-integration"></a>
+
 # Default-manager and context-menu integration
 
 `Settings.cpp` manages FileSpacer's folder associations and alternate-manager
 menu entries. Windows still selects and invokes the default action. For usage,
 see [Windows integration](user-guide.md#windows-integration).
+
+<a id="associations-and-menu-visibility"></a>
 
 ## Associations and menu visibility
 
@@ -34,6 +38,8 @@ The separate `filespacer.explorer` verb invokes
 removes this alternate verb and FileSpacer's visibility override. Avoid rewriting
 unchanged values; notify `SHCNE_ASSOCCHANGED` after an actual menu change.
 
+<a id="startup-settings-and-installer-boundary"></a>
+
 ## Startup, settings and installer boundary
 
 Normal startup synchronizes existing registrations; portable startup installs
@@ -46,6 +52,8 @@ The installer calls `/sync-context-menus` without opening a folder or starting
 crash recovery, and checks its exit code. Component removal/uninstall removes
 FileSpacer's per-user overrides through the user-hive cleanup. Neither startup
 nor synchronization silently changes a user's default-manager choice.
+
+<a id="testing-the-boundary"></a>
 
 ## Testing the boundary
 

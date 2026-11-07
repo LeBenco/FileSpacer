@@ -1,9 +1,13 @@
+<a id="regression-tests"></a>
+
 # Regression tests
 
 The reference launcher is `tests.cmd`, run from CMD at the repository root.
 It builds the Debug application with MSVC/NMAKE and selects independent cases
 from this checkout. Application sources, binaries and test helpers must come
 from the same revision. See the [build guide](../../build.md) for dependencies.
+
+<a id="run-locally"></a>
 
 ## Run locally
 
@@ -49,6 +53,8 @@ The UI runner temporarily keeps the system/display awake and suspends the
 screen saver, then restores both even after failure. It does not change the
 power plan or unlock Windows. `desktop-activity.json` records restoration.
 
+<a id="run-in-hyper-v"></a>
+
 ## Run in Hyper-V
 
 ```cmd
@@ -61,6 +67,8 @@ The client verifies their hashes and runs the same scripts and assertions, with
 no compilation in the guest and no fallback to the host desktop. Selection
 precedes package preparation. See the [Hyper-V guide](../client/README.md) for
 one-time setup, desktop requirements and transport diagnostics.
+
+<a id="run-on-github"></a>
 
 ## Run on GitHub
 
@@ -100,6 +108,8 @@ exit code and first error. Logs, JSON reports, screenshots and
 `regression-<run>-<attempt>`, including failed runs. Worker and cleanup failures
 remain invalidating even when individual cases passed.
 
+<a id="find-the-relevant-cases"></a>
+
 ## Find the relevant cases
 
 Case directories are grouped by behavior under `cases/`. Names and paths are
@@ -126,6 +136,8 @@ stable selectors; they need not be translated to use this English guide.
 These are coverage entry points, not a record of executed tests. Inspect each
 case's setup and assertions before deciding whether it covers a change.
 
+<a id="native-view-persistence"></a>
+
 ### Native view persistence
 
 `18-vue-shell-native/02-Persistance.ps1` builds the production host, settings,
@@ -142,6 +154,8 @@ test-native-state.cmd --diagnostic
 
 It initializes MSVC x64 and uses `/Z7`, avoiding a shared compiler PDB. It is an
 alternative invocation of this test, not an additional full-suite check.
+
+<a id="external-applications"></a>
 
 ### External applications
 
@@ -164,6 +178,8 @@ Nilesoft rendering. Inspect their fixtures and use the actual external program
 for visual interoperability acceptance. Missing prerequisites do not validate
 the integration.
 
+<a id="mixed-sorting"></a>
+
 ### Mixed sorting
 
 Group `30-tri-melange` checks ordering, preference changes, notifications,
@@ -172,6 +188,8 @@ command/navigation scenarios with the provider enabled. Keep those shared
 gestures and assertions in one implementation. Filtering, free icon positions,
 renaming and deleting the displayed folder are important identity boundaries;
 an order-only assertion does not cover them.
+
+<a id="add-or-change-a-case"></a>
 
 ## Add or change a case
 
@@ -191,6 +209,8 @@ selection and focus where relevant. A matching count alone is insufficient.
 Do not repeat a failed action, force focus after it, or change an assertion just
 to obtain PASS. Injected failures cover deterministic error/lifetime paths;
 they complement real-Shell tests rather than replacing them.
+
+<a id="reports-isolation-and-diagnosis"></a>
 
 ## Reports, isolation and diagnosis
 
