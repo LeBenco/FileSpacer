@@ -3,13 +3,13 @@ param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')
 $ErrorActionPreference='Stop'
 if($env:COMPUTERNAME-ne'AGENTWIN10'){throw 'Manual package provisioning belongs to AgentWin10.'}
 . (Join-Path $PSScriptRoot '..\..\common\Native.ps1')
-$test=Build-NativeTest -Name SelectionClearTests -CaseDirectory $PSScriptRoot -Standard c++14 -ProductionSources @('MixedFolder.cpp','ShellViewHost.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib')
+$test=Build-NativeTest -Name SelectionClearTests -CaseDirectory $PSScriptRoot -Standard c++14 -ProductionSources @('MixedFolder.cpp','ShellViewHost.cpp','ShellViewSelection.cpp','ShellSelectionDiscovery.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib')
 $payload=Join-Path $ProjectRoot ('build\manual-selection-clear-'+[guid]::NewGuid().ToString('N'))
 [void][IO.Directory]::CreateDirectory($payload)
 Copy-Item -LiteralPath $test -Destination (Join-Path $payload 'SelectionClearTests.exe')
 foreach($name in @('Run-ManualSelectionClear.ps1','Fixture.ps1')){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination (Join-Path $payload $name)}
 $hash=(Get-FileHash -LiteralPath $test -Algorithm SHA256).Hash
-@{CodeCommit='32d16bc + SelectionClearTests prototype';ExecutableSha256=$hash;Purpose='Measure classic Shell clear, candidate aggregate notification, forced fallback. This provisioning step does not run the prototype.'}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $payload 'package.json') -Encoding UTF8
+@{CodeCommit='Production Shell selection binding; inspect the executable hash and actual acceleration coverage';ExecutableSha256=$hash;Purpose='Measure classic Shell clear, production clear-and-notify binding, and unbound public fallback. This provisioning step does not run the prototype.'}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $payload 'package.json') -Encoding UTF8
 $desktop=[Environment]::GetFolderPath([Environment+SpecialFolder]::DesktopDirectory)
 if(!$desktop-or!(Test-Path -LiteralPath $desktop)){throw 'The connected guest desktop directory is unavailable.'}
 function Launcher-Text([string]$Directory) {
