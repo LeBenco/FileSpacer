@@ -3,6 +3,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {Marked} from 'marked';
+import {fetchReleaseDates, releaseHeading} from './releases.mjs';
 
 const template = path.dirname(fileURLToPath(import.meta.url));
 const navigationDepth = 2; // Maximum menu levels, counting each document as level 1.
@@ -143,6 +144,9 @@ export async function generate(repository = path.dirname(template), destination 
         token.siteId = target?.id || (first ? id : `${id}--${originalId}`);
         token.siteDepth = Math.min(6, token.depth + 1);
         token.siteTitle = first ? language.ui[id] : null;
+        if (source === 'CHANGELOG.md' && token.depth === 2 && options.releaseDates) {
+          token.siteTitle = releaseHeading(text(token.text), language.code, options.releaseDates);
+        }
         anchors.set(originalId, token.siteId);
         headings.push({id: token.siteId, anchor: originalId, title: token.siteTitle || text(token.text), depth: token.siteDepth});
       });
@@ -267,5 +271,8 @@ export async function generate(repository = path.dirname(template), destination 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   if (args.length && args[0] !== '--record-translation-sources') throw new Error('Usage: node website/generate.mjs [--record-translation-sources [locale...]]');
-  console.log(json(await generate(undefined, undefined, args.length ? {recordTranslations: args.slice(1)} : {})));
+  console.log(json(await generate(undefined, undefined, {
+    releaseDates: await fetchReleaseDates(),
+    ...(args.length ? {recordTranslations: args.slice(1)} : {}),
+  })));
 }
