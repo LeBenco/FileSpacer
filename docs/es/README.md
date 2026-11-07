@@ -37,16 +37,9 @@ _FileSpacer es una bifurcación de [ChromaFiler](https://github.com/vanjac/chrom
 
 ## Funciones
 
-- **Una ventana por carpeta**, que se activa si la carpeta ya está abierta. Su posición, tamaño, configuración de vista y disposición de iconos se conservan entre aperturas. [Navegación espacial](user-guide.md#navegación-entre-ventanas).
-- **Evitar que se acumulen ventanas**: al abrir una carpeta, se cierra de forma predeterminada la ventana de origen. [Navegación entre ventanas](user-guide.md#navegación-entre-ventanas).
-- **Coloca los iconos libremente**, con las posiciones guardadas y restauradas para cada carpeta. [Disposición de iconos](user-guide.md#disposición-de-iconos).
-- **Mueve y cambia el tamaño de las ventanas** desde cualquier punto del área de archivos sin perder la selección. Los gestos del ratón son configurables, con Alt + arrastrar con el botón izquierdo y Alt + arrastrar con el botón derecho por defecto. [Gestos de ventana](user-guide.md#movimiento-y-cambio-de-tamaño).
-- **Cambia entre carpetas abiertas** desde el menú de la barra de título, cierra las ventanas de las carpetas superiores o vuelve a abrir la última ventana cerrada con Ctrl+Mayús+T. [Navegación entre ventanas](user-guide.md#navegación-entre-ventanas).
-- **Bloquea el estado guardado de una ventana**, manteniendo la posibilidad de cambiar temporalmente su posición, tamaño y visualización. [Bloqueo del estado de las ventanas](user-guide.md#bloqueo-del-estado-guardado).
-- **Filtra la carpeta actual** y reutiliza sus búsquedas recientes. [Búsqueda e historial](user-guide.md#búsqueda-e-historial).
-- **Conserva la selección al activar una ventana** haciendo clic en su fondo. [Selección y activación](user-guide.md#selección-y-activación).
-- **Reduce la superposición de ventanas** al abrir carpetas sin una posición guardada. [Colocación de ventanas](user-guide.md#colocación-de-ventanas).
-- **Personalizar el menú de la barra de título** con acciones para ventanas y disposiciones, y guardar grupos de carpetas abiertas. [Personalización del menú](user-guide.md#personalizar-el-menú-de-la-barra-de-título) · [Grupos de carpetas](user-guide.md#grupos-de-carpetas).
+- **[Una ventana por carpeta](user-guide.md#navegación-entre-ventanas)**. Se guardan la posición, el tamaño, el modo de vista y las posiciones de los iconos. Los iconos se pueden colocar libremente o alinear con la [cuadrícula clásica](user-guide.md#disposición-de-iconos).
+- **Organización automática de las ventanas**. Al abrir otra carpeta, la ventana de origen se cierra de forma predeterminada. Las ventanas sin una posición guardada se colocan [limitando la superposición](user-guide.md#colocación-de-ventanas).
+- **Gestionar las ventanas**. Mover o cambiar el tamaño de las ventanas mediante [gestos del ratón](user-guide.md#movimiento-y-cambio-de-tamaño). Guardar y volver a abrir [grupos de carpetas](user-guide.md#grupos-de-carpetas). [Bloquear la disposición de las ventanas](user-guide.md#bloqueo-del-estado-guardado).
 
 ## Integración
 

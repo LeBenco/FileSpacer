@@ -37,16 +37,9 @@ _FileSpacer est un dérivé de [ChromaFiler](https://github.com/vanjac/chromafil
 
 ## Fonctionnalités
 
-- **Une fenêtre unique par dossier**, réactivée si le dossier est déjà ouvert. Sa position, sa taille, ses réglages d’affichage et la disposition des icônes sont conservés d’une ouverture à l’autre. [Navigation spatiale](user-guide.md#navigation-entre-les-fenêtres).
-- **Limiter l’accumulation des fenêtres** : ouvrir un dossier ferme par défaut la fenêtre source. [Navigation entre les fenêtres](user-guide.md#navigation-entre-les-fenêtres).
-- **Disposer les icônes librement**, avec une disposition enregistrée et restaurée pour chaque dossier. [Disposition des icônes](user-guide.md#disposition-des-icônes).
-- **Déplacer et redimensionner les fenêtres** depuis la zone des fichiers en conservant la sélection. Les raccourcis souris sont configurables, avec Alt + glisser gauche et Alt + glisser droit par défaut. [Gestes de fenêtre](user-guide.md#déplacement-et-redimensionnement).
-- **Passer d’un dossier ouvert à l’autre** depuis le menu de la barre de titre, fermer les fenêtres parentes ou rouvrir la dernière fenêtre fermée avec Ctrl+Maj+T. [Navigation entre les fenêtres](user-guide.md#navigation-entre-les-fenêtres).
-- **Verrouiller l’état enregistré d’une fenêtre**, tout en permettant des changements temporaires de position, de taille et d’affichage. [Verrouillage de l’état des fenêtres](user-guide.md#verrouillage-de-létat-enregistré).
-- **Filtrer le dossier courant** et réutiliser ses recherches récentes. [Recherche et historique](user-guide.md#recherche-et-historique).
-- **Conserver la sélection à l’activation d’une fenêtre** en cliquant sur son arrière-plan. [Sélection et activation](user-guide.md#sélection-et-activation).
-- **Réduire le chevauchement des fenêtres** lors de l’ouverture de dossiers sans position enregistrée. [Placement des fenêtres](user-guide.md#placement-des-fenêtres).
-- **Personnaliser le menu de la barre de titre** avec des actions sur les fenêtres et leur disposition, et enregistrer des groupes de dossiers ouverts. [Personnalisation du menu](user-guide.md#personnaliser-le-menu-de-la-barre-de-titre) · [Groupes de dossiers](user-guide.md#groupes-de-dossiers).
+- **[Une fenêtre unique par dossier](user-guide.md#navigation-entre-les-fenêtres)**. Position, taille, mode d’affichage et emplacement des icônes sont mémorisés. Les icônes peuvent être disposées librement ou alignées sur la [grille de positionnement classique](user-guide.md#disposition-des-icônes).
+- **Organisation automatique des fenêtres**. La fenêtre source se ferme par défaut à l’ouverture d’un autre dossier. Les fenêtres sans position mémorisée sont placées [en limitant le chevauchement](user-guide.md#placement-des-fenêtres).
+- **Gérer ses fenêtres**. Déplacer ou redimensionner les fenêtres grâce à des [raccourcis souris](user-guide.md#déplacement-et-redimensionnement). Enregistrer et rouvrir des [groupes de dossiers](user-guide.md#groupes-de-dossiers). [Verrouiller la disposition des fenêtres](user-guide.md#verrouillage-de-létat-enregistré).
 
 ## Intégration
 

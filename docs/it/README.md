@@ -37,16 +37,9 @@ _FileSpacer è un fork di [ChromaFiler](https://github.com/vanjac/chromafiler), 
 
 ## Funzionalità
 
-- **Una finestra per ogni cartella**, riattivata se la cartella è già aperta. Posizione, dimensioni, impostazioni di visualizzazione e disposizione delle icone vengono ripristinate a ogni riapertura. [Navigazione spaziale](user-guide.md#navigazione-tra-finestre).
-- **Evitare l’accumulo di finestre**: aprire una cartella chiude per impostazione predefinita la finestra di origine. [Navigazione tra finestre](user-guide.md#navigazione-tra-finestre).
-- **Disponi liberamente le icone**: le posizioni vengono salvate e ripristinate per ogni cartella. [Disposizione delle icone](user-guide.md#disposizione-delle-icone).
-- **Sposta e ridimensiona le finestre** da qualsiasi punto dell’area dei file, senza perdere la selezione. I gesti del mouse sono configurabili. Quelli predefiniti sono Alt + trascinamento con il pulsante sinistro e Alt + trascinamento con il pulsante destro. [Gesti per le finestre](user-guide.md#spostamento-e-ridimensionamento).
-- **Passa da una cartella aperta all’altra** dal menu della barra del titolo, chiudi le finestre delle cartelle superiori o riapri l’ultima finestra chiusa con Ctrl+Maiusc+T. [Navigazione tra finestre](user-guide.md#navigazione-tra-finestre).
-- **Blocca lo stato salvato di una finestra**, mantenendo la possibilità di modificarne temporaneamente posizione, dimensioni e visualizzazione. [Blocco dello stato](user-guide.md#blocco-dello-stato-salvato).
-- **Filtra la cartella corrente** e riutilizza le ricerche recenti. [Ricerca e cronologia](user-guide.md#ricerca-e-cronologia).
-- **Mantieni la selezione quando attivi una finestra** facendo clic sullo sfondo. [Selezione e attivazione](user-guide.md#selezione-e-attivazione).
-- **Riduci la sovrapposizione delle finestre** quando apri cartelle senza una posizione salvata. [Posizionamento delle finestre](user-guide.md#posizionamento-delle-finestre).
-- **Personalizzare il menu della barra del titolo** con azioni su finestre e disposizioni e salvare gruppi di cartelle aperte. [Personalizzazione del menu](user-guide.md#personalizzare-il-menu-della-barra-del-titolo) · [Gruppi di cartelle](user-guide.md#gruppi-di-cartelle).
+- **[Una finestra per ogni cartella](user-guide.md#navigazione-tra-finestre)**. Posizione, dimensioni, modalità di visualizzazione e posizioni delle icone vengono memorizzate. Le icone si possono disporre liberamente o allineare alla [griglia classica](user-guide.md#disposizione-delle-icone).
+- **Organizzazione automatica delle finestre**. L’apertura di un’altra cartella chiude per impostazione predefinita la finestra di origine. Le finestre senza una posizione salvata vengono collocate [limitando la sovrapposizione](user-guide.md#posizionamento-delle-finestre).
+- **Gestire le finestre**. Spostare o ridimensionare le finestre con [gesti del mouse](user-guide.md#spostamento-e-ridimensionamento). Salvare e riaprire [gruppi di cartelle](user-guide.md#gruppi-di-cartelle). [Bloccare la disposizione delle finestre](user-guide.md#blocco-dello-stato-salvato).
 
 ## Integrazione
 
