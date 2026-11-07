@@ -5,6 +5,7 @@ import {createHash} from 'node:crypto';
 import {Marked} from 'marked';
 
 const template = path.dirname(fileURLToPath(import.meta.url));
+const navigationDepth = 2; // Maximum menu levels, counting each document as level 1.
 const sources = [
   ['README.md', 'overview'],
   ['docs/user-guide.md', 'user-guide'],
@@ -39,6 +40,7 @@ function navigation(headings, ui) {
   const stack = [root];
   for (const heading of headings.slice(1)) {
     while (stack.length > 1 && stack.at(-1).depth >= heading.depth) stack.pop();
+    if (stack.length >= navigationDepth) continue;
     const node = {...heading, children: []};
     stack.at(-1).children.push(node);
     stack.push(node);
