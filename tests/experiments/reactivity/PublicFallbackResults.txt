@@ -1,0 +1,81 @@
+Public fallback after spatial-array integration, 2026-11-07
+=========================================================
+
+Real Shell, AgentWin10 / Windows 10 19045, Debug x64 with CFG, 5000 files,
+800x400 viewports. This driver never initializes or binds the private selection
+adapter. Its clear object stays unbound and every row records zero private calls.
+FS hosts use the application's folder flags, classic spatial renderers and modern
+List/Details; Explorer uses its native arranged views. No Content alias is included.
+
+FS restores a complete saved selection, focus and viewport; Explorer performs
+native Select All. Clear and the following first selection-array read are also
+measured separately. These are related operations, not identical full-application
+workflows. Values below are medians of three API measurements in milliseconds.
+Combined time is measured in each trial before taking its median; it is not
+computed by adding separate medians. Neither status-size calculation nor the
+application's selection-update debounce is included here.
+
+App      View             Clear     Restore  Array read  Restore+read
+Explorer details             1.813      15.914       5.233        18.020
+Explorer extra-large         1.581      26.352       3.330        29.683
+Explorer large               2.612      22.596       6.414        28.570
+Explorer list                6.776      32.371       6.333        40.990
+Explorer medium              3.594      40.978      12.698        53.677
+Explorer small               2.999      17.263       3.453        20.211
+Explorer tiles               2.549      20.690       5.482        23.267
+FS       details             1.619      29.826       3.918        34.812
+FS       extra-large      1534.334     720.552       4.051       723.794
+FS       free-icons       1367.251     618.810      40.785       663.810
+FS       free-tiles       6131.776     802.251      50.560       853.734
+FS       large            1593.020     746.772       3.507       750.605
+FS       list                9.282      37.923       3.720        41.850
+FS       medium           1346.187     685.244       2.898       688.084
+FS       small            1342.299     648.911       4.049       652.052
+FS       tiles            1338.902     616.805       3.042       619.848
+
+The complete-selection reader improves the data-access phase in free icons,
+independently of private selection capabilities. The public mutation itself is
+still expensive in classic views: arranged restoration is about 0.62-0.75 s and
+clearing about 1.34-1.59 s in this final run. Modern List/Details remain close to
+Explorer. Free Tiles has no equivalent free folder layout in Explorer and is
+substantially worse: public clear is 6.132 s. That case was not changed by the
+array-reader integration (which rejects Tile mode); a separate control measures
+the existing qualified private clear and public redraw suspension. That control
+finds no useful drawing-suspension gain: public median 5717.749 -> 5960.147 ms;
+existing private median 4721.365 -> 4686.751 ms. No redraw change is adopted.
+
+Visible completion
+------------------
+The first repetition of each mode/action records Desktop Duplication images,
+first-change/final-image timestamps and hashes. All 32 final observations are
+OBSERVED with zero coalesced frames, at 800x400 pixels. These are composed desktop
+images, not physical scan-out, opening times or a complete FS status-bar timing.
+The 1.5-second observation tail is excluded from the reported completion times.
+
+Examples from that single visual repetition, milliseconds:
+  FS medium restore/read: 704.136; Explorer medium Select All/read: 54.194.
+  FS medium clear: 1676.432; Explorer medium clear: 64.479.
+  FS List restore/read: 86.568; Explorer List: 69.737.
+  FS Details restore/read: 69.903; Explorer Details: 52.652.
+  FS free-icons restore/read: 703.096; clear: 1425.977.
+  FS free-Tiles restore/read: 1035.863; clear: 6261.271.
+One image observation must not be presented as the median of three API timings.
+
+Validation and evidence
+-----------------------
+Final matrix: experiment-publicfallback-d6d9f80fe9fd4545a17a6a4f0b2ff786, PASS/0,
+48 rows (27 FS, 21 Explorer), exact identities and retained arrays, logical and
+keyboard focus, and every free coordinate. Both restoration and clear are real
+native operations. The source is PublicFallbackTests.cpp and the runner case is
+PublicFallback, with isolated fixtures and no fallback to host UI execution.
+An earlier integration matrix also passed: experiment-publicfallback-512e7cf55def45a88e2b33b111aef2c2.
+Raw data: build/regression/<run>/output/regression/36-reactivity-prototype/50-PublicFallback.
+
+Debug /W4 builds pass without new warnings. clang-tidy and Cppcheck complete on
+the benchmark and modified production units/headers. The required Windows x64
+configuration, real Microsoft headers and official Cppcheck models are retained.
+Static verdict REVIEW: explicit aggregate initialization, reentrancy guards and
+documented bitmask enum-range warnings and benchmark style diagnostics; no
+confirmed new defect. All modified C++ units/headers have both analyses. The separate
+SelectionArrayResults.txt records the integrated data-reader and status-size
+measurements, functional regressions and final analyzer paths.
