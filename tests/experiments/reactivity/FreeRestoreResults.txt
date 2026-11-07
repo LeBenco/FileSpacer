@@ -1,5 +1,16 @@
 Free-placement restoration investigation, 2026-11-07
 
+Qualification update (same day)
+-------------------------------
+The historical presentation table below used only FWF_AUTOARRANGE when creating
+the host. It omitted FS's FWF_NOWEBVIEW and FWF_NOHEADERINALLVIEWS. The API results
+and checked free coordinates remain observations of that fixture, but its 118 ms
+free-view presentation is not an exact measurement of the product's layout.
+The corrected host and new focused observations are in LayoutPathResults.txt.
+Likewise, the old "Content" row forced FVM_CONTENT on the classic renderer: it
+displayed tiles, was not a reachable FS menu mode, and was not real modern Content.
+Do not use that row as evidence of FS offering Content or its performance.
+
 Scope and reference
 -------------------
 5000 files, real free positions, 800x400 Shell views, Debug x64, AgentWin10.
