@@ -97,6 +97,10 @@ void ProxyIcon::create(HWND parent, wchar_t *title, int top, int height) {
         SS_OWNERDRAW | SS_NOPREFIX | WS_VISIBLE | WS_CHILD,
         0, 0, 0, 0, parent, nullptr, GetModuleHandle(nullptr), nullptr));
     SetWindowSubclass(caption, captionProc, 0, (DWORD_PTR)this);
+    lockBadge = checkLE(CreateWindowEx(exStyle, L"STATIC", getString(IDS_WINDOW_STATE_LOCKED),
+        SS_OWNERDRAW | SS_NOPREFIX | WS_CHILD,
+        0, 0, 0, 0, parent, nullptr, GetModuleHandle(nullptr), nullptr));
+    SetWindowSubclass(lockBadge, captionProc, 0, (DWORD_PTR)this);
     toolbar = checkLE(CreateWindowEx(exStyle, TOOLBARCLASSNAME, nullptr,
         TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_TOOLTIPS
             | CCS_NOPARENTALIGN | CCS_NORESIZE | CCS_NODIVIDER | WS_VISIBLE | WS_CHILD,
@@ -126,7 +130,7 @@ void ProxyIcon::create(HWND parent, wchar_t *title, int top, int height) {
 }
 
 void ProxyIcon::destroy() {
-    caption = toolbar = renameBox = nullptr;
+    caption = toolbar = renameBox = lockBadge = nullptr;
     captionIcon = nullptr; // Borrowed from ItemWindow.
 }
 
@@ -197,6 +201,8 @@ void ProxyIcon::setLocked(bool locked) {
         SetWindowText(caption, description.c_str());
         InvalidateRect(caption, nullptr, FALSE);
     }
+    if (lockBadge)
+        InvalidateRect(lockBadge, nullptr, FALSE);
 }
 
 void ProxyIcon::setIcon(HICON icon) {
@@ -229,7 +235,8 @@ LRESULT CALLBACK ProxyIcon::captionProc(HWND window, UINT message,
 }
 
 bool ProxyIcon::drawTitle(const DRAWITEMSTRUCT *draw) {
-    if (!caption || draw->hwndItem != caption || draw->CtlType != ODT_STATIC)
+    if (draw->CtlType != ODT_STATIC || !draw->hwndItem
+            || (draw->hwndItem != caption && draw->hwndItem != lockBadge))
         return false;
     const int saved = SaveDC(draw->hDC);
     FillRect(draw->hDC, &draw->rcItem, GetSysColorBrush(
@@ -247,18 +254,22 @@ bool ProxyIcon::drawTitle(const DRAWITEMSTRUCT *draw) {
         GetThemeColor(theme, TP_BUTTON, TS_NORMAL, TMT_TEXTCOLOR, &color);
     SetTextColor(draw->hDC, color);
     const int iconSize = GetSystemMetrics(SM_CXSMICON);
+    if (draw->hwndItem == lockBadge) {
+        if (stateLocked && settings::getWindowStateLockBadgeEnabled())
+            drawLockBadge(draw->hDC, PROXY_PADDING.cx,
+                (rectHeight(draw->rcItem) - iconSize) / 2, iconSize, color, highContrast);
+        if (theme)
+            CloseThemeData(theme);
+        makeBitmapOpaque(draw->hDC, draw->rcItem);
+        RestoreDC(draw->hDC, saved);
+        return true;
+    }
     if (captionIcon)
         DrawIconEx(draw->hDC, PROXY_PADDING.cx,
             (rectHeight(draw->rcItem) - iconSize) / 2, captionIcon,
             iconSize, iconSize, 0, nullptr, DI_NORMAL);
     RECT text = draw->rcItem;
     text.left += PROXY_PADDING.cx + iconSize + PROXY_INFLATE.cx;
-    if (stateLocked && settings::getWindowStateLockBadgeEnabled()) {
-        const int badgeSize = scaleDPI(11);
-        const int x = PROXY_PADDING.cx + iconSize - badgeSize + scaleDPI(2);
-        const int y = (rectHeight(draw->rcItem) - iconSize)/2 + iconSize - badgeSize + scaleDPI(1);
-        drawLockBadge(draw->hDC, x, y, badgeSize, color, highContrast);
-    }
     text.right = max(text.left, text.right - PROXY_PADDING.cx);
     const DWORD flags = DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS;
     if (theme) {
@@ -279,6 +290,8 @@ void ProxyIcon::setActive(bool active) {
             SetLayeredWindowAttributes(caption, 0, active ? 255 : INACTIVE_CAPTION_ALPHA, LWA_ALPHA);
         if (toolbar)
             SetLayeredWindowAttributes(toolbar, 0, active ? 255 : INACTIVE_CAPTION_ALPHA, LWA_ALPHA);
+        if (lockBadge)
+            SetLayeredWindowAttributes(lockBadge, 0, active ? 255 : INACTIVE_CAPTION_ALPHA, LWA_ALPHA);
     }
 }
 
@@ -293,6 +306,9 @@ void ProxyIcon::setPressedState(bool pressed) {
 void ProxyIcon::autoSize(LONG parentWidth, LONG captionLeft, LONG captionRight) {
     if (!caption || !toolbar)
         return;
+    const bool showLockBadge = stateLocked && settings::getWindowStateLockBadgeEnabled();
+    const int badgeWidth = 2 * PROXY_PADDING.cx + GetSystemMetrics(SM_CXSMICON);
+    const LONG titleLeft = showLockBadge ? captionLeft + badgeWidth : captionLeft;
     HDC dc = GetDC(caption);
     HGDIOBJ previous = captionFont ? SelectObject(dc, captionFont) : nullptr;
     SIZE textSize = {};
@@ -306,7 +322,7 @@ void ProxyIcon::autoSize(LONG parentWidth, LONG captionLeft, LONG captionRight) 
         + PROXY_INFLATE.cx + textSize.cx;
     const int idealWidth = idealLabelWidth + menuSize.cx;
     const int actualLeft = outer->centeredProxy()
-        ? max((parentWidth - idealWidth) / 2, captionLeft) : captionLeft;
+        ? max((parentWidth - idealWidth) / 2, titleLeft) : titleLeft;
     const int actualWidth = min(idealWidth, max(0, parentWidth - actualLeft - captionRight));
     const int labelWidth = max(0, actualWidth - menuSize.cx);
     RECT rect = windowRect(toolbar);
@@ -326,11 +342,17 @@ void ProxyIcon::autoSize(LONG parentWidth, LONG captionLeft, LONG captionRight) 
                     (outer->CAPTION_HEIGHT - hiddenTop - rectHeight(rect)) / 2);
         }
     }
+    if (lockBadge)
+        SetWindowPos(lockBadge, nullptr, captionLeft, top,
+            min(badgeWidth, max(0, parentWidth - captionLeft - captionRight)), rectHeight(rect),
+            SWP_NOZORDER | SWP_NOACTIVATE | (showLockBadge ? SWP_SHOWWINDOW : SWP_HIDEWINDOW));
     SetWindowPos(caption, nullptr, actualLeft, top, labelWidth, rectHeight(rect),
         SWP_NOZORDER | SWP_NOACTIVATE);
     SetWindowPos(toolbar, nullptr, actualLeft + labelWidth, top,
         min(actualWidth, menuSize.cx), rectHeight(rect), SWP_NOZORDER | SWP_NOACTIVATE);
     InvalidateRect(caption, nullptr, FALSE);
+    if (lockBadge)
+        InvalidateRect(lockBadge, nullptr, FALSE);
 }
 
 void ProxyIcon::redrawToolbar() {
@@ -338,6 +360,8 @@ void ProxyIcon::redrawToolbar() {
         RedrawWindow(caption, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
     if (toolbar)
         RedrawWindow(toolbar, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+    if (lockBadge)
+        RedrawWindow(lockBadge, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
 RECT ProxyIcon::titleRect() {
