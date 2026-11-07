@@ -33,12 +33,13 @@ const BYTE INACTIVE_CAPTION_ALPHA = 156;
 const BYTE PROXY_BUTTON_STYLE = BTNS_WHOLEDROPDOWN | BTNS_NOPREFIX;
 
 static HFONT captionFont = nullptr;
+static SIZE LOCK_BADGE_SIZE = {};
 
 // Native ICO loading selects a DPI-sized image on every supported Windows version.
-static bool drawLockBadge(int resource, HDC dc, int x, int y, int size, COLORREF color, bool highContrast) {
+static bool drawLockBadge(int resource, HDC dc, int x, int y, SIZE size, COLORREF color, bool highContrast) {
     std::unique_ptr<std::remove_pointer_t<HICON>, decltype(&DestroyIcon)> icon(
         static_cast<HICON>(LoadImage(GetModuleHandle(nullptr),
-            MAKEINTRESOURCE(resource), IMAGE_ICON, size, size, 0)), DestroyIcon);
+            MAKEINTRESOURCE(resource), IMAGE_ICON, size.cx, size.cy, 0)), DestroyIcon);
     if (!icon) return false;
     if (highContrast) {
         // DrawState's monochrome conversion loses alpha-only ICO masks. Preserve
@@ -48,9 +49,9 @@ static bool drawLockBadge(int resource, HDC dc, int x, int y, int size, COLORREF
         using Bitmap = std::unique_ptr<std::remove_pointer_t<HBITMAP>, decltype(&DeleteObject)>;
         Bitmap mask(info.hbmMask, DeleteObject), source(info.hbmColor, DeleteObject);
         if (!source) return false;
-        BITMAPINFO format = {{sizeof(BITMAPINFOHEADER), size, -size, 1, 32, BI_RGB}};
-        std::vector<uint32_t> pixels(static_cast<size_t>(size)*size);
-        if (GetDIBits(dc, source.get(), 0, size, pixels.data(), &format, DIB_RGB_COLORS) != size)
+        BITMAPINFO format = {{sizeof(BITMAPINFOHEADER), size.cx, -size.cy, 1, 32, BI_RGB}};
+        std::vector<uint32_t> pixels(static_cast<size_t>(size.cx)*size.cy);
+        if (GetDIBits(dc, source.get(), 0, size.cy, pixels.data(), &format, DIB_RGB_COLORS) != size.cy)
             return false;
         for (auto &pixel : pixels) {
             const uint32_t alpha = pixel >> 24;
@@ -65,12 +66,26 @@ static bool drawLockBadge(int resource, HDC dc, int x, int y, int size, COLORREF
         icon.reset(CreateIconIndirect(&info));
         if (!icon) return false;
     }
-    return !!DrawIconEx(dc, x, y, icon.get(), size, size, 0, nullptr, DI_NORMAL);
+    return !!DrawIconEx(dc, x, y, icon.get(), size.cx, size.cy, 0, nullptr, DI_NORMAL);
 }
 
 void ProxyIcon::init() {
     PROXY_PADDING = scaleDPI(PROXY_PADDING);
     PROXY_INFLATE = scaleDPI(PROXY_INFLATE);
+    LOCK_BADGE_SIZE = {GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON)};
+    // Preserve the artwork's aspect ratio at the existing small-icon height.
+    std::unique_ptr<std::remove_pointer_t<HICON>, decltype(&DestroyIcon)> icon(
+        static_cast<HICON>(LoadImage(GetModuleHandle(nullptr),
+            MAKEINTRESOURCE(IDR_LOCK_BADGE_ICON), IMAGE_ICON, 0, 0, 0)), DestroyIcon);
+    ICONINFO info = {};
+    if (icon && checkLE(GetIconInfo(icon.get(), &info))) {
+        using Bitmap = std::unique_ptr<std::remove_pointer_t<HBITMAP>, decltype(&DeleteObject)>;
+        Bitmap mask(info.hbmMask, DeleteObject), source(info.hbmColor, DeleteObject);
+        BITMAP bitmap = {};
+        if (source && checkLE(GetObject(source.get(), sizeof(bitmap), &bitmap))
+                && bitmap.bmWidth > 0 && bitmap.bmHeight > 0)
+            LOCK_BADGE_SIZE.cx = MulDiv(LOCK_BADGE_SIZE.cy, bitmap.bmWidth, bitmap.bmHeight);
+    }
 }
 
 void ProxyIcon::initTheme(HTHEME theme) {
@@ -101,7 +116,7 @@ void ProxyIcon::create(HWND parent, wchar_t *title, int top, int height) {
         TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_TOOLTIPS
             | CCS_NOPARENTALIGN | CCS_NORESIZE | CCS_NODIVIDER | WS_CHILD,
         0, 0, 0, 0, parent, nullptr, GetModuleHandle(nullptr), nullptr));
-    SetWindowSubclass(lockBadge, captionProc, 0, (DWORD_PTR)this);
+    SetWindowSubclass(lockBadge, lockBadgeProc, 0, 0);
     SendMessage(lockBadge, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_MIXEDBUTTONS);
     SendMessage(lockBadge, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
     SendMessage(lockBadge, TB_SETBITMAPSIZE, 0, 0);
@@ -168,11 +183,10 @@ bool ProxyIcon::drawMenuButton(const NMCUSTOMDRAW &draw) {
         HIGHCONTRAST contrast = {sizeof(contrast)};
         const bool highContrast = SystemParametersInfo(SPI_GETHIGHCONTRAST,
             sizeof(contrast), &contrast, 0) && (contrast.dwFlags & HCF_HIGHCONTRASTON);
-        const int iconSize = GetSystemMetrics(SM_CXSMICON);
         drawLockBadge(stateLocked ? IDR_LOCK_BADGE_ICON : IDR_UNLOCK_BADGE_ICON,
             draw.hdc, draw.rc.left + PROXY_PADDING.cx,
-            draw.rc.top + (rectHeight(draw.rc) - iconSize) / 2,
-            iconSize, GetSysColor(COLOR_WINDOWTEXT), highContrast);
+            draw.rc.top + (rectHeight(draw.rc) - LOCK_BADGE_SIZE.cy) / 2,
+            LOCK_BADGE_SIZE, GetSysColor(COLOR_WINDOWTEXT), highContrast);
         if (clickable && (draw.uItemState & CDIS_FOCUS))
             DrawFocusRect(draw.hdc, &draw.rc);
         RestoreDC(draw.hdc, saved);
@@ -254,8 +268,7 @@ void ProxyIcon::setIcon(HICON icon) {
 // The passive label is part of the native caption hit-test area. Windows handles
 // moving, activation and double-click maximization; no simulated dragging is used.
 LRESULT CALLBACK ProxyIcon::captionProc(HWND window, UINT message,
-        WPARAM wParam, LPARAM lParam, UINT_PTR id, DWORD_PTR refData) {
-    auto proxy = reinterpret_cast<ProxyIcon *>(refData);
+        WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR) {
     if (message == WM_COMMAND && !lParam) {
         // Nilesoft Shell's window.command targets this menu owner. Queue the
         // same stable command on the real host instead of running it in NS.
@@ -268,11 +281,20 @@ LRESULT CALLBACK ProxyIcon::captionProc(HWND window, UINT message,
         }
         return 0;
     }
-    if (message == WM_NCHITTEST && (window != proxy->lockBadge
-            || !settings::getWindowStateLockEnabled() || !settings::getWindowStateLockClickEnabled()))
+    if (message == WM_NCHITTEST)
         return HTTRANSPARENT;
     if (message == WM_NCDESTROY)
-        RemoveWindowSubclass(window, captionProc, id);
+        RemoveWindowSubclass(window, captionProc, 0);
+    return DefSubclassProc(window, message, wParam, lParam);
+}
+
+LRESULT CALLBACK ProxyIcon::lockBadgeProc(HWND window, UINT message,
+        WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR) {
+    if (message == WM_NCHITTEST && (!settings::getWindowStateLockEnabled()
+            || !settings::getWindowStateLockClickEnabled()))
+        return HTTRANSPARENT;
+    if (message == WM_NCDESTROY)
+        RemoveWindowSubclass(window, lockBadgeProc, 0);
     return DefSubclassProc(window, message, wParam, lParam);
 }
 
@@ -340,7 +362,7 @@ void ProxyIcon::autoSize(LONG parentWidth, LONG captionLeft, LONG captionRight) 
     const bool showLockBadge = outer->isFolder() && settings::getWindowStateLockEnabled()
         && (stateLocked ? settings::getWindowStateLockBadgeEnabled()
             : settings::getWindowStateUnlockBadgeEnabled());
-    const int badgeWidth = 2 * PROXY_PADDING.cx + GetSystemMetrics(SM_CXSMICON);
+    const int badgeWidth = 2 * PROXY_PADDING.cx + LOCK_BADGE_SIZE.cx;
     const LONG titleLeft = showLockBadge ? captionLeft + badgeWidth : captionLeft;
     HDC dc = GetDC(caption);
     HGDIOBJ previous = captionFont ? SelectObject(dc, captionFont) : nullptr;
