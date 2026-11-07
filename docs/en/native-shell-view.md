@@ -113,8 +113,13 @@ checked again after the call. Duplicate, missing or differently encoded identiti
 unsupported interfaces and failed operations retain the per-item restoration.
 View-generation checks still apply after every external call. The qualified
 Select All binding is reused when available; otherwise the public bulk operation
-is used for arranged views. Free placement retains its ordinary public path
-unless that binding is qualified. Focus and scroll restoration remain separate.
+also serves free placement when the arrangement query is supported. In free icon
+views, complete-set proofs use public item indices and recheck all/selected
+counts, avoiding the native spatial sort while still comparing every identity.
+Other renderers retain their efficient native enumeration. Capturing a large
+complete selection also uses indices in free icon views, with native enumeration
+when the indexed capture is unavailable. Focus and scroll restoration remain
+separate.
 
 ## Mixed file/folder sorting
 
