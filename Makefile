@@ -37,6 +37,7 @@ RESOURCE = $(OUTDIR)\resource.res
 PROVIDER_RESOURCE = $(OUTDIR)\MixedFolderProvider.res
 ICON_SVG = src\res\FileSpacer.svg
 ICON_ICO = src\res\FileSpacer.ico
+LOCK_BADGE_SVG = src\res\window-state-lock.svg
 LOCK_BADGE_ICO = src\res\window-state-lock.ico
 UNLOCK_BADGE_SVG = src\res\window-state-unlock.svg
 UNLOCK_BADGE_ICO = src\res\window-state-unlock.ico
@@ -122,8 +123,13 @@ $(RESOURCE): src\*.rc src\resource.h src\dialog.h \
 $(ICON_ICO): $(ICON_SVG) $(ICON_GENERATOR) Makefile
 	"$(ICON_PYTHON)" "$(ICON_GENERATOR)" --source "$(ICON_SVG)" --output "$(ICON_ICO)" --work-dir "$(OUTDIR)" --inkscape "$(INKSCAPE)"
 
+$(LOCK_BADGE_ICO): $(LOCK_BADGE_SVG) Makefile
+	@for %S in (16 20 24 28 32 40 48 64 96 128 160) do @(magick -background none -density 384 MSVG:$(LOCK_BADGE_SVG) -resize x%S $(OUTDIR)\lock-%S.png || exit /b 1)
+	magick $(OUTDIR)\lock-160.png $(OUTDIR)\lock-128.png $(OUTDIR)\lock-96.png $(OUTDIR)\lock-64.png $(OUTDIR)\lock-48.png $(OUTDIR)\lock-40.png $(OUTDIR)\lock-32.png $(OUTDIR)\lock-28.png $(OUTDIR)\lock-24.png $(OUTDIR)\lock-20.png $(OUTDIR)\lock-16.png $(LOCK_BADGE_ICO)
+
 $(UNLOCK_BADGE_ICO): $(UNLOCK_BADGE_SVG) Makefile
-	magick -background none -density 384 MSVG:$(UNLOCK_BADGE_SVG) -define icon:auto-resize=256,128,96,64,48,40,32,28,24,20,16 $(UNLOCK_BADGE_ICO)
+	@for %S in (16 20 24 28 32 40 48 64 96 128 160) do @(magick -background none -density 384 MSVG:$(UNLOCK_BADGE_SVG) -resize x%S $(OUTDIR)\unlock-%S.png || exit /b 1)
+	magick $(OUTDIR)\unlock-160.png $(OUTDIR)\unlock-128.png $(OUTDIR)\unlock-96.png $(OUTDIR)\unlock-64.png $(OUTDIR)\unlock-48.png $(OUTDIR)\unlock-40.png $(OUTDIR)\unlock-32.png $(OUTDIR)\unlock-28.png $(OUTDIR)\unlock-24.png $(OUTDIR)\unlock-20.png $(OUTDIR)\unlock-16.png $(UNLOCK_BADGE_ICO)
 
 clean:
 	@if exist "build\debug" rmdir /s /q "build\debug"
