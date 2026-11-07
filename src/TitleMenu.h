@@ -15,19 +15,24 @@ namespace filespacer {
 enum TitleMenuEntry {
     TITLE_COPY_PATH, TITLE_RENAME, TITLE_STATE_LOCK, TITLE_PROPERTIES,
     TITLE_CLOSE_PARENTS, TITLE_REOPEN, TITLE_SETTINGS,
-    TITLE_RESTORE_LAYOUT, TITLE_REPLACE_LAYOUT, TITLE_FORGET_LAYOUT,
-    TITLE_CLOSE_DESCENDANTS, TITLE_CLOSE_OTHERS, TITLE_FIT_CONTENT, TITLE_GROUPS, TITLE_SEPARATOR,
+    TITLE_RESTORE_LAYOUT, TITLE_REPLACE_LAYOUT,
+    // Slot 9 is retired; keep the remaining persisted identifiers stable.
+    TITLE_CLOSE_DESCENDANTS = 10, TITLE_CLOSE_OTHERS, TITLE_FIT_CONTENT, TITLE_GROUPS, TITLE_SEPARATOR,
     TITLE_OPEN_WINDOWS, TITLE_ENTRY_COUNT
 };
 inline std::vector<int> defaultTitleMenu() {
     return {TITLE_COPY_PATH, TITLE_RENAME, TITLE_STATE_LOCK, TITLE_PROPERTIES,
         TITLE_CLOSE_PARENTS, TITLE_REOPEN, TITLE_SEPARATOR, TITLE_OPEN_WINDOWS};
 }
+inline bool validTitleMenuEntry(int entry) {
+    return entry >= 0 && entry < TITLE_ENTRY_COUNT
+        && (entry <= TITLE_REPLACE_LAYOUT || entry >= TITLE_CLOSE_DESCENDANTS);
+}
 inline bool validTitleMenu(const std::vector<int> &items) {
     if (items.size() > 64) return false;
     bool seen[TITLE_ENTRY_COUNT] = {};
     for (int entry : items) {
-        if (entry < 0 || entry >= TITLE_ENTRY_COUNT) return false;
+        if (!validTitleMenuEntry(entry)) return false;
         if (entry != TITLE_SEPARATOR && seen[entry]) return false;
         seen[entry] = true;
     }
@@ -36,7 +41,7 @@ inline bool validTitleMenu(const std::vector<int> &items) {
 inline UINT titleMenuCommand(int entry) {
     const UINT commands[] = {IDM_CAPTION_COPY_PATH, IDM_RENAME_PROXY, IDM_TOGGLE_STATE_LOCK,
         IDM_CAPTION_PROPERTIES, IDM_CAPTION_CLOSE_PARENTS, IDM_REOPEN_WINDOW, IDM_SETTINGS,
-        IDM_RESTORE_LAYOUT, IDM_REPLACE_LAYOUT, IDM_FORGET_LAYOUT, IDM_CLOSE_DESCENDANTS,
+        IDM_RESTORE_LAYOUT, IDM_REPLACE_LAYOUT, 0, IDM_CLOSE_DESCENDANTS,
         IDM_CLOSE_OTHERS, IDM_FIT_CONTENT, IDM_FOLDER_GROUPS};
     return entry >= 0 && entry < TITLE_SEPARATOR ? commands[entry] : 0;
 }
