@@ -21,6 +21,7 @@ public:
     void bind(IShellView *view, const std::function<bool()> &current);
     void reset();
     bool accelerated() const;
+    bool acceleratesSelectAll() const;
     uint64_t acceleratedSelectAllCount() const;
     bool backingBufferReleased(bool &known) const;
     HRESULT clear(IShellView *view, const std::function<bool()> &current,
