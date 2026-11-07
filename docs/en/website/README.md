@@ -1,3 +1,5 @@
+<a id="website-generation"></a>
+
 # Website generation
 
 The public site concatenates `README.md`, the user guide, the changelog and
@@ -43,8 +45,11 @@ when regenerating the application icon. The theme's `favicon_ico` setting
 uses this asset in every language.
 
 Heading order and hierarchy must match English. The generator normalizes levels,
-reuses the English document-specific heading IDs in every language and rewrites
-internal links. Changing language preserves the section being read. Missing
+uses explicit English heading anchors shared by every source language and rewrites
+internal links. Translated titles do not determine the canonical IDs. Changing
+language appends the current fragment to the other language’s URL, without a
+translation map. Localized assets have identical filenames and relative URLs
+within each generated language directory. Missing
 documents, headings or localized PNG/GIF captures fail the build. The neutral
 application logo is shared. See [translation maintenance](translations/README.md)
 for terminology sources and naming conventions.
@@ -73,6 +78,8 @@ sites and omits English stemming and stop words. Lunr's default ASCII trimmer
 would otherwise discard Greek words. English keeps the original search pipeline.
 The test dependency matches the theme's Lunr 2.3.9 runtime.
 
+<a id="local-checks"></a>
+
 ## Local checks
 
 With Node.js 22 or later, run from the repository root:
@@ -91,6 +98,8 @@ site root, other languages under `/de/`, `/el/`, `/es/`, `/fr/`, `/it/`, `/nl/`,
 `/pl/`, `/pt/` and `/uk/`.
 These outputs are generated and ignored by Git. The application build and its
 dependencies are separate from this documentation build.
+
+<a id="shared-website-and-offline-builds"></a>
 
 ## Shared website and offline builds
 
@@ -128,6 +137,8 @@ Text input hashes normalize CRLF/LF to permit Linux-to-Windows artifact transfer
 An absent, stale or damaged copy is rebuilt with Jekyll. A generated NSIS include
 installs the documentation and removes only its owned files on uninstallation;
 unowned files in the help directory are preserved.
+
+<a id="github-pages"></a>
 
 ## GitHub Pages
 
