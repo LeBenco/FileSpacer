@@ -27,18 +27,16 @@ FileSpacer prioritizes a lightweight and uncluttered experience. To address the 
 
 WinGet and Chocolatey packages are awaiting catalog approval.
 
+## Features
+
+- **One window per folder**. Its position, size, view mode and icon positions [are remembered](docs/en/user-guide.md#window-navigation). Icons can be arranged freely or aligned to the [standard positioning grid](docs/en/user-guide.md#icon-layout).
+- **Window organization**. Opening another folder closes the source window by default. Windows without a saved position are placed to [limit overlap](docs/en/user-guide.md#window-placement).
+- **Manage windows**. Move or resize windows using [mouse shortcuts](docs/en/user-guide.md#moving-and-resizing). Save and reopen [groups of folders](docs/en/user-guide.md#folder-groups). [Lock window layouts](docs/en/user-guide.md#locking-a-saved-layout).
+
 **Documentation:**
 
 [![Docs](https://img.shields.io/badge/Docs-User%20Guide-blue)](docs/en/user-guide.md)
 [![Docs](https://img.shields.io/badge/Docs-Changelog-orange)](CHANGELOG.md)
-
-_FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler), originally created by J. van't Hoog. See [Credits](#license-and-credits) below for details._
-
-## Features
-
-- **One window per folder**. Its position, size, view mode and icon positions [are remembered](docs/en/user-guide.md#window-navigation). Icons can be arranged freely or aligned to the [standard positioning grid](docs/en/user-guide.md#icon-layout).
-- **Automatic window organization**. Opening another folder closes the source window by default. Windows without a saved position are placed to [limit overlap](docs/en/user-guide.md#window-placement).
-- **Manage windows**. Move or resize windows using [mouse shortcuts](docs/en/user-guide.md#moving-and-resizing). Save and reopen [groups of folders](docs/en/user-guide.md#folder-groups). [Lock window layouts](docs/en/user-guide.md#locking-a-saved-layout).
 
 ## Integration
 
