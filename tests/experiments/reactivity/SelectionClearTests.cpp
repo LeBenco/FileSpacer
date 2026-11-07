@@ -288,13 +288,21 @@ void runClear(const std::wstring &output,const wchar_t *path) {
             std::puts("SELECT_PHASE post-sort-clear");std::fflush(stdout);
             checkState(view,shell,folder,path,ids,{});
             need(arrayPaths(retained)==wanted,"Global clear corrupted retained snapshot");
-            need(SUCCEEDED(shell->SelectItem(ids[7],selectNoFocus)),"Partial selection setup failed");
-            std::puts("SELECT_PHASE partial-to-all");std::fflush(stdout);
-            const uint64_t before=accelerated.acceleratedSelectAllCount();
-            need(SUCCEEDED(bulk->Select(SFVS_SELECT_ALLITEMS))&&accelerated.acceleratedSelectAllCount()==before,
-                "Partial-selection fallback did not stay native");
-            checkAll();
-            need(SUCCEEDED(accelerated.clear(shell,current)),"Partial-selection fallback clear failed");
+            for(int quantity:{1,1000,fixtureCount-1}) {
+                need(SUCCEEDED(view->SelectAndPositionItems(static_cast<UINT>(quantity),ids.data(),nullptr,selectNoFocus)),"Partial selection setup failed");
+                std::vector<std::wstring> partial(orderedPaths.begin(),orderedPaths.begin()+quantity);std::sort(partial.begin(),partial.end());
+                CComPtr<IShellItemArray> previous;
+                need(SUCCEEDED(view->GetSelection(FALSE,&previous))&&arrayPaths(previous)==partial,"Partial selection snapshot differs");
+                std::puts("SELECT_PHASE partial-to-all");std::fflush(stdout);
+                const uint64_t before=accelerated.acceleratedSelectAllCount();const double partialStarted=clockMs();
+                need(SUCCEEDED(bulk->Select(SFVS_SELECT_ALLITEMS)),"Partial-to-all selection failed");
+                const double partialElapsed=clockMs()-partialStarted;
+                need(accelerated.acceleratedSelectAllCount()==before+(expected?1u:0u),"Wrong partial-to-all backend used");
+                checkAll();need(arrayPaths(previous)==partial,"Partial-to-all selection corrupted retained snapshot");
+                need(SUCCEEDED(accelerated.clear(shell,current)),"Partial-to-all selection clear failed");
+                std::printf("PARTIAL_ALL view=%s previous=%d count=%d private_applied=%d api_ms=%.3f identities=PASS retained=PASS\n",
+                    mode.name,quantity,fixtureCount,expected,partialElapsed);std::fflush(stdout);
+            }
             accelerated.reset();
             std::puts("SELECT_PHASE detached-all");std::fflush(stdout);
             need(SUCCEEDED(bulk->Select(SFVS_SELECT_ALLITEMS)),"Detached global-selection fallback failed");
