@@ -1,3 +1,5 @@
+<a id="using-filespacer"></a>
+
 # FileSpacer verwenden
 
 FileSpacer merkt sich Position und Aussehen jedes Fensters beim erneuten Öffnen. Ordner kehren an ihren vertrauten Platz zurück, ähnlich wie Gegenstände auf einem Schreibtisch. Dazu kommen anpassbare Tastenkombinationen, Schnellaktionen und eine aufgeräumte, anpassbare Oberfläche.
@@ -5,6 +7,8 @@ FileSpacer merkt sich Position und Aussehen jedes Fensters beim erneuten Öffnen
 <div id="windows-integration"></div>
 
 FileSpacer lässt sich bei der Installation oder unter **Einstellungen > Integration** mit **Als Standard-Dateibrowser festlegen** als Standard-Dateimanager festlegen. Das Kontextmenü von Ordnern bietet **In FileSpacer öffnen** bzw. **Im Windows-Datei-Explorer öffnen**, wenn FileSpacer als Standard festgelegt ist.
+
+<a id="window-navigation-and-layout"></a>
 
 ## Navigation und Anordnung der Fenster
 
@@ -26,7 +30,7 @@ FileSpacer lässt sich bei der Installation oder unter **Einstellungen > Integra
 
 Die Sperrfunktion wird unter **Einstellungen > Allgemein** aktiviert. Danach erscheint **Fensterzustand sperren** neben dem Ordnertitel. Ein Schloss am Symbol kennzeichnet die Sperre. Das Abschalten der Funktion entfernt alle Sperren.
 
-<img src="images/locked-title-de.png" alt="Nahaufnahme des Ordnertitels mit Schlosssymbol." width="280">
+<img src="images/locked-title.png" alt="Nahaufnahme des Ordnertitels mit Schlosssymbol." width="280">
 
 Beim Öffnen eines Ordners oder seines übergeordneten Ordners wird das Ausgangsfenster standardmäßig geschlossen. **Strg beim Öffnen gedrückt halten**, um es offen zu lassen. Das Verhalten lässt sich unter **Einstellungen > Allgemein** ändern. Beim Öffnen mehrerer ausgewählter Ordner bleibt das Ausgangsfenster offen.
 
@@ -36,6 +40,8 @@ Das Menü neben dem Titel wechselt zwischen geöffneten Ordnern und schließt ü
 <div id="folder-groups"></div>
 
 **Ordnergruppe speichern / öffnen** im Titelmenü öffnet mehrere Ordner gemeinsam mit ihren gespeicherten Anordnungen.
+
+<a id="folder-contents-and-display"></a>
 
 ## Anzeige der Ordnerinhalte
 
@@ -51,18 +57,22 @@ In FileSpacer lassen sich die Inhalte eines Ordners in einem Raster anordnen, wi
 
 Standardmäßig stehen Ordner vor Dateien, wie im Datei-Explorer. **Ordner und Dateien beim Sortieren mischen** unter **Einstellungen > Anzeige** sortiert beide gemeinsam, wie unter [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) und [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Das gilt für Details, Liste und automatisch angeordnete Symbole. Virtuelle Ordner und Archive behalten die Windows-Sortierung.
 
-![Ordner und Dateien in einer gemeinsamen alphabetischen Reihenfolge.](images/mixed-sorting-de.png)
+![Ordner und Dateien in einer gemeinsamen alphabetischen Reihenfolge.](images/mixed-sorting.png)
 
 In denselben Einstellungen macht **Vollständigen Namen einer ausgewählten Datei anzeigen** auch sehr lange Namen in der Symbolansicht vollständig lesbar. Das gilt bei genau einer ausgewählten Datei.
 
-![Ein langer ausgewählter Dateiname wird in der Symbolansicht vollständig angezeigt.](images/selected-name-de.png)
+![Ein langer ausgewählter Dateiname wird in der Symbolansicht vollständig angezeigt.](images/selected-name.png)
 
 <div id="auswahl-und-aktivierung"></div>
 <div id="selection-and-activation"></div>
 
 Ein Klick auf den Hintergrund eines inaktiven Fensters hebt dessen Auswahl standardmäßig auf, wie im Datei-Explorer. **Auswahl beim Klicken auf inaktives Fenster beibehalten** unter **Einstellungen > Allgemein** aktiviert es ohne Verlust der Auswahl.
 
+<a id="customization"></a>
+
 ## Anpassung
+
+<a id="changing-the-interface"></a>
 
 ### Oberfläche anpassen
 
@@ -71,9 +81,9 @@ Ein Klick auf den Hintergrund eines inaktiven Fensters hebt dessen Auswahl stand
 
 Das **Titelleistenmenü** lässt sich unter **Einstellungen > Anzeige > Oberflächenelemente** anpassen. Befehle werden durch Ziehen und Ablegen hinzugefügt und umgeordnet. Zum Entfernen einen Eintrag aus dem Menü herausziehen.
 
-![Eine Aktion zum Titelleistenmenü hinzufügen und eine andere entfernen.](images/customize-title-menu-de.gif)
+![Eine Aktion zum Titelleistenmenü hinzufügen und eine andere entfernen.](images/customize-title-menu.gif)
 
-![Das Titelleistenmenü mit der Aktion Gesperrtes Fensterlayout wiederherstellen.](images/customized-title-menu-de.png)
+![Das Titelleistenmenü mit der Aktion Gesperrtes Fensterlayout wiederherstellen.](images/customized-title-menu.png)
 
 Von Nilesoft Shell verwaltete Einträge werden in dessen Konfiguration geändert, da seine Regeln Vorrang vor denen von FileSpacer haben ([siehe Integration unten](#nilesoft-shell)).
 
@@ -87,11 +97,13 @@ Von Nilesoft Shell verwaltete Einträge werden in dessen Konfiguration geändert
 | Verschieben | Alt + Ziehen mit der linken Maustaste |
 | Größe ändern | Alt + Ziehen mit der rechten Maustaste |
 
-![Fenster mit Alt und der linken Maustaste verschieben.](images/move-window-de.gif)
+![Fenster mit Alt und der linken Maustaste verschieben.](images/move-window.gif)
 
-![Fenstergröße mit Alt und der rechten Maustaste ändern.](images/resize-window-de.gif)
+![Fenstergröße mit Alt und der rechten Maustaste ändern.](images/resize-window.gif)
 
 Die Auswahl bleibt erhalten. Esc bricht die Geste ab. Die Belegung lässt sich unter **Einstellungen > Tastenkombinationen** anpassen. Linke und rechte Maustaste erfordern Alt. Die mittlere kann allein verwendet werden.
+
+<a id="integration"></a>
 
 ### Integration
 
@@ -103,7 +115,7 @@ Die Auswahl bleibt erhalten. Esc bricht die Geste ab. Die Belegung lässt sich u
 
 **In Everything suchen** startet [die Suche](https://www.voidtools.com/support/everything/searching/) im Ordner und seinen Unterordnern oder mit **Überall** in allen [indizierten Dateien](https://www.voidtools.com/support/everything/indexes/). Die Ergebnisse öffnen sich in Everything. Für virtuelle Ordner Überall wählen. Ein erfolgreicher Start leert das Suchfeld und entfernt den lokalen Filter von FileSpacer.
 
-![Eine Suchanfrage in FileSpacer und daneben die passenden Ergebnisse in Everything.](images/everything-search-de.png)
+![Eine Suchanfrage in FileSpacer und daneben die passenden Ergebnisse in Everything.](images/everything-search.png)
 
 <div id="nilesoft-shell"></div>
 
@@ -111,19 +123,19 @@ Die Auswahl bleibt erhalten. Esc bricht die Geste ab. Die Belegung lässt sich u
 
 FileSpacer stellt das Titelleistenmenü zusammen. Danach wendet Nilesoft Shell seine Regeln an, die Vorrang haben. Die [Konfigurationsreferenz](nilesoft-shell.md) beschreibt die Darstellung und den Zugriff auf FileSpacer-Aktionen.
 
-Für die Menüs der Titelleiste und der Symbolleiste werden Ecken ohne Abrundung empfohlen.
+Für die Menüs der Titelleiste und der Symbolleiste werden [Ecken ohne Abrundung](nilesoft-shell.md#recommended-menu-appearance) empfohlen.
 
 **Navigationsmenü**
 
 | Standardecken | Empfohlene eckige Menüs |
 | --- | --- |
-| <img src="images/nilesoft-navigation-default-de.png" alt="Navigationsmenü der Titelleiste mit den standardmäßig abgerundeten Ecken des Modern-Themes." width="320"> | <img src="images/nilesoft-navigation-adapted-de.png" alt="Dasselbe Navigationsmenü mit den empfohlenen eckigen Menürändern." width="320"> |
+| <img src="images/nilesoft-navigation-default.png" alt="Navigationsmenü der Titelleiste mit den standardmäßig abgerundeten Ecken des Modern-Themes." width="320"> | <img src="images/nilesoft-navigation-adapted.png" alt="Dasselbe Navigationsmenü mit den empfohlenen eckigen Menürändern." width="320"> |
 
-**Hauptmenü (…)**
+**Hauptmenü**
 
 | Standardecken | Empfohlene eckige Menüs |
 | --- | --- |
-| <img src="images/nilesoft-main-menu-default-de.png" alt="Hauptmenü mit den standardmäßig abgerundeten Ecken des Modern-Themes." width="320"> | <img src="images/nilesoft-main-menu-adapted-de.png" alt="Dasselbe Hauptmenü mit den empfohlenen eckigen Menürändern." width="320"> |
+| <img src="images/nilesoft-main-menu-default.png" alt="Hauptmenü mit den standardmäßig abgerundeten Ecken des Modern-Themes." width="320"> | <img src="images/nilesoft-main-menu-adapted.png" alt="Dasselbe Hauptmenü mit den empfohlenen eckigen Menürändern." width="320"> |
 
 [PowerToys](https://learn.microsoft.com/de-de/windows/powertoys/) ist eine Sammlung von Microsoft-Werkzeugen zum Erweitern und Anpassen von Windows.
 
@@ -134,6 +146,8 @@ Für die Menüs der Titelleiste und der Symbolleiste werden Ecken ohne Abrundung
 <div id="powertoys-grab-and-move"></div>
 
 **Grab And Move** verschiebt Fenster und ändert ihre Größe direkt aus dem Fensterinhalt. Ist es aktiviert, werden die entsprechenden FileSpacer-Gesten ausgesetzt, auch wenn PowerToys geschlossen ist. Für FileSpacer-Gesten `FileSpacer.exe` in Grab And Move ausschließen oder das Werkzeug abschalten.
+
+<a id="updates-and-troubleshooting"></a>
 
 ## Updates und Fehlerbehebung
 
@@ -148,6 +162,8 @@ Für die Menüs der Titelleiste und der Symbolleiste werden Ecken ohne Abrundung
 Auf derselben Seite schließt **Wartung > Alle Ordnerzustände zurücksetzen** die Fenster und löscht deren Anordnungen, Verlauf und Sperren. Dateien und allgemeine Einstellungen bleiben erhalten.
 
 Das Zurücksetzen der Einstellungen und die erweiterte Fehlerbehebung beschreibt die [technische Notiz](../en/README.md#local-data) auf Englisch.
+
+<a id="privacy"></a>
 
 ## Datenschutz
 

@@ -1,3 +1,5 @@
+<a id="using-filespacer"></a>
+
 # Korzystanie z FileSpacer
 
 FileSpacer zapamiętuje położenie i wygląd każdego okna między kolejnymi otwarciami. Foldery wracają na swoje miejsca i łatwo je rozpoznać, podobnie jak przedmioty ułożone na biurku. Program oferuje też konfigurowalne skróty, szybkie działania i przejrzysty interfejs, który można dostosować.
@@ -6,6 +8,8 @@ FileSpacer zapamiętuje położenie i wygląd każdego okna między kolejnymi ot
 <div id="windows-integration"></div>
 
 FileSpacer można ustawić jako domyślny menedżer plików podczas instalacji lub w **Ustawienia > Integracja**, wybierając **Ustaw jako domyślny menedżer**. Menu kontekstowe folderów zawiera **Otwórz w FileSpacer**, a gdy FileSpacer jest domyślny, **Otwórz w Eksploratorze plików Windows**.
+
+<a id="window-navigation-and-layout"></a>
 
 ## Nawigacja i rozmieszczenie okien
 
@@ -27,7 +31,7 @@ FileSpacer można ustawić jako domyślny menedżer plików podczas instalacji l
 
 Blokowanie włącza się w **Ustawienia > Ogólne**. Polecenie **Zablokuj stan okna** pojawia się wtedy obok tytułu folderu. Kłódka na ikonie oznacza blokadę. Wyłączenie funkcji usuwa wszystkie blokady.
 
-<img src="images/locked-title-pl.png" alt="Zbliżenie tytułu folderu z oznaczeniem kłódki." width="280">
+<img src="images/locked-title.png" alt="Zbliżenie tytułu folderu z oznaczeniem kłódki." width="280">
 
 Otwarcie folderu lub folderu nadrzędnego domyślnie zamyka okno źródłowe. **Przytrzymanie Ctrl podczas otwierania** pozostawia je otwarte. Zachowanie można ustawić w **Ustawienia > Ogólne**. Otwarcie kilku zaznaczonych folderów pozostawia okno źródłowe otwarte.
 
@@ -37,6 +41,8 @@ Menu obok tytułu pozwala przełączać otwarte foldery i zamykać okna nadrzęd
 <div id="folder-groups"></div>
 
 **Zapisz / przywołaj grupę folderów** w menu tytułu pozwala otworzyć kilka folderów razem z ich zapisanymi układami.
+
+<a id="folder-contents-and-display"></a>
 
 ## Wyświetlanie zawartości folderów
 
@@ -52,18 +58,22 @@ FileSpacer pozwala rozmieszczać elementy folderu w siatce, jak w Eksploratorze 
 
 Domyślnie foldery są zgrupowane przed plikami, jak w Eksploratorze plików. **Sortuj foldery i pliki razem** w **Ustawienia > Wyświetlanie** sortuje je razem, jak w [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) i [Linuksie](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Dotyczy to widoków Szczegóły, Lista i automatycznie rozmieszczanych ikon. Foldery wirtualne i archiwa zachowują kolejność systemu Windows.
 
-![Pliki i foldery we wspólnej kolejności alfabetycznej.](images/mixed-sorting-pl.png)
+![Pliki i foldery we wspólnej kolejności alfabetycznej.](images/mixed-sorting.png)
 
 W tych samych ustawieniach **Pokaż pełną nazwę zaznaczonego pliku** pozwala odczytać całą nazwę w widoku ikon, nawet bardzo długą. Dotyczy to pojedynczego zaznaczonego pliku.
 
-![Długa nazwa zaznaczonego pliku wyświetlona w całości w widoku ikon.](images/selected-name-pl.png)
+![Długa nazwa zaznaczonego pliku wyświetlona w całości w widoku ikon.](images/selected-name.png)
 
 <div id="zaznaczenie-i-aktywacja"></div>
 <div id="selection-and-activation"></div>
 
 Domyślnie kliknięcie tła nieaktywnego okna usuwa jego zaznaczenie, jak w Eksploratorze plików. **Zachowaj zaznaczenie po kliknięciu nieaktywnego okna** w **Ustawienia > Ogólne** pozwala je aktywować bez utraty zaznaczenia.
 
+<a id="customization"></a>
+
 ## Dostosowywanie
+
+<a id="changing-the-interface"></a>
 
 ### Zmiana interfejsu
 
@@ -72,9 +82,9 @@ Domyślnie kliknięcie tła nieaktywnego okna usuwa jego zaznaczenie, jak w Eksp
 
 **Menu paska tytułu** można dostosować w **Ustawienia > Wyświetlanie > Elementy interfejsu**. Polecenia dodaje się i przestawia przez przeciąganie. Przeciągnięcie wpisu poza menu usuwa go.
 
-![Dodawanie działania do menu paska tytułu i usuwanie innego.](images/customize-title-menu-pl.gif)
+![Dodawanie działania do menu paska tytułu i usuwanie innego.](images/customize-title-menu.gif)
 
-![Dostosowane menu paska tytułu z dodanym przywracaniem zablokowanego układu.](images/customized-title-menu-pl.png)
+![Dostosowane menu paska tytułu z dodanym przywracaniem zablokowanego układu.](images/customized-title-menu.png)
 
 Wpisy obsługiwane przez Nilesoft Shell zmienia się w jego konfiguracji, ponieważ jego reguły mają pierwszeństwo przed regułami FileSpacer ([zobacz integrację poniżej](#nilesoft-shell)).
 
@@ -88,11 +98,13 @@ Można skonfigurować **gesty myszy do przenoszenia i zmiany rozmiaru okna** bez
 | Przenoszenie | Alt + przeciągnięcie lewym przyciskiem |
 | Zmiana rozmiaru | Alt + przeciągnięcie prawym przyciskiem |
 
-![Przenoszenie okna z Alt i przeciągnięciem lewym przyciskiem.](images/move-window-pl.gif)
+![Przenoszenie okna z Alt i przeciągnięciem lewym przyciskiem.](images/move-window.gif)
 
-![Zmiana rozmiaru okna z Alt i przeciągnięciem prawym przyciskiem.](images/resize-window-pl.gif)
+![Zmiana rozmiaru okna z Alt i przeciągnięciem prawym przyciskiem.](images/resize-window.gif)
 
 Zaznaczenie zostaje zachowane, a Esc anuluje gest. Skróty ustawia się w **Ustawienia > Skróty**. Lewy i prawy przycisk wymagają Alt. Środkowego można używać samodzielnie.
+
+<a id="integration"></a>
 
 ### Integracja
 
@@ -104,7 +116,7 @@ Zaznaczenie zostaje zachowane, a Esc anuluje gest. Skróty ustawia się w **Usta
 
 **Wyszukaj w Everything** uruchamia [wyszukiwanie](https://www.voidtools.com/support/everything/searching/) w folderze i podfolderach lub we wszystkich [zindeksowanych plikach](https://www.voidtools.com/support/everything/indexes/) po wybraniu **Wszędzie**. Wyniki otwierają się w Everything. Dla folderów wirtualnych wybrać Wszędzie. Udane uruchomienie czyści pole i lokalny filtr FileSpacer.
 
-![Zapytanie w FileSpacer i odpowiadające mu wyniki Everything obok.](images/everything-search-pl.png)
+![Zapytanie w FileSpacer i odpowiadające mu wyniki Everything obok.](images/everything-search.png)
 
 <div id="nilesoft-shell"></div>
 
@@ -112,19 +124,19 @@ Zaznaczenie zostaje zachowane, a Esc anuluje gest. Skróty ustawia się w **Usta
 
 FileSpacer tworzy menu paska tytułu, a następnie Nilesoft Shell stosuje własne reguły, które mają pierwszeństwo. [Dokumentacja konfiguracji](nilesoft-shell.md) opisuje wygląd i dostęp do działań FileSpacer.
 
-Dla menu paska tytułu i paska narzędzi zalecane są prostokątne narożniki.
+Dla menu paska tytułu i paska narzędzi zalecane są [prostokątne narożniki](nilesoft-shell.md#recommended-menu-appearance).
 
 **Menu nawigacji**
 
 | Domyślne narożniki | Zalecane prostokątne narożniki |
 | --- | --- |
-| <img src="images/nilesoft-navigation-default-pl.png" alt="Menu nawigacji z domyślnymi zaokrąglonymi narożnikami." width="320"> | <img src="images/nilesoft-navigation-adapted-pl.png" alt="To samo menu z prostokątnymi narożnikami." width="320"> |
+| <img src="images/nilesoft-navigation-default.png" alt="Menu nawigacji z domyślnymi zaokrąglonymi narożnikami." width="320"> | <img src="images/nilesoft-navigation-adapted.png" alt="To samo menu z prostokątnymi narożnikami." width="320"> |
 
-**Menu główne (…)**
+**Menu główne**
 
 | Domyślne narożniki | Zalecane prostokątne narożniki |
 | --- | --- |
-| <img src="images/nilesoft-main-menu-default-pl.png" alt="Menu główne z domyślnymi zaokrąglonymi narożnikami." width="320"> | <img src="images/nilesoft-main-menu-adapted-pl.png" alt="To samo menu z prostokątnymi narożnikami." width="320"> |
+| <img src="images/nilesoft-main-menu-default.png" alt="Menu główne z domyślnymi zaokrąglonymi narożnikami." width="320"> | <img src="images/nilesoft-main-menu-adapted.png" alt="To samo menu z prostokątnymi narożnikami." width="320"> |
 
 [PowerToys](https://learn.microsoft.com/pl-pl/windows/powertoys/) to zestaw narzędzi Microsoft do rozszerzania i dostosowywania systemu Windows.
 
@@ -135,6 +147,8 @@ Dla menu paska tytułu i paska narzędzi zalecane są prostokątne narożniki.
 <div id="powertoys-grab-and-move"></div>
 
 **Grab And Move** przenosi okna i zmienia ich rozmiar z obszaru zawartości. Po jego włączeniu odpowiednie gesty FileSpacer są wstrzymywane, nawet gdy PowerToys jest zamknięty. Aby je zachować, wykluczyć `FileSpacer.exe` w Grab And Move lub wyłączyć narzędzie.
+
+<a id="updates-and-troubleshooting"></a>
 
 ## Aktualizacje i rozwiązywanie problemów
 
@@ -149,6 +163,8 @@ Dla menu paska tytułu i paska narzędzi zalecane są prostokątne narożniki.
 Na tej samej stronie **Konserwacja > Zresetuj stan wszystkich folderów** zamyka okna i usuwa ich układy, historię oraz blokady. Pliki i ustawienia ogólne pozostają zachowane.
 
 Resetowanie ustawień i zaawansowane rozwiązywanie problemów opisano w [notatce technicznej](../en/README.md#local-data) po angielsku.
+
+<a id="privacy"></a>
 
 ## Prywatność
 
