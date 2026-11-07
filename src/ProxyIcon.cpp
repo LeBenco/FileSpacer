@@ -25,6 +25,7 @@ namespace filespacer {
 // dimensions
 static SIZE PROXY_PADDING = {7, 3};
 static SIZE PROXY_INFLATE = {4, 1};
+static int LOCK_BADGE_PADDING = 2;
 
 // this produces the color used in every high-contrast theme
 // regular light mode theme uses #999999
@@ -72,6 +73,7 @@ static bool drawLockBadge(int resource, HDC dc, int x, int y, SIZE size, COLORRE
 void ProxyIcon::init() {
     PROXY_PADDING = scaleDPI(PROXY_PADDING);
     PROXY_INFLATE = scaleDPI(PROXY_INFLATE);
+    LOCK_BADGE_PADDING = scaleDPI(LOCK_BADGE_PADDING);
     LOCK_BADGE_SIZE = {GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON)};
     // Preserve the artwork's aspect ratio at the existing small-icon height.
     std::unique_ptr<std::remove_pointer_t<HICON>, decltype(&DestroyIcon)> icon(
@@ -120,6 +122,7 @@ void ProxyIcon::create(HWND parent, wchar_t *title, int top, int height) {
     SendMessage(lockBadge, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_MIXEDBUTTONS);
     SendMessage(lockBadge, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
     SendMessage(lockBadge, TB_SETBITMAPSIZE, 0, 0);
+    SendMessage(lockBadge, TB_SETPADDING, 0, MAKELPARAM(2 * LOCK_BADGE_PADDING, PROXY_PADDING.cy));
     TBBUTTON lockButton = {I_IMAGENONE, IDM_TOGGLE_STATE_LOCK, 0,
         BTNS_BUTTON | BTNS_NOPREFIX, {}, 0, (INT_PTR)getString(IDS_LOCK_WINDOW_STATE)};
     SendMessage(lockBadge, TB_ADDBUTTONS, 1, (LPARAM)&lockButton);
@@ -184,7 +187,7 @@ bool ProxyIcon::drawMenuButton(const NMCUSTOMDRAW &draw) {
         const bool highContrast = SystemParametersInfo(SPI_GETHIGHCONTRAST,
             sizeof(contrast), &contrast, 0) && (contrast.dwFlags & HCF_HIGHCONTRASTON);
         drawLockBadge(stateLocked ? IDR_LOCK_BADGE_ICON : IDR_UNLOCK_BADGE_ICON,
-            draw.hdc, draw.rc.left + PROXY_PADDING.cx,
+            draw.hdc, draw.rc.left + LOCK_BADGE_PADDING,
             draw.rc.top + (rectHeight(draw.rc) - LOCK_BADGE_SIZE.cy) / 2,
             LOCK_BADGE_SIZE, GetSysColor(COLOR_WINDOWTEXT), highContrast);
         if (clickable && (draw.uItemState & CDIS_FOCUS))
@@ -362,7 +365,7 @@ void ProxyIcon::autoSize(LONG parentWidth, LONG captionLeft, LONG captionRight) 
     const bool showLockBadge = outer->isFolder() && settings::getWindowStateLockEnabled()
         && (stateLocked ? settings::getWindowStateLockBadgeEnabled()
             : settings::getWindowStateUnlockBadgeEnabled());
-    const int badgeWidth = 2 * PROXY_PADDING.cx + LOCK_BADGE_SIZE.cx;
+    const int badgeWidth = 2 * LOCK_BADGE_PADDING + LOCK_BADGE_SIZE.cx;
     const LONG titleLeft = showLockBadge ? captionLeft + badgeWidth : captionLeft;
     HDC dc = GetDC(caption);
     HGDIOBJ previous = captionFont ? SelectObject(dc, captionFont) : nullptr;
