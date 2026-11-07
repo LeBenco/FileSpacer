@@ -37,7 +37,7 @@ try {
 }finally{foreach($process in $processes){if(!$process.HasExited){$process.Kill();$process.WaitForExit()};$process.Dispose()}}
 $bad=Join-Path $RunDirectory 'bad-cache';[void][IO.Directory]::CreateDirectory($bad)
 $bytes=[IO.File]::ReadAllBytes($data[0].FullName)
-foreach($fault in @(@{Name='identity';Offset=12},@{Name='callback';Offset=76},@{Name='layout';Offset=116},@{Name='procedure';Offset=132})){
+foreach($fault in @(@{Name='schema';Offset=7},@{Name='identity';Offset=12},@{Name='callback';Offset=76},@{Name='layout';Offset=116},@{Name='procedure';Offset=132})){
     $mutated=[byte[]]$bytes.Clone();$mutated[$fault.Offset]=$mutated[$fault.Offset]-bxor1
     [IO.File]::WriteAllBytes((Join-Path $bad $data[0].Name),$mutated)
     & $cacheTest --fallback $bad > (Join-Path $RunDirectory ('fallback-'+$fault.Name+'.log'))
