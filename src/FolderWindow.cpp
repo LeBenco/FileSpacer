@@ -204,6 +204,8 @@ struct FolderWindow::ViewMenuPreview {
         auto valid = [&]() { return current(); };
         HRESULT result = captureReopenSelection(source, valid, initial.selection);
         if (FAILED(result) || !current()) return false;
+        captureViewScroll(source, valid, initial.scroll);
+        if (!current()) return false;
         if (owner.spatialView(view) && current()) {
             result = captureIconPositions(view, valid, owner.enumerationComplete,
                 owner.getSavedFolderState().icons, initial.icons, !owner.searchText.empty());
@@ -1454,6 +1456,8 @@ void FolderWindow::synchronizeViewProvider() {
 
 uint32_t FolderWindow::captureViewState(uint32_t mask) {
     uint32_t captured = ItemWindow::captureViewState(mask);
+    const auto &preview = viewMenuPreview ? viewMenuPreview : viewMenuRestore;
+    if (!isWindowOperational() && preview && !preview->restoreFailed) closingScroll = preview->initial.scroll;
     if (provisionalBaseline) {
         if (!recoverProvisionalView()) return captured;
         // Closing deliberately merges without replaying the native view. Do
@@ -1468,6 +1472,12 @@ uint32_t FolderWindow::captureViewState(uint32_t mask) {
     auto current = [&]() { return hwnd == owner && shellView == source && viewGeneration == generation; };
     CComPtr<IFolderView2> view;
     if (FAILED(viewHost.currentView(IID_PPV_ARGS(&view))) || !current()) return captured;
+    if (!isWindowOperational() && closingScroll.empty() && !preview && enumerationComplete && searchText.empty()) {
+        std::vector<uint8_t> bytes;
+        const HRESULT result = captureViewScroll(source, current, bytes);
+        if (!current()) return captured;
+        if (result == S_OK) closingScroll.swap(bytes);
+    }
     FolderViewSettings options = captureOptions(view, getSavedFolderState().view);
     if (!current()) return captured;
     const bool profileMismatch = (options.present & FolderViewSettings::Mode)
@@ -1652,6 +1662,7 @@ void FolderWindow::restoreReopenViewState() {
     auto bytes = std::move(reopeningWindow.viewState);
     reopeningWindow = {};
     if (bytes.empty()) return;
+    restoreScrollPending = false; // The explicit history snapshot owns this viewport.
     CComPtr<IShellView> view = shellView;
     const ULONG_PTR generation = viewGeneration;
     auto valid = [&]() { return isWindowOperational() && shellView == view && viewGeneration == generation; };
@@ -1674,6 +1685,11 @@ void FolderWindow::onDestroy() {
     viewStateDirty(FolderState::Icons);
     persistViewState();
     saveSearchHistory();
+    if (!closingScroll.empty() && !getFolderStateKey().empty() && !layoutForgotten
+            && !getSavedFolderState().firstFailedAt) {
+        auto store = folderStateStore();
+        if (!store || !store->saveViewScroll(getFolderStateKey(), closingScroll)) stateStorageError();
+    }
     searchBox.destroy();
     if (quickAccessIconThread)
         quickAccessIconThread->stop();
@@ -3558,6 +3574,7 @@ void FolderWindow::finishViewInitialization() {
     auto current = [&]() {
         return isWindowOperational() && shellView == view && viewGeneration == generation;
     };
+    if (storedViewState) restoreScrollPending = false; // Its transient viewport takes precedence.
     if (storedViewState && !initialStateApplied && searchText.empty()) {
         // A newly created view can publish an empty completion before its real
         // contents. Do not consume the rename snapshot if the native folder
@@ -3711,6 +3728,17 @@ void FolderWindow::finishViewInitialization() {
     if (initial) {
         restoreReopenViewState();
         if (!current()) return;
+        if (restoreScrollPending) {
+            restoreScrollPending = false; // Consume before reentrant Shell calls.
+            if (!provisionalBaseline && searchText.empty() && !getFolderStateKey().empty()) {
+                std::vector<uint8_t> bytes;
+                auto store = folderStateStore();
+                if (!store || !store->readViewScroll(getFolderStateKey(), &bytes)) stateStorageError();
+                if (!current()) return;
+                if (!bytes.empty()) checkHR(restoreViewScroll(view, bytes, current));
+                if (!current()) return;
+            }
+        }
         onViewReady();
     }
     if (initial && viewProfileChanging && current()) {

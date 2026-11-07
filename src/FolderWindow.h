@@ -216,6 +216,8 @@ private:
     bool peekPressActive = false; // The current Space press started a preview: its repeats are consumed.
 
     ClosedWindow reopeningWindow;
+    std::vector<uint8_t> closingScroll;
+    bool restoreScrollPending = true; // Once for this window, never on refresh/profile changes.
     bool initialEnumerationReady = false;
     bool viewOptionsApplied = false;
     bool initialStateApplied = false;
@@ -245,6 +247,7 @@ private:
     struct ShellViewState {
         FolderViewSettings view;
         std::vector<uint8_t> selection;
+        std::vector<uint8_t> scroll; // View-menu cancellation and closing keep its initial viewport.
         std::vector<uint8_t> icons; // Existing icon-position blob, applied once to the new view.
     };
     // The native fallback is observable before SQLite can be read. It is not
