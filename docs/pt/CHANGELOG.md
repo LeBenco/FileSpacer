@@ -1,12 +1,20 @@
+<a id="changelog"></a>
+
 # Histórico de versões
+
+<a id="132--2026-11-04"></a>
 
 ## 1.3.2 — 2026-11-04
 
 - Adicionar polaco, neerlandês e ucraniano à aplicação, ao instalador, ao sítio Web e à documentação do utilizador e técnica.
 
+<a id="131--2026-11-03"></a>
+
 ## 1.3.1 — 2026-11-03
 
 - Corrige a abertura com o gestor de ficheiros predefinido que selecionava outra aplicação em vez do FileSpacer.
+
+<a id="130--2026-11-02"></a>
 
 ## 1.3.0 — 2026-11-02
 
@@ -19,6 +27,8 @@
 - Corrige a desinstalação para que prossiga se a limpeza da ajuda falhar e a deteção de vários processos Explorer na mesma sessão de ambiente de trabalho nos testes da VM.
 - Corrige as junções entre as faces verdes do ícone e atualiza os guias multilingues e as demonstrações do menu.
 
+<a id="123--2026-10-30"></a>
+
 ## 1.2.3 — 2026-10-30
 
 - Corrige as identidades, as sobreposições de ícones e as notificações de pastas na ordenação mista. Conserva as posições livres dos ícones e usa vistas nativas quando o fornecedor está indisponível ou é incompatível.
@@ -27,13 +37,19 @@
 - Corrige a atualização das Jump Lists e os diagnósticos do instalador. Conserva os ficheiros de ajuda do utilizador durante atualizações e a desinstalação.
 - Inclui ajuda multilingue offline através de F1 e Acerca de e atualiza os guias de configuração traduzidos e as referências do Nilesoft Shell.
 
+<a id="122--2026-10-28"></a>
+
 ## 1.2.2 — 2026-10-28
 
 - Corrige a utilização do fornecedor de pastas personalizado na ordenação mista com ícones dispostos livremente. Usa o fornecedor nativo no posicionamento livre e muda de fornecedor ao confirmar uma disposição ordenada, conservando as posições guardadas dos ícones, a seleção e o foco.
 
+<a id="121--2026-10-28"></a>
+
 ## 1.2.1 — 2026-10-28
 
 - Reduz a apresentação transitória de ícones genéricos ao abrir pastas com ordenação mista. Prepara os ícones visíveis na cache do Windows antes de mostrar a vista nativa, com um tempo de espera limitado para os manipuladores de ícones lentos.
+
+<a id="120--2026-10-28"></a>
 
 ## 1.2.0 — 2026-10-28
 
@@ -43,6 +59,8 @@
 - Amplia o guia online com capturas inglesas e francesas, demonstrações dos gestos de janela e comparações dos menus do Nilesoft Shell.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.1.10...v1.2.0)
+
+<a id="1110--2026-10-27"></a>
 
 ## 1.1.10 — 2026-10-27
 
@@ -59,11 +77,15 @@
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.1.9...v1.1.10)
 
+<a id="119--2026-10-27"></a>
+
 ## 1.1.9 — 2026-10-27
 
 - Mostra uma pré-visualização dos modos ao passar o ponteiro pelo menu Ver, com reposição progressiva em caso de cancelamento e uma opção ativada por predefinição em Apresentação.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.1.8...v1.1.9)
+
+<a id="118--2026-10-27"></a>
 
 ## 1.1.8 — 2026-10-27
 
@@ -77,12 +99,16 @@
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.1.7...v1.1.8)
 
+<a id="117--2026-10-26"></a>
+
 ## 1.1.7 — 2026-10-26
 
 - Minimiza a sobreposição de janelas novas com geometria exata, procurando primeiro espaço livre. Muda o nome da opção geral para «Minimizar a sobreposição de janelas».
 - Oferece a escolha opcional do gestor de ficheiros predefinido nos instaladores inglês e francês, com instruções para a ativar ou reverter posteriormente nas definições de integração do FileSpacer.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.1.6...v1.1.7)
+
+<a id="116--2026-10-26"></a>
 
 ## 1.1.6 — 2026-10-26
 
@@ -94,6 +120,8 @@
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.1.5...v1.1.6)
 
+<a id="115--2026-10-26"></a>
+
 ## 1.1.5 — 2026-10-26
 
 - Corrige a criação involuntária de um atalho após Alt + duplo clique seguido de movimento do rato. Conserva as propriedades nativas, a seleção e o foco sem reproduzir uma pressão mantida de um botão.
@@ -102,6 +130,8 @@
 - Mantém o ambiente de trabalho ativo e suspende temporariamente a proteção de ecrã durante os testes de interface, repondo o estado inicial na limpeza, mesmo após falhas nos testes.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.1.4...v1.1.5)
+
+<a id="114--2026-10-25"></a>
 
 ## 1.1.4 — 2026-10-25
 
@@ -115,6 +145,8 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
 
+<a id="113--2026-10-25"></a>
+
 ## 1.1.3 — 2026-10-25
 
 - Adiciona o separador Atalhos às definições para configurar ou desativar os gestos de movimento e redimensionamento com teclas modificadoras e os botões esquerdo, central ou direito, com captura direta e validação de conflitos.
@@ -123,6 +155,8 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 - Adiciona testes exaustivos dos atalhos e dos gestos reais do rato, com recursos de definições franceses e ingleses.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.1.2...v1.1.3)
+
+<a id="112--2026-10-25"></a>
 
 ## 1.1.2 — 2026-10-25
 
@@ -135,12 +169,16 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.1.1...v1.1.2)
 
+<a id="111--2026-10-24"></a>
+
 ## 1.1.1 — 2026-10-24
 
 - Restaura a ativação que conserva a seleção: o primeiro clique no fundo vazio de uma pasta inativa ativa a janela sem limpar a seleção. A preferência volta a estar ativada.
 - Corrige uma falha ao fechar uma janela de pasta enquanto a vista da Shell é atualizada, com Atualizar, filtro por nome ou comandos da Shell Atualizar/Novo.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.1.0...v1.1.1)
+
+<a id="110--2026-10-24"></a>
 
 ## 1.1.0 — 2026-10-24
 
@@ -154,6 +192,8 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
 
+<a id="108--2026-10-22"></a>
+
 ## 1.0.8 — 2026-10-22
 
 - Move janelas com Alt + arrastar com o botão esquerdo e redimensiona-as com Alt + arrastar com o botão direito a partir da área principal de ficheiros, conservando a seleção.
@@ -164,6 +204,8 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.0.7...v1.0.8)
 
+<a id="107--2026-10-20"></a>
+
 ## 1.0.7 — 2026-10-20
 
 - Seleciona a pasta subordinada de origem ao abrir uma pasta superior, conservando a seleção das janelas já abertas.
@@ -173,11 +215,15 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.0.6...v1.0.7)
 
+<a id="106--2026-10-11"></a>
+
 ## 1.0.6 — 2026-10-11
 
 - Restaura automaticamente as janelas de pastas abertas após uma atualização a partir da aplicação, conservando as posições, os tamanhos e as definições de apresentação guardados.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.0.5...v1.0.6)
+
+<a id="105--2026-10-11"></a>
 
 ## 1.0.5 — 2026-10-11
 
@@ -187,6 +233,8 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 - Publica os metadados de transferência do instalador juntamente com cada versão.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.0.4...v1.0.5)
+
+<a id="104--2026-10-11"></a>
 
 ## 1.0.4 — 2026-10-11
 
@@ -198,6 +246,8 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.0.3...v1.0.4)
 
+<a id="103--2026-10-11"></a>
+
 ## 1.0.3 — 2026-10-11
 
 - Restaura as verificações manuais e as verificações semanais opcionais de atualizações através das versões GitHub do FileSpacer, desativadas por predefinição.
@@ -207,6 +257,8 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 - Conserva a gestão nativa da Shell de Alt + duplo clique e Alt + Enter nas propriedades das pastas.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.0.2...v1.0.3)
+
+<a id="102--2026-10-11"></a>
 
 ## 1.0.2 — 2026-10-11
 
@@ -218,6 +270,8 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 - Permite ao workflow de publicação substituir o instalador de uma versão existente.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.0.1...v1.0.2)
+
+<a id="101--2026-10-09"></a>
 
 ## 1.0.1 — 2026-10-09
 
@@ -233,6 +287,8 @@ Esta versão baseia-se na 1.1.3, que já oferece gestos configuráveis de teclad
 - Permite publicar versões manualmente e inclui o número da versão nos nomes dos instaladores.
 
 [Todas as alterações](https://github.com/LeBenco/FileSpacer/compare/v1.0.0...v1.0.1)
+
+<a id="100--2026-10-09"></a>
 
 ## 1.0.0 — 2026-10-09
 

@@ -1,14 +1,20 @@
+<a id="third-party-notices"></a>
+
 # Third-party notices
 
 FileSpacer is based on [ChromaFiler](https://github.com/vanjac/chromafiler),
 Copyright (c) 2023 J. van't Hoog, distributed under the
 [GNU General Public License v3.0](https://github.com/LeBenco/FileSpacer/blob/main/LICENSE).
 
+<a id="sqlite"></a>
+
 ## SQLite
 
 SQLite 3.53.4 is statically linked into the application. It is in the public domain.
 The unmodified sources and their provenance are in `third_party/sqlite`.
 See <https://sqlite.org/copyright.html>.
+
+<a id="up-and-refresh-button-icons-lucide-and-feather"></a>
 
 ## Up and Refresh button icons (Lucide and Feather)
 
@@ -21,11 +27,15 @@ See [licenses/Lucide-LICENSE.txt](https://github.com/LeBenco/FileSpacer/blob/mai
 ISC and MIT notices in the source tree, or `Lucide-LICENSE.txt` in the installation
 folder. See <https://lucide.dev/license>.
 
+<a id="windows-fonts-and-components"></a>
+
 ## Windows fonts and components
 
 Some interface glyphs use Microsoft's Segoe MDL2 Assets font installed with
 Windows. FileSpacer does not redistribute that font. Windows Shell, common
 controls, GDI+, and other system components are supplied by Windows.
+
+<a id="installer"></a>
 
 ## Installer
 
@@ -38,6 +48,8 @@ included as `LockedList-LICENSE.txt` with the installed program. See
 The shortcut AppUserModelID is set by FileSpacer's `ShortcutAppID.nsh` using NSIS
 Windows COM macros. The former `nsis-shortcut-properties` submodule is not used.
 Material Design Icons and the former bundled Segoe font subset are not used.
+
+<a id="small--flat-lock-icon"></a>
 
 ## Small & Flat lock icon
 

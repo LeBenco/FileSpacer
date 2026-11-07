@@ -55,6 +55,8 @@ Beide workflows gebruiken `.github/actions/build-docs` voor afhankelijkheden en 
 
 Offline bevat bronvingerafdruk, bestandshashes en talen. Verpakken controleert die vóór hergebruik. Teksthashes normaliseren CRLF/LF voor Linux-Windows-overdracht. Ontbrekende, verouderde of beschadigde uitvoer wordt herbouwd. Een gegenereerde NSIS-include installeert documentatie en verwijdert alleen eigen bestanden; andere helpbestanden blijven.
 
+<a id="github-pages"></a>
+
 ## GitHub Pages
 
 Pages bouwt en controleert relevante PR’s, genereert bronnen eenmaal, leest `locales.json`, bouwt elke taal en deployt. Geen tweede taallijst in CI. Pushes naar `main` herbouwen bij wijzigingen aan README’s, `BUILD.md`, `docs/`, vertalingen, iconen, generator, gedeelde actie of Pages-workflow. PR’s gebruiken dezelfde filters en bouwen alleen. Handmatige start is mogelijk.

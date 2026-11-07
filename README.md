@@ -2,6 +2,8 @@
     <img height="200" alt="FileSpacer" src="src/res/FileSpacer.svg" />
 </p>
 
+<a id="filespacer"></a>
+
 # FileSpacer
 
 [![Download latest](https://img.shields.io/badge/Download-latest-blue)](https://github.com/LeBenco/FileSpacer/releases/latest) &emsp;
@@ -27,6 +29,8 @@ FileSpacer prioritizes a lightweight and uncluttered experience. To address the 
 
 WinGet and Chocolatey packages are awaiting catalog approval.
 
+<a id="features"></a>
+
 ## Features
 
 - **One window per folder**. Its position, size, view mode and icon positions [are remembered](docs/en/user-guide.md#window-navigation). Icons can be arranged freely or aligned to the [standard positioning grid](docs/en/user-guide.md#icon-layout).
@@ -38,6 +42,8 @@ WinGet and Chocolatey packages are awaiting catalog approval.
 [![Docs](https://img.shields.io/badge/Docs-User%20Guide-blue)](docs/en/user-guide.md)
 [![Docs](https://img.shields.io/badge/Docs-Changelog-orange)](CHANGELOG.md)
 
+<a id="integration"></a>
+
 ## Integration
 
 FileSpacer can be set as the default file manager during installation or later in Settings. Files open with their usual Windows applications. Network folders use Windows' usual handling. [Windows integration](docs/en/user-guide.md#windows-integration).
@@ -45,6 +51,8 @@ FileSpacer can be set as the default file manager during installation or later i
 With **Everything**, advanced searches can be launched from FileSpacer's search field, in the current folder and its subfolders or across all indexed files. Results open in Everything. [Integration and usage](docs/en/user-guide.md#everything).
 
 With **Nilesoft Shell**, FileSpacer's menus can use its themes and custom commands. Configuration adjustments are recommended for a consistent appearance. [Integration and configuration](docs/en/user-guide.md#nilesoft-shell).
+
+<a id="build"></a>
 
 ## Build
 
@@ -56,14 +64,22 @@ See the [build guide](docs/en/build.md).
 
 Regression tests combine PowerShell scenarios with C++ and C# helpers for internal checks and real Windows UI/Shell tests. The [GitHub Actions regression workflow](https://github.com/LeBenco/FileSpacer/actions/workflows/regression.yml) runs this application suite on demand and automatically before a release. The same cases can be run with `tests.cmd` on a local Windows desktop or in a configured Hyper-V VM. See the [test guide](docs/en/tests/regression/README.md) for case selection, prerequisites and results.
 
+<a id="license-and-credits"></a>
+
 ## License and credits
+
+<a id="copyright-and-license"></a>
 
 ### Copyright and License
 FileSpacer is distributed under the <img align="absbottom" src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"> license.<br>
 Copyright © 2026 Benco for FileSpacer modifications. The complete license is in [LICENSE](LICENSE) in the source tree, or `LICENSE.txt` in the installation folder. FileSpacer comes without warranty. Redistribution and modification are permitted under that license.
 
+<a id="fork-and-upstream-credits"></a>
+
 ### Fork and Upstream Credits
 FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler) (original ChromaFiler code © 2023 J. van't Hoog.), created by J. van't Hoog (vanjac). Many thanks to vanjac for the foundation!
+
+<a id="third-party-notices"></a>
 
 ### Third-Party Notices
 See [third-party notices](THIRD_PARTY_NOTICES.md) and the [privacy policy](docs/en/privacy-policy.md).
