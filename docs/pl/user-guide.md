@@ -16,7 +16,7 @@ FileSpacer można ustawić jako domyślny menedżer plików podczas instalacji l
 <div id="zarządzanie-oknami"></div>
 <div id="managing-windows"></div>
 
-**Każdy folder ma własne okno.** Jeśli jest już otwarty, FileSpacer przenosi jego okno na pierwszy plan. Położenie, rozmiar, widok i układ ikon są zapamiętywane nawet po przeniesieniu folderu lub zmianie jego nazwy. Okna bez zapisanego położenia są rozmieszczane tak, aby ograniczyć nakładanie się (opcja w **Ustawienia > Ogólne**).
+**Każdy folder ma własne okno.** Jeśli jest już otwarty, FileSpacer przenosi jego okno na pierwszy plan. Położenie, rozmiar, widok, układ ikon i pozycja przewijania są zapamiętywane nawet po przeniesieniu folderu lub zmianie jego nazwy. Okna bez zapisanego położenia są rozmieszczane tak, aby ograniczyć nakładanie się (opcja w **Ustawienia > Ogólne**).
 
 <div id="blokowanie-zapisanego-układu"></div>
 <div id="locking-a-saved-layout"></div>
@@ -45,7 +45,7 @@ Menu obok tytułu pozwala przełączać otwarte foldery i zamykać okna nadrzęd
 <div id="układ-ikon"></div>
 <div id="icon-layout"></div>
 
-FileSpacer pozwala rozmieszczać elementy folderu w siatce, jak w Eksploratorze plików, lub dowolnie, jak na pulpicie systemu Windows. Dowolne rozmieszczanie jest dostępne przy każdym rozmiarze ikon oraz w widoku **Kafelki**. Widoki **Lista** i **Szczegóły** nie obsługują dowolnego rozmieszczania. Aby wybrać pozycje, wyłączyć opcję **Autorozmieszczanie ikon**. Wyrównywanie do siatki pozostaje dostępne.
+FileSpacer pozwala rozmieszczać elementy folderu w siatce, jak w Eksploratorze plików, lub dowolnie, jak na pulpicie systemu Windows. Dowolne rozmieszczanie jest dostępne przy każdym rozmiarze ikon oraz w widoku **Kafelki**. Widoki **Lista** i **Szczegóły** nie obsługują dowolnego rozmieszczania. Aby wybrać pozycje, wyłączyć opcję **Autorozmieszczanie ikon**. Wyrównywanie do siatki pozostaje dostępne. Menu **Widok** w każdym oknie zapewnia szybki dostęp do ustawień ikon, w tym opcji dostępnych w FileSpacer.
 
 <div id="opcje-widoku"></div>
 <div id="view-options"></div>
