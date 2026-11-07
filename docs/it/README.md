@@ -38,6 +38,7 @@ _FileSpacer è un fork di [ChromaFiler](https://github.com/vanjac/chromafiler), 
 ## Funzionalità
 
 - **Una finestra per ogni cartella**, riattivata se la cartella è già aperta. Posizione, dimensioni, impostazioni di visualizzazione e disposizione delle icone vengono ripristinate a ogni riapertura. [Navigazione spaziale](user-guide.md#navigazione-tra-finestre).
+- **Evitare l’accumulo di finestre**: aprire una cartella chiude per impostazione predefinita la finestra di origine. [Navigazione tra finestre](user-guide.md#navigazione-tra-finestre).
 - **Disponi liberamente le icone**: le posizioni vengono salvate e ripristinate per ogni cartella. [Disposizione delle icone](user-guide.md#disposizione-delle-icone).
 - **Sposta e ridimensiona le finestre** da qualsiasi punto dell’area dei file, senza perdere la selezione. I gesti del mouse sono configurabili. Quelli predefiniti sono Alt + trascinamento con il pulsante sinistro e Alt + trascinamento con il pulsante destro. [Gesti per le finestre](user-guide.md#spostamento-e-ridimensionamento).
 - **Passa da una cartella aperta all’altra** dal menu della barra del titolo, chiudi le finestre delle cartelle superiori o riapri l’ultima finestra chiusa con Ctrl+Maiusc+T. [Navigazione tra finestre](user-guide.md#navigazione-tra-finestre).

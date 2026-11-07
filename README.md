@@ -39,6 +39,9 @@ _FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler), o
 - **One window per folder**, reused if the folder is already open. Its position,
   size, view settings and icon layout are restored between visits.
   [Spatial navigation](docs/en/user-guide.md#window-navigation).
+- **Keep the number of open windows in check**: opening a folder closes the
+  source window by default.
+  [Window navigation](docs/en/user-guide.md#window-navigation).
 - **Arrange icons freely**, with their positions saved and restored for each
   folder. [Icon layout](docs/en/user-guide.md#icon-layout).
 - **Move and resize windows** from anywhere in the file area, preserving

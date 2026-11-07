@@ -38,6 +38,7 @@ _FileSpacer es una bifurcación de [ChromaFiler](https://github.com/vanjac/chrom
 ## Funciones
 
 - **Una ventana por carpeta**, que se activa si la carpeta ya está abierta. Su posición, tamaño, configuración de vista y disposición de iconos se conservan entre aperturas. [Navegación espacial](user-guide.md#navegación-entre-ventanas).
+- **Evitar que se acumulen ventanas**: al abrir una carpeta, se cierra de forma predeterminada la ventana de origen. [Navegación entre ventanas](user-guide.md#navegación-entre-ventanas).
 - **Coloca los iconos libremente**, con las posiciones guardadas y restauradas para cada carpeta. [Disposición de iconos](user-guide.md#disposición-de-iconos).
 - **Mueve y cambia el tamaño de las ventanas** desde cualquier punto del área de archivos sin perder la selección. Los gestos del ratón son configurables, con Alt + arrastrar con el botón izquierdo y Alt + arrastrar con el botón derecho por defecto. [Gestos de ventana](user-guide.md#movimiento-y-cambio-de-tamaño).
 - **Cambia entre carpetas abiertas** desde el menú de la barra de título, cierra las ventanas de las carpetas superiores o vuelve a abrir la última ventana cerrada con Ctrl+Mayús+T. [Navegación entre ventanas](user-guide.md#navegación-entre-ventanas).
