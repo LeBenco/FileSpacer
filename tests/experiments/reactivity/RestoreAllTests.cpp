@@ -233,7 +233,8 @@ void restoreEnumeration(IShellView *shell, ViewEvents *events) {
     while (!events->sink->ready && GetTickCount64() < deadline) pump(10);
     need(events->sink->ready, "Missing completed enumeration event");
 }
-void restoreMatrix(const wchar_t *output, const wchar_t *fixture, bool explorer, bool freeOnly, bool observe) {
+void restoreMatrix(const wchar_t *output, const wchar_t *fixture, bool explorer, bool freeOnly, bool observe,
+        bool retainSelection = false) {
     std::unique_ptr<presentation::PointerParking> parking;
     if (observe) { parking = std::make_unique<presentation::PointerParking>(); presentation::pointer = parking.get(); }
     struct ResetPointer { ~ResetPointer() { presentation::pointer = nullptr; } } resetPointer;
@@ -278,7 +279,7 @@ void restoreMatrix(const wchar_t *output, const wchar_t *fixture, bool explorer,
             RECT bounds = {}; GetClientRect(frame, &bounds);
             need(SUCCEEDED(owner.host.setBounds(bounds)), "Cannot resize host");
         });
-        if (observe) restoreExpose(frame);
+        if (observe || explorer) restoreExpose(frame);
         int count = 0;
         need(SUCCEEDED(view->ItemCount(SVGIO_ALLVIEW, &count)) && count == fixtureCount, "Fixture count differs");
         std::vector<OwnedId> storage;
@@ -299,7 +300,9 @@ void restoreMatrix(const wchar_t *output, const wchar_t *fixture, bool explorer,
         need(SUCCEEDED(restoreExplorerAll(shell, view, frame, bulk)), "No native bulk selection");
         need(SUCCEEDED(shell->SelectItem(ids[7], static_cast<SVSIF>(SVSI_SELECT | SVSI_FOCUSED | SVSI_NOTAKEFOCUS))), "Cannot seed focus");
         std::vector<uint8_t> saved;
+        const double captureStarted = clockMs();
         need(SUCCEEDED(filespacer::captureReopenSelection(shell, current, saved)), "Cannot capture selection");
+        std::printf("CAPTURE app=%s mode=%s ms=%.3f\n", explorer ? "Explorer" : "FS", mode.name, clockMs() - captureStarted);
         CComPtr<IShellItemArray> retained;
         need(SUCCEEDED(view->GetSelection(FALSE, &retained)), "Cannot retain source array");
         const auto wanted = arrayPaths(retained);
@@ -312,7 +315,7 @@ void restoreMatrix(const wchar_t *output, const wchar_t *fixture, bool explorer,
         for (int repetition = 0; repetition < (observe ? 1 : 3); ++repetition) {
             for (int privateArm = 0; privateArm <= (privateEligible ? 1 : 0); ++privateArm) {
                 bind();
-                need(SUCCEEDED(privateEligible ? binding.clear(shell, current)
+                if (!retainSelection) need(SUCCEEDED(privateEligible ? binding.clear(shell, current)
                     : shell->SelectItem(nullptr, SVSI_DESELECTOTHERS)), "Cannot clear setup selection");
                 if (!privateArm) binding.reset();
                 const HWND keyboard = restoreKeyboardFocus(frame);
@@ -395,7 +398,9 @@ int wmain(int argc, wchar_t **argv) {
         need(selectionDiscovery::image().selectAllSupported, "Global selection capability unavailable");
         const bool explorer = wcscmp(argv[4], L"explorer") == 0 || wcscmp(argv[4], L"explorer-visible") == 0;
         const bool observe = wcscmp(argv[4], L"fs-visible") == 0 || wcscmp(argv[4], L"explorer-visible") == 0;
-        restoreMatrix(argv[1], argv[2], explorer, wcscmp(argv[4], L"fs-free") == 0, observe);
+        const bool retainSelection = wcscmp(argv[4], L"fs-free-same") == 0;
+        restoreMatrix(argv[1], argv[2], explorer, wcscmp(argv[4], L"fs-free") == 0 || retainSelection,
+            observe, retainSelection);
     } catch (const std::exception &error) { std::fprintf(stderr, "FAIL: %s\n", error.what()); result = 1; }
     UnregisterClassW(type.lpszClassName, type.hInstance); CoUninitialize(); return result;
 }
