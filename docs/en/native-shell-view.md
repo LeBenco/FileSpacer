@@ -145,7 +145,7 @@ query, or assume `GetViewStateStream` contains a scroll offset.
 
 
 
-## Optional selection-clear capability
+## Optional selection capabilities
 
 `ShellViewSelection` starts with an immediately usable public clear path.
 `ShellSelectionDiscovery` asynchronously reads the capability cache; it never
@@ -158,8 +158,9 @@ still apply. A rejected binding or failed safety check retains the public path.
 
 The cache under `%LOCALAPPDATA%\FileSpacer\ShellSelection-v1` contains relative
 addresses/member offsets, not absolute pointers. Its key includes the loaded
-Shell32 PDB GUID, age and PE image size. Every process validates cached data
-against its loaded system image, recognized operands and CFG targets. Discovery
+Shell32 PDB GUID, age, PE image size and qualification-schema revision. Every
+process validates cached data against its loaded system image, recognized
+operands and CFG targets. Discovery
 only runs when no usable decision exists for this image/schema. A saved
 unsupported decision avoids repeated discovery; transient failures back off for
 24 hours before a later launch may retry.
@@ -167,7 +168,7 @@ unsupported decision avoids repeated discovery; transient failures back off for
 An isolated native worker obtains the matching Microsoft PDB through HTTPS and
 uses system DbgHelp and bounded instruction recognition. No development tools,
 prepared build profiles, executable-memory patches or CFG exemptions are used.
-The worker qualifies actual invisible Shell views with 64 isolated files in all
+The worker qualifies actual invisible Shell views with 256 isolated files in all
 nine configurations, including selection caches, identities, retained snapshots,
 focus, follow-up actions and refresh. Only a successful qualification atomically
 publishes the cache. Concurrent processes share a single producer and receive
@@ -188,6 +189,31 @@ decisions, transient failure backoff, concurrent discovery and the 405-row real
 Shell matrix with 5000 files. Its views are invisible; this is not presentation
 latency or a full Explorer benchmark. Ordinary `/test` launches do not read or
 populate the user's capability cache.
+
+The optional Select All capability uses the same discovery, cache and binding
+lifecycle. It observes global selection notifications on the public Shell-view
+window and validates the registered native callback, control identity and native
+notification guard. Windows still constructs every selected-item entry and its
+subscription. FileSpacer stages those opaque entries while keeping the native
+search list empty, then publishes the complete array and invalidates selection
+snapshots. This avoids the classic engine's quadratic duplicate searches without
+calling unqualified private item constructors. A partial previous selection is
+released through the qualified native cleanup callback before reconstruction.
+
+Temporary staging costs 16 bytes per item (80,000 bytes for 5,000 items). The
+native allocator owns the final array. Missing symbols, unknown instruction
+forms or an unsupported binding retain ordinary Shell selection silently; they
+do not disable an independently qualified clear capability. This is an optional
+private protocol, not a guaranteed Windows interface. Arbitrary subset selection
+continues to use the native per-item path.
+
+Cases `05-SelectionAll.ps1` and `06-SelectionAllVisible.ps1` exercise the production
+adapter from empty and partial selections in nine configurations, plus a forced
+public selection fallback. They verify identities, retained snapshots, selection
+data objects, sorting, focus and subsequent operations. Case 06 uses visible
+800-by-400 views and checks sampled icon positions. API-return timings do not
+establish composed-frame presentation latency or full-application parity with
+Explorer.
 
 ## Activation and external folders
 
