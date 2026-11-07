@@ -2,6 +2,7 @@
 
 ## Non pubblicato
 
+- Attivare o disattivare globalmente le anteprime di Windows dal menu Visualizza.
 - Ripristinare la posizione di scorrimento di una cartella quando si riapre la sua finestra.
 - Posizionare le nuove finestre in base alle dimensioni e alla posizione normali delle finestre FileSpacer esistenti, comprese quelle ingrandite, ridotte a icona o affiancate.
 - Drastica accelerazione di «Seleziona tutto» e della deselezione di migliaia di file nelle viste classiche della Shell. Questa ottimizzazione utilizza funzioni private di Windows la cui disponibilità e il cui comportamento non sono garantiti. Se queste funzioni sono assenti o incompatibili, FileSpacer torna automaticamente e silenziosamente alle funzioni pubbliche, senza i vantaggi di prestazioni.
