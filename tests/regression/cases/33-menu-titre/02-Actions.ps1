@@ -49,7 +49,7 @@ try {
     Set-UiPreference 'WindowStateLockEnabled' 1
     $a=Join-Path $script:UiRoot 'Layout';$parent=Join-Path $script:UiRoot 'Parent';$child=Join-Path $parent 'Child';$grand=Join-Path $child 'Grandchild';$other=Join-Path $script:UiRoot 'Other'
     foreach($path in @($a,$grand,$other)){[void][IO.Directory]::CreateDirectory($path)}
-    $window=Open-UiFolder $a 0;$defaultSize=Size $window
+    $window=Open-UiFolder $a 0
     Place $window 80 70 660 460;$reference=Geometry $window
     Command $window 'IDM_TOGGLE_STATE_LOCK'
     [TitleMenuUi]::Capture($window,(Join-Path $env:FS_REGRESSION_RUN 'lock-request.png'))
@@ -65,10 +65,14 @@ try {
     Command $window 'IDM_REPLACE_LAYOUT';Confirm
     Place $window 170 150 780 540
     Command $window 'IDM_RESTORE_LAYOUT';Wait-Ui {(Geometry $window)-eq$replacement} 'replacement reference stored'
-    Command $window 'IDM_FORGET_LAYOUT';Confirm;Wait-Ui {!(Locked $window)} 'forget clears lock'
     Place $window 150 140 620 440;Close-UiFolder $window
     $window=Open-UiFolder $a 0
-    Assert-Ui ((Size $window)-eq$defaultSize) 'Forgotten geometry was saved again on close.'
+    Assert-Ui ((Geometry $window)-eq$replacement) 'Closing and reopening lost the locked replacement geometry.'
+    Assert-Ui (Locked $window) 'Closing and reopening lost the state lock.'
+    Command $window 'IDM_TOGGLE_STATE_LOCK';Wait-Ui {!(Locked $window)} 'reference unlocked'
+    Place $window 150 140 620 440;$unlocked=Geometry $window;Close-UiFolder $window
+    $window=Open-UiFolder $a 0
+    Assert-Ui ((Geometry $window)-eq$unlocked) 'Closing and reopening lost the unlocked geometry.'
     # NS window.command is forwarded by this public menu-owner control. Exercise
     # the same route with NS excluded by /test, without loading an extension.
     $caption=@([FileSpacerRegression.Native]::Children($window,'Static')|Where-Object{([FileSpacerRegression.Native]::Style($_,-16)-band31)-eq13})[0]
@@ -103,7 +107,7 @@ try {
     [void][FileSpacerRegression.Native]::PostMessage($group,0x10,[IntPtr]::Zero,[IntPtr]::Zero)
     Wait-Ui {![FileSpacerRegression.Native]::IsWindow($group)} 'close groups'
     $script:dialog=[IntPtr]::Zero
-    Write-Host 'PASS: restore/replace/forget layouts, native command forwarding, fit content, descendant/other windows, named group save/recall/delete and real folder identities.'
+    Write-Host 'PASS: restore/replace layouts, locked/unlocked persistence, native command forwarding, fit content, descendant/other windows, named group save/recall/delete and real folder identities.'
 }catch{$failure=$_;throw}
 finally{
     foreach($candidate in @($group,$dialog)){
