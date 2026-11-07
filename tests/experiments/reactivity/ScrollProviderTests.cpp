@@ -76,7 +76,7 @@ void probe(const wchar_t *path,FOLDERVIEWOPTIONS profile,FOLDERVIEWMODE mode){
         std::printf("PASS rep=%d read_ms=%.3f set_ms=%.3f percent=%.8f selection/focus retained\n",repetition,readMs,writeMs,value);std::fflush(stdout);
         std::vector<uint8_t> snapshot;const auto current=[](){return true;};
         const double captureStart=clockMs();need(SUCCEEDED(filespacer::captureReopenSelection(owner.events->shell,current,snapshot)),"Production scroll capture failed");const double captureMs=clockMs()-captureStart;
-        uint32_t version=0;need(snapshot.size()>=sizeof(version),"Missing snapshot");std::memcpy(&version,snapshot.data(),sizeof(version));need(version==2,"Default view did not capture percentage format");
+        uint32_t version=0;need(snapshot.size()>=sizeof(version),"Missing snapshot");std::memcpy(&version,snapshot.data(),sizeof(version));need(version==3,"Default view did not capture shared viewport format");
         need(SUCCEEDED(set(0)),"Cannot prepare production restore");
         const auto saved=snapshot;double expected=0;need(SUCCEEDED(set(value))&&SUCCEEDED(read(&expected))&&SUCCEEDED(set(0)),"No native round-trip oracle");const double restoreStart=clockMs();need(SUCCEEDED(filespacer::restoreReopenSelection(owner.events->shell,snapshot,current))&&snapshot.empty(),"Production scroll restore failed");const double restoreMs=clockMs()-restoreStart;
         need(SUCCEEDED(read(&value))&&std::abs(value-expected)<0.000001,"Production restore lost scroll");
@@ -86,11 +86,11 @@ void probe(const wchar_t *path,FOLDERVIEWOPTIONS profile,FOLDERVIEWMODE mode){
         auto cancelled=saved;unsigned checks=0;
         need(filespacer::restoreReopenSelection(owner.events->shell,cancelled,[&](){return ++checks<20;})==E_ABORT&&cancelled.empty(),"Cancellation not propagated");
         need(SUCCEEDED(read(&value))&&value==0&&GetFocus()==keyboard,"Cancelled restore changed view");
-        // Version 2 retains the 20-byte legacy header, then two doubles and mode/reserved.
-        need(saved.size()>=44,"Incomplete version-2 fixture");
+        // Version 3 retains the 20-byte header, then the shared 48-byte viewport.
+        need(saved.size()>=68,"Incomplete version-3 fixture");
         auto invalid=saved;invalid.resize(28);
         need(FAILED(filespacer::restoreReopenSelection(owner.events->shell,invalid,current))&&invalid.empty(),"Truncated percentage accepted");
-        invalid=saved;const double nan=std::numeric_limits<double>::quiet_NaN();std::memcpy(invalid.data()+28,&nan,sizeof(nan));
+        invalid=saved;const double nan=std::numeric_limits<double>::quiet_NaN();std::memcpy(invalid.data()+52,&nan,sizeof(nan));
         need(FAILED(filespacer::restoreReopenSelection(owner.events->shell,invalid,current))&&invalid.empty(),"Nonfinite percentage accepted");
         need(SUCCEEDED(read(&value))&&value==0&&SUCCEEDED(view->GetSelectionState(selected,&state))&&(state&SVSI_SELECT)&&GetFocus()==keyboard,"Malformed snapshot changed view");
     }
