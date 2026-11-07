@@ -45,7 +45,7 @@ O menu junto ao título permite alternar entre pastas abertas e fechar as janela
 <div id="disposição-dos-ícones"></div>
 <div id="icon-layout"></div>
 
-Além das vistas clássicas do Explorador de Ficheiros, o FileSpacer permite dispor livremente ficheiros e subpastas na vista de ícones, desativando **Dispor ícones automaticamente**. Também podem ser alinhados pela grelha.
+O FileSpacer permite dispor os elementos de uma pasta numa grelha, como no Explorador de Ficheiros, ou livremente, como no ambiente de trabalho do Windows. A disposição livre está disponível com qualquer tamanho de ícones e na vista **Mosaicos**. As vistas **Lista** e **Detalhes** não permitem esta disposição livre. Para escolher as posições, desativar **Dispor ícones automaticamente**. O alinhamento pela grelha continua disponível.
 
 <div id="opções-de-apresentação"></div>
 <div id="view-options"></div>

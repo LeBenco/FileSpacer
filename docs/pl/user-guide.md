@@ -45,7 +45,7 @@ Menu obok tytułu pozwala przełączać otwarte foldery i zamykać okna nadrzęd
 <div id="układ-ikon"></div>
 <div id="icon-layout"></div>
 
-Oprócz standardowych widoków Eksploratora plików FileSpacer umożliwia dowolne rozmieszczanie plików i podfolderów w widoku ikon po wyłączeniu opcji **Autorozmieszczanie ikon**. Można je też wyrównać do siatki.
+FileSpacer pozwala rozmieszczać elementy folderu w siatce, jak w Eksploratorze plików, lub dowolnie, jak na pulpicie systemu Windows. Dowolne rozmieszczanie jest dostępne przy każdym rozmiarze ikon oraz w widoku **Kafelki**. Widoki **Lista** i **Szczegóły** nie obsługują dowolnego rozmieszczania. Aby wybrać pozycje, wyłączyć opcję **Autorozmieszczanie ikon**. Wyrównywanie do siatki pozostaje dostępne.
 
 <div id="opcje-widoku"></div>
 <div id="view-options"></div>

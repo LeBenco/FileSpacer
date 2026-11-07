@@ -44,7 +44,7 @@ Das Menü neben dem Titel wechselt zwischen geöffneten Ordnern und schließt ü
 <div id="symbolanordnung"></div>
 <div id="icon-layout"></div>
 
-Zusätzlich zu den klassischen Ansichten des Datei-Explorers lassen sich Dateien und Unterordner in der Symbolansicht frei platzieren, wenn **Symbole automatisch anordnen** ausgeschaltet ist. Sie können auch am Raster ausgerichtet werden.
+In FileSpacer lassen sich die Inhalte eines Ordners in einem Raster anordnen, wie im Datei-Explorer, oder frei platzieren, wie auf dem Windows-Desktop. Die freie Platzierung ist bei jeder Symbolgröße und in der Ansicht **Kacheln** möglich. Die Ansichten **Liste** und **Details** unterstützen keine freie Platzierung. Dazu **Symbole automatisch anordnen** ausschalten. Die Ausrichtung am Raster bleibt möglich.
 
 <div id="ansichtsoptionen"></div>
 <div id="view-options"></div>

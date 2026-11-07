@@ -45,7 +45,7 @@ El menú junto al título permite cambiar entre carpetas abiertas y cerrar las v
 <div id="disposición-de-iconos"></div>
 <div id="icon-layout"></div>
 
-Además de las vistas clásicas del Explorador de archivos, FileSpacer permite colocar libremente archivos y subcarpetas en la vista Iconos desactivando **Organizar iconos automáticamente**. También se pueden alinear con la cuadrícula.
+FileSpacer permite distribuir los elementos de una carpeta en una cuadrícula, como en el Explorador de archivos, o libremente, como en el escritorio de Windows. La colocación libre está disponible con cualquier tamaño de icono y en la vista **Mosaicos**. Las vistas **Lista** y **Detalles** no permiten esta colocación libre. Para elegir sus posiciones, desactivar **Organizar iconos automáticamente**. La alineación con la cuadrícula sigue disponible.
 
 <div id="opciones-de-visualización"></div>
 <div id="view-options"></div>

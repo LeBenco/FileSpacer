@@ -37,7 +37,7 @@ The menu beside the title switches between open folders and closes parent window
 <div id="view-and-layout"></div>
 <div id="icon-layout"></div>
 
-Alongside File Explorer’s standard views, FileSpacer allows files and subfolders to be placed freely in Icons view by turning off **Auto arrange icons**. They can also be aligned to the grid.
+FileSpacer lets you arrange a folder’s contents on a grid, as in File Explorer, or freely, as on the Windows desktop. Free placement is available at every icon size and in **Tiles** view. **List** and **Details** views do not support free placement. To choose their positions, turn off **Auto arrange icons**. Alignment to the grid remains available.
 
 <div id="view-options"></div>
 

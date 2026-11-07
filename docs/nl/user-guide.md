@@ -45,7 +45,7 @@ Het menu naast de titel wisselt tussen geopende mappen en sluit bovenliggende ve
 <div id="pictogramindeling"></div>
 <div id="icon-layout"></div>
 
-Naast de gebruikelijke weergaven van Bestandenverkenner kan FileSpacer bestanden en submappen vrij plaatsen in de pictogramweergave door **Pictogrammen automatisch schikken** uit te schakelen. Uitlijnen op het raster is ook mogelijk.
+In FileSpacer kunnen de items in een map op een raster worden gerangschikt, zoals in Bestandenverkenner, of vrij worden geplaatst, zoals op het Windows-bureaublad. Vrije plaatsing is beschikbaar bij elke pictogramgrootte en in de weergave **Tegels**. De weergaven **Lijst** en **Details** ondersteunen geen vrije plaatsing. Daarvoor **Pictogrammen automatisch schikken** uitschakelen. Uitlijnen op het raster blijft mogelijk.
 
 <div id="weergaveopties"></div>
 <div id="view-options"></div>
