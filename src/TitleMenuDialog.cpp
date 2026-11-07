@@ -50,7 +50,7 @@ bool readPayload(IDataObject *data, CLIPFORMAT format, Payload &payload) {
             std::memcpy(&payload, bytes, sizeof(payload));
             GlobalUnlock(medium.hGlobal);
             valid = payload.process == GetCurrentProcessId()
-                && payload.command >= 0 && payload.command < LABEL_COUNT;
+                && validTitleMenuEntry(payload.command);
         }
     }
     ReleaseStgMedium(&medium);
@@ -234,6 +234,7 @@ void refreshCatalog(App &app) {
     SendMessageW(app.catalog, WM_SETREDRAW, FALSE, 0);
     ListView_DeleteAllItems(app.catalog);
     for (int command = 0; command < LABEL_COUNT; ++command) {
+        if (!validTitleMenuEntry(command)) continue;
         if (command != SEPARATOR && std::find(app.items.begin(), app.items.end(), command) != app.items.end()) continue;
         LVITEMW item = {}; item.mask = LVIF_TEXT | LVIF_PARAM;
         item.iItem = ListView_GetItemCount(app.catalog); item.lParam = command;
@@ -339,7 +340,7 @@ public:
 };
 
 void startDrag(App &app, int command, int sourceIndex) {
-    if (app.dragging || app.rendering || command < 0 || command >= LABEL_COUNT) return;
+    if (app.dragging || app.rendering || !validTitleMenuEntry(command)) return;
     trackBlockedTip(app, false);
     app.dragging = true;
     const unsigned drops = app.drops;
@@ -467,7 +468,7 @@ void refreshPreview(App &app) {
     trackBlockedTip(app, false);
     if (!app.measuringStack && !app.fullStackHeight) {
         std::vector<int> model = std::move(app.items), forced = std::move(app.nsForcedCommands);
-        app.items = {0, 1, 2, 3, SEPARATOR, 4, 5, 6, SEPARATOR, 7, 8, 9, 10, 11, 12, 13, WINDOWS_BLOCK};
+        app.items = {0, 1, 2, 3, SEPARATOR, 4, 5, 6, SEPARATOR, 7, 8, 10, 11, 12, 13, WINDOWS_BLOCK};
         app.measuringStack = true;
         refreshPreview(app);
         app.measuringStack = false; app.items = std::move(model); app.nsForcedCommands = std::move(forced);
@@ -913,10 +914,10 @@ INT_PTR CALLBACK dialogProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         app->font = reinterpret_cast<HFONT>(SendMessageW(window, WM_GETFONT, 0, 0));
         const UINT labels[] = {IDS_CAPTION_COPY_PATH, IDS_CAPTION_RENAME, IDS_LOCK_WINDOW_STATE,
             IDS_CAPTION_PROPERTIES, IDS_CAPTION_CLOSE_PARENTS, IDS_REOPEN_MENU, IDS_SETTINGS_CAPTION,
-            IDS_TITLE_MENU_RESTORE, IDS_TITLE_MENU_REPLACE, IDS_TITLE_MENU_FORGET,
+            IDS_TITLE_MENU_RESTORE, IDS_TITLE_MENU_REPLACE, 0,
             IDS_TITLE_MENU_CLOSE_DESCENDANTS, IDS_TITLE_MENU_CLOSE_OTHERS, IDS_TITLE_MENU_FIT,
             IDS_TITLE_MENU_GROUPS, IDS_TITLE_MENU_SEPARATOR, IDS_TITLE_MENU_OPEN_WINDOWS};
-        for (int i = 0; i < LABEL_COUNT; ++i) app->labels[i] = getString(labels[i]);
+        for (int i = 0; i < LABEL_COUNT; ++i) app->labels[i] = labels[i] ? getString(labels[i]) : L"";
         app->catalog = GetDlgItem(window, IDC_TITLE_MENU_ACTIONS);
         app->nilesoftNotice = GetDlgItem(window, IDC_TITLE_MENU_NS_NOTICE);
         app->settingsLink = GetDlgItem(window, IDC_TITLE_MENU_NS_LINK);
