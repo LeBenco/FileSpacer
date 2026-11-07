@@ -1,5 +1,14 @@
 Complete-selection restoration investigation, 2026-11-07
 
+Qualification update (same day)
+-------------------------------
+The historical Content row below requested FVM_CONTENT with custom layout flags.
+The classic host displays tiles for that request; FS has no Content menu command.
+It is not a measurement of real modern Content. Also, the old host omitted FS's
+FWF_NOWEBVIEW and FWF_NOHEADERINALLVIEWS. Its timings remain raw observations of
+that fixture, not an exact reproduction of the FS presentation. LayoutPathResults.txt
+records the corrected host, real modern Content and the remaining phase analysis.
+
 Scope
 -----
 Production restoreReopenSelection, real Shell views, 5000 files, Windows x64
