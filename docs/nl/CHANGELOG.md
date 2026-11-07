@@ -2,7 +2,7 @@
 
 ## Nog niet uitgebracht
 
-- Enorme versnelling van het selecteren en deselecteren van duizenden bestanden in klassieke Shell-weergaven. Deze optimalisatie gebruikt private Windows-functies waarvan de beschikbaarheid en het gedrag niet gegarandeerd zijn. Als deze functies ontbreken of niet compatibel zijn, valt FileSpacer automatisch en zonder melding terug op publieke functies, zonder de snelheidswinst.
+- Enorme versnelling van ‘Alles selecteren’ en het deselecteren van duizenden bestanden in klassieke Shell-weergaven. Deze optimalisatie gebruikt private Windows-functies waarvan de beschikbaarheid en het gedrag niet gegarandeerd zijn. Als deze functies ontbreken of niet compatibel zijn, valt FileSpacer automatisch en zonder melding terug op publieke functies, zonder de snelheidswinst.
 
 ## 1.3.2 — 2026-11-04
 

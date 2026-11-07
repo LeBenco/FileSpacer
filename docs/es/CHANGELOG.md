@@ -2,7 +2,7 @@
 
 ## Sin publicar
 
-- Aceleración masiva de la selección y deselección de miles de archivos en las vistas clásicas del Shell. Esta optimización utiliza funciones privadas de Windows cuya disponibilidad y comportamiento no están garantizados. Si faltan o son incompatibles, FileSpacer recurre automática y silenciosamente a las funciones públicas, sin las mejoras de rendimiento.
+- Aceleración masiva de «Seleccionar todo» y de la deselección de miles de archivos en las vistas clásicas del Shell. Esta optimización utiliza funciones privadas de Windows cuya disponibilidad y comportamiento no están garantizados. Si faltan o son incompatibles, FileSpacer recurre automática y silenciosamente a las funciones públicas, sin las mejoras de rendimiento.
 
 ## 1.3.2 — 2026-11-04
 

@@ -2,7 +2,7 @@
 
 ## Noch nicht veröffentlicht
 
-- Massive Beschleunigung der Auswahl und des Aufhebens der Auswahl von Tausenden Dateien in klassischen Shell-Ansichten. Diese Optimierung nutzt private Windows-Funktionen, deren Verfügbarkeit und Verhalten nicht garantiert sind. Fehlen diese Funktionen oder sind sie inkompatibel, greift FileSpacer automatisch und ohne Meldung auf öffentliche Funktionen zurück; die Leistungsgewinne entfallen dann.
+- Massive Beschleunigung von „Alles auswählen“ und des Aufhebens der Auswahl von Tausenden Dateien in klassischen Shell-Ansichten. Diese Optimierung nutzt private Windows-Funktionen, deren Verfügbarkeit und Verhalten nicht garantiert sind. Fehlen diese Funktionen oder sind sie inkompatibel, greift FileSpacer automatisch und ohne Meldung auf öffentliche Funktionen zurück; die Leistungsgewinne entfallen dann.
 
 ## 1.3.2 — 2026-11-04
 
