@@ -230,6 +230,20 @@ namespace FileSpacerRegression {
                 return Clickable(found[0]);
             });
         }
+        public static MousePoint CellPoint(IntPtr viewWindow,string name) {
+            return ReadView(viewWindow,delegate(AutomationElement root) {
+                var rows=Visible(root,ControlType.ListItem,name);
+                if(rows.Count!=1) throw new InvalidOperationException("Expected one visible row named "+name+".");
+                var cells=new List<AutomationElement>();
+                foreach(AutomationElement cell in rows[0].FindAll(TreeScope.Children,new OrCondition(
+                        new PropertyCondition(AutomationElement.ControlTypeProperty,ControlType.Edit),
+                        new PropertyCondition(AutomationElement.ControlTypeProperty,ControlType.Text))))
+                    if(!cell.Current.IsOffscreen && !cell.Current.BoundingRectangle.IsEmpty) cells.Add(cell);
+                cells.Sort(delegate(AutomationElement a,AutomationElement b) { return a.Current.BoundingRectangle.Left.CompareTo(b.Current.BoundingRectangle.Left); });
+                if(cells.Count<2) throw new InvalidOperationException("Details row exposes no visible second cell.");
+                return Clickable(cells[1]);
+            });
+        }
         public static string DescribeView(IntPtr viewWindow) {
             return ReadView(viewWindow,delegate(AutomationElement root) {
                 var lines=new List<string>();
@@ -245,36 +259,55 @@ namespace FileSpacerRegression {
         public static MousePoint HeaderPoint(IntPtr viewWindow) {
             return ReadView(viewWindow,delegate(AutomationElement root) {
                 var found=Visible(root,ControlType.HeaderItem,null);
+                if(found.Count==0) {
+                    // Modern Shell headers expose their columns as split buttons.
+                    foreach(var header in Visible(root,ControlType.Header,null))
+                        found.AddRange(Visible(header,ControlType.SplitButton,null));
+                }
                 if(found.Count==0) throw new InvalidOperationException("Details view exposes no visible column header.");
                 return Clickable(found[0]);
             });
         }
         public static bool RenameVisible(IntPtr viewWindow) {
             return ReadView(viewWindow,delegate(AutomationElement root) {
-                int count=Visible(root,ControlType.Edit,null).Count;
+                int count=Editable(root).Count;
                 if(count>1) throw new InvalidOperationException("Ambiguous in-place rename edits: "+count+".");
                 return count==1;
             });
         }
+        static List<AutomationElement> Editable(AutomationElement root) {
+            var result=new List<AutomationElement>();
+            foreach(var element in Visible(root,ControlType.Edit,null)) {
+                object value;
+                if(element.Current.HasKeyboardFocus && element.TryGetCurrentPattern(ValuePattern.Pattern,out value)
+                        && !((ValuePattern)value).Current.IsReadOnly) result.Add(element);
+            }
+            return result;
+        }
         public static MousePoint RenamePoint(IntPtr viewWindow) {
+            return RenamePoint(viewWindow,false);
+        }
+        public static MousePoint RenamePoint(IntPtr viewWindow,bool right) {
             return ReadView(viewWindow,delegate(AutomationElement root) {
-                var found=Visible(root,ControlType.Edit,null);
+                var found=Editable(root);
                 if(found.Count!=1) throw new InvalidOperationException("Expected one visible in-place rename edit; found "+found.Count+".");
-                return Clickable(found[0]);
+                var bounds=found[0].Current.BoundingRectangle;
+                if(bounds.Width<24 || bounds.Height<8) throw new InvalidOperationException("Rename edit is too small for an interior drag.");
+                var point=new System.Windows.Point(right?bounds.Right-8:bounds.Left+8,bounds.Top+bounds.Height/2);
+                if(!Automation.Compare(AutomationElement.FromPoint(point),found[0])) throw new InvalidOperationException("Rename target is covered or outside the editable element.");
+                return new MousePoint { X=(int)Math.Round(point.X),Y=(int)Math.Round(point.Y) };
             });
         }
         public static MousePoint BackgroundPoint(IntPtr viewWindow) {
+            return BackgroundPoint(viewWindow,false);
+        }
+        public static MousePoint BackgroundPoint(IntPtr viewWindow,bool fromRight) {
             return ReadView(viewWindow,delegate(AutomationElement root) {
-                var items=Visible(root,ControlType.ListItem,"AnchorA");
-                if(items.Count!=1) throw new InvalidOperationException("Cannot identify the fixture's item container.");
-                var container=TreeWalker.ControlViewWalker.GetParent(items[0]);
-                while(container!=null) {
-                    var type=container.Current.ControlType;
-                    if(type==ControlType.List || type==ControlType.DataGrid) break;
-                    if(Automation.Compare(container,root)) { container=null; break; }
-                    container=TreeWalker.ControlViewWalker.GetParent(container);
-                }
-                if(container==null) throw new InvalidOperationException("No accessible Shell item container.");
+                var containers=root.FindAll(TreeScope.Subtree,new OrCondition(
+                    new PropertyCondition(AutomationElement.ControlTypeProperty,ControlType.List),
+                    new PropertyCondition(AutomationElement.ControlTypeProperty,ControlType.DataGrid)));
+                if(containers.Count!=1) throw new InvalidOperationException("Expected one accessible Shell item container; found "+containers.Count+".");
+                var container=containers[0];
                 var bounds=container.Current.BoundingRectangle;
                 var obstacles=new List<System.Windows.Rect>();
                 foreach(var type in new ControlType[]{ControlType.ListItem,ControlType.Header,ControlType.Edit,ControlType.ScrollBar,ControlType.Button})
@@ -282,7 +315,9 @@ namespace FileSpacerRegression {
                 // The complete 48x24 selection rectangle must be empty, with a
                 // margin. Never rely on an assumed row height or client class.
                 for(int y=(int)bounds.Bottom-70;y>=bounds.Top+12;y-=32) {
-                    for(int x=(int)bounds.Left+40;x+60<bounds.Right;x+=64) {
+                    for(int step=0;step<bounds.Width;step+=64) {
+                        int x=fromRight?(int)bounds.Right-70-step:(int)bounds.Left+40+step;
+                        if(x<bounds.Left+12 || x+60>=bounds.Right) continue;
                         var area=new System.Windows.Rect(x-4,y-4,56,32);
                         bool clear=true;
                         foreach(var obstacle in obstacles) if(area.IntersectsWith(obstacle)) { clear=false; break; }
