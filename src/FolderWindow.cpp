@@ -1695,7 +1695,7 @@ void FolderWindow::onDestroy() {
 
 bool FolderWindow::onCommand(WORD command) {
     if (provisionalBaseline && (command == IDM_RESTORE_LAYOUT || command == IDM_REPLACE_LAYOUT
-            || command == IDM_FORGET_LAYOUT || command == IDM_TOGGLE_STATE_LOCK)) {
+            || command == IDM_TOGGLE_STATE_LOCK)) {
         if (provisionalInputBlocked || provisionalCaptureBusy) return true;
         // Lock capture temporarily clears the cached view before invoking our
         // virtual capture. Reconcile first, while the SQL reference is intact.
@@ -1713,9 +1713,6 @@ bool FolderWindow::onCommand(WORD command) {
                 toggleStateLock(true);
             return true;
         }
-        case IDM_FORGET_LAYOUT:
-            forgetLayout();
-            return true;
         case IDM_FIT_CONTENT:
             fitWindowToContents();
             return true;
