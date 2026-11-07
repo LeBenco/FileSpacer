@@ -143,6 +143,52 @@ redraw suppression, without taking focus. Icon views use unscrolled positions
 and reopen at the top. Do not treat `IFolderView2::GetVisibleItem` as a viewport
 query, or assume `GetViewStateStream` contains a scroll offset.
 
+
+
+## Optional selection-clear capability
+
+`ShellViewSelection` starts with an immediately usable public clear path.
+`ShellSelectionDiscovery` asynchronously reads the capability cache; it never
+waits for symbols or filesystem I/O on the UI thread. A qualified private path
+can be published once in the current process. Each operation retains its
+binding, so publication cannot change an operation already in progress.
+Existing folder windows receive a posted notification and bind the new
+capability on their UI thread; navigation/closure and view-generation guards
+still apply. A rejected binding or failed safety check retains the public path.
+
+The cache under `%LOCALAPPDATA%\FileSpacer\ShellSelection-v1` contains relative
+addresses/member offsets, not absolute pointers. Its key includes the loaded
+Shell32 PDB GUID, age and PE image size. Every process validates cached data
+against its loaded system image, recognized operands and CFG targets. Discovery
+only runs when no usable decision exists for this image/schema. A saved
+unsupported decision avoids repeated discovery; transient failures back off for
+24 hours before a later launch may retry.
+
+An isolated native worker obtains the matching Microsoft PDB through HTTPS and
+uses system DbgHelp and bounded instruction recognition. No development tools,
+prepared build profiles, executable-memory patches or CFG exemptions are used.
+The worker qualifies actual invisible Shell views with 64 isolated files in all
+nine configurations, including selection caches, identities, retained snapshots,
+focus, follow-up actions and refresh. Only a successful qualification atomically
+publishes the cache. Concurrent processes share a single producer and receive
+cache-publication notifications without polling the UI. A watchdog terminates
+only the disposable worker after three minutes.
+
+This optimization uses private COM interfaces, a native entry callback and an
+undocumented selection-array count write. Public native clear performs its own
+allocation cleanup; FileSpacer does not free another component's allocation.
+Unknown signatures, unsupported CFG policies and elevated processes use public
+operations. CFG does not establish a public ABI contract: do not bypass a failed
+validation or enable an unqualified image. Tests of foreign DLL bytes do not
+establish runtime compatibility with their Windows version.
+
+The host regression case `18-vue-shell-native/04-SelectionCache.ps1` exercises
+the production adapter, asynchronous publication, persistent positive/negative
+decisions, transient failure backoff, concurrent discovery and the 405-row real
+Shell matrix with 5000 files. Its views are invisible; this is not presentation
+latency or a full Explorer benchmark. Ordinary `/test` launches do not read or
+populate the user's capability cache.
+
 ## Activation and external folders
 
 With selection-preserving activation enabled, a plain left click on the
