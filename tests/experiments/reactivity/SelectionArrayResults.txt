@@ -1,0 +1,125 @@
+Public spatial selection-array qualification, 2026-11-07
+======================================================
+
+Scope and result
+----------------
+Independent real-Shell prototype, AgentWin10 / Windows 10 19045, MSVC Debug x64
+with CFG, C++14, 5000 files and an 800x400 viewport. No host UI is automated.
+The application selection implementation has not been changed by this experiment.
+
+The earlier prototype was qualified beyond one full medium-icon selection:
+three classic free icon sizes (16, 48, 96), focus at indices 0, 7 and 4999,
+three repetitions per focus, alternating native/candidate measurement order.
+Each arm starts with a new complete selection and invalidates the native array.
+The layout includes displaced items and is not assumed to follow view indices.
+
+The public candidate reads each child PIDL and its position once, sorts the
+cached positions, rotates the array to its focused item, and uses the documented
+SHCreateShellItemArray factory. It checks mode, arrangement, grouping, focus,
+all/selected counts and the view-generation callback. Complete counts are
+rechecked after construction. No private offset, function, symbol or native-cache
+mutation is introduced by this helper. The existing qualified selection adapter
+only prepares and clears the repeated test selections; it is not the array algorithm.
+
+Supported and rejected cases
+----------------------------
+The candidate only applies to a complete selection of at least 128 items in an
+ungrouped, unarranged Icon or SmallIcon view with a valid focus and unique item
+coordinates. Other contexts return S_FALSE with no array and no selection change,
+leaving the caller to use its existing native GetSelection call. Failed native
+queries and capability mismatches use the same rejection. Cancellation returns
+E_ABORT rather than being disguised as capability fallback.
+
+A temporary set detects coordinate ties during traversal, before sorting or
+array creation. This preserves the conservative native fallback without paying
+for every subsequent item. It is not a persistent cache. The test with the first
+two items sharing coordinates rejects in 1.985-2.272 ms; ties found later can
+still cost the preceding traversal. Other measured guard rejections take
+0.003-0.012 ms. No uniform constant-time rejection claim is made.
+
+Partial selections (including an unselected focused item), empty selections,
+arranged and grouped views and tied coordinates are deliberately not accelerated.
+This experiment qualifies their rejection, not a faster partial/grouped algorithm.
+Native spatial enumeration order is an observed behavior rather than a public
+ordering guarantee. The candidate preserves it on the tested image and fixtures;
+only public API access is used. Broader ordering cases are not inferred tested.
+
+Paired measurements
+-------------------
+Medians in milliseconds, nine samples per view. These measure API return of the
+first selection array, not composed desktop latency or total application work.
+
+View            Native GetSelection(FALSE)    Public candidate    Reduction
+Medium icons             372.143                   44.473          88.0%
+Small icons              380.617                   44.747          88.2%
+Large icons              368.491                   45.329          87.7%
+
+Candidate ranges are 41.662-57.238 / 41.456-52.232 / 43.567-52.214 ms respectively.
+The native small-icon range includes a 534.838 ms sample. Raw observations are
+retained; the earlier roughly 230 ms measurements are not substituted for the
+paired references in this stronger fixture.
+
+Explorer's arranged medium-icon control returns its first array in
+6.651 / 6.477 / 7.724 ms (median 6.651). Explorer does not expose an equivalent
+free folder layout, so this is an API-cost control, not identical-workflow parity.
+The candidate's remaining difference is under 200 ms; this does not justify
+further broad investigation under the requested threshold.
+
+Functional checks
+-----------------
+All 27 positive rows compare exact ordered filesystem identities and aggregate
+attributes. Each candidate array binds to BHID_DataObject and round-trips through
+SHCreateShellItemArrayFromDataObject with the same ordered identities. Native and
+candidate arrays keep their original contents after native selection clearing.
+All 5000 free coordinates, logical focus and the keyboard-focus HWND are checked.
+All 15 rejection rows preserve native selection and return no candidate. Three
+cancellation scenarios stop without changing the complete selection.
+
+This validates array/data-object construction and retention, not a complete
+copy/paste or drag/drop gesture in FileSpacer. The Shell's own GetSelection cache
+is not populated or replaced. Future integration can accelerate FS's own array
+requests (status and Peek paths), but the Shell's independent consumers retain
+native costs. Mixed-provider unwrapping, application lifetime and real FS command
+workflows require integration validation before claiming delivery in the app.
+
+Evolution and evidence
+----------------------
+Final runtime: experiment-selectionarray-fe520bfc0a9b41b9845f9fa29871b8cb, PASS/0,
+27 qualified rows, 15 rejection rows, 3 cancellations and 3 Explorer controls.
+All artifacts are under build/regression/<run>/output/regression/36-reactivity-prototype/49-SelectionArray.
+Reproduce with Run-Experiment.ps1 -Case SelectionArray -TimeoutSeconds 300;
+CacheRecord can seed the already-qualified VM descriptor used by fixture setup.
+
+The first run (70cfa7f0ad9d4b5a9d693994b2b48081) failed because the new test omitted
+the existing asynchronous fixture-backend readiness wait. The corrected test
+waits for actual resolution with a bounded watchdog, not a fixed delay.
+The next run (c7fffcd82b0a4c209b76e9261f6e09a8) passed native assertions but the
+PowerShell wrapper counted diagnostic EXPLORER lines as timing rows and failed.
+Its final anchored timing-row check retains all required cases. These two runs
+remain failures and are not included as successful end-to-end qualifications.
+
+An intermediate version checked membership per item despite complete counts.
+Removing those redundant queries reduced candidate capture to about 39 ms in
+3c0287b80bf04caa9ce29adcb50cc577 (PASS). Coordinate-tie rejection still scanned all
+items in that version (38-46 ms). The final version adds early tie rejection,
+keeping the full positive/rejection/retention assertions and the paired timings
+above. These phases are not independent speedups to multiply.
+
+Validation
+----------
+Debug app/resource build and native /W4 builds: PASS, no new compiler warning.
+clang-tidy and Cppcheck both completed on the final prototype unit and its real
+included project headers. Win64/C++14; real MSVC+ATL 14.44.35207 / SDK 10.0.19041.0
+headers for clang-tidy, official Windows/ATL/SQLite models for Cppcheck.
+Logs: build/integration/static-selection-array-final. No timeout or analyzer crash.
+Static verdict REVIEW: Cppcheck constructor advisories concern explicitly
+initialized aggregates; its STL-algorithm suggestion is stylistic. clang-tidy
+reports no diagnostic. No confirmed new defect, suppressed check or uncovered
+modified C++ unit remains. The complete regression suite was not rerun for this
+independent experiment. No new thumbnail-option test was authored or executed.
+
+Public contracts
+----------------
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-shcreateshellitemarray
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifolderview2-getselection
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ishellitemarray-bindtohandler
