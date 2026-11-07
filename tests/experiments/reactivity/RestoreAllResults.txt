@@ -1,0 +1,176 @@
+Complete-selection restoration investigation, 2026-11-07
+
+Scope
+-----
+Production restoreReopenSelection, real Shell views, 5000 files, Windows x64
+Debug with CFG. The reference is the exact ShellViewSelection.cpp from 9042bea,
+not the original FileSpacer release. Both executables use the same driver and
+other production units. List and Details use FVO_DEFAULT; the other FS views
+use FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING. All view rectangles are 800x400.
+Readiness requires the real completed-enumeration event.
+
+FS restores an actual captureReopenSelection snapshot, including selection,
+focus and scrolling. Explorer performs its native Select All command through
+the same documented interface when available. These are related operations,
+not identical application workflows or opening-time measurements.
+
+Cause and change
+----------------
+The existing qualified Select All adapter was bypassed when reopening a saved
+complete selection: restoration selected each child separately. The candidate
+proves the exact complete identity set, invokes the documented bulk operation,
+and proves the resulting selection again. It adds no private method, offset,
+executable patch or unqualified indirect call. It reuses the existing qualified
+binding; its absence still permits public bulk selection in arranged views.
+The public free-placement path remains unchanged to avoid a measured slowdown
+of the unqualified bulk path. Small and partial selections retain per-item
+restoration. Differently encoded opaque IDs conservatively take that path.
+
+API-return matrix
+-----------------
+Three samples per row; medians in milliseconds. First GetSelection(FALSE)
+materialization is measured separately in the raw CSV. The times below exclude
+that follow-up read and do not establish composed-frame presentation latency.
+
+View              Reference FS   Candidate FS   Explorer native Select All
+Extra-large          1873.59          50.00          24.29
+Large                1881.88          50.75          19.17
+Medium               1905.47          51.97          27.00
+Small                1859.62          50.33          18.35
+List                  830.38          36.25          49.10
+Details               143.68          29.89          17.91
+Tiles                1721.92          64.64          20.68
+Content              1409.81          54.73          16.98
+
+Candidate FS uses the qualified binding in classic views and public native
+operations in modern List/Details. All 120 rows passed exact selected-identity,
+retained-array and focus checks. All 21 candidate qualified rows recorded one
+accelerated global operation; reference rows recorded none.
+
+Public fallback medians, same run (reference -> candidate):
+Extra-large 2010.49 -> 632.04; Large 1836.59 -> 609.18;
+Medium 1723.58 -> 622.52; Small 1901.97 -> 626.93;
+Tiles 1580.14 -> 790.67; Content 1333.32 -> 657.18.
+The public fallback remains substantially slower than Explorer in these views.
+
+Free-placement control
+----------------------
+5000 real positions seeded through production restoreIconPositions, checked
+individually after each restoration. Three outer cycles alternate candidate
+and reference order, three samples per cycle/arm, nine samples per value.
+
+Arm                   Reference median   Candidate median
+Qualified                  1031.69              830.21
+Public                     1065.35             1010.93
+
+The nine-view run showed a slower public candidate (981.67 -> 1295.31),
+which was not reproduced by the balanced control. The public free-layout branch
+is deliberately retained. There is no equivalent freely positioned folder view
+in Explorer for this row. Large synthetic free layouts and first selection-array
+materialization still exceed the 500 ms target; no parity claim is made there.
+
+Safety and regression coverage
+------------------------------
+Cancellation during identity proof returns E_ABORT, consumes the pending state
+once and leaves the exact empty selection unchanged. Duplicate saved identities
+restore the expected 4999 unique children without a global operation. Replacing
+one file with a different identity while retaining a 5000-item count restores
+only the 4999 surviving saved identities, excluding the new file.
+
+Real-Shell regression cases 18/02-Persistance and 18/03-RedessinGrandDossier
+passed in AgentWin10. This does not constitute a complete regression-suite run.
+
+Reproduction
+------------
+Run-Experiment.ps1 -Case RestoreAll -TimeoutSeconds 900
+Run-Experiment.ps1 -Case RestoreFreeBalance -TimeoutSeconds 900
+Run-Experiment.ps1 -Case RestoreVisual -TimeoutSeconds 900
+
+The wrapper compiles through the existing tests.cmd/NMAKE/MSVC path and runs
+only in AgentWin10. The driver rejects execution outside that dedicated VM.
+ReferenceRevision defaults to 9042bea. Optional CacheRecord accepts a 160-byte
+runtime-generated descriptor from this VM; the native loader still validates
+the exact loaded DLL, operands and CFG. No prepared Windows profile is shipped.
+Fresh symbol preparation hit a download limit on this VM; successful comparisons
+reuse a previously qualified descriptor for that same VM image. This work does
+not establish compatibility with other Windows images.
+
+Composed desktop capture
+------------------------
+Composed desktop capture is separate from the API matrix. The initial visual
+run measured all eight Explorer views but failed the FS foreground precondition
+before measuring either FS variant. Its failure is retained. A caption-click
+setup replaces that failed foreground request before the empty baseline capture.
+The corrected run passed all 26 observations (9 reference FS, 9 candidate FS,
+8 Explorer), each quality OBSERVED, no coalesced frames. One observation per
+view/variant, milliseconds to the final observed composed desktop image:
+
+View              Reference FS   Candidate FS   Explorer native Select All
+Extra-large          2066.792        116.748          54.193
+Large                2209.225        117.226          69.789
+Medium               2091.961         85.499          63.118
+Small                2565.551         69.856          52.724
+List                  787.832        115.678         116.855
+Details               184.465         79.382          85.429
+Tiles                1693.205        285.312          63.197
+Content              2084.766        301.783          85.478
+Free                 1599.550        917.945             n/a
+
+These are composed desktop timestamps, not physical scan-out or whole-folder
+opening time. The final frame is the last observed quiet ROI image; the 1.5 s
+observation tail is not included as rendering latency. First-change timestamps,
+full frame hashes, and before/final bitmaps are retained. The driver checks exact
+selection, focus and free positions after the capture too.
+
+The viewport dimensions match, but the classic FS layouts are not visually
+identical to modern Explorer. In particular the Content screenshots show FS
+displaying a denser, multi-column arrangement with its column header, while
+Explorer shows full-width content rows. Thus this is a comparison of each
+product's requested mode, not an equal-visible-item-count renderer benchmark.
+Tiles/Content retain about 200 ms of observed extra presentation latency on
+this pass, while remaining below 500 ms. No causal attribution of that residual
+gap to layout density alone has been established.
+
+The guest case and cleanup returned PASS/0. After collection, the host launcher's
+poll of protected last-run.json failed with Access denied, so its command exit
+was nonzero. This transport failure is retained, not relabelled PASS. A separate
+authorized read verified the matching controller record Complete with no error,
+TaskExitCode/LastTaskResult 0, the matching guest run ID, RunnerExitCode 0 and no
+cleanup errors. The native visual-test result is valid; the launch command's
+permission failure is a separate limitation. No VM infrastructure was changed.
+
+The remaining per-item path for arbitrary subsets and the cost of checking an
+already identical large selection remain investigation candidates. The complete
+set shortcut is not evidence that either case has been accelerated.
+
+Static analysis
+---------------
+Both clang-tidy and Cppcheck cover the changed production unit/header and both
+native driver translation units. The exact prior production unit is analyzed
+with the same configuration. Real SDK 10.0.19041.0 and MSVC/ATL 14.44.35207
+headers are used by clang-tidy; Cppcheck uses official win64 Windows/ATL/SQLite
+models without the full system include trees. Standard: C++14.
+Verdict REVIEW: aggregate-member constructor advisories despite explicit full
+aggregate initialization; documented Win32 bitmask enum analysis warnings;
+shared-driver .cpp includes and same-type parameter/style diagnostics. The old
+production dead store is present in the exact reference too. No confirmed new
+product defect was found. No analyzer checks are disabled to conceal findings.
+The duplicated setup ternary was simplified. A misspelled caption-border metric
+introduced in the visual helper was caught by MSVC/clang-tidy and corrected to
+the SDK's SM_CXPADDEDBORDER; the final helper builds and both analyses complete.
+
+Raw evidence under build/regression (not release artifacts):
+experiment-restoreall-3de5b21472c6418680d443c7f17fa426
+experiment-restorefreebalance-3596309d0ab64871b355fd9f597e172d
+restore-all-regression-vm
+Initial visual failure: experiment-restorevisual-ab66009d79c6485b99c5075fcd1faa49
+Corrected visual run: experiment-restorevisual-83f0076214014bf1aca94c1849be35ff
+Final analyses: build/integration/static-restore-all-caption-corrected
+
+References
+----------
+https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-ishellfolderview-select
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifolderview-items
+https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmflush
+The first interface is documented but Microsoft warns it may change or become
+unavailable; QueryInterface and operation failure retain ordinary restoration.
