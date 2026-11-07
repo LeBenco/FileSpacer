@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Restore the scroll position when reopening a folder window.
 - Place new windows using the normal size and position of existing FileSpacer windows, including maximized, minimized and snapped windows.
 - Massively accelerate Select All and clearing selections of thousands of files in classic Shell views. This optimization uses private Windows functions whose availability and behavior are not guaranteed. If these functions are missing or incompatible, FileSpacer automatically and silently falls back to public functions, without the performance gains.
 

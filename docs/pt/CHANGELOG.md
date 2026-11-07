@@ -2,6 +2,7 @@
 
 ## Por publicar
 
+- Restaurar a posição de deslocamento de uma pasta ao reabrir a sua janela.
 - Posicionar novas janelas com base no tamanho e na posição normais das janelas existentes do FileSpacer, incluindo janelas maximizadas, minimizadas ou encaixadas.
 - Aceleração massiva de «Selecionar tudo» e da desseleção de milhares de ficheiros nas vistas clássicas do Shell. Esta otimização utiliza funções privadas do Windows cuja disponibilidade e comportamento não são garantidos. Se estas funções estiverem ausentes ou forem incompatíveis, o FileSpacer recorre automática e silenciosamente às funções públicas, sem os ganhos de desempenho.
 
