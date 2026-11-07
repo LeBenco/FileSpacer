@@ -643,7 +643,14 @@ DWORD WINAPI resolve(void *raw) {
             else break;
             candidate=Image::discover(final);
             if(candidate.supported){publish(candidate,context->uiThread);return 0;}
-            if(savedPublic(negative) || (!child && !producerActive(context->root)))break;
+            if(savedPublic(negative))break;
+            if(!child && !producerActive(context->root)) {
+                // A competing producer can publish after our read, then drop
+                // its lock before this check. Read once more after its exit.
+                candidate=Image::discover(final);
+                if(candidate.supported){publish(candidate,context->uiThread);return 0;}
+                break;
+            }
         }
     }catch(const std::exception &){ /* Public is already callable; no UI wait. */ }
     resolution.store(Resolution::Public,std::memory_order_release);return 0;
