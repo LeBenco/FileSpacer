@@ -16,7 +16,7 @@ On peut définir FileSpacer comme gestionnaire de fichiers par défaut lors de l
 <div id="gestion-des-fenêtres"></div>
 <div id="managing-windows"></div>
 
-**Chaque dossier possède sa propre fenêtre.** S’il est déjà ouvert, FileSpacer ramène sa fenêtre au premier plan. Position, taille, affichage et disposition des icônes sont mémorisés, même après déplacement ou renommage du dossier. Les fenêtres sans position mémorisée sont placées en limitant le chevauchement (option dans **Paramètres > Général**).
+**Chaque dossier possède sa propre fenêtre.** S’il est déjà ouvert, FileSpacer ramène sa fenêtre au premier plan. Position, taille, affichage, disposition des icônes et position de défilement sont mémorisés, même après déplacement ou renommage du dossier. Les fenêtres sans position mémorisée sont placées en limitant le chevauchement (option dans **Paramètres > Général**).
 
 <div id="verrouillage-de-létat-enregistré"></div>
 <div id="locking-a-saved-layout"></div>
@@ -45,7 +45,7 @@ Le menu à côté du titre permet de passer entre les dossiers ouverts et de fer
 <div id="disposition-des-icônes"></div>
 <div id="icon-layout"></div>
 
-FileSpacer permet de disposer les éléments d’un dossier en grille, comme l’Explorateur de fichiers, mais aussi librement, comme sur le Bureau Windows. Le placement libre est disponible avec toutes les tailles d’icônes et en mode **Mosaïque**. Les modes **Liste** et **Détails** ne permettent pas ce placement libre. Pour choisir leurs positions, désactiver **Réorganiser automatiquement les icônes**. L’alignement sur la grille reste disponible.
+FileSpacer permet de disposer les éléments d’un dossier en grille, comme l’Explorateur de fichiers, mais aussi librement, comme sur le Bureau Windows. Le placement libre est disponible avec toutes les tailles d’icônes et en mode **Mosaïque**. Les modes **Liste** et **Détails** ne permettent pas ce placement libre. Pour choisir leurs positions, désactiver **Réorganiser automatiquement les icônes**. L’alignement sur la grille reste disponible. Le menu **Affichage** de chaque fenêtre donne un accès rapide aux réglages des icônes, y compris ceux propres à FileSpacer.
 
 <div id="options-daffichage"></div>
 <div id="view-options"></div>

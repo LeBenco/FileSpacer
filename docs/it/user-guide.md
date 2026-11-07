@@ -16,7 +16,7 @@ FileSpacer si può impostare come gestore di file predefinito durante l’instal
 <div id="gestione-delle-finestre"></div>
 <div id="managing-windows"></div>
 
-**Ogni cartella ha la propria finestra.** Se è già aperta, FileSpacer la porta in primo piano. Posizione, dimensioni, visualizzazione e disposizione delle icone vengono memorizzate anche dopo lo spostamento o la ridenominazione della cartella. Le finestre senza posizione salvata vengono collocate limitando la sovrapposizione (opzione in **Impostazioni > Generale**).
+**Ogni cartella ha la propria finestra.** Se è già aperta, FileSpacer la porta in primo piano. Posizione, dimensioni, visualizzazione, disposizione delle icone e posizione di scorrimento vengono memorizzate anche dopo lo spostamento o la ridenominazione della cartella. Le finestre senza posizione salvata vengono collocate limitando la sovrapposizione (opzione in **Impostazioni > Generale**).
 
 <div id="blocco-dello-stato-salvato"></div>
 <div id="locking-a-saved-layout"></div>
@@ -45,7 +45,7 @@ Il menu accanto al titolo permette di passare tra le cartelle aperte e chiudere 
 <div id="disposizione-delle-icone"></div>
 <div id="icon-layout"></div>
 
-FileSpacer permette di disporre gli elementi di una cartella in una griglia, come in Esplora file, oppure liberamente, come sul desktop di Windows. Il posizionamento libero è disponibile con qualsiasi dimensione delle icone e nella vista **Riquadri**. Le viste **Elenco** e **Dettagli** non consentono il posizionamento libero. Per scegliere le posizioni, disattivare **Disponi icone automaticamente**. Resta disponibile l’allineamento alla griglia.
+FileSpacer permette di disporre gli elementi di una cartella in una griglia, come in Esplora file, oppure liberamente, come sul desktop di Windows. Il posizionamento libero è disponibile con qualsiasi dimensione delle icone e nella vista **Riquadri**. Le viste **Elenco** e **Dettagli** non consentono il posizionamento libero. Per scegliere le posizioni, disattivare **Disponi icone automaticamente**. Resta disponibile l’allineamento alla griglia. Il menu **Visualizza** di ogni finestra offre un accesso rapido alle impostazioni delle icone, comprese quelle specifiche di FileSpacer.
 
 <div id="opzioni-di-visualizzazione"></div>
 <div id="view-options"></div>

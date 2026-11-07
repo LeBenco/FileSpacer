@@ -15,7 +15,7 @@ FileSpacer lässt sich bei der Installation oder unter **Einstellungen > Integra
 <div id="fenster-verwalten"></div>
 <div id="managing-windows"></div>
 
-**Jeder Ordner hat sein eigenes Fenster.** Ist er bereits geöffnet, holt FileSpacer dieses Fenster in den Vordergrund. Position, Größe, Ansicht und Symbolanordnung bleiben auch nach dem Verschieben oder Umbenennen des Ordners erhalten. Fenster ohne gespeicherte Position werden so platziert, dass sie sich möglichst wenig überlappen (Option unter **Einstellungen > Allgemein**).
+**Jeder Ordner hat sein eigenes Fenster.** Ist er bereits geöffnet, holt FileSpacer dieses Fenster in den Vordergrund. Position, Größe, Ansicht, Symbolanordnung und Scrollposition bleiben auch nach dem Verschieben oder Umbenennen des Ordners erhalten. Fenster ohne gespeicherte Position werden so platziert, dass sie sich möglichst wenig überlappen (Option unter **Einstellungen > Allgemein**).
 
 <div id="gespeicherten-fensterzustand-sperren"></div>
 <div id="locking-a-saved-layout"></div>
@@ -44,7 +44,7 @@ Das Menü neben dem Titel wechselt zwischen geöffneten Ordnern und schließt ü
 <div id="symbolanordnung"></div>
 <div id="icon-layout"></div>
 
-In FileSpacer lassen sich die Inhalte eines Ordners in einem Raster anordnen, wie im Datei-Explorer, oder frei platzieren, wie auf dem Windows-Desktop. Die freie Platzierung ist bei jeder Symbolgröße und in der Ansicht **Kacheln** möglich. Die Ansichten **Liste** und **Details** unterstützen keine freie Platzierung. Dazu **Symbole automatisch anordnen** ausschalten. Die Ausrichtung am Raster bleibt möglich.
+In FileSpacer lassen sich die Inhalte eines Ordners in einem Raster anordnen, wie im Datei-Explorer, oder frei platzieren, wie auf dem Windows-Desktop. Die freie Platzierung ist bei jeder Symbolgröße und in der Ansicht **Kacheln** möglich. Die Ansichten **Liste** und **Details** unterstützen keine freie Platzierung. Dazu **Symbole automatisch anordnen** ausschalten. Die Ausrichtung am Raster bleibt möglich. Das Menü **Ansicht** in jedem Fenster bietet schnellen Zugriff auf die Symboleinstellungen, einschließlich der zusätzlichen Optionen von FileSpacer.
 
 <div id="ansichtsoptionen"></div>
 <div id="view-options"></div>

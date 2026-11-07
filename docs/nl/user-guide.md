@@ -16,7 +16,7 @@ FileSpacer kan tijdens de installatie of onder **Instellingen > Integratie** met
 <div id="vensters-beheren"></div>
 <div id="managing-windows"></div>
 
-**Elke map heeft een eigen venster.** Is de map al open, dan brengt FileSpacer dat venster naar de voorgrond. Positie, afmetingen, weergave en pictogramindeling worden onthouden, ook na verplaatsen of hernoemen van de map. Vensters zonder opgeslagen positie worden zo geplaatst dat ze zo min mogelijk overlappen (optie onder **Instellingen > Algemeen**).
+**Elke map heeft een eigen venster.** Is de map al open, dan brengt FileSpacer dat venster naar de voorgrond. Positie, afmetingen, weergave, pictogramindeling en schuifpositie worden onthouden, ook na verplaatsen of hernoemen van de map. Vensters zonder opgeslagen positie worden zo geplaatst dat ze zo min mogelijk overlappen (optie onder **Instellingen > Algemeen**).
 
 <div id="een-opgeslagen-indeling-vergrendelen"></div>
 <div id="locking-a-saved-layout"></div>
@@ -45,7 +45,7 @@ Het menu naast de titel wisselt tussen geopende mappen en sluit bovenliggende ve
 <div id="pictogramindeling"></div>
 <div id="icon-layout"></div>
 
-In FileSpacer kunnen de items in een map op een raster worden gerangschikt, zoals in Bestandenverkenner, of vrij worden geplaatst, zoals op het Windows-bureaublad. Vrije plaatsing is beschikbaar bij elke pictogramgrootte en in de weergave **Tegels**. De weergaven **Lijst** en **Details** ondersteunen geen vrije plaatsing. Daarvoor **Pictogrammen automatisch schikken** uitschakelen. Uitlijnen op het raster blijft mogelijk.
+In FileSpacer kunnen de items in een map op een raster worden gerangschikt, zoals in Bestandenverkenner, of vrij worden geplaatst, zoals op het Windows-bureaublad. Vrije plaatsing is beschikbaar bij elke pictogramgrootte en in de weergave **Tegels**. De weergaven **Lijst** en **Details** ondersteunen geen vrije plaatsing. Daarvoor **Pictogrammen automatisch schikken** uitschakelen. Uitlijnen op het raster blijft mogelijk. Het menu **Beeld** in elk venster biedt snelle toegang tot de pictograminstellingen, inclusief de eigen opties van FileSpacer.
 
 <div id="weergaveopties"></div>
 <div id="view-options"></div>

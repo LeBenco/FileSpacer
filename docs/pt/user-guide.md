@@ -16,7 +16,7 @@ O FileSpacer pode ser definido como gestor de ficheiros predefinido durante a in
 <div id="gestão-das-janelas"></div>
 <div id="managing-windows"></div>
 
-**Cada pasta tem a sua própria janela.** Se já estiver aberta, o FileSpacer traz a janela para primeiro plano. A posição, o tamanho, a apresentação e a disposição dos ícones são memorizados, mesmo depois de mover ou mudar o nome da pasta. As janelas sem posição guardada são colocadas de forma a limitar a sobreposição (opção em **Definições > Geral**).
+**Cada pasta tem a sua própria janela.** Se já estiver aberta, o FileSpacer traz a janela para primeiro plano. A posição, o tamanho, a apresentação, a disposição dos ícones e a posição de deslocamento são memorizados, mesmo depois de mover ou mudar o nome da pasta. As janelas sem posição guardada são colocadas de forma a limitar a sobreposição (opção em **Definições > Geral**).
 
 <div id="bloqueio-do-estado-guardado"></div>
 <div id="locking-a-saved-layout"></div>
@@ -45,7 +45,7 @@ O menu junto ao título permite alternar entre pastas abertas e fechar as janela
 <div id="disposição-dos-ícones"></div>
 <div id="icon-layout"></div>
 
-O FileSpacer permite dispor os elementos de uma pasta numa grelha, como no Explorador de Ficheiros, ou livremente, como no ambiente de trabalho do Windows. A disposição livre está disponível com qualquer tamanho de ícones e na vista **Mosaicos**. As vistas **Lista** e **Detalhes** não permitem esta disposição livre. Para escolher as posições, desativar **Dispor ícones automaticamente**. O alinhamento pela grelha continua disponível.
+O FileSpacer permite dispor os elementos de uma pasta numa grelha, como no Explorador de Ficheiros, ou livremente, como no ambiente de trabalho do Windows. A disposição livre está disponível com qualquer tamanho de ícones e na vista **Mosaicos**. As vistas **Lista** e **Detalhes** não permitem esta disposição livre. Para escolher as posições, desativar **Dispor ícones automaticamente**. O alinhamento pela grelha continua disponível. O menu **Ver** de cada janela dá acesso rápido às definições dos ícones, incluindo as opções próprias do FileSpacer.
 
 <div id="opções-de-apresentação"></div>
 <div id="view-options"></div>

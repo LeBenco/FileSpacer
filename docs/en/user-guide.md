@@ -12,7 +12,7 @@ FileSpacer can be set as the default file manager during installation, or under 
 <div id="window-placement"></div>
 <div id="managing-windows"></div>
 
-**Each folder has its own window.** If it is already open, FileSpacer brings that window forward. Position, size, view settings and icon layout are remembered, even after moving or renaming the folder. Windows without a saved position are placed to limit overlap (option under **Settings > General**).
+**Each folder has its own window.** If it is already open, FileSpacer brings that window forward. Position, size, view settings, icon layout and scroll position are remembered, even after moving or renaming the folder. Windows without a saved position are placed to limit overlap (option under **Settings > General**).
 
 <div id="locking-a-saved-layout"></div>
 
@@ -37,7 +37,7 @@ The menu beside the title switches between open folders and closes parent window
 <div id="view-and-layout"></div>
 <div id="icon-layout"></div>
 
-FileSpacer lets you arrange a folder’s contents on a grid, as in File Explorer, or freely, as on the Windows desktop. Free placement is available at every icon size and in **Tiles** view. **List** and **Details** views do not support free placement. To choose their positions, turn off **Auto arrange icons**. Alignment to the grid remains available.
+FileSpacer lets you arrange a folder’s contents on a grid, as in File Explorer, or freely, as on the Windows desktop. Free placement is available at every icon size and in **Tiles** view. **List** and **Details** views do not support free placement. To choose their positions, turn off **Auto arrange icons**. Alignment to the grid remains available. The **View** menu in each window gives quick access to icon settings, including those specific to FileSpacer.
 
 <div id="view-options"></div>
 

@@ -16,7 +16,7 @@ FileSpacer se puede definir como gestor de archivos predeterminado durante la in
 <div id="gestión-de-ventanas"></div>
 <div id="managing-windows"></div>
 
-**Cada carpeta tiene su propia ventana.** Si ya está abierta, FileSpacer la trae al primer plano. La posición, el tamaño, la vista y la disposición de los iconos se conservan incluso al mover o cambiar de nombre la carpeta. Las ventanas sin una posición guardada se colocan limitando la superposición (opción en **Configuración > General**).
+**Cada carpeta tiene su propia ventana.** Si ya está abierta, FileSpacer la trae al primer plano. La posición, el tamaño, la vista, la disposición de los iconos y la posición de desplazamiento se conservan incluso al mover o cambiar de nombre la carpeta. Las ventanas sin una posición guardada se colocan limitando la superposición (opción en **Configuración > General**).
 
 <div id="bloqueo-del-estado-guardado"></div>
 <div id="locking-a-saved-layout"></div>
@@ -45,7 +45,7 @@ El menú junto al título permite cambiar entre carpetas abiertas y cerrar las v
 <div id="disposición-de-iconos"></div>
 <div id="icon-layout"></div>
 
-FileSpacer permite distribuir los elementos de una carpeta en una cuadrícula, como en el Explorador de archivos, o libremente, como en el escritorio de Windows. La colocación libre está disponible con cualquier tamaño de icono y en la vista **Mosaicos**. Las vistas **Lista** y **Detalles** no permiten esta colocación libre. Para elegir sus posiciones, desactivar **Organizar iconos automáticamente**. La alineación con la cuadrícula sigue disponible.
+FileSpacer permite distribuir los elementos de una carpeta en una cuadrícula, como en el Explorador de archivos, o libremente, como en el escritorio de Windows. La colocación libre está disponible con cualquier tamaño de icono y en la vista **Mosaicos**. Las vistas **Lista** y **Detalles** no permiten esta colocación libre. Para elegir sus posiciones, desactivar **Organizar iconos automáticamente**. La alineación con la cuadrícula sigue disponible. El menú **Vista** de cada ventana permite acceder rápidamente a los ajustes de los iconos, incluidas las opciones propias de FileSpacer.
 
 <div id="opciones-de-visualización"></div>
 <div id="view-options"></div>
