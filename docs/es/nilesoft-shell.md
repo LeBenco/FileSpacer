@@ -87,7 +87,6 @@ item(type='*' mode='multiple' where=filespacer_title
 | --- | ---: |
 | Restaurar la disposición bloqueada | 1123 |
 | Reemplazar la disposición de referencia | 1124 |
-| Olvidar la disposición de esta carpeta | 1125 |
 | Cerrar ventanas de subcarpetas | 1126 |
 | Cerrar las otras ventanas | 1127 |
 | Ajustar la ventana al contenido | 1128 |

@@ -87,7 +87,6 @@ item(type='*' mode='multiple' where=filespacer_title
 | --- | ---: |
 | Gesperrtes Fensterlayout wiederherstellen | 1123 |
 | Referenzlayout ersetzen | 1124 |
-| Layout dieses Ordners verwerfen | 1125 |
 | Unterordnerfenster schließen | 1126 |
 | Andere Fenster schließen | 1127 |
 | Fenster an Inhalt anpassen | 1128 |

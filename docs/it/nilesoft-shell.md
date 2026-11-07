@@ -87,7 +87,6 @@ item(type='*' mode='multiple' where=filespacer_title
 | --- | ---: |
 | Ripristina la disposizione bloccata | 1123 |
 | Sostituisci la disposizione di riferimento | 1124 |
-| Rimuovi la disposizione salvata della cartella | 1125 |
 | Chiudi le finestre delle sottocartelle | 1126 |
 | Chiudi le altre finestre | 1127 |
 | Adatta la finestra al contenuto | 1128 |

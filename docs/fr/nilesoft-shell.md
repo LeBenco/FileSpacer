@@ -87,7 +87,6 @@ item(type='*' mode='multiple' where=filespacer_title
 | --- | ---: |
 | Rétablir la disposition verrouillée | 1123 |
 | Remplacer la disposition de référence | 1124 |
-| Oublier la disposition de ce dossier | 1125 |
 | Fermer les fenêtres descendantes | 1126 |
 | Fermer les autres fenêtres | 1127 |
 | Ajuster la fenêtre au contenu | 1128 |
