@@ -1021,8 +1021,8 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
                         // Modern MSAA rejects EXTENDSELECTION. Apply the same
                         // view-order range through the public folder interface.
                         const int anchor = rangeAnchor >= 0 ? rangeAnchor : index;
-                        for (int item = (std::min)(anchor, index); item <= (std::max)(anchor, index); ++item) {
-                            checkHR(folderView->SelectItem(item, SVSI_SELECT | SVSI_NOTAKEFOCUS));
+                        for (int rangeIndex = (std::min)(anchor, index); rangeIndex <= (std::max)(anchor, index); ++rangeIndex) {
+                            checkHR(folderView->SelectItem(rangeIndex, SVSI_SELECT | SVSI_NOTAKEFOCUS));
                             if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
                         }
                     } else checkHR(accessible->accSelect(flags, child));
