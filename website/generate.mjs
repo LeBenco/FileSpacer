@@ -21,8 +21,7 @@ const technicalReferences = [
   'website/README.md', 'website/translations/README.md',
 ];
 const privacyAliases = {
-  'user-guide--settings-and-updates': ['privacy-policy--update-checks'],
-  'user-guide--local-data': ['privacy-policy--local-data', 'privacy-policy--resetting-preferences'],
+  'user-guide--updates-and-troubleshooting': ['privacy-policy--update-checks', 'privacy-policy--local-data', 'privacy-policy--resetting-preferences'],
   'user-guide--privacy': ['privacy-policy', 'privacy-policy--windows-and-external-applications'],
 };
 const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
@@ -234,7 +233,7 @@ export async function generate(repository = path.dirname(template), destination 
       return `<a class="screenshot-link" href="${src}" aria-label="${escape(language.ui.enlargeImage)}: ${alt}">${img}</a>`;
     });
     const ids = [...html.matchAll(/\sid\s*=\s*(["'])([^"']+)\1/g)].map(match => match[2]);
-    const missing = [...html.matchAll(/<a\b[^>]*\shref\s*=\s*(["'])#([^"']+)\1/g)].filter(match => !ids.includes(match[2]));
+    const missing = [...html.matchAll(/<a\b[^>]*\shref\s*=\s*(["'])#([^"']+)\1/g)].filter(match => !ids.includes(decodeURIComponent(match[2])));
     if (new Set(ids).size !== ids.length || missing.length) throw new Error('Duplicate heading IDs or broken internal links');
     const output = path.join(destination, language.source);
     await fs.mkdir(output, {recursive: true});
