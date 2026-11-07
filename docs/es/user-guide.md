@@ -1,3 +1,5 @@
+<a id="using-filespacer"></a>
+
 # Usar FileSpacer
 
 FileSpacer recuerda la posición y el aspecto de cada ventana entre aperturas. Las carpetas vuelven a su lugar y resultan reconocibles, como objetos colocados sobre un escritorio. También ofrece atajos configurables, acciones rápidas y una interfaz despejada y personalizable.
@@ -6,6 +8,8 @@ FileSpacer recuerda la posición y el aspecto de cada ventana entre aperturas. L
 <div id="windows-integration"></div>
 
 FileSpacer se puede definir como gestor de archivos predeterminado durante la instalación o en **Configuración > Integración**, con **Establecer como explorador predeterminado**. El menú contextual de las carpetas ofrece **Abrir en FileSpacer**, o **Abrir en el Explorador de archivos de Windows** cuando FileSpacer es el predeterminado.
+
+<a id="window-navigation-and-layout"></a>
 
 ## Navegación y disposición de las ventanas
 
@@ -27,7 +31,7 @@ FileSpacer se puede definir como gestor de archivos predeterminado durante la in
 
 El bloqueo se activa en **Configuración > General**. Después aparece **Bloquear el estado de la ventana** junto al título de la carpeta. Un candado en el icono indica el bloqueo. Desactivar la función elimina todos los bloqueos.
 
-<img src="images/locked-title-es.png" alt="Detalle del título de una carpeta con el distintivo de candado." width="280">
+<img src="images/locked-title.png" alt="Detalle del título de una carpeta con el distintivo de candado." width="280">
 
 Abrir una carpeta o su carpeta superior cierra de forma predeterminada la ventana de origen. **Mantener pulsada Ctrl al abrirla** permite dejarla abierta. Este comportamiento se configura en **Configuración > General**. Abrir varias carpetas seleccionadas mantiene abierta la ventana de origen.
 
@@ -37,6 +41,8 @@ El menú junto al título permite cambiar entre carpetas abiertas y cerrar las v
 <div id="folder-groups"></div>
 
 **Guardar / abrir un grupo de carpetas**, en el menú del título, permite recuperar varias carpetas juntas con sus disposiciones guardadas.
+
+<a id="folder-contents-and-display"></a>
 
 ## Visualización del contenido de las carpetas
 
@@ -52,18 +58,22 @@ FileSpacer permite distribuir los elementos de una carpeta en una cuadrícula, c
 
 De forma predeterminada, las carpetas se agrupan antes que los archivos, como en el Explorador de archivos. **Mezclar carpetas y archivos al ordenar**, en **Configuración > Visualización**, los ordena juntos, como en [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) y [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Se aplica a Detalles, Lista e Iconos organizados automáticamente. Las carpetas virtuales y los archivos comprimidos mantienen el orden de Windows.
 
-![Carpetas y archivos en un mismo orden alfabético.](images/mixed-sorting-es.png)
+![Carpetas y archivos en un mismo orden alfabético.](images/mixed-sorting.png)
 
 En la misma configuración, **Mostrar el nombre completo del archivo seleccionado** permite leer el nombre entero en la vista Iconos, aunque sea muy largo. Se aplica cuando hay un solo archivo seleccionado.
 
-![Un nombre de archivo largo seleccionado y visible por completo en la vista de iconos.](images/selected-name-es.png)
+![Un nombre de archivo largo seleccionado y visible por completo en la vista de iconos.](images/selected-name.png)
 
 <div id="selección-y-activación"></div>
 <div id="selection-and-activation"></div>
 
 De forma predeterminada, hacer clic en el fondo de una ventana inactiva borra su selección, como en el Explorador de archivos. **Mantener la selección al hacer clic en una ventana inactiva**, en **Configuración > General**, permite activarla sin perder la selección.
 
+<a id="customization"></a>
+
 ## Personalización
+
+<a id="changing-the-interface"></a>
 
 ### Modificar la interfaz
 
@@ -72,9 +82,9 @@ De forma predeterminada, hacer clic en el fondo de una ventana inactiva borra su
 
 El **menú de la barra de título** se personaliza en **Configuración > Visualización > Elementos de la interfaz**. Los comandos se añaden y reorganizan arrastrándolos. Para quitar una entrada, arrastrarla fuera del menú.
 
-![Añadir una acción al menú de la barra de título y quitar otra.](images/customize-title-menu-es.gif)
+![Añadir una acción al menú de la barra de título y quitar otra.](images/customize-title-menu.gif)
 
-![El menú de la barra de título con la acción Restaurar la disposición bloqueada.](images/customized-title-menu-es.png)
+![El menú de la barra de título con la acción Restaurar la disposición bloqueada.](images/customized-title-menu.png)
 
 Las entradas gestionadas por Nilesoft Shell se modifican en su configuración, ya que sus reglas tienen prioridad sobre las de FileSpacer ([ver su integración más abajo](#nilesoft-shell)).
 
@@ -88,11 +98,13 @@ Se pueden configurar **gestos del ratón para mover o cambiar el tamaño de una 
 | Mover | Alt + arrastrar con el botón izquierdo |
 | Cambiar tamaño | Alt + arrastrar con el botón derecho |
 
-![Mover una ventana con Alt y el botón izquierdo.](images/move-window-es.gif)
+![Mover una ventana con Alt y el botón izquierdo.](images/move-window.gif)
 
-![Cambiar el tamaño de una ventana con Alt y el botón derecho.](images/resize-window-es.gif)
+![Cambiar el tamaño de una ventana con Alt y el botón derecho.](images/resize-window.gif)
 
 La selección se conserva y Esc cancela el gesto. Los atajos se personalizan en **Configuración > Métodos abreviados**. Los botones izquierdo y derecho requieren Alt. El central se puede usar solo.
+
+<a id="integration"></a>
 
 ### Integración
 
@@ -104,7 +116,7 @@ La selección se conserva y Esc cancela el gesto. Los atajos se personalizan en 
 
 **Buscar en Everything** inicia [la búsqueda](https://www.voidtools.com/support/everything/searching/) en la carpeta y sus subcarpetas, o en todos los [archivos indexados](https://www.voidtools.com/support/everything/indexes/) con **En todas partes**. Los resultados se abren en Everything. Para las carpetas virtuales, elegir En todas partes. Si se inicia correctamente, se vacían el campo y el filtro local de FileSpacer.
 
-![Una consulta en FileSpacer y, al lado, los resultados correspondientes en Everything.](images/everything-search-es.png)
+![Una consulta en FileSpacer y, al lado, los resultados correspondientes en Everything.](images/everything-search.png)
 
 <div id="nilesoft-shell"></div>
 
@@ -112,19 +124,19 @@ La selección se conserva y Esc cancela el gesto. Los atajos se personalizan en 
 
 FileSpacer compone el menú de la barra de título y después Nilesoft Shell aplica sus reglas, que tienen prioridad. La [referencia de configuración](nilesoft-shell.md) describe los ajustes visuales y el acceso a las acciones de FileSpacer.
 
-Se recomiendan esquinas rectas en los menús de la barra de título y de la barra de herramientas.
+Se recomiendan [esquinas rectas](nilesoft-shell.md#recommended-menu-appearance) en los menús de la barra de título y de la barra de herramientas.
 
 **Menú de navegación**
 
 | Esquinas predeterminadas | Esquinas rectas recomendadas |
 | --- | --- |
-| <img src="images/nilesoft-navigation-default-es.png" alt="Menú de navegación de la barra de título con las esquinas redondeadas predeterminadas del tema Modern." width="320"> | <img src="images/nilesoft-navigation-adapted-es.png" alt="El mismo menú de navegación con las esquinas rectas recomendadas." width="320"> |
+| <img src="images/nilesoft-navigation-default.png" alt="Menú de navegación de la barra de título con las esquinas redondeadas predeterminadas del tema Modern." width="320"> | <img src="images/nilesoft-navigation-adapted.png" alt="El mismo menú de navegación con las esquinas rectas recomendadas." width="320"> |
 
-**Menú principal (…)**
+**Menú principal**
 
 | Esquinas predeterminadas | Esquinas rectas recomendadas |
 | --- | --- |
-| <img src="images/nilesoft-main-menu-default-es.png" alt="Menú principal con las esquinas redondeadas predeterminadas del tema Modern." width="320"> | <img src="images/nilesoft-main-menu-adapted-es.png" alt="El mismo menú principal con las esquinas rectas recomendadas." width="320"> |
+| <img src="images/nilesoft-main-menu-default.png" alt="Menú principal con las esquinas redondeadas predeterminadas del tema Modern." width="320"> | <img src="images/nilesoft-main-menu-adapted.png" alt="El mismo menú principal con las esquinas rectas recomendadas." width="320"> |
 
 [PowerToys](https://learn.microsoft.com/es-es/windows/powertoys/) reúne utilidades de Microsoft para ampliar y personalizar Windows.
 
@@ -135,6 +147,8 @@ Se recomiendan esquinas rectas en los menús de la barra de título y de la barr
 <div id="powertoys-grab-and-move"></div>
 
 **Grab And Move** permite mover y cambiar el tamaño de las ventanas desde su contenido. Cuando está activado, los gestos equivalentes de FileSpacer se suspenden aunque PowerToys esté cerrado. Para conservarlos, excluir `FileSpacer.exe` en Grab And Move o desactivar la herramienta.
+
+<a id="updates-and-troubleshooting"></a>
 
 ## Actualizaciones y solución de problemas
 
@@ -149,6 +163,8 @@ Se recomiendan esquinas rectas en los menús de la barra de título y de la barr
 En la misma página, **Mantenimiento > Restablecer el estado de todas las carpetas** cierra las ventanas y elimina sus disposiciones, historiales y bloqueos. Se conservan los archivos y las preferencias generales.
 
 El restablecimiento de las preferencias y la solución avanzada de problemas se explican en la [nota técnica](../en/README.md#local-data), en inglés.
+
+<a id="privacy"></a>
 
 ## Privacidad
 

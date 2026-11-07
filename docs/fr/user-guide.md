@@ -1,3 +1,5 @@
+<a id="using-filespacer"></a>
+
 # Utiliser FileSpacer
 
 FileSpacer mémorise la position et l’apparence de chaque fenêtre d’une ouverture à l’autre. Les dossiers retrouvent ainsi leur place et deviennent reconnaissables, à la manière d’objets disposés sur un bureau. Il propose aussi des raccourcis configurables, des actions rapides et une interface épurée et personnalisable.
@@ -6,6 +8,8 @@ FileSpacer mémorise la position et l’apparence de chaque fenêtre d’une ouv
 <div id="windows-integration"></div>
 
 On peut définir FileSpacer comme gestionnaire de fichiers par défaut lors de l’installation, ou dans **Paramètres > Intégration**, avec **Définir comme explorateur par défaut**. Le menu contextuel des dossiers propose **Ouvrir dans FileSpacer**, ou **Ouvrir dans l’Explorateur de fichiers Windows** lorsque FileSpacer est défini par défaut.
+
+<a id="window-navigation-and-layout"></a>
 
 ## Navigation et disposition des fenêtres
 
@@ -27,7 +31,7 @@ On peut définir FileSpacer comme gestionnaire de fichiers par défaut lors de l
 
 La fonction de verrouillage s’active dans **Paramètres > Général**. La commande **Verrouiller l’état de la fenêtre** apparaît ensuite à côté du titre du dossier. Un badge de cadenas signale le verrouillage. Désactiver complètement la fonction supprime tous les verrouillages.
 
-<img src="images/locked-title-fr.png" alt="Gros plan du titre du dossier et de son badge de cadenas." width="280">
+<img src="images/locked-title.png" alt="Gros plan du titre du dossier et de son badge de cadenas." width="280">
 
 Ouvrir un dossier ou son parent ferme par défaut la fenêtre source. **Maintenir Ctrl pendant l’ouverture** permet de la conserver. Ce comportement se règle dans **Paramètres > Général**. L’ouverture de plusieurs dossiers sélectionnés garde la fenêtre source ouverte.
 
@@ -37,6 +41,8 @@ Le menu à côté du titre permet de passer entre les dossiers ouverts et de fer
 <div id="folder-groups"></div>
 
 **Enregistrer / rappeler un groupe de dossiers**, dans le menu du titre, permet de retrouver ensemble plusieurs dossiers avec leurs dispositions enregistrées.
+
+<a id="folder-contents-and-display"></a>
 
 ## Affichage du contenu des dossiers
 
@@ -52,18 +58,22 @@ FileSpacer permet de disposer les éléments d’un dossier en grille, comme l�
 
 Par défaut, les dossiers sont regroupés avant les fichiers, comme dans l’Explorateur de fichiers. **Mélanger les dossiers et les fichiers dans le tri**, dans **Paramètres > Affichage**, les classe ensemble, comme sous [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) et [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). L’option concerne les modes Détails, Liste et Icônes réorganisées automatiquement. Les dossiers virtuels et les archives gardent l’ordre de Windows.
 
-![Dossiers et fichiers mélangés dans le même ordre alphabétique.](images/mixed-sorting-fr.png)
+![Dossiers et fichiers mélangés dans le même ordre alphabétique.](images/mixed-sorting.png)
 
 Dans les mêmes paramètres, **Afficher le nom complet d’un fichier sélectionné** permet de lire entièrement son nom en mode Icônes, même s’il est très long. Cette option s’applique lorsqu’un seul fichier est sélectionné.
 
-![Un nom de fichier long, sélectionné et affiché en entier en mode Icônes.](images/selected-name-fr.png)
+![Un nom de fichier long, sélectionné et affiché en entier en mode Icônes.](images/selected-name.png)
 
 <div id="sélection-et-activation"></div>
 <div id="selection-and-activation"></div>
 
 Par défaut, cliquer sur l’arrière-plan d’une fenêtre inactive efface sa sélection, comme dans l’Explorateur de fichiers. **Conserver la sélection lors d’un clic sur une fenêtre inactive**, dans **Paramètres > Général**, permet de l’activer sans perdre la sélection.
 
+<a id="customization"></a>
+
 ## Personnalisation
+
+<a id="changing-the-interface"></a>
 
 ### Modification de l’interface
 
@@ -72,9 +82,9 @@ Par défaut, cliquer sur l’arrière-plan d’une fenêtre inactive efface sa s
 
 Le **menu de la barre de titre** se personnalise dans **Paramètres > Affichage > Éléments de l’interface**. Les commandes s’ajoutent et se réorganisent par glisser-déposer. Pour retirer une entrée, la faire glisser hors du menu.
 
-![Ajout d’une action au menu de barre de titre, puis retrait d’une autre.](images/customize-title-menu-fr.gif)
+![Ajout d’une action au menu de barre de titre, puis retrait d’une autre.](images/customize-title-menu.gif)
 
-![Le menu de barre de titre avec l’action Rétablir la disposition verrouillée.](images/customized-title-menu-fr.png)
+![Le menu de barre de titre avec l’action Rétablir la disposition verrouillée.](images/customized-title-menu.png)
 
 Les entrées gérées par Nilesoft Shell se modifient dans sa configuration, car ses règles sont prioritaires sur celles de FileSpacer ([voir son intégration ci-dessous](#nilesoft-shell)).
 
@@ -88,11 +98,13 @@ On peut définir des **raccourcis souris pour déplacer ou redimensionner une fe
 | Déplacer | Alt + glisser avec le bouton gauche |
 | Redimensionner | Alt + glisser avec le bouton droit |
 
-![Déplacer une fenêtre avec Alt et un glisser du bouton gauche.](images/move-window-fr.gif)
+![Déplacer une fenêtre avec Alt et un glisser du bouton gauche.](images/move-window.gif)
 
-![Redimensionner une fenêtre avec Alt et un glisser du bouton droit.](images/resize-window-fr.gif)
+![Redimensionner une fenêtre avec Alt et un glisser du bouton droit.](images/resize-window.gif)
 
 La sélection est conservée et Échap annule le geste. Les raccourcis se personnalisent dans **Paramètres > Raccourcis**. Les boutons gauche et droit nécessitent Alt, le bouton central peut s’utiliser seul.
+
+<a id="integration"></a>
 
 ### Intégration
 
@@ -104,7 +116,7 @@ La sélection est conservée et Échap annule le geste. Les raccourcis se person
 
 **Rechercher dans Everything** lance [la recherche](https://www.voidtools.com/support/everything/searching/) dans le dossier et ses sous-dossiers, ou dans tous les [fichiers indexés](https://www.voidtools.com/support/everything/indexes/) avec **Partout**. Les résultats s’ouvrent dans Everything. Pour les dossiers virtuels, choisir Partout. Un lancement réussi efface le champ et le filtre local de FileSpacer.
 
-![Une requête dans FileSpacer et les résultats correspondants dans Everything, à côté.](images/everything-search-fr.png)
+![Une requête dans FileSpacer et les résultats correspondants dans Everything, à côté.](images/everything-search.png)
 
 <div id="nilesoft-shell"></div>
 
@@ -112,19 +124,19 @@ La sélection est conservée et Échap annule le geste. Les raccourcis se person
 
 FileSpacer compose le menu de la barre de titre, puis Nilesoft Shell applique ses règles, qui ont priorité. Les réglages visuels et l’accès aux actions de FileSpacer sont décrits dans la [référence de configuration](nilesoft-shell.md).
 
-Des coins carrés sont recommandés pour les menus de la barre de titre et de la barre d’outils.
+[Des coins carrés](nilesoft-shell.md#recommended-menu-appearance) sont recommandés pour les menus de la barre de titre et de la barre d’outils.
 
 **Menu de navigation**
 
 | Coins par défaut | Coins carrés recommandés |
 | --- | --- |
-| <img src="images/nilesoft-navigation-default-fr.png" alt="Menu de navigation avec les coins arrondis par défaut." width="320"> | <img src="images/nilesoft-navigation-adapted-fr.png" alt="Le même menu avec des coins carrés." width="320"> |
+| <img src="images/nilesoft-navigation-default.png" alt="Menu de navigation avec les coins arrondis par défaut." width="320"> | <img src="images/nilesoft-navigation-adapted.png" alt="Le même menu avec des coins carrés." width="320"> |
 
-**Menu principal (…)**
+**Menu principal**
 
 | Coins par défaut | Coins carrés recommandés |
 | --- | --- |
-| <img src="images/nilesoft-main-menu-default-fr.png" alt="Menu principal avec les coins arrondis par défaut." width="320"> | <img src="images/nilesoft-main-menu-adapted-fr.png" alt="Le même menu avec des coins carrés." width="320"> |
+| <img src="images/nilesoft-main-menu-default.png" alt="Menu principal avec les coins arrondis par défaut." width="320"> | <img src="images/nilesoft-main-menu-adapted.png" alt="Le même menu avec des coins carrés." width="320"> |
 
 [PowerToys](https://learn.microsoft.com/fr-fr/windows/powertoys/) regroupe des utilitaires Microsoft pour enrichir et personnaliser Windows.
 
@@ -135,6 +147,8 @@ Des coins carrés sont recommandés pour les menus de la barre de titre et de la
 <div id="powertoys-grab-and-move"></div>
 
 **Grab And Move** permet de déplacer et redimensionner les fenêtres depuis leur contenu. Lorsqu’il est activé, les gestes équivalents de FileSpacer sont suspendus, même si PowerToys est fermé. Pour les conserver, exclure `FileSpacer.exe` dans Grab And Move ou désactiver cet outil.
+
+<a id="updates-and-troubleshooting"></a>
 
 ## Mises à jour et dépannage
 
@@ -149,6 +163,8 @@ Des coins carrés sont recommandés pour les menus de la barre de titre et de la
 Dans cette même page, **Maintenance > Réinitialiser l’état de tous les dossiers** ferme les fenêtres et efface leurs dispositions, historiques et verrouillages. Les fichiers et les préférences générales sont conservés.
 
 La réinitialisation des préférences et le dépannage avancé sont décrits dans la [note technique](../en/README.md#local-data), en anglais.
+
+<a id="privacy"></a>
 
 ## Confidentialité
 

@@ -1,3 +1,5 @@
+<a id="using-filespacer"></a>
+
 # Utilizar o FileSpacer
 
 O FileSpacer memoriza a posição e o aspeto de cada janela entre aberturas. As pastas voltam ao seu lugar e tornam-se reconhecíveis, como objetos dispostos numa secretária. Oferece também atalhos configuráveis, ações rápidas e uma interface simples e personalizável.
@@ -6,6 +8,8 @@ O FileSpacer memoriza a posição e o aspeto de cada janela entre aberturas. As 
 <div id="windows-integration"></div>
 
 O FileSpacer pode ser definido como gestor de ficheiros predefinido durante a instalação ou em **Definições > Integração**, com **Definir como gestor de ficheiros predefinido**. O menu de contexto das pastas apresenta **Abrir no FileSpacer**, ou **Abrir no Explorador de Ficheiros do Windows** quando o FileSpacer é o gestor predefinido.
+
+<a id="window-navigation-and-layout"></a>
 
 ## Navegação e disposição das janelas
 
@@ -27,7 +31,7 @@ O FileSpacer pode ser definido como gestor de ficheiros predefinido durante a in
 
 O bloqueio ativa-se em **Definições > Geral**. O comando **Bloquear o estado da janela** aparece depois junto ao título da pasta. Um cadeado no ícone assinala o bloqueio. Desativar a função elimina todos os bloqueios.
 
-<img src="images/locked-title-pt.png" alt="Pormenor do título da pasta com o indicador de cadeado." width="280">
+<img src="images/locked-title.png" alt="Pormenor do título da pasta com o indicador de cadeado." width="280">
 
 Abrir uma pasta ou a pasta superior fecha a janela de origem por predefinição. **Manter Ctrl premido durante a abertura** permite deixá-la aberta. Este comportamento configura-se em **Definições > Geral**. Abrir várias pastas selecionadas mantém a janela de origem aberta.
 
@@ -37,6 +41,8 @@ O menu junto ao título permite alternar entre pastas abertas e fechar as janela
 <div id="folder-groups"></div>
 
 **Guardar / abrir um grupo de pastas**, no menu do título, permite recuperar várias pastas em conjunto com as respetivas disposições guardadas.
+
+<a id="folder-contents-and-display"></a>
 
 ## Apresentação do conteúdo das pastas
 
@@ -52,18 +58,22 @@ O FileSpacer permite dispor os elementos de uma pasta numa grelha, como no Explo
 
 Por predefinição, as pastas são agrupadas antes dos ficheiros, como no Explorador de Ficheiros. **Misturar pastas e ficheiros na ordenação**, em **Definições > Apresentação**, ordena ambos em conjunto, como no [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) e no [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). A opção aplica-se a Detalhes, Lista e ícones organizados automaticamente. As pastas virtuais e os arquivos mantêm a ordenação do Windows.
 
-![Pastas e ficheiros na mesma ordem alfabética.](images/mixed-sorting-pt.png)
+![Pastas e ficheiros na mesma ordem alfabética.](images/mixed-sorting.png)
 
 Nas mesmas definições, **Mostrar o nome completo do ficheiro selecionado** permite ler o nome inteiro na vista de ícones, mesmo que seja muito comprido. Aplica-se quando está selecionado um único ficheiro.
 
-![Um nome de ficheiro comprido, selecionado e apresentado na íntegra na vista de ícones.](images/selected-name-pt.png)
+![Um nome de ficheiro comprido, selecionado e apresentado na íntegra na vista de ícones.](images/selected-name.png)
 
 <div id="seleção-e-ativação"></div>
 <div id="selection-and-activation"></div>
 
 Por predefinição, clicar no fundo de uma janela inativa limpa a seleção, como no Explorador de Ficheiros. **Manter a seleção ao clicar numa janela inativa**, em **Definições > Geral**, permite ativá-la sem perder a seleção.
 
+<a id="customization"></a>
+
 ## Personalização
+
+<a id="changing-the-interface"></a>
 
 ### Alterar a interface
 
@@ -72,9 +82,9 @@ Por predefinição, clicar no fundo de uma janela inativa limpa a seleção, com
 
 O **menu da barra de título** personaliza-se em **Definições > Apresentação > Elementos da interface**. Os comandos são adicionados e reordenados por arrastar e largar. Para remover uma entrada, arrastá-la para fora do menu.
 
-![Adicionar uma ação ao menu da barra de título e remover outra.](images/customize-title-menu-pt.gif)
+![Adicionar uma ação ao menu da barra de título e remover outra.](images/customize-title-menu.gif)
 
-![O menu da barra de título com a ação Repor a disposição bloqueada.](images/customized-title-menu-pt.png)
+![O menu da barra de título com a ação Repor a disposição bloqueada.](images/customized-title-menu.png)
 
 As entradas geridas pelo Nilesoft Shell alteram-se na sua configuração, pois as suas regras têm prioridade sobre as do FileSpacer ([ver a integração abaixo](#nilesoft-shell)).
 
@@ -88,11 +98,13 @@ As entradas geridas pelo Nilesoft Shell alteram-se na sua configuração, pois a
 | Mover | Alt + arrastar com o botão esquerdo |
 | Redimensionar | Alt + arrastar com o botão direito |
 
-![Mover uma janela com Alt e o botão esquerdo.](images/move-window-pt.gif)
+![Mover uma janela com Alt e o botão esquerdo.](images/move-window.gif)
 
-![Redimensionar uma janela com Alt e o botão direito.](images/resize-window-pt.gif)
+![Redimensionar uma janela com Alt e o botão direito.](images/resize-window.gif)
 
 A seleção é mantida e Esc cancela o gesto. Os atalhos personalizam-se em **Definições > Atalhos**. Os botões esquerdo e direito exigem Alt. O botão central pode ser utilizado sozinho.
+
+<a id="integration"></a>
 
 ### Integração
 
@@ -104,7 +116,7 @@ O [Everything](https://www.voidtools.com/) é uma ferramenta de pesquisa que enc
 
 **Pesquisar no Everything** inicia [a pesquisa](https://www.voidtools.com/support/everything/searching/) na pasta e nas subpastas, ou em todos os [ficheiros indexados](https://www.voidtools.com/support/everything/indexes/) com **Em todo o lado**. Os resultados abrem no Everything. Para pastas virtuais, escolher Em todo o lado. Um arranque bem-sucedido limpa o campo e o filtro local do FileSpacer.
 
-![Uma pesquisa no FileSpacer e os resultados correspondentes no Everything, ao lado.](images/everything-search-pt.png)
+![Uma pesquisa no FileSpacer e os resultados correspondentes no Everything, ao lado.](images/everything-search.png)
 
 <div id="nilesoft-shell"></div>
 
@@ -112,19 +124,19 @@ O [Nilesoft Shell](https://nilesoft.org/) é uma extensão do Windows que permit
 
 O FileSpacer compõe o menu da barra de título e o Nilesoft Shell aplica depois as suas regras, que têm prioridade. A [referência de configuração](nilesoft-shell.md) descreve as definições visuais e o acesso às ações do FileSpacer.
 
-São recomendados cantos retos para os menus da barra de título e da barra de ferramentas.
+São recomendados [cantos retos](nilesoft-shell.md#recommended-menu-appearance) para os menus da barra de título e da barra de ferramentas.
 
 **Menu de navegação**
 
 | Cantos predefinidos | Cantos retos recomendados |
 | --- | --- |
-| <img src="images/nilesoft-navigation-default-pt.png" alt="Menu de navegação da barra de título com os cantos arredondados predefinidos do tema Modern." width="320"> | <img src="images/nilesoft-navigation-adapted-pt.png" alt="O mesmo menu de navegação com os cantos retos recomendados." width="320"> |
+| <img src="images/nilesoft-navigation-default.png" alt="Menu de navegação da barra de título com os cantos arredondados predefinidos do tema Modern." width="320"> | <img src="images/nilesoft-navigation-adapted.png" alt="O mesmo menu de navegação com os cantos retos recomendados." width="320"> |
 
-**Menu principal (…)**
+**Menu principal**
 
 | Cantos predefinidos | Cantos retos recomendados |
 | --- | --- |
-| <img src="images/nilesoft-main-menu-default-pt.png" alt="Menu principal com os cantos arredondados predefinidos do tema Modern." width="320"> | <img src="images/nilesoft-main-menu-adapted-pt.png" alt="O mesmo menu principal com os cantos retos recomendados." width="320"> |
+| <img src="images/nilesoft-main-menu-default.png" alt="Menu principal com os cantos arredondados predefinidos do tema Modern." width="320"> | <img src="images/nilesoft-main-menu-adapted.png" alt="O mesmo menu principal com os cantos retos recomendados." width="320"> |
 
 O [PowerToys](https://learn.microsoft.com/pt-pt/windows/powertoys/) reúne utilitários da Microsoft para complementar e personalizar o Windows.
 
@@ -135,6 +147,8 @@ O **Peek** apresenta uma pré-visualização dos ficheiros. No FileSpacer, **Pr�
 <div id="powertoys-grab-and-move"></div>
 
 O **Grab And Move** permite mover e redimensionar janelas a partir do conteúdo. Quando está ativo, os gestos equivalentes do FileSpacer são suspensos, mesmo que o PowerToys esteja fechado. Para os manter, excluir `FileSpacer.exe` no Grab And Move ou desativar a ferramenta.
+
+<a id="updates-and-troubleshooting"></a>
 
 ## Atualizações e resolução de problemas
 
@@ -149,6 +163,8 @@ O **Grab And Move** permite mover e redimensionar janelas a partir do conteúdo.
 Na mesma página, **Manutenção > Repor o estado de todas as pastas** fecha as janelas e elimina as suas disposições, históricos e bloqueios. Os ficheiros e as preferências gerais são mantidos.
 
 A reposição das preferências e a resolução avançada de problemas estão descritas na [nota técnica](../en/README.md#local-data), em inglês.
+
+<a id="privacy"></a>
 
 ## Privacidade
 
