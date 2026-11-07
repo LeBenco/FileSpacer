@@ -30,8 +30,8 @@ namespace FileSpacerRegression {
         [DllImport("kernel32.dll")] static extern bool VirtualFreeEx(IntPtr p,IntPtr a,UIntPtr n,uint type);
         [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr p);
 
-        // Same read-only ListView protocol as the validated SelectedItemPoint.
-        // Messages above WM_USER require structures in the control's process.
+        // Read-only ListView/toolbar queries. Messages above WM_USER require
+        // structures in the control's process.
         // Synchronous sends retain the buffer until processing is complete.
         sealed class Query : IDisposable {
             IntPtr process; public IntPtr Address;
@@ -140,9 +140,9 @@ namespace FileSpacerRegression {
             return String.Format("flags=0x{0:X}, active={1}, focus={2}, capture={3}, menuOwner={4}, moveSize={5}",
                 info.Flags,info.Active,info.Focus,info.Capture,info.MenuOwner,info.MoveSize);
         }
-        public static Point VerticalThumb(IntPtr list) {
+        public static Point VerticalThumb(IntPtr list,int objectId=-5) {
             var info=new ScrollInfo(); info.Size=(uint)Marshal.SizeOf(typeof(ScrollInfo)); info.States=new uint[6];
-            if(!GetScrollBarInfo(list,-5,ref info)) throw new Win32Exception(); // OBJID_VSCROLL
+            if(!GetScrollBarInfo(list,objectId,ref info)) throw new Win32Exception(); // OBJID_VSCROLL or OBJID_CLIENT for a scrollbar control
             if((info.States[0]&0x18001)!=0||info.ThumbBottom<=info.ThumbTop) throw new InvalidOperationException("No visible enabled vertical scrollbar thumb.");
             return Exposed(list,new Point { X=info.Bounds.Left+(info.Bounds.Right-info.Bounds.Left)/2,Y=info.Bounds.Top+(info.ThumbTop+info.ThumbBottom)/2 });
         }
