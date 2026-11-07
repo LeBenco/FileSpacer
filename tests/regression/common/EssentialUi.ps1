@@ -94,6 +94,22 @@ function Use-UiView([IntPtr]$Window,[scriptblock]$Action) {
     if ($null -eq $view) { throw 'The application did not expose its registered native Shell view.' }
     try { & $Action $view } finally { $view.Dispose() }
 }
+function Wait-UiViewMode([IntPtr]$Window,[uint32]$Mode,[int]$IconSize=-1) {
+    Wait-Ui {
+        $view=$null
+        try {
+            $view=Get-UiView $Window
+            return $null -ne $view -and $view.Mode -eq $Mode -and ($IconSize -lt 0 -or $view.IconSize -eq $IconSize)
+        } catch {
+            $failure=$_.Exception
+            while($failure.InnerException) { $failure=$failure.InnerException }
+            # A renderer replacement temporarily removes/disconnects the view
+            # service. Observe the new view; never repeat the mode command.
+            if($failure.HResult -notin @(-2147467262,-2147467259,-2147417848,-2147483638)) { throw }
+            return $false
+        } finally { if($null -ne $view) { $view.Dispose() } }
+    } 'registered native view has the requested mode and icon size' 300 10
+}
 function Register-UiWindowProcess([IntPtr]$Window) {
     $windowProcessId=[uint32]0
     [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($Window,[ref]$windowProcessId)
