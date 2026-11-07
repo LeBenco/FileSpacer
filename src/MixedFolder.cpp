@@ -2,7 +2,6 @@
 
 #include <shlobj.h>
 #include <shlwapi.h>
-#include <vector>
 
 namespace filespacer {
 HRESULT mixedFolderItem(IShellItem *item, bool isolated, IShellItem **out) {
@@ -33,31 +32,5 @@ HRESULT nativeShellItem(IShellItem *item, IShellItem **out) {
         if (mixed) return mixed->NativeItem(child, IID_PPV_ARGS(out));
     }
     return item->QueryInterface(IID_PPV_ARGS(out));
-}
-
-HRESULT nativeViewSelection(IFolderView2 *view, BOOL noneMeansFolder, IShellItemArray **out) {
-    if (!view || !out) return E_POINTER;
-    *out = nullptr;
-    CComPtr<IShellItemArray> selected;
-    HRESULT hr = view->GetSelection(noneMeansFolder, &selected);
-    if (FAILED(hr) || !selected) return hr;
-    CComPtr<IShellFolder> folder;
-    CComPtr<IMixedFolder> mixed;
-    if (FAILED(view->GetFolder(IID_PPV_ARGS(&folder))) || FAILED(folder->QueryInterface(IID_PPV_ARGS(&mixed))))
-        return selected.CopyTo(out);
-    DWORD count = 0;
-    hr = selected->GetCount(&count);
-    if (FAILED(hr)) return hr;
-    std::vector<CComHeapPtr<ITEMIDLIST_ABSOLUTE>> owned(count);
-    std::vector<PCIDLIST_ABSOLUTE> ids(count);
-    for (DWORD i = 0; i < count; ++i) {
-        CComPtr<IShellItem> item, native;
-        hr = selected->GetItemAt(i, &item);
-        if (SUCCEEDED(hr)) hr = nativeShellItem(item, &native);
-        if (SUCCEEDED(hr)) hr = SHGetIDListFromObject(native, &owned[i]);
-        if (FAILED(hr)) return hr;
-        ids[i] = owned[i];
-    }
-    return SHCreateShellItemArrayFromIDLists(count, ids.data(), out);
 }
 }
