@@ -5,5 +5,5 @@ param(
     [int]$IconSize=-1,
     [bool]$FullNamesOnSelection=$false
 )
-# Mode variants use the validated empty-folder gesture, with no UIA locator.
+# Mode variants exercise both the empty background and a selected item.
 & (Join-Path $PSScriptRoot 'Remaining.ps1') -ProjectRoot $ProjectRoot -Case Mode -ViewMode $ViewMode -ViewName $ViewName -IconSize $IconSize -FullNamesOnSelection $FullNamesOnSelection
