@@ -38,6 +38,7 @@ _FileSpacer ist eine Abspaltung von [ChromaFiler](https://github.com/vanjac/chro
 ## Funktionen
 
 - **Ein Fenster pro Ordner**, das bei bereits geöffneten Ordnern wieder aktiviert wird. Position, Größe, Ansichtseinstellungen und Symbolanordnung bleiben beim erneuten Öffnen erhalten. [Räumliche Navigation](user-guide.md#fensternavigation).
+- **Weniger Fenster offen halten**: Beim Öffnen eines Ordners wird das Ausgangsfenster standardmäßig geschlossen. [Fensternavigation](user-guide.md#fensternavigation).
 - **Symbole frei anordnen.** Ihre Positionen werden für jeden Ordner gespeichert und wiederhergestellt. [Symbolanordnung](user-guide.md#symbolanordnung).
 - **Fenster von jeder Stelle im Dateibereich aus verschieben und skalieren**, ohne die Auswahl zu verlieren. Die Mausgesten lassen sich anpassen. Standardmäßig gelten Alt + Ziehen mit der linken bzw. rechten Maustaste. [Fenstergesten](user-guide.md#verschieben-und-größenänderung).
 - **Zwischen geöffneten Ordnern wechseln**, über das Menü in der Titelleiste. Übergeordnete Fenster schließen oder das zuletzt geschlossene Fenster mit Strg+Umschalt+T erneut öffnen. [Fensternavigation](user-guide.md#fensternavigation).

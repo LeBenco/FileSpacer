@@ -37,6 +37,7 @@ _FileSpacer is een fork van [ChromaFiler](https://github.com/vanjac/chromafiler)
 ## Functies
 
 - **Eén venster per map**, hergebruikt als de map al open is. Positie, afmetingen, weergave-instellingen en pictogramindeling worden hersteld. [Ruimtelijke navigatie](user-guide.md#navigeren-tussen-vensters).
+- **Minder vensters open houden**: bij het openen van een map wordt het bronvenster standaard gesloten. [Vensternavigatie](user-guide.md#navigeren-tussen-vensters).
 - **Pictogrammen vrij plaatsen**, met opgeslagen en herstelde posities per map. [Pictogramindeling](user-guide.md#pictogramindeling).
 - **Vensters verplaatsen en het formaat wijzigen** vanuit het hele bestandsgebied, met behoud van selectie. Muisgebaren zijn instelbaar, met standaard Alt + slepen met links en Alt + slepen met rechts. [Venstergebaren](user-guide.md#verplaatsen-en-formaat-wijzigen).
 - **Schakelen tussen geopende mappen** via het titelbalkmenu, bovenliggende vensters sluiten of het laatst gesloten venster opnieuw openen met Ctrl+Shift+T. [Vensternavigatie](user-guide.md#navigeren-tussen-vensters).

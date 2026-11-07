@@ -38,6 +38,7 @@ _FileSpacer est un dérivé de [ChromaFiler](https://github.com/vanjac/chromafil
 ## Fonctionnalités
 
 - **Une fenêtre unique par dossier**, réactivée si le dossier est déjà ouvert. Sa position, sa taille, ses réglages d’affichage et la disposition des icônes sont conservés d’une ouverture à l’autre. [Navigation spatiale](user-guide.md#navigation-entre-les-fenêtres).
+- **Limiter l’accumulation des fenêtres** : ouvrir un dossier ferme par défaut la fenêtre source. [Navigation entre les fenêtres](user-guide.md#navigation-entre-les-fenêtres).
 - **Disposer les icônes librement**, avec une disposition enregistrée et restaurée pour chaque dossier. [Disposition des icônes](user-guide.md#disposition-des-icônes).
 - **Déplacer et redimensionner les fenêtres** depuis la zone des fichiers en conservant la sélection. Les raccourcis souris sont configurables, avec Alt + glisser gauche et Alt + glisser droit par défaut. [Gestes de fenêtre](user-guide.md#déplacement-et-redimensionnement).
 - **Passer d’un dossier ouvert à l’autre** depuis le menu de la barre de titre, fermer les fenêtres parentes ou rouvrir la dernière fenêtre fermée avec Ctrl+Maj+T. [Navigation entre les fenêtres](user-guide.md#navigation-entre-les-fenêtres).
