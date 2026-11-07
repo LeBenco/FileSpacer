@@ -210,7 +210,6 @@ BEGIN
   IDS_TITLE_MENU_WINDOWS_BLOCK "<< Open windows >>"
   IDS_TITLE_MENU_RESTORE "Restore the locked layout"
   IDS_TITLE_MENU_REPLACE "Replace the reference layout"
-  IDS_TITLE_MENU_FORGET "Forget this folder’s layout"
   IDS_TITLE_MENU_CLOSE_DESCENDANTS "Close descendant windows"
   IDS_TITLE_MENU_CLOSE_OTHERS "Close other windows"
   IDS_TITLE_MENU_FIT "Fit the window to its contents"
@@ -219,7 +218,6 @@ END
 
 STRINGTABLE
 BEGIN
-  IDS_TITLE_FORGET_CONFIRM "Forget this folder’s layout?\n\nThe window stays in place, but its layout will no longer be saved until it closes. Its next opening will use the default settings. Search history is kept."
   IDS_TITLE_REPLACE_CONFIRM "Replace the locked layout with the window’s current position, size and view settings?"
   IDS_GROUPS_ERROR "The folder group could not be read or saved. Existing groups have been kept."
   IDS_GROUPS_REPLACE "Replace this group with the folders currently open in FileSpacer?"
