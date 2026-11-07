@@ -9,6 +9,7 @@ IDR_ITEM_MENU   MENU {
 }
 
 STRINGTABLE {
+    IDS_GLOBAL_THUMBNAILS, "Ескізи (глобальний параметр Windows)"
     IDS_DOCUMENTATION_ERROR, "Не вдалося відкрити локальну документацію:\n%1\n\n%2"
     IDS_CAPTION_COPY_PATH, "Копіювати шлях"
     IDS_CAPTION_RENAME, "Перейменувати"
