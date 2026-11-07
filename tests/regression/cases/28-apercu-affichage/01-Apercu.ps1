@@ -1,4 +1,4 @@
-﻿# Test-Category: UI
+# Test-Category: UI
 param([string]$ProjectRoot)
 . (Join-Path $PSScriptRoot 'ViewMenu.ps1')
 $failure=$null
@@ -29,7 +29,9 @@ try {
     [FileSpacerViewMenuTests.MenuUi]::Hover($popup,5);Wait-PreviewMode $window $modes[5]
     [FileSpacerViewMenuTests.MenuUi]::Choose($popup,5,$window)
     Wait-PreviewMenuClosed $window;Wait-PreviewMode $window $modes[5]
-    $committed=Read-PreviewState $window
+    # Details has no icon coordinates in the modern native renderer.
+    # This assertion concerns the selection and focus, which both renderers expose.
+    $committed=Use-UiView $window {param($view) @{Selected=(@($view.Selected())|Sort-Object) -join ';';Focus=$view.Focused()}}
     Assert-Ui ($committed.Selected -eq $state.Selected -and $committed.Focus -eq $state.Focus) 'Committing a mode lost the selection or focus.'
     Close-UiFolder $window
     $window=Open-UiFolder $folder 300

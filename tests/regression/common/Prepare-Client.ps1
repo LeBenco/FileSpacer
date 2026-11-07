@@ -191,7 +191,7 @@ function New-ClientPackage {
                     $exe=& { . (Join-Path $regression 'common\Native.ps1'); Build-NativeTest @nativeParameters }
                 } finally { $env:FS_REGRESSION_RUN=$previousRun }
                 $description=@{}
-                foreach($name in @('ProductionSources','Sqlite','Storage','Extract','Resources','CommonControls','Libraries','Standard','Defines')) { $description[$name]=if($parameters.ContainsKey($name)){@($parameters[$name]) -join '|'}else{''} }
+                foreach($name in @('ProductionSources','Sqlite','Storage','Extract','Resources','CommonControls','ControlFlowGuard','Libraries','Standard','Defines')) { $description[$name]=if($parameters.ContainsKey($name)){@($parameters[$name]) -join '|'}else{''} }
                 [void]$native.Add(@{Name=$parameters.Name;CaseDirectory=$parameters.CaseDirectory.Substring($ProjectRoot.Length+1);Parameters=$description;Executable=('native-'+$native.Count+'\'+[IO.Path]::GetFileName($exe));Sha256=(Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash})
                 # Only the executable is needed by the client; compiler output
                 # remains with host preparation logs, outside the transferred package.

@@ -86,6 +86,9 @@ FolderViewSettings captureOptions(IFolderView2 *view, const FolderViewSettings &
 }
 
 HRESULT restoreOptions(IFolderView2 *view, const FolderViewSettings &state) {
+    // Reapplying an identical presentation can still sort and lay out the Shell view.
+    // A partial or unsupported capture retains the existing application path.
+    if (state.present && sameView(captureOptions(view, {}), state)) return S_OK;
     HRESULT restored = S_OK;
     auto record = [&](HRESULT result) {
         if (FAILED(result) && SUCCEEDED(restored)) restored = result;

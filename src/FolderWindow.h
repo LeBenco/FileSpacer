@@ -4,6 +4,7 @@
 #include "ItemWindow.h"
 #include "SearchBox.h"
 #include "ShellViewHost.h"
+#include "ShellViewSelection.h"
 #include "WindowResizeGesture.h"
 #include <memory>
 #include <vector>
@@ -162,11 +163,13 @@ protected:
         // WPARAM: storageWaitSerial. The folder-state mutex another process held was released.
         MSG_STORAGE_AVAILABLE = WM_APP + 52,
         // Deferred synchronizeViewProvider(), posted when a guard that refused it clears.
-        MSG_SYNCHRONIZE_VIEW_PROVIDER = WM_APP + 53
+        MSG_SYNCHRONIZE_VIEW_PROVIDER = WM_APP + 53,
+        MSG_SYNCHRONIZE_VIEW_PROFILE = WM_APP + 54,
+        MSG_OPEN_PENDING_VIEW_MENU = WM_APP + 55
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
 
-    static bool spatialView(IFolderView *folderView);
+    bool spatialView(IFolderView *folderView) const;
 
 	bool hasStatusText();
 	void setStatusText(const wchar_t *text);
@@ -342,6 +345,19 @@ private:
     HIMAGELIST quickAccessImages = nullptr;
 
     ShellViewHost viewHost;
+    ShellSelectionClear selectionClear;
+    bool selectionBindingPending = false;
+    bool hybridViewEligible = false;
+    FOLDERVIEWOPTIONS viewProfile = FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING;
+    bool viewProfilePending = false, viewProfilePosted = false, viewProfileChanging = false;
+    bool viewMenuRequested = false;
+    unsigned viewMenuDepth = 0;
+    POINT pendingViewMenuPoint = {};
+    HWND pendingKeyboardControl = nullptr;
+    bool pendingKeyboardView = false;
+    FOLDERVIEWOPTIONS profileForMode(UINT mode) const;
+    void requestViewProfile();
+    void synchronizeViewProfile();
     bool initialNavigationPending = false;
     unsigned navigationDepth = 0;
     UINT deferredCloseMessage = 0;
