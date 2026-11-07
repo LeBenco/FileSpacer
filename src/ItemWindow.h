@@ -100,8 +100,6 @@ protected:
     bool stateLocked = false;
     bool updateStateLock();
     void toggleStateLock(bool replaceReference = false);
-    void forgetLayout();
-    bool layoutForgotten = false;
     bool loadFolderState();
     FolderState &getSavedFolderState() { return savedState; }
     const std::string &getFolderStateKey() const { return stateKey; }
