@@ -36,6 +36,10 @@ private:
 // viewport capture, with the legacy anchor fallback on unsupported renderers.
 HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &current,
     std::vector<uint8_t> &bytes);
+// Public complete-selection snapshot for ungrouped free Icon/SmallIcon views.
+// S_FALSE leaves unsupported contexts to GetSelection; E_ABORT rejects a stale view.
+HRESULT captureCompleteSpatialSelection(IFolderView2 *view, const std::function<bool()> &current,
+    IShellItemArray **out);
 // Consumes pending before calling the Shell, including on failure/cancellation.
 // Empty input returns S_FALSE without changing the current selection.
 HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
