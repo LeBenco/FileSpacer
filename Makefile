@@ -38,6 +38,8 @@ PROVIDER_RESOURCE = $(OUTDIR)\MixedFolderProvider.res
 ICON_SVG = src\res\FileSpacer.svg
 ICON_ICO = src\res\FileSpacer.ico
 LOCK_BADGE_ICO = src\res\window-state-lock.ico
+UNLOCK_BADGE_SVG = src\res\window-state-unlock.svg
+UNLOCK_BADGE_ICO = src\res\window-state-unlock.ico
 ICON_GENERATOR = generate-icon.py
 OBJECTS = \
     $(OUTDIR)\ClosedWindows.obj \
@@ -113,12 +115,15 @@ $(SQLITE_OBJECT): $(SQLITE_DIR)\sqlite3.c $(SQLITE_DIR)\sqlite3.h Makefile
 $(RESOURCE): src\*.rc src\resource.h src\dialog.h \
     src\res\title-menu-backdrop.bmp \
     src\res\FileSpacer.exe.manifest $(ICON_ICO) $(LOCK_BADGE_ICO) \
-    Makefile
+    $(UNLOCK_BADGE_ICO) Makefile
 	rc.exe /D _UNICODE /D UNICODE /n /I src /fo $(RESOURCE) src\resource.rc
 
 # Regenerate the optical small sizes and the larger vector sizes together.
 $(ICON_ICO): $(ICON_SVG) $(ICON_GENERATOR) Makefile
 	"$(ICON_PYTHON)" "$(ICON_GENERATOR)" --source "$(ICON_SVG)" --output "$(ICON_ICO)" --work-dir "$(OUTDIR)" --inkscape "$(INKSCAPE)"
+
+$(UNLOCK_BADGE_ICO): $(UNLOCK_BADGE_SVG) Makefile
+	magick -background none -density 384 MSVG:$(UNLOCK_BADGE_SVG) -define icon:auto-resize=256,128,96,64,48,40,32,28,24,20,16 $(UNLOCK_BADGE_ICO)
 
 clean:
 	@if exist "build\debug" rmdir /s /q "build\debug"
