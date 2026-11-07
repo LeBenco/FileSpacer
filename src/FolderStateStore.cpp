@@ -630,26 +630,6 @@ bool FolderStateStore::enforceQuota() {
     return false;
 }
 
-bool FolderStateStore::clear(const std::string &key, uint32_t parts) {
-    if (!initialized) return false;
-    Lock lock(*this);
-    if (!lock) return false;
-    sqlite3_stmt *raw = nullptr;
-    if (!result(sqlite3_prepare_v2(db,
-        "UPDATE folder_state SET x=CASE WHEN (?2&1)!=0 AND (locked=0 OR ?2=31) THEN NULL ELSE x END,"
-        "y=CASE WHEN (?2&1)!=0 AND (locked=0 OR ?2=31) THEN NULL ELSE y END,"
-        "width=CASE WHEN (?2&2)!=0 AND (locked=0 OR ?2=31) THEN NULL ELSE width END,"
-        "height=CASE WHEN (?2&2)!=0 AND (locked=0 OR ?2=31) THEN NULL ELSE height END,"
-        "view=CASE WHEN (?2&4)!=0 AND (locked=0 OR ?2=31) THEN NULL ELSE view END,"
-        "icons=CASE WHEN (?2&8)!=0 THEN NULL ELSE icons END,"
-        "maximized=CASE WHEN (?2&16)!=0 AND (locked=0 OR ?2=31) THEN NULL ELSE maximized END,"
-        "locked=CASE WHEN ?2=31 THEN 0 ELSE locked END WHERE key=?1", -1, &raw, nullptr))) return false;
-    Statement statement(raw, sqlite3_finalize);
-    if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))
-            || !result(sqlite3_bind_int(raw, 2, static_cast<int>(parts)))) return false;
-    return result(sqlite3_step(raw));
-}
-
 bool FolderStateStore::remove(const std::string &key) {
     if (!initialized) return false;
     Lock lock(*this);
