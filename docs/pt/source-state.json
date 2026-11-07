@@ -39,90 +39,34 @@
       ]
     },
     "docs/user-guide.md": {
-      "sourceHash": "ca9b55994ba68e0f2ae558be1853232fa1501875c5d865b01eb2ba0a3083eec4",
+      "sourceHash": "547c251c0011ddbe38edd57fdce1ca283bece024007d8b2f1ff5d168f91aa5a4",
       "headings": [
         [
           "using-filespacer",
           2
         ],
         [
-          "window-navigation",
+          "window-navigation-and-layout",
           3
         ],
         [
-          "view-and-layout",
+          "folder-contents-and-display",
           3
         ],
         [
-          "icon-layout",
-          4
-        ],
-        [
-          "view-options",
-          4
-        ],
-        [
-          "window-placement",
-          4
-        ],
-        [
-          "selection-and-activation",
-          4
-        ],
-        [
-          "managing-windows",
+          "customization",
           3
         ],
         [
-          "moving-and-resizing",
+          "changing-the-interface",
           4
-        ],
-        [
-          "locking-a-saved-layout",
-          4
-        ],
-        [
-          "customize-the-title-bar-menu",
-          4
-        ],
-        [
-          "folder-groups",
-          4
-        ],
-        [
-          "search-and-history",
-          3
         ],
         [
           "integration",
-          3
-        ],
-        [
-          "windows-integration",
           4
         ],
         [
-          "powertoys-grab-and-move",
-          4
-        ],
-        [
-          "powertoys-peek",
-          4
-        ],
-        [
-          "everything",
-          4
-        ],
-        [
-          "nilesoft-shell",
-          4
-        ],
-        [
-          "settings-and-updates",
-          3
-        ],
-        [
-          "local-data",
+          "updates-and-troubleshooting",
           3
         ],
         [
