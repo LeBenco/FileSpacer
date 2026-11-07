@@ -2,6 +2,7 @@
 
 ## Sin publicar
 
+- Colocar las ventanas nuevas según el tamaño y la posición normales de las ventanas existentes de FileSpacer, incluidas las maximizadas, minimizadas o acopladas.
 - Aceleración masiva de «Seleccionar todo» y de la deselección de miles de archivos en las vistas clásicas del Shell. Esta optimización utiliza funciones privadas de Windows cuya disponibilidad y comportamiento no están garantizados. Si faltan o son incompatibles, FileSpacer recurre automática y silenciosamente a las funciones públicas, sin las mejoras de rendimiento.
 
 ## 1.3.2 — 2026-11-04
