@@ -25,6 +25,38 @@ namespace FileSpacerRegression {
     // Observe visible geometry only: no control-class assumptions, injected code or remote buffers.
     // The real Shell HWND comes from IShellView::GetWindow, not from an Explorer window search.
     public static class ViewLayout {
+        public static double VerticalScrollPercent(IntPtr window,int processId) {
+            return ScrollPercent(window,processId,null);
+        }
+        public static double SetVerticalScrollPercent(IntPtr window,int processId,double percent) {
+            if(Double.IsNaN(percent) || Double.IsInfinity(percent) || percent<0 || percent>100)
+                throw new ArgumentOutOfRangeException("percent");
+            return ScrollPercent(window,processId,percent);
+        }
+        static double ScrollPercent(IntPtr window,int processId,double? requested) {
+            double result=Double.NaN; Exception error=null;
+            var worker=new Thread(delegate() {
+                try {
+                    var root=AutomationElement.FromHandle(window);
+                    if(root==null || (int)Required(root,AutomationElement.ProcessIdProperty)!=processId)
+                        throw new InvalidOperationException("Scroll target does not belong to the expected process.");
+                    var element=root.FindFirst(TreeScope.Subtree,
+                        new PropertyCondition(AutomationElement.IsScrollPatternAvailableProperty,true));
+                    if(element==null) throw new InvalidOperationException("No public ScrollPattern in the Shell view.");
+                    var scroll=(ScrollPattern)element.GetCurrentPattern(ScrollPattern.Pattern);
+                    if(!scroll.Current.VerticallyScrollable)
+                        throw new InvalidOperationException("The fixture must have a vertical scroll range.");
+                    if(requested.HasValue) scroll.SetScrollPercent(ScrollPattern.NoScroll,requested.Value);
+                    result=scroll.Current.VerticalScrollPercent;
+                } catch(Exception failure) { error=failure; }
+            });
+            worker.IsBackground=true;
+            worker.SetApartmentState(ApartmentState.MTA);
+            worker.Start();
+            if(!worker.Join(5000)) throw new TimeoutException("ScrollPattern measurement exceeded five seconds.");
+            if(error!=null) throw new InvalidOperationException("ScrollPattern measurement failed.",error);
+            return result;
+        }
         public static VisibleViewLayout Capture(IntPtr window,int processId,int expectedItems) {
             if(window==IntPtr.Zero || processId<=0 || expectedItems<=0) throw new ArgumentException("LAYOUT MEASUREMENT: invalid Shell view layout target.");
             VisibleViewLayout result=null; Exception error=null;

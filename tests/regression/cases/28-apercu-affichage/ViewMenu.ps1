@@ -1,7 +1,23 @@
-﻿. (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
+. (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
 Add-Type -Path (Join-Path $PSScriptRoot 'ViewMenuUi.cs') -ReferencedAssemblies ([FileSpacerRegression.Native].Assembly.Location)
 function Read-PreviewMode([IntPtr]$Window) {
-    return Use-UiView $Window {param($view) @{Mode=$view.Mode;Size=$view.IconSize}}
+    $result=@{Value=$null}
+    Wait-Ui {
+        $view=$null
+        try {
+            $view=Get-UiView $Window
+            if($null-eq$view){return $false}
+            $result.Value=@{Mode=$view.Mode;Size=$view.IconSize}
+            return $true
+        } catch {
+            $error=$_.Exception
+            while($error.InnerException){$error=$error.InnerException}
+            # A renderer change briefly removes the registered view service.
+            if($error.HResult -notin @(-2147467262,-2147467259,-2147417848,-2147483638)){throw}
+            return $false
+        } finally {if($null-ne$view){$view.Dispose()}}
+    } 'registered native view available after a representation change'
+    return $result.Value
 }
 function Wait-PreviewMode([IntPtr]$Window,$Expected) {
     Wait-Ui {$now=Read-PreviewMode $Window; $now.Mode -eq $Expected.Mode -and $now.Size -eq $Expected.Size} 'native display mode and icon size' 150

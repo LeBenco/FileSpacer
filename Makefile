@@ -5,12 +5,12 @@ CFG = Release
 
 !IF "$(CFG)" == "Debug"
 OUTDIR = build\debug
-CXXFLAGS = /nologo /EHsc /MP /W4 /Zi /MTd /D FILESPACER_DEBUG /I src
-LINKFLAGS = /subsystem:console
+CXXFLAGS = /nologo /EHsc /MP /W4 /guard:cf /Zi /MTd /D FILESPACER_DEBUG /I src
+LINKFLAGS = /subsystem:console /guard:cf
 !ELSEIF "$(CFG)" == "Release"
 OUTDIR = build\release
-CXXFLAGS = /nologo /EHsc /MP /W4 /O2 /Zi /MT /I src
-LINKFLAGS = /subsystem:windows /OPT:REF /OPT:ICF
+CXXFLAGS = /nologo /EHsc /MP /W4 /guard:cf /O2 /Zi /MT /I src
+LINKFLAGS = /subsystem:windows /guard:cf /OPT:REF /OPT:ICF
 !ELSE
 !ERROR CFG must be Debug or Release.
 !ENDIF
@@ -68,6 +68,7 @@ OBJECTS = \
     $(OUTDIR)\ShellViewFilter.obj \
     $(OUTDIR)\ShellViewSettings.obj \
     $(OUTDIR)\ShellViewSelection.obj \
+    $(OUTDIR)\ShellSelectionDiscovery.obj \
     $(OUTDIR)\ShellViewIcons.obj \
     $(OUTDIR)\UIStrings.obj \
     $(OUTDIR)\Update.obj \
@@ -91,7 +92,7 @@ $(TARGET): $(OBJECTS) $(SQLITE_OBJECT) $(RESOURCE) $(OUTDIR)\FileSpacerFolder.dl
 	cl.exe /nologo /Fe$(TARGET) $(OBJECTS) $(SQLITE_OBJECT) $(RESOURCE) /link /incremental:no /manifest:no /debug /pdb:$(OUTDIR)\FileSpacer.pdb $(LINKFLAGS) Uuid.lib
 
 $(OUTDIR)\FileSpacerFolder.dll: src\MixedFolderProvider.cpp src\MixedFolder.h src\common.h src\MixedFolderProvider.def $(PROVIDER_RESOURCE) Makefile
-	cl.exe $(CXXFLAGS) /DSTRICT_TYPED_ITEMIDS /Fd$(OUTDIR)\MixedFolder-compiler.pdb /Fo$(OUTDIR)\MixedFolderProvider.obj /LD /Fe$@ src\MixedFolderProvider.cpp $(PROVIDER_RESOURCE) /link /incremental:no /debug /pdb:$(OUTDIR)\FileSpacerFolder.pdb /def:src\MixedFolderProvider.def User32.lib Shell32.lib Shlwapi.lib Ole32.lib OleAut32.lib Propsys.lib Uuid.lib Version.lib
+	cl.exe $(CXXFLAGS) /DSTRICT_TYPED_ITEMIDS /Fd$(OUTDIR)\MixedFolder-compiler.pdb /Fo$(OUTDIR)\MixedFolderProvider.obj /LD /Fe$@ src\MixedFolderProvider.cpp $(PROVIDER_RESOURCE) /link /guard:cf /incremental:no /debug /pdb:$(OUTDIR)\FileSpacerFolder.pdb /def:src\MixedFolderProvider.def User32.lib Shell32.lib Shlwapi.lib Ole32.lib OleAut32.lib Propsys.lib Uuid.lib Version.lib
 
 # The provider carries the application's version so a registration pointing
 # at another copy can be compared by file version.
