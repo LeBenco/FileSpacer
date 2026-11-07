@@ -25,6 +25,8 @@ struct CMINVOKECOMMANDINFOEX {
     UINT cbSize; HWND hwnd; const char *lpDirectory; const wchar_t *lpDirectoryW;
 };
 constexpr HRESULT S_OK = 0, E_FAIL = -1;
+constexpr unsigned FVO_DEFAULT = 0;
+namespace selectionDetail { UINT readyMessage() { return 0xc001; } }
 constexpr UINT CMF_CANRENAME = 1, CMF_EXTENDEDVERBS = 2, CMF_ITEMMENU = 4,
     CMF_NODEFAULT = 8, CMF_OPTIMIZEFORINVOKE = 16;
 constexpr UINT TPM_RIGHTBUTTON = 2, TPM_RETURNCMD = 256, MM_ADDSEPARATOR = 1;
@@ -61,6 +63,7 @@ struct Observation {
     Stage closeAt = Stage::None;
     bool fired = false, closed = false, destroyed = false, cleared = false;
     int menus = 0, objects = 0, invoked = 0, saves = 0, sites = 0, detaches = 0;
+    int profileRequests = 0, selectionReadyPosts = 0;
     int command = IDM_SHELL_FIRST;
     bool failSelection = false, failQuery = false, failView = false, failSite = false;
 } observation;
@@ -280,6 +283,11 @@ struct FolderWindow : ItemWindow {
     // Close deferral around view verbs; a direct closeNow() here is not a queued WM_CLOSE.
     unsigned navigationDepth = 0;
     UINT deferredCloseMessage = 0;
+    bool hybridViewEligible = false, viewMenuRequested = false;
+    bool selectionBindingPending = false, viewProfilePending = false;
+    unsigned viewProfile = FVO_DEFAULT, viewMenuDepth = 0;
+    POINT pendingViewMenuPoint = {};
+    void requestViewProfile() { if (isWindowOperational()) ++observation.profileRequests; }
     HRESULT invokeViewCommand(IContextMenu *menu, CMINVOKECOMMANDINFO *info);
     void resumeDeferredClose();
     CComPtr<IContextMenu> queryBackgroundMenu(HMENU *);
@@ -289,7 +297,11 @@ struct FolderWindow : ItemWindow {
     void openBackgroundSubMenu(IContextMenu *, HMENU, POINT);
 };
 FolderWindow::ViewMenuPreview *FolderWindow::ViewMenuPreview::active = nullptr;
-bool PostMessageW(HWND, UINT, WPARAM, LPARAM) { assert(false && "no close is deferred in this harness"); return true; }
+bool PostMessageW(HWND window, UINT message, WPARAM, LPARAM) {
+    assert(window && !observation.closed && message == selectionDetail::readyMessage());
+    ++observation.selectionReadyPosts;
+    return true;
+}
 HMENU findViewMenu(IContextMenu *, HMENU menu) { return menu; } // Borrowed submenu stand-in.
 void boundary(Stage stage) {
     if (stage != Stage::None && stage == observation.closeAt && !observation.fired) {
@@ -354,5 +366,18 @@ int main() {
             run(operation, stage);
     }
     run(Operation::View, Stage::Popup);
-    std::cout << "PASS: 40 deterministic cases; no invocation/save after closure; menus/sites/references released.\n";
+    observation = {};
+    auto source = new FolderWindow;
+    observation.source = source;
+    source->hybridViewEligible = true;
+    source->openViewMenu({12, 34});
+    assert(source->viewMenuRequested && source->pendingViewMenuPoint.x == 12 && source->pendingViewMenuPoint.y == 34);
+    assert(observation.profileRequests == 1 && observation.menus == 0 && observation.invoked == 0);
+    source->selectionBindingPending = true;
+    source->navigationDepth = 1;
+    source->resumeDeferredClose();
+    assert(!source->selectionBindingPending && observation.selectionReadyPosts == 1);
+    source->closeNow();
+    assert(observation.objects == 0 && observation.menus == 0);
+    std::cout << "PASS: menu closure boundaries, deferred modern-profile menu and selection capability wakeup; references released.\n";
 }
