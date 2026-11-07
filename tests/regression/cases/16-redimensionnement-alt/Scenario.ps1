@@ -61,11 +61,9 @@ try {
     Assert-Ui ($work.Width -ge 800 -and $work.Height -ge 600) 'At least 800x600 physical pixels are required.'
     Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($window,[IntPtr]::Zero,($work.Left+40),($work.Top+40),600,400,0x14)) 'Cannot place the test window.'
     Activate-Ui $window
-    if($Case -eq 'Header') { Use-UiView $window {param($v) $v.SetViewModeAndIconSize(4,-1)}; Wait-Ui { Use-UiView $window {param($v) $v.Mode -eq 4} } 'Details mode ready' 200 5 }
-    if($Case -eq 'Icons') { Use-UiView $window {param($v) $v.SetViewModeAndIconSize(1,48)}; Wait-Ui { Use-UiView $window {param($v) $v.Mode -eq 1} } 'Icons mode ready' 200 5 }
+    if($Case -eq 'Header') { Use-UiView $window {param($v) $v.SetViewModeAndIconSize(4,-1)}; Wait-UiViewMode $window 4 }
+    if($Case -eq 'Icons') { Use-UiView $window {param($v) $v.SetViewModeAndIconSize(1,48)}; Wait-UiViewMode $window 1 48 }
     $viewWindow=Use-UiView $window {param($v) $v.Window}
-    $lists=@([FileSpacerRegression.Native]::Children($viewWindow,'SysListView32'))
-    Assert-Ui ($lists.Count -eq 1) 'Exactly one classic ListView is required.'; $list=$lists[0]
     $state.Mode=Use-UiView $window {param($v) $v.Mode}
     $selection=''
     if($names.Count) {
@@ -74,22 +72,18 @@ try {
     }
     Assert-UiSelected $window $selection
     $state.SelectionBefore=@(Use-UiView $window {param($v) $v.Selected()})
-    $r=[FileSpacerRegression.Native]::ClientBounds($list)
-    $point=Point-At ([int]($r.Left+$r.Width/2)) ([int]($r.Top+3*$r.Height/4))
-    if($Case -eq 'Minimum') { $point=Point-At ($r.Right-25) ($r.Bottom-25) }
-    [FileSpacerRegression.NativeTargets]::Background($list,$point.X,$point.Y)
+    $point=[FileSpacerRegression.AltDragInput]::BackgroundPoint($viewWindow,($Case -in @('Minimum','Outside')))
     if($Case -in @('Unselected','Inactive','PlainContext','DoubleRight','Icons')) {
-        $index=Use-UiView $window {param($v) $v.IndexOf('OtherC')}
-        $p=[FileSpacerRegression.NativeTargets]::Item($list,$index,$names.Count,$false,$false)
-        $point=Point-At $p.X $p.Y
+        $point=[FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,'OtherC')
     }
     if($Case -in @('Header','Rename','Search','Toolbar')) {
-        if($Case -eq 'Header') { $control=Get-UiControl $viewWindow 'SysHeader32' }
+        if($Case -eq 'Header') { $point=[FileSpacerRegression.AltDragInput]::HeaderPoint($viewWindow) }
         if($Case -eq 'Rename') {
             Use-UiView $window {param($v) $v.Select('AnchorA')}; $selection='AnchorA'
             [FileSpacerRegression.Native]::Keys($window,0x71,$false,$false)
             Wait-Ui { @([FileSpacerRegression.Native]::Children($viewWindow,'Edit') | Where-Object { [FileSpacerRegression.Native]::IsWindowVisible($_) }).Count -eq 1 } 'rename edit visible' 0 5
             $control=Get-UiControl $viewWindow 'Edit'
+            $point=[FileSpacerRegression.AltDragInput]::RenamePoint($viewWindow)
         }
         if($Case -eq 'Search') { $control=Get-UiSearchEdit $window }
         if($Case -eq 'Toolbar') {
@@ -97,7 +91,7 @@ try {
             $bars=@([FileSpacerRegression.Native]::Children($window,'ToolbarWindow32') | Where-Object { [FileSpacerRegression.Native]::IsWindowVisible($_) -and [FileSpacerRegression.Native]::Message($_,0x419,$id,0) -ge 0 })
             Assert-Ui ($bars.Count -eq 1) 'Exactly one refresh toolbar is required.'
             $p=[FileSpacerRegression.NativeTargets]::Toolbar($bars[0],$id); $point=Point-At $p.X $p.Y
-        } else {
+        } elseif($Case -notin @('Header','Rename')) {
             $c=[FileSpacerRegression.Native]::ClientBounds($control)
             $p=[FileSpacerRegression.NativeTargets]::Control($control,$c.Left,$c.Top,$c.Right,$c.Bottom)
             $point=Point-At $p.X $p.Y
@@ -128,11 +122,8 @@ try {
         if($Case -eq 'Rename') {
             # Stay inside the editor: a right release over the list is a context-menu
             # request for the selection, which ends the rename (standard Shell behavior).
-            $c=[FileSpacerRegression.Native]::ClientBounds($control)
-            $x=[Math]::Min($point.X+40,$c.Right-4); $y=[Math]::Min($point.Y+25,$c.Bottom-4)
-            Assert-Ui (($x-$point.X) -gt [FileSpacerRegression.AltDragInput]::GetSystemMetrics(68)) 'The rename editor is too narrow for a drag inside it.'
-            $p=[FileSpacerRegression.NativeTargets]::Control($control,($x-1),($y-1),($x+1),($y+1))
-            $destination=Point-At $p.X $p.Y
+            $destination=[FileSpacerRegression.AltDragInput]::RenamePoint($viewWindow,$true)
+            Assert-Ui (($destination.X-$point.X) -gt [FileSpacerRegression.AltDragInput]::GetSystemMetrics(68)) 'The rename editor is too narrow for a drag inside it.'
         }
         [FileSpacerRegression.AltDragInput]::Move($destination)
         Wait-Ui { Assert-Fixed $before; return $true } 'excluded control kept window geometry' 200 5
