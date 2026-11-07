@@ -93,7 +93,7 @@ Identity identity() {
         for (wchar_t character : text) if (character && character != L'{' && character != L'}' && character != L'-') result.key += character;
         swprintf_s(age, L"%X", code.age); result.key += age;
         wchar_t size[16]={};swprintf_s(size,L"%X",result.size);
-        result.cacheKey=result.key+L"-"+size;
+        result.cacheKey=result.key+L"-"+size+L"-s2";
         return result;
     }
     throw std::runtime_error("No Shell RSDS identity");
@@ -312,7 +312,7 @@ std::array<DWORD, FieldCount> extract(const Identity &id, const Symbols &foundSy
 }
 void save(const Identity &id, const std::array<DWORD,FieldCount> &fields, const std::wstring &path) {
     std::ofstream file(path.c_str(),std::ios::binary|std::ios::trunc);const DWORD count=FieldCount;
-    file.write("FSDISC01",8);file.write(reinterpret_cast<const char *>(&id.size),4);
+    file.write("FSDISC02",8);file.write(reinterpret_cast<const char *>(&id.size),4);
     file.write(reinterpret_cast<const char *>(&id.guid),sizeof(id.guid));file.write(reinterpret_cast<const char *>(&id.age),4);
     file.write(reinterpret_cast<const char *>(&count),4);file.write(reinterpret_cast<const char *>(fields.data()),sizeof(fields));file.flush();
     require(file.good(),"Cannot save discovered data");
@@ -503,6 +503,17 @@ bool qualify(const std::wstring &root) {
             require(SUCCEEDED(shell->SelectItem(ids[7],select)),"Qualification subsequent selection failed");
             CComPtr<IShellItemArray> next;require(SUCCEEDED(view->GetSelection(FALSE,&next)) && paths(next)==std::vector<std::wstring>{names[7]},"Qualification subsequent cache failed");
             require(SUCCEEDED(shell->SelectItem(nullptr,SVSI_DESELECTOTHERS)),"Qualification subsequent clear failed");pump(100);
+        }
+        if(image().selectAllSupported)for(int quantity:{1,32,128}) {
+            require(SUCCEEDED(view->SelectAndPositionItems(static_cast<UINT>(quantity),ids.data(),nullptr,select)),"Cannot seed partial all-selection qualification");
+            std::vector<std::wstring> wanted(names.begin(),names.begin()+quantity);std::sort(wanted.begin(),wanted.end());
+            CComPtr<IShellItemArray> retained;
+            require(SUCCEEDED(view->GetSelection(FALSE,&retained))&&paths(retained)==wanted,"Partial qualification identities differ");
+            const uint64_t before=candidate.acceleratedSelectAllCount();
+            require(SUCCEEDED(bulk->Select(SFVS_SELECT_ALLITEMS))&&candidate.acceleratedSelectAllCount()==before+1,
+                "Partial-to-all qualification did not use acceleration");
+            require(selectionSettled(view,allNames)&&paths(retained)==wanted,"Partial-to-all qualification corrupted a snapshot");
+            require(SUCCEEDED(candidate.clear(shell,current)),"Partial-to-all qualification clear failed");
         }
         // Keep sorting separate from the focus/clear scenario: the native sort
         // itself can reset focus, even with no optional adaptation installed.
