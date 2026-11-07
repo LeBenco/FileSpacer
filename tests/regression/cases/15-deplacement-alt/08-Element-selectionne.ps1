@@ -7,8 +7,6 @@ Add-Type -AssemblyName WindowsBase
 $references=@([System.Windows.Automation.AutomationElement].Assembly.Location,
     [System.Windows.Automation.ControlType].Assembly.Location,[System.Windows.Rect].Assembly.Location)
 Add-Type -Path (Join-Path $PSScriptRoot 'MouseInput.cs') -ReferencedAssemblies $references
-Add-Type -Path (Join-Path $PSScriptRoot 'SelectedItemPoint.cs') -ReferencedAssemblies @(
-    [ComponentModel.Win32Exception].Assembly.Location)
 $testFailure=$null
 $window=[IntPtr]::Zero
 $phase='initialization'
@@ -22,7 +20,7 @@ function Point-At([int]$X,[int]$Y) {
 try {
     # Keep the application's initial display mode and appearance defaults.
     # One selected item; only the gesture's starting point changes from case 07.
-    # Documented ListView messages locate the icon in the current native view.
+    # Public UI Automation locates the named item in either Shell renderer.
     # The Shell verifies its identity; display mode and gesture remain unchanged.
     Initialize-Ui 'alt-selected-item' -UseApplicationDefaults
     $folder=Join-Path $script:UiRoot 'SelectedItemAltDrag'
@@ -42,12 +40,10 @@ try {
     Assert-UiSelected $window 'AnchorA'
     $state.SelectionBefore=@(Use-UiView $window {param($view) $view.Selected()})
     $phase='selected item location'
-    $list=Get-UiControl $viewWindow 'SysListView32'
-    $target=[FileSpacerRegression.SelectedItemPoint]::Locate($list)
+    $target=[FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,'AnchorA')
     $point=Point-At $target.X $target.Y
-    $state.StartPoint=@{X=$point.X; Y=$point.Y; Target='AnchorA'; Method='LVM_GETITEMRECT/LVM_HITTEST'; IconHitFlags=$target.HitFlags;
-        ItemBounds=$target.Bounds; ListWindow=$list.ToInt64()}
-    # There is exactly one Shell item and one native ListView item.
+    $state.StartPoint=@{X=$point.X; Y=$point.Y; Target='AnchorA'; Method='UI Automation named item'}
+    # There is exactly one Shell item, identified by name in both APIs.
     # The read-only locator must not change the prepared selection.
     Assert-UiSelected $window 'AnchorA'
     $before=[FileSpacerRegression.Native]::Bounds($window)
