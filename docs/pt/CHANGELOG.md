@@ -2,6 +2,7 @@
 
 ## Por publicar
 
+- Acelerar a leitura de seleções completas nas vistas de ícones com posicionamento livre através das API públicas do Windows.
 - Ativar ou desativar globalmente as miniaturas do Windows no menu Ver.
 - Restaurar a posição de deslocamento de uma pasta ao reabrir a sua janela.
 - Posicionar novas janelas com base no tamanho e na posição normais das janelas existentes do FileSpacer, incluindo janelas maximizadas, minimizadas ou encaixadas.

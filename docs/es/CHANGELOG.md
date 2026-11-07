@@ -2,6 +2,7 @@
 
 ## Sin publicar
 
+- Acelerar la lectura de selecciones completas en vistas de iconos con colocación libre mediante las API públicas de Windows.
 - Activar o desactivar las miniaturas de Windows globalmente desde el menú Ver.
 - Restaurar la posición de desplazamiento de una carpeta al volver a abrir su ventana.
 - Colocar las ventanas nuevas según el tamaño y la posición normales de las ventanas existentes de FileSpacer, incluidas las maximizadas, minimizadas o acopladas.
