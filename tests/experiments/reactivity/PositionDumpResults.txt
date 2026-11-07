@@ -1,0 +1,157 @@
+Native position-dump investigation, 2026-11-07
+============================================
+
+Question and scope
+------------------
+Can a native saved layout replace the expensive application of thousands of free
+positions? The probe uses the real Shell in AgentWin10, Windows 10 19045, MSVC
+Debug x64/C++14 with CFG and /W4. Production FileSpacer code is unchanged.
+Both free medium Icons and free Tiles are exercised in 5000-file fixtures.
+No host UI is manipulated. Explorer folders have no equivalent free-position
+layout, so arranged Explorer selection timings are not a positioning benchmark.
+
+Existing FS implementation
+--------------------------
+ShellViewIcons already serializes child identities and coordinates, skips
+unchanged coordinates, and sends the remaining positions in one public
+IFolderView::SelectAndPositionItems call. Its optional redraw guard suppresses
+premature native resumes during that batch. Merely changing the file format to
+a larger blob or issuing a single public call is therefore not a new speedup.
+A useful native dump would need a different loading/application path.
+
+Public/native-state probe
+-------------------------
+PositionDumpTests.cpp reuses the independent OrderTransfer host scaffolding.
+It compares a stream supplied through IShellBrowser with ordinary native
+ExplorerBrowser persistence using SetPropertyBag after Initialize. The stream
+site implements the public IShellBrowser/IServiceProvider/ICommDlgBrowser2
+interfaces used by FS, plus its existing WM_USER+7 hosting compatibility hook.
+That hook is observed Shell hosting behavior, not a public persistence contract.
+Service discovery logging is bounded and deduplicated. No private method, raw
+object offset, remote memory write, injection or executable patch is used.
+
+A capability check precedes expensive full-layout seeding: two unmistakable
+identities, at view indices 0 and 4000, are displaced with DPI-scaled coordinates.
+Only those two records are applied through production restoreIconPositions.
+All 5000 observed coordinates and identities are captured for comparison after
+destroying/recreating the native view. Passing GetItemPosition/SaveViewState
+alone cannot qualify a successful restore. The two displaced identities must
+actually return to their saved coordinates. Partial natural-layout coincidence
+is reported separately and never counted as a restored layout.
+
+Two contrasting ordinary-setting controls check the native persistence route:
+SmallIcon/16 and then Details are saved and independently observed after native
+view recreation with FVM_AUTO. Both controls pass for both starting modes.
+This is same-process view recreation, not a separate-process restart test.
+The modes/flags of the position candidate itself are not re-applied on reopen.
+
+Final runtime observations
+--------------------------
+experiment-positiondump-852d132688164803942d8b8e3c8130d7
+VM 842511e78d244f49a9385a48998793b4, native protocol PASS/0.
+
+Mode    SaveViewState  Recreate+enumerate  Displaced restored  All coordinates equal
+Icons       2.092 ms          346.601 ms               0 / 2               47 / 5000
+Tiles       2.624 ms          225.080 ms               0 / 2               24 / 5000
+
+These are one sample per mode from the final pass, not medians. The reopen
+numbers describe a candidate that LOSES the requested positions; they are not a
+successful position-restoration timing and must not be compared as a speedup.
+Both native setting controls pass, every filesystem identity survives, and
+GetAutoArrange returns S_FALSE after reopening. A prior pass with the first
+setting control also passed the protocol and lost both sentinels in both modes
+(experiment-positiondump-0d7f886ab10541e099415556c630a499).
+
+The two-record seed itself costs 1712.357 ms (Icons) / 4292.814 ms (Tiles) on this
+pass; these include lazy initial Shell layout work and are NOT a 5000-position
+restoration benchmark. No full 5000-move dump comparison is justified when the
+two-coordinate capability check already fails.
+
+Stream qualification limitation
+-------------------------------
+In this ExplorerBrowser profile the supplied stream is never requested: zero
+read/write callbacks and zero saved bytes, despite SaveViewState returning S_OK.
+Both stream rows are explicitly UNQUALIFIED, not successful empty snapshots and
+not proof that every possible Shell stream would omit positions. No result is
+inferred from identical empty A/B buffers. The runner requires completion of all
+four arms, both usable native-bag comparisons and both positive-setting controls;
+it prints the stream qualification limitation rather than hiding it in PASS.
+
+Read-only SHGetViewStatePropertyBag probes of the named application bag and the
+fixture's Shell bag do not expose Mode or IconLayouts (ERROR_FILE_NOT_FOUND).
+Because even Mode is absent there, this does not prove the absence of a native
+layout blob elsewhere. It proves that these attempted bag lookups do not retrieve
+it. No desktop/user bag is modified or reset. Probe state belongs to unique VM
+fixtures and unique application bag names.
+
+Internal evidence and remaining opportunity
+------------------------------------------
+Offline Microsoft-symbol disassembly of the host's shell32 10.0.19041.5678 shows:
+- CLegacyViewState::_LoadPositionBlob reads a whole stream into owned storage and
+  builds its native record index.
+- CLegacyViewState::_SyncPositions then iterates records, resolves each identity
+  and calls the native ListView positioning interface under a redraw scope.
+  This is not a constant-time memory-image restore. Its cost still needs measuring.
+- IconLayoutEngine::SaveDataModelToPropertyBag serializes its native model into a
+  stream and writes the IconLayouts property, with IconNameVersion metadata.
+- IconLayoutEngine::ReadStreamFromPropertyBag reads the same property and passes
+  its stream into the model's native loader.
+
+The four relevant functions also resolve in the previously archived VM image,
+shell32 10.0.19041.6456; their addresses differ. Their existence on these two
+builds is evidence for a native serialization path, not a public callable ABI,
+not evidence that FS's free-folder host uses that model, and not a measured gain.
+No private call is introduced or claimed validated by this investigation.
+
+The reasonable next private prototype is to identify the actual model/legacy
+state used by free folders and its ownership, then reuse a native load/apply
+transaction with exact coordinate/identity/focus checks. The same question must
+be tested independently in Tiles. A raw memory snapshot containing live COM
+pointers, heap addresses or stale item indexes is not an acceptable persistent
+format. An optional accelerator would retain the current public restoration
+path, qualify the actual loaded implementation, and invalidate cached metadata
+when the relevant Shell binary changes. Absence alone must only remove gains.
+A blob's existence does not establish that safe adoption is already possible.
+
+Validation, failed trials and artifacts
+--------------------------------------
+Debug app build: build/layout-paths/build-position-dump.log, PASS; no production
+source change. Final native helper compiles with /W4 and CFG, no compiler warning.
+No full app regression suite is needed/run for this experiment-only addition.
+The actual product restore helper is used only to prepare the two sentinels.
+
+Final clang-tidy AND Cppcheck complete without timeout/crash on PositionDumpTests.cpp
+and included project code: build/integration/static-position-dump-final.
+Windows x64/C++14, real MSVC+ATL 14.44.35207 and SDK 10.0.19041.0 headers for tidy;
+official Windows/ATL/SQLite models for Cppcheck. No modified C++ unit/header is
+uncovered. Static verdict REVIEW: aggregate constructor advisory despite explicit
+initialization; experiment .cpp inclusion, signed STGM flag expression and similar
+path-parameter style suggestions. No confirmed new defect or analysis-driven
+production correction. Shared-scaffolding diagnostics remain separate.
+
+Earlier attempts are NOT successful qualifications:
+- VM 00daf888d7ef42968660fe799332eb43: missing Gdi32 link dependency, corrected.
+- VM 9dea66702697405e8148d8e5862134b6: minimal direct Shell host could not save state.
+- VM 6b456e6401694422a06426797ce1879c: that direct-host variant exceeded its 600s
+  watchdog; native artifacts were unavailable after interruption. No time/gain
+  or position correctness is inferred. The direct-host variant is not retained.
+- VM 86ee3c743417450cb2af34e73bebe1f2: initial full-coordinate preparation failed;
+  the final capability fixture uses only two explicit DPI-scaled records and
+  captures the other observed coordinates rather than rewriting lazy positions.
+- VM 2752460f9cb14daabc0afbe25f91d0aa and 9850b00795e6430cafd6fc60011cfd93: ordinary
+  setting positive control rejected an unused stream; the final protocol reports
+  that route as UNQUALIFIED and still exercises both native-bag modes.
+- VM a6cf606ef8b14f4b94974b5c0d7270cc: exploratory protocol completed without the
+  final contrasting-setting controls. It does not replace the final evidence.
+
+Final raw data: build/regression/<final run>/output/regression/36-reactivity-prototype/51-PositionDump.
+Offline evidence: build/layout-paths/position-dump-*-host.txt and position-dump-internals-vm.txt.
+Reproduce: Run-Experiment.ps1 -Case PositionDump -TimeoutSeconds 300.
+
+Public contracts
+----------------
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifolderview-selectandpositionitems
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ishellview-saveviewstate
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ishellbrowser-getviewstatestream
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-iexplorerbrowser-setpropertybag
+https://learn.microsoft.com/en-us/windows/win32/api/shlwapi/nf-shlwapi-shgetviewstatepropertybag
