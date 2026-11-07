@@ -164,12 +164,12 @@ bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
     const Image &module=image();HDSA array=nullptr;ArraySnapshot snapshot;DWORD state=0;
     if(!read(reinterpret_cast<const unsigned char *>(nativeData)+module.ignoredStateOffset,state)||(state&0x2000u))return false;
     if(!read(reinterpret_cast<unsigned char *>(manager.p)+module.fields[ArrayOffset],array)||!array
-            ||!nativeArray(array,snapshot)||snapshot.count!=0||snapshot.stride!=16
+            ||!nativeArray(array,snapshot)||snapshot.count<0||snapshot.stride!=16
             ||reinterpret_cast<ULONG_PTR>(array)%alignof(LONG)||!writable(array,sizeof(LONG)))return false;
     int count=0,selected=0;
     if(FAILED(folder->ItemCount(SVGIO_ALLVIEW,&count))||count<128
             ||FAILED(folder->ItemCount(SVGIO_SELECTION,&selected))||selected!=count
-            ||!nativeArray(array,snapshot)||snapshot.count!=0)return false;
+            ||!nativeArray(array,snapshot)||snapshot.count<0||snapshot.count>count)return false;
     struct alignas(void *) Entry {unsigned char bytes[16]={};};
     // Windows creates each entry and subscription. Only their ownership is
     // staged temporarily; no private item constructor or ABI is called.
@@ -190,6 +190,23 @@ bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
     selecting=true;
     struct Active {bool &value;~Active(){value=false;}} active{selecting};
     Construction construction(*this,array,count);
+    if(snapshot.count) {
+        // Reuse the same staging storage for the old selection. The control
+        // has already selected every item, so a native fallback can rebuild
+        // the complete cache even if allocation subsequently fails.
+        const SIZE_T bytes=static_cast<SIZE_T>(snapshot.count)*16;
+        if(!snapshot.data||!writable(snapshot.data,bytes))return false;
+        std::memcpy(construction.entries.data(),snapshot.data,bytes);
+        construction.filled=static_cast<size_t>(snapshot.count);
+        InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);
+        while(construction.filled) {
+            const size_t index=--construction.filled;
+            Entry previous=construction.entries[index];construction.entries[index]={};
+            callback(&previous,nullptr);
+            if(!nativeArray(array,snapshot)||snapshot.stride!=16){nativeProcedure=nullptr;return true;}
+            if(snapshot.count){nativeProcedure=nullptr;return false;}
+        }
+    }
     {
         struct EmptyReservation {HDSA array;~EmptyReservation(){InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);}} reset{array};
         const Entry empty;
