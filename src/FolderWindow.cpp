@@ -50,6 +50,14 @@ static constexpr int BOTTOM_STATUS_HEIGHT_DIP = 23;
 // Coalesce selection notifications before updating the selected item and status.
 static constexpr UINT SELECTION_UPDATE_DELAY_MS = 100;
 
+static void toggleGlobalThumbnails() {
+    SHELLSTATE state = {};
+    SHGetSetSettings(&state, SSF_ICONSONLY, FALSE);
+    state.fIconsOnly = !state.fIconsOnly;
+    // The Shell publishes its normal ShellState setting-change notification.
+    SHGetSetSettings(&state, SSF_ICONSONLY, TRUE);
+}
+
 // on the Desktop only
 const wchar_t * const HIDDEN_ITEM_PARSE_NAMES[] = {
     L"::{26EE0668-A00A-44D7-9371-BEB064C98683}", // Control Panel
@@ -347,6 +355,10 @@ struct FolderWindow::ViewMenuPreview {
         const UINT command = pendingCommand;
         pendingCommand = 0;
         if (!command || !current()) return;
+        if (command == IDM_TOGGLE_THUMBNAILS) {
+            toggleGlobalThumbnails();
+            return;
+        }
         auto info = owner.makeInvokeInfo(static_cast<int>(command - IDM_SHELL_FIRST), POINT{});
         info.hwnd = owner.hwnd;
         checkHR(owner.invokeViewCommand(context, reinterpret_cast<CMINVOKECOMMANDINFO *>(&info)));
@@ -3026,6 +3038,30 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
             && checkHR(IUnknown_SetSite(contextMenu, folderView)))
         site.reset(contextMenu);
     if (!isWindowOperational()) return;
+    const int menuCount = GetMenuItemCount(subMenu);
+    if (menuCount < 0) return;
+    int thumbnailPosition = menuCount;
+    for (int i = 0; i < menuCount; ++i) {
+        const UINT command = GetMenuItemID(subMenu, i);
+        if (command < IDM_SHELL_FIRST || command > IDM_SHELL_LAST) continue;
+        wchar_t verb[64] = {};
+        const HRESULT result = contextMenu->GetCommandString(command - IDM_SHELL_FIRST,
+            GCS_VERBW, nullptr, reinterpret_cast<char *>(verb), _countof(verb));
+        if (!isWindowOperational()) return;
+        // Canonical Shell verb; the translated label is never used as an identifier.
+        if (SUCCEEDED(result) && lstrcmpiW(verb, L"arrangeautogrid") == 0) {
+            thumbnailPosition = i + 1;
+            break;
+        }
+    }
+    SHELLSTATE thumbnailState = {};
+    SHGetSetSettings(&thumbnailState, SSF_ICONSONLY, FALSE);
+    MENUITEMINFO thumbnailItem = {sizeof(thumbnailItem)};
+    thumbnailItem.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE;
+    thumbnailItem.wID = IDM_TOGGLE_THUMBNAILS;
+    thumbnailItem.dwTypeData = const_cast<wchar_t *>(getString(IDS_GLOBAL_THUMBNAILS));
+    thumbnailItem.fState = thumbnailState.fIconsOnly ? MFS_UNCHECKED : MFS_CHECKED;
+    checkLE(InsertMenuItemW(subMenu, thumbnailPosition, TRUE, &thumbnailItem));
     std::shared_ptr<ViewMenuPreview> preview;
     HHOOK hook = nullptr;
     ViewMenuPreview *previous = ViewMenuPreview::active;
@@ -3046,7 +3082,10 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     if (hook) {
         UnhookWindowsHookEx(hook);
         ViewMenuPreview::active = previous;
-        preview->finish(cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST ? static_cast<UINT>(cmd) : 0);
+        preview->finish((cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) || cmd == IDM_TOGGLE_THUMBNAILS
+            ? static_cast<UINT>(cmd) : 0);
+    } else if (isWindowOperational() && cmd == IDM_TOGGLE_THUMBNAILS) {
+        toggleGlobalThumbnails();
     } else if (isWindowOperational() && viewHost && cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) {
         auto info = makeInvokeInfo(cmd - IDM_SHELL_FIRST, point);
         info.hwnd = hwnd;
