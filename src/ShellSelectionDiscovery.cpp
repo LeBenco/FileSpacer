@@ -8,10 +8,12 @@
 #include <shlwapi.h>
 #include <shldisp.h>
 #include <shdispid.h>
+#include <propkey.h>
 #include <algorithm>
 #include <mutex>
 #include <atomic>
 #include <stdexcept>
+#include <string>
 #include <vector>
 #pragma comment(lib, "Winhttp.lib")
 #pragma comment(lib, "Shlwapi.lib")
@@ -161,7 +163,7 @@ BOOL CALLBACK collectTables(PSYMBOL_INFOW symbol, ULONG, void *context) {
         && symbol->Address - result.base < result.size) result.tables.push_back(static_cast<DWORD>(symbol->Address - result.base));
     return TRUE;
 }
-struct Symbols { std::array<DWORD, 17> methods = {}; std::vector<DWORD> tables; };
+struct Symbols { std::array<DWORD, 22> methods = {}; std::vector<DWORD> tables; };
 Symbols symbols(const Identity &id, const std::wstring &path) {
     Module library(LoadLibraryExW(systemFile(L"dbghelp.dll").c_str(), nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32), &FreeLibrary);
     require(library != nullptr, "System DbgHelp unavailable");
@@ -183,7 +185,8 @@ Symbols symbols(const Identity &id, const std::wstring &path) {
         L"CSelectionManager::Init",L"CDefView::QueryService",L"CDefView::OnItemStateChanged",L"CDefView::CancelDelayActivation",
         L"?QueryInterface@CListViewHost@@UEAAJAEBU_GUID@@PEAPEAX@Z",L"_imp_DSA_EnumCallback",L"_imp_DSA_DeleteAllItems",
         L"CSelectionManager::s_ClearSelectedItemEntry",L"??_7CDefView@@6BIListControlHost@@@",L"??_7CListViewHost@@6BIListControl@@@",
-        L"CListViewHost::QueryObject",L"CDefView::QueryObject",L"??_7CSelectionManager@@6B@",L"DSA_GetItemPtr"};
+        L"CListViewHost::QueryObject",L"CDefView::QueryObject",L"??_7CSelectionManager@@6B@",L"DSA_GetItemPtr",
+        L"CListViewHost::s_ViewSubclassWndProc",L"_imp_DSA_InsertItem",L"DSA_InsertItem",L"CSelectionManager::SelectItem",L"CListViewHost::_OnLVNotify"};
     Symbols result;
     for (size_t i = 0; i < _countof(names); ++i) {
         struct Symbol { SYMBOL_INFOW info; wchar_t extra[MAX_SYM_NAME]; } symbol = {};
@@ -195,7 +198,7 @@ Symbols symbols(const Identity &id, const std::wstring &path) {
             IMAGEHLP_MODULEW64 info={};info.SizeOfStruct=sizeof(info);
             require(moduleInfo(session.get(),base,&info) && info.SymType==SymPdb && !info.PdbUnmatched
                 && info.PdbAge==id.age && IsEqualGUID(info.PdbSig70,id.guid),"Matching PDB was not loaded");
-            supported(i == EnumGlobal || i == DeleteGlobal, "Required private symbol absent"); continue;
+            supported(i == EnumGlobal || i == DeleteGlobal || i >= 17, "Required private symbol absent"); continue;
         }
         require(symbol.info.Address >= base && symbol.info.Address - base < id.size, "Symbol outside loaded image");
         result.methods[i] = static_cast<DWORD>(symbol.info.Address - base);
@@ -249,6 +252,7 @@ std::array<DWORD, FieldCount> extract(const Identity &id, const Symbols &foundSy
     };
     std::array<DWORD, FieldCount> fields = {};
     std::copy_n(foundSymbols.methods.begin(), 16, fields.begin()); fields[ArrayGetter] = foundSymbols.methods[16];
+    std::copy_n(foundSymbols.methods.begin()+17,5,fields.begin()+NativeWindowProcedure);
     unsigned char qi[20] = {}; copy(fields[HostQI], qi);
     const unsigned char qiPrefix[] = {0x4d,0x8b,0xc8,0x4c,0x8b,0xc2,0x48,0x8d,0x15};
     const unsigned char qiJump[] = {0x48,0xff,0x25};
@@ -369,6 +373,19 @@ std::vector<std::wstring> paths(IShellItemArray *array) {
         result.emplace_back(path);}
     std::sort(result.begin(),result.end());return result;
 }
+bool selectionSettled(IFolderView2 *view,const std::vector<std::wstring> &wanted) {
+    const ULONGLONG deadline=GetTickCount64()+5000;ULONGLONG stable=0;
+    do {
+        CComPtr<IShellItemArray> selected;int before=-1,after=-1;
+        const bool matches=SUCCEEDED(view->ItemCount(SVGIO_SELECTION,&before))&&before==static_cast<int>(wanted.size())
+            &&SUCCEEDED(view->GetSelection(FALSE,&selected))&&selected&&paths(selected)==wanted
+            &&SUCCEEDED(view->ItemCount(SVGIO_SELECTION,&after))&&after==before;
+        if(matches){if(!stable)stable=GetTickCount64();if(GetTickCount64()-stable>=100)return true;}
+        else stable=0;
+        pump(10);
+    }while(GetTickCount64()<deadline);
+    return false;
+}
 struct QualificationFixture {
     std::wstring folder;
     std::vector<std::wstring> files;
@@ -377,7 +394,7 @@ struct QualificationFixture {
         GUID guid={};wchar_t name[40]={};require(SUCCEEDED(CoCreateGuid(&guid)) && StringFromGUID2(guid,name,_countof(name)),"Cannot name qualification fixture");
         const std::wstring target=root+L"\\qualification-"+name;
         require(CreateDirectoryW(target.c_str(),nullptr)!=FALSE,"Cannot create isolated qualification fixture");folder=target;
-        for(unsigned i=0;i<64;++i){wchar_t leaf[32]={};swprintf_s(leaf,L"\\item-%04u.txt",i);
+        for(unsigned i=0;i<256;++i){wchar_t leaf[32]={};swprintf_s(leaf,L"\\item-%04u.txt",i);
             const std::wstring path=folder+leaf;
             Handle file(CreateFileW(path.c_str(),GENERIC_WRITE,0,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr),&closeHandle);
             require(file.get()!=INVALID_HANDLE_VALUE,"Cannot create qualification item");files.push_back(path);
@@ -420,7 +437,7 @@ bool qualify(const std::wstring &root) {
         require(SUCCEEDED(view->GetViewModeAndIconSize(&actual,&size)) && actual==mode.mode && size==mode.size,"Qualification representation differs");
         if(mode.free)require(SUCCEEDED(view->SetCurrentFolderFlags(FWF_AUTOARRANGE,0)),"Cannot qualify free placement");
         require(SUCCEEDED(view->GetFolder(IID_PPV_ARGS(&folder))),"Cannot read qualification folder");
-        int count=0;require(SUCCEEDED(view->ItemCount(SVGIO_ALLVIEW,&count)) && count==64,"Qualification fixture incomplete");
+        int count=0;require(SUCCEEDED(view->ItemCount(SVGIO_ALLVIEW,&count)) && count==256,"Qualification fixture incomplete");
         using Id=std::unique_ptr<ITEMID_CHILD,decltype(&CoTaskMemFree)>;
         std::vector<Id> owned;std::vector<PCUITEMID_CHILD> ids;std::vector<std::wstring> names;
         for(int i=0;i<count;++i){ITEMID_CHILD *id=nullptr;require(SUCCEEDED(view->Item(i,&id)) && id,"Missing qualification PIDL");
@@ -429,9 +446,38 @@ bool qualify(const std::wstring &root) {
             require(SUCCEEDED(SHCreateItemWithParent(nullptr,folder,id,IID_PPV_ARGS(&item)))
                 && SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH,&path)),"Missing qualification path");names.emplace_back(path);}
         const DWORD select=static_cast<DWORD>(SVSI_SELECT)|static_cast<DWORD>(SVSI_NOTAKEFOCUS);
+        CComQIPtr<IShellFolderView> bulk(shell);
+        auto allNames=names;std::sort(allNames.begin(),allNames.end());
+        if(image().selectAllSupported) {
+            // Select() itself calls the native _FocusOnSomething after its
+            // selection notification. Establish that public baseline before
+            // comparing keyboard focus; the adaptation does not own activation.
+            require(bulk&&SUCCEEDED(bulk->Select(SFVS_SELECT_ALLITEMS)),"Native baseline select failed");
+            CComPtr<IShellItemArray> all;
+            require(SUCCEEDED(view->GetSelection(FALSE,&all))&&paths(all)==allNames,"Native baseline identities differ");
+            require(SUCCEEDED(shell->SelectItem(nullptr,SVSI_DESELECTOTHERS)),"Native baseline clear failed");
+        }
         require(SUCCEEDED(shell->SelectItem(ids[7],static_cast<SVSIF>(SVSI_FOCUSED|SVSI_NOTAKEFOCUS))),"Cannot seed qualification focus");
         const HWND focus=GetFocus();auto current=[&]{return IsWindow(owner.window) && owner.events->shell.p==shell;};
+        pump(100);
         ShellSelectionClear candidate;candidate.bind(shell,current);require(candidate.accelerated(),"Qualification did not bind acceleration");
+        if(image().selectAllSupported) {
+            int before=-1;CComHeapPtr<ITEMID_CHILD> beforeId;
+            require(SUCCEEDED(view->GetFocusedItem(&before))&&before>=0&&SUCCEEDED(view->Item(before,&beforeId))
+                &&ILIsEqual(beforeId,ids[7]),"Linear selection focus precondition missing");
+            require(bulk&&SUCCEEDED(bulk->Select(SFVS_SELECT_ALLITEMS))&&candidate.acceleratedSelectAllCount()==1,
+                "Qualification did not use native linear selection");
+            CComPtr<IShellItemArray> all;
+            require(SUCCEEDED(view->GetSelection(FALSE,&all))&&paths(all)==allNames,"Linear selection identities differ");
+            int focused=-1;CComHeapPtr<ITEMID_CHILD> focusedId;
+            const bool focusValid=SUCCEEDED(view->GetFocusedItem(&focused))&&focused>=0&&SUCCEEDED(view->Item(focused,&focusedId));
+            const bool sameId=focusValid&&ILIsEqual(focusedId,ids[7]);
+            const std::string focusError="Linear focus differs: mode="+std::to_string(mode.mode)+" size="+std::to_string(mode.size)
+                +" before="+std::to_string(before)+" after="+std::to_string(focused)+" sameId="+std::to_string(sameId)
+                +" sameKeyboard="+std::to_string(GetFocus()==focus);
+            require(sameId&&GetFocus()==focus,focusError.c_str());
+            require(SUCCEEDED(candidate.clear(shell,current)),"Linear selection clear failed");
+        }
         for(int selected:{0,1,32,64}) {
             require(SUCCEEDED(shell->SelectItem(nullptr,SVSI_DESELECTOTHERS)),"Cannot clear qualification setup");
             std::vector<PCUITEMID_CHILD> chosen;std::vector<std::wstring> wanted;
@@ -457,6 +503,23 @@ bool qualify(const std::wstring &root) {
             require(SUCCEEDED(shell->SelectItem(ids[7],select)),"Qualification subsequent selection failed");
             CComPtr<IShellItemArray> next;require(SUCCEEDED(view->GetSelection(FALSE,&next)) && paths(next)==std::vector<std::wstring>{names[7]},"Qualification subsequent cache failed");
             require(SUCCEEDED(shell->SelectItem(nullptr,SVSI_DESELECTOTHERS)),"Qualification subsequent clear failed");pump(100);
+        }
+        // Keep sorting separate from the focus/clear scenario: the native sort
+        // itself can reset focus, even with no optional adaptation installed.
+        if(image().selectAllSupported) {
+            candidate.reset();
+            require(bulk&&SUCCEEDED(bulk->Select(SFVS_SELECT_ALLITEMS)),"Native baseline select failed");
+            const SORTCOLUMN descending={PKEY_ItemNameDisplay,SORT_DESCENDING};
+            require(SUCCEEDED(view->SetSortColumns(&descending,1)),"Native baseline sort failed");
+            require(selectionSettled(view,allNames),"Native baseline selection changed after sort");
+            require(SUCCEEDED(shell->SelectItem(nullptr,SVSI_DESELECTOTHERS)),"Native baseline clear failed");
+            candidate.bind(shell,current);
+            require(SUCCEEDED(bulk->Select(SFVS_SELECT_ALLITEMS))&&candidate.acceleratedSelectAllCount()==1,
+                "Linear sort qualification did not use acceleration");
+            const SORTCOLUMN ascending={PKEY_ItemNameDisplay,SORT_ASCENDING};
+            require(SUCCEEDED(view->SetSortColumns(&ascending,1)),"Linear selection sort failed");
+            require(selectionSettled(view,allNames),"Linear selection changed after sort");
+            require(SUCCEEDED(candidate.clear(shell,current)),"Linear sort qualification clear failed");
         }
         owner.events->sink->ready=false;require(SUCCEEDED(shell->Refresh()),"Qualification refresh failed");
         const ULONGLONG deadline=GetTickCount64()+45000;

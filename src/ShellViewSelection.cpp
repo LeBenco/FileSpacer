@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <atomic>
+#include <commctrl.h>
 #pragma comment(lib, "Oleacc.lib")
 
 namespace filespacer {
@@ -121,17 +122,117 @@ HRESULT getScrollPattern(HWND window, const std::function<bool()> &current, IScr
 
 using NotifyFunction=HRESULT(STDMETHODCALLTYPE *)(IUnknown *,UINT,UINT);
 using CancelFunction=HRESULT(STDMETHODCALLTYPE *)(IUnknown *);
-struct ShellSelectionClear::Binding {
+struct ShellSelectionClear::Binding : std::enable_shared_from_this<ShellSelectionClear::Binding> {
         mutable std::atomic<bool> usable{true};
         CComPtr<IShellView> source;CComPtr<IFolderView2> folder;CComPtr<IUnknown> host,manager,notification;
         using Enumerate=void(WINAPI *)(HDSA,PFNDAENUMCALLBACK,void *);
         using Erase=BOOL(WINAPI *)(HDSA);
         Enumerate enumerate=nullptr;Erase erase=nullptr;
         PFNDAENUMCALLBACK callback=nullptr;NotifyFunction notify=nullptr;CancelFunction cancel=nullptr;
+        HWND window=nullptr;
+        SUBCLASSPROC nativeProcedure=nullptr;
+        SUBCLASSPROC registeredProcedure=nullptr;
+        DWORD_PTR nativeData=0;
+        decltype(&DSA_InsertItem) insert=nullptr;
+        bool selecting=false;
+        uint64_t selectAllCount=0;
+        void detach(){DWORD_PTR data=0;if(window&&GetWindowSubclass(window,procedure,selectionSubclassId,&data)
+            &&data==reinterpret_cast<DWORD_PTR>(this))RemoveWindowSubclass(window,procedure,selectionSubclassId);}
+        ~Binding(){detach();}
+        static constexpr UINT_PTR selectionSubclassId=0x46535341;
+        static LRESULT CALLBACK procedure(HWND,UINT,WPARAM,LPARAM,UINT_PTR,DWORD_PTR);
+        bool nativeArray(HDSA expected,selectionDetail::ArraySnapshot &snapshot)const {
+            using namespace selectionDetail;const Image &module=image();IUnknown *sameManager=nullptr;HDSA array=nullptr;DWORD_PTR data=0;
+            // Detaching our observer must not invalidate an in-flight native
+            // construction. The registered native callback also rejects a
+            // destroyed/recycled HWND without relying on IsWindow alone.
+            return window&&registeredProcedure&&GetWindowSubclass(window,registeredProcedure,0,&data)&&data==nativeData
+                &&read(reinterpret_cast<unsigned char *>(host.p)+module.fields[ManagerOffset],sameManager)
+                &&sameManager==manager.p&&read(reinterpret_cast<unsigned char *>(manager.p)+module.fields[ArrayOffset],array)
+                &&array==expected&&snapshotArray(array,module.dataOffset,module.strideOffset,snapshot);
+        }
+        bool selectAll(const NMLISTVIEW &notice);
     };
 
+bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
+    using namespace selectionDetail;
+    if(!nativeProcedure||selecting||!usable.load()||notice.iItem!=-1||!(notice.uChanged&LVIF_STATE)
+            ||(notice.uOldState&LVIS_SELECTED)||!(notice.uNewState&LVIS_SELECTED))return false;
+    wchar_t className[32]={};
+    if(!IsChild(window,notice.hdr.hwndFrom)||!GetClassNameW(notice.hdr.hwndFrom,className,_countof(className))
+            ||lstrcmpW(className,WC_LISTVIEWW)!=0)return false;
+    const Image &module=image();HDSA array=nullptr;ArraySnapshot snapshot;DWORD state=0;
+    if(!read(reinterpret_cast<const unsigned char *>(nativeData)+module.ignoredStateOffset,state)||(state&0x2000u))return false;
+    if(!read(reinterpret_cast<unsigned char *>(manager.p)+module.fields[ArrayOffset],array)||!array
+            ||!nativeArray(array,snapshot)||snapshot.count!=0||snapshot.stride!=16
+            ||reinterpret_cast<ULONG_PTR>(array)%alignof(LONG)||!writable(array,sizeof(LONG)))return false;
+    int count=0,selected=0;
+    if(FAILED(folder->ItemCount(SVGIO_ALLVIEW,&count))||count<128
+            ||FAILED(folder->ItemCount(SVGIO_SELECTION,&selected))||selected!=count
+            ||!nativeArray(array,snapshot)||snapshot.count!=0)return false;
+    struct alignas(void *) Entry {unsigned char bytes[16]={};};
+    // Windows creates each entry and subscription. Only their ownership is
+    // staged temporarily; no private item constructor or ABI is called.
+    struct Construction {
+        Binding &owner;HDSA array;std::vector<Entry> entries;size_t filled=0;bool committed=false;
+        Construction(Binding &binding,HDSA selected,int count):owner(binding),array(selected),entries(static_cast<size_t>(count)){}
+        ~Construction(){
+            if(committed)return;
+            ArraySnapshot current;Entry pending;
+            if(owner.nativeArray(array,current)&&current.count==1&&current.stride==16&&current.data
+                    &&read(current.data,pending)) {
+                InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);
+                owner.callback(&pending,nullptr);
+            }
+            for(size_t i=0;i<filled;++i)owner.callback(&entries[i],nullptr);
+        }
+    };
+    selecting=true;
+    struct Active {bool &value;~Active(){value=false;}} active{selecting};
+    Construction construction(*this,array,count);
+    {
+        struct EmptyReservation {HDSA array;~EmptyReservation(){InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);}} reset{array};
+        const Entry empty;
+        for(int i=0;i<count;++i)if(insert(array,INT_MAX,&empty)<0)return false;
+        if(!nativeArray(array,snapshot)||snapshot.count!=count||snapshot.stride!=16||!snapshot.data
+                ||!writable(snapshot.data,static_cast<SIZE_T>(count)*16))return false;
+    }
+    const unsigned char *reserved=snapshot.data;
+    for(int index=0;index<count;++index) {
+        NMLISTVIEW item=notice;item.iItem=index;item.uOldState=0;item.uNewState=LVIS_SELECTED;item.uChanged=LVIF_STATE;
+        nativeProcedure(window,WM_NOTIFY,item.hdr.idFrom,reinterpret_cast<LPARAM>(&item),0,nativeData);
+        if(!nativeArray(array,snapshot)||snapshot.stride!=16||snapshot.data!=reserved){nativeProcedure=nullptr;return true;}
+        if(snapshot.count!=1||!read(snapshot.data,construction.entries[construction.filled])){nativeProcedure=nullptr;return false;}
+        ++construction.filled;
+        InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);
+    }
+    std::memcpy(snapshot.data,construction.entries.data(),static_cast<SIZE_T>(count)*16);
+    InterlockedExchange(reinterpret_cast<volatile LONG *>(array),count);
+    construction.committed=true;++selectAllCount;
+    // Invalidate a snapshot that a reentrant subscriber could have requested
+    // while the native per-item handler was constructing the final entry.
+    if(FAILED(notify(notification,0,1))||!window||FAILED(cancel(notification)))nativeProcedure=nullptr;
+    return true;
+}
+
+LRESULT CALLBACK ShellSelectionClear::Binding::procedure(HWND window,UINT message,WPARAM first,LPARAM second,UINT_PTR id,DWORD_PTR data) {
+    auto self=reinterpret_cast<Binding *>(data)->shared_from_this();
+    if(message==WM_NCDESTROY){RemoveWindowSubclass(window,procedure,id);self->window=nullptr;}
+    if(message==WM_NOTIFY&&second&&reinterpret_cast<const NMHDR *>(second)->code==LVN_ITEMCHANGED) {
+        try {if(self->selectAll(*reinterpret_cast<const NMLISTVIEW *>(second)))return 0;}
+        catch(const std::bad_alloc &){self->nativeProcedure=nullptr;}
+        // A failed construction released every staged native subscription.
+        // Let the original native global notification rebuild normally, unless
+        // its view was closed or replaced during a reentrant native callback.
+        if(self->window!=window)return 0;
+    }
+    return DefSubclassProc(window,message,first,second);
+}
+
 void initializeShellSelectionClear(const wchar_t *cacheRoot,bool background) { selectionDetail::initialize(cacheRoot,background); }
+void ShellSelectionClear::reset(){auto previous=std::move(binding);if(previous)previous->detach();}
 bool ShellSelectionClear::accelerated()const {const auto value=binding;return value && value->usable.load();}
+uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value=binding;return value?value->selectAllCount:0;}
 
     bool ShellSelectionClear::backingBufferReleased(bool &known)const {
         using namespace selectionDetail;known=false;const auto value=binding;const Image &module=image();
@@ -171,6 +272,17 @@ bool ShellSelectionClear::accelerated()const {const auto value=binding;return va
         value->erase=reinterpret_cast<Binding::Erase>(module.erase);
         value->notify=reinterpret_cast<NotifyFunction>(module.base+module.fields[Notify]);
         value->cancel=reinterpret_cast<CancelFunction>(module.base+module.fields[Cancel]);
+        if(module.selectAllSupported&&SUCCEEDED(source->GetWindow(&value->window))&&current()) {
+            const auto procedure=reinterpret_cast<SUBCLASSPROC>(module.base+module.fields[NativeWindowProcedure]);
+            if(GetWindowSubclass(value->window,procedure,0,&value->nativeData)
+                    &&value->nativeData==reinterpret_cast<ULONG_PTR>(value->host.p)-module.fields[HostOffset]) {
+                value->nativeProcedure=procedure;
+                value->registeredProcedure=procedure;
+                value->insert=reinterpret_cast<decltype(value->insert)>(module.base+module.fields[NativeInsert]);
+                if(!SetWindowSubclass(value->window,Binding::procedure,Binding::selectionSubclassId,reinterpret_cast<DWORD_PTR>(value.get())))
+                    value->nativeProcedure=nullptr;
+            }
+        }
         if(current())binding=std::move(value);
     } catch(const std::bad_alloc &) { binding.reset(); }
     HRESULT ShellSelectionClear::clear(IShellView *source,const std::function<bool()> &current,bool *applied)const {
@@ -183,6 +295,7 @@ bool ShellSelectionClear::accelerated()const {const auto value=binding;return va
             return current()?result:E_ABORT;
         };
         const auto value=binding;
+        if(value&&value->selecting)return E_PENDING;
         if(!value||!value->usable.load()||value->source.p!=source)return native();
         const auto reject=[&](){value->usable.store(false);return native();};
         const Image &module=image();IUnknown *manager=nullptr;HDSA array=nullptr;int count=-1,selected=-1;
