@@ -209,7 +209,6 @@ BEGIN
   IDS_TITLE_MENU_WINDOWS_BLOCK "<< Fenêtres ouvertes >>"
   IDS_TITLE_MENU_RESTORE "Rétablir la disposition verrouillée"
   IDS_TITLE_MENU_REPLACE "Remplacer la disposition de référence"
-  IDS_TITLE_MENU_FORGET "Oublier la disposition de ce dossier"
   IDS_TITLE_MENU_CLOSE_DESCENDANTS "Fermer les fenêtres descendantes"
   IDS_TITLE_MENU_CLOSE_OTHERS "Fermer les autres fenêtres"
   IDS_TITLE_MENU_FIT "Ajuster la fenêtre au contenu"
@@ -218,7 +217,6 @@ END
 
 STRINGTABLE
 BEGIN
-  IDS_TITLE_FORGET_CONFIRM "Oublier la disposition de ce dossier ?\n\nLa fenêtre reste en place, mais sa disposition ne sera plus enregistrée jusqu’à sa fermeture. Sa prochaine ouverture utilisera les réglages par défaut. L’historique de recherche est conservé."
   IDS_TITLE_REPLACE_CONFIRM "Remplacer la disposition verrouillée par la position, la taille et les réglages actuellement visibles ?"
   IDS_GROUPS_ERROR "Impossible de lire ou d’enregistrer le groupe de dossiers. Les groupes existants sont conservés."
   IDS_GROUPS_REPLACE "Remplacer ce groupe par les dossiers actuellement ouverts dans FileSpacer ?"

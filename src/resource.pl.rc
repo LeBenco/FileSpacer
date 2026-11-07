@@ -210,7 +210,6 @@ BEGIN
   IDS_TITLE_MENU_WINDOWS_BLOCK "<< Otwarte okna >>"
   IDS_TITLE_MENU_RESTORE "Przywróć zablokowany układ"
   IDS_TITLE_MENU_REPLACE "Zastąp układ odniesienia"
-  IDS_TITLE_MENU_FORGET "Zapomnij układ tego folderu"
   IDS_TITLE_MENU_CLOSE_DESCENDANTS "Zamknij okna podrzędne"
   IDS_TITLE_MENU_CLOSE_OTHERS "Zamknij pozostałe okna"
   IDS_TITLE_MENU_FIT "Dopasuj okno do zawartości"
@@ -219,7 +218,6 @@ END
 
 STRINGTABLE
 BEGIN
-  IDS_TITLE_FORGET_CONFIRM "Zapomnieć układ tego folderu?\n\nOkno pozostanie na miejscu, ale jego układ nie będzie zapisywany do zamknięcia. Przy następnym otwarciu zostaną użyte ustawienia domyślne. Historia wyszukiwania zostanie zachowana."
   IDS_TITLE_REPLACE_CONFIRM "Zastąpić zablokowany układ bieżącym położeniem, rozmiarem i ustawieniami widoku okna?"
   IDS_GROUPS_ERROR "Nie można odczytać ani zapisać grupy folderów. Dotychczasowe grupy zachowano."
   IDS_GROUPS_REPLACE "Zastąpić tę grupę folderami obecnie otwartymi w FileSpacer?"
