@@ -1,148 +1,105 @@
 # Using FileSpacer
 
-## Window navigation
+FileSpacer remembers each window’s position and appearance between visits. Folders return to their familiar places, like objects arranged on a desk. It also offers configurable shortcuts, quick actions and an uncluttered, customizable interface.
 
-FileSpacer offers a fluid, understated and customizable interface built around the spatial paradigm:
+<div id="windows-integration"></div>
 
-- **One folder, one window.** Reopening an already-open folder brings its window forward. Its position, size, view settings and icon layout are remembered, even after moving or renaming the folder.
-- Opening a folder or its parent closes the source window by default. Hold Ctrl while opening a folder to keep the source window open. The default can be changed in **Settings > General**. Opening several selected folders keeps the source window open.
-- The menu beside the folder title switches between open folders. **Close Parent Windows** closes the open windows of folders above the current folder in the hierarchy.
-- **Ctrl+Shift+T** reopens the last closed folder with its layout and selection. The title menu offers the same command. The taskbar Jump List can reopen this folder or those closed earlier.
-- The taskbar Jump List also opens folders pinned in File Explorer's Quick access.
+FileSpacer can be set as the default file manager during installation, or under **Settings > Integration** with **Set as default browser**. Folder context menus offer **Open in FileSpacer**, or **Open in Windows File Explorer** when FileSpacer is the default.
 
-Going to a parent does not select the folder just left. An already-open parent keeps its selection.
+## Window navigation and layout
 
-![The folder title menu, with navigation and saved-layout commands.](images/window-menu.png)
+<div id="window-navigation"></div>
+<div id="window-placement"></div>
+<div id="managing-windows"></div>
 
-## View and layout
+**Each folder has its own window.** If it is already open, FileSpacer brings that window forward. Position, size, view settings and icon layout are remembered, even after moving or renaming the folder. Windows without a saved position are placed to limit overlap (option under **Settings > General**).
 
-### Icon layout
+<div id="locking-a-saved-layout"></div>
 
-Icon views allow free placement of files and subfolders when **Auto arrange icons** is off. Icon positions are saved independently of window geometry, including when the window's saved layout is locked.
+**A folder’s current position, size and view settings can be locked to restore them whenever it is reopened.** Later changes are temporary. Icon positions continue to be saved. The **locked layout can be restored** without closing the window.
 
-### View options
+**Unlock window state** keeps the current layout and allows changes to be saved again.
 
-**Show the full name of a selected file**, in **Settings > Display**, makes the name of a single selected file fully readable in Icons view.
-
-![A long selected filename displayed in full in Icons view.](images/selected-name.png)
-
-**Preview display modes in the View menu** shows each mode on hover. Click a mode to apply it. Escape or leaving the preview restores the initial view. The preview is temporary and does not replace the saved layout.
-
-**Mix folders and files when sorting** sorts both together, as on [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) and [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). The option is in **Settings > Display > Files** and applies to Details, List and automatically arranged icon views. Virtual folders and archives keep Windows’ ordering.
-
-![Files and folders sharing the same alphabetical order.](images/mixed-sorting.png)
-
-### Window placement
-
-Folders without a saved position open in free space, or with reduced overlap when space runs out. Configure this under **Settings > General > Place new windows in free space**.
-
-### Selection and activation
-
-**Keep the current selection when clicking an inactive window**, in **Settings > General**, lets a background click activate a folder without clearing its selection. Once the window is active, click and drag its background to draw a selection rectangle.
-
-## Managing windows
-
-### Moving and resizing
-
-A window can be moved or resized by dragging anywhere in its file area, including over an item. The defaults are:
-
-| Action | Shortcut |
-| --- | --- |
-| Move the window | Alt + left drag |
-| Resize from the bottom-right corner | Alt + right drag |
-
-![Moving a window with Alt and a left-button drag.](images/move-window.gif)
-
-![Resizing a window with Alt and a right-button drag.](images/resize-window.gif)
-
-Selection stays intact. Escape cancels the gesture.
-
-Each action has its own configurable shortcut in **Settings > Shortcuts**. Left and right buttons require Alt. The middle button can also be used without it.
-
-### Locking a saved layout
-
-Locking keeps a folder's position, size and view settings as the layout to restore on reopening. The feature is off by default in **Settings > General > Enable window state locking**. Once enabled, **Lock window state** is available beside the folder title. A padlock badge on its folder icon marks a locked layout.
+Enable locking under **Settings > General**. The **Lock window state** command then appears beside the folder title. A padlock badge indicates a locked layout. Turning off the feature removes all locks.
 
 <img src="images/locked-title.png" alt="Close-up of the folder title and its padlock badge." width="280">
 
-Temporary changes remain possible. Reopening restores the locked layout. Individual icon positions still save normally. **Unlock window state** keeps the current layout.
+Opening a folder or its parent closes the source window by default. **Hold Ctrl while opening** to keep it open. This behavior can be changed under **Settings > General**. Opening several selected folders keeps the source window open.
 
-Switching the feature off asks for confirmation and removes all locks, including those on closed folders. Switching it back on does not restore them.
+The menu beside the title switches between open folders and closes parent windows. **Ctrl+Shift+T** reopens the last closed folder with its layout and selection. The taskbar Jump List also provides recently closed folders and folders pinned in Quick access.
 
-### Customize the title-bar menu
+<div id="folder-groups"></div>
 
-The menu can be customized in **Settings > Display > Interface elements > Customize title bar menu**. Drag an action from the right-hand list into the menu, move an entry to reorder it, or drag it out of the menu to remove it.
+**Save / recall a folder group** in the title menu reopens several folders together with their saved layouts.
 
-Entries managed by Nilesoft Shell cannot be changed here because its rules take priority. See [Nilesoft Shell integration](#nilesoft-shell).
+## Folder contents and display
+
+<div id="view-and-layout"></div>
+<div id="icon-layout"></div>
+
+Alongside File Explorer’s standard views, FileSpacer allows files and subfolders to be placed freely in Icons view by turning off **Auto arrange icons**. They can also be aligned to the grid.
+
+<div id="view-options"></div>
+
+By default, folders are grouped before files, as in File Explorer. **Mix folders and files when sorting** under **Settings > Display** sorts them together, as on [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) and [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). This applies to Details, List and automatically arranged Icons views. Virtual folders and archives keep Windows’ ordering.
+
+![Files and folders sharing the same alphabetical order.](images/mixed-sorting.png)
+
+In the same settings, **Show the full name of a selected file** makes the entire name readable in Icons view, even when it is very long. It applies when a single file is selected.
+
+![A long selected filename displayed in full in Icons view.](images/selected-name.png)
+
+<div id="selection-and-activation"></div>
+
+By default, clicking the background of an inactive window clears its selection, as in File Explorer. **Keep the current selection when clicking an inactive window** under **Settings > General** activates it without losing the selection.
+
+## Customization
+
+### Changing the interface
+
+<div id="customize-the-title-bar-menu"></div>
+
+Customize the **title-bar menu** under **Settings > Display > Interface elements**. Drag and drop commands to add or reorder them. Drag an entry out of the menu to remove it.
 
 ![Adding an action to the title-bar menu and removing another.](images/customize-title-menu.gif)
 
 ![The customized title-bar menu with Restore the locked layout added.](images/customized-title-menu.png)
 
-- **Restore the locked layout** returns the window to its reference layout. **Replace the reference layout** saves the current layout as the new locked reference, after confirmation.
+Entries managed by Nilesoft Shell are changed in its configuration because its rules take priority over FileSpacer’s ([see its integration below](#nilesoft-shell)).
 
-- **Forget this folder’s layout** clears its saved layout and lock, preserving search history. Layout saving stays suspended in the current window until it closes. The next opening uses defaults. Locking a new layout resumes saving.
+<div id="moving-and-resizing"></div>
 
-### Folder groups
+**Mouse shortcuts can be configured to move or resize a window** directly from its contents, including by dragging over a file. Defaults:
 
-**Save / recall a folder group** stores the open folders under a name. Recalling the group reopens them with their saved layouts.
+| Action | Shortcut |
+| --- | --- |
+| Move | Alt + left-button drag |
+| Resize | Alt + right-button drag |
 
-## Search and history
+![Moving a window with Alt and a left-button drag.](images/move-window.gif)
 
-Enter all or part of a file or folder name, then press Enter to filter the current folder. **Filter while typing**, in **Settings > General**, applies the filter as text is entered.
+![Resizing a window with Alt and a right-button drag.](images/resize-window.gif)
 
-The field offers recent searches and, when integration is enabled, **Search in Everything** for an external search. Enter without a selected suggestion applies the local filter. Ctrl+F focuses the field.
+Selection is preserved and Escape cancels the gesture. Customize shortcuts under **Settings > Shortcuts**. The left and right buttons require Alt. The middle button can be used alone.
 
-History is kept per folder. The number of submitted searches retained is configurable in General settings. 0 clears and disables history. [Everything](#everything) can search subfolders or all indexed files.
+### Integration
 
-![The search field with Everything and recent-search suggestions.](images/search.png)
+<div id="search-and-history"></div>
+<div id="everything"></div>
 
-## Integration
+[Everything](https://www.voidtools.com/) is a search tool that quickly finds files and folders by name. FileSpacer can launch it from a folder’s search field. Enable this integration under **Settings > Integration**, with automatic detection or a portable version selected manually.
 
-### Windows integration
-
-FileSpacer can be set as the default file manager during installation or later in **Settings > Integration** with **Set as default browser**. **Reset default browser** returns folder opening to File Explorer.
-
-The folder context menu offers **Open in FileSpacer**, or **Open in Windows File Explorer** when FileSpacer is the default. This also works on drives, ZIP folders, network locations and folder backgrounds, without requiring a change of default application.
-
-**File Explorer options** opens shared folder preferences, some of which affect FileSpacer too.
-
-### PowerToys Grab And Move
-
-When Grab And Move is enabled in PowerToys settings, FileSpacer’s move and resize gestures are suspended for the affected windows, even if PowerToys is not running.
-
-To keep using FileSpacer’s gestures, add `FileSpacer.exe` to Grab And Move’s excluded apps, or turn that utility off in PowerToys.
-
-### PowerToys Peek
-
-**Preview with Space**, in **Settings > Integration**, opens a Peek preview of selected files or folders with **Space** alone. The option is off by default.
-
-Peek must also be enabled in PowerToys. This integration requires PowerToys 0.96 or later, and 0.102 or later for multiple selections.
-
-### Everything
-
-An existing [Everything](https://www.voidtools.com/) installation can be integrated to run advanced searches from FileSpacer's search field. Results open in Everything.
-
-Enable the option in **Settings > Integration**, with automatic Everything detection or manual selection of a portable copy. The search covers the current folder and its subfolders, or all indexed files with **Everywhere**. Virtual folders require Everywhere.
-
-Selecting **Search in Everything** runs the external search using Everything’s syntax. A successful launch clears FileSpacer’s field and local filter.
+**Search in Everything** runs [the search](https://www.voidtools.com/support/everything/searching/) in the folder and its subfolders, or across all [indexed files](https://www.voidtools.com/support/everything/indexes/) with **Everywhere**. Results open in Everything. Choose Everywhere for virtual folders. A successful launch clears FileSpacer’s search field and local filter.
 
 ![A query in FileSpacer with the matching Everything results alongside it.](images/everything-search.png)
 
-### Nilesoft Shell
+<div id="nilesoft-shell"></div>
 
-[Nilesoft Shell](https://nilesoft.org/) can style FileSpacer's menus and customize their commands. Adapting its configuration is recommended for a consistent appearance, particularly square corners on the title-bar and toolbar menus.
+[Nilesoft Shell](https://nilesoft.org/) is a Windows extension for customizing the appearance and commands of context menus. If used, it can also manage FileSpacer’s menus.
 
-FileSpacer composes the title-bar menu first. Nilesoft Shell then applies its rules, which can rename, move, hide or add commands and therefore take priority. Entries shown in gray in the editor are changed in Nilesoft Shell’s configuration files.
+FileSpacer builds the title-bar menu, then Nilesoft Shell applies its rules, which take priority. See the [configuration reference](nilesoft-shell.md) for visual settings and access to FileSpacer actions.
 
-FileSpacer actions can be used in Nilesoft Shell’s configuration. The [configuration reference](nilesoft-shell.md) lists settings and action IDs. For example, using the `filespacer_title` condition defined there:
-
-```nss
-item(type='*' mode='multiple' where=filespacer_title
-     title='Restore the locked layout' cmd=window.command(1123))
-```
-
-The screenshots below show the Modern theme with its default corners and with the recommended square corners.
+Square corners are recommended for title-bar and toolbar menus.
 
 **Navigation menu**
 
@@ -156,24 +113,34 @@ The screenshots below show the Modern theme with its default corners and with th
 | --- | --- |
 | <img src="images/nilesoft-main-menu-default.png" alt="Main menu with default rounded corners." width="320"> | <img src="images/nilesoft-main-menu-adapted.png" alt="The same menu with square corners." width="320"> |
 
-## Settings and updates
+[PowerToys](https://learn.microsoft.com/en-us/windows/powertoys/) is a collection of Microsoft utilities for extending and customizing Windows.
 
-Ctrl+, opens Settings. F1 opens the offline guide. The interface follows Windows’ display language. A language change needs a restart.
+<div id="powertoys-peek"></div>
 
-Check for updates in **Settings > About**, where optional weekly checks can also be enabled. They are off by default. Downloading and installing require confirmation. Afterwards, previously open folders return with their saved layouts.
+**Peek** previews files. In FileSpacer, **Preview with Space** under **Settings > Integration** opens it with Space. Peek must be enabled in PowerToys. Minimum version: 0.96, or 0.102 for multiple selection.
 
-## Local data
+<div id="powertoys-grab-and-move"></div>
 
-Layouts, locks, histories and preferences are stored locally. See the [technical troubleshooting note](README.md#local-data) for storage locations.
+**Grab And Move** moves and resizes windows from their contents. When enabled, FileSpacer’s equivalent gestures are suspended even if PowerToys is closed. To keep them available, exclude `FileSpacer.exe` in Grab And Move or turn off that tool.
 
-**Settings > About > Maintenance > Reset all folder state** closes folder windows and clears their saved layouts, history and locks. Files and general preferences are preserved.
+## Updates and troubleshooting
 
-For troubleshooting, `FileSpacer.exe /reset-options` resets general preferences. `/reset-all` also clears saved folder state. These commands preserve files.
+<div id="settings-and-updates"></div>
+
+**Settings > About** provides update checks and optional weekly checks, which are off by default. Downloading and installing require confirmation.
+
+<div id="local-data"></div>
+
+On the same page, **Maintenance > Reset all folder state** closes windows and clears their layouts, history and locks. Files and general preferences are preserved.
+
+Preference resets and advanced troubleshooting are covered in the [technical note](README.md#local-data).
 
 ## Privacy
 
-FileSpacer has no telemetry, usage tracking or advertising. Crash reports are not sent automatically. Any diagnostic reports stay in `%LOCALAPPDATA%\FileSpacer`. Sharing them is optional and may reveal file paths or parts of process memory.
+FileSpacer has no telemetry, usage tracking or advertising. Crash reports are never sent automatically. Sharing them is optional and may reveal file paths or portions of memory.
 
-Update checks and downloads contact GitHub over HTTPS. GitHub receives the usual connection information, including the IP address and application version, but no folder state, file paths or diagnostic reports.
+Updates contact GitHub, which receives the IP address and application version, but no file paths or folder state.
 
-Network-drive credentials are entered and handled by Windows, as in File Explorer. FileSpacer does not read or store them. Choosing an Everything search passes the query and, for a folder-scoped search, its path to the local Everything application.
+Network-drive credentials are handled directly by Windows. FileSpacer neither reads nor stores them.
+
+An Everything search sends the query and, when limited to a folder, its path to the local Everything application.

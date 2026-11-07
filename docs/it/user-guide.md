@@ -1,148 +1,118 @@
 # Usare FileSpacer
 
-## Navigazione tra finestre
+FileSpacer ricorda la posizione e l’aspetto di ogni finestra tra un’apertura e l’altra. Le cartelle ritrovano il loro posto e diventano riconoscibili, come oggetti disposti su una scrivania. Offre anche scorciatoie configurabili, azioni rapide e un’interfaccia essenziale e personalizzabile.
 
-FileSpacer offre un’interfaccia fluida, sobria e personalizzabile, basata sul paradigma spaziale:
+<div id="integrazione-con-windows"></div>
+<div id="windows-integration"></div>
 
-- **Una cartella, una finestra.** Riaprire una cartella già aperta porta la sua finestra in primo piano. Posizione, dimensioni, vista e disposizione delle icone vengono ricordate anche dopo aver spostato o rinominato la cartella.
-- Aprire una cartella o la cartella superiore chiude per impostazione predefinita la finestra di origine. Tenendo premuto Ctrl mentre si apre una cartella, la finestra di origine rimane aperta. L’impostazione predefinita si cambia in **Impostazioni > Generale**. Aprire più cartelle selezionate mantiene aperta la finestra di origine.
-- Il menu accanto al titolo permette di passare tra le cartelle aperte. **Chiudi le finestre delle cartelle superiori** chiude le finestre aperte delle cartelle che la contengono.
-- **Ctrl+Maiusc+T** riapre l’ultima cartella chiusa con la sua disposizione e selezione. Il comando è disponibile anche nel menu del titolo. La Jump List della barra delle applicazioni permette di riaprire questa cartella o altre chiuse in precedenza.
-- La Jump List della barra delle applicazioni apre anche le cartelle aggiunte ad Accesso rapido in Esplora file.
+FileSpacer si può impostare come gestore di file predefinito durante l’installazione oppure in **Impostazioni > Integrazione**, con **Imposta come gestore di file predefinito**. Il menu contestuale delle cartelle propone **Apri in FileSpacer**, oppure **Apri in Esplora file di Windows** quando FileSpacer è il gestore predefinito.
 
-Passare alla cartella superiore non seleziona quella da cui provieni. Una cartella superiore già aperta conserva la propria selezione.
+## Navigazione e disposizione delle finestre
 
-![Il menu del titolo della cartella con la navigazione tra finestre e il blocco dello stato salvato.](images/window-menu-it.png)
+<div id="navigazione-tra-finestre"></div>
+<div id="window-navigation"></div>
+<div id="posizionamento-delle-finestre"></div>
+<div id="window-placement"></div>
+<div id="gestione-delle-finestre"></div>
+<div id="managing-windows"></div>
 
-## Visualizzazione e disposizione
+**Ogni cartella ha la propria finestra.** Se è già aperta, FileSpacer la porta in primo piano. Posizione, dimensioni, visualizzazione e disposizione delle icone vengono memorizzate anche dopo lo spostamento o la ridenominazione della cartella. Le finestre senza posizione salvata vengono collocate limitando la sovrapposizione (opzione in **Impostazioni > Generale**).
 
-### Disposizione delle icone
+<div id="blocco-dello-stato-salvato"></div>
+<div id="locking-a-saved-layout"></div>
 
-Nelle visualizzazioni a icone puoi posizionare liberamente file e sottocartelle quando **Disponi icone automaticamente** è disattivato. Le loro posizioni vengono salvate indipendentemente dalle dimensioni e dalla posizione della finestra, anche quando il suo stato salvato è bloccato.
+**Si possono bloccare la posizione, le dimensioni e la visualizzazione attuali di una cartella per ritrovarle a ogni riapertura.** Le modifiche successive restano temporanee. Le posizioni delle icone continuano a essere salvate. Si può poi **ripristinare la disposizione bloccata** senza chiudere la finestra.
 
-### Opzioni di visualizzazione
+**Sblocca lo stato della finestra** conserva la disposizione attuale e permette di tornare a salvare le modifiche.
 
-**Mostra il nome completo di un file selezionato**, in **Impostazioni > Visualizzazione**, rende interamente leggibile il nome di un singolo file selezionato nella vista a icone.
-
-![Un nome di file lungo, selezionato e visibile per intero nella vista a icone.](images/selected-name-it.png)
-
-**Mostra l’anteprima delle modalità nel menu Visualizza** mostra ogni modalità al passaggio del puntatore. Un clic la conferma. Esc o l’uscita dall’anteprima ripristina la vista iniziale. L’anteprima è temporanea e non sostituisce la disposizione salvata.
-
-**Mescola cartelle e file nell’ordinamento** li ordina insieme, come su [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) e [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). L’opzione si trova in **Impostazioni > Visualizzazione > File** e si applica a Dettagli, Elenco e alle icone disposte automaticamente. Cartelle virtuali e archivi mantengono l’ordinamento di Windows.
-
-![Cartelle e file nello stesso ordine alfabetico.](images/mixed-sorting-it.png)
-
-### Posizionamento delle finestre
-
-Le cartelle senza posizione salvata si aprono nello spazio libero o, se non basta, con una sovrapposizione ridotta. L’impostazione si trova in **Impostazioni > Generale > Disponi le nuove finestre nello spazio libero**.
-
-### Selezione e attivazione
-
-Con **Impostazioni > Generale > Mantieni la selezione facendo clic su una finestra inattiva** attivo, un clic sullo sfondo di una cartella inattiva ne attiva la finestra senza cancellare la selezione. Una volta attiva la finestra, fare clic e trascinare sullo sfondo permette di tracciare un rettangolo di selezione.
-
-## Gestione delle finestre
-
-### Spostamento e ridimensionamento
-
-Una finestra può essere spostata o ridimensionata trascinando nell’area dei file, anche sopra un elemento. Le combinazioni predefinite sono:
-
-| Azione | Scelta rapida |
-| --- | --- |
-| Spostare la finestra | Alt + trascinamento con il pulsante sinistro |
-| Ridimensionare dall’angolo inferiore destro | Alt + trascinamento con il pulsante destro |
-
-![Spostamento di una finestra con Alt e il pulsante sinistro.](images/move-window-it.gif)
-
-![Ridimensionamento con Alt e il pulsante destro.](images/resize-window-it.gif)
-
-La selezione rimane intatta. Esc annulla il gesto.
-
-Ogni azione ha una combinazione personalizzabile in **Impostazioni > Scelte rapide**. I pulsanti sinistro e destro richiedono Alt. Quello centrale funziona anche senza Alt.
-
-### Blocco dello stato salvato
-
-Il blocco conserva posizione, dimensioni e vista di una cartella per la successiva apertura. La funzione è disattivata per impostazione predefinita in **Impostazioni > Generale > Abilita il blocco dello stato della finestra**. Una volta attivata, **Blocca lo stato della finestra** è disponibile accanto al titolo. Un lucchetto sull’icona della cartella segnala il blocco.
+Il blocco si attiva in **Impostazioni > Generale**. Il comando **Blocca lo stato della finestra** compare poi accanto al titolo della cartella. Un lucchetto sull’icona segnala il blocco. Disattivare la funzione elimina tutti i blocchi.
 
 <img src="images/locked-title-it.png" alt="Dettaglio del titolo della cartella con il lucchetto." width="280">
 
-Sono comunque possibili modifiche temporanee. Riaprendo la cartella si ripristina lo stato bloccato. Le posizioni delle singole icone continuano a essere salvate. **Sblocca lo stato della finestra** mantiene la disposizione attuale.
+Aprire una cartella o la cartella superiore chiude per impostazione predefinita la finestra di origine. **Tenere premuto Ctrl durante l’apertura** permette di lasciarla aperta. Il comportamento si imposta in **Impostazioni > Generale**. L’apertura di più cartelle selezionate mantiene aperta la finestra di origine.
 
-Disattivare la funzione richiede conferma e rimuove tutti i blocchi, anche dalle cartelle chiuse. Riattivarla non li ripristina.
+Il menu accanto al titolo permette di passare tra le cartelle aperte e chiudere le finestre delle cartelle superiori. **Ctrl+Maiusc+T** riapre l’ultima cartella chiusa con la sua disposizione e selezione. La Jump List della barra delle applicazioni include anche le cartelle chiuse di recente e quelle aggiunte ad Accesso rapido.
 
-### Personalizzare il menu della barra del titolo
+<div id="gruppi-di-cartelle"></div>
+<div id="folder-groups"></div>
 
-Il menu si personalizza in **Impostazioni > Visualizzazione > Elementi dell’interfaccia > Personalizza il menu della barra del titolo**. Trascinare un’azione dall’elenco a destra nel menu, spostare una voce per cambiarne l’ordine o trascinarla fuori dal menu per rimuoverla.
+**Salva / apri un gruppo di cartelle**, nel menu del titolo, permette di ritrovare più cartelle insieme con le loro disposizioni salvate.
 
-Le voci gestite da Nilesoft Shell non possono essere modificate qui, perché le sue regole hanno la precedenza. Vedere l’[integrazione con Nilesoft Shell](#nilesoft-shell).
+## Visualizzazione del contenuto delle cartelle
+
+<div id="visualizzazione-e-disposizione"></div>
+<div id="view-and-layout"></div>
+<div id="disposizione-delle-icone"></div>
+<div id="icon-layout"></div>
+
+Oltre alle viste classiche di Esplora file, FileSpacer permette di disporre liberamente file e sottocartelle nella vista Icone disattivando **Disponi icone automaticamente**. Si possono anche allineare alla griglia.
+
+<div id="opzioni-di-visualizzazione"></div>
+<div id="view-options"></div>
+
+Per impostazione predefinita, le cartelle sono raggruppate prima dei file, come in Esplora file. **Mescola cartelle e file nell’ordinamento**, in **Impostazioni > Visualizzazione**, li ordina insieme, come in [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) e [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). L’opzione riguarda Dettagli, Elenco e Icone disposte automaticamente. Cartelle virtuali e archivi mantengono l’ordine di Windows.
+
+![Cartelle e file nello stesso ordine alfabetico.](images/mixed-sorting-it.png)
+
+Nelle stesse impostazioni, **Mostra il nome completo di un file selezionato** permette di leggere per intero il nome nella vista Icone, anche se è molto lungo. Si applica quando è selezionato un solo file.
+
+![Un nome di file lungo, selezionato e visibile per intero nella vista a icone.](images/selected-name-it.png)
+
+<div id="selezione-e-attivazione"></div>
+<div id="selection-and-activation"></div>
+
+Per impostazione predefinita, un clic sullo sfondo di una finestra inattiva ne cancella la selezione, come in Esplora file. **Mantieni la selezione facendo clic su una finestra inattiva**, in **Impostazioni > Generale**, permette di attivarla senza perdere la selezione.
+
+## Personalizzazione
+
+### Modificare l’interfaccia
+
+<div id="personalizzare-il-menu-della-barra-del-titolo"></div>
+<div id="customize-the-title-bar-menu"></div>
+
+Il **menu della barra del titolo** si personalizza in **Impostazioni > Visualizzazione > Elementi dell’interfaccia**. I comandi si aggiungono e riordinano trascinandoli. Per rimuovere una voce, trascinarla fuori dal menu.
 
 ![Aggiunta di un’azione al menu della barra del titolo e rimozione di un’altra.](images/customize-title-menu-it.gif)
 
 ![Il menu della barra del titolo con l’azione Ripristina la disposizione bloccata.](images/customized-title-menu-it.png)
 
-- **Ripristina la disposizione bloccata** riporta la finestra alla disposizione di riferimento. **Sostituisci la disposizione di riferimento** salva la disposizione attuale come nuovo riferimento bloccato, dopo conferma.
+Le voci gestite da Nilesoft Shell si modificano nella sua configurazione, perché le sue regole hanno priorità su quelle di FileSpacer ([vedere l’integrazione più sotto](#nilesoft-shell)).
 
-- **Rimuovi la disposizione salvata della cartella** elimina la disposizione salvata e il blocco, mantenendo la cronologia delle ricerche. Il salvataggio resta sospeso nella finestra corrente fino alla chiusura. All’apertura successiva vengono usati i valori predefiniti. Bloccare una nuova disposizione riattiva il salvataggio.
+<div id="spostamento-e-ridimensionamento"></div>
+<div id="moving-and-resizing"></div>
 
-### Gruppi di cartelle
+Si possono definire **gesti del mouse per spostare o ridimensionare una finestra** direttamente dal suo contenuto, anche trascinando su un file. Impostazioni predefinite:
 
-**Salva / apri un gruppo di cartelle** memorizza le cartelle aperte con un nome. Richiamare il gruppo le riapre con le rispettive disposizioni salvate.
+| Azione | Gesto |
+| --- | --- |
+| Spostare | Alt + trascinamento con il pulsante sinistro |
+| Ridimensionare | Alt + trascinamento con il pulsante destro |
 
-## Ricerca e cronologia
+![Spostamento di una finestra con Alt e il pulsante sinistro.](images/move-window-it.gif)
 
-Digitare tutto o parte del nome di un file o di una cartella, quindi premere Invio per filtrare la cartella corrente. **Impostazioni > Generale > Filtra durante la digitazione** applica il filtro durante la digitazione.
+![Ridimensionamento con Alt e il pulsante destro.](images/resize-window-it.gif)
 
-Il campo propone le ricerche recenti e, se l’integrazione è attiva, **Cerca in Everything** per una ricerca esterna. Invio senza un suggerimento selezionato applica il filtro locale. Ctrl+F attiva il campo.
+La selezione viene mantenuta ed Esc annulla il gesto. Le scorciatoie si personalizzano in **Impostazioni > Scelte rapide**. I pulsanti sinistro e destro richiedono Alt. Il pulsante centrale si può usare da solo.
 
-La cronologia è distinta per cartella. Il numero di ricerche confermate da conservare si regola nelle impostazioni generali. 0 svuota e disattiva la cronologia. [Everything](#everything) permette di cercare nelle sottocartelle o in tutti i file indicizzati.
+### Integrazione
 
-![Suggerimenti di ricerca con Everything e query recenti per file di progetto fittizi.](images/search-it.png)
+<div id="ricerca-e-cronologia"></div>
+<div id="search-and-history"></div>
+<div id="everything"></div>
 
-## Integrazione
+[Everything](https://www.voidtools.com/) è uno strumento di ricerca che trova rapidamente file e cartelle per nome. FileSpacer permette di avviarlo dal campo di ricerca di una cartella. L’integrazione si attiva in **Impostazioni > Integrazione**, con rilevamento automatico o scelta di una versione portabile.
 
-### Integrazione con Windows
-
-FileSpacer può essere impostato come gestore di file predefinito durante l’installazione o in seguito con **Impostazioni > Integrazione > Imposta come gestore di file predefinito**. **Ripristina Esplora file come predefinito** restituisce l’apertura delle cartelle a Esplora file.
-
-Il menu di scelta rapida delle cartelle offre **Apri in FileSpacer**, oppure **Apri in Esplora file di Windows** quando FileSpacer è predefinito. Vale anche per unità, cartelle ZIP, percorsi di rete e sfondi delle cartelle, senza obbligare a cambiare l’applicazione predefinita.
-
-**Opzioni di Esplora file** apre le preferenze comuni delle cartelle, alcune delle quali valgono anche per FileSpacer.
-
-### PowerToys Grab And Move
-
-Quando Grab And Move è attivo nelle impostazioni di PowerToys, i gesti di FileSpacer per spostare e ridimensionare le finestre interessate vengono sospesi, anche se PowerToys è chiuso.
-
-Per continuare a usare i gesti di FileSpacer, aggiungere `FileSpacer.exe` alle applicazioni escluse di Grab And Move oppure disattivare l’utilità in PowerToys.
-
-### PowerToys Peek
-
-**Anteprima con Spazio**, in **Impostazioni > Integrazione**, apre un’anteprima Peek dei file o delle cartelle selezionati premendo solo **Spazio**. L’opzione è disattivata per impostazione predefinita.
-
-Peek deve essere attivato anche in PowerToys. L’integrazione richiede PowerToys 0.96 o successivo e 0.102 o successivo per una selezione multipla.
-
-### Everything
-
-Un’installazione esistente di [Everything](https://www.voidtools.com/) può essere integrata per avviare ricerche avanzate dal campo di FileSpacer. I risultati si aprono in Everything.
-
-L’opzione si attiva in **Impostazioni > Integrazione**, con rilevamento automatico di Everything o scelta manuale di una copia portatile. La ricerca comprende la cartella corrente e le sottocartelle, oppure tutti i file indicizzati con **Ovunque**. Per le cartelle virtuali è necessario scegliere Ovunque.
-
-**Cerca in Everything** avvia la ricerca esterna con la sintassi di Everything. Un avvio riuscito svuota il campo e il filtro locale di FileSpacer.
+**Cerca in Everything** avvia [la ricerca](https://www.voidtools.com/support/everything/searching/) nella cartella e nelle sottocartelle, oppure in tutti i [file indicizzati](https://www.voidtools.com/support/everything/indexes/) con **Ovunque**. I risultati si aprono in Everything. Per le cartelle virtuali, scegliere Ovunque. Un avvio riuscito svuota il campo e rimuove il filtro locale di FileSpacer.
 
 ![Una ricerca in FileSpacer con i risultati corrispondenti in Everything a fianco.](images/everything-search-it.png)
 
-### Nilesoft Shell
+<div id="nilesoft-shell"></div>
 
-[Nilesoft Shell](https://nilesoft.org/) può gestire l’aspetto dei menu di FileSpacer e personalizzarne i comandi. Si consiglia di adattarne la configurazione per un aspetto coerente, in particolare con angoli squadrati nei menu della barra del titolo e della barra degli strumenti.
+[Nilesoft Shell](https://nilesoft.org/) è un’estensione di Windows che permette di personalizzare l’aspetto e i comandi dei menu contestuali. Se utilizzata, può gestire anche i menu di FileSpacer.
 
-FileSpacer compone prima il menu della barra del titolo. Nilesoft Shell applica poi le proprie regole, che possono rinominare, spostare, nascondere o aggiungere comandi e hanno quindi la precedenza. Le voci in grigio nell’editor si modificano nei file di configurazione di Nilesoft Shell.
+FileSpacer compone il menu della barra del titolo, poi Nilesoft Shell applica le sue regole, che hanno priorità. La [guida di configurazione](nilesoft-shell.md) descrive le impostazioni visive e l’accesso alle azioni di FileSpacer.
 
-Le azioni di FileSpacer possono essere usate nella configurazione di Nilesoft Shell. Il [riferimento di configurazione](nilesoft-shell.md) contiene impostazioni e ID delle azioni. Esempio con la condizione `filespacer_title` definita nel riferimento:
-
-```nss
-item(type='*' mode='multiple' where=filespacer_title
-     title='Ripristina la disposizione bloccata' cmd=window.command(1123))
-```
-
-Le immagini qui sotto mostrano il tema Modern con gli angoli predefiniti e con quelli squadrati consigliati.
+Per i menu della barra del titolo e della barra degli strumenti sono consigliati angoli retti.
 
 **Menu di navigazione**
 
@@ -156,24 +126,36 @@ Le immagini qui sotto mostrano il tema Modern con gli angoli predefiniti e con q
 | --- | --- |
 | <img src="images/nilesoft-main-menu-default-it.png" alt="Menu principale con gli angoli arrotondati predefiniti del tema Modern." width="320"> | <img src="images/nilesoft-main-menu-adapted-it.png" alt="Lo stesso menu principale con gli angoli squadrati consigliati." width="320"> |
 
-## Impostazioni e aggiornamenti
+[PowerToys](https://learn.microsoft.com/it-it/windows/powertoys/) raccoglie utilità Microsoft per ampliare e personalizzare Windows.
 
-Ctrl+, apre le impostazioni. F1 apre la guida offline. L’interfaccia segue la lingua di visualizzazione di Windows. Un cambio di lingua richiede il riavvio.
+<div id="powertoys-peek"></div>
 
-Gli aggiornamenti si cercano in **Impostazioni > Informazioni**, dove si possono attivare anche i controlli settimanali facoltativi, disattivati per impostazione predefinita. Scaricamento e installazione richiedono conferma. Al termine si riaprono le cartelle precedenti con le disposizioni salvate.
+**Peek** mostra un’anteprima dei file. In FileSpacer, **Anteprima con Spazio**, in **Impostazioni > Integrazione**, permette di aprirla con Spazio. Peek deve essere attivo in PowerToys. Versione minima: 0.96, oppure 0.102 per la selezione multipla.
 
-## Dati locali
+<div id="powertoys-grab-and-move"></div>
 
-Disposizioni, blocchi, cronologie e preferenze sono conservati localmente. I percorsi di archiviazione sono descritti nella [nota tecnica per la risoluzione dei problemi](../en/README.md#local-data) (in inglese).
+**Grab And Move** permette di spostare e ridimensionare le finestre dal loro contenuto. Quando è attivo, i gesti equivalenti di FileSpacer vengono sospesi anche se PowerToys è chiuso. Per mantenerli, escludere `FileSpacer.exe` in Grab And Move o disattivare lo strumento.
 
-**Impostazioni > Informazioni > Manutenzione > Reimposta lo stato di tutte le cartelle** chiude le finestre delle cartelle e ne cancella disposizioni, cronologia e blocchi salvati. File e preferenze generali vengono conservati.
+## Aggiornamenti e risoluzione dei problemi
 
-Per la risoluzione dei problemi, `FileSpacer.exe /reset-options` reimposta le preferenze generali. `/reset-all` cancella anche lo stato salvato delle cartelle. Questi comandi conservano i file.
+<div id="impostazioni-e-aggiornamenti"></div>
+<div id="settings-and-updates"></div>
+
+**Impostazioni > Informazioni** permette di cercare aggiornamenti e attivare i controlli settimanali, disattivati per impostazione predefinita. Download e installazione richiedono conferma.
+
+<div id="dati-locali"></div>
+<div id="local-data"></div>
+
+Nella stessa pagina, **Manutenzione > Reimposta lo stato di tutte le cartelle** chiude le finestre e cancella disposizioni, cronologie e blocchi. File e preferenze generali vengono mantenuti.
+
+Il ripristino delle preferenze e la risoluzione avanzata dei problemi sono descritti nella [nota tecnica](../en/README.md#local-data), in inglese.
 
 ## Privacy
 
-FileSpacer non contiene telemetria, monitoraggio dell’utilizzo o pubblicità. I rapporti sugli arresti anomali non vengono inviati automaticamente. Gli eventuali rapporti diagnostici rimangono in `%LOCALAPPDATA%\FileSpacer`. Condividerli è facoltativo e può rivelare percorsi di file o parti della memoria del processo.
+FileSpacer non include telemetria, monitoraggio dell’uso o pubblicità. Nessuna segnalazione di arresto anomalo viene inviata automaticamente. La condivisione è facoltativa e può rivelare percorsi di file o porzioni di memoria.
 
-I controlli degli aggiornamenti e i download contattano GitHub tramite HTTPS. GitHub riceve le normali informazioni di connessione, compresi indirizzo IP e versione dell’applicazione, ma nessuno stato di cartella, percorso di file o rapporto diagnostico.
+Gli aggiornamenti contattano GitHub, che riceve l’indirizzo IP e la versione dell’applicazione, ma nessun percorso di file o stato delle cartelle.
 
-Le credenziali per le unità di rete vengono immesse e gestite da Windows, come in Esplora file. FileSpacer non le legge né le memorizza. Una ricerca Everything passa la query e, se limitata alla cartella, il relativo percorso all’applicazione Everything locale.
+Le credenziali delle unità di rete sono gestite direttamente da Windows. FileSpacer non le legge né le salva.
+
+Una ricerca di Everything invia la query e, se limitata a una cartella, il relativo percorso all’applicazione Everything locale.
