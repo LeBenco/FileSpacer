@@ -370,6 +370,14 @@ uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value
     }
 
 
+static bool isFreeIconView(IFolderView *view, const std::function<bool()> &current) {
+    UINT mode = 0;
+    const HRESULT result = view->GetCurrentViewMode(&mode);
+    if (!current() || FAILED(result) || (mode != FVM_ICON && mode != FVM_SMALLICON)) return false;
+    const HRESULT arranged = view->GetAutoArrange();
+    return current() && arranged == S_FALSE;
+}
+
 HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &current,
         std::vector<uint8_t> &bytes) {
     bytes.clear();
@@ -485,14 +493,42 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
         result = IStream_WritePidl(stream, focused);
     if (FAILED(result)) return result;
     if (count) {
-        CComPtr<IEnumIDList> selectedItems;
-        result = folderView->Items(SVGIO_SELECTION, IID_PPV_ARGS(&selectedItems));
+        // A complete selection is an unordered set in this snapshot. Avoid the
+        // native spatial sort; providers without usable indices keep Items.
+        std::vector<CComHeapPtr<ITEMID_CHILD>> complete;
+        const bool indexed = count >= 128 && isFreeIconView(folderView, current);
         if (!current()) return E_ABORT;
-        if (FAILED(result)) return result;
-        if (!selectedItems) return E_UNEXPECTED;
+        if (indexed) {
+            int allCount = 0;
+            result = folderView->ItemCount(SVGIO_ALLVIEW, &allCount);
+            if (!current()) return E_ABORT;
+            if (SUCCEEDED(result) && allCount == count) {
+                complete.resize(static_cast<size_t>(count));
+                for (int i = 0; i < count; ++i) {
+                    result = folderView->Item(i, &complete[static_cast<size_t>(i)]);
+                    if (!current()) return E_ABORT;
+                    if (FAILED(result) || !complete[static_cast<size_t>(i)]) { complete.clear(); break; }
+                }
+                int selectedCount = 0;
+                result = folderView->ItemCount(SVGIO_SELECTION, &selectedCount);
+                if (!current()) return E_ABORT;
+                if (FAILED(result) || selectedCount != count) complete.clear();
+                result = folderView->ItemCount(SVGIO_ALLVIEW, &allCount);
+                if (!current()) return E_ABORT;
+                if (FAILED(result) || allCount != count) complete.clear();
+            }
+        }
+        CComPtr<IEnumIDList> selectedItems;
+        if (complete.empty()) {
+            result = folderView->Items(SVGIO_SELECTION, IID_PPV_ARGS(&selectedItems));
+            if (!current()) return E_ABORT;
+            if (FAILED(result)) return result;
+            if (!selectedItems) return E_UNEXPECTED;
+        }
         for (int i = 0; i < count; ++i) {
             CComHeapPtr<ITEMID_CHILD> selectedItem;
-            result = selectedItems->Next(1, &selectedItem, nullptr);
+            if (complete.empty()) result = selectedItems->Next(1, &selectedItem, nullptr);
+            else { selectedItem.Attach(complete[static_cast<size_t>(i)].Detach()); result = S_OK; }
             if (!current()) return E_ABORT;
             if (result != S_OK) return FAILED(result) ? result : E_UNEXPECTED;
             result = IStream_WritePidl(stream, selectedItem);
@@ -520,6 +556,12 @@ static HRESULT matchesViewItems(IFolderView2 *view, UINT flags,
     HRESULT result = view->ItemCount(flags, &count);
     if (!current()) return E_ABORT;
     if (FAILED(result) || count < 0 || static_cast<size_t>(count) != wanted.size()) return S_FALSE;
+    int allCount = 0;
+    result = view->ItemCount(SVGIO_ALLVIEW, &allCount);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || allCount != count) return S_FALSE;
+    const bool indexed = isFreeIconView(view, current);
+    if (!current()) return E_ABORT;
     struct Identity { PCUIDLIST_RELATIVE item; UINT size; bool matched; };
     std::vector<Identity> sorted;
     sorted.reserve(wanted.size());
@@ -530,13 +572,19 @@ static HRESULT matchesViewItems(IFolderView2 *view, UINT flags,
     std::sort(sorted.begin(), sorted.end(), less);
     for (size_t i = 1; i < sorted.size(); ++i)
         if (!less(sorted[i - 1], sorted[i])) return S_FALSE;
+    // This proof only accepts complete sets. Free icons can use indices to
+    // avoid the Shell's spatial sort. Other renderers retain their fast Items.
+    // For SVGIO_SELECTION, equal selected/all counts establish membership;
+    // the exact view identities still have to match before and after Select All.
     CComPtr<IEnumIDList> items;
-    result = view->Items(flags, IID_PPV_ARGS(&items));
-    if (!current()) return E_ABORT;
-    if (FAILED(result) || !items) return S_FALSE;
+    if (!indexed) {
+        result = view->Items(flags, IID_PPV_ARGS(&items));
+        if (!current()) return E_ABORT;
+        if (FAILED(result) || !items) return S_FALSE;
+    }
     for (int i = 0; i < count; ++i) {
         CComHeapPtr<ITEMID_CHILD> item;
-        result = items->Next(1, &item, nullptr);
+        result = indexed ? view->Item(i, &item) : items->Next(1, &item, nullptr);
         if (!current()) return E_ABORT;
         if (result != S_OK || !item) return S_FALSE;
         const Identity key = {item, ILGetSize(item), false};
@@ -544,10 +592,19 @@ static HRESULT matchesViewItems(IFolderView2 *view, UINT flags,
         if (found == sorted.end() || less(key, *found) || found->matched) return S_FALSE;
         found->matched = true;
     }
-    CComHeapPtr<ITEMID_CHILD> extra;
-    result = items->Next(1, &extra, nullptr);
+    if (!indexed) {
+        CComHeapPtr<ITEMID_CHILD> extra;
+        result = items->Next(1, &extra, nullptr);
+        if (!current()) return E_ABORT;
+        if (result != S_FALSE) return S_FALSE;
+    }
+    int finalCount = 0;
+    result = view->ItemCount(flags, &finalCount);
     if (!current()) return E_ABORT;
-    return result == S_FALSE ? S_OK : S_FALSE;
+    if (FAILED(result) || finalCount != count) return S_FALSE;
+    result = view->ItemCount(SVGIO_ALLVIEW, &finalCount);
+    if (!current()) return E_ABORT;
+    return SUCCEEDED(result) && finalCount == count ? S_OK : S_FALSE;
 } catch (const std::bad_alloc &) { return S_FALSE; }
 
 HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
@@ -670,7 +727,7 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         if (SUCCEEDED(result)) {
             useBulkSelection = mode != FVM_ICON && mode != FVM_SMALLICON;
             if (!useBulkSelection) {
-                useBulkSelection = folderView->GetAutoArrange() == S_OK;
+                useBulkSelection = SUCCEEDED(folderView->GetAutoArrange());
                 if (!current()) return E_ABORT;
             }
         }
