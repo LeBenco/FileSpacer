@@ -28,18 +28,16 @@ FileSpacer legt Wert auf eine schlanke und übersichtliche Bedienung. Damit sich
 
 Die WinGet- und Chocolatey-Pakete warten auf die Freigabe in den jeweiligen Katalogen.
 
+## Funktionen
+
+- **Ein Fenster pro Ordner**. Position, Größe, Ansichtsmodus und Symbolpositionen [werden gespeichert](user-guide.md#fensternavigation). Symbole lassen sich frei anordnen oder am [klassischen Raster ausrichten](user-guide.md#symbolanordnung).
+- **Fensteranordnung**. Beim Öffnen eines anderen Ordners wird das Ausgangsfenster standardmäßig geschlossen. Fenster ohne gespeicherte Position werden so platziert, dass sie sich [möglichst wenig überlappen](user-guide.md#fensterpositionierung).
+- **Fenster verwalten**. Fenster mit [Mausgesten](user-guide.md#verschieben-und-größenänderung) verschieben oder ihre Größe ändern. [Ordnergruppen](user-guide.md#ordnergruppen) speichern und erneut öffnen. [Die Fensteranordnung sperren](user-guide.md#gespeicherten-fensterzustand-sperren).
+
 **Dokumentation:**
 
 [![Docs](https://img.shields.io/badge/Docs-Benutzerhandbuch-blue)](user-guide.md)
 [![Docs](https://img.shields.io/badge/Docs-Versionsverlauf-orange)](CHANGELOG.md)
-
-_FileSpacer ist eine Abspaltung von [ChromaFiler](https://github.com/vanjac/chromafiler), ursprünglich entwickelt von J. van’t Hoog. Weitere Einzelheiten stehen unten unter [Lizenz und Danksagung](#lizenz-und-danksagung)._
-
-## Funktionen
-
-- **Ein Fenster pro Ordner**. Position, Größe, Ansichtsmodus und Symbolpositionen [werden gespeichert](user-guide.md#fensternavigation). Symbole lassen sich frei anordnen oder am [klassischen Raster ausrichten](user-guide.md#symbolanordnung).
-- **Automatische Fensteranordnung**. Beim Öffnen eines anderen Ordners wird das Ausgangsfenster standardmäßig geschlossen. Fenster ohne gespeicherte Position werden so platziert, dass sie sich [möglichst wenig überlappen](user-guide.md#fensterpositionierung).
-- **Fenster verwalten**. Fenster mit [Mausgesten](user-guide.md#verschieben-und-größenänderung) verschieben oder ihre Größe ändern. [Ordnergruppen](user-guide.md#ordnergruppen) speichern und erneut öffnen. [Die Fensteranordnung sperren](user-guide.md#gespeicherten-fensterzustand-sperren).
 
 ## Integration
 

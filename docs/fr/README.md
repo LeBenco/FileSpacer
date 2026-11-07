@@ -28,18 +28,16 @@ FileSpacer privilégie une expérience légère et épurée. Pour limiter l’ac
 
 Les paquets WinGet et Chocolatey sont en attente d’approbation dans leurs catalogues.
 
+## Fonctionnalités
+
+- **Une fenêtre unique par dossier**. Position, taille, mode d’affichage et emplacement des icônes [sont mémorisés](user-guide.md#navigation-entre-les-fenêtres). Les icônes peuvent être disposées librement ou alignées sur la [grille de positionnement classique](user-guide.md#disposition-des-icônes).
+- **Organisation des fenêtres**. La fenêtre source se ferme par défaut à l’ouverture d’un autre dossier. Les fenêtres sans position mémorisée sont placées [en limitant le chevauchement](user-guide.md#placement-des-fenêtres).
+- **Gérer ses fenêtres**. Déplacer ou redimensionner les fenêtres grâce à des [raccourcis souris](user-guide.md#déplacement-et-redimensionnement). Enregistrer et rouvrir des [groupes de dossiers](user-guide.md#groupes-de-dossiers). [Verrouiller la disposition des fenêtres](user-guide.md#verrouillage-de-létat-enregistré).
+
 **Documentation :**
 
 [![Docs](https://img.shields.io/badge/Docs-Guide%20d%E2%80%99utilisation-blue)](user-guide.md)
 [![Docs](https://img.shields.io/badge/Docs-Historique%20des%20versions-orange)](CHANGELOG.md)
-
-_FileSpacer est un dérivé de [ChromaFiler](https://github.com/vanjac/chromafiler), créé à l’origine par J. van’t Hoog. Voir les [crédits](#licence-et-crédits) ci-dessous pour plus de détails._
-
-## Fonctionnalités
-
-- **Une fenêtre unique par dossier**. Position, taille, mode d’affichage et emplacement des icônes [sont mémorisés](user-guide.md#navigation-entre-les-fenêtres). Les icônes peuvent être disposées librement ou alignées sur la [grille de positionnement classique](user-guide.md#disposition-des-icônes).
-- **Organisation automatique des fenêtres**. La fenêtre source se ferme par défaut à l’ouverture d’un autre dossier. Les fenêtres sans position mémorisée sont placées [en limitant le chevauchement](user-guide.md#placement-des-fenêtres).
-- **Gérer ses fenêtres**. Déplacer ou redimensionner les fenêtres grâce à des [raccourcis souris](user-guide.md#déplacement-et-redimensionnement). Enregistrer et rouvrir des [groupes de dossiers](user-guide.md#groupes-de-dossiers). [Verrouiller la disposition des fenêtres](user-guide.md#verrouillage-de-létat-enregistré).
 
 ## Intégration
 

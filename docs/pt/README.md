@@ -28,18 +28,16 @@ O FileSpacer privilegia uma experiência leve e descomplicada. Para limitar a ac
 
 Os pacotes WinGet e Chocolatey aguardam aprovação nos respetivos catálogos.
 
+## Funcionalidades
+
+- **Uma janela por pasta**. A posição, o tamanho, o modo de apresentação e as posições dos ícones [são memorizados](user-guide.md#navegação-entre-janelas). Os ícones podem ser dispostos livremente ou alinhados pela [grelha clássica](user-guide.md#disposição-dos-ícones).
+- **Organização das janelas**. Ao abrir outra pasta, a janela de origem é fechada por predefinição. As janelas sem posição guardada são colocadas de forma a [limitar a sobreposição](user-guide.md#posicionamento-das-janelas).
+- **Gerir as janelas**. Mover ou redimensionar as janelas com [gestos do rato](user-guide.md#movimento-e-redimensionamento). Guardar e reabrir [grupos de pastas](user-guide.md#grupos-de-pastas). [Bloquear a disposição das janelas](user-guide.md#bloqueio-do-estado-guardado).
+
 **Documentação:**
 
 [![Docs](https://img.shields.io/badge/Docs-Guia%20de%20utiliza%C3%A7%C3%A3o-blue)](user-guide.md)
 [![Docs](https://img.shields.io/badge/Docs-Hist%C3%B3rico%20de%20vers%C3%B5es-orange)](CHANGELOG.md)
-
-_O FileSpacer é uma derivação do [ChromaFiler](https://github.com/vanjac/chromafiler), criado originalmente por J. van’t Hoog. Consulte os [agradecimentos](#licença-e-agradecimentos) abaixo para mais informações._
-
-## Funcionalidades
-
-- **Uma janela por pasta**. A posição, o tamanho, o modo de apresentação e as posições dos ícones [são memorizados](user-guide.md#navegação-entre-janelas). Os ícones podem ser dispostos livremente ou alinhados pela [grelha clássica](user-guide.md#disposição-dos-ícones).
-- **Organização automática das janelas**. Ao abrir outra pasta, a janela de origem é fechada por predefinição. As janelas sem posição guardada são colocadas de forma a [limitar a sobreposição](user-guide.md#posicionamento-das-janelas).
-- **Gerir as janelas**. Mover ou redimensionar as janelas com [gestos do rato](user-guide.md#movimento-e-redimensionamento). Guardar e reabrir [grupos de pastas](user-guide.md#grupos-de-pastas). [Bloquear a disposição das janelas](user-guide.md#bloqueio-do-estado-guardado).
 
 ## Integração
 

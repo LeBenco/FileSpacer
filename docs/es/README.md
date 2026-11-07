@@ -28,18 +28,16 @@ FileSpacer da prioridad a una experiencia ligera y despejada. Para limitar la ac
 
 Los paquetes de WinGet y Chocolatey están pendientes de aprobación en sus respectivos catálogos.
 
+## Funciones
+
+- **Una ventana por carpeta**. [Se guardan](user-guide.md#navegación-entre-ventanas) la posición, el tamaño, el modo de vista y las posiciones de los iconos. Los iconos se pueden colocar libremente o alinear con la [cuadrícula clásica](user-guide.md#disposición-de-iconos).
+- **Organización de las ventanas**. Al abrir otra carpeta, la ventana de origen se cierra de forma predeterminada. Las ventanas sin una posición guardada se colocan [limitando la superposición](user-guide.md#colocación-de-ventanas).
+- **Gestionar las ventanas**. Mover o cambiar el tamaño de las ventanas mediante [gestos del ratón](user-guide.md#movimiento-y-cambio-de-tamaño). Guardar y volver a abrir [grupos de carpetas](user-guide.md#grupos-de-carpetas). [Bloquear la disposición de las ventanas](user-guide.md#bloqueo-del-estado-guardado).
+
 **Documentación:**
 
 [![Docs](https://img.shields.io/badge/Docs-Gu%C3%ADa%20de%20uso-blue)](user-guide.md)
 [![Docs](https://img.shields.io/badge/Docs-Historial%20de%20versiones-orange)](CHANGELOG.md)
-
-_FileSpacer es una bifurcación de [ChromaFiler](https://github.com/vanjac/chromafiler), creado originalmente por J. van’t Hoog. Consulta los [agradecimientos](#licencia-y-agradecimientos) más abajo para conocer los detalles._
-
-## Funciones
-
-- **Una ventana por carpeta**. [Se guardan](user-guide.md#navegación-entre-ventanas) la posición, el tamaño, el modo de vista y las posiciones de los iconos. Los iconos se pueden colocar libremente o alinear con la [cuadrícula clásica](user-guide.md#disposición-de-iconos).
-- **Organización automática de las ventanas**. Al abrir otra carpeta, la ventana de origen se cierra de forma predeterminada. Las ventanas sin una posición guardada se colocan [limitando la superposición](user-guide.md#colocación-de-ventanas).
-- **Gestionar las ventanas**. Mover o cambiar el tamaño de las ventanas mediante [gestos del ratón](user-guide.md#movimiento-y-cambio-de-tamaño). Guardar y volver a abrir [grupos de carpetas](user-guide.md#grupos-de-carpetas). [Bloquear la disposición de las ventanas](user-guide.md#bloqueo-del-estado-guardado).
 
 ## Integración
 

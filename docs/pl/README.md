@@ -27,18 +27,16 @@ FileSpacer stawia na lekkość i przejrzystość. Aby ograniczyć gromadzenie ok
 
 Pakiety WinGet i Chocolatey oczekują na zatwierdzenie w odpowiednich katalogach.
 
+## Funkcje
+
+- **Jedno okno na folder**. Położenie, rozmiar, tryb widoku i pozycje ikon [są zapamiętywane](user-guide.md#nawigacja-między-oknami). Ikony można rozmieszczać dowolnie lub wyrównywać do [klasycznej siatki](user-guide.md#układ-ikon).
+- **Rozmieszczanie okien**. Otwarcie innego folderu domyślnie zamyka okno źródłowe. Okna bez zapisanego położenia są rozmieszczane tak, aby [ograniczyć ich nakładanie się](user-guide.md#rozmieszczanie-okien).
+- **Zarządzanie oknami**. Przenoszenie i zmiana rozmiaru okien za pomocą [gestów myszy](user-guide.md#przenoszenie-i-zmiana-rozmiaru). Zapisywanie i ponowne otwieranie [grup folderów](user-guide.md#grupy-folderów). [Blokowanie układu okien](user-guide.md#blokowanie-zapisanego-układu).
+
 **Dokumentacja:**
 
 [![Dokumentacja](https://img.shields.io/badge/Docs-Instrukcja-blue)](user-guide.md)
 [![Dokumentacja](https://img.shields.io/badge/Docs-Historia-orange)](CHANGELOG.md)
-
-_FileSpacer jest forkiem [ChromaFiler](https://github.com/vanjac/chromafiler), pierwotnie utworzonego przez J. van't Hooga. Szczegóły w [podziękowaniach](#licencja-i-podziękowania)._
-
-## Funkcje
-
-- **Jedno okno na folder**. Położenie, rozmiar, tryb widoku i pozycje ikon [są zapamiętywane](user-guide.md#nawigacja-między-oknami). Ikony można rozmieszczać dowolnie lub wyrównywać do [klasycznej siatki](user-guide.md#układ-ikon).
-- **Automatyczne rozmieszczanie okien**. Otwarcie innego folderu domyślnie zamyka okno źródłowe. Okna bez zapisanego położenia są rozmieszczane tak, aby [ograniczyć ich nakładanie się](user-guide.md#rozmieszczanie-okien).
-- **Zarządzanie oknami**. Przenoszenie i zmiana rozmiaru okien za pomocą [gestów myszy](user-guide.md#przenoszenie-i-zmiana-rozmiaru). Zapisywanie i ponowne otwieranie [grup folderów](user-guide.md#grupy-folderów). [Blokowanie układu okien](user-guide.md#blokowanie-zapisanego-układu).
 
 ## Integracja
 

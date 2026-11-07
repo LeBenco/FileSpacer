@@ -28,18 +28,16 @@ FileSpacer privilegia un’esperienza leggera e ordinata. Per limitare l’accum
 
 I pacchetti WinGet e Chocolatey sono in attesa di approvazione nei rispettivi cataloghi.
 
+## Funzionalità
+
+- **Una finestra per ogni cartella**. Posizione, dimensioni, modalità di visualizzazione e posizioni delle icone [vengono memorizzate](user-guide.md#navigazione-tra-finestre). Le icone si possono disporre liberamente o allineare alla [griglia classica](user-guide.md#disposizione-delle-icone).
+- **Organizzazione delle finestre**. L’apertura di un’altra cartella chiude per impostazione predefinita la finestra di origine. Le finestre senza una posizione salvata vengono collocate [limitando la sovrapposizione](user-guide.md#posizionamento-delle-finestre).
+- **Gestire le finestre**. Spostare o ridimensionare le finestre con [gesti del mouse](user-guide.md#spostamento-e-ridimensionamento). Salvare e riaprire [gruppi di cartelle](user-guide.md#gruppi-di-cartelle). [Bloccare la disposizione delle finestre](user-guide.md#blocco-dello-stato-salvato).
+
 **Documentazione:**
 
 [![Docs](https://img.shields.io/badge/Docs-Guida%20all%E2%80%99uso-blue)](user-guide.md)
 [![Docs](https://img.shields.io/badge/Docs-Cronologia%20delle%20versioni-orange)](CHANGELOG.md)
-
-_FileSpacer è un fork di [ChromaFiler](https://github.com/vanjac/chromafiler), creato originariamente da J. van’t Hoog. Per i dettagli, vedi i [riconoscimenti](#licenza-e-riconoscimenti) qui sotto._
-
-## Funzionalità
-
-- **Una finestra per ogni cartella**. Posizione, dimensioni, modalità di visualizzazione e posizioni delle icone [vengono memorizzate](user-guide.md#navigazione-tra-finestre). Le icone si possono disporre liberamente o allineare alla [griglia classica](user-guide.md#disposizione-delle-icone).
-- **Organizzazione automatica delle finestre**. L’apertura di un’altra cartella chiude per impostazione predefinita la finestra di origine. Le finestre senza una posizione salvata vengono collocate [limitando la sovrapposizione](user-guide.md#posizionamento-delle-finestre).
-- **Gestire le finestre**. Spostare o ridimensionare le finestre con [gesti del mouse](user-guide.md#spostamento-e-ridimensionamento). Salvare e riaprire [gruppi di cartelle](user-guide.md#gruppi-di-cartelle). [Bloccare la disposizione delle finestre](user-guide.md#blocco-dello-stato-salvato).
 
 ## Integrazione
 
