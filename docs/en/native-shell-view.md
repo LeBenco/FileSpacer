@@ -8,9 +8,10 @@ see [Working on FileSpacer](README.md).
 
 `ShellViewHost` embeds `CLSID_ExplorerBrowser`. Windows owns enumeration,
 rendering, icons, view modes and file operations. `FolderWindow` owns spatial
-navigation policy and coordinates persistence. The production options are
-`FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING`, without forcing `FVO_VISTALAYOUT`;
-virtual folders can choose their initial presentation. `EBO_NOPERSISTVIEWSTATE`
+navigation policy and coordinates persistence. Eligible filesystem folders use
+`FVO_DEFAULT` for Details and List, and
+`FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING` for spatial presentations. Virtual
+folders can choose their initial presentation. `EBO_NOPERSISTVIEWSTATE`
 keeps per-folder persistence under FileSpacer's control.
 
 | Component | Responsibility |
@@ -22,9 +23,8 @@ keeps per-folder persistence under FileSpacer's control.
 | `ShellViewFilter` | Name filtering through `IFolderFilter`. |
 | `FolderStateStore` | Independently present state parts, transactions, locking and retention. |
 
-View operations use public COM interfaces. Exactly two narrow exceptions touch
-Shell-owned windows; both are optional implementation dependencies that fall
-back to native behavior when a prerequisite is missing:
+View operations use public COM interfaces, with three optional adaptations
+that fall back to native behavior when a prerequisite is missing:
 
 - Selected-label background (`ShellViewLabels.h`, described below): subclasses
   only the public view window returned by `IShellView::GetWindow`, reads
@@ -48,10 +48,32 @@ back to native behavior when a prerequisite is missing:
   about 3.7 s with the guard against about 162 s under the public interface
   alone, whose suspension the Shell resumed inside the batch. Group 18 covers
   this restoration.
+- Qualified selection capabilities (`ShellViewSelection`, described below):
+  optional private selection-cache access and a qualified native callback for
+  global Select All. Their absence retains public Shell selection operations.
 
-Do not generalize either exception to other view operations, which remain COM
+Do not generalize these exceptions to other view operations, which remain COM
 calls. Tests can inspect controls to observe a gesture; that instrumentation is
 not an application dependency.
+
+## Mouse gestures across Shell renderers
+
+The shared MSAA hit test recognizes both renderer families. Read-only text
+cells and passive List labels are resolved to their logical item; native
+editing controls, headers and scrollbars remain excluded from window gestures.
+UI Automation locates test targets from a separate worker, not from the
+application's GUI thread.
+
+Classic controls supply `WM_LBUTTONDBLCLK`. A renderer without `CS_DBLCLKS`
+recognizes double clicks itself, but a consumed first window-gesture press
+prevents that recognition. FileSpacer recognizes the second press using the
+Windows time and position limits, then requests native Properties through
+`IFolderView2::InvokeVerbOnSelection`. It does not replay mouse presses.
+The preparation preserves the renderer's focus/selection-mark behavior and
+Ctrl selection; Shift ranges use public folder-view selection because the
+modern MSAA provider rejects extended selection. Groups 15, 16 and 24 exercise
+the actual gestures and compare Properties, selection, focus and selection mark
+against the same Shell view with FileSpacer gestures disabled.
 
 ## Readiness, restoration and lifetime
 
@@ -240,6 +262,8 @@ paths that a successful real-view test cannot establish.
 
 - [IExplorerBrowser](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-iexplorerbrowser)
 - [IFolderView2](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-ifolderview2)
+- [IFolderView2::InvokeVerbOnSelection](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifolderview2-invokeverbonselection)
+- [MSAA selection flags](https://learn.microsoft.com/en-us/windows/win32/winauto/selflag)
 - [FOLDERVIEWOPTIONS](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl/ne-shobjidl-folderviewoptions)
 - [Native folder views](https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shcreateshellfolderview)
 - [Namespace junctions](https://learn.microsoft.com/en-us/windows/win32/shell/nse-junction)
