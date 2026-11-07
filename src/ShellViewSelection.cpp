@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <atomic>
+#include <algorithm>
 #include <commctrl.h>
 #pragma comment(lib, "Oleacc.lib")
 
@@ -249,6 +250,7 @@ LRESULT CALLBACK ShellSelectionClear::Binding::procedure(HWND window,UINT messag
 void initializeShellSelectionClear(const wchar_t *cacheRoot,bool background) { selectionDetail::initialize(cacheRoot,background); }
 void ShellSelectionClear::reset(){auto previous=std::move(binding);if(previous)previous->detach();}
 bool ShellSelectionClear::accelerated()const {const auto value=binding;return value && value->usable.load();}
+bool ShellSelectionClear::acceleratesSelectAll()const {const auto value=binding;return value && value->usable.load() && value->nativeProcedure;}
 uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value=binding;return value?value->selectAllCount:0;}
 
     bool ShellSelectionClear::backingBufferReleased(bool &known)const {
@@ -511,6 +513,43 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
     return result;
 }
 
+static HRESULT matchesViewItems(IFolderView2 *view, UINT flags,
+        const std::vector<CComHeapPtr<ITEMID_CHILD>> &wanted,
+        const std::function<bool()> &current) try {
+    int count = 0;
+    HRESULT result = view->ItemCount(flags, &count);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || count < 0 || static_cast<size_t>(count) != wanted.size()) return S_FALSE;
+    struct Identity { PCUIDLIST_RELATIVE item; UINT size; bool matched; };
+    std::vector<Identity> sorted;
+    sorted.reserve(wanted.size());
+    for (const auto &item : wanted) sorted.push_back({item, ILGetSize(item), false});
+    const auto less = [](const Identity &a, const Identity &b) {
+        return a.size != b.size ? a.size < b.size : std::memcmp(a.item, b.item, a.size) < 0;
+    };
+    std::sort(sorted.begin(), sorted.end(), less);
+    for (size_t i = 1; i < sorted.size(); ++i)
+        if (!less(sorted[i - 1], sorted[i])) return S_FALSE;
+    CComPtr<IEnumIDList> items;
+    result = view->Items(flags, IID_PPV_ARGS(&items));
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || !items) return S_FALSE;
+    for (int i = 0; i < count; ++i) {
+        CComHeapPtr<ITEMID_CHILD> item;
+        result = items->Next(1, &item, nullptr);
+        if (!current()) return E_ABORT;
+        if (result != S_OK || !item) return S_FALSE;
+        const Identity key = {item, ILGetSize(item), false};
+        const auto found = std::lower_bound(sorted.begin(), sorted.end(), key, less);
+        if (found == sorted.end() || less(key, *found) || found->matched) return S_FALSE;
+        found->matched = true;
+    }
+    CComHeapPtr<ITEMID_CHILD> extra;
+    result = items->Next(1, &extra, nullptr);
+    if (!current()) return E_ABORT;
+    return result == S_FALSE ? S_OK : S_FALSE;
+} catch (const std::bad_alloc &) { return S_FALSE; }
+
 HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         const std::function<bool()> &current, const ShellSelectionClear *clear) {
     std::vector<uint8_t> bytes;
@@ -608,7 +647,7 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
     int selectedCount = 0;
     result = folderView->ItemCount(SVGIO_SELECTION, &selectedCount);
     if (!current()) return E_ABORT;
-    const bool selectionCountKnown = SUCCEEDED(result) && selectedCount >= 0;
+    bool selectionCountKnown = SUCCEEDED(result) && selectedCount >= 0;
     bool sameSelection = selectionCountKnown
         && static_cast<uint32_t>(selectedCount) == header.selected;
     if (sameSelection) {
@@ -619,6 +658,41 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
             if (FAILED(result) || !(selection & SVSI_SELECT)) {
                 sameSelection = false;
                 break;
+            }
+        }
+    }
+    bool useBulkSelection = clear && clear->acceleratesSelectAll();
+    if (!sameSelection && !useBulkSelection && selectedItems.size() >= 128) {
+        FOLDERVIEWMODE mode = FVM_AUTO;
+        int iconSize = 0;
+        result = folderView->GetViewModeAndIconSize(&mode, &iconSize);
+        if (!current()) return E_ABORT;
+        if (SUCCEEDED(result)) {
+            useBulkSelection = mode != FVM_ICON && mode != FVM_SMALLICON;
+            if (!useBulkSelection) {
+                useBulkSelection = folderView->GetAutoArrange() == S_OK;
+                if (!current()) return E_ABORT;
+            }
+        }
+    }
+    if (!sameSelection && useBulkSelection && selectedItems.size() >= 128) {
+        CComQIPtr<IShellFolderView> bulk(view);
+        if (!current()) return E_ABORT;
+        if (bulk) {
+            result = matchesViewItems(folderView, SVGIO_ALLVIEW, selectedItems, current);
+            if (!current()) return E_ABORT;
+            if (result == S_OK) {
+                result = bulk->Select(SFVS_SELECT_ALLITEMS);
+                if (!current()) return E_ABORT;
+                // A failed or reentrant bulk operation may have changed the
+                // selection. Rebuild from identities unless its exact result
+                // matches, including when contents changed without a count change.
+                selectionCountKnown = false;
+                if (SUCCEEDED(result)) {
+                    result = matchesViewItems(folderView, SVGIO_SELECTION, selectedItems, current);
+                    if (!current()) return E_ABORT;
+                    sameSelection = result == S_OK;
+                }
             }
         }
     }
