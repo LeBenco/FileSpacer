@@ -2,6 +2,7 @@
 
 ## Non pubblicato
 
+- Velocizzare la lettura delle selezioni complete nelle viste a icone con posizionamento libero tramite le API pubbliche di Windows.
 - Attivare o disattivare globalmente le anteprime di Windows dal menu Visualizza.
 - Ripristinare la posizione di scorrimento di una cartella quando si riapre la sua finestra.
 - Posizionare le nuove finestre in base alle dimensioni e alla posizione normali delle finestre FileSpacer esistenti, comprese quelle ingrandite, ridotte a icona o affiancate.

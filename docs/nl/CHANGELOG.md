@@ -2,6 +2,7 @@
 
 ## Nog niet uitgebracht
 
+- Volledige selecties sneller uitlezen in pictogramweergaven met vrije plaatsing via openbare Windows-API’s.
 - De algemene Windows-instelling voor miniaturen wijzigen via het menu Beeld.
 - De schuifpositie van een map herstellen wanneer het venster opnieuw wordt geopend.
 - Nieuwe vensters plaatsen op basis van de normale grootte en positie van bestaande FileSpacer-vensters, ook wanneer deze gemaximaliseerd, geminimaliseerd of vastgemaakt zijn.

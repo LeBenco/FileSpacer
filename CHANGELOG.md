@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Speed up reading complete selections in freely positioned icon views through public Windows APIs.
 - Toggle the global Windows thumbnail setting from the View menu.
 - Restore the scroll position when reopening a folder window.
 - Place new windows using the normal size and position of existing FileSpacer windows, including maximized, minimized and snapped windows.
