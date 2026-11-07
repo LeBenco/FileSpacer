@@ -1,4 +1,5 @@
 ﻿$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Process.ps1')
 Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1') -ErrorAction Stop
 if ($env:OS -ne 'Windows_NT' -or ![Environment]::Is64BitProcess) { throw 'Windows x64 is required.' }
 if (!$env:FS_REGRESSION_PREPARED -and !(Get-Command cl.exe -ErrorAction SilentlyContinue)) { throw 'Run tests.cmd, or use an x64 MSVC developer prompt.' }
@@ -59,7 +60,17 @@ function Build-NativeTest {
     Invoke-Compiler $arguments | Out-Host
     return $exe
 }
+function Invoke-NativeProgram([string]$Executable,[string[]]$Arguments,[string]$OutputPath,[string]$ErrorPath) {
+    $job=Start-RecordedProcess -Executable $Executable -Arguments (Join-ProcessArguments $Arguments) -OutputPath $OutputPath -ErrorPath $ErrorPath
+    try {
+        $job.Process.WaitForExit()
+        return (Complete-RecordedProcess $job)
+    } finally { $job.Process.Dispose() }
+}
 function Invoke-TestProgram([string]$Executable,[string[]]$Arguments=@()) {
-    & $Executable @Arguments
-    if ($LASTEXITCODE -ne 0) { throw "Test failed: $Executable (exit $LASTEXITCODE)" }
+    $prefix=Join-Path $RunDirectory ('native-'+[Guid]::NewGuid().ToString('N'))
+    $code=Invoke-NativeProgram $Executable $Arguments ($prefix+'.stdout.log') ($prefix+'.stderr.log')
+    Get-Content -LiteralPath ($prefix+'.stdout.log')
+    [Console]::Error.Write([IO.File]::ReadAllText($prefix+'.stderr.log'))
+    if ($code -ne 0) { throw "Test failed: $Executable (exit $code)" }
 }
