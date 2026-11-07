@@ -55,7 +55,9 @@ std::vector<int> getTitleMenu() {
     std::vector<int> items;
     for (DWORD i = 1; i < bytes / sizeof(DWORD); ++i) {
         if (data[i] >= TITLE_ENTRY_COUNT) return defaultTitleMenu();
-        items.push_back(static_cast<int>(data[i]));
+        // Omit retired entries without discarding the rest of a saved composition.
+        if (validTitleMenuEntry(static_cast<int>(data[i])))
+            items.push_back(static_cast<int>(data[i]));
     }
     return validTitleMenu(items) ? items : defaultTitleMenu();
 }
