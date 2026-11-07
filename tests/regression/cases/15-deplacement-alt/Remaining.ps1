@@ -12,6 +12,7 @@ $references=@([System.Windows.Automation.AutomationElement].Assembly.Location,
 Add-Type -Path (Join-Path $PSScriptRoot 'MouseInput.cs') -ReferencedAssemblies $references
 Add-Type -Path (Join-Path $PSScriptRoot 'NativeTargets.cs') -ReferencedAssemblies @([ComponentModel.Win32Exception].Assembly.Location)
 if($Case -in @('DoubleAlt','DoubleAltMotion','QuickAccess')) { Add-Type -Path (Join-Path $PSScriptRoot 'WindowEvidence.cs') }
+if($Case -eq 'Scrollbar') { Add-Type -Path (Join-Path $PSScriptRoot '..\..\common\ViewLayout.cs') -ReferencedAssemblies $references }
 $testFailure=$null; $window=[IntPtr]::Zero; $properties=[IntPtr]::Zero
 $phase='initialization'; $list=[IntPtr]::Zero; $other=[IntPtr]::Zero
 $state=@{Status='RUNNING'; Case=$Case; Phase=$phase; Error=$null; Before=$null; After=$null;
@@ -55,16 +56,15 @@ function Wait-Idle {
     Wait-Ui { [FileSpacerRegression.AltDragInput]::Idle($window) } 'mouse capture and native move ended' 0 5
 }
 function Background-Point {
-    $r=[FileSpacerRegression.Native]::ClientBounds($viewWindow)
-    Assert-Ui ($r.Width -ge 200 -and $r.Height -ge 160) 'The Shell view is too small for the validated gesture.'
-    $p=Point-At ([int]($r.Left+$r.Width/2)) ([int]($r.Top+3*$r.Height/4))
-    if($list -ne [IntPtr]::Zero) { [FileSpacerRegression.NativeTargets]::Background($list,$p.X,$p.Y) }
-    return $p
+    return [FileSpacerRegression.AltDragInput]::BackgroundPoint($viewWindow)
 }
 function Item-Point([string]$Name,[bool]$Selected,[bool]$Cell=$false) {
-    Assert-Ui ($list -ne [IntPtr]::Zero) 'This item-specific case requires the native ListView observed in the validated configuration.'
     $index=Use-UiView $window {param($view) $view.IndexOf($Name)}
-    $native=[FileSpacerRegression.NativeTargets]::Item($list,$index,$itemCount,$Selected,$Cell)
+    $selectedNames=@(Use-UiView $window {param($view) $view.Selected()})
+    Assert-Ui ($index -ge 0 -and (($selectedNames -contains $Name) -eq $Selected)) 'Unexpected target item identity or selection.'
+    if($Cell -and $list -ne [IntPtr]::Zero) { $native=[FileSpacerRegression.NativeTargets]::Item($list,$index,$itemCount,$Selected,$true) }
+    elseif($Cell) { $native=[FileSpacerRegression.AltDragInput]::CellPoint($viewWindow,$Name) }
+    else { $native=[FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,$Name) }
     $state.Evidence.Target=@{Name=$Name; Index=$index; X=$native.X; Y=$native.Y; Cell=$Cell; Selected=$Selected}
     return Point-At $native.X $native.Y
 }
@@ -165,7 +165,7 @@ try {
     if($Case -eq 'Mode') {
         $phase='display mode setup'
         Use-UiView $window {param($view) $view.SetViewModeAndIconSize($ViewMode,$IconSize)}
-        Wait-Ui { Use-UiView $window {param($view) $view.Mode -eq $ViewMode -and ($IconSize -lt 0 -or $view.IconSize -eq $IconSize)} } 'requested mode and icon size applied' 300 5
+        Wait-UiViewMode $window $ViewMode $IconSize
         Assert-Ui ((Get-UiPreference 'FullNamesOnSelection') -eq [int]$FullNamesOnSelection) 'Requested appearance preference was not applied.'
     }
     $viewWindow=Use-UiView $window {param($view) $view.Window}
@@ -197,22 +197,30 @@ try {
             Assert-Ui ($state.Mode -eq 4) 'The initial display mode must be Details for the subitem-cell case.'
             $point=Item-Point 'OtherC' $false $true
         }
-        'Header' { $point=Control-Point (Get-UiControl $viewWindow 'SysHeader32') }
+        'Header' { $point=[FileSpacerRegression.AltDragInput]::HeaderPoint($viewWindow) }
         'Rename' {
             [FileSpacerRegression.Native]::Keys($window,0x71,$false,$false)
             Wait-Ui { @([FileSpacerRegression.Native]::Children($viewWindow,'Edit') | Where-Object { [FileSpacerRegression.Native]::IsWindowVisible($_) }).Count -eq 1 } 'native rename edit visible' 0 5
             $rename=Get-UiControl $viewWindow 'Edit'
             Assert-Ui ([FileSpacerRegression.Native]::Text($rename) -eq 'AnchorA') 'Rename edit is not editing the fixture item.'
-            $point=Control-Point $rename
+            $point=[FileSpacerRegression.AltDragInput]::RenamePoint($viewWindow)
         }
         'Toolbar' { $point=Toolbar-Point 'IDM_REFRESH' }
         'QuickAccess' { $point=Toolbar-Point 'IDM_QUICK_ACCESS' }
         'MenuButton' { $point=Toolbar-Point 'IDM_CONTEXT_MENU' }
         'Search' { $search=Get-UiSearchEdit $window; $searchText=[FileSpacerRegression.Native]::Text($search); $point=Control-Point $search }
         'Scrollbar' {
-            Assert-Ui ($list -ne [IntPtr]::Zero) 'The scrollbar case requires the validated native ListView.'
-            $state.Evidence.TopIndexBefore=[FileSpacerRegression.Native]::Message($list,0x1027,0,0)
-            $native=[FileSpacerRegression.NativeTargets]::VerticalThumb($list); $point=Point-At $native.X $native.Y
+            $state.Evidence.ScrollPercentBefore=[FileSpacerRegression.ViewLayout]::VerticalScrollPercent($viewWindow,[int]$script:targetProcessId)
+            if($list -ne [IntPtr]::Zero) { $native=[FileSpacerRegression.NativeTargets]::VerticalThumb($list) }
+            else {
+                $bars=@([FileSpacerRegression.Native]::Children($viewWindow,'ScrollBar') | Where-Object {
+                    $bounds=[FileSpacerRegression.Native]::Bounds($_)
+                    [FileSpacerRegression.Native]::IsWindowVisible($_) -and $bounds.Height -gt $bounds.Width
+                })
+                Assert-Ui ($bars.Count -eq 1) 'Expected one visible vertical scrollbar control.'
+                $native=[FileSpacerRegression.NativeTargets]::VerticalThumb($bars[0],-4)
+            }
+            $point=Point-At $native.X $native.Y
         }
         default { $point=Background-Point }
     }
@@ -252,7 +260,6 @@ try {
                 Use-UiView $window {param($view) $view.Focus(); $view.Select('AnchorA')}
                 Assert-UiSelected $window 'AnchorA'
                 $viewWindow=Use-UiView $window {param($view) $view.Window}
-                $list=Get-UiControl $viewWindow 'SysListView32'
                 $itemCount=1; $expectedNames='AnchorA'; $expectedSelection='AnchorA'
                 $state.SelectionBefore=@(Use-UiView $window {param($view) $view.Selected()})
                 $point=Item-Point 'AnchorA' $true
@@ -362,6 +369,7 @@ try {
             Observe-Fixed $before
             [FileSpacerRegression.AltDragInput]::VerifyHeld($true)
             if($Case -eq 'Scrollbar') { $destination=Point-At $point.X ($point.Y+72) }
+            elseif($Case -eq 'Rename') { $destination=[FileSpacerRegression.AltDragInput]::RenamePoint($viewWindow,$true) }
             elseif($Case -eq 'QuickAccess') {
                 # A live popup can contain real user folders. Move to an exposed
                 # HTCAPTION point, not across its entries, and do not click there.
@@ -396,7 +404,7 @@ try {
                 Wait-Ui { ![FileSpacerRegression.Native]::IsWindow($rename) -or ![FileSpacerRegression.Native]::IsWindowVisible($rename) } 'rename cancelled without renaming' 0 5
             }
             if($Case -eq 'Scrollbar') {
-                Wait-Ui { [FileSpacerRegression.Native]::Message($list,0x1027,0,0) -gt $state.Evidence.TopIndexBefore } 'native scrollbar scrolled the list without moving the window' 200 5
+                Wait-Ui { [FileSpacerRegression.ViewLayout]::VerticalScrollPercent($viewWindow,[int]$script:targetProcessId) -gt $state.Evidence.ScrollPercentBefore } 'native scrollbar scrolled the view without moving the window' 200 5
             }
             if($Case -eq 'Search') { Assert-Ui ([FileSpacerRegression.Native]::Text($search) -eq $searchText) 'Alt-drag changed the search query.' }
         }
