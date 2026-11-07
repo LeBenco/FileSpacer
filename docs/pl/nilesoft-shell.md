@@ -101,7 +101,6 @@ item(type='*' mode='multiple' where=filespacer_title
 | --- | ---: |
 | Przywróć zablokowany układ | 1123 |
 | Zastąp układ odniesienia | 1124 |
-| Zapomnij układ tego folderu | 1125 |
 | Zamknij okna podrzędne | 1126 |
 | Zamknij pozostałe okna | 1127 |
 | Dopasuj okno do zawartości | 1128 |

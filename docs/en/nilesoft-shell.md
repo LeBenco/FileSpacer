@@ -87,7 +87,6 @@ item(type='*' mode='multiple' where=filespacer_title
 | --- | ---: |
 | Restore the locked layout | 1123 |
 | Replace the reference layout | 1124 |
-| Forget this folder’s layout | 1125 |
 | Close descendant windows | 1126 |
 | Close other windows | 1127 |
 | Fit the window to its contents | 1128 |

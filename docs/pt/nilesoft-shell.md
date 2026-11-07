@@ -87,7 +87,6 @@ item(type='*' mode='multiple' where=filespacer_title
 | --- | ---: |
 | Repor a disposição bloqueada | 1123 |
 | Substituir a disposição de referência | 1124 |
-| Esquecer a disposição desta pasta | 1125 |
 | Fechar janelas de subpastas | 1126 |
 | Fechar as outras janelas | 1127 |
 | Ajustar a janela ao conteúdo | 1128 |
