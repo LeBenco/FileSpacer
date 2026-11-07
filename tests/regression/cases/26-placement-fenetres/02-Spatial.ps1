@@ -1,6 +1,34 @@
 # Test-Category: UI
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
 . (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
+Add-Type -TypeDefinition @'
+using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+public static class PlacementSnap {
+    [StructLayout(LayoutKind.Sequential)] struct Keyboard {
+        public ushort Key,Scan; public uint Flags,Time; public UIntPtr Extra;
+    }
+    [StructLayout(LayoutKind.Explicit,Size=32)] struct InputUnion {
+        [FieldOffset(0)] public Keyboard Keyboard;
+    }
+    [StructLayout(LayoutKind.Sequential)] struct Input { public uint Type; public InputUnion Data; }
+    [DllImport("user32.dll",SetLastError=true)] static extern uint SendInput(uint count,Input[] inputs,int size);
+    [DllImport("user32.dll")] public static extern bool IsWindowArranged(IntPtr window);
+    static Input Key(ushort key,uint flags) {
+        var input=new Input(); input.Type=1; input.Data.Keyboard.Key=key;
+        input.Data.Keyboard.Flags=flags; return input;
+    }
+    public static void Left() {
+        var inputs=new Input[]{Key(0x5b,0),Key(0x25,1),Key(0x25,3),Key(0x5b,2)};
+        if(SendInput(4,inputs,Marshal.SizeOf(typeof(Input)))!=4) {
+            int error=Marshal.GetLastWin32Error();
+            SendInput(2,new Input[]{Key(0x25,3),Key(0x5b,2)},Marshal.SizeOf(typeof(Input)));
+            throw new Win32Exception(error,"Snap input incomplete.");
+        }
+    }
+}
+'@
 $testFailure=$null
 $script:PlacementConfirmation=[IntPtr]::Zero
 function Set-PlacementRect([IntPtr]$Window,[int]$X,[int]$Y) {
@@ -69,17 +97,45 @@ try {
     Press-UiSettings 5
     Write-Host 'PASS: default placement option, Cancel/Apply, maintenance moved to About without clipping.'
 
-    [void][FileSpacerRegression.Native]::Message($parent,0x112,0xf020,0)
-    Wait-Ui { ([FileSpacerRegression.Native]::Style($parent,-16) -band 0x20000000) -ne 0 } 'parent minimized'
     $third=Open-UiFolder $thirdPath 0
-    $thirdRect=[FileSpacerRegression.Native]::Bounds($third)
-    Assert-Ui ($thirdRect.Left -eq $work.Left -and $thirdRect.Top -eq $work.Top) 'Minimized parent still occupies its former position.'
+    $reference=[FileSpacerRegression.Native]::Bounds($third)
+    Assert-Ui ((Overlap-Area $reference $parentRect) -eq 0 -and (Overlap-Area $reference $otherRect) -eq 0) 'Reference placement is not free.'
     Close-UiFolder $third
-    [void][FileSpacerRegression.Native]::Message($parent,0x112,0xf120,0)
-    Wait-Ui { ([FileSpacerRegression.Native]::Style($parent,-16) -band 0x20000000) -eq 0 } 'parent restored'
+    foreach ($mode in @('maximized','minimized','maximized-minimized','snapped')) {
+        if ($mode -in @('maximized','maximized-minimized')) {
+            [void][FileSpacerRegression.Native]::Message($parent,0x112,0xf030,0)
+            Wait-Ui { ([FileSpacerRegression.Native]::Style($parent,-16) -band 0x01000000) -ne 0 } 'parent maximized'
+        }
+        if ($mode -in @('minimized','maximized-minimized')) {
+            [void][FileSpacerRegression.Native]::Message($parent,0x112,0xf020,0)
+            Wait-Ui { ([FileSpacerRegression.Native]::Style($parent,-16) -band 0x20000000) -ne 0 } 'parent minimized'
+        }
+        if ($mode -eq 'snapped') {
+            Activate-Ui $parent
+            [PlacementSnap]::Left()
+            Wait-Ui { [PlacementSnap]::IsWindowArranged($parent) } 'parent snapped by Windows'
+        }
+        $probePath=Join-Path $script:UiRoot ('Third-'+$mode)
+        [void][IO.Directory]::CreateDirectory($probePath)
+        $third=Open-UiFolder $probePath 0
+        $actual=[FileSpacerRegression.Native]::Bounds($third)
+        Assert-Ui ($actual.Left -eq $reference.Left -and $actual.Top -eq $reference.Top -and $actual.Width -eq $reference.Width -and $actual.Height -eq $reference.Height) ('Placement changed with parent state: '+$mode)
+        Close-UiFolder $third
+        [void][FileSpacerRegression.Native]::Message($parent,0x112,0xf120,0)
+        if (([FileSpacerRegression.Native]::Style($parent,-16) -band 0x01000000) -ne 0) {
+            [void][FileSpacerRegression.Native]::Message($parent,0x112,0xf120,0)
+        }
+        Wait-Ui {
+            $r=[FileSpacerRegression.Native]::Bounds($parent)
+            return (([FileSpacerRegression.Native]::Style($parent,-16) -band 0x21000000) -eq 0 -and ![PlacementSnap]::IsWindowArranged($parent) -and $r.Left -eq $parentRect.Left -and $r.Top -eq $parentRect.Top -and $r.Width -eq $parentRect.Width -and $r.Height -eq $parentRect.Height)
+        } ('parent restored after '+$mode)
+        Write-Host ('PASS: '+$mode+' parent contributes the same normal geometry across processes.')
+    }
     Set-PlacementRect $parent ($work.Left+20) ($work.Top+20)
     Set-PlacementRect $other ($work.Left+$script:PlacementWidth+40) ($work.Top+$script:PlacementHeight+40)
     $sourceRect=[FileSpacerRegression.Native]::Bounds($parent)
+    [void][FileSpacerRegression.Native]::Message($parent,0x112,0xf030,0)
+    Wait-Ui { ([FileSpacerRegression.Native]::Style($parent,-16) -band 0x01000000) -ne 0 } 'replacement source maximized'
     Activate-Ui $parent
     Use-UiView $parent { param($view) $view.Select('Child'); $view.Focus() }
     [FileSpacerRegression.Native]::Keys($parent,0x0d,$false,$false)
@@ -87,7 +143,7 @@ try {
     Wait-Ui { ![FileSpacerRegression.Native]::IsWindow($parent) } 'automatic source closure'
     $childRect=[FileSpacerRegression.Native]::Bounds($child)
     Assert-Ui ($childRect.Left -eq $sourceRect.Left -and $childRect.Top -eq $sourceRect.Top) 'Replacement placement counted the closing source.'
-    Write-Host 'PASS: minimized windows ignored; spatial replacement reuses the withdrawn source position.'
+    Write-Host 'PASS: spatial replacement reuses the normal position of the maximized withdrawn source.'
 
     Close-UiFolder $child
     Set-PlacementRect $other $childRect.Left $childRect.Top
