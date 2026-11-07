@@ -5,6 +5,7 @@
 #include <shlobj.h>
 #include <shldisp.h>
 #include <shdispid.h>
+#include <propkey.h>
 #include <atlbase.h>
 #include <algorithm>
 #include <cstdio>
@@ -134,6 +135,21 @@ std::vector<std::wstring> arrayPaths(IShellItemArray *array) {
     for(DWORD i=0;i<count;++i){CComPtr<IShellItem> item;need(SUCCEEDED(array->GetItemAt(i,&item)),"Short selection array");names.push_back(itemPath(item));}
     std::sort(names.begin(),names.end());return names;
 }
+#ifdef FILESPACER_SELECTION_PRODUCT_TEST
+void waitSelectedIdentities(IFolderView2 *view,const std::vector<std::wstring> &wanted) {
+    const ULONGLONG deadline=GetTickCount64()+5000;ULONGLONG stable=0;
+    do {
+        int before=-1,after=-1;CComPtr<IShellItemArray> selected;
+        const bool matches=SUCCEEDED(view->ItemCount(SVGIO_SELECTION,&before))&&before==static_cast<int>(wanted.size())
+            &&SUCCEEDED(view->GetSelection(FALSE,&selected))&&selected&&arrayPaths(selected)==wanted
+            &&SUCCEEDED(view->ItemCount(SVGIO_SELECTION,&after))&&after==before;
+        if(matches){if(!stable)stable=GetTickCount64();if(GetTickCount64()-stable>=100)return;}
+        else stable=0;
+        pump(10);
+    }while(GetTickCount64()<deadline);
+    need(false,"Selection count and identities did not settle after the action");
+}
+#endif
 void checkState(IFolderView2 *view,IShellView *shell,IShellFolder *folder,const wchar_t *path,
         const std::vector<PCUITEMID_CHILD> &ids,const std::vector<std::wstring> &wanted) {
     int count=-1;const HRESULT counted=view->ItemCount(SVGIO_SELECTION,&count);
@@ -228,6 +244,17 @@ void runClear(const std::wstring &output,const wchar_t *path) {
         if(hasPositions)for(size_t i=1;i<positionIndices.size();++i)need(SUCCEEDED(view->GetItemPosition(ids[positionIndices[i]],&positions[i])),"Position capture failed");
         const DWORD focusOnly=static_cast<DWORD>(SVSI_FOCUSED)|static_cast<DWORD>(SVSI_NOTAKEFOCUS);
         const DWORD selectNoFocus=static_cast<DWORD>(SVSI_SELECT)|static_cast<DWORD>(SVSI_NOTAKEFOCUS);
+#ifdef FILESPACER_SELECTION_PRODUCT_TEST
+        const bool selectAllOnly=GetEnvironmentVariableW(L"FS_SELECTION_ALL_ONLY",nullptr,0)!=0;
+        CComQIPtr<IShellFolderView> bulk(shell);
+        const auto checkAll=[&]{waitSelectedIdentities(view,wanted);checkState(view,shell,folder,path,ids,wanted);};
+        if(selectAllOnly) {
+            std::puts("SELECT_PHASE native-baseline");std::fflush(stdout);
+            need(bulk&&SUCCEEDED(bulk->Select(SFVS_SELECT_ALLITEMS)),"Native all-selection baseline failed");
+            checkAll();
+            need(SUCCEEDED(shell->SelectItem(nullptr,SVSI_DESELECTOTHERS)),"Native all-selection baseline clear failed");
+        }
+#endif
         need(SUCCEEDED(shell->SelectItem(ids[7],focusOnly)),"Cannot seed independent focus");
         const HWND keyboard=GetFocus();
         filespacer::ShellSelectionClear accelerated, fallback;
@@ -236,6 +263,47 @@ void runClear(const std::wstring &output,const wchar_t *path) {
         accelerated.bind(shell,current);
         std::printf("BIND %s binding_ms=%.3f\n",mode.name,clockMs()-bindStarted);
         std::printf("VIEW %s private_available=%d mode=%d icon_size=%d\n",mode.name,accelerated.accelerated(),actual,size);std::fflush(stdout);
+#ifdef FILESPACER_SELECTION_PRODUCT_TEST
+        if(selectAllOnly) {
+            std::puts("SELECT_PHASE candidate-all");std::fflush(stdout);
+            const double started=clockMs();
+            need(SUCCEEDED(bulk->Select(SFVS_SELECT_ALLITEMS)),"Global select through product binding failed");
+            const double elapsed=clockMs()-started;
+            const bool expected=selectionDiscovery::image().selectAllSupported;
+            need(accelerated.acceleratedSelectAllCount()==(expected?1u:0u),"Wrong global-selection backend used");
+            checkAll();
+            int focused=-1;CComHeapPtr<ITEMID_CHILD> focusedId;
+            need(SUCCEEDED(view->GetFocusedItem(&focused))&&focused>=0&&SUCCEEDED(view->Item(focused,&focusedId))
+                &&ILIsEqual(focusedId,ids[7])&&GetFocus()==keyboard,"Global selection changed focus");
+            if(hasPositions)for(size_t i=0;i<positionIndices.size();++i){POINT currentPosition={};
+                need(SUCCEEDED(view->GetItemPosition(ids[positionIndices[i]],&currentPosition))&&currentPosition.x==positions[i].x
+                    &&currentPosition.y==positions[i].y,"Global selection changed positions");}
+            CComPtr<IShellItemArray> retained;
+            need(SUCCEEDED(view->GetSelection(FALSE,&retained)),"No retained global selection snapshot");
+            const SORTCOLUMN sort={PKEY_ItemNameDisplay,SORT_DESCENDING};
+            std::puts("SELECT_PHASE sort");std::fflush(stdout);
+            need(SUCCEEDED(view->SetSortColumns(&sort,1)),"Global selection sort failed");
+            checkAll();
+            need(SUCCEEDED(accelerated.clear(shell,current)),"Global selection subsequent clear failed");
+            std::puts("SELECT_PHASE post-sort-clear");std::fflush(stdout);
+            checkState(view,shell,folder,path,ids,{});
+            need(arrayPaths(retained)==wanted,"Global clear corrupted retained snapshot");
+            need(SUCCEEDED(shell->SelectItem(ids[7],selectNoFocus)),"Partial selection setup failed");
+            std::puts("SELECT_PHASE partial-to-all");std::fflush(stdout);
+            const uint64_t before=accelerated.acceleratedSelectAllCount();
+            need(SUCCEEDED(bulk->Select(SFVS_SELECT_ALLITEMS))&&accelerated.acceleratedSelectAllCount()==before,
+                "Partial-selection fallback did not stay native");
+            checkAll();
+            need(SUCCEEDED(accelerated.clear(shell,current)),"Partial-selection fallback clear failed");
+            accelerated.reset();
+            std::puts("SELECT_PHASE detached-all");std::fflush(stdout);
+            need(SUCCEEDED(bulk->Select(SFVS_SELECT_ALLITEMS)),"Detached global-selection fallback failed");
+            checkAll();
+            std::printf("SELECT_ALL view=%s count=%d private_applied=%d api_ms=%.3f identities=PASS caches=PASS payload=PASS sort=PASS focus=PASS fallback=PASS\n",
+                mode.name,fixtureCount,expected,elapsed);std::fflush(stdout);
+            continue;
+        }
+#endif
 #ifdef FILESPACER_SELECTION_DISCOVERY_TEST
         const bool smoke=GetEnvironmentVariableW(L"FS_SELECTION_SMOKE",nullptr,0)!=0;
         wchar_t smokeCount[16]={};GetEnvironmentVariableW(L"FS_SELECTION_SMOKE",smokeCount,_countof(smokeCount));
