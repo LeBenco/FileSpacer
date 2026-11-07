@@ -1,4 +1,5 @@
 #include "ShellViewSelection.h"
+#include "MixedFolder.h"
 #include "ShellSelectionRuntime.h"
 #include <atlbase.h>
 #include <shlobj.h>
@@ -390,6 +391,135 @@ static bool isFreeIconView(IFolderView *view, const std::function<bool()> &curre
     if (!current() || FAILED(result) || (mode != FVM_ICON && mode != FVM_SMALLICON)) return false;
     const HRESULT arranged = view->GetAutoArrange();
     return current() && arranged == S_FALSE;
+}
+
+HRESULT captureCompleteSpatialSelection(IFolderView2 *view, const std::function<bool()> &current,
+        IShellItemArray **out) try {
+    if (!view || !out) return E_POINTER;
+    CComPtr<IFolderView2> keepView(view);
+    *out = nullptr;
+    if (!current()) return E_ABORT;
+    UINT mode = 0;
+    HRESULT result = view->GetCurrentViewMode(&mode);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || (mode != FVM_ICON && mode != FVM_SMALLICON)) return S_FALSE;
+    result = view->GetAutoArrange();
+    if (!current()) return E_ABORT;
+    if (result != S_FALSE) return S_FALSE;
+    PROPERTYKEY group = {}; BOOL ascending = FALSE;
+    result = view->GetGroupBy(&group, &ascending);
+    if (!current()) return E_ABORT;
+    if (result != S_FALSE) return S_FALSE;
+    int count = 0, selected = 0, focused = -1;
+    result = view->ItemCount(SVGIO_ALLVIEW, &count);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || count < 128) return S_FALSE;
+    result = view->ItemCount(SVGIO_SELECTION, &selected);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || selected != count) return S_FALSE;
+    result = view->GetFocusedItem(&focused);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || focused < 0 || focused >= count) return S_FALSE;
+    using OwnedId = std::unique_ptr<ITEMID_CHILD, decltype(&CoTaskMemFree)>;
+    struct Entry { PCUITEMID_CHILD id; POINT position; int index; };
+    std::vector<OwnedId> owned;
+    std::vector<Entry> entries;
+    std::unordered_set<uint64_t> positions;
+    positions.reserve(static_cast<size_t>(count));
+    owned.reserve(static_cast<size_t>(count)); entries.reserve(static_cast<size_t>(count));
+    for (int i = 0; i < count; ++i) {
+        CComHeapPtr<ITEMID_CHILD> id;
+        result = view->Item(i, &id);
+        if (!current()) return E_ABORT;
+        if (FAILED(result) || !id) return S_FALSE;
+        POINT position = {};
+        result = view->GetItemPosition(id, &position);
+        if (!current()) return E_ABORT;
+        if (FAILED(result)) return S_FALSE;
+        const uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(position.x)) << 32)
+            | static_cast<uint32_t>(position.y);
+        if (!positions.emplace(key).second) return S_FALSE;
+        // Equal selected/all counts on both sides authorize only the complete set.
+        owned.emplace_back(id.Detach(), &CoTaskMemFree);
+        entries.push_back({owned.back().get(), position, i});
+    }
+    std::sort(entries.begin(), entries.end(), [](const Entry &a, const Entry &b) {
+        return a.position.x != b.position.x ? a.position.x < b.position.x : a.position.y < b.position.y;
+    });
+    const auto first = std::find_if(entries.begin(), entries.end(), [&](const Entry &entry) {
+        return entry.index == focused;
+    });
+    std::rotate(entries.begin(), first, entries.end());
+    std::vector<PCUITEMID_CHILD> ids;
+    ids.reserve(entries.size());
+    for (const auto &entry : entries) ids.push_back(entry.id);
+    CComPtr<IShellFolder> folder;
+    result = view->GetFolder(IID_PPV_ARGS(&folder));
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || !folder) return S_FALSE;
+    CComPtr<IShellItemArray> array;
+    result = SHCreateShellItemArray(nullptr, folder, static_cast<UINT>(ids.size()), ids.data(), &array);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || !array) return S_FALSE;
+    int allAfter = 0, selectedAfter = 0, focusAfter = -1;
+    result = view->ItemCount(SVGIO_ALLVIEW, &allAfter);
+    if (!current()) return E_ABORT;
+    if (FAILED(result)) return S_FALSE;
+    result = view->ItemCount(SVGIO_SELECTION, &selectedAfter);
+    if (!current()) return E_ABORT;
+    if (FAILED(result)) return S_FALSE;
+    result = view->GetFocusedItem(&focusAfter);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || allAfter != count || selectedAfter != count || focusAfter != focused) return S_FALSE;
+    return array.CopyTo(out);
+} catch (const std::bad_alloc &) {
+    return E_OUTOFMEMORY;
+}
+
+HRESULT nativeViewSelection(IFolderView2 *view, BOOL noneMeansFolder, IShellItemArray **out,
+        const std::function<bool()> &current) {
+    if (!view || !out) return E_POINTER;
+    *out = nullptr;
+    CComPtr<IFolderView2> keepView(view);
+    const auto valid = [&] { return !current || current(); };
+    if (!valid()) return E_ABORT;
+    CComPtr<IShellItemArray> selected;
+    HRESULT hr = current ? captureCompleteSpatialSelection(view, current, &selected) : S_FALSE;
+    if (hr == E_ABORT || !valid()) return E_ABORT;
+    if (hr != S_OK) {
+        hr = view->GetSelection(noneMeansFolder, &selected);
+        if (!valid()) return E_ABORT;
+    }
+    if (FAILED(hr) || !selected) return hr;
+    CComPtr<IShellFolder> folder;
+    CComPtr<IMixedFolder> mixed;
+    hr = view->GetFolder(IID_PPV_ARGS(&folder));
+    if (!valid()) return E_ABORT;
+    if (SUCCEEDED(hr) && folder) hr = folder->QueryInterface(IID_PPV_ARGS(&mixed));
+    if (!valid()) return E_ABORT;
+    if (FAILED(hr) || !mixed)
+        return selected.CopyTo(out);
+    DWORD count = 0;
+    hr = selected->GetCount(&count);
+    if (!valid()) return E_ABORT;
+    if (FAILED(hr)) return hr;
+    std::vector<CComHeapPtr<ITEMIDLIST_ABSOLUTE>> owned(count);
+    std::vector<PCIDLIST_ABSOLUTE> ids(count);
+    for (DWORD i = 0; i < count; ++i) {
+        CComPtr<IShellItem> item, native;
+        hr = selected->GetItemAt(i, &item);
+        if (!valid()) return E_ABORT;
+        if (SUCCEEDED(hr)) hr = nativeShellItem(item, &native);
+        if (!valid()) return E_ABORT;
+        if (SUCCEEDED(hr)) hr = SHGetIDListFromObject(native, &owned[i]);
+        if (!valid()) return E_ABORT;
+        if (FAILED(hr)) return hr;
+        ids[i] = owned[i];
+    }
+    CComPtr<IShellItemArray> converted;
+    hr = SHCreateShellItemArrayFromIDLists(count, ids.data(), &converted);
+    if (!valid()) return E_ABORT;
+    return FAILED(hr) ? hr : converted.CopyTo(out);
 }
 
 HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &current,
