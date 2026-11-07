@@ -1,87 +1,22 @@
 // Investigation only: public replacement for a complete free-layout selection array.
 #define RESTORE_PATH_DRIVER
 #include "RestoreAllTests.cpp"
-#include <unordered_set>
+#include "MixedFolder.h"
 
 namespace {
-HRESULT completeSpatialArray(IFolderView2 *view, const std::function<bool()> &current,
-        IShellItemArray **out) {
-    *out = nullptr;
-    if (!current()) return E_ABORT;
-    UINT mode = 0;
-    HRESULT result = view->GetCurrentViewMode(&mode);
-    if (!current()) return E_ABORT;
-    if (FAILED(result) || (mode != FVM_ICON && mode != FVM_SMALLICON)) return S_FALSE;
-    result = view->GetAutoArrange();
-    if (!current()) return E_ABORT;
-    if (result != S_FALSE) return S_FALSE;
-    PROPERTYKEY group = {}; BOOL ascending = FALSE;
-    result = view->GetGroupBy(&group, &ascending);
-    if (!current()) return E_ABORT;
-    if (result != S_FALSE) return S_FALSE;
-    int count = 0, selected = 0, focused = -1;
-    result = view->ItemCount(SVGIO_ALLVIEW, &count);
-    if (!current()) return E_ABORT;
-    if (FAILED(result) || count < 128) return S_FALSE;
-    result = view->ItemCount(SVGIO_SELECTION, &selected);
-    if (!current()) return E_ABORT;
-    if (FAILED(result) || selected != count) return S_FALSE;
-    result = view->GetFocusedItem(&focused);
-    if (!current()) return E_ABORT;
-    if (FAILED(result) || focused < 0 || focused >= count) return S_FALSE;
-    struct Entry { PCUITEMID_CHILD id; POINT position; int index; };
-    std::vector<OwnedId> owned;
-    std::vector<Entry> entries;
-    std::unordered_set<uint64_t> positions;
-    positions.reserve(static_cast<size_t>(count));
-    owned.reserve(static_cast<size_t>(count)); entries.reserve(static_cast<size_t>(count));
-    for (int i = 0; i < count; ++i) {
-        CComHeapPtr<ITEMID_CHILD> id;
-        result = view->Item(i, &id);
-        if (!current()) return E_ABORT;
-        if (FAILED(result) || !id) return S_FALSE;
-        POINT position = {};
-        result = view->GetItemPosition(id, &position);
-        if (!current()) return E_ABORT;
-        if (FAILED(result)) return S_FALSE;
-        const uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(position.x)) << 32)
-            | static_cast<uint32_t>(position.y);
-        if (!positions.emplace(key).second) return S_FALSE;
-        // Equal selected/all counts on both sides authorize only the complete set.
-        owned.emplace_back(id.Detach(), &CoTaskMemFree);
-        entries.push_back({owned.back().get(), position, i});
+ULONGLONG selectionSize(IShellItemArray *array) {
+    DWORD count = 0;
+    need(SUCCEEDED(array->GetCount(&count)), "No status selection count");
+    ULONGLONG bytes = 0;
+    for (DWORD i = 0; i < count; ++i) {
+        CComPtr<IShellItem> item; ULONGLONG size = 0;
+        need(SUCCEEDED(array->GetItemAt(i, &item)), "Missing status item");
+        CComQIPtr<IShellItem2> properties(item);
+        need(properties && SUCCEEDED(properties->GetUInt64(PKEY_Size, &size)), "Missing status size");
+        bytes += size;
     }
-    std::sort(entries.begin(), entries.end(), [](const Entry &a, const Entry &b) {
-        return a.position.x != b.position.x ? a.position.x < b.position.x : a.position.y < b.position.y;
-    });
-    const auto first = std::find_if(entries.begin(), entries.end(), [&](const Entry &entry) {
-        return entry.index == focused;
-    });
-    std::rotate(entries.begin(), first, entries.end());
-    std::vector<PCUITEMID_CHILD> ids;
-    ids.reserve(entries.size());
-    for (const auto &entry : entries) ids.push_back(entry.id);
-    CComPtr<IShellFolder> folder;
-    result = view->GetFolder(IID_PPV_ARGS(&folder));
-    if (!current()) return E_ABORT;
-    if (FAILED(result) || !folder) return S_FALSE;
-    CComPtr<IShellItemArray> array;
-    result = SHCreateShellItemArray(nullptr, folder, static_cast<UINT>(ids.size()), ids.data(), &array);
-    if (!current()) return E_ABORT;
-    if (FAILED(result) || !array) return S_FALSE;
-    int allAfter = 0, selectedAfter = 0, focusAfter = -1;
-    result = view->ItemCount(SVGIO_ALLVIEW, &allAfter);
-    if (!current()) return E_ABORT;
-    if (FAILED(result)) return S_FALSE;
-    result = view->ItemCount(SVGIO_SELECTION, &selectedAfter);
-    if (!current()) return E_ABORT;
-    if (FAILED(result)) return S_FALSE;
-    result = view->GetFocusedItem(&focusAfter);
-    if (!current()) return E_ABORT;
-    if (FAILED(result) || allAfter != count || selectedAfter != count || focusAfter != focused) return S_FALSE;
-    return array.CopyTo(out);
+    return bytes;
 }
-
 std::vector<std::wstring> orderedArrayPaths(IShellItemArray *array) {
     DWORD count = 0;
     need(array && SUCCEEDED(array->GetCount(&count)), "No array count");
@@ -155,13 +90,19 @@ void selectionArrays(const wchar_t *fixture) {
                 const bool reference = (arm == 0) == (repetition % 2 == 0);
                 const double began = clockMs();
                 if (reference) {
-                    need(view->GetSelection(FALSE, &native) == S_OK && native, "No first native array");
+                    need(filespacer::nativeViewSelection(view, FALSE, &native) == S_OK && native, "No first native array");
                     nativeMs = clockMs() - began;
                 } else {
-                    need(completeSpatialArray(view, current, &candidate) == S_OK && candidate, "Complete candidate was not applied");
+                    need(filespacer::nativeViewSelection(view, FALSE, &candidate, current) == S_OK && candidate, "Integrated candidate failed");
                     candidateMs = clockMs() - began;
                 }
+                need(selectionSize(reference ? native.p : candidate.p) == 318120, "Status byte total differs");
+                std::printf("STATUS mode=%s focus=%d rep=%d arm=%s total_ms=%.3f bytes=318120\n",
+                    mode.name, focus, repetition, reference ? "native" : "integrated", clockMs() - began);
             }
+            CComPtr<IShellItemArray> qualified;
+            need(filespacer::captureCompleteSpatialSelection(view, current, &qualified) == S_OK && qualified,
+                "Complete selection did not qualify for the integrated fast path");
             compareArrays(candidate, native);
             const auto wanted = orderedArrayPaths(native);
             int actualFocus = -1;
@@ -179,21 +120,33 @@ void selectionArrays(const wchar_t *fixture) {
             CComPtr<IShellItemArray> before, after, rejected;
             const HRESULT observed = view->GetSelection(FALSE, &before);
             const double began = clockMs();
-            need(completeSpatialArray(view, current, &rejected) == S_FALSE && !rejected, "Unsupported case did not retain native access");
+            need(filespacer::captureCompleteSpatialSelection(view, current, &rejected) == S_FALSE && !rejected, "Unsupported case did not retain native access");
             const double elapsed = clockMs() - began;
+            CComPtr<IShellItemArray> integrated;
+            need(filespacer::nativeViewSelection(view, FALSE, &integrated, current) == observed
+                && static_cast<bool>(before) == static_cast<bool>(integrated)
+                && (!before || orderedArrayPaths(before) == orderedArrayPaths(integrated)),
+                "Integrated fallback differs from the native result");
             need(view->GetSelection(FALSE, &after) == observed && static_cast<bool>(before) == static_cast<bool>(after)
                 && (!before || orderedArrayPaths(before) == orderedArrayPaths(after)), "Capability rejection changed selection");
             std::printf("FALLBACK mode=%s case=%s check_ms=%.3f unchanged=1\n", mode.name, name, elapsed);
         };
         reject("empty");
+        CComPtr<IShellItemArray> nativeFolder, integratedFolder;
+        need(view->GetSelection(TRUE, &nativeFolder) == S_OK && nativeFolder
+            && filespacer::nativeViewSelection(view, TRUE, &integratedFolder, current) == S_OK && integratedFolder
+            && orderedArrayPaths(nativeFolder) == orderedArrayPaths(integratedFolder), "Empty-selection folder fallback changed");
         need(SUCCEEDED(shell->SelectItem(ids[1], SVSI_SELECT | SVSI_NOTAKEFOCUS))
             && SUCCEEDED(shell->SelectItem(ids[300], SVSI_SELECT | SVSI_NOTAKEFOCUS)), "Cannot prepare partial selection");
         reject("partial-unselected-focus");
         selectAll(7);
         CComPtr<IShellItemArray> aborted;
         unsigned calls = 0;
-        need(completeSpatialArray(view, [&] { return current() && ++calls < 64; }, &aborted) == E_ABORT && !aborted,
+        need(filespacer::captureCompleteSpatialSelection(view, [&] { return current() && ++calls < 64; }, &aborted) == E_ABORT && !aborted,
             "Cancellation did not reject the candidate");
+        calls = 0;
+        need(filespacer::nativeViewSelection(view, FALSE, &aborted, [&] { return current() && ++calls < 64; }) == E_ABORT && !aborted,
+            "Integrated cancellation fell back to a stale view");
         int selected = 0;
         need(SUCCEEDED(view->ItemCount(SVGIO_SELECTION, &selected)) && selected == count, "Cancellation changed selection");
         POINT duplicate = positions[0]; PCUITEMID_CHILD duplicateId = ids[1];
@@ -206,6 +159,61 @@ void selectionArrays(const wchar_t *fixture) {
         restoreEnumeration(shell, owner.events);
         reject("grouped");
         std::printf("SAFETY mode=%s cancellation=1\n", mode.name);
+    }
+    // Check whether the slow public free-Tiles clear also affects the existing binding.
+    {
+        RestoreHost owner;
+        owner.createProfile(fixture, FVM_TILE, static_cast<FOLDERVIEWOPTIONS>(FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING));
+        CComPtr<IShellView> shell = owner.events->shell;
+        CComQIPtr<IFolderView2> view(shell); CComQIPtr<IShellFolderView> bulk(shell);
+        const auto current = [&] { return !cancelled && !locked && IsWindow(owner.frame) != FALSE && owner.events->shell == shell; };
+        need(view && SUCCEEDED(view->SetViewModeAndIconSize(FVM_TILE,48))
+            && SUCCEEDED(view->SetCurrentFolderFlags(FWF_AUTOARRANGE | FWF_SNAPTOGRID,0)), "Cannot set free Tiles control");
+        restoreEnumeration(shell,owner.events);
+        presentation::fitView(shell,owner.frame,[&] {
+            RECT bounds = {}; need(GetClientRect(owner.frame,&bounds) != FALSE, "No Tiles control bounds");
+            need(SUCCEEDED(owner.host.setBounds(bounds)), "Cannot fit Tiles control");
+        });
+        restoreExpose(owner.frame);
+        std::vector<OwnedId> owned; std::vector<PCUITEMID_CHILD> ids; std::vector<POINT> positions;
+        for (int i = 0; i < 5000; ++i) {
+            CComHeapPtr<ITEMID_CHILD> id; need(SUCCEEDED(view->Item(i,&id)) && id, "No Tiles control identity");
+            owned.emplace_back(id.Detach(),&CoTaskMemFree); ids.push_back(owned.back().get());
+        }
+        PCUITEMID_CHILD moved[] = {ids[0],ids[4000]}; POINT adjusted[] = {{13,17},{6000,9000}};
+        need(SUCCEEDED(view->SelectAndPositionItems(2,moved,adjusted,SVSI_POSITIONITEM | SVSI_NOSTATECHANGE)), "Cannot seed Tiles control geometry");
+        for (const auto id : ids) { POINT point = {}; need(SUCCEEDED(view->GetItemPosition(id,&point)), "No Tiles control position"); positions.push_back(point); }
+        filespacer::ShellSelectionClear binding; binding.bind(shell,current);
+        need(binding.accelerated() && binding.acceleratesSelectAll(), "No existing free Tiles capability");
+        for (int repetition = 0; repetition < 3; ++repetition) for (const bool privateClear : {false,true}) for (const bool redraw : {false,true}) {
+            need(SUCCEEDED(restoreExplorerAll(shell,view,owner.frame,bulk))
+                && SUCCEEDED(shell->SelectItem(ids[7],SVSI_SELECT | SVSI_FOCUSED | SVSI_NOTAKEFOCUS)), "Cannot seed Tiles control selection");
+            CComPtr<IShellItemArray> retained;
+            need(view->GetSelection(FALSE,&retained) == S_OK && retained, "No retained Tiles selection");
+            const auto wanted = arrayPaths(retained); const HWND keyboard = restoreKeyboardFocus(owner.frame);
+            HWND body = nullptr;
+            need(SUCCEEDED(shell->GetWindow(&body))
+                && RedrawWindow(body,nullptr,nullptr,RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW)
+                && SUCCEEDED(DwmFlush()), "Cannot compose the selected Tiles baseline");
+            bool applied = false; const double began = clockMs();
+            if (redraw) need(SUCCEEDED(view->SetRedraw(FALSE)), "Cannot suspend Tiles drawing");
+            filespacer::ShellSelectionClear publicClear;
+            need(SUCCEEDED(privateClear ? binding.clear(shell,current,&applied) : publicClear.clear(shell,current,&applied))
+                && applied == privateClear, "Requested Tiles clear path was not applied");
+            if (redraw) {
+                need(SUCCEEDED(view->SetRedraw(TRUE)), "Cannot resume Tiles drawing");
+                need(RedrawWindow(body,nullptr,nullptr,RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW)
+                    && SUCCEEDED(DwmFlush()), "Cannot compose resumed Tiles control");
+            }
+            const double elapsed = clockMs() - began;
+            int count = -1,focus = -1;
+            need(SUCCEEDED(view->ItemCount(SVGIO_SELECTION,&count)) && count == 0
+                && SUCCEEDED(view->GetFocusedItem(&focus)) && focus == 7
+                && restoreKeyboardFocus(owner.frame) == keyboard && arrayPaths(retained) == wanted, "Qualified Tiles clear changed focus or retained identities");
+            for (size_t i = 0; i < ids.size(); ++i) { POINT point = {}; need(SUCCEEDED(view->GetItemPosition(ids[i],&point))
+                && point.x == positions[i].x && point.y == positions[i].y, "Qualified Tiles clear changed geometry"); }
+            std::printf("QUALIFIED mode=free-tiles rep=%d private_clear=%d redraw=%d clear_ms=%.3f applied=%d identities=1 positions=1 focus=1\n",repetition,privateClear,redraw,elapsed,applied);
+        }
     }
     // Explorer has no free folder layout: its arranged view is an API-cost control.
     RestoreExplorer explorer; explorer.open(fixture);
