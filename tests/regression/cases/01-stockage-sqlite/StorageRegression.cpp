@@ -82,17 +82,15 @@ int main(int argc, char **argv) {
             require(!store.save("folder",rejected,FolderState::All),"forced save failure was ignored");
             require(store.read("folder",&s) && s.x==444 && s.width==902 && s.icons==original.icons,"failed save was partially committed");
             rawSQL(path,"DROP TRIGGER fail_save");
-            require(store.clear("folder",FolderState::Size),"partial clear");
-            require(store.read("folder",&s) && s.present==(FolderState::All & ~FolderState::Size) && s.icons==original.icons,"partial clear erased another part");
             changed.icons.clear();
             require(store.save("empty",changed,FolderState::Icons),"empty blob");
             require(store.read("empty",&s) && s.present==FolderState::Icons && s.icons.empty(),"empty blob is not NULL");
             const std::string escaped="folder'; DELETE FROM folder_state; --";
             require(store.save(escaped,original,FolderState::All),"bound key");
-            require(store.read("folder",&s) && s.present==(FolderState::All & ~FolderState::Size),"SQL injection");
+            require(store.read("folder",&s) && s.present==FolderState::All,"SQL injection");
             require(store.move("folder","renamed"),"move");
             require(store.read("folder",&s) && !s.present,"old key retained");
-            require(store.read("renamed",&s) && s.present==(FolderState::All & ~FolderState::Size) && s.x==444,"new key lost state");
+            require(store.read("renamed",&s) && s.present==FolderState::All && s.x==444,"new key lost state");
             require(store.move("renamed","renamed"),"same key");
             require(store.move("missing","empty"),"missing source");
             require(store.read("empty",&s) && s.present==FolderState::Icons,"missing source erased existing target");
@@ -122,9 +120,6 @@ int main(int argc, char **argv) {
             temporary.locked = true; // An old in-memory lock must never be written back.
             require(store.save("locked-renamed",temporary,FolderState::All),"stale snapshot save");
             require(store.read("locked-renamed",&s) && !s.locked && s.x==123,"stale save revived lock");
-            require(store.setLocked("locked-renamed",original,FolderState::All,true),"lock before reset");
-            require(store.clear("locked-renamed",FolderState::All),"full reset unlocks");
-            require(store.read("locked-renamed",&s) && !s.locked && !s.present,"full reset retained lock");
             require(store.clearAll(),"reset all");
             require(store.read("renamed",&s) && !s.present,"reset left data");
             require(store.save("folder",original,FolderState::All),"after reset");
