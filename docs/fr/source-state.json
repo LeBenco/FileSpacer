@@ -2,7 +2,7 @@
   "version": 1,
   "sources": {
     "README.md": {
-      "sourceHash": "ac490357245eee6b6f2fda70e4d28ea3526104c2e4bf6921390240ca0767a621",
+      "sourceHash": "01168693a88465e0981bbb15601a3a757a1a3d56c5ace3b9fb9ba202a8399726",
       "headings": [
         [
           "filespacer",
@@ -39,7 +39,7 @@
       ]
     },
     "docs/user-guide.md": {
-      "sourceHash": "457f23289fe6e75e3c439fda4a37c29df89a8bd097bdc1d634d6bc4f2a4fd8ed",
+      "sourceHash": "6c88de35ee03c216e1fca0afd277d3b8bdb9e8d76b007d6f10ee28c756ab9251",
       "headings": [
         [
           "using-filespacer",
@@ -76,7 +76,7 @@
       ]
     },
     "CHANGELOG.md": {
-      "sourceHash": "5e0365a4efcee539696a55659e730a106140563e58abbf2886dcfcfddb18af4e",
+      "sourceHash": "b2aa742451e0aa4745e917190d1b14b53d1199b97c23cbd86815763234f9254b",
       "headings": [
         [
           "changelog",
@@ -193,7 +193,7 @@
       ]
     },
     "THIRD_PARTY_NOTICES.md": {
-      "sourceHash": "965aa76b299de0fe0b8cd637491c7ad874b669c3c3b3890fd700b95136bc45da",
+      "sourceHash": "629ac65c6af96a44394baed393c8f0f639bc4ee1ecc6607ec9c34c4e1c382f41",
       "headings": [
         [
           "third-party-notices",
