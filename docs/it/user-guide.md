@@ -45,7 +45,7 @@ Il menu accanto al titolo permette di passare tra le cartelle aperte e chiudere 
 <div id="disposizione-delle-icone"></div>
 <div id="icon-layout"></div>
 
-Oltre alle viste classiche di Esplora file, FileSpacer permette di disporre liberamente file e sottocartelle nella vista Icone disattivando **Disponi icone automaticamente**. Si possono anche allineare alla griglia.
+FileSpacer permette di disporre gli elementi di una cartella in una griglia, come in Esplora file, oppure liberamente, come sul desktop di Windows. Il posizionamento libero è disponibile con qualsiasi dimensione delle icone e nella vista **Riquadri**. Le viste **Elenco** e **Dettagli** non consentono il posizionamento libero. Per scegliere le posizioni, disattivare **Disponi icone automaticamente**. Resta disponibile l’allineamento alla griglia.
 
 <div id="opzioni-di-visualizzazione"></div>
 <div id="view-options"></div>

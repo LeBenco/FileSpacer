@@ -45,7 +45,7 @@ Le menu à côté du titre permet de passer entre les dossiers ouverts et de fer
 <div id="disposition-des-icônes"></div>
 <div id="icon-layout"></div>
 
-En plus des modes d’affichage classiques de l’Explorateur de fichiers, FileSpacer permet de disposer librement les fichiers et sous-dossiers en mode Icônes, en désactivant **Réorganiser automatiquement les icônes**. Ils peuvent aussi être alignés sur la grille.
+FileSpacer permet de disposer les éléments d’un dossier en grille, comme l’Explorateur de fichiers, mais aussi librement, comme sur le Bureau Windows. Le placement libre est disponible avec toutes les tailles d’icônes et en mode **Mosaïque**. Les modes **Liste** et **Détails** ne permettent pas ce placement libre. Pour choisir leurs positions, désactiver **Réorganiser automatiquement les icônes**. L’alignement sur la grille reste disponible.
 
 <div id="options-daffichage"></div>
 <div id="view-options"></div>
