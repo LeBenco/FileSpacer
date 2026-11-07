@@ -857,14 +857,44 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
     return !isWindowOperational();
 }
 
-// MSAA supplies semantic roles without discovering or subclassing Shell controls.
-static LONG gestureRoleAt(POINT point) {
+struct ViewGestureTarget {
     CComPtr<IAccessible> accessible;
-    CComVariant child, role;
-    if (FAILED(AccessibleObjectFromPoint(point, &accessible, &child)) || !accessible
-            || FAILED(accessible->get_accRole(child, &role)) || role.vt != VT_I4)
-        return 0;
-    return role.lVal;
+    CComVariant child;
+    LONG role = 0;
+};
+
+// Both Shell engines expose logical items through MSAA. Modern Details can
+// hit a read-only text cell inside that item rather than the item itself.
+static void viewGestureTargetAt(POINT point, ViewGestureTarget &target) {
+    if (FAILED(AccessibleObjectFromPoint(point, &target.accessible, &target.child))) return;
+    for (unsigned depth = 0; depth < 8 && target.accessible; ++depth) {
+        CComVariant role, state;
+        target.role = 0;
+        if (FAILED(target.accessible->get_accRole(target.child, &role)) || role.vt != VT_I4) break;
+        target.role = role.lVal;
+        if (target.role != ROLE_SYSTEM_TEXT || FAILED(target.accessible->get_accState(target.child, &state))
+                || state.vt != VT_I4
+                || (state.lVal != 0 && !(static_cast<DWORD>(state.lVal) & STATE_SYSTEM_READONLY))) break;
+        // Simple children belong to this IAccessible; full objects expose a
+        // separate parent. List labels can have no state flags; editable text
+        // is excluded by the focused control's dialog code before hit testing.
+        if (target.child.vt == VT_I4 && target.child.lVal != CHILDID_SELF) {
+            target.child = CComVariant(CHILDID_SELF);
+        } else {
+            CComPtr<IDispatch> parent;
+            if (FAILED(target.accessible->get_accParent(&parent)) || !parent) break;
+            CComQIPtr<IAccessible> accessible(parent);
+            if (!accessible) break;
+            target.accessible = accessible;
+            target.child = CComVariant(CHILDID_SELF);
+        }
+    }
+}
+
+static LONG gestureRoleAt(POINT point) {
+    ViewGestureTarget target;
+    viewGestureTargetAt(point, target);
+    return target.role;
 }
 
 bool FolderWindow::handleResizeMessage(UINT message, WPARAM wParam, LPARAM lParam) {
@@ -896,10 +926,20 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
             && msg->message != WM_MBUTTONDOWN && msg->message != WM_MBUTTONDBLCLK)
             || GetCapture() || !shellView)
         return false;
+    // The modern renderer recognizes double clicks without CS_DBLCLKS. Its
+    // first press was consumed by the window gesture, so recognize the second
+    // using Windows' time/position settings and invoke the public Shell verb.
+    const bool rendererDoubleClick = msg->message == WM_LBUTTONDOWN && deferredGestureClick.hwnd == msg->hwnd
+            && deferredGestureClick.hwnd && deferredGestureGeneration == viewGeneration
+            && msg->time - deferredGestureClick.time <= GetDoubleClickTime()
+            && std::abs(msg->pt.x - deferredGestureClick.pt.x) <= GetSystemMetrics(SM_CXDOUBLECLK) / 2
+            && std::abs(msg->pt.y - deferredGestureClick.pt.y) <= GetSystemMetrics(SM_CYDOUBLECLK) / 2
+            && (currentGestureModifiers() & GestureAlt)
+            && !(GetClassLongPtrW(msg->hwnd, GCL_STYLE) & CS_DBLCLKS);
     // A window gesture consumes its first click. Prepare that click's selection
     // through MSAA before the native double-click. Replaying a button-down while
     // the second press is physically held can start an unintended Shell drag.
-    if (msg->message == WM_LBUTTONDBLCLK) {
+    if (msg->message == WM_LBUTTONDBLCLK || rendererDoubleClick) {
         const MSG click = deferredGestureClick;
         deferredGestureClick = {};
         const CComPtr<IShellView> view = shellView;
@@ -910,13 +950,16 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
                 && SUCCEEDED(view->GetWindow(&root)) && root
                 && (click.hwnd == root || IsChild(root, click.hwnd))) {
             if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
-            CComPtr<IAccessible> accessible;
-            CComVariant child, role, state;
-            if (SUCCEEDED(AccessibleObjectFromPoint(click.pt, &accessible, &child)) && accessible
-                    && SUCCEEDED(accessible->get_accRole(child, &role)) && role.vt == VT_I4
-                    && role.lVal == ROLE_SYSTEM_LISTITEM) {
+            ViewGestureTarget target;
+            viewGestureTargetAt(click.pt, target);
+            const auto &accessible = target.accessible;
+            const auto &child = target.child;
+            CComVariant state;
+            if (accessible && target.role == ROLE_SYSTEM_LISTITEM) {
                 LONG flags = SELFLAG_NONE;
-                if (click.wParam & MK_CONTROL) {
+                if (rendererDoubleClick && (click.wParam & MK_SHIFT)) {
+                    flags = SELFLAG_ADDSELECTION;
+                } else if (click.wParam & MK_CONTROL) {
                     if (FAILED(accessible->get_accState(child, &state)) || state.vt != VT_I4) return false;
                     flags |= state.lVal & STATE_SYSTEM_SELECTED ? SELFLAG_REMOVESELECTION : SELFLAG_ADDSELECTION;
                 } else {
@@ -926,10 +969,19 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
                 CComQIPtr<IFolderView2> folderView(view);
                 if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
                 if (!folderView) return false;
+                const bool extendSelection = rendererDoubleClick && (click.wParam & MK_SHIFT);
+                int rangeAnchor = -1;
+                if (extendSelection) {
+                    if (folderView->GetSelectionMarkedItem(&rangeAnchor) != S_OK || rangeAnchor < 0)
+                        folderView->GetFocusedItem(&rangeAnchor);
+                    if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                }
                 // TAKEFOCUS in the MSAA proxy can synthesize Alt restoration
                 // after the real key release. Resolve the pointed item through
                 // a selection-only operation, then focus its public Shell index.
                 std::vector<CComHeapPtr<ITEMID_CHILD>> previousSelection;
+                const bool preserveSelection = (click.wParam & MK_CONTROL)
+                    || (rendererDoubleClick && (click.wParam & MK_SHIFT));
                 if (click.wParam & MK_CONTROL) {
                     int count = 0;
                     checkHR(folderView->ItemCount(SVGIO_SELECTION, &count));
@@ -956,7 +1008,7 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
                     checkHR(folderView->Item(index, &pointed));
                     if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
                 }
-                if (click.wParam & MK_CONTROL) {
+                if (preserveSelection) {
                     checkHR(selectionClear.clear(view, [&]() {
                         return isWindowOperational() && shellView == view && viewGeneration == generation;
                     }));
@@ -965,14 +1017,35 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
                         checkHR(view->SelectItem(id, SVSI_SELECT | SVSI_NOTAKEFOCUS));
                         if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
                     }
-                    checkHR(accessible->accSelect(flags, child));
+                    if (extendSelection && index >= 0) {
+                        // Modern MSAA rejects EXTENDSELECTION. Apply the same
+                        // view-order range through the public folder interface.
+                        const int anchor = rangeAnchor >= 0 ? rangeAnchor : index;
+                        for (int item = (std::min)(anchor, index); item <= (std::max)(anchor, index); ++item) {
+                            checkHR(folderView->SelectItem(item, SVSI_SELECT | SVSI_NOTAKEFOCUS));
+                            if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                        }
+                    } else checkHR(accessible->accSelect(flags, child));
                     if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
                 }
                 if (pointed) {
                     DWORD selection = 0;
                     checkHR(folderView->GetSelectionState(pointed, &selection));
                     if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
-                    checkHR(view->SelectItem(pointed, (selection & SVSI_SELECT) | SVSI_FOCUSED | SVSI_SELECTIONMARK | SVSI_NOTAKEFOCUS));
+                    const UINT mark = rendererDoubleClick ? 0 : SVSI_SELECTIONMARK;
+                    checkHR(view->SelectItem(pointed, (selection & SVSI_SELECT) | SVSI_FOCUSED | mark | SVSI_NOTAKEFOCUS));
+                }
+                if (rendererDoubleClick && isWindowOperational() && shellView == view && viewGeneration == generation) {
+                    ++navigationDepth;
+                    const HRESULT invoked = folderView->InvokeVerbOnSelection("properties");
+                    resumeDeferredClose();
+                    // A native Ctrl-double-click on a selected item invokes
+                    // its first-click selection, then restores that item.
+                    if (flags == SELFLAG_REMOVESELECTION && pointed && isWindowOperational()
+                            && shellView == view && viewGeneration == generation)
+                        checkHR(view->SelectItem(pointed, SVSI_SELECT | SVSI_NOTAKEFOCUS));
+                    checkHR(invoked);
+                    return true;
                 }
             }
             if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
