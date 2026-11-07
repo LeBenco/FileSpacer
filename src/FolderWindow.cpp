@@ -802,7 +802,7 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
                 CComQIPtr<IFolderView2> folderView(view);
                 if (!current()) return true;
                 CComPtr<IShellItemArray> selection;
-                if (folderView && SUCCEEDED(nativeViewSelection(folderView, FALSE, &selection)) && selection) {
+                if (folderView && SUCCEEDED(nativeViewSelection(folderView, FALSE, &selection, current)) && selection) {
                     const auto paths = peekPaths(selection);
                     if (!current() || GetFocus() != focus)
                         return true;
@@ -2519,6 +2519,9 @@ void FolderWindow::updateSelection() {
     CComPtr<ItemWindow> keepAlive(this);
     if (!isWindowOperational() || !viewHost)
         return;
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    const auto current = [&] { return isWindowOperational() && shellView == source && viewGeneration == generation; };
 
     CComPtr<IFolderView2> folderView;
     if (!isWindowOperational()
@@ -2532,7 +2535,7 @@ void FolderWindow::updateSelection() {
 
     if (numSelected == 1) {
         CComPtr<IShellItemArray> selection;
-        if (nativeViewSelection(folderView, FALSE, &selection) == S_OK && isWindowOperational()) {
+        if (nativeViewSelection(folderView, FALSE, &selection, current) == S_OK && current()) {
             CComPtr<IShellItem> newSelected;
             if (checkHR(selection->GetItemAt(0, &newSelected)) && isWindowOperational())
                 selected = newSelected;
@@ -2549,6 +2552,9 @@ void FolderWindow::updateStatus() {
     CComPtr<ItemWindow> keepAlive(this);
     if (!isWindowOperational() || !viewHost)
         return;
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    const auto current = [&] { return isWindowOperational() && shellView == source && viewGeneration == generation; };
     CComPtr<IFolderView2> folderView;
     if (!isWindowOperational()
             || FAILED(viewHost.currentView(IID_PPV_ARGS(&folderView)))
@@ -2575,7 +2581,7 @@ void FolderWindow::updateStatus() {
 
         CComPtr<IShellItemArray> selection;
 
-        if (nativeViewSelection(folderView, FALSE, &selection) == S_OK && isWindowOperational()) {
+        if (nativeViewSelection(folderView, FALSE, &selection, current) == S_OK && current()) {
             DWORD count = 0;
             checkHR(selection->GetCount(&count));
 
@@ -3259,12 +3265,15 @@ STDMETHODIMP FolderWindow::QueryService(
 
 // Called when double-clicking an item or pressing Enter.
 STDMETHODIMP FolderWindow::OnDefaultCommand(IShellView *const view) {
+    CComPtr<ItemWindow> keepAlive(this);
     // Preserve the Shell's native handling of Alt-modified activation.
     if (GetKeyState(VK_MENU) < 0)
         return S_FALSE;
 
     const bool closeSource = settings::getKeepSourceWindowOpen()
         == (GetKeyState(VK_CONTROL) < 0);
+    const ULONG_PTR generation = viewGeneration;
+    const auto current = [&] { return isWindowOperational() && shellView == view && viewGeneration == generation; };
     CComQIPtr<IFolderView2> folderView(view);
 
     int numSelected = 0;
@@ -3273,7 +3282,7 @@ STDMETHODIMP FolderWindow::OnDefaultCommand(IShellView *const view) {
             && numSelected == 1) {
 
         CComPtr<IShellItemArray> selection;
-        if (nativeViewSelection(folderView, FALSE, &selection) == S_OK) {
+        if (nativeViewSelection(folderView, FALSE, &selection, current) == S_OK && current()) {
             CComPtr<IShellItem> selectedItem;
 
             if (checkHR(selection->GetItemAt(0, &selectedItem))) {
