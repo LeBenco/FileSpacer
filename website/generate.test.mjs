@@ -41,7 +41,8 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
   assert.match(html, /https:\/\/github\.com\/LeBenco\/FileSpacer\/blob\/main\/docs\/en\/build\.md/);
   assert.match(html, /https:\/\/github\.com\/LeBenco\/FileSpacer\/blob\/main\/docs\/en\/tests\/regression\/README\.md/);
   assert.doesNotMatch(html, /data-source="(?:docs\/(?:build|native-shell-view)|tests\/)/);
-  assert.match(nav, /href="#user-guide--integration"[^]*href="#user-guide--windows-integration"[^]*href="#user-guide--everything"[^]*href="#user-guide--nilesoft-shell"/);
+  assert.match(nav, /href="#user-guide--integration"/);
+  assert.doesNotMatch(nav, /href="#(?:user-guide--(?:windows-integration|everything|nilesoft-shell)|overview--copyright-and-license)"/);
   assert.match(html, /<h4 id="user-guide--everything"/);
   const windows = html.match(/<h3 id="user-guide--managing-windows">[^]*?(?=<h3 |<\/section>)/)?.[0];
   assert.ok(windows, 'The user guide groups window controls under Managing windows');
