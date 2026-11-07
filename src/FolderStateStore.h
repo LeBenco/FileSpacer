@@ -81,7 +81,6 @@ public:
     // Failure never creates a row. expired is true only after a committed age-based deletion.
     // A success within SUCCESS_REFRESH_SECONDS of the stored one, with no failure to clear, changes nothing.
     bool recordAccess(const std::string &key, bool success, int64_t when, bool *expired = nullptr);
-    bool clear(const std::string &key, uint32_t parts);
     bool clearAll();
     bool remove(const std::string &key);
     bool move(const std::string &oldKey, const std::string &newKey);
