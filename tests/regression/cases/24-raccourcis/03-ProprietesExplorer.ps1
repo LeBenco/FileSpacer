@@ -6,7 +6,6 @@ Add-Type -AssemblyName UIAutomationTypes
 Add-Type -AssemblyName WindowsBase
 $references=@([System.Windows.Automation.AutomationElement].Assembly.Location,[System.Windows.Automation.ControlType].Assembly.Location,[System.Windows.Rect].Assembly.Location)
 Add-Type -Path (Join-Path $PSScriptRoot '..\15-deplacement-alt\MouseInput.cs') -ReferencedAssemblies $references
-Add-Type -Path (Join-Path $PSScriptRoot '..\15-deplacement-alt\NativeTargets.cs') -ReferencedAssemblies @([ComponentModel.Win32Exception].Assembly.Location)
 $testFailure=$null; $propertyWindow=[IntPtr]::Zero
 function Properties-Match([IntPtr]$Candidate) {
     if (![FileSpacerRegression.Native]::IsWindowVisible($Candidate) -or @([FileSpacerRegression.Native]::Children($Candidate,'SysTabControl32')).Count -ne 1) { return $false }
@@ -27,8 +26,7 @@ function Observe-Properties([int]$Bindings,[string]$Phase,[bool]$Motion=$false,[
     # Each phase starts a separate physical gesture from the same fixture state.
     Use-UiView $window {param($view) $view.Focus(); $view.Select('AnchorA'); if($InitialMulti) {$view.Select('OtherC',$true)}}
     if ($InitialMulti) {Assert-UiSelected $window 'AnchorA;OtherC'} else {Assert-UiSelected $window 'AnchorA'}
-    $index=Use-UiView $window {param($view) $view.IndexOf('OtherC')}
-    $position=[FileSpacerRegression.NativeTargets]::Item($list,$index,2,$InitialMulti,$false)
+    $position=[FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,'OtherC')
     $point=New-Object FileSpacerRegression.MousePoint; $point.X=$position.X; $point.Y=$position.Y
     $before=[FileSpacerRegression.Native]::Bounds($window)
     [FileSpacerRegression.AltDragInput]::BeginDoubleConfigured($window,$point,$Modifiers)
@@ -69,8 +67,6 @@ try {
     $window=Open-UiFolder $folder 2
     $processId=[uint32]0; [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($window,[ref]$processId)
     $viewWindow=Use-UiView $window {param($view) $view.Window}
-    $lists=@([FileSpacerRegression.Native]::Children($viewWindow,'SysListView32'))
-    Assert-Ui ($lists.Count -eq 1) 'Validated native Shell list required.'; $list=$lists[0]
     $native=Observe-Properties 0x01001202 'native-with-both-actions-disabled'
     $configured=Observe-Properties 0x01003222 'default-window-bindings'
     $resizeLeft=Observe-Properties 0x0100222a 'resize-with-alt-left'
