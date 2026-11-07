@@ -257,9 +257,24 @@ namespace {
 const wchar_t withdrawalProperty[] = L"FileSpacer.PlacementWithdrawal";
 const wchar_t testProperty[] = L"FileSpacer.PlacementTest";
 
+bool normalPlacementRect(HWND window, RECT &rect) {
+    WINDOWPLACEMENT placement = {};
+    placement.length = sizeof(placement);
+    if (!GetWindowPlacement(window, &placement)) return false;
+    rect = placement.rcNormalPosition;
+    if (!(GetWindowLongPtrW(window, GWL_EXSTYLE) & WS_EX_TOOLWINDOW)) {
+        MONITORINFO info = {sizeof(info)};
+        if (!GetMonitorInfoW(MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST), &info))
+            return false;
+        OffsetRect(&rect, info.rcWork.left - info.rcMonitor.left,
+            info.rcWork.top - info.rcMonitor.top);
+    }
+    return !IsRectEmpty(&rect);
+}
+
 bool placementRect(HWND window, RECT &rect) {
     wchar_t name[64] = {};
-    if (!IsWindowVisible(window) || IsIconic(window)
+    if (!IsWindowVisible(window)
             || GetPropW(window, withdrawalProperty)
             || !GetClassNameW(window, name, ARRAYSIZE(name))
             || lstrcmpW(name, L"FileSpacer Item Window") != 0)
@@ -275,7 +290,8 @@ bool placementRect(HWND window, RECT &rect) {
         return false;
     // Keep the same DPI-virtualized outer coordinates as requestedRect and
     // MONITORINFO.rcWork; do not mix them with DWM's physical frame bounds.
-    return GetWindowRect(window, &rect) && !IsRectEmpty(&rect);
+    // The normal rectangle also excludes maximization, minimization and Snap.
+    return normalPlacementRect(window, rect);
 }
 }
 
@@ -322,7 +338,7 @@ bool findWindowPlacement(HMONITOR monitor, SIZE size, HWND source, RECT &rect) t
     if (!EnumWindows(collect, reinterpret_cast<LPARAM>(&windows))) return false;
     POINT preferred = {info.rcWork.left, info.rcWork.top};
     RECT origin = {};
-    if (source && GetWindowRect(source, &origin)) preferred = {origin.left, origin.top};
+    if (source && normalPlacementRect(source, origin)) preferred = {origin.left, origin.top};
     const POINT position = findPlacementPosition(info.rcWork, size, preferred, windows);
     rect = {position.x, position.y, position.x + size.cx, position.y + size.cy};
     return true;
