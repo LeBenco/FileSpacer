@@ -66,6 +66,35 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
   await fs.access(path.join(output, 'assets/content/src/res/FileSpacer.svg'));
 });
 
+test('GitHub publication dates localize changelog headings and navigation without changing notes or existing anchors', async t => {
+  const output = await fs.mkdtemp(path.join(os.tmpdir(), 'filespacer-release-dates-'));
+  t.after(() => {
+    assert.equal(path.dirname(output), os.tmpdir());
+    return fs.rm(output, {recursive: true, force: true});
+  });
+  const baseline = await generate(repository, output, {onWarning: () => {}});
+  const oldIds = new Map();
+  const ids = html => [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
+  for (const language of baseline.languages) {
+    oldIds.set(language.code, ids(await fs.readFile(path.join(output, language.source, 'index.html'), 'utf8')));
+  }
+  const result = await generate(repository, output, {
+    onWarning: () => {}, releaseDates: {'1.3.2': '2026-11-05T23:59:59Z'},
+  });
+  for (const language of result.languages) {
+    const html = await fs.readFile(path.join(output, language.source, 'index.html'), 'utf8');
+    const nav = await fs.readFile(path.join(output, language.source, '_includes/components/site_nav.html'), 'utf8');
+    assert.deepEqual(ids(html), oldIds.get(language.code), language.code);
+    const date = new Intl.DateTimeFormat(language.code, {year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC'})
+      .format(new Date('2026-11-05T23:59:59Z'));
+    assert.ok(html.includes(`1.3.2 — ${date}</h3>`), language.code);
+    assert.ok(nav.includes(`1.3.2 — ${date}</a>`), language.code);
+    assert.match(html, /1\.3\.1<\/h3>/, 'A version not yet published on GitHub is shown without an invented date');
+    if (language.code === 'fr-FR') assert.match(html, /Ajouter le polonais/);
+    if (language.code === 'en-GB') assert.match(html, /Add Polish/);
+  }
+});
+
 test('replacing an image changes both its thumbnail and popup URL while unchanged images keep their cache key', async t => {
   const root = await fixture(t);
   const output = path.join(root, 'output');
