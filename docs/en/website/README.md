@@ -12,6 +12,19 @@ and user documents are in `docs/en/`; the English README, changelog and third-pa
 notices stay at the repository root as the English website sources.
 Build instructions, tests and technical notes remain on GitHub: links to files
 not included in the site become links to the repository's `main` branch.
+Online changelog dates come from `published_at` in the GitHub Releases JSON API,
+matched by release version. The existing Markdown files supply the translated
+notes. `Intl.DateTimeFormat` uses each site's locale for numeric day, month and
+four-digit year formatting, keeping the UTC publication day. Source dates are
+not parsed or used as a fallback. Versions not yet published on GitHub appear
+without a date. Existing heading IDs remain unchanged, including their original
+date suffixes, so published bookmarks still work.
+The generator fetches all release pages during a web build, and incorporates
+the publication metadata into the build fingerprint. API failures stop the build
+before replacing the existing output. Reading the finished site needs no API
+request. CI uses its automatic GitHub token; local builds can use `GH_TOKEN` or
+`GITHUB_TOKEN`, or access the public API without authentication. Offline help
+keeps its local changelog, so an installer can be built before its release exists.
 The Nilesoft configuration reference has a translated file for each language;
 its GitHub links follow the selected language. Polish, Dutch and Ukrainian also
 provide translated developer guides; their references use the selected language.
