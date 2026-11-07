@@ -1,148 +1,118 @@
 # FileSpacer gebruiken
 
-## Navigeren tussen vensters
+FileSpacer onthoudt de positie en het uiterlijk van elk venster bij het opnieuw openen. Mappen keren terug naar hun vertrouwde plek, zoals voorwerpen op een bureau. Daarnaast zijn er instelbare sneltoetsen, snelle acties en een rustige, aanpasbare interface.
 
-FileSpacer biedt een soepele, sobere en aanpasbare interface op basis van het ruimtelijke model:
+<div id="windows-integratie"></div>
+<div id="windows-integration"></div>
 
-- **Eén map, één venster.** Een al geopende map opnieuw openen brengt haar venster naar voren. Positie, afmetingen, weergave en pictogramindeling blijven bewaard, ook na het verplaatsen of hernoemen van de map.
-- Een map of bovenliggende map openen sluit standaard het bronvenster. Houd Ctrl ingedrukt bij het openen van een map om het bronvenster open te houden. De standaard is instelbaar onder **Instellingen > Algemeen**. Meerdere geselecteerde mappen openen houdt het bronvenster open.
-- Het menu naast de maptitel schakelt tussen geopende mappen. **Bovenliggende vensters sluiten** sluit de geopende bovenliggende mapvensters.
-- **Ctrl+Shift+T** opent de laatst gesloten map met haar indeling en selectie. Dezelfde opdracht staat in het titelmenu. Via de Jump List op de taakbalk kunt u deze map of eerder gesloten mappen opnieuw openen.
-- De Jump List op de taakbalk opent ook mappen die zijn vastgemaakt aan Snelle toegang in Bestandenverkenner.
+FileSpacer kan tijdens de installatie of onder **Instellingen > Integratie** met **Instellen als standaardbestandsbeheerder** als standaardbestandsbeheerder worden ingesteld. Het contextmenu van mappen biedt **Openen in FileSpacer**, of **Openen in Windows Bestandenverkenner** als FileSpacer de standaard is.
 
-Naar een bovenliggende map gaan selecteert de verlaten map niet. Een al geopende bovenliggende map behoudt haar selectie.
+## Navigatie en vensterindeling
 
-![Het maptitelmenu met opdrachten voor navigatie en opgeslagen indelingen.](images/window-menu-nl.png)
+<div id="navigeren-tussen-vensters"></div>
+<div id="window-navigation"></div>
+<div id="vensterplaatsing"></div>
+<div id="window-placement"></div>
+<div id="vensters-beheren"></div>
+<div id="managing-windows"></div>
 
-## Weergave en indeling
+**Elke map heeft een eigen venster.** Is de map al open, dan brengt FileSpacer dat venster naar de voorgrond. Positie, afmetingen, weergave en pictogramindeling worden onthouden, ook na verplaatsen of hernoemen van de map. Vensters zonder opgeslagen positie worden zo geplaatst dat ze zo min mogelijk overlappen (optie onder **Instellingen > Algemeen**).
 
-### Pictogramindeling
+<div id="een-opgeslagen-indeling-vergrendelen"></div>
+<div id="locking-a-saved-layout"></div>
 
-In pictogramweergaven kunnen bestanden en submappen vrij worden geplaatst wanneer **Pictogrammen automatisch schikken** uitstaat. Pictogramposities worden onafhankelijk van de venstergeometrie opgeslagen, ook als de opgeslagen vensterindeling is vergrendeld.
+**De huidige positie, afmetingen en weergave van een map kunnen worden vergrendeld om ze bij elke opening terug te krijgen.** Latere wijzigingen zijn tijdelijk. Pictogramposities worden nog steeds opgeslagen. De **vergrendelde indeling kan worden hersteld** zonder het venster te sluiten.
 
-### Weergaveopties
+**Vensterstatus ontgrendelen** behoudt de huidige indeling en maakt het weer mogelijk wijzigingen op te slaan.
 
-**Volledige naam van geselecteerd bestand tonen**, onder **Instellingen > Weergave**, maakt de naam van één geselecteerd bestand volledig leesbaar in de pictogramweergave.
-
-![Een lange geselecteerde bestandsnaam volledig zichtbaar in de pictogramweergave.](images/selected-name-nl.png)
-
-**Weergavemodi vooraf bekijken in het menu Beeld** toont elke modus wanneer de aanwijzer erboven staat. Klikken bevestigt de modus. Escape of het verlaten van het voorbeeld herstelt de oorspronkelijke weergave. Het voorbeeld is tijdelijk en vervangt de opgeslagen indeling niet.
-
-**Mappen en bestanden samen sorteren** sorteert beide samen, zoals in [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) en [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). De optie staat onder **Instellingen > Weergave > Bestanden** en geldt voor Details, Lijst en automatisch gerangschikte pictogrammen. Virtuele mappen en archieven behouden de Windows-volgorde.
-
-![Bestanden en mappen in dezelfde alfabetische volgorde.](images/mixed-sorting-nl.png)
-
-### Vensterplaatsing
-
-Mappen zonder opgeslagen positie openen in vrije ruimte, of met minder overlap als de ruimte opraakt. Dit is instelbaar onder **Instellingen > Algemeen > Nieuwe vensters in vrije ruimte plaatsen**.
-
-### Selectie en activering
-
-**Selectie behouden bij klikken op een inactief venster**, onder **Instellingen > Algemeen**, laat een klik op de achtergrond een map activeren zonder de selectie te wissen. Zodra het venster actief is, kunt u op de achtergrond klikken en slepen om een selectierechthoek te tekenen.
-
-## Vensters beheren
-
-### Verplaatsen en formaat wijzigen
-
-U kunt een venster verplaatsen of het formaat wijzigen door ergens in het bestandsgebied te slepen, ook boven een item. De standaardgebaren zijn:
-
-| Actie | Sneltoets |
-| --- | --- |
-| Venster verplaatsen | Alt + slepen met links |
-| Formaat wijzigen vanaf de rechteronderhoek | Alt + slepen met rechts |
-
-![Een venster verplaatsen met Alt en slepen met de linkermuisknop.](images/move-window-nl.gif)
-
-![Het vensterformaat wijzigen met Alt en slepen met de rechtermuisknop.](images/resize-window-nl.gif)
-
-De selectie blijft intact. Escape annuleert het gebaar.
-
-Elke actie heeft een eigen instelbare sneltoets onder **Instellingen > Sneltoetsen**. De linker- en rechtermuisknop vereisen Alt. De middelste knop kan ook zonder.
-
-### Een opgeslagen indeling vergrendelen
-
-Vergrendelen bewaart de positie, afmetingen en weergave-instellingen als de indeling die bij opnieuw openen wordt hersteld. De functie staat standaard uit onder **Instellingen > Algemeen > Vensterstatusvergrendeling inschakelen**. Na inschakeling is **Vensterstatus vergrendelen** beschikbaar naast de maptitel. Een slotje op het mappictogram markeert een vergrendelde indeling.
+Vergrendeling wordt ingeschakeld onder **Instellingen > Algemeen**. Daarna verschijnt **Vensterstatus vergrendelen** naast de maptitel. Een slotje op het pictogram geeft de vergrendeling aan. De functie uitschakelen verwijdert alle vergrendelingen.
 
 <img src="images/locked-title-nl.png" alt="Detail van de maptitel met het slotje." width="280">
 
-Tijdelijke wijzigingen blijven mogelijk. Opnieuw openen herstelt de vergrendelde indeling. Individuele pictogramposities worden normaal opgeslagen. **Vensterstatus ontgrendelen** behoudt de huidige indeling.
+Een map of bovenliggende map openen sluit standaard het bronvenster. **Ctrl ingedrukt houden bij het openen** laat het open. Dit gedrag is instelbaar onder **Instellingen > Algemeen**. Meerdere geselecteerde mappen openen houdt het bronvenster open.
 
-De functie uitschakelen vraagt om bevestiging en verwijdert alle vergrendelingen, ook voor gesloten mappen. Opnieuw inschakelen herstelt ze niet.
+Het menu naast de titel wisselt tussen geopende mappen en sluit bovenliggende vensters. **Ctrl+Shift+T** opent de laatst gesloten map opnieuw met haar indeling en selectie. De Jump List op de taakbalk biedt ook recent gesloten mappen en mappen die in Snelle toegang zijn vastgemaakt.
 
-### Het titelbalkmenu aanpassen
+<div id="mapgroepen"></div>
+<div id="folder-groups"></div>
 
-Het menu is aanpasbaar onder **Instellingen > Weergave > Interface-elementen > Titelbalkmenu aanpassen**. Sleep een actie van rechts naar het menu, verplaats een item om de volgorde te wijzigen of sleep het eruit om het te verwijderen.
+**Mapgroep opslaan / oproepen** in het titelmenu opent meerdere mappen samen met hun opgeslagen indelingen.
 
-Items die door Nilesoft Shell worden beheerd, kunnen hier niet worden gewijzigd omdat zijn regels voorrang hebben. Zie [Nilesoft Shell-integratie](#nilesoft-shell).
+## Weergave van de mapinhoud
+
+<div id="weergave-en-indeling"></div>
+<div id="view-and-layout"></div>
+<div id="pictogramindeling"></div>
+<div id="icon-layout"></div>
+
+Naast de gebruikelijke weergaven van Bestandenverkenner kan FileSpacer bestanden en submappen vrij plaatsen in de pictogramweergave door **Pictogrammen automatisch schikken** uit te schakelen. Uitlijnen op het raster is ook mogelijk.
+
+<div id="weergaveopties"></div>
+<div id="view-options"></div>
+
+Standaard staan mappen vóór bestanden, zoals in Bestandenverkenner. **Mappen en bestanden samen sorteren** onder **Instellingen > Weergave** sorteert ze samen, zoals op [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) en [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Dit geldt voor Details, Lijst en automatisch gerangschikte pictogrammen. Virtuele mappen en archieven behouden de Windows-volgorde.
+
+![Bestanden en mappen in dezelfde alfabetische volgorde.](images/mixed-sorting-nl.png)
+
+In dezelfde instellingen maakt **Volledige naam van geselecteerd bestand tonen** de hele naam leesbaar in de pictogramweergave, ook als die erg lang is. Dit geldt wanneer één bestand is geselecteerd.
+
+![Een lange geselecteerde bestandsnaam volledig zichtbaar in de pictogramweergave.](images/selected-name-nl.png)
+
+<div id="selectie-en-activering"></div>
+<div id="selection-and-activation"></div>
+
+Klikken op de achtergrond van een inactief venster wist standaard de selectie, zoals in Bestandenverkenner. **Selectie behouden bij klikken op een inactief venster** onder **Instellingen > Algemeen** activeert het venster zonder de selectie te verliezen.
+
+## Aanpassen
+
+### De interface aanpassen
+
+<div id="het-titelbalkmenu-aanpassen"></div>
+<div id="customize-the-title-bar-menu"></div>
+
+Het **titelbalkmenu** is aanpasbaar onder **Instellingen > Weergave > Interface-elementen**. Opdrachten kunnen door slepen worden toegevoegd en verplaatst. Een item uit het menu slepen verwijdert het.
 
 ![Een actie aan het titelbalkmenu toevoegen en een andere verwijderen.](images/customize-title-menu-nl.gif)
 
 ![Het aangepaste titelbalkmenu met Vergrendelde indeling herstellen.](images/customized-title-menu-nl.png)
 
-- **Vergrendelde indeling herstellen** zet het venster terug naar de referentie-indeling. **Referentie-indeling vervangen** slaat na bevestiging de huidige indeling op als nieuwe vergrendelde referentie.
+Items die Nilesoft Shell beheert, worden in zijn configuratie aangepast omdat zijn regels voorrang hebben op die van FileSpacer ([zie de integratie hieronder](#nilesoft-shell)).
 
-- **Indeling van deze map vergeten** wist de opgeslagen indeling en vergrendeling, maar behoudt de zoekgeschiedenis. Opslaan blijft in het huidige venster onderbroken totdat het sluit. Bij opnieuw openen gelden de standaardinstellingen. Een nieuwe indeling vergrendelen hervat het opslaan.
+<div id="verplaatsen-en-formaat-wijzigen"></div>
+<div id="moving-and-resizing"></div>
 
-### Mapgroepen
+**Muisgebaren om vensters te verplaatsen of het formaat te wijzigen** zijn instelbaar en werken rechtstreeks vanuit de inhoud, ook door over een bestand te slepen. Standaard:
 
-**Mapgroep opslaan / oproepen** bewaart de geopende mappen onder een naam. De groep oproepen opent ze opnieuw met hun opgeslagen indelingen.
+| Actie | Gebaar |
+| --- | --- |
+| Verplaatsen | Alt + slepen met de linkermuisknop |
+| Formaat wijzigen | Alt + slepen met de rechtermuisknop |
 
-## Zoeken en geschiedenis
+![Een venster verplaatsen met Alt en slepen met de linkermuisknop.](images/move-window-nl.gif)
 
-Voer een volledige of gedeeltelijke bestands- of mapnaam in en druk op Enter om de huidige map te filteren. **Filteren tijdens het typen**, onder **Instellingen > Algemeen**, past het filter tijdens het typen toe.
+![Het vensterformaat wijzigen met Alt en slepen met de rechtermuisknop.](images/resize-window-nl.gif)
 
-Het veld biedt recente zoekopdrachten en, als de integratie is ingeschakeld, **Zoeken in Everything** voor een externe zoekopdracht. Enter zonder geselecteerde suggestie past het lokale filter toe. Ctrl+F activeert het veld.
+De selectie blijft behouden en Escape annuleert het gebaar. Aanpassen kan onder **Instellingen > Sneltoetsen**. De linker- en rechtermuisknop vereisen Alt. De middelste knop werkt ook zonder Alt.
 
-Elke map heeft een eigen zoekgeschiedenis. Het aantal bewaarde bevestigde zoekopdrachten is instelbaar onder Algemeen. 0 wist en schakelt de geschiedenis uit. [Everything](#everything) kan submappen of alle geïndexeerde bestanden doorzoeken.
+### Integratie
 
-![Het zoekveld met Everything en suggesties uit recente zoekopdrachten.](images/search-nl.png)
+<div id="zoeken-en-geschiedenis"></div>
+<div id="search-and-history"></div>
+<div id="everything"></div>
 
-## Integratie
+[Everything](https://www.voidtools.com/) is een zoekprogramma dat bestanden en mappen snel op naam vindt. FileSpacer kan het starten vanuit het zoekveld van een map. De integratie wordt ingeschakeld onder **Instellingen > Integratie**, met automatische detectie of een handmatig gekozen draagbare versie.
 
-### Windows-integratie
-
-FileSpacer kan tijdens installatie of later onder **Instellingen > Integratie** met **Instellen als standaardbestandsbeheerder** worden ingesteld. **Standaardbestandsbeheerder herstellen** laat mappen weer in Bestandenverkenner openen.
-
-Het mapsnelmenu biedt **Openen in FileSpacer**, of **Openen in Windows Bestandenverkenner** wanneer FileSpacer de standaard is. Dit werkt ook op stations, ZIP-mappen, netwerklocaties en mapachtergronden, zonder de standaardtoepassing te hoeven wijzigen.
-
-**Opties voor Bestandenverkenner** opent gedeelde mapvoorkeuren, waarvan sommige ook voor FileSpacer gelden.
-
-### PowerToys Grab And Move
-
-Wanneer Grab And Move is ingeschakeld in PowerToys, worden de verplaats- en formaatwijzigingsgebaren van FileSpacer opgeschort voor de betrokken vensters, ook als PowerToys niet actief is.
-
-Voeg `FileSpacer.exe` toe aan de uitgesloten apps van Grab And Move of schakel de functie uit in PowerToys om de FileSpacer-gebaren te blijven gebruiken.
-
-### PowerToys Peek
-
-**Voorbeeld met spatiebalk**, onder **Instellingen > Integratie**, opent een Peek-voorbeeld van geselecteerde bestanden of mappen met alleen de **spatiebalk**. De optie staat standaard uit.
-
-Peek moet ook in PowerToys zijn ingeschakeld. De integratie vereist PowerToys 0.96 of nieuwer en 0.102 of nieuwer voor meervoudige selecties.
-
-### Everything
-
-Een bestaande installatie van [Everything](https://www.voidtools.com/) kan worden geïntegreerd voor geavanceerde zoekopdrachten vanuit het FileSpacer-zoekveld. Resultaten openen in Everything.
-
-De optie staat onder **Instellingen > Integratie**, met automatische detectie van Everything of handmatige selectie van een draagbare kopie. De zoekopdracht omvat de huidige map en submappen, of alle geïndexeerde bestanden met **Overal**. Voor virtuele mappen moet Overal worden gekozen.
-
-**Zoeken in Everything** start de externe zoekopdracht met de syntaxis van Everything. Na geslaagd starten worden het FileSpacer-veld en lokale filter gewist.
+**Zoeken in Everything** voert [de zoekopdracht](https://www.voidtools.com/support/everything/searching/) uit in de map en submappen, of met **Overal** in alle [geïndexeerde bestanden](https://www.voidtools.com/support/everything/indexes/). Resultaten openen in Everything. Voor virtuele mappen Overal kiezen. Na geslaagd starten worden het zoekveld en lokale filter van FileSpacer gewist.
 
 ![Een zoekopdracht in FileSpacer met de bijbehorende Everything-resultaten ernaast.](images/everything-search-nl.png)
 
-### Nilesoft Shell
+<div id="nilesoft-shell"></div>
 
-[Nilesoft Shell](https://nilesoft.org/) kan de menu’s van FileSpacer vormgeven en opdrachten aanpassen. Aanpassing van de configuratie wordt aanbevolen voor een consistent uiterlijk, met name rechte hoeken op titelbalk- en werkbalkmenu’s.
+[Nilesoft Shell](https://nilesoft.org/) is een Windows-uitbreiding om het uiterlijk en de opdrachten van contextmenu’s aan te passen. Bij gebruik kan het ook de menu’s van FileSpacer beheren.
 
-FileSpacer stelt eerst het titelbalkmenu samen. Daarna past Nilesoft Shell regels toe die opdrachten kunnen hernoemen, verplaatsen, verbergen of toevoegen en dus voorrang hebben. Grijze items in de editor worden gewijzigd in de configuratiebestanden van Nilesoft Shell.
+FileSpacer stelt het titelbalkmenu samen. Daarna past Nilesoft Shell zijn regels toe, die voorrang hebben. De [configuratiereferentie](nilesoft-shell.md) beschrijft de vormgeving en toegang tot FileSpacer-acties.
 
-FileSpacer-acties zijn bruikbaar in de configuratie van Nilesoft Shell. De [configuratiereferentie](nilesoft-shell.md) bevat de instellingen en actie-ID’s. Voorbeeld met de daar gedefinieerde voorwaarde `filespacer_title`:
-
-```nss
-item(type='*' mode='multiple' where=filespacer_title
-     title='Vergrendelde indeling herstellen' cmd=window.command(1123))
-```
-
-De afbeeldingen hieronder tonen het Modern-thema met de standaardhoeken en met de aanbevolen rechte hoeken.
+Rechte hoeken worden aanbevolen voor menu’s van de titelbalk en werkbalk.
 
 **Navigatiemenu**
 
@@ -156,24 +126,36 @@ De afbeeldingen hieronder tonen het Modern-thema met de standaardhoeken en met d
 | --- | --- |
 | <img src="images/nilesoft-main-menu-default-nl.png" alt="Hoofdmenu met standaard afgeronde hoeken." width="320"> | <img src="images/nilesoft-main-menu-adapted-nl.png" alt="Hetzelfde menu met rechte hoeken." width="320"> |
 
-## Instellingen en updates
+[PowerToys](https://learn.microsoft.com/nl-nl/windows/powertoys/) is een verzameling Microsoft-hulpprogramma’s om Windows uit te breiden en aan te passen.
 
-Ctrl+, opent Instellingen. F1 opent de offlinehandleiding. De interface volgt de Windows-weergavetaal. Een taalwijziging vereist het opnieuw starten van de toepassing.
+<div id="powertoys-peek"></div>
 
-Updates worden gecontroleerd onder **Instellingen > Info**, waar ook optionele wekelijkse controles kunnen worden ingeschakeld. Deze staan standaard uit. Downloaden en installeren vereisen bevestiging. Daarna openen de eerdere mappen weer met hun opgeslagen indeling.
+**Peek** toont een bestandsvoorbeeld. In FileSpacer opent **Voorbeeld met spatiebalk** onder **Instellingen > Integratie** dit met de spatiebalk. Peek moet in PowerToys zijn ingeschakeld. Minimumversie: 0.96, of 0.102 voor meervoudige selectie.
 
-## Lokale gegevens
+<div id="powertoys-grab-and-move"></div>
 
-Indelingen, vergrendelingen, geschiedenis en voorkeuren worden lokaal opgeslagen. De opslaglocaties staan in de [technische notitie voor probleemoplossing](../en/README.md#local-data) (in het Engels).
+**Grab And Move** verplaatst vensters en wijzigt hun formaat vanuit de inhoud. Als het is ingeschakeld, zijn de overeenkomstige FileSpacer-gebaren onderbroken, ook als PowerToys gesloten is. Om ze te behouden, `FileSpacer.exe` uitsluiten in Grab And Move of het hulpmiddel uitschakelen.
 
-**Instellingen > Info > Onderhoud > Alle mapstatussen opnieuw instellen** sluit mapvensters en wist hun opgeslagen indeling, geschiedenis en vergrendelingen. Bestanden en algemene voorkeuren blijven behouden.
+## Updates en probleemoplossing
 
-Voor probleemoplossing stelt `FileSpacer.exe /reset-options` algemene voorkeuren opnieuw in. `/reset-all` wist ook opgeslagen mapstatussen. Deze opdrachten behouden de bestanden.
+<div id="instellingen-en-updates"></div>
+<div id="settings-and-updates"></div>
+
+**Instellingen > Info** biedt updatecontroles en optionele wekelijkse controles, die standaard uitstaan. Downloaden en installeren vereisen bevestiging.
+
+<div id="lokale-gegevens"></div>
+<div id="local-data"></div>
+
+Op dezelfde pagina sluit **Onderhoud > Alle mapstatussen opnieuw instellen** de vensters en wist hun indelingen, geschiedenis en vergrendelingen. Bestanden en algemene voorkeuren blijven behouden.
+
+Het herstellen van voorkeuren en geavanceerde probleemoplossing staan in de [technische notitie](../en/README.md#local-data), in het Engels.
 
 ## Privacy
 
-FileSpacer bevat geen telemetrie, gebruiksregistratie of reclame. Crashrapporten worden niet automatisch verstuurd. Diagnostische rapporten blijven in `%LOCALAPPDATA%\FileSpacer`. Delen is optioneel en kan bestandspaden of delen van het procesgeheugen onthullen.
+FileSpacer bevat geen telemetrie, gebruiksregistratie of advertenties. Crashrapporten worden nooit automatisch verstuurd. Delen is vrijwillig en kan bestandspaden of delen van het geheugen onthullen.
 
-Updatecontroles en downloads maken via HTTPS contact met GitHub. GitHub ontvangt de gebruikelijke verbindingsinformatie, waaronder het IP-adres en de toepassingsversie, maar geen mapstatussen, bestandspaden of diagnostische rapporten.
+Updates maken verbinding met GitHub, dat het IP-adres en de toepassingsversie ontvangt, maar geen bestandspaden of mapstatus.
 
-Referenties voor netwerkstations worden door Windows ingevoerd en verwerkt, zoals in Bestandenverkenner. FileSpacer leest of bewaart ze niet. Een Everything-zoekopdracht kiezen geeft de zoekopdracht en, bij mapgebonden zoeken, het pad door aan de lokale Everything-toepassing.
+Windows beheert de aanmeldgegevens voor netwerkstations rechtstreeks. FileSpacer leest of bewaart deze niet.
+
+Een Everything-zoekopdracht geeft de zoektekst en, bij een zoekopdracht binnen een map, het pad door aan de lokale Everything-toepassing.
