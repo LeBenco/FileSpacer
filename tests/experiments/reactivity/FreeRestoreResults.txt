@@ -1,0 +1,205 @@
+Free-placement restoration investigation, 2026-11-07
+
+Scope and reference
+-------------------
+5000 files, real free positions, 800x400 Shell views, Debug x64, AgentWin10.
+The reference restoration source is e3fb433, which already includes the earlier
+complete-selection optimization. These results are not against the original FS
+release. No host UI is automated. Explorer has no equivalent free-position folder
+view in this comparison; its eight arranged views remain controls.
+
+Cause identified
+----------------
+The instrumented reference separates decoding, anchor preparation, revealing the
+last item and anchor, redraw, identity proofs, native construction and focus.
+In three qualified restorations:
+
+  First complete-identity proof: 375.668, 390.828, 456.074 ms
+  Native entry construction:     18.979,  22.206,  20.619 ms
+  Second identity proof:        386.100, 424.024, 475.931 ms
+  Anchor stages together: generally 2-5 ms; focus below 0.1 ms.
+
+The scroll detour was therefore the wrong initial suspect. The dominant work was
+inside the identity enumerations introduced to make global selection safe.
+
+Offline inspection uses the exact VM Shell32 image and matching Microsoft PDB:
+PDB identity FD92FC129E957EBEE6CB4C6D738D339F1, image size 0x770000.
+CDefView::_GetItemsWorker calls _GetItemArray, which dispatches GetItems through
+the list host. CListViewHost::GetItems performs DSA_Sort with
+_CmpLeftToRightTopToBottom in the free-layout branch. That comparator repeatedly
+queries geometry through the list-control interface. The order is unnecessary
+for an identity-set proof. These are matched-image disassembly and API-phase
+observations, not a count of live comparator calls or a CPU sampling profile.
+
+Changes, ordered by measured gain
+--------------------------------
+1. Complete identity proofs use public IFolderView::Item indices in free icon
+   views. Every identity still must match a unique saved opaque PIDL. All/selected
+   counts are checked before and after the traversal; selection membership follows
+   from a complete view set and equal selected/all counts. Other renderers keep
+   their native enumeration. Duplicate, stale or missing identities and failed
+   operations still take ordinary restoration; generation checks remain in place.
+
+2. Once those proofs are inexpensive, public Select All is also useful in free
+   placement. S_FALSE from GetAutoArrange means an unarranged view, not a missing
+   API. Unsupported queries and bulk-operation failures retain the old path.
+   The existing qualified native binding is reused whenever available.
+
+3. Capturing a large complete selection also uses indices in free icon views.
+   This removes a second spatial enumeration from capture. Failure to obtain
+   usable indices/counts retains native selection enumeration. Only the private
+   snapshot's identity order changes; selection, focus and geometry remain
+   independent. Anchor capture still uses its original native enumeration.
+
+These additions use public methods only. No private method, offset, executable
+patch, CFG exemption, capability schema or startup-discovery dependency is added.
+The earlier optional private Select All adapter remains optional and retains its
+existing cache, qualification and silent public fallback. Mode/arrangement checks
+are cheap current-view policy queries, not repeated ABI discovery.
+
+Measured improvements
+---------------------
+An initial indexed proof pass reduced the qualified restoration to 46.631,
+50.330 and 66.258 ms. Individual proofs were about 10-19 ms rather than 375-475.
+
+Balanced comparison: three outer cycles alternate reference/candidate order,
+three repetitions per cycle and arm, nine samples per restoration value.
+
+Operation/arm                 Reference median   Candidate median   ms
+Restore, qualified                 883.308             46.420
+Restore, public                   1140.102            725.617
+
+Qualified restoration improves about 19x (94.7%); public fallback improves 36.4%.
+All 5000 identities, retained arrays, free coordinates and focus states pass.
+No claim is made that the public fallback reaches the 500 ms target.
+This balanced trial preceded the final renderer guard; the free-icon algorithm
+is retained, with additional cheap mode/arrangement checks. The final guarded
+executable is independently covered by the matrix and presentation run below.
+
+Three captures per variant in the same balanced trial:
+  Reference: 913.259, 948.664, 939.160 ms; median 939.160.
+  Candidate: 536.595, 524.435, 564.550 ms; median 536.595.
+Capture still includes the original spatial enumeration used to find an anchor.
+Its remaining cost is separate from restore latency.
+
+Already-identical selection: six samples per variant, no global reconstruction
+in either variant, all recorded private_all_calls values zero.
+  Reference: 139.795-179.089 ms.
+  Candidate: 39.467-42.957 ms.
+This observed side benefit does not establish a separate optimization mechanism
+for arbitrary partial selections, which retain the original path.
+
+First GetSelection(FALSE) remains a distinct roughly 0.35-0.5 s cost in these
+free-layout trials. It occurs after the measured restore and is not hidden inside
+the restore result. Changing SVGIO_FLAG_VIEWORDER would not remove the inspected
+spatial DSA_Sort branch; that flag controls a later ordering step. No private
+selection-cache injection was implemented to hide this cost.
+
+Rejected/generalized attempt
+----------------------------
+Applying the indexed traversal to every renderer was rejected. In the real
+modern List/Details profiles it made capture take 2.4-3.2 s and restore about
+4.9-5.5 s instead of tens of milliseconds. The final code restricts indices to
+unarranged Icon/SmallIcon modes and retains native enumeration elsewhere.
+This is determined from public current-view capabilities, not an OS-version list.
+
+Final guarded version
+---------------------
+The complete nine-view API matrix passed: 48 reference FS rows, 48 candidate
+rows and 24 native Explorer rows, with all three cancellation/duplicate/stale
+identity cases. List/Details return to native enumeration: candidate medians
+71.936 / 66.830 ms, reference 48.542 / 29.474 ms on this pass, instead of the
+rejected multi-second indexed traversal. Three samples are insufficient to
+attribute differences of tens of milliseconds amid the observed VM variability.
+Free-placement medians on that pass are 1056.627 -> 66.768 ms qualified and
+1684.979 -> 813.890 ms public. Raw data is retained without substituting the
+better balanced values for this run's values.
+
+The final visual run uses exactly those already-built native executables,
+verified by their prepared hashes and byte-identical native build recipes.
+The ordinary test command was blocked before compilation by host FileSpacer
+test processes. A new prepared package reused the successful matrix artifacts
+without compiling, controlling the host UI or terminating those processes.
+The existing VM runner and its native-argument/hash checks were retained; its
+file manifest was regenerated for the newly selected visual case. The reuse
+record preserves both executable hashes and the original package identity.
+
+All 26 final observations are OBSERVED, no coalesced frames, 800x400 pixels.
+Milliseconds to the final observed quiet composed desktop image, one sample:
+
+View              Reference FS   Candidate FS   Explorer native Select All
+Extra-large           100.960         54.251          69.704
+Large                  70.026        100.993          47.982
+Medium                100.697        116.719          69.845
+Small                 101.082        101.086          47.605
+List                   99.987         85.391          92.506
+Details                69.962        100.726          85.388
+Tiles                 348.594        286.147          69.877
+Content               301.769        301.851          63.738
+Free                 1169.974        118.118             n/a
+
+Free restore API return on this visual pass: 1130.368 -> 52.450 ms. Free capture:
+1069.832 -> 573.827 ms. The reference and candidate final free-view bitmaps are
+byte-identical (SHA256 0E71DD8049D2AB4959DF4C2E7728ADA752EFE5023AE5F546E606CA2CB6F719BF),
+in addition to the checks of all 5000 coordinates and identities. Presentation
+means composed desktop observation, not physical scan-out. The 1.5 s observation
+tail is not included as rendering time. Explorer performs native Select All;
+FS restores a saved selection, focus and scroll. Classic layouts differ from
+Explorer's modern layouts, as documented in RestoreAllResults.txt.
+
+No additional private capability is needed for these gains. The remaining
+roughly half-second capture and first selection-array construction are not
+claimed resolved. Arbitrary partial selections retain the existing behavior.
+
+Validation and evidence
+-----------------------
+Phase reference: experiment-freerestorephases-849e1bfd4c8e484581d385d4ff0d9b88
+Indexed phase: experiment-freerestorephases-59af027357234d54b8be9523379b16c2
+Public bulk trial: experiment-freerestorebulk-e7f73cbb102f4c178faab00ae9a34cf7
+Balanced trial: experiment-restorefreebalance-e0874a6c7860476fa73b53eac04e1400
+Identical selection: experiment-freerestoreidentical-afa4ece6fc8e4e429e57b370ffafbb15
+Final nine-view matrix: experiment-restoreall-204106e81fd24466abfa8507ac6de560
+Final prepared presentation: vm-8d2225c0d8c9474a9ab79f1e5253add9
+Raw runs are under build/regression; offline disassembly/phase journals are under
+build/restore-free-phases. The temporary forced-public-bulk driver is retired in
+that ignored evidence directory; the normal phase test now covers the adopted
+public path without an override.
+
+The first phase journal was accidentally overwritten by the case's own output
+log; the corrected test uses a distinct native-output.log and checks six end
+markers. A missing Windows.h in the new phase helper was corrected after MSVC
+rejected it. These failed preparations are retained, not successful measurements.
+
+The first nine-view comparison passed both 48-row FS variants and the three
+identity/cancellation safety cases, but failed the Explorer setup foreground
+precondition. Caption-click setup now also applies before nonvisual Explorer
+trials. The API benchmark's keyboard route is used when that Explorer view does
+not expose IShellFolderView. A premature identical-selection launch was rejected
+by the VM mutex and was rerun after the controller finished; no concurrent guest
+test was accepted.
+
+Real product regressions 18/02-Persistance and 18/03-RedessinGrandDossier pass.
+The host launcher subsequently failed to read its protected last-run.json.
+Matching guest/controller records, PASS/0, no cleanup errors and final task state
+were verified independently. That launcher failure is retained as a transport
+limitation; no VM infrastructure or security setting was changed.
+The final matrix and prepared presentation both return PASS/0 through the full
+controller, with no guest cleanup errors. The prepared replay's first attempt
+lacked the prescribed Windows PowerShell module path; it failed before VM use
+and was corrected. The final Debug/native builds contain no new /W4 warning.
+
+Both clang-tidy and Cppcheck finish on the production unit, changed shared driver,
+new phase driver, baseline includer, instrumented unit and exact reference unit:
+12 completed jobs, no timeout. Real SDK 10.0.19041.0 / MSVC+ATL 14.44.35207 headers
+for clang-tidy, official Win64 Windows/ATL/SQLite models for Cppcheck, C++14.
+Verdict REVIEW: explicit aggregate initialization still produces constructor
+advisories; documented Win32 bitmasks, shared .cpp includes and test-driver style
+also need review. No confirmed new product defect remains. The old dead-store
+warning also exists in the analyzed e3fb433 source. No checks are suppressed.
+
+References
+----------
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifolderview-item
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifolderview-itemcount
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifolderview-items
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/ne-shobjidl_core-_svgio
