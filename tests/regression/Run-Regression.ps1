@@ -147,7 +147,7 @@ function Stop-TestApplication {
         try {
             if (!$process.HasExited) {
                 [void]$process.CloseMainWindow()
-                if (!$process.WaitForExit(5000)) { $process.Kill(); [void]$process.WaitForExit(5000) }
+                if (!$process.WaitForExit(5000)) { $cleanupFailures.Add("PID $($process.Id) remains running; normal closure required.") }
             }
         } catch { $cleanupFailures.Add($_.Exception.Message) }
         finally { $process.Dispose() }
@@ -191,7 +191,7 @@ try {
         [void][IO.Directory]::CreateDirectory($testRun)
         $env:FS_REGRESSION_RUN=$testRun
         $log=Join-Path $testRun 'output.log'; $errors=Join-Path $testRun 'errors.log'
-        $started=Get-Date; $exitCode=-1; $status='FAIL'; $detail=''; $cleanupDetail=''; $collectionDetail=''
+        $started=Get-Date; $exitCode=-1; $status='FAIL'; $detail=''; $cleanupDetail=''; $collectionDetail=''; $timedOut=$false
         if ($entry.Category -eq 'UI') {
             # Cases are independent. Retaining previous fixtures' taskbar identities
             # makes each Shell CommitList rewrite an ever-growing set of old lists.
@@ -216,8 +216,8 @@ try {
         $process=$job.Process
         try {
             if (!$process.WaitForExit($TimeoutSeconds*1000)) {
-                & taskkill.exe /PID $process.Id /T /F | Out-Host
-                if (!$process.WaitForExit(5000)) { $process.Kill(); $process.WaitForExit() }
+                $timedOut=$true
+                Stop-TestCaseProcess $process
                 $detail='Timeout'
             } else {
                 $exitCode=[int]$process.ExitCode
@@ -256,6 +256,7 @@ try {
         ConvertTo-Json -InputObject $results -Depth 5 | Set-Content -LiteralPath (Join-Path $run 'results.json') -Encoding UTF8
         Write-Host "$status $relative ($([Math]::Round($seconds,1)) s)"
         if ($detail) { Write-Warning "$relative : $detail" }
+        if($timedOut){throw "$relative : timed out; descendants were preserved, so subsequent tests cannot be isolated."}
         if ($entry.Category -eq 'UI') {
             $image=Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'
             $remaining=@(Get-Process -Name FileSpacer -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $image })
@@ -269,7 +270,14 @@ finally {
     Remove-Item Env:\FS_REGRESSION_RUN -ErrorAction SilentlyContinue
     if ($ui) {
         try { Stop-TestApplication } catch { if (!$fatal) { $fatal=$_.Exception.Message } }
-        if ($dbPrepared) {
+        $image=Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'
+        $canRestore=-not @(Get-Process -Name FileSpacer -ErrorAction SilentlyContinue | Where-Object {$_.Path-eq$image}).Count
+        if(!$canRestore){
+            $restoreError="FileSpacer remains running. Test registry/database restoration deferred; preserved backup: $backup"
+            if($fatal){$fatal+='; '+$restoreError}else{$fatal=$restoreError}
+            Write-Warning $restoreError
+        }
+        if ($dbPrepared -and $canRestore) {
             foreach ($suffix in @('','-wal','-shm')) {
                 try {
                     $file=$database+$suffix
@@ -281,7 +289,7 @@ finally {
                 } catch { $fatal="Restore test database: $($_.Exception.Message)"; Write-Warning $fatal }
             }
         }
-        if ($registryPrepared) {
+        if ($registryPrepared -and $canRestore) {
             try {
                 [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($testKey,$false)
                 if ($savedRegistry) {
