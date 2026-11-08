@@ -247,6 +247,18 @@ do not disable an independently qualified clear capability. This is an optional
 private protocol, not a guaranteed Windows interface. Arbitrary subset selection
 continues to use the native per-item path.
 
+Ordinary deselection clicks stay on the native input path. After a verified
+global deselection notification reports zero selected items, the same binding
+can batch-release the old native subscriptions, forward the original notice,
+invalidate selection snapshots and cancel stale delayed activation. There is
+no background-click preclear hook. Missing capability leaves native handling.
+
+An independently qualified native selected-index range can also accelerate
+explicit clearing, including free Tiles. Its matching control symbols, loaded
+instructions, ownership and CFG targets are checked and cached separately;
+absence retains the existing manager capability or the public path. Case
+`06-SelectionRange.ps1` covers qualification, cache faults and late publication.
+
 Cases `05-SelectionAll.ps1` and `06-SelectionAllVisible.ps1` exercise the production
 adapter from empty and partial selections in nine configurations, plus a forced
 public selection fallback. They verify identities, retained snapshots, selection
@@ -255,15 +267,18 @@ data objects, sorting, focus and subsequent operations. Case 06 uses visible
 establish composed-frame presentation latency or full-application parity with
 Explorer.
 
-## Complete-selection reads in free layouts
+## Large-selection reads in free layouts
 
-Guarded `nativeViewSelection` calls use a public complete-selection snapshot for
-ungrouped free Icon/SmallIcon views with at least 128 selected items. The helper
-reads child IDs and positions once, sorts cached coordinates, starts at the
-focused item and constructs an ordinary array with `SHCreateShellItemArray`.
-The selected/all counts and focus must still match after capture. Coordinate
-ties, partial/empty selections, grouping, other modes and unavailable methods
-retain native `GetSelection`; cancellation rejects the stale operation.
+Guarded `nativeViewSelection` calls use a public snapshot for ungrouped free
+Icon/SmallIcon views: complete selections of at least 128 items and partial
+selections of at least 1024 items. Partial capture uses `GetSelectedItem`, with
+an explicit check of index zero, and rechecks the selected indices to detect
+same-count replacement. The helper reads selected child IDs and positions once,
+sorts cached coordinates, starts at the focused item only when it is selected,
+and constructs an ordinary array with `SHCreateShellItemArray`. Final all/selected
+counts and focus must still match after index verification. Coordinate ties,
+smaller/empty selections, grouping, other modes and unavailable methods retain
+native `GetSelection`; cancellation rejects the stale operation.
 
 This helper lives in `ShellViewSelection`, together with the native-array reader
 and its existing mixed-provider conversion. The pure folder/item adapters remain
@@ -276,7 +291,10 @@ This optimization uses public APIs, has no symbol-discovery dependency and keeps
 no persistent item cache. It does not populate the Shell's own selection cache
 or accelerate its independent commands. `SelectionArray` tests the production
 reader, exact ordered identities, attributes, data-object round trips, retained
-arrays, geometry, focus, rejection and cancellation. `PublicFallback` separately
+arrays, geometry, focus, rejection and cancellation. The host `Partial` scenario
+of `Run-SelectionGestures.ps1` additionally checks large subsets, same-count
+replacement and late focus changes, with a qualified fixture cache supplied
+through `FS_GESTURE_CACHE` when needed. `PublicFallback` separately
 measures public-only clear/restoration and the following array read against
 Explorer at equal viewport dimensions.
 
