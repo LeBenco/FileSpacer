@@ -281,7 +281,7 @@ HRESULT ShellSelectionClear::Binding::purgeArray(HDSA array,int selected,const s
         }else enumerate(array,callback,nullptr);
         BOOL erased=TRUE;
         if(module.clearViaCount){
-            // Experimental internal data write, not a public API contract.
+            // Qualified internal data write, not a public API contract.
             // Public native clear then reaches its own zero-count purge, using
             // its own allocator and a direct, CFG-compatible internal call.
             if(!current())return E_ABORT;
