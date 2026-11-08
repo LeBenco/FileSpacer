@@ -1,5 +1,6 @@
 # Host only, explicitly invoked. Keep registry/database isolation in tests.cmd.
-param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path)
+param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path,
+    [ValidateRange(30,900)][int]$TimeoutSeconds=300)
 $ErrorActionPreference='Stop'
 $ProjectRoot=(Resolve-Path -LiteralPath $ProjectRoot).Path
 if(Get-Process FileSpacer -ErrorAction SilentlyContinue){throw 'Close FileSpacer first; no process was stopped.'}
@@ -13,7 +14,7 @@ try {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot '55-SelectionGestures.ps1') -Destination $case
     Push-Location -LiteralPath $ProjectRoot
     try {
-        & $env:ComSpec /d /c tests.cmd -Category UI -Pattern ($leaf+'\01-Gestures.ps1') -TimeoutSeconds 900
+        & $env:ComSpec /d /c tests.cmd -Category UI -Pattern ($leaf+'\01-Gestures.ps1') -TimeoutSeconds $TimeoutSeconds
         $exitCode=$LASTEXITCODE
     }finally{Pop-Location}
 }finally{
