@@ -1,6 +1,6 @@
 # Host only, explicitly invoked. Keep registry/database isolation in tests.cmd.
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path,
-    [ValidateSet('Gestures','Drop')][string]$Scenario='Gestures',
+    [ValidateSet('Gestures','Drop','Tail')][string]$Scenario='Gestures',
     [ValidateRange(30,900)][int]$TimeoutSeconds=300)
 $ErrorActionPreference='Stop'
 $ProjectRoot=(Resolve-Path -LiteralPath $ProjectRoot).Path
@@ -12,7 +12,7 @@ if(Test-Path -LiteralPath $stage){throw 'The unique staging directory already ex
 $case=Join-Path $stage '01-Gestures.ps1'
 $exitCode=1
 try {
-    $source=if($Scenario-eq'Drop'){'BackgroundClickDropTests.ps1'}else{'55-SelectionGestures.ps1'}
+    $source=switch($Scenario){'Drop'{'BackgroundClickDropTests.ps1'}'Tail'{'TailSelectionMeasurements.ps1'}default{'55-SelectionGestures.ps1'}}
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot $source) -Destination $case
     Push-Location -LiteralPath $ProjectRoot
     try {
