@@ -29,7 +29,7 @@ On peut définir FileSpacer comme gestionnaire de fichiers par défaut lors de l
 
 **Déverrouiller l’état de la fenêtre** conserve sa disposition actuelle et permet d’enregistrer à nouveau les changements.
 
-La fonction de verrouillage s’active dans **Paramètres > Général**. La commande **Verrouiller l’état de la fenêtre** apparaît ensuite à côté du titre du dossier. Un badge de cadenas signale le verrouillage. Désactiver complètement la fonction supprime tous les verrouillages.
+Le verrouillage s’active dans **Paramètres > Général**. On peut aussi y personnaliser l’affichage du cadenas à gauche de la barre de titre et activer le clic sur cette icône pour verrouiller ou déverrouiller l’état de la fenêtre. Désactiver la fonction supprime tous les verrouillages et masque le badge.
 
 <img src="images/locked-title.png" alt="Gros plan du titre du dossier et de son badge de cadenas." width="280">
 
@@ -102,7 +102,7 @@ On peut définir des **raccourcis souris pour déplacer ou redimensionner une fe
 
 ![Redimensionner une fenêtre avec Alt et un glisser du bouton droit.](images/resize-window.gif)
 
-La sélection est conservée et Échap annule le geste. Les raccourcis se personnalisent dans **Paramètres > Raccourcis**. Les boutons gauche et droit nécessitent Alt, le bouton central peut s’utiliser seul.
+Si des fichiers sont sélectionnés, la sélection est conservée. Échap annule l’action. Les raccourcis se personnalisent dans **Paramètres > Raccourcis**. Les boutons gauche et droit nécessitent Alt, le bouton central peut s’utiliser seul.
 
 <a id="integration"></a>
 

@@ -28,7 +28,7 @@ FileSpacer lässt sich bei der Installation oder unter **Einstellungen > Integra
 
 **Fensterzustand entsperren** behält die aktuelle Anordnung bei und ermöglicht wieder das Speichern von Änderungen.
 
-Die Sperrfunktion wird unter **Einstellungen > Allgemein** aktiviert. Danach erscheint **Fensterzustand sperren** neben dem Ordnertitel. Ein Schloss am Symbol kennzeichnet die Sperre. Das Abschalten der Funktion entfernt alle Sperren.
+Die Sperrfunktion wird unter **Einstellungen > Allgemein** aktiviert. Dort lassen sich auch die Anzeige des Schlosses links in der Titelleiste anpassen und das Sperren oder Entsperren des Fensterzustands per Klick auf das Symbol aktivieren. Das Abschalten der Funktion entfernt alle Sperren und blendet das Symbol aus.
 
 <img src="images/locked-title.png" alt="Nahaufnahme des Ordnertitels mit Schlosssymbol." width="280">
 
@@ -101,7 +101,7 @@ Von Nilesoft Shell verwaltete Einträge werden in dessen Konfiguration geändert
 
 ![Fenstergröße mit Alt und der rechten Maustaste ändern.](images/resize-window.gif)
 
-Die Auswahl bleibt erhalten. Esc bricht die Geste ab. Die Belegung lässt sich unter **Einstellungen > Tastenkombinationen** anpassen. Linke und rechte Maustaste erfordern Alt. Die mittlere kann allein verwendet werden.
+Sind Dateien ausgewählt, bleibt die Auswahl erhalten. Esc bricht die Aktion ab. Die Belegung lässt sich unter **Einstellungen > Tastenkombinationen** anpassen. Linke und rechte Maustaste erfordern Alt. Die mittlere kann allein verwendet werden.
 
 <a id="integration"></a>
 

@@ -29,7 +29,7 @@ FileSpacer si può impostare come gestore di file predefinito durante l’instal
 
 **Sblocca lo stato della finestra** conserva la disposizione attuale e permette di tornare a salvare le modifiche.
 
-Il blocco si attiva in **Impostazioni > Generale**. Il comando **Blocca lo stato della finestra** compare poi accanto al titolo della cartella. Un lucchetto sull’icona segnala il blocco. Disattivare la funzione elimina tutti i blocchi.
+Il blocco si attiva in **Impostazioni > Generale**. Qui si può anche personalizzare l’aspetto del lucchetto a sinistra della barra del titolo e abilitarne il clic per bloccare o sbloccare lo stato della finestra. Disattivare la funzione elimina tutti i blocchi e nasconde l’icona.
 
 <img src="images/locked-title.png" alt="Dettaglio del titolo della cartella con il lucchetto." width="280">
 
@@ -102,7 +102,7 @@ Si possono definire **gesti del mouse per spostare o ridimensionare una finestra
 
 ![Ridimensionamento con Alt e il pulsante destro.](images/resize-window.gif)
 
-La selezione viene mantenuta ed Esc annulla il gesto. Le scorciatoie si personalizzano in **Impostazioni > Scelte rapide**. I pulsanti sinistro e destro richiedono Alt. Il pulsante centrale si può usare da solo.
+Se ci sono file selezionati, la selezione viene mantenuta. Esc annulla l’azione. Le scorciatoie si personalizzano in **Impostazioni > Scelte rapide**. I pulsanti sinistro e destro richiedono Alt. Il pulsante centrale si può usare da solo.
 
 <a id="integration"></a>
 
