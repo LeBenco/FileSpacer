@@ -48,7 +48,7 @@ IDR_ITEM_ACCEL  ACCELERATORS {
     "D",            IDM_DELETE_PROXY,   VIRTKEY, CONTROL, SHIFT
     // folder
     "N",            IDM_NEW_FOLDER,     VIRTKEY, CONTROL, SHIFT
-    "N",            IDM_NEW_TEXT_FILE,  VIRTKEY, CONTROL
+    "N",            IDM_NEW_WINDOW,     VIRTKEY, CONTROL
 }
 
 #pragma code_page(65001)
