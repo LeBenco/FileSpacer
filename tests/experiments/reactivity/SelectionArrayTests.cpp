@@ -101,7 +101,7 @@ void selectionArrays(const wchar_t *fixture) {
                     mode.name, focus, repetition, reference ? "native" : "integrated", clockMs() - began);
             }
             CComPtr<IShellItemArray> qualified;
-            need(filespacer::captureCompleteSpatialSelection(view, current, &qualified) == S_OK && qualified,
+            need(filespacer::captureSpatialSelection(view, current, &qualified) == S_OK && qualified,
                 "Complete selection did not qualify for the integrated fast path");
             compareArrays(candidate, native);
             const auto wanted = orderedArrayPaths(native);
@@ -120,7 +120,7 @@ void selectionArrays(const wchar_t *fixture) {
             CComPtr<IShellItemArray> before, after, rejected;
             const HRESULT observed = view->GetSelection(FALSE, &before);
             const double began = clockMs();
-            need(filespacer::captureCompleteSpatialSelection(view, current, &rejected) == S_FALSE && !rejected, "Unsupported case did not retain native access");
+            need(filespacer::captureSpatialSelection(view, current, &rejected) == S_FALSE && !rejected, "Unsupported case did not retain native access");
             const double elapsed = clockMs() - began;
             CComPtr<IShellItemArray> integrated;
             need(filespacer::nativeViewSelection(view, FALSE, &integrated, current) == observed
@@ -142,7 +142,7 @@ void selectionArrays(const wchar_t *fixture) {
         selectAll(7);
         CComPtr<IShellItemArray> aborted;
         unsigned calls = 0;
-        need(filespacer::captureCompleteSpatialSelection(view, [&] { return current() && ++calls < 64; }, &aborted) == E_ABORT && !aborted,
+        need(filespacer::captureSpatialSelection(view, [&] { return current() && ++calls < 64; }, &aborted) == E_ABORT && !aborted,
             "Cancellation did not reject the candidate");
         calls = 0;
         need(filespacer::nativeViewSelection(view, FALSE, &aborted, [&] { return current() && ++calls < 64; }) == E_ABORT && !aborted,
