@@ -29,7 +29,7 @@ O FileSpacer pode ser definido como gestor de ficheiros predefinido durante a in
 
 **Desbloquear o estado da janela** mantém a disposição atual e permite voltar a guardar as alterações.
 
-O bloqueio ativa-se em **Definições > Geral**. Também é possível personalizar a apresentação do cadeado à esquerda da barra de título e ativar o clique nesse ícone para bloquear ou desbloquear o estado da janela. Desativar a função elimina todos os bloqueios e oculta o ícone.
+O bloqueio ativa-se em **Definições > Geral**. Também é possível personalizar a apresentação do cadeado à esquerda da barra de título e ativar o clique nesse ícone para bloquear ou desbloquear o estado da janela. Também é possível [adicionar este comando ao menu da barra de título](#customize-the-title-bar-menu). Desativar a função elimina todos os bloqueios e oculta o ícone.
 
 <img src="images/locked-title.png" alt="Pormenor do título da pasta com o indicador de cadeado." width="280">
 

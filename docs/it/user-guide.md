@@ -29,7 +29,7 @@ FileSpacer si può impostare come gestore di file predefinito durante l’instal
 
 **Sblocca lo stato della finestra** conserva la disposizione attuale e permette di tornare a salvare le modifiche.
 
-Il blocco si attiva in **Impostazioni > Generale**. Qui si può anche personalizzare l’aspetto del lucchetto a sinistra della barra del titolo e abilitarne il clic per bloccare o sbloccare lo stato della finestra. Disattivare la funzione elimina tutti i blocchi e nasconde l’icona.
+Il blocco si attiva in **Impostazioni > Generale**. Qui si può anche personalizzare l’aspetto del lucchetto a sinistra della barra del titolo e abilitarne il clic per bloccare o sbloccare lo stato della finestra. Il comando si può anche [aggiungere al menu della barra del titolo](#customize-the-title-bar-menu). Disattivare la funzione elimina tutti i blocchi e nasconde l’icona.
 
 <img src="images/locked-title.png" alt="Dettaglio del titolo della cartella con il lucchetto." width="280">
 

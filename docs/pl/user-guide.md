@@ -29,7 +29,7 @@ FileSpacer można ustawić jako domyślny menedżer plików podczas instalacji l
 
 **Odblokuj stan okna** zachowuje bieżący układ i ponownie umożliwia zapisywanie zmian.
 
-Blokowanie włącza się w **Ustawienia > Ogólne**. Można tam również dostosować wyświetlanie kłódki po lewej stronie paska tytułu i włączyć blokowanie lub odblokowywanie stanu okna kliknięciem tej ikony. Wyłączenie funkcji usuwa wszystkie blokady i ukrywa ikonę.
+Blokowanie włącza się w **Ustawienia > Ogólne**. Można tam również dostosować wyświetlanie kłódki po lewej stronie paska tytułu i włączyć blokowanie lub odblokowywanie stanu okna kliknięciem tej ikony. Polecenie można też [dodać do menu paska tytułu](#customize-the-title-bar-menu). Wyłączenie funkcji usuwa wszystkie blokady i ukrywa ikonę.
 
 <img src="images/locked-title.png" alt="Zbliżenie tytułu folderu z oznaczeniem kłódki." width="280">
 

@@ -24,7 +24,7 @@ FileSpacer can be set as the default file manager during installation, or under 
 
 **Unlock window state** keeps the current layout and allows changes to be saved again.
 
-Enable locking under **Settings > General**. The same settings let you customize the padlock on the left of the title bar and enable clicking it to lock or unlock the window state. Turning off the feature removes all locks and hides the padlock.
+Enable locking under **Settings > General**. The same settings let you customize the padlock on the left of the title bar and enable clicking it to lock or unlock the window state. The command can also be [added to the title-bar menu](#customize-the-title-bar-menu). Turning off the feature removes all locks and hides the padlock.
 
 <img src="images/locked-title.png" alt="Close-up of the folder title and its padlock badge." width="280">
 
