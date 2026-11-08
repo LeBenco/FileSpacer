@@ -49,7 +49,6 @@ FolderWindow::~FolderWindow() {
 static constexpr int BOTTOM_STATUS_HEIGHT_DIP = 23;
 // Coalesce selection notifications before updating the selected item and status.
 static constexpr UINT SELECTION_UPDATE_DELAY_MS = 100;
-static LONG gestureRoleAt(POINT point);
 
 static void toggleGlobalThumbnails() {
     SHELLSTATE state = {};
