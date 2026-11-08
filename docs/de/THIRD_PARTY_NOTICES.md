@@ -4,39 +4,33 @@
 
 FileSpacer basiert auf [ChromaFiler](https://github.com/vanjac/chromafiler), Copyright (c) 2023 J. van’t Hoog, veröffentlicht unter der [GNU General Public License v3.0](../../LICENSE).
 
+<a id="installer"></a>
+
+## NSIS
+
+Das NSIS-Installationsprogramm verwendet das LockedList-Plug-in, Copyright (c) 2013 Afrow Soft Ltd, unter der zlib-Lizenz. Der vollständige Hinweis steht in [installer/plugins/LockedList.txt](../../installer/plugins/LockedList.txt) und liegt als `LockedList-LICENSE.txt` im Installationsordner bei. Siehe <https://nsis.sourceforge.io/LockedList_plug-in>.
+
+Die AppUserModelID von Verknüpfungen wird durch FileSpacers `ShortcutAppID.nsh` mithilfe der Windows-COM-Makros von NSIS festgelegt. Das frühere Untermodul `nsis-shortcut-properties` wird nicht verwendet. Material Design Icons und der früher enthaltene Segoe-Schriftartauszug werden ebenfalls nicht verwendet.
+
 <a id="sqlite"></a>
 
 ## SQLite
 
 SQLite 3.53.4 wird statisch in die Anwendung eingebunden. Es ist gemeinfrei. Die unveränderten Quellen und ihre Herkunft sind in `third_party/sqlite` enthalten. Siehe <https://sqlite.org/copyright.html>.
 
-<a id="up-and-refresh-button-icons-lucide-and-feather"></a>
+<a id="icons"></a>
 
-## Symbole der Schaltflächen Aufwärts und Aktualisieren (Lucide und Feather)
+## Symbole
+
+<div id="up-and-refresh-button-icons-lucide-and-feather"></div>
 
 In der Symbolleiste öffnet der **Pfeil nach oben** den **übergeordneten Ordner**. Der **kreisförmige Pfeil** **aktualisiert den Ordnerinhalt**. Beide Symbole sind angepasste Versionen der **Lucide**-Symbole `arrow-up` und `rotate-cw`. Das Symbol mit dem Pfeil nach oben stammt ursprünglich aus **Feather**.
 
 Die vollständigen ISC- und MIT-Hinweise stehen in [licenses/Lucide-LICENSE.txt](../../licenses/Lucide-LICENSE.txt) im Quelltext oder `Lucide-LICENSE.txt` im Installationsordner. Siehe <https://lucide.dev/license>.
 
-<a id="windows-fonts-and-components"></a>
+<div id="small--flat-lock-icon"></div>
 
-## Windows-Schriftarten und -Komponenten
-
-Einige Oberflächensymbole verwenden die mit Windows installierte Microsoft-Schriftart Segoe MDL2 Assets. FileSpacer liefert diese Schriftart nicht mit. Windows Shell, allgemeine Steuerelemente, GDI+ und weitere Systemkomponenten werden von Windows bereitgestellt.
-
-<a id="installer"></a>
-
-## Installationsprogramm
-
-Das NSIS-Installationsprogramm verwendet das LockedList-Plug-in, Copyright (c) 2013 Afrow Soft Ltd, unter der zlib-Lizenz. Der vollständige Hinweis steht in [installer/plugins/LockedList.txt](../../installer/plugins/LockedList.txt) und liegt als `LockedList-LICENSE.txt` im Installationsordner bei. Siehe <https://nsis.sourceforge.io/LockedList_plug-in>.
-
-Die AppUserModelID von Verknüpfungen wird durch FileSpacers `ShortcutAppID.nsh` mithilfe der Windows-COM-Makros von NSIS festgelegt. Das frühere Untermodul `nsis-shortcut-properties` wird nicht verwendet. Material Design Icons und der früher enthaltene Segoe-Schriftartauszug werden ebenfalls nicht verwendet.
-
-<a id="small--flat-lock-icon"></a>
-
-## Small-&-Flat-Schlosssymbol
-
-Das Symbol für die Fensterzustandssperre (`src/res/window-state-lock.ico`) ist das unveränderte **lock**-Symbol aus der Sammlung Small & Flat von paomedia, unter [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) der Gemeinfreiheit gewidmet.
+Die Symbole für das geschlossene und das offene Vorhängeschloss (`src/res/window-state-lock.ico` und `src/res/window-state-unlock.ico`) basieren auf dem **lock**-Symbol aus Small & Flat von paomedia, das unter [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) als gemeinfrei veröffentlicht wurde. Das offene Vorhängeschloss ist eine abgewandelte Version des Originals.
 
 Ursprüngliche Sammlung und Lizenz: https://github.com/paomedia/small-n-flat
 

@@ -6,38 +6,9 @@ FileSpacer is based on [ChromaFiler](https://github.com/vanjac/chromafiler),
 Copyright (c) 2023 J. van't Hoog, distributed under the
 [GNU General Public License v3.0](https://github.com/LeBenco/FileSpacer/blob/main/LICENSE).
 
-<a id="sqlite"></a>
-
-## SQLite
-
-SQLite 3.53.4 is statically linked into the application. It is in the public domain.
-The unmodified sources and their provenance are in `third_party/sqlite`.
-See <https://sqlite.org/copyright.html>.
-
-<a id="up-and-refresh-button-icons-lucide-and-feather"></a>
-
-## Up and Refresh button icons (Lucide and Feather)
-
-In the toolbar, the **up arrow** opens the **parent folder**, and the
-**circular arrow** **refreshes the folder contents**. These two icons are adapted
-from **Lucide** (`arrow-up` and `rotate-cw`). The up-arrow icon originally comes
-from **Feather**.
-
-See [licenses/Lucide-LICENSE.txt](https://github.com/LeBenco/FileSpacer/blob/main/licenses/Lucide-LICENSE.txt) for the complete
-ISC and MIT notices in the source tree, or `Lucide-LICENSE.txt` in the installation
-folder. See <https://lucide.dev/license>.
-
-<a id="windows-fonts-and-components"></a>
-
-## Windows fonts and components
-
-Some interface glyphs use Microsoft's Segoe MDL2 Assets font installed with
-Windows. FileSpacer does not redistribute that font. Windows Shell, common
-controls, GDI+, and other system components are supplied by Windows.
-
 <a id="installer"></a>
 
-## Installer
+## NSIS
 
 The NSIS installer uses the LockedList plug-in, Copyright (c) 2013 Afrow Soft Ltd,
 under the zlib license. The complete notice is in
@@ -49,13 +20,32 @@ The shortcut AppUserModelID is set by FileSpacer's `ShortcutAppID.nsh` using NSI
 Windows COM macros. The former `nsis-shortcut-properties` submodule is not used.
 Material Design Icons and the former bundled Segoe font subset are not used.
 
-<a id="small--flat-lock-icon"></a>
+<a id="sqlite"></a>
 
-## Small & Flat lock icon
+## SQLite
 
-The window-state lock badge (`src/res/window-state-lock.ico`) is the unmodified
-Small & Flat **lock** icon by paomedia, dedicated to the public domain under
-[CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/).
+SQLite 3.53.4 is statically linked into the application. It is in the public domain.
+The unmodified sources and their provenance are in `third_party/sqlite`.
+See <https://sqlite.org/copyright.html>.
+
+<a id="icons"></a>
+
+## Icons
+
+<div id="up-and-refresh-button-icons-lucide-and-feather"></div>
+
+In the toolbar, the **up arrow** opens the **parent folder**, and the
+**circular arrow** **refreshes the folder contents**. These two icons are adapted
+from **Lucide** (`arrow-up` and `rotate-cw`). The up-arrow icon originally comes
+from **Feather**.
+
+See [licenses/Lucide-LICENSE.txt](https://github.com/LeBenco/FileSpacer/blob/main/licenses/Lucide-LICENSE.txt) for the complete
+ISC and MIT notices in the source tree, or `Lucide-LICENSE.txt` in the installation
+folder. See <https://lucide.dev/license>.
+
+<div id="small--flat-lock-icon"></div>
+
+The closed and open padlock icons (`src/res/window-state-lock.ico` and `src/res/window-state-unlock.ico`) come from paomedia’s Small & Flat **lock** icon, dedicated to the public domain under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/). The open padlock is a derived version.
 
 Original collection and license: https://github.com/paomedia/small-n-flat
 
