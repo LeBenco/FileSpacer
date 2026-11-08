@@ -1,0 +1,118 @@
+Cloture du chantier reactivite — 8 novembre 2026
+================================================
+
+Integration
+-----------
+Base main : 270eb2da ; branche source : codex/reactivity-hybrid, 0eac2e0d.
+Fusion locale validee : 1dc71c37, preparee dans reactivity-final-integration.
+Les changements de main sur les cadenas et le retrait de « Oublier la disposition »
+sont conserves. L'ancienne API clear(key, parts) et layoutForgotten ne sont pas
+reintroduits. Le viewport est teste apres le reset global encore disponible.
+WindowPlacement.cpp n'est pas modifie. Les fichiers locaux et non suivis etrangers
+du worktree source restent hors integration. Aucun push, installateur ou release.
+
+Derniere revue et nettoyage
+---------------------------
+- Retrait de la declaration gestureRoleAt devenue inutile apres abandon du
+  preclear souris et de la pause FS_GESTURE_INSPECT_SECONDS : plus d'export de
+  l'adresse objet de fenetre ni de GetWindowLongPtr associe dans ce lanceur.
+- Aucun nouveau journal, breakpoint, sondage de processus distant ou crochet
+  d'entree temporaire dans le chemin de production. Le selecteur de cache Debug
+  /test est conserve pour les regressions prive/public ; il est absent du Release.
+- La qualification native isolee fait partie du produit adopte : elle est requise
+  pour la publication sure des capacites privees et n'est pas une sonde oubliee.
+- Les experiences explicites et leurs rapports restent separes de la production.
+  Les essais de chargement natif des positions non qualifies ne sont pas integres
+  dans le produit. Les artefacts temporaires sont sous build, jamais embarques.
+- Relecture et mise a jour de la documentation du lecteur public et des chemins
+  prives adoptes, de leurs gardes et replis.
+
+Robustesse du banc
+------------------
+Le test partiel verifie les 5000 objets du dossier et l'effectif prepare de chaque
+selection. Les mutations sont calibrees sur une capture reelle ; les constantes
+6000/16000 ne pilotent plus les modifications. La mutation de focus et celle des
+identites doivent effectivement etre atteintes. Les lanceurs Partial et Tail
+attendent la resolution asynchrone du cache avec une borne et acceptent un cache
+explicite FS_GESTURE_CACHE, sans lancer de decouverte implicite dans le test.
+Chaque cle (vue, motif, focus, repetition) et chaque ligne de securite est exigee
+exactement une fois. Les journaux incomplets, dupliques ou mal formes sont rejetes.
+Controle negatif sur un vrai ancien journal : journal valide accepte ; doublon,
+mode manquant et drapeaux invalides rejetes. Les assertions metier ne sont pas
+relachees et les actions ne sont pas repetees pour masquer un echec.
+
+Validations executees
+---------------------
+Builds Debug et Release MSVC/NMAKE x64 /W4 : PASS, aucun nouveau warning.
+Logs : build/final-review/build-debug.log et build-release.log dans le checkout
+ d'integration.
+
+Matrice complete durcie : 80 comparaisons + 4 lignes de securite, PASS.
+ Source : worktrees/reactivity-hybrid/build/regression/
+ 20261108-230745-0763ee6970c64476a87dd77c535e0291
+Repetition sur les sources fusionnees : 24 comparaisons + 4 lignes, PASS.
+ build/regression/20261108-233148-bd6e88e074fb493c9881ae591d18d952
+24 gestes reels de l'application, prive/public, quatre presentations : PASS.
+ build/regression/20261108-233305-3cbcd611dcd442a6b7c2a44b64ba3950
+Deux deplacements OLE reels de 128 dossiers, icones libres et Mosaique libre : PASS.
+ build/regression/20261108-233356-7e0b3ca598ff482f92244a92a4d73cd0
+Fixture Tail avec le cache qualifie : trois lectures et trois clics Explorer Tiles,
+ PASS, sans modifier le protocole des observations.
+ build/regression/20261108-233435-4637f3e1ace4415f9397d9c99059e10e
+Ces repetitions de cloture ne constituent pas de nouvelles moyennes de performance.
+
+Regressions ciblees sur l'ensemble fusionne :
+ 00-banc/02-Processus : PASS (process-contract)
+ 01-stockage-sqlite/01-Stockage : PASS, migration, rollback et huit ecrivains.
+  build/regression/20261108-231405-c19eb78cc4194f47a1eb4d7e8d565e5b
+ 18-vue-shell-native/02-Persistance : PASS (native-persistence)
+ 07-fenetres/05-DefilementReouverture et 08-DefilementPersistant : PASS (scroll-reopen)
+ 22-verrouillage/02-BadgeIcone : PASS (native-lock-badge)
+ 28-apercu-affichage/01-Apercu et 03-Clavier : PASS (view-previews)
+ 33-menu-titre/03-EntreeRetiree : PASS (retired-title-entry)
+ 18-vue-shell-native/03-RedessinGrandDossier : PASS (large-free-layout),
+  avec les 5000 positions persistantes et le rendu retabli.
+ Les chemins entre parentheses sont sous build/final-review/ du checkout
+ d'integration. La suite globale n'a pas ete relancee.
+
+Limite de validation conservee
+-----------------------------
+30-tri-melange/02-CommandesShell termine creation/renommage/suppression et
+copie/coupe/collage, puis echoue avant le glisser-deposer : UIA ne fournit pas
+TryGetClickablePoint pour la ligne Details « Drag-move », pourtant visible.
+Reproduction sur main AVANT fusion (270eb2da), avec le sous-cas d'origine
+19-commandes-shell/03-GlisserDeposer : MEME ECHEC, avant toute pression souris.
+ Preuve : checkout principal, build/reactivity-closure-drag-baseline.
+ Les passages d'integration en echec sont sous build/final-review/
+ mixed-folder-commands*, jamais comptes comme PASS.
+Un point d'icone avec verifications natives/UIA, l'heritage explicite du contexte
+DPI du thread et un ciblage natif limite aux ListView ont ete essayes ; ils
+n'ont pas resolu ce cas moderne. Tous ces changements exploratoires ont ete
+retires. Aucun changement de MouseInput.cs ou du scenario 19/03 issu de ces
+essais ne subsiste. Les commandes suivantes du scenario composite ne sont pas
+validees par ce passage arrete. Les deux vrais drops en placement libre ci-dessus
+restent des preuves distinctes, pas un remplacement du test Details en echec.
+
+Analyse statique : REVIEW
+-------------------------
+Clang-tidy ET Cppcheck termines, sans crash, timeout, entete manquant ou reduction
+ATL sur les six unites de production importees : FolderStateStore, FolderWindow,
+MixedFolder, ShellSelectionDiscovery, ShellViewSelection, main ; ainsi que sur
+PartialSelectionTests, TailSelectionMeasurements et StorageRegression. Les
+entetes modifies sont couverts par ces unites. Windows x64, C++14 production et
+C++17 StorageRegression, macros du build Debug, vrais SDK 10.0.19041.0 et
+MSVC/ATL 14.44.35207 pour clang-tidy ; modeles officiels windows/microsoft_atl/
+sqlite3 et entetes locaux uniquement pour Cppcheck.
+ Resultats : build/integration/closure-merged ; revue avant fusion :
+ worktree source, build/integration/closure-review.
+ Comparaison main avant fusion pour FolderWindow/FolderStateStore :
+ build/integration/closure-main-baseline.
+Aucun nouveau defaut de correction confirme. Restent a REVIEW les diagnostics
+de style : conversions de donnees Win32/controle vers pointeurs deja gardees dans
+le chemin prive, signatures de callbacks, combinaisons de flags documentees et
+inclusions de scaffolds .cpp. Les avertissements sur les agregats initialises et
+le fopen protege par require qui leve une exception dans le test sont des faux
+positifs expliques. Le diagnostic Cppcheck deallocuse sur CloseHandle(mutex)
+est aussi present sur main avant fusion ; cette fonction n'est pas modifiee.
+Aucun controle n'a ete desactive et aucun fichier modifie pendant cette revue
+n'est laisse sans les deux analyses requises.
