@@ -2,7 +2,7 @@
 
 ## Non publié
 
-- Accélérer fortement la désélection au clic sur le fond en placement libre, en vues Icônes et Mosaïque, avec repli automatique et silencieux si la capacité privée Windows n’est pas disponible.
+- Accélérer massivement la réduction des grandes sélections par un clic sur un élément ou sur le fond des vues Shell classiques, avec repli automatique et silencieux si la capacité privée de Windows est indisponible.
 - Accélérer la lecture des sélections complètes dans les vues d’icônes à placement libre avec les API publiques de Windows.
 - Activer ou désactiver les vignettes Windows globalement depuis le menu Affichage.
 - Rétablir la position de défilement à la réouverture d’un dossier.

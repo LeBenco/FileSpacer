@@ -2,7 +2,7 @@
 
 ## Sin publicar
 
-- Acelerar la deselección de grupos grandes al hacer clic en el fondo de las vistas de iconos y mosaicos con posición libre, con retorno automático y silencioso si la función privada de Windows no está disponible.
+- Acelerar enormemente la reducción de selecciones grandes al hacer clic en un elemento o en el fondo de las vistas clásicas del Shell, con retorno automático y silencioso si la función privada de Windows no está disponible.
 - Acelerar la lectura de selecciones completas en vistas de iconos con colocación libre mediante las API públicas de Windows.
 - Activar o desactivar las miniaturas de Windows globalmente desde el menú Ver.
 - Restaurar la posición de desplazamiento de una carpeta al volver a abrir su ventana.
