@@ -8,9 +8,8 @@ FileSpacer está basado en [ChromaFiler](https://github.com/vanjac/chromafiler),
 
 ## NSIS
 
-El instalador NSIS usa el complemento LockedList, Copyright (c) 2013 Afrow Soft Ltd, bajo la licencia zlib. El aviso completo está en [installer/plugins/LockedList.txt](../../installer/plugins/LockedList.txt) y se incluye como `LockedList-LICENSE.txt` en la carpeta de instalación. Consulta <https://nsis.sourceforge.io/LockedList_plug-in>.
-
-El AppUserModelID de los accesos directos lo establece `ShortcutAppID.nsh` de FileSpacer usando las macros Windows COM de NSIS. No se usa el antiguo submódulo `nsis-shortcut-properties`. Tampoco se usan Material Design Icons ni el subconjunto de la fuente Segoe incluido anteriormente.
+- **Instalador**: [NSIS](https://nsis.sourceforge.io/) ([licencias](https://nsis.sourceforge.io/License)).
+- **Complemento LockedList del instalador**: [Afrow Soft](https://nsis.sourceforge.io/LockedList_plug-in) (Copyright (c) 2013 Afrow Soft Ltd, [licencia zlib](../../installer/plugins/LockedList.txt), incluida también en `LockedList-LICENSE.txt`).
 
 <a id="sqlite"></a>
 
@@ -24,14 +23,8 @@ SQLite 3.53.4 está enlazado estáticamente con la aplicación y es de dominio p
 
 <div id="up-and-refresh-button-icons-lucide-and-feather"></div>
 
-En la barra de herramientas, la **flecha hacia arriba** abre la **carpeta superior** y la **flecha circular** **actualiza el contenido de la carpeta**. Estos dos iconos están adaptados de **Lucide** (`arrow-up` y `rotate-cw`). El icono de la flecha hacia arriba procede originalmente de **Feather**.
-
-Consulta [licenses/Lucide-LICENSE.txt](../../licenses/Lucide-LICENSE.txt) para los avisos ISC y MIT completos del código fuente, o `Lucide-LICENSE.txt` en la carpeta de instalación. Consulta <https://lucide.dev/license>.
-
 <div id="small--flat-lock-icon"></div>
 
-Los iconos de candado cerrado y abierto (`src/res/window-state-lock.ico` y `src/res/window-state-unlock.ico`) proceden del icono **lock** de Small & Flat de paomedia, dedicado al dominio público bajo [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/). El candado abierto es una versión derivada.
-
-Colección original y licencia: https://github.com/paomedia/small-n-flat
-
-Distribución ICO: https://www.iconarchive.com/show/small-n-flat-icons-by-paomedia/lock-icon.html
+- **Iconos Subir y Actualizar**: [Lucide](https://lucide.dev/) (versiones adaptadas, [ISC y MIT](../../licenses/Lucide-LICENSE.txt), avisos incluidos también en `Lucide-LICENSE.txt`).
+- **Icono Subir**: [Feather](https://feathericons.com/) (origen de la versión de Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
+- **Iconos de candado cerrado y abierto**: [Small & Flat de paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), candado abierto derivado del cerrado).
