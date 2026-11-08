@@ -6,13 +6,6 @@ FileSpacer is based on [ChromaFiler](https://github.com/vanjac/chromafiler),
 Copyright (c) 2023 J. van't Hoog, distributed under the
 [GNU General Public License v3.0](https://github.com/LeBenco/FileSpacer/blob/main/LICENSE).
 
-<a id="installer"></a>
-
-## NSIS
-
-- **Installer**: [NSIS](https://nsis.sourceforge.io/) ([licenses](https://nsis.sourceforge.io/License)).
-- **LockedList installer plug-in**: [Afrow Soft](https://nsis.sourceforge.io/LockedList_plug-in) (Copyright (c) 2013 Afrow Soft Ltd, [zlib license](installer/plugins/LockedList.txt), also supplied as `LockedList-LICENSE.txt`).
-
 <a id="sqlite"></a>
 
 ## SQLite
@@ -20,6 +13,13 @@ Copyright (c) 2023 J. van't Hoog, distributed under the
 SQLite 3.53.4 is statically linked into the application. It is in the public domain.
 The unmodified sources and their provenance are in `third_party/sqlite`.
 See <https://sqlite.org/copyright.html>.
+
+<a id="installer"></a>
+
+## NSIS
+
+- **Installer**: [NSIS](https://nsis.sourceforge.io/) ([licenses](https://nsis.sourceforge.io/License)).
+- **LockedList installer plug-in**: [Afrow Soft](https://nsis.sourceforge.io/LockedList_plug-in) (Copyright (c) 2013 Afrow Soft Ltd, [zlib license](installer/plugins/LockedList.txt), also supplied as `LockedList-LICENSE.txt`).
 
 <a id="icons"></a>
 

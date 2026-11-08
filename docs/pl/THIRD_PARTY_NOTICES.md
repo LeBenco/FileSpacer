@@ -4,18 +4,18 @@
 
 FileSpacer bazuje na [ChromaFiler](https://github.com/vanjac/chromafiler), Copyright (c) 2023 J. van't Hoog, rozpowszechnianym na [GNU General Public License v3.0](../../LICENSE).
 
+<a id="sqlite"></a>
+
+## SQLite
+
+SQLite 3.53.4 jest połączony statycznie z aplikacją i należy do domeny publicznej. Niezmienione źródła i informacje o pochodzeniu znajdują się w `third_party/sqlite`. Zobacz <https://sqlite.org/copyright.html>.
+
 <a id="installer"></a>
 
 ## NSIS
 
 - **Instalator**: [NSIS](https://nsis.sourceforge.io/) ([licencje](https://nsis.sourceforge.io/License)).
 - **Wtyczka LockedList instalatora**: [Afrow Soft](https://nsis.sourceforge.io/LockedList_plug-in) (Copyright (c) 2013 Afrow Soft Ltd, [licencja zlib](../../installer/plugins/LockedList.txt), dostępna również w `LockedList-LICENSE.txt`).
-
-<a id="sqlite"></a>
-
-## SQLite
-
-SQLite 3.53.4 jest połączony statycznie z aplikacją i należy do domeny publicznej. Niezmienione źródła i informacje o pochodzeniu znajdują się w `third_party/sqlite`. Zobacz <https://sqlite.org/copyright.html>.
 
 <a id="icons"></a>
 
