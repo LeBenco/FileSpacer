@@ -1,0 +1,12 @@
+{
+  "en": ["Studio project", "Documents", "Images", "Project brief.txt", "Schedule.csv", "Notes.md", "Concept.png", "Palette.png", "Research", "Archive", "brief"],
+  "fr": ["Projet studio", "Documents", "Images", "Cahier des charges.txt", "Calendrier.csv", "Notes.md", "Concept.png", "Palette.png", "Recherches", "Archives", "charges"],
+  "de": ["Studioprojekt", "Dokumente", "Bilder", "Projektbeschreibung.txt", "Zeitplan.csv", "Notizen.md", "Entwurf.png", "Palette.png", "Recherche", "Archiv", "Projekt"],
+  "it": ["Progetto studio", "Documenti", "Immagini", "Descrizione del progetto.txt", "Calendario.csv", "Note.md", "Bozza.png", "Tavolozza.png", "Ricerca", "Archivio", "progetto"],
+  "es": ["Proyecto de estudio", "Documentos", "Imágenes", "Descripción del proyecto.txt", "Calendario.csv", "Notas.md", "Boceto.png", "Paleta.png", "Investigación", "Archivo", "proyecto"],
+  "pt": ["Projeto do estúdio", "Documentos", "Imagens", "Descrição do projeto.txt", "Calendário.csv", "Notas.md", "Esboço.png", "Paleta.png", "Pesquisa", "Arquivo", "projeto"],
+  "el": ["Έργο στούντιο", "Έγγραφα", "Εικόνες", "Περιγραφή έργου.txt", "Χρονοδιάγραμμα.csv", "Σημειώσεις.md", "Προσχέδιο.png", "Παλέτα.png", "Έρευνα", "Αρχείο", "έργου"],
+  "pl": ["Projekt studia", "Dokumenty", "Obrazy", "Opis projektu — wersja do przeglądu.txt", "Harmonogram.txt", "Notatki.md", "Koncepcja.png", "Paleta.png", "Materiały", "Archiwum", "projektu"],
+  "nl": ["Studioproject", "Documenten", "Afbeeldingen", "Projectbeschrijving — versie voor beoordeling.txt", "Planning.txt", "Notities.md", "Concept.png", "Palet.png", "Onderzoek", "Archief", "Project"],
+  "uk": ["Проєкт студії", "Документи", "Зображення", "Опис проєкту — версія для перегляду.txt", "Розклад.txt", "Нотатки.md", "Концепція.png", "Палітра.png", "Матеріали", "Архів", "проєкту"]
+}
