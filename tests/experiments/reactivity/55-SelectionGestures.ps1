@@ -191,6 +191,7 @@ try {
                     [FileSpacerRegression.Native]::Keys($window,0x41,$true,$false)
                     Wait-GestureCount $window $FixtureCount
                     Wait-Ui {(Use-UiView $window {param($view) $view.SelectedCount})-eq$FixtureCount} 'full selection stable before the measured gesture' 100
+                    Assert-Ui ((Use-UiView $window {param($view) $view.SelectionSnapshotCount})-eq$FixtureCount) 'Cannot warm the ordinary selection snapshot.'
                     Set-GestureStage 'locate-target'
                     $target=$null;$locating=[Diagnostics.Stopwatch]::StartNew()
                     if($gesture-eq'selected-item'){$target=[FileSpacerRegression.NativeTargets]::Item($list,0,$FixtureCount,$true,$false)}
@@ -323,12 +324,13 @@ try {
                     Set-GestureStage 'verify-counter-and-identities'
                     $calls=(Read-RangeCounter $window)-$before
                     if($arm-eq'private'-and$env:FS_GESTURE_EXPECT_CLICK_RANGE-eq'1'){
-                        $expectedCalls=if($mode.Free-and$gesture-in@('background','marquee','marquee-cancel','marquee-late-ctrl','marquee-late-shift','escape','escape-background','escape-background-once')){1}elseif($gesture-in@('escape','escape-background','escape-background-once')){1}else{0}
+                        $expectedCalls=if($gesture-in@('escape','escape-background','escape-background-once')){1}else{0}
                         Assert-Ui ($calls-eq$expectedCalls) ('Unexpected private call count for '+$mode.Name+'/'+$gesture+': '+$calls+' instead of '+$expectedCalls)
                     }
                     if($arm-ne'private'){Assert-Ui ($calls-eq0) 'A fallback arm invoked the unavailable private range.'}
                     if($arm-eq'private'-and$gesture-in@('escape','escape-background','escape-background-once')){Assert-Ui ($calls-eq1) 'The qualified private Escape path was not exercised exactly once.'}
                     $selected=@(Use-UiView $window {param($view) $view.Selected()})
+                    Assert-Ui ((Use-UiView $window {param($view) $view.SelectionSnapshotCount})-eq$selected.Count) 'Ordinary selection snapshot is stale after the gesture.'
                     if(!$marquee){
                         $expectedNames=if($itemDrag-or$gesture-eq'activation-background'){@(for($index=0;$index-lt$FixtureCount;++$index){'File{0:D5}.txt'-f$index})}elseif($expected){@('File00000.txt')}else{@()}
                         Assert-Ui (($selected-join';')-eq($expectedNames-join';')) 'Wrong selected identities.'
