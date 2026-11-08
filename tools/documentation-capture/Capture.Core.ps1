@@ -28,6 +28,7 @@ function ClickPoint([IntPtr]$Owner,$Point) {
 }
 function ClickControl([IntPtr]$Owner,[IntPtr]$Control) {
     Assert-Ui ($Control-ne[IntPtr]::Zero) 'Missing visible control.'
+    Wait-Ui {[FileSpacerRegression.Native]::IsWindowEnabled($Owner)} 'the dialog owner is enabled after closing its child dialog'
     $deadline=[DateTime]::UtcNow.AddSeconds(10)
     do {
         $rect=[FileSpacerRegression.Native]::Bounds($Control)
@@ -43,6 +44,7 @@ function ClickControl([IntPtr]$Owner,[IntPtr]$Control) {
     Start-Sleep -Milliseconds 300
 }
 function OpenRecordedMenu([IntPtr]$Window,[string]$Button) {
+    Wait-Ui {[FileSpacerRegression.Native]::IsWindowEnabled($Window)} 'the folder is enabled after closing its dialogs'
     $id=Get-UiId $Button
     $bars=@([FileSpacerRegression.Native]::Children($Window,'ToolbarWindow32')|Where-Object {[FileSpacerRegression.Native]::Message($_,0x419,$id,0)-ge0})
     Assert-Ui ($bars.Count-eq1) 'Exactly one actual toolbar button must match.'
@@ -133,6 +135,7 @@ function StopRecording([IntPtr]$Window,[Diagnostics.Process]$Recorder) {
     [FileSpacerRegression.Native]::Keys($foreground,0x77,$false,$false)
 }
 function Record([IntPtr]$Window,[string]$Kind,[scriptblock]$Action=$null,[Drawing.Rectangle]$Area=[Drawing.Rectangle]::Empty) {
+    Wait-Ui {[FileSpacerRegression.Native]::IsWindowEnabled($Window)} 'the folder is enabled before recording'
     if($null-eq$Action){Place $Window 340 280 720 440}
     Activate-Ui $Window
     $point=WindowCenter $Window
