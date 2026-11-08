@@ -16,7 +16,7 @@ MIDL_INTERFACE("91D72DCF-DE04-4CED-995C-A4870EB11D32") IMixedFolder : public IUn
 
 HRESULT mixedFolderItem(IShellItem *item, bool isolated, IShellItem **out);
 HRESULT nativeShellItem(IShellItem *item, IShellItem **out);
-// A guarded caller can use public complete-set capture; absent guards keep native access.
+// A guarded caller can use public large-selection capture; absent guards keep native access.
 HRESULT nativeViewSelection(IFolderView2 *view, BOOL noneMeansFolder, IShellItemArray **out,
     const std::function<bool()> &current = {});
 }
