@@ -529,6 +529,19 @@ namespace FileSpacerRegression {
             if(thread==0 || !GetGUIThreadInfo(thread,ref info)) throw new Win32Exception();
             return info.Focus;
         }
+        public static long ClickControlAtPointer(IntPtr window,IntPtr control,int x,int y) {
+            if(GetForegroundWindow()!=window) throw new InvalidOperationException("Test window is not foreground; click was not sent.");
+            Point point;
+            if(!GetCursorPos(out point)) throw new Win32Exception();
+            if(point.X!=x || point.Y!=y || WindowFromPoint(point)!=control)
+                throw new InvalidOperationException("Pointer is not over the verified click target.");
+            var down=new Input();down.Type=0;down.Data.Mouse.Flags=2;
+            var up=new Input();up.Type=0;up.Data.Mouse.Flags=4;
+            long sentAt=System.Diagnostics.Stopwatch.GetTimestamp();
+            uint sent=SendInput(2,new Input[]{down,up},Marshal.SizeOf(typeof(Input)));
+            if(sent!=2) { if(sent==1) SendInput(1,new Input[]{up},Marshal.SizeOf(typeof(Input)));throw new Win32Exception(); }
+            return sentAt;
+        }
         public static void ClickControl(IntPtr window,IntPtr control,int x,int y) {
             if(GetForegroundWindow()!=window) throw new InvalidOperationException("Test window is not foreground; click was not sent.");
             var point=new Point{X=x,Y=y};
