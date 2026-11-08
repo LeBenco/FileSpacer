@@ -33,6 +33,8 @@ namespace FileSpacerRegression {
         [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
         [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(MousePoint point);
         [DllImport("user32.dll")] static extern bool IsChild(IntPtr parent,IntPtr child);
+        [DllImport("user32.dll")] static extern IntPtr GetThreadDpiAwarenessContext();
+        [DllImport("user32.dll",SetLastError=true)] static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context);
         [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr window,out uint processId);
         [DllImport("user32.dll",SetLastError=true)] static extern bool GetGUIThreadInfo(uint thread,ref GuiInfo info);
         static bool buttonHeld,altHeld,rightButton,middleButton,ctrlHeld,shiftHeld;
@@ -209,9 +211,16 @@ namespace FileSpacerRegression {
         // points/booleans leave this bounded MTA worker; input remains native.
         static T ReadView<T>(IntPtr viewWindow,Func<AutomationElement,T> read) {
             T result=default(T); Exception error=null;
+            IntPtr dpi=GetThreadDpiAwarenessContext();
             var worker=new Thread(delegate() {
-                try { result=read(AutomationElement.FromHandle(viewWindow)); }
+                IntPtr previous=IntPtr.Zero;
+                try {
+                    previous=SetThreadDpiAwarenessContext(dpi);
+                    if(previous==IntPtr.Zero) throw new Win32Exception();
+                    result=read(AutomationElement.FromHandle(viewWindow));
+                }
                 catch(Exception failure) { error=failure; }
+                finally { if(previous!=IntPtr.Zero) SetThreadDpiAwarenessContext(previous); }
             });
             worker.IsBackground=true; worker.SetApartmentState(ApartmentState.MTA); worker.Start();
             if(!worker.Join(5000)) throw new TimeoutException("UI Automation did not inspect the Shell view within five seconds.");
@@ -230,16 +239,31 @@ namespace FileSpacerRegression {
                 if(!element.Current.IsOffscreen && !element.Current.BoundingRectangle.IsEmpty) result.Add(element);
             return result;
         }
-        static MousePoint Clickable(AutomationElement element) {
-            System.Windows.Point point;
-            if(!element.TryGetClickablePoint(out point)) throw new InvalidOperationException("No clickable point: "+element.Current.ControlType.ProgrammaticName+" / "+element.Current.Name);
-            return new MousePoint { X=(int)Math.Round(point.X),Y=(int)Math.Round(point.Y) };
+        static bool Exposed(IntPtr viewWindow,MousePoint point) {
+            IntPtr target=WindowFromPoint(point);
+            return target==viewWindow || IsChild(viewWindow,target);
+        }
+        static MousePoint Clickable(IntPtr viewWindow,AutomationElement element) {
+            // Read the documented provider point directly. TryGetClickablePoint
+            // also calls the global UIA hit-test, which can return the desktop
+            // even when WindowFromPoint correctly identifies this Shell view.
+            object value=element.GetCurrentPropertyValue(AutomationElement.ClickablePointProperty,true);
+            System.Windows.Point supplied;
+            if(value is System.Windows.Point) supplied=(System.Windows.Point)value;
+            else if(!element.TryGetClickablePoint(out supplied))
+                throw new InvalidOperationException("No clickable point: "+element.Current.ControlType.ProgrammaticName+" / "+element.Current.Name);
+            if(double.IsNaN(supplied.X) || double.IsNaN(supplied.Y) || double.IsInfinity(supplied.X) || double.IsInfinity(supplied.Y))
+                throw new InvalidOperationException("The provider returned a non-finite clickable point.");
+            var point=new MousePoint { X=checked((int)Math.Round(supplied.X)),Y=checked((int)Math.Round(supplied.Y)) };
+            if(!element.Current.BoundingRectangle.Contains(new System.Windows.Point(point.X,point.Y)) || !Exposed(viewWindow,point))
+                throw new InvalidOperationException("The provider clickable point is outside the element or covered by another window.");
+            return point;
         }
         public static MousePoint ItemPoint(IntPtr viewWindow,string name) {
             return ReadView(viewWindow,delegate(AutomationElement root) {
                 var found=Visible(root,ControlType.ListItem,name);
                 if(found.Count!=1) throw new InvalidOperationException("Expected one visible item named "+name+"; found "+found.Count+".");
-                return Clickable(found[0]);
+                return Clickable(viewWindow,found[0]);
             });
         }
         public static MousePoint CellPoint(IntPtr viewWindow,string name) {
@@ -253,7 +277,7 @@ namespace FileSpacerRegression {
                     if(!cell.Current.IsOffscreen && !cell.Current.BoundingRectangle.IsEmpty) cells.Add(cell);
                 cells.Sort(delegate(AutomationElement a,AutomationElement b) { return a.Current.BoundingRectangle.Left.CompareTo(b.Current.BoundingRectangle.Left); });
                 if(cells.Count<2) throw new InvalidOperationException("Details row exposes no visible second cell.");
-                return Clickable(cells[1]);
+                return Clickable(viewWindow,cells[1]);
             });
         }
         public static string DescribeView(IntPtr viewWindow) {
@@ -277,7 +301,7 @@ namespace FileSpacerRegression {
                         found.AddRange(Visible(header,ControlType.SplitButton,null));
                 }
                 if(found.Count==0) throw new InvalidOperationException("Details view exposes no visible column header.");
-                return Clickable(found[0]);
+                return Clickable(viewWindow,found[0]);
             });
         }
         public static bool RenameVisible(IntPtr viewWindow) {
@@ -334,9 +358,11 @@ namespace FileSpacerRegression {
                         bool clear=true;
                         foreach(var obstacle in obstacles) if(area.IntersectsWith(obstacle)) { clear=false; break; }
                         if(!clear) continue;
+                        // UIA establishes the empty area; Win32 checks that it
+                        // is exposed, without the unreliable global UIA hit-test.
                         for(int dx=0;dx<=48 && clear;dx+=24)
                             for(int dy=0;dy<=24;dy+=12)
-                                if(!Automation.Compare(AutomationElement.FromPoint(new System.Windows.Point(x+dx,y+dy)),container)) { clear=false; break; }
+                                if(!Exposed(viewWindow,new MousePoint { X=x+dx,Y=y+dy })) { clear=false; break; }
                         if(clear) return new MousePoint { X=x,Y=y };
                     }
                 }
