@@ -141,6 +141,7 @@ using CancelFunction=HRESULT(STDMETHODCALLTYPE *)(IUnknown *);
 struct ShellSelectionClear::Binding : std::enable_shared_from_this<ShellSelectionClear::Binding> {
         mutable std::atomic<bool> usable{true};
         CComPtr<IShellView> source;CComPtr<IFolderView2> folder;CComPtr<IUnknown> host,manager,notification;
+        selectionDetail::RangeBinding range;
         using Enumerate=void(WINAPI *)(HDSA,PFNDAENUMCALLBACK,void *);
         using Erase=BOOL(WINAPI *)(HDSA);
         Enumerate enumerate=nullptr;Erase erase=nullptr;
@@ -306,7 +307,9 @@ uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value
         value->erase=reinterpret_cast<Binding::Erase>(module.erase);
         value->notify=reinterpret_cast<NotifyFunction>(module.base+module.fields[Notify]);
         value->cancel=reinterpret_cast<CancelFunction>(module.base+module.fields[Cancel]);
-        if(module.selectAllSupported&&SUCCEEDED(source->GetWindow(&value->window))&&current()) {
+        const bool hasWindow=SUCCEEDED(source->GetWindow(&value->window))&&current();
+        if(hasWindow)value->range.bind(value->window);
+        if(module.selectAllSupported&&hasWindow&&current()) {
             const auto procedure=reinterpret_cast<SUBCLASSPROC>(module.base+module.fields[NativeWindowProcedure]);
             if(GetWindowSubclass(value->window,procedure,0,&value->nativeData)
                     &&value->nativeData==reinterpret_cast<ULONG_PTR>(value->host.p)-module.fields[HostOffset]) {
@@ -374,6 +377,12 @@ uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value
         }else erased=value->erase(array);
         if(applied)*applied=true;
         if(!erased)return E_FAIL;
+        if(!current())return E_ABORT;
+        // The native range owns only selected indexes. Clear it after releasing
+        // Shell subscriptions and before public cleanup; otherwise classic free
+        // Tiles measures every off-screen label merely to invalidate it. Native
+        // failure/missing capability leaves the ordinary cleanup in charge.
+        if(selected>=128&&value->range.clear(value->window)!=S_OK)value->range=RangeBinding{};
         if(!current())return E_ABORT;
         const HRESULT cleared=native();
         if(!current())return E_ABORT;
