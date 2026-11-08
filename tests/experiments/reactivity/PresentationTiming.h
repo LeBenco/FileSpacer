@@ -66,7 +66,7 @@ inline Boundaries boundaries(const std::vector<Image> &images,LONGLONG start){
 }
 struct Observation {
     HWND observedWindow=nullptr;RECT region={};std::wstring prefix;std::vector<Image> images;
-    std::vector<unsigned char> firstPixels,lastPixels;std::string failure;
+    std::vector<unsigned char> firstPixels,lastPixels,firstChangedPixels;std::string failure;
     std::atomic<bool> initialized{false},ready{false},done{false},stop{false};
     std::atomic<LONGLONG> began{0},returned{0};std::thread worker;
     LONGLONG rate=0;UINT width=0,height=0;unsigned lost=0;bool quiet=false;
@@ -137,6 +137,7 @@ struct Observation {
                     for(UINT row=0;row<height;++row)std::memcpy(pixels.data()+static_cast<size_t>(row)*width*4,static_cast<const unsigned char *>(mapped.pData)+static_cast<size_t>(row)*mapped.RowPitch,static_cast<size_t>(width)*4);
                     context->Unmap(staging,0);Image image;image.presented=info.LastPresentTime.QuadPart;image.accumulated=info.AccumulatedFrames;
                     check(BCryptHash(hash,nullptr,0,pixels.data(),static_cast<ULONG>(pixels.size()),image.digest.data(),static_cast<ULONG>(image.digest.size()))>=0,"Frame digest failed");
+                    if(haveImage&&began.load()&&image.presented>=began.load()&&image.digest!=previous&&firstChangedPixels.empty())firstChangedPixels=pixels;
                     if(!haveImage||image.digest!=previous){changed=tick();previous=image.digest;}
                     if(!haveImage||!began.load()||image.presented<began.load())firstPixels=pixels;
                     haveImage=true;
@@ -172,6 +173,7 @@ struct Observation {
         if(firstChange&&!result.returnedToBaseline&&quiet&&finalImage)std::fprintf(out,"%.3f",static_cast<double>(finalImage-start)*scale);
         std::fprintf(out,",%zu,%u,%.3f,%u,%u\n",images.size(),lost,static_cast<double>(tick()-start)*scale,width,height);check(std::fclose(out)==0,"Presentation journal close failed");
         bitmap(prefix+L"-before.bmp",firstPixels);bitmap(prefix+L"-final.bmp",lastPixels);
+        if(!firstChangedPixels.empty())bitmap(prefix+L"-first-change.bmp",firstChangedPixels);
         check(_wfopen_s(&out,(prefix+L"-frames.csv").c_str(),L"wb")==0,"Frame journal unavailable");std::fputs("relative_present_ms,accumulated_frames,sha256\n",out);
         for(const auto &image:images){if(image.presented)std::fprintf(out,"%.3f",static_cast<double>(image.presented-start)*scale);std::fprintf(out,",%u,",image.accumulated);for(unsigned char value:image.digest)std::fprintf(out,"%02x",static_cast<unsigned>(value));std::fputc('\n',out);}check(std::fclose(out)==0,"Frame journal close failed");
         std::printf("PRESENTATION %ls quality=%s coalesced=%u\n",prefix.c_str(),quality,lost);std::fflush(stdout);

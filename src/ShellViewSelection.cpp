@@ -1,4 +1,5 @@
 #include "ShellViewSelection.h"
+#include "MixedFolder.h"
 #include "ShellSelectionRuntime.h"
 #include <atlbase.h>
 #include <shlobj.h>
@@ -15,6 +16,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <atomic>
+#include <algorithm>
 #include <commctrl.h>
 #pragma comment(lib, "Oleacc.lib")
 
@@ -27,12 +29,26 @@ struct ReopenViewHeader {
 // Existing blob layout: header, optional anchor (first displayed item), optional focus, selection.
 constexpr uint32_t REOPEN_ANCHOR = 2, REOPEN_FOCUS = 4;
 constexpr uint32_t REOPEN_SCROLL = 8;
+constexpr uint32_t REOPEN_VIEWPORT = 16;
+struct ViewScrollState {
+    uint32_t version = 1, kind = 0, mode = 0;
+    int32_t iconSize = 0, x = 0, y = 0;
+    uint32_t dpi = 0, reserved = 0;
+    double horizontal = UIA_ScrollPatternNoScroll, vertical = UIA_ScrollPatternNoScroll;
+};
+static_assert(sizeof(ViewScrollState) == 48, "Viewport storage format");
 struct ReopenScroll {
     double horizontal = UIA_ScrollPatternNoScroll, vertical = UIA_ScrollPatternNoScroll;
     UINT mode = 0, reserved = 0;
 };
 bool validScrollPercent(double value) {
     return std::isfinite(value) && (value == UIA_ScrollPatternNoScroll || (value >= 0 && value <= 100));
+}
+bool validViewScroll(const ViewScrollState &state) {
+    return state.version == 1 && !state.reserved && state.kind >= 1 && state.kind <= 2
+        && state.mode >= FVM_FIRST && state.mode <= FVM_LAST && state.iconSize > 0
+        && (state.kind != 1 || (state.dpi && state.dpi <= INT32_MAX))
+        && (state.kind != 2 || (validScrollPercent(state.horizontal) && validScrollPercent(state.vertical)));
 }
 
 // Microsoft documents this provider-access route for clients already in-process.
@@ -125,6 +141,7 @@ using CancelFunction=HRESULT(STDMETHODCALLTYPE *)(IUnknown *);
 struct ShellSelectionClear::Binding : std::enable_shared_from_this<ShellSelectionClear::Binding> {
         mutable std::atomic<bool> usable{true};
         CComPtr<IShellView> source;CComPtr<IFolderView2> folder;CComPtr<IUnknown> host,manager,notification;
+        selectionDetail::RangeBinding range;
         using Enumerate=void(WINAPI *)(HDSA,PFNDAENUMCALLBACK,void *);
         using Erase=BOOL(WINAPI *)(HDSA);
         Enumerate enumerate=nullptr;Erase erase=nullptr;
@@ -152,6 +169,13 @@ struct ShellSelectionClear::Binding : std::enable_shared_from_this<ShellSelectio
                 &&array==expected&&snapshotArray(array,module.dataOffset,module.strideOffset,snapshot);
         }
         bool selectAll(const NMLISTVIEW &notice);
+        bool deselectAll(const NMLISTVIEW &notice);
+        HRESULT purgeArray(HDSA array,int selected,const std::function<bool()> &current,bool *applied=nullptr)const;
+        bool notificationsEnabled()const {
+            DWORD state=0;
+            return selectionDetail::read(reinterpret_cast<const unsigned char *>(nativeData)+selectionDetail::image().ignoredStateOffset,state)
+                &&!(state&0x2000u);
+        }
     };
 
 bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
@@ -161,8 +185,8 @@ bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
     wchar_t className[32]={};
     if(!IsChild(window,notice.hdr.hwndFrom)||!GetClassNameW(notice.hdr.hwndFrom,className,_countof(className))
             ||lstrcmpW(className,WC_LISTVIEWW)!=0)return false;
-    const Image &module=image();HDSA array=nullptr;ArraySnapshot snapshot;DWORD state=0;
-    if(!read(reinterpret_cast<const unsigned char *>(nativeData)+module.ignoredStateOffset,state)||(state&0x2000u))return false;
+    const Image &module=image();HDSA array=nullptr;ArraySnapshot snapshot;
+    if(!notificationsEnabled())return false;
     if(!read(reinterpret_cast<unsigned char *>(manager.p)+module.fields[ArrayOffset],array)||!array
             ||!nativeArray(array,snapshot)||snapshot.count<0||snapshot.stride!=16
             ||reinterpret_cast<ULONG_PTR>(array)%alignof(LONG)||!writable(array,sizeof(LONG)))return false;
@@ -232,23 +256,107 @@ bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
     return true;
 }
 
+HRESULT ShellSelectionClear::Binding::purgeArray(HDSA array,int selected,const std::function<bool()> &current,bool *applied)const {
+        using namespace selectionDetail;const Image &module=image();
+        if(module.clearViaCount&&(reinterpret_cast<ULONG_PTR>(array)%alignof(LONG)!=0||!writable(array,sizeof(LONG))))return S_FALSE;
+        // Same DSA implementation and callback as Shell32. Finish the purge
+        // phase even if callback releases reenter. Never retry after mutation.
+        if(module.manualEnumeration){ArraySnapshot snapshot;
+            if(!snapshotArray(array,module.dataOffset,module.strideOffset,snapshot)||snapshot.count!=selected||snapshot.stride!=16||!snapshot.data
+                    ||!writable(snapshot.data,static_cast<SIZE_T>(selected)*snapshot.stride))return S_FALSE;
+            const unsigned char *verified=snapshot.data;int verifiedCount=selected;
+            for(int index=0;index<snapshot.count;++index){
+                if(!callback(snapshot.data+static_cast<SIZE_T>(index)*snapshot.stride,nullptr))break;
+                if(!current())return E_ABORT;
+                IUnknown *sameManager=nullptr;HDSA sameArray=nullptr;
+                if(!read(reinterpret_cast<unsigned char *>(host.p)+module.fields[ManagerOffset],sameManager)||sameManager!=manager.p
+                        ||!read(reinterpret_cast<unsigned char *>(manager.p)+module.fields[ArrayOffset],sameArray)||sameArray!=array
+                        ||!snapshotArray(array,module.dataOffset,module.strideOffset,snapshot)||snapshot.count<0
+                        ||(snapshot.count>0&&(snapshot.stride!=16||!snapshot.data)))return E_ABORT;
+                if(snapshot.count>0&&(snapshot.data!=verified||snapshot.count>verifiedCount)){
+                    if(!writable(snapshot.data,static_cast<SIZE_T>(snapshot.count)*snapshot.stride))return E_ABORT;
+                    verified=snapshot.data;verifiedCount=snapshot.count;
+                }
+            }
+        }else enumerate(array,callback,nullptr);
+        BOOL erased=TRUE;
+        if(module.clearViaCount){
+            // Qualified internal data write, not a public API contract.
+            // Public native clear then reaches its own zero-count purge, using
+            // its own allocator and a direct, CFG-compatible internal call.
+            if(!current())return E_ABORT;
+            HDSA same=nullptr;IUnknown *sameManager=nullptr;
+            if(!read(reinterpret_cast<unsigned char *>(host.p)+module.fields[ManagerOffset],sameManager)||sameManager!=manager.p
+                    ||!read(reinterpret_cast<unsigned char *>(manager.p)+module.fields[ArrayOffset],same)||same!=array)return E_ABORT;
+            InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);
+        }else erased=erase(array);
+        if(applied)*applied=true;
+        if(!erased)return E_FAIL;
+        return S_OK;
+}
+
+bool ShellSelectionClear::Binding::deselectAll(const NMLISTVIEW &notice) {
+    using namespace selectionDetail;
+    if(!nativeProcedure||selecting||!usable.load()||notice.iItem!=-1||!(notice.uChanged&LVIF_STATE)
+            ||!(notice.uOldState&LVIS_SELECTED)||(notice.uNewState&LVIS_SELECTED))return false;
+    wchar_t className[32]={};
+    if(!IsChild(window,notice.hdr.hwndFrom)||!GetClassNameW(notice.hdr.hwndFrom,className,_countof(className))
+            ||lstrcmpW(className,WC_LISTVIEWW)!=0)return false;
+    const Image &module=image();HDSA array=nullptr;ArraySnapshot snapshot;
+    if(!notificationsEnabled()
+            ||!read(reinterpret_cast<unsigned char *>(manager.p)+module.fields[ArrayOffset],array)||!array)return false;
+    const HWND expected=window;
+    const auto current=[&]{ArraySnapshot now;return window==expected&&nativeArray(array,now);};
+    int selected=-1,count=0;
+    if(!current()||FAILED(folder->ItemCount(SVGIO_SELECTION,&selected))||selected!=0||!current()
+            ||FAILED(folder->ItemCount(SVGIO_ALLVIEW,&count))||!current()
+            ||!nativeArray(array,snapshot)||snapshot.count<128||snapshot.count>count||snapshot.stride!=16||!snapshot.data
+            ||!writable(snapshot.data,static_cast<SIZE_T>(snapshot.count)*snapshot.stride))return false;
+    // The control has already applied the global deselection. Purge its Shell
+    // subscriptions as one batch, then retain the original notification for
+    // native cache invalidation, focus, activation and subsequent item selection.
+    selecting=true;
+    struct Active {bool &value;~Active(){value=false;}} active{selecting};
+    bool applied=false;
+    if(FAILED(purgeArray(array,snapshot.count,current,&applied)))usable.store(false);
+    return applied;
+}
+
 LRESULT CALLBACK ShellSelectionClear::Binding::procedure(HWND window,UINT message,WPARAM first,LPARAM second,UINT_PTR id,DWORD_PTR data) {
     auto self=reinterpret_cast<Binding *>(data)->shared_from_this();
+    bool cleared=false;
     if(message==WM_NCDESTROY){RemoveWindowSubclass(window,procedure,id);self->window=nullptr;}
     if(message==WM_NOTIFY&&second&&reinterpret_cast<const NMHDR *>(second)->code==LVN_ITEMCHANGED) {
-        try {if(self->selectAll(*reinterpret_cast<const NMLISTVIEW *>(second)))return 0;}
+        try {
+            const auto &notice=*reinterpret_cast<const NMLISTVIEW *>(second);
+            if(self->selectAll(notice))return 0;
+            cleared=self->deselectAll(notice);
+        }
         catch(const std::bad_alloc &){self->nativeProcedure=nullptr;}
         // A failed construction released every staged native subscription.
         // Let the original native global notification rebuild normally, unless
         // its view was closed or replaced during a reentrant native callback.
         if(self->window!=window)return 0;
     }
-    return DefSubclassProc(window,message,first,second);
+    const LRESULT result=DefSubclassProc(window,message,first,second);
+    const auto attached=[&]{DWORD_PTR owner=0,native=0;return self->window==window
+        &&GetWindowSubclass(window,procedure,id,&owner)&&owner==data
+        &&self->registeredProcedure&&GetWindowSubclass(window,self->registeredProcedure,0,&native)&&native==self->nativeData;};
+    if(cleared&&attached()) {
+        // Native cleanup can see an already-empty manager and skip invalidating
+        // a previously returned array. Publish the completed change once, after
+        // forwarding the original notification, as explicit clearing does.
+        const HRESULT notified=self->notify(self->notification,0,1);
+        if(attached()&&FAILED(self->cancel(self->notification)))self->usable.store(false);
+        if(FAILED(notified))self->usable.store(false);
+    }
+    return result;
 }
 
 void initializeShellSelectionClear(const wchar_t *cacheRoot,bool background) { selectionDetail::initialize(cacheRoot,background); }
 void ShellSelectionClear::reset(){auto previous=std::move(binding);if(previous)previous->detach();}
 bool ShellSelectionClear::accelerated()const {const auto value=binding;return value && value->usable.load();}
+bool ShellSelectionClear::acceleratesSelectAll()const {const auto value=binding;return value && value->usable.load() && value->nativeProcedure;}
 uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value=binding;return value?value->selectAllCount:0;}
 
     bool ShellSelectionClear::backingBufferReleased(bool &known)const {
@@ -289,7 +397,9 @@ uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value
         value->erase=reinterpret_cast<Binding::Erase>(module.erase);
         value->notify=reinterpret_cast<NotifyFunction>(module.base+module.fields[Notify]);
         value->cancel=reinterpret_cast<CancelFunction>(module.base+module.fields[Cancel]);
-        if(module.selectAllSupported&&SUCCEEDED(source->GetWindow(&value->window))&&current()) {
+        const bool hasWindow=SUCCEEDED(source->GetWindow(&value->window))&&current();
+        if(hasWindow)value->range.bind(value->window);
+        if(module.selectAllSupported&&hasWindow&&current()) {
             const auto procedure=reinterpret_cast<SUBCLASSPROC>(module.base+module.fields[NativeWindowProcedure]);
             if(GetWindowSubclass(value->window,procedure,0,&value->nativeData)
                     &&value->nativeData==reinterpret_cast<ULONG_PTR>(value->host.p)-module.fields[HostOffset]) {
@@ -323,40 +433,15 @@ uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value
         if(!read(reinterpret_cast<unsigned char *>(value->host.p)+module.fields[ManagerOffset],manager)||manager!=value->manager.p
                 ||!read(reinterpret_cast<unsigned char *>(manager)+module.fields[ArrayOffset],array)||!array
                 ||!read(array,count)||count!=selected)return reject();
-        if(module.clearViaCount&&(reinterpret_cast<ULONG_PTR>(array)%alignof(LONG)!=0||!writable(array,sizeof(LONG))))return reject();
-        // Same DSA implementation and callback as Shell32. Finish the purge
-        // phase even if callback releases reenter. Never retry after mutation.
-        if(module.manualEnumeration){ArraySnapshot snapshot;
-            if(!snapshotArray(array,module.dataOffset,module.strideOffset,snapshot)||snapshot.count!=selected||snapshot.stride!=16||!snapshot.data
-                    ||!writable(snapshot.data,static_cast<SIZE_T>(selected)*snapshot.stride))return reject();
-            const unsigned char *verified=snapshot.data;int verifiedCount=selected;
-            for(int index=0;index<snapshot.count;++index){
-                if(!value->callback(snapshot.data+static_cast<SIZE_T>(index)*snapshot.stride,nullptr))break;
-                if(!current())return E_ABORT;
-                IUnknown *sameManager=nullptr;HDSA sameArray=nullptr;
-                if(!read(reinterpret_cast<unsigned char *>(value->host.p)+module.fields[ManagerOffset],sameManager)||sameManager!=manager
-                        ||!read(reinterpret_cast<unsigned char *>(manager)+module.fields[ArrayOffset],sameArray)||sameArray!=array
-                        ||!snapshotArray(array,module.dataOffset,module.strideOffset,snapshot)||snapshot.count<0
-                        ||(snapshot.count>0&&(snapshot.stride!=16||!snapshot.data)))return E_ABORT;
-                if(snapshot.count>0&&(snapshot.data!=verified||snapshot.count>verifiedCount)){
-                    if(!writable(snapshot.data,static_cast<SIZE_T>(snapshot.count)*snapshot.stride))return E_ABORT;
-                    verified=snapshot.data;verifiedCount=snapshot.count;
-                }
-            }
-        }else value->enumerate(array,value->callback,nullptr);
-        BOOL erased=TRUE;
-        if(module.clearViaCount){
-            // Experimental internal data write, not a public API contract.
-            // Public native clear then reaches its own zero-count purge, using
-            // its own allocator and a direct, CFG-compatible internal call.
-            if(!current())return E_ABORT;
-            HDSA same=nullptr;IUnknown *sameManager=nullptr;
-            if(!read(reinterpret_cast<unsigned char *>(value->host.p)+module.fields[ManagerOffset],sameManager)||sameManager!=manager
-                    ||!read(reinterpret_cast<unsigned char *>(manager)+module.fields[ArrayOffset],same)||same!=array)return E_ABORT;
-            InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);
-        }else erased=value->erase(array);
-        if(applied)*applied=true;
-        if(!erased)return E_FAIL;
+        const HRESULT purged=value->purgeArray(array,selected,current,applied);
+        if(purged==S_FALSE)return reject();
+        if(FAILED(purged))return purged;
+        if(!current())return E_ABORT;
+        // The native range owns only selected indexes. Clear it after releasing
+        // Shell subscriptions and before public cleanup; otherwise classic free
+        // Tiles measures every off-screen label merely to invalidate it. Native
+        // failure/missing capability leaves the ordinary cleanup in charge.
+        if(selected>=128&&value->range.clear(value->window)!=S_OK)value->range=RangeBinding{};
         if(!current())return E_ABORT;
         const HRESULT cleared=native();
         if(!current())return E_ABORT;
@@ -367,6 +452,188 @@ uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value
         return !current()?E_ABORT:FAILED(cleared)?cleared:FAILED(notified)?notified:cancelled;
     }
 
+
+static bool isFreeIconView(IFolderView *view, const std::function<bool()> &current) {
+    UINT mode = 0;
+    const HRESULT result = view->GetCurrentViewMode(&mode);
+    if (!current() || FAILED(result) || (mode != FVM_ICON && mode != FVM_SMALLICON)) return false;
+    const HRESULT arranged = view->GetAutoArrange();
+    return current() && arranged == S_FALSE;
+}
+
+HRESULT captureSpatialSelection(IFolderView2 *view, const std::function<bool()> &current,
+        IShellItemArray **out) try {
+    if (!view || !out) return E_POINTER;
+    CComPtr<IFolderView2> keepView(view);
+    *out = nullptr;
+    if (!current()) return E_ABORT;
+    UINT mode = 0;
+    HRESULT result = view->GetCurrentViewMode(&mode);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || (mode != FVM_ICON && mode != FVM_SMALLICON)) return S_FALSE;
+    result = view->GetAutoArrange();
+    if (!current()) return E_ABORT;
+    if (result != S_FALSE) return S_FALSE;
+    PROPERTYKEY group = {}; BOOL ascending = FALSE;
+    result = view->GetGroupBy(&group, &ascending);
+    if (!current()) return E_ABORT;
+    if (result != S_FALSE) return S_FALSE;
+    int count = 0, selected = 0, focused = -1;
+    result = view->ItemCount(SVGIO_ALLVIEW, &count);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || count < 128) return S_FALSE;
+    result = view->ItemCount(SVGIO_SELECTION, &selected);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || selected < 128 || selected > count) return S_FALSE;
+    if (selected != count && selected < 1024) return S_FALSE;
+    result = view->GetFocusedItem(&focused);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || focused < 0 || focused >= count) return S_FALSE;
+    const auto selectedIndices = [&](std::vector<int> &indices) -> HRESULT {
+        indices.reserve(static_cast<size_t>(selected));
+        CComHeapPtr<ITEMID_CHILD> zero;
+        HRESULT hr = view->Item(0, &zero);
+        if (!current()) return E_ABORT;
+        if (FAILED(hr) || !zero) return S_FALSE;
+        DWORD state = 0;
+        hr = view->GetSelectionState(zero, &state);
+        if (!current()) return E_ABORT;
+        if (FAILED(hr)) return S_FALSE;
+        if (state & SVSI_SELECT) indices.push_back(0);
+        int start = 0;
+        while (indices.size() < static_cast<size_t>(selected)) {
+            int index = -1;
+            hr = view->GetSelectedItem(start, &index);
+            if (!current()) return E_ABORT;
+            if (hr != S_OK) return S_FALSE;
+            // The API describes both "at or after" and "after". Accept either
+            // forward-only interpretation without relying on a negative sentinel.
+            if (!indices.empty() && index == indices.back()) {
+                if (index >= count - 1) return S_FALSE;
+                start = index + 1;
+                hr = view->GetSelectedItem(start, &index);
+                if (!current()) return E_ABORT;
+                if (hr != S_OK) return S_FALSE;
+            }
+            if (index < start || index >= count || (!indices.empty() && index <= indices.back())) return S_FALSE;
+            indices.push_back(index);
+            start = index;
+        }
+        return S_OK;
+    };
+    std::vector<int> indices;
+    if (selected != count) {
+        result = selectedIndices(indices);
+        if (result != S_OK) return result;
+    }
+    using OwnedId = std::unique_ptr<ITEMID_CHILD, decltype(&CoTaskMemFree)>;
+    struct Entry { PCUITEMID_CHILD id; POINT position; int index; };
+    std::vector<OwnedId> owned;
+    std::vector<Entry> entries;
+    std::unordered_set<uint64_t> positions;
+    positions.reserve(static_cast<size_t>(selected));
+    owned.reserve(static_cast<size_t>(selected)); entries.reserve(static_cast<size_t>(selected));
+    for (int slot = 0; slot < selected; ++slot) {
+        const int i = selected == count ? slot : indices[static_cast<size_t>(slot)];
+        CComHeapPtr<ITEMID_CHILD> id;
+        result = view->Item(i, &id);
+        if (!current()) return E_ABORT;
+        if (FAILED(result) || !id) return S_FALSE;
+        POINT position = {};
+        result = view->GetItemPosition(id, &position);
+        if (!current()) return E_ABORT;
+        if (FAILED(result)) return S_FALSE;
+        const uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(position.x)) << 32)
+            | static_cast<uint32_t>(position.y);
+        if (!positions.emplace(key).second) return S_FALSE;
+        owned.emplace_back(id.Detach(), &CoTaskMemFree);
+        entries.push_back({owned.back().get(), position, i});
+    }
+    std::sort(entries.begin(), entries.end(), [](const Entry &a, const Entry &b) {
+        return a.position.x != b.position.x ? a.position.x < b.position.x : a.position.y < b.position.y;
+    });
+    const auto first = std::find_if(entries.begin(), entries.end(), [&](const Entry &entry) {
+        return entry.index == focused;
+    });
+    std::rotate(entries.begin(), first, entries.end());
+    std::vector<PCUITEMID_CHILD> ids;
+    ids.reserve(entries.size());
+    for (const auto &entry : entries) ids.push_back(entry.id);
+    CComPtr<IShellFolder> folder;
+    result = view->GetFolder(IID_PPV_ARGS(&folder));
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || !folder) return S_FALSE;
+    CComPtr<IShellItemArray> array;
+    result = SHCreateShellItemArray(nullptr, folder, static_cast<UINT>(ids.size()), ids.data(), &array);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || !array) return S_FALSE;
+    if (selected != count) {
+        // Counts alone do not detect replacing one selected item with another.
+        std::vector<int> after;
+        result = selectedIndices(after);
+        if (result != S_OK) return result;
+        if (after != indices) return S_FALSE;
+    }
+    int allAfter = 0, selectedAfter = 0, focusAfter = -1;
+    result = view->ItemCount(SVGIO_ALLVIEW, &allAfter);
+    if (!current()) return E_ABORT;
+    if (FAILED(result)) return S_FALSE;
+    result = view->ItemCount(SVGIO_SELECTION, &selectedAfter);
+    if (!current()) return E_ABORT;
+    if (FAILED(result)) return S_FALSE;
+    result = view->GetFocusedItem(&focusAfter);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || allAfter != count || selectedAfter != selected || focusAfter != focused) return S_FALSE;
+    return array.CopyTo(out);
+} catch (const std::bad_alloc &) {
+    return E_OUTOFMEMORY;
+}
+
+HRESULT nativeViewSelection(IFolderView2 *view, BOOL noneMeansFolder, IShellItemArray **out,
+        const std::function<bool()> &current) {
+    if (!view || !out) return E_POINTER;
+    *out = nullptr;
+    CComPtr<IFolderView2> keepView(view);
+    const auto valid = [&] { return !current || current(); };
+    if (!valid()) return E_ABORT;
+    CComPtr<IShellItemArray> selected;
+    HRESULT hr = current ? captureSpatialSelection(view, current, &selected) : S_FALSE;
+    if (hr == E_ABORT || !valid()) return E_ABORT;
+    if (hr != S_OK) {
+        hr = view->GetSelection(noneMeansFolder, &selected);
+        if (!valid()) return E_ABORT;
+    }
+    if (FAILED(hr) || !selected) return hr;
+    CComPtr<IShellFolder> folder;
+    CComPtr<IMixedFolder> mixed;
+    hr = view->GetFolder(IID_PPV_ARGS(&folder));
+    if (!valid()) return E_ABORT;
+    if (SUCCEEDED(hr) && folder) hr = folder->QueryInterface(IID_PPV_ARGS(&mixed));
+    if (!valid()) return E_ABORT;
+    if (FAILED(hr) || !mixed)
+        return selected.CopyTo(out);
+    DWORD count = 0;
+    hr = selected->GetCount(&count);
+    if (!valid()) return E_ABORT;
+    if (FAILED(hr)) return hr;
+    std::vector<CComHeapPtr<ITEMIDLIST_ABSOLUTE>> owned(count);
+    std::vector<PCIDLIST_ABSOLUTE> ids(count);
+    for (DWORD i = 0; i < count; ++i) {
+        CComPtr<IShellItem> item, native;
+        hr = selected->GetItemAt(i, &item);
+        if (!valid()) return E_ABORT;
+        if (SUCCEEDED(hr)) hr = nativeShellItem(item, &native);
+        if (!valid()) return E_ABORT;
+        if (SUCCEEDED(hr)) hr = SHGetIDListFromObject(native, &owned[i]);
+        if (!valid()) return E_ABORT;
+        if (FAILED(hr)) return hr;
+        ids[i] = owned[i];
+    }
+    CComPtr<IShellItemArray> converted;
+    hr = SHCreateShellItemArrayFromIDLists(count, ids.data(), &converted);
+    if (!valid()) return E_ABORT;
+    return FAILED(hr) ? hr : converted.CopyTo(out);
+}
 
 HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &current,
         std::vector<uint8_t> &bytes) {
@@ -392,7 +659,14 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
         if (!current()) return E_ABORT;
         if (SUCCEEDED(result) && focused) header.flags |= REOPEN_FOCUS;
     }
-    // Scroll anchor: the first item whose reported position lies inside the view's
+    std::vector<uint8_t> viewport;
+    result = captureViewScroll(view, current, viewport);
+    if (!current()) return E_ABORT;
+    if (result == S_OK) {
+        header.version = 3;
+        header.flags |= REOPEN_VIEWPORT;
+    }
+    // Legacy fallback: the first item whose reported position lies inside the view's
     // client area. Report and list views answer in client coordinates, so this is
     // the first displayed row. Views answering in unscrolled layout coordinates
     // (icons) yield the first item of the folder, which restoring leaves at the
@@ -404,7 +678,7 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
     RECT client = {};
     result = view->GetWindow(&viewWindow);
     if (!current()) return E_ABORT;
-    if (SUCCEEDED(result) && viewWindow && GetClientRect(viewWindow, &client)
+    if (viewport.empty() && SUCCEEDED(result) && viewWindow && GetClientRect(viewWindow, &client)
             && client.right > 0 && client.bottom > 0) {
         // A column header covers the top of the client area; the rows under it
         // report non-negative positions but are not displayed. Its height comes
@@ -475,6 +749,8 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
     stream.Attach(SHCreateMemStream(nullptr, 0));
     if (!stream) return E_OUTOFMEMORY;
     result = IStream_Write(stream, &header, sizeof(header));
+    if (SUCCEEDED(result) && (header.flags & REOPEN_VIEWPORT))
+        result = IStream_Write(stream, viewport.data(), static_cast<ULONG>(viewport.size()));
     if (SUCCEEDED(result) && (header.flags & REOPEN_SCROLL))
         result = IStream_Write(stream, &scroll, sizeof(scroll));
     if (SUCCEEDED(result) && (header.flags & REOPEN_ANCHOR))
@@ -483,14 +759,42 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
         result = IStream_WritePidl(stream, focused);
     if (FAILED(result)) return result;
     if (count) {
-        CComPtr<IEnumIDList> selectedItems;
-        result = folderView->Items(SVGIO_SELECTION, IID_PPV_ARGS(&selectedItems));
+        // A complete selection is an unordered set in this snapshot. Avoid the
+        // native spatial sort; providers without usable indices keep Items.
+        std::vector<CComHeapPtr<ITEMID_CHILD>> complete;
+        const bool indexed = count >= 128 && isFreeIconView(folderView, current);
         if (!current()) return E_ABORT;
-        if (FAILED(result)) return result;
-        if (!selectedItems) return E_UNEXPECTED;
+        if (indexed) {
+            int allCount = 0;
+            result = folderView->ItemCount(SVGIO_ALLVIEW, &allCount);
+            if (!current()) return E_ABORT;
+            if (SUCCEEDED(result) && allCount == count) {
+                complete.resize(static_cast<size_t>(count));
+                for (int i = 0; i < count; ++i) {
+                    result = folderView->Item(i, &complete[static_cast<size_t>(i)]);
+                    if (!current()) return E_ABORT;
+                    if (FAILED(result) || !complete[static_cast<size_t>(i)]) { complete.clear(); break; }
+                }
+                int selectedCount = 0;
+                result = folderView->ItemCount(SVGIO_SELECTION, &selectedCount);
+                if (!current()) return E_ABORT;
+                if (FAILED(result) || selectedCount != count) complete.clear();
+                result = folderView->ItemCount(SVGIO_ALLVIEW, &allCount);
+                if (!current()) return E_ABORT;
+                if (FAILED(result) || allCount != count) complete.clear();
+            }
+        }
+        CComPtr<IEnumIDList> selectedItems;
+        if (complete.empty()) {
+            result = folderView->Items(SVGIO_SELECTION, IID_PPV_ARGS(&selectedItems));
+            if (!current()) return E_ABORT;
+            if (FAILED(result)) return result;
+            if (!selectedItems) return E_UNEXPECTED;
+        }
         for (int i = 0; i < count; ++i) {
             CComHeapPtr<ITEMID_CHILD> selectedItem;
-            result = selectedItems->Next(1, &selectedItem, nullptr);
+            if (complete.empty()) result = selectedItems->Next(1, &selectedItem, nullptr);
+            else { selectedItem.Attach(complete[static_cast<size_t>(i)].Detach()); result = S_OK; }
             if (!current()) return E_ABORT;
             if (result != S_OK) return FAILED(result) ? result : E_UNEXPECTED;
             result = IStream_WritePidl(stream, selectedItem);
@@ -511,6 +815,64 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
     return result;
 }
 
+static HRESULT matchesViewItems(IFolderView2 *view, UINT flags,
+        const std::vector<CComHeapPtr<ITEMID_CHILD>> &wanted,
+        const std::function<bool()> &current) try {
+    int count = 0;
+    HRESULT result = view->ItemCount(flags, &count);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || count < 0 || static_cast<size_t>(count) != wanted.size()) return S_FALSE;
+    int allCount = 0;
+    result = view->ItemCount(SVGIO_ALLVIEW, &allCount);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || allCount != count) return S_FALSE;
+    const bool indexed = isFreeIconView(view, current);
+    if (!current()) return E_ABORT;
+    struct Identity { PCUIDLIST_RELATIVE item; UINT size; bool matched; };
+    std::vector<Identity> sorted;
+    sorted.reserve(wanted.size());
+    for (const auto &item : wanted) sorted.push_back({item, ILGetSize(item), false});
+    const auto less = [](const Identity &a, const Identity &b) {
+        return a.size != b.size ? a.size < b.size : std::memcmp(a.item, b.item, a.size) < 0;
+    };
+    std::sort(sorted.begin(), sorted.end(), less);
+    for (size_t i = 1; i < sorted.size(); ++i)
+        if (!less(sorted[i - 1], sorted[i])) return S_FALSE;
+    // This proof only accepts complete sets. Free icons can use indices to
+    // avoid the Shell's spatial sort. Other renderers retain their fast Items.
+    // For SVGIO_SELECTION, equal selected/all counts establish membership;
+    // the exact view identities still have to match before and after Select All.
+    CComPtr<IEnumIDList> items;
+    if (!indexed) {
+        result = view->Items(flags, IID_PPV_ARGS(&items));
+        if (!current()) return E_ABORT;
+        if (FAILED(result) || !items) return S_FALSE;
+    }
+    for (int i = 0; i < count; ++i) {
+        CComHeapPtr<ITEMID_CHILD> item;
+        result = indexed ? view->Item(i, &item) : items->Next(1, &item, nullptr);
+        if (!current()) return E_ABORT;
+        if (result != S_OK || !item) return S_FALSE;
+        const Identity key = {item, ILGetSize(item), false};
+        const auto found = std::lower_bound(sorted.begin(), sorted.end(), key, less);
+        if (found == sorted.end() || less(key, *found) || found->matched) return S_FALSE;
+        found->matched = true;
+    }
+    if (!indexed) {
+        CComHeapPtr<ITEMID_CHILD> extra;
+        result = items->Next(1, &extra, nullptr);
+        if (!current()) return E_ABORT;
+        if (result != S_FALSE) return S_FALSE;
+    }
+    int finalCount = 0;
+    result = view->ItemCount(flags, &finalCount);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || finalCount != count) return S_FALSE;
+    result = view->ItemCount(SVGIO_ALLVIEW, &finalCount);
+    if (!current()) return E_ABORT;
+    return SUCCEEDED(result) && finalCount == count ? S_OK : S_FALSE;
+} catch (const std::bad_alloc &) { return S_FALSE; }
+
 HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         const std::function<bool()> &current, const ShellSelectionClear *clear) {
     std::vector<uint8_t> bytes;
@@ -527,11 +889,21 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
     ReopenViewHeader header;
     HRESULT result = IStream_Read(stream, &header, sizeof(header));
     if (FAILED(result)) return result;
-    if ((header.version != 1 && header.version != 2)
-            || (header.flags & ~(header.version == 1 ? 7u : 15u))
+    if ((header.version != 1 && header.version != 2 && header.version != 3)
+            || (header.flags & ~(header.version == 1 ? 7u : header.version == 2 ? 15u : REOPEN_FOCUS | REOPEN_VIEWPORT))
+            || (header.version == 3 && !(header.flags & REOPEN_VIEWPORT))
             || ((header.flags & REOPEN_SCROLL) && (header.flags & REOPEN_ANCHOR))
             || header.selected > bytes.size() / 2)
         return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+    std::vector<uint8_t> viewport;
+    if (header.flags & REOPEN_VIEWPORT) {
+        ViewScrollState state;
+        result = IStream_Read(stream, &state, sizeof(state));
+        if (FAILED(result)) return result;
+        if (!validViewScroll(state)) return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+        viewport.resize(sizeof(state));
+        std::memcpy(viewport.data(), &state, sizeof(state));
+    }
     ReopenScroll scroll;
     if (header.flags & REOPEN_SCROLL) {
         result = IStream_Read(stream, &scroll, sizeof(scroll));
@@ -608,7 +980,7 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
     int selectedCount = 0;
     result = folderView->ItemCount(SVGIO_SELECTION, &selectedCount);
     if (!current()) return E_ABORT;
-    const bool selectionCountKnown = SUCCEEDED(result) && selectedCount >= 0;
+    bool selectionCountKnown = SUCCEEDED(result) && selectedCount >= 0;
     bool sameSelection = selectionCountKnown
         && static_cast<uint32_t>(selectedCount) == header.selected;
     if (sameSelection) {
@@ -619,6 +991,41 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
             if (FAILED(result) || !(selection & SVSI_SELECT)) {
                 sameSelection = false;
                 break;
+            }
+        }
+    }
+    bool useBulkSelection = clear && clear->acceleratesSelectAll();
+    if (!sameSelection && !useBulkSelection && selectedItems.size() >= 128) {
+        FOLDERVIEWMODE mode = FVM_AUTO;
+        int iconSize = 0;
+        result = folderView->GetViewModeAndIconSize(&mode, &iconSize);
+        if (!current()) return E_ABORT;
+        if (SUCCEEDED(result)) {
+            useBulkSelection = mode != FVM_ICON && mode != FVM_SMALLICON;
+            if (!useBulkSelection) {
+                useBulkSelection = SUCCEEDED(folderView->GetAutoArrange());
+                if (!current()) return E_ABORT;
+            }
+        }
+    }
+    if (!sameSelection && useBulkSelection && selectedItems.size() >= 128) {
+        CComQIPtr<IShellFolderView> bulk(view);
+        if (!current()) return E_ABORT;
+        if (bulk) {
+            result = matchesViewItems(folderView, SVGIO_ALLVIEW, selectedItems, current);
+            if (!current()) return E_ABORT;
+            if (result == S_OK) {
+                result = bulk->Select(SFVS_SELECT_ALLITEMS);
+                if (!current()) return E_ABORT;
+                // A failed or reentrant bulk operation may have changed the
+                // selection. Rebuild from identities unless its exact result
+                // matches, including when contents changed without a count change.
+                selectionCountKnown = false;
+                if (SUCCEEDED(result)) {
+                    result = matchesViewItems(folderView, SVGIO_SELECTION, selectedItems, current);
+                    if (!current()) return E_ABORT;
+                    sameSelection = result == S_OK;
+                }
             }
         }
     }
@@ -731,7 +1138,7 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         if (SUCCEEDED(result)) {
             // A focus-only SelectItem otherwise includes SVSI_DESELECT (zero).
             record(view->SelectItem(focused, (selection & SVSI_SELECT) | SVSI_FOCUSED
-                | (anchor || scrollPattern ? 0 : SVSI_ENSUREVISIBLE) | SVSI_NOTAKEFOCUS));
+                | (anchor || scrollPattern || !viewport.empty() ? 0 : SVSI_ENSUREVISIBLE) | SVSI_NOTAKEFOCUS));
             if (!current()) return E_ABORT;
         }
     }
@@ -747,6 +1154,160 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         if (!current()) return E_ABORT;
         record(result);
     }
+    if (!viewport.empty()) {
+        record(restoreViewScroll(view, viewport, current));
+        if (!current()) return E_ABORT;
+    }
     return restored;
+}
+namespace {
+struct ScrollListSearch { HWND window = nullptr; unsigned count = 0; };
+BOOL CALLBACK findScrollList(HWND window, LPARAM data) {
+    wchar_t name[32] = {}; DWORD process = 0;
+    if (GetClassNameW(window, name, _countof(name)) && wcscmp(name, WC_LISTVIEWW) == 0
+            && GetWindowThreadProcessId(window, &process) == GetCurrentThreadId()
+            && process == GetCurrentProcessId()) {
+        auto &search = *reinterpret_cast<ScrollListSearch *>(data);
+        search.window = window; ++search.count;
+    }
+    return TRUE;
+}
+HWND scrollList(IFolderView2 *view, HWND parent, UINT mode, const std::function<bool()> &current) {
+    DWORD process = 0;
+    if (GetWindowThreadProcessId(parent, &process) != GetCurrentThreadId()
+            || process != GetCurrentProcessId()) return nullptr;
+    ScrollListSearch search;
+    EnumChildWindows(parent, findScrollList, reinterpret_cast<LPARAM>(&search));
+    if (!current() || search.count != 1 || !IsWindowVisible(search.window)
+            || GetPropW(search.window, L"SysSetRedraw")) return nullptr;
+    int expected = -1;
+    switch (mode) {
+        case FVM_ICON: expected = LV_VIEW_ICON; break;
+        case FVM_SMALLICON: expected = LV_VIEW_SMALLICON; break;
+        case FVM_LIST: expected = LV_VIEW_LIST; break;
+        case FVM_DETAILS: expected = LV_VIEW_DETAILS; break;
+        case FVM_TILE: case FVM_CONTENT: expected = LV_VIEW_TILE; break;
+        default: return nullptr;
+    }
+    const int actual = static_cast<int>(ListView_GetView(search.window));
+    if (!current() || actual != expected) return nullptr;
+    int count = 0;
+    const HRESULT result = view->ItemCount(SVGIO_ALLVIEW, &count);
+    if (!current() || FAILED(result) || count <= 0) return nullptr;
+    const int nativeCount = ListView_GetItemCount(search.window);
+    return current() && nativeCount == count ? search.window : nullptr;
+}
+}
+
+HRESULT captureViewScroll(IShellView *view, const std::function<bool()> &current, std::vector<uint8_t> &bytes) {
+    bytes.clear();
+    if (!view) return E_POINTER;
+    if (!current()) return E_ABORT;
+    CComQIPtr<IFolderView2> folder(view);
+    if (!current()) return E_ABORT;
+    if (!folder) return S_FALSE;
+    ViewScrollState state;
+    FOLDERVIEWMODE mode = FVM_AUTO;
+    int iconSize = 0;
+    HRESULT result = folder->GetViewModeAndIconSize(&mode, &iconSize);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || mode < FVM_FIRST || mode > FVM_LAST || iconSize <= 0) return S_FALSE;
+    state.mode = static_cast<uint32_t>(mode); state.iconSize = iconSize;
+    HWND window = nullptr;
+    result = view->GetWindow(&window);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || !window) return S_FALSE;
+    const HWND list = scrollList(folder, window, state.mode, current);
+    if (!current()) return E_ABORT;
+    if (list) {
+        RECT first = {};
+        const BOOL located = ListView_GetItemRect(list, 0, &first, LVIR_BOUNDS);
+        if (!current()) return E_ABORT;
+        state.dpi = GetDpiForWindow(list);
+        if (!located || first.right <= first.left || first.bottom <= first.top
+                || !state.dpi || state.dpi > INT32_MAX) return S_FALSE;
+        state.kind = 1; state.x = first.left; state.y = first.top;
+    } else {
+        CComPtr<IScrollProvider> pattern;
+        result = getScrollPattern(window, current, &pattern);
+        if (!current()) return E_ABORT;
+        if (SUCCEEDED(result)) result = pattern->get_HorizontalScrollPercent(&state.horizontal);
+        if (!current()) return E_ABORT;
+        if (SUCCEEDED(result)) result = pattern->get_VerticalScrollPercent(&state.vertical);
+        if (!current()) return E_ABORT;
+        if (FAILED(result) || !validScrollPercent(state.horizontal) || !validScrollPercent(state.vertical)) return S_FALSE;
+        state.kind = 2;
+    }
+    bytes.resize(sizeof(state));
+    std::memcpy(bytes.data(), &state, sizeof(state));
+    return S_OK;
+}
+
+HRESULT restoreViewScroll(IShellView *view, const std::vector<uint8_t> &bytes, const std::function<bool()> &current) {
+    if (bytes.empty()) return S_FALSE;
+    if (!view) return E_POINTER;
+    if (!current()) return E_ABORT;
+    if (bytes.size() != sizeof(ViewScrollState)) return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+    ViewScrollState state;
+    std::memcpy(&state, bytes.data(), sizeof(state));
+    if (!validViewScroll(state))
+        return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+    CComQIPtr<IFolderView2> folder(view);
+    if (!current()) return E_ABORT;
+    if (!folder) return S_FALSE;
+    FOLDERVIEWMODE mode = FVM_AUTO; int iconSize = 0;
+    HRESULT result = folder->GetViewModeAndIconSize(&mode, &iconSize);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || static_cast<uint32_t>(mode) != state.mode || iconSize != state.iconSize) return S_FALSE;
+    HWND window = nullptr;
+    result = view->GetWindow(&window);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || !window) return S_FALSE;
+    if (state.kind == 1) {
+        const HWND list = scrollList(folder, window, state.mode, current);
+        if (!current()) return E_ABORT;
+        if (!list) return S_FALSE;
+        RECT first = {};
+        const BOOL located = ListView_GetItemRect(list, 0, &first, LVIR_BOUNDS);
+        if (!current()) return E_ABORT;
+        const UINT dpi = GetDpiForWindow(list);
+        if (!located || !dpi || dpi > INT32_MAX) return S_FALSE;
+        const int64_t x = static_cast<int64_t>(first.left) - static_cast<int64_t>(state.x) * dpi / state.dpi;
+        const int64_t y = static_cast<int64_t>(first.top) - static_cast<int64_t>(state.y) * dpi / state.dpi;
+        if (x < INT32_MIN || x > INT32_MAX || y < INT32_MIN || y > INT32_MAX) return S_FALSE;
+        if (!x && !y) return S_OK;
+        // A visible native ListView animates LVM_SCROLL for roughly 200 ms.
+        // One explicit pixel delta needs no intermediate frame or layout query.
+        struct Resume {
+            IFolderView2 *view;
+            bool held = false;
+            ~Resume() { if (held) view->SetRedraw(TRUE); }
+        } redraw{folder};
+        redraw.held = SUCCEEDED(folder->SetRedraw(FALSE));
+        if (!current()) return E_ABORT;
+        const BOOL scrolled = ListView_Scroll(list, static_cast<int>(x), static_cast<int>(y));
+        if (!current()) return E_ABORT;
+        HRESULT resumed = S_OK;
+        if (redraw.held) {
+            redraw.held = false;
+            resumed = folder->SetRedraw(TRUE);
+            if (!current()) return E_ABORT;
+            if (SUCCEEDED(resumed)) RedrawWindow(window, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+        }
+        return !current() ? E_ABORT : FAILED(resumed) ? resumed : scrolled ? S_OK : S_FALSE;
+    }
+    CComPtr<IScrollProvider> pattern;
+    result = getScrollPattern(window, current, &pattern);
+    if (!current()) return E_ABORT;
+    if (FAILED(result)) return S_FALSE;
+    BOOL horizontal = FALSE, vertical = FALSE;
+    result = pattern->get_HorizontallyScrollable(&horizontal);
+    if (!current()) return E_ABORT;
+    if (SUCCEEDED(result)) result = pattern->get_VerticallyScrollable(&vertical);
+    if (!current()) return E_ABORT;
+    if (FAILED(result)) return S_FALSE;
+    if (horizontal || vertical) result = pattern->SetScrollPercent(horizontal ? state.horizontal : UIA_ScrollPatternNoScroll,
+        vertical ? state.vertical : UIA_ScrollPatternNoScroll);
+    return !current() ? E_ABORT : result;
 }
 } // namespace filespacer

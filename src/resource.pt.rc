@@ -9,6 +9,7 @@ IDR_ITEM_MENU   MENU {
 }
 
 STRINGTABLE {
+    IDS_GLOBAL_THUMBNAILS, "Miniaturas (definição global)"
     IDS_DOCUMENTATION_ERROR, "Não foi possível abrir a documentação local:\n%1\n\n%2"
     IDS_CAPTION_COPY_PATH, "Copiar caminho"
     IDS_CAPTION_RENAME, "Mudar o nome"

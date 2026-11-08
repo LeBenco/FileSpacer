@@ -108,6 +108,15 @@ namespace FileSpacerRegression {
         [PreserveSig] int Reset();
         [PreserveSig] int Clone(out EnumPidls copy);
     }
+    // IShellItemArray prefix through GetCount, in Windows SDK order.
+    [ComImport, Guid("b63ea76d-1f85-456f-a19c-48159efa858b"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface ShellItemArray {
+        [PreserveSig] int BindToHandler(IntPtr context,ref Guid handler,ref Guid iid,out IntPtr result);
+        [PreserveSig] int GetPropertyStore(uint flags,ref Guid iid,out IntPtr result);
+        [PreserveSig] int GetPropertyDescriptionList(IntPtr key,ref Guid iid,out IntPtr result);
+        [PreserveSig] int GetAttributes(uint flags,uint mask,out uint attributes);
+        [PreserveSig] int GetCount(out uint count);
+    }
     // IColumnManager, implemented by DefView's IShellView in Details mode.
     [ComImport, Guid("d8ec27bb-3f3b-4042-b10a-4acfd924d453"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface ColumnManager {
@@ -134,6 +143,21 @@ namespace FileSpacerRegression {
             finally { if(text!=IntPtr.Zero) Marshal.FreeCoTaskMem(text); Marshal.FreeCoTaskMem(absolute); }
         }
         public int Count { get { int n; Native.Check(view.ItemCount(2,out n)); return n; } }
+        public int SelectedCount { get { int n; Native.Check(view.ItemCount(1,out n)); return n; } }
+        public int SelectionSnapshotCount {
+            get {
+                IntPtr pointer=IntPtr.Zero; ShellItemArray array=null;
+                try {
+                    int result=((FolderView2)view).GetSelection(0,out pointer);
+                    if(result==unchecked((int)0x80070490)&&pointer==IntPtr.Zero) return 0;
+                    Native.Check(result); if(pointer==IntPtr.Zero) return 0;
+                    array=(ShellItemArray)Marshal.GetObjectForIUnknown(pointer);
+                    uint count; Native.Check(array.GetCount(out count)); return checked((int)count);
+                } finally { if(pointer!=IntPtr.Zero) Marshal.Release(pointer); Native.Release(array); }
+            }
+        }
+        public int FocusIndex { get { int n; Native.Check(view.GetFocusedItem(out n)); return n; } }
+        public int AnchorIndex { get { int n; Native.Check(view.GetSelectionMarkedItem(out n)); return n; } }
         public uint Mode { get { uint n; Native.Check(view.GetCurrentViewMode(out n)); return n; } set { Native.Check(view.SetCurrentViewMode(value)); } }
         public void SetViewModeAndIconSize(uint mode, int size) { Native.Check(((FolderView2)view).SetViewModeAndIconSize(mode,size)); }
         [StructLayout(LayoutKind.Sequential)] struct SortColumn { public Guid Format; public uint Id; public int Direction; }
@@ -527,6 +551,19 @@ namespace FileSpacerRegression {
             var info=new GuiThreadInfo();info.Size=(uint)Marshal.SizeOf(typeof(GuiThreadInfo));
             if(thread==0 || !GetGUIThreadInfo(thread,ref info)) throw new Win32Exception();
             return info.Focus;
+        }
+        public static long ClickControlAtPointer(IntPtr window,IntPtr control,int x,int y) {
+            if(GetForegroundWindow()!=window) throw new InvalidOperationException("Test window is not foreground; click was not sent.");
+            Point point;
+            if(!GetCursorPos(out point)) throw new Win32Exception();
+            if(point.X!=x || point.Y!=y || WindowFromPoint(point)!=control)
+                throw new InvalidOperationException("Pointer is not over the verified click target.");
+            var down=new Input();down.Type=0;down.Data.Mouse.Flags=2;
+            var up=new Input();up.Type=0;up.Data.Mouse.Flags=4;
+            long sentAt=System.Diagnostics.Stopwatch.GetTimestamp();
+            uint sent=SendInput(2,new Input[]{down,up},Marshal.SizeOf(typeof(Input)));
+            if(sent!=2) { if(sent==1) SendInput(1,new Input[]{up},Marshal.SizeOf(typeof(Input)));throw new Win32Exception(); }
+            return sentAt;
         }
         public static void ClickControl(IntPtr window,IntPtr control,int x,int y) {
             if(GetForegroundWindow()!=window) throw new InvalidOperationException("Test window is not foreground; click was not sent.");

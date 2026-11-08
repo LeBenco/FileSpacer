@@ -2,6 +2,10 @@
 
 ## Noch nicht veröffentlicht
 
+- Das Verkleinern großer Auswahlen durch einen Klick auf ein Element oder den Hintergrund klassischer Shell-Ansichten massiv beschleunigen, mit automatischem stillem Rückgriff auf öffentliche Funktionen, wenn die private Windows-Funktion fehlt.
+- Das Auslesen vollständiger und großer teilweiser Auswahlen in Symbolansichten mit freier Platzierung über öffentliche Windows-APIs beschleunigen.
+- Die globale Windows-Einstellung für Miniaturansichten über das Ansichtsmenü umschalten.
+- Die Scrollposition eines Ordners beim erneuten Öffnen seines Fensters wiederherstellen.
 - Neue Fenster anhand der normalen Größe und Position vorhandener FileSpacer-Fenster platzieren, auch wenn diese maximiert, minimiert oder angedockt sind.
 - Massive Beschleunigung von „Alles auswählen“ und des Aufhebens der Auswahl von Tausenden Dateien in klassischen Shell-Ansichten. Diese Optimierung nutzt private Windows-Funktionen, deren Verfügbarkeit und Verhalten nicht garantiert sind. Fehlen diese Funktionen oder sind sie inkompatibel, greift FileSpacer automatisch und ohne Meldung auf öffentliche Funktionen zurück; die Leistungsgewinne entfallen dann.
 

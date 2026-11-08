@@ -52,9 +52,9 @@ that fall back to native behavior when a prerequisite is missing:
   optional private selection-cache access and a qualified native callback for
   global Select All. Their absence retains public Shell selection operations.
 
-Do not generalize these exceptions to other view operations, which remain COM
-calls. Tests can inspect controls to observe a gesture; that instrumentation is
-not an application dependency.
+The additional optional viewport adapter below is limited to recording and
+restoring scrolling. Other view operations remain COM calls. Tests can inspect
+controls to observe a gesture; that instrumentation is not an application dependency.
 
 ## Mouse gestures across Shell renderers
 
@@ -105,6 +105,21 @@ keyboard focus. To clear selection, `SelectItem(nullptr, SVSI_DESELECTOTHERS)`
 must not include `SVSI_NOTAKEFOCUS`; that flag belongs on a targeted item.
 Navigating upward does not automatically select the source folder or replace
 the selection of an already-open parent.
+
+For changed selections of at least 128 items, a saved complete selection can
+use `IShellFolderView::Select(SFVS_SELECT_ALLITEMS)`. An exact bijection of opaque
+child PIDLs must match the current view first, and the selected identities are
+checked again after the call. Duplicate, missing or differently encoded identities,
+unsupported interfaces and failed operations retain the per-item restoration.
+View-generation checks still apply after every external call. The qualified
+Select All binding is reused when available; otherwise the public bulk operation
+also serves free placement when the arrangement query is supported. In free icon
+views, complete-set proofs use public item indices and recheck all/selected
+counts, avoiding the native spatial sort while still comparing every identity.
+Other renderers retain their efficient native enumeration. Capturing a large
+complete selection also uses indices in free icon views, with native enumeration
+when the indexed capture is unavailable. Focus and scroll restoration remain
+separate.
 
 ## Mixed file/folder sorting
 
@@ -157,13 +172,16 @@ not a general Shell contract for label expansion. If its prerequisites or
 notifications disappear, leave the standard drawing intact. Do not generalize
 it into a custom multi-label renderer or use it for view operations.
 
-Reopening Details/List views restores a first-visible-row anchor, not an exact
-pixel offset. `ShellViewSelection` finds it from `IFolderView::Items` and item
-positions inside the view's client rectangle, below the accessible column
-header. Restoration ensures the last item, then the anchor, is visible under
-redraw suppression, without taking focus. Icon views use unscrolled positions
-and reopen at the top. Do not treat `IFolderView2::GetVisibleItem` as a viewport
-query, or assume `GetViewStateStream` contains a scroll offset.
+Selection snapshots now embed the shared viewport described below (format 3),
+before the optional focus and selected PIDLs. This avoids spatial enumeration
+for an anchor and the last-item/anchor scroll detour. Both old formats remain
+readable. If the viewport adapter is unavailable, capture retains the legacy
+anchor/percentage protocol. Its classic anchor comes from `IFolderView::Items`
+and positions inside the client rectangle, below the accessible header; it is
+restored by revealing the last item, then the anchor under redraw suppression.
+This legacy fallback does not promise an exact pixel offset. Do not treat
+`IFolderView2::GetVisibleItem` as a viewport query, or assume `GetViewStateStream`
+contains a scroll offset.
 
 
 
@@ -229,6 +247,18 @@ do not disable an independently qualified clear capability. This is an optional
 private protocol, not a guaranteed Windows interface. Arbitrary subset selection
 continues to use the native per-item path.
 
+Ordinary deselection clicks stay on the native input path. After a verified
+global deselection notification reports zero selected items, the same binding
+can batch-release the old native subscriptions, forward the original notice,
+invalidate selection snapshots and cancel stale delayed activation. There is
+no background-click preclear hook. Missing capability leaves native handling.
+
+An independently qualified native selected-index range can also accelerate
+explicit clearing, including free Tiles. Its matching control symbols, loaded
+instructions, ownership and CFG targets are checked and cached separately;
+absence retains the existing manager capability or the public path. Case
+`06-SelectionRange.ps1` covers qualification, cache faults and late publication.
+
 Cases `05-SelectionAll.ps1` and `06-SelectionAllVisible.ps1` exercise the production
 adapter from empty and partial selections in nine configurations, plus a forced
 public selection fallback. They verify identities, retained snapshots, selection
@@ -236,6 +266,68 @@ data objects, sorting, focus and subsequent operations. Case 06 uses visible
 800-by-400 views and checks sampled icon positions. API-return timings do not
 establish composed-frame presentation latency or full-application parity with
 Explorer.
+
+## Large-selection reads in free layouts
+
+Guarded `nativeViewSelection` calls use a public snapshot for ungrouped free
+Icon/SmallIcon views: complete selections of at least 128 items and partial
+selections of at least 1024 items. Partial capture uses `GetSelectedItem`, with
+an explicit check of index zero, and rechecks the selected indices to detect
+same-count replacement. The helper reads selected child IDs and positions once,
+sorts cached coordinates, starts at the focused item only when it is selected,
+and constructs an ordinary array with `SHCreateShellItemArray`. Final all/selected
+counts and focus must still match after index verification. Coordinate ties,
+smaller/empty selections, grouping, other modes and unavailable methods retain
+native `GetSelection`; cancellation rejects the stale operation.
+
+This helper lives in `ShellViewSelection`, together with the native-array reader
+and its existing mixed-provider conversion. The pure folder/item adapters remain
+in `MixedFolder`. The declaration keeps its existing call form; callers without
+a lifetime/generation guard keep native access. Folder-window status, selected
+item, Peek and default-command calls supply that guard. Returned arrays own
+their snapshots and preserve the provider's native-item conversion.
+
+This optimization uses public APIs, has no symbol-discovery dependency and keeps
+no persistent item cache. It does not populate the Shell's own selection cache
+or accelerate its independent commands. `SelectionArray` tests the production
+reader, exact ordered identities, attributes, data-object round trips, retained
+arrays, geometry, focus, rejection and cancellation. The host `Partial` scenario
+of `Run-SelectionGestures.ps1` additionally checks large subsets, same-count
+replacement and late focus changes, with a qualified fixture cache supplied
+through `FS_GESTURE_CACHE` when needed. `PublicFallback` separately
+measures public-only clear/restoration and the following array read against
+Explorer at equal viewport dimensions.
+
+## Persistent viewport
+
+Ordinary folder opens restore a separate 48-byte viewport snapshot, after the
+saved presentation and free positions are applied. This is independent of the
+closed-window history and does not select files or restore keyboard focus.
+The snapshot is consumed once for the window; refresh and renderer recreation
+do not replay it. An explicit closed-window or transient selection snapshot
+takes precedence. Unreadable/provisional state and filtered views never replace
+the saved viewport. A closing View-menu preview retains its original viewport.
+
+Modern views use the existing in-process public `IScrollProvider`. Classic
+views optionally use a unique, visible `SysListView32` in the Shell view's own
+process and UI thread, with matching view type and item count. The documented
+`LVM_GETITEMRECT` and `LVM_SCROLL` messages save and restore the first item's
+client coordinates. One pixel displacement runs under `IFolderView2::SetRedraw`
+to avoid native scrolling animation; drawing resumes on cancellation too.
+There is no per-file traversal. DPI is recorded, and incompatible presentation
+or unavailable capabilities leave the native viewport unchanged.
+
+Recognizing that child control is an optional dependency on Shell composition,
+not a guaranteed Shell COM contract. No additional private Windows function,
+offset or executable patch is introduced. With changed folder contents, layout
+or DPI, restoration remains best effort rather than preserving a semantic item.
+
+Database schema 7 adds a nullable `scroll` column, preserving existing view and
+icon blobs. Closing updates an existing folder only; viewport saving ignores
+the layout lock because scrolling is navigation. Rekeying carries the snapshot;
+global reset, deletion, expiry and quota eviction discard it with the folder state.
+Tests `07-fenetres/08-DefilementPersistant` and the independent real-Shell
+`ScrollState` experiment cover this behavior and its incremental cost.
 
 ## Activation and external folders
 

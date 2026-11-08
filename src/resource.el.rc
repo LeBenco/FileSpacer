@@ -9,6 +9,7 @@ IDR_ITEM_MENU   MENU {
 }
 
 STRINGTABLE {
+    IDS_GLOBAL_THUMBNAILS, "Μικρογραφίες (καθολική ρύθμιση)"
     IDS_DOCUMENTATION_ERROR, "Δεν ήταν δυνατό το άνοιγμα της τοπικής τεκμηρίωσης:\n%1\n\n%2"
     IDS_CAPTION_COPY_PATH, "Αντιγραφή διαδρομής"
     IDS_CAPTION_RENAME, "Μετονομασία"

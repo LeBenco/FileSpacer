@@ -2,6 +2,10 @@
 
 ## Non pubblicato
 
+- Accelerare notevolmente la riduzione delle selezioni estese facendo clic su un elemento o sullo sfondo delle viste Shell classiche, con ripiego automatico e silenzioso se la funzionalità privata di Windows non è disponibile.
+- Velocizzare la lettura delle selezioni complete e delle selezioni parziali estese nelle viste a icone con posizionamento libero tramite le API pubbliche di Windows.
+- Attivare o disattivare globalmente le anteprime di Windows dal menu Visualizza.
+- Ripristinare la posizione di scorrimento di una cartella quando si riapre la sua finestra.
 - Posizionare le nuove finestre in base alle dimensioni e alla posizione normali delle finestre FileSpacer esistenti, comprese quelle ingrandite, ridotte a icona o affiancate.
 - Drastica accelerazione di «Seleziona tutto» e della deselezione di migliaia di file nelle viste classiche della Shell. Questa ottimizzazione utilizza funzioni private di Windows la cui disponibilità e il cui comportamento non sono garantiti. Se queste funzioni sono assenti o incompatibili, FileSpacer torna automaticamente e silenziosamente alle funzioni pubbliche, senza i vantaggi di prestazioni.
 

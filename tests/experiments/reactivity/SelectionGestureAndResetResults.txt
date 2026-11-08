@@ -1,0 +1,227 @@
+Selection gestures and public view recreation -- 8 November 2026
+===============================================================
+
+Decision
+--------
+No additional product acceleration is adopted by this investigation. The
+attempted early-Escape change was reverted. FolderWindow.cpp and
+ShellViewSelection.cpp retain their previously adopted behavior.
+
+Stop pursuing the modest public recreation gain. Prioritize operations taking
+seconds, especially deselection by an ordinary blank click in free Tiles with
+5,000 files. Do not infer user-visible latency from the private API's duration.
+
+Actual FileSpacer gesture coverage
+--------------------------------
+55-SelectionGestures.ps1 runs the Debug application in the runner's isolated
+/test registry/database namespace. main.cpp accepts FS_SELECTION_PRODUCT_CACHE
+only in that Debug test mode, with discovery disabled. Ordinary test runs keep
+the public path; normal application startup is unchanged.
+
+The fixture uses the real FS display menu to choose the classic profile before
+changing arrangement. Directly changing IFolderView's mode from modern Details
+does not establish that renderer transition and is not sufficient evidence.
+
+One completed host run checked 24 gestures with 256 files:
+ build/regression/20261108-110320-2ba522283b8c46b2b5857ba1c54b175b
+
+For medium Icons, Tiles, free Icons and free Tiles:
+ - Escape: exactly one qualified native-range clear in every private arm.
+ - Blank click and click on an already selected item: zero adapter range calls.
+ - Public arms: zero private range calls for all gestures.
+ - All selected identities and the fixture item count were correct.
+
+Thus Escape already reaches the adopted private implementation. Ordinary mouse
+deselection still belongs to the Shell. This result proves routing, not that
+the entire mouse procedure is slow in every representation.
+
+Counter integrity
+-----------------
+The observer reads only its expected Debug executable's own counter, using its
+matching local PDB. Module lookup uses the image path, not module-list order.
+The selected address must be writable, committed image data belonging to that
+executable; code and heap addresses are rejected. No injected code, patched
+instructions or modified vtables are used.
+
+An initial observer incorrectly accepted the eight-byte rangeCalls procedure
+instead of its untyped public data symbol. Those zero deltas are invalid.
+Filtering CodeView symbol tags, recognizing the static data name and checking
+the memory region fixed this. Two small public/private contracts passed after
+the module lookup correction:
+ build/regression/20261108-110938-7312bfc0a14a40df9ad1b353513391c1
+
+The counter subprocess now uses the existing CreateNoWindow process recorder.
+It must not allocate a console and disturb focus or accessibility observation.
+
+Rejected early Escape
+---------------------
+A separate MSVC/NMAKE executable used HEAD's FolderWindow.cpp with the same
+test-cache support and other objects. Three host Escape measurements at 5,000
+medium Icons were compared with the attempted pretranslation change:
+
+                       reference              early Escape
+ composed ms           6865, 6994, 69          7279, 7011, 7180
+ private range calls   1, 1, 1                 1, 1, 1
+
+The variation and UIA traffic make these unsuitable as native performance
+figures. They do not demonstrate a gain. The candidate was removed rather than
+adding a keyboard path without a demonstrated benefit. A later ancillary rename
+fixture timed out setting edit text; no rename change is delivered.
+
+Rejected public recreation
+--------------------------
+PublicViewResetTests.cpp is an independent real-Shell experiment. It uses only
+public calls in its clear/recreate workflow; no private adapter is initialized.
+Scope: 5,000 files, classic arranged Icons/Tiles, explicit ascending or descending
+name sort, no grouping, and an 800 x 400 Shell viewport. It does not cover free
+positions, manual ordering, virtual folders or the modern Content view.
+
+The timed workflow includes snapshot capture, destruction and release of the
+old browser, creation/navigation, actual EnumDone, restoration, synchronous
+RedrawWindow and DwmFlush. Full FS application callbacks/database work are not
+included. This is forced composition, not a desktop-duplication settling test.
+
+                             public clear    recreate       validation
+ medium, one passing pair    720.714 ms      623.979 ms      initially correct
+ medium, separate trial      818.142 ms      667.052 ms      later focus failure
+ Tiles                       773.512 ms      589.408 ms      later focus failure
+
+Order, settings, logical focus, selection anchor, viewport, retained arrays and
+empty selection were checked. Rechecking after message dispatch exposed loss
+of keyboard focus in recreated views. Those rows are failures, not accepted
+performance gains. The cause of the focus loss is not established. Even the
+optimistic times remain hundreds of milliseconds and do not approach the
+already adopted private clear. No integration is justified here.
+
+Evidence:
+ build/regression/individual-4c44dcf32f6e458893e3a7d0c7d7bfcd
+ build/regression/individual-faae87c52db54d55b3f3d6ee3b768513
+ build/regression/individual-ff7801267ae341ab90ca2f1875806e1e
+
+Large mouse case: still unvalidated
+----------------------------------
+The opt-in escape-background gesture tests an upper bound for clearing before
+the ordinary click. It includes another native hit test, Escape, observation of
+empty selection, the click and composition. It does not implement a production
+mouse hook and does not prove drag, cut or reentrant input behavior safe.
+
+The 5,000-file host attempts did not complete their comparison: UIA traffic
+occupied the GUI thread and the foreground guard later rejected input. One
+run spent tens of seconds locating a blank point as well. These observations
+are not validated FS clear times and must not be mixed with the API results in
+RemainingSelectionResults.txt.
+
+Noninvasive stacks repeatedly showed:
+ getProcessMessage -> PeekMessage -> UIAutomationCore provider/event handling
+ -> SendMessage(LVM_GETITEMW).
+
+The sender was not identified. A bounded handles-only diagnostic was
+inconclusive; no accessibility service or user application was disabled.
+
+Host retry after the desktop was explicitly made available:
+ build/regression/20261108-125941-26e496895b684fbcb21edb2fd41266b6
+The actual-app test failed in 166.6 seconds, before its first completed row:
+the foreground guard refused the click. The initial normal-close cleanup
+exceeded its grace period, then both FileSpacer processes exited. The legacy
+controller allowed forced cleanup, so a normal exit is not established.
+A read-only debugger attach attempted as that process exited
+returned HRESULT 0x80004002 and provided no usable stack. This retry supplies
+no new comparative timing.
+
+An isolated native click comparison was prepared for AgentWin10. One guest
+attempt passed private capability discovery but failed its initial exposed/
+focused-list prerequisite, before a measured row. A fixture-focus correction
+was prepared; subsequent dispatch was refused because another VM request was
+active. No lock was forced and no other campaign was interrupted.
+
+The focus-corrected native fixture was then run on the available host:
+ build/regression/20261108-130305-eed6fc9ff6b344f1badb7e3e73dfce09
+Private discovery passed (supported=1, all=1, range=1, CFG enabled). After
+creating and enumerating free Tiles, the fixture failed with "No exposed
+native caption for blank fixture" before producing a timing row. The Computer
+Use desktop inspector could not start (kernel asset path missing, OS error 3).
+Neither result identifies the window covering the fixture or proves a slow
+selection procedure. No foreground protection was bypassed.
+
+A final activation diagnostic reused the qualified cache:
+ build/regression/20261108-131252-1dfad9d138bf4817bf445fbd322a019d
+It failed before timing in 15.8 seconds. The fixture was visible, enabled and
+not minimized. WindowFromPoint at its caption resolved to a Chromium renderer
+(Chrome_RenderWidgetHostHWND); the foreground root was Chrome_WidgetWin_1.
+The diagnostic did not inspect that application's contents or manipulate it.
+
+A second attempt placed only the owned temporary fixture in the topmost band:
+ build/regression/20261108-131359-66035487987d47d3acc18f5d2c3105e2
+It still found the Chromium renderer covering the caption and failed before
+timing in 15.4 seconds. The covering application was not closed or altered.
+These attempts narrow the immediate activation failure to actual occlusion;
+they do not explain why raising the fixture failed to expose its caption.
+The earlier mouse-latency comparison remains unvalidated. No new product input
+hook or activation policy is adopted.
+
+Successful host control without input/foreground activation
+---------------------------------------------------------
+ build/regression/20261108-130741-14b4c809b5344c68b7707045a5d67d34
+The existing native comparison passed all nine rows (three repetitions per
+arm) with 5,000 files in free Tiles, same fixture and 800 x 400 Shell viewport.
+FS_REMAINING_BACKGROUND=1 skips foreground/input requirements, not the actual
+Shell view. A previously qualified current-image cache was copied into the
+isolated test cache. Discovery confirmed supported=1, all=1, range=1, CFG enabled.
+
+                                  public Shell    legacy bulk    adopted private
+ deselect median, ms                  6386.732       6500.923           7.825
+ deselect min..max, ms           6118.947..6797.251 6374.761..6769.338 7.483..8.650
+ select-all median, ms                 575.825        619.474          25.139
+ saved-selection restore median, ms    695.684        699.430         128.246
+ private range calls per clear               0              0               1
+
+The adopted clear is about 816 times faster than the public clear in this
+control. Every row checked identities, focus, selection anchor, saved free
+positions and the retained selection array. The restoration row is selection
+restoration, not loading icon positions. These are API durations, not real
+mouse latency or settled desktop display. Free placement has no matching
+ordinary Explorer folder mode; this run makes no new Explorer comparison.
+
+Reproduce the actual-app checks
+------------------------------
+From CMD in the worktree, with FileSpacer closed and the test desktop available:
+
+ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-SelectionGestures.ps1
+
+Supply a current runtime-qualified descriptor directory with FS_GESTURE_CACHE
+when it is not in build\remaining-selection\cache. The launcher builds its own
+counter helper and uses tests.cmd for state backup/restore and scoped cleanup.
+
+Optional environment controls:
+ FS_GESTURE_PUBLIC=1              also test the public arm
+ FS_GESTURE_COUNT=5000            default 256; minimum 128
+ FS_GESTURE_VIEWS=free-tiles       comma-separated view names listed above
+ FS_GESTURE_ACTIONS=background,escape-background
+ FS_GESTURE_REPETITIONS=3         default 1; maximum 3
+
+CSV columns distinguish selected-state observation, DwmFlush completion,
+private call counts, target-location setup and the candidate's extra hit test.
+Current CSV numbers use invariant decimal formatting. Earlier quoted French
+decimal values require fr-FR parsing. A DwmFlush timestamp is not proof that a
+screen region has settled. Use the existing visual observer for that question.
+
+The public-only experiment can be run from an x64 MSVC CMD prompt with:
+ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\56-PublicViewReset.ps1 -View tiles -Repetitions 1
+
+Validation of retained changes
+------------------------------
+Debug application and native helpers built with MSVC /W4 and CFG; the new
+shadowing warning in the initial cache-path edit was corrected. Both
+clang-tidy and Cppcheck completed on main.cpp, RemainingSelectionTests.cpp and
+PublicViewResetTests.cpp, including their real/local headers as appropriate.
+Baseline comparisons found no new diagnostic in main.cpp. Test-only diagnostics
+concern the SDK's reserved compatibility macro, adjacent string parameters,
+fixture .cpp inclusion and Win32 enum flag expressions. Static verdict: REVIEW;
+no confirmed new correctness defect. Experimental functional failures above
+remain failures and are not converted into static-analysis success.
+
+The temporary screen-saver state whose restoration failed during one host run
+was restored to its recorded original value. No manual FileSpacer kill was
+issued. Subsequent inspection found forced termination in the legacy controller;
+see HostClickPresentationResults.txt for the correction and the watchdog fix.
+No release build, main-worktree merge or push.

@@ -25,6 +25,30 @@ namespace FileSpacerRegression {
     // Observe visible geometry only: no control-class assumptions, injected code or remote buffers.
     // The real Shell HWND comes from IShellView::GetWindow, not from an Explorer window search.
     public static class ViewLayout {
+        public sealed class ScrollPosition {
+            public double Horizontal, Vertical;
+            public string Signature { get { return Horizontal.ToString("R",CultureInfo.InvariantCulture)+","+Vertical.ToString("R",CultureInfo.InvariantCulture); } }
+        }
+        // Null means that the provider is temporarily absent during recreation;
+        // callers must wait for a real measurement before checking their expected position.
+        public static ScrollPosition TryReadScrollPosition(IntPtr window,int processId) {
+            ScrollPosition result=null;Exception error=null;
+            var worker=new Thread(delegate() {
+                try {
+                    var root=AutomationElement.FromHandle(window);
+                    if(root==null || (int)Required(root,AutomationElement.ProcessIdProperty)!=processId)
+                        throw new InvalidOperationException("Scroll target does not belong to the expected process.");
+                    var element=root.FindFirst(TreeScope.Subtree,new PropertyCondition(AutomationElement.IsScrollPatternAvailableProperty,true));
+                    if(element==null) return;
+                    var scroll=(ScrollPattern)element.GetCurrentPattern(ScrollPattern.Pattern);
+                    result=new ScrollPosition {Horizontal=scroll.Current.HorizontalScrollPercent,Vertical=scroll.Current.VerticalScrollPercent};
+                } catch(Exception failure) {error=failure;}
+            });
+            worker.IsBackground=true;worker.SetApartmentState(ApartmentState.MTA);worker.Start();
+            if(!worker.Join(5000)) throw new TimeoutException("Scroll measurement exceeded five seconds.");
+            if(error!=null) throw new InvalidOperationException("ScrollPattern measurement failed: "+error.Message,error);
+            return result;
+        }
         public static double VerticalScrollPercent(IntPtr window,int processId) {
             return ScrollPercent(window,processId,null);
         }

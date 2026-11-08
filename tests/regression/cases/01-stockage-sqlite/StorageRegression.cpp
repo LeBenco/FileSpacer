@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <chrono>
 
 using namespace filespacer;
 static void require(bool ok, const char *message) {
@@ -129,7 +130,34 @@ int main(int argc, char **argv) {
             FolderStateStore store(path.c_str()); FolderState s;
             require(store.ready() && store.read("folder",&s) && s.present==FolderState::All && s.maximized,"reopen lost data");
             std::cout << "PASS: data survives closing and reopening the database.\n";
-
+            std::vector<uint8_t> scroll;
+            std::vector<uint8_t> expected(48,0);expected.front()=1;expected.back()=6;
+            require(store.readViewScroll("folder",&scroll) && scroll.empty(),"new viewport must be absent");
+            require(store.saveViewScroll("missing",expected) && store.read("missing",&s) && !s.present,"viewport resurrected a missing folder");
+            auto began=std::chrono::steady_clock::now();
+            require(store.saveViewScroll("folder",expected),"viewport save failed");
+            const double writeMs=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-began).count();
+            began=std::chrono::steady_clock::now();
+            require(store.readViewScroll("folder",&scroll) && scroll==expected,"viewport read differs");
+            const double readMs=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-began).count();
+            std::cout << "VIEWPORT_STORAGE bytes=48 commit_ms=" << writeMs << " read_ms=" << readMs << "\n";
+            require(store.save("folder",fixture(),FolderState::All) && store.readViewScroll("folder",&scroll)
+                && scroll==expected,"ordinary save overwrote viewport");
+            require(store.setLocked("folder",fixture(),FolderState::All,true),"viewport lock fixture");
+            auto changed=expected;changed.back()=9;
+            require(store.saveViewScroll("folder",changed) && store.readViewScroll("folder",&scroll)
+                && scroll==changed,"layout lock froze navigation viewport");
+            rawSQL(path,"CREATE TRIGGER fail_scroll BEFORE UPDATE OF scroll ON folder_state BEGIN SELECT RAISE(ABORT,'forced viewport failure'); END");
+            require(store.saveViewScroll("folder",changed),"unchanged viewport caused an update");
+            require(!store.saveViewScroll("folder",expected) && store.readViewScroll("folder",&scroll)
+                && scroll==changed,"failed viewport write changed stored bytes");
+            rawSQL(path,"DROP TRIGGER fail_scroll");
+            require(store.move("folder","viewport-moved") && store.readViewScroll("viewport-moved",&scroll)
+                && scroll==changed,"rekey lost viewport");
+            require(store.clearAll() && store.readViewScroll("viewport-moved",&scroll)
+                && scroll.empty(),"global reset retained viewport");
+            require(store.save("folder",fixture(),FolderState::All),"restore malformed-blob fixture");
+            std::cout << "PASS: independent viewport persistence, locking, rekey, no resurrection, rollback and reset.\n";
         }
         rawSQL(path,"UPDATE folder_state SET view=x'00000000' WHERE key='folder'");
         {
@@ -138,6 +166,20 @@ int main(int argc, char **argv) {
         }
         rawSQL(path,"PRAGMA user_version=99");
         { FolderStateStore store(path.c_str()); require(!store.ready(),"future schema accepted"); }
+        erase(path);
+        rawSQL(path,"CREATE TABLE folder_state(key TEXT PRIMARY KEY NOT NULL,x INTEGER,y INTEGER,width INTEGER,height INTEGER,"
+            "view BLOB,icons BLOB,last_success_at INTEGER NOT NULL DEFAULT 0,first_failed_at INTEGER,maximized INTEGER,locked INTEGER NOT NULL DEFAULT 0) WITHOUT ROWID;"
+            "INSERT INTO folder_state(key,x,y,width,height,maximized,locked) VALUES('legacy-six',12,34,600,400,1,1);PRAGMA user_version=6;");
+        {
+            FolderStateStore store(path.c_str());FolderState s;std::vector<uint8_t> scroll;
+            require(store.ready() && store.read("legacy-six",&s) && s.x==12 && s.y==34 && s.width==600
+                && s.height==400 && s.maximized && s.locked,"schema-six migration lost its layout");
+            require(store.readViewScroll("legacy-six",&scroll) && scroll.empty(),"legacy viewport was invented");
+            const std::vector<uint8_t> expected={9,8,7};
+            require(store.saveViewScroll("legacy-six",expected) && store.readViewScroll("legacy-six",&scroll)
+                && scroll==expected,"migrated viewport cannot be stored");
+            std::cout << "PASS: schema-six migration preserves existing state and enables viewport persistence.\n";
+        }
         erase(path);
         {
             FILE *file=std::fopen(path.c_str(),"wb"); require(file!=nullptr,"create damaged fixture");

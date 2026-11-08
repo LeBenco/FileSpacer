@@ -128,6 +128,13 @@ namespace FileSpacerRegression {
         public static void ReleaseAlt() {
             if(altHeld) { Trace("releasing Alt"); Send(Key(0x12,true)); altHeld=false; }
         }
+        public static void PressModifierDuringDrag(int modifier) {
+            if(!buttonHeld || (modifier!=1 && modifier!=4) || (modifier==1?ctrlHeld:shiftHeld)
+                    || GetAsyncKeyState(modifier==1?0x11:0x10)<0)
+                throw new InvalidOperationException("A new Ctrl or Shift press requires an owned mouse drag.");
+            if(modifier==1) ctrlHeld=true; else shiftHeld=true;
+            Send(Key((ushort)(modifier==1?0x11:0x10),false));
+        }
         public static void PressSecondaryRight() {
             if(!buttonHeld || !middleButton || secondaryRightHeld || GetAsyncKeyState(2)<0)
                 throw new InvalidOperationException("A middle-button gesture with an unpressed secondary right button is required.");
@@ -160,6 +167,11 @@ namespace FileSpacerRegression {
             ReleaseAlt();
             try { Send(Key(0x1b,false),Key(0x1b,true)); }
             catch { SendInput(1,new Input[]{Key(0x1b,true)},Marshal.SizeOf(typeof(Input))); throw; }
+        }
+        public static void EscapeHeld() {
+            ReleaseAlt();
+            try { Send(Key(0x1b,false)); Thread.Sleep(100); }
+            finally { Send(Key(0x1b,true)); }
         }
         static GuiInfo Info(IntPtr window) {
             uint process; uint thread=GetWindowThreadProcessId(window,out process);
