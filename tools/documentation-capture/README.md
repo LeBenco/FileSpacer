@@ -78,6 +78,9 @@ Before the menu recording, its actual localized menus and dialogs are opened,
 measured and cancelled. Their frame union plus 32 pixels defines the capture
 region. The recorded sequence then repeats the complete visible path. Native
 tab and list-view bounds locate controls when accessibility omits their items.
+Before clicking a button, the script reads its native bounds again after moving
+the pointer. If localized preview rendering has moved the button, the pointer
+visibly follows its new center before a single click is sent.
 
 A fictional folder is opened and closed during preparation so **Reopen** is
 really available in the original menu. No production history is used.
