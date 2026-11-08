@@ -324,7 +324,8 @@ bool PathBar::handleTopLevelMessage(MSG *msg) {
     if (msg->message == WM_KEYDOWN || msg->message == WM_SYSKEYDOWN) {
         bool control = GetKeyState(VK_CONTROL) < 0;
         bool alt = GetKeyState(VK_MENU) < 0;
-        if ((msg->wParam == 'L' && control && !alt) || (msg->wParam == 'D' && alt && !control)) {
+        if ((msg->wParam == 'L' && control && !alt) || (msg->wParam == 'D' && alt && !control)
+                || (msg->wParam == VK_F4 && !control && !alt && GetKeyState(VK_SHIFT) >= 0)) {
             beginEdit();
             return true;
         }
