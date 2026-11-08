@@ -193,18 +193,18 @@
       ]
     },
     "THIRD_PARTY_NOTICES.md": {
-      "sourceHash": "5e6264a3f9774df9cd79cf9d341fa787f567cd226c70ebfed974d7ef790f978b",
+      "sourceHash": "373eb0191f650df4038367988a283b6866ca9f5738076d0be0a81567240658ff",
       "headings": [
         [
           "third-party-notices",
           2
         ],
         [
-          "installer",
+          "sqlite",
           3
         ],
         [
-          "sqlite",
+          "installer",
           3
         ],
         [
