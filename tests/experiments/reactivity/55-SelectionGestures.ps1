@@ -16,7 +16,6 @@ using System.Runtime.InteropServices;
 public static class GestureComposition {
     [DllImport("dwmapi.dll")] public static extern int DwmFlush();
     [DllImport("user32.dll")] public static extern uint GetDoubleClickTime();
-    [DllImport("user32.dll",EntryPoint="GetWindowLongPtrW")] public static extern System.IntPtr WindowData(System.IntPtr window,int index);
 }
 '@
 if(Get-Process FileSpacer -ErrorAction SilentlyContinue){throw 'Close FileSpacer before building the native helper.'}
@@ -168,13 +167,6 @@ try {
                 }
             }
             $list=Get-UiControl $window 'SysListView32'
-            if($env:FS_GESTURE_INSPECT_SECONDS) {
-                $seconds=[int]$env:FS_GESTURE_INSPECT_SECONDS
-                Assert-Ui ($seconds-ge1-and$seconds-le60) 'Inspection pause must be bounded to sixty seconds.'
-                [uint32]$targetId=0;[void][FileSpacerRegression.Native]::GetWindowThreadProcessId($window,[ref]$targetId)
-                @{ProcessId=$targetId;Window=$window.ToInt64();Object=('0x'+[GestureComposition]::WindowData($window,-21).ToInt64().ToString('x'))}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'inspect.json')
-                Start-Sleep -Seconds $seconds # Owned fixture only; outside every timed action.
-            }
             $gestures=if($env:FS_GESTURE_ACTIONS){@($env:FS_GESTURE_ACTIONS-split',')}else{@('escape','background','selected-item')}
             Assert-Ui (@($gestures|Where-Object {$_-notin@('escape','background','selected-item','escape-background','escape-background-once','marquee','marquee-cancel','marquee-ctrl','marquee-shift','marquee-late-ctrl','marquee-late-shift','activation-background','item-drag')}).Count-eq0) 'Unknown gesture.'
             foreach($gesture in $gestures) {
