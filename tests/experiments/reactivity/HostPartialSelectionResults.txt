@@ -1,0 +1,120 @@
+Public partial-selection reader — adopted in codex/reactivity-hybrid
+2026-11-08 — host Windows x64 — baseline commit 38fb0a07
+
+Scope
+-----
+Extend the existing public complete-selection reader to partial selections of
+at least 1024 items in ungrouped free Icon/SmallIcon views (all four icon sizes).
+The complete-selection threshold remains 128. Smaller partial selections,
+grouping, automatic layout, duplicate selected coordinates and invalid captures
+retain native GetSelection. Cancellation returns E_ABORT without stale fallback.
+
+The reader enumerates selected view indices with IFolderView2::GetSelectedItem,
+using Item(0)/GetSelectionState for index zero. It accepts either inclusive or
+exclusive forward iteration, without undocumented negative starting indices.
+It captures only selected PIDLs/positions, uses the existing native spatial
+ordering (column order, rotated only when the focused item is selected), and
+constructs an owning IShellItemArray with SHCreateShellItemArray. A second index
+pass detects same-count subset replacement. Final counts and focus are checked
+AFTER that pass, so a late focus change cannot publish an obsolete ordering.
+No private discovery, method, function pointer, offset or startup state is added.
+The existing private capability is used only to prepare/clear test selections;
+all calls measured in the new capture implementation use public APIs.
+
+Final clean host timings
+-----------------------
+First retrieval of 4999 selected files out of 5000, free icon layouts.
+Medians of three repetitions with alternating native/integrated arm order.
+Old FS uses native GetSelection for this partial case; new FS uses the public
+reader. No debugger or static-analysis process ran during this final measurement.
+
+View          Old FS / native API   New public FS   Gain       Reduction
+Medium Icons       244.982 ms          45.890 ms     5.34x       81.3%
+Small Icons        237.663 ms          43.839 ms     5.42x       81.6%
+Large Icons        259.343 ms          47.434 ms     5.47x       81.7%
+Extra-large        236.935 ms          45.793 ms     5.17x       80.7%
+
+Complete selection control: integrated capture remains about 26–29 ms.
+This fast complete-selection path already existed; its advantage over ordinary
+GetSelection is NOT a new gain attributed to this change.
+These are selection-array retrieval times in FileSpacer's real Shell host, not
+mouse-to-display latency or a new end-to-end status-bar/Explorer comparison.
+Explorer has no equivalent free folder placement; it was not retimed here.
+
+Investigation and decisions
+---------------------------
+Pilot 27 rows: correct identity sets for all rotations, native order only when
+rotating to a selected focus; an unselected focus leaves column order unchanged.
+Dense partial capture initially fell from about 245–261 ms to 31–33 ms before
+the second consistency pass. Final numbers above include that pass.
+Small 128- and 512-item subsets showed no useful gain (a few milliseconds in
+both implementations), so the adopted partial path begins at 1024 items.
+
+Validation
+----------
+Extended matrix PASS: 80 comparisons and four safety rows on the real host
+Shell, across four icon sizes, complete/dense/half/sparse selections, index zero
+selected or excluded, and focus inside or outside selection. Ordered paths,
+attributes, IDataObject round trips, retained arrays after clearing, keyboard
+and logical focus and all free positions were checked. Includes cancellation,
+same-count replacement, tied positions and arranged-view fallback.
+ build/regression/20261108-222448-8efdba13ee68414cb77249d332d5db10
+This exploratory matrix used the earlier 512 threshold and final count/focus
+checks before the second index pass. Its functional assertions passed, but its
+timings are excluded: a diagnostic CDB attach temporarily suspended only the
+owned helper during fixture preparation. The helper threads were resumed.
+
+Follow-up PASS: 24 comparisons plus four safety rows after moving final
+count/focus checks after index verification and adding late-focus mutation.
+ build/regression/20261108-223339-daa002d9d9c74c9f92cf06dbcd6edc12
+
+FINAL ADOPTED VERSION PASS: 24 comparisons plus four safety rows, threshold
+1024, with native fallback tested at 1023 selected items and all safety checks,
+including same-count replacement and late-focus mutation, in all four views.
+ build/regression/20261108-223555-5160c2909b424afc9fa1cfba8048c8c8
+Log: 56-selection-gestures-2f042c3c/01-Gestures/tail.log
+Debug x64 /W4 application and native helper build passed without new warnings.
+PowerShell scripts parse successfully; git diff --check passed.
+
+Static verdict: REVIEW
+----------------------
+Both clang-tidy and Cppcheck completed on all modified C++ units, including
+ShellViewSelection.h via production and test units, with real MSVC 14.44.35207,
+ATL and Windows SDK 10.0.19041.0 headers for clang-tidy; Cppcheck used Windows
+x64/C++14 and its official windows/microsoft_atl/sqlite3 models. No timeout,
+crash, ATL coverage reduction or unanalysed modified C++ file/header remains.
+Production/header and final test logs:
+ build/integration/partial-selection-adopted
+Existing complete-selection experiment and baseline comparison logs:
+ build/integration/partial-selection
+No new correctness defect confirmed. New clang-tidy signed-bitwise warning on
+DWORD & documented SVSI_SELECT is stylistic. New test diagnostics concern
+.cpp scaffold inclusion, documented enum flags and Cppcheck Mode aggregate
+members (all actual aggregate initializers supply every field). Other included
+scaffold/runtime diagnostics are baselined. No check was suppressed and no
+unrelated source was changed to silence style diagnostics.
+A missing test include and reuse of nonempty CComPtr output variables in the
+initial bench were corrected before the successful runs. Earlier incomplete
+runs and the sandbox registry refusal are not validation results.
+
+Reproduce (host authorization and FileSpacer closed required)
+------------------------------------------------------------
+From CMD in this worktree:
+ powershell -NoProfile -ExecutionPolicy Bypass -File tests/experiments/reactivity/Run-SelectionGestures.ps1 -Scenario Partial -TimeoutSeconds 660
+For the reduced measurement plus all safety checks, first set:
+ set FS_PARTIAL_MEASURE_ONLY=1
+The launcher stages a temporary case and uses tests.cmd isolation. The helper
+uses an isolated 5000-file fixture and build/remaining-selection/cache for setup;
+no user preferences/database, no mouse or keyboard input is required.
+
+Changed: ShellViewSelection.cpp/.h, the existing experiment's helper references,
+PartialSelectionTests.cpp/.ps1, the isolated launcher, and ten changelogs.
+Root/main, WindowPlacement.cpp and foreign local changes remain untouched.
+No VM, installer, push or release was used.
+
+Public contracts
+----------------
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifolderview2-getselecteditem
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifolderview2-getselectionstate
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifolderview-getitemposition
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifolderview2-getselection
