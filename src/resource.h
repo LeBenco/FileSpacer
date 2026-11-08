@@ -18,13 +18,13 @@
 #define IDM_SETTINGS        1009
 #define IDM_PARENT_MENU     1010
 #define IDM_VIEW_MENU       1012
-#define IDM_NEW_TEXT_FILE   1015
 #define IDM_DELETE_PROXY    1016
 #define IDM_DEBUG_NAMES     1017
 #define IDM_CONTEXT_MENU    1018
 #define IDM_PROXY_BUTTON    1019
 #define IDM_QUICK_ACCESS    1020
 #define IDM_REOPEN_WINDOW   1021
+#define IDM_NEW_WINDOW      1022
 
 #define IDM_SHELL_FIRST     0x4000
 #define IDM_SHELL_LAST      0x7FFF
