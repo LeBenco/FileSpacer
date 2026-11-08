@@ -161,6 +161,11 @@ namespace FileSpacerRegression {
             try { Send(Key(0x1b,false),Key(0x1b,true)); }
             catch { SendInput(1,new Input[]{Key(0x1b,true)},Marshal.SizeOf(typeof(Input))); throw; }
         }
+        public static void EscapeHeld() {
+            ReleaseAlt();
+            try { Send(Key(0x1b,false)); Thread.Sleep(100); }
+            finally { Send(Key(0x1b,true)); }
+        }
         static GuiInfo Info(IntPtr window) {
             uint process; uint thread=GetWindowThreadProcessId(window,out process);
             if(thread==0) throw new InvalidOperationException("The test window disappeared.");
