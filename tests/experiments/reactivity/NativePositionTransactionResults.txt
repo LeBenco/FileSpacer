@@ -1,0 +1,232 @@
+Native free-position snapshot investigation, 2026-11-08
+====================================================
+
+Decision and current scope
+--------------------------
+The last lightweight public candidate, automatic-arrangement priming, is rejected.
+It toggles FWF_AUTOARRANGE and restores the original flags in 0.941 ms, but the
+5000-position Tiles workflow still exceeds its 90 s watchdog. No product change
+is adopted from these experiments. All changes are independent probes and evidence.
+
+A native legacy snapshot can restore all 5000 coordinates through a qualified
+settings interface on the inspected VM Shell. It is not a constant-time dump:
+its native synchronization still applies positions and performs geometry work.
+It needs a second enumeration and explicit public focus repair. Portable startup
+qualification, nonempty-selection/viewport/cancellation coverage and integration
+into FS's lifecycle remain unqualified. A fixed inspected-image prototype is not
+an acceptable substitute for the requested portable production backend.
+
+Latest qualified samples, milliseconds, 5000 files:
+
+  Presentation       Ordinary public workflow       Native init + import/paint
+  Icons, 48 px                 3158.491                       2111.353
+  Tiles, 32 px          90 s watchdog, no completion          3379.130
+  Tiles, 48 px         180 s watchdog, no completion          5365.845
+
+Icons saves 1047.138 ms in this final single pair (about 33%). Earlier comparable
+Icons samples gave smaller gains, about 19-22%; these are not balanced medians.
+The Tiles watchdog values are interrupted whole-test durations, NOT completed
+API measurements or precise per-call lower bounds. PSS evidence places the slow
+work inside public placement. No ratio against those timeouts is claimed.
+The Tiles native-only arms verify import and a later move, not ordinary refresh
+persistence. The corresponding ordinary public arms did not complete.
+
+Real Shell, AgentWin10 / Windows 10 19045, MSVC Debug x64, CFG, 800x400 viewports.
+Reported mode, icon size and native ListView mode are checked explicitly:
+Icons = FVM_ICON / LV_VIEW_ICON; Tiles = FVM_TILE / LV_VIEW_TILE. Timings include
+creation and import plus paint/DwmFlush; they are not physical scan-out, a stable
+Desktop Duplication frame measurement, FS status-bar completion or app-wide
+opening-time guarantees. Snapshot construction is outside the native timing.
+Explorer has no equivalent free-position folder view. Its Desktop loader is the
+implementation studied offline; this is not a matched Explorer UI benchmark.
+
+Mechanism established
+---------------------
+Exact inspected shell32: 10.0.19041.6456, SHA256
+936C33A8283196A070AA6F844A65A29A8F99F760EAE0016754C1CBF17D62BDB7.
+Matching Microsoft symbols identify the following behavior:
+- Native browser settings append the folder-type GUID to the client bag name.
+  Generic is applicable to these text-file fixtures.
+- The legacy per-screen ItemPos stream contains POINT plus one SHITEMID per
+  record, omitting the terminating USHORT; a final zero USHORT ends the stream.
+  The complete generated fixture is 580002 bytes. Single-element PIDLs are
+  validated before encoding. No live pointers or heap images are serialized.
+- The normal classic host has no IconLayoutEngine model or attached bag; observed
+  folder flags are 0x41210200. Settings load and collection load have separate
+  FWF_DESKTOP gates. Merely injecting registry data does not enable the loader.
+- The existing runtime-generated selection descriptor identifies the acquired
+  host. Its QISearch table provides the real settings IID. QueryInterface returns
+  a typed COM sink: slots 3/4/5 are OnSettingsChanged/OnSettingsLoad/OnSettingsSave.
+  The load/save slots, host table and CFG membership are checked before use.
+- OnSettingsLoad is a CFG target. Direct CLegacyViewState loaders/_SyncPositions
+  are not CFG targets in this image and are never called directly.
+- A temporary Desktop role plus OnSettingsLoad attaches the owned memory bag.
+  A subsequent genuine Refresh under the role loads the legacy snapshot. Flags
+  are restored exactly, premature redraw resumes are blocked by the copied
+  production guard, the requested presentation is restored and verified, and
+  the focused PIDL is restored via public IShellView::SelectItem while retaining
+  its selection state and without requesting keyboard focus.
+
+These RVA/offset checks are test-only and restricted to the exact inspected image.
+There is no code patching, injected executable code, CFG exemption or new raw
+function-pointer call. Discovering a method alone would not establish that this
+private data format/protocol is valid on another Windows image.
+
+Functional evidence and final artifacts
+--------------------------------------
+Final Icons pair: VM da55d9a7a1cf435c90bb15f6f2b34dfa,
+experiment-nativepositiontransaction-30ca7a50591a4d70a56600d4cc2ae1f6, PASS/0.
+Both 48-pixel renderers, exact coordinates/identities, empty selection, logical
+focus at index 7, keyboard-focus HWND, subsequent single move and ordinary
+refresh equivalence are checked. Native init 295.418 ms, refresh 1814.506 ms;
+the full native sum includes the surrounding transaction setup.
+
+Final Tiles 32: VM 908503dd3dc5453196019666bf4e9cc5,
+experiment-nativepositiontransaction-c31d90d955e44b34b49dc6e0ef104cef, PASS/0.
+Native init 207.942 ms, refresh 3169.748 ms, exact 5000 coordinates/identities,
+empty selection, focus 7 and unchanged keyboard focus, then an exact later move.
+The native-only result explicitly says refresh=unqualified.
+
+Final Tiles 48: VM 81e8fcb35b2b492a814d44cfc8de67db,
+experiment-nativepositiontransaction-7f0ce394b7db4bb5aa97eb4e65cd324e, PASS/0.
+Init 285.746 ms, refresh 5071.611 ms, same import/move/focus proofs and real Tiles
+renderer; native-only ordinary refresh is likewise unqualified. No slow-capture
+diagnostic fired during either final Tiles native measurement.
+
+Ordinary refresh in a bare host loses the custom layout in the public control
+as well. The final Icons comparison checks actual post-refresh equivalence,
+not a persistence contract that the public host lacks. FS separately captures
+and reapplies positions through FolderWindow::loadIconPositions and enumeration
+completion. No claim is made that the native blob replaces that policy.
+
+Nonempty selection, grouping, changed folder contents, all namespace providers,
+reentrant app closure, menu-preview lifecycle and cross-Windows behavior are not
+qualified for this position-import candidate. This is why no app backend is added.
+
+Public-only initialization and lightweight variants
+--------------------------------------------------
+Case 52 without the initial Desktop role finds the correct Generic bag and Mode,
+but restores neither displaced sentinel: Icons 326.774 ms / 47 matching points,
+Tiles 323.885 ms / 24 points. Both REJECT; those fast reopens are not gains.
+VM 609e617b930c4d819a6eb6a18b14d072,
+experiment-nativepositionload-1aef707c9c954fe396ccef93f96216fc.
+
+A public-only initialization variant supplies the Desktop flag and the legacy
+bag before browser creation. In the strictly normalized final trial:
+VM 564e2c60199242b4a433bfc0c9049fb4,
+experiment-nativepositionload-f8f051cef8a34d758a741c7bc523d0be, protocol PASS/0.
+Icons 48 restores 5000/5000 in 2262.309 ms and survives deletion of the temporary
+position property. Tiles, after normalization to real 48-pixel Tiles, matches
+0/5000 and is REJECTED (3138.804 ms is therefore not a restoration gain).
+This initialization timing excludes bag priming/serialization/writes and is not
+an end-to-end paired FS result. The initial 047f6b4207df489489e9d3849fa11e7b
+trial failed its presentation assertion. No 32-pixel bag-init success is inferred.
+
+Holding the role from OnViewCreated until EnumDone is too late to load the blob:
+201cb8015cf54768ac844c347417bb9b, protocol PASS with REJECT, 402.961 ms,
+0 coordinates restored and zero position-stream reads. No gain is claimed.
+
+Other public candidates are rejected, with failures retained:
+- Disable the documented AUTOAUTOARRANGE/SNAPTOGRID ListView styles temporarily:
+  b33b556135284c67b1578d9120ce4995 times out at 90 s. Styles really change from
+  D5014C30 to D4014C30; independent style ownership is verified. An earlier
+  guard-coupled trial 3578cd8bf35d46cdb4753c8842ce2cf0 also timed out at 180 s.
+- Hold the public Desktop role during public placement, without a private load:
+  7cdffbf1fb9b48d2b44fdb346a517268 times out at 90 s after verified flag changes.
+- Stage placement in Icons then restore real Tiles 48 under the redraw guard:
+  5c7ecc0922b44cc4859a95c9b8add270 finishes quickly but fails exact coordinates.
+  Correct renderer alone is not correct layout; the candidate is rejected.
+- Initialize isolated native view state, then disable its persistence before
+  placement: e8d6778e206345029ecbe09482a68737 times out at 90 s in real Tiles 32.
+- Request native all-view ordered enumeration first: 4600ef8313d44e4bbe539f776515b7b7
+  takes 1.423 ms for that warmup but still times out at 90 s during placement.
+- Try POSITIONITEM|NOTAKEFOCUS on an empty selection with identical preparation
+  and redraw protection: 1634fb583a9845f2b5c5c92169263815 times out at 90 s.
+- Finally prime automatic arrangement, then restore the exact original flags:
+  59b3cad768894618bd2d7039ca6cfe1c times out at 90 s. Its 0.941 ms flag round
+  trip is 41210200 -> 41210201 -> 41210200. This last candidate is abandoned.
+
+The ordinary matching 32-pixel public case 5c6a00568bd043bcb232789f1ffefb94
+also times out. The early 48-pixel common-factory controls
+f7cc1727691f49209f80f2e043ff7557, eac582fc5ebf405cb5451efd1864f8b0 and
+f2ef163f4d594207a193dda9f9231604 exceed 180 s. Moving configuration after enum
+and activating the view did not resolve the slow public path.
+
+Earlier 2457.195 ms public Tiles / 6550.201 ms native comparisons did not check
+both actual renderers/sizes and must not be used as a valid speed comparison.
+A fresh host was later observed reporting Details/16 despite the requested
+initial folder mode. All final positive claims explicitly verify presentation.
+
+Profiling and failed trials
+---------------------------
+Two-record legacy snapshots restore the displaced sentinels but redistribute
+all other items: 14959.576 ms Icons and 49461.656 ms Tiles, only 2/5000 original
+coordinates equal. READY_FOR_FULL in those trials is not a full qualification.
+VM dcf2e4a182c2420a83246f289a199f45. A full snapshot of lazy observations exceeds
+180 s both without a guard (749ee45bc1ab4a0398f2c0591015deba) and with it
+(47c873c78abc449caf8873a673b41463). Explicit coordinates for every item are needed.
+
+Own-process PSS snapshots, inspected offline with matching symbols, identify
+native redistribution/rectangle work: redraw resumes in FinishAndSaveBatchPositionChanges
+and collection notifications reaching InvalidateTryHarder, followed by ListView
+recomputation, free-slot/visibility calculations and Tile label/subitem caches.
+Public placement snapshots also contain repeated GetVisibleSlotCount,
+_TrimItemCache, CalculateSubItemRect and _RecomputeLabelSizeInternal addresses,
+with a PDB-resolved caller inside applyIconPositions/restoreIconPositions.
+Some snapshots do not fully unwind with the retained module subset. Raw stack
+address scans are not a complete ordered call trace or a live-call count.
+No claim is made to have measured the entire procedure in Explorer's own process.
+Artifacts: build/layout-paths/*transaction*stacks*, *workflow* and native-layout-*.txt.
+
+Initial safe settings-slot rejections a2063188c6a9450283c342d6b8c1f8d5 and
+da03d8ce14ec40efbdfc027b2ecf9ca3 occur before private calls. Trial
+913014a431644fd0a10bf26ad56b0a53 establishes the optional reader's accepted
+missing-property status; E_FAIL is accepted, ERROR_FILE_NOT_FOUND is not.
+b4b7fc5434db402f9f0ec9f0e9d89c2a establishes the second collection-load gate.
+Early strict-refresh failures e03154371f1c452080aa5cc9136b117e,
+679c7588561d4d9a89abcac7760b8914, 6e22ce304bb24c9dba0092ad6c7f3b1e and
+e5bdb9aeff1e4a20a75791a203482f2c are retained; the later public refresh control
+explains why their standalone persistence assertion was too strong.
+c4ce665992084e20b19335790100daae catches the loss of nontrivial logical focus;
+the final public PIDL-based focus repair fixes that case without taking keyboard focus.
+
+Build and static validation
+---------------------------
+Debug MSVC/NMAKE builds and final native helpers compile with /W4 and CFG without
+new compiler warnings. Initial driver-main redefinition and a diagnostic variable
+name collision were corrected. A new signed/unsigned renderer comparison warning
+C4389 was corrected with an explicit DWORD conversion, before the final helpers.
+No application source is changed; no full app regression suite or installer runs.
+
+All three modified/new C++ units are covered by both clang-tidy and Cppcheck:
+PositionDumpTests.cpp, NativePositionLoadTests.cpp and NativePositionTransactionTests.cpp,
+including real project headers. Final logs: build/integration/static-native-position-transaction-final.
+All six jobs terminate with exit 0, no timeout/crash/ATL reduction. Windows x64,
+C++14; real MSVC/ATL 14.44.35207 and SDK 10.0.19041.0 headers for tidy, official
+windows/microsoft_atl/sqlite3 models without system-header ingestion for Cppcheck.
+No modified C++ source/header is uncovered. Static verdict REVIEW:
+aggregate-constructor advisories despite explicit initialization; test .cpp reuse,
+similar parameters, vector reserve and COM copy/style suggestions; standard
+callback pointer conversions; SDK enum-combination modeling; diagnostic-thread
+exception-escape modeling; bounded QITAB multiplication and intentional padding.
+No confirmed new defect remains and no production code was altered for an analyzer.
+
+Reproduce
+---------
+Run-Experiment.ps1 -Case NativePositionLoad [-InitialDesktopBag]
+Run-Experiment.ps1 -Case NativePositionTransaction -PositionLayout icons|tiles
+  -PositionIconSize 32|48 -PositionPublicStyle <arm> -CacheRecord <matching descriptor>
+Arms: current, native-only, native-initial, native-layout, desktop-role, icon-stage,
+view-state, enumeration, position-only, arrange-prime. Watchdogs 90-180 s are
+recommended for negative probes. A protocol PASS with REJECT is not an acceleration.
+Case 52 uses public calls/private format and rejects a selection cache. Case 53
+uses the matching runtime-generated 160-byte descriptor for host identification.
+Both require the dedicated VM and exact inspected Shell hash. Logs are written
+incrementally so watchdog interruptions retain phase evidence.
+
+Public API references (not contracts for private Shell layout serialization):
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifolderview-selectandpositionitems
+https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/ne-shobjidl_core-folderflags
+https://learn.microsoft.com/en-us/windows/win32/controls/extended-list-view-styles
+https://learn.microsoft.com/en-us/windows/win32/api/commctrl/nf-commctrl-listview_setextendedlistviewstyleex
+https://learn.microsoft.com/en-us/windows/win32/api/shlwapi/nf-shlwapi-shgetviewstatepropertybag
