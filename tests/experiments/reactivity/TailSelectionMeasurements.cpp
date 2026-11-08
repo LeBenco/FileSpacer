@@ -144,6 +144,9 @@ int wmain(int argc,wchar_t **argv) {
     int result=0;
     try{
         filespacer::initializeShellSelectionClear(argv[3],false);
+        const ULONGLONG ready=GetTickCount64()+10000;
+        while(!selectionDiscovery::resolved()&&GetTickCount64()<ready)pump(1);
+        need(selectionDiscovery::resolved()&&selectionDiscovery::image().selectAllSupported,"No qualified setup cache; prepare it for the current Shell first");
         wchar_t option[2]={};const bool tilesOnly=GetEnvironmentVariableW(L"FS_TAIL_EXPLORER_TILES_ONLY",option,_countof(option))==1&&option[0]==L'1';
         if(!tilesOnly)for(const bool free:{false,true})for(const bool tiles:{false,true})measure(argv[1],argv[2],false,tiles,free);
         for(const bool tiles:{false,true}){
