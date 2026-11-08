@@ -1,6 +1,12 @@
 Host click presentation investigation -- 8 November 2026
 =======================================================
 
+Current implementation: HostSelectionCollapseResults.txt supersedes the input
+preclear and complete-manager-plus-range gate described below. Ordinary mouse
+messages are now left native; global notification cache cleanup also works
+with a manager-only capability. FS_TEST_CLICK_PRECLEAR has been retired.
+The earlier results and failure records below describe their historical code.
+
 Integrated background clearing -- final worktree validation
 ---------------------------------------------------------
 This section supersedes the prototype-only status and the interpretation of
