@@ -1,11 +1,83 @@
 // Host-only investigation of the remaining classic selection costs.
 #define RESTORE_PATH_DRIVER
 #include "RestoreAllTests.cpp"
+// Use the SDK's documented CodeView enum definitions without a DIA dependency.
+#define _NO_CVCONST_H
 #include <dbghelp.h>
 #include <psapi.h>
 #include <docobj.h>
 
 namespace {
+struct RangeCounterSymbol {
+    HANDLE process = nullptr;
+    DWORD64 address = 0;
+    unsigned matches = 0;
+    static BOOL CALLBACK collect(PSYMBOL_INFOW symbol, ULONG, void *context) {
+        auto &self = *static_cast<RangeCounterSymbol *>(context);
+        wchar_t diagnostic[2] = {};
+        if (GetEnvironmentVariableW(L"FS_COUNTER_DIAGNOSTICS", diagnostic, _countof(diagnostic)))
+            std::fwprintf(stderr, L"COUNTER symbol=%s tag=%lu flags=%lu size=%lu address=%llx\n", symbol->Name,
+                symbol->Tag, symbol->Flags, symbol->Size, symbol->Address);
+        ULONG64 length = symbol->Size;
+        if (!length) SymGetTypeInfo(self.process, symbol->ModBase, symbol->TypeIndex, TI_GET_LENGTH, &length);
+        const size_t nameLength = wcslen(symbol->Name);
+        const bool publicCounter = symbol->Tag == SymTagPublicSymbol && nameLength >= 7
+            && wcscmp(symbol->Name + nameLength - 7, L"::calls") == 0;
+        if ((symbol->Tag == SymTagData && length == sizeof(uint64_t)) || publicCounter) {
+            self.address = symbol->Address;
+            ++self.matches;
+        }
+        return TRUE;
+    }
+};
+int readApplicationRangeCounter(const wchar_t *processText, const wchar_t *expectedPath) {
+    wchar_t *end = nullptr;
+    const unsigned long processId = wcstoul(processText, &end, 10);
+    need(processId && end && !*end, "Invalid application PID");
+    const HANDLE raw = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+    need(raw != nullptr, "Cannot read owned Debug application");
+    std::unique_ptr<void, decltype(&CloseHandle)> process(raw, &CloseHandle);
+    wchar_t path[32768] = {}; DWORD length = _countof(path);
+    need(QueryFullProcessImageNameW(raw, 0, path, &length)
+        && _wcsicmp(path, expectedPath) == 0, "Counter target is not the expected application");
+    HMODULE modules[1024] = {}; DWORD bytes = 0;
+    need(EnumProcessModulesEx(raw, modules, sizeof(modules), &bytes, LIST_MODULES_64BIT)
+        && bytes <= sizeof(modules) && bytes % sizeof(HMODULE) == 0, "Cannot enumerate bounded application modules");
+    HMODULE module = nullptr;
+    for (size_t index = 0; index < bytes / sizeof(HMODULE); ++index) {
+        wchar_t modulePath[32768] = {};
+        const DWORD size = GetModuleFileNameExW(raw, modules[index], modulePath, _countof(modulePath));
+        if (size && size < _countof(modulePath) && _wcsicmp(modulePath, path) == 0) {
+            need(!module, "Application module is ambiguous");
+            module = modules[index];
+        }
+    }
+    need(module != nullptr, "Application module path did not match");
+    std::wstring directory(path); directory.resize(directory.find_last_of(L"\\/"));
+    need(SymInitializeW(raw, directory.c_str(), FALSE) != FALSE, "Cannot initialize local application symbols");
+    struct Symbols { HANDLE process; ~Symbols() { SymCleanup(process); } } symbols{raw};
+    const DWORD64 base = SymLoadModuleExW(raw, nullptr, path, nullptr, reinterpret_cast<DWORD64>(module), 0, nullptr, 0);
+    need(base != 0, "Cannot load exact application PDB");
+    RangeCounterSymbol candidate; candidate.process = raw;
+    need(SymEnumSymbolsW(raw, base, L"*rangeCalls*", &RangeCounterSymbol::collect, &candidate)
+        && candidate.matches == 1, "Application range counter is not unambiguous");
+    // MSVC emits this function-local atomic as a public data symbol without
+    // type information. Reject code pages, even if a procedure has size eight.
+    static_assert(sizeof(std::atomic<uint64_t>) == sizeof(uint64_t), "Counter storage width");
+    MEMORY_BASIC_INFORMATION memory = {};
+    need(VirtualQueryEx(raw, reinterpret_cast<const void *>(candidate.address), &memory, sizeof(memory)) == sizeof(memory)
+        && memory.AllocationBase == module && memory.State == MEM_COMMIT && memory.Type == MEM_IMAGE
+        && (memory.Protect == PAGE_READWRITE || memory.Protect == PAGE_WRITECOPY)
+        && memory.RegionSize >= sizeof(uint64_t) && candidate.address >= reinterpret_cast<DWORD64>(memory.BaseAddress)
+        && candidate.address - reinterpret_cast<DWORD64>(memory.BaseAddress) <= memory.RegionSize - sizeof(uint64_t),
+        "Counter is not writable application data");
+    uint64_t value = 0; SIZE_T read = 0;
+    need(ReadProcessMemory(raw, reinterpret_cast<const void *>(candidate.address), &value, sizeof(value), &read)
+        && read == sizeof(value), "Cannot read application range counter");
+    std::printf("%llu\n", static_cast<unsigned long long>(value));
+    return 0;
+}
+
 struct NoticeTiming {
     HWND window = nullptr;
     double elapsed = 0;
@@ -349,6 +421,10 @@ void remainingSelection(const wchar_t *output, const wchar_t *fixture, const wch
 }
 }
 int wmain(int argc, wchar_t **argv) {
+    if (argc == 4 && wcscmp(argv[1], L"--application-counter") == 0) {
+        try { return readApplicationRangeCounter(argv[2], argv[3]); }
+        catch (const std::exception &error) { std::fprintf(stderr, "FAIL: %s\n", error.what()); return 1; }
+    }
     if (argc == 4 && wcscmp(argv[1], L"/test") == 0 && wcscmp(argv[2], L"/selection-discovery") == 0)
         return selectionDiscovery::runWorker(argv[3]);
     if (argc == 3 && wcscmp(argv[1], L"--build-cache") == 0) return selectionDiscovery::runWorker(argv[2]);
