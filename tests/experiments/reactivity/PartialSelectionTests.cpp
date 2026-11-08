@@ -33,6 +33,7 @@ void partialSelections(const wchar_t *fixture) {
         need(view&&bulk&&SUCCEEDED(view->SetViewModeAndIconSize(mode.mode,mode.size))
             &&SUCCEEDED(view->SetCurrentFolderFlags(FWF_AUTOARRANGE|FWF_SNAPTOGRID,0)),"Cannot set free view");
         restoreEnumeration(shell,owner.events);need(view->GetAutoArrange()==S_FALSE,"Fixture is not free");
+        int all=0;need(SUCCEEDED(view->ItemCount(SVGIO_ALLVIEW,&all))&&all==5000,"Incomplete selection fixture");
         const auto current=[&]{return !cancelled&&IsWindow(owner.frame)!=FALSE&&owner.events->shell==shell;};
         filespacer::ShellSelectionClear binding;binding.bind(shell,current);need(binding.acceleratesSelectAll(),"No qualified selection setup path");
         std::vector<OwnedId> owned;std::vector<PCUITEMID_CHILD> ids;
@@ -51,6 +52,8 @@ void partialSelections(const wchar_t *fixture) {
             if(!excluded.empty())need(SUCCEEDED(view->SelectAndPositionItems(static_cast<UINT>(excluded.size()),excluded.data(),nullptr,SVSI_DESELECT|SVSI_NOTAKEFOCUS)),"Cannot seed subset");
             DWORD selected=0;need(SUCCEEDED(view->GetSelectionState(ids[static_cast<size_t>(focus)],&selected))
                 &&SUCCEEDED(shell->SelectItem(ids[static_cast<size_t>(focus)],(selected&SVSI_SELECT)|SVSI_FOCUSED|SVSI_NOTAKEFOCUS)),"Cannot seed focus");
+            const int expected[]={5000,4999,2500,1000,512,2500,1023};int actual=0;
+            need(SUCCEEDED(view->ItemCount(SVGIO_SELECTION,&actual))&&actual==expected[pattern],"Incomplete setup selection");
         };
         for(int pattern=0;pattern<6;++pattern)for(const int focus:{7,4000,4999}){
             if(measurements&&(pattern>1||focus!=7))continue;
@@ -79,23 +82,32 @@ void partialSelections(const wchar_t *fixture) {
         need(filespacer::captureSpatialSelection(view,current,&rejected)==S_FALSE&&!rejected
             &&view->GetSelection(FALSE,&native)==S_OK&&filespacer::nativeViewSelection(view,FALSE,&candidate,current)==S_OK,"Small subset fallback failed");
         partialContract(candidate,native);
-        prepare(1,7);unsigned calls=0;
+        prepare(1,7);unsigned checks=0;
+        CComPtr<IShellItemArray> calibrated;
+        need(filespacer::captureSpatialSelection(view,[&]{++checks;return current();},&calibrated)==S_OK
+            &&calibrated&&checks>2,"Cannot calibrate capture boundaries");
+        calibrated.Release();unsigned calls=0;
+        // Calibrate from the real capture rather than hard-coding its COM call count.
+        // Change focus just before the last check; replace membership halfway
+        // between the initial and final selected-index enumerations.
         const auto changeFocus=[&]{
-            if(++calls==16000)need(SUCCEEDED(shell->SelectItem(ids[8],SVSI_SELECT|SVSI_FOCUSED|SVSI_NOTAKEFOCUS)),"Cannot change verification focus");
+            if(++calls==checks-1)need(SUCCEEDED(shell->SelectItem(ids[8],SVSI_SELECT|SVSI_FOCUSED|SVSI_NOTAKEFOCUS)),"Cannot change verification focus");
             return current();
         };
+        int changedFocus=-1;
         need(filespacer::captureSpatialSelection(view,changeFocus,&rejected)==S_FALSE&&!rejected
-            &&calls>=16000,"Late focus change escaped validation");
+            &&calls>=checks-1&&SUCCEEDED(view->GetFocusedItem(&changedFocus))&&changedFocus==8,"Late focus change escaped validation");
         candidate.Release();native.Release();
         prepare(1,7);calls=0;
         need(filespacer::nativeViewSelection(view,FALSE,&rejected,[&]{return current()&&++calls<64;})==E_ABORT&&!rejected,"Cancellation fell back to a stale view");
         // Replace a selected identity after enumeration, keeping both count and focus.
         calls=0;const auto mutate=[&]{
-            if(++calls==6000)need(SUCCEEDED(shell->SelectItem(ids[8],SVSI_DESELECT|SVSI_NOTAKEFOCUS))
+            if(++calls==checks/2)need(SUCCEEDED(shell->SelectItem(ids[8],SVSI_DESELECT|SVSI_NOTAKEFOCUS))
                 &&SUCCEEDED(shell->SelectItem(ids[4999],SVSI_SELECT|SVSI_NOTAKEFOCUS)),"Cannot replace selected identity");
             return current();
         };
-        need(filespacer::captureSpatialSelection(view,mutate,&rejected)==S_FALSE&&!rejected,"Same-count mutation escaped validation");
+        need(filespacer::captureSpatialSelection(view,mutate,&rejected)==S_FALSE&&!rejected
+            &&calls>=checks/2,"Same-count mutation escaped validation");
         prepare(1,7);calls=0;
         need(filespacer::nativeViewSelection(view,FALSE,&candidate,mutate)==S_OK&&view->GetSelection(FALSE,&native)==S_OK,"Mutation fallback failed");
         partialContract(candidate,native);
@@ -116,7 +128,13 @@ int wmain(int argc,wchar_t **argv) {
     QueryPerformanceFrequency(&frequency);filespacer::initDPI();headless=true;
     WNDCLASSW type={};type.hInstance=GetModuleHandleW(nullptr);type.lpfnWndProc=testWindowProc;type.lpszClassName=L"FileSpacer Placement Prototype";
     if(!RegisterClassW(&type)){CoUninitialize();return 2;}
-    int result=0;try{filespacer::initializeShellSelectionClear(argv[3],false);partialSelections(argv[2]);}
+    int result=0;try{
+        filespacer::initializeShellSelectionClear(argv[3],false);
+        const ULONGLONG deadline=GetTickCount64()+10000;
+        while(!selectionDiscovery::resolved()&&GetTickCount64()<deadline)pump(1);
+        need(selectionDiscovery::resolved()&&selectionDiscovery::image().selectAllSupported,"No qualified setup cache; prepare it for the current Shell first");
+        partialSelections(argv[2]);
+    }
     catch(const std::exception &error){std::fprintf(stderr,"FAIL: %s\n",error.what());result=1;}
     UnregisterClassW(type.lpszClassName,type.hInstance);CoUninitialize();return result;
 }
