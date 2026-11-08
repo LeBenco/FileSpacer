@@ -3,7 +3,7 @@
 ## Non publié
 
 - Accélérer massivement la réduction des grandes sélections par un clic sur un élément ou sur le fond des vues Shell classiques, avec repli automatique et silencieux si la capacité privée de Windows est indisponible.
-- Accélérer la lecture des sélections complètes dans les vues d’icônes à placement libre avec les API publiques de Windows.
+- Accélérer la lecture des sélections complètes et des grandes sélections partielles dans les vues d’icônes à placement libre avec les API publiques de Windows.
 - Activer ou désactiver les vignettes Windows globalement depuis le menu Affichage.
 - Rétablir la position de défilement à la réouverture d’un dossier.
 - Placer les nouvelles fenêtres à partir de la taille et de la position normales des fenêtres FileSpacer existantes, y compris lorsqu’elles sont maximisées, minimisées ou ancrées.
