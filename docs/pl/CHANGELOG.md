@@ -2,6 +2,10 @@
 
 ## Nieopublikowane
 
+- Znacznie przyspieszyć ograniczanie dużych zaznaczeń przez kliknięcie elementu lub tła w klasycznych widokach powłoki, z automatycznym i cichym powrotem do ścieżki publicznej, gdy prywatna funkcja Windows jest niedostępna.
+- Przyspieszyć odczyt pełnych i dużych częściowych zaznaczeń w widokach ikon ze swobodnym rozmieszczeniem za pomocą publicznych interfejsów API systemu Windows.
+- Włączać lub wyłączać miniatury globalnie w systemie Windows z menu Widok.
+- Przywracać pozycję przewijania folderu po ponownym otwarciu jego okna.
 - Rozmieszczanie nowych okien na podstawie normalnego rozmiaru i położenia istniejących okien FileSpacer, również zmaksymalizowanych, zminimalizowanych lub przyciągniętych do krawędzi.
 - Ogromne przyspieszenie operacji „Zaznacz wszystko” i odznaczania tysięcy plików w klasycznych widokach powłoki. Optymalizacja korzysta z prywatnych funkcji systemu Windows, których dostępność i działanie nie są gwarantowane. Jeśli tych funkcji brakuje lub są niezgodne, FileSpacer automatycznie i bez komunikatów wraca do funkcji publicznych, bez korzyści z przyspieszenia.
 

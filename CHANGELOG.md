@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Massively speed up reducing large selections by clicking an item or the background in classic Shell views, with automatic silent fallback when the private Windows capability is unavailable.
+- Speed up reading complete and large partial selections in freely positioned icon views through public Windows APIs.
+- Toggle the global Windows thumbnail setting from the View menu.
+- Restore the scroll position when reopening a folder window.
 - Place new windows using the normal size and position of existing FileSpacer windows, including maximized, minimized and snapped windows.
 - Massively accelerate Select All and clearing selections of thousands of files in classic Shell views. This optimization uses private Windows functions whose availability and behavior are not guaranteed. If these functions are missing or incompatible, FileSpacer automatically and silently falls back to public functions, without the performance gains.
 

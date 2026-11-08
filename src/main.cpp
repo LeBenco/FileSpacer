@@ -270,7 +270,13 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         return 0;
 
 #ifdef FILESPACER_DEBUG
-    if (settings::testMode) initializeShellSelectionClear(L"", false);
+    if (settings::testMode) {
+        // UI experiments may opt into an isolated, already qualified cache.
+        // Ordinary /test runs retain the deterministic public path.
+        wchar_t cache[MAX_PATH] = {};
+        const DWORD cacheLength = GetEnvironmentVariableW(L"FS_SELECTION_PRODUCT_CACHE", cache, _countof(cache));
+        initializeShellSelectionClear(cacheLength && cacheLength < _countof(cache) ? cache : L"", false);
+    }
     else
 #endif
         initializeShellSelectionClear();

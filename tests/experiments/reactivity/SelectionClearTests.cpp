@@ -57,7 +57,9 @@ const bool headless=false;const int fixtureCount=5000;
 double clockMs(){LARGE_INTEGER value;QueryPerformanceCounter(&value);return 1000.0*static_cast<double>(value.QuadPart)/static_cast<double>(frequency.QuadPart);}
 void pump(DWORD milliseconds){
     const ULONGLONG end=GetTickCount64()+milliseconds;
-    do{MSG message;while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){TranslateMessage(&message);DispatchMessageW(&message);}
+    do{MSG message;while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){
+            TranslateMessage(&message);DispatchMessageW(&message);if(milliseconds&&GetTickCount64()>=end)return;
+        }
         if(GetTickCount64()>=end)return;MsgWaitForMultipleObjects(0,nullptr,FALSE,5,QS_ALLINPUT);
     }while(true);
 }
@@ -138,15 +140,19 @@ std::vector<std::wstring> arrayPaths(IShellItemArray *array) {
 #ifdef FILESPACER_SELECTION_PRODUCT_TEST
 void waitSelectedIdentities(IFolderView2 *view,const std::vector<std::wstring> &wanted) {
     const ULONGLONG deadline=GetTickCount64()+5000;ULONGLONG stable=0;
+    bool lastMatches=false;unsigned samples=0;double lastRead=0,lastPump=0;
     do {
+        const double reading=clockMs();
         int before=-1,after=-1;CComPtr<IShellItemArray> selected;
         const bool matches=SUCCEEDED(view->ItemCount(SVGIO_SELECTION,&before))&&before==static_cast<int>(wanted.size())
             &&SUCCEEDED(view->GetSelection(FALSE,&selected))&&selected&&arrayPaths(selected)==wanted
             &&SUCCEEDED(view->ItemCount(SVGIO_SELECTION,&after))&&after==before;
+        lastMatches=matches;++samples;lastRead=clockMs()-reading;
         if(matches){if(!stable)stable=GetTickCount64();if(GetTickCount64()-stable>=100)return;}
         else stable=0;
-        pump(10);
+        const double pumping=clockMs();pump(10);lastPump=clockMs()-pumping;
     }while(GetTickCount64()<deadline);
+    std::fprintf(stderr,"SELECTION WAIT timeout last_matches=%d samples=%u read_ms=%.3f pump_ms=%.3f\n",lastMatches,samples,lastRead,lastPump);
     need(false,"Selection count and identities did not settle after the action");
 }
 #endif

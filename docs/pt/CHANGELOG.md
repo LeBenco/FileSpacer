@@ -2,6 +2,10 @@
 
 ## Por publicar
 
+- Acelerar significativamente a redução de seleções grandes com um clique num item ou no fundo das vistas clássicas do Shell, com recurso automático e silencioso à alternativa quando a funcionalidade privada do Windows não estiver disponível.
+- Acelerar a leitura de seleções completas e de grandes seleções parciais nas vistas de ícones com posicionamento livre através das API públicas do Windows.
+- Ativar ou desativar globalmente as miniaturas do Windows no menu Ver.
+- Restaurar a posição de deslocamento de uma pasta ao reabrir a sua janela.
 - Posicionar novas janelas com base no tamanho e na posição normais das janelas existentes do FileSpacer, incluindo janelas maximizadas, minimizadas ou encaixadas.
 - Aceleração massiva de «Selecionar tudo» e da desseleção de milhares de ficheiros nas vistas clássicas do Shell. Esta otimização utiliza funções privadas do Windows cuja disponibilidade e comportamento não são garantidos. Se estas funções estiverem ausentes ou forem incompatíveis, o FileSpacer recorre automática e silenciosamente às funções públicas, sem os ganhos de desempenho.
 

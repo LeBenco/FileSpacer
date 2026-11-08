@@ -50,6 +50,14 @@ static constexpr int BOTTOM_STATUS_HEIGHT_DIP = 23;
 // Coalesce selection notifications before updating the selected item and status.
 static constexpr UINT SELECTION_UPDATE_DELAY_MS = 100;
 
+static void toggleGlobalThumbnails() {
+    SHELLSTATE state = {};
+    SHGetSetSettings(&state, SSF_ICONSONLY, FALSE);
+    state.fIconsOnly = !state.fIconsOnly;
+    // The Shell publishes its normal ShellState setting-change notification.
+    SHGetSetSettings(&state, SSF_ICONSONLY, TRUE);
+}
+
 // on the Desktop only
 const wchar_t * const HIDDEN_ITEM_PARSE_NAMES[] = {
     L"::{26EE0668-A00A-44D7-9371-BEB064C98683}", // Control Panel
@@ -204,6 +212,8 @@ struct FolderWindow::ViewMenuPreview {
         auto valid = [&]() { return current(); };
         HRESULT result = captureReopenSelection(source, valid, initial.selection);
         if (FAILED(result) || !current()) return false;
+        captureViewScroll(source, valid, initial.scroll);
+        if (!current()) return false;
         if (owner.spatialView(view) && current()) {
             result = captureIconPositions(view, valid, owner.enumerationComplete,
                 owner.getSavedFolderState().icons, initial.icons, !owner.searchText.empty());
@@ -345,6 +355,10 @@ struct FolderWindow::ViewMenuPreview {
         const UINT command = pendingCommand;
         pendingCommand = 0;
         if (!command || !current()) return;
+        if (command == IDM_TOGGLE_THUMBNAILS) {
+            toggleGlobalThumbnails();
+            return;
+        }
         auto info = owner.makeInvokeInfo(static_cast<int>(command - IDM_SHELL_FIRST), POINT{});
         info.hwnd = owner.hwnd;
         checkHR(owner.invokeViewCommand(context, reinterpret_cast<CMINVOKECOMMANDINFO *>(&info)));
@@ -788,7 +802,7 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
                 CComQIPtr<IFolderView2> folderView(view);
                 if (!current()) return true;
                 CComPtr<IShellItemArray> selection;
-                if (folderView && SUCCEEDED(nativeViewSelection(folderView, FALSE, &selection)) && selection) {
+                if (folderView && SUCCEEDED(nativeViewSelection(folderView, FALSE, &selection, current)) && selection) {
                     const auto paths = peekPaths(selection);
                     if (!current() || GetFocus() != focus)
                         return true;
@@ -1454,6 +1468,8 @@ void FolderWindow::synchronizeViewProvider() {
 
 uint32_t FolderWindow::captureViewState(uint32_t mask) {
     uint32_t captured = ItemWindow::captureViewState(mask);
+    const auto &preview = viewMenuPreview ? viewMenuPreview : viewMenuRestore;
+    if (!isWindowOperational() && preview && !preview->restoreFailed) closingScroll = preview->initial.scroll;
     if (provisionalBaseline) {
         if (!recoverProvisionalView()) return captured;
         // Closing deliberately merges without replaying the native view. Do
@@ -1468,6 +1484,12 @@ uint32_t FolderWindow::captureViewState(uint32_t mask) {
     auto current = [&]() { return hwnd == owner && shellView == source && viewGeneration == generation; };
     CComPtr<IFolderView2> view;
     if (FAILED(viewHost.currentView(IID_PPV_ARGS(&view))) || !current()) return captured;
+    if (!isWindowOperational() && closingScroll.empty() && !preview && enumerationComplete && searchText.empty()) {
+        std::vector<uint8_t> bytes;
+        const HRESULT result = captureViewScroll(source, current, bytes);
+        if (!current()) return captured;
+        if (result == S_OK) closingScroll.swap(bytes);
+    }
     FolderViewSettings options = captureOptions(view, getSavedFolderState().view);
     if (!current()) return captured;
     const bool profileMismatch = (options.present & FolderViewSettings::Mode)
@@ -1652,6 +1674,7 @@ void FolderWindow::restoreReopenViewState() {
     auto bytes = std::move(reopeningWindow.viewState);
     reopeningWindow = {};
     if (bytes.empty()) return;
+    restoreScrollPending = false; // The explicit history snapshot owns this viewport.
     CComPtr<IShellView> view = shellView;
     const ULONG_PTR generation = viewGeneration;
     auto valid = [&]() { return isWindowOperational() && shellView == view && viewGeneration == generation; };
@@ -1674,6 +1697,11 @@ void FolderWindow::onDestroy() {
     viewStateDirty(FolderState::Icons);
     persistViewState();
     saveSearchHistory();
+    if (!closingScroll.empty() && !getFolderStateKey().empty()
+            && !getSavedFolderState().firstFailedAt) {
+        auto store = folderStateStore();
+        if (!store || !store->saveViewScroll(getFolderStateKey(), closingScroll)) stateStorageError();
+    }
     searchBox.destroy();
     if (quickAccessIconThread)
         quickAccessIconThread->stop();
@@ -2488,6 +2516,9 @@ void FolderWindow::updateSelection() {
     CComPtr<ItemWindow> keepAlive(this);
     if (!isWindowOperational() || !viewHost)
         return;
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    const auto current = [&] { return isWindowOperational() && shellView == source && viewGeneration == generation; };
 
     CComPtr<IFolderView2> folderView;
     if (!isWindowOperational()
@@ -2501,7 +2532,7 @@ void FolderWindow::updateSelection() {
 
     if (numSelected == 1) {
         CComPtr<IShellItemArray> selection;
-        if (nativeViewSelection(folderView, FALSE, &selection) == S_OK && isWindowOperational()) {
+        if (nativeViewSelection(folderView, FALSE, &selection, current) == S_OK && current()) {
             CComPtr<IShellItem> newSelected;
             if (checkHR(selection->GetItemAt(0, &newSelected)) && isWindowOperational())
                 selected = newSelected;
@@ -2518,6 +2549,9 @@ void FolderWindow::updateStatus() {
     CComPtr<ItemWindow> keepAlive(this);
     if (!isWindowOperational() || !viewHost)
         return;
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    const auto current = [&] { return isWindowOperational() && shellView == source && viewGeneration == generation; };
     CComPtr<IFolderView2> folderView;
     if (!isWindowOperational()
             || FAILED(viewHost.currentView(IID_PPV_ARGS(&folderView)))
@@ -2544,7 +2578,7 @@ void FolderWindow::updateStatus() {
 
         CComPtr<IShellItemArray> selection;
 
-        if (nativeViewSelection(folderView, FALSE, &selection) == S_OK && isWindowOperational()) {
+        if (nativeViewSelection(folderView, FALSE, &selection, current) == S_OK && current()) {
             DWORD count = 0;
             checkHR(selection->GetCount(&count));
 
@@ -3007,6 +3041,30 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
             && checkHR(IUnknown_SetSite(contextMenu, folderView)))
         site.reset(contextMenu);
     if (!isWindowOperational()) return;
+    const int menuCount = GetMenuItemCount(subMenu);
+    if (menuCount < 0) return;
+    int thumbnailPosition = menuCount;
+    for (int i = 0; i < menuCount; ++i) {
+        const UINT command = GetMenuItemID(subMenu, i);
+        if (command < IDM_SHELL_FIRST || command > IDM_SHELL_LAST) continue;
+        wchar_t verb[64] = {};
+        const HRESULT result = contextMenu->GetCommandString(command - IDM_SHELL_FIRST,
+            GCS_VERBW, nullptr, reinterpret_cast<char *>(verb), _countof(verb));
+        if (!isWindowOperational()) return;
+        // Canonical Shell verb; the translated label is never used as an identifier.
+        if (SUCCEEDED(result) && lstrcmpiW(verb, L"arrangeautogrid") == 0) {
+            thumbnailPosition = i + 1;
+            break;
+        }
+    }
+    SHELLSTATE thumbnailState = {};
+    SHGetSetSettings(&thumbnailState, SSF_ICONSONLY, FALSE);
+    MENUITEMINFO thumbnailItem = {sizeof(thumbnailItem)};
+    thumbnailItem.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE;
+    thumbnailItem.wID = IDM_TOGGLE_THUMBNAILS;
+    thumbnailItem.dwTypeData = const_cast<wchar_t *>(getString(IDS_GLOBAL_THUMBNAILS));
+    thumbnailItem.fState = thumbnailState.fIconsOnly ? MFS_UNCHECKED : MFS_CHECKED;
+    checkLE(InsertMenuItemW(subMenu, thumbnailPosition, TRUE, &thumbnailItem));
     std::shared_ptr<ViewMenuPreview> preview;
     HHOOK hook = nullptr;
     ViewMenuPreview *previous = ViewMenuPreview::active;
@@ -3027,7 +3085,10 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     if (hook) {
         UnhookWindowsHookEx(hook);
         ViewMenuPreview::active = previous;
-        preview->finish(cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST ? static_cast<UINT>(cmd) : 0);
+        preview->finish((cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) || cmd == IDM_TOGGLE_THUMBNAILS
+            ? static_cast<UINT>(cmd) : 0);
+    } else if (isWindowOperational() && cmd == IDM_TOGGLE_THUMBNAILS) {
+        toggleGlobalThumbnails();
     } else if (isWindowOperational() && viewHost && cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) {
         auto info = makeInvokeInfo(cmd - IDM_SHELL_FIRST, point);
         info.hwnd = hwnd;
@@ -3201,12 +3262,15 @@ STDMETHODIMP FolderWindow::QueryService(
 
 // Called when double-clicking an item or pressing Enter.
 STDMETHODIMP FolderWindow::OnDefaultCommand(IShellView *const view) {
+    CComPtr<ItemWindow> keepAlive(this);
     // Preserve the Shell's native handling of Alt-modified activation.
     if (GetKeyState(VK_MENU) < 0)
         return S_FALSE;
 
     const bool closeSource = settings::getKeepSourceWindowOpen()
         == (GetKeyState(VK_CONTROL) < 0);
+    const ULONG_PTR generation = viewGeneration;
+    const auto current = [&] { return isWindowOperational() && shellView == view && viewGeneration == generation; };
     CComQIPtr<IFolderView2> folderView(view);
 
     int numSelected = 0;
@@ -3215,7 +3279,7 @@ STDMETHODIMP FolderWindow::OnDefaultCommand(IShellView *const view) {
             && numSelected == 1) {
 
         CComPtr<IShellItemArray> selection;
-        if (nativeViewSelection(folderView, FALSE, &selection) == S_OK) {
+        if (nativeViewSelection(folderView, FALSE, &selection, current) == S_OK && current()) {
             CComPtr<IShellItem> selectedItem;
 
             if (checkHR(selection->GetItemAt(0, &selectedItem))) {
@@ -3555,6 +3619,7 @@ void FolderWindow::finishViewInitialization() {
     auto current = [&]() {
         return isWindowOperational() && shellView == view && viewGeneration == generation;
     };
+    if (storedViewState) restoreScrollPending = false; // Its transient viewport takes precedence.
     if (storedViewState && !initialStateApplied && searchText.empty()) {
         // A newly created view can publish an empty completion before its real
         // contents. Do not consume the rename snapshot if the native folder
@@ -3708,6 +3773,17 @@ void FolderWindow::finishViewInitialization() {
     if (initial) {
         restoreReopenViewState();
         if (!current()) return;
+        if (restoreScrollPending) {
+            restoreScrollPending = false; // Consume before reentrant Shell calls.
+            if (!provisionalBaseline && searchText.empty() && !getFolderStateKey().empty()) {
+                std::vector<uint8_t> bytes;
+                auto store = folderStateStore();
+                if (!store || !store->readViewScroll(getFolderStateKey(), &bytes)) stateStorageError();
+                if (!current()) return;
+                if (!bytes.empty()) checkHR(restoreViewScroll(view, bytes, current));
+                if (!current()) return;
+            }
+        }
         onViewReady();
     }
     if (initial && viewProfileChanging && current()) {

@@ -293,17 +293,17 @@ FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitializat
     }
     int schema = sqlite3_column_int(version.get(), 0);
     version.reset();
-    if (schema != 0 && schema != 2 && schema != 3 && schema != 4 && schema != 5 && schema != 6) {
+    if (schema != 0 && schema != 2 && schema != 3 && schema != 4 && schema != 5 && schema != 6 && schema != 7) {
         lastError = "Unsupported FileSpacer database version";
         finishWrite(false);
         return;
     }
     // An up-to-date schema needs no DDL and no user_version write.
-    if (schema != 6 && ((schema == 2 && !execute("ALTER TABLE folder_state ADD COLUMN maximized INTEGER;"))
+    if (schema != 7 && ((schema == 2 && !execute("ALTER TABLE folder_state ADD COLUMN maximized INTEGER;"))
             || !execute("CREATE TABLE IF NOT EXISTS folder_state("
             "key TEXT PRIMARY KEY NOT NULL, x INTEGER, y INTEGER, width INTEGER, height INTEGER,"
             "view BLOB, icons BLOB, last_success_at INTEGER NOT NULL DEFAULT 0,"
-            "first_failed_at INTEGER, maximized INTEGER, locked INTEGER NOT NULL DEFAULT 0) WITHOUT ROWID;"
+            "first_failed_at INTEGER, maximized INTEGER, locked INTEGER NOT NULL DEFAULT 0, scroll BLOB) WITHOUT ROWID;"
             "CREATE INDEX IF NOT EXISTS folder_state_age ON folder_state(last_success_at);"
             "CREATE TABLE IF NOT EXISTS closed_windows("
             "sequence INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL,"
@@ -313,12 +313,16 @@ FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitializat
             "UNIQUE(key,query));"
             "CREATE TRIGGER IF NOT EXISTS delete_search_history AFTER DELETE ON folder_state "
             "BEGIN DELETE FROM search_history WHERE key=old.key; END;"
-            "PRAGMA user_version=6;"))) {
+            "PRAGMA user_version=7;"))) {
         finishWrite(false);
         return;
     }
     if (schema >= 2 && schema <= 4 && !execute(
             "ALTER TABLE folder_state ADD COLUMN locked INTEGER NOT NULL DEFAULT 0;")) {
+        finishWrite(false);
+        return;
+    }
+    if (schema >= 2 && schema <= 6 && !execute("ALTER TABLE folder_state ADD COLUMN scroll BLOB;")) {
         finishWrite(false);
         return;
     }
@@ -493,6 +497,42 @@ bool FolderStateStore::writeState(const std::string &key, const FolderState &sta
     return finishWrite(success);
 }
 
+
+bool FolderStateStore::readViewScroll(const std::string &key, std::vector<uint8_t> *bytes) {
+    if (!bytes) return false;
+    bytes->clear();
+    if (!beginRead()) return false;
+    sqlite3_stmt *raw = nullptr;
+    if (!result(sqlite3_prepare_v2(db, "SELECT scroll FROM folder_state WHERE key=?1", -1, &raw, nullptr))) return false;
+    Statement statement(raw, sqlite3_finalize);
+    if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))) return false;
+    const int step = sqlite3_step(raw);
+    if (!result(step)) return false;
+    if (step == SQLITE_ROW) {
+        const int size = sqlite3_column_bytes(raw, 0);
+        const auto data = static_cast<const uint8_t *>(sqlite3_column_blob(raw, 0));
+        if (size && !data) { lastError = "Cannot read folder viewport"; return false; }
+        if (size > 0) bytes->assign(data, data + size);
+    }
+    return true;
+}
+
+bool FolderStateStore::saveViewScroll(const std::string &key, const std::vector<uint8_t> &bytes) {
+    if (!initialized) return false;
+    if (key.empty() || bytes.empty()) return true;
+    Lock lock(*this);
+    if (!lock || !execute("BEGIN IMMEDIATE")) return false;
+    const bool success = [&]() {
+        sqlite3_stmt *raw = nullptr;
+        if (!result(sqlite3_prepare_v2(db,
+                "UPDATE folder_state SET scroll=?2 WHERE key=?1 AND scroll IS NOT ?2", -1, &raw, nullptr))) return false;
+        Statement statement(raw, sqlite3_finalize);
+        return result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))
+            && result(sqlite3_bind_blob64(raw, 2, bytes.data(), bytes.size(), SQLITE_TRANSIENT))
+            && result(sqlite3_step(raw));
+    }();
+    return finishWrite(success);
+}
 
 bool FolderStateStore::recordAccess(const std::string &key, bool success, int64_t when, bool *expired) {
     if (expired) *expired = false;
@@ -744,7 +784,7 @@ bool FolderStateStore::move(const std::string &oldKey, const std::string &newKey
     sqlite3_stmt *raw = nullptr;
     bool success = result(sqlite3_prepare_v2(db,
         "INSERT OR REPLACE INTO folder_state "
-        "SELECT ?2,x,y,width,height,view,icons,last_success_at,first_failed_at,maximized,locked "
+        "SELECT ?2,x,y,width,height,view,icons,last_success_at,first_failed_at,maximized,locked,scroll "
         "FROM folder_state WHERE key=?1", -1, &raw, nullptr));
     {
         Statement statement(raw, sqlite3_finalize);

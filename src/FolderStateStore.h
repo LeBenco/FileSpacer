@@ -85,6 +85,9 @@ public:
     bool remove(const std::string &key);
     bool move(const std::string &oldKey, const std::string &newKey);
     bool readSearchHistory(const std::string &key, unsigned limit, std::vector<std::string> *queries);
+    bool readViewScroll(const std::string &key, std::vector<uint8_t> *bytes);
+    // Updates only an existing folder, independently of the locked layout.
+    bool saveViewScroll(const std::string &key, const std::vector<uint8_t> &bytes);
     // stateMissing reports a committed no-op: no folder_state row exists yet for this key.
     bool saveSearchHistory(const std::string &key, const std::vector<std::string> &queries, unsigned limit,
         bool mergeRecent = false, bool *stateMissing = nullptr);

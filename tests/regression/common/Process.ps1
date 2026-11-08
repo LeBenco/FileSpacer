@@ -38,6 +38,15 @@ function Complete-RecordedProcess($Job) {
     [IO.File]::WriteAllText($Job.ErrorPath,$Job.Error.Result,$utf8)
     return [int]$Job.Process.ExitCode
 }
+
+# Stop only the owned scenario process. Descendants may include FileSpacer,
+# which must remain available for normal closure and state restoration.
+function Stop-TestCaseProcess([Diagnostics.Process]$Process) {
+    if($Process.HasExited){return}
+    if($Process.ProcessName-eq'FileSpacer'){throw 'Refusing to terminate FileSpacer.'}
+    $Process.Kill()
+    if(!$Process.WaitForExit(5000)){throw 'The scenario process did not exit after timeout.'}
+}
 function Start-TestApplication {
     param([string]$Executable,[string]$Arguments,[string]$WorkingDirectory='',
         [string]$OutputDirectory='')
