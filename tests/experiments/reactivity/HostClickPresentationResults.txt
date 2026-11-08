@@ -1,6 +1,144 @@
 Host click presentation investigation -- 8 November 2026
 =======================================================
 
+Follow-up: UIA interference and actual-click prototype
+----------------------------------------------------
+This follow-up supersedes the performance conclusion of the historical
+50-second measurements below; those measurements and failures are retained.
+
+The Microsoft-Windows-UIAutomationCore ETW provider identified the persistent
+Codex computer-use helper PID 32652 as a client issuing repeated provider calls
+to the isolated FileSpacer process. Entry/exit records, not just FileSpacer's
+own API timings, identify that caller. Evidence: build/input-phase/uia-smoke.etl,
+uia-smoke-calls.csv and uia-caller.json. After explicit user permission, only
+that exact helper was stopped (build/input-phase/helper-stop.json). Another
+older helper, PID 26916, remained; it was not a respawn and was not stopped.
+No FileSpacer process was terminated for this comparison.
+
+The next real-app run completed normally:
+ build/regression/20261108-155857-0f89164183e14a3e80a87370aeb90313
+Ordinary blank click: 874.525 ms visible; Escape then click: 39.475 ms visible.
+The private clear itself took 4.433 ms. Escape translation was below 0.1 ms.
+This rejects the earlier hypothesis that Shell accelerator translation alone
+explained the tens of seconds. It also separates the measurement disturbance
+from the remaining roughly 0.8-second native blank-click cost.
+
+The opt-in prototype calls the existing qualified selection-clear path before
+ordinary unmodified WM_LBUTTONDOWN processing on the free-view background.
+The original mouse message continues through native processing. It excludes
+items, modifiers, existing capture and the activation click already consumed
+by FileSpacer's selection-preservation policy. It remains Debug /test only,
+requires FS_TEST_CLICK_PRECLEAR=1, and is not adopted for normal application use.
+
+Matched actual-click measurements, 5,000 text files, 48-pixel icons, same binary,
+same 800 x 400 Shell region, three clicks per view and per arm:
+
+                         Prototype OFF              Prototype ON
+ free Icons samples ms   818.112, 832.625, 835.715    44.483, 49.712, 53.880
+ median ms               832.625                     49.712
+ free Tiles samples ms   835.122, 841.928, 850.991    33.852, 39.927, 59.745
+ median ms               841.928                     39.927
+
+Runs:
+ OFF: build/regression/20261108-171414-b5080dc97b224a779ffa6b5a4b50ded4
+ ON:  build/regression/20261108-171521-2dba65f02d844c629d65fafc8d36764b
+These are desktop-image observations after the actual SendInput click marker,
+not DwmFlush return times or API-only timings. All 12 observations passed;
+counter values were zero OFF and one ON. Selected identities and unchanged
+positions were checked. Both final-view image proofs were inspected: the
+selection is cleared and the first item's focus rectangle remains visible.
+No new Explorer timing was collected in this follow-up.
+
+Behavior comparison at 128 items
+-------------------------------
+The four presentations are arranged medium Icons, arranged Tiles, free Icons
+and free Tiles. Each is tested with a background click, selected-item click,
+marquee selection, Ctrl-marquee and Shift-marquee. A native-reference run and
+the prototype run passed all 20 combinations. Exact selected identities,
+focus and anchor match for every combination; positions remain unchanged.
+
+Reference: build/regression/20261108-170932-6189cd1405eb467baf1adfc2068f7b28
+Prototype: build/regression/20261108-171038-410c7ac1a928492daafbc7c455422602
+Private plus public arms (40 rows, both matching the 20 reference rows):
+ build/regression/20261108-171651-3fc401edb97d406a95333c101d10cb19
+The counter proves that only background clicks and unmodified marquees in
+free views use the private range operation. Item clicks and Ctrl/Shift do not.
+Without a private cache, every gesture retains the public/native behavior.
+
+At 128 selected items, an actual background activation click preserves all
+identities; the next active-window click clears them. Private and public arms
+passed for both free views:
+ build/regression/20261108-171854-cc3f5ecb037644118016c7d35b15efbe
+After the signed-mask diagnostic correction described below, the final binary
+passed all 24 combinations of these six gestures, two free views and two arms:
+ build/regression/20261108-172151-57c2260cc45243b8a569a3fb4d45ff85
+The existing real-Shell rename-cancellation/Unicode test also passed:
+ build/regression/20261108-172346-1b8d6034d7b048af89f5c22b7d3188a2
+
+Unresolved failures and initially blocked checks
+-----------------------------------------------
+Escape during an active native marquee leaves the ListView's mouse capture
+set after all buttons and modifiers have been released. This fails both the
+prototype-OFF reference and prototype-ON case. Both produce identical empty
+selection, focus 0, anchor 3 and unchanged positions. These are FAIL results,
+not passed cancellation tests:
+ OFF: build/regression/20261108-170633-1efd837b1ff04c5eb04ec5898b59bfcc
+ ON:  build/regression/20261108-170707-ea7e4b005a904c908f017300fa4be472
+Holding Escape for 100 ms did not resolve it. A further OFF run recorded no
+visible native tooltip; natural pointer departure also did not release capture:
+ build/regression/20261108-171325-52f6131d3a6441b9af494ca2ef3ebb62
+The hover-tooltip hypothesis is rejected. The test does not call ReleaseCapture,
+send WM_CANCELMODE or replay a click to manufacture success. This establishes
+the same failure without the new click optimization, not a root cause in Windows.
+
+The existing filesystem drag/drop case failed before input because the modern
+Details UIA item exposed no clickable point:
+ build/regression/20261108-172416-162d64c5c3004fca982c6b42048a935b
+A retry after moving the covering browsers failed at that same locator:
+ build/regression/20261108-173453-8e1deb4f10f74dafbf62dcb0129fe4ce
+No filesystem drag/drop validation is claimed from these runs.
+A targeted 128-item free-position drag test was prepared using the same native
+hit testing as the click benchmark. Its initial run was BLOCKED before input
+because Firefox covered the test caption and the activation request failed:
+ build/regression/20261108-172604-0e1ab52ee00147d69aa543eb44661aab
+A read-only input-desktop probe reported Default. After the user confirmed the
+host remained available, the covering browser windows were moved temporarily.
+The targeted free-position drag passed all four combinations (two free views,
+private and public), retaining all 128 selected identities and making the same
+position changes in both arms. The counter stayed zero and mouse capture ended:
+ build/regression/20261108-173300-4c215e44b6cc4f029e42d0aabbe3c2bb
+Before/after position strings match exactly between the private and public arms
+in both views. This tests native movement within a free-position view; it does
+not replace the unexecuted filesystem drop in the failed legacy scenario.
+Both moved browser windows were restored to their exact original rectangles,
+after checking handle, process path/start time and current geometry:
+ build/input-phase/test-window-moves.json
+No lock-screen interaction or desktop switch was performed.
+
+The test script now records exact identities, focus/anchor, unchanged positions,
+activation behavior and native call counts. It preserves a selected-name array
+when a marquee selects only one item (the first arranged-reference attempt
+exposed that PowerShell scalar/Count defect; it was corrected, not relaxed).
+
+Final code and static analysis
+------------------------------
+Debug MSVC /W4 build passed without new compiler warnings. clang-tidy and
+Cppcheck completed on main.cpp and FolderWindow.cpp with Windows x64/C++14,
+real MSVC 14.44.35207/ATL and SDK 10.0.19041.0 headers for clang-tidy, and official
+Windows/ATL/SQLite models without full SDK preprocessing for Cppcheck.
+clang-tidy's new signed-bitwise warning in the prototype's button mask was
+corrected by making the mask explicitly WPARAM, then build/tests/analyses reran.
+Final artifacts: build/integration/click-validation-corrected/results.json.
+All four tool runs completed with no timeout or coverage reduction. Diagnostic
+multisets match the baseline: FolderWindow tidy 75/75, Cppcheck 129/129; main
+tidy 36/36, Cppcheck 20/20. Existing diagnostics, including the unchanged mutex
+CloseHandle/deallocuse report, are present in the baseline as well. No new
+diagnostic remains; static-analysis verdict for these two modified units: PASS.
+This does not turn the failed cancellation or legacy drag/drop test into PASS.
+
+Historical investigation and earlier conclusions
+------------------------------------------------
+
 Desktop preparation
 -------------------
 The covering Chromium root was the Codex desktop window, verified by current
