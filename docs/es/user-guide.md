@@ -29,7 +29,7 @@ FileSpacer se puede definir como gestor de archivos predeterminado durante la in
 
 **Desbloquear el estado de la ventana** conserva su disposición actual y permite volver a guardar los cambios.
 
-El bloqueo se activa en **Configuración > General**. Allí también se puede personalizar la visualización del candado situado a la izquierda de la barra de título y activar el clic en ese icono para bloquear o desbloquear el estado de la ventana. Desactivar la función elimina todos los bloqueos y oculta el candado.
+El bloqueo se activa en **Configuración > General**. Allí también se puede personalizar la visualización del candado situado a la izquierda de la barra de título y activar el clic en ese icono para bloquear o desbloquear el estado de la ventana. El comando también se puede [añadir al menú de la barra de título](#customize-the-title-bar-menu). Desactivar la función elimina todos los bloqueos y oculta el candado.
 
 <img src="images/locked-title.png" alt="Detalle del título de una carpeta con el distintivo de candado." width="280">
 

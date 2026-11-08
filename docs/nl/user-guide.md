@@ -29,7 +29,7 @@ FileSpacer kan tijdens de installatie of onder **Instellingen > Integratie** met
 
 **Vensterstatus ontgrendelen** behoudt de huidige indeling en maakt het weer mogelijk wijzigingen op te slaan.
 
-Vergrendeling wordt ingeschakeld onder **Instellingen > Algemeen**. Daar kan ook de weergave van het slot links in de titelbalk worden aangepast en klikken op het pictogram worden ingeschakeld om de vensterstatus te vergrendelen of ontgrendelen. Uitschakelen wist alle vergrendelingen en verbergt het pictogram.
+Vergrendeling wordt ingeschakeld onder **Instellingen > Algemeen**. Daar kan ook de weergave van het slot links in de titelbalk worden aangepast en klikken op het pictogram worden ingeschakeld om de vensterstatus te vergrendelen of ontgrendelen. De opdracht kan ook [aan het titelbalkmenu worden toegevoegd](#customize-the-title-bar-menu). Uitschakelen wist alle vergrendelingen en verbergt het pictogram.
 
 <img src="images/locked-title.png" alt="Detail van de maptitel met het slotje." width="280">
 

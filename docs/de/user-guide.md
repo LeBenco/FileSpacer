@@ -28,7 +28,7 @@ FileSpacer lässt sich bei der Installation oder unter **Einstellungen > Integra
 
 **Fensterzustand entsperren** behält die aktuelle Anordnung bei und ermöglicht wieder das Speichern von Änderungen.
 
-Die Sperrfunktion wird unter **Einstellungen > Allgemein** aktiviert. Dort lassen sich auch die Anzeige des Schlosses links in der Titelleiste anpassen und das Sperren oder Entsperren des Fensterzustands per Klick auf das Symbol aktivieren. Das Abschalten der Funktion entfernt alle Sperren und blendet das Symbol aus.
+Die Sperrfunktion wird unter **Einstellungen > Allgemein** aktiviert. Dort lassen sich auch die Anzeige des Schlosses links in der Titelleiste anpassen und das Sperren oder Entsperren des Fensterzustands per Klick auf das Symbol aktivieren. Der Befehl lässt sich auch [zum Titelleistenmenü hinzufügen](#customize-the-title-bar-menu). Das Abschalten der Funktion entfernt alle Sperren und blendet das Symbol aus.
 
 <img src="images/locked-title.png" alt="Nahaufnahme des Ordnertitels mit Schlosssymbol." width="280">
 

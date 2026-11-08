@@ -29,7 +29,7 @@ On peut définir FileSpacer comme gestionnaire de fichiers par défaut lors de l
 
 **Déverrouiller l’état de la fenêtre** conserve sa disposition actuelle et permet d’enregistrer à nouveau les changements.
 
-Le verrouillage s’active dans **Paramètres > Général**. On peut aussi y personnaliser l’affichage du cadenas à gauche de la barre de titre et activer le clic sur cette icône pour verrouiller ou déverrouiller l’état de la fenêtre. Désactiver la fonction supprime tous les verrouillages et masque le badge.
+Le verrouillage s’active dans **Paramètres > Général**. On peut aussi y personnaliser l’affichage du cadenas à gauche de la barre de titre et activer le clic sur cette icône pour verrouiller ou déverrouiller l’état de la fenêtre. Cette commande peut aussi être [ajoutée au menu de la barre de titre](#customize-the-title-bar-menu). Désactiver la fonction supprime tous les verrouillages et masque le badge.
 
 <img src="images/locked-title.png" alt="Gros plan du titre du dossier et de son badge de cadenas." width="280">
 
