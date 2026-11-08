@@ -22,9 +22,6 @@ public:
     void reset();
     bool accelerated() const;
     bool acceleratesSelectAll() const;
-    // Background-click preclearing needs both the manager and native index range.
-    // Without the complete capability the original click must remain native.
-    bool acceleratesBackgroundClear() const;
     uint64_t acceleratedSelectAllCount() const;
     bool backingBufferReleased(bool &known) const;
     HRESULT clear(IShellView *view, const std::function<bool()> &current,
