@@ -122,8 +122,9 @@ Host retry after the desktop was explicitly made available:
  build/regression/20261108-125941-26e496895b684fbcb21edb2fd41266b6
 The actual-app test failed in 166.6 seconds, before its first completed row:
 the foreground guard refused the click. The initial normal-close cleanup
-exceeded its grace period, then both FileSpacer processes exited; no process
-was killed. A read-only debugger attach attempted as that process exited
+exceeded its grace period, then both FileSpacer processes exited. The legacy
+controller allowed forced cleanup, so a normal exit is not established.
+A read-only debugger attach attempted as that process exited
 returned HRESULT 0x80004002 and provided no usable stack. This retry supplies
 no new comparative timing.
 
@@ -220,5 +221,7 @@ no confirmed new correctness defect. Experimental functional failures above
 remain failures and are not converted into static-analysis success.
 
 The temporary screen-saver state whose restoration failed during one host run
-was restored to its recorded original value. Test fixtures were closed normally;
-no FileSpacer process was killed. No release build, main-worktree merge or push.
+was restored to its recorded original value. No manual FileSpacer kill was
+issued. Subsequent inspection found forced termination in the legacy controller;
+see HostClickPresentationResults.txt for the correction and the watchdog fix.
+No release build, main-worktree merge or push.
