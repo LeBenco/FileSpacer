@@ -99,6 +99,11 @@ site root, other languages under `/de/`, `/el/`, `/es/`, `/fr/`, `/it/`, `/nl/`,
 These outputs are generated and ignored by Git. The application build and its
 dependencies are separate from this documentation build.
 
+The [documentation capture scripts](../../../tools/documentation-capture/README.md)
+keep the menu, movement and resizing animations reproducible with ScreenToGif,
+localized fictional files and the same local wallpaper. Review the exported
+media before replacing the files under `docs/<language>/images/`.
+
 <a id="shared-website-and-offline-builds"></a>
 
 ## Shared website and offline builds
