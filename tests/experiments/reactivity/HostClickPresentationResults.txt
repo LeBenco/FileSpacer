@@ -1,0 +1,214 @@
+Host click presentation investigation -- 8 November 2026
+=======================================================
+
+Desktop preparation
+-------------------
+The covering Chromium root was the Codex desktop window, verified by current
+HWND, process ID and executable path. Public SetWindowPos moved it from
+(0,0)-(1920,1040) to (-1920,0)-(0,1040), entirely on the second display,
+without resizing or changing its activation. Original geometry is recorded in
+build/remaining-selection/chromium-move.json. The original geometry was verified
+restored after both final GUI cases. No browser contents were used.
+Both Computer Use runtimes failed to start (kernel assets, OS error 3);
+the explicit requested move used verified Win32 window metadata instead.
+
+First actual-app desktop-image result
+------------------------------------
+Run: build/regression/20261108-132651-3064b1fd02e34e4196136e9bc7e2b068
+Actual Debug FileSpacer /test, qualified private cache, 5,000 text files,
+classic free Tiles, exactly 800 x 400 Shell pixels:
+
+ ordinary pointer-move plus blank click
+ selected-count observation       57659.204 ms
+ DwmFlush return                  57677.341 ms
+ first changed desktop image      57663.673 ms
+ final observed stable image      57758.910 ms
+ private native-range calls                  0
+ capture quality                       OBSERVED
+ coalesced frames                              0
+
+The observer recorded 78 frames. Before/final bitmaps were inspected: all
+visible items changed from selected to unselected, with the focused first item
+retained. The row also passed selected-identity and item-count checks. Final
+presentation was about 82 ms later than DwmFlush. These are compositor image
+timestamps, not physical monitor scan-out. This initial protocol includes
+moving the pointer into the view and a small synchronization interval; it is
+not the later, precise stationary-button protocol described below.
+
+The complete run failed during its next gesture, so this is one partial-run
+observation, not a successful comparison matrix or a representative median.
+No other diagnostic process was started during this row's image interval;
+the read-only debugger sample was taken later in the next preparation.
+
+Slow preparations and rejected attempts
+--------------------------------------
+The later UI-thread stack repeatedly entered UIAutomationCore provider work
+and synchronous window messages from PeekMessage inside getProcessMessage.
+The client initiating those requests was not identified. This evidence does
+not establish a persistence bottleneck or an ordinary production latency.
+
+ - 20261108-132123-9f0f801a475c44b09752fae301825f59:
+   native fixture reached its ready stage, then failed to park the pointer.
+ - 20261108-133656-7a15c60bb28f43408ce9bc9730f8cc3d:
+   same native failure, with no parallel diagnostic processes.
+ - 20261108-133828-e66a57c6c10d458a8df097e25325f446:
+   after the repeated remote blank hit test, foreground protection rejected
+   Escape before sending it; no accelerated click measurement.
+ - 20261108-134607-b0ea18caf0854f699f4680fc34d6f5dc:
+   view-menu preparation failed; no click measurement.
+ - 20261108-134931-33c9df9132444f2d877aed0eeb2bbe65:
+   preparing a persistent view on 128 files then reopening with 5,000 exceeded
+   the 900-second case watchdog; no usable click measurement.
+
+Watchdog defect discovered and corrected
+----------------------------------------
+The legacy controller forcibly killed an entire scenario tree on timeout and
+also killed leftover FileSpacer processes after a normal-close grace period.
+The 900-second attempt explicitly stopped FileSpacer PID 40844. Earlier notes
+claiming no FileSpacer termination were therefore too strong: no manual kill
+was issued, but controller-enforced termination was possible and occurred.
+
+The controller now stops only its owned scenario process, never its tree.
+The shared stop helper explicitly refuses FileSpacer. Application cleanup
+requests normal closure and records leftovers without killing them. If the
+tested application remains alive, test-registry/database backups are retained
+and restoration is deferred, avoiding writes against its active test state.
+Desktop-activity settings are still restored. A timed-out case stops the suite
+because preserved descendants could prevent isolation. Subsequent tests also
+cannot proceed while the application remains open.
+
+The process contract uses a real harmless parent/child pair: stop the parent,
+verify the child is still alive, then signal it to exit normally. It does not
+terminate a real FileSpacer instance to test this rule. The contract and the
+prepared-runner contract both passed in:
+ build/regression/20261108-141120-02a8bf61ff97440892af0a03626ccd8d
+
+Precise stationary-button protocol
+----------------------------------
+FS_GESTURE_PRESENTATION=1 builds GesturePresentationTests.cpp. The observer
+checks the fixture PID, executable, root class, foreground and coverage; it
+captures only the real Shell rectangle and requires a lasting visible change,
+stable final image, unchanged geometry and foreground. Named events coordinate
+readiness and the start marker. Frame hashes, before/first/final bitmaps and
+presentation timestamps are retained, including coalescing quality.
+
+The pointer is positioned on a previously verified target before observation.
+ClickControlAtPointer checks exact pointer coordinates, foreground and native
+target, then timestamps immediately before SendInput without moving the pointer.
+The CSV subtracts the observer-to-input marker interval from visible timings.
+The pointer is parked outside the Shell after the action to exclude tooltips.
+
+escape-background retains its extra remote hit test in the measured sequence.
+escape-background-once is a distinct experiment: it verifies the blank point
+in preparation, then measures Escape plus a guarded click, without repeating
+that remote hit test. It does not implement or validate a production mouse hook,
+drag/cut semantics or an internal in-message hit-test optimization.
+
+FS_GESTURE_PRESEED=1 optionally prepares one persisted view on 128 files,
+closes it, creates the remaining files, and reopens the actual saved view.
+It is a different preparation scenario; its timeout above remains a failure.
+
+The launcher accepts -TimeoutSeconds (30..900, default 300). Use a larger limit
+explicitly for large fixtures; the application itself is no longer force-killed
+by the controller. All fixtures and native artifacts stay under the project.
+
+Successful precise-click checks
+-------------------------------
+Instrumentation smoke run, 128 files:
+ build/regression/20261108-141258-82b9920c5ab94a90ae52641b4b243d2b
+The complete two-gesture case passed. Ordinary blank click: final image at
+133.413 ms, no private call. Escape plus guarded click: final image at
+1398.246 ms, exactly one private call. Both observations were OBSERVED, without
+coalesced frames. This is a functional smoke run with one sample per gesture,
+not evidence that the Escape sequence improves mouse latency.
+
+Final ordinary-button run, 5,000 files:
+ build/regression/20261108-141607-e598ddcc972344a3b3458d8756c10c3f
+The complete case passed, including selected identities, exact count, frame
+coverage/foreground, normal application exit and desktop-state restoration.
+
+ first changed image from SendInput          53976.258 ms
+ final stable image from SendInput           54088.945 ms
+ private native-range calls                           0
+ image quality                                OBSERVED
+ coalesced frames                                     0
+ frames recorded                                     78
+ observer-to-SendInput marker interval            6.713 ms
+ native WM_LBUTTONDOWN dispatch (Debug log)     ~1454 ms
+
+The AMD Radeon 780M primary display was captured at (108,163)-(908,563).
+Before/final images were inspected: every visible tile changed from selected
+to unselected, with the first tile's focus rectangle retained. Confirmation
+of image quietness is excluded from the final-image timestamp.
+
+Thus the stationary click itself still takes about 54.09 seconds to finish
+visibly in this host test. Removing pointer travel did not account for the
+large delay seen in the initial observation. The message-dispatch log covers
+only about 1.45 seconds, so the remaining interval cannot be equated with the
+native button handler's CPU time. Earlier samples implicate UI Automation
+provider/message processing; they do not allocate the whole delay or identify
+its client. These remain single samples under the observed host conditions,
+not a general FileSpacer performance claim or a private-path gain.
+
+Reproduce the precise ordinary-button case from CMD in the worktree:
+
+ set FS_GESTURE_PRESENTATION=1
+ set FS_GESTURE_COUNT=5000
+ set FS_GESTURE_VIEWS=free-tiles
+ set FS_GESTURE_ACTIONS=background
+ set FS_GESTURE_REPETITIONS=1
+ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\Run-SelectionGestures.ps1 -TimeoutSeconds 600
+
+The stage JSON records the last preparation/input/verification phase outside
+the measured action. The application counter distinguishes the available
+private capability from the path actually used by the gesture.
+
+Final Escape-plus-click run, 5,000 files:
+ build/regression/20261108-142617-ac9c3542ccea4fceb115c84d63d765a3
+The complete case also passed, with normal exit and restored desktop settings.
+It used the same view dimensions, file count and stationary click target in a
+fresh process. Timing starts before Escape, so it covers the full key/click
+sequence, not just the subsequent mouse button:
+
+ first changed image from sequence start     50677.978 ms
+ final stable image from sequence start      50857.841 ms
+ private native-range calls                           1
+ image quality                                OBSERVED
+ coalesced frames                                     0
+ frames recorded                                     85
+ observer-to-sequence marker interval            3.374 ms
+
+Before/final bitmaps were inspected and show the expected cleared selection
+with the first item's focus rectangle preserved. Change FS_GESTURE_ACTIONS to
+escape-background-once to reproduce this distinct experiment.
+
+Conclusion: both 5,000-file interactive cases are now measured successfully,
+but the private call's millisecond API result does not translate to a massive
+gain in the measured GUI sequence: 54.09 seconds versus 50.86 seconds here.
+One sample of two different gestures cannot establish a percentage gain.
+No automatic preclear mouse hook is adopted on this evidence. The unresolved
+latency is around the complete input/message/presentation procedure, and
+further investigation must identify it rather than extrapolate API timing.
+
+Final retained-code checks
+--------------------------
+MSVC Debug and both native helpers compiled with /W4 without new warnings.
+The exact final process contract (including project-local fixture cleanup)
+passed again in:
+ build/regression/20261108-143648-d661d6c7852f45b7821ccfde2b72e659
+After stopping the suite on a case timeout, all three targeted summary,
+process-survival and prepared-runner contracts passed in:
+ build/regression/20261108-152226-eeb05a683ba048bdad79caa799c9767f
+The small real-Shell image/counter smoke and both final 5,000-file GUI cases
+passed. Earlier failures and forced legacy cleanup remain recorded above.
+The native button prototype that failed pointer parking is not adopted.
+
+Static checks
+-------------
+Both clang-tidy and Cppcheck completed on GesturePresentationTests.cpp with
+Windows x64/C++14, real SDK/MSVC/ATL headers for clang-tidy and official Windows/
+ATL models for Cppcheck. No parsing failure or timeout. The new diagnostic is
+performance-no-int-to-ptr for the validated public HWND argument conversion;
+it is a required Win32 handle conversion, not a code/function-pointer call.
+Inherited header diagnostics match earlier runs. Verdict REVIEW under the
+project rule for stylistic diagnostics; no confirmed new correctness defect.
