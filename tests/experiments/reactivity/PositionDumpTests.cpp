@@ -108,14 +108,14 @@ struct DumpHost : Host {
         close(); stateBrowser.Release();
     }
     void createDump(const wchar_t *path, FOLDERVIEWMODE mode, bool useStream,
-            const std::vector<uint8_t> &saved, const std::wstring &bag) {
+            const std::vector<uint8_t> &saved, const std::wstring &bag, DWORD extraFlags = 0) {
         streamBacked = useStream;
         frame.reset(CreateWindowW(L"Order transfer prototype", L"Position dump investigation",
             WS_OVERLAPPEDWINDOW | WS_VISIBLE, 40, 40, 850, 500,
             nullptr, nullptr, GetModuleHandleW(nullptr), nullptr));
         require(frame != nullptr, "No dump host window");
         RECT bounds = {0,0,800,400};
-        const FOLDERSETTINGS settings = {static_cast<UINT>(saved.empty() ? mode : FVM_AUTO), FWF_NOWEBVIEW | FWF_NOHEADERINALLVIEWS};
+        const FOLDERSETTINGS settings = {static_cast<UINT>(saved.empty() ? mode : FVM_AUTO), static_cast<UINT>(FWF_NOWEBVIEW | FWF_NOHEADERINALLVIEWS | extraFlags)};
         events.Attach(new BrowserEvents);
         if (streamBacked) {
             stateBrowser.Attach(new StateBrowser); stateBrowser->window = frame.get();
@@ -306,6 +306,7 @@ void positionDump(const wchar_t *fixture, const wchar_t *output) {
     }
 }
 }
+#ifndef POSITION_DUMP_DRIVER
 int wmain(int argc, wchar_t **argv) {
     if (argc != 3) return 2;
     wchar_t machine[MAX_COMPUTERNAME_LENGTH + 1] = {}; DWORD length = _countof(machine);
@@ -320,3 +321,4 @@ int wmain(int argc, wchar_t **argv) {
     catch (const std::exception &error) { std::fprintf(stderr,"FAIL position dump: %s\n",error.what()); result = 1; }
     UnregisterClassW(type.lpszClassName,type.hInstance); OleUninitialize(); return result;
 }
+#endif
