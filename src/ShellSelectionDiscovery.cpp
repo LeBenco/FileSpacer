@@ -27,6 +27,10 @@ using Module = std::unique_ptr<HINSTANCE__, decltype(&FreeLibrary)>;
 using Internet = std::unique_ptr<void, decltype(&WinHttpCloseHandle)>;
 Image selectedImage;
 const Image publicImage;
+RangeImage selectedRange;
+const RangeImage publicRange;
+std::atomic<bool> rangeReady{false};
+std::atomic<bool> rangeFinished{false};
 enum class Resolution : unsigned char { Running, Public, Private };
 std::atomic<Resolution> resolution{Resolution::Running};
 std::once_flag initialized;
@@ -98,6 +102,27 @@ Identity identity() {
     }
     throw std::runtime_error("No Shell RSDS identity");
 }
+std::wstring rangeCacheFile(const std::wstring &base) {
+    RangeData data;if(!controlIdentity(data))return {};
+    // Shell identity remains in the stem; control identity is checked inside
+    // both positive and negative records. Avoid two GUIDs in a long filename.
+    // Change the suffix when the producer/qualification contract changes.
+    return base.substr(0,base.size()-4)+L"-r1.range";
+}
+bool savedRangePublic(const std::wstring &path) {
+    std::ifstream file(path.c_str(),std::ios::binary);char magic[10]={};RangeData saved,current;
+    file.read(magic,sizeof(magic));file.read(reinterpret_cast<char *>(&saved.guid),sizeof(saved.guid));
+    file.read(reinterpret_cast<char *>(&saved.age),sizeof(saved.age));file.read(reinterpret_cast<char *>(&saved.size),sizeof(saved.size));
+    return file&&std::memcmp(magic,"FSPUBLIC01",sizeof(magic))==0&&controlIdentity(current)
+        &&saved.size==current.size&&saved.age==current.age&&IsEqualGUID(saved.guid,current.guid);
+}
+void saveRangeRecord(const std::wstring &path,const char *message) {
+    RangeData data;if(!controlIdentity(data))return;
+    std::ofstream file(path.c_str(),std::ios::binary|std::ios::trunc);file<<"FSPUBLIC01";
+    file.write(reinterpret_cast<const char *>(&data.guid),sizeof(data.guid));
+    file.write(reinterpret_cast<const char *>(&data.age),sizeof(data.age));
+    file.write(reinterpret_cast<const char *>(&data.size),sizeof(data.size));file<<message<<"\n";
+}
 std::wstring defaultRoot() {
     CComHeapPtr<wchar_t> local;
     require(SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_DONT_VERIFY, nullptr, &local)), "Local cache unavailable");
@@ -124,14 +149,14 @@ template<class T> T api(HMODULE module, const char *name) {
     require(address != nullptr, "Required system export absent");
     return reinterpret_cast<T>(address);
 }
-void downloadPdb(const Identity &id, const std::wstring &destination) {
+void downloadPdb(const Identity &id, const std::wstring &destination, const wchar_t *pdb=L"shell32.pdb") {
     if (GetFileAttributesW(destination.c_str()) != INVALID_FILE_ATTRIBUTES) return;
     Internet session(WinHttpOpen(L"FileSpacer symbol discovery", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
         WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0), &WinHttpCloseHandle);
     require(session && WinHttpSetTimeouts(session.get(), 5000, 5000, 15000, 15000), "Cannot initialize symbol download");
     Internet connection(WinHttpConnect(session.get(), L"msdl.microsoft.com", INTERNET_DEFAULT_HTTPS_PORT, 0), &WinHttpCloseHandle);
     require(connection != nullptr, "Cannot connect to symbol server");
-    const std::wstring url = L"/download/symbols/shell32.pdb/" + id.key + L"/shell32.pdb";
+    const std::wstring url = L"/download/symbols/"+std::wstring(pdb)+L"/"+id.key+L"/"+pdb;
     Internet request(WinHttpOpenRequest(connection.get(), L"GET", url.c_str(), nullptr, WINHTTP_NO_REFERER,
         WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE), &WinHttpCloseHandle);
     require(request && WinHttpSendRequest(request.get(), WINHTTP_NO_ADDITIONAL_HEADERS, 0,
@@ -156,15 +181,15 @@ void downloadPdb(const Identity &id, const std::wstring &destination) {
     file.reset();
     require(MoveFileExW(temporary.c_str(), destination.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != FALSE, "Cannot publish symbol file");
 }
-struct SymbolTables { DWORD64 base; DWORD size; std::vector<DWORD> tables; };
+struct SymbolTables { DWORD64 base; DWORD size; std::vector<DWORD> tables; const wchar_t *prefix=L"??_7CDefView@@"; };
 BOOL CALLBACK collectTables(PSYMBOL_INFOW symbol, ULONG, void *context) {
     auto &result = *static_cast<SymbolTables *>(context);
-    if (wcsncmp(symbol->Name, L"??_7CDefView@@", _countof(L"??_7CDefView@@")-1) == 0 && symbol->Address >= result.base
+    if (wcsncmp(symbol->Name,result.prefix,wcslen(result.prefix)) == 0 && symbol->Address >= result.base
         && symbol->Address - result.base < result.size) result.tables.push_back(static_cast<DWORD>(symbol->Address - result.base));
     return TRUE;
 }
 struct Symbols { std::array<DWORD, 22> methods = {}; std::vector<DWORD> tables; };
-Symbols symbols(const Identity &id, const std::wstring &path) {
+Symbols symbols(const Identity &id, const std::wstring &path, bool control=false) {
     Module library(LoadLibraryExW(systemFile(L"dbghelp.dll").c_str(), nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32), &FreeLibrary);
     require(library != nullptr, "System DbgHelp unavailable");
     const auto initialize = api<decltype(&SymInitializeW)>(library.get(), "SymInitializeW");
@@ -180,67 +205,46 @@ Symbols symbols(const Identity &id, const std::wstring &path) {
     require(initialize(session.get(), path.c_str(), FALSE) != FALSE, "Symbol initialization failed");
     struct Cleanup { decltype(cleanup) function; HANDLE session; ~Cleanup(){ function(session); } } finish = {cleanup, session.get()};
     const DWORD64 base = reinterpret_cast<ULONG_PTR>(id.base);
-    require(load(session.get(), nullptr, systemFile(L"shell32.dll").c_str(), L"shell32", base, id.size, nullptr, 0) == base, "Symbol module mismatch");
+    wchar_t imageFile[32768]={};
+    require(GetModuleFileNameW(reinterpret_cast<HMODULE>(id.base),imageFile,_countof(imageFile))!=0,"Symbol image unavailable");
+    const wchar_t *moduleName=control?L"comctl32":L"shell32";
+    require(load(session.get(), nullptr,imageFile,moduleName, base, id.size, nullptr, 0) == base, "Symbol module mismatch");
     const wchar_t *names[] = {L"CListViewHost::_OnClearSelection",L"CListViewHost::Select",L"CSelectionManager::ClearSelection",
         L"CSelectionManager::Init",L"CDefView::QueryService",L"CDefView::OnItemStateChanged",L"CDefView::CancelDelayActivation",
         L"?QueryInterface@CListViewHost@@UEAAJAEBU_GUID@@PEAPEAX@Z",L"_imp_DSA_EnumCallback",L"_imp_DSA_DeleteAllItems",
         L"CSelectionManager::s_ClearSelectedItemEntry",L"??_7CDefView@@6BIListControlHost@@@",L"??_7CListViewHost@@6BIListControl@@@",
         L"CListViewHost::QueryObject",L"CDefView::QueryObject",L"??_7CSelectionManager@@6B@",L"DSA_GetItemPtr",
         L"CListViewHost::s_ViewSubclassWndProc",L"_imp_DSA_InsertItem",L"DSA_InsertItem",L"CSelectionManager::SelectItem",L"CListViewHost::_OnLVNotify"};
+    const wchar_t *controlNames[]={L"?QueryInterface@CListView@@UEAAJAEBU_GUID@@PEAPEAX@Z",L"?AddRef@CListView@@UEAAKXZ",L"?Release@CListView@@UEAAKXZ",
+        L"?QueryInterface@CLVRange@@UEAAJAEBU_GUID@@PEAPEAX@Z",L"?AddRef@CLVRange@@UEAAKXZ",L"?Release@CLVRange@@UEAAKXZ",
+        L"?GetSelectedCount@CListView@@UEAAJPEAH@Z",L"?Clear@CLVRange@@UEAAJXZ",L"CLVRange::CountIncluded"};
     Symbols result;
-    for (size_t i = 0; i < _countof(names); ++i) {
+    for (size_t i = 0; i < (control?_countof(controlNames):_countof(names)); ++i) {
+        const auto method=control?controlNames[i]:names[i];
         struct Symbol { SYMBOL_INFOW info; wchar_t extra[MAX_SYM_NAME]; } symbol = {};
         symbol.info.SizeOfStruct = sizeof(SYMBOL_INFOW); symbol.info.MaxNameLen = MAX_SYM_NAME;
         options(SYMOPT_DEFERRED_LOADS | SYMOPT_EXACT_SYMBOLS | SYMOPT_FAIL_CRITICAL_ERRORS | SYMOPT_NO_PROMPTS
-            | (names[i][0] == L'?' ? 0 : SYMOPT_UNDNAME));
-        const std::wstring name = L"shell32!" + std::wstring(names[i]);
+            | (method[0] == L'?' ? 0 : SYMOPT_UNDNAME));
+        const std::wstring name = std::wstring(moduleName)+L"!"+method;
         if (!lookup(session.get(), name.c_str(), &symbol.info)) {
             IMAGEHLP_MODULEW64 info={};info.SizeOfStruct=sizeof(info);
             require(moduleInfo(session.get(),base,&info) && info.SymType==SymPdb && !info.PdbUnmatched
                 && info.PdbAge==id.age && IsEqualGUID(info.PdbSig70,id.guid),"Matching PDB was not loaded");
-            supported(i == EnumGlobal || i == DeleteGlobal || i >= 17, "Required private symbol absent"); continue;
+            supported(!control&&(i == EnumGlobal || i == DeleteGlobal || i >= 17), "Required private symbol absent"); continue;
         }
         require(symbol.info.Address >= base && symbol.info.Address - base < id.size, "Symbol outside loaded image");
         result.methods[i] = static_cast<DWORD>(symbol.info.Address - base);
     }
     options(SYMOPT_DEFERRED_LOADS | SYMOPT_EXACT_SYMBOLS | SYMOPT_FAIL_CRITICAL_ERRORS | SYMOPT_NO_PROMPTS);
     SymbolTables tables = {base, id.size, {}};
-    require(enumerate(session.get(), base, L"shell32!*CDefView*", collectTables, &tables) != FALSE, "Cannot enumerate notification tables");
+    if(control)tables.prefix=L"??_7CLVRange@@";
+    const std::wstring mask=std::wstring(moduleName)+(control?L"!*CLVRange*":L"!*CDefView*");
+    require(enumerate(session.get(), base,mask.c_str(), collectTables, &tables) != FALSE, "Cannot enumerate notification tables");
     result.tables = std::move(tables.tables);
     return result;
 }
 template<size_t N> bool match(const unsigned char *data, size_t length, size_t offset, const unsigned char (&pattern)[N]) {
     return offset <= length && N <= length - offset && std::memcmp(data + offset, pattern, N) == 0;
-}
-bool namedImport(const Image &image, DWORD wanted, const char *name) {
-    IMAGE_DOS_HEADER dos={};IMAGE_NT_HEADERS64 nt={};
-    if(!read(image.base,dos) || !read(image.base+dos.e_lfanew,nt))return false;
-    for(unsigned type:{IMAGE_DIRECTORY_ENTRY_IMPORT,IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT}) {
-        const auto &directory=nt.OptionalHeader.DataDirectory[type];
-        const DWORD stride=type==IMAGE_DIRECTORY_ENTRY_IMPORT?20:32;
-        if(!image.range(directory.VirtualAddress,directory.Size))return false;
-        for(DWORD offset=0;offset+stride<=directory.Size;offset+=stride) {
-            std::array<DWORD,8> entry={};
-            SIZE_T copied=0;
-            if(!ReadProcessMemory(GetCurrentProcess(),image.base+directory.VirtualAddress+offset,entry.data(),stride,&copied) || copied!=stride)return false;
-            const DWORD names=type==IMAGE_DIRECTORY_ENTRY_IMPORT?entry[0]:entry[4];
-            const DWORD table=type==IMAGE_DIRECTORY_ENTRY_IMPORT?entry[4]:entry[3];
-            if(!names && !table)break;
-            if(type==IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT && entry[0]!=1)return false;
-            if(!names || wanted<table || (wanted-table)%8 || wanted-table>=8192*8)continue;
-            const DWORD index=(wanted-table)/8;
-            for(DWORD i=0;i<=index;++i) {
-                ULONGLONG thunk=0;
-                if(!image.range(names+8*i,sizeof(thunk)) || !read(image.base+names+static_cast<SIZE_T>(8)*i,thunk) || !thunk)break;
-                if(i!=index)continue;
-                if(thunk>=image.size || !image.range(static_cast<DWORD>(thunk),32))return false;
-                char symbol[30]={};
-                return read(image.base+static_cast<DWORD>(thunk)+2,symbol) && std::strlen(name)<sizeof(symbol)
-                    && std::memcmp(symbol,name,std::strlen(name)+1)==0;
-            }
-        }
-    }
-    return false;
 }
 std::array<DWORD, FieldCount> extract(const Identity &id, const Symbols &foundSymbols) {
     Image view; view.base = id.base; view.size = id.size;
@@ -317,6 +321,33 @@ void save(const Identity &id, const std::array<DWORD,FieldCount> &fields, const 
     file.write(reinterpret_cast<const char *>(&count),4);file.write(reinterpret_cast<const char *>(fields.data()),sizeof(fields));file.flush();
     require(file.good(),"Cannot save discovered data");
 }
+void discoverRange(const std::wstring &root,const std::wstring &path) {
+    RangeImage result;require(controlIdentity(result.data),"Control identity unavailable");result.base=controlModule();
+    Identity id;id.base=result.base;id.size=result.data.size;id.guid=result.data.guid;id.age=result.data.age;
+    wchar_t guid[40]={},age[16]={};require(StringFromGUID2(id.guid,guid,_countof(guid))!=0,"Control GUID unavailable");
+    for(wchar_t character:guid)if(character&&character!=L'{'&&character!=L'}'&&character!=L'-')id.key+=character;
+    swprintf_s(age,L"%X",id.age);id.key+=age;
+    const std::wstring directoryName=root+L"\\symbols\\comctl32.pdb\\"+id.key;directory(directoryName);
+    downloadPdb(id,directoryName+L"\\comctl32.pdb",L"comctl32.pdb");
+    const auto found=symbols(id,directoryName,true);
+    std::copy_n(found.methods.begin(),RangeMethodCount,result.data.methods.begin());
+    unsigned char count[96]={};
+    supported(read(result.base+result.data.methods[ControlCount],count)
+        &&decodeControlCount(count,sizeof(count),result.data.managerOffset,result.data.rangeOffset),"Unknown control count form");
+    unsigned matches=0;
+    for(const auto table:found.tables)for(DWORD slot=3;slot<13;++slot) {
+        void *clear=nullptr,*included=nullptr;
+        if(read(result.base+table+sizeof(void *)*slot,clear)&&clear==result.base+result.data.methods[RangeClear]
+                &&read(result.base+table+13*sizeof(void *),included)&&included==result.base+result.data.methods[RangeCount]) {
+            result.data.clearSlot=slot;result.data.tableRva=table;++matches;
+        }
+    }
+    supported(matches==1,"Control range virtual table missing or ambiguous");
+    const char *reason=nullptr;const bool valid=result.qualifies(&reason);supported(valid,reason);
+    std::ofstream file(path.c_str(),std::ios::binary|std::ios::trunc);
+    file.write("FSLVR001",8);file.write(reinterpret_cast<const char *>(&result.data),sizeof(result.data));file.flush();
+    require(file.good(),"Cannot save range discovery");
+}
 
 // Runs only in the isolated background process, with an invisible owned view.
 struct QualificationSink : IDispatch {
@@ -360,7 +391,9 @@ struct QualificationEvents : IExplorerBrowserEvents {
 void pump(DWORD duration) {
     const ULONGLONG deadline=GetTickCount64()+duration;
     do { MSG message;
-        while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){TranslateMessage(&message);DispatchMessageW(&message);}
+        while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){
+            TranslateMessage(&message);DispatchMessageW(&message);if(duration&&GetTickCount64()>=deadline)return;
+        }
         if(GetTickCount64()>=deadline)return;
         MsgWaitForMultipleObjects(0,nullptr,FALSE,5,QS_ALLINPUT);
     }while(true);
@@ -386,6 +419,31 @@ bool selectionSettled(IFolderView2 *view,const std::vector<std::wstring> &wanted
     }while(GetTickCount64()<deadline);
     return false;
 }
+// Isolated qualification only: a direct range reset must retain the native
+// aggregate accessibility notification as well as its readable selection state.
+struct RangeQualificationEvents {
+    static RangeQualificationEvents *observer;
+    HWND window;HWINEVENTHOOK hook=nullptr;DWORD began=0;unsigned changes=0;bool active=false;
+    static void CALLBACK received(HWINEVENTHOOK,DWORD event,HWND source,LONG object,LONG child,DWORD,DWORD time) {
+        auto *self=observer;
+        if(self&&self->active&&static_cast<DWORD>(time-self->began)<0x80000000u
+                &&(source==self->window||IsChild(self->window,source))
+                &&event==EVENT_OBJECT_SELECTIONWITHIN&&object==OBJID_CLIENT&&child==CHILDID_SELF)++self->changes;
+    }
+    explicit RangeQualificationEvents(HWND source):window(source) {
+        hook=SetWinEventHook(EVENT_OBJECT_SELECTION,EVENT_OBJECT_SELECTIONWITHIN,nullptr,received,
+            GetCurrentProcessId(),GetCurrentThreadId(),WINEVENT_OUTOFCONTEXT);
+        require(hook!=nullptr,"Cannot observe range selection notification");observer=this;
+    }
+    ~RangeQualificationEvents(){if(hook)UnhookWinEvent(hook);observer=nullptr;}
+    void begin(){changes=0;began=GetTickCount();active=true;}
+    bool finish() {
+        const ULONGLONG deadline=GetTickCount64()+5000;
+        while(!changes&&GetTickCount64()<deadline)pump(10);
+        active=false;return changes!=0;
+    }
+};
+RangeQualificationEvents *RangeQualificationEvents::observer=nullptr;
 struct QualificationFixture {
     std::wstring folder;
     std::vector<std::wstring> files;
@@ -428,9 +486,13 @@ bool qualify(const std::wstring &root) {
     struct Class {~Class(){UnregisterClassW(L"FileSpacer Selection Qualification",GetModuleHandleW(nullptr));}} registration;
     struct Mode {FOLDERVIEWMODE mode;int size;bool free;};
     const Mode modes[]={{FVM_ICON,256,false},{FVM_ICON,96,false},{FVM_ICON,48,false},{FVM_SMALLICON,16,false},
-        {FVM_TILE,48,false},{FVM_CONTENT,32,false},{FVM_LIST,16,false},{FVM_DETAILS,16,false},{FVM_ICON,48,true}};
+        {FVM_TILE,48,false},{FVM_CONTENT,32,false},{FVM_LIST,16,false},{FVM_DETAILS,16,false},{FVM_ICON,48,true},{FVM_TILE,48,true}};
     for(const auto &mode:modes) {
+        try {
+        const auto beforeRanges=rangeCalls().load(std::memory_order_relaxed);
         QualificationView owner;owner.create(fixture.folder);
+        std::unique_ptr<RangeQualificationEvents> selectionEvents;
+        if(rangeImage().supported)selectionEvents=std::make_unique<RangeQualificationEvents>(owner.window);
         IShellView *shell=owner.events->shell;CComQIPtr<IFolderView2> view(shell);CComPtr<IShellFolder> folder;
         require(view && SUCCEEDED(view->SetViewModeAndIconSize(mode.mode,mode.size)),"Cannot set qualification mode");pump(100);
         FOLDERVIEWMODE actual=FVM_AUTO;int size=0;
@@ -478,7 +540,7 @@ bool qualify(const std::wstring &root) {
             require(sameId&&GetFocus()==focus,focusError.c_str());
             require(SUCCEEDED(candidate.clear(shell,current)),"Linear selection clear failed");
         }
-        for(int selected:{0,1,32,64}) {
+        for(int selected:{0,1,32,64,128}) {
             require(SUCCEEDED(shell->SelectItem(nullptr,SVSI_DESELECTOTHERS)),"Cannot clear qualification setup");
             std::vector<PCUITEMID_CHILD> chosen;std::vector<std::wstring> wanted;
             for(int i=0;i<selected;++i){const size_t index=(static_cast<size_t>(i)*37)%ids.size();chosen.push_back(ids[index]);wanted.push_back(names[index]);}
@@ -488,10 +550,13 @@ bool qualify(const std::wstring &root) {
             CComPtr<IShellItemArray> retained;
             if(selected){require(SUCCEEDED(view->GetSelection(FALSE,&retained)) && paths(retained)==wanted,"Qualification identities differ");
                 CComPtr<IShellItemArray> parent;require(SUCCEEDED(view->GetSelection(TRUE,&parent)) && paths(parent)==wanted,"Qualification parent cache differs");}
+            const bool observeRange=selectionEvents&&selected>=128;
+            if(observeRange){pump(100);selectionEvents->begin();}
             bool applied=false;require(SUCCEEDED(candidate.clear(shell,current,&applied)) && (!selected || applied),"Qualification did not clear through candidate");
             if(selected){bool known=false;const bool released=candidate.backingBufferReleased(known);
                 require(known && released,"Native clear did not release its own backing allocation");}
             pump(100);require(SUCCEEDED(view->ItemCount(SVGIO_SELECTION,&count)) && count==0,"Qualification clear left selection");
+            if(observeRange)require(selectionEvents->finish(),"Range clear lost aggregate selection notification");
             CComPtr<IShellItemArray> empty;const HRESULT result=view->GetSelection(FALSE,&empty);
             require((result==HRESULT_FROM_WIN32(ERROR_NOT_FOUND) && !empty) || (SUCCEEDED(result) && (!empty || paths(empty).empty())),"Qualification ordinary cache stale");
             CComPtr<IShellItemArray> parent;require(SUCCEEDED(view->GetSelection(TRUE,&parent)) && paths(parent)==std::vector<std::wstring>{fixture.folder},"Qualification parent cache stale");
@@ -537,6 +602,12 @@ bool qualify(const std::wstring &root) {
         while(!owner.events->sink->ready && GetTickCount64()<deadline)pump(10);
         require(owner.events->sink->ready,"Qualification refresh incomplete");
         candidate.reset();require(candidate.clear(shell,[]{return false;})==E_ABORT,"Qualification stale continuation accepted");
+        if(rangeImage().supported&&mode.free&&mode.mode==FVM_TILE)
+            require(rangeCalls().load(std::memory_order_relaxed)>beforeRanges,"Free Tiles range qualification not exercised");
+        }catch(const std::exception &error) {
+            throw std::runtime_error("Qualification mode="+std::to_string(mode.mode)+" size="+std::to_string(mode.size)
+                +" free="+std::to_string(mode.free)+": "+error.what());
+        }
     }
     return true;
 }
@@ -549,6 +620,10 @@ UINT readyMessage() {
 const Image &image() {
     return resolution.load(std::memory_order_acquire)==Resolution::Private?selectedImage:publicImage;
 }
+const RangeImage &rangeImage() {
+    return rangeReady.load(std::memory_order_acquire)?selectedRange:publicRange;
+}
+bool rangeResolved(){return rangeFinished.load(std::memory_order_acquire);}
 bool resolved() { return resolution.load(std::memory_order_acquire)!=Resolution::Running; }
 std::wstring cacheFile(const std::wstring &root) { return root+L"\\"+identity().cacheKey+L".bin"; }
 namespace {
@@ -561,6 +636,10 @@ void publish(Image candidate,DWORD uiThread) {
     // for the process lifetime; an in-flight call retains its chosen path.
     selectedImage=candidate;
     resolution.store(Resolution::Private,std::memory_order_release);
+    if(readyMessage())EnumThreadWindows(uiThread,notifyWindow,readyMessage());
+}
+void publishRange(RangeImage candidate,DWORD uiThread) {
+    selectedRange=candidate;rangeReady.store(true,std::memory_order_release);
     if(readyMessage())EnumThreadWindows(uiThread,notifyWindow,readyMessage());
 }
 bool savedPublic(const std::wstring &file) {
@@ -610,30 +689,41 @@ struct DirectoryWatch {
 };
 DWORD WINAPI resolve(void *raw) {
     std::unique_ptr<ResolveContext> context(static_cast<ResolveContext *>(raw));
+    struct FinishRange {~FinishRange(){rangeFinished.store(true,std::memory_order_release);}} finish;
+    bool published=false;
     try {
         if(!limitedProcess() || !cfgCompatible() || (context->custom && context->root.empty()))throw std::runtime_error("Public path selected");
         if(!context->custom)context->root=defaultRoot();
         const std::wstring final=cacheFile(context->root),negative=final+L".public";
-        Image candidate=Image::discover(final);
-        if(candidate.supported){publish(candidate,context->uiThread);return 0;}
+        const std::wstring rangeFinal=rangeCacheFile(final);
+        const auto adopt=[&]() {
+            const Image candidate=published?image():Image::discover(final);
+            if(!candidate.supported)return false;
+            const RangeImage range=rangeFinal.empty()?RangeImage{}:RangeImage::discover(rangeFinal);
+            if(range.supported)publishRange(range,context->uiThread);
+            if(!published){publish(candidate,context->uiThread);published=true;}
+            // A missing optional range never takes an existing private path
+            // away. Its independent immutable publication can arrive later.
+            return range.supported||rangeFinal.empty()||savedRangePublic(rangeFinal+L".public")||!context->background;
+        };
+        if(adopt())return 0;
         if(!context->background || savedPublic(negative))throw std::runtime_error("No discovery required");
         directory(context->root);DirectoryWatch watch;
         const bool watching=watch.open(context->root);
         // Arm before rechecking, so another process cannot publish between
         // our initial lookup and the notification subscription.
-        candidate=Image::discover(final);
-        if(candidate.supported){publish(candidate,context->uiThread);return 0;}
+        if(adopt())return 0;
         Handle child(nullptr,&closeHandle);
         if(!producerActive(context->root)) {
-            if(recentAttempt(context->root+L"\\"+identity().cacheKey+L".attempt"))throw std::runtime_error("Transient failure backoff");
+            const std::wstring attempt=published&&!rangeFinal.empty()?rangeFinal+L".attempt":context->root+L"\\"+identity().cacheKey+L".attempt";
+            if(recentAttempt(attempt)&&(!published||savedRangePublic(attempt)))throw std::runtime_error("Transient failure backoff");
             child=startWorker(*context);
             if(!child)throw std::runtime_error("Cannot start isolated discovery");
         }
         for(;;) {
             if(!watching) {
                 if(child)WaitForSingleObject(child.get(),INFINITE);
-                candidate=Image::discover(final);
-                if(candidate.supported){publish(candidate,context->uiThread);return 0;}
+                if(adopt())return 0;
                 break;
             }
             HANDLE handles[2]={watch.event.get(),child.get()};
@@ -641,19 +731,17 @@ DWORD WINAPI resolve(void *raw) {
             if(waited==WAIT_OBJECT_0){if(!watch.next())break;}
             else if(child && waited==WAIT_OBJECT_0+1)child.reset();
             else break;
-            candidate=Image::discover(final);
-            if(candidate.supported){publish(candidate,context->uiThread);return 0;}
+            if(adopt())return 0;
             if(savedPublic(negative))break;
             if(!child && !producerActive(context->root)) {
                 // A competing producer can publish after our read, then drop
                 // its lock before this check. Read once more after its exit.
-                candidate=Image::discover(final);
-                if(candidate.supported){publish(candidate,context->uiThread);return 0;}
+                if(adopt())return 0;
                 break;
             }
         }
     }catch(const std::exception &){ /* Public is already callable; no UI wait. */ }
-    resolution.store(Resolution::Public,std::memory_order_release);return 0;
+    if(!published)resolution.store(Resolution::Public,std::memory_order_release);return 0;
 }
 DWORD WINAPI discoveryWatchdog(void *stop) {
     if(WaitForSingleObject(static_cast<HANDLE>(stop),180000)==WAIT_TIMEOUT)
@@ -677,6 +765,7 @@ void initialize(const wchar_t *cacheRoot,bool background) {
             (void)readyMessage();
             if(QueueUserWorkItem(resolve,context.get(),WT_EXECUTELONGFUNCTION)){(void)context.release();return;}
         }catch(const std::bad_alloc &){ }
+        rangeFinished.store(true,std::memory_order_release);
         resolution.store(Resolution::Public,std::memory_order_release);
     });
 }
@@ -684,7 +773,7 @@ int runWorker(const wchar_t *cacheRoot) {
     if(!limitedProcess() || !cfgCompatible())return ERROR_ACCESS_DENIED;
     const bool background=SetPriorityClass(GetCurrentProcess(),PROCESS_MODE_BACKGROUND_BEGIN)!=FALSE;
     struct Priority {bool changed;~Priority(){if(changed)SetPriorityClass(GetCurrentProcess(),PROCESS_MODE_BACKGROUND_END);}} priority={background};
-    std::wstring candidate,attempt,negative;
+    std::wstring candidate,attempt,negative;bool rangePhase=false;
     try {
         Watchdog watchdog;
         const std::wstring root=cacheRoot?cacheRoot:defaultRoot();directory(root);
@@ -692,29 +781,58 @@ int runWorker(const wchar_t *cacheRoot) {
         Handle lock(CreateFileW((root+L"\\discovery.lock").c_str(),GENERIC_READ|GENERIC_WRITE,0,nullptr,
             OPEN_ALWAYS,FILE_ATTRIBUTE_TEMPORARY|FILE_FLAG_DELETE_ON_CLOSE,nullptr),&closeHandle);
         if(lock.get()==INVALID_HANDLE_VALUE)return ERROR_BUSY;
-        if(Image::discover(final).supported || savedPublic(final+L".public"))return 0;
-        attempt=root+L"\\"+id.cacheKey+L".attempt";
-        if(!cacheRoot && recentAttempt(attempt))return ERROR_RETRY;
-        {std::ofstream mark(attempt.c_str(),std::ios::trunc);mark<<"Discovery running\n";}
-        const std::wstring pdbDirectory=root+L"\\symbols\\shell32.pdb\\"+id.key;directory(pdbDirectory);
-        downloadPdb(id,pdbDirectory+L"\\shell32.pdb");
-        const auto foundSymbols=symbols(id,pdbDirectory);const auto fields=extract(id,foundSymbols);
-        candidate=final+L".pending";save(id,fields,candidate);
-        std::call_once(initialized,[&]{selectedImage=Image::discover(candidate);
+        if(savedPublic(final+L".public"))return 0;
+        const Image previous=Image::discover(final);
+        const std::wstring rangeFinal=rangeCacheFile(final);
+        if(previous.supported&&(rangeFinal.empty()||RangeImage::discover(rangeFinal).supported||savedRangePublic(rangeFinal+L".public")))return 0;
+        if(previous.supported){rangePhase=true;negative=rangeFinal+L".public";}
+        attempt=previous.supported&&!rangeFinal.empty()?rangeFinal+L".attempt":root+L"\\"+id.cacheKey+L".attempt";
+        if(!cacheRoot&&recentAttempt(attempt)&&(!rangePhase||savedRangePublic(attempt)))return ERROR_RETRY;
+        if(rangePhase)saveRangeRecord(attempt,"Discovery running");
+        else {std::ofstream mark(attempt.c_str(),std::ios::trunc);mark<<"Discovery running\n";}
+        if(!previous.supported) {
+            const std::wstring pdbDirectory=root+L"\\symbols\\shell32.pdb\\"+id.key;directory(pdbDirectory);
+            downloadPdb(id,pdbDirectory+L"\\shell32.pdb");
+            const auto foundSymbols=symbols(id,pdbDirectory);const auto fields=extract(id,foundSymbols);
+            candidate=final+L".pending";save(id,fields,candidate);
+        }
+        std::call_once(initialized,[&]{selectedImage=previous.supported?previous:Image::discover(candidate);
             resolution.store(selectedImage.supported?Resolution::Private:Resolution::Public,std::memory_order_release);});
         supported(selectedImage.supported,"Loaded-image/CFG validation rejected discovery");
-        require(qualify(root),"Real Shell qualification failed");
-        require(identity().key==id.key,"Shell image changed during qualification");
-        require(MoveFileExW(candidate.c_str(),final.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)!=FALSE,"Cannot publish qualified cache");
+        if(!previous.supported) {
+            require(qualify(root),"Real Shell qualification failed");
+            require(identity().key==id.key,"Shell image changed during qualification");
+            require(MoveFileExW(candidate.c_str(),final.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)!=FALSE,"Cannot publish qualified cache");
+            candidate.clear();
+        }
+        if(!rangeFinal.empty()) {
+            rangePhase=true;
+            negative=rangeFinal+L".public";candidate=rangeFinal+L".pending";
+            const std::wstring nextAttempt=rangeFinal+L".attempt";
+            if(attempt!=nextAttempt){DeleteFileW(attempt.c_str());attempt=nextAttempt;}
+            saveRangeRecord(attempt,"Discovery running");
+            discoverRange(root,candidate);
+            selectedRange=RangeImage::discover(candidate);supported(selectedRange.supported,"Loaded range qualification rejected discovery");
+            rangeReady.store(true,std::memory_order_release);
+            // API/qualification failures can be transient (busy Shell, UIA,
+            // unavailable desktop). Only structural Unsupported failures get a
+            // permanent negative record; this failure uses the scoped backoff.
+            require(qualify(root),"Real Shell range qualification failed");
+            require(selectedRange.qualifies(),"Control image changed during qualification");
+            require(MoveFileExW(candidate.c_str(),rangeFinal.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)!=FALSE,"Cannot publish qualified range cache");
+            candidate.clear();
+        }
         DeleteFileW(attempt.c_str());return 0;
     }catch(const Unsupported &error){
         if(!candidate.empty())DeleteFileW(candidate.c_str());
-        if(!negative.empty()){std::ofstream report(negative.c_str(),std::ios::binary|std::ios::trunc);report<<"FSPUBLIC01"<<error.what()<<"\n";}
+        if(rangePhase)saveRangeRecord(negative,error.what());
+        else if(!negative.empty()){std::ofstream report(negative.c_str(),std::ios::binary|std::ios::trunc);report<<"FSPUBLIC01"<<error.what()<<"\n";}
         if(!attempt.empty())DeleteFileW(attempt.c_str());
         return ERROR_NOT_SUPPORTED;
     }catch(const std::exception &error){
         if(!candidate.empty())DeleteFileW(candidate.c_str());
-        if(!attempt.empty()){std::ofstream report(attempt.c_str(),std::ios::trunc);report<<error.what()<<"\n";}
+        if(rangePhase)saveRangeRecord(attempt,error.what());
+        else if(!attempt.empty()){std::ofstream report(attempt.c_str(),std::ios::trunc);report<<error.what()<<"\n";}
         return ERROR_NOT_SUPPORTED;
     }
 }
