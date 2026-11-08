@@ -2,6 +2,7 @@
 
 ## Non pubblicato
 
+- Velocizzare la deselezione di molti elementi con un clic sullo sfondo nelle viste Icone e Riquadri a posizionamento libero, con ripiego automatico e silenzioso se la funzione privata di Windows non è disponibile.
 - Velocizzare la lettura delle selezioni complete nelle viste a icone con posizionamento libero tramite le API pubbliche di Windows.
 - Attivare o disattivare globalmente le anteprime di Windows dal menu Visualizza.
 - Ripristinare la posizione di scorrimento di una cartella quando si riapre la sua finestra.
