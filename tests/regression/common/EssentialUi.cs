@@ -134,6 +134,7 @@ namespace FileSpacerRegression {
             finally { if(text!=IntPtr.Zero) Marshal.FreeCoTaskMem(text); Marshal.FreeCoTaskMem(absolute); }
         }
         public int Count { get { int n; Native.Check(view.ItemCount(2,out n)); return n; } }
+        public int SelectedCount { get { int n; Native.Check(view.ItemCount(1,out n)); return n; } }
         public uint Mode { get { uint n; Native.Check(view.GetCurrentViewMode(out n)); return n; } set { Native.Check(view.SetCurrentViewMode(value)); } }
         public void SetViewModeAndIconSize(uint mode, int size) { Native.Check(((FolderView2)view).SetViewModeAndIconSize(mode,size)); }
         [StructLayout(LayoutKind.Sequential)] struct SortColumn { public Guid Format; public uint Id; public int Direction; }
