@@ -169,6 +169,13 @@ struct ShellSelectionClear::Binding : std::enable_shared_from_this<ShellSelectio
                 &&array==expected&&snapshotArray(array,module.dataOffset,module.strideOffset,snapshot);
         }
         bool selectAll(const NMLISTVIEW &notice);
+        bool deselectAll(const NMLISTVIEW &notice);
+        HRESULT purgeArray(HDSA array,int selected,const std::function<bool()> &current,bool *applied=nullptr)const;
+        bool notificationsEnabled()const {
+            DWORD state=0;
+            return selectionDetail::read(reinterpret_cast<const unsigned char *>(nativeData)+selectionDetail::image().ignoredStateOffset,state)
+                &&!(state&0x2000u);
+        }
     };
 
 bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
@@ -178,8 +185,8 @@ bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
     wchar_t className[32]={};
     if(!IsChild(window,notice.hdr.hwndFrom)||!GetClassNameW(notice.hdr.hwndFrom,className,_countof(className))
             ||lstrcmpW(className,WC_LISTVIEWW)!=0)return false;
-    const Image &module=image();HDSA array=nullptr;ArraySnapshot snapshot;DWORD state=0;
-    if(!read(reinterpret_cast<const unsigned char *>(nativeData)+module.ignoredStateOffset,state)||(state&0x2000u))return false;
+    const Image &module=image();HDSA array=nullptr;ArraySnapshot snapshot;
+    if(!notificationsEnabled())return false;
     if(!read(reinterpret_cast<unsigned char *>(manager.p)+module.fields[ArrayOffset],array)||!array
             ||!nativeArray(array,snapshot)||snapshot.count<0||snapshot.stride!=16
             ||reinterpret_cast<ULONG_PTR>(array)%alignof(LONG)||!writable(array,sizeof(LONG)))return false;
@@ -249,28 +256,107 @@ bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
     return true;
 }
 
+HRESULT ShellSelectionClear::Binding::purgeArray(HDSA array,int selected,const std::function<bool()> &current,bool *applied)const {
+        using namespace selectionDetail;const Image &module=image();
+        if(module.clearViaCount&&(reinterpret_cast<ULONG_PTR>(array)%alignof(LONG)!=0||!writable(array,sizeof(LONG))))return S_FALSE;
+        // Same DSA implementation and callback as Shell32. Finish the purge
+        // phase even if callback releases reenter. Never retry after mutation.
+        if(module.manualEnumeration){ArraySnapshot snapshot;
+            if(!snapshotArray(array,module.dataOffset,module.strideOffset,snapshot)||snapshot.count!=selected||snapshot.stride!=16||!snapshot.data
+                    ||!writable(snapshot.data,static_cast<SIZE_T>(selected)*snapshot.stride))return S_FALSE;
+            const unsigned char *verified=snapshot.data;int verifiedCount=selected;
+            for(int index=0;index<snapshot.count;++index){
+                if(!callback(snapshot.data+static_cast<SIZE_T>(index)*snapshot.stride,nullptr))break;
+                if(!current())return E_ABORT;
+                IUnknown *sameManager=nullptr;HDSA sameArray=nullptr;
+                if(!read(reinterpret_cast<unsigned char *>(host.p)+module.fields[ManagerOffset],sameManager)||sameManager!=manager.p
+                        ||!read(reinterpret_cast<unsigned char *>(manager.p)+module.fields[ArrayOffset],sameArray)||sameArray!=array
+                        ||!snapshotArray(array,module.dataOffset,module.strideOffset,snapshot)||snapshot.count<0
+                        ||(snapshot.count>0&&(snapshot.stride!=16||!snapshot.data)))return E_ABORT;
+                if(snapshot.count>0&&(snapshot.data!=verified||snapshot.count>verifiedCount)){
+                    if(!writable(snapshot.data,static_cast<SIZE_T>(snapshot.count)*snapshot.stride))return E_ABORT;
+                    verified=snapshot.data;verifiedCount=snapshot.count;
+                }
+            }
+        }else enumerate(array,callback,nullptr);
+        BOOL erased=TRUE;
+        if(module.clearViaCount){
+            // Experimental internal data write, not a public API contract.
+            // Public native clear then reaches its own zero-count purge, using
+            // its own allocator and a direct, CFG-compatible internal call.
+            if(!current())return E_ABORT;
+            HDSA same=nullptr;IUnknown *sameManager=nullptr;
+            if(!read(reinterpret_cast<unsigned char *>(host.p)+module.fields[ManagerOffset],sameManager)||sameManager!=manager.p
+                    ||!read(reinterpret_cast<unsigned char *>(manager.p)+module.fields[ArrayOffset],same)||same!=array)return E_ABORT;
+            InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);
+        }else erased=erase(array);
+        if(applied)*applied=true;
+        if(!erased)return E_FAIL;
+        return S_OK;
+}
+
+bool ShellSelectionClear::Binding::deselectAll(const NMLISTVIEW &notice) {
+    using namespace selectionDetail;
+    if(!nativeProcedure||selecting||!usable.load()||notice.iItem!=-1||!(notice.uChanged&LVIF_STATE)
+            ||!(notice.uOldState&LVIS_SELECTED)||(notice.uNewState&LVIS_SELECTED))return false;
+    wchar_t className[32]={};
+    if(!IsChild(window,notice.hdr.hwndFrom)||!GetClassNameW(notice.hdr.hwndFrom,className,_countof(className))
+            ||lstrcmpW(className,WC_LISTVIEWW)!=0)return false;
+    const Image &module=image();HDSA array=nullptr;ArraySnapshot snapshot;
+    if(!notificationsEnabled()
+            ||!read(reinterpret_cast<unsigned char *>(manager.p)+module.fields[ArrayOffset],array)||!array)return false;
+    const HWND expected=window;
+    const auto current=[&]{ArraySnapshot now;return window==expected&&nativeArray(array,now);};
+    int selected=-1,count=0;
+    if(!current()||FAILED(folder->ItemCount(SVGIO_SELECTION,&selected))||selected!=0||!current()
+            ||FAILED(folder->ItemCount(SVGIO_ALLVIEW,&count))||!current()
+            ||!nativeArray(array,snapshot)||snapshot.count<128||snapshot.count>count||snapshot.stride!=16||!snapshot.data
+            ||!writable(snapshot.data,static_cast<SIZE_T>(snapshot.count)*snapshot.stride))return false;
+    // The control has already applied the global deselection. Purge its Shell
+    // subscriptions as one batch, then retain the original notification for
+    // native cache invalidation, focus, activation and subsequent item selection.
+    selecting=true;
+    struct Active {bool &value;~Active(){value=false;}} active{selecting};
+    bool applied=false;
+    if(FAILED(purgeArray(array,snapshot.count,current,&applied)))usable.store(false);
+    return applied;
+}
+
 LRESULT CALLBACK ShellSelectionClear::Binding::procedure(HWND window,UINT message,WPARAM first,LPARAM second,UINT_PTR id,DWORD_PTR data) {
     auto self=reinterpret_cast<Binding *>(data)->shared_from_this();
+    bool cleared=false;
     if(message==WM_NCDESTROY){RemoveWindowSubclass(window,procedure,id);self->window=nullptr;}
     if(message==WM_NOTIFY&&second&&reinterpret_cast<const NMHDR *>(second)->code==LVN_ITEMCHANGED) {
-        try {if(self->selectAll(*reinterpret_cast<const NMLISTVIEW *>(second)))return 0;}
+        try {
+            const auto &notice=*reinterpret_cast<const NMLISTVIEW *>(second);
+            if(self->selectAll(notice))return 0;
+            cleared=self->deselectAll(notice);
+        }
         catch(const std::bad_alloc &){self->nativeProcedure=nullptr;}
         // A failed construction released every staged native subscription.
         // Let the original native global notification rebuild normally, unless
         // its view was closed or replaced during a reentrant native callback.
         if(self->window!=window)return 0;
     }
-    return DefSubclassProc(window,message,first,second);
+    const LRESULT result=DefSubclassProc(window,message,first,second);
+    const auto attached=[&]{DWORD_PTR owner=0,native=0;return self->window==window
+        &&GetWindowSubclass(window,procedure,id,&owner)&&owner==data
+        &&self->registeredProcedure&&GetWindowSubclass(window,self->registeredProcedure,0,&native)&&native==self->nativeData;};
+    if(cleared&&attached()) {
+        // Native cleanup can see an already-empty manager and skip invalidating
+        // a previously returned array. Publish the completed change once, after
+        // forwarding the original notification, as explicit clearing does.
+        const HRESULT notified=self->notify(self->notification,0,1);
+        if(attached()&&FAILED(self->cancel(self->notification)))self->usable.store(false);
+        if(FAILED(notified))self->usable.store(false);
+    }
+    return result;
 }
 
 void initializeShellSelectionClear(const wchar_t *cacheRoot,bool background) { selectionDetail::initialize(cacheRoot,background); }
 void ShellSelectionClear::reset(){auto previous=std::move(binding);if(previous)previous->detach();}
 bool ShellSelectionClear::accelerated()const {const auto value=binding;return value && value->usable.load();}
 bool ShellSelectionClear::acceleratesSelectAll()const {const auto value=binding;return value && value->usable.load() && value->nativeProcedure;}
-bool ShellSelectionClear::acceleratesBackgroundClear()const {
-    const auto value=binding;
-    return value && value->usable.load() && value->range.range && selectionDetail::rangeImage().supported;
-}
 uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value=binding;return value?value->selectAllCount:0;}
 
     bool ShellSelectionClear::backingBufferReleased(bool &known)const {
@@ -347,40 +433,9 @@ uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value
         if(!read(reinterpret_cast<unsigned char *>(value->host.p)+module.fields[ManagerOffset],manager)||manager!=value->manager.p
                 ||!read(reinterpret_cast<unsigned char *>(manager)+module.fields[ArrayOffset],array)||!array
                 ||!read(array,count)||count!=selected)return reject();
-        if(module.clearViaCount&&(reinterpret_cast<ULONG_PTR>(array)%alignof(LONG)!=0||!writable(array,sizeof(LONG))))return reject();
-        // Same DSA implementation and callback as Shell32. Finish the purge
-        // phase even if callback releases reenter. Never retry after mutation.
-        if(module.manualEnumeration){ArraySnapshot snapshot;
-            if(!snapshotArray(array,module.dataOffset,module.strideOffset,snapshot)||snapshot.count!=selected||snapshot.stride!=16||!snapshot.data
-                    ||!writable(snapshot.data,static_cast<SIZE_T>(selected)*snapshot.stride))return reject();
-            const unsigned char *verified=snapshot.data;int verifiedCount=selected;
-            for(int index=0;index<snapshot.count;++index){
-                if(!value->callback(snapshot.data+static_cast<SIZE_T>(index)*snapshot.stride,nullptr))break;
-                if(!current())return E_ABORT;
-                IUnknown *sameManager=nullptr;HDSA sameArray=nullptr;
-                if(!read(reinterpret_cast<unsigned char *>(value->host.p)+module.fields[ManagerOffset],sameManager)||sameManager!=manager
-                        ||!read(reinterpret_cast<unsigned char *>(manager)+module.fields[ArrayOffset],sameArray)||sameArray!=array
-                        ||!snapshotArray(array,module.dataOffset,module.strideOffset,snapshot)||snapshot.count<0
-                        ||(snapshot.count>0&&(snapshot.stride!=16||!snapshot.data)))return E_ABORT;
-                if(snapshot.count>0&&(snapshot.data!=verified||snapshot.count>verifiedCount)){
-                    if(!writable(snapshot.data,static_cast<SIZE_T>(snapshot.count)*snapshot.stride))return E_ABORT;
-                    verified=snapshot.data;verifiedCount=snapshot.count;
-                }
-            }
-        }else value->enumerate(array,value->callback,nullptr);
-        BOOL erased=TRUE;
-        if(module.clearViaCount){
-            // Experimental internal data write, not a public API contract.
-            // Public native clear then reaches its own zero-count purge, using
-            // its own allocator and a direct, CFG-compatible internal call.
-            if(!current())return E_ABORT;
-            HDSA same=nullptr;IUnknown *sameManager=nullptr;
-            if(!read(reinterpret_cast<unsigned char *>(value->host.p)+module.fields[ManagerOffset],sameManager)||sameManager!=manager
-                    ||!read(reinterpret_cast<unsigned char *>(manager)+module.fields[ArrayOffset],same)||same!=array)return E_ABORT;
-            InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);
-        }else erased=value->erase(array);
-        if(applied)*applied=true;
-        if(!erased)return E_FAIL;
+        const HRESULT purged=value->purgeArray(array,selected,current,applied);
+        if(purged==S_FALSE)return reject();
+        if(FAILED(purged))return purged;
         if(!current())return E_ABORT;
         // The native range owns only selected indexes. Clear it after releasing
         // Shell subscriptions and before public cleanup; otherwise classic free
