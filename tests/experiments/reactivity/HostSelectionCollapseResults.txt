@@ -1,0 +1,171 @@
+Selection collapse and final bounded measurements -- 8 November 2026
+==================================================================
+
+Adopted implementation
+----------------------
+The classic control already sends a global LVN_ITEMCHANGED after clearing
+its selection, followed by a single-item notification when an item was clicked.
+The slow part was inside the Shell host's handling of that global notification:
+about 1.15--1.28 seconds in the isolated 5,000-item control.
+
+Read-only, nonsuspending CDB inspection of the current Explorer process confirms
+ExplorerFrame!CSelectionState::_DeselectAll calls RemoveAll on its selection
+maps/arrays. The retained adaptation applies that batching principle to the
+classic Shell manager; it does not call ExplorerFrame methods or replace the
+renderer. The existing qualified manager, callback, notification and cancellation
+functions are reused. No new offsets, cache schema or prepared version profiles
+were introduced. Existing asynchronous discovery/public fallback remains intact.
+
+ShellViewSelection handles the global deselection after proving the native
+registration, zero control selection, matching manager/array, bounded count,
+entry layout and writable storage. It releases native subscriptions in one
+batch and forwards the original notification. The existing completion
+notification then invalidates ordinary selection snapshots and cancels stale
+delayed activation, guarded against detachment, destruction and replacement.
+The explicit clear operation shares the same entry-purge routine.
+
+FolderWindow no longer preclears background mouse presses. The associated
+capability accessor and Debug FS_TEST_CLICK_PRECLEAR switch were removed.
+The new input path does not require the optional private index range. That
+range remains useful for explicit clearing such as Escape. The implementation
+adds no mouse hook, timer, executable-memory write or new private function address.
+
+Public alternatives
+-------------------
+Four public variants were exercised in the independent prototype: IShellView
+clear and IShellFolderView::Select(SFVS_SELECT_NONE) inside the global notice,
+and public exclusive selection before release, with/without SetRedraw.
+The calls inside the notice were no-ops because the control was already empty;
+the pre-release variants retained about 1.2--1.4 seconds of work. None provided
+the strong gain. A public entry point benefiting from the private observer is
+not a purely public implementation. The true public-only application control
+below disables private discovery/capabilities.
+
+The discarded release-hook prototype reached about 37/44 ms for free Icons/
+Tiles, but the notification prototype reached about 38/45 ms without changing
+input handling. Only the latter approach was adopted.
+Prototype runs:
+ build/regression/20261108-194453-d25a320786a940da8808e5bac8620a88
+ build/regression/20261108-194759-6abd904013594541857de2ad62d09125
+ build/regression/20261108-195429-61d17502cb8b4421832da8d14819db9e
+ build/regression/20261108-195743-a137d185031f43b0a8f9261e593d0302
+Disassembly evidence: build/input-phase/item-modern-confirm.log and
+build/input-phase/item-private.log. Temporary input-hook sources are not part
+of the retained application or regression cases.
+
+Real final FileSpacer clicks
+---------------------------
+5,000 text files; 800 x 400 Shell pixels; 48-pixel icons; host; actual SendInput;
+Desktop Duplication final composed image, not physical scan-out. Final check
+uses one sample per cell, with an ordinary selection snapshot read before and
+after the gesture. Identity enumeration, focus/anchor, positions, foreground,
+coverage, quiet final image and zero coalesced frames are checked. Quiet-tail
+confirmation is excluded from the final-image timestamp.
+
+                                 Click selected item         Background click
+ view                         private      public-only      private  public-only
+ medium Icons                  85.779       1124.488          59.579   1254.244
+ arranged Tiles               112.871       1213.706          54.976   1182.310
+ free Icons                    91.160       1141.990          51.519   1119.283
+ free Tiles                   134.427       1226.828          65.795   1156.386
+All values are milliseconds. Every mouse gesture used zero direct range clears.
+Run: build/regression/20261108-205708-fc5cc57a55d04814985f8e4e0d005f58
+
+This final warmed-snapshot check follows a three-sample-per-cell application
+run before adding the completion invalidation. Its click-item medians were
+80.312/77.508/52.816/89.682 ms, respectively. Those are historical supporting
+measurements, not the final implementation's medians.
+ build/regression/20261108-201659-f427cd4a987d4c86a5e7c5035c60d00f
+
+Before this development, the valid click-item medians were 1283.790/1340.641/
+1293.069 ms for medium/Tiles/free Icons. Free Tiles had only one valid sample,
+1397.347 ms, before the old run lost foreground; that whole run is not PASS.
+ build/regression/20261108-191414-489e92294cea4a70bcea96ce85ba6cad
+
+A manager-only control, without the optional range and with the old input
+preclear disabled, passed all eight free-view background/item rows: background
+56.726--69.046 ms; item click 92.399--115.988 ms. This is a single sample per
+configuration and preceded the snapshot-completion fix.
+ build/regression/20261108-200652-ee1d31c0127c488e83e0b048f1b39b58
+
+Explorer and partial-array control
+---------------------------------
+The final independent Tail benchmark passed 30 exact partial-array rows and
+six real Explorer clicks at the same dimensions, filenames and icon sizes:
+ build/regression/20261108-201409-e26a8d19cf264747bcb7b51e4a9ea2c2
+
+Explorer click-item medians, three samples: medium 48.040 ms; Tiles 44.990 ms.
+Explorer does not implement equivalent free folder placement, so these are
+arranged-view comparisons only. The remaining application difference is tens
+of milliseconds and every final private application sample is below 200 ms.
+
+First explicit read of 4,999 selected items in a real Shell host, three samples:
+                        native API     integrated public reader
+ free Icons              359.140 ms           364.450 ms
+ free Tiles               41.843 ms            40.706 ms
+The integrated reader correctly retains native fallback for partial selections.
+These are array-call timings, not complete application/display timings. The
+combined selection-change/read clock is logged separately. Explorer may eagerly
+prepare its snapshot; no claim is made that its cached-array read is cold.
+No partial-array optimization is adopted: these values meet the accepted
+500-ms criterion above 1,000 items, without an equivalent Explorer free view.
+
+Earlier Tail attempts rejected an exposed tile subfield as the target. The
+final target verifies the icon point and its enclosing list-item identity;
+post-click identity is checked independently. These setup failures are retained
+in their original run directories, rather than relabelled as application PASS.
+
+Correctness and validation
+--------------------------
+The first 18/04 matrix exposed a genuine stale ordinary selection snapshot in
+extra-large Icons after a warmed selection was cleared. The completion
+notification above fixes it. Existing assertions were not changed.
+Initial failure and passing 18/05 Select All/partial-to-all controls:
+ build/regression/20261108-202701-700fe571ee43489995b7fbb225241c0f
+The 18/05 operations were unaffected by the subsequent completion fix: their
+explicit clear already publishes completion and their detached arm has no
+observer. The corrected full 405-row 18/04 matrix and required 18/06 range,
+missing/malformed cache, late publication and saved fallback contracts passed:
+ build/regression/20261108-204439-dee8fde24cee4626b5c6f8bc40548797
+Only existing Microsoft symbols were preseeded in that staged repeat; the
+original case assertions and C++ test sources were preserved.
+
+The original gesture/drop passes and their logs remain available:
+ build/regression/20261108-202126-c96e39c5f58042f28c1d576c567b8eb0
+ build/regression/20261108-202321-037408ff5cde449cabddf228700358ff
+Final warmed-snapshot repeat passed 22 gesture combinations and both real
+128-directory disk drops:
+ build/regression/20261108-210109-e758488b40ac4b8a89e8e07ece77b843
+ build/regression/20261108-210208-780c3d1b355542c4925b437453053c07
+
+MSVC/NMAKE x64 Debug and Release compile without new /W4 warnings. Retained
+C++ units and the modified header were analyzed with clang-tidy and Cppcheck:
+Windows x64/C++14, real SDK 10.0.19041.0 and MSVC/ATL 14.44.35207 headers for
+clang-tidy; official Windows/ATL/SQLite models without system headers for
+Cppcheck. Both tools completed; no parser failure, timeout, ATL crash or reduced
+coverage. Baseline analyses isolate inherited diagnostics.
+
+Static verdict REVIEW: no confirmed new correctness defect, but clang-tidy
+reports stylistic swappable-parameter warnings on the required Win32 callback
+signature and new benchmark helpers, .cpp scaffold inclusion, and signed
+bitwise use of documented flags. Existing integer/pointer data conversions and
+Cppcheck aggregate-initialization/header-model diagnostics are baselined.
+No modified retained C++ file or header lacks analysis. Production comparison
+logs are under build/integration/notice-final, notice-completion and notice-safety.
+The final benchmark analyses are under build/integration/tail-final. Its
+conversion-only rebuild and real Explorer tile check passed without /W4 warnings:
+ build/regression/20261108-211235-5d4e79a64b7048778ed2fc35c4da4d80
+The duplicate native-state pointer conversion was avoided by sharing the
+existing notification-state predicate; callback ABI/order was not altered to
+satisfy a style diagnostic. No analysis check was suppressed.
+The benchmark's signed OBJID_CLIENT constant is explicitly converted to the
+DWORD required by AccessibleObjectFromWindow, resolving its /W4 C4245 warning.
+
+Public notification contract:
+ https://learn.microsoft.com/en-us/windows/win32/controls/lvn-itemchanged
+Nonsuspending investigation option:
+ https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/cdb-command-line-options
+
+Five host windows moved for the investigation were restored with process,
+window-class and geometry checks. No user FileSpacer process was terminated.
+No installer, push or release was performed.
