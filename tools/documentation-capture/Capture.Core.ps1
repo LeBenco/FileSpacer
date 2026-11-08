@@ -28,8 +28,19 @@ function ClickPoint([IntPtr]$Owner,$Point) {
 }
 function ClickControl([IntPtr]$Owner,[IntPtr]$Control) {
     Assert-Ui ($Control-ne[IntPtr]::Zero) 'Missing visible control.'
-    $rect=[FileSpacerRegression.Native]::Bounds($Control)
-    ClickPoint $Owner (Point ($rect.Left+$rect.Width/2) ($rect.Top+$rect.Height/2))
+    $deadline=[DateTime]::UtcNow.AddSeconds(10)
+    do {
+        $rect=[FileSpacerRegression.Native]::Bounds($Control)
+        $point=Point ($rect.Left+$rect.Width/2) ($rect.Top+$rect.Height/2)
+        MovePointer $point
+        # Localized preview rendering can resize the dialog while the pointer moves.
+        $current=[FileSpacerRegression.Native]::Bounds($Control)
+        $center=Point ($current.Left+$current.Width/2) ($current.Top+$current.Height/2)
+        $ready=[FileSpacerRegression.Native]::IsWindowEnabled($Control) -and $point.X-eq$center.X -and $point.Y-eq$center.Y
+        if(!$ready -and [DateTime]::UtcNow-ge$deadline){throw 'The visible control did not settle under the pointer.'}
+    }while(!$ready)
+    [FileSpacerViewMenuTests.MenuUi]::Click($point.X,$point.Y,$Owner)
+    Start-Sleep -Milliseconds 300
 }
 function OpenRecordedMenu([IntPtr]$Window,[string]$Button) {
     $id=Get-UiId $Button
@@ -111,6 +122,7 @@ function CloseRecorder([Diagnostics.Process]$Process) {
       }
     }
     Write-Host ('ScreenToGif exit='+$Process.ExitCode)
+    if($Process.ExitCode-notin@(0,2)){throw ('ScreenToGif exited unexpectedly: '+$Process.ExitCode)}
 }
 function StopRecording([IntPtr]$Window,[Diagnostics.Process]$Recorder) {
     $foreground=[FileSpacerRegression.Native]::GetForegroundWindow()
