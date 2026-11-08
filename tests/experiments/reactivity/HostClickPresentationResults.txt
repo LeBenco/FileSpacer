@@ -1,6 +1,120 @@
 Host click presentation investigation -- 8 November 2026
 =======================================================
 
+Integrated background clearing -- final worktree validation
+---------------------------------------------------------
+This section supersedes the prototype-only status and the interpretation of
+the immediate post-Escape capture check below. Earlier failures are retained.
+
+FolderWindow now preclears a large unmodified free-view background click by
+default, before native control processing. It keeps the original mouse message.
+Activation preservation, item clicks, modifiers and existing capture are
+handled by the existing native/gesture paths. ShellSelectionClear exposes the
+complete capability: both the qualified manager and the bound native index
+range are required. A manager-only or public configuration therefore leaves
+the original click native, without an added public bulk-clear operation.
+The existing symbol/introspection discovery, immutable publication, DLL-bound
+cache and ready-message rebinding are reused; no new offsets or version table
+were added. Temporary input-phase probes were removed. Debug /test can set
+FS_TEST_CLICK_PRECLEAR=0 for a native control measurement; normal use needs no
+activation flag. Release always enables the qualified operation.
+
+Real visible-click timings on the final integrated Debug code, 5,000 files,
+800 x 400 Shell pixels, median of three complete observations per configuration:
+
+                                     Native control      Integrated default
+ full private capability, free Icons   1310.878 ms           50.089 ms
+ full private capability, free Tiles   1366.700 ms           42.743 ms
+ manager only, free Icons              1315.096 ms         1396.945 ms
+ manager only, free Tiles              1424.724 ms         1353.157 ms
+ public path, free Icons               1600.859 ms         1268.216 ms
+ public path, free Tiles               1364.732 ms         1308.914 ms
+
+Integrated: build/regression/20261108-181724-f15b47e593774eeabbabf4e54ee921e0
+Control:    build/regression/20261108-183021-0ec4fe1bb8554986a8be89a752d7eb58
+Every integrated full-private sample used exactly one range clear; all native
+controls and both fallback configurations used zero. The manager-only fixture
+copies the same Shell descriptor but omits the optional range descriptor.
+All 36 observations passed, including exact identities and unchanged positions.
+The two integrated final images were inspected: selection cleared, focus kept.
+The full-private gain is about 26x/32x. Three samples do not quantify the tiny
+constant capability-check cost: the fallback differences vary in both directions
+and should not be presented as fallback gains or a precise overhead estimate.
+No new Explorer timing or original-classic-FS timing is claimed here.
+
+One earlier native-control attempt was rejected for changed geometry or lost
+foreground during observation:
+ build/regression/20261108-182507-a1b571620cf942ae9dced113f58d2184
+None of that partial run is used in the table. The observer now logs the actual
+foreground HWND/PID and both rectangles on failure; validation is not relaxed.
+The completed control run above and the final observer smoke both passed.
+
+Native reference and functional validation
+------------------------------------------
+A minimal Shell host with no FileSpacer input handling and no private binding
+reproduces the same immediate state after a real marquee and Escape: selected
+count zero, list capture still held. A distinct next item click selects one
+item and releases capture normally. Reference evidence:
+ build/regression/20261108-180041-a640e706038949ce8d24ffcbeb0a99a9
+ build/regression/20261108-180254-eab002d6d74a48a1b40c665e675c6b80
+The initial minimal attempt hit a scrollbar and is not marquee evidence. The
+native target helper now requires HTCLIENT, and cancellation tests prove that
+a real subset was selected before Escape. They record the immediate cancelled
+state, then test the next independent click; no ReleaseCapture, WM_CANCELMODE
+or replay is used to manufacture success. Thus the old immediate-zero-capture
+assertion was not a valid native-behavior requirement for this Shell build.
+Reference source/scripts remain in build/input-phase for inspection.
+
+Final integrated checks:
+ - 56 combinations: arranged/free Icons/Tiles, background/item clicks,
+   Ctrl/Shift marquees, activation preservation, cancellation plus next click,
+   each with full private and public paths. Exact identities, focus and anchor
+   match across all 28 pairs; icon positions remain unchanged.
+   build/regression/20261108-180732-de4e88ccb69f4216ba7afbee12a8b325
+ - 8 additional combinations: Ctrl or Shift pressed after a plain marquee has
+   already begun, in both free views and both paths. The retained bench now
+   compares identities/focus/anchor automatically. All match.
+   build/regression/20261108-183412-e963e45fc20348d8bce0e87226372687
+ - The retained BackgroundClickDropTests.ps1 moved all 128 selected directories
+   into the target directory in both free views. It verifies every destination
+   identity, the two remaining source identities, released capture and unchanged
+   window geometry. It uses native hit testing and real input. Both passed.
+   build/regression/20261108-182045-ef8379752d78459dbba6d04fd5b9c7fd
+   Reproduce with Run-SelectionGestures.ps1 -Scenario Drop on the free host.
+ - Final observer /W4 compilation and real private/public smoke passed:
+   build/regression/20261108-184115-26abbc6625db4d598a7122aa659b893e
+
+The old modern-Details UIA locator failure remains recorded below. An attempted
+UIA fallback did not yield a verified point and was removed. The successful
+disk-drop validation instead exercises the actual free-view feature using
+verified native item points. Its first draft checked the destination before
+the asynchronous move finished; the retained test waits for all exact source
+and destination identities without reissuing the operation.
+
+Build, analysis and scope
+-------------------------
+MSVC Debug and Release builds passed with no new /W4 compiler warnings. UI and
+image timings above use the actual integrated Debug executable; no claim of a
+Release UI run or of the entire repository suite is made. clang-tidy and
+Cppcheck completed on FolderWindow.cpp, ShellViewSelection.cpp (covering the
+modified header) and GesturePresentationTests.cpp using the real Windows x64
+build context, SDK/MSVC/ATL headers for clang-tidy and official Cppcheck models.
+No timeout, parser failure or ATL coverage reduction. Diagnostic multiset counts
+match the references: FolderWindow 75/75 tidy and 129/129 Cppcheck;
+ShellViewSelection 26/26 and 26/26; observer 3/3 and 3/3. The observer's added
+PID variable now has a distinct name from the measured-process handle; the
+shadow diagnostic was eliminated and both analyses reran. Verdict: PASS for
+this integration. Earlier historical REVIEW verdicts are not rewritten.
+Artifacts: build/integration/background-integration-static and
+build/integration/background-observer-corrected.
+
+The changelog entry is translated into all ten supported languages. No changes
+to WindowPlacement, no new symbol-discovery mechanism, no installer, no push.
+Temporary staging cases were removed, and the four covering application windows
+were restored after exact identity/geometry checks:
+ build/input-phase/integration-window-moves.json
+FileSpacer test processes closed normally and the host is available.
+
 Follow-up: UIA interference and actual-click prototype
 ----------------------------------------------------
 This follow-up supersedes the performance conclusion of the historical
