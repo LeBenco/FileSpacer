@@ -29,7 +29,7 @@ O FileSpacer pode ser definido como gestor de ficheiros predefinido durante a in
 
 **Desbloquear o estado da janela** mantém a disposição atual e permite voltar a guardar as alterações.
 
-O bloqueio ativa-se em **Definições > Geral**. O comando **Bloquear o estado da janela** aparece depois junto ao título da pasta. Um cadeado no ícone assinala o bloqueio. Desativar a função elimina todos os bloqueios.
+O bloqueio ativa-se em **Definições > Geral**. Também é possível personalizar a apresentação do cadeado à esquerda da barra de título e ativar o clique nesse ícone para bloquear ou desbloquear o estado da janela. Desativar a função elimina todos os bloqueios e oculta o ícone.
 
 <img src="images/locked-title.png" alt="Pormenor do título da pasta com o indicador de cadeado." width="280">
 
@@ -102,7 +102,7 @@ As entradas geridas pelo Nilesoft Shell alteram-se na sua configuração, pois a
 
 ![Redimensionar uma janela com Alt e o botão direito.](images/resize-window.gif)
 
-A seleção é mantida e Esc cancela o gesto. Os atalhos personalizam-se em **Definições > Atalhos**. Os botões esquerdo e direito exigem Alt. O botão central pode ser utilizado sozinho.
+Se houver ficheiros selecionados, a seleção é mantida. Esc cancela a ação. Os atalhos personalizam-se em **Definições > Atalhos**. Os botões esquerdo e direito exigem Alt. O botão central pode ser utilizado sozinho.
 
 <a id="integration"></a>
 

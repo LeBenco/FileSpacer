@@ -29,7 +29,7 @@ FileSpacer można ustawić jako domyślny menedżer plików podczas instalacji l
 
 **Odblokuj stan okna** zachowuje bieżący układ i ponownie umożliwia zapisywanie zmian.
 
-Blokowanie włącza się w **Ustawienia > Ogólne**. Polecenie **Zablokuj stan okna** pojawia się wtedy obok tytułu folderu. Kłódka na ikonie oznacza blokadę. Wyłączenie funkcji usuwa wszystkie blokady.
+Blokowanie włącza się w **Ustawienia > Ogólne**. Można tam również dostosować wyświetlanie kłódki po lewej stronie paska tytułu i włączyć blokowanie lub odblokowywanie stanu okna kliknięciem tej ikony. Wyłączenie funkcji usuwa wszystkie blokady i ukrywa ikonę.
 
 <img src="images/locked-title.png" alt="Zbliżenie tytułu folderu z oznaczeniem kłódki." width="280">
 
@@ -102,7 +102,7 @@ Można skonfigurować **gesty myszy do przenoszenia i zmiany rozmiaru okna** bez
 
 ![Zmiana rozmiaru okna z Alt i przeciągnięciem prawym przyciskiem.](images/resize-window.gif)
 
-Zaznaczenie zostaje zachowane, a Esc anuluje gest. Skróty ustawia się w **Ustawienia > Skróty**. Lewy i prawy przycisk wymagają Alt. Środkowego można używać samodzielnie.
+Jeśli zaznaczono pliki, zaznaczenie zostaje zachowane. Esc anuluje działanie. Skróty ustawia się w **Ustawienia > Skróty**. Lewy i prawy przycisk wymagają Alt. Środkowego można używać samodzielnie.
 
 <a id="integration"></a>
 

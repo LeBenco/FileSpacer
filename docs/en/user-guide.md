@@ -24,7 +24,7 @@ FileSpacer can be set as the default file manager during installation, or under 
 
 **Unlock window state** keeps the current layout and allows changes to be saved again.
 
-Enable locking under **Settings > General**. The **Lock window state** command then appears beside the folder title. A padlock badge indicates a locked layout. Turning off the feature removes all locks.
+Enable locking under **Settings > General**. The same settings let you customize the padlock on the left of the title bar and enable clicking it to lock or unlock the window state. Turning off the feature removes all locks and hides the padlock.
 
 <img src="images/locked-title.png" alt="Close-up of the folder title and its padlock badge." width="280">
 
@@ -90,7 +90,7 @@ Entries managed by Nilesoft Shell are changed in its configuration because its r
 
 ![Resizing a window with Alt and a right-button drag.](images/resize-window.gif)
 
-Selection is preserved and Escape cancels the gesture. Customize shortcuts under **Settings > Shortcuts**. The left and right buttons require Alt. The middle button can be used alone.
+If files are selected, the selection is preserved. Escape cancels the action. Customize shortcuts under **Settings > Shortcuts**. The left and right buttons require Alt. The middle button can be used alone.
 
 <a id="integration"></a>
 

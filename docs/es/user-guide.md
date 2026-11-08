@@ -29,7 +29,7 @@ FileSpacer se puede definir como gestor de archivos predeterminado durante la in
 
 **Desbloquear el estado de la ventana** conserva su disposición actual y permite volver a guardar los cambios.
 
-El bloqueo se activa en **Configuración > General**. Después aparece **Bloquear el estado de la ventana** junto al título de la carpeta. Un candado en el icono indica el bloqueo. Desactivar la función elimina todos los bloqueos.
+El bloqueo se activa en **Configuración > General**. Allí también se puede personalizar la visualización del candado situado a la izquierda de la barra de título y activar el clic en ese icono para bloquear o desbloquear el estado de la ventana. Desactivar la función elimina todos los bloqueos y oculta el candado.
 
 <img src="images/locked-title.png" alt="Detalle del título de una carpeta con el distintivo de candado." width="280">
 
@@ -102,7 +102,7 @@ Se pueden configurar **gestos del ratón para mover o cambiar el tamaño de una 
 
 ![Cambiar el tamaño de una ventana con Alt y el botón derecho.](images/resize-window.gif)
 
-La selección se conserva y Esc cancela el gesto. Los atajos se personalizan en **Configuración > Métodos abreviados**. Los botones izquierdo y derecho requieren Alt. El central se puede usar solo.
+Si hay archivos seleccionados, se mantiene la selección. Esc cancela la acción. Los atajos se personalizan en **Configuración > Métodos abreviados**. Los botones izquierdo y derecho requieren Alt. El central se puede usar solo.
 
 <a id="integration"></a>
 

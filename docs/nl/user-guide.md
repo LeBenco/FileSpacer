@@ -29,7 +29,7 @@ FileSpacer kan tijdens de installatie of onder **Instellingen > Integratie** met
 
 **Vensterstatus ontgrendelen** behoudt de huidige indeling en maakt het weer mogelijk wijzigingen op te slaan.
 
-Vergrendeling wordt ingeschakeld onder **Instellingen > Algemeen**. Daarna verschijnt **Vensterstatus vergrendelen** naast de maptitel. Een slotje op het pictogram geeft de vergrendeling aan. De functie uitschakelen verwijdert alle vergrendelingen.
+Vergrendeling wordt ingeschakeld onder **Instellingen > Algemeen**. Daar kan ook de weergave van het slot links in de titelbalk worden aangepast en klikken op het pictogram worden ingeschakeld om de vensterstatus te vergrendelen of ontgrendelen. Uitschakelen wist alle vergrendelingen en verbergt het pictogram.
 
 <img src="images/locked-title.png" alt="Detail van de maptitel met het slotje." width="280">
 
@@ -102,7 +102,7 @@ Items die Nilesoft Shell beheert, worden in zijn configuratie aangepast omdat zi
 
 ![Het vensterformaat wijzigen met Alt en slepen met de rechtermuisknop.](images/resize-window.gif)
 
-De selectie blijft behouden en Escape annuleert het gebaar. Aanpassen kan onder **Instellingen > Sneltoetsen**. De linker- en rechtermuisknop vereisen Alt. De middelste knop werkt ook zonder Alt.
+Als er bestanden zijn geselecteerd, blijft de selectie behouden. Escape annuleert de actie. Aanpassen kan onder **Instellingen > Sneltoetsen**. De linker- en rechtermuisknop vereisen Alt. De middelste knop werkt ook zonder Alt.
 
 <a id="integration"></a>
 
