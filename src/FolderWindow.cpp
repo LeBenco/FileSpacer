@@ -784,35 +784,6 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
     CComPtr<IShellView> view = shellView;
     if (!view)
         return false;
-#ifdef FILESPACER_DEBUG
-    static const bool testClickClear = [] {
-        wchar_t value[2] = {};
-        return GetEnvironmentVariableW(L"FS_TEST_CLICK_PRECLEAR", value, _countof(value)) != 1 || value[0] != L'0';
-    }();
-    const bool clearBackground = !settings::testMode || testClickClear;
-#else
-    constexpr bool clearBackground = true;
-#endif
-    if (clearBackground && msg->message == WM_LBUTTONDOWN && selectionClear.acceleratesBackgroundClear()
-            && !(msg->wParam & static_cast<WPARAM>(MK_CONTROL | MK_SHIFT | MK_RBUTTON | MK_MBUTTON | MK_XBUTTON1 | MK_XBUTTON2))
-            && GetKeyState(VK_MENU) >= 0 && !GetCapture()) {
-        const ULONG_PTR generation = viewGeneration;
-        const auto current = [&] { return isWindowOperational() && shellView == view && viewGeneration == generation; };
-        HWND root = nullptr;
-        CComQIPtr<IFolderView2> folderView(view);
-        int count = 0;
-        if (current() && folderView && spatialView(folderView) && current()
-                && SUCCEEDED(view->GetWindow(&root)) && current() && root
-                && (msg->hwnd == root || IsChild(root, msg->hwnd))
-                && SUCCEEDED(folderView->ItemCount(SVGIO_SELECTION, &count)) && current() && count >= 128
-                && gestureRoleAt(msg->pt) == ROLE_SYSTEM_LIST && current()) {
-            // Empty both native selection stores before the control walks them
-            // to handle the click. Keep its original message for focus/dragging.
-            clearSelection();
-            if (!current()) return true;
-        }
-        if (!current()) return true;
-    }
     if (msg->message == WM_KEYDOWN && msg->wParam == VK_SPACE && settings::getPeekEnabled()
             && GetKeyState(VK_CONTROL) >= 0 && GetKeyState(VK_SHIFT) >= 0 && GetKeyState(VK_MENU) >= 0) {
         const ULONG_PTR generation = viewGeneration;
