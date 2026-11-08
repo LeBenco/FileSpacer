@@ -104,9 +104,14 @@ try {
     Set-UiPreference 'ViewMenuPreviewEnabled' 0
     $cache=Join-Path $script:UiRoot 'qualified-cache';[void][IO.Directory]::CreateDirectory($cache)
     Get-ChildItem -LiteralPath $qualified -File | Where-Object {$_.Extension-eq'.bin'-or$_.Name-like'*-r1.range'} | Copy-Item -Destination $cache
-    $arms=@(if($IncludePublic){'private';'public'}else{'private'})
+    $managerCache=Join-Path $script:UiRoot 'manager-only-cache'
+    if($env:FS_GESTURE_MANAGER_ONLY-eq'1'){
+        [void][IO.Directory]::CreateDirectory($managerCache)
+        Get-ChildItem -LiteralPath $cache -Filter '*.bin' -File|Copy-Item -Destination $managerCache
+    }
+    $arms=@('private';if($env:FS_GESTURE_MANAGER_ONLY-eq'1'){'manager-only'};if($IncludePublic){'public'})
     foreach($arm in $arms) {
-        $env:FS_SELECTION_PRODUCT_CACHE=if($arm-eq'private'){$cache}else{''}
+        $env:FS_SELECTION_PRODUCT_CACHE=if($arm-eq'private'){$cache}elseif($arm-eq'manager-only'){$managerCache}else{''}
         $folder=Join-Path $script:UiRoot $arm;[void][IO.Directory]::CreateDirectory($folder)
         $initialCount=if($preseed){128}else{$FixtureCount}
         for($i=0;$i-lt$initialCount;++$i){[IO.File]::WriteAllText((Join-Path $folder ('File{0:D5}.txt'-f$i)),'fixture')}
@@ -171,7 +176,7 @@ try {
                 Start-Sleep -Seconds $seconds # Owned fixture only; outside every timed action.
             }
             $gestures=if($env:FS_GESTURE_ACTIONS){@($env:FS_GESTURE_ACTIONS-split',')}else{@('escape','background','selected-item')}
-            Assert-Ui (@($gestures|Where-Object {$_-notin@('escape','background','selected-item','escape-background','escape-background-once','marquee','marquee-cancel','marquee-ctrl','marquee-shift','activation-background','item-drag')}).Count-eq0) 'Unknown gesture.'
+            Assert-Ui (@($gestures|Where-Object {$_-notin@('escape','background','selected-item','escape-background','escape-background-once','marquee','marquee-cancel','marquee-ctrl','marquee-shift','marquee-late-ctrl','marquee-late-shift','activation-background','item-drag')}).Count-eq0) 'Unknown gesture.'
             foreach($gesture in $gestures) {
                 for($rep=0;$rep-lt$Repetitions;++$rep) {
                     $marquee=$gesture-like'marquee*'
@@ -204,6 +209,7 @@ try {
                         Assert-Ui ($null-ne$target) ('No verified exposed blank point: '+$lastError)
                     }
                     $endPoint=if($marquee){[FileSpacerRegression.NativeTargets]::Item($list,8,$FixtureCount,$true,$false)}else{$null}
+                    $latePoint=if($gesture-like'marquee-late-*'){[FileSpacerRegression.NativeTargets]::Item($list,9,$FixtureCount,$true,$false)}else{$null}
                     if($itemDrag){$endPoint=$target;$target=[FileSpacerRegression.NativeTargets]::Item($list,0,$FixtureCount,$true,$false)}
                     $locateMs=$locating.Elapsed.TotalMilliseconds;$locating.Stop()
                     if($presentation-and$gesture-ne'escape'){
@@ -239,7 +245,17 @@ try {
                             Wait-Ui {[FileSpacerRegression.AltDragInput]::Captured($window)} 'native marquee capture' 0 5
                             [FileSpacerRegression.AltDragInput]::Move($finishPoint)
                             Start-Sleep -Milliseconds 100
-                            if($gesture-eq'marquee-cancel'){[FileSpacerRegression.AltDragInput]::EscapeHeld()}
+                            if($gesture-like'marquee-late-*'){
+                                Wait-Ui {$count=[FileSpacerRegression.Native]::Message($list,0x1032,0,0);$count-gt0-and$count-lt$FixtureCount} 'plain marquee subset before modifier change' 0 5
+                                [FileSpacerRegression.AltDragInput]::PressModifierDuringDrag($(if($gesture-eq'marquee-late-ctrl'){1}else{4}))
+                                $nextPoint=New-Object FileSpacerRegression.MousePoint;$nextPoint.X=$latePoint.X;$nextPoint.Y=$latePoint.Y
+                                [FileSpacerRegression.AltDragInput]::Move($nextPoint)
+                                Start-Sleep -Milliseconds 100
+                            }
+                            if($gesture-eq'marquee-cancel'){
+                                Wait-Ui {$count=[FileSpacerRegression.Native]::Message($list,0x1032,0,0);$count-gt0-and$count-lt$FixtureCount} 'actual marquee subset before cancellation' 0 5
+                                [FileSpacerRegression.AltDragInput]::EscapeHeld()
+                            }
                         }finally{[FileSpacerRegression.AltDragInput]::End()}
                         if($gesture-eq'marquee-cancel'){
                             $tooltip=[IntPtr]([FileSpacerRegression.Native]::Message($list,0x104e,0,0)) # LVM_GETTOOLTIPS
@@ -252,6 +268,14 @@ try {
                             [FileSpacerRegression.AltDragInput]::Move($park)
                             $cancel.AfterPointerDeparture=[FileSpacerRegression.AltDragInput]::Describe($window)
                             $cancel|ConvertTo-Json -Depth 3|Set-Content -LiteralPath $cancelPath
+                            Assert-Ui (@($cancel.Selected).Count-eq0-and$cancel.PositionsUnchanged) 'Cancelled marquee changed native selection or positions.'
+                            # A plain Shell host also retains capture after Escape.
+                            # Test a distinct next user click rather than releasing
+                            # capture or replaying the cancellation to force success.
+                            $next=[FileSpacerRegression.NativeTargets]::Item($list,0,$FixtureCount,$false,$false)
+                            $nextPoint=New-Object FileSpacerRegression.MousePoint;$nextPoint.X=$next.X;$nextPoint.Y=$next.Y
+                            try{[FileSpacerRegression.AltDragInput]::BeginConfigured($window,$nextPoint,0,0)}finally{[FileSpacerRegression.AltDragInput]::End()}
+                            Wait-GestureCount $window 1
                         }
                         try{Wait-Ui {[FileSpacerRegression.AltDragInput]::Idle($window)} 'native marquee ended' 100 5}
                         catch{throw ($_.Exception.Message+'; '+[FileSpacerRegression.AltDragInput]::Describe($window))}
@@ -298,10 +322,11 @@ try {
                     }
                     Set-GestureStage 'verify-counter-and-identities'
                     $calls=(Read-RangeCounter $window)-$before
-                    if($arm-eq'private'-and$env:FS_GESTURE_EXPECT_CLICK_RANGE-eq'1'-and$gesture-ne'marquee-cancel'){
-                        $expectedCalls=if($mode.Free-and$gesture-in@('background','marquee','escape','escape-background','escape-background-once')){1}elseif($gesture-in@('escape','escape-background','escape-background-once')){1}else{0}
+                    if($arm-eq'private'-and$env:FS_GESTURE_EXPECT_CLICK_RANGE-eq'1'){
+                        $expectedCalls=if($mode.Free-and$gesture-in@('background','marquee','marquee-cancel','marquee-late-ctrl','marquee-late-shift','escape','escape-background','escape-background-once')){1}elseif($gesture-in@('escape','escape-background','escape-background-once')){1}else{0}
                         Assert-Ui ($calls-eq$expectedCalls) ('Unexpected private call count for '+$mode.Name+'/'+$gesture+': '+$calls+' instead of '+$expectedCalls)
                     }
+                    if($arm-ne'private'){Assert-Ui ($calls-eq0) 'A fallback arm invoked the unavailable private range.'}
                     if($arm-eq'private'-and$gesture-in@('escape','escape-background','escape-background-once')){Assert-Ui ($calls-eq1) 'The qualified private Escape path was not exercised exactly once.'}
                     $selected=@(Use-UiView $window {param($view) $view.Selected()})
                     if(!$marquee){
@@ -309,6 +334,7 @@ try {
                         Assert-Ui (($selected-join';')-eq($expectedNames-join';')) 'Wrong selected identities.'
                     }
                     elseif($gesture-eq'marquee'){Assert-Ui ($selected.Count-gt0-and$selected.Count-lt$FixtureCount) 'Marquee did not produce a proper subset.'}
+                    elseif($gesture-eq'marquee-cancel'){Assert-Ui (($selected-join';')-eq'File00000.txt') 'The next item click after cancellation selected the wrong identity.'}
                     Assert-Ui ((Use-UiView $window {param($view) $view.Count})-eq$FixtureCount) 'Fixture count changed.'
                     $positionsAfter=if($env:FS_GESTURE_SEMANTICS-eq'1'){Use-UiView $window {param($view) $view.Positions()}}else{''}
                     if($itemDrag){
@@ -332,5 +358,14 @@ try {
     $viewCount=if($env:FS_GESTURE_VIEWS){@($env:FS_GESTURE_VIEWS-split',').Count}else{4}
     $actionCount=if($env:FS_GESTURE_ACTIONS){@($env:FS_GESTURE_ACTIONS-split',').Count}else{3}
     Assert-Ui ($rows.Count-eq($arms.Count*$viewCount*$actionCount*$Repetitions)) 'Incomplete gesture matrix.'
+    if($IncludePublic){
+        foreach($row in @($rows|Where-Object arm -eq 'private')){
+            $reference=@($rows|Where-Object {$_.arm-eq'public'-and$_.view-eq$row.view-and$_.gesture-eq$row.gesture-and$_.rep-eq$row.rep})
+            Assert-Ui ($reference.Count-eq1) 'Missing native/public reference row.'
+            foreach($property in @('selected_json','focus','anchor')){
+                Assert-Ui ($row.$property-ceq$reference[0].$property) ('Private/native behavior differs for '+$row.view+'/'+$row.gesture+'/'+$property)
+            }
+        }
+    }
 }catch{$failure=$_;throw}
 finally{try{Close-GestureObservation $capture}finally{Remove-Item Env:\FS_SELECTION_PRODUCT_CACHE -ErrorAction SilentlyContinue;Stop-Ui $failure}}
