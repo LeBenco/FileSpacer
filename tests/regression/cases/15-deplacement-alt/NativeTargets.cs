@@ -95,6 +95,9 @@ namespace FileSpacerRegression {
         }
         public static void Background(IntPtr list,int x,int y) {
             Point point=Exposed(list,new Point {X=x,Y=y});
+            int packed=unchecked((x&0xffff)|((y&0xffff)<<16));
+            if(SendMessage(list,0x84,IntPtr.Zero,new IntPtr(packed)).ToInt64()!=1)
+                throw new InvalidOperationException("Background point is outside the item container client area."); // HTCLIENT
             if(!ScreenToClient(list,ref point)) throw new Win32Exception();
             using(var q=new Query(list)) { byte[] hit; if(Hit(list,q,point,false,out hit)!=-1) throw new InvalidOperationException("Background point overlaps an item."); }
         }
