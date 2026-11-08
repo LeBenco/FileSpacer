@@ -2,6 +2,7 @@
 
 ## Nieopublikowane
 
+- Przyspieszyć usuwanie dużych zaznaczeń kliknięciem tła w widokach ikon i kafelków ze swobodnym rozmieszczeniem, z automatycznym, cichym przejściem na standardową obsługę, gdy prywatna funkcja Windows jest niedostępna.
 - Przyspieszyć odczyt pełnych zaznaczeń w widokach ikon ze swobodnym rozmieszczeniem za pomocą publicznych interfejsów API systemu Windows.
 - Włączać lub wyłączać miniatury globalnie w systemie Windows z menu Widok.
 - Przywracać pozycję przewijania folderu po ponownym otwarciu jego okna.

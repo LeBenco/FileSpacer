@@ -2,6 +2,7 @@
 
 ## Noch nicht veröffentlicht
 
+- Das Aufheben großer Auswahlen per Klick auf den Hintergrund in frei angeordneten Symbol- und Kachelansichten beschleunigen, mit automatischem, stillem Rückfall, wenn die private Windows-Funktion nicht verfügbar ist.
 - Das Auslesen vollständig ausgewählter Elemente in Symbolansichten mit freier Platzierung über öffentliche Windows-APIs beschleunigen.
 - Die globale Windows-Einstellung für Miniaturansichten über das Ansichtsmenü umschalten.
 - Die Scrollposition eines Ordners beim erneuten Öffnen seines Fensters wiederherstellen.

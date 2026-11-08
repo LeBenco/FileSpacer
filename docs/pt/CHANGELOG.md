@@ -2,6 +2,7 @@
 
 ## Por publicar
 
+- Acelerar a desmarcação de grandes seleções ao clicar no fundo das vistas de ícones e mosaicos com posicionamento livre, com recurso automático e silencioso ao funcionamento normal se a função privada do Windows não estiver disponível.
 - Acelerar a leitura de seleções completas nas vistas de ícones com posicionamento livre através das API públicas do Windows.
 - Ativar ou desativar globalmente as miniaturas do Windows no menu Ver.
 - Restaurar a posição de deslocamento de uma pasta ao reabrir a sua janela.

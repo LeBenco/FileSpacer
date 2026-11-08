@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Speed up clearing large selections with a background click in freely positioned icon and tile views, with automatic silent fallback when the private Windows capability is unavailable.
 - Speed up reading complete selections in freely positioned icon views through public Windows APIs.
 - Toggle the global Windows thumbnail setting from the View menu.
 - Restore the scroll position when reopening a folder window.

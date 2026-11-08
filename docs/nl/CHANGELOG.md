@@ -2,6 +2,7 @@
 
 ## Nog niet uitgebracht
 
+- Grote selecties sneller opheffen met een klik op de achtergrond in vrij geplaatste pictogram- en tegelweergaven, met een automatische, stille terugval als de private Windows-functie niet beschikbaar is.
 - Volledige selecties sneller uitlezen in pictogramweergaven met vrije plaatsing via openbare Windows-API’s.
 - De algemene Windows-instelling voor miniaturen wijzigen via het menu Beeld.
 - De schuifpositie van een map herstellen wanneer het venster opnieuw wordt geopend.
