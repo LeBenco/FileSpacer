@@ -142,6 +142,22 @@ Use desktop inspector could not start (kernel asset path missing, OS error 3).
 Neither result identifies the window covering the fixture or proves a slow
 selection procedure. No foreground protection was bypassed.
 
+A final activation diagnostic reused the qualified cache:
+ build/regression/20261108-131252-1dfad9d138bf4817bf445fbd322a019d
+It failed before timing in 15.8 seconds. The fixture was visible, enabled and
+not minimized. WindowFromPoint at its caption resolved to a Chromium renderer
+(Chrome_RenderWidgetHostHWND); the foreground root was Chrome_WidgetWin_1.
+The diagnostic did not inspect that application's contents or manipulate it.
+
+A second attempt placed only the owned temporary fixture in the topmost band:
+ build/regression/20261108-131359-66035487987d47d3acc18f5d2c3105e2
+It still found the Chromium renderer covering the caption and failed before
+timing in 15.4 seconds. The covering application was not closed or altered.
+These attempts narrow the immediate activation failure to actual occlusion;
+they do not explain why raising the fixture failed to expose its caption.
+The earlier mouse-latency comparison remains unvalidated. No new product input
+hook or activation policy is adopted.
+
 Successful host control without input/foreground activation
 ---------------------------------------------------------
  build/regression/20261108-130741-14b4c809b5344c68b7707045a5d67d34
