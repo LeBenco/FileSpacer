@@ -19,6 +19,26 @@ try {
     $width=[int](($work.Width-60)/2);$height=[Math]::Min(480,$work.Height-60)
     Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($first,[IntPtr]::Zero,($work.Left+20),($work.Top+20),$width,$height,0x14)) 'Cannot place the source.'
     Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($second,[IntPtr]::Zero,($work.Left+40+$width),($work.Top+20),$width,$height,0x14)) 'Cannot place the destination.'
+    # Provider geometry can remain available through an occluding window.
+    # Both locators must reject that source before any input is sent.
+    Focus-ShellFixture $first 'Drag-move'
+    $sourceView=Use-UiView $first {param($view) $view.Window}
+    Focus-ShellFixture $second
+    Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($second,[IntPtr]::Zero,($work.Left+20),($work.Top+20),$width,$height,0x14)) 'Cannot cover the source for the targeting guard.'
+    foreach ($kind in @('item','background')) {
+        $rejected=$false
+        try {
+            if ($kind -eq 'item') { [void][FileSpacerRegression.AltDragInput]::ItemPoint($sourceView,'Drag-move') }
+            else { [void][FileSpacerRegression.AltDragInput]::BackgroundPoint($sourceView) }
+        } catch {
+            $expected=if ($kind -eq 'item') {'*outside the element or covered by another window*'} else {'*No verified empty Shell background*'}
+            $noPoint=$kind -eq 'item' -and $_.Exception.Message -like '*No clickable point: ControlType.*'
+            if ($_.Exception.Message -notlike $expected -and !$noPoint) { throw }
+            $rejected=$true
+        }
+        Assert-Ui $rejected ('The locator accepted a covered '+$kind+' target.')
+    }
+    Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($second,[IntPtr]::Zero,($work.Left+40+$width),($work.Top+20),$width,$height,0x14)) 'Cannot restore the destination.'
     foreach ($name in @('Drag-move','Drag-copy')) {
         Focus-ShellFixture $first $name
         $sourceView=Use-UiView $first {param($view) $view.Window}
@@ -70,6 +90,8 @@ try {
             if ($candidate -eq [IntPtr]::Zero -or ![FileSpacerRegression.Native]::IsWindow($candidate)) { continue }
             $entry=@{Window=$candidate.ToInt64();Title=[FileSpacerRegression.Native]::Text($candidate)}
             try {
+                try { Save-ShellScreenshot $candidate ('drag-failure-'+$candidate.ToInt64()+'.png') -WithoutActivation }
+                catch { $entry.ScreenshotError=$_.Exception.Message }
                 $entry.Names=@(Use-UiView $candidate {param($view) $view.Names()})
                 $entry.Selection=@(Use-UiView $candidate {param($view) $view.Selected()})
                 $viewWindow=Use-UiView $candidate {param($view) $view.Window}
