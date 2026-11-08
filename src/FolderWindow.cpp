@@ -748,6 +748,41 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         if (!isWindowOperational())
             return false;
     }
+    if (msg->message == WM_KEYDOWN && GetKeyState(VK_MENU) >= 0) {
+        const bool control = GetKeyState(VK_CONTROL) < 0;
+        const bool shift = GetKeyState(VK_SHIFT) < 0;
+        if (!shift && ((!control && msg->wParam == VK_F5)
+                || (control && msg->wParam == L'R'))) {
+            onCommand(IDM_REFRESH);
+            return true;
+        }
+        if (control && !shift && (msg->wParam == L'N' || msg->wParam == L'W')) {
+            onCommand(msg->wParam == L'N' ? IDM_NEW_WINDOW : IDM_CLOSE_WINDOW);
+            return true;
+        }
+        if (control && shift && msg->wParam >= L'1' && msg->wParam <= L'8') {
+            changeViewMode(static_cast<int>(msg->wParam - L'1'));
+            return true;
+        }
+    }
+    if ((msg->message == WM_KEYUP && msg->wParam == VK_CONTROL)
+            || (msg->message == WM_MOUSEWHEEL && !(GET_KEYSTATE_WPARAM(msg->wParam) & MK_CONTROL)))
+        zoomWheelDelta = 0;
+    if (msg->message == WM_MOUSEWHEEL && (GET_KEYSTATE_WPARAM(msg->wParam) & MK_CONTROL)
+            && !(GET_KEYSTATE_WPARAM(msg->wParam) & MK_SHIFT) && GetKeyState(VK_MENU) >= 0) {
+        CComPtr<IShellView> view = shellView;
+        HWND root = nullptr;
+        const HWND target = WindowFromPoint({GET_X_LPARAM(msg->lParam), GET_Y_LPARAM(msg->lParam)});
+        if (view && SUCCEEDED(view->GetWindow(&root)) && isWindowOperational() && shellView == view
+                && root && (msg->hwnd == root || IsChild(root, msg->hwnd)
+                    || target == root || IsChild(root, target))) {
+            zoomWheelDelta += GET_WHEEL_DELTA_WPARAM(msg->wParam);
+            const int steps = zoomWheelDelta / WHEEL_DELTA;
+            zoomWheelDelta %= WHEEL_DELTA;
+            if (steps) changeViewMode(-1, steps);
+            return true;
+        }
+    }
     if (msg->message == WM_KEYDOWN && msg->wParam == L'T'
             && GetKeyState(VK_CONTROL) < 0 && GetKeyState(VK_SHIFT) < 0
             && GetKeyState(VK_MENU) >= 0) {
@@ -755,8 +790,9 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         onCommand(IDM_REOPEN_WINDOW);
         return true;
     }
-    if (msg->message == WM_KEYDOWN && msg->wParam == L'F'
-            && GetKeyState(VK_CONTROL) < 0 && GetKeyState(VK_MENU) >= 0)
+    if (msg->message == WM_KEYDOWN && GetKeyState(VK_MENU) >= 0
+            && (((msg->wParam == L'F' || msg->wParam == L'E') && GetKeyState(VK_CONTROL) < 0)
+                || (msg->wParam == VK_F3 && GetKeyState(VK_CONTROL) >= 0 && GetKeyState(VK_SHIFT) >= 0)))
         return searchBox.focus();
     if (searchBox.hasFocus()) {
         if (pathBar.handleTopLevelMessage(msg))
@@ -783,6 +819,27 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
     CComPtr<IShellView> view = shellView;
     if (!view)
         return false;
+    if (msg->message == WM_KEYDOWN && msg->wParam == VK_BACK
+            && GetKeyState(VK_MENU) >= 0 && GetKeyState(VK_SHIFT) >= 0) {
+        const bool closeSource = GetKeyState(VK_CONTROL) >= 0 && !settings::getKeepSourceWindowOpen();
+        const ULONG_PTR generation = viewGeneration;
+        const HWND focus = GetFocus();
+        HWND root = nullptr;
+        if (SUCCEEDED(view->GetWindow(&root)) && isWindowOperational() && shellView == view
+                && viewGeneration == generation && root && focus == msg->hwnd
+                && (focus == root || IsChild(root, focus))) {
+            const LRESULT code = SendMessageW(focus, WM_GETDLGCODE, VK_BACK, reinterpret_cast<LPARAM>(msg));
+            if (!isWindowOperational() || shellView != view || viewGeneration != generation || GetFocus() != focus)
+                return true;
+            if (!(code & (DLGC_HASSETSEL | DLGC_WANTALLKEYS))) {
+                CComPtr<IShellItem> parent;
+                if (SUCCEEDED(item->GetParent(&parent)) && isWindowOperational()
+                        && shellView == view && viewGeneration == generation)
+                    openChild(parent, closeSource);
+                return true;
+            }
+        }
+    }
     if (msg->message == WM_KEYDOWN && msg->wParam == VK_SPACE && settings::getPeekEnabled()
             && GetKeyState(VK_CONTROL) >= 0 && GetKeyState(VK_SHIFT) >= 0 && GetKeyState(VK_MENU) >= 0) {
         const ULONG_PTR generation = viewGeneration;
@@ -1731,6 +1788,13 @@ bool FolderWindow::onCommand(WORD command) {
         if (!isWindowOperational() || provisionalBaseline) return true;
     }
     switch (command) {
+        case IDM_NEW_WINDOW: {
+            CComPtr<ItemWindow> keepAlive(this);
+            auto path = settings::getStartingFolder();
+            CComPtr<IShellItem> target = itemFromPath(path.get());
+            if (target && isWindowOperational()) openChild(target, false);
+            return true;
+        }
         case IDM_RESTORE_LAYOUT:
             restoreReferenceLayout();
             return true;
@@ -1750,11 +1814,62 @@ bool FolderWindow::onCommand(WORD command) {
         case IDM_NEW_FOLDER:
             newItem(CMDSTR_NEWFOLDERA);
             return true;
-        case IDM_NEW_TEXT_FILE:
-            newItem(".txt");
-            return true;
     }
     return ItemWindow::onCommand(command);
+}
+
+void FolderWindow::changeViewMode(int index, int steps) {
+    CComPtr<ItemWindow> keepAlive(this);
+    if (!isWindowOperational() || !viewReady || !initialStateApplied || !enumerationComplete
+            || restoringState || viewProfileChanging || navigationDepth || viewMenuDepth
+            || viewMenuPreview || viewMenuRestore || provisionalInputBlocked || provisionalCaptureBusy) return;
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    auto current = [&]() {
+        return isWindowOperational() && shellView == source && viewGeneration == generation;
+    };
+    CComPtr<IFolderView2> view;
+    const HRESULT queried = viewHost.currentView(IID_PPV_ARGS(&view));
+    if (!current() || FAILED(queried) || !view) return;
+    struct Mode { FOLDERVIEWMODE mode; int size; };
+    const Mode modes[] = {
+        {FVM_ICON, scaleDPI(256)}, {FVM_ICON, scaleDPI(96)}, {FVM_ICON, scaleDPI(48)},
+        {FVM_SMALLICON, scaleDPI(16)}, {FVM_LIST, -1}, {FVM_DETAILS, -1}, {FVM_TILE, -1}, {FVM_CONTENT, -1}
+    };
+    FOLDERVIEWMODE mode;
+    int size;
+    if (!checkHR(view->GetViewModeAndIconSize(&mode, &size)) || !current()) return;
+    if (index < 0) {
+        index = 5; // Unknown provider modes start from Details.
+        for (int i = 0; i < static_cast<int>(_countof(modes)); ++i) {
+            if (mode != modes[i].mode) continue;
+            index = i;
+            if (mode != FVM_ICON || size >= modes[i].size) break;
+        }
+        // Nonstandard icon sizes move to the next preset in the wheel direction.
+        if (mode == FVM_ICON && steps > 0 && size < modes[index].size) ++index;
+        if (mode == FVM_ICON && steps < 0 && size > modes[index].size) --index;
+        index = (std::max)(0, (std::min)(static_cast<int>(_countof(modes)) - 1, index - steps));
+    }
+    if (index < 0 || index >= static_cast<int>(_countof(modes))) return;
+    const Mode target = modes[index];
+    if (mode == target.mode && (target.size < 0 || size == target.size)) return;
+    viewStateDirty(FolderState::Icons);
+    persistViewState();
+    if (!current()) return;
+    ++navigationDepth;
+    const HRESULT result = view->SetViewModeAndIconSize(target.mode, target.size);
+    resumeDeferredClose();
+    if (current() && checkHR(result)) {
+        // Some native mode changes discard free positions without changing
+        // the spatial flag. Replay the saved positions before another capture.
+        restoreIconsPending = searchText.empty();
+        restoreIconsUnpruned = restoreIconsPending;
+        finishViewInitialization();
+        if (!current()) return;
+        scheduleStateSave();
+        requestViewProfile();
+    }
 }
 
 void FolderWindow::restoreReferenceLayout() {
