@@ -16,6 +16,14 @@ public static class GestureComposition {
 '@
 if(Get-Process FileSpacer -ErrorAction SilentlyContinue){throw 'Close FileSpacer before building the native helper.'}
 $counter=Build-NativeTest -Name RemainingSelectionTests -CaseDirectory (Join-Path $ProjectRoot 'tests\experiments\reactivity') -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','MixedFolder.cpp','ShellViewHost.cpp','ShellViewIcons.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib','D3d11.lib','Dxgi.lib','Bcrypt.lib','Wtsapi32.lib','Dwmapi.lib','Dbghelp.lib','Psapi.lib')
+$presentation=$env:FS_GESTURE_PRESENTATION-eq'1'
+$preseed=$env:FS_GESTURE_PRESEED-eq'1'
+if($preseed){Assert-Ui ($env:FS_GESTURE_VIEWS-and@($env:FS_GESTURE_VIEWS-split',').Count-eq1) 'Persisted-view preparation requires one view.'}
+if($presentation){$observer=Build-NativeTest -Name GesturePresentationTests -CaseDirectory (Join-Path $ProjectRoot 'tests\experiments\reactivity') -Standard c++14 -ControlFlowGuard -ProductionSources @('DPI.cpp') -Libraries @('Ole32.lib','Gdi32.lib','D3d11.lib','Dxgi.lib','Bcrypt.lib','Dwmapi.lib')}
+$capture=$null
+function Set-GestureStage([string]$Name){
+    @{Stage=$Name;Utc=[DateTime]::UtcNow.ToString('o')}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $env:FS_REGRESSION_RUN 'gesture-stage.json') -Encoding UTF8
+}
 $qualified=if($env:FS_GESTURE_CACHE){[IO.Path]::GetFullPath($env:FS_GESTURE_CACHE)}else{Join-Path $ProjectRoot 'build\remaining-selection\cache'}
 Assert-Ui (Test-Path -LiteralPath $qualified) 'Supply the current Shell-qualified cache with FS_GESTURE_CACHE.'
 $rows=New-Object Collections.Generic.List[object]
@@ -43,6 +51,42 @@ function Wait-GestureCount([IntPtr]$Window,[int]$Expected) {
     }while([DateTime]::UtcNow-lt$limit)
     throw "Selection did not reach $Expected (last $actual)."
 }
+function Close-GestureObservation($Capture) {
+    if($null-eq$Capture){return}
+    try {
+        if(!$Capture.Job.Process.HasExited){$Capture.Job.Process.Kill();$Capture.Job.Process.WaitForExit()}
+        [void](Complete-RecordedProcess $Capture.Job)
+    }finally{
+        $Capture.Job.Process.Dispose()
+        foreach($event in $Capture.Events.Values){$event.Dispose()}
+    }
+}
+function Wait-GestureObserverEvent($Capture,[string]$Name) {
+    $limit=[DateTime]::UtcNow.AddSeconds(15)
+    do {
+        if($Capture.Events[$Name].WaitOne(50)){return}
+        if($Capture.Job.Process.HasExited){throw ('Presentation observer failed: '+$Capture.Job.Error.Result)}
+    }while([DateTime]::UtcNow-lt$limit)
+    throw ('Presentation observer timed out: '+$Name)
+}
+function Start-GestureObservation([IntPtr]$Window,[string]$Label) {
+    $stem='Local\FileSpacer-Gesture-'+[Guid]::NewGuid().ToString('N')
+    $events=@{};$job=$null
+    try {
+        foreach($name in @('ready','begin','started','returned')){$events[$name]=New-Object Threading.EventWaitHandle($false,[Threading.EventResetMode]::ManualReset,($stem+'-'+$name))}
+        [uint32]$targetId=0;[void][FileSpacerRegression.Native]::GetWindowThreadProcessId($Window,[ref]$targetId)
+        $body=Use-UiView $Window {param($view) $view.Window}
+        $prefix=Join-Path $env:FS_REGRESSION_RUN $Label
+        $job=Start-RecordedProcess -Executable $observer -Arguments (Join-ProcessArguments @([string]$targetId,[string]$body.ToInt64(),$script:UiExecutable,$prefix,$stem)) -OutputPath ($prefix+'.stdout.log') -ErrorPath ($prefix+'.stderr.log')
+        $result=[pscustomobject]@{Job=$job;Events=$events;Prefix=$prefix}
+        Wait-GestureObserverEvent $result 'ready'
+        return $result
+    }catch{
+        if($null-ne$job){Close-GestureObservation ([pscustomobject]@{Job=$job;Events=$events})}
+        else{foreach($event in $events.Values){$event.Dispose()}}
+        throw
+    }
+}
 $failure=$null
 try {
     Initialize-Ui 'selection-gestures' -FixtureParent (Join-Path $ProjectRoot 'build')
@@ -59,13 +103,16 @@ try {
     foreach($arm in $arms) {
         $env:FS_SELECTION_PRODUCT_CACHE=if($arm-eq'private'){$cache}else{''}
         $folder=Join-Path $script:UiRoot $arm;[void][IO.Directory]::CreateDirectory($folder)
-        for($i=0;$i-lt$FixtureCount;++$i){[IO.File]::WriteAllText((Join-Path $folder ('File{0:D5}.txt'-f$i)),'fixture')}
-        $window=Open-UiFolder $folder $FixtureCount
+        $initialCount=if($preseed){128}else{$FixtureCount}
+        for($i=0;$i-lt$initialCount;++$i){[IO.File]::WriteAllText((Join-Path $folder ('File{0:D5}.txt'-f$i)),'fixture')}
+        Set-GestureStage 'open-initial-fixture'
+        $window=Open-UiFolder $folder $initialCount
         Activate-Ui $window
         foreach($mode in @(@{Name='medium';Mode=1;Free=$false},@{Name='tiles';Mode=6;Free=$false},@{Name='free-icons';Mode=1;Free=$true},@{Name='free-tiles';Mode=6;Free=$true})) {
             if($env:FS_GESTURE_VIEWS-and$mode.Name-notin($env:FS_GESTURE_VIEWS-split',')){continue}
             # Opening the FS menu selects the classic profile. Direct COM mode
             # changes from modern Details otherwise bypass that product policy.
+            Set-GestureStage 'configure-view-menu'
             $popup=[FileSpacerViewMenuTests.MenuUi]::Open($window,(Get-UiCommandToolbar $window),(Get-UiId 'IDM_VIEW_MENU'))
             $labelPattern=if($mode.Mode-eq6){'Mosa|Tiles'}else{'Moyennes|Medium'}
             $popup.Entries|Select-Object Command,Label|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'view-menu.json')
@@ -77,6 +124,33 @@ try {
             Wait-UiViewMode $window $mode.Mode
             Use-UiView $window {param($view) $view.SetViewModeAndIconSize($mode.Mode,48);$view.AutoArrange=!$mode.Free;$view.SortBy($false,$true);$view.Focus()}
             Wait-UiViewMode $window $mode.Mode 48
+            if($presentation){
+                for($attempt=0;$attempt-lt4;++$attempt){
+                    $body=Use-UiView $window {param($view) $view.Bounds}
+                    if($body.Width-eq800-and$body.Height-eq400){break}
+                    $outer=[FileSpacerRegression.Native]::Bounds($window)
+                    Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($window,[IntPtr]::Zero,100,100,($outer.Width+800-$body.Width),($outer.Height+400-$body.Height),0x14)) 'Cannot fit gesture viewport.'
+                    Start-Sleep -Milliseconds 50
+                }
+                $body=Use-UiView $window {param($view) $view.Bounds}
+                Assert-Ui ($body.Width-eq800-and$body.Height-eq400) 'Gesture viewport differs from 800 x 400.'
+            }
+            if($preseed){
+                Set-GestureStage 'close-seed-fixture'
+                Close-UiFolder $window
+                Complete-TestApplications $script:UiProcesses
+                $script:UiProcesses.Clear()
+                for($i=$initialCount;$i-lt$FixtureCount;++$i){[IO.File]::WriteAllText((Join-Path $folder ('File{0:D5}.txt'-f$i)),'fixture')}
+                Set-GestureStage 'reopen-persisted-fixture'
+                $window=Open-UiFolder $folder $FixtureCount
+                Activate-Ui $window
+                Wait-UiViewMode $window $mode.Mode 48
+                Assert-Ui ((Use-UiView $window {param($view) $view.AutoArrange})-eq(!$mode.Free)) 'Persisted arrangement differs.'
+                if($presentation){
+                    $body=Use-UiView $window {param($view) $view.Bounds}
+                    Assert-Ui ($body.Width-eq800-and$body.Height-eq400) 'Persisted viewport differs from 800 x 400.'
+                }
+            }
             $list=Get-UiControl $window 'SysListView32'
             if($env:FS_GESTURE_INSPECT_SECONDS) {
                 $seconds=[int]$env:FS_GESTURE_INSPECT_SECONDS
@@ -86,18 +160,20 @@ try {
                 Start-Sleep -Seconds $seconds # Owned fixture only; outside every timed action.
             }
             $gestures=if($env:FS_GESTURE_ACTIONS){@($env:FS_GESTURE_ACTIONS-split',')}else{@('escape','background','selected-item')}
-            Assert-Ui (@($gestures|Where-Object {$_-notin@('escape','background','selected-item','escape-background')}).Count-eq0) 'Unknown gesture.'
+            Assert-Ui (@($gestures|Where-Object {$_-notin@('escape','background','selected-item','escape-background','escape-background-once')}).Count-eq0) 'Unknown gesture.'
             foreach($gesture in $gestures) {
                 for($rep=0;$rep-lt$Repetitions;++$rep) {
                     Use-UiView $window {param($view) $view.Reveal('File00000.txt');$view.Focus()}
                     $frame=[FileSpacerRegression.Native]::Bounds($window)
                     Assert-Ui ([FileSpacerRegression.Native]::SetCursorPos($frame.Left+100,$frame.Top+10)) 'Cannot park pointer before preparing selection.'
+                    Set-GestureStage 'select-all'
                     [FileSpacerRegression.Native]::Keys($window,0x41,$true,$false)
                     Wait-GestureCount $window $FixtureCount
                     Wait-Ui {(Use-UiView $window {param($view) $view.SelectedCount})-eq$FixtureCount} 'full selection stable before the measured gesture' 100
+                    Set-GestureStage 'locate-target'
                     $target=$null;$locating=[Diagnostics.Stopwatch]::StartNew()
                     if($gesture-eq'selected-item'){$target=[FileSpacerRegression.NativeTargets]::Item($list,0,$FixtureCount,$true,$false)}
-                    if($gesture-in@('background','escape-background')) {
+                    if($gesture-in@('background','escape-background','escape-background-once')) {
                         $rect=[FileSpacerRegression.Native]::Bounds($list)
                         $lastError=''
                         foreach($y in @(10,30,50,80,110,150,200,250)) {
@@ -112,20 +188,37 @@ try {
                         Assert-Ui ($null-ne$target) ('No verified exposed blank point: '+$lastError)
                     }
                     $locateMs=$locating.Elapsed.TotalMilliseconds;$locating.Stop()
+                    if($presentation-and$gesture-ne'escape'){
+                        Assert-Ui ([FileSpacerRegression.Native]::SetCursorPos($target.X,$target.Y)) 'Cannot position pointer before the visual click measurement.'
+                    }
+                    Set-GestureStage 'observe-counter-and-baseline'
                     $before=Read-RangeCounter $window
                     if($gesture-ne'escape'){Start-Sleep -Milliseconds ([int][GestureComposition]::GetDoubleClickTime()+20)}
+                    if($presentation){
+                        $capture=Start-GestureObservation $window ($arm+'-'+$mode.Name+'-'+$gesture+'-'+$rep)
+                        [void]$capture.Events['begin'].Set()
+                        Wait-GestureObserverEvent $capture 'started'
+                    }
+                    Set-GestureStage ('input-'+$gesture)
+                    $inputTick=[Diagnostics.Stopwatch]::GetTimestamp()
                     $clock=[Diagnostics.Stopwatch]::StartNew()
                     $hitMs=0.0
-                    if($gesture-eq'escape-background') {
-                        $hitStart=$clock.Elapsed.TotalMilliseconds
-                        [FileSpacerRegression.NativeTargets]::Background($list,$target.X,$target.Y)
-                        $hitMs=$clock.Elapsed.TotalMilliseconds-$hitStart
+                    if($gesture-in@('escape-background','escape-background-once')) {
+                        if($gesture-eq'escape-background'){
+                            $hitStart=$clock.Elapsed.TotalMilliseconds
+                            [FileSpacerRegression.NativeTargets]::Background($list,$target.X,$target.Y)
+                            $hitMs=$clock.Elapsed.TotalMilliseconds-$hitStart
+                        }
                         [FileSpacerRegression.Native]::Keys($window,0x1b,$false,$false)
                         Wait-GestureCount $window 0
-                        [FileSpacerRegression.Native]::ClickControl($window,$list,$target.X,$target.Y)
+                        if($presentation){[void][FileSpacerRegression.Native]::ClickControlAtPointer($window,$list,$target.X,$target.Y)}
+                        else{[FileSpacerRegression.Native]::ClickControl($window,$list,$target.X,$target.Y)}
                     }
                     elseif($gesture-eq'escape'){[FileSpacerRegression.Native]::Keys($window,0x1b,$false,$false)}
-                    else{[FileSpacerRegression.Native]::ClickControl($window,$list,$target.X,$target.Y)}
+                    else{
+                        if($presentation){$inputTick=[FileSpacerRegression.Native]::ClickControlAtPointer($window,$list,$target.X,$target.Y)}
+                        else{[FileSpacerRegression.Native]::ClickControl($window,$list,$target.X,$target.Y)}
+                    }
                     $expected=if($gesture-eq'selected-item'){1}else{0}
                     Wait-GestureCount $window $expected
                     $stateMs=$clock.Elapsed.TotalMilliseconds
@@ -133,17 +226,36 @@ try {
                     $composedMs=$clock.Elapsed.TotalMilliseconds;$clock.Stop()
                     $frame=[FileSpacerRegression.Native]::Bounds($window)
                     Assert-Ui ([FileSpacerRegression.Native]::SetCursorPos($frame.Left+100,$frame.Top+10)) 'Cannot park pointer outside the Shell view.'
+                    $visible=$null
+                    $markerOffset=0.0;$visibleFirst='';$visibleFinal=''
+                    if($null-ne$capture){
+                        [void]$capture.Events['returned'].Set()
+                        if(!$capture.Job.Process.WaitForExit(10000)){throw 'Presentation observer did not finish.'}
+                        $exitCode=Complete-RecordedProcess $capture.Job
+                        Assert-Ui ($exitCode-eq0) ('Presentation observer failed: '+$capture.Job.Error.Result)
+                        $visible=Import-Csv -LiteralPath ($capture.Prefix+'-presentation.csv')
+                        Assert-Ui ($capture.Job.Output.Result-match'GESTURE_MARKER qpc=(\d+) rate=(\d+)') 'Missing visual start marker.'
+                        $markerOffset=1000.0*($inputTick-[double]$matches[1])/[double]$matches[2]
+                        $culture=[Globalization.CultureInfo]::InvariantCulture
+                        $first=[double]::Parse($visible.first_changed_ms,$culture)-$markerOffset
+                        $final=[double]::Parse($visible.final_observed_ms,$culture)-$markerOffset
+                        Assert-Ui ($markerOffset-ge0-and$first-ge0-and$final-ge$first) 'Visible change preceded the measured gesture.'
+                        $visibleFirst=$first.ToString('F3',$culture);$visibleFinal=$final.ToString('F3',$culture)
+                        Close-GestureObservation $capture;$capture=$null
+                    }
+                    Set-GestureStage 'verify-counter-and-identities'
                     $calls=(Read-RangeCounter $window)-$before
-                    if($arm-eq'private'-and$gesture-in@('escape','escape-background')){Assert-Ui ($calls-eq1) 'The qualified private Escape path was not exercised exactly once.'}
+                    if($arm-eq'private'-and$gesture-in@('escape','escape-background','escape-background-once')){Assert-Ui ($calls-eq1) 'The qualified private Escape path was not exercised exactly once.'}
                     $selected=Use-UiView $window {param($view) $view.Selected()}
                     Assert-Ui (($selected-join';')-eq$(if($expected){'File00000.txt'}else{''})) 'Wrong selected identities.'
                     Assert-Ui ((Use-UiView $window {param($view) $view.Count})-eq$FixtureCount) 'Fixture count changed.'
-                    $rows.Add([pscustomobject]@{arm=$arm;view=$mode.Name;gesture=$gesture;items=$FixtureCount;rep=$rep;state_ms=$stateMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);composed_ms=$composedMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);range_calls=$calls;locate_ms=$locateMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);hit_ms=$hitMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture)})
+                    $rows.Add([pscustomobject]@{arm=$arm;view=$mode.Name;gesture=$gesture;items=$FixtureCount;rep=$rep;persisted_view=$preseed;state_ms=$stateMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);composed_ms=$composedMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);range_calls=$calls;locate_ms=$locateMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);hit_ms=$hitMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);presentation_quality=$(if($null-ne$visible){$visible.quality}else{''});visible_first_ms=$visibleFirst;visible_final_ms=$visibleFinal;marker_offset_ms=$markerOffset.ToString('F3',[Globalization.CultureInfo]::InvariantCulture)})
                     $rows|Export-Csv -LiteralPath (Join-Path $env:FS_REGRESSION_RUN 'gestures.csv') -NoTypeInformation
                     Write-Host ('GESTURE '+$arm+' '+$mode.Name+' '+$gesture+' '+[math]::Round($composedMs,3)+' ms; range='+$calls)
                 }
             }
         }
+        Set-GestureStage 'normal-close'
         Close-UiFolder $window
         Complete-TestApplications $script:UiProcesses
         $script:UiProcesses.Clear()
@@ -152,4 +264,4 @@ try {
     $actionCount=if($env:FS_GESTURE_ACTIONS){@($env:FS_GESTURE_ACTIONS-split',').Count}else{3}
     Assert-Ui ($rows.Count-eq($arms.Count*$viewCount*$actionCount*$Repetitions)) 'Incomplete gesture matrix.'
 }catch{$failure=$_;throw}
-finally{Remove-Item Env:\FS_SELECTION_PRODUCT_CACHE -ErrorAction SilentlyContinue;Stop-Ui $failure}
+finally{try{Close-GestureObservation $capture}finally{Remove-Item Env:\FS_SELECTION_PRODUCT_CACHE -ErrorAction SilentlyContinue;Stop-Ui $failure}}
