@@ -12,6 +12,18 @@ FileSpacer propose une interface fluide, sobre et personnalisable, basée sur le
 
 Revenir au parent ne sélectionne pas le dossier qui vient d’être quitté. Un parent déjà ouvert conserve sa sélection.
 
+| Raccourci | Action |
+| --- | --- |
+| Ctrl+N | Ouvrir le dossier de démarrage choisi dans les paramètres, ou réactiver sa fenêtre, en conservant la fenêtre source. |
+| Ctrl+W | Fermer la fenêtre, y compris depuis l’adresse ou la recherche. |
+| Retour arrière | Remonter au parent en respectant le réglage de conservation de la fenêtre source. |
+| Ctrl+Retour arrière | Ouvrir ou réactiver le parent en conservant toujours la fenêtre source. |
+| F4, Ctrl+L ou Alt+D | Sélectionner l’adresse. |
+| F3, Ctrl+E ou Ctrl+F | Placer le curseur dans la recherche. |
+| F5 ou Ctrl+R | Actualiser le dossier, y compris pendant la saisie dans l’adresse ou la recherche. |
+
+Dans l’adresse, la recherche et le renommage d’un fichier, Retour arrière et Ctrl+Retour arrière conservent leur fonction d’édition. La création de fichier texte reste disponible dans le menu contextuel **Nouveau**.
+
 ![Le menu du titre, avec les commandes de navigation et de disposition enregistrée.](images/window-menu-fr.png)
 
 ## Affichage et disposition
@@ -21,6 +33,8 @@ Revenir au parent ne sélectionne pas le dossier qui vient d’être quitté. Un
 Les fichiers et sous-dossiers peuvent être disposés librement en mode Icônes lorsque **Réorganiser automatiquement les icônes** est désactivé. Leurs positions sont enregistrées indépendamment des dimensions de la fenêtre, même lorsque son état enregistré est verrouillé.
 
 ### Options d’affichage
+
+**Ctrl+molette** parcourt les tailles d’icônes et les modes d’affichage. Le geste de zoom du pavé tactile utilise la même action lorsqu’il est transmis par Windows. **Ctrl+Maj+1 à 8** choisit directement, dans l’ordre : très grandes icônes, grandes icônes, icônes moyennes, petites icônes, liste, détails, mosaïques et contenu. Le mode choisi est mémorisé pour le dossier ; le verrouillage de l’état enregistré conserve ses règles habituelles.
 
 **Afficher le nom complet d’un fichier sélectionné**, dans **Paramètres > Affichage**, rend entièrement lisible le nom de l’unique fichier sélectionné en mode Icônes.
 

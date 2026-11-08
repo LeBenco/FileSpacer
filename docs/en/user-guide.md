@@ -12,6 +12,18 @@ FileSpacer offers a fluid, understated and customizable interface built around t
 
 Going to a parent does not select the folder just left. An already-open parent keeps its selection.
 
+| Shortcut | Action |
+| --- | --- |
+| Ctrl+N | Open the starting folder chosen in Settings, or activate its existing window, keeping the source window open. |
+| Ctrl+W | Close the window, including from the address or search field. |
+| Backspace | Open the parent, respecting the setting for keeping the source window open. |
+| Ctrl+Backspace | Open or activate the parent, always keeping the source window open. |
+| F4, Ctrl+L or Alt+D | Select the address. |
+| F3, Ctrl+E or Ctrl+F | Focus search. |
+| F5 or Ctrl+R | Refresh the folder, including while typing in the address or search field. |
+
+In the address, search and file rename fields, Backspace and Ctrl+Backspace retain their text-editing behavior. Text files can still be created from the **New** context menu.
+
 ![The folder title menu, with navigation and saved-layout commands.](images/window-menu.png)
 
 ## View and layout
@@ -21,6 +33,8 @@ Going to a parent does not select the folder just left. An already-open parent k
 Icon views allow free placement of files and subfolders when **Auto arrange icons** is off. Icon positions are saved independently of window geometry, including when the window's saved layout is locked.
 
 ### View options
+
+**Ctrl+mouse wheel** steps through icon sizes and view modes. The touchpad zoom gesture uses the same action when forwarded by Windows. **Ctrl+Shift+1 to 8** selects, in order: extra large icons, large icons, medium icons, small icons, list, details, tiles and content. The chosen mode is remembered for the folder; the saved-state lock keeps its usual behavior.
 
 **Show the full name of a selected file**, in **Settings > Display**, makes the name of a single selected file fully readable in Icons view.
 
