@@ -1,0 +1,292 @@
+Remaining selection costs: host investigation, 8 November 2026
+============================================================
+
+Host: Windows 10 Pro N 22H2, 19045.7807. Native Shell, x64 Debug helpers,
+MSVC 14.44, C++14, /W4, compiler/linker CFG enabled. Shell32 10.0.19041.5678
+(PDB AA193CECC4BAA62951B71B2BC210DD181); native v6 common controls
+10.0.19041.7802 (PDB 88B314BCC210D0A575F8BBBEEB35C4851). ExplorerFrame
+10.0.19041.4842. Owned 5,000-file fixtures; matched 800 x 400 Shell windows.
+
+Scope
+-----
+1. Complete-selection restoration through the public fallback.
+2. Complete deselection through the public fallback.
+3. Free-Tiles deselection with the adopted private manager purge already active.
+
+The first two must remain usable without a qualified private Shell ABI. A faster
+private method is not an improvement to an explicitly public-only fallback.
+Explorer has no equivalent free-Tiles folder placement. Its arranged Tiles view
+is a control, not a claim of identical placement functionality.
+
+Observed cause
+--------------
+Own-process dumps and noninvasive inspection located the remaining free-Tiles
+cost in comctl32, outside the Shell manager notification:
+
+ CListViewHost::Select -> CListView::SetItemState
+ -> CLVItemStore::OnSetItemState
+ -> CLVDrawManager::InvalidateSelectedOrCutOwnerData
+ -> CLVDrawManager::InvalidateItem / _InvalidateItemWorker
+ -> CLVView::GetRects -> CLVTileView::GetRectsOwnerData
+ -> _RecomputeLabelSizeInternal / CalculateSubItemRect
+ -> CLVItemStore::OnGetItem.
+
+The native invalidation visits selected indexes and requests label/subitem
+rectangles even outside the viewport. In the first host trace, free-Tiles clear
+took 4,951.175 ms with 740.769 ms in its selection notification. Purging the
+manager reduced that notification to 0.025 ms but left 3,536.833 ms total.
+These instrumented timings diagnose the path; they are not clean benchmarks.
+
+Ordinary IShellView clear and IShellFolderView::Select(SFVS_SELECT_NONE) both
+retain the quadratic CSelectionManager loop. The measured host arranged-medium
+trace gives 744.559 / 850.294 ms, compared with 8.637 ms for manager purging.
+Earlier count probes established n-squared comparisons for the legacy clear.
+The modern Explorer renderer uses a different selection representation; its
+earlier traced bulk clear empties native selection containers rather than
+performing the legacy per-entry membership/removal loop.
+
+Rejected controls
+-----------------
+Direct child WM_SETREDRAW, IFolderView2::SetRedraw and the documented legacy
+IShellFolderView::SetRedraw do not remove the free-Tiles rectangle work. One
+paired host control gives 5,686.058 ms unchanged, then 5,580.997 / 5,752.413 /
+5,823.207 ms respectively. Every completed row preserved identities, retained
+arrays, focus and positions. Hiding the control exceeded the experiment budget;
+that candidate was stopped and is not qualified or adopted.
+
+No newly validated public replacement removes the classic manager's quadratic
+complete-selection cost. Previously tested batch, forward/reverse indexes,
+accessible selection and temporary Details switching are recorded in README.md;
+Details switching fails free-position preservation. They are not repeated as
+new improvements here.
+
+Adopted candidate
+-----------------
+After the existing manager/subscription purge, clear the control's native
+selected-index range through its own CLVRange::Clear method. Then perform the
+existing public native cleanup, aggregate CDefView notification and cancellation
+of delayed activation. Request one view invalidation; preserve logical focus,
+keyboard focus, selection anchor, canonical positions and retained snapshots.
+Selections below 128 indexes retain the existing path.
+
+Independent prototype, three paired host repetitions:
+
+ old private clear ms       native range candidate ms
+ 5742.571                   12.239
+ 5790.599                    7.187
+ 6256.568                    9.641
+
+Medians: 5,790.599 -> 9.641 ms. Complete identity/cache/focus/position checks pass.
+The test proxy used to place the candidate between purge and public cleanup was
+removed after integration; it is not a FileSpacer implementation dependency.
+
+First integrated production-adapter check, three host repetitions:
+
+ clear ms   snapshot restoration ms   qualified range calls per clear
+ 6.970      127.132                    1
+ 6.950      127.560                    1
+ 6.112      123.875                    1
+
+These initial figures are synchronous API times. Final API comparisons and a
+composed-frame check appear below; the latter includes actual repaint work.
+
+Discovery and fallback
+----------------------
+No Windows-version allowlist or prepared RVA catalogue is used. The isolated
+worker loads matching Microsoft symbols for the actual control DLL, obtains
+method and virtual-table RVAs, and decodes the loaded count getter to derive its
+manager/range members. The consumer checks loaded-image identity, CFG targets,
+virtual slots, getter operands, the native Clear implementation and its named
+allocator imports, including unresolved delay imports. It retains the real
+native COM objects and checks live window/control/range ownership before use.
+No executable bytes, remote process memory, allocation ownership or CFG policy
+are modified by the optimization.
+
+The existing 160-byte Shell descriptor remains compatible. A separate 84-byte
+-r1.range sidecar holds the optional control capability. Its short filename keeps
+the Shell identity; both positive and negative/retry records validate the
+control identity internally. Changed DLLs trigger discovery, not reuse of stale
+offsets. An unknown method/compiler form or failed view binding keeps the prior
+private manager path. An unavailable manager keeps the public Shell path.
+
+Startup dispatch remains asynchronous. A valid existing manager capability is
+published immediately while optional discovery continues. The independently
+published immutable range capability triggers the existing rebind notification
+as soon as it is ready. In-flight calls retain their previously chosen binding.
+There is no UI wait, discovery polling timer or PDB/code inspection per selection.
+Live ownership guards are bounded and independent of the number of icons.
+
+Functional validation and limits
+-------------------------------
+The dedicated range worker qualifies real hidden Shell views, sparse and complete
+selections, ordinary/parent arrays, retained snapshots, subsequent selection,
+focus, sorting, refresh and stale continuations, including free Tiles. The range
+must actually execute before a positive record is published.
+
+The new 18/06 regression passes missing/malformed/truncated/trailing descriptors,
+wrong DLL/size/targets/member/virtual slots/table, unchanged-cache reuse, saved
+optional fallback and obsolete-control negative records. Twenty independent
+late-publication processes pass. The simulated publisher releases its lock after
+atomic final rename, matching the real worker protocol; a rename notification
+can precede the publisher's completion/read access to that file.
+
+Initial sorting qualification and all-selection failures were investigated
+against a native baseline; see Regression investigation below. Rejected
+qualification never publishes a positive descriptor.
+
+Additional public control
+-------------------------
+Temporarily setting documented LVTILEVIEWINFO.cLines to zero under public
+SetRedraw and restoring it afterwards is worse: completed free-Tiles public
+rows take 17,939-18,388 ms instead of 6,876-6,983 ms; manager-only rows take
+16,732-17,522 ms instead of 5,654-5,888 ms. All twelve completed rows pass
+their functional checks. The technique is rejected.
+
+Accessibility verification
+--------------------------
+An initial event probe, without draining setup events, reported zero selection
+events once. An explicit NotifyWinEvent was investigated but produced duplicates.
+It is NOT adopted. After draining setup events before starting the timestamped
+observer, all nine final public/legacy/private rows observe exactly one native
+EVENT_OBJECT_SELECTIONWITHIN, on the same SysListView32, OBJID_CLIENT (-4),
+CHILDID_SELF (0). Queue coalescing/timestamp filtering is a plausible explanation
+for the initial probe result; it is not evidence of a product notification loss.
+Qualification drains setup events and requires the native aggregate event after
+the 128-item sparse clear. Final cold-cache qualification succeeds without any
+added application WinEvent.
+
+Regression investigation
+------------------------
+The broad all-selection matrix initially failed after sorting Tiles. A separate
+native baseline without either private binding could also fail its settling
+check. Noninvasive stacks showed reentrant UIAutomationCore provider calls
+inside PeekMessage; the helper drained messages without checking its duration
+inside that loop. Both test and qualification pumps now check their deadline
+between dispatched messages. A single reentrant Windows call can still overrun
+it; no hard real-time guarantee is claimed. Exact identities, two surrounding
+selection counts, the 100-ms stability interval and five-second deadline remain
+unchanged. Six native/adopted sort comparisons subsequently pass.
+
+Static analysis
+---------------
+Debug /W4 build succeeds without new compiler warnings. Clang-tidy and Cppcheck
+complete without crashes/timeouts on ShellViewSelection, ShellSelectionDiscovery,
+RemainingSelectionTests, SelectionCacheTests and ProductionSelectionTests. These
+units cover the modified runtime header and shared SelectionClearTests source.
+Clang uses real Windows SDK 10.0.19041 and MSVC/ATL 14.44.35207; Cppcheck uses
+official windows, microsoft_atl and sqlite3 models without full system headers.
+
+Verdict: REVIEW. New guarded window-extra/procedure integer-to-pointer conversions
+receive performance-no-int-to-ptr diagnostics; these are necessary Win32 ABI
+conversions, not unvalidated calls. New adjacent same-type parameters and native
+flag combinations receive style diagnostics. Cppcheck reports aggregate members
+with explicit {} initialization as potentially uninitialized; the initialization
+is present. No confirmed new defect remains in production code. Do not interpret
+an analyzer exit code of zero as an empty diagnostic set.
+
+Analysis-driven corrections: signed RVA arithmetic is explicitly widened;
+multi-level pointer arithmetic uses byte pointers; callback tracing moves its
+path and joins its thread during exception unwinding; the measurement fixture
+checks its Shell pointer before copying it. The null-reference and thread-entry
+exception diagnostics disappear in the final probe analysis.
+
+Final validation
+----------------
+18/04 completes all cache/lifecycle checks and 405 real-Shell selection rows.
+18/05 passes both the qualified and forced public-selection paths: nine
+representations and 27 partial-to-all checks per path, including sorting.
+18/06 passes again from an empty cache on the final implementation, with native
+notifications and no additional NotifyWinEvent. Twenty independent late
+publication processes pass. The final event comparison passes nine rows.
+The Explorer comparison passes six rows; the targeted private display check
+passes one row, including identity/cache/focus/position checks.
+The final four-view adopted-path matrix passes all twelve rows as well.
+
+Final free-Tiles API medians, 5,000 items, three repetitions (milliseconds):
+
+ path                       select all    clear       restore saved IDs
+ public IShellView             398.554    4551.688       485.553
+ public legacy bulk            407.175    4609.911       471.078
+ adopted private                16.393       6.266        83.350
+
+Independent missing-range control, retaining the prior private manager path:
+clear median 4154.452 ms. The optional native range therefore removes roughly
+99.85% of that synchronous clear cost on this host. The two public-only cases
+have no newly adopted optimization. Public restoration is near the user's
+500-ms threshold here; this does not guarantee that bound on other machines.
+
+Final adopted-path API medians, three repetitions on each representation:
+
+ view                 select all    clear    restore saved IDs
+ medium Icons           13.674      5.376      27.677
+ arranged Tiles         19.080      4.677      29.160
+ free Icons             23.559      4.718      28.557
+ free Tiles             16.582      5.040      87.705
+
+These short samples are not percentile guarantees. Earlier cold/loaded
+restoration samples reached about 200 ms; the large multi-second clear
+improvement is substantially larger than this measurement variability.
+
+Explorer API medians at the same 800 x 400 view dimensions (three repetitions):
+
+ view                 select all    clear    reselect all
+ medium Icons           27.891      4.169      33.963
+ arranged Tiles         33.481      3.822      18.186
+
+Explorer's last column is reselect-all, not restoration of a serialized identity
+snapshot. FileSpacer verifies those identities before using its global shortcut;
+the operations must not be presented as identical. Explorer does not implement
+free folder placement, so arranged Tiles is only the nearest rendering control.
+Remote Explorer windows are not subclassed: per-notification fields are zero
+there because they are unmeasured, not because Explorer emits no notifications.
+Likewise selection_events=0 outside the events case means no event observer.
+
+Actual composed-frame check
+--------------------------
+Final native-range clear: API 6.862 ms; final deselected image 85.794 ms after
+the marker, quality OBSERVED, zero coalesced frames, 800 x 400. Before/after
+bitmaps were inspected: visible highlights disappear, focus and positions stay.
+This is one capture, not a latency percentile or physical scan-out measurement.
+
+The display driver explicitly repaints through standard RedrawWindow with
+RDW_UPDATENOW, then DwmFlush, after API return. DWM capture includes that paint
+cost. It waits for the capture thread without dispatching unrelated UIA requests.
+The product's normal paint scheduling is unchanged. This establishes that the
+multi-second work is not merely deferred to repaint; it is not an end-to-end
+measurement of the complete FolderWindow/application under arbitrary automation.
+
+Earlier public captures with the ordinary pump observed final images at
+5400.678 and 5494.025 ms. Later ordinary-pump runs were contaminated by external
+UIAutomationCore activity in PeekMessage (tooltip GetText/hit tests, then item
+queries). They are not complete PASS runs. The helper now detaches/removes only
+its own native tooltip, outside timing, using ListView_SetToolTips; deactivation
+alone did not stop accessibility text requests. Visible interactive setup also
+encountered SetCursorPos failures; default restricted execution denied Desktop
+Duplication (0x80070005) and ShellWindows activation. Desktop-capable execution
+and API-only setup enabled the final capture and Explorer comparison. No host
+security/lock setting was changed. The optional Computer Use helper could not
+initialize its kernel assets (OS error 3); no app actions were performed with it.
+
+The free fixtures keep most initial column positions but explicitly move items
+0 and 4000 to (13,17) and (6000,9000). GetAutoArrange must return S_FALSE and all
+5,000 canonical positions must survive. Column-like screenshots are therefore
+not evidence that the test accidentally enabled automatic placement.
+
+Reproduction (x64 MSVC CMD, FileSpacer closed)
+--------------------------------------------
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\regression\cases\18-vue-shell-native\06-SelectionRange.ps1 -RequireRange
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\54-RemainingSelection.ps1 -Case events
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\54-RemainingSelection.ps1 -Case visible-adopted
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\experiments\reactivity\54-RemainingSelection.ps1 -Case explorer
+
+-SymbolCache may reuse downloaded matching Microsoft PDBs. -CacheDirectory may
+reuse a qualified isolated cache; -MissingRange retains only its base capability.
+FS_REMAINING_BACKGROUND=1 skips input injection, not creation of visible native
+windows; it does not turn API-only rows into display measurements. The dedicated
+visible cases still verify coverage and capture real DWM images.
+
+Proposed French changelog line
+-----------------------------
+Accélération supplémentaire de la désélection massive en placement libre,
+notamment en Mosaïque, avec découverte automatique du chemin natif et repli
+silencieux lorsque celui-ci ne peut pas être validé.
