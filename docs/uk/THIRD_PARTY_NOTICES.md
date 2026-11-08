@@ -4,18 +4,18 @@
 
 FileSpacer засновано на [ChromaFiler](https://github.com/vanjac/chromafiler), Copyright (c) 2023 J. van't Hoog, що поширюється за [GNU General Public License v3.0](../../LICENSE).
 
+<a id="sqlite"></a>
+
+## SQLite
+
+SQLite 3.53.4 статично скомпоновано з програмою. Він належить до суспільного надбання. Незмінений вихідний код і відомості про походження містяться в `third_party/sqlite`. Див. <https://sqlite.org/copyright.html>.
+
 <a id="installer"></a>
 
 ## NSIS
 
 - **Програма інсталяції**: [NSIS](https://nsis.sourceforge.io/) ([ліцензії](https://nsis.sourceforge.io/License)).
 - **Модуль LockedList програми інсталяції**: [Afrow Soft](https://nsis.sourceforge.io/LockedList_plug-in) (Copyright (c) 2013 Afrow Soft Ltd, [ліцензія zlib](../../installer/plugins/LockedList.txt), також постачається у файлі `LockedList-LICENSE.txt`).
-
-<a id="sqlite"></a>
-
-## SQLite
-
-SQLite 3.53.4 статично скомпоновано з програмою. Він належить до суспільного надбання. Незмінений вихідний код і відомості про походження містяться в `third_party/sqlite`. Див. <https://sqlite.org/copyright.html>.
 
 <a id="icons"></a>
 
