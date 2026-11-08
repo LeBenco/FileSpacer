@@ -71,8 +71,17 @@ int wmain(int argc, wchar_t **argv) {
         observation.apiReturned();
         observation.finish();
         RECT actual = {};
-        presentation::check(IsWindow(body) && GetWindowRect(body, &actual)
-            && EqualRect(&actual, &observation.region) && GetForegroundWindow() == frame,
+        const HWND foreground = GetForegroundWindow();
+        const bool unchanged = IsWindow(body) && GetWindowRect(body, &actual)
+            && EqualRect(&actual, &observation.region) && foreground == frame;
+        if (!unchanged) {
+            DWORD foregroundProcess = 0; GetWindowThreadProcessId(foreground, &foregroundProcess);
+            std::fprintf(stderr, "OBSERVATION frame=%p foreground=%p pid=%lu expected=(%ld,%ld,%ld,%ld) actual=(%ld,%ld,%ld,%ld)\n",
+                static_cast<void *>(frame), static_cast<void *>(foreground), foregroundProcess,
+                observation.region.left, observation.region.top, observation.region.right, observation.region.bottom,
+                actual.left, actual.top, actual.right, actual.bottom);
+        }
+        presentation::check(unchanged,
             "Gesture window moved or lost foreground during observation");
         presentation::check(observation.quiet, "Gesture image did not settle");
         const auto images = presentation::boundaries(observation.images, observation.began.load());
