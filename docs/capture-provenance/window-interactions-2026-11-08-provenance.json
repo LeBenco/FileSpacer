@@ -1,0 +1,1393 @@
+{
+  "application": "FileSpacer",
+  "version": "1.3.2",
+  "captured": "2026-11-08",
+  "sourceCommit": "270eb2da1562f21f7555a68bde9394c0fae554c1",
+  "baseExecutableSha256": "049facc7281db28eebd1d3f93300e0364d5bf989bde5f95765039e00834e3de0",
+  "folderDllSha256": "8f60bbf82027e940ada15345dcafeba7d4554d73c548a5a35f7c4c7b0bef23df",
+  "method": "Actual screen pixels in AgentWin10, using installed Windows display languages and resource-only executables relinked from the frozen validated Debug objects. No translated overlays, compositing or frame edits.",
+  "captureScripts": "tools/documentation-capture/",
+  "captureTool": {
+    "name": "ScreenToGif",
+    "version": "2.43.2",
+    "archiveSha256": "42a0b53d67ecae22698b4881ffb2c9c7a9049663f5fbdd2edb779e1971000664",
+    "cursor": true,
+    "clickHighlights": true,
+    "recordedModifierKeys": true
+  },
+  "wallpaper": {
+    "source": "https://images.unsplash.com/photo-1599148521725-dbd1ee6c0817",
+    "license": "https://unsplash.com/license",
+    "sha256": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714",
+    "position": "Fit (DWPOS_FIT)"
+  },
+  "environment": "Windows 10, native menus without Nilesoft Shell, fictional localized files and isolated /test preferences. Temporary 1600x1200 display mode. Other application windows are minimized during capture and restored afterward.",
+  "storyboard": "Each animation starts with the cursor centered in the folder window. The menu animation opens the original menu for 2 seconds, dismisses it by clicking empty folder background, follows the complete visible toolbar-menu > FileSpacer Settings > Display > Customize title bar menu path, drags Restore locked layout into the menu and Reopen closed window out, accepts both dialogs, and leaves the final menu visible for 2 seconds. All recorded pointer transitions are interpolated and no cuts are made.",
+  "framing": "Gesture recordings are 900x600 and keep both initial and final window bounds inside the capture. Menu recordings use the measured union of real localized menus and dialogs plus 32 pixels. The static menu image uses the native DWM frame. The 480x220 lock crop shows the new left-hand icon, title, toolbar and part of the content.",
+  "validation": {
+    "scope": "Documentation capture scenarios, not a complete application regression suite.",
+    "visualReview": "Per-language contact sheets and extracted original-size frames checked for native text, framing, menu actions, centered initial cursor, Alt overlay and approved wallpaper. Final PNGs inspected with the same series.",
+    "stateRestored": true,
+    "productionUnchanged": true,
+    "cleanupErrors": []
+  },
+  "supersedes": [
+    "docs/<language>/images/move-window.gif",
+    "docs/<language>/images/resize-window.gif",
+    "docs/<language>/images/customize-title-menu.gif",
+    "docs/<language>/images/customized-title-menu.png",
+    "docs/<language>/images/locked-title.png"
+  ],
+  "languages": [
+    {
+      "language": "en",
+      "windowsDisplayLanguage": "en-GB",
+      "requestedWindowsDisplayLanguage": "en-GB",
+      "powerShellUiCulture": "en-GB",
+      "run": "vm-391b4420d9de4cbf9fba170a26000e0c",
+      "recorderExitCodes": [
+        2,
+        2,
+        2
+      ],
+      "captured": "2026-11-08T11:32:19.6810082Z",
+      "scenarioStatus": "PASS",
+      "files": [
+        {
+          "file": "docs/en/images/move-window.gif",
+          "bytes": 1702476,
+          "sha256": "29937a84fc9afeef072f74bd248e8685676fdc21bb88d86433b89fc980d37c56",
+          "width": 900,
+          "height": 600,
+          "frames": 41,
+          "durationMs": 6110,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 455,
+            "Top": 347,
+            "Right": 1175,
+            "Bottom": 787,
+            "Width": 720,
+            "Height": 440
+          }
+        },
+        {
+          "file": "docs/en/images/resize-window.gif",
+          "bytes": 1121666,
+          "sha256": "649289c11a89c4497ca87d86cd6cdda1d27bb33d3c0901da2b7eab8cfdf6fca8",
+          "width": 900,
+          "height": 600,
+          "frames": 40,
+          "durationMs": 6030,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1180,
+            "Bottom": 790,
+            "Width": 840,
+            "Height": 510
+          }
+        },
+        {
+          "file": "docs/en/images/customize-title-menu.gif",
+          "bytes": 1166783,
+          "sha256": "ab83732584cd922a57a17ba6b341dda757a45deace608dbe333cd8d5bed04324",
+          "width": 949,
+          "height": 757,
+          "frames": 229,
+          "durationMs": 23850,
+          "loop": 0,
+          "captureArea": {
+            "Y": 188,
+            "Width": 949,
+            "Height": 757,
+            "X": 315
+          },
+          "before": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          },
+          "after": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          }
+        },
+        {
+          "file": "docs/en/images/customized-title-menu.png",
+          "bytes": 16503,
+          "sha256": "94ef3c05cd1527d657d3336d8e06f0a72db0cf547680b2f2d453ae652b847470",
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/en/images/locked-title.png",
+          "bytes": 9438,
+          "sha256": "f5cffb672128e610a4dd5d9f0963a835759560b0931070be74166a841cd80175",
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "executableSha256": "ee120070b0264dbb72a902d3007fb5970882c26295efb826a61743bfe275fb12",
+      "finalMenuCommandIds": [
+        1123,
+        1120,
+        1008,
+        1100,
+        1121,
+        1122
+      ]
+    },
+    {
+      "language": "fr",
+      "windowsDisplayLanguage": "fr-FR",
+      "requestedWindowsDisplayLanguage": "fr-FR",
+      "powerShellUiCulture": "fr-FR",
+      "run": "vm-6fbe52778d3244e6a05fcd3722a54f34",
+      "recorderExitCodes": [
+        2,
+        2,
+        2
+      ],
+      "captured": "2026-11-08T11:10:28.2404963Z",
+      "scenarioStatus": "PASS",
+      "files": [
+        {
+          "file": "docs/fr/images/move-window.gif",
+          "bytes": 1720541,
+          "sha256": "5ef49f4efb523cda8afcdd2575a091ee8847d085993d972bbc4d3f90e78d41fa",
+          "width": 900,
+          "height": 600,
+          "frames": 40,
+          "durationMs": 6030,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 455,
+            "Top": 347,
+            "Right": 1175,
+            "Bottom": 787,
+            "Width": 720,
+            "Height": 440
+          }
+        },
+        {
+          "file": "docs/fr/images/resize-window.gif",
+          "bytes": 1130047,
+          "sha256": "ac76e8c4bd4a3c25257ac4b34959b7200cdfe8229d8a85f674826ccffaf956f1",
+          "width": 900,
+          "height": 600,
+          "frames": 40,
+          "durationMs": 5950,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1180,
+            "Bottom": 790,
+            "Width": 840,
+            "Height": 510
+          }
+        },
+        {
+          "file": "docs/fr/images/customize-title-menu.gif",
+          "bytes": 1466621,
+          "sha256": "9793d58603e2bd823586884c9a112c39a4d0e7f3c80cfce59898411d5cd037a6",
+          "width": 982,
+          "height": 757,
+          "frames": 232,
+          "durationMs": 24080,
+          "loop": 0,
+          "captureArea": {
+            "Y": 188,
+            "Width": 982,
+            "Height": 757,
+            "X": 315
+          },
+          "before": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          },
+          "after": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          }
+        },
+        {
+          "file": "docs/fr/images/customized-title-menu.png",
+          "bytes": 16927,
+          "sha256": "93fc26d9ddd7fde3e866844e5e6fd799a60254fc2be480e04b7b85d1b07e5943",
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/fr/images/locked-title.png",
+          "bytes": 10225,
+          "sha256": "cc9783c8d84cac18a72ffe9844d5820846775e1a55fccea9c51f35f256846295",
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "executableSha256": "a843139dc45ad8399a9bc6c19c271ab0536b157a1d0afc1a3372482924964cf2",
+      "finalMenuCommandIds": [
+        1123,
+        1120,
+        1008,
+        1100,
+        1121,
+        1122
+      ]
+    },
+    {
+      "language": "de",
+      "windowsDisplayLanguage": "de-DE",
+      "requestedWindowsDisplayLanguage": "de-DE",
+      "powerShellUiCulture": "de-DE",
+      "run": "vm-8901f74d2b9643fd81dd90cb9ccea8c0",
+      "recorderExitCodes": [
+        2,
+        2,
+        2
+      ],
+      "captured": "2026-11-08T12:06:27.7951881Z",
+      "scenarioStatus": "PASS",
+      "files": [
+        {
+          "file": "docs/de/images/move-window.gif",
+          "bytes": 1732889,
+          "sha256": "80376c956d4da6617c58014a776b2910105d249ba43a867c4bb0c2d8fa42fcba",
+          "width": 900,
+          "height": 600,
+          "frames": 41,
+          "durationMs": 6200,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 455,
+            "Top": 347,
+            "Right": 1175,
+            "Bottom": 787,
+            "Width": 720,
+            "Height": 440
+          }
+        },
+        {
+          "file": "docs/de/images/resize-window.gif",
+          "bytes": 1176084,
+          "sha256": "b47514ef0648a846c217021416566afff5bf633a488d18acf98c706bdedc438e",
+          "width": 900,
+          "height": 600,
+          "frames": 42,
+          "durationMs": 6030,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1180,
+            "Bottom": 790,
+            "Width": 840,
+            "Height": 510
+          }
+        },
+        {
+          "file": "docs/de/images/customize-title-menu.gif",
+          "bytes": 1448318,
+          "sha256": "32c95212f656746d88d1da61e0110f49bc09ecd6a58c3cd3a84427c0127c6559",
+          "width": 982,
+          "height": 757,
+          "frames": 228,
+          "durationMs": 23410,
+          "loop": 0,
+          "captureArea": {
+            "Y": 188,
+            "Width": 982,
+            "Height": 757,
+            "X": 315
+          },
+          "before": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          },
+          "after": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          }
+        },
+        {
+          "file": "docs/de/images/customized-title-menu.png",
+          "bytes": 16278,
+          "sha256": "b0f08c2bc171af144c0ba8dee6820638349a7238121851755ebd0009d94a3982",
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/de/images/locked-title.png",
+          "bytes": 9684,
+          "sha256": "338dd0e8e95477bde17260e7b82e0479edc593c3b162be6cd981b6d204c87ffb",
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "executableSha256": "c1855170c42fd29c19bc927055bfb4ea97a53ee6137db4df6bdc167d14bdc840",
+      "finalMenuCommandIds": [
+        1123,
+        1120,
+        1008,
+        1100,
+        1121,
+        1122
+      ]
+    },
+    {
+      "language": "it",
+      "windowsDisplayLanguage": "it-IT",
+      "requestedWindowsDisplayLanguage": "it-IT",
+      "powerShellUiCulture": "it-IT",
+      "run": "vm-3b1cc0f8909946a394c015dc920281c7",
+      "recorderExitCodes": [
+        2,
+        2,
+        2
+      ],
+      "captured": "2026-11-08T12:11:08.8555075Z",
+      "scenarioStatus": "PASS",
+      "files": [
+        {
+          "file": "docs/it/images/move-window.gif",
+          "bytes": 1674177,
+          "sha256": "a7ad290f14ac16b8aba4ee1ec584895ecd046d318510e3ddb8a92c77a4ed7897",
+          "width": 900,
+          "height": 600,
+          "frames": 40,
+          "durationMs": 5950,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 455,
+            "Top": 347,
+            "Right": 1175,
+            "Bottom": 787,
+            "Width": 720,
+            "Height": 440
+          }
+        },
+        {
+          "file": "docs/it/images/resize-window.gif",
+          "bytes": 1156399,
+          "sha256": "707c7b521fecf6e7f5894a96bf405dd7f9ab15fd181e546ce4f5b62829ec53e7",
+          "width": 900,
+          "height": 600,
+          "frames": 41,
+          "durationMs": 5950,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1180,
+            "Bottom": 790,
+            "Width": 840,
+            "Height": 510
+          }
+        },
+        {
+          "file": "docs/it/images/customize-title-menu.gif",
+          "bytes": 1439512,
+          "sha256": "0aaa65ccc5eb5bd217325d10ebd96c997b82d9eb3b2b87685ee99065ea187ee0",
+          "width": 988,
+          "height": 757,
+          "frames": 231,
+          "durationMs": 23910,
+          "loop": 0,
+          "captureArea": {
+            "Y": 188,
+            "Width": 988,
+            "Height": 757,
+            "X": 315
+          },
+          "before": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          },
+          "after": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          }
+        },
+        {
+          "file": "docs/it/images/customized-title-menu.png",
+          "bytes": 16106,
+          "sha256": "ba6585a792e63308816995f29685777d455c1097063b4ee46aefe583dc44be30",
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/it/images/locked-title.png",
+          "bytes": 10558,
+          "sha256": "658ecd6dceb6a5219baba41116abbd2417fa40636dbbc846d125ec327778319f",
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "executableSha256": "13568cc4bd5d3f136a18ce07ad827caf3133479098de180151d9400752549f4c",
+      "finalMenuCommandIds": [
+        1123,
+        1120,
+        1008,
+        1100,
+        1121,
+        1122
+      ]
+    },
+    {
+      "language": "es",
+      "windowsDisplayLanguage": "es-ES",
+      "requestedWindowsDisplayLanguage": "es-ES",
+      "powerShellUiCulture": "es-ES",
+      "run": "vm-ab6f47839af344eaa5147945424dc5ea",
+      "recorderExitCodes": [
+        2,
+        2,
+        2
+      ],
+      "captured": "2026-11-08T12:15:59.1491169Z",
+      "scenarioStatus": "PASS",
+      "files": [
+        {
+          "file": "docs/es/images/move-window.gif",
+          "bytes": 1733616,
+          "sha256": "c2a8c16c518555b2f857d3d11a2dd98df12710c9bf4e10bf5f6284a940d2f440",
+          "width": 900,
+          "height": 600,
+          "frames": 40,
+          "durationMs": 6110,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 455,
+            "Top": 347,
+            "Right": 1175,
+            "Bottom": 787,
+            "Width": 720,
+            "Height": 440
+          }
+        },
+        {
+          "file": "docs/es/images/resize-window.gif",
+          "bytes": 1162327,
+          "sha256": "c661a4180e09275431525ea61d814b0295648cb9fb2f5bcb99774190f5dd4169",
+          "width": 900,
+          "height": 600,
+          "frames": 41,
+          "durationMs": 6110,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1180,
+            "Bottom": 790,
+            "Width": 840,
+            "Height": 510
+          }
+        },
+        {
+          "file": "docs/es/images/customize-title-menu.gif",
+          "bytes": 1479546,
+          "sha256": "1cdedd16aaf6fe7f28d0077a5c2d1b304baeae3e34ae7de628fb280a498960a6",
+          "width": 999,
+          "height": 757,
+          "frames": 235,
+          "durationMs": 24070,
+          "loop": 0,
+          "captureArea": {
+            "Y": 188,
+            "Width": 999,
+            "Height": 757,
+            "X": 315
+          },
+          "before": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          },
+          "after": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          }
+        },
+        {
+          "file": "docs/es/images/customized-title-menu.png",
+          "bytes": 17488,
+          "sha256": "8b235d644392091d3429c4634f8cb2cf65f3782618e55422c2f9402cdd13151a",
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/es/images/locked-title.png",
+          "bytes": 10990,
+          "sha256": "64f88e8fee5477047641371a0cdc7a9c4da9375ff6adb5f8fa3398a5048b7a0f",
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "executableSha256": "f25d0fdd3ad3a81ae86015cacebe83671d63279bc5bbc404772fa0778bcade3a",
+      "finalMenuCommandIds": [
+        1123,
+        1120,
+        1008,
+        1100,
+        1121,
+        1122
+      ]
+    },
+    {
+      "language": "pt",
+      "windowsDisplayLanguage": "pt-PT",
+      "requestedWindowsDisplayLanguage": "pt-PT",
+      "powerShellUiCulture": "pt-PT",
+      "run": "vm-72af53e4cabc4d2ea522281a51976761",
+      "recorderExitCodes": [
+        2,
+        2,
+        2
+      ],
+      "captured": "2026-11-08T12:21:04.0424202Z",
+      "scenarioStatus": "PASS",
+      "files": [
+        {
+          "file": "docs/pt/images/move-window.gif",
+          "bytes": 1726819,
+          "sha256": "5cc09b087b4246de49482a0ae54fe6eac2c4f39825cf92fc7ffb755979eac27b",
+          "width": 900,
+          "height": 600,
+          "frames": 42,
+          "durationMs": 6030,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 455,
+            "Top": 347,
+            "Right": 1175,
+            "Bottom": 787,
+            "Width": 720,
+            "Height": 440
+          }
+        },
+        {
+          "file": "docs/pt/images/resize-window.gif",
+          "bytes": 1130425,
+          "sha256": "d83c868a93a115554839ce80246ef84d2d65dc9dda645f10657b0a447672ff74",
+          "width": 900,
+          "height": 600,
+          "frames": 39,
+          "durationMs": 5950,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1180,
+            "Bottom": 790,
+            "Width": 840,
+            "Height": 510
+          }
+        },
+        {
+          "file": "docs/pt/images/customize-title-menu.gif",
+          "bytes": 1379374,
+          "sha256": "720e8a2c5c635d2afb5301c524143264fde8961a776782735e72f1df8c3d8e8b",
+          "width": 979,
+          "height": 757,
+          "frames": 230,
+          "durationMs": 23670,
+          "loop": 0,
+          "captureArea": {
+            "Y": 188,
+            "Width": 979,
+            "Height": 757,
+            "X": 315
+          },
+          "before": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          },
+          "after": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          }
+        },
+        {
+          "file": "docs/pt/images/customized-title-menu.png",
+          "bytes": 17680,
+          "sha256": "873f4d432a9e8900317a10acfab42bdc90c966ae12365f8f0cedadf6d437cef8",
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/pt/images/locked-title.png",
+          "bytes": 10734,
+          "sha256": "20edce930a8821efa0e0a535500fa796c4cfa33831ada2d01494cb594078a9b4",
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "executableSha256": "335e765edcb5e01e81294d653ed995b0c9f8a76937bb4a499a63b9c6d928f248",
+      "finalMenuCommandIds": [
+        1123,
+        1120,
+        1008,
+        1100,
+        1121,
+        1122
+      ]
+    },
+    {
+      "language": "el",
+      "windowsDisplayLanguage": "el",
+      "requestedWindowsDisplayLanguage": "el-GR",
+      "powerShellUiCulture": "en-US",
+      "run": "vm-211f4afb678f40a6baef104b58b3c1b4",
+      "recorderExitCodes": [
+        2,
+        2,
+        2
+      ],
+      "captured": "2026-11-08T11:20:44.5117968Z",
+      "scenarioStatus": "PASS",
+      "files": [
+        {
+          "file": "docs/el/images/move-window.gif",
+          "bytes": 1744474,
+          "sha256": "e22ec20e300fde8a053bd3ac700bd6114fd8d9a86f1b1f1da6bfb73721cbb3c9",
+          "width": 900,
+          "height": 600,
+          "frames": 41,
+          "durationMs": 6030,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 455,
+            "Top": 347,
+            "Right": 1175,
+            "Bottom": 787,
+            "Width": 720,
+            "Height": 440
+          }
+        },
+        {
+          "file": "docs/el/images/resize-window.gif",
+          "bytes": 1150331,
+          "sha256": "cc35b7de7de09c2a2bf6e44f9110a74e2321f5caee32dc3159e7cf898f6a9526",
+          "width": 900,
+          "height": 600,
+          "frames": 41,
+          "durationMs": 6030,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1180,
+            "Bottom": 790,
+            "Width": 840,
+            "Height": 510
+          }
+        },
+        {
+          "file": "docs/el/images/customize-title-menu.gif",
+          "bytes": 1703575,
+          "sha256": "5764a200bb2972da6e94cb4ca9196321dcd7e225132d966bf0226eb3cc87e0e8",
+          "width": 989,
+          "height": 757,
+          "frames": 225,
+          "durationMs": 23440,
+          "loop": 0,
+          "captureArea": {
+            "Y": 188,
+            "Width": 989,
+            "Height": 757,
+            "X": 315
+          },
+          "before": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          },
+          "after": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          }
+        },
+        {
+          "file": "docs/el/images/customized-title-menu.png",
+          "bytes": 17834,
+          "sha256": "5a0814548809c3f483c529f76a60300d47056f3691accda343390ad67f2c61e7",
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/el/images/locked-title.png",
+          "bytes": 10225,
+          "sha256": "31140b903f6fb739d0bb865395481a30b36f2b6ec9e57c9e23f645c8b552c637",
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "executableSha256": "a03afe7ffc7ce66db63bf471a2c0b3f32118a86ed5f1b16cc581d4fbe54585d1",
+      "finalMenuCommandIds": [
+        1123,
+        1120,
+        1008,
+        1100,
+        1121,
+        1122
+      ]
+    },
+    {
+      "language": "pl",
+      "windowsDisplayLanguage": "pl",
+      "requestedWindowsDisplayLanguage": "pl-PL",
+      "powerShellUiCulture": "pl-PL",
+      "run": "vm-c9d910f14d674b41a853bedeccb6b845",
+      "recorderExitCodes": [
+        2,
+        2,
+        2
+      ],
+      "captured": "2026-11-08T12:34:00.2913514Z",
+      "scenarioStatus": "PASS",
+      "files": [
+        {
+          "file": "docs/pl/images/move-window.gif",
+          "bytes": 1740384,
+          "sha256": "47da8e8179cbd878fdb18759da39cd63403bffe7207cc96e49dc043a807cd168",
+          "width": 900,
+          "height": 600,
+          "frames": 40,
+          "durationMs": 6030,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 455,
+            "Top": 347,
+            "Right": 1175,
+            "Bottom": 787,
+            "Width": 720,
+            "Height": 440
+          }
+        },
+        {
+          "file": "docs/pl/images/resize-window.gif",
+          "bytes": 1155287,
+          "sha256": "cd91a6b339a780343cb08874e28cd54bed8d10dfa7f381b8e4cadc2edb550735",
+          "width": 900,
+          "height": 600,
+          "frames": 40,
+          "durationMs": 6030,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1180,
+            "Bottom": 790,
+            "Width": 840,
+            "Height": 510
+          }
+        },
+        {
+          "file": "docs/pl/images/customize-title-menu.gif",
+          "bytes": 1252544,
+          "sha256": "3ccd33499f2953d63071f0f2dd7febdd97650d9a16304db26749eecb6ac96d6c",
+          "width": 964,
+          "height": 757,
+          "frames": 230,
+          "durationMs": 23570,
+          "loop": 0,
+          "captureArea": {
+            "Y": 188,
+            "Width": 964,
+            "Height": 757,
+            "X": 315
+          },
+          "before": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          },
+          "after": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          }
+        },
+        {
+          "file": "docs/pl/images/customized-title-menu.png",
+          "bytes": 17943,
+          "sha256": "7e4fc15e5ecff30778e5fa183804f145ba99c426f7d2dc7457263b6b9c89558e",
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/pl/images/locked-title.png",
+          "bytes": 10225,
+          "sha256": "36f5403246044f3832db23bd0cf91113ae820ba31935a0ba6beaea7ef89bb9fe",
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "executableSha256": "ca09ab8a79b5d47d1b961895e6fae87133f539a6aa1dce286d8cfc51aab9d01c",
+      "finalMenuCommandIds": [
+        1123,
+        1120,
+        1008,
+        1100,
+        1121,
+        1122
+      ]
+    },
+    {
+      "language": "nl",
+      "windowsDisplayLanguage": "nl-NL",
+      "requestedWindowsDisplayLanguage": "nl-NL",
+      "powerShellUiCulture": "nl-NL",
+      "run": "vm-0ef3839ef5334b95a086ed05c15c5411",
+      "recorderExitCodes": [
+        2,
+        2,
+        2
+      ],
+      "captured": "2026-11-08T12:38:48.2904310Z",
+      "scenarioStatus": "PASS",
+      "files": [
+        {
+          "file": "docs/nl/images/move-window.gif",
+          "bytes": 1739188,
+          "sha256": "30af817c7eb6922b9b830bc0cbedc76c57700f29cf80359719c65aee54c20751",
+          "width": 900,
+          "height": 600,
+          "frames": 41,
+          "durationMs": 6030,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 455,
+            "Top": 347,
+            "Right": 1175,
+            "Bottom": 787,
+            "Width": 720,
+            "Height": 440
+          }
+        },
+        {
+          "file": "docs/nl/images/resize-window.gif",
+          "bytes": 1200433,
+          "sha256": "3d9519886f86aa78d23d80bb5f4715d24429a65012ab4207195d83e210d3cf5e",
+          "width": 900,
+          "height": 600,
+          "frames": 43,
+          "durationMs": 6190,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1180,
+            "Bottom": 790,
+            "Width": 840,
+            "Height": 510
+          }
+        },
+        {
+          "file": "docs/nl/images/customize-title-menu.gif",
+          "bytes": 1418606,
+          "sha256": "c686582d878af99833a44f688c19ad57de5e56b16d641d9fdfe5310fda4b16d4",
+          "width": 970,
+          "height": 757,
+          "frames": 230,
+          "durationMs": 23670,
+          "loop": 0,
+          "captureArea": {
+            "Y": 188,
+            "Width": 970,
+            "Height": 757,
+            "X": 315
+          },
+          "before": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          },
+          "after": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          }
+        },
+        {
+          "file": "docs/nl/images/customized-title-menu.png",
+          "bytes": 16921,
+          "sha256": "d1a101d3294420952c695393d0e5872dd123615f4b2d693f1b0c3953af4a9cfb",
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/nl/images/locked-title.png",
+          "bytes": 9488,
+          "sha256": "fbf3ea259979f9fe6f4fd750ee4b0571928c5b352dc80c08843504367039fbc1",
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "executableSha256": "d2371f328c9411126e024b49dd787c28cd578d7dd69ed3efc709a879db3ed6d7",
+      "finalMenuCommandIds": [
+        1123,
+        1120,
+        1008,
+        1100,
+        1121,
+        1122
+      ]
+    },
+    {
+      "language": "uk",
+      "windowsDisplayLanguage": "uk",
+      "requestedWindowsDisplayLanguage": "uk-UA",
+      "powerShellUiCulture": "en-US",
+      "run": "vm-f988a9f71890411caaff7bef64d91a39",
+      "recorderExitCodes": [
+        2,
+        2,
+        2
+      ],
+      "captured": "2026-11-08T12:43:24.0948708Z",
+      "scenarioStatus": "PASS",
+      "files": [
+        {
+          "file": "docs/uk/images/move-window.gif",
+          "bytes": 1775401,
+          "sha256": "38d537615404a4cc5c099d22774e9bbb2ac4932b3f76284e4230fab3ef5e44c6",
+          "width": 900,
+          "height": 600,
+          "frames": 42,
+          "durationMs": 6200,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 455,
+            "Top": 347,
+            "Right": 1175,
+            "Bottom": 787,
+            "Width": 720,
+            "Height": 440
+          }
+        },
+        {
+          "file": "docs/uk/images/resize-window.gif",
+          "bytes": 1127270,
+          "sha256": "3705f0054cfc6b137c2ff0697cec71750fc2ff13e54c57d3a0ce88c6f0d4e848",
+          "width": 900,
+          "height": 600,
+          "frames": 40,
+          "durationMs": 6030,
+          "loop": 0,
+          "captureArea": {
+            "Y": 218,
+            "Width": 900,
+            "Height": 600,
+            "X": 308
+          },
+          "before": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1060,
+            "Bottom": 720,
+            "Width": 720,
+            "Height": 440
+          },
+          "after": {
+            "Left": 340,
+            "Top": 280,
+            "Right": 1180,
+            "Bottom": 790,
+            "Width": 840,
+            "Height": 510
+          }
+        },
+        {
+          "file": "docs/uk/images/customize-title-menu.gif",
+          "bytes": 1451719,
+          "sha256": "7d0050823909f94eee9c32933308599578ce1dd1765f63b8b788bd6635e1a6fa",
+          "width": 967,
+          "height": 757,
+          "frames": 228,
+          "durationMs": 23690,
+          "loop": 0,
+          "captureArea": {
+            "Y": 188,
+            "Width": 967,
+            "Height": 757,
+            "X": 315
+          },
+          "before": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          },
+          "after": {
+            "Left": 340,
+            "Top": 220,
+            "Right": 1060,
+            "Bottom": 920,
+            "Width": 720,
+            "Height": 700
+          }
+        },
+        {
+          "file": "docs/uk/images/customized-title-menu.png",
+          "bytes": 17212,
+          "sha256": "7991cf35ab0d820f1c7f73dd88fb2a082254eb02603696f31c808f6881b03d35",
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/uk/images/locked-title.png",
+          "bytes": 10570,
+          "sha256": "d2f7178c463a20c91a1d2cde73d6167b98daab6d33af3506920701eb9cdfac67",
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "executableSha256": "2e575d9a0f282f7c0fe6306fea694a91224a28050b4edcb458c3faa39f6cc33a",
+      "finalMenuCommandIds": [
+        1123,
+        1120,
+        1008,
+        1100,
+        1121,
+        1122
+      ]
+    }
+  ]
+}
