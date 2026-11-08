@@ -3,9 +3,10 @@ param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version 2
 . (Join-Path $PSScriptRoot '..\..\common\Process.ps1')
-$temporaryRoot=Join-Path ([IO.Path]::GetTempPath()) ('FileSpacer-processes-'+[Guid]::NewGuid().ToString('N'))
+$temporaryRoot=Join-Path $ProjectRoot ('build\processes-'+[Guid]::NewGuid().ToString('N'))
 $previousRun=$env:FS_REGRESSION_RUN; $previousTemp=$env:TEMP; $previousLocal=$env:LOCALAPPDATA
 $processes=@()
+$timeoutJob=$null;$timeoutChild=$null
 try {
     [void][IO.Directory]::CreateDirectory($temporaryRoot)
     $env:FS_REGRESSION_RUN=$temporaryRoot
@@ -57,9 +58,44 @@ try {
     if (Test-Path -LiteralPath (Join-Path $temporaryRoot ('application-recovery\'+$staleName))) { throw 'A stale recovery report was collected.' }
     $tracked=@((Get-Content -LiteralPath (Join-Path $temporaryRoot 'application-processes.json') -Raw | ConvertFrom-Json))
     if ($tracked.Count -ne 3) { throw 'Not all started processes were tracked.' }
+    $childScript=Join-Path $temporaryRoot 'child.ps1'
+    $parentScript=Join-Path $temporaryRoot 'parent.ps1'
+    [IO.File]::WriteAllText($childScript,@'
+param([string]$Root)
+[IO.File]::WriteAllText((Join-Path $Root 'child.ready'),'ready')
+while(!(Test-Path -LiteralPath (Join-Path $Root 'release.child'))){Start-Sleep -Milliseconds 50}
+exit 0
+'@)
+    [IO.File]::WriteAllText($parentScript,@'
+param([string]$Root)
+$child=Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList ('-NoProfile -File "'+(Join-Path $Root 'child.ps1')+'" -Root "'+$Root+'"') -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $Root 'child.stdout') -RedirectStandardError (Join-Path $Root 'child.stderr')
+[IO.File]::WriteAllText((Join-Path $Root 'child.id'),[string]$child.Id)
+while(!(Test-Path -LiteralPath (Join-Path $Root 'release.parent'))){Start-Sleep -Milliseconds 50}
+'@)
+    $timeoutJob=Start-RecordedProcess -Executable $hostExecutable -Arguments (Join-ProcessArguments @('-NoProfile','-File',$parentScript,'-Root',$temporaryRoot)) -OutputPath (Join-Path $temporaryRoot 'parent.stdout') -ErrorPath (Join-Path $temporaryRoot 'parent.stderr')
+    $readyDeadline=[DateTime]::UtcNow.AddSeconds(10)
+    while(!(Test-Path -LiteralPath (Join-Path $temporaryRoot 'child.ready'))-or!(Test-Path -LiteralPath (Join-Path $temporaryRoot 'child.id'))){
+        if($timeoutJob.Process.HasExited-or[DateTime]::UtcNow-ge$readyDeadline){throw 'Timeout fixture did not create its child.'}
+        Start-Sleep -Milliseconds 50
+    }
+    $timeoutChild=Get-Process -Id ([int][IO.File]::ReadAllText((Join-Path $temporaryRoot 'child.id')))
+    $null=$timeoutChild.Handle
+    Stop-TestCaseProcess $timeoutJob.Process
+    if($timeoutChild.HasExited){throw 'Stopping the scenario also terminated its application child.'}
+    [IO.File]::WriteAllText((Join-Path $temporaryRoot 'release.child'),'exit normally')
+    if(!$timeoutChild.WaitForExit(10000)-or$timeoutChild.ExitCode-ne0){throw 'The preserved application child did not exit normally.'}
+    if((Complete-RecordedProcess $timeoutJob)-eq0){throw 'The timed-out scenario unexpectedly succeeded.'}
+    Write-Host 'PASS: timeout stops only the scenario; its application child survives and exits normally.'
     Write-Host 'PASS: all process exits are checked and available diagnostics survive failures.'
 } finally {
+    foreach($name in @('release.child','release.parent')){if(Test-Path -LiteralPath $temporaryRoot){[IO.File]::WriteAllText((Join-Path $temporaryRoot $name),'exit normally')}}
+    foreach($owned in @($timeoutChild,$(if($timeoutJob){$timeoutJob.Process}else{$null}))){if($null-ne$owned){[void]$owned.WaitForExit(10000);$owned.Dispose()}}
     $env:FS_REGRESSION_RUN=$previousRun; $env:TEMP=$previousTemp; $env:LOCALAPPDATA=$previousLocal
     foreach ($applicationProcess in $processes) { $applicationProcess.Dispose() }
-    if (Test-Path -LiteralPath $temporaryRoot) { Remove-Item -LiteralPath $temporaryRoot -Recurse -Force }
+    if (Test-Path -LiteralPath $temporaryRoot) {
+        $allowed=[IO.Path]::GetFullPath((Join-Path $ProjectRoot 'build')).TrimEnd('\')+'\'
+        $target=[IO.Path]::GetFullPath($temporaryRoot)
+        if(!$target.StartsWith($allowed,[StringComparison]::OrdinalIgnoreCase)-or((Get-Item -LiteralPath $target).Attributes-band[IO.FileAttributes]::ReparsePoint)){throw 'Unsafe process fixture cleanup path.'}
+        Remove-Item -LiteralPath $target -Recurse -Force
+    }
 }
