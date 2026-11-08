@@ -267,6 +267,10 @@ void initializeShellSelectionClear(const wchar_t *cacheRoot,bool background) { s
 void ShellSelectionClear::reset(){auto previous=std::move(binding);if(previous)previous->detach();}
 bool ShellSelectionClear::accelerated()const {const auto value=binding;return value && value->usable.load();}
 bool ShellSelectionClear::acceleratesSelectAll()const {const auto value=binding;return value && value->usable.load() && value->nativeProcedure;}
+bool ShellSelectionClear::acceleratesBackgroundClear()const {
+    const auto value=binding;
+    return value && value->usable.load() && value->range.range && selectionDetail::rangeImage().supported;
+}
 uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value=binding;return value?value->selectAllCount:0;}
 
     bool ShellSelectionClear::backingBufferReleased(bool &known)const {
