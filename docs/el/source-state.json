@@ -193,30 +193,22 @@
       ]
     },
     "THIRD_PARTY_NOTICES.md": {
-      "sourceHash": "629ac65c6af96a44394baed393c8f0f639bc4ee1ecc6607ec9c34c4e1c382f41",
+      "sourceHash": "ed37e2e225862467f7cf8eb18e7f7d20d8ecdc77ae43e2040749386d1962396a",
       "headings": [
         [
           "third-party-notices",
           2
         ],
         [
-          "sqlite",
-          3
-        ],
-        [
-          "up-and-refresh-button-icons-lucide-and-feather",
-          3
-        ],
-        [
-          "windows-fonts-and-components",
-          3
-        ],
-        [
           "installer",
           3
         ],
         [
-          "small--flat-lock-icon",
+          "sqlite",
+          3
+        ],
+        [
+          "icons",
           3
         ]
       ]
