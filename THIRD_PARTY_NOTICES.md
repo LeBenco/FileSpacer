@@ -10,15 +10,8 @@ Copyright (c) 2023 J. van't Hoog, distributed under the
 
 ## NSIS
 
-The NSIS installer uses the LockedList plug-in, Copyright (c) 2013 Afrow Soft Ltd,
-under the zlib license. The complete notice is in
-[installer/plugins/LockedList.txt](https://github.com/LeBenco/FileSpacer/blob/main/installer/plugins/LockedList.txt) and is
-included as `LockedList-LICENSE.txt` with the installed program. See
-<https://nsis.sourceforge.io/LockedList_plug-in>.
-
-The shortcut AppUserModelID is set by FileSpacer's `ShortcutAppID.nsh` using NSIS
-Windows COM macros. The former `nsis-shortcut-properties` submodule is not used.
-Material Design Icons and the former bundled Segoe font subset are not used.
+- **Installer**: [NSIS](https://nsis.sourceforge.io/) ([licenses](https://nsis.sourceforge.io/License)).
+- **LockedList installer plug-in**: [Afrow Soft](https://nsis.sourceforge.io/LockedList_plug-in) (Copyright (c) 2013 Afrow Soft Ltd, [zlib license](installer/plugins/LockedList.txt), also supplied as `LockedList-LICENSE.txt`).
 
 <a id="sqlite"></a>
 
@@ -34,19 +27,8 @@ See <https://sqlite.org/copyright.html>.
 
 <div id="up-and-refresh-button-icons-lucide-and-feather"></div>
 
-In the toolbar, the **up arrow** opens the **parent folder**, and the
-**circular arrow** **refreshes the folder contents**. These two icons are adapted
-from **Lucide** (`arrow-up` and `rotate-cw`). The up-arrow icon originally comes
-from **Feather**.
-
-See [licenses/Lucide-LICENSE.txt](https://github.com/LeBenco/FileSpacer/blob/main/licenses/Lucide-LICENSE.txt) for the complete
-ISC and MIT notices in the source tree, or `Lucide-LICENSE.txt` in the installation
-folder. See <https://lucide.dev/license>.
-
 <div id="small--flat-lock-icon"></div>
 
-The closed and open padlock icons (`src/res/window-state-lock.ico` and `src/res/window-state-unlock.ico`) come from paomedia’s Small & Flat **lock** icon, dedicated to the public domain under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/). The open padlock is a derived version.
-
-Original collection and license: https://github.com/paomedia/small-n-flat
-
-ICO distribution: https://www.iconarchive.com/show/small-n-flat-icons-by-paomedia/lock-icon.html
+- **Up and Refresh icons**: [Lucide](https://lucide.dev/) (adapted versions, [ISC and MIT](licenses/Lucide-LICENSE.txt), notices also supplied as `Lucide-LICENSE.txt`).
+- **Up icon**: [Feather](https://feathericons.com/) (origin of the Lucide version, [MIT](licenses/Lucide-LICENSE.txt)).
+- **Closed and open padlock icons**: [Small & Flat by paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), open padlock derived from the closed one).

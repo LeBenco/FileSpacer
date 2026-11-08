@@ -8,9 +8,8 @@
 
 ## NSIS
 
-Το πρόγραμμα εγκατάστασης NSIS χρησιμοποιεί το πρόσθετο LockedList, Copyright (c) 2013 Afrow Soft Ltd, με την άδεια zlib. Η πλήρης γνωστοποίηση βρίσκεται στο [installer/plugins/LockedList.txt](../../installer/plugins/LockedList.txt) και περιλαμβάνεται ως `LockedList-LICENSE.txt` στον φάκελο εγκατάστασης. Δείτε <https://nsis.sourceforge.io/LockedList_plug-in>.
-
-Το AppUserModelID των συντομεύσεων ορίζεται από το `ShortcutAppID.nsh` του FileSpacer, χρησιμοποιώντας τις μακροεντολές Windows COM του NSIS. Το παλιό submodule `nsis-shortcut-properties` δεν χρησιμοποιείται. Δεν χρησιμοποιούνται το Material Design Icons ούτε το υποσύνολο της γραμματοσειράς Segoe που περιλαμβανόταν παλαιότερα.
+- **Πρόγραμμα εγκατάστασης**: [NSIS](https://nsis.sourceforge.io/) ([άδειες](https://nsis.sourceforge.io/License)).
+- **Πρόσθετο LockedList του προγράμματος εγκατάστασης**: [Afrow Soft](https://nsis.sourceforge.io/LockedList_plug-in) (Copyright (c) 2013 Afrow Soft Ltd, [άδεια zlib](../../installer/plugins/LockedList.txt), παρέχεται επίσης στο `LockedList-LICENSE.txt`).
 
 <a id="sqlite"></a>
 
@@ -24,14 +23,8 @@
 
 <div id="up-and-refresh-button-icons-lucide-and-feather"></div>
 
-Στη γραμμή εργαλείων, το **βέλος προς τα επάνω** ανοίγει τον **γονικό φάκελο**, ενώ το **κυκλικό βέλος** **ανανεώνει τα περιεχόμενα του φακέλου**. Τα δύο εικονίδια είναι προσαρμογές των εικονιδίων `arrow-up` και `rotate-cw` του **Lucide**. Το εικονίδιο με το βέλος προς τα επάνω προέρχεται αρχικά από το **Feather**.
-
-Δείτε το [licenses/Lucide-LICENSE.txt](../../licenses/Lucide-LICENSE.txt) για τις πλήρεις γνωστοποιήσεις ISC και MIT στον πηγαίο κώδικα ή το `Lucide-LICENSE.txt` στον φάκελο εγκατάστασης. Δείτε <https://lucide.dev/license>.
-
 <div id="small--flat-lock-icon"></div>
 
-Τα εικονίδια κλειστού και ανοιχτού λουκέτου (`src/res/window-state-lock.ico` και `src/res/window-state-unlock.ico`) προέρχονται από το εικονίδιο **lock** της συλλογής Small & Flat του paomedia, που έχει διατεθεί ως κοινό κτήμα με [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/). Το ανοιχτό λουκέτο είναι τροποποιημένη έκδοση του αρχικού.
-
-Αρχική συλλογή και άδεια: https://github.com/paomedia/small-n-flat
-
-Διανομή ICO: https://www.iconarchive.com/show/small-n-flat-icons-by-paomedia/lock-icon.html
+- **Εικονίδια «Επάνω» και «Ανανέωση»**: [Lucide](https://lucide.dev/) (προσαρμοσμένες εκδόσεις, [ISC και MIT](../../licenses/Lucide-LICENSE.txt), οι όροι παρέχονται επίσης στο `Lucide-LICENSE.txt`).
+- **Εικονίδιο «Επάνω»**: [Feather](https://feathericons.com/) (αρχική πηγή της έκδοσης Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
+- **Εικονίδια κλειστού και ανοιχτού λουκέτου**: [Small & Flat του paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), το ανοιχτό λουκέτο προέρχεται από το κλειστό).
