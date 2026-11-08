@@ -6,6 +6,11 @@ $ErrorActionPreference='Stop'
 . (Join-Path $ProjectRoot 'tests\regression\common\EssentialUi.ps1')
 Add-Type -Path (Join-Path $ProjectRoot 'tests\regression\cases\15-deplacement-alt\NativeTargets.cs')
 Add-Type -Path (Join-Path $ProjectRoot 'tests\regression\cases\28-apercu-affichage\ViewMenuUi.cs')
+if($env:FS_GESTURE_ACTIONS-match'marquee|activation|item-drag'){
+    Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes,WindowsBase
+    $references=@([System.Windows.Automation.AutomationElement].Assembly.Location,[System.Windows.Automation.ControlType].Assembly.Location,[System.Windows.Rect].Assembly.Location)
+    Add-Type -Path (Join-Path $ProjectRoot 'tests\regression\cases\15-deplacement-alt\MouseInput.cs') -ReferencedAssemblies $references
+}
 Add-Type -TypeDefinition @'
 using System.Runtime.InteropServices;
 public static class GestureComposition {
@@ -105,6 +110,12 @@ try {
         $folder=Join-Path $script:UiRoot $arm;[void][IO.Directory]::CreateDirectory($folder)
         $initialCount=if($preseed){128}else{$FixtureCount}
         for($i=0;$i-lt$initialCount;++$i){[IO.File]::WriteAllText((Join-Path $folder ('File{0:D5}.txt'-f$i)),'fixture')}
+        $other=[IntPtr]::Zero
+        if($env:FS_GESTURE_ACTIONS-match'activation'){
+            $otherFolder=Join-Path $script:UiRoot ($arm+'-other');[void][IO.Directory]::CreateDirectory($otherFolder)
+            $other=Open-UiFolder $otherFolder 0
+            Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($other,[IntPtr]::Zero,1000,100,600,400,0x14)) 'Cannot place the other activation window.'
+        }
         Set-GestureStage 'open-initial-fixture'
         $window=Open-UiFolder $folder $initialCount
         Activate-Ui $window
@@ -124,7 +135,7 @@ try {
             Wait-UiViewMode $window $mode.Mode
             Use-UiView $window {param($view) $view.SetViewModeAndIconSize($mode.Mode,48);$view.AutoArrange=!$mode.Free;$view.SortBy($false,$true);$view.Focus()}
             Wait-UiViewMode $window $mode.Mode 48
-            if($presentation){
+            if($presentation-or$env:FS_GESTURE_SEMANTICS-eq'1'){
                 for($attempt=0;$attempt-lt4;++$attempt){
                     $body=Use-UiView $window {param($view) $view.Bounds}
                     if($body.Width-eq800-and$body.Height-eq400){break}
@@ -160,10 +171,15 @@ try {
                 Start-Sleep -Seconds $seconds # Owned fixture only; outside every timed action.
             }
             $gestures=if($env:FS_GESTURE_ACTIONS){@($env:FS_GESTURE_ACTIONS-split',')}else{@('escape','background','selected-item')}
-            Assert-Ui (@($gestures|Where-Object {$_-notin@('escape','background','selected-item','escape-background','escape-background-once')}).Count-eq0) 'Unknown gesture.'
+            Assert-Ui (@($gestures|Where-Object {$_-notin@('escape','background','selected-item','escape-background','escape-background-once','marquee','marquee-cancel','marquee-ctrl','marquee-shift','activation-background','item-drag')}).Count-eq0) 'Unknown gesture.'
             foreach($gesture in $gestures) {
                 for($rep=0;$rep-lt$Repetitions;++$rep) {
+                    $marquee=$gesture-like'marquee*'
+                    $itemDrag=$gesture-eq'item-drag'
+                    if($itemDrag){Assert-Ui ($mode.Free-and!$presentation-and$env:FS_GESTURE_SEMANTICS-eq'1') 'Item drag requires a free view and position comparison, without presentation timing.'}
+                    Assert-Ui (!($marquee-and$presentation)) 'Marquee comparison records identities; use presentation disabled.'
                     Use-UiView $window {param($view) $view.Reveal('File00000.txt');$view.Focus()}
+                    $positionsBefore=if($env:FS_GESTURE_SEMANTICS-eq'1'){Use-UiView $window {param($view) $view.Positions()}}else{''}
                     $frame=[FileSpacerRegression.Native]::Bounds($window)
                     Assert-Ui ([FileSpacerRegression.Native]::SetCursorPos($frame.Left+100,$frame.Top+10)) 'Cannot park pointer before preparing selection.'
                     Set-GestureStage 'select-all'
@@ -173,7 +189,7 @@ try {
                     Set-GestureStage 'locate-target'
                     $target=$null;$locating=[Diagnostics.Stopwatch]::StartNew()
                     if($gesture-eq'selected-item'){$target=[FileSpacerRegression.NativeTargets]::Item($list,0,$FixtureCount,$true,$false)}
-                    if($gesture-in@('background','escape-background','escape-background-once')) {
+                    if($itemDrag-or$marquee-or$gesture-in@('background','escape-background','escape-background-once','activation-background')) {
                         $rect=[FileSpacerRegression.Native]::Bounds($list)
                         $lastError=''
                         foreach($y in @(10,30,50,80,110,150,200,250)) {
@@ -187,6 +203,8 @@ try {
                         }
                         Assert-Ui ($null-ne$target) ('No verified exposed blank point: '+$lastError)
                     }
+                    $endPoint=if($marquee){[FileSpacerRegression.NativeTargets]::Item($list,8,$FixtureCount,$true,$false)}else{$null}
+                    if($itemDrag){$endPoint=$target;$target=[FileSpacerRegression.NativeTargets]::Item($list,0,$FixtureCount,$true,$false)}
                     $locateMs=$locating.Elapsed.TotalMilliseconds;$locating.Stop()
                     if($presentation-and$gesture-ne'escape'){
                         Assert-Ui ([FileSpacerRegression.Native]::SetCursorPos($target.X,$target.Y)) 'Cannot position pointer before the visual click measurement.'
@@ -194,6 +212,10 @@ try {
                     Set-GestureStage 'observe-counter-and-baseline'
                     $before=Read-RangeCounter $window
                     if($gesture-ne'escape'){Start-Sleep -Milliseconds ([int][GestureComposition]::GetDoubleClickTime()+20)}
+                    if($gesture-eq'activation-background'){
+                        Assert-Ui (!$presentation) 'Activation comparison uses identities rather than the foreground-only presentation observer.'
+                        Activate-Ui $other
+                    }
                     if($presentation){
                         $capture=Start-GestureObservation $window ($arm+'-'+$mode.Name+'-'+$gesture+'-'+$rep)
                         [void]$capture.Events['begin'].Set()
@@ -203,7 +225,38 @@ try {
                     $inputTick=[Diagnostics.Stopwatch]::GetTimestamp()
                     $clock=[Diagnostics.Stopwatch]::StartNew()
                     $hitMs=0.0
-                    if($gesture-in@('escape-background','escape-background-once')) {
+                    if($gesture-eq'activation-background'){
+                        $point=New-Object FileSpacerRegression.MousePoint;$point.X=$target.X;$point.Y=$target.Y
+                        try{[FileSpacerRegression.AltDragInput]::BeginConfigured($window,$point,0,0)}finally{[FileSpacerRegression.AltDragInput]::End()}
+                        Wait-Ui {([FileSpacerRegression.Native]::GetForegroundWindow()-eq$window)-and[FileSpacerRegression.AltDragInput]::Idle($window)} 'activation click finished' 100 5
+                    }
+                    elseif($marquee-or$itemDrag){
+                        $startPoint=New-Object FileSpacerRegression.MousePoint;$startPoint.X=$target.X;$startPoint.Y=$target.Y
+                        $finishPoint=New-Object FileSpacerRegression.MousePoint;$finishPoint.X=$endPoint.X;$finishPoint.Y=$endPoint.Y
+                        try{
+                            $modifiers=if($gesture-eq'marquee-ctrl'){1}elseif($gesture-eq'marquee-shift'){4}else{0}
+                            [FileSpacerRegression.AltDragInput]::BeginConfigured($window,$startPoint,0,$modifiers)
+                            Wait-Ui {[FileSpacerRegression.AltDragInput]::Captured($window)} 'native marquee capture' 0 5
+                            [FileSpacerRegression.AltDragInput]::Move($finishPoint)
+                            Start-Sleep -Milliseconds 100
+                            if($gesture-eq'marquee-cancel'){[FileSpacerRegression.AltDragInput]::EscapeHeld()}
+                        }finally{[FileSpacerRegression.AltDragInput]::End()}
+                        if($gesture-eq'marquee-cancel'){
+                            $tooltip=[IntPtr]([FileSpacerRegression.Native]::Message($list,0x104e,0,0)) # LVM_GETTOOLTIPS
+                            $cancel=@{Selected=@(Use-UiView $window {param($view) $view.Selected()});Focus=(Use-UiView $window {param($view) $view.FocusIndex});Anchor=(Use-UiView $window {param($view) $view.AnchorIndex});Input=[FileSpacerRegression.AltDragInput]::Describe($window);PositionsUnchanged=((Use-UiView $window {param($view) $view.Positions()})-eq$positionsBefore);TooltipVisible=[FileSpacerRegression.Native]::IsWindowVisible($tooltip)}
+                            $cancelPath=Join-Path $env:FS_REGRESSION_RUN ('cancel-'+$mode.Name+'-'+$rep+'.json')
+                            $cancel|ConvertTo-Json -Depth 3|Set-Content -LiteralPath $cancelPath
+                            # Preserve the immediate state, then observe whether ordinary
+                            # pointer departure releases a capture associated with hover.
+                            $park=New-Object FileSpacerRegression.MousePoint;$park.X=$frame.Left+100;$park.Y=$frame.Top+10
+                            [FileSpacerRegression.AltDragInput]::Move($park)
+                            $cancel.AfterPointerDeparture=[FileSpacerRegression.AltDragInput]::Describe($window)
+                            $cancel|ConvertTo-Json -Depth 3|Set-Content -LiteralPath $cancelPath
+                        }
+                        try{Wait-Ui {[FileSpacerRegression.AltDragInput]::Idle($window)} 'native marquee ended' 100 5}
+                        catch{throw ($_.Exception.Message+'; '+[FileSpacerRegression.AltDragInput]::Describe($window))}
+                    }
+                    elseif($gesture-in@('escape-background','escape-background-once')) {
                         if($gesture-eq'escape-background'){
                             $hitStart=$clock.Elapsed.TotalMilliseconds
                             [FileSpacerRegression.NativeTargets]::Background($list,$target.X,$target.Y)
@@ -219,8 +272,8 @@ try {
                         if($presentation){$inputTick=[FileSpacerRegression.Native]::ClickControlAtPointer($window,$list,$target.X,$target.Y)}
                         else{[FileSpacerRegression.Native]::ClickControl($window,$list,$target.X,$target.Y)}
                     }
-                    $expected=if($gesture-eq'selected-item'){1}else{0}
-                    Wait-GestureCount $window $expected
+                    $expected=if($marquee){-1}elseif($itemDrag-or$gesture-eq'activation-background'){$FixtureCount}elseif($gesture-eq'selected-item'){1}else{0}
+                    if(!$marquee){Wait-GestureCount $window $expected}
                     $stateMs=$clock.Elapsed.TotalMilliseconds
                     Assert-Ui ([GestureComposition]::DwmFlush()-ge0) 'Composition failed.'
                     $composedMs=$clock.Elapsed.TotalMilliseconds;$clock.Stop()
@@ -245,17 +298,33 @@ try {
                     }
                     Set-GestureStage 'verify-counter-and-identities'
                     $calls=(Read-RangeCounter $window)-$before
+                    if($arm-eq'private'-and$env:FS_GESTURE_EXPECT_CLICK_RANGE-eq'1'-and$gesture-ne'marquee-cancel'){
+                        $expectedCalls=if($mode.Free-and$gesture-in@('background','marquee','escape','escape-background','escape-background-once')){1}elseif($gesture-in@('escape','escape-background','escape-background-once')){1}else{0}
+                        Assert-Ui ($calls-eq$expectedCalls) ('Unexpected private call count for '+$mode.Name+'/'+$gesture+': '+$calls+' instead of '+$expectedCalls)
+                    }
                     if($arm-eq'private'-and$gesture-in@('escape','escape-background','escape-background-once')){Assert-Ui ($calls-eq1) 'The qualified private Escape path was not exercised exactly once.'}
-                    $selected=Use-UiView $window {param($view) $view.Selected()}
-                    Assert-Ui (($selected-join';')-eq$(if($expected){'File00000.txt'}else{''})) 'Wrong selected identities.'
+                    $selected=@(Use-UiView $window {param($view) $view.Selected()})
+                    if(!$marquee){
+                        $expectedNames=if($itemDrag-or$gesture-eq'activation-background'){@(for($index=0;$index-lt$FixtureCount;++$index){'File{0:D5}.txt'-f$index})}elseif($expected){@('File00000.txt')}else{@()}
+                        Assert-Ui (($selected-join';')-eq($expectedNames-join';')) 'Wrong selected identities.'
+                    }
+                    elseif($gesture-eq'marquee'){Assert-Ui ($selected.Count-gt0-and$selected.Count-lt$FixtureCount) 'Marquee did not produce a proper subset.'}
                     Assert-Ui ((Use-UiView $window {param($view) $view.Count})-eq$FixtureCount) 'Fixture count changed.'
-                    $rows.Add([pscustomobject]@{arm=$arm;view=$mode.Name;gesture=$gesture;items=$FixtureCount;rep=$rep;persisted_view=$preseed;state_ms=$stateMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);composed_ms=$composedMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);range_calls=$calls;locate_ms=$locateMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);hit_ms=$hitMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);presentation_quality=$(if($null-ne$visible){$visible.quality}else{''});visible_first_ms=$visibleFirst;visible_final_ms=$visibleFinal;marker_offset_ms=$markerOffset.ToString('F3',[Globalization.CultureInfo]::InvariantCulture)})
+                    $positionsAfter=if($env:FS_GESTURE_SEMANTICS-eq'1'){Use-UiView $window {param($view) $view.Positions()}}else{''}
+                    if($itemDrag){
+                        Assert-Ui ($positionsAfter-ne$positionsBefore) 'Native item drag did not move positions.'
+                        @{Before=$positionsBefore;After=$positionsAfter}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $env:FS_REGRESSION_RUN ($arm+'-'+$mode.Name+'-drag-'+$rep+'.json'))
+                    }
+                    elseif($env:FS_GESTURE_SEMANTICS-eq'1'){Assert-Ui ($positionsAfter-eq$positionsBefore) 'Gesture moved free icon positions.'}
+                    $focus=Use-UiView $window {param($view) $view.FocusIndex};$anchor=Use-UiView $window {param($view) $view.AnchorIndex}
+                    $rows.Add([pscustomobject]@{arm=$arm;view=$mode.Name;gesture=$gesture;items=$FixtureCount;rep=$rep;persisted_view=$preseed;state_ms=$stateMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);composed_ms=$composedMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);range_calls=$calls;locate_ms=$locateMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);hit_ms=$hitMs.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);presentation_quality=$(if($null-ne$visible){$visible.quality}else{''});visible_first_ms=$visibleFirst;visible_final_ms=$visibleFinal;marker_offset_ms=$markerOffset.ToString('F3',[Globalization.CultureInfo]::InvariantCulture);selected_json=(ConvertTo-Json -InputObject @($selected) -Compress);focus=$focus;anchor=$anchor})
                     $rows|Export-Csv -LiteralPath (Join-Path $env:FS_REGRESSION_RUN 'gestures.csv') -NoTypeInformation
                     Write-Host ('GESTURE '+$arm+' '+$mode.Name+' '+$gesture+' '+[math]::Round($composedMs,3)+' ms; range='+$calls)
                 }
             }
         }
         Set-GestureStage 'normal-close'
+        if($other-ne[IntPtr]::Zero){Close-UiFolder $other}
         Close-UiFolder $window
         Complete-TestApplications $script:UiProcesses
         $script:UiProcesses.Clear()
