@@ -461,7 +461,7 @@ static bool isFreeIconView(IFolderView *view, const std::function<bool()> &curre
     return current() && arranged == S_FALSE;
 }
 
-HRESULT captureCompleteSpatialSelection(IFolderView2 *view, const std::function<bool()> &current,
+HRESULT captureSpatialSelection(IFolderView2 *view, const std::function<bool()> &current,
         IShellItemArray **out) try {
     if (!view || !out) return E_POINTER;
     CComPtr<IFolderView2> keepView(view);
@@ -484,18 +484,57 @@ HRESULT captureCompleteSpatialSelection(IFolderView2 *view, const std::function<
     if (FAILED(result) || count < 128) return S_FALSE;
     result = view->ItemCount(SVGIO_SELECTION, &selected);
     if (!current()) return E_ABORT;
-    if (FAILED(result) || selected != count) return S_FALSE;
+    if (FAILED(result) || selected < 128 || selected > count) return S_FALSE;
+    if (selected != count && selected < 1024) return S_FALSE;
     result = view->GetFocusedItem(&focused);
     if (!current()) return E_ABORT;
     if (FAILED(result) || focused < 0 || focused >= count) return S_FALSE;
+    const auto selectedIndices = [&](std::vector<int> &indices) -> HRESULT {
+        indices.reserve(static_cast<size_t>(selected));
+        CComHeapPtr<ITEMID_CHILD> zero;
+        HRESULT hr = view->Item(0, &zero);
+        if (!current()) return E_ABORT;
+        if (FAILED(hr) || !zero) return S_FALSE;
+        DWORD state = 0;
+        hr = view->GetSelectionState(zero, &state);
+        if (!current()) return E_ABORT;
+        if (FAILED(hr)) return S_FALSE;
+        if (state & SVSI_SELECT) indices.push_back(0);
+        int start = 0;
+        while (indices.size() < static_cast<size_t>(selected)) {
+            int index = -1;
+            hr = view->GetSelectedItem(start, &index);
+            if (!current()) return E_ABORT;
+            if (hr != S_OK) return S_FALSE;
+            // The API describes both "at or after" and "after". Accept either
+            // forward-only interpretation without relying on a negative sentinel.
+            if (!indices.empty() && index == indices.back()) {
+                if (index >= count - 1) return S_FALSE;
+                start = index + 1;
+                hr = view->GetSelectedItem(start, &index);
+                if (!current()) return E_ABORT;
+                if (hr != S_OK) return S_FALSE;
+            }
+            if (index < start || index >= count || (!indices.empty() && index <= indices.back())) return S_FALSE;
+            indices.push_back(index);
+            start = index;
+        }
+        return S_OK;
+    };
+    std::vector<int> indices;
+    if (selected != count) {
+        result = selectedIndices(indices);
+        if (result != S_OK) return result;
+    }
     using OwnedId = std::unique_ptr<ITEMID_CHILD, decltype(&CoTaskMemFree)>;
     struct Entry { PCUITEMID_CHILD id; POINT position; int index; };
     std::vector<OwnedId> owned;
     std::vector<Entry> entries;
     std::unordered_set<uint64_t> positions;
-    positions.reserve(static_cast<size_t>(count));
-    owned.reserve(static_cast<size_t>(count)); entries.reserve(static_cast<size_t>(count));
-    for (int i = 0; i < count; ++i) {
+    positions.reserve(static_cast<size_t>(selected));
+    owned.reserve(static_cast<size_t>(selected)); entries.reserve(static_cast<size_t>(selected));
+    for (int slot = 0; slot < selected; ++slot) {
+        const int i = selected == count ? slot : indices[static_cast<size_t>(slot)];
         CComHeapPtr<ITEMID_CHILD> id;
         result = view->Item(i, &id);
         if (!current()) return E_ABORT;
@@ -507,7 +546,6 @@ HRESULT captureCompleteSpatialSelection(IFolderView2 *view, const std::function<
         const uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(position.x)) << 32)
             | static_cast<uint32_t>(position.y);
         if (!positions.emplace(key).second) return S_FALSE;
-        // Equal selected/all counts on both sides authorize only the complete set.
         owned.emplace_back(id.Detach(), &CoTaskMemFree);
         entries.push_back({owned.back().get(), position, i});
     }
@@ -529,6 +567,13 @@ HRESULT captureCompleteSpatialSelection(IFolderView2 *view, const std::function<
     result = SHCreateShellItemArray(nullptr, folder, static_cast<UINT>(ids.size()), ids.data(), &array);
     if (!current()) return E_ABORT;
     if (FAILED(result) || !array) return S_FALSE;
+    if (selected != count) {
+        // Counts alone do not detect replacing one selected item with another.
+        std::vector<int> after;
+        result = selectedIndices(after);
+        if (result != S_OK) return result;
+        if (after != indices) return S_FALSE;
+    }
     int allAfter = 0, selectedAfter = 0, focusAfter = -1;
     result = view->ItemCount(SVGIO_ALLVIEW, &allAfter);
     if (!current()) return E_ABORT;
@@ -538,7 +583,7 @@ HRESULT captureCompleteSpatialSelection(IFolderView2 *view, const std::function<
     if (FAILED(result)) return S_FALSE;
     result = view->GetFocusedItem(&focusAfter);
     if (!current()) return E_ABORT;
-    if (FAILED(result) || allAfter != count || selectedAfter != count || focusAfter != focused) return S_FALSE;
+    if (FAILED(result) || allAfter != count || selectedAfter != selected || focusAfter != focused) return S_FALSE;
     return array.CopyTo(out);
 } catch (const std::bad_alloc &) {
     return E_OUTOFMEMORY;
@@ -552,7 +597,7 @@ HRESULT nativeViewSelection(IFolderView2 *view, BOOL noneMeansFolder, IShellItem
     const auto valid = [&] { return !current || current(); };
     if (!valid()) return E_ABORT;
     CComPtr<IShellItemArray> selected;
-    HRESULT hr = current ? captureCompleteSpatialSelection(view, current, &selected) : S_FALSE;
+    HRESULT hr = current ? captureSpatialSelection(view, current, &selected) : S_FALSE;
     if (hr == E_ABORT || !valid()) return E_ABORT;
     if (hr != S_OK) {
         hr = view->GetSelection(noneMeansFolder, &selected);
