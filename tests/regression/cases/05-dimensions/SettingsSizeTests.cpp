@@ -16,8 +16,8 @@
 
 namespace {
 SIZE stored = {400, 500};
-bool options[10] = {true, true, true, true, true, true, true, true, true, true};
-int writes = 0, notifications = 0, testErrorCount = 0, cases = 0;
+bool options[12] = {true, true, true, true, true, true, true, true, true, true, true, true};
+int writes = 0, notifications = 0, providerResets = 0, testErrorCount = 0, cases = 0;
 std::wstring lastError;
 void require(bool condition, const char *description) {
     if (!condition) { std::fprintf(stderr, "FAIL: %s\n", description); std::abort(); }
@@ -40,9 +40,15 @@ TEST_OPTION(ViewButtonEnabled, 6)
 TEST_OPTION(FullNamesOnSelection, 7)
 TEST_OPTION(ViewMenuPreviewEnabled, 8)
 TEST_OPTION(MixedFolderSorting, 9)
+TEST_OPTION(DetailsColumnsEnabled, 10)
+TEST_OPTION(DetailsColumnsDeferred, 11)
 #undef TEST_OPTION
 }
 void notifyWindowSettingsChanged() { ++notifications; }
+class ShellViewHost {
+public:
+    static void resetMixedProviderAvailability() { ++providerResets; }
+};
 void openTitleMenuDialog(HWND) {
     require(false, "title-menu editing is outside the settings dimension harness");
 }
@@ -98,7 +104,7 @@ LONG_PTR notify(UINT code) {
 void reset() {
     stored = {400, 500};
     for (auto &option : options) option = true;
-    writes = notifications = testErrorCount = 0;
+    writes = notifications = providerResets = testErrorCount = 0;
     lastError.clear();
     displayProc(displayPage, WM_INITDIALOG, 0, 0);
     pump();
@@ -109,7 +115,7 @@ void invalid(int control, const wchar_t *text, UINT event = PSN_APPLY) {
     setText(control, text);
     require(notify(event) == (event == PSN_APPLY ? PSNRET_INVALID : TRUE), "invalid submission refused");
     require(testErrorCount == 1 && !lastError.empty(), "one explanatory error");
-    require(writes == 0 && notifications == 0, "invalid submission writes no options");
+    require(writes == 0 && notifications == 0 && providerResets == 0, "invalid submission writes no options or provider reset");
     require(getText(control) == (control == IDC_FOLDER_WINDOW_WIDTH ? L"400" : L"500"),
         "restore previous stored dimension");
     HWND edit = GetDlgItem(displayPage, control);
@@ -174,7 +180,13 @@ int main() {
     setText(IDC_FOLDER_WINDOW_HEIGHT, std::to_wstring(minimum.cy).c_str());
     require(notify(PSN_KILLACTIVE) == FALSE && writes == 0, "valid leaving does not save yet");
     require(notify(PSN_APPLY) == PSNRET_NOERROR && testErrorCount == 0, "exact minima accepted");
-    require(stored.cx == minimum.cx && stored.cy == minimum.cy && writes == 11, "valid dimensions and all ten options saved");
+    require(stored.cx == minimum.cx && stored.cy == minimum.cy && writes == 13, "valid dimensions and all twelve options saved");
+    require(providerResets == 1, "enabled mixed sorting rearms the provider on Apply");
+    ++cases;
+    reset();
+    CheckDlgButton(displayPage, IDC_MIXED_FOLDER_SORTING, BST_UNCHECKED);
+    require(notify(PSN_APPLY) == PSNRET_NOERROR && !options[9] && providerResets == 0,
+        "disabled mixed sorting does not rearm the provider");
     ++cases;
     reset();
     CheckDlgButton(displayPage, IDC_FULL_NAMES_ON_SELECTION, BST_UNCHECKED);
