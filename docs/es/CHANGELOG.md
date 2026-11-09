@@ -2,6 +2,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Añadir el ajuste automático del ancho de las columnas en la vista Detalles, con actualización opcional durante el redimensionamiento.
 - Añadir los atajos del Explorador y sus adaptaciones al modo espacial (Ctrl+N y Ctrl+Retroceso).
 - Acelerar enormemente la reducción de selecciones grandes al hacer clic en un elemento o en el fondo de las vistas clásicas del Shell, con retorno automático y silencioso si la función privada de Windows no está disponible.
 - Acelerar la lectura de selecciones completas y grandes selecciones parciales en vistas de iconos con colocación libre mediante las API públicas de Windows.
