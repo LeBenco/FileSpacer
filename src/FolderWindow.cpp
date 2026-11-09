@@ -3771,6 +3771,25 @@ STDMETHODIMP FolderWindow::OnViewCreated(IShellView *const view) {
     if (provisionalBaseline) blockProvisionalInput(true);
 
     if (!current()) return S_OK;
+    if (!provisionalBaseline) {
+        // OnViewCreated is the documented point for setting modes and flags
+        // before the native view is shown. Doing this after enumeration can
+        // queue a second refill that discards positions restored in between.
+        const auto &saved = storedViewState ? storedViewState->view : getSavedFolderState().view;
+        FolderViewSettings initial;
+        initial.present = saved.present & (FolderViewSettings::Mode | FolderViewSettings::Flags);
+        initial.mode = saved.mode;
+        initial.iconSize = saved.iconSize;
+        initial.flags = saved.flags;
+        if (initial.present) {
+            CComQIPtr<IFolderView2> folderView(view);
+            if (!current()) return S_OK;
+            // The ordinary post-enumeration restoration retries any part an
+            // individual provider cannot apply at this earlier point.
+            if (folderView) (void)restoreOptions(folderView, initial);
+            if (!current()) return S_OK;
+        }
+    }
     setSingleSelectionLabels(view, settings::getFullNamesOnSelection());
     if (!current()) return S_OK;
     restoringState = false;
@@ -3914,10 +3933,10 @@ bool FolderWindow::captureProvisionalBaseline() {
     return isWindowOperational() && viewGeneration == generation;
 }
 
-// Navigation and enumeration callbacks can arrive in either order. Complete
-// initial enumeration before applying stored presentation changes. Those changes
-// may rebuild the native contents, requiring a later EnumDone before selection,
-// icon positions or persistence can use the view.
+// Modes and placement flags are prepared in OnViewCreated. Navigation and
+// enumeration callbacks can arrive in either order; restore the remaining
+// presentation after initial enumeration. A refill still requires a later
+// EnumDone before selection, icon positions or persistence can use the view.
 void FolderWindow::finishViewInitialization() {
     if (!viewReady || !initialEnumerationReady || !enumerationComplete
             || restoringState || !isWindowOperational()) return;
