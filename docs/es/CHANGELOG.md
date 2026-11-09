@@ -6,6 +6,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Mantener disponibles el menú Ver y la colocación libre de iconos cuando el estado guardado de la carpeta no se puede leer temporalmente.
 - Cargar el icono del botón Acceso rápido directamente desde el Shell de Windows.
 - Añadir el ajuste automático del ancho de las columnas en la vista Detalles, con actualización opcional durante el redimensionamiento.
 - Añadir los atajos del Explorador y sus adaptaciones al modo espacial (Ctrl+N y Ctrl+Retroceso).

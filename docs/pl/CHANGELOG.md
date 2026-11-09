@@ -6,6 +6,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Zachować dostępność menu Widok i swobodnego rozmieszczania ikon, gdy zapisany stan folderu jest tymczasowo niedostępny do odczytu.
 - Ładowanie ikony przycisku Szybki dostęp bezpośrednio z powłoki Windows.
 - Dodać automatyczne dostosowywanie szerokości kolumn w widoku Szczegóły, z opcjonalną aktualizacją na bieżąco.
 - Dodać skróty Eksploratora plików i ich dostosowania do trybu przestrzennego (Ctrl+N i Ctrl+Backspace).

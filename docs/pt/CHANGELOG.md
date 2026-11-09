@@ -6,6 +6,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Manter disponíveis o menu Ver e o posicionamento livre dos ícones quando o estado guardado da pasta está temporariamente indisponível para leitura.
 - Carregar o ícone do botão Acesso rápido diretamente da Shell do Windows.
 - Adicionar o redimensionamento automático das colunas na vista Detalhes, com atualização contínua opcional.
 - Adicionar atalhos do Explorador de Ficheiros e adaptações ao modo espacial (Ctrl+N e Ctrl+Retrocesso).

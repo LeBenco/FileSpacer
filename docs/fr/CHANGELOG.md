@@ -6,6 +6,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Garder le menu Affichage et le placement libre des icônes disponibles lorsque l’état sauvegardé du dossier est temporairement inaccessible.
 - Charger l’icône du bouton Accès rapide directement depuis le Shell Windows.
 - Ajouter le redimensionnement automatique des colonnes dans la vue Détails, avec actualisation en continu facultative.
 - Ajouter les raccourcis de l’Explorateur et leurs adaptations au mode spatial (Ctrl+N et Ctrl+Retour arrière).
