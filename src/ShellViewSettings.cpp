@@ -88,20 +88,29 @@ FolderViewSettings captureOptions(IFolderView2 *view, const FolderViewSettings &
 
 HRESULT restoreOptions(IFolderView2 *view, const FolderViewSettings &state) {
     // Reapplying an identical presentation can still sort and lay out the Shell view.
-    // A partial or unsupported capture retains the existing application path.
+    // Compare supported parts of a partial capture before changing them.
+    if (!state.present) return S_OK;
     FolderViewSettings metadata;
     metadata.present = state.present & FolderViewSettings::ColumnFill;
     metadata.fillColumns = state.fillColumns;
-    if (state.present && sameView(captureOptions(view, metadata), state)) return S_OK;
+    const FolderViewSettings actual = captureOptions(view, metadata);
+    if (sameView(actual, state)) return S_OK;
     HRESULT restored = S_OK;
     auto record = [&](HRESULT result) {
         if (FAILED(result) && SUCCEEDED(restored)) restored = result;
     };
-    if (state.present & FolderViewSettings::Mode) {
+    const bool changeMode = (state.present & FolderViewSettings::Mode)
+        && (!(actual.present & FolderViewSettings::Mode)
+            || actual.mode != state.mode || actual.iconSize != state.iconSize);
+    if (changeMode) {
         const HRESULT result = view->SetViewModeAndIconSize(static_cast<FOLDERVIEWMODE>(state.mode), state.iconSize);
         record(result);
     }
-    if (state.present & FolderViewSettings::Flags) {
+    // A changed mode can reset flags; retain their restoration in that case.
+    // Partial snapshots with an identical mode must not relayout the view.
+    if ((state.present & FolderViewSettings::Flags)
+            && (changeMode || !(actual.present & FolderViewSettings::Flags)
+                || actual.flags != state.flags)) {
         const HRESULT result = view->SetCurrentFolderFlags(FWF_AUTOARRANGE | FWF_SNAPTOGRID, state.flags);
         record(result);
     }
