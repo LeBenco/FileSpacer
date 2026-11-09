@@ -60,9 +60,9 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Informazioni sul posizionamento delle finestre", IDC_SMART_WINDOW_PLACEMENT_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 79, 12, 14
   CONTROL "Blocco delle finestre", -1, "Button", BS_GROUPBOX, 7, 100, 286, 72
   CONTROL "Attiva il &blocco dello stato delle finestre", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 111, 272, 12
-  CONTROL "Mostra un lucchetto aperto nella barra del titolo", IDC_WINDOW_STATE_UNLOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
-  CONTROL "Mostra un &lucchetto nella barra del titolo delle cartelle bloccate", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 139, 272, 12
-  CONTROL "Cambia il blocco facendo clic sull’icona", IDC_WINDOW_STATE_LOCK_CLICK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 153, 272, 12
+  CONTROL "Mostra un lucchetto aperto nella barra del titolo", IDC_WINDOW_STATE_UNLOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 125, 260, 12
+  CONTROL "Mostra un &lucchetto nella barra del titolo delle cartelle bloccate", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 139, 260, 12
+  CONTROL "Cambia il blocco facendo clic sull’icona", IDC_WINDOW_STATE_LOCK_CLICK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 153, 260, 12
   CONTROL "Casella di ricerca", -1, "Button", BS_GROUPBOX, 7, 176, 286, 52
   CONTROL "Filtra durante la &digitazione", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 187, 272, 12
   LTEXT "Ricerche recenti per cartella (0–20; 0 disattiva la cronologia)", -1, 14, 205, 222, 16
