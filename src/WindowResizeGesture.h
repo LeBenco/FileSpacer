@@ -12,6 +12,7 @@ public:
     bool begin(HWND window, HWND source, POINT screenPoint,
         GestureButton button = GestureButton::Right, bool move = false);
     bool handleMessage(UINT message, WPARAM wParam, LPARAM lParam);
+    bool isActive() const { return source != nullptr; }
     void cancel();
     void stop(); // Teardown commits the current size without resizing a dying window.
     bool takeCompleted();
