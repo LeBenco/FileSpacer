@@ -4,6 +4,10 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '..\..\common\Native.ps1')
 $test = Build-NativeTest -Name StorageRegression -CaseDirectory $PSScriptRoot -ProductionSources @('FolderStateStore.cpp') -Sqlite -Storage
 Invoke-TestProgram $test @((Join-Path $RunDirectory "single.sqlite3"))
+$crashDatabase=Join-Path $RunDirectory 'crash-wal.sqlite3'
+Invoke-TestProgram $test @('--crash-wal',$crashDatabase)
+if (!(Test-Path -LiteralPath ($crashDatabase+'-wal'))) { throw 'Abrupt-exit fixture did not leave a WAL; recovery scenario not established.' }
+Invoke-TestProgram $test @('--verify-wal',$crashDatabase)
 . (Join-Path $PSScriptRoot '..\..\common\Process.ps1')
 $database=Join-Path $RunDirectory 'concurrent.sqlite3'
 $writers=@()
