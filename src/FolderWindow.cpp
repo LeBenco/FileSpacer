@@ -975,20 +975,27 @@ static LONG gestureRoleAt(POINT point) {
 }
 
 bool FolderWindow::handleResizeMessage(UINT message, WPARAM wParam, LPARAM lParam) {
+    const bool wasActive = resizeGesture.isActive();
     const bool handled = resizeGesture.handleMessage(message, wParam, lParam);
     if (resizeGesture.takeCompleted()) {
         deferredGestureClick = {};
         finishColumnResize();
         if (isWindowOperational()) persistViewState();
+    } else if (wasActive && !resizeGesture.isActive() && resizingColumns) {
+        // A click or cancellation without movement still ends layout deferral.
+        finishColumnResize();
     }
     return handled;
 }
 
 void FolderWindow::cancelAltGesture() {
+    const bool wasActive = resizeGesture.isActive();
     resizeGesture.cancel();
     if (resizeGesture.takeCompleted() && isWindowOperational()) {
         finishColumnResize();
         persistViewState();
+    } else if (wasActive && resizingColumns) {
+        finishColumnResize();
     }
 }
 
