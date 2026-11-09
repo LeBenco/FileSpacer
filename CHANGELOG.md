@@ -6,6 +6,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Preserve saved free icon positions when the Shell reports an empty completion before loading the folder contents.
 - Keep the View menu and free icon placement available while saved folder state is temporarily unreadable.
 - Load the Quick access button icon directly from the Windows Shell.
 - Add automatic column resizing in Details view, with optional live updates.

@@ -6,6 +6,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Conservar las posiciones libres guardadas de los iconos cuando el Shell indica que ha terminado una enumeración vacía antes de cargar el contenido de la carpeta.
 - Mantener disponibles el menú Ver y la colocación libre de iconos cuando el estado guardado de la carpeta no se puede leer temporalmente.
 - Cargar el icono del botón Acceso rápido directamente desde el Shell de Windows.
 - Añadir el ajuste automático del ancho de las columnas en la vista Detalles, con actualización opcional durante el redimensionamiento.
