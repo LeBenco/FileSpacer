@@ -40,7 +40,7 @@ try {
     $diagnostic=[MutexRecoveryNative]::ClipboardText()
     $diagnostic | Set-Content -LiteralPath (Join-Path $RunDirectory 'copied-diagnostic.txt') -Encoding UTF8
     Assert-Ui ($diagnostic -match '\b26\b' -and $diagnostic -match 'not a database') 'Diagnostic lost the original SQLite error.'
-    Assert-Ui ($diagnostic.Contains('PID '+$PID)) 'Restart Manager did not identify the controlled file user.'
+    Assert-Ui ($diagnostic.Contains(' - PID '+$PID)) 'Restart Manager did not identify the controlled file user with a correctly encoded separator.'
     Assert-Ui ($diagnostic -notmatch '%[1-6]!') 'Unexpanded resource format in diagnostic.'
     $fileUser.Dispose();$fileUser=$null
     $existingExplorer=@($script:UiShell.Windows() | ForEach-Object {try{[long]$_.HWND}catch{}})
