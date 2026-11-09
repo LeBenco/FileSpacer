@@ -25,6 +25,7 @@ public static class SpatialNative {
     [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr h, IntPtr z, int x, int y, int w, int hgt, uint f);
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int cmd);
     [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
+    [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr h);
     [DllImport("user32.dll")] public static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context);
     public static IntPtr[] Find(string property) {
         var result = new List<IntPtr>();
@@ -80,8 +81,16 @@ function Drain-Launches {
     } while ([DateTime]::UtcNow -lt $deadline)
 }
 function Close-Folder([string]$property) {
-    foreach ($h in (Windows $property)) { [void][SpatialNative]::PostMessage($h, 0x10, [IntPtr]::Zero, [IntPtr]::Zero) }
+    $closing=@(Windows $property)
+    foreach ($h in $closing) { Require ([SpatialNative]::PostMessage($h, 0x10, [IntPtr]::Zero, [IntPtr]::Zero)) 'Cannot request folder closure.' }
     Wait-Count $property 0
+    # Identity is withdrawn before the close handler saves state. Wait for
+    # actual destruction before testing a reopening after completed closure.
+    $deadline=[DateTime]::UtcNow.AddSeconds(25)
+    while(@($closing|Where-Object{[SpatialNative]::IsWindow($_)}).Count) {
+        if([DateTime]::UtcNow-ge$deadline){throw 'Folder identity was withdrawn but its window did not close.'}
+        Start-Sleep -Milliseconds 50
+    }
 }
 function Check-Rect($actual, $expected) {
     foreach ($field in @('Left','Top','Right','Bottom')) {
