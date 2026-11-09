@@ -2,7 +2,7 @@
   "version": 1,
   "sources": {
     "README.md": {
-      "sourceHash": "e122a0fec625d2894ac620052e134f481745553d0210e92fa7ab0fff4ac880e7",
+      "sourceHash": "01168693a88465e0981bbb15601a3a757a1a3d56c5ace3b9fb9ba202a8399726",
       "headings": [
         [
           "filespacer",
@@ -39,90 +39,34 @@
       ]
     },
     "docs/user-guide.md": {
-      "sourceHash": "ca9b55994ba68e0f2ae558be1853232fa1501875c5d865b01eb2ba0a3083eec4",
+      "sourceHash": "a82ccfec61424c99c06aed39cf37acf836a59fd4bec08d9f2e99e479494514cc",
       "headings": [
         [
           "using-filespacer",
           2
         ],
         [
-          "window-navigation",
+          "window-navigation-and-layout",
           3
         ],
         [
-          "view-and-layout",
+          "folder-contents-and-display",
           3
         ],
         [
-          "icon-layout",
-          4
-        ],
-        [
-          "view-options",
-          4
-        ],
-        [
-          "window-placement",
-          4
-        ],
-        [
-          "selection-and-activation",
-          4
-        ],
-        [
-          "managing-windows",
+          "customization",
           3
         ],
         [
-          "moving-and-resizing",
+          "changing-the-interface",
           4
-        ],
-        [
-          "locking-a-saved-layout",
-          4
-        ],
-        [
-          "customize-the-title-bar-menu",
-          4
-        ],
-        [
-          "folder-groups",
-          4
-        ],
-        [
-          "search-and-history",
-          3
         ],
         [
           "integration",
-          3
-        ],
-        [
-          "windows-integration",
           4
         ],
         [
-          "powertoys-grab-and-move",
-          4
-        ],
-        [
-          "powertoys-peek",
-          4
-        ],
-        [
-          "everything",
-          4
-        ],
-        [
-          "nilesoft-shell",
-          4
-        ],
-        [
-          "settings-and-updates",
-          3
-        ],
-        [
-          "local-data",
+          "updates-and-troubleshooting",
           3
         ],
         [
@@ -132,14 +76,14 @@
       ]
     },
     "CHANGELOG.md": {
-      "sourceHash": "5dc0b5fa99bff27afecaea59cddb454cc1f6e6814536955a503f1b665ac3a370",
+      "sourceHash": "cf0d0fa7a6c39c1d691d15eb44866e5821d7752635dc36fb9cde0714da2b2773",
       "headings": [
         [
           "changelog",
           2
         ],
         [
-          "unreleased",
+          "140--2026-11-09",
           3
         ],
         [
@@ -253,7 +197,7 @@
       ]
     },
     "THIRD_PARTY_NOTICES.md": {
-      "sourceHash": "965aa76b299de0fe0b8cd637491c7ad874b669c3c3b3890fd700b95136bc45da",
+      "sourceHash": "373eb0191f650df4038367988a283b6866ca9f5738076d0be0a81567240658ff",
       "headings": [
         [
           "third-party-notices",
@@ -264,19 +208,11 @@
           3
         ],
         [
-          "up-and-refresh-button-icons-lucide-and-feather",
-          3
-        ],
-        [
-          "windows-fonts-and-components",
-          3
-        ],
-        [
           "installer",
           3
         ],
         [
-          "small--flat-lock-icon",
+          "icons",
           3
         ]
       ]

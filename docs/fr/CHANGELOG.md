@@ -1,4 +1,8 @@
+<a id="changelog"></a>
+
 # Historique des versions
+
+<a id="140--2026-11-09"></a>
 
 ## 1.4.0 — 2026-11-09
 
@@ -12,13 +16,19 @@
 - Placer les nouvelles fenêtres à partir de la taille et de la position normales des fenêtres FileSpacer existantes, y compris lorsqu’elles sont maximisées, minimisées ou ancrées.
 - Accélération massive de « Tout sélectionner » et de la désélection de milliers de fichiers dans les vues Shell classiques. Cette optimisation s’appuie sur des fonctions privées de Windows dont la disponibilité et le comportement ne sont pas garantis. Si elles sont absentes ou incompatibles, FileSpacer revient automatiquement et silencieusement aux fonctions publiques, sans les gains de performance.
 
+<a id="132--2026-11-04"></a>
+
 ## 1.3.2 — 2026-11-04
 
 - Ajouter le polonais, le néerlandais et l’ukrainien à l’application, à l’installateur, au site et aux documentations utilisateur et technique.
 
+<a id="131--2026-11-03"></a>
+
 ## 1.3.1 — 2026-11-03
 
 - Corriger l’ouverture par le gestionnaire de fichiers par défaut qui sélectionnait une autre application à la place de FileSpacer.
+
+<a id="130--2026-11-02"></a>
 
 ## 1.3.0 — 2026-11-02
 
@@ -31,6 +41,8 @@
 - Corriger la désinstallation pour qu’elle se poursuive si le nettoyage de l’aide échoue, ainsi que la détection de plusieurs processus Explorer dans une même session par les tests VM.
 - Corriger les jointures entre les faces vertes de l’icône et actualiser les guides multilingues et les démonstrations du menu.
 
+<a id="123--2026-10-30"></a>
+
 ## 1.2.3 — 2026-10-30
 
 - Corriger les identités, les surimpressions d’icônes et les notifications de dossiers du tri mixte. Conserver les positions libres des icônes et utiliser les vues natives si le fournisseur est indisponible ou incompatible.
@@ -39,13 +51,19 @@
 - Corriger les rafraîchissements des Jump Lists et les diagnostics de l’installeur. Conserver les fichiers d’aide utilisateur pendant les mises à niveau et la désinstallation.
 - Intégrer l’aide multilingue hors ligne par F1 et À propos, et actualiser les guides de configuration traduits et les références Nilesoft Shell.
 
+<a id="122--2026-10-28"></a>
+
 ## 1.2.2 — 2026-10-28
 
 - Corriger l’utilisation du fournisseur de dossiers personnalisé par le tri mixte en disposition libre des icônes. Utiliser le fournisseur natif pour le placement libre et changer de fournisseur à la validation d’une disposition triée, en conservant les positions enregistrées des icônes, la sélection et le focus.
 
+<a id="121--2026-10-28"></a>
+
 ## 1.2.1 — 2026-10-28
 
 - Réduire l’apparition transitoire d’icônes génériques à l’ouverture des dossiers en tri mixte. Préparer les icônes visibles dans le cache Windows avant d’afficher la vue native, avec une attente limitée pour les gestionnaires d’icônes lents.
+
+<a id="120--2026-10-28"></a>
 
 ## 1.2.0 — 2026-10-28
 
@@ -55,6 +73,8 @@
 - Enrichir le guide en ligne avec des captures françaises et anglaises, des démonstrations des gestes de fenêtre et des comparaisons des menus Nilesoft Shell.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.10...v1.2.0)
+
+<a id="1110--2026-10-27"></a>
 
 ## 1.1.10 — 2026-10-27
 
@@ -71,11 +91,15 @@
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.9...v1.1.10)
 
+<a id="119--2026-10-27"></a>
+
 ## 1.1.9 — 2026-10-27
 
 - Prévisualiser les modes d’affichage au survol du menu Affichage, avec restauration progressive en cas d’annulation et une option activée par défaut dans les paramètres d’affichage.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.8...v1.1.9)
+
+<a id="118--2026-10-27"></a>
 
 ## 1.1.8 — 2026-10-27
 
@@ -89,12 +113,16 @@
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.7...v1.1.8)
 
+<a id="117--2026-10-26"></a>
+
 ## 1.1.7 — 2026-10-26
 
 - Minimiser le chevauchement des nouvelles fenêtres avec une géométrie exacte, en recherchant d’abord l’espace libre. Renommer l’option générale en « Minimiser le chevauchement des fenêtres ».
 - Proposer le choix facultatif du gestionnaire de fichiers par défaut dans l’installeur français et anglais, avec les instructions pour l’activer ou le rétablir plus tard dans les paramètres d’intégration de FileSpacer.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.6...v1.1.7)
+
+<a id="116--2026-10-26"></a>
 
 ## 1.1.6 — 2026-10-26
 
@@ -106,6 +134,8 @@
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.5...v1.1.6)
 
+<a id="115--2026-10-26"></a>
+
 ## 1.1.5 — 2026-10-26
 
 - Corriger la création involontaire d’un raccourci lorsqu’un Alt + double-clic est suivi d’un déplacement de souris. Préserver les propriétés natives, la sélection et le focus sans rejouer un appui maintenu.
@@ -114,6 +144,8 @@
 - Maintenir le poste éveillé et suspendre temporairement l’économiseur d’écran pendant les tests d’interface, en restaurant leur état initial pendant le nettoyage, même après un échec.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.4...v1.1.5)
+
+<a id="114--2026-10-25"></a>
 
 ## 1.1.4 — 2026-10-25
 
@@ -127,6 +159,8 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
 
+<a id="113--2026-10-25"></a>
+
 ## 1.1.3 — 2026-10-25
 
 - Ajouter un onglet Raccourcis aux paramètres pour configurer ou désactiver les gestes de déplacement et de redimensionnement avec les touches modificatrices et les boutons gauche, central ou droit, avec saisie directe et validation des conflits.
@@ -135,6 +169,8 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Ajouter des tests exhaustifs de configuration des raccourcis et de gestes réels de souris, avec les ressources de paramètres françaises et anglaises.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.2...v1.1.3)
+
+<a id="112--2026-10-25"></a>
 
 ## 1.1.2 — 2026-10-25
 
@@ -147,12 +183,16 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.1...v1.1.2)
 
+<a id="111--2026-10-24"></a>
+
 ## 1.1.1 — 2026-10-24
 
 - Restaurer l’activation préservant la sélection : le premier clic sur l’arrière-plan vide d’un dossier inactif l’active sans effacer la sélection (préférence réactivée).
 - Corriger un plantage à la fermeture d’une fenêtre de dossier pendant l’actualisation de sa vue Shell (commande Actualiser, filtre par nom, commandes Shell Actualiser/Nouveau).
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.0...v1.1.1)
+
+<a id="110--2026-10-24"></a>
 
 ## 1.1.0 — 2026-10-24
 
@@ -166,6 +206,8 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
 
+<a id="108--2026-10-22"></a>
+
 ## 1.0.8 — 2026-10-22
 
 - Déplacer les fenêtres avec Alt + glisser gauche et les redimensionner avec Alt + glisser droit depuis la zone principale des fichiers, en conservant la sélection.
@@ -176,6 +218,8 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.7...v1.0.8)
 
+<a id="107--2026-10-20"></a>
+
 ## 1.0.7 — 2026-10-20
 
 - Sélectionner le dossier enfant d’origine à l’ouverture d’un parent ou d’un ancêtre, en préservant la sélection des fenêtres déjà ouvertes.
@@ -185,11 +229,15 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.6...v1.0.7)
 
+<a id="106--2026-10-11"></a>
+
 ## 1.0.6 — 2026-10-11
 
 - Restaurer automatiquement les fenêtres de dossiers ouvertes après une mise à jour dans l’application, en conservant leurs positions, tailles et réglages d’affichage enregistrés.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.5...v1.0.6)
+
+<a id="105--2026-10-11"></a>
 
 ## 1.0.5 — 2026-10-11
 
@@ -199,6 +247,8 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Publier les métadonnées de téléchargement de l’installeur avec chaque version.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.4...v1.0.5)
+
+<a id="104--2026-10-11"></a>
 
 ## 1.0.4 — 2026-10-11
 
@@ -210,6 +260,8 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.3...v1.0.4)
 
+<a id="103--2026-10-11"></a>
+
 ## 1.0.3 — 2026-10-11
 
 - Restaurer les vérifications manuelles et les vérifications hebdomadaires facultatives des mises à jour à partir des versions GitHub de FileSpacer, désactivées par défaut.
@@ -219,6 +271,8 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Conserver la gestion native du Shell pour Alt + double-clic et Alt + Entrée sur les dossiers.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.2...v1.0.3)
+
+<a id="102--2026-10-11"></a>
 
 ## 1.0.2 — 2026-10-11
 
@@ -230,6 +284,8 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Permettre au workflow de publication de remplacer l’installeur d’une version existante.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.1...v1.0.2)
+
+<a id="101--2026-10-09"></a>
 
 ## 1.0.1 — 2026-10-09
 
@@ -245,6 +301,8 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Permettre la publication manuelle des versions et inclure le numéro de version dans les noms de fichiers des installeurs.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.0...v1.0.1)
+
+<a id="100--2026-10-09"></a>
 
 ## 1.0.0 — 2026-10-09
 

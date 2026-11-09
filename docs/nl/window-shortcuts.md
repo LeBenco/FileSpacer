@@ -2,7 +2,7 @@
 
 # Venstergebaren
 
-Configuratie staat in de [gebruikershandleiding](user-guide.md#verplaatsen-en-formaat-wijzigen). Begin voor de implementatie in `WindowShortcuts.h`, `ShortcutSettingsPage.cpp`, `Settings.cpp`, `FolderWindow` en `WindowResizeGesture`.
+Configuratie staat in de [gebruikershandleiding](user-guide.md#moving-and-resizing). Begin voor de implementatie in `WindowShortcuts.h`, `ShortcutSettingsPage.cpp`, `Settings.cpp`, `FolderWindow` en `WindowResizeGesture`.
 
 <a id="binding-and-input-rules"></a>
 
@@ -28,6 +28,8 @@ Dubbelklikken en Eigenschappen blijven van de Shell. Heeft een gebaar de eerste 
 De instellingenpagina bewaart concepten tot Toepassen/OK en weigert gereserveerde of conflicterende toewijzingen. Standaardwaarden per actie wijzigen één concept; Herstellen herstelt het laatst toegepaste paar. Beide worden atomair vastgelegd als de versiegebonden DWORD `WindowShortcuts`. Ongeldige opgeslagen gegevens vallen terug op standaardwaarden. Vensters lezen het huidige paar bij aanvang van een gebaar, ook tussen processen.
 
 `settings::windowShortcutApplies()` controleert PowerToys Grab And Move pas nadat invoer met een ingestelde toewijzing overeenkomt. Als de opgeslagen configuratie het voor dat doelvenster inschakelt, onderdrukt FileSpacer zijn gebaren zonder de sneltoetsen te verwijderen. PowerToys hoeft niet actief te zijn. Onderscheid doeluitsluitingen en wijzigingstoetsuitsluitingen van het voorgrondvenster; zie `powerToysOverridesWindowGestures()` in `Settings.cpp`.
+
+<a id="tests"></a>
 
 ## Tests
 

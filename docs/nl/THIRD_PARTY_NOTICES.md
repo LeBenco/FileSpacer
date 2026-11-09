@@ -1,31 +1,30 @@
+<a id="third-party-notices"></a>
+
 # Vermeldingen van derden
 
 FileSpacer is gebaseerd op [ChromaFiler](https://github.com/vanjac/chromafiler), Copyright (c) 2023 J. van't Hoog, verspreid onder de [GNU General Public License v3.0](../../LICENSE).
+
+<a id="sqlite"></a>
 
 ## SQLite
 
 SQLite 3.53.4 is statisch in de toepassing gekoppeld en behoort tot het publieke domein. De ongewijzigde bronnen en hun herkomst staan in `third_party/sqlite`. Zie <https://sqlite.org/copyright.html>.
 
-## Pictogrammen Omhoog en Vernieuwen (Lucide en Feather)
+<a id="installer"></a>
 
-Op de werkbalk opent de **pijl omhoog** de **bovenliggende map** en **vernieuwt de ronde pijl de mapinhoud**. Beide pictogrammen zijn afgeleid van **Lucide** (`arrow-up` en `rotate-cw`). De pijl omhoog komt oorspronkelijk uit **Feather**.
+## NSIS
 
-Zie [licenses/Lucide-LICENSE.txt](../../licenses/Lucide-LICENSE.txt) voor de volledige ISC- en MIT-vermeldingen in de broncode, of `Lucide-LICENSE.txt` in de installatiemap. Zie <https://lucide.dev/license>.
+- **Installatieprogramma**: [NSIS](https://nsis.sourceforge.io/) ([licenties](https://nsis.sourceforge.io/License)).
+- **LockedList-uitbreiding van het installatieprogramma**: [Afrow Soft](https://nsis.sourceforge.io/LockedList_plug-in) (Copyright (c) 2013 Afrow Soft Ltd, [zlib-licentie](../../installer/plugins/LockedList.txt), ook meegeleverd als `LockedList-LICENSE.txt`).
 
-## Windows-lettertypen en -onderdelen
+<a id="icons"></a>
 
-Sommige interfacetekens gebruiken Microsofts Segoe MDL2 Assets-lettertype dat met Windows is geïnstalleerd. FileSpacer verspreidt dit lettertype niet. Windows Shell, algemene besturingselementen, GDI+ en andere systeemonderdelen worden door Windows geleverd.
+## Pictogrammen
 
-## Installatieprogramma
+<div id="up-and-refresh-button-icons-lucide-and-feather"></div>
 
-Het NSIS-installatieprogramma gebruikt de LockedList-plug-in, Copyright (c) 2013 Afrow Soft Ltd, onder de zlib-licentie. De volledige vermelding staat in [installer/plugins/LockedList.txt](../../installer/plugins/LockedList.txt) en wordt als `LockedList-LICENSE.txt` bij het programma geïnstalleerd. Zie <https://nsis.sourceforge.io/LockedList_plug-in>.
+<div id="small--flat-lock-icon"></div>
 
-De AppUserModelID van de snelkoppeling wordt ingesteld door FileSpacers `ShortcutAppID.nsh` met Windows COM-macro’s van NSIS. De voormalige submodule `nsis-shortcut-properties` wordt niet gebruikt. Material Design Icons en de vroegere meegeleverde Segoe-lettertypedeelverzameling worden niet gebruikt.
-
-## Small & Flat-slotpictogram
-
-Het vensterstatusslotje (`src/res/window-state-lock.ico`) is het ongewijzigde **lock**-pictogram uit Small & Flat van paomedia, onder [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) aan het publieke domein gewijd.
-
-Oorspronkelijke collectie en licentie: https://github.com/paomedia/small-n-flat
-
-ICO-distributie: https://www.iconarchive.com/show/small-n-flat-icons-by-paomedia/lock-icon.html
+- **Pictogrammen Omhoog en Vernieuwen**: [Lucide](https://lucide.dev/) (aangepaste versies, [ISC en MIT](../../licenses/Lucide-LICENSE.txt), licentieteksten ook meegeleverd als `Lucide-LICENSE.txt`).
+- **Pictogram Omhoog**: [Feather](https://feathericons.com/) (oorsprong van de Lucide-versie, [MIT](../../licenses/Lucide-LICENSE.txt)).
+- **Pictogrammen voor een gesloten en open hangslot**: [Small & Flat van paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), het open hangslot is afgeleid van het gesloten hangslot).

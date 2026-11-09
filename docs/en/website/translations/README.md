@@ -1,3 +1,5 @@
+<a id="website-translations"></a>
+
 # Website translations
 
 The repository's main README and documentation remain English sources. These
@@ -41,24 +43,18 @@ record an English edit until its translation is complete. Missing documents,
 broken links or media and translation structure inconsistent with its recorded
 reference remain errors.
 
-The recorded English IDs keep existing section links working when another
-language's headings change. Links can use either a translated heading slug or
-the original English slug. Referenced user
-documentation links to the selected language's GitHub file. Polish, Dutch and
-Ukrainian also provide translated developer documents outside the website;
-their links use those files. Other languages retain the English technical sources.
-Keep explicit HTML anchor IDs unchanged across languages.
+Every heading has an explicit English anchor immediately before it, for example `<a id="recommended-menu-appearance"></a>`. Keep these IDs identical in every language and use them in all links. Translated titles can change without changing their anchors. Old translated anchors remain usable for compatibility, but new links must use the English IDs. User references point to the selected language’s GitHub file. Technical references use a translation when available and otherwise keep the English source.
 
-Use explicit relative references to the language's own `images/` directory,
-including existing suffixes such as `spatial-windows-de.png`. The generator copies
-the referenced files without inferring another filename, while
-the neutral application logo is shared. It fails when an included capture or
-animation is missing. Do not translate text inside exported images.
+Use the same filenames in every language directory, without a language suffix: for example, `images/spatial-windows.png`. The containing `docs/<language>/` directory identifies the language. The generator also uses the same relative asset URLs in each language’s site. It copies the actual localized files and fails if a capture is missing. The application logo is shared.
+
+To normalize existing sources and references, run `node website/normalize-docs.mjs` from the repository root. The script adds shared English heading anchors, rewrites links and removes redundant language suffixes from filenames and path references. It checks filename collisions before writing and can be run again without further changes. Review its report and commit renamed files with their updated references.
 
 The generated site is built separately for each language with the same pinned
 Just the Docs theme. Each build has its own navigation, search index, interface
 labels and media; the deployment workflow discovers the build matrix from the
 generator's `locales.json` output.
+
+<a id="terminology-and-style"></a>
 
 ## Terminology and style
 

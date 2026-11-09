@@ -1,9 +1,13 @@
+<a id="working-on-filespacer"></a>
+
 # Working on FileSpacer
 
 FileSpacer is a native C++/Win32 spatial file manager. Windows supplies the file
 view and file operations; FileSpacer supplies folder-window policy, persistence
 and its own controls. This documentation is a starting point for navigating the
 code, not an API reference. See the [user guide](user-guide.md) for usage.
+
+<a id="start-here"></a>
 
 ## Start here
 
@@ -13,6 +17,8 @@ code, not an API reference. See the [user guide](user-guide.md) for usage.
    [GitHub Actions regression workflow](tests/regression/README.md#run-on-github).
 3. Read the [Shell architecture](native-shell-view.md) before changing view
    lifetime, restoration or item identities.
+
+<a id="code-map"></a>
 
 ## Code map
 
@@ -36,6 +42,8 @@ The build, installer, regression harness and website have separate entry points:
 New C++ translation units must be added to the relevant Makefile object list.
 Keep UI text in the language resource files and preserve their encodings.
 
+<a id="boundaries-to-preserve"></a>
+
 ## Boundaries to preserve
 
 - A folder has one window, including across FileSpacer processes. Identity is
@@ -56,6 +64,8 @@ Keep UI text in the language resource files and preserve their encodings.
   returning. A COM reference keeps the C++ object alive, not its window or view.
   Recheck lifetime and observation generation before continuing.
 
+<a id="local-data"></a>
+
 ## Local data
 
 Folder layouts, locks, search history and closed-folder history are stored in
@@ -65,8 +75,12 @@ composition and folder groups are in the Windows Registry under
 including network paths. Temporary update files and the session's folder list
 are under `%TEMP%\FileSpacerUpdate-{GUID}`.
 
-Use the [user guide's reset procedures](user-guide.md#local-data) for maintenance.
+For the in-app reset, see [updates and troubleshooting](user-guide.md#updates-and-troubleshooting).
+For troubleshooting, `FileSpacer.exe /reset-options` resets general preferences.
+`FileSpacer.exe /reset-all` also clears folder state. Neither command deletes files.
 Do not edit a live database or reset production data to prepare regression tests.
+
+<a id="focused-notes"></a>
 
 ## Focused notes
 
