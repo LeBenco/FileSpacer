@@ -6,6 +6,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Gespeicherte freie Symbolpositionen beibehalten, wenn die Shell vor dem Laden des Ordnerinhalts eine leere Aufzählung als abgeschlossen meldet.
 - Das Ansichtsmenü und die freie Symbolplatzierung verfügbar halten, wenn der gespeicherte Ordnerzustand vorübergehend nicht gelesen werden kann.
 - Das Symbol der Schaltfläche Schnellzugriff direkt aus der Windows-Shell laden.
 - Automatische Größenanpassung der Spalten in der Detailansicht mit optionaler Live-Aktualisierung ergänzen.

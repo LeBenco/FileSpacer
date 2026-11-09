@@ -6,6 +6,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Preservar as posições livres guardadas dos ícones quando a Shell comunica a conclusão de uma enumeração vazia antes de carregar o conteúdo da pasta.
 - Manter disponíveis o menu Ver e o posicionamento livre dos ícones quando o estado guardado da pasta está temporariamente indisponível para leitura.
 - Carregar o ícone do botão Acesso rápido diretamente da Shell do Windows.
 - Adicionar o redimensionamento automático das colunas na vista Detalhes, com atualização contínua opcional.

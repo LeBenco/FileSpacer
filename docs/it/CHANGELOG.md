@@ -6,6 +6,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Conservare le posizioni libere salvate delle icone quando la Shell segnala il completamento di un’enumerazione vuota prima di caricare il contenuto della cartella.
 - Mantenere disponibili il menu Visualizza e il posizionamento libero delle icone quando lo stato salvato della cartella è temporaneamente illeggibile.
 - Caricare l’icona del pulsante Accesso rapido direttamente dalla Shell di Windows.
 - Aggiungere il ridimensionamento automatico delle colonne nella vista Dettagli, con aggiornamento continuo facoltativo.
