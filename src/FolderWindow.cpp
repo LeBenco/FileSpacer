@@ -6,6 +6,7 @@
 #include "ShellViewIcons.h"
 #include "ShellViewFilter.h"
 #include "ShellViewLabels.h"
+#include "ShellViewColumns.h"
 #include "CreateItemWindow.h"
 #include "ClosedWindows.h"
 #include "ShellMenuIcons.h"
@@ -43,6 +44,7 @@
 namespace filespacer {
 
 FolderWindow::~FolderWindow() {
+    if (columnLayout) columnLayout->stop();
     watchProvisionalInput(false); // The hook must never compare a destroyed window.
 }
 
@@ -357,6 +359,10 @@ struct FolderWindow::ViewMenuPreview {
         if (!command || !current()) return;
         if (command == IDM_TOGGLE_THUMBNAILS) {
             toggleGlobalThumbnails();
+            return;
+        }
+        if (command == IDM_FILL_COLUMNS) {
+            owner.toggleFillColumns();
             return;
         }
         auto info = owner.makeInvokeInfo(static_cast<int>(command - IDM_SHELL_FIRST), POINT{});
@@ -972,6 +978,7 @@ bool FolderWindow::handleResizeMessage(UINT message, WPARAM wParam, LPARAM lPara
     const bool handled = resizeGesture.handleMessage(message, wParam, lParam);
     if (resizeGesture.takeCompleted()) {
         deferredGestureClick = {};
+        finishColumnResize();
         if (isWindowOperational()) persistViewState();
     }
     return handled;
@@ -979,7 +986,10 @@ bool FolderWindow::handleResizeMessage(UINT message, WPARAM wParam, LPARAM lPara
 
 void FolderWindow::cancelAltGesture() {
     resizeGesture.cancel();
-    if (resizeGesture.takeCompleted() && isWindowOperational()) persistViewState();
+    if (resizeGesture.takeCompleted() && isWindowOperational()) {
+        finishColumnResize();
+        persistViewState();
+    }
 }
 
 bool FolderWindow::handleAltMouseMessage(MSG *msg) {
@@ -1162,8 +1172,14 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
         deferredGestureClick = *msg;
         deferredGestureGeneration = generation;
     }
-    if (!moving || button != GestureButton::Left)
-        return resizeGesture.begin(owner, owner, point, button, moving);
+    if (!moving || button != GestureButton::Left) {
+        const bool begun = resizeGesture.begin(owner, owner, point, button, moving);
+        if (begun && !moving) {
+            resizingColumns = true;
+            if (columnLayout) columnLayout->suspend(settings::getDetailsColumnsDeferred());
+        }
+        return begun;
+    }
     suppressAltUp = (modifiers & GestureAlt) != 0;
     if (DragDetect(owner, point) && current()) {
         deferredGestureClick = {};
@@ -1235,6 +1251,7 @@ void FolderWindow::onCreate() {
         hybridViewEligible = SUCCEEDED(SHGetIDListFromObject(item, &id)) && id && !ILIsEmpty(id);
     }
     if (!isWindowOperational()) return;
+    loadColumnFill();
     if (hybridViewEligible && loadFolderState()
             && (getSavedFolderState().view.present & FolderViewSettings::Mode)) {
         const auto mode = getSavedFolderState().view.mode;
@@ -1421,7 +1438,7 @@ void FolderWindow::scheduleStateSave(bool icons) {
 }
 
 FOLDERVIEWOPTIONS FolderWindow::profileForMode(UINT mode) const {
-    return hybridViewEligible && (mode == FVM_DETAILS || mode == FVM_LIST)
+    return hybridViewEligible && (mode == FVM_LIST || (mode == FVM_DETAILS && !columnFillActive()))
         ? FVO_DEFAULT : static_cast<FOLDERVIEWOPTIONS>(FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING);
 }
 
@@ -1454,6 +1471,10 @@ void FolderWindow::synchronizeViewProfile() {
     if (FAILED(viewHost.currentView(IID_PPV_ARGS(&view))) || !current()) return;
     auto state = std::make_unique<ShellViewState>();
     state->view = captureOptions(view, getSavedFolderState().view);
+    if (columnFillSet) {
+        state->view.present |= FolderViewSettings::ColumnFill;
+        state->view.fillColumns = fillColumns;
+    }
     if (!current() || !(state->view.present & FolderViewSettings::Mode)) return;
     const auto desired = viewMenuRequested
         ? static_cast<FOLDERVIEWOPTIONS>(FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING)
@@ -1548,6 +1569,10 @@ uint32_t FolderWindow::captureViewState(uint32_t mask) {
         if (result == S_OK) closingScroll.swap(bytes);
     }
     FolderViewSettings options = captureOptions(view, getSavedFolderState().view);
+    if (columnFillSet) {
+        options.present |= FolderViewSettings::ColumnFill;
+        options.fillColumns = fillColumns;
+    }
     if (!current()) return captured;
     const bool profileMismatch = (options.present & FolderViewSettings::Mode)
         && profileForMode(static_cast<UINT>(options.mode)) != viewProfile;
@@ -1740,6 +1765,8 @@ void FolderWindow::restoreReopenViewState() {
 }
 
 void FolderWindow::onDestroy() {
+    if (columnLayout) columnLayout->stop();
+    columnLayout.reset();
     viewMenuRequested = false;
     viewProfilePosted = false;
     watchProvisionalInput(false);
@@ -1779,6 +1806,7 @@ void FolderWindow::onDestroy() {
 }
 
 bool FolderWindow::onCommand(WORD command) {
+    if (command == IDM_FILL_COLUMNS) { toggleFillColumns(); return true; }
     if (provisionalBaseline && (command == IDM_RESTORE_LAYOUT || command == IDM_REPLACE_LAYOUT
             || command == IDM_TOGGLE_STATE_LOCK)) {
         if (provisionalInputBlocked || provisionalCaptureBusy) return true;
@@ -2224,6 +2252,12 @@ void FolderWindow::onActivate(WORD state, HWND prevWindow) {
 }
 
 void FolderWindow::onSize(SIZE size) {
+    if (viewHost && columnLayout && resizingColumns && settings::getDetailsColumnsDeferred()) {
+        // Keep the whole client layout stable; Shell-only deferral still redraws the toolbars.
+        columnBoundsPending = true;
+        return;
+    }
+    columnBoundsPending = false;
     ItemWindow::onSize(size);
     placeSearchBox();
 
@@ -2256,6 +2290,106 @@ void FolderWindow::onSize(SIZE size) {
         if (folderView)
             folderView->SetRedraw(true); // Windows 11 has so many cool bugs
     }
+    if (columnLayout && (!resizingColumns || !settings::getDetailsColumnsDeferred())) columnLayout->resize();
+}
+
+bool FolderWindow::columnFillActive() const {
+    return settings::getDetailsColumnsEnabled() && fillColumns;
+}
+
+void FolderWindow::loadColumnFill() {
+    if (columnFillLoaded || !loadFolderState()) return;
+    const auto &state = getSavedFolderState().view;
+    columnFillSet = (state.present & FolderViewSettings::ColumnFill) != 0;
+    fillColumns = !columnFillSet || state.fillColumns;
+    columnFillLoaded = true;
+}
+
+void FolderWindow::toggleFillColumns() {
+    CComPtr<ItemWindow> keepAlive(this);
+    if (!settings::getDetailsColumnsEnabled() || !isWindowOperational()
+            || provisionalBaseline || provisionalInputBlocked || provisionalCaptureBusy) return;
+    loadColumnFill();
+    if (!columnFillLoaded || !isWindowOperational()) return;
+    if (!fillColumns && !settings::getDetailsColumnsDeferred()) {
+        CComPtr<IShellView> source = shellView;
+        const ULONG_PTR generation = viewGeneration;
+        auto current = [&]() {
+            return isWindowOperational() && shellView == source && viewGeneration == generation
+                && settings::getDetailsColumnsEnabled() && !fillColumns;
+        };
+        if (current()) {
+            TASKDIALOGCONFIG config = {sizeof(config)};
+            config.hwndParent = hwnd;
+            config.hInstance = GetModuleHandleW(nullptr);
+            config.pszWindowTitle = MAKEINTRESOURCEW(IDS_APP_NAME);
+            config.pszMainInstruction = getString(IDS_FILL_COLUMNS);
+            config.pszContent = getString(IDS_FILL_COLUMNS_WARNING);
+            config.pszMainIcon = TD_WARNING_ICON;
+            config.dwFlags = TDF_ALLOW_DIALOG_CANCELLATION;
+            config.dwCommonButtons = TDCBF_YES_BUTTON | TDCBF_NO_BUTTON;
+            config.nDefaultButton = IDNO;
+            int button = IDNO;
+            const HRESULT result = TaskDialogIndirect(&config, &button, nullptr, nullptr);
+            if (!current() || !checkHR(result) || button != IDYES) return;
+        } else return;
+    }
+    fillColumns = !fillColumns;
+    columnFillSet = true;
+    viewStateDirty(FolderState::View);
+    if (columnLayout) columnLayout->stop();
+    columnLayout.reset();
+    synchronizeColumns();
+    requestViewProfile();
+    if (isWindowOperational()) {
+        scheduleStateSave();
+        checkLE(PostMessageW(hwnd, MSG_COLUMNS_CHANGED, viewGeneration, 0));
+    }
+}
+
+void FolderWindow::synchronizeColumns() {
+    CComPtr<ItemWindow> keepAlive(this);
+    if (!isWindowOperational()) return;
+    loadColumnFill();
+    if (!columnFillActive()) {
+        if (columnLayout) columnLayout->stop();
+        columnLayout.reset();
+        return;
+    }
+    if (!initialStateApplied || !enumerationComplete || restoringState
+            || viewMenuPreview || viewMenuRestore || provisionalBaseline) return;
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    CComQIPtr<IFolderView2> view(source);
+    UINT mode = 0;
+    if (!view || FAILED(view->GetCurrentViewMode(&mode)) || !isWindowOperational()
+            || shellView != source || viewGeneration != generation) return;
+    if (mode != FVM_DETAILS) {
+        if (columnLayout) columnLayout->stop();
+        columnLayout.reset();
+        return;
+    }
+    if (!columnLayout) {
+        auto attached = ShellViewColumns::attach(source, hwnd, MSG_COLUMNS_CHANGED, generation);
+        if (!isWindowOperational() || shellView != source || viewGeneration != generation) {
+            if (attached) attached->stop();
+            return;
+        }
+        columnLayout = std::move(attached);
+    }
+    auto layout = columnLayout;
+    if (layout) {
+        layout->setDeferred(settings::getDetailsColumnsDeferred());
+        layout->suspend(resizingColumns && settings::getDetailsColumnsDeferred());
+        layout->synchronize();
+    }
+}
+
+void FolderWindow::finishColumnResize() {
+    resizingColumns = false;
+    if (!isWindowOperational()) return;
+    if (columnBoundsPending && !IsIconic(hwnd)) onSize(clientSize(hwnd));
+    synchronizeColumns();
 }
 
 void FolderWindow::onSettingsChanged() {
@@ -2274,6 +2408,10 @@ void FolderWindow::onSettingsChanged() {
     if (!limit) {
         searchHistoryDirty = false; // The preference already cleared persisted histories.
         searchHistoryLoaded = false;
+    }
+    if (isWindowOperational()) {
+        synchronizeColumns();
+        requestViewProfile();
     }
     if (isWindowOperational())
         setSingleSelectionLabels(shellView, settings::getFullNamesOnSelection());
@@ -2392,6 +2530,15 @@ bool FolderWindow::isBackgroundActivationClick(const MSG *msg) const {
 
 LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     CComPtr<ItemWindow> messageKeepAlive(this);
+    if (message == WM_ENTERSIZEMOVE) {
+        resizingColumns = true;
+        if (columnLayout) columnLayout->suspend(settings::getDetailsColumnsDeferred());
+    } else if (message == WM_EXITSIZEMOVE) {
+        finishColumnResize();
+    } else if (message == MSG_COLUMNS_CHANGED) {
+        if (wParam == viewGeneration) synchronizeColumns();
+        return 0;
+    }
     if (message >= 0xC000 && message == selectionDetail::readyMessage()) {
         if (!isWindowOperational()) return 0;
         if (navigationDepth) { selectionBindingPending = true; return 0; }
@@ -2475,6 +2622,7 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
                 auto restore = viewMenuRestore;
                 if (message == MSG_ENUM_DONE && restore && isWindowOperational())
                     restore->replay(static_cast<ULONG_PTR>(lParam));
+                if (isWindowOperational()) synchronizeColumns();
             }
             return 0;
         case MSG_VIEW_CHANGED:
@@ -3140,6 +3288,11 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     // The parent menu and this object are owned by openViewMenu.
     if (!isWindowOperational())
         return;
+    if (columnLayout) columnLayout->suspend(true);
+    struct ColumnsResume {
+        std::shared_ptr<ShellViewColumns> layout;
+        ~ColumnsResume() { if (layout) layout->suspend(false); }
+    } columnsResume{columnLayout};
     viewMenuRestore.reset(); // A new menu supersedes a previous preview's pending replay.
     const bool previewEnabled = settings::getViewMenuPreviewEnabled();
     if (previewEnabled) {
@@ -3180,6 +3333,14 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     thumbnailItem.dwTypeData = const_cast<wchar_t *>(getString(IDS_GLOBAL_THUMBNAILS));
     thumbnailItem.fState = thumbnailState.fIconsOnly ? MFS_UNCHECKED : MFS_CHECKED;
     checkLE(InsertMenuItemW(subMenu, thumbnailPosition, TRUE, &thumbnailItem));
+    if (settings::getDetailsColumnsEnabled()) {
+        MENUITEMINFOW columnsItem = {sizeof(columnsItem)};
+        columnsItem.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE;
+        columnsItem.wID = IDM_FILL_COLUMNS;
+        columnsItem.dwTypeData = const_cast<wchar_t *>(getString(IDS_FILL_COLUMNS));
+        columnsItem.fState = fillColumns ? MFS_CHECKED : MFS_UNCHECKED;
+        checkLE(InsertMenuItemW(subMenu, GetMenuItemCount(subMenu), TRUE, &columnsItem));
+    }
     std::shared_ptr<ViewMenuPreview> preview;
     HHOOK hook = nullptr;
     ViewMenuPreview *previous = ViewMenuPreview::active;
@@ -3200,8 +3361,10 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     if (hook) {
         UnhookWindowsHookEx(hook);
         ViewMenuPreview::active = previous;
-        preview->finish((cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) || cmd == IDM_TOGGLE_THUMBNAILS
+        preview->finish((cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) || cmd == IDM_TOGGLE_THUMBNAILS || cmd == IDM_FILL_COLUMNS
             ? static_cast<UINT>(cmd) : 0);
+    } else if (isWindowOperational() && cmd == IDM_FILL_COLUMNS) {
+        toggleFillColumns();
     } else if (isWindowOperational() && cmd == IDM_TOGGLE_THUMBNAILS) {
         toggleGlobalThumbnails();
     } else if (isWindowOperational() && viewHost && cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) {
@@ -3530,6 +3693,8 @@ STDMETHODIMP FolderWindow::OnNavigationFailed(PCIDLIST_ABSOLUTE) {
 
 STDMETHODIMP FolderWindow::OnViewCreated(IShellView *const view) {
     CComPtr<ItemWindow> keepAlive(this);
+    if (columnLayout) columnLayout->stop();
+    columnLayout.reset();
     debugPrintf(L"NATIVE HWND=%p OnViewCreated\n", hwnd);
     selectionClear.reset();
     shellView = view;
@@ -3918,6 +4083,7 @@ void FolderWindow::finishViewInitialization() {
     }
     scheduleStateSave();
     updateSelection();
+    if (current()) synchronizeColumns();
     if (current()) replayProviderSync(); // Outside this callback, not from within it.
     if (current()) {
         if (viewMenuRequested && viewProfile != FVO_DEFAULT)
