@@ -47,7 +47,7 @@ function Invoke-ExistingParent() {
         Initialize-UiParentChildWindows $parent $child
         Activate-Ui $parent
         Use-UiView $parent { param($view) $view.Mode=1 }
-        Wait-Ui { (Use-UiView $parent {param($view) $view.Mode}) -eq 1 } 'native icon view' 300
+        Wait-UiViewMode $parent 1
         Use-UiView $parent {param($view) $view.Select('keep.txt')}
         Assert-UiSelected $parent 'keep.txt'
         $positions=Get-UiStableLayout $parent 3 'before'
