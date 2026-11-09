@@ -12,12 +12,7 @@ function Point([int]$X,[int]$Y) { $p=New-Object FileSpacerRegression.MousePoint;
 function Same-Bounds($A,$B) { return $A.Left -eq $B.Left -and $A.Top -eq $B.Top -and $A.Width -eq $B.Width -and $A.Height -eq $B.Height }
 function Background([IntPtr]$Window) {
     $view=Use-UiView $Window {param($v) $v.Window}
-    $lists=@([FileSpacerRegression.Native]::Children($view,'SysListView32'))
-    Assert-Ui ($lists.Count -eq 1) 'Require the validated native Shell item container.'
-    $bounds=[FileSpacerRegression.Native]::ClientBounds($lists[0])
-    $p=Point ([int]($bounds.Left+$bounds.Width/2)) ([int]($bounds.Top+3*$bounds.Height/4))
-    [FileSpacerRegression.NativeTargets]::Background($lists[0],$p.X,$p.Y)
-    return $p
+    return [FileSpacerRegression.AltDragInput]::BackgroundPoint($view)
 }
 function Native-Menu([IntPtr]$Window) {
     Activate-Ui $Window
