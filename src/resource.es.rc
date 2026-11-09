@@ -3,6 +3,12 @@
 
 LANGUAGE LANG_SPANISH, SUBLANG_NEUTRAL
 
+STRINGTABLE
+BEGIN
+  IDS_FILL_COLUMNS "Columnas de Detalles a todo el ancho (esta carpeta)"
+  IDS_FILL_COLUMNS_WARNING "La actualización continua puede reducir la fluidez y aumentar el uso de CPU incluso en carpetas pequeñas. Se recomienda actualizar al soltar el botón.\n\n¿Activar de todos modos las columnas a todo el ancho para esta carpeta?"
+END
+
 IDR_ITEM_MENU   MENU {
     MENUITEM    "Documentación\tF1", IDM_HELP
     MENUITEM    "Configuración de FileSpacer\tCtrl+,", IDM_SETTINGS

@@ -3,6 +3,12 @@
 
 LANGUAGE LANG_ITALIAN, SUBLANG_NEUTRAL
 
+STRINGTABLE
+BEGIN
+  IDS_FILL_COLUMNS "Colonne Dettagli a tutta larghezza (questa cartella)"
+  IDS_FILL_COLUMNS_WARNING "L’aggiornamento continuo può ridurre la fluidità e aumentare l’uso della CPU anche nelle cartelle piccole. È consigliato aggiornare al rilascio.\n\nAttivare comunque le colonne a tutta larghezza per questa cartella?"
+END
+
 IDR_ITEM_MENU   MENU {
     MENUITEM    "Documentazione\tF1", IDM_HELP
     MENUITEM    "Impostazioni di FileSpacer\tCtrl+,", IDM_SETTINGS
