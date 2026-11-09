@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
             require(store.saveSearchHistory("B", recent, 5) && store.remove("B") && history(store, "B").empty(), "deletion cleanup");
         }
         // A version-5 database and unrelated search data survive migration verbatim.
-        sql(path, "DROP TRIGGER delete_search_history; DROP TABLE search_history; PRAGMA user_version=5;"
+        sql(path, "DROP TRIGGER delete_search_history; DROP TABLE search_history; ALTER TABLE folder_state DROP COLUMN scroll; PRAGMA user_version=5;"
             "CREATE TABLE legacy_search(query TEXT, filter BLOB); INSERT INTO legacy_search VALUES('saved query',x'010203');");
         {
             FolderStateStore store(path); require(store.ready(), "version 5 migration failed");
@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
             require(store.save("version4", original, FolderState::Position | FolderState::Icons), "prepare version 4 state");
         }
         sql(path, "DROP TRIGGER delete_search_history; DROP TABLE search_history;"
-            "ALTER TABLE folder_state DROP COLUMN locked; PRAGMA user_version=4;");
+            "ALTER TABLE folder_state DROP COLUMN locked; ALTER TABLE folder_state DROP COLUMN scroll; PRAGMA user_version=4;");
         {
             FolderStateStore store(path); require(store.ready(), "version 4 migration failed");
             FolderState migrated;
