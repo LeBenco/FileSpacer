@@ -12,6 +12,7 @@
 #include <shlobj_core.h>
 
 namespace filespacer {
+class ShellViewColumns;
 
 class FolderWindow : public ItemWindow, public IServiceProvider, public ICommDlgBrowser2,
         public IExplorerBrowserEvents, public IWebBrowserApp,
@@ -165,7 +166,8 @@ protected:
         // Deferred synchronizeViewProvider(), posted when a guard that refused it clears.
         MSG_SYNCHRONIZE_VIEW_PROVIDER = WM_APP + 53,
         MSG_SYNCHRONIZE_VIEW_PROFILE = WM_APP + 54,
-        MSG_OPEN_PENDING_VIEW_MENU = WM_APP + 55
+        MSG_OPEN_PENDING_VIEW_MENU = WM_APP + 55,
+        MSG_COLUMNS_CHANGED = WM_APP + 56
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
 
@@ -206,6 +208,15 @@ protected:
     CComPtr<IShellView> shellView;
 
 private:
+    bool fillColumns = true, resizingColumns = false;
+    bool columnBoundsPending = false;
+    bool columnFillLoaded = false, columnFillSet = false;
+    std::shared_ptr<ShellViewColumns> columnLayout;
+    bool columnFillActive() const;
+    void loadColumnFill();
+    void toggleFillColumns();
+    void synchronizeColumns();
+    void finishColumnResize();
     bool handleAltMouseMessage(MSG *msg);
     bool handleResizeMessage(UINT message, WPARAM wParam, LPARAM lParam);
     void cancelAltGesture();
