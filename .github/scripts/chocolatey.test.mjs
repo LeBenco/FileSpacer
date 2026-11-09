@@ -26,6 +26,10 @@ test('package pins the official installer and checksum with native machine-wide 
   const install = files['tools/chocolateyinstall.ps1'];
   assert.ok(spec.includes('<id>filespacer</id>') && spec.includes('<version>1.3.2</version>'));
   assert.ok(spec.includes('/blob/v1.3.2/LICENSE'));
+  assert.ok(spec.includes('<copyright>Copyright (c) 2026 Benco</copyright>'));
+  assert.ok(spec.includes('each folder has a single window that remembers its position, size and view settings'));
+  assert.ok(spec.includes('https://raw.githubusercontent.com/LeBenco/FileSpacer/v1.3.2/docs/en/images/spatial-windows.png'));
+  await fs.access(new URL('../../docs/en/images/spatial-windows.png', import.meta.url));
   assert.ok(install.includes(url) && install.includes(hash.toUpperCase()));
   assert.ok(install.includes("silentArgs = '/S /AllUsers'"));
   assert.ok(install.includes("checksumType64 = 'sha256'"));
