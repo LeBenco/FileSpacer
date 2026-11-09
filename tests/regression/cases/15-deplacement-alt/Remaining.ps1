@@ -64,7 +64,21 @@ function Item-Point([string]$Name,[bool]$Selected,[bool]$Cell=$false) {
     Assert-Ui ($index -ge 0 -and (($selectedNames -contains $Name) -eq $Selected)) 'Unexpected target item identity or selection.'
     if($Cell -and $list -ne [IntPtr]::Zero) { $native=[FileSpacerRegression.NativeTargets]::Item($list,$index,$itemCount,$Selected,$true) }
     elseif($Cell) { $native=[FileSpacerRegression.AltDragInput]::CellPoint($viewWindow,$Name) }
-    else { $native=[FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,$Name) }
+    else {
+        try { $native=[FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,$Name) }
+        catch {
+            # Some classic Small Icons providers omit a newly added item from
+            # UIA. Fall back only for that precise absence, on one real ListView.
+            # The native query checks item count, selection and icon hit-test;
+            # the index was resolved by its Shell identity above.
+            if($_.Exception.GetBaseException().Message -ne ('Expected one visible item named '+$Name+'; found 0.')){throw}
+            $body=Use-UiView $window {param($view) $view.Window}
+            $containers=@([FileSpacerRegression.Native]::Children($body,'SysListView32'))
+            if($containers.Count-ne1){throw}
+            $native=[FileSpacerRegression.NativeTargets]::Item($containers[0],$index,$itemCount,$Selected,$false)
+            $state.Evidence.TargetInspection='Validated classic ListView query; UIA item unavailable'
+        }
+    }
     $state.Evidence.Target=@{Name=$Name; Index=$index; X=$native.X; Y=$native.Y; Cell=$Cell; Selected=$Selected}
     return Point-At $native.X $native.Y
 }
