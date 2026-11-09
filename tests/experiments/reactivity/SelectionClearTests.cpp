@@ -115,9 +115,20 @@ struct SelectionHost {
         CComPtr<IShellItem> folder;need(SUCCEEDED(SHCreateItemFromParsingName(path,nullptr,IID_PPV_ARGS(&folder))),"Cannot bind fixture");
         need(SUCCEEDED(host.navigate(folder,false,true)),"Cannot navigate fixture");
         const ULONGLONG deadline=GetTickCount64()+45000;
-        while((!events->navigated||!events->sink||!events->sink->ready)&&GetTickCount64()<deadline)pump(10);
+        int count=0;
+        while(GetTickCount64()<deadline){
+            if(events->navigated&&events->sink&&events->sink->ready){
+                need(SUCCEEDED(view()->ItemCount(SVGIO_ALLVIEW,&count)),"Cannot count fixture");
+                if(count!=0)break;
+                // The known nonempty fixture can receive an initial empty
+                // completion. Require another public completion, not a delay
+                // or a matching item count as evidence of readiness.
+                events->sink->ready=false;
+            }
+            pump(10);
+        }
         need(events->navigated&&events->sink&&events->sink->ready&&SUCCEEDED(events->observed),"No complete enumeration event");
-        int count=0;need(SUCCEEDED(view()->ItemCount(SVGIO_ALLVIEW,&count))&&count==fixtureCount,"Incomplete fixture");
+        need(count==fixtureCount,"Incomplete fixture");
         need(SUCCEEDED(events->shell->UIActivate(headless?SVUIA_ACTIVATE_NOFOCUS:SVUIA_ACTIVATE_FOCUS)),"Cannot activate fixture view");
         if(headless)need(!IsWindowVisible(frame)&&GetForegroundWindow()!=frame,"Hidden qualifier became visible or foreground");
 #ifdef FILESPACER_SELECTION_DISCOVERY_TEST
