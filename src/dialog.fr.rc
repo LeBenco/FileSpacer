@@ -89,7 +89,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Fichiers", -1, "Button", BS_GROUPBOX, 7, 169, 286, 78
   CONTROL "Affiche le &nom complet d’un fichier sélectionné (ne s’applique pas aux sélections multiples)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 181, 272, 18
   CONTROL "Mélanger les &dossiers et les fichiers dans le tri", IDC_MIXED_FOLDER_SORTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 199, 272, 14
-  CONTROL "Autoriser les colonnes Détails à remplir la &largeur de la fenêtre", IDC_DETAILS_COLUMNS_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 213, 272, 14
+  CONTROL "Autor&iser les colonnes Détails à remplir la largeur de la fenêtre", IDC_DETAILS_COLUMNS_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 213, 272, 14
   CONTROL "Actualiser uniquement au relâchement du &bouton de la souris", IDC_DETAILS_COLUMNS_DEFERRED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 227, 260, 14
   CONTROL "Menu Affichage", -1, "Button", BS_GROUPBOX, 7, 254, 286, 30
   CONTROL "&Prévisualiser les modes d’affichage dans le menu Affichage", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 266, 272, 14
