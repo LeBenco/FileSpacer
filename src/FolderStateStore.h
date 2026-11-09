@@ -67,6 +67,12 @@ public:
     FolderStateStore &operator=(const FolderStateStore &) = delete;
     bool ready() const { return initialized; }
     const std::string &error() const { return lastError; }
+    int errorCode() const { return lastErrorCode; } // SQLite extended result; zero for non-SQLite failures.
+    bool canResetDamagedDatabase() const;
+#ifdef _WIN32
+    // Explicitly confirmed recovery only: exclusively open, back up, then delete the complete file set.
+    bool resetDamagedDatabase(const char *utf8Path, const wchar_t *backupDirectory);
+#endif
     // Diagnosis of the last wait: the named mutex another process held (owned
     // by this object; duplicate it to wait on it elsewhere), or null when it
     // was acquired. busy() reports SQLite's own lock contention instead.
@@ -111,8 +117,10 @@ private:
     bool finishWrite(bool success);
     sqlite3 *db = nullptr;
     bool initialized = false;
+    bool unsupportedSchema = false;
     bool mutexBlocked = false, sqliteBusy = false;
     std::string lastError;
+    int lastErrorCode = 0;
     std::unique_ptr<void, CloseHandle> accessMutex;
 };
 
