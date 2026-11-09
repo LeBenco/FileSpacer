@@ -11,12 +11,16 @@ function Wait-Provider([IntPtr]$Window,[bool]$Mixed) {
     $observed=@{}
     Write-Host ('EXPECT PROVIDER mixed='+$Mixed)
     try { Wait-Ui {
-        try { return Use-UiView $Window {param($view)
+        $view=$null
+        try {
+            $view=Get-UiView $Window
+            if($null-eq$view){return $false}
             $observed.Id=$view.FolderClassId; $observed.Mode=$view.Mode; $observed.AutoArrange=$view.AutoArrange; $observed.Visible=$view.ContentVisible
-            $observed.Visible -and (($observed.Id -eq [guid]'E129740C-52FD-4C7B-98AA-9ED6EBF9A604') -eq $Mixed)
-        } }
+            return $observed.Visible -and (($observed.Id -eq [guid]'E129740C-52FD-4C7B-98AA-9ED6EBF9A604') -eq $Mixed)
+        }
         catch [InvalidCastException] { return $false }
         catch [Runtime.InteropServices.COMException] { return $false }
+        finally {if($null-ne$view){$view.Dispose()}}
     } 'provider matching the committed layout' 300 } catch {Write-Host ($observed|ConvertTo-Json -Compress);throw}
 }
 # The provider roots its namespace in a junction under the application data:
@@ -28,13 +32,23 @@ function Wait-Order([IntPtr]$Window,[string[]]$Names) {
     $expected=$Names -join '|'
     $observation=@{Error=$null;Names=@()}
     Write-Host ('EXPECT '+$expected)
-    Wait-Ui {
-        try { $actual=Use-UiView $Window {param($view) $view.OrderedNames()}; $observation.Names=$actual; return (($actual -join '|') -ceq $expected) }
+    try { Wait-Ui {
+        $view=$null
+        try {
+            $view=Get-UiView $Window
+            if($null-eq$view){return $false}
+            $actual=$view.OrderedNames(); $observation.Names=$actual; return (($actual -join '|') -ceq $expected)
+        }
         catch [InvalidCastException] { $observation.Error=$_.Exception; Write-Host ('OBSERVATION '+$_.Exception.ToString()); return $false }
         catch [Runtime.InteropServices.COMException] {
             if($_.Exception.HResult -notin @(-2147023728,-2147483638)){throw};return $false
         }
-    } ('exact view order: '+$expected) 100
+        finally {if($null-ne$view){$view.Dispose()}}
+    } ('exact view order: '+$expected) 100 } catch {Write-Host ('OBSERVED ORDER '+($observation.Names -join '|'));throw}
+}
+function Set-TestViewMode([IntPtr]$Window,[uint32]$Mode) {
+    Use-UiView $Window {param($view) $view.SetViewModeAndIconSize($Mode,48)}
+    Wait-UiViewMode $Window $Mode 48
 }
 function Expected-Order([bool]$Date,[bool]$Ascending,[bool]$Separated) {
     $ordered=if($Date){@($script:items|Sort-Object { [int]$_.Rank })}else{@($script:items|Sort-Object { [string]$_.Name })}
@@ -70,7 +84,8 @@ try {
         $script:items+=[pscustomobject]@{Name=$name;Rank=$rank;Folder=($index%2-eq1)}
     }
     $window=Open-UiFolder $folder 12
-    Use-UiView $window {param($view) $view.SetViewModeAndIconSize(4,48);$view.SortBy($false,$true);$view.Select($selectedName)}
+    Set-TestViewMode $window 4
+    Use-UiView $window {param($view) $view.SortBy($false,$true);$view.Select($selectedName)}
     Wait-Order $window (Expected-Order $false $true $true)
     [void](Show-UiSettings $window);$page=Set-UiPage 1
     $control=[FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_MIXED_FOLDER_SORTING'))
@@ -83,16 +98,20 @@ try {
 
     Press-UiSettings 3
     foreach($mode in @(4,3,1)) {
-        Use-UiView $window {param($view) $view.SetViewModeAndIconSize($mode,48);$view.AutoArrange=$true}
+        Set-TestViewMode $window $mode
+        Use-UiView $window {param($view) $view.AutoArrange=$true}
         foreach($date in @($false,$true)) {foreach($ascending in @($false,$true)) {
             Use-UiView $window {param($view) $view.SortBy($date,$ascending)}
             Wait-Order $window (Expected-Order $date $ascending $false)
         }}
     }
     Write-Host 'PASS: real FileSpacer mixes folders and files by name/date in Details/List/Icons with Windows rendering.'
-    Use-UiView $window {param($view) $view.SetViewModeAndIconSize(4,48);$view.SortBy($false,$true)}
+    Set-TestViewMode $window 4
+    Use-UiView $window {param($view) $view.SortBy($false,$true)}
+    Activate-Ui $window
     $edit=Get-UiSearchEdit $window;$submit=Get-UiSearchSubmit $window
     [FileSpacerRegression.Native]::SetText($edit,$selectedName)
+    Assert-Ui ([FileSpacerRegression.Native]::Text($edit) -ceq $selectedName) 'The Unicode filter text was not set.'
     [void][FileSpacerRegression.Native]::Message($submit,0xf5,0,0)
     Wait-Order $window @($selectedName)
     [FileSpacerRegression.Native]::SetText($edit,'')
@@ -108,7 +127,8 @@ try {
     [IO.File]::Delete((Join-Path $folder 'renamed.txt'))
     Wait-Order $window (Expected-Order $false $true $false)
     Write-Host 'PASS: actual filesystem creation, rename and deletion update the mixed view without refresh commands.'
-    Use-UiView $window {param($view) $view.SetViewModeAndIconSize(1,48);$view.AutoArrange=$false}
+    Set-TestViewMode $window 1
+    Use-UiView $window {param($view) $view.AutoArrange=$false}
     Wait-Provider $window $true
     Use-UiView $window {param($view) $view.Select($selectedName);$view.Select('item-03',$true);$view.Position($selectedName,310,170);$view.Position('item-03',100,270)}
     $positions=Use-UiView $window {param($view) $view.Positions()}
@@ -122,14 +142,14 @@ try {
     Wait-Ui {(Use-UiView $window {param($view) $view.Positions()}) -ceq $positions} 'free placement before switching' 500
     foreach($mode in @(4,3,1)) {
         if($mode-eq1){Toggle-AutoArrange $window}
-        else {Use-UiView $window {param($view) $view.SetViewModeAndIconSize($mode,48);$view.SortBy($false,$true)}}
+        else {Set-TestViewMode $window $mode;Use-UiView $window {param($view) $view.SortBy($false,$true)}}
         Wait-Provider $window $true
         Assert-TestJunctionHidden
         Wait-Order $window (Expected-Order $false $true $false)
         Assert-Ui (((Use-UiView $window {param($view) $view.Selected()}) -join '|') -ceq $selection) 'Switching to a sorted layout lost the multiselection.'
         Assert-Ui ((Use-UiView $window {param($view) $view.Focused()}) -ceq $focus) 'Switching to a sorted layout lost focus.'
         if($mode-eq1){Toggle-AutoArrange $window}
-        else {Use-UiView $window {param($view) $view.SetViewModeAndIconSize(1,48);$view.AutoArrange=$false}}
+        else {Set-TestViewMode $window 1;Use-UiView $window {param($view) $view.AutoArrange=$false}}
         Wait-Provider $window $true
         $actualPositions=Use-UiView $window {param($view) $view.Positions()}
         Assert-Ui ($actualPositions -ceq $positions) ('Returning to the free layout lost icon positions. Expected: '+$positions+' Actual: '+$actualPositions)
@@ -158,9 +178,10 @@ try {
     $empty=Join-Path $script:UiRoot 'empty';[void][IO.Directory]::CreateDirectory($empty)
     $emptyWindow=Open-UiFolder $empty 0
     Assert-Ui (Use-UiView $emptyWindow {param($view) $view.ContentVisible}) 'An empty mixed folder retained hidden content.'
-    Use-UiView $emptyWindow {param($view) $view.SetViewModeAndIconSize(1,48);$view.AutoArrange=$false}
+    Set-TestViewMode $emptyWindow 1
+    Use-UiView $emptyWindow {param($view) $view.AutoArrange=$false}
     Wait-Provider $emptyWindow $true
-    Use-UiView $emptyWindow {param($view) $view.SetViewModeAndIconSize(4,48)}
+    Set-TestViewMode $emptyWindow 4
     Wait-Provider $emptyWindow $true
     Close-UiFolder $emptyWindow
     Write-Host 'PASS: an empty mixed folder becomes visible without an icon job.'
