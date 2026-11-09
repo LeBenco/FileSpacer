@@ -28,17 +28,11 @@ function Fixed($Before,$After) {
 }
 function Target([IntPtr]$Window,[bool]$Item) {
     $viewWindow=Use-UiView $Window {param($view) $view.Window}
-    $lists=@([FileSpacerRegression.Native]::Children($viewWindow,'SysListView32'))
-    Assert-Ui ($lists.Count -eq 1) 'Require the validated native Shell item container.'
     if ($Item) {
-        $itemIndex=Use-UiView $Window {param($view) $view.IndexOf('OtherC')}
-        $position=[FileSpacerRegression.NativeTargets]::Item($lists[0],$itemIndex,2,$false,$false)
-        return Point $position.X $position.Y
+        Assert-UiSelected $Window 'AnchorA'
+        return [FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,'OtherC')
     }
-    $bounds=[FileSpacerRegression.Native]::ClientBounds($lists[0])
-    $point=Point ([int]($bounds.Left+$bounds.Width/2)) ([int]($bounds.Top+3*$bounds.Height/4))
-    [FileSpacerRegression.NativeTargets]::Background($lists[0],$point.X,$point.Y)
-    return $point
+    return [FileSpacerRegression.AltDragInput]::BackgroundPoint($viewWindow)
 }
 try {
     Initialize-Ui 'shortcut-matrix'
