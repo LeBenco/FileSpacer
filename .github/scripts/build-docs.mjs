@@ -29,7 +29,7 @@ function buildPath(directory) {
 
 async function digest(file, normalize = false) {
   let bytes = await fs.readFile(file);
-  if (normalize && /\.(?:md|mjs|js|html|css|yml|json|txt|lock|svg)$|(?:^|[\\/])Gemfile$/.test(file)) {
+  if (normalize && /\.(?:md|mjs|js|py|html|css|yml|json|txt|lock|svg)$|(?:^|[\\/])Gemfile$/.test(file)) {
     bytes = Buffer.from(bytes.toString('utf8').replace(/^\uFEFF/, '').replaceAll('\r\n', '\n'));
   }
   return createHash('sha256').update(bytes).digest('hex');
