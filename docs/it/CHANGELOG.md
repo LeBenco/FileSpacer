@@ -2,6 +2,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Caricare l’icona del pulsante Accesso rapido direttamente dalla Shell di Windows.
 - Aggiungere il ridimensionamento automatico delle colonne nella vista Dettagli, con aggiornamento continuo facoltativo.
 - Aggiungere le scorciatoie di Esplora file e gli adattamenti alla modalità spaziale (Ctrl+N e Ctrl+Backspace).
 - Accelerare notevolmente la riduzione delle selezioni estese facendo clic su un elemento o sullo sfondo delle viste Shell classiche, con ripiego automatico e silenzioso se la funzionalità privata di Windows non è disponibile.

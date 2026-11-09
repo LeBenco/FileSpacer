@@ -2,6 +2,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Charger l’icône du bouton Accès rapide directement depuis le Shell Windows.
 - Ajouter le redimensionnement automatique des colonnes dans la vue Détails, avec actualisation en continu facultative.
 - Ajouter les raccourcis de l’Explorateur et leurs adaptations au mode spatial (Ctrl+N et Ctrl+Retour arrière).
 - Accélérer massivement la réduction des grandes sélections par un clic sur un élément ou sur le fond des vues Shell classiques, avec repli automatique et silencieux si la capacité privée de Windows est indisponible.
