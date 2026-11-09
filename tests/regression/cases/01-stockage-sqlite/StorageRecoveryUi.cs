@@ -73,24 +73,6 @@ public static class MutexRecoveryNative {
         } finally { FreeLibrary(module); }
         return result.ToArray();
     }
-    public static bool ContainsText(IntPtr dialog,string[] expected) {
-        bool found=false;
-        EnumChildWindows(dialog,delegate(IntPtr child,IntPtr unused) {
-            if(ClassName(child)!="Static") return true;
-            var text=new StringBuilder(4096); GetWindowText(child,text,text.Capacity);
-            foreach(string message in expected) if(text.ToString()==message) found=true;
-            return true;
-        },IntPtr.Zero);
-        return found;
-    }
-    public static int ButtonCount(IntPtr dialog) {
-        int count=0;
-        EnumChildWindows(dialog,delegate(IntPtr child,IntPtr unused) {
-            if(ClassName(child)=="Button" && IsWindowVisible(child)) count++;
-            return true;
-        },IntPtr.Zero);
-        return count;
-    }
     public static string ClipboardText() {
         if(!OpenClipboard(IntPtr.Zero)) return null;
         try {
