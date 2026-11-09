@@ -605,6 +605,12 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::getFullNamesOnSelection() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_VIEW_MENU_PREVIEW_ENABLED,
                 settings::getViewMenuPreviewEnabled() ? BST_CHECKED : BST_UNCHECKED);
+            CheckDlgButton(hwnd, IDC_DETAILS_COLUMNS_ENABLED,
+                settings::getDetailsColumnsEnabled() ? BST_CHECKED : BST_UNCHECKED);
+            CheckDlgButton(hwnd, IDC_DETAILS_COLUMNS_DEFERRED,
+                settings::getDetailsColumnsDeferred() ? BST_CHECKED : BST_UNCHECKED);
+            EnableWindow(GetDlgItem(hwnd, IDC_DETAILS_COLUMNS_DEFERRED),
+                IsDlgButtonChecked(hwnd, IDC_DETAILS_COLUMNS_ENABLED) == BST_CHECKED);
             enableToolbarOptions(hwnd);
             return TRUE;
         }
@@ -631,6 +637,8 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 bool mixedFolderSorting = !!IsDlgButtonChecked(hwnd, IDC_MIXED_FOLDER_SORTING);
                 bool fullNamesOnSelection = !!IsDlgButtonChecked(hwnd, IDC_FULL_NAMES_ON_SELECTION);
                 bool viewMenuPreviewEnabled = !!IsDlgButtonChecked(hwnd, IDC_VIEW_MENU_PREVIEW_ENABLED);
+                bool detailsColumnsEnabled = !!IsDlgButtonChecked(hwnd, IDC_DETAILS_COLUMNS_ENABLED);
+                const bool detailsColumnsDeferred = !!IsDlgButtonChecked(hwnd, IDC_DETAILS_COLUMNS_DEFERRED);
                 bool windowSettingsChanged = statusTextEnabled != settings::getStatusTextEnabled()
                     || toolbarEnabled != settings::getToolbarEnabled()
                     || quickAccessEnabled != settings::getQuickAccessEnabled()
@@ -640,7 +648,9 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     || viewButtonEnabled != settings::getViewButtonEnabled()
                     || mixedFolderSorting != settings::getMixedFolderSorting()
                     || fullNamesOnSelection != settings::getFullNamesOnSelection()
-                    || viewMenuPreviewEnabled != settings::getViewMenuPreviewEnabled();
+                    || viewMenuPreviewEnabled != settings::getViewMenuPreviewEnabled()
+                    || detailsColumnsEnabled != settings::getDetailsColumnsEnabled()
+                    || detailsColumnsDeferred != settings::getDetailsColumnsDeferred();
                 settings::setStatusTextEnabled(statusTextEnabled);
                 settings::setToolbarEnabled(toolbarEnabled);
                 settings::setQuickAccessEnabled(quickAccessEnabled);
@@ -654,6 +664,8 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 if (mixedFolderSorting) ShellViewHost::resetMixedProviderAvailability();
                 settings::setFullNamesOnSelection(fullNamesOnSelection);
                 settings::setViewMenuPreviewEnabled(viewMenuPreviewEnabled);
+                settings::setDetailsColumnsEnabled(detailsColumnsEnabled);
+                settings::setDetailsColumnsDeferred(detailsColumnsDeferred);
                 if (windowSettingsChanged)
                     notifyWindowSettingsChanged();
                 SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_NOERROR);
@@ -668,6 +680,9 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             }
             if (LOWORD(wParam) == IDC_TOOLBAR_ENABLED && HIWORD(wParam) == BN_CLICKED)
                 enableToolbarOptions(hwnd);
+            if (LOWORD(wParam) == IDC_DETAILS_COLUMNS_ENABLED && HIWORD(wParam) == BN_CLICKED)
+                EnableWindow(GetDlgItem(hwnd, IDC_DETAILS_COLUMNS_DEFERRED),
+                    IsDlgButtonChecked(hwnd, IDC_DETAILS_COLUMNS_ENABLED) == BST_CHECKED);
             if (((LOWORD(wParam) == IDC_FOLDER_WINDOW_WIDTH
                         || LOWORD(wParam) == IDC_FOLDER_WINDOW_HEIGHT) && HIWORD(wParam) == EN_CHANGE)
                     || (HIWORD(wParam) == BN_CLICKED && (
@@ -680,7 +695,9 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                         || LOWORD(wParam) == IDC_VIEW_BUTTON_ENABLED
                         || LOWORD(wParam) == IDC_MIXED_FOLDER_SORTING
                         || LOWORD(wParam) == IDC_FULL_NAMES_ON_SELECTION
-                        || LOWORD(wParam) == IDC_VIEW_MENU_PREVIEW_ENABLED))) {
+                        || LOWORD(wParam) == IDC_VIEW_MENU_PREVIEW_ENABLED
+                        || LOWORD(wParam) == IDC_DETAILS_COLUMNS_ENABLED
+                        || LOWORD(wParam) == IDC_DETAILS_COLUMNS_DEFERRED))) {
                 PropSheet_Changed(GetParent(hwnd), hwnd);
                 return TRUE;
             }
