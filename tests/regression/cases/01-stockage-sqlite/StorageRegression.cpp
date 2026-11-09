@@ -7,6 +7,9 @@
 #include <string>
 #include <vector>
 #include <chrono>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 using namespace filespacer;
 static void require(bool ok, const char *message) {
@@ -39,6 +42,18 @@ static void rawSQL(const std::string &path, const char *sql) {
 }
 int main(int argc, char **argv) {
     try {
+        if (argc == 3 && std::string(argv[1]) == "--crash-wal") {
+            FolderStateStore store(argv[2]); require(store.ready(), store.error().c_str());
+            require(store.save("crash-committed",fixture(),FolderState::All),"commit before abrupt exit");
+            std::_Exit(0); // OS closes handles; SQLite gets no destructor/checkpoint.
+        }
+        if (argc == 3 && std::string(argv[1]) == "--verify-wal") {
+            FolderStateStore store(argv[2]); FolderState state;
+            require(store.ready() && store.read("crash-committed",&state) && state.x==fixture().x
+                && state.icons==fixture().icons,"native WAL recovery after abrupt exit lost committed data");
+            std::cout << "PASS: native WAL recovery after abrupt exit, without resetting or deleting journals.\n";
+            return 0;
+        }
         if (argc >= 4 && std::string(argv[1]) == "--writer") {
             FolderStateStore store(argv[2]); require(store.ready(), store.error().c_str());
             FolderState state = fixture();
@@ -81,6 +96,9 @@ int main(int argc, char **argv) {
             rawSQL(path,"CREATE TRIGGER fail_save BEFORE UPDATE ON folder_state WHEN new.x=999 BEGIN SELECT RAISE(ABORT,'forced write failure'); END");
             FolderState rejected = original; rejected.x=999; rejected.width=123;
             require(!store.save("folder",rejected,FolderState::All),"forced save failure was ignored");
+            require(store.errorCode()==SQLITE_CONSTRAINT_TRIGGER && store.error()=="forced write failure",
+                "rollback erased the original SQLite error or its extended code");
+            require(!store.canResetDamagedDatabase(),"ordinary write error offered database reset");
             require(store.read("folder",&s) && s.x==444 && s.width==902 && s.icons==original.icons,"failed save was partially committed");
             rawSQL(path,"DROP TRIGGER fail_save");
             changed.icons.clear();
@@ -121,8 +139,14 @@ int main(int argc, char **argv) {
             temporary.locked = true; // An old in-memory lock must never be written back.
             require(store.save("locked-renamed",temporary,FolderState::All),"stale snapshot save");
             require(store.read("locked-renamed",&s) && !s.locked && s.x==123,"stale save revived lock");
+            require(store.saveSearchHistory("renamed",{"history"},20),"reset history fixture");
+            ClosedWindow closed;closed.key="renamed";closed.parsingName="renamed";closed.displayName="renamed";
+            require(store.rememberClosedWindow(closed),"reset closed-window fixture");
             require(store.clearAll(),"reset all");
             require(store.read("renamed",&s) && !s.present,"reset left data");
+            std::vector<std::string> history;
+            require(store.readSearchHistory("renamed",20,&history) && history.empty()
+                && store.lastClosedWindow(&closed) && !closed.sequence,"reset retained history");
             require(store.save("folder",original,FolderState::All),"after reset");
             std::cout << "PASS: full/partial saves, signed coordinates, reset, rekey, bound keys, empty blobs.\n";
         }
@@ -192,8 +216,28 @@ int main(int argc, char **argv) {
             FolderStateStore store(path.c_str());FolderState s;
             require(!store.read("folder",&s) && !store.error().empty(),"malformed blob silently accepted");
         }
-        rawSQL(path,"PRAGMA user_version=99");
-        { FolderStateStore store(path.c_str()); require(!store.ready(),"future schema accepted"); }
+        rawSQL(path,"INSERT INTO search_history(key,query) VALUES('folder','reset-history');"
+            "INSERT INTO closed_windows(key,parsing_name,display_name) VALUES('folder','folder','folder');PRAGMA user_version=99");
+        {
+            FolderStateStore store(path.c_str()); require(!store.ready(),"future schema accepted");
+            require(store.error().find("99")!=std::string::npos && store.error().find("7")!=std::string::npos
+                && store.errorCode()==0 && store.canResetDamagedDatabase(),"unsupported schema diagnosis was lost");
+#ifdef _WIN32
+            const int count=MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,path.c_str(),-1,nullptr,0);
+            require(count>0,"reset path length");
+            std::wstring wide(static_cast<size_t>(count),L'\0');
+            require(MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,path.c_str(),-1,&wide[0],count)!=0,"reset path");
+            wide.pop_back();
+            const std::wstring backup=wide+L".schema-backup";
+            require(store.resetDamagedDatabase(path.c_str(),backup.c_str()),store.error().c_str());
+            FolderStateStore fresh(path.c_str());FolderState state;ClosedWindow closed;std::vector<std::string> history;
+            require(fresh.ready() && fresh.read("folder",&state) && !state.present
+                && fresh.readSearchHistory("folder",20,&history) && history.empty()
+                && fresh.lastClosedWindow(&closed) && !closed.sequence,
+                "deletion/recreation differs from clearAll for saved layouts and histories");
+            std::cout << "PASS: deletion/recreation and clearAll both remove saved layouts, search and closed-window histories.\n";
+#endif
+        }
         erase(path);
         rawSQL(path,"CREATE TABLE folder_state(key TEXT PRIMARY KEY NOT NULL,x INTEGER,y INTEGER,width INTEGER,height INTEGER,"
             "view BLOB,icons BLOB,last_success_at INTEGER NOT NULL DEFAULT 0,first_failed_at INTEGER,maximized INTEGER,locked INTEGER NOT NULL DEFAULT 0) WITHOUT ROWID;"
@@ -213,6 +257,57 @@ int main(int argc, char **argv) {
             FILE *file=std::fopen(path.c_str(),"wb"); require(file!=nullptr,"create damaged fixture");
             std::fputs("not a database",file);std::fclose(file);
             FolderStateStore store(path.c_str());require(!store.ready(),"corrupt database accepted");
+            require(store.errorCode()==SQLITE_NOTADB && store.canResetDamagedDatabase(),"corrupt database diagnosis missing");
+#ifdef _WIN32
+            const int count=MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,path.c_str(),-1,nullptr,0);
+            require(count>0,"fixture path length");
+            std::wstring wide(static_cast<size_t>(count),L'\0');
+            require(MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,path.c_str(),-1,&wide[0],count)!=0,"fixture path");
+            wide.pop_back();
+            const std::wstring backup=wide+L".backup";
+            const HANDLE busy=CreateFileW(wide.c_str(),GENERIC_READ|GENERIC_WRITE,FILE_SHARE_READ|FILE_SHARE_WRITE,
+                nullptr,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,nullptr);
+            require(busy!=INVALID_HANDLE_VALUE,"open controlled busy database");
+            const bool refused=!store.resetDamagedDatabase(path.c_str(),backup.c_str());
+            CloseHandle(busy);
+            require(refused && GetFileAttributesW(backup.c_str())==INVALID_FILE_ATTRIBUTES,
+                "reset bypassed a live user or created a backup while files were in use");
+            require(CreateDirectoryW(backup.c_str(),nullptr)!=0,"reserve backup failure fixture");
+            {
+                FolderStateStore noBackup(path.c_str());
+                require(!noBackup.resetDamagedDatabase(path.c_str(),backup.c_str())
+                    && GetFileAttributesW(wide.c_str())!=INVALID_FILE_ATTRIBUTES,
+                    "failed backup removed the original database");
+            }
+            require(RemoveDirectoryW(backup.c_str())!=0,"remove empty backup failure fixture");
+            // Retry from a fresh diagnosis, as the real dialog does after confirmation.
+            FolderStateStore retry(path.c_str());
+            const wchar_t *suffixes[]={L"-wal",L"-shm",L"-journal"};
+            for(const auto suffix:suffixes) {
+                FILE *sidecar=nullptr;
+                require(_wfopen_s(&sidecar,(wide+suffix).c_str(),L"wb")==0 && sidecar,"sidecar fixture");
+                std::fputs("sidecar backup fixture",sidecar);std::fclose(sidecar);
+            }
+            require(retry.resetDamagedDatabase(path.c_str(),backup.c_str()),retry.error().c_str());
+            require(GetFileAttributesW(wide.c_str())==INVALID_FILE_ATTRIBUTES,"reset left the original database");
+            const size_t slash=wide.find_last_of(L"\\/");
+            const std::wstring backupFile=backup+L"\\"+wide.substr(slash==std::wstring::npos?0:slash+1);
+            FILE *saved=nullptr;
+            require(_wfopen_s(&saved,backupFile.c_str(),L"rb")==0 && saved,"backup not present");
+            char contents[32]={}; const size_t bytes=std::fread(contents,1,sizeof(contents),saved); std::fclose(saved);
+            require(std::string(contents,bytes)=="not a database","backup changed the damaged original");
+            for(const auto suffix:suffixes) {
+                require(GetFileAttributesW((wide+suffix).c_str())==INVALID_FILE_ATTRIBUTES,"reset left a sidecar");
+                require(_wfopen_s(&saved,(backupFile+suffix).c_str(),L"rb")==0 && saved,"sidecar backup missing");
+                const size_t size=std::fread(contents,1,sizeof(contents),saved);std::fclose(saved);
+                require(std::string(contents,size)=="sidecar backup fixture","sidecar backup changed");
+            }
+            FolderStateStore recreated(path.c_str());FolderState state;
+            require(recreated.ready() && recreated.read("folder",&state) && !state.present,
+                "a fresh database was not recreated after reset");
+            require(!recreated.canResetDamagedDatabase(),"healthy database offered destructive recovery");
+            std::cout << "PASS: reset refuses files in use, preserves original bytes in backup, and recreates an empty database.\n";
+#endif
         }
         erase(path);
         std::cout << "PASS: damaged database, malformed view data, future schema are rejected.\n";
