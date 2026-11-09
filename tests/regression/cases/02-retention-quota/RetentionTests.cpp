@@ -49,7 +49,9 @@ int main(int argc, char **argv) {
         {
             FolderStateStore store(path.c_str()); require(store.ready(), store.error().c_str());
             Database db(path.c_str());
-            require(db.number("PRAGMA user_version") == 6, "schema version");
+            require(db.number("PRAGMA user_version") == 7, "schema version");
+            require(db.number("SELECT count(*) FROM pragma_table_info('folder_state') WHERE name='scroll'") == 1,
+                "scroll migration column missing");
             require(db.number("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='search_history'") == 1,
                 "separate history table missing");
             require(db.number("PRAGMA synchronous") == 2, "FULL must remain enabled");
