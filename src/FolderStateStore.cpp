@@ -1175,7 +1175,7 @@ void loadStorageUsers(StorageErrorDialog &dialog) {
                 error = RmGetList(session, &required, &count, processes.data(), &reboot);
                 if (error == ERROR_SUCCESS) {
                     for (UINT index = 0; index < count; ++index)
-                        users += L"\n" + std::wstring(processes[index].strAppName) + L" — PID "
+                        users += L"\n" + std::wstring(processes[index].strAppName) + L" - PID "
                             + std::to_wstring(processes[index].Process.dwProcessId);
                 }
             }
