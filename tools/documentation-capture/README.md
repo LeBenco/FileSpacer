@@ -47,6 +47,10 @@ under `build/regression/vm-<id>/output/regression/99-documentation/01-Capture/`.
 Each `captures/<language>/` directory uses the same neutral filenames as
 `docs/<language>/images/`. Review the exported files before copying them there.
 
+Use `-Scenes details-columns` with a build that includes full-width Details
+columns to record only that feature. The fixture in `details-columns.json`
+adds localized medium and long filenames to the same fictional folder.
+
 ScreenToGif's existing portable archive must be present at
 `build/tools/ScreenToGif.zip` in the source checkout. Its SHA-256 must be
 `42a0b53d67ecae22698b4881ffb2c9c7a9049663f5fbdd2edb779e1971000664`.
@@ -70,6 +74,16 @@ their natural positions. There are no cuts, silent settings commands or instant
 window repositioning within the recorded sequence. Preparation and export happen
 outside the recording. Moving and resizing also start with the pointer at the
 center of the folder window and preserve its actual selection.
+
+The Details-columns scene starts with filling disabled for the folder and a
+normal-width Name column that reveals about 30% of the long names. It enables
+filling through the visible View menu, pauses, then drags the Name divider to
+show the complete names. At least two names remain more than 20% hidden between
+activation and the manual drag. The global permission and update-on-release
+option are enabled before recording. The window and measured View menu define
+the capture area. Native column bounds and text measurements are recorded for
+review, along with the actual command and executable hash. Review the exported
+GIF to confirm the visible text, pauses and continuous pointer path.
 
 The recorder finishes startup before F7 begins recording with the folder active.
 This keeps the recorder launch and the initial focus change outside the captured sequence.
