@@ -29,7 +29,8 @@ void appendInt(std::vector<uint8_t> &bytes, uint32_t value) {
 }
 std::vector<uint8_t> encodeView(const FolderViewSettings &view) {
     std::vector<uint8_t> bytes;
-    appendInt(bytes, 1); // FileSpacer view format version; independent of Shell internals.
+    const bool columnFill = (view.present & FolderViewSettings::ColumnFill) != 0;
+    appendInt(bytes, columnFill ? 2 : 1); // Keep the original encoding when no new choice is present.
     appendInt(bytes, view.present);
     appendInt(bytes, static_cast<uint32_t>(view.mode));
     appendInt(bytes, static_cast<uint32_t>(view.iconSize));
@@ -46,6 +47,7 @@ std::vector<uint8_t> encodeView(const FolderViewSettings &view) {
     }
     bytes.insert(bytes.end(), view.groupBy.begin(), view.groupBy.end());
     appendInt(bytes, view.groupAscending ? 1 : 0);
+    if (columnFill) appendInt(bytes, view.fillColumns ? 1 : 0);
     return bytes;
 }
 
@@ -66,8 +68,8 @@ bool decodeView(const uint8_t *bytes, size_t size, FolderViewSettings *out) {
     };
     FolderViewSettings view;
     uint32_t version, mode, iconSize, count;
-    if (!integer(&version) || version != 1 || !integer(&view.present)
-            || (view.present & ~31u) || !integer(&mode) || !integer(&iconSize)
+    if (!integer(&version) || (version != 1 && version != 2) || !integer(&view.present)
+            || (view.present & ~(version == 1 ? 31u : 63u)) || !integer(&mode) || !integer(&iconSize)
             || !integer(&view.flags) || !integer(&count) || count > (size-offset)/24)
         return false;
     view.mode = static_cast<int32_t>(mode);
@@ -83,9 +85,14 @@ bool decodeView(const uint8_t *bytes, size_t size, FolderViewSettings *out) {
         column.direction = static_cast<int32_t>(direction);
     }
     uint32_t ascending;
-    if (!key(&view.groupBy) || !integer(&ascending) || ascending > 1 || offset != size)
-        return false;
+    if (!key(&view.groupBy) || !integer(&ascending) || ascending > 1) return false;
     view.groupAscending = ascending != 0;
+    if (version == 2) {
+        uint32_t fill;
+        if (!integer(&fill) || fill > 1) return false;
+        view.fillColumns = fill != 0;
+    }
+    if (offset != size) return false;
     *out = std::move(view);
     return true;
 }
@@ -95,6 +102,11 @@ FolderViewSettings FolderViewSettings::mergeChanges(const FolderViewSettings &ba
         const FolderViewSettings &current, const std::vector<Column> &initialWidths) const {
     FolderViewSettings merged = *this;
     auto observed = [&](uint32_t part) { return (baseline.present & current.present & part) != 0; };
+    if (current.present & ColumnFill) {
+        if (!(present & ColumnFill) || (observed(ColumnFill) && current.fillColumns != baseline.fillColumns))
+            merged.fillColumns = current.fillColumns;
+        merged.present |= ColumnFill;
+    }
     if (current.present & Mode) {
         if (!(present & Mode) || (observed(Mode) && current.mode != baseline.mode)) merged.mode = current.mode;
         if (!(present & Mode) || (observed(Mode) && current.iconSize != baseline.iconSize)) merged.iconSize = current.iconSize;
