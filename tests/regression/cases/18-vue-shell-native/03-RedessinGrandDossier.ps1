@@ -42,7 +42,18 @@ try {
     $dpi=[MutexRecoveryNative]::GetDpiForWindow($window)
     Assert-Ui ($dpi -gt 0) 'Window DPI unavailable.'
     $wanted=$witnessName+'='+(Scale $expected[$witnessName][0] $dpi)+','+(Scale $expected[$witnessName][1] $dpi)
-    Wait-Ui { (Use-UiView $window {param($view) $view.Position($witnessName)}) -eq $wanted } ('saved position of '+$witnessName+' restored') 0 $limitSeconds
+    $observation=@{Expected=$wanted;Actual=$null;Mode=$null;AutoArrange=$null}
+    try {
+        Wait-Ui {
+            Use-UiView $window {param($view)
+                $observation.Actual=$view.Position($witnessName)
+                $observation.Mode=$view.Mode;$observation.AutoArrange=$view.AutoArrange
+            }
+            return $observation.Actual -eq $wanted
+        } ('saved position of '+$witnessName+' restored') 0 $limitSeconds
+    } finally {
+        $observation|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $RunDirectory 'witness-observation.json') -Encoding UTF8
+    }
     $restoredMilliseconds=$watch.Elapsed.TotalMilliseconds
     Write-Host ('DIAG: items='+$ItemCount+', dpi='+$dpi+', view ready='+[int]$readyMilliseconds+' ms, witness '+$witnessName+' restored='+[int]$restoredMilliseconds+' ms since process start, limit='+$limitSeconds+' s')
 
