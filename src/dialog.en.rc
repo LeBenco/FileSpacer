@@ -92,7 +92,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Show the full &name of a selected file (does not apply to multiple selections)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 181, 272, 18
   CONTROL "Mi&x folders and files when sorting", IDC_MIXED_FOLDER_SORTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 199, 272, 14
   CONTROL "Allow Details columns to &fill the window width", IDC_DETAILS_COLUMNS_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 213, 272, 14
-  CONTROL "Update only when releasing the resize &handle", IDC_DETAILS_COLUMNS_DEFERRED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 227, 260, 14
+  CONTROL "Update only when releasin&g the resize handle", IDC_DETAILS_COLUMNS_DEFERRED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 227, 260, 14
   CONTROL "View menu", -1, "Button", BS_GROUPBOX, 7, 254, 286, 30
   CONTROL "Preview &display modes in the View menu", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 266, 272, 14
   CONTROL "Default window size", -1, "Button", BS_GROUPBOX, 7, 291, 286, 35
