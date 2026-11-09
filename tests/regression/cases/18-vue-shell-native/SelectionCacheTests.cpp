@@ -109,12 +109,15 @@ int wmain(int argc,wchar_t **argv) {
         for(unsigned i=0;i<20 && !notifications;++i)pump();
         std::printf("RESOLVED supported=%d reason=%s notifications=%u dispatched=%u\n",
             supported,filespacer::selectionDetail::image().reason,notifications,dispatched);
-        if(!notifications || !dispatched || IsWindowVisible(window))return 1;
+        if(!dispatched || IsWindowVisible(window))return 1;
         if(!supported) {
-            if(FAILED(operation.clear(&view,[]{return true;},&applied))||view.calls!=2||applied)return 1;
+            // The public path was already armed; only publishing a private
+            // capability notifies the UI. Unsupported discovery stays silent.
+            if(notifications || FAILED(operation.clear(&view,[]{return true;},&applied))||view.calls!=2||applied)return 1;
             std::puts("FALLBACK: discovery completed; public clearing remains usable");
             return ERROR_NOT_SUPPORTED;
         }
+        if(!notifications)return 1;
         // Shell acceleration is usable while its independent range capability
         // is still being qualified. Wait only in this test before reusing the
         // producer cache; resolved() intentionally no longer means producer idle.
