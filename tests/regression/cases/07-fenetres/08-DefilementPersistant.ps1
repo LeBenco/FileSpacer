@@ -4,7 +4,9 @@ param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')
 . (Join-Path $PSScriptRoot '..\..\common\ViewLayout.ps1')
 function Read-Viewport([IntPtr]$Window) {
  try {
-  $body=Use-UiView $Window {param($v) $v.Window}
+  $view=Get-UiView $Window
+  if($null-eq$view){return $null}
+  try {$body=$view.Window} finally {$view.Dispose()}
   $targetProcess=[uint32]0
   [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($Window,[ref]$targetProcess)
   return [FileSpacerRegression.ViewLayout]::TryReadScrollPosition($body,[int]$targetProcess)
@@ -20,14 +22,16 @@ function Same-Viewport($Left,$Right) {
  return [Math]::Abs($Left.Horizontal-$Right.Horizontal)-lt0.5-and[Math]::Abs($Left.Vertical-$Right.Vertical)-lt0.5
 }
 function Test-ViewModeReady([IntPtr]$Window,$Mode) {
+ $view=$null
  try {
-  return (Use-UiView $Window {param($v) $v.Mode})-eq$Mode.Mode-and(Use-UiView $Window {param($v) $v.IconSize})-eq$Mode.Size
+  $view=Get-UiView $Window
+  return $null-ne$view-and$view.Mode-eq$Mode.Mode-and$view.IconSize-eq$Mode.Size
  } catch {
   # The renderer is recreated asynchronously; an old automation object can
   # briefly cease to implement IFolderView. Poll readiness, never replay the command.
   if($_.Exception.GetBaseException() -is [InvalidCastException]){return $false}
   throw
- }
+ } finally {if($null-ne$view){$view.Dispose()}}
 }
 $testFailure=$null
 try {
