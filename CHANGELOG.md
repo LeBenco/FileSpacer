@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add File Explorer shortcuts and spatial adaptations (Ctrl+N and Ctrl+Backspace).
 - Massively speed up reducing large selections by clicking an item or the background in classic Shell views, with automatic silent fallback when the private Windows capability is unavailable.
 - Speed up reading complete and large partial selections in freely positioned icon views through public Windows APIs.
 - Toggle the global Windows thumbnail setting from the View menu.

@@ -2,6 +2,7 @@
 
 ## Non pubblicato
 
+- Aggiungere le scorciatoie di Esplora file e gli adattamenti alla modalità spaziale (Ctrl+N e Ctrl+Backspace).
 - Accelerare notevolmente la riduzione delle selezioni estese facendo clic su un elemento o sullo sfondo delle viste Shell classiche, con ripiego automatico e silenzioso se la funzionalità privata di Windows non è disponibile.
 - Velocizzare la lettura delle selezioni complete e delle selezioni parziali estese nelle viste a icone con posizionamento libero tramite le API pubbliche di Windows.
 - Attivare o disattivare globalmente le anteprime di Windows dal menu Visualizza.
