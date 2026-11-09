@@ -91,6 +91,11 @@ try {
     Activate-Ui $window
 
     Write-Host 'STEP: single selection, exact Unicode path and preserved view state'
+    # Icon positions are meaningful in a spatial view. The modern Details
+    # renderer legitimately returns E_NOTIMPL for GetItemPosition.
+    Use-UiView $window {param($v) $v.SetViewModeAndIconSize(1,48)}
+    Wait-UiViewMode $window 1 48
+    Use-UiView $window {param($v) $v.AutoArrange=$false}
     Focus-Item $window $first
     $before=Use-UiView $window {param($v) [ordered]@{Selected=($v.Selected()-join ';');Focus=$v.Focused();Positions=($v.Positions()-join ';')}}
     [FileSpacerRegression.Native]::Keys($window,0x20,$false,$false)
