@@ -1252,14 +1252,20 @@ void FolderWindow::onCreate() {
     }
     if (!isWindowOperational()) return;
     loadColumnFill();
-    if (hybridViewEligible && loadFolderState()
+    const bool storedStateAvailable = !hybridViewEligible || loadFolderState();
+    if (hybridViewEligible && storedStateAvailable
             && (getSavedFolderState().view.present & FolderViewSettings::Mode)) {
         const auto mode = getSavedFolderState().view.mode;
         if (mode == FVM_AUTO || (mode >= FVM_FIRST && mode <= FVM_LAST))
             initial.ViewMode = static_cast<UINT>(mode);
     }
     if (!isWindowOperational()) return;
-    viewProfile = profileForMode(initial.ViewMode);
+    // A provisional view must support the complete native View menu and free
+    // placement before SQLite becomes readable. Profile replacement is deferred
+    // during that recovery; its normal synchronization resumes afterwards.
+    viewProfile = !storedStateAvailable
+        ? static_cast<FOLDERVIEWOPTIONS>(FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING)
+        : profileForMode(initial.ViewMode);
     if (!checkHR(viewHost.initialize(hwnd, browserRect, initial,
             static_cast<IServiceProvider *>(this), this, viewProfile)))
         return;
