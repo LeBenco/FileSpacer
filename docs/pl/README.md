@@ -27,7 +27,7 @@ FileSpacer stawia na lekkość i przejrzystość. Aby ograniczyć gromadzenie ok
 - **WinGet:** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (terminal uruchomiony jako administrator): `choco install filespacer -y`
 
-Pakiety WinGet i Chocolatey oczekują na zatwierdzenie w odpowiednich katalogach.
+Pakiety WinGet oczekują na zatwierdzenie w katalogu.
 
 <a id="features"></a>
 
