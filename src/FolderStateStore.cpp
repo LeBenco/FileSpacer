@@ -397,7 +397,7 @@ bool FolderStateStore::resetDamagedDatabase(const char *utf8Path, const wchar_t 
         std::unique_ptr<void, CloseHandle> files[4];
         for (size_t index = 0; index < ARRAYSIZE(suffixes); ++index) {
             const HANDLE file = CreateFileW((path + suffixes[index]).c_str(), GENERIC_READ | DELETE,
-                0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+                0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT, nullptr);
             if (file == INVALID_HANDLE_VALUE) {
                 const DWORD error = GetLastError();
                 if (index && error == ERROR_FILE_NOT_FOUND) continue;
@@ -405,6 +405,12 @@ bool FolderStateStore::resetDamagedDatabase(const char *utf8Path, const wchar_t 
                 return failed();
             }
             files[index].reset(file);
+            BY_HANDLE_FILE_INFORMATION information = {};
+            if (!GetFileInformationByHandle(file, &information)) return failed();
+            if (information.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+                SetLastError(ERROR_CANT_ACCESS_FILE);
+                return failed(); // Never follow a symbolic link while deleting database files.
+            }
         }
         // Keep every source exclusively open until backup and deletion finish.
         // Existing users prevent this operation; no foreign handle is closed.
