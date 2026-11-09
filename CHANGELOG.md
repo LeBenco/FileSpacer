@@ -8,6 +8,7 @@
 
 - Explain folder state database errors with a copyable diagnostic, access to the data folder and process identification when available. Offer a confirmed reset with a complete backup when the database cannot be loaded or recovered.
 - Avoid unnecessary search history writes when applying unchanged preferences, so an unavailable folder state database does not block this step before an automatic update.
+- Fix toolbar resizing remaining frozen after opening its menu or Preferences, including in Details view with deferred column resizing.
 
 <a id="140--2026-11-09"></a>
 
