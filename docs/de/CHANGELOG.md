@@ -2,6 +2,7 @@
 
 ## Noch nicht veröffentlicht
 
+- Tastenkürzel des Explorers und Anpassungen an die räumliche Bedienung ergänzen (Strg+N und Strg+Rücktaste).
 - Das Verkleinern großer Auswahlen durch einen Klick auf ein Element oder den Hintergrund klassischer Shell-Ansichten massiv beschleunigen, mit automatischem stillem Rückgriff auf öffentliche Funktionen, wenn die private Windows-Funktion fehlt.
 - Das Auslesen vollständiger und großer teilweiser Auswahlen in Symbolansichten mit freier Platzierung über öffentliche Windows-APIs beschleunigen.
 - Die globale Windows-Einstellung für Miniaturansichten über das Ansichtsmenü umschalten.
