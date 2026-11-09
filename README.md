@@ -23,7 +23,7 @@ FileSpacer prioritizes a lightweight and uncluttered experience. To address the 
 
 **Install:**
 
-- **Manual installation:** download and run <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.3.2/FileSpacer-1.3.2-install.exe" id="last-release-url">the latest release installer</a>.
+- **Manual installation:** download and run <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.4.0/FileSpacer-1.4.0-install.exe" id="last-release-url">the latest release installer</a>.
 - **WinGet:** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (administrator terminal): `choco install filespacer -y`
 

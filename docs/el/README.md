@@ -24,7 +24,7 @@
 
 **Εγκατάσταση:**
 
-- **Χειροκίνητη εγκατάσταση:** λήψη και εκτέλεση του <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.3.2/FileSpacer-1.3.2-install.exe" id="last-release-url">προγράμματος εγκατάστασης της τελευταίας έκδοσης</a>.
+- **Χειροκίνητη εγκατάσταση:** λήψη και εκτέλεση του <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.4.0/FileSpacer-1.4.0-install.exe" id="last-release-url">προγράμματος εγκατάστασης της τελευταίας έκδοσης</a>.
 - **WinGet:** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (τερματικό με δικαιώματα διαχειριστή): `choco install filespacer -y`
 
