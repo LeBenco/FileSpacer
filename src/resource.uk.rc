@@ -3,6 +3,12 @@
 
 LANGUAGE LANG_UKRAINIAN, SUBLANG_NEUTRAL
 
+STRINGTABLE
+BEGIN
+  IDS_FILL_COLUMNS "Стовпці подробиць на всю ширину (ця папка)"
+  IDS_FILL_COLUMNS_WARNING "Безперервне оновлення може зменшувати плавність зміни розміру й збільшувати навантаження на CPU навіть у малих папках. Рекомендовано оновлення після відпускання кнопки.\n\nУсе одно ввімкнути стовпці на всю ширину для цієї папки?"
+END
+
 IDR_ITEM_MENU   MENU {
     MENUITEM    "Документація\tF1", IDM_HELP
     MENUITEM    "Настройки FileSpacer\tCtrl+,", IDM_SETTINGS

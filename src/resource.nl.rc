@@ -3,6 +3,12 @@
 
 LANGUAGE LANG_DUTCH, SUBLANG_NEUTRAL
 
+STRINGTABLE
+BEGIN
+  IDS_FILL_COLUMNS "Detailskolommen over de volledige breedte (deze map)"
+  IDS_FILL_COLUMNS_WARNING "Voortdurend bijwerken kan het wijzigen van de grootte minder vloeiend maken en meer CPU gebruiken, ook in kleine mappen. Bijwerken bij het loslaten wordt aanbevolen.\n\nToch Detailskolommen over de volledige breedte inschakelen voor deze map?"
+END
+
 IDR_ITEM_MENU   MENU {
     MENUITEM    "Documentatie\tF1", IDM_HELP
     MENUITEM    "FileSpacer-instellingen\tCtrl+,", IDM_SETTINGS
