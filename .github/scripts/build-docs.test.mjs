@@ -13,12 +13,15 @@ test('source fingerprints survive CRLF transfer and ignore build caches while tr
     assert.equal(path.dirname(directory), os.tmpdir());
     return fs.rm(directory, {recursive: true, force: true});
   });
-  for (const file of ['README.md', 'CHANGELOG.md', 'THIRD_PARTY_NOTICES.md', 'docs/user-guide.md', 'docs/privacy-policy.md', 'src/res/FileSpacer.svg', 'website/assets/js/vendor/search.js', '.github/scripts/Gemfile.lock', 'docs/images/image.png']) {
+  for (const file of ['README.md', 'CHANGELOG.md', 'THIRD_PARTY_NOTICES.md', 'docs/user-guide.md', 'docs/privacy-policy.md', 'src/res/FileSpacer.svg', 'website/assets/js/vendor/search.js', '.github/scripts/Gemfile.lock', '.github/scripts/update-release-links.py', '.github/scripts/update-release-links.test.py', 'docs/images/image.png']) {
     await fs.mkdir(path.dirname(path.join(directory, file)), {recursive: true});
     await fs.writeFile(path.join(directory, file), 'first\nsecond\n');
   }
   const original = await sourceDigest(directory);
   await fs.writeFile(path.join(directory, 'README.md'), 'first\r\nsecond\r\n');
+  for (const script of ['update-release-links.py', 'update-release-links.test.py']) {
+    await fs.writeFile(path.join(directory, '.github/scripts', script), 'first\r\nsecond\r\n');
+  }
   await fs.mkdir(path.join(directory, '.github/scripts/.sass-cache'), {recursive: true});
   await fs.writeFile(path.join(directory, '.github/scripts/.sass-cache/generated'), 'cache');
   assert.equal(await sourceDigest(directory), original);
