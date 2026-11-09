@@ -6,6 +6,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Mantenere disponibili il menu Visualizza e il posizionamento libero delle icone quando lo stato salvato della cartella è temporaneamente illeggibile.
 - Caricare l’icona del pulsante Accesso rapido direttamente dalla Shell di Windows.
 - Aggiungere il ridimensionamento automatico delle colonne nella vista Dettagli, con aggiornamento continuo facoltativo.
 - Aggiungere le scorciatoie di Esplora file e gli adattamenti alla modalità spaziale (Ctrl+N e Ctrl+Backspace).

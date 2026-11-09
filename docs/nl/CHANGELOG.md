@@ -6,6 +6,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Het menu Beeld en de vrije plaatsing van pictogrammen beschikbaar houden wanneer de opgeslagen mapstatus tijdelijk niet kan worden gelezen.
 - Het pictogram van de knop Snelle toegang rechtstreeks uit de Windows-shell laden.
 - Automatische aanpassing van kolombreedtes in de detailweergave toevoegen, met optionele live-updates.
 - Sneltoetsen van Verkenner en aanpassingen voor de ruimtelijke werkwijze toevoegen (Ctrl+N en Ctrl+Backspace).
