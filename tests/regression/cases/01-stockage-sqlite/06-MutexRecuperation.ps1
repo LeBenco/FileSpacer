@@ -6,6 +6,11 @@ $ErrorActionPreference='Stop'
 $helper=Build-NativeTest -Name StorageMutexRegression -CaseDirectory $PSScriptRoot -ProductionSources @('FolderStateStore.cpp') -Sqlite -Storage -Standard c++14
 $probe=Build-NativeTest -Name FolderIdentityProbe -CaseDirectory $PSScriptRoot -ProductionSources @('FolderIdentity.cpp')
 Add-Type -Path (Join-Path $PSScriptRoot 'StorageRecoveryUi.cs')
+Add-Type -AssemblyName UIAutomationClient
+Add-Type -AssemblyName UIAutomationTypes
+Add-Type -AssemblyName WindowsBase
+$taskReferences=@([System.Windows.Automation.AutomationElement].Assembly.Location,[System.Windows.Automation.ControlType].Assembly.Location,[System.Windows.Rect].Assembly.Location)
+Add-Type -Path (Join-Path $PSScriptRoot 'StorageTaskDialog.cs') -ReferencedAssemblies $taskReferences
 $script:dismissedDialogs=@{}
 function Require($ok,[string]$message){if(!$ok){throw $message}}
 function Wait-Folder([int]$processId){
@@ -66,7 +71,8 @@ try{
             @([MutexRecoveryNative]::Describe($application.Id))|ConvertTo-Json|Set-Content (Join-Path $RunDirectory 'dialog-during-identification.json') -Encoding UTF8
             $messages=[MutexRecoveryNative]::Messages((Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'),278)
             Require ($messages.Count -gt 0) 'Product storage-error string resources were not found.'
-            if([MutexRecoveryNative]::ContainsText($dialogs[0],$messages) -and [MutexRecoveryNative]::ButtonCount($dialogs[0]) -eq 1){
+            if([StorageTaskDialog]::HasButton($dialogs[0],1650) -and [StorageTaskDialog]::HasButton($dialogs[0],1651) -and
+                    [StorageTaskDialog]::HasButton($dialogs[0],1)){
                 $initialDialog=$dialogs[0];$errorObserved=$true;break
             }
         }
@@ -74,6 +80,7 @@ try{
     }while([DateTime]::UtcNow -lt $deadline)
     @([MutexRecoveryNative]::Describe($application.Id))|ConvertTo-Json|Set-Content (Join-Path $RunDirectory 'windows-before-release.json') -Encoding UTF8
     Require $errorObserved 'Controlled initialization timeout was not observed before the watchdog; scenario not established.'
+    Require (-not [StorageTaskDialog]::HasButton($initialDialog,1652)) 'A temporary mutex timeout must not offer database reset.'
     [void]$release.Set()
     Require ($holder.Process.WaitForExit(20000)) 'Controlled holder did not exit.'
     Require ((Complete-RecordedProcess $holder) -eq 0) 'Controlled holder failed.'
