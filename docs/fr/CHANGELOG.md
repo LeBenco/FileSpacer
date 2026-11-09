@@ -1,6 +1,6 @@
 # Historique des versions
 
-## Non publié
+## 1.4.0 — 2026-11-09
 
 - Ajouter les raccourcis de l’Explorateur et leurs adaptations au mode spatial (Ctrl+N et Ctrl+Retour arrière).
 - Accélérer massivement la réduction des grandes sélections par un clic sur un élément ou sur le fond des vues Shell classiques, avec repli automatique et silencieux si la capacité privée de Windows est indisponible.

@@ -1,6 +1,6 @@
 # Historial de versiones
 
-## Sin publicar
+## 1.4.0 — 2026-11-09
 
 - Añadir los atajos del Explorador y sus adaptaciones al modo espacial (Ctrl+N y Ctrl+Retroceso).
 - Acelerar enormemente la reducción de selecciones grandes al hacer clic en un elemento o en el fondo de las vistas clásicas del Shell, con retorno automático y silencioso si la función privada de Windows no está disponible.
