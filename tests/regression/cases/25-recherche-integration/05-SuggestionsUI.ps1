@@ -22,7 +22,11 @@ try {
     $folder=Join-Path $script:UiRoot 'Folder';[void](New-Item -ItemType Directory -Path $folder)
     foreach($name in @('keep.txt','other.txt','a&b.txt')) { [IO.File]::WriteAllText((Join-Path $folder $name),'fixture') }
     $window=Open-UiFolder $folder 3;$edit=Get-UiSearchEdit $window
-    Set-SearchOptions $window $true 5 (Join-Path $script:UiRoot 'missing\Everything.exe')
+    # An explicitly configured path must exist. Its inert fixture still makes
+    # an unintended launch fail visibly, while local suggestions never run it.
+    $everything=Join-Path $script:UiRoot 'Everything.exe'
+    [IO.File]::WriteAllText($everything,'fixture')
+    Set-SearchOptions $window $true 5 $everything
     Submit-Search $window 'a&b' @('a&b.txt')
     Submit-Search $window 'keep' @('keep.txt');Submit-Search $window 'other' @('other.txt')
     $search=Get-UiControl $window 'FileSpacer Search Box'
