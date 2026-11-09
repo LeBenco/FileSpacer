@@ -3949,9 +3949,11 @@ void FolderWindow::finishViewInitialization() {
         return isWindowOperational() && shellView == view && viewGeneration == generation;
     };
     if (storedViewState) restoreScrollPending = false; // Its transient viewport takes precedence.
-    if (storedViewState && !initialStateApplied && searchText.empty()) {
+    if (!initialStateApplied && searchText.empty()
+            && (storedViewState || ((getSavedFolderState().present & FolderState::Icons)
+                && !getSavedFolderState().icons.empty()))) {
         // A newly created view can publish an empty completion before its real
-        // contents. Do not consume the rename snapshot if the native folder
+        // contents. Do not consume saved positions or a rename snapshot if the native folder
         // proves that this empty view is still transitional. A truly empty
         // folder must remain a valid completed enumeration.
         const ULONG_PTR enumeration = viewHost.enumerationSerial();
