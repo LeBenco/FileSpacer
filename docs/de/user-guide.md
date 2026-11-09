@@ -52,6 +52,14 @@ Das Menü neben dem Titel wechselt zwischen geöffneten Ordnern und schließt ü
 
 In FileSpacer lassen sich die Inhalte eines Ordners in einem Raster anordnen, wie im Datei-Explorer, oder frei platzieren, wie auf dem Windows-Desktop. Die freie Platzierung ist bei jeder Symbolgröße und in der Ansicht **Kacheln** möglich. Die Ansichten **Liste** und **Details** unterstützen keine freie Platzierung. Dazu **Symbole automatisch anordnen** ausschalten. Die Ausrichtung am Raster bleibt möglich. Das Menü **Ansicht** in jedem Fenster bietet schnellen Zugriff auf die Symboleinstellungen, einschließlich der zusätzlichen Optionen von FileSpacer.
 
+<div id="details-columns"></div>
+
+In der Ansicht **Details** können die Spalten automatisch die gesamte Fensterbreite ausfüllen. Die Funktion wird unter **Einstellungen > Anzeige** allgemein zugelassen und lässt sich für jeden Ordner im Menü **Ansicht** ein- oder ausschalten.
+
+![Detailspalten auf Fensterbreite verteilen und anschließend die Spalte Name verbreitern.](images/details-columns.gif)
+
+Eine **fortlaufende Aktualisierung** ist ebenfalls in den Einstellungen möglich und kann Größenänderungen weniger flüssig machen. Bei mehr als einigen Dutzend Dateien ist vorsorglich davon abzuraten.
+
 <div id="ansichtsoptionen"></div>
 <div id="view-options"></div>
 

@@ -45,6 +45,14 @@ The menu beside the title switches between open folders and closes parent window
 
 FileSpacer lets you arrange a folder’s contents on a grid, as in File Explorer, or freely, as on the Windows desktop. Free placement is available at every icon size and in **Tiles** view. **List** and **Details** views do not support free placement. To choose their positions, turn off **Auto arrange icons**. Alignment to the grid remains available. The **View** menu in each window gives quick access to icon settings, including those specific to FileSpacer.
 
+<div id="details-columns"></div>
+
+In **Details** view, columns can automatically fill the entire window width. Allow this under **Settings > Display**, then enable or disable it for each folder from its **View** menu.
+
+![Filling the window with Details columns, then widening the Name column.](images/details-columns.gif)
+
+**Live updates** are also available in the settings and can make resizing less smooth. As a precaution, avoid enabling them with more than a few dozen files.
+
 <div id="view-options"></div>
 
 By default, folders are grouped before files, as in File Explorer. **Mix folders and files when sorting** under **Settings > Display** sorts them together, as on [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) and [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). This applies to Details, List and automatically arranged Icons views. Virtual folders and archives keep Windows’ ordering.

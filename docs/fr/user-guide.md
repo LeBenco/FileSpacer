@@ -53,6 +53,14 @@ Le menu à côté du titre permet de passer entre les dossiers ouverts et de fer
 
 FileSpacer permet de disposer les éléments d’un dossier en grille, comme l’Explorateur de fichiers, mais aussi librement, comme sur le Bureau Windows. Le placement libre est disponible avec toutes les tailles d’icônes et en mode **Mosaïque**. Les modes **Liste** et **Détails** ne permettent pas ce placement libre. Pour choisir leurs positions, désactiver **Réorganiser automatiquement les icônes**. L’alignement sur la grille reste disponible. Le menu **Affichage** de chaque fenêtre donne un accès rapide aux réglages des icônes, y compris ceux propres à FileSpacer.
 
+<div id="details-columns"></div>
+
+En mode **Détails**, les colonnes peuvent remplir automatiquement toute la largeur de la fenêtre. On peut l’autoriser dans **Paramètres > Affichage**, puis activer ou désactiver l’option pour chaque dossier dans son menu **Affichage**.
+
+![Remplissage des colonnes en mode Détails, puis élargissement de la colonne Nom.](images/details-columns.gif)
+
+L’**actualisation en continu**, également proposée dans les paramètres, peut rendre le redimensionnement moins fluide. Par prudence, éviter de l’activer au-delà de quelques dizaines de fichiers.
+
 <div id="options-daffichage"></div>
 <div id="view-options"></div>
 

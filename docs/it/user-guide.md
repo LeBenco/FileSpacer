@@ -53,6 +53,14 @@ Il menu accanto al titolo permette di passare tra le cartelle aperte e chiudere 
 
 FileSpacer permette di disporre gli elementi di una cartella in una griglia, come in Esplora file, oppure liberamente, come sul desktop di Windows. Il posizionamento libero è disponibile con qualsiasi dimensione delle icone e nella vista **Riquadri**. Le viste **Elenco** e **Dettagli** non consentono il posizionamento libero. Per scegliere le posizioni, disattivare **Disponi icone automaticamente**. Resta disponibile l’allineamento alla griglia. Il menu **Visualizza** di ogni finestra offre un accesso rapido alle impostazioni delle icone, comprese quelle specifiche di FileSpacer.
 
+<div id="details-columns"></div>
+
+Nella visualizzazione **Dettagli**, le colonne possono occupare automaticamente tutta la larghezza della finestra. La funzione si abilita in **Impostazioni > Visualizzazione** e si attiva o disattiva per ogni cartella dal relativo menu **Visualizza**.
+
+![Colonne della visualizzazione Dettagli estese a tutta la finestra, poi allargamento della colonna Nome.](images/details-columns.gif)
+
+L’**aggiornamento continuo**, disponibile nelle stesse impostazioni, può rendere il ridimensionamento meno fluido. Per prudenza, è sconsigliato attivarlo con più di qualche decina di file.
+
 <div id="opzioni-di-visualizzazione"></div>
 <div id="view-options"></div>
 
