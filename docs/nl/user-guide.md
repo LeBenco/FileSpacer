@@ -53,6 +53,14 @@ Het menu naast de titel wisselt tussen geopende mappen en sluit bovenliggende ve
 
 In FileSpacer kunnen de items in een map op een raster worden gerangschikt, zoals in Bestandenverkenner, of vrij worden geplaatst, zoals op het Windows-bureaublad. Vrije plaatsing is beschikbaar bij elke pictogramgrootte en in de weergave **Tegels**. De weergaven **Lijst** en **Details** ondersteunen geen vrije plaatsing. Daarvoor **Pictogrammen automatisch schikken** uitschakelen. Uitlijnen op het raster blijft mogelijk. Het menu **Beeld** in elk venster biedt snelle toegang tot de pictograminstellingen, inclusief de eigen opties van FileSpacer.
 
+<div id="details-columns"></div>
+
+In de weergave **Details** kunnen de kolommen automatisch de volledige vensterbreedte vullen. Sta dit toe onder **Instellingen > Weergave** en schakel het daarna voor elke map afzonderlijk in of uit via het menu **Beeld**.
+
+![Detailskolommen over de volledige vensterbreedte en daarna de kolom Naam breder maken.](images/details-columns.gif)
+
+**Continu bijwerken** is ook mogelijk via de instellingen en kan het wijzigen van de grootte minder vloeiend maken. Uit voorzorg wordt inschakelen bij meer dan enkele tientallen bestanden afgeraden.
+
 <div id="weergaveopties"></div>
 <div id="view-options"></div>
 

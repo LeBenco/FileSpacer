@@ -53,6 +53,14 @@ O menu junto ao título permite alternar entre pastas abertas e fechar as janela
 
 O FileSpacer permite dispor os elementos de uma pasta numa grelha, como no Explorador de Ficheiros, ou livremente, como no ambiente de trabalho do Windows. A disposição livre está disponível com qualquer tamanho de ícones e na vista **Mosaicos**. As vistas **Lista** e **Detalhes** não permitem esta disposição livre. Para escolher as posições, desativar **Dispor ícones automaticamente**. O alinhamento pela grelha continua disponível. O menu **Ver** de cada janela dá acesso rápido às definições dos ícones, incluindo as opções próprias do FileSpacer.
 
+<div id="details-columns"></div>
+
+Na vista **Detalhes**, as colunas podem ajustar-se automaticamente a toda a largura da janela. A função é permitida em **Definições > Apresentação** e ativada ou desativada para cada pasta no respetivo menu **Ver**.
+
+![Colunas da vista Detalhes a ocupar toda a largura e alargamento manual da coluna Nome.](images/details-columns.gif)
+
+A **atualização contínua**, também disponível nas definições, pode tornar o redimensionamento menos fluido. Por prudência, é desaconselhada com mais de algumas dezenas de ficheiros.
+
 <div id="opções-de-apresentação"></div>
 <div id="view-options"></div>
 

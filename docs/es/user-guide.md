@@ -53,6 +53,14 @@ El menú junto al título permite cambiar entre carpetas abiertas y cerrar las v
 
 FileSpacer permite distribuir los elementos de una carpeta en una cuadrícula, como en el Explorador de archivos, o libremente, como en el escritorio de Windows. La colocación libre está disponible con cualquier tamaño de icono y en la vista **Mosaicos**. Las vistas **Lista** y **Detalles** no permiten esta colocación libre. Para elegir sus posiciones, desactivar **Organizar iconos automáticamente**. La alineación con la cuadrícula sigue disponible. El menú **Vista** de cada ventana permite acceder rápidamente a los ajustes de los iconos, incluidas las opciones propias de FileSpacer.
 
+<div id="details-columns"></div>
+
+En la vista **Detalles**, las columnas pueden ajustarse automáticamente a todo el ancho de la ventana. La función se habilita en **Configuración > Visualización** y se activa o desactiva para cada carpeta desde su menú **Ver**.
+
+![Columnas de la vista Detalles que ocupan todo el ancho y ampliación manual de la columna Nombre.](images/details-columns.gif)
+
+La **actualización continua**, disponible también en la configuración, puede reducir la fluidez al cambiar el tamaño. Por prudencia, se desaconseja activarla con más de unas pocas decenas de archivos.
+
 <div id="opciones-de-visualización"></div>
 <div id="view-options"></div>
 

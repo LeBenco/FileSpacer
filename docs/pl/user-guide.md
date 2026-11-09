@@ -53,6 +53,14 @@ Menu obok tytułu pozwala przełączać otwarte foldery i zamykać okna nadrzęd
 
 FileSpacer pozwala rozmieszczać elementy folderu w siatce, jak w Eksploratorze plików, lub dowolnie, jak na pulpicie systemu Windows. Dowolne rozmieszczanie jest dostępne przy każdym rozmiarze ikon oraz w widoku **Kafelki**. Widoki **Lista** i **Szczegóły** nie obsługują dowolnego rozmieszczania. Aby wybrać pozycje, wyłączyć opcję **Autorozmieszczanie ikon**. Wyrównywanie do siatki pozostaje dostępne. Menu **Widok** w każdym oknie zapewnia szybki dostęp do ustawień ikon, w tym opcji dostępnych w FileSpacer.
 
+<div id="details-columns"></div>
+
+W widoku **Szczegóły** kolumny mogą automatycznie wypełniać całą szerokość okna. Można na to zezwolić w **Ustawienia > Wyświetlanie**, a następnie włączać lub wyłączać tę opcję osobno dla każdego folderu w menu **Widok**.
+
+![Wypełnienie szerokości okna kolumnami widoku Szczegóły, a następnie poszerzenie kolumny Nazwa.](images/details-columns.gif)
+
+**Odświeżanie na bieżąco**, dostępne także w ustawieniach, może zmniejszyć płynność zmiany rozmiaru. Dla ostrożności nie zaleca się włączania go przy więcej niż kilkudziesięciu plikach.
+
 <div id="opcje-widoku"></div>
 <div id="view-options"></div>
 
