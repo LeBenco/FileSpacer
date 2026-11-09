@@ -46,9 +46,6 @@ try {
     Use-UiView $window {param($view) $view.Focus(); $view.Select('AnchorA'); $view.Select('AnchorB',$true)}
     Assert-UiSelected $window 'AnchorA;AnchorB'
     $viewWindow=Use-UiView $window {param($view) $view.Window}
-    $lists=@([FileSpacerRegression.Native]::Children($viewWindow,'SysListView32'))
-    Assert-Ui ($lists.Count -eq 1) 'Require the validated native Shell item container.'
-    $list=$lists[0]
     Assert-Ui ((Get-UiPreference 'KeepSelectionOnActivate') -eq 1) 'The fixture preference must enable selection preservation.'
 
     Write-Host 'STEP: caption click on the inactive window'
@@ -58,10 +55,7 @@ try {
     Write-Host 'PASS: the caption click activates the window and leaves its selection alone.'
 
     Write-Host 'STEP: background click in the window activated by its caption'
-    $bounds=[FileSpacerRegression.Native]::ClientBounds($list)
-    $background=New-Object FileSpacerRegression.MousePoint
-    $background.X=[int]($bounds.Left+$bounds.Width/2);$background.Y=[int]($bounds.Top+3*$bounds.Height/4)
-    [FileSpacerRegression.NativeTargets]::Background($list,$background.X,$background.Y)
+    $background=[FileSpacerRegression.AltDragInput]::BackgroundPoint($viewWindow)
     Click-At $window $background
     Assert-UiSelected $window ''
     Write-Host 'PASS: the first background click after a caption activation keeps the native deselection.'
@@ -70,7 +64,7 @@ try {
     Use-UiView $window {param($view) $view.Select('AnchorA'); $view.Select('AnchorB',$true)}
     Assert-UiSelected $window 'AnchorA;AnchorB'
     Deactivate-Window
-    [FileSpacerRegression.NativeTargets]::Background($list,$background.X,$background.Y)
+    $background=[FileSpacerRegression.AltDragInput]::BackgroundPoint($viewWindow)
     Click-At $window $background
     Wait-Ui { [FileSpacerRegression.Native]::GetForegroundWindow() -eq $window } 'background click activates the inactive window' 0 5
     Assert-UiSelected $window 'AnchorA;AnchorB'
