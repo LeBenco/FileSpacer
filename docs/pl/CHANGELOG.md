@@ -2,6 +2,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Ładowanie ikony przycisku Szybki dostęp bezpośrednio z powłoki Windows.
 - Dodać automatyczne dostosowywanie szerokości kolumn w widoku Szczegóły, z opcjonalną aktualizacją na bieżąco.
 - Dodać skróty Eksploratora plików i ich dostosowania do trybu przestrzennego (Ctrl+N i Ctrl+Backspace).
 - Znacznie przyspieszyć ograniczanie dużych zaznaczeń przez kliknięcie elementu lub tła w klasycznych widokach powłoki, z automatycznym i cichym powrotem do ścieżki publicznej, gdy prywatna funkcja Windows jest niedostępna.

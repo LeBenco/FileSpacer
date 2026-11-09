@@ -2,6 +2,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Het pictogram van de knop Snelle toegang rechtstreeks uit de Windows-shell laden.
 - Automatische aanpassing van kolombreedtes in de detailweergave toevoegen, met optionele live-updates.
 - Sneltoetsen van Verkenner en aanpassingen voor de ruimtelijke werkwijze toevoegen (Ctrl+N en Ctrl+Backspace).
 - Het verkleinen van grote selecties door op een item of de achtergrond van klassieke Shell-weergaven te klikken sterk versnellen, met een automatische, stille terugval als de private Windows-functie ontbreekt.
