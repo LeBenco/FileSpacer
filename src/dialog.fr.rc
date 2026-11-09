@@ -70,7 +70,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Informations sur le regroupement des fenêtres", IDC_GROUP_FOLDER_WINDOWS_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 242, 12, 14
 }
 
-IDD_SETTINGS_DISPLAY DIALOGEX DISCARDABLE 0, 0, 300, 374
+IDD_SETTINGS_DISPLAY DIALOGEX DISCARDABLE 0, 0, 300, 333
 STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
 CAPTION "Affichage"
 FONT 8, "MS Shell Dlg", 400, 0, 0
@@ -86,19 +86,18 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Afficher le bouton Act&ualiser", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 127, 130, 14
   CONTROL "Afficher le bouton A&ffichage", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 127, 130, 14
   CONTROL "Les éléments ci-dessus sont visibles lorsque la barre d’outils est affichée.", -1, "Static", WS_GROUP, 14, 143, 272, 16
-  CONTROL "Fichiers", -1, "Button", BS_GROUPBOX, 7, 169, 286, 56
-  CONTROL "Affiche le &nom complet d’un fichier sélectionné (ne s’applique pas aux sélections multiples)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 181, 272, 20
-  CONTROL "Mélanger les &dossiers et les fichiers dans le tri", IDC_MIXED_FOLDER_SORTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 205, 272, 14
-  CONTROL "Menu Affichage", -1, "Button", BS_GROUPBOX, 7, 232, 286, 38
-  CONTROL "&Prévisualiser les modes d’affichage dans le menu Affichage", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 244, 272, 20
-  CONTROL "Colonnes Détails", -1, "Button", BS_GROUPBOX, 7, 277, 286, 60
-  CONTROL "Autoriser les colonnes Détails à remplir la &largeur de la fenêtre", IDC_DETAILS_COLUMNS_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 289, 272, 20
-  CONTROL "Actualiser uniquement au relâchement du &bouton de la souris", IDC_DETAILS_COLUMNS_DEFERRED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 311, 260, 20
-  CONTROL "Taille des fenêtres par défaut", -1, "Button", BS_GROUPBOX, 7, 344, 286, 35
-  CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 361, 88, 8
-  CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 358, 35, 14
-  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT_LABEL, "Static", SS_RIGHT|WS_GROUP, 156, 361, 88, 8
-  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 251, 358, 35, 14
+  CONTROL "Fichiers", -1, "Button", BS_GROUPBOX, 7, 169, 286, 78
+  CONTROL "Affiche le &nom complet d’un fichier sélectionné (ne s’applique pas aux sélections multiples)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 181, 272, 18
+  CONTROL "Mélanger les &dossiers et les fichiers dans le tri", IDC_MIXED_FOLDER_SORTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 199, 272, 14
+  CONTROL "Autoriser les colonnes Détails à remplir la &largeur de la fenêtre", IDC_DETAILS_COLUMNS_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 213, 272, 14
+  CONTROL "Actualiser uniquement au relâchement du &bouton de la souris", IDC_DETAILS_COLUMNS_DEFERRED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 227, 260, 14
+  CONTROL "Menu Affichage", -1, "Button", BS_GROUPBOX, 7, 254, 286, 30
+  CONTROL "&Prévisualiser les modes d’affichage dans le menu Affichage", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 266, 272, 14
+  CONTROL "Taille des fenêtres par défaut", -1, "Button", BS_GROUPBOX, 7, 291, 286, 35
+  CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 308, 88, 8
+  CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 305, 35, 14
+  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT_LABEL, "Static", SS_RIGHT|WS_GROUP, 156, 308, 88, 8
+  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 251, 305, 35, 14
 }
 
 IDD_SETTINGS_BROWSER DIALOGEX DISCARDABLE 0, 0, 300, 309
