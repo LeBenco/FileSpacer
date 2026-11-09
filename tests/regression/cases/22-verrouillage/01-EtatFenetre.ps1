@@ -91,8 +91,10 @@ try {
     Caption-Menu $first $true $false 'Verrouiller|Lock'
     $work=[FileSpacerRegression.Native]::WorkArea($first)
     Place $first ($work.Left+35) ($work.Top+35) 620 440
-    Use-UiView $first {param($v) $v.SetViewModeAndIconSize(1,48); $v.AutoArrange=$false }
-    Wait-Ui { (Use-UiView $first {param($v) $v.Mode}) -eq 1 } 'icon mode visible' 400
+    Use-UiView $first {param($v) $v.SetViewModeAndIconSize(1,48)}
+    Wait-UiViewMode $first 1 48
+    Use-UiView $first {param($v) $v.AutoArrange=$false}
+    Wait-Ui { !(Use-UiView $first {param($v) $v.AutoArrange}) } 'free icon placement active' 400
     $reference=Geometry $first
     Caption-Menu $first $true $true
     Assert-Locked $first $true; Caption-Menu $first $true $false 'Déverrouiller|Unlock'
@@ -102,19 +104,26 @@ try {
     Assert-Locked $first $true
     Place $first ($work.Left+35) ($work.Top+35) 620 440
     Use-UiView $first {param($v) $v.Position('First.txt',170,130); $v.Position('Second.txt',310,210)}
+    Wait-Ui { (Use-UiView $first {param($v) $v.Positions()}) -ceq 'First.txt=170,130;Second.txt=310,210' } 'requested manual icon coordinates before closing' 400
     $positions=Use-UiView $first {param($v) $v.Positions()}
     # Close in the spatial mode to capture the current manual placement,
     # independently of the later presentation-change scenario.
     Close-UiFolder $first; $first=Open-UiFolder $a 2
     Assert-Locked $first $true
-    Wait-Ui { (Use-UiView $first {param($v) $v.Positions()}) -eq $positions } 'manual icon coordinates restored while locked' 400
+    $restored=@{Positions='';Mode=0;IconSize=0;AutoArrange=$true}
+    try { Wait-Ui {
+        Use-UiView $first {param($v) $restored.Positions=$v.Positions();$restored.Mode=$v.Mode;$restored.IconSize=$v.IconSize;$restored.AutoArrange=$v.AutoArrange}
+        return $restored.Positions -ceq $positions
+    } 'manual icon coordinates restored while locked' 400 } finally {
+        @{Expected=$positions;Observed=$restored}|ConvertTo-Json -Depth 3|Set-Content -LiteralPath (Join-Path $RunDirectory 'locked-layout.json') -Encoding UTF8
+    }
     [void][FileSpacerRegression.Native]::PostMessage($first,0x112,[IntPtr]0xf030,[IntPtr]::Zero)
     Wait-Ui { [LockUi]::IsZoomed($first) } 'locked window can be temporarily maximized'
     Close-UiFolder $first; $first=Open-UiFolder $a 2
     Assert-Ui (![LockUi]::IsZoomed($first) -and (Geometry $first) -eq $reference) 'Temporary maximization replaced the normal reference.'
     Place $first ($work.Left+65) ($work.Top+70) 700 470
     Use-UiView $first {param($v) $v.SetViewModeAndIconSize(4,32)}
-    Wait-Ui { (Use-UiView $first {param($v) $v.Mode}) -eq 4 } 'temporary Details mode visible' 500
+    Wait-UiViewMode $first 4 32
     Assert-Ui ((Geometry $first) -ne $reference) 'Temporary geometry did not change.'
     Close-UiFolder $first; $first=Open-UiFolder $a 2
     Assert-Locked $first $true
@@ -123,7 +132,7 @@ try {
     Assert-Ui ((Use-UiView $first {param($v) $v.IconSize}) -eq 48) 'Locked icon size was overwritten.'
     Place $first ($work.Left+75) ($work.Top+60) 650 450
     Use-UiView $first {param($v) $v.SetViewModeAndIconSize(4,32)}
-    Wait-Ui { (Use-UiView $first {param($v) $v.Mode}) -eq 4 } 'temporary view before unlock' 400
+    Wait-UiViewMode $first 4 32
     $unlocked=Geometry $first
     Caption-Menu $first $true $true; Assert-Locked $first $false
     Close-UiFolder $first; $first=Open-UiFolder $a 2
