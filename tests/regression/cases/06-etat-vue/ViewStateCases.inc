@@ -7,7 +7,8 @@ int main(int argc, char **argv) {
         IFolderView2 oldView, newView;
         // Restoration must change the destination; an identical presentation
         // intentionally performs no writes and has its own scenario below.
-        if (scenario != "identical") { newView.currentMode = FVM_DETAILS; newView.autoArrange = true; }
+        if (scenario != "identical" && scenario != "partial-identical") { newView.currentMode = FVM_DETAILS; newView.autoArrange = true; }
+        if (scenario == "partial-mode-matched") newView.currentMode = oldView.currentMode;
         if (scenario == "all-fail") {
             oldView.modeFails = oldView.flagsFail = oldView.countFails = true;
             oldView.sortCountFails = oldView.groupFails = oldView.countItemsFails = true;
@@ -22,10 +23,14 @@ int main(int argc, char **argv) {
             // icon positions go through the shared ShellViewIcons blob (bench 18).
             FolderWindow::ShellViewState snapshot;
             snapshot.view = captureOptions(&oldView, {});
+            if (scenario == "partial-identical" || scenario == "partial-mode-matched")
+                snapshot.view.present &= FolderViewSettings::Mode | FolderViewSettings::Flags;
             restoreOptions(&newView, snapshot.view);
         }
         std::set<std::string> expected = {"mode", "flags", "columns", "widths", "sort", "group"};
         if (scenario == "all-fail" || scenario == "identical") expected.clear();
+        if (scenario == "partial-identical") expected.clear();
+        if (scenario == "partial-mode-matched") expected = {"flags"};
         if (scenario == "columns-fail" || scenario == "width-fail" || scenario == "no-manager") {
             expected.erase("columns"); expected.erase("widths");
         }
