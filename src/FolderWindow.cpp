@@ -1253,11 +1253,17 @@ void FolderWindow::onCreate() {
     if (!isWindowOperational()) return;
     loadColumnFill();
     const bool storedStateAvailable = !hybridViewEligible || loadFolderState();
-    if (hybridViewEligible && storedStateAvailable
-            && (getSavedFolderState().view.present & FolderViewSettings::Mode)) {
-        const auto mode = getSavedFolderState().view.mode;
-        if (mode == FVM_AUTO || (mode >= FVM_FIRST && mode <= FVM_LAST))
-            initial.ViewMode = static_cast<UINT>(mode);
+    if (hybridViewEligible && storedStateAvailable) {
+        const auto &saved = getSavedFolderState().view;
+        if (saved.present & FolderViewSettings::Mode) {
+            const auto mode = saved.mode;
+            if (mode == FVM_AUTO || (mode >= FVM_FIRST && mode <= FVM_LAST))
+                initial.ViewMode = static_cast<UINT>(mode);
+        }
+        if (saved.present & FolderViewSettings::Flags) {
+            const DWORD placementFlags = FWF_AUTOARRANGE | FWF_SNAPTOGRID;
+            initial.fFlags = (initial.fFlags & ~placementFlags) | (saved.flags & placementFlags);
+        }
     }
     if (!isWindowOperational()) return;
     // A provisional view must support the complete native View menu and free
