@@ -10,7 +10,7 @@ struct sqlite3;
 namespace filespacer {
 
 struct FolderViewSettings {
-    enum Part : uint32_t { Mode = 1, Flags = 2, Columns = 4, Sort = 8, Group = 16 };
+    enum Part : uint32_t { Mode = 1, Flags = 2, Columns = 4, Sort = 8, Group = 16, ColumnFill = 32 };
     // PROPERTYKEY encoded as the 16 GUID bytes followed by a 32-bit property ID.
     using Key = std::array<uint8_t, 20>;
     struct Column { Key key = {}; uint32_t width = 0; };
@@ -22,6 +22,7 @@ struct FolderViewSettings {
     std::vector<SortColumn> sort;
     Key groupBy = {};
     bool groupAscending = false;
+    bool fillColumns = false; // Per-folder choice, retained while the global feature is disabled.
     // Apply observed provisional changes to this known reference, preserving
     // fields that were unchanged or unavailable in either observation.
     FolderViewSettings mergeChanges(const FolderViewSettings &baseline,
