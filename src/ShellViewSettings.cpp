@@ -24,6 +24,7 @@ bool sameView(const FolderViewSettings &a, const FolderViewSettings &b) {
     if (a.present != b.present || a.mode != b.mode || a.iconSize != b.iconSize
             || a.flags != b.flags || a.groupBy != b.groupBy
             || a.groupAscending != b.groupAscending
+            || ((a.present & FolderViewSettings::ColumnFill) && a.fillColumns != b.fillColumns)
             || a.columns.size() != b.columns.size() || a.sort.size() != b.sort.size()) return false;
     for (size_t i = 0; i < a.columns.size(); ++i)
         if (a.columns[i].key != b.columns[i].key || a.columns[i].width != b.columns[i].width) return false;
@@ -88,7 +89,10 @@ FolderViewSettings captureOptions(IFolderView2 *view, const FolderViewSettings &
 HRESULT restoreOptions(IFolderView2 *view, const FolderViewSettings &state) {
     // Reapplying an identical presentation can still sort and lay out the Shell view.
     // A partial or unsupported capture retains the existing application path.
-    if (state.present && sameView(captureOptions(view, {}), state)) return S_OK;
+    FolderViewSettings metadata;
+    metadata.present = state.present & FolderViewSettings::ColumnFill;
+    metadata.fillColumns = state.fillColumns;
+    if (state.present && sameView(captureOptions(view, metadata), state)) return S_OK;
     HRESULT restored = S_OK;
     auto record = [&](HRESULT result) {
         if (FAILED(result) && SUCCEEDED(restored)) restored = result;

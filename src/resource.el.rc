@@ -3,6 +3,12 @@
 
 LANGUAGE LANG_GREEK, SUBLANG_NEUTRAL
 
+STRINGTABLE
+BEGIN
+  IDS_FILL_COLUMNS "Στήλες Λεπτομερειών σε όλο το πλάτος (αυτός ο φάκελος)"
+  IDS_FILL_COLUMNS_WARNING "Η συνεχής ενημέρωση μπορεί να κάνει την αλλαγή μεγέθους λιγότερο ομαλή και να αυξήσει τη χρήση CPU, ακόμη και σε μικρούς φακέλους. Συνιστάται ενημέρωση κατά την απελευθέρωση.\n\nΕνεργοποίηση στηλών πλήρους πλάτους για αυτόν τον φάκελο;"
+END
+
 IDR_ITEM_MENU   MENU {
     MENUITEM    "Τεκμηρίωση\tF1", IDM_HELP
     MENUITEM    "Ρυθμίσεις FileSpacer\tCtrl+,", IDM_SETTINGS

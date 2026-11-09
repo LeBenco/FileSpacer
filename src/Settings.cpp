@@ -202,6 +202,8 @@ SETTINGS_BOOL_VALUE(RefreshButtonEnabled, L"RefreshButtonEnabled", DEFAULT_REFRE
 SETTINGS_BOOL_VALUE(UpButtonEnabled, L"UpButtonEnabled", DEFAULT_UP_BUTTON_ENABLED)
 SETTINGS_BOOL_VALUE(ViewButtonEnabled, L"ViewButtonEnabled", DEFAULT_VIEW_BUTTON_ENABLED)
 SETTINGS_BOOL_VALUE(ViewMenuPreviewEnabled, L"ViewMenuPreviewEnabled", DEFAULT_VIEW_MENU_PREVIEW_ENABLED)
+SETTINGS_BOOL_VALUE(DetailsColumnsEnabled, L"DetailsColumnsEnabled", true)
+SETTINGS_BOOL_VALUE(DetailsColumnsDeferred, L"DetailsColumnsDeferred", true)
 SETTINGS_BOOL_VALUE(GroupFolderWindows, L"GroupFolderWindows", DEFAULT_GROUP_FOLDER_WINDOWS)
 SETTINGS_BOOL_VALUE(KeepSourceWindowOpen, L"KeepSourceWindowOpen", DEFAULT_KEEP_SOURCE_WINDOW_OPEN)
 SETTINGS_BOOL_VALUE(SmartWindowPlacement, L"SmartWindowPlacement", DEFAULT_SMART_WINDOW_PLACEMENT)
