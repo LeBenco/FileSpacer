@@ -5,6 +5,7 @@
     <version>@VERSION@</version>
     <title>FileSpacer</title>
     <authors>Benco</authors>
+    <copyright>Copyright (c) 2026 Benco</copyright>
     <iconUrl>https://lebenco.github.io/FileSpacer/assets/icons/FileSpacer-256.png</iconUrl>
     <projectUrl>https://lebenco.github.io/FileSpacer/</projectUrl>
     <packageSourceUrl>https://github.com/LeBenco/FileSpacer/tree/main/installer/chocolatey</packageSourceUrl>
@@ -14,9 +15,21 @@
     <licenseUrl>https://github.com/LeBenco/FileSpacer/blob/v@VERSION@/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <summary>A spatial file manager for Windows.</summary>
-    <description>FileSpacer is a spatial file manager for Windows 10 and later (x64), forked from ChromaFiler. Each folder has its own window, retaining its size, position, view settings and icon positions. It supports multilingual interfaces, title-bar menus, configurable shortcuts and optional Everything search integration.
+    <description><![CDATA[FileSpacer is a file manager for Windows built around the spatial paradigm: each folder has a single window that remembers its position, size and view settings. It is forked from ChromaFiler and distributed under the GPL v3 license.
 
-This package downloads the official GitHub installer, verifies its SHA-256 and installs for all users. Existing native upgrade choices are preserved.</description>
+### Features
+
+- **One window per folder.** Its position, size, view mode and icon positions are remembered. Icons can be arranged freely or aligned to the standard positioning grid.
+- **Window organization.** Opening another folder closes the source window by default. Hold Ctrl while opening a folder to keep the source window open. Windows without a saved position are placed to limit overlap.
+- **Manage windows.** Move or resize windows using configurable mouse shortcuts. Save and reopen groups of folders, and lock window layouts.
+
+![Three folder windows with different sizes, view modes and icon layouts.](https://raw.githubusercontent.com/LeBenco/FileSpacer/v@VERSION@/docs/en/images/spatial-windows.png)
+
+FileSpacer supports Windows 10 or later (x64) and is available in ten languages, including English. It has no telemetry, usage tracking or advertising. Optional Everything integration provides indexed file search.
+
+### Package information
+
+This package downloads the official GitHub installer, verifies its SHA-256 and installs for all users. Existing native upgrade choices are preserved. It does not request a change of default file manager.]]></description>
     <releaseNotes>https://github.com/LeBenco/FileSpacer/releases/tag/v@VERSION@</releaseNotes>
     <tags>filespacer spatial file-manager windows explorer</tags>
   </metadata>
