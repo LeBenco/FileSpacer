@@ -42,12 +42,14 @@ try {
     $dpi=[MutexRecoveryNative]::GetDpiForWindow($window)
     Assert-Ui ($dpi -gt 0) 'Window DPI unavailable.'
     $wanted=$witnessName+'='+(Scale $expected[$witnessName][0] $dpi)+','+(Scale $expected[$witnessName][1] $dpi)
-    $observation=@{Expected=$wanted;Actual=$null;Mode=$null;AutoArrange=$null}
+    $viewWindow=Use-UiView $window {param($view) $view.Window}
+    $observation=@{Expected=$wanted;Actual=$null;Mode=$null;IconSize=$null;AutoArrange=$null;
+        Children=@([FileSpacerRegression.Native]::DescribeChildren($viewWindow))}
     try {
         Wait-Ui {
             Use-UiView $window {param($view)
                 $observation.Actual=$view.Position($witnessName)
-                $observation.Mode=$view.Mode;$observation.AutoArrange=$view.AutoArrange
+                $observation.Mode=$view.Mode;$observation.IconSize=$view.IconSize;$observation.AutoArrange=$view.AutoArrange
             }
             return $observation.Actual -eq $wanted
         } ('saved position of '+$witnessName+' restored') 0 $limitSeconds
