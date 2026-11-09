@@ -15,6 +15,12 @@ public static class MutexRecoveryNative {
     [DllImport("kernel32.dll")] static extern IntPtr LoadResource(IntPtr m,IntPtr r);
     [DllImport("kernel32.dll")] static extern IntPtr LockResource(IntPtr r);
     [DllImport("kernel32.dll")] static extern bool FreeLibrary(IntPtr m);
+    [DllImport("user32.dll")] static extern bool OpenClipboard(IntPtr owner);
+    [DllImport("user32.dll")] static extern bool CloseClipboard();
+    [DllImport("user32.dll")] static extern IntPtr GetClipboardData(uint format);
+    [DllImport("user32.dll")] public static extern uint GetClipboardSequenceNumber();
+    [DllImport("kernel32.dll")] static extern IntPtr GlobalLock(IntPtr memory);
+    [DllImport("kernel32.dll")] static extern bool GlobalUnlock(IntPtr memory);
     [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h,out uint pid);
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
@@ -84,5 +90,15 @@ public static class MutexRecoveryNative {
             return true;
         },IntPtr.Zero);
         return count;
+    }
+    public static string ClipboardText() {
+        if(!OpenClipboard(IntPtr.Zero)) return null;
+        try {
+            IntPtr memory=GetClipboardData(13);
+            if(memory==IntPtr.Zero) return null;
+            IntPtr text=GlobalLock(memory);
+            if(text==IntPtr.Zero) return null;
+            try {return Marshal.PtrToStringUni(text);} finally {GlobalUnlock(memory);}
+        } finally {CloseClipboard();}
     }
 }
