@@ -1350,12 +1350,30 @@ HBITMAP FolderWindow::QuickAccessIconThread::takeBitmap() {
 
 void FolderWindow::QuickAccessIconThread::run() {
     // Extract the namespace's own icon, independently of the UI thread's COM objects.
-    CComPtr<IShellItemImageFactory> factory;
+    CComPtr<IShellItem> quickAccess;
     HBITMAP image = nullptr;
     if (FAILED(SHCreateItemFromParsingName(
             L"shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}", nullptr,
-            IID_PPV_ARGS(&factory)))
-            || FAILED(factory->GetImage({iconSize, iconSize}, SIIGBF_ICONONLY, &image)))
+            IID_PPV_ARGS(&quickAccess))))
+        return;
+    CComHeapPtr<ITEMIDLIST> idList;
+    SHFILEINFO fileInfo = {};
+    if (SUCCEEDED(SHGetIDListFromObject(quickAccess, &idList))) {
+        SHGetFileInfoW(reinterpret_cast<LPCWSTR>(static_cast<ITEMIDLIST *>(idList)),
+            0, &fileInfo, sizeof(fileInfo), SHGFI_PIDL | SHGFI_ICON | SHGFI_SMALLICON);
+        if (fileInfo.hIcon) {
+            image = iconToPARGB32Bitmap(fileInfo.hIcon, iconSize, iconSize);
+            DestroyIcon(fileInfo.hIcon);
+        }
+    }
+    if (!image) {
+        CComQIPtr<IShellItemImageFactory> factory(quickAccess);
+        if (factory && FAILED(factory->GetImage({iconSize, iconSize}, SIIGBF_ICONONLY, &image))) {
+            if (image) DeleteObject(image);
+            return;
+        }
+    }
+    if (!image)
         return;
     GdiFlush(); // Complete GDI writes before the UI thread reads the bitmap pixels.
     AcquireSRWLockExclusive(&stopLock);
