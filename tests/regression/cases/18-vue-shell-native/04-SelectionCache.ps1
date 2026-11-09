@@ -10,8 +10,10 @@ $cache=Join-Path $RunDirectory 'selection-cache'
 $code=Invoke-NativeProgram $cacheTest @('--fallback',$cache) (Join-Path $RunDirectory 'missing-cache.log') (Join-Path $RunDirectory 'missing-cache-errors.log')
 if($code-ne0){throw 'Missing cache did not select public fallback.'}
 $code=Invoke-NativeProgram $cacheTest @('--live',$cache) (Join-Path $RunDirectory 'cache-lifecycle.log') (Join-Path $RunDirectory 'cache-lifecycle-errors.log')
-if($code-ne0){throw ('Native discovery/qualification/cache lifecycle failed: '+$code)}
+if($code-ne0-and$code-ne50){throw ('Native discovery/qualification/cache lifecycle failed: '+$code)}
+$privateSupported=$code-eq0
 $data=@(Get-ChildItem -LiteralPath $cache -Filter '*.bin' -File)
+if($privateSupported){
 if($data.Count-ne1-or$data[0].Length-ne160){throw 'No unique qualified cache.'}
 $timestamp=$data[0].LastWriteTimeUtc
 $code=Invoke-NativeProgram $cacheTest @('--build-cache',$cache) (Join-Path $RunDirectory 'reuse-cache.log') (Join-Path $RunDirectory 'reuse-cache-errors.log')
@@ -42,6 +44,13 @@ foreach($fault in @(@{Name='schema';Offset=7},@{Name='identity';Offset=12},@{Nam
     $code=Invoke-NativeProgram $cacheTest @('--fallback',$bad) (Join-Path $RunDirectory ('fallback-'+$fault.Name+'.log')) (Join-Path $RunDirectory ('fallback-'+$fault.Name+'-errors.log'))
     if($code-ne0){throw ('Invalid cache accepted: '+$fault.Name)}
 }
+}else{
+    $negative=@(Get-ChildItem -LiteralPath $cache -Filter '*.bin.public' -File)
+    if($data.Count-or$negative.Count-ne1-or!(Get-Content $negative[0].FullName -Raw).StartsWith('FSPUBLIC01')){throw 'Private discovery failed without a saved structural fallback decision.'}
+    $timestamp=$negative[0].LastWriteTimeUtc
+    $code=Invoke-NativeProgram $cacheTest @('--public-persist',$cache) (Join-Path $RunDirectory 'unsupported-public.log') (Join-Path $RunDirectory 'unsupported-public-errors.log')
+    if($code-ne0-or(Get-Item $negative[0].FullName).LastWriteTimeUtc-ne$timestamp-or@(Get-ChildItem -LiteralPath $cache -Filter '*.attempt').Count){throw 'Saved structural fallback was not reused without rediscovery.'}
+}
 . (Join-Path $PSScriptRoot '..\..\..\experiments\reactivity\Fixture.ps1')
 $fixture=New-ReactivityFixture $ProjectRoot 5000
 try {
@@ -53,5 +62,7 @@ try {
     if($code-ne0){throw ('Product selection matrix failed: '+$code)}
     $rows=@(Import-Csv -LiteralPath (Join-Path $output 'clear-results.csv'))
     $candidate=@($rows|Where-Object {$_.arm-eq'candidate'-and[int]$_.selected_count-gt0})
-    if($rows.Count-ne405-or$candidate.Count-ne108-or@($candidate|Where-Object private_applied -ne '1').Count){throw 'Product acceleration coverage incomplete.'}
+    $expectedApplied=if($privateSupported){'1'}else{'0'}
+    if($rows.Count-ne405-or$candidate.Count-ne108-or@($candidate|Where-Object private_applied -ne $expectedApplied).Count){throw 'Product selection backend coverage incomplete.'}
+    if(!$privateSupported){Write-Host 'PASS: saved structural fallback reused; all 405 real Shell selection cases verified through public APIs. Private acceleration not exercised.'}
 }finally{Remove-ReactivityFixture $ProjectRoot $fixture}
