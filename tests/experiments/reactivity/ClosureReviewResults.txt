@@ -116,3 +116,30 @@ positifs expliques. Le diagnostic Cppcheck deallocuse sur CloseHandle(mutex)
 est aussi present sur main avant fusion ; cette fonction n'est pas modifiee.
 Aucun controle n'a ete desactive et aucun fichier modifie pendant cette revue
 n'est laisse sans les deux analyses requises.
+
+Complement du 9 novembre 2026 : correction du banc et main combine
+-----------------------------------------------------------------
+Le blocage Details ci-dessus est resolu en conservant UI Automation : lecture
+du point cliquable fourni par le provider, verification native de la fenetre
+exposee et du rectangle cible, transmission du contexte DPI au worker MTA.
+Le fond reste choisi hors des elements et controles enumeres par UIA. Le test
+verifie aussi le refus d'une source recouverte, sans accepter un timeout ni
+une erreur sans rapport comme preuve de ce refus. Aucun clic n'est rejoue.
+Les sondes d'investigation ont ete retirees ; seules les captures d'echec utiles
+au diagnostic du test restent. Douze controles cibles ont passe sur le worktree.
+
+Les commits du banc ont ete repris dans main par f4739e3f et ef165189, apres
+l'integration des colonnes Details (base fe083bfa). Build Debug /W4 reussi sans
+nouveau warning. Trois scenarios reels sur main ont passe : 19/03 (11,9 s),
+19/01 (10,5 s) et le composite 30/02 (62,6 s, six scenarios imbriques).
+Rapports : build/main-uia-drag-combined, build/main-uia-current-commands et
+build/main-uia-mixed-current-commands. Le premier passage composite avait
+revele une reference obsolete a IDM_NEW_TEXT_FILE, supprime volontairement
+par 58f7af6b ; cette seule couverture retiree de l'application a ete retiree
+du test, qui conserve creation de dossier, renommage, octets et suppression.
+La creation de texte par le menu Nouveau natif n'est pas validee par ce cas.
+
+Cette correction ne modifie que C# et PowerShell. Les sources C++ combinees
+restent celles des branches deja analysees ; les verdicts REVIEW precedents
+ne sont pas transformes en PASS. Les dix changelogs conservent leur unique
+section 1.4.0 du 2026-11-09 et toutes leurs anciennes entrees. Aucun push.
