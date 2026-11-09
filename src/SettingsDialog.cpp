@@ -438,7 +438,7 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     notifyWindowSettingsChanged();
                 }
                 const bool historyChanged = limit != settings::getSearchHistoryLimit();
-                if (!settings::setSearchHistoryLimit(limit)) {
+                if (historyChanged && !settings::setSearchHistoryLimit(limit)) {
                     reportFolderStateError(GetParent(hwnd));
                     SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
                     return TRUE;
