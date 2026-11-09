@@ -13,6 +13,7 @@ Add-Type -AssemblyName UIAutomationTypes
 Add-Type -AssemblyName WindowsBase
 Add-Type -AssemblyName System.Drawing
 $titleReferences=@([System.Windows.Automation.AutomationElement].Assembly.Location,[System.Windows.Automation.ControlType].Assembly.Location,[System.Windows.Rect].Assembly.Location,[System.Drawing.Bitmap].Assembly.Location)
+Add-Type -Path (Join-Path $PSScriptRoot 'StorageTaskDialog.cs') -ReferencedAssemblies $titleReferences
 Add-Type -Path (Join-Path $PSScriptRoot '..\33-menu-titre\TitleMenuUi.cs') -ReferencedAssemblies $titleReferences
 $helper=Build-NativeTest -Name StorageMutexRegression -CaseDirectory $PSScriptRoot -ProductionSources @('FolderStateStore.cpp') -Sqlite -Storage -Standard c++14
 $probe=Build-NativeTest -Name FolderIdentityProbe -CaseDirectory $PSScriptRoot -ProductionSources @('FolderIdentity.cpp')
@@ -121,8 +122,8 @@ try {
     Wait-Ui {
         $dialogs=@([MutexRecoveryNative]::Find($app.Id,'#32770'))
         if($dialogs.Count -ne 1){return $false}
-        $messages=[MutexRecoveryNative]::Messages($script:UiExecutable,(Get-UiId 'IDS_FOLDER_STATE_ERROR'))
-        if([MutexRecoveryNative]::ContainsText($dialogs[0],$messages) -and [MutexRecoveryNative]::ButtonCount($dialogs[0]) -eq 1){$script:storageDialog=$dialogs[0];return $true}
+        if([StorageTaskDialog]::HasButton($dialogs[0],1650) -and [StorageTaskDialog]::HasButton($dialogs[0],1651) -and
+                [StorageTaskDialog]::HasButton($dialogs[0],1)){$script:storageDialog=$dialogs[0];return $true}
         return $false
     } 'identified initial storage error' 0 15
     Assert-Ui ([MutexRecoveryNative]::PostMessage($script:storageDialog,0x10,[IntPtr]::Zero,[IntPtr]::Zero)) 'Acknowledge identified storage error.'

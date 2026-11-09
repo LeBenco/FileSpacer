@@ -3,6 +3,11 @@ param([string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
 Add-Type -Path (Join-Path $PSScriptRoot 'StorageRecoveryUi.cs')
+Add-Type -AssemblyName UIAutomationClient
+Add-Type -AssemblyName UIAutomationTypes
+Add-Type -AssemblyName WindowsBase
+$taskReferences=@([System.Windows.Automation.AutomationElement].Assembly.Location,[System.Windows.Automation.ControlType].Assembly.Location,[System.Windows.Rect].Assembly.Location)
+Add-Type -Path (Join-Path $PSScriptRoot 'StorageTaskDialog.cs') -ReferencedAssemblies $taskReferences
 $helper=Build-NativeTest -Name StorageMutexRegression -CaseDirectory $PSScriptRoot -ProductionSources @('FolderStateStore.cpp') -Sqlite -Storage -Standard c++14
 $probe=Build-NativeTest -Name FolderIdentityProbe -CaseDirectory $PSScriptRoot -ProductionSources @('FolderIdentity.cpp')
 function Read-Presentation([IntPtr]$Window) {
@@ -64,8 +69,8 @@ try {
     Wait-Ui {
         $dialogs=@([MutexRecoveryNative]::Find($app.Id,'#32770'))
         if($dialogs.Count -ne 1){return $false}
-        $messages=[MutexRecoveryNative]::Messages($script:UiExecutable,(Get-UiId 'IDS_FOLDER_STATE_ERROR'))
-        if([MutexRecoveryNative]::ContainsText($dialogs[0],$messages) -and [MutexRecoveryNative]::ButtonCount($dialogs[0]) -eq 1){$script:storageDialog=$dialogs[0];return $true}
+        if([StorageTaskDialog]::HasButton($dialogs[0],1650) -and [StorageTaskDialog]::HasButton($dialogs[0],1651) -and
+                [StorageTaskDialog]::HasButton($dialogs[0],1)){$script:storageDialog=$dialogs[0];return $true}
         return $false
     } 'identified initial storage error' 0 15
     Assert-Ui ([MutexRecoveryNative]::PostMessage($script:storageDialog,0x10,[IntPtr]::Zero,[IntPtr]::Zero)) 'Acknowledge identified storage error.'
