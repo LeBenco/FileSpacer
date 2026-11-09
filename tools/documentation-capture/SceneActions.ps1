@@ -108,3 +108,89 @@ function LockedTitle([IntPtr]$Window) {
     [CaptureDesktop]::Region($file,$frame.Left,$frame.Top,480,220)
     [void]$records.Add(@{File=$script:language+'/locked-title.png';Language=$script:language;Left=$frame.Left;Top=$frame.Top;Width=480;Height=220;BinarySha256=(Get-FileHash -LiteralPath $script:UiExecutable -Algorithm SHA256).Hash;Nilesoft=$false})
 }
+
+function CaptureColumnHeaders([IntPtr]$Window) {
+    $nativeHeaders=@([FileSpacerRegression.Native]::Children($Window,'SysHeader32'))
+    if($nativeHeaders.Count-eq1){
+        $headers=@([FileSpacerColumnTests.ColumnsUi]::Headers($nativeHeaders[0])|Sort-Object Left)
+        Assert-Ui ($headers.Count-eq4) 'The native Details header must expose four columns.'
+        return $headers
+    }
+    $root=[Windows.Automation.AutomationElement]::FromHandle($Window)
+    $items=@($root.FindAll([Windows.Automation.TreeScope]::Descendants,[Windows.Automation.Condition]::TrueCondition)|Where-Object {($_.Current.ControlType-eq[Windows.Automation.ControlType]::HeaderItem -or $_.Current.ClassName-eq'UIColumnHeader') -and !$_.Current.IsOffscreen -and $_.Current.BoundingRectangle.Width-gt0}|Sort-Object {$_.Current.BoundingRectangle.Left})
+    if($items.Count-ne4){
+        $root.FindAll([Windows.Automation.TreeScope]::Descendants,[Windows.Automation.Condition]::TrueCondition)|ForEach-Object {$c=$_.Current;'{0}`t{1}`t{2}`t{3}`t{4}'-f $c.ControlType.ProgrammaticName,$c.ClassName,$c.AutomationId,$c.Name,$c.BoundingRectangle}|Set-Content -LiteralPath (Join-Path $env:FS_REGRESSION_RUN 'column-accessibility.txt') -Encoding UTF8
+        throw ('The fictional folder must expose four actual Details column headers; observed '+$items.Count)
+    }
+    return @($items|ForEach-Object {$_.Current.BoundingRectangle})
+}
+function DetailsColumns([IntPtr]$Window,[string]$Folder) {
+    $fixtures=Get-Content -LiteralPath (Join-Path $source 'details-columns.json') -Raw -Encoding UTF8|ConvertFrom-Json
+    $files=$fixtures.($script:language)
+    foreach($name in @($files.Long)+@($files.Medium)) {[IO.File]::WriteAllText((Join-Path $Folder $name),'Fictional documentation example.')}
+    Set-UiPreference 'DetailsColumnsEnabled' 1
+    Set-UiPreference 'DetailsColumnsDeferred' 1
+    Use-UiView $Window {param($view)$view.Mode=4}
+    Wait-UiViewMode $Window 4
+    Place $Window 340 220 1100 500
+    # The new folder starts with filling enabled. Disable it before the recording.
+    [void][FileSpacerRegression.Native]::PostMessage($Window,0x111,[IntPtr](Get-UiId 'IDM_FILL_COLUMNS'),[IntPtr]::Zero)
+    Wait-UiViewMode $Window 4
+    Wait-Ui {Use-UiView $Window {param($view)$view.Count-eq11}} 'all fictional names appear'
+    Wait-Ui {Use-UiView $Window {param($view)@([FileSpacerRegression.Native]::Children($view.Window,'SysListView32')).Count-eq0}} 'ordinary Details view before enabling full-width columns' 300
+    $textWidths=@($files.Long|ForEach-Object {[Windows.Forms.TextRenderer]::MeasureText($_,[Drawing.SystemFonts]::IconTitleFont).Width})
+    $longest=[int]($textWidths|Measure-Object -Maximum).Maximum
+    Assert-Ui ($longest-ge440 -and $longest-le700) 'Long filenames must be meaningful with a normal-width Name column.'
+    $initialName=[int][Math]::Round($longest*0.30)+28 # Leave room for the native icon and cell inset.
+    $desired=@($initialName,($initialName*2),100,80)
+    for($index=0;$index-lt4;$index++) {
+        $headers=CaptureColumnHeaders $Window
+        $header=$headers[$index]
+        $from=Point ([int]$header.Right-1) ([int]($header.Top+$header.Height/2))
+        $to=Point ($from.X+$desired[$index]-[int]$header.Width) $from.Y
+        SlowDrag $Window $from $to
+    }
+    $initialHeaders=CaptureColumnHeaders $Window
+    OpenRecordedMenu $Window 'IDM_VIEW_MENU'
+    $popup=[FileSpacerViewMenuTests.MenuUi]::Active($Window,$true)
+    $entry=@($popup.Entries|Where-Object {$_.Command-eq(Get-UiId 'IDM_FILL_COLUMNS')})
+    Assert-Ui ($entry.Count-eq1 -and ($entry[0].State-band8)-eq0) 'The actual View menu must show filling unchecked.'
+    $menuBounds=[FileSpacerRegression.Native]::Bounds($popup.Window)
+    CloseMenu $Window
+    $frame=[CaptureDesktop]::Frame($Window)
+    $area=[Drawing.Rectangle]::Intersect([Drawing.Rectangle]::FromLTRB([Math]::Min($frame.Left,$menuBounds.Left)-24,[Math]::Min($frame.Top,$menuBounds.Top)-24,[Math]::Max($frame.Right,$menuBounds.Right)+24,[Math]::Max($frame.Bottom,$menuBounds.Bottom)+24),[Windows.Forms.SystemInformation]::VirtualScreen)
+    foreach($bounds in @($frame,$menuBounds)){Assert-Ui ($area.Contains([Drawing.Rectangle]::FromLTRB($bounds.Left,$bounds.Top,$bounds.Right,$bounds.Bottom))) 'The complete folder and View menu must fit the capture.'}
+    Wait-UiViewMode $Window 4
+    Wait-Ui {Use-UiView $Window {param($view)$view.ContentVisible -and $view.Count-eq11}} 'Details contents restored after menu preflight' 300
+    $initialHeaders=CaptureColumnHeaders $Window
+    Write-Host ('Details capture: '+$area+'; initial widths: '+(@($initialHeaders|ForEach-Object Width)-join','))
+    Record $Window 'details-columns' {
+        Start-Sleep -Milliseconds 1500
+        OpenRecordedMenu $Window 'IDM_VIEW_MENU'
+        Start-Sleep -Milliseconds 900
+        $popup=[FileSpacerViewMenuTests.MenuUi]::Active($Window,$true)
+        $entry=@($popup.Entries|Where-Object {$_.Command-eq(Get-UiId 'IDM_FILL_COLUMNS')})
+        Assert-Ui ($entry.Count-eq1) 'The visible menu must contain the actual per-folder column command.'
+        $rect=$entry[0].Bounds
+        ClickPoint $Window (Point (($rect.Left+$rect.Right)/2) (($rect.Top+$rect.Bottom)/2))
+        Wait-UiViewMode $Window 4
+        Wait-Ui {Use-UiView $Window {param($view)@([FileSpacerRegression.Native]::Children($view.Window,'SysListView32')).Count-eq1}} 'full-width Details view after the visible menu activation' 300
+        $filled=CaptureColumnHeaders $Window
+        $available=Use-UiView $Window {param($view)$list=@([FileSpacerRegression.Native]::Children($view.Window,'SysListView32'));[FileSpacerRegression.Native]::ClientBounds($list[0]).Width}
+        Assert-Ui ([Math]::Abs(($filled|Measure-Object Width -Sum).Sum-$available)-le2) 'The actual columns must fill the folder viewport.'
+        Assert-Ui ($filled[0].Width-gt$initialHeaders[0].Width -and $filled[0].Width-lt($textWidths|Measure-Object -Minimum).Minimum*0.80) 'At least two long filenames must still have more than twenty percent hidden after filling.'
+        Start-Sleep -Milliseconds 1500
+        $header=$filled[0]
+        $from=Point ([int]$header.Right-1) ([int]($header.Top+$header.Height/2))
+        $to=Point ($from.X+$longest+40-[int]$header.Width) $from.Y
+        MovePointer $from
+        Start-Sleep -Milliseconds 600
+        [FileSpacerRegression.AltDragInput]::BeginConfigured($Window,$from,0,0)
+        try {MovePointer $to 1800;Start-Sleep -Milliseconds 500}finally{[FileSpacerRegression.AltDragInput]::End()}
+        Wait-Ui {$headers=CaptureColumnHeaders $Window;$headers[0].Width-ge$longest+35} 'the actual manual drag exposes the complete long names' 300
+        $after=CaptureColumnHeaders $Window
+        Start-Sleep -Milliseconds 1500
+        MovePointer (Background $Window)
+        [void]$records.Add(@{Scene='DetailsColumns';Language=$script:language;Files=@($files.Long)+@($files.Medium);GlobalEnabled=1;UpdateOnRelease=1;BeforeWidths=@($initialHeaders|ForEach-Object Width);FilledWidths=@($filled|ForEach-Object Width);AfterWidths=@($after|ForEach-Object Width);LongNameTextWidths=$textWidths;CommandId=(Get-UiId 'IDM_FILL_COLUMNS');ContinuousPointer=$true;SourceExecutableSha256=(Get-FileHash -LiteralPath $script:UiExecutable).Hash})
+    } $area
+}
