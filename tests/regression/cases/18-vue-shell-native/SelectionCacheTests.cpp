@@ -107,7 +107,14 @@ int wmain(int argc,wchar_t **argv) {
     }
     if(live) {
         for(unsigned i=0;i<20 && !notifications;++i)pump();
-        if(!supported || !notifications || !dispatched || IsWindowVisible(window))return 1;
+        std::printf("RESOLVED supported=%d reason=%s notifications=%u dispatched=%u\n",
+            supported,filespacer::selectionDetail::image().reason,notifications,dispatched);
+        if(!notifications || !dispatched || IsWindowVisible(window))return 1;
+        if(!supported) {
+            if(FAILED(operation.clear(&view,[]{return true;},&applied))||view.calls!=2||applied)return 1;
+            std::puts("FALLBACK: discovery completed; public clearing remains usable");
+            return ERROR_NOT_SUPPORTED;
+        }
         // Shell acceleration is usable while its independent range capability
         // is still being qualified. Wait only in this test before reusing the
         // producer cache; resolved() intentionally no longer means producer idle.
