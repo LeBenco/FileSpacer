@@ -12,6 +12,7 @@ try {
     $database=Join-Path $env:LOCALAPPDATA 'FileSpacer\folder-state-test.sqlite3'
     $sheet=Show-UiSettings $window
     $page=Set-UiPage 0
+    $expectedLimit=[int][FileSpacerRegression.Native]::Text([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_SEARCH_HISTORY_LIMIT')))
     $prefix='Local\FileSpacer.NoHistoryChange.'+[Guid]::NewGuid().ToString('N')
     $ready=New-Object Threading.EventWaitHandle($false,[Threading.EventResetMode]::ManualReset,($prefix+'.ready'))
     $release=New-Object Threading.EventWaitHandle($false,[Threading.EventResetMode]::ManualReset,($prefix+'.release'))
@@ -20,6 +21,7 @@ try {
     Set-UiCheck $page 'IDC_KEEP_SOURCE_WINDOW_OPEN' $false
     Press-UiSettings 4
     Wait-Ui { (Get-UiPreference 'KeepSourceWindowOpen') -eq 0 } 'preferences applied despite unavailable storage and unchanged history limit' 0 8
+    Assert-Ui ((Get-UiPreference 'SearchHistoryLimit') -eq $expectedLimit) 'Apply did not persist the explicit history limit.'
     $processId=[uint32]0;[void][FileSpacerRegression.Native]::GetWindowThreadProcessId($window,[ref]$processId)
     Assert-Ui (@([FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,$processId) | Where-Object {$_ -ne $sheet}).Count -eq 0) 'Unchanged history caused a storage error during Apply.'
     [void]$release.Set()
