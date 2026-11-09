@@ -15,6 +15,9 @@ $source=Join-Path $ProjectRoot 'build\documentation-capture\reusable-source'
 . (Join-Path $source 'Capture.Core.ps1')
 . (Join-Path $source 'SceneActions.ps1')
 $plan=Get-Content -LiteralPath (Join-Path $ProjectRoot 'build\documentation-capture\reusable-plan.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+if($plan.Scenes-contains'details-columns'){
+    Add-Type -Path (Join-Path $ProjectRoot 'tests\regression\cases\37-colonnes\ColumnsUi.cs') -ReferencedAssemblies @('Accessibility.dll',([FileSpacerRegression.Native].Assembly.Location))
+}
 $names=Get-Content -LiteralPath (Join-Path $source 'scenes.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $displayOverride=Get-WinUILanguageOverride
 $windowsUiLanguage=if($displayOverride){$displayOverride.Name}else{[Globalization.CultureInfo]::CurrentUICulture.Name}
@@ -71,6 +74,9 @@ try {
             [void][IO.Directory]::CreateDirectory($script:captures)
             foreach($setting in @('KeepSourceWindowOpen','WindowStateLockEnabled','WindowStateLockBadgeEnabled','FullNamesOnSelection')){Set-UiPreference $setting 1}
             foreach($setting in @('WindowStateUnlockBadgeEnabled','WindowStateLockClickEnabled','MixedFolderSorting','EverythingEnabled')){Set-UiPreference $setting 0}
+            if($plan.Scenes-contains'details-columns'){
+                foreach($setting in @('DetailsColumnsEnabled','DetailsColumnsDeferred')){Set-UiPreference $setting 1}
+            }
             $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\FileSpacer\Test',$true)
             try{$key.DeleteValue('TitleMenu',$false)}finally{$key.Dispose()}
             $n=$names.($script:language)
@@ -117,6 +123,7 @@ try {
                     }
                     'customize-title-menu' {Customize $window}
                     'locked-title' {LockedTitle $window}
+                    'details-columns' {DetailsColumns $window $folder}
                     default {throw ('Unknown documentation scene: '+$scene)}
                 }
             }
