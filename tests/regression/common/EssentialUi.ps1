@@ -68,7 +68,7 @@ function Initialize-Ui([string]$Name,[switch]$UseApplicationDefaults,[string]$Fi
     if (!$UseApplicationDefaults) {
         foreach ($name in @('StatusTextEnabled','ToolbarEnabled','QuickAccessEnabled','PathBarEnabled',
                 'RefreshButtonEnabled','UpButtonEnabled','ViewButtonEnabled','KeepSelectionOnActivate')) { Set-UiPreference $name 1 }
-        foreach ($name in @('LiveNameSearch','FullNamesOnSelection')) { Set-UiPreference $name 0 }
+        foreach ($name in @('LiveNameSearch','FullNamesOnSelection','DetailsColumnsEnabled','DetailsColumnsDeferred')) { Set-UiPreference $name 0 }
         # These are fixture defaults in the runner's isolated /test namespace.
         Set-UiPreference 'FolderWindow2Width' 800; Set-UiPreference 'FolderWindow2Height' 500
     }
