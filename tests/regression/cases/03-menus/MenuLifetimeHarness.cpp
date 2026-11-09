@@ -32,7 +32,8 @@ constexpr UINT CMF_CANRENAME = 1, CMF_EXTENDEDVERBS = 2, CMF_ITEMMENU = 4,
 constexpr UINT TPM_RIGHTBUTTON = 2, TPM_RETURNCMD = 256, MM_ADDSEPARATOR = 1;
 constexpr int SVGIO_SELECTION = 1, SVGIO_BACKGROUND = 0, VK_SHIFT = 16,
     CP_ACP = 0, SIGDN_DESKTOPABSOLUTEPARSING = 1;
-constexpr WORD IDM_SETTINGS = 20;
+constexpr WORD IDM_SETTINGS = 20, IDM_TOGGLE_THUMBNAILS = 21, IDM_FILL_COLUMNS = 22;
+constexpr int IDS_GLOBAL_THUMBNAILS = 1, IDS_FILL_COLUMNS = 2;
 constexpr int IDM_SHELL_FIRST = 100, IDM_SHELL_LAST = 200, IDR_ITEM_MENU = 1;
 #define SUCCEEDED(hr) ((hr) >= 0)
 inline bool checkResult(HRESULT hr) { return SUCCEEDED(hr); }
@@ -47,7 +48,10 @@ inline bool checkResult(HRESULT hr) { return SUCCEEDED(hr); }
 
 // This deterministic harness exercises the non-preview menu lifetime path.
 // Real preview capture/hover/restore is exercised by group 28 on the Shell.
-namespace settings { bool getViewMenuPreviewEnabled() { return false; } }
+namespace settings {
+    bool getViewMenuPreviewEnabled() { return false; }
+    bool getDetailsColumnsEnabled() { return true; }
+}
 struct FolderState { enum { Icons = 8 }; };
 constexpr int WH_MSGFILTER = -1;
 HHOOK SetWindowsHookEx(int, HOOKPROC, void *, unsigned long) { assert(false); return nullptr; }
@@ -64,6 +68,7 @@ struct Observation {
     bool fired = false, closed = false, destroyed = false, cleared = false;
     int menus = 0, objects = 0, invoked = 0, saves = 0, sites = 0, detaches = 0;
     int profileRequests = 0, selectionReadyPosts = 0;
+    int columnSuspends = 0, columnResumes = 0, thumbnailToggles = 0, columnToggles = 0;
     int command = IDM_SHELL_FIRST;
     bool failSelection = false, failQuery = false, failView = false, failSite = false;
 } observation;
@@ -104,10 +109,23 @@ using COLORREF = unsigned;
 using HTHEME = void *;
 struct Bitmap {};
 using HBITMAP = Bitmap *;
-struct MENUITEMINFO { unsigned cbSize; unsigned fMask = 0; HBITMAP hbmpItem = nullptr; };
+struct MENUITEMINFO {
+    unsigned cbSize, fMask = 0;
+    HBITMAP hbmpItem = nullptr;
+    unsigned wID = 0, fState = 0;
+    wchar_t *dwTypeData = nullptr;
+};
+using MENUITEMINFOW = MENUITEMINFO;
 constexpr int COLOR_MENUTEXT=7, MENU_POPUPITEM=14, MPI_NORMAL=1, TMT_TEXTCOLOR=3803, SM_CXSMICON=49;
 constexpr unsigned MIIM_BITMAP=128;
+constexpr unsigned MIIM_ID=2, MIIM_STRING=64, MIIM_STATE=1, MFS_UNCHECKED=0, MFS_CHECKED=8, SSF_ICONSONLY=1;
+constexpr unsigned GCS_VERBW=4;
+constexpr bool TRUE=true;
 constexpr bool FALSE=false;
+struct SHELLSTATE { bool fIconsOnly = false; };
+void SHGetSetSettings(SHELLSTATE *, unsigned flags, bool set) { assert(flags == SSF_ICONSONLY && !set); }
+const wchar_t *getString(int) { return L"fixture label"; }
+int lstrcmpiW(const wchar_t *first, const wchar_t *second) { return std::wcscmp(first, second); }
 constexpr wchar_t MDL2_SETTINGS=0xe713;
 COLORREF GetSysColor(int) { return 0; }
 HTHEME OpenThemeData(HWND, const wchar_t *) { return nullptr; }
@@ -118,6 +136,12 @@ HBITMAP captionCommandBitmap(wchar_t, int, COLORREF) { return new Bitmap; }
 bool DeleteObject(HBITMAP bitmap) { delete bitmap; return true; }
 struct Menu {};
 using HMENU = Menu *;
+int GetMenuItemCount(HMENU menu) { assert(menu); return 0; }
+UINT GetMenuItemID(HMENU menu, int) { assert(menu); return static_cast<UINT>(-1); }
+bool InsertMenuItemW(HMENU menu, UINT, bool, const MENUITEMINFO *info) {
+    assert(menu && (info->wID == IDM_TOGGLE_THUMBNAILS || info->wID == IDM_FILL_COLUMNS));
+    return true;
+}
 bool SetMenuItemInfo(HMENU, UINT, bool, MENUITEMINFO *) { return true; }
 HMENU CreatePopupMenu() { ++observation.menus; return new Menu; }
 HMENU LoadMenu(void *, int) { return CreatePopupMenu(); }
@@ -252,6 +276,11 @@ struct ShellViewHost {
     }
     void destroy() { browser.Release(); }
 };
+// Column geometry is outside this lifetime harness; retain its suspend/resume
+// boundary so closure during a menu must still balance the scoped ownership.
+struct ShellViewColumns {
+    void suspend(bool value) { if (value) ++observation.columnSuspends; else ++observation.columnResumes; }
+};
 struct FolderWindow : ItemWindow {
     struct ViewMenuPreview {
         static ViewMenuPreview *active;
@@ -261,6 +290,10 @@ struct FolderWindow : ItemWindow {
         static LRESULT filter(int, WPARAM, LPARAM) { assert(false); return 0; }
     };
     std::shared_ptr<ViewMenuPreview> viewMenuPreview, viewMenuRestore;
+    std::shared_ptr<ShellViewColumns> columnLayout = std::make_shared<ShellViewColumns>();
+    bool fillColumns = true;
+    void toggleGlobalThumbnails() { assert(isWindowOperational()); ++observation.thumbnailToggles; }
+    void toggleFillColumns() { assert(isWindowOperational()); ++observation.columnToggles; }
     bool viewReady = true, initialStateApplied = true, enumerationComplete = true, restoringState = false;
     bool provisionalInputBlocked = false, provisionalCaptureBusy = false, provisionalBaseline = false;
     bool captureProvisionalCurrent(bool, bool) { assert(false); return false; }
@@ -338,6 +371,7 @@ void run(Operation op, Stage stage, int command = IDM_SHELL_FIRST,
         source->closeNow();
     }
     assert(observation.objects == 0 && observation.menus == 0);
+    assert(observation.columnSuspends == observation.columnResumes);
     assert(observation.sites == observation.detaches);
     if (stage != Stage::None && stage != Stage::Invoke && stage != Stage::Unsite
             && stage != Stage::BrowserRelease && stage != Stage::ViewRelease)
@@ -345,6 +379,10 @@ void run(Operation op, Stage stage, int command = IDM_SHELL_FIRST,
 }
 
 int main() {
+    run(Operation::View, Stage::None, IDM_TOGGLE_THUMBNAILS);
+    assert(observation.thumbnailToggles == 1 && observation.invoked == 0);
+    run(Operation::View, Stage::None, IDM_FILL_COLUMNS);
+    assert(observation.columnToggles == 1 && observation.invoked == 0);
     run(Operation::Context, Stage::None);
     run(Operation::Context, Stage::None, 0);
     run(Operation::Context, Stage::None, IDM_SETTINGS);
