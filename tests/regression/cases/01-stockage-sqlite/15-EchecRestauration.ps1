@@ -25,7 +25,9 @@ try {
     $database=Join-Path $env:LOCALAPPDATA 'FileSpacer\folder-state-test.sqlite3'
     Invoke-TestProgram $helper @('--seed-product',$database,$key)
     $first=Open-UiFolder $folder 2
-    Use-UiView $first {param($view) $view.SetViewModeAndIconSize(1,64);$view.AutoArrange=$false}
+    Use-UiView $first {param($view) $view.SetViewModeAndIconSize(1,64)}
+    Wait-UiViewMode $first 1 64
+    Use-UiView $first {param($view) $view.AutoArrange=$false}
     Wait-Ui {(Use-UiView $first {param($view) $view.Mode})-eq1} 'reference icon mode' 300
     Close-UiFolder $first
     Wait-Ui {@($script:UiProcesses|Where-Object{!$_.HasExited}).Count-eq0} 'reference process exit'

@@ -72,7 +72,9 @@ try {
     [void][IO.Directory]::CreateDirectory((Split-Path $database -Parent))
     Invoke-TestProgram $helper @('--seed-product',$database,$key)
     $first=Open-UiFolder $folder $ItemCount
-    Use-UiView $first {param($view) $view.SetViewModeAndIconSize(1,64);$view.AutoArrange=$false}
+    Use-UiView $first {param($view) $view.SetViewModeAndIconSize(1,64)}
+    Wait-UiViewMode $first 1 64
+    Use-UiView $first {param($view) $view.AutoArrange=$false}
     Wait-Ui {$state=Read-Presentation $first -Light;return $state.Mode -eq 1 -and !$state.AutoArrange -and $state.Count -eq $ItemCount} 'enumerated reference icon mode' 300
     Use-UiView $first {param($view) $view.Position('alpha',350,160);$view.Position('beta',560,280)}
     $reference=Read-Presentation $first
