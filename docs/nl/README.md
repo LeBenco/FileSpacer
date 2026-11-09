@@ -27,7 +27,7 @@ FileSpacer kiest voor een lichte, overzichtelijke ervaring. Om de opeenstapeling
 - **WinGet:** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (terminal als administrator): `choco install filespacer -y`
 
-De WinGet- en Chocolatey-pakketten wachten op goedkeuring in de bijbehorende catalogi.
+De WinGet-pakketten wachten op goedkeuring in de catalogus.
 
 <a id="features"></a>
 

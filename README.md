@@ -27,7 +27,7 @@ FileSpacer prioritizes a lightweight and uncluttered experience. To address the 
 - **WinGet:** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (administrator terminal): `choco install filespacer -y`
 
-WinGet and Chocolatey packages are awaiting catalog approval.
+WinGet packages are awaiting catalog approval.
 
 <a id="features"></a>
 

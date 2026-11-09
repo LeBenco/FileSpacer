@@ -28,7 +28,7 @@
 - **WinGet:** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (τερματικό με δικαιώματα διαχειριστή): `choco install filespacer -y`
 
-Τα πακέτα WinGet και Chocolatey αναμένουν έγκριση στους αντίστοιχους καταλόγους.
+Τα πακέτα WinGet αναμένουν έγκριση στον κατάλογο.
 
 <a id="features"></a>
 

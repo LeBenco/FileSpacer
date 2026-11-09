@@ -28,7 +28,7 @@ FileSpacer da prioridad a una experiencia ligera y despejada. Para limitar la ac
 - **WinGet:** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (terminal como administrador): `choco install filespacer -y`
 
-Los paquetes de WinGet y Chocolatey están pendientes de aprobación en sus respectivos catálogos.
+Los paquetes de WinGet están pendientes de aprobación en el catálogo.
 
 <a id="features"></a>
 
