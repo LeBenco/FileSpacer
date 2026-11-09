@@ -265,6 +265,18 @@ int main(int argc, char **argv) {
             require(MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,path.c_str(),-1,&wide[0],count)!=0,"fixture path");
             wide.pop_back();
             const std::wstring backup=wide+L".backup";
+            const std::wstring link=wide+L".link";
+            if(CreateSymbolicLinkW(link.c_str(),wide.c_str(),SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE)) {
+                FolderStateStore linkedStore((path+".link").c_str());
+                require(linkedStore.canResetDamagedDatabase(),"linked corrupt fixture did not fail opening");
+                require(!linkedStore.resetDamagedDatabase((path+".link").c_str(),backup.c_str())
+                    && GetFileAttributesW(wide.c_str())!=INVALID_FILE_ATTRIBUTES,
+                    "reset followed a symbolic link and removed its target");
+                require(DeleteFileW(link.c_str())!=0,"remove fixture link");
+                std::cout << "PASS: symbolic database links are refused without deleting their target.\n";
+            } else {
+                std::cout << "SKIP: symbolic-link fixture unavailable (Windows error " << GetLastError() << ").\n";
+            }
             const HANDLE busy=CreateFileW(wide.c_str(),GENERIC_READ|GENERIC_WRITE,FILE_SHARE_READ|FILE_SHARE_WRITE,
                 nullptr,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,nullptr);
             require(busy!=INVALID_HANDLE_VALUE,"open controlled busy database");
