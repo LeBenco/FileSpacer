@@ -224,6 +224,7 @@ bool setSearchHistoryLimit(DWORD value) {
     const DWORD previous = getSearchHistoryLimit();
     if (setSettingsValue(L"SearchHistoryLimit", REG_DWORD, &value, sizeof(value)) != ERROR_SUCCESS)
         return false;
+    if (value == previous) return true; // Persist the choice without touching unchanged histories.
     auto store = folderStateStore();
     if (!store || !store->trimSearchHistory(value)) {
         setSettingsValue(L"SearchHistoryLimit", REG_DWORD, &previous, sizeof(previous));
