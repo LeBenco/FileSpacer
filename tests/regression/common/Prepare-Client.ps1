@@ -80,6 +80,10 @@ function New-ClientPackage {
             # host transport/preparation code or invokes its compilers.
             if ($file -eq (Join-Path $regression 'cases\00-banc\05-PaquetLanceur.ps1') -and
                     $value -eq 'tests\regression\common\Prepare-Client.ps1') { continue }
+            # The process contract writes these fixtures in its temporary run
+            # directory. They are not checked-in scripts to copy to the client.
+            if ($file -eq (Join-Path $regression 'cases\00-banc\02-Processus.ps1') -and
+                    $value -in @('child.ps1','parent.ps1')) { continue }
             if ($value -notmatch '\.(ps1|cs)$' -or $value -match '[*?\r\n]') { continue }
             # Most paths are relative to PSScriptRoot; a few helper aliases
             # name a unique CS file in another test group.
@@ -137,8 +141,9 @@ function New-ClientPackage {
         Write-Host ('PREPARE '+$entry.Relative)
         if ($entry.Relative -eq '00-banc\05-PaquetLanceur.ps1') {
             # The client contract must not invoke a compiler in the guest.
-            $fixtureCase='00-banc\01-Resultats.ps1'
-            $fixtureSelection=@([pscustomobject]@{Relative=$fixtureCase;Category='Internal';File=(Get-Item -LiteralPath (Join-Path $regression ('cases\'+$fixtureCase)))})
+            $fixtureSelection=@(foreach($fixtureCase in @('00-banc\01-Resultats.ps1','00-banc\02-Processus.ps1')) {
+                [pscustomobject]@{Relative=$fixtureCase;Category='Internal';File=(Get-Item -LiteralPath (Join-Path $regression ('cases\'+$fixtureCase)))}
+            })
             New-ClientPackage -Selected $fixtureSelection -Destination (Join-Path $Destination 'prepared\runner-contract') -TimeoutSeconds 60
         }
         if ($entry.Relative -like '30-tri-melange\05-*') {
