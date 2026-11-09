@@ -1,8 +1,12 @@
+<a id="native-shell-view-architecture"></a>
+
 # Native Shell view architecture
 
 Read this note before changing view hosting, saved-state restoration or the
 boundary between Shell items and spatial windows. For a broader source map,
 see [Working on FileSpacer](README.md).
+
+<a id="responsibilities"></a>
 
 ## Responsibilities
 
@@ -56,6 +60,8 @@ The additional optional viewport adapter below is limited to recording and
 restoring scrolling. Other view operations remain COM calls. Tests can inspect
 controls to observe a gesture; that instrumentation is not an application dependency.
 
+<a id="mouse-gestures-across-shell-renderers"></a>
+
 ## Mouse gestures across Shell renderers
 
 The shared MSAA hit test recognizes both renderer families. Read-only text
@@ -74,6 +80,8 @@ Ctrl selection; Shift ranges use public folder-view selection because the
 modern MSAA provider rejects extended selection. Groups 15, 16 and 24 exercise
 the actual gestures and compare Properties, selection, focus and selection mark
 against the same Shell view with FileSpacer gestures disabled.
+
+<a id="readiness-restoration-and-lifetime"></a>
 
 ## Readiness, restoration and lifetime
 
@@ -121,6 +129,8 @@ complete selection also uses indices in free icon views, with native enumeration
 when the indexed capture is unavailable. Focus and scroll restoration remain
 separate.
 
+<a id="mixed-filefolder-sorting"></a>
+
 ## Mixed file/folder sorting
 
 When mixed sorting is enabled for a filesystem folder, `MixedFolder` supplies a
@@ -153,6 +163,8 @@ Registration and the junction are isolated in `/test` mode. Test cases must
 remove only their own registration and directory. Normal uninstall removes
 the registration owned by FileSpacer.
 
+<a id="selected-name-background-and-scrolling"></a>
+
 ## Selected-name background and scrolling
 
 `ShellViewLabels.h` optionally fills an opaque background behind the single
@@ -184,6 +196,8 @@ This legacy fallback does not promise an exact pixel offset. Do not treat
 contains a scroll offset.
 
 
+
+<a id="optional-selection-capabilities"></a>
 
 ## Optional selection capabilities
 
@@ -267,6 +281,8 @@ data objects, sorting, focus and subsequent operations. Case 06 uses visible
 establish composed-frame presentation latency or full-application parity with
 Explorer.
 
+<a id="large-selection-reads-in-free-layouts"></a>
+
 ## Large-selection reads in free layouts
 
 Guarded `nativeViewSelection` calls use a public snapshot for ungrouped free
@@ -297,6 +313,8 @@ replacement and late focus changes, with a qualified fixture cache supplied
 through `FS_GESTURE_CACHE` when needed. `PublicFallback` separately
 measures public-only clear/restoration and the following array read against
 Explorer at equal viewport dimensions.
+
+<a id="persistent-viewport"></a>
 
 ## Persistent viewport
 
@@ -329,6 +347,8 @@ global reset, deletion, expiry and quota eviction discard it with the folder sta
 Tests `07-fenetres/08-DefilementPersistant` and the independent real-Shell
 `ScrollState` experiment cover this behavior and its incremental cost.
 
+<a id="activation-and-external-folders"></a>
+
 ## Activation and external folders
 
 With selection-preserving activation enabled, a plain left click on the
@@ -343,6 +363,8 @@ windows.
 Control Panel opens externally through `IOpenControlPanel::Open`. Compare Shell
 identities, not translated names or decoded PIDLs. Keep the source folder and
 its selection intact.
+
+<a id="tests-and-references"></a>
 
 ## Tests and references
 

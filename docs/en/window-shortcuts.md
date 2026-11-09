@@ -1,8 +1,12 @@
+<a id="window-gestures"></a>
+
 # Window gestures
 
 The [user guide](user-guide.md#moving-and-resizing) covers configuration.
 Implementation starts in `WindowShortcuts.h`, `ShortcutSettingsPage.cpp`,
 `Settings.cpp`, `FolderWindow` and `WindowResizeGesture`.
+
+<a id="binding-and-input-rules"></a>
 
 ## Binding and input rules
 
@@ -29,6 +33,8 @@ the first click of a subsequent native double-click, deliver that deferred
 click to the view before the double-click. Do not replace Explorer's selection
 or Properties behavior with a manual invocation.
 
+<a id="preferences-and-powertoys-precedence"></a>
+
 ## Preferences and PowerToys precedence
 
 The settings page keeps drafts until Apply/OK and rejects reserved or
@@ -43,6 +49,8 @@ for that target window, FileSpacer suppresses its own gestures without deleting
 the configured shortcuts. This does not depend on PowerToys currently running.
 Preserve the distinction between target exclusions and foreground-window
 modifier exclusions; see `powerToysOverridesWindowGestures()` in `Settings.cpp`.
+
+<a id="tests"></a>
 
 ## Tests
 

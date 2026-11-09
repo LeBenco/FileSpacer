@@ -1,3 +1,5 @@
+<a id="building-filespacer"></a>
+
 # Building FileSpacer
 
 See the [build guide](docs/en/build.md) for dependencies, MSVC/NMAKE commands,

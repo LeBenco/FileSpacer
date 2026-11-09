@@ -1,3 +1,5 @@
+<a id="running-tests-in-a-hyper-v-client"></a>
+
 # Running tests in a Hyper-V client
 
 The [regression launcher](../regression/README.md) can run the selected cases in
@@ -11,6 +13,8 @@ tests.cmd -VM AgentWin10 -Category UI -Pattern "16-redimensionnement-alt\03-*"
 
 Without `-VM`, tests run locally. A VM name refers to an existing configured VM;
 the launcher never creates one or falls back to local UI execution.
+
+<a id="prepare-the-client-once"></a>
 
 ## Prepare the client once
 
@@ -40,6 +44,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\client\Install-Hyp
 Do not reinstall it for each test. A protocol or protected-script mismatch
 fails explicitly and requires this deliberate update.
 
+<a id="host-and-guest-responsibilities"></a>
+
 ## Host and guest responsibilities
 
 Selection happens before preparation. The host compiles the application,
@@ -58,6 +64,8 @@ guest worker; input is sent to the guest desktop only.
 Install any scenario-specific prerequisites in the guest. Everything on the host
 does not satisfy an Everything case in the VM. Display layout, DPI, Shell
 providers and external applications must match the case's requirements.
+
+<a id="reports-and-diagnosis"></a>
 
 ## Reports and diagnosis
 

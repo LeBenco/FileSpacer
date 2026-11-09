@@ -55,6 +55,8 @@ Oba workflow używają `.github/actions/build-docs` do instalacji zależności i
 
 Offline zawiera odcisk źródeł, skróty plików i języki. Pakowanie instalatora weryfikuje je przed ponownym użyciem. Skróty tekstu normalizują CRLF/LF dla transferu Linux–Windows. Brak, nieaktualność lub uszkodzenie powodują Jekyll rebuild. Generowany include NSIS instaluje dokumentację i usuwa tylko własne pliki; obce pliki pomocy pozostają.
 
+<a id="github-pages"></a>
+
 ## GitHub Pages
 
 Pages buduje i sprawdza odpowiednie PR. Generuje źródła raz, czyta `locales.json`, buduje każdy język i wdraża. CI nie ma drugiej listy języków. Push na `main` przebudowuje przy zmianach dowolnego README, `BUILD.md`, `docs/`, tłumaczeń, ikon, generatora, wspólnej akcji lub workflow Pages. PR używają tych samych filtrów i tylko budują. Można uruchamiać ręcznie.

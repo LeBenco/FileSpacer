@@ -1,12 +1,18 @@
+<a id="nilesoft-shell-configuration-reference"></a>
+
 # Guida alla configurazione di Nilesoft Shell
 
 Per una panoramica, consulta [Nilesoft Shell nella guida utente](user-guide.md#nilesoft-shell).
 
 Se usi [Nilesoft Shell](https://nilesoft.org/), puoi applicare i suoi temi e le personalizzazioni dei menu anche a FileSpacer tramite `shell.nss` e i file di configurazione importati. Per questa integrazione facoltativa, è consigliabile adattare la configurazione affinché i menu si integrino visivamente con FileSpacer. Gli esempi seguenti illustrano come aggiungere, modificare o rimuovere voci, impostare condizioni per FileSpacer e usare gli angoli squadrati consigliati.
 
+<a id="scope-system-menu-rules"></a>
+
 ## Limitare le regole dei menu di sistema
 
 Per le regole destinate a Esplora file, al desktop o alla barra delle applicazioni, aggiungi `process.is_explorer &&` alla condizione `where` esistente. Per mantenerle attive nelle altre applicazioni escludendo FileSpacer, usa invece `process.name != 'FileSpacer' &&`. Applica il filtro alle regole generiche `menu`, `item`, `modify` e `remove`, anche nei file importati.
+
+<a id="apply-themes-to-filespacer"></a>
 
 ## Applicare i temi a FileSpacer
 
@@ -22,6 +28,8 @@ import 'imports/theme.nss'
 Anche le proprietà del tema possono usare espressioni specifiche per il processo. Ad esempio, `dark = if(process.name == 'FileSpacer', true, sys.dark)` all’interno di `theme { ... }` sceglie la modalità scura per FileSpacer e la preferenza di sistema altrove.
 
 Con FileSpacer, le modifiche al tema si applicano ai nuovi menu dopo aver annullato e ripetuto la registrazione di Nilesoft Shell, senza riavviare Esplora file.
+
+<a id="target-a-specific-menu"></a>
 
 ## Individuare un menu specifico
 
@@ -45,6 +53,8 @@ Usa nelle regole le proprietà `where` e `type` corrispondenti:
 
 Usa `mode='multiple'` per le regole che devono rimanere disponibili indipendentemente dallo stato della selezione. `process.name` non comprende `.exe`. `window.parent.name` identifica una classe di finestra.
 
+<a id="target-an-existing-menu-entry"></a>
+
 ## Individuare una voce di menu esistente
 
 Il meccanismo generale `modify(find=...)` di Nilesoft trova una voce in base alla sua etichetta. Combinalo con `where` per limitare la modifica a un menu. `|` separa le etichette alternative e `*` è un carattere jolly:
@@ -55,6 +65,8 @@ modify(type='*' mode='multiple' where=filespacer_title
 ```
 
 Consulta la [documentazione della configurazione di Nilesoft](https://nilesoft.org/docs/configuration/).
+
+<a id="recommended-menu-appearance"></a>
 
 ## Aspetto consigliato per i menu
 
@@ -74,6 +86,8 @@ border.radius = if(
 
 Se usi già un raggio personalizzato, sostituisci `default` con il suo valore precedente.
 
+<a id="use-filespacer-actions"></a>
+
 ## Usare le azioni di FileSpacer
 
 Usare [`window.command`](https://nilesoft.org/docs/functions/window) con uno degli ID seguenti per aggiungere un’azione di FileSpacer, anche se non compare nella composizione del suo menu. Limitare la regola al menu della barra del titolo con la condizione `filespacer_title` definita sopra. Restano validi i requisiti dell’azione: per ripristinare una disposizione bloccata, per esempio, deve già essere presente un blocco.
@@ -87,7 +101,6 @@ item(type='*' mode='multiple' where=filespacer_title
 | --- | ---: |
 | Ripristina la disposizione bloccata | 1123 |
 | Sostituisci la disposizione di riferimento | 1124 |
-| Rimuovi la disposizione salvata della cartella | 1125 |
 | Chiudi le finestre delle sottocartelle | 1126 |
 | Chiudi le altre finestre | 1127 |
 | Adatta la finestra al contenuto | 1128 |

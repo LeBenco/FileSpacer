@@ -101,7 +101,6 @@ item(type='*' mode='multiple' where=filespacer_title
 | --- | ---: |
 | Vergrendelde indeling herstellen | 1123 |
 | Referentie-indeling vervangen | 1124 |
-| Indeling van deze map vergeten | 1125 |
 | Onderliggende vensters sluiten | 1126 |
 | Andere vensters sluiten | 1127 |
 | Venster aan inhoud aanpassen | 1128 |

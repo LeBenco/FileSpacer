@@ -1,3 +1,5 @@
+<a id="privacy-policy"></a>
+
 # Privacy policy
 
 No telemetry, usage tracking or advertising. Update checks contact GitHub. Weekly checks are optional and off by default. Downloading and installing require confirmation.

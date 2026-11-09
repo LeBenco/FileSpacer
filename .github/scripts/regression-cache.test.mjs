@@ -8,7 +8,7 @@ const base = entry('src/main.cpp') + entry('tests/regression/cases/example.ps1')
 
 test('documentation, screenshots and NSIS-only changes preserve the tested application identity', () => {
   const original = fingerprint(base);
-  for (const file of ['README.md', 'docs/en/privacy-policy.md', 'docs/pl/images/overview-pl.png',
+  for (const file of ['README.md', 'docs/en/privacy-policy.md', 'docs/pl/images/overview.png',
     'website/generate.mjs', 'installer/install.nsi', 'installer/generate-notes.mjs', '.github/workflows/winget.yml']) {
     assert.equal(applicationInput(file), false, file);
     assert.equal(fingerprint(base + entry(file, 'b'.repeat(40))), original, file);

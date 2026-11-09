@@ -1,3 +1,5 @@
+<a id="website-generation"></a>
+
 # Website generation
 
 The public site concatenates `README.md`, the user guide, the changelog and
@@ -12,6 +14,19 @@ and user documents are in `docs/en/`; the English README, changelog and third-pa
 notices stay at the repository root as the English website sources.
 Build instructions, tests and technical notes remain on GitHub: links to files
 not included in the site become links to the repository's `main` branch.
+Online changelog dates come from `published_at` in the GitHub Releases JSON API,
+matched by release version. The existing Markdown files supply the translated
+notes. `Intl.DateTimeFormat` uses each site's locale for numeric day, month and
+four-digit year formatting, keeping the UTC publication day. Source dates are
+not parsed or used as a fallback. Versions not yet published on GitHub appear
+without a date. Existing heading IDs remain unchanged, including their original
+date suffixes, so published bookmarks still work.
+The generator fetches all release pages during a web build, and incorporates
+the publication metadata into the build fingerprint. API failures stop the build
+before replacing the existing output. Reading the finished site needs no API
+request. CI uses its automatic GitHub token; local builds can use `GH_TOKEN` or
+`GITHUB_TOKEN`, or access the public API without authentication. Offline help
+keeps its local changelog, so an installer can be built before its release exists.
 The Nilesoft configuration reference has a translated file for each language;
 its GitHub links follow the selected language. Polish, Dutch and Ukrainian also
 provide translated developer guides; their references use the selected language.
@@ -30,8 +45,11 @@ when regenerating the application icon. The theme's `favicon_ico` setting
 uses this asset in every language.
 
 Heading order and hierarchy must match English. The generator normalizes levels,
-reuses the English document-specific heading IDs in every language and rewrites
-internal links. Changing language preserves the section being read. Missing
+uses explicit English heading anchors shared by every source language and rewrites
+internal links. Translated titles do not determine the canonical IDs. Changing
+language appends the current fragment to the other language’s URL, without a
+translation map. Localized assets have identical filenames and relative URLs
+within each generated language directory. Missing
 documents, headings or localized PNG/GIF captures fail the build. The neutral
 application logo is shared. See [translation maintenance](translations/README.md)
 for terminology sources and naming conventions.
@@ -60,6 +78,8 @@ sites and omits English stemming and stop words. Lunr's default ASCII trimmer
 would otherwise discard Greek words. English keeps the original search pipeline.
 The test dependency matches the theme's Lunr 2.3.9 runtime.
 
+<a id="local-checks"></a>
+
 ## Local checks
 
 With Node.js 22 or later, run from the repository root:
@@ -78,6 +98,13 @@ site root, other languages under `/de/`, `/el/`, `/es/`, `/fr/`, `/it/`, `/nl/`,
 `/pl/`, `/pt/` and `/uk/`.
 These outputs are generated and ignored by Git. The application build and its
 dependencies are separate from this documentation build.
+
+The [documentation capture scripts](../../../tools/documentation-capture/README.md)
+keep the menu, movement and resizing animations reproducible with ScreenToGif,
+localized fictional files and the same local wallpaper. Review the exported
+media before replacing the files under `docs/<language>/images/`.
+
+<a id="shared-website-and-offline-builds"></a>
 
 ## Shared website and offline builds
 
@@ -115,6 +142,8 @@ Text input hashes normalize CRLF/LF to permit Linux-to-Windows artifact transfer
 An absent, stale or damaged copy is rebuilt with Jekyll. A generated NSIS include
 installs the documentation and removes only its owned files on uninstallation;
 unowned files in the help directory are preserved.
+
+<a id="github-pages"></a>
 
 ## GitHub Pages
 

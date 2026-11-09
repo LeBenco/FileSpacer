@@ -1,0 +1,642 @@
+{
+  "application": "FileSpacer",
+  "feature": "Full-width Details columns",
+  "captured": "2026-11-09",
+  "sourceCommit": "a1897eebccc1057caee80167775eb3e1c3141aa4",
+  "sourceApplicationSha256": "2b9f9c28b22bb33e40a5a6426496dfe49e167fe506f1ec10f8b4403ae2201671",
+  "folderDllSha256": "aad96509af87726ceb9938c8efce1e982ad114828a3e7c7f5aba89584224fb7d",
+  "method": "Actual screen pixels from AgentWin10. Installed Windows display languages and resource-only application executables relinked from the validated Debug objects. ScreenToGif 2.43.2, with cursor and click highlights. No compositing, translated overlays, frame edits or cuts.",
+  "recorderArchiveSha256": "42a0b53d67ecae22698b4881ffb2c9c7a9049663f5fbdd2edb779e1971000664",
+  "captureScripts": "tools/documentation-capture/",
+  "fixtures": [
+    "tools/documentation-capture/scenes.json",
+    "tools/documentation-capture/details-columns.json"
+  ],
+  "nativeHeaderHelperSha256": "23db746250a96661a381503635b2cab5472693bf0cbd001ee4cc8a35bde27215",
+  "wallpaper": {
+    "file": "tools/documentation-capture/wallpaper.jpg",
+    "sha256": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714",
+    "source": "https://images.unsplash.com/photo-1599148521725-dbd1ee6c0817",
+    "license": "https://unsplash.com/license"
+  },
+  "storyboard": "The global permission and update-on-release setting are enabled before recording. The folder starts in ordinary Details view, with about 30 percent of the long names visible. The centered pointer moves continuously to View and activates the real per-folder fill command. Some names become fully visible, while two long names remain more than 20 percent hidden. After a pause, the pointer moves to the Name divider and drags it to expose the complete names, then pauses again. The Name column and its immediate neighbour retain the window width.",
+  "validation": {
+    "scope": "Documentation capture scenarios, not a complete application regression suite.",
+    "visualReview": "Per-language contact sheets and decoded frames checked for native labels and localized filenames, the initial state, complete View menu, intermediate truncation, final names, framing and pointer continuity.",
+    "stateRestored": true,
+    "productionUnchanged": true,
+    "cleanupErrors": []
+  },
+  "languages": [
+    {
+      "language": "fr",
+      "windowsDisplayLanguage": "fr-FR",
+      "powerShellUiCulture": "fr-FR",
+      "run": "vm-cbb627631e0043dc83145bbd25d279e6",
+      "captured": "2026-11-09T12:02:07.7622995Z",
+      "file": "docs/fr/images/details-columns.gif",
+      "sha256": "3ece3013a895a2d1010338782952675c810bf6eb87635887b97ffba499357323",
+      "bytes": 506583,
+      "width": 1277,
+      "height": 541,
+      "frames": 83,
+      "durationMilliseconds": 16710,
+      "recordedSettingsAndWidths": {
+        "LongNameTextWidths": [
+          532,
+          526
+        ],
+        "UpdateOnRelease": 1,
+        "BeforeWidths": [
+          188,
+          376,
+          100,
+          80
+        ],
+        "SourceExecutableSha256": "35BD1C96CD63660ED0109AE678A04B29360325995DFD18DBBC123078CAAF16EC",
+        "ContinuousPointer": true,
+        "GlobalEnabled": 1,
+        "Language": "fr",
+        "AfterWidths": [
+          572,
+          249,
+          146,
+          117
+        ],
+        "CommandId": 1131,
+        "Files": [
+          "Projet studio — cahier des charges complet et commentaires détaillés pour la présentation finale.txt",
+          "Projet studio — calendrier complet et notes de préparation détaillées pour la présentation finale.txt",
+          "Présentation provisoire à relire.txt",
+          "Images de référence et croquis.txt"
+        ],
+        "Scene": "DetailsColumns",
+        "FilledWidths": [
+          273,
+          548,
+          146,
+          117
+        ]
+      },
+      "recorderExitCode": 2,
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "9611d7bf97a50857bb93610e2ad40f62dd17c832517e952fd2a2ead7a85ed927",
+        "tools/documentation-capture/Capture.ps1": "194f91203ce02908fb0b4e7203e92d9d3aa4ce5346c3a41a97a6388df5d3a769",
+        "tools/documentation-capture/CaptureDesktop.cs": "4b166338a16b06458ce1fc30f30cddd9cc8280ff68579444f785a69e0bc8047c",
+        "tools/documentation-capture/details-columns.json": "e5d755c72b74534dd7b4e89f76dd3a178f430614b6c3241d9d8ad3f0dd5218f2",
+        "tools/documentation-capture/SceneActions.ps1": "355ffde65099f85db930a2420d6b868bd579dec1894df3dfe373d9966875da51",
+        "tools/documentation-capture/scenes.json": "6a03e05a27c1408d17c8f1f871c41e30fe61df57ad18e280538859b83b7d9078"
+      },
+      "scenarioStatus": "PASS"
+    },
+    {
+      "language": "en",
+      "windowsDisplayLanguage": "en-GB",
+      "powerShellUiCulture": "en-GB",
+      "run": "vm-2e7d9a7e4275447dae30e0647f1b4a4b",
+      "captured": "2026-11-09T12:07:30.7378622Z",
+      "file": "docs/en/images/details-columns.gif",
+      "sha256": "6c685781c740e188bd65e929911368d5572990a970fd0eeb3f2b987dbf63cffe",
+      "bytes": 520680,
+      "width": 1277,
+      "height": 541,
+      "frames": 84,
+      "durationMilliseconds": 16540,
+      "recordedSettingsAndWidths": {
+        "LongNameTextWidths": [
+          502,
+          513
+        ],
+        "UpdateOnRelease": 1,
+        "BeforeWidths": [
+          182,
+          364,
+          100,
+          80
+        ],
+        "SourceExecutableSha256": "5D90C584BB5EDCD3F21C14C48AA654B688CDE9F70DFCB4542F3331800A00356E",
+        "ContinuousPointer": true,
+        "GlobalEnabled": 1,
+        "Language": "en",
+        "AfterWidths": [
+          553,
+          262,
+          149,
+          120
+        ],
+        "CommandId": 1131,
+        "Files": [
+          "Studio project — complete specifications and detailed comments for the final presentation.txt",
+          "Studio project — complete schedule and detailed preparation notes for the final presentation.txt",
+          "Presentation draft for review.txt",
+          "Reference images and sketches.txt"
+        ],
+        "Scene": "DetailsColumns",
+        "FilledWidths": [
+          271,
+          544,
+          149,
+          120
+        ]
+      },
+      "recorderExitCode": 2,
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "9611d7bf97a50857bb93610e2ad40f62dd17c832517e952fd2a2ead7a85ed927",
+        "tools/documentation-capture/Capture.ps1": "194f91203ce02908fb0b4e7203e92d9d3aa4ce5346c3a41a97a6388df5d3a769",
+        "tools/documentation-capture/CaptureDesktop.cs": "4b166338a16b06458ce1fc30f30cddd9cc8280ff68579444f785a69e0bc8047c",
+        "tools/documentation-capture/details-columns.json": "e5d755c72b74534dd7b4e89f76dd3a178f430614b6c3241d9d8ad3f0dd5218f2",
+        "tools/documentation-capture/SceneActions.ps1": "355ffde65099f85db930a2420d6b868bd579dec1894df3dfe373d9966875da51",
+        "tools/documentation-capture/scenes.json": "6a03e05a27c1408d17c8f1f871c41e30fe61df57ad18e280538859b83b7d9078"
+      },
+      "scenarioStatus": "PASS"
+    },
+    {
+      "language": "de",
+      "windowsDisplayLanguage": "de-DE",
+      "powerShellUiCulture": "de-DE",
+      "run": "vm-8d5bae924ed647d786b79cfbfcf9cd86",
+      "captured": "2026-11-09T12:09:43.8253151Z",
+      "file": "docs/de/images/details-columns.gif",
+      "sha256": "bcf62cf0cc205b0bc44c42e90ce1bf3eede8c55fb0a7c8e09b0b0f30f9b74676",
+      "bytes": 494268,
+      "width": 1277,
+      "height": 541,
+      "frames": 85,
+      "durationMilliseconds": 16630,
+      "recordedSettingsAndWidths": {
+        "LongNameTextWidths": [
+          573,
+          511
+        ],
+        "UpdateOnRelease": 1,
+        "BeforeWidths": [
+          200,
+          400,
+          100,
+          80
+        ],
+        "SourceExecutableSha256": "E223EFAAC561B87CDD7F2C5E67CEE34587E820ECCA29077A9223CFBF8F8A142C",
+        "ContinuousPointer": true,
+        "GlobalEnabled": 1,
+        "Language": "de",
+        "AfterWidths": [
+          613,
+          220,
+          139,
+          112
+        ],
+        "CommandId": 1131,
+        "Files": [
+          "Studioprojekt — vollständige Anforderungen und ausführliche Anmerkungen zur Abschlusspräsentation.txt",
+          "Studioprojekt — vollständiger Zeitplan und ausführliche Hinweise zur Abschlusspräsentation.txt",
+          "Präsentationsentwurf zur Prüfung.txt",
+          "Referenzbilder und erste Skizzen.txt"
+        ],
+        "Scene": "DetailsColumns",
+        "FilledWidths": [
+          277,
+          556,
+          139,
+          112
+        ]
+      },
+      "recorderExitCode": 2,
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "9611d7bf97a50857bb93610e2ad40f62dd17c832517e952fd2a2ead7a85ed927",
+        "tools/documentation-capture/Capture.ps1": "194f91203ce02908fb0b4e7203e92d9d3aa4ce5346c3a41a97a6388df5d3a769",
+        "tools/documentation-capture/CaptureDesktop.cs": "4b166338a16b06458ce1fc30f30cddd9cc8280ff68579444f785a69e0bc8047c",
+        "tools/documentation-capture/details-columns.json": "e5d755c72b74534dd7b4e89f76dd3a178f430614b6c3241d9d8ad3f0dd5218f2",
+        "tools/documentation-capture/SceneActions.ps1": "355ffde65099f85db930a2420d6b868bd579dec1894df3dfe373d9966875da51",
+        "tools/documentation-capture/scenes.json": "6a03e05a27c1408d17c8f1f871c41e30fe61df57ad18e280538859b83b7d9078"
+      },
+      "scenarioStatus": "PASS"
+    },
+    {
+      "language": "it",
+      "windowsDisplayLanguage": "it-IT",
+      "powerShellUiCulture": "it-IT",
+      "run": "vm-20659975f65247639471e6d9439f3cba",
+      "captured": "2026-11-09T12:11:58.5725285Z",
+      "file": "docs/it/images/details-columns.gif",
+      "sha256": "1543462f96ef7695b284ea613a25e625a18564fe1632f667429103d3a83a20ea",
+      "bytes": 517308,
+      "width": 1277,
+      "height": 541,
+      "frames": 89,
+      "durationMilliseconds": 17020,
+      "recordedSettingsAndWidths": {
+        "LongNameTextWidths": [
+          493,
+          521
+        ],
+        "UpdateOnRelease": 1,
+        "BeforeWidths": [
+          184,
+          368,
+          100,
+          80
+        ],
+        "SourceExecutableSha256": "30C0F3E2F9CF680785166A85C31967B9EEC410CB0F00BAA53F30D515D55714E4",
+        "ContinuousPointer": true,
+        "GlobalEnabled": 1,
+        "Language": "it",
+        "AfterWidths": [
+          561,
+          256,
+          148,
+          119
+        ],
+        "CommandId": 1131,
+        "Files": [
+          "Progetto studio — specifiche complete e commenti dettagliati per la presentazione finale.txt",
+          "Progetto studio — calendario completo e note dettagliate per preparare la presentazione finale.txt",
+          "Bozza della presentazione da rivedere.txt",
+          "Immagini di riferimento e schizzi.txt"
+        ],
+        "Scene": "DetailsColumns",
+        "FilledWidths": [
+          272,
+          545,
+          148,
+          119
+        ]
+      },
+      "recorderExitCode": 2,
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "9611d7bf97a50857bb93610e2ad40f62dd17c832517e952fd2a2ead7a85ed927",
+        "tools/documentation-capture/Capture.ps1": "194f91203ce02908fb0b4e7203e92d9d3aa4ce5346c3a41a97a6388df5d3a769",
+        "tools/documentation-capture/CaptureDesktop.cs": "4b166338a16b06458ce1fc30f30cddd9cc8280ff68579444f785a69e0bc8047c",
+        "tools/documentation-capture/details-columns.json": "e5d755c72b74534dd7b4e89f76dd3a178f430614b6c3241d9d8ad3f0dd5218f2",
+        "tools/documentation-capture/SceneActions.ps1": "355ffde65099f85db930a2420d6b868bd579dec1894df3dfe373d9966875da51",
+        "tools/documentation-capture/scenes.json": "6a03e05a27c1408d17c8f1f871c41e30fe61df57ad18e280538859b83b7d9078"
+      },
+      "scenarioStatus": "PASS"
+    },
+    {
+      "language": "es",
+      "windowsDisplayLanguage": "es-ES",
+      "powerShellUiCulture": "es-ES",
+      "run": "vm-a16177b4e714488b8fb2c9c0ecb9828b",
+      "captured": "2026-11-09T12:14:17.2134463Z",
+      "file": "docs/es/images/details-columns.gif",
+      "sha256": "8f6402da1bbe53604f9c368782fa061c146303ef03b7bc28e03bd29e478fb351",
+      "bytes": 535654,
+      "width": 1277,
+      "height": 541,
+      "frames": 90,
+      "durationMilliseconds": 17350,
+      "recordedSettingsAndWidths": {
+        "LongNameTextWidths": [
+          504,
+          514
+        ],
+        "UpdateOnRelease": 1,
+        "BeforeWidths": [
+          182,
+          364,
+          100,
+          80
+        ],
+        "SourceExecutableSha256": "5647C09132522C6AF705E32379D47FE1EF179B127E58E70A775411CD46F102FF",
+        "ContinuousPointer": true,
+        "GlobalEnabled": 1,
+        "Language": "es",
+        "AfterWidths": [
+          554,
+          261,
+          149,
+          120
+        ],
+        "CommandId": 1131,
+        "Files": [
+          "Proyecto de estudio — especificaciones completas y comentarios para la presentación final.txt",
+          "Proyecto de estudio — calendario completo y notas de preparación para la presentación final.txt",
+          "Borrador de la presentación para revisar.txt",
+          "Imágenes de referencia y bocetos.txt"
+        ],
+        "Scene": "DetailsColumns",
+        "FilledWidths": [
+          271,
+          544,
+          149,
+          120
+        ]
+      },
+      "recorderExitCode": 2,
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "9611d7bf97a50857bb93610e2ad40f62dd17c832517e952fd2a2ead7a85ed927",
+        "tools/documentation-capture/Capture.ps1": "194f91203ce02908fb0b4e7203e92d9d3aa4ce5346c3a41a97a6388df5d3a769",
+        "tools/documentation-capture/CaptureDesktop.cs": "4b166338a16b06458ce1fc30f30cddd9cc8280ff68579444f785a69e0bc8047c",
+        "tools/documentation-capture/details-columns.json": "e5d755c72b74534dd7b4e89f76dd3a178f430614b6c3241d9d8ad3f0dd5218f2",
+        "tools/documentation-capture/SceneActions.ps1": "355ffde65099f85db930a2420d6b868bd579dec1894df3dfe373d9966875da51",
+        "tools/documentation-capture/scenes.json": "6a03e05a27c1408d17c8f1f871c41e30fe61df57ad18e280538859b83b7d9078"
+      },
+      "scenarioStatus": "PASS"
+    },
+    {
+      "language": "pt",
+      "windowsDisplayLanguage": "pt-PT",
+      "powerShellUiCulture": "pt-PT",
+      "run": "vm-2482c45ad0cd461e96b7f09491221523",
+      "captured": "2026-11-09T12:16:30.1036002Z",
+      "file": "docs/pt/images/details-columns.gif",
+      "sha256": "7f53c8587e652519254164b1d67448fa4b469165da7b8b3c636d2008d0970016",
+      "bytes": 478999,
+      "width": 1277,
+      "height": 541,
+      "frames": 85,
+      "durationMilliseconds": 16780,
+      "recordedSettingsAndWidths": {
+        "LongNameTextWidths": [
+          485,
+          501
+        ],
+        "UpdateOnRelease": 1,
+        "BeforeWidths": [
+          178,
+          356,
+          100,
+          80
+        ],
+        "SourceExecutableSha256": "1D8AF9B3810B2FED7BE9E79CFA1803B7B0B11409416BB029BF931EB65297B9C8",
+        "ContinuousPointer": true,
+        "GlobalEnabled": 1,
+        "Language": "pt",
+        "AfterWidths": [
+          541,
+          269,
+          152,
+          122
+        ],
+        "CommandId": 1131,
+        "Files": [
+          "Projeto do estúdio — especificações completas e comentários para a apresentação final.txt",
+          "Projeto do estúdio — calendário completo e notas de preparação para a apresentação final.txt",
+          "Rascunho da apresentação para revisão.txt",
+          "Imagens de referência e esboços.txt"
+        ],
+        "Scene": "DetailsColumns",
+        "FilledWidths": [
+          270,
+          540,
+          152,
+          122
+        ]
+      },
+      "recorderExitCode": 2,
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "9611d7bf97a50857bb93610e2ad40f62dd17c832517e952fd2a2ead7a85ed927",
+        "tools/documentation-capture/Capture.ps1": "194f91203ce02908fb0b4e7203e92d9d3aa4ce5346c3a41a97a6388df5d3a769",
+        "tools/documentation-capture/CaptureDesktop.cs": "4b166338a16b06458ce1fc30f30cddd9cc8280ff68579444f785a69e0bc8047c",
+        "tools/documentation-capture/details-columns.json": "e5d755c72b74534dd7b4e89f76dd3a178f430614b6c3241d9d8ad3f0dd5218f2",
+        "tools/documentation-capture/SceneActions.ps1": "355ffde65099f85db930a2420d6b868bd579dec1894df3dfe373d9966875da51",
+        "tools/documentation-capture/scenes.json": "6a03e05a27c1408d17c8f1f871c41e30fe61df57ad18e280538859b83b7d9078"
+      },
+      "scenarioStatus": "PASS"
+    },
+    {
+      "language": "el",
+      "windowsDisplayLanguage": "el",
+      "powerShellUiCulture": "en-US",
+      "run": "vm-c2c0c3a14839406bb1b9c5a09c4c2018",
+      "captured": "2026-11-09T12:18:45.6160634Z",
+      "file": "docs/el/images/details-columns.gif",
+      "sha256": "99c6711166f63d5d0dd29e15556979ae24c5712b0051a238257d6ece0f515845",
+      "bytes": 520631,
+      "width": 1277,
+      "height": 541,
+      "frames": 95,
+      "durationMilliseconds": 16750,
+      "recordedSettingsAndWidths": {
+        "LongNameTextWidths": [
+          508,
+          546
+        ],
+        "UpdateOnRelease": 1,
+        "BeforeWidths": [
+          192,
+          384,
+          100,
+          80
+        ],
+        "SourceExecutableSha256": "2DC14B56A88D4745E689AF061436E454C028E704383D296146C1AEF0B59CFD0A",
+        "ContinuousPointer": true,
+        "GlobalEnabled": 1,
+        "Language": "el",
+        "AfterWidths": [
+          586,
+          239,
+          144,
+          115
+        ],
+        "CommandId": 1131,
+        "Files": [
+          "Έργο στούντιο — πλήρεις προδιαγραφές και αναλυτικά σχόλια για την τελική παρουσίαση.txt",
+          "Έργο στούντιο — πλήρες χρονοδιάγραμμα και αναλυτικές σημειώσεις για την τελική παρουσίαση.txt",
+          "Προσχέδιο παρουσίασης για έλεγχο.txt",
+          "Εικόνες αναφοράς και πρώτα σχέδια.txt"
+        ],
+        "Scene": "DetailsColumns",
+        "FilledWidths": [
+          275,
+          550,
+          144,
+          115
+        ]
+      },
+      "recorderExitCode": 2,
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "9611d7bf97a50857bb93610e2ad40f62dd17c832517e952fd2a2ead7a85ed927",
+        "tools/documentation-capture/Capture.ps1": "194f91203ce02908fb0b4e7203e92d9d3aa4ce5346c3a41a97a6388df5d3a769",
+        "tools/documentation-capture/CaptureDesktop.cs": "4b166338a16b06458ce1fc30f30cddd9cc8280ff68579444f785a69e0bc8047c",
+        "tools/documentation-capture/details-columns.json": "e5d755c72b74534dd7b4e89f76dd3a178f430614b6c3241d9d8ad3f0dd5218f2",
+        "tools/documentation-capture/SceneActions.ps1": "355ffde65099f85db930a2420d6b868bd579dec1894df3dfe373d9966875da51",
+        "tools/documentation-capture/scenes.json": "6a03e05a27c1408d17c8f1f871c41e30fe61df57ad18e280538859b83b7d9078"
+      },
+      "scenarioStatus": "PASS"
+    },
+    {
+      "language": "pl",
+      "windowsDisplayLanguage": "pl",
+      "powerShellUiCulture": "pl-PL",
+      "run": "vm-a746762b081d43448527b916231746e5",
+      "captured": "2026-11-09T12:21:00.1974581Z",
+      "file": "docs/pl/images/details-columns.gif",
+      "sha256": "53242e0479fa6eb6f24a280ff8d439cb9ff2688b3b835d786c73ac508db5fb87",
+      "bytes": 526488,
+      "width": 1277,
+      "height": 541,
+      "frames": 82,
+      "durationMilliseconds": 16710,
+      "recordedSettingsAndWidths": {
+        "LongNameTextWidths": [
+          529,
+          550
+        ],
+        "UpdateOnRelease": 1,
+        "BeforeWidths": [
+          193,
+          386,
+          100,
+          80
+        ],
+        "SourceExecutableSha256": "7A10F1AD01B8D8B9EF7B0827E81EB04BE10F84E20BF55F0BC3BCA1041C71E26B",
+        "ContinuousPointer": true,
+        "GlobalEnabled": 1,
+        "Language": "pl",
+        "AfterWidths": [
+          590,
+          236,
+          143,
+          115
+        ],
+        "CommandId": 1131,
+        "Files": [
+          "Projekt studia — pełne wymagania i szczegółowe uwagi do przygotowania prezentacji końcowej.txt",
+          "Projekt studia — pełny harmonogram i szczegółowe notatki do przygotowania prezentacji końcowej.txt",
+          "Wstępna prezentacja do sprawdzenia.txt",
+          "Materiały referencyjne i szkice.txt"
+        ],
+        "Scene": "DetailsColumns",
+        "FilledWidths": [
+          275,
+          551,
+          143,
+          115
+        ]
+      },
+      "recorderExitCode": 2,
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "9611d7bf97a50857bb93610e2ad40f62dd17c832517e952fd2a2ead7a85ed927",
+        "tools/documentation-capture/Capture.ps1": "194f91203ce02908fb0b4e7203e92d9d3aa4ce5346c3a41a97a6388df5d3a769",
+        "tools/documentation-capture/CaptureDesktop.cs": "4b166338a16b06458ce1fc30f30cddd9cc8280ff68579444f785a69e0bc8047c",
+        "tools/documentation-capture/details-columns.json": "e5d755c72b74534dd7b4e89f76dd3a178f430614b6c3241d9d8ad3f0dd5218f2",
+        "tools/documentation-capture/SceneActions.ps1": "355ffde65099f85db930a2420d6b868bd579dec1894df3dfe373d9966875da51",
+        "tools/documentation-capture/scenes.json": "6a03e05a27c1408d17c8f1f871c41e30fe61df57ad18e280538859b83b7d9078"
+      },
+      "scenarioStatus": "PASS"
+    },
+    {
+      "language": "nl",
+      "windowsDisplayLanguage": "nl-NL",
+      "powerShellUiCulture": "nl-NL",
+      "run": "vm-6156b402c48d4eaea50403023b46c67f",
+      "captured": "2026-11-09T12:23:13.2966259Z",
+      "file": "docs/nl/images/details-columns.gif",
+      "sha256": "df8f7872e5bd92918cb84954a8ef9a56e1173d17ea9934ee97a7cc9da0ead7ef",
+      "bytes": 474425,
+      "width": 1277,
+      "height": 541,
+      "frames": 83,
+      "durationMilliseconds": 16630,
+      "recordedSettingsAndWidths": {
+        "LongNameTextWidths": [
+          508,
+          545
+        ],
+        "UpdateOnRelease": 1,
+        "BeforeWidths": [
+          192,
+          384,
+          100,
+          80
+        ],
+        "SourceExecutableSha256": "1EB02B9A4F6073CB8874CA94061E277EBCC59F10B314470B812316535A2C3251",
+        "ContinuousPointer": true,
+        "GlobalEnabled": 1,
+        "Language": "nl",
+        "AfterWidths": [
+          585,
+          240,
+          144,
+          115
+        ],
+        "CommandId": 1131,
+        "Files": [
+          "Studioproject — volledige specificaties en uitgebreide opmerkingen voor de eindpresentatie.txt",
+          "Studioproject — volledige planning en uitgebreide voorbereidende notities voor de eindpresentatie.txt",
+          "Conceptpresentatie ter beoordeling.txt",
+          "Referentiebeelden en eerste schetsen.txt"
+        ],
+        "Scene": "DetailsColumns",
+        "FilledWidths": [
+          275,
+          550,
+          144,
+          115
+        ]
+      },
+      "recorderExitCode": 2,
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "9611d7bf97a50857bb93610e2ad40f62dd17c832517e952fd2a2ead7a85ed927",
+        "tools/documentation-capture/Capture.ps1": "194f91203ce02908fb0b4e7203e92d9d3aa4ce5346c3a41a97a6388df5d3a769",
+        "tools/documentation-capture/CaptureDesktop.cs": "4b166338a16b06458ce1fc30f30cddd9cc8280ff68579444f785a69e0bc8047c",
+        "tools/documentation-capture/details-columns.json": "e5d755c72b74534dd7b4e89f76dd3a178f430614b6c3241d9d8ad3f0dd5218f2",
+        "tools/documentation-capture/SceneActions.ps1": "355ffde65099f85db930a2420d6b868bd579dec1894df3dfe373d9966875da51",
+        "tools/documentation-capture/scenes.json": "6a03e05a27c1408d17c8f1f871c41e30fe61df57ad18e280538859b83b7d9078"
+      },
+      "scenarioStatus": "PASS"
+    },
+    {
+      "language": "uk",
+      "windowsDisplayLanguage": "uk",
+      "powerShellUiCulture": "en-US",
+      "run": "vm-9a6628f6c9974fb9a29b1f1dc18d75e6",
+      "captured": "2026-11-09T12:25:26.1787213Z",
+      "file": "docs/uk/images/details-columns.gif",
+      "sha256": "538c9ac52aa24a9a3a66b39aa47513ea2e844d47800381dd7d9ebe9315616e8a",
+      "bytes": 531094,
+      "width": 1277,
+      "height": 541,
+      "frames": 85,
+      "durationMilliseconds": 16620,
+      "recordedSettingsAndWidths": {
+        "LongNameTextWidths": [
+          524,
+          517
+        ],
+        "UpdateOnRelease": 1,
+        "BeforeWidths": [
+          185,
+          370,
+          100,
+          80
+        ],
+        "SourceExecutableSha256": "F03DFA59651072B2ABC2250C31C5A431B6DC6E85638042E6FD80CC7A996D0456",
+        "ContinuousPointer": true,
+        "GlobalEnabled": 1,
+        "Language": "uk",
+        "AfterWidths": [
+          564,
+          254,
+          148,
+          118
+        ],
+        "CommandId": 1131,
+        "Files": [
+          "Проєкт студії — повні вимоги та докладні коментарі для підготовки остаточної презентації.txt",
+          "Проєкт студії — повний розклад і докладні нотатки для підготовки остаточної презентації.txt",
+          "Чернетка презентації для перевірки.txt",
+          "Довідкові зображення та ескізи.txt"
+        ],
+        "Scene": "DetailsColumns",
+        "FilledWidths": [
+          272,
+          546,
+          148,
+          118
+        ]
+      },
+      "recorderExitCode": 2,
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "9611d7bf97a50857bb93610e2ad40f62dd17c832517e952fd2a2ead7a85ed927",
+        "tools/documentation-capture/Capture.ps1": "194f91203ce02908fb0b4e7203e92d9d3aa4ce5346c3a41a97a6388df5d3a769",
+        "tools/documentation-capture/CaptureDesktop.cs": "4b166338a16b06458ce1fc30f30cddd9cc8280ff68579444f785a69e0bc8047c",
+        "tools/documentation-capture/details-columns.json": "e5d755c72b74534dd7b4e89f76dd3a178f430614b6c3241d9d8ad3f0dd5218f2",
+        "tools/documentation-capture/SceneActions.ps1": "355ffde65099f85db930a2420d6b868bd579dec1894df3dfe373d9966875da51",
+        "tools/documentation-capture/scenes.json": "6a03e05a27c1408d17c8f1f871c41e30fe61df57ad18e280538859b83b7d9078"
+      },
+      "scenarioStatus": "PASS"
+    }
+  ]
+}

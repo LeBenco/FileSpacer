@@ -1,7 +1,9 @@
+<a id="privacy-policy"></a>
+
 # Política de privacidad
 
 Sin telemetría, seguimiento del uso ni publicidad. Las comprobaciones de actualizaciones contactan con GitHub. Las semanales son opcionales y están desactivadas de forma predeterminada. La descarga y la instalación requieren confirmación.
 
-[Detalles en la guía de uso](user-guide.md#privacidad).
+[Detalles en la guía de uso](user-guide.md#privacy).
 
-[Datos locales](user-guide.md#datos-locales).
+[Datos locales](user-guide.md#local-data).

@@ -1,3 +1,5 @@
+<a id="winget-distribution"></a>
+
 # WinGet distribution
 
 GitHub Actions submits `Benco.FileSpacer` to the public
@@ -10,6 +12,8 @@ several channels; the selection is recorded in the annotated tag and carried in
 `release-publication`. Missing selection metadata also means no automatic submission.
 The workflow can also be dispatched for an existing published stable release tag;
 that explicit request selects WinGet even if the tag originally selected none.
+
+<a id="one-time-setup"></a>
 
 ## One-time setup
 
@@ -30,6 +34,8 @@ The release's ordinary `GITHUB_TOKEN` remains sufficient for publishing
 FileSpacer itself. The additional PAT is used only by WingetCreate to submit
 to the external community repository. No manual first-package creation is
 needed: generated manifests support both the first submission and new versions.
+
+<a id="each-release"></a>
 
 ## Each release
 
@@ -88,6 +94,8 @@ winget install --id Benco.FileSpacer --exact --scope machine
 winget upgrade --id Benco.FileSpacer --exact
 winget uninstall --id Benco.FileSpacer --exact
 ```
+
+<a id="validation"></a>
 
 ## Validation
 

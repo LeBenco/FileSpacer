@@ -1,9 +1,13 @@
+<a id="title-bar-menu-implementation"></a>
+
 # Title bar menu implementation
 
 For editing and folder-group usage, see the
 [user guide](user-guide.md#customize-the-title-bar-menu). Start in `TitleMenu.h`,
 `TitleMenuDialog.cpp`, `TitleMenuRenderer.cpp` and `FolderGroups.cpp`; the live
 commands are handled by the folder window.
+
+<a id="composition-and-rendering"></a>
 
 ## Composition and rendering
 
@@ -29,13 +33,13 @@ drag, retain the captured menu pixels. If Nilesoft's layered background cannot
 be captured, use the explicit opaque fallback rather than simulating compositor
 acrylic.
 
+<a id="action-boundaries"></a>
+
 ## Action boundaries
 
 - Restore the locked layout applies saved geometry/view options through the
   existing view without destroying its selection. Replace reference captures
   the current layout under an existing lock and requires confirmation.
-- Forget folder layout clears its layout/lock, retaining search history. The
-  current window does not resave it until closure unless explicitly locked anew.
 - Close descendant/other windows uses normal close processing and persistence,
   including across processes. Fit to contents uses native item positions,
   spacing and visible column widths, bounded by the monitor work area.
@@ -43,6 +47,8 @@ acrylic.
   Recall opens/activates each folder with its own saved layout, retaining other
   windows. Removing a group never deletes folders; resetting global preference
   values does not clear groups.
+
+<a id="nilesoft-command-bridge"></a>
 
 ## Nilesoft command bridge
 
@@ -71,11 +77,12 @@ for menu scoping and visual settings.
 | Preferences | 1009 |
 | Restore locked layout | 1123 |
 | Replace reference layout | 1124 |
-| Forget folder layout | 1125 |
 | Close descendant windows | 1126 |
 | Close other windows | 1127 |
 | Fit window to contents | 1128 |
 | Folder groups | 1129 |
+
+<a id="tests"></a>
 
 ## Tests
 

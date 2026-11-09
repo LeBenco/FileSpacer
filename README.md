@@ -2,6 +2,8 @@
     <img height="200" alt="FileSpacer" src="src/res/FileSpacer.svg" />
 </p>
 
+<a id="filespacer"></a>
+
 # FileSpacer
 
 [![Download latest](https://img.shields.io/badge/Download-latest-blue)](https://github.com/LeBenco/FileSpacer/releases/latest) &emsp;
@@ -27,39 +29,20 @@ FileSpacer prioritizes a lightweight and uncluttered experience. To address the 
 
 WinGet and Chocolatey packages are awaiting catalog approval.
 
+<a id="features"></a>
+
+## Features
+
+- **One window per folder**. Its position, size, view mode and icon positions [are remembered](docs/en/user-guide.md#window-navigation). Icons can be arranged freely or aligned to the [standard positioning grid](docs/en/user-guide.md#icon-layout).
+- **Window organization**. Opening another folder closes the source window by default. Windows without a saved position are placed to [limit overlap](docs/en/user-guide.md#window-placement).
+- **Manage windows**. Move or resize windows using [mouse shortcuts](docs/en/user-guide.md#moving-and-resizing). Save and reopen [groups of folders](docs/en/user-guide.md#folder-groups). [Lock window layouts](docs/en/user-guide.md#locking-a-saved-layout).
+
 **Documentation:**
 
 [![Docs](https://img.shields.io/badge/Docs-User%20Guide-blue)](docs/en/user-guide.md)
 [![Docs](https://img.shields.io/badge/Docs-Changelog-orange)](CHANGELOG.md)
 
-_FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler), originally created by J. van't Hoog. See [Credits](#license-and-credits) below for details._
-
-## Features
-
-- **One window per folder**, reused if the folder is already open. Its position,
-  size, view settings and icon layout are restored between visits.
-  [Spatial navigation](docs/en/user-guide.md#window-navigation).
-- **Arrange icons freely**, with their positions saved and restored for each
-  folder. [Icon layout](docs/en/user-guide.md#icon-layout).
-- **Move and resize windows** from anywhere in the file area, preserving
-  selection. Mouse shortcuts are configurable. Defaults are Alt + left drag
-  and Alt + right drag. [Window gestures](docs/en/user-guide.md#moving-and-resizing).
-- **Switch between open folders** from the title-bar menu, close parent
-  windows, or reopen the last closed window with Ctrl+Shift+T.
-  [Window navigation](docs/en/user-guide.md#window-navigation).
-- **Lock a window's saved layout** while allowing temporary changes to its
-  position, size and view settings.
-  [Window state locking](docs/en/user-guide.md#locking-a-saved-layout).
-- **Filter the current folder** and reuse its recent searches.
-  [Search and history](docs/en/user-guide.md#search-and-history).
-- **Preserve selection when activating a window** by clicking its background.
-  [Selection and activation](docs/en/user-guide.md#selection-and-activation).
-- **Reduce overlap between windows** when opening folders without a saved
-  position. [Window placement](docs/en/user-guide.md#window-placement).
-- **Customize the title-bar menu** with layout and window actions, and save
-  named groups of open folders.
-  [Menu customization](docs/en/user-guide.md#customize-the-title-bar-menu) ·
-  [Folder groups](docs/en/user-guide.md#folder-groups).
+<a id="integration"></a>
 
 ## Integration
 
@@ -68,6 +51,8 @@ FileSpacer can be set as the default file manager during installation or later i
 With **Everything**, advanced searches can be launched from FileSpacer's search field, in the current folder and its subfolders or across all indexed files. Results open in Everything. [Integration and usage](docs/en/user-guide.md#everything).
 
 With **Nilesoft Shell**, FileSpacer's menus can use its themes and custom commands. Configuration adjustments are recommended for a consistent appearance. [Integration and configuration](docs/en/user-guide.md#nilesoft-shell).
+
+<a id="build"></a>
 
 ## Build
 
@@ -79,14 +64,22 @@ See the [build guide](docs/en/build.md).
 
 Regression tests combine PowerShell scenarios with C++ and C# helpers for internal checks and real Windows UI/Shell tests. The [GitHub Actions regression workflow](https://github.com/LeBenco/FileSpacer/actions/workflows/regression.yml) runs this application suite on demand and automatically before a release. The same cases can be run with `tests.cmd` on a local Windows desktop or in a configured Hyper-V VM. See the [test guide](docs/en/tests/regression/README.md) for case selection, prerequisites and results.
 
+<a id="license-and-credits"></a>
+
 ## License and credits
+
+<a id="copyright-and-license"></a>
 
 ### Copyright and License
 FileSpacer is distributed under the <img align="absbottom" src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"> license.<br>
 Copyright © 2026 Benco for FileSpacer modifications. The complete license is in [LICENSE](LICENSE) in the source tree, or `LICENSE.txt` in the installation folder. FileSpacer comes without warranty. Redistribution and modification are permitted under that license.
 
+<a id="fork-and-upstream-credits"></a>
+
 ### Fork and Upstream Credits
 FileSpacer is a fork of [ChromaFiler](https://github.com/vanjac/chromafiler) (original ChromaFiler code © 2023 J. van't Hoog.), created by J. van't Hoog (vanjac). Many thanks to vanjac for the foundation!
+
+<a id="third-party-notices"></a>
 
 ### Third-Party Notices
 See [third-party notices](THIRD_PARTY_NOTICES.md) and the [privacy policy](docs/en/privacy-policy.md).

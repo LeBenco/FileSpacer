@@ -1,4 +1,8 @@
+<a id="changelog"></a>
+
 # Changelog
+
+<a id="140--2026-11-09"></a>
 
 ## 1.4.0 — 2026-11-09
 
@@ -12,13 +16,19 @@
 - Place new windows using the normal size and position of existing FileSpacer windows, including maximized, minimized and snapped windows.
 - Massively accelerate Select All and clearing selections of thousands of files in classic Shell views. This optimization uses private Windows functions whose availability and behavior are not guaranteed. If these functions are missing or incompatible, FileSpacer automatically and silently falls back to public functions, without the performance gains.
 
+<a id="132--2026-11-04"></a>
+
 ## 1.3.2 — 2026-11-04
 
 - Add Polish, Dutch and Ukrainian to the application, installer, website and user and developer documentation.
 
+<a id="131--2026-11-03"></a>
+
 ## 1.3.1 — 2026-11-03
 
 - Fix default file-manager opening selecting another application instead of FileSpacer.
+
+<a id="130--2026-11-02"></a>
 
 ## 1.3.0 — 2026-11-02
 
@@ -32,6 +42,8 @@
 - Fix help cleanup failures blocking uninstallation and VM tests misidentifying several Explorer processes as separate desktop sessions.
 - Fix seams between green icon faces and refresh multilingual guides and menu demonstrations.
 
+<a id="123--2026-10-30"></a>
+
 ## 1.2.3 — 2026-10-30
 
 - Smooth the installer and uninstaller sidebar logo with high-quality image scaling at the current display size.
@@ -43,13 +55,19 @@
 - Fix Jump List refreshes and installer diagnostics. Preserve user help files during upgrades and uninstallation.
 - Bundle multilingual offline help through F1 and About, and refresh localized setup guides and Nilesoft Shell references.
 
+<a id="122--2026-10-28"></a>
+
 ## 1.2.2 — 2026-10-28
 
 - Fix mixed sorting using the custom folder provider in free icon layouts. Use the native provider for free placement and switch providers when committing a sorted layout, preserving saved icon positions, selection and focus.
 
+<a id="121--2026-10-28"></a>
+
 ## 1.2.1 — 2026-10-28
 
 - Reduce transient generic icons when opening folders with mixed sorting. Prepare the visible icons in the Windows cache before revealing the native view, with a bounded wait for slow icon handlers.
+
+<a id="120--2026-10-28"></a>
 
 ## 1.2.0 — 2026-10-28
 
@@ -59,6 +77,8 @@
 - Expand the online user guide with English and French screenshots, window gesture demonstrations and Nilesoft Shell menu comparisons.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.10...v1.2.0)
+
+<a id="1110--2026-10-27"></a>
 
 ## 1.1.10 — 2026-10-27
 
@@ -75,11 +95,15 @@
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.9...v1.1.10)
 
+<a id="119--2026-10-27"></a>
+
 ## 1.1.9 — 2026-10-27
 
 - Preview display modes while hovering over the View menu, with progressive restoration when cancelling and a default-on option under Display settings.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.8...v1.1.9)
+
+<a id="118--2026-10-27"></a>
 
 ## 1.1.8 — 2026-10-27
 
@@ -93,12 +117,16 @@
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.7...v1.1.8)
 
+<a id="117--2026-10-26"></a>
+
 ## 1.1.7 — 2026-10-26
 
 - Minimize new-window overlap with exact geometry, first looking for free space. Rename the General option to "Minimize window overlap".
 - Offer an optional default file manager choice in the English and French installer, with instructions to enable or reverse it later in FileSpacer's Integration settings.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.6...v1.1.7)
+
+<a id="116--2026-10-26"></a>
 
 ## 1.1.6 — 2026-10-26
 
@@ -110,6 +138,8 @@
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.5...v1.1.6)
 
+<a id="115--2026-10-26"></a>
+
 ## 1.1.5 — 2026-10-26
 
 - Fix Alt + double-click followed by mouse movement creating an unintended shortcut. Preserve native Properties, selection and focus without replaying a held button press.
@@ -118,6 +148,8 @@
 - Keep the desktop awake and temporarily suspend the screen saver during UI regression runs, restoring its original runtime state during cleanup, including after test failures.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.4...v1.1.5)
+
+<a id="114--2026-10-25"></a>
 
 ## 1.1.4 — 2026-10-25
 
@@ -131,6 +163,8 @@ This release builds on 1.1.3, which already provides configurable keyboard/mouse
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
 
+<a id="113--2026-10-25"></a>
+
 ## 1.1.3 — 2026-10-25
 
 - Add a Shortcuts settings tab to configure or disable window move/resize gestures using modifier keys and left, middle or right mouse buttons, with direct input capture and conflict validation.
@@ -139,6 +173,8 @@ This release builds on 1.1.3, which already provides configurable keyboard/mouse
 - Add exhaustive shortcut configuration tests and real mouse gesture coverage, with French and English settings resources.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.2...v1.1.3)
+
+<a id="112--2026-10-25"></a>
 
 ## 1.1.2 — 2026-10-25
 
@@ -151,12 +187,16 @@ This release builds on 1.1.3, which already provides configurable keyboard/mouse
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.1...v1.1.2)
 
+<a id="111--2026-10-24"></a>
+
 ## 1.1.1 — 2026-10-24
 
 - Restore the selection-preserving activation click: the first click on the empty background of an inactive folder window activates it without clearing the selection (preference re-enabled).
 - Fix a crash when a folder window is closed while the Shell view is refreshing (Refresh command, name filter, Refresh/New verbs).
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.1.0...v1.1.1)
+
+<a id="110--2026-10-24"></a>
 
 ## 1.1.0 — 2026-10-24
 
@@ -170,6 +210,8 @@ This release builds on 1.1.3, which already provides configurable keyboard/mouse
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
 
+<a id="108--2026-10-22"></a>
+
 ## 1.0.8 — 2026-10-22
 
 - Move folder windows with Alt + left drag and resize them with Alt + right drag from the main file area, preserving the file selection.
@@ -180,6 +222,8 @@ This release builds on 1.1.3, which already provides configurable keyboard/mouse
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.7...v1.0.8)
 
+<a id="107--2026-10-20"></a>
+
 ## 1.0.7 — 2026-10-20
 
 - Select the originating child folder when opening a parent or ancestor, preserving selection in already-open windows.
@@ -189,11 +233,15 @@ This release builds on 1.1.3, which already provides configurable keyboard/mouse
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.6...v1.0.7)
 
+<a id="106--2026-10-11"></a>
+
 ## 1.0.6 — 2026-10-11
 
 - Automatically restore open folder windows after an in-app update, preserving their saved positions, sizes and view settings.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.5...v1.0.6)
+
+<a id="105--2026-10-11"></a>
 
 ## 1.0.5 — 2026-10-11
 
@@ -203,6 +251,8 @@ This release builds on 1.1.3, which already provides configurable keyboard/mouse
 - Publish installer download metadata alongside each release.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.4...v1.0.5)
+
+<a id="104--2026-10-11"></a>
 
 ## 1.0.4 — 2026-10-11
 
@@ -214,6 +264,8 @@ This release builds on 1.1.3, which already provides configurable keyboard/mouse
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.3...v1.0.4)
 
+<a id="103--2026-10-11"></a>
+
 ## 1.0.3 — 2026-10-11
 
 - Restore manual update checks and optional weekly checks using FileSpacer GitHub releases, disabled by default.
@@ -223,6 +275,8 @@ This release builds on 1.1.3, which already provides configurable keyboard/mouse
 - Preserve native Shell handling of Alt+double-click and Alt+Enter on folders.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.2...v1.0.3)
+
+<a id="102--2026-10-11"></a>
 
 ## 1.0.2 — 2026-10-11
 
@@ -234,6 +288,8 @@ This release builds on 1.1.3, which already provides configurable keyboard/mouse
 - Allow the release workflow to replace the installer of an existing release.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.1...v1.0.2)
+
+<a id="101--2026-10-09"></a>
 
 ## 1.0.1 — 2026-10-09
 
@@ -249,6 +305,8 @@ This release builds on 1.1.3, which already provides configurable keyboard/mouse
 - Support manual release publication and include the version in installer filenames.
 
 [Full changes](https://github.com/LeBenco/FileSpacer/compare/v1.0.0...v1.0.1)
+
+<a id="100--2026-10-09"></a>
 
 ## 1.0.0 — 2026-10-09
 

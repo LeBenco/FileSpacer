@@ -1,8 +1,12 @@
+<a id="search-history-and-everything"></a>
+
 # Search, history and Everything
 
 Start in `SearchBox`, `FolderWindow::applyNameFilter`, `ShellViewFilter` and
 `Everything`. For interaction details, see the
 [user guide](user-guide.md#search-and-history).
+
+<a id="local-filtering-and-suggestions"></a>
 
 ## Local filtering and suggestions
 
@@ -19,6 +23,8 @@ Keep its strings accessible and its bounds inside the monitor work area.
 
 Only a successful explicit local submission, recent-query selection or external
 launch records a nonblank query. Typing alone must not fill the history.
+
+<a id="launching-everything"></a>
 
 ## Launching Everything
 
@@ -38,6 +44,8 @@ Process creation is only launch success, not proof of indexing or usable
 results. On successful launch, clear the local filter; on failure, preserve
 the query/filter and report the error.
 
+<a id="history-persistence"></a>
+
 ## History persistence
 
 `SearchHistoryLimit` defaults to 5 and accepts 0–20. The SQLite
@@ -55,6 +63,8 @@ removes it on confirmed deletion, qualified expiration, reset or quota eviction.
 Writes require an existing folder state and must not recreate an expired folder.
 An access failure alone is not deletion; the store's retention policy applies.
 
+<a id="everything-icon-loading"></a>
+
 ## Everything icon loading
 
 The suggestion uses the configured executable's primary icon, not a bundled
@@ -69,6 +79,8 @@ An update preserving all those values is not detected. Painting takes a
 nonblocking cache lock, and a missing icon leaves the action usable. Closing the
 field cancels publication without joining the worker; shared state and handles
 remain valid until it finishes.
+
+<a id="tests-and-references"></a>
 
 ## Tests and references
 

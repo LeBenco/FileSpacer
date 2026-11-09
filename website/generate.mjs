@@ -3,8 +3,10 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {Marked} from 'marked';
+import {fetchReleaseDates, releaseHeading} from './releases.mjs';
 
 const template = path.dirname(fileURLToPath(import.meta.url));
+const navigationDepth = 2; // Maximum menu levels, counting each document as level 1.
 const sources = [
   ['README.md', 'overview'],
   ['docs/user-guide.md', 'user-guide'],
@@ -20,14 +22,30 @@ const technicalReferences = [
   'website/README.md', 'website/translations/README.md',
 ];
 const privacyAliases = {
-  'user-guide--settings-and-updates': ['privacy-policy--update-checks'],
-  'user-guide--local-data': ['privacy-policy--local-data', 'privacy-policy--resetting-preferences'],
+  'user-guide--updates-and-troubleshooting': ['privacy-policy--update-checks', 'privacy-policy--local-data', 'privacy-policy--resetting-preferences'],
   'user-guide--privacy': ['privacy-policy', 'privacy-policy--windows-and-external-applications'],
 };
 const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 const text = value => value.replace(/<[^>]*>/g, '').replace(/[*`_~]/g, '');
-const slug = value => text(value).toLowerCase().replace(/[^\p{L}\p{M}\p{N}_\-\s]/gu, '').replace(/\s/g, '-');
+export const headingSlug = value => text(value).toLowerCase().replace(/[^\p{L}\p{M}\p{N}_\-\s]/gu, '').replace(/\s/g, '-');
 const json = value => JSON.stringify(value, null, 2) + '\n';
+
+// A standalone source anchor immediately before a heading names that heading
+// in Markdown and on the site. Consume the marker so it adds no empty paragraph.
+export function prepareHeadingAnchors(tokens) {
+  for (let index = 0; index < tokens.length; index++) {
+    const token = tokens[index];
+    if (!['html', 'paragraph'].includes(token.type)) continue;
+    const anchor = token.text.trim().match(/^<a id="([^"]+)"><\/a>$/)?.[1];
+    if (!anchor) continue;
+    let next = index + 1;
+    while (tokens[next]?.type === 'space') next++;
+    if (tokens[next]?.type !== 'heading') continue;
+    tokens[next].docAnchor = anchor;
+    tokens.splice(index--, 1);
+  }
+  return tokens;
+}
 
 async function exists(file) {
   try { await fs.access(file); return true; }
@@ -39,6 +57,7 @@ function navigation(headings, ui) {
   const stack = [root];
   for (const heading of headings.slice(1)) {
     while (stack.length > 1 && stack.at(-1).depth >= heading.depth) stack.pop();
+    if (stack.length >= navigationDepth) continue;
     const node = {...heading, children: []};
     stack.at(-1).children.push(node);
     stack.push(node);
@@ -118,7 +137,7 @@ export async function generate(repository = path.dirname(template), destination 
       ? JSON.parse(await fs.readFile(stateFile, 'utf8')).sources : {};
     for (const [source, id] of sources) {
       const content = await fs.readFile(path.join(language.root, sourceFile(language, source)), 'utf8');
-      const tokens = parser.lexer(content);
+      const tokens = prepareHeadingAnchors(parser.lexer(content));
       const sourceHash = createHash('sha256').update(content.replaceAll('\r\n', '\n')).digest('hex');
       const baseline = state[source];
       const reference = baseline ? baseline.headings.map(([anchor, depth], index) => ({
@@ -133,17 +152,25 @@ export async function generate(repository = path.dirname(template), destination 
       const anchors = new Map(), counts = new Map(), headings = [];
       parser.walkTokens(tokens, token => {
         if (token.type !== 'heading') return;
-        const original = slug(token.text), count = counts.get(original) || 0;
+        const original = headingSlug(token.text), count = counts.get(original) || 0;
         counts.set(original, count + 1);
         const originalId = original + (count ? `-${count}` : '');
         const first = headings.length === 0 && token.depth === 1;
         const target = reference?.[headings.length];
         if (language !== languages[0] && (!target || target.depth !== Math.min(6, token.depth + 1))) throw new Error(`Translation heading structure differs from English: ${language.code}/${source}`);
-        token.siteId = target?.id || (first ? id : `${id}--${originalId}`);
+        const anchor = token.docAnchor || originalId;
+        if (headings.some(heading => heading.anchor === anchor)) throw new Error(`Duplicate source anchor: ${source}#${anchor}`);
+        if (token.docAnchor && target && target.anchor !== token.docAnchor) throw new Error(`Translation heading anchor differs from English: ${language.code}/${source}#${token.docAnchor}`);
+        token.siteId = token.docAnchor ? (first ? id : `${id}--${anchor}`)
+          : target?.id || (first ? id : `${id}--${originalId}`);
         token.siteDepth = Math.min(6, token.depth + 1);
         token.siteTitle = first ? language.ui[id] : null;
+        if (source === 'CHANGELOG.md' && token.depth === 2 && options.releaseDates) {
+          token.siteTitle = releaseHeading(text(token.text), language.code, options.releaseDates);
+        }
         anchors.set(originalId, token.siteId);
-        headings.push({id: token.siteId, anchor: originalId, title: token.siteTitle || text(token.text), depth: token.siteDepth});
+        anchors.set(anchor, token.siteId);
+        headings.push({id: token.siteId, anchor, title: token.siteTitle || text(token.text), depth: token.siteDepth});
       });
       if (headings[0]?.depth !== 2) throw new Error(`Missing top-level title: ${source}`);
       if (language !== languages[0]) {
@@ -177,7 +204,9 @@ export async function generate(repository = path.dirname(template), destination 
         const actualTarget = file ? path.posix.normalize(path.posix.join(path.posix.dirname(actualSource), file)) : actualSource;
         if (actualTarget.startsWith('../') || path.posix.isAbsolute(actualTarget)) throw new Error(`Path outside repository: ${href}`);
         if (image) {
-          const output = `assets/content/${actualTarget}`;
+          const prefix = `docs/${language.path || 'en'}/`;
+          const neutral = actualTarget.startsWith(prefix) ? 'docs/' + actualTarget.slice(prefix.length) : actualTarget;
+          const output = `assets/content/${neutral}`;
           assets.set(actualTarget, output);
           return output;
         }
@@ -232,7 +261,7 @@ export async function generate(repository = path.dirname(template), destination 
       return `<a class="screenshot-link" href="${src}" aria-label="${escape(language.ui.enlargeImage)}: ${alt}">${img}</a>`;
     });
     const ids = [...html.matchAll(/\sid\s*=\s*(["'])([^"']+)\1/g)].map(match => match[2]);
-    const missing = [...html.matchAll(/<a\b[^>]*\shref\s*=\s*(["'])#([^"']+)\1/g)].filter(match => !ids.includes(match[2]));
+    const missing = [...html.matchAll(/<a\b[^>]*\shref\s*=\s*(["'])#([^"']+)\1/g)].filter(match => !ids.includes(decodeURIComponent(match[2])));
     if (new Set(ids).size !== ids.length || missing.length) throw new Error('Duplicate heading IDs or broken internal links');
     const output = path.join(destination, language.source);
     await fs.mkdir(output, {recursive: true});
@@ -259,12 +288,18 @@ export async function generate(repository = path.dirname(template), destination 
     results.push({code: language.code, path: language.path, source: language.source, documents: documents.size, headings: ids.length, images: assets.size});
   }
   await fs.writeFile(path.join(destination, 'locales.json'), json(results));
-  for (const [file, snapshot] of snapshots) await fs.writeFile(file, json(snapshot));
+  for (const [file, snapshot] of snapshots) {
+    const previous = await fs.readFile(file, 'utf8').catch(error => { if (error.code === 'ENOENT') return ''; throw error; });
+    await fs.writeFile(file, json(snapshot).replaceAll('\n', previous.includes('\r\n') ? '\r\n' : '\n'));
+  }
   return {...results[0], languages: results, warnings, destination};
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   if (args.length && args[0] !== '--record-translation-sources') throw new Error('Usage: node website/generate.mjs [--record-translation-sources [locale...]]');
-  console.log(json(await generate(undefined, undefined, args.length ? {recordTranslations: args.slice(1)} : {})));
+  console.log(json(await generate(undefined, undefined, {
+    releaseDates: await fetchReleaseDates(),
+    ...(args.length ? {recordTranslations: args.slice(1)} : {}),
+  })));
 }

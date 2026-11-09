@@ -2,7 +2,7 @@
 
 # Gesty okna
 
-Konfigurację opisuje [instrukcja użytkownika](user-guide.md#przenoszenie-i-zmiana-rozmiaru). Implementacja zaczyna się w `WindowShortcuts.h`, `ShortcutSettingsPage.cpp`, `Settings.cpp`, `FolderWindow` i `WindowResizeGesture`.
+Konfigurację opisuje [instrukcja użytkownika](user-guide.md#moving-and-resizing). Implementacja zaczyna się w `WindowShortcuts.h`, `ShortcutSettingsPage.cpp`, `Settings.cpp`, `FolderWindow` i `WindowResizeGesture`.
 
 <a id="binding-and-input-rules"></a>
 

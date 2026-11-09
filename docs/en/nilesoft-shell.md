@@ -1,12 +1,18 @@
+<a id="nilesoft-shell-configuration-reference"></a>
+
 # Nilesoft Shell configuration reference
 
 For an overview, see [Nilesoft Shell in the user guide](user-guide.md#nilesoft-shell).
 
 If you use [Nilesoft Shell](https://nilesoft.org/), you can also apply its themes and menu customizations to FileSpacer through `shell.nss` and its imported configuration files. For this optional integration, configuration adjustments are recommended so the menus fit FileSpacer's appearance. The examples below cover rules to add, modify or remove menu items, conditions specific to FileSpacer, and the recommended square corners.
 
+<a id="scope-system-menu-rules"></a>
+
 ## Scope system-menu rules
 
 For rules intended for Windows Explorer, the desktop or the taskbar, add `process.is_explorer &&` to their existing `where` condition. To preserve their scope in other applications while excluding FileSpacer, use `process.name != 'FileSpacer' &&` instead. Apply the filter to generic `menu`, `item`, `modify` and `remove` rules, including those in imported files.
+
+<a id="apply-themes-to-filespacer"></a>
 
 ## Apply themes to FileSpacer
 
@@ -22,6 +28,8 @@ import 'imports/theme.nss'
 Theme properties can also use process-specific expressions: for example, `dark = if(process.name == 'FileSpacer', true, sys.dark)` inside `theme { ... }` selects dark mode for FileSpacer and the system preference elsewhere.
 
 When using FileSpacer instead of File Explorer, theme changes apply directly to newly opened menus after unregistering and registering Nilesoft Shell again, without restarting Explorer.
+
+<a id="target-a-specific-menu"></a>
 
 ## Target a specific menu
 
@@ -45,6 +53,8 @@ Use the corresponding `where` and `type` properties on your rules:
 
 Use `mode='multiple'` for rules that should remain available across selection states. `process.name` omits `.exe`. `window.parent.name` identifies a window class.
 
+<a id="target-an-existing-menu-entry"></a>
+
 ## Target an existing menu entry
 
 Nilesoft's general `modify(find=...)` mechanism matches an entry by its label. Combine it with `where` to limit the change to a menu. `|` separates alternative labels and `*` is a wildcard:
@@ -55,6 +65,8 @@ modify(type='*' mode='multiple' where=filespacer_title
 ```
 
 See the Nilesoft [configuration reference](https://nilesoft.org/docs/configuration/).
+
+<a id="recommended-menu-appearance"></a>
 
 ## Recommended menu appearance
 
@@ -74,6 +86,8 @@ border.radius = if(
 
 If you already use a custom radius, replace `default` with its previous value.
 
+<a id="use-filespacer-actions"></a>
+
 ## Use FileSpacer actions
 
 Use [`window.command`](https://nilesoft.org/docs/functions/window) with one of the IDs below to add a FileSpacer action, even if it is absent from FileSpacer’s own menu composition. Keep the rule restricted to the title-bar menu with the `filespacer_title` condition defined above. The action’s usual requirements still apply: restoring a locked layout, for example, requires an existing lock.
@@ -87,7 +101,6 @@ item(type='*' mode='multiple' where=filespacer_title
 | --- | ---: |
 | Restore the locked layout | 1123 |
 | Replace the reference layout | 1124 |
-| Forget this folder’s layout | 1125 |
 | Close descendant windows | 1126 |
 | Close other windows | 1127 |
 | Fit the window to its contents | 1128 |

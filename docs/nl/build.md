@@ -66,6 +66,8 @@ Verpakken start `generate-installer-assets.py` voor downloadbadge, zijbalken, re
 nmake /f Makefile CFG=Debug installer-bitmap
 ```
 
+<a id="sqlite"></a>
+
 ## SQLite
 
 De ongewijzigde amalgamatie in `third_party\sqlite` wordt apart als C gebouwd en statisch gekoppeld. Geen SQLite-DLL, CLI of download tijdens bouwen nodig. Zie [herkomst en opties](https://github.com/LeBenco/FileSpacer/blob/main/third_party/sqlite/README.txt).
@@ -94,6 +96,8 @@ Setup logt naar `%TEMP%\FileSpacer-install.log`, de worker naar `%TEMP%\FileSpac
 
 Een NSIS-bouw controleert verpakking, geen echte installatie, UAC, upgrade of de-installatie. Valideer gewijzigde geïnstalleerde paden afzonderlijk.
 
+<a id="releases"></a>
+
 ## Releases
 
 [De releaseworkflow](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/release.yml) start op `vX.Y.Z` of handmatig voor een bestaande tag. Eerst wordt de [regressieworkflow voor de toepassing](https://github.com/LeBenco/FileSpacer/blob/main/.github/workflows/regression.yml) hergebruikt en moet deze slagen; daarna bouwt hij offlinehulp en Windows-NSIS uit de geselecteerde, gevalideerde SHA. Hij controleert versie tegen tag en publiceert `FileSpacer-X.Y.Z-install.exe` en `FileSpacer-update.txt` op GitHub Releases. Gewone branchpushes publiceren geen installatieprogramma. GitHubs automatische token volstaat voor de release.
@@ -116,6 +120,8 @@ Zonder optie wordt geen kanaal geselecteerd; `--distribute none` maakt dit expli
 Het script vereist een schone werkboom, controleert externe branch/tag, toont wijzigingen en kanalen en vraagt bevestiging vóór push van `main` en de geannoteerde tag. Controleer daarna workflow en beide bestanden. Foutsamenvattingen en bouwlogboeken blijven workflowartefacten.
 
 Een bestaande release kan later worden ingediend via **Submit FileSpacer to WinGet** en/of **Submit FileSpacer to Chocolatey**, met branch `main` en de gepubliceerde tag. Handmatig starten selecteert dat kanaal ongeacht de oorspronkelijke keuze en hergebruikt installer en SHA-256. Gebruik bijvoorbeeld `gh workflow run winget.yml --ref main -f tag=vX.Y.Z` of dezelfde opdracht met `chocolatey.yml`. Herstart hiervoor niet de releasegeneratie: die kan de installer vervangen en cataloguschecksums ongeldig maken.
+
+<a id="tests"></a>
 
 ## Tests
 

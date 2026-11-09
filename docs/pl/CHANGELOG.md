@@ -1,4 +1,8 @@
+<a id="changelog"></a>
+
 # Historia zmian
+
+<a id="140--2026-11-09"></a>
 
 ## 1.4.0 — 2026-11-09
 
@@ -12,13 +16,19 @@
 - Rozmieszczanie nowych okien na podstawie normalnego rozmiaru i położenia istniejących okien FileSpacer, również zmaksymalizowanych, zminimalizowanych lub przyciągniętych do krawędzi.
 - Ogromne przyspieszenie operacji „Zaznacz wszystko” i odznaczania tysięcy plików w klasycznych widokach powłoki. Optymalizacja korzysta z prywatnych funkcji systemu Windows, których dostępność i działanie nie są gwarantowane. Jeśli tych funkcji brakuje lub są niezgodne, FileSpacer automatycznie i bez komunikatów wraca do funkcji publicznych, bez korzyści z przyspieszenia.
 
+<a id="132--2026-11-04"></a>
+
 ## 1.3.2 — 2026-11-04
 
 - Dodano język polski, niderlandzki i ukraiński do aplikacji, instalatora, witryny oraz dokumentacji użytkownika i technicznej.
 
+<a id="131--2026-11-03"></a>
+
 ## 1.3.1 — 2026-11-03
 
 - Naprawiono otwieranie przez domyślnego menedżera, które wybierało inną aplikację zamiast FileSpacer.
+
+<a id="130--2026-11-02"></a>
 
 ## 1.3.0 — 2026-11-02
 
@@ -32,6 +42,8 @@
 - Naprawiono błędy czyszczenia pomocy blokujące deinstalację i błędne rozpoznawanie kilku procesów Eksploratora jako osobnych sesji w testach VM.
 - Naprawiono szczeliny między zielonymi ścianami ikony i odświeżono wielojęzyczne przewodniki oraz demonstracje menu.
 
+<a id="123--2026-10-30"></a>
+
 ## 1.2.3 — 2026-10-30
 
 - Wygładzono logo panelu bocznego instalatora i deinstalatora przez wysokiej jakości skalowanie do bieżącego rozmiaru.
@@ -43,13 +55,19 @@
 - Naprawiono odświeżanie list szybkiego dostępu i diagnostykę instalatora. Zachowano pliki pomocy użytkownika przy aktualizacji i deinstalacji.
 - Dołączono wielojęzyczną pomoc offline przez F1 i Informacje oraz odświeżono lokalne przewodniki instalacji i Nilesoft Shell.
 
+<a id="122--2026-10-28"></a>
+
 ## 1.2.2 — 2026-10-28
 
 - Naprawiono użycie własnego dostawcy folderu w swobodnym układzie ikon przy sortowaniu mieszanym. Swobodne rozmieszczanie używa dostawcy natywnego, a zatwierdzenie sortowania przełącza dostawcę, zachowując położenia ikon, zaznaczenie i fokus.
 
+<a id="121--2026-10-28"></a>
+
 ## 1.2.1 — 2026-10-28
 
 - Ograniczono chwilowe ikony ogólne przy otwieraniu folderów z sortowaniem mieszanym. Widoczne ikony są przygotowywane w pamięci Windows przed pokazaniem widoku, z ograniczonym oczekiwaniem na wolne procedury obsługi.
+
+<a id="120--2026-10-28"></a>
 
 ## 1.2.0 — 2026-10-28
 
@@ -59,6 +77,8 @@
 - Rozszerzono przewodnik online o angielskie i francuskie zrzuty, gesty okna i porównania menu Nilesoft Shell.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.10...v1.2.0)
+
+<a id="1110--2026-10-27"></a>
 
 ## 1.1.10 — 2026-10-27
 
@@ -75,11 +95,15 @@
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.9...v1.1.10)
 
+<a id="119--2026-10-27"></a>
+
 ## 1.1.9 — 2026-10-27
 
 - Dodano podgląd trybów po wskazaniu w menu Widok, stopniowe przywracanie po anulowaniu i domyślnie włączoną opcję w Wyświetlaniu.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.8...v1.1.9)
+
+<a id="118--2026-10-27"></a>
 
 ## 1.1.8 — 2026-10-27
 
@@ -93,12 +117,16 @@
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.7...v1.1.8)
 
+<a id="117--2026-10-26"></a>
+
 ## 1.1.7 — 2026-10-26
 
 - Ograniczono nakładanie nowych okien dokładną geometrią i wyszukiwaniem wolnego miejsca. Zmieniono nazwę opcji na „Minimalizuj nakładanie okien”.
 - Dodano opcjonalny wybór domyślnego menedżera w angielskim i francuskim instalatorze z instrukcją późniejszej zmiany w Integracji.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.6...v1.1.7)
+
+<a id="116--2026-10-26"></a>
 
 ## 1.1.6 — 2026-10-26
 
@@ -110,6 +138,8 @@
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.5...v1.1.6)
 
+<a id="115--2026-10-26"></a>
+
 ## 1.1.5 — 2026-10-26
 
 - Naprawiono niezamierzony skrót po Alt + dwukrotnym kliknięciu i ruchu myszy. Zachowano natywne Właściwości, zaznaczenie i fokus bez odtwarzania przytrzymanego naciśnięcia.
@@ -118,6 +148,8 @@
 - Podczas testów UI utrzymywany jest aktywny pulpit i czasowo wyłączany wygaszacz, z przywróceniem stanu przy sprzątaniu także po błędach.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.4...v1.1.5)
+
+<a id="114--2026-10-25"></a>
 
 ## 1.1.4 — 2026-10-25
 
@@ -131,6 +163,8 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
 
+<a id="113--2026-10-25"></a>
+
 ## 1.1.3 — 2026-10-25
 
 - Dodano kartę Skróty do ustawiania lub wyłączania gestów przez modyfikatory i lewy, środkowy lub prawy przycisk, z bezpośrednim przechwyceniem i kontrolą konfliktów.
@@ -139,6 +173,8 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 - Dodano wyczerpujące testy konfiguracji skrótów i rzeczywistych gestów z francuskimi i angielskimi zasobami.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.2...v1.1.3)
+
+<a id="112--2026-10-25"></a>
 
 ## 1.1.2 — 2026-10-25
 
@@ -151,12 +187,16 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.1...v1.1.2)
 
+<a id="111--2026-10-24"></a>
+
 ## 1.1.1 — 2026-10-24
 
 - Przywrócono kliknięcie aktywujące bez utraty zaznaczenia: pierwszy klik pustego tła nieaktywnego folderu tylko go aktywuje (opcja ponownie włączona).
 - Naprawiono awarię przy zamknięciu folderu podczas odświeżania widoku powłoki (Odśwież, filtr nazw, polecenia Odśwież/Nowy).
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.1.0...v1.1.1)
+
+<a id="110--2026-10-24"></a>
 
 ## 1.1.0 — 2026-10-24
 
@@ -170,6 +210,8 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
 
+<a id="108--2026-10-22"></a>
+
 ## 1.0.8 — 2026-10-22
 
 - Dodano przenoszenie Alt + lewy i zmianę rozmiaru Alt + prawy z obszaru plików z zachowaniem zaznaczenia.
@@ -180,6 +222,8 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.0.7...v1.0.8)
 
+<a id="107--2026-10-20"></a>
+
 ## 1.0.7 — 2026-10-20
 
 - Przy otwieraniu przodka zaznaczany jest folder źródłowy, z zachowaniem wyboru w już otwartych oknach.
@@ -189,11 +233,15 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.0.6...v1.0.7)
 
+<a id="106--2026-10-11"></a>
+
 ## 1.0.6 — 2026-10-11
 
 - Otwarte foldery są automatycznie odtwarzane po aktualizacji w aplikacji, z zapisanym położeniem, rozmiarem i widokiem.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.0.5...v1.0.6)
+
+<a id="105--2026-10-11"></a>
 
 ## 1.0.5 — 2026-10-11
 
@@ -203,6 +251,8 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 - Przy każdym wydaniu publikowane są metadane pobierania instalatora.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.0.4...v1.0.5)
+
+<a id="104--2026-10-11"></a>
 
 ## 1.0.4 — 2026-10-11
 
@@ -214,6 +264,8 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.0.3...v1.0.4)
 
+<a id="103--2026-10-11"></a>
+
 ## 1.0.3 — 2026-10-11
 
 - Przywrócono ręczne i opcjonalne cotygodniowe sprawdzanie wydań GitHub FileSpacer, domyślnie wyłączone.
@@ -223,6 +275,8 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 - Zachowano natywną obsługę Alt + dwukrotne kliknięcie i Alt+Enter na folderach.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.0.2...v1.0.3)
+
+<a id="102--2026-10-11"></a>
 
 ## 1.0.2 — 2026-10-11
 
@@ -234,6 +288,8 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 - Proces publikacji może zastąpić instalator istniejącego wydania.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.0.1...v1.0.2)
+
+<a id="101--2026-10-09"></a>
 
 ## 1.0.1 — 2026-10-09
 
@@ -249,6 +305,8 @@ To wydanie bazuje na 1.1.3, które już zapewnia konfigurowalne gesty klawiatury
 - Dodano ręczną publikację wydań i numer wersji w nazwach instalatorów.
 
 [Pełna lista zmian](https://github.com/LeBenco/FileSpacer/compare/v1.0.0...v1.0.1)
+
+<a id="100--2026-10-09"></a>
 
 ## 1.0.0 — 2026-10-09
 

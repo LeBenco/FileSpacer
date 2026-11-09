@@ -22,7 +22,7 @@ async function fixture(t) {
     await fs.writeFile(path.join(root, source), content);
   }
   await fs.cp(path.join(repository, 'docs/en/images'), path.join(root, 'docs/images'), {recursive: true});
-  await fs.copyFile(path.join(repository, 'docs/fr/images/spatial-windows-fr.png'), path.join(root, 'docs/images/spatial-windows-fr.png'));
+  await fs.copyFile(path.join(repository, 'docs/fr/images/spatial-windows.png'), path.join(root, 'docs/images/spatial-windows-fr.png'));
   return root;
 }
 test('real documents keep guide nesting, local anchors, images and GitHub references', async t => {
@@ -41,28 +41,58 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
   assert.match(html, /https:\/\/github\.com\/LeBenco\/FileSpacer\/blob\/main\/docs\/en\/build\.md/);
   assert.match(html, /https:\/\/github\.com\/LeBenco\/FileSpacer\/blob\/main\/docs\/en\/tests\/regression\/README\.md/);
   assert.doesNotMatch(html, /data-source="(?:docs\/(?:build|native-shell-view)|tests\/)/);
-  assert.match(nav, /href="#user-guide--integration"[^]*href="#user-guide--windows-integration"[^]*href="#user-guide--everything"[^]*href="#user-guide--nilesoft-shell"/);
-  assert.match(html, /<h4 id="user-guide--everything"/);
-  const windows = html.match(/<h3 id="user-guide--managing-windows">[^]*?(?=<h3 |<\/section>)/)?.[0];
-  assert.ok(windows, 'The user guide groups window controls under Managing windows');
-  assert.match(windows, /<h4 id="user-guide--moving-and-resizing"/);
-  assert.match(windows, /<h4 id="user-guide--locking-a-saved-layout"/);
+  assert.match(nav, /href="#user-guide--customization"/);
+  assert.doesNotMatch(nav, /href="#(?:user-guide--(?:integration|windows-integration|everything|nilesoft-shell)|overview--copyright-and-license)"/);
+  assert.match(html, /<div id="user-guide--everything"><\/div>/);
+  const windows = html.match(/<h3 id="user-guide--window-navigation-and-layout">[^]*?(?=<h3 |<\/section>)/)?.[0];
+  assert.ok(windows, 'The user guide groups window navigation and locking');
+  assert.match(windows, /<div id="user-guide--locking-a-saved-layout"><\/div>/);
+  assert.match(html, /<div id="user-guide--moving-and-resizing"><\/div>/);
   assert.match(html, /href="#user-guide--locking-a-saved-layout"/);
   assert.match(html, /assets\/content\/src\/res\/FileSpacer\.svg/);
   assert.doesNotMatch(nav, /href="#privacy-policy"/);
   assert.match(nav, /href="#user-guide--privacy"/);
   for (const [alias, target] of [
-    ['privacy-policy', 'privacy'], ['privacy-policy--local-data', 'local-data'],
-    ['privacy-policy--resetting-preferences', 'local-data'],
-    ['privacy-policy--update-checks', 'settings-and-updates'],
+    ['privacy-policy', 'privacy'], ['privacy-policy--local-data', 'updates-and-troubleshooting'],
+    ['privacy-policy--resetting-preferences', 'updates-and-troubleshooting'],
+    ['privacy-policy--update-checks', 'updates-and-troubleshooting'],
     ['privacy-policy--windows-and-external-applications', 'privacy'],
   ]) assert.ok(html.includes(`id="${alias}" data-alias-for="user-guide--${target}"`));
   const screenshots = [...html.matchAll(/<a class="screenshot-link"[^>]+><img\b[^>]+><\/a>/g)];
   assert.equal(screenshots.length, [...html.matchAll(/<img\b[^>]*src="[^"]+\.(?:png|gif)\?v=[a-f0-9]{12}"/g)].length);
   assert.ok(screenshots.length > 0);
   assert.ok(screenshots.every(([link]) => !link.includes('.svg')));
-  assert.match(html, /screenshot-link" href="assets\/content\/docs\/en\/images\/spatial-windows\.png\?v=[a-f0-9]{12}"/);
+  assert.match(html, /screenshot-link" href="assets\/content\/docs\/images\/spatial-windows\.png\?v=[a-f0-9]{12}"/);
   await fs.access(path.join(output, 'assets/content/src/res/FileSpacer.svg'));
+});
+
+test('GitHub publication dates localize changelog headings and navigation without changing notes or existing anchors', async t => {
+  const output = await fs.mkdtemp(path.join(os.tmpdir(), 'filespacer-release-dates-'));
+  t.after(() => {
+    assert.equal(path.dirname(output), os.tmpdir());
+    return fs.rm(output, {recursive: true, force: true});
+  });
+  const baseline = await generate(repository, output, {onWarning: () => {}});
+  const oldIds = new Map();
+  const ids = html => [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
+  for (const language of baseline.languages) {
+    oldIds.set(language.code, ids(await fs.readFile(path.join(output, language.source, 'index.html'), 'utf8')));
+  }
+  const result = await generate(repository, output, {
+    onWarning: () => {}, releaseDates: {'1.3.2': '2026-11-05T23:59:59Z'},
+  });
+  for (const language of result.languages) {
+    const html = await fs.readFile(path.join(output, language.source, 'index.html'), 'utf8');
+    const nav = await fs.readFile(path.join(output, language.source, '_includes/components/site_nav.html'), 'utf8');
+    assert.deepEqual(ids(html), oldIds.get(language.code), language.code);
+    const date = new Intl.DateTimeFormat(language.code, {year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC'})
+      .format(new Date('2026-11-05T23:59:59Z'));
+    assert.ok(html.includes(`1.3.2 — ${date}</h3>`), language.code);
+    assert.ok(nav.includes(`1.3.2 — ${date}</a>`), language.code);
+    assert.match(html, /1\.3\.1<\/h3>/, 'A version not yet published on GitHub is shown without an invented date');
+    if (language.code === 'fr-FR') assert.match(html, /Ajouter le polonais/);
+    if (language.code === 'en-GB') assert.match(html, /Add Polish/);
+  }
 });
 
 test('replacing an image changes both its thumbnail and popup URL while unchanged images keep their cache key', async t => {
@@ -77,7 +107,7 @@ test('replacing an image changes both its thumbnail and popup URL while unchange
   const updated = imageUrl(after, 'spatial-windows');
   assert.notEqual(updated, imageUrl(before, 'spatial-windows'));
   assert.ok(after.includes(`src="${updated}"`));
-  assert.equal(imageUrl(after, 'window-menu'), imageUrl(before, 'window-menu'));
+  assert.equal(imageUrl(after, 'selected-name'), imageUrl(before, 'selected-name'));
 });
 
 test('the header adds no download button while preserving download links in Markdown', async t => {
@@ -108,9 +138,11 @@ test('language directories use the root English README and require their own ima
   assert.match(english, /Canonical root README/);
   assert.doesNotMatch(english, /Not the project overview/);
   const french = await fs.readFile(path.join(output, '_locales/fr-FR/index.html'), 'utf8');
-  assert.match(french, /assets\/content\/docs\/fr\/images\/spatial-windows-fr\.png/);
-  assert.doesNotMatch(french, /assets\/content\/docs\/en\/images\//);
-  await fs.unlink(path.join(root, 'docs/fr/images/spatial-windows-fr.png'));
+  assert.match(french, /assets\/content\/docs\/images\/spatial-windows\.png/);
+  const localized = await fs.readFile(path.join(output, '_locales/fr-FR/assets/content/docs/images/spatial-windows.png'));
+  assert.deepEqual(localized, await fs.readFile(path.join(root, 'docs/fr/images/spatial-windows.png')));
+  assert.notDeepEqual(localized, await fs.readFile(path.join(root, 'docs/en/images/spatial-windows.png')));
+  await fs.unlink(path.join(root, 'docs/fr/images/spatial-windows.png'));
   await assert.rejects(generate(root, output, {onWarning: () => {}}), /Missing localized media \(fr-FR\)/);
 });
 
@@ -145,6 +177,23 @@ test('explicit HTML anchors and raw HTML links are resolved without cross-docume
   assert.match(html, /data-id="not-an-anchor"/);
   await fs.appendFile(path.join(root, 'README.md'), '\n<a id="custom-anchor"></a>\n');
   await assert.rejects(generate(root, output), /Duplicate source anchor/);
+});
+
+test('explicit English heading anchors survive title edits without adding empty source-anchor paragraphs', async t => {
+  const root = await fixture(t);
+  const file = path.join(root, 'docs/user-guide.md');
+  await fs.appendFile(file, '\n<a id="stable-display-settings"></a>\n\n## Initial wording\n\n[Settings](#stable-display-settings)\n');
+  const output = path.join(root, 'output');
+  await generate(root, output);
+  const first = await fs.readFile(path.join(output, 'index.html'), 'utf8');
+  assert.match(first, /<h3 id="user-guide--stable-display-settings">/);
+  assert.match(first, /href="#user-guide--stable-display-settings"/);
+  assert.doesNotMatch(first, /<p><a id="user-guide--stable-display-settings"><\/a><\/p>/);
+  await fs.writeFile(file, (await fs.readFile(file, 'utf8')).replace('## Initial wording', '## Entirely different wording'));
+  await generate(root, output);
+  const updated = await fs.readFile(path.join(output, 'index.html'), 'utf8');
+  assert.match(updated, /<h3 id="user-guide--stable-display-settings">/);
+  assert.ok(updated.includes('Entirely different wording'));
 });
 
 async function translatedFixture(t) {
@@ -262,8 +311,8 @@ test('all available translations keep recorded section IDs, localized navigation
     assert.ok(html.includes('href="https://github.com/LeBenco/FileSpacer/blob/main/' + reference + '"'), 'Nilesoft reference must use the selected language');
     await fs.access(path.join(repository, reference));
   }
-  const localizedImage = await fs.readFile(path.join(output, '_locales/fr-FR/assets/content/docs/fr/images/spatial-windows-fr.png'));
-  assert.deepEqual(localizedImage, await fs.readFile(path.join(repository, 'docs/fr/images/spatial-windows-fr.png')));
+  const localizedImage = await fs.readFile(path.join(output, '_locales/fr-FR/assets/content/docs/images/spatial-windows.png'));
+  assert.deepEqual(localizedImage, await fs.readFile(path.join(repository, 'docs/fr/images/spatial-windows.png')));
 });
 
 test('a translation with a missing document is rejected rather than partially published', async t => {
