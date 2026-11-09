@@ -1,7 +1,7 @@
 ﻿# SPDX-License-Identifier: GPL-3.0-only; Copyright (C) 2026 Benco
 param([Parameter(Mandatory=$true)][string]$ProjectRoot,
       [string[]]$Languages=@(),
-      [ValidateSet('customize-title-menu','move-window','resize-window','locked-title')][string[]]$Scenes=@('move-window','resize-window','customize-title-menu','locked-title'),
+      [ValidateSet('customize-title-menu','move-window','resize-window','locked-title','details-columns')][string[]]$Scenes=@('move-window','resize-window','customize-title-menu','locked-title'),
       [string]$VMName='AgentWin10',[int]$TimeoutSeconds=2400)
 $ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1') -ErrorAction Stop
@@ -13,7 +13,7 @@ $source=Join-Path $assets 'reusable-source'
 $supported=(Get-Content -LiteralPath (Join-Path $PSScriptRoot 'scenes.json') -Raw -Encoding UTF8 | ConvertFrom-Json).PSObject.Properties.Name
 foreach($language in $Languages){if($language-notin$supported){throw ('Unknown language: '+$language)}}
 if(@($Languages|Select-Object -Unique).Count-ne$Languages.Count){throw 'Duplicate capture language.'}
-foreach($name in @('Capture.ps1','Capture.Core.ps1','SceneActions.ps1','CaptureDesktop.cs','scenes.json','wallpaper.jpg')) {
+foreach($name in @('Capture.ps1','Capture.Core.ps1','SceneActions.ps1','CaptureDesktop.cs','scenes.json','details-columns.json','wallpaper.jpg')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination (Join-Path $source $name) -Force
 }
 $wallpaperHash='8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714'
