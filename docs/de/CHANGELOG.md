@@ -1,6 +1,6 @@
 # Versionsverlauf
 
-## Noch nicht veröffentlicht
+## 1.4.0 — 2026-11-09
 
 - Tastenkürzel des Explorers und Anpassungen an die räumliche Bedienung ergänzen (Strg+N und Strg+Rücktaste).
 - Das Verkleinern großer Auswahlen durch einen Klick auf ein Element oder den Hintergrund klassischer Shell-Ansichten massiv beschleunigen, mit automatischem stillem Rückgriff auf öffentliche Funktionen, wenn die private Windows-Funktion fehlt.

@@ -1,6 +1,6 @@
 # Histórico de versões
 
-## Por publicar
+## 1.4.0 — 2026-11-09
 
 - Adicionar atalhos do Explorador de Ficheiros e adaptações ao modo espacial (Ctrl+N e Ctrl+Retrocesso).
 - Acelerar significativamente a redução de seleções grandes com um clique num item ou no fundo das vistas clássicas do Shell, com recurso automático e silencioso à alternativa quando a funcionalidade privada do Windows não estiver disponível.

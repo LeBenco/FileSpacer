@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.4.0 — 2026-11-09
 
 - Add File Explorer shortcuts and spatial adaptations (Ctrl+N and Ctrl+Backspace).
 - Massively speed up reducing large selections by clicking an item or the background in classic Shell views, with automatic silent fallback when the private Windows capability is unavailable.
