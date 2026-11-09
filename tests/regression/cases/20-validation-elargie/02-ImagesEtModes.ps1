@@ -18,7 +18,7 @@ try {
     $window=Open-UiFolder $folder 64
     foreach ($presentation in @(@{Mode=4;Size=16},@{Mode=3;Size=16},@{Mode=1;Size=96})) {
         Use-UiView $window {param($view) $view.SetViewModeAndIconSize($presentation.Mode,$presentation.Size)}
-        Wait-Ui { (Use-UiView $window {param($view) $view.Mode}) -eq $presentation.Mode } 'requested native mode is visible'
+        Wait-UiViewMode $window $presentation.Mode $presentation.Size
         Assert-SearchNames $window $expected
         Focus-ShellFixture $window 'image-01.png';Assert-UiSelected $window 'image-01.png'
         [FileSpacerRegression.Native]::Keys($window,0x74,$false,$false)
