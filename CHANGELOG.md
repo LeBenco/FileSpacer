@@ -9,6 +9,10 @@
 - Place new windows using the normal size and position of existing FileSpacer windows, including maximized, minimized and snapped windows.
 - Massively accelerate Select All and clearing selections of thousands of files in classic Shell views. This optimization uses private Windows functions whose availability and behavior are not guaranteed. If these functions are missing or incompatible, FileSpacer automatically and silently falls back to public functions, without the performance gains.
 
+## 1.4.0
+
+- Add automatic column resizing in Details view, with optional live updates.
+
 ## 1.3.2 — 2026-11-04
 
 - Add Polish, Dutch and Ukrainian to the application, installer, website and user and developer documentation.
