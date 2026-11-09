@@ -15,6 +15,11 @@
 #include "WinUtils.h"
 #include <shlobj.h>
 #include <atlbase.h>
+#include <commctrl.h>
+#include <shellapi.h>
+#include <type_traits>
+#include <RestartManager.h>
+#pragma comment(lib, "Rstrtmgr.lib")
 #endif
 
 namespace filespacer {
@@ -181,8 +186,11 @@ bool FolderStateStore::result(int code) {
     sqliteBusy = code == SQLITE_BUSY; // Extended result codes are not enabled on this connection.
     if (code == SQLITE_OK || code == SQLITE_DONE || code == SQLITE_ROW) {
         lastError.clear();
+        lastErrorCode = 0;
         return true;
     }
+    lastErrorCode = db ? sqlite3_extended_errcode(db) : code;
+    if ((lastErrorCode & 255) != code) lastErrorCode = code;
     lastError = db ? sqlite3_errmsg(db) : sqlite3_errstr(code);
     return false;
 }
@@ -253,9 +261,11 @@ public:
         }
         acquired = waited == WAIT_OBJECT_0 || waited == WAIT_ABANDONED;
         store.mutexBlocked = waited == WAIT_TIMEOUT;
-        if (!acquired)
+        if (!acquired) {
             store.lastError = "Folder-state database mutex wait failed (Windows error " + std::to_string(code) + ")";
-        else if (store.db) sqlite3_busy_timeout(store.db, static_cast<int>(left));
+            store.lastErrorCode = 0;
+            store.sqliteBusy = false;
+        } else if (store.db) sqlite3_busy_timeout(store.db, static_cast<int>(left));
 #else
         acquired = true;
         if (store.db) sqlite3_busy_timeout(store.db, static_cast<int>(left));
@@ -306,7 +316,9 @@ FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitializat
     int schema = sqlite3_column_int(version.get(), 0);
     version.reset();
     if (schema != 0 && schema != 2 && schema != 3 && schema != 4 && schema != 5 && schema != 6 && schema != 7) {
-        lastError = "Unsupported FileSpacer database version";
+        unsupportedSchema = true;
+        lastError = "Unsupported FileSpacer database version " + std::to_string(schema)
+            + " (supported: 2 through 7)";
         finishWrite(false);
         return;
     }
@@ -358,6 +370,96 @@ FolderStateStore::~FolderStateStore() {
     if (waited == WAIT_OBJECT_0 || waited == WAIT_ABANDONED) ReleaseMutex(accessMutex.get());
 #endif
 }
+
+bool FolderStateStore::canResetDamagedDatabase() const {
+    const int primary = lastErrorCode & 255;
+    return !initialized && (unsupportedSchema || primary == SQLITE_CORRUPT || primary == SQLITE_NOTADB
+        || primary == SQLITE_ERROR);
+}
+#ifdef _WIN32
+bool FolderStateStore::resetDamagedDatabase(const char *utf8Path, const wchar_t *backupDirectory) {
+    if (!canResetDamagedDatabase() || db) return false;
+    Lock lock(*this);
+    if (!lock) return false;
+    auto reset = [&]() -> bool {
+        auto failed = [&]() {
+            const DWORD code = GetLastError();
+            lastErrorCode = 0;
+            lastError = "Cannot back up folder-state database (Windows error " + std::to_string(code) + ")";
+            return false;
+        };
+        const int count = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8Path, -1, nullptr, 0);
+        if (!count) return failed();
+        std::wstring path(static_cast<size_t>(count), L'\0');
+        if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8Path, -1, &path[0], count)) return failed();
+        path.pop_back();
+        const wchar_t *suffixes[] = {L"", L"-wal", L"-shm", L"-journal"};
+        std::unique_ptr<void, CloseHandle> files[4];
+        for (size_t index = 0; index < ARRAYSIZE(suffixes); ++index) {
+            const HANDLE file = CreateFileW((path + suffixes[index]).c_str(), GENERIC_READ | DELETE,
+                0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+            if (file == INVALID_HANDLE_VALUE) {
+                const DWORD error = GetLastError();
+                if (index && error == ERROR_FILE_NOT_FOUND) continue;
+                SetLastError(error);
+                return failed();
+            }
+            files[index].reset(file);
+        }
+        // Keep every source exclusively open until backup and deletion finish.
+        // Existing users prevent this operation; no foreign handle is closed.
+        if (!CreateDirectoryW(backupDirectory, nullptr)) return failed();
+        const size_t slash = path.find_last_of(L"\\/");
+        const std::wstring name = path.substr(slash == std::wstring::npos ? 0 : slash + 1);
+        std::vector<uint8_t> buffer(64 * 1024);
+        for (size_t index = 0; index < ARRAYSIZE(suffixes); ++index) {
+            if (!files[index]) continue;
+            const std::wstring destination = std::wstring(backupDirectory) + L"\\" + name + suffixes[index];
+            const HANDLE raw = CreateFileW(destination.c_str(), GENERIC_WRITE, 0, nullptr,
+                CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
+            if (raw == INVALID_HANDLE_VALUE) return failed();
+            const std::unique_ptr<void, CloseHandle> copy(raw);
+            for (;;) {
+                DWORD read = 0, written = 0;
+                if (!ReadFile(files[index].get(), buffer.data(), static_cast<DWORD>(buffer.size()), &read, nullptr))
+                    return failed();
+                if (!read) break;
+                if (!WriteFile(copy.get(), buffer.data(), read, &written, nullptr)) return failed();
+                if (written != read) {
+                    SetLastError(ERROR_WRITE_FAULT);
+                    return failed();
+                }
+            }
+            if (!FlushFileBuffers(copy.get())) return failed();
+        }
+        FILE_DISPOSITION_INFO disposition = {TRUE};
+        // Mark the main database last; keep all handles open until every mark
+        // succeeds. On failure cancel pending deletions before releasing them.
+        const size_t order[] = {1, 2, 3, 0};
+        for (const size_t index : order) {
+            if (!files[index]) continue;
+            if (!SetFileInformationByHandle(files[index].get(), FileDispositionInfo,
+                    &disposition, sizeof(disposition))) {
+                const DWORD error = GetLastError();
+                FILE_DISPOSITION_INFO cancel = {FALSE};
+                bool restored = true;
+                for (auto &file : files)
+                    if (file && !SetFileInformationByHandle(file.get(), FileDispositionInfo, &cancel, sizeof(cancel)))
+                        restored = false;
+                lastErrorCode = 0;
+                lastError = "Cannot reset folder-state database (Windows error " + std::to_string(error) + ")"
+                    + (restored ? "" : "; use the complete backup to restore the files");
+                return false;
+            }
+        }
+        // Sidecars disappear before the main file can be recreated by another process.
+        for (size_t index = 1; index < ARRAYSIZE(suffixes); ++index) files[index].reset();
+        files[0].reset();
+        return true;
+    };
+    return reset();
+}
+#endif
 
 bool FolderStateStore::read(const std::string &key, FolderState *state) {
     if (!beginRead()) return false;
@@ -591,8 +693,12 @@ bool FolderStateStore::finishWrite(bool success) {
     if (success) success = execute("COMMIT");
     if (!success) {
         const std::string error = lastError;
+        const int code = lastErrorCode;
+        const bool busy = sqliteBusy;
         execute("ROLLBACK");
         lastError = error;
+        lastErrorCode = code;
+        sqliteBusy = busy;
     }
     return success;
 }
@@ -933,31 +1039,44 @@ bool FolderStateStore::trimSearchHistory(unsigned limit) {
 #if defined(_WIN32) && !defined(FILESPACER_STORAGE_TEST)
 static_assert(settings::MAX_SEARCH_HISTORY_LIMIT == MAX_STORED_SEARCH_HISTORY,
     "The search history preference limit must match the rows kept per folder");
-std::string folderStateDatabasePath() {
+static HRESULT resolveFolderStatePath(std::wstring &path) {
+    path.clear();
     CComHeapPtr<wchar_t> local;
-    if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_CREATE, nullptr, &local)))
-        return {};
+    const HRESULT found = SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_CREATE, nullptr, &local);
+    if (FAILED(found)) return found;
     std::wstring directory = std::wstring(local) + L"\\FileSpacer";
-    const int status = SHCreateDirectoryExW(nullptr, directory.c_str(), nullptr);
-    if (status != ERROR_SUCCESS && status != ERROR_ALREADY_EXISTS && status != ERROR_FILE_EXISTS)
-        return {};
-    std::wstring path = directory + L"\\folder-state.sqlite3";
+    path = directory + L"\\folder-state.sqlite3";
 #ifdef FILESPACER_DEBUG
     if (settings::testMode) path = directory + L"\\folder-state-test.sqlite3";
 #endif
+    const int status = SHCreateDirectoryExW(nullptr, directory.c_str(), nullptr);
+    return status == ERROR_SUCCESS || status == ERROR_ALREADY_EXISTS || status == ERROR_FILE_EXISTS
+        ? S_OK : HRESULT_FROM_WIN32(status);
+}
+std::string folderStateDatabasePath() {
+    std::wstring path;
+    if (FAILED(resolveFolderStatePath(path))) return {};
     return toUtf8(path.c_str());
 }
 namespace {
 // The last failed UI initialization, kept only for its diagnosis: the mutex
 // handle a waiting window duplicates, and SQLite's busy report.
 std::unique_ptr<FolderStateStore> failedStore;
+// UI-only diagnosis; background readers resolve their path into local variables.
+std::wstring attemptedPath;
+HRESULT pathError = S_OK;
+std::unique_ptr<FolderStateStore> &currentStore() {
+    static std::unique_ptr<FolderStateStore> store;
+    return store;
+}
 }
 FolderStateStore *folderStateStore(bool waitForInitialization) {
     // /test is parsed before the first folder creation. No worker uses this connection.
-    static std::unique_ptr<FolderStateStore> store;
+    auto &store = currentStore();
     static bool attempted = false;
     if (!store) {
-        const std::string path = folderStateDatabasePath();
+        pathError = resolveFolderStatePath(attemptedPath);
+        const std::string path = SUCCEEDED(pathError) ? toUtf8(attemptedPath.c_str()) : std::string();
         if (!path.empty() && !store) {
             {
                 const bool wait = waitForInitialization || !attempted;
@@ -977,9 +1096,199 @@ void *folderStateBlockingMutex() {
 bool folderStateBusy() {
     return failedStore && failedStore->busy();
 }
+namespace {
+std::wstring storageErrorText(const std::string &utf8) {
+    const int count = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8.c_str(), -1, nullptr, 0);
+    if (!count) return {};
+    std::wstring text(static_cast<size_t>(count), L'\0');
+    if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8.c_str(), -1, &text[0], count)) return {};
+    text.pop_back();
+    return text;
+}
+DWORD copyStorageDiagnosis(HWND owner, const std::wstring &diagnosis) {
+    const size_t bytes = (diagnosis.size() + 1) * sizeof(wchar_t);
+    std::unique_ptr<std::remove_pointer<HGLOBAL>::type, decltype(&GlobalFree)>
+        memory(GlobalAlloc(GMEM_MOVEABLE, bytes), GlobalFree);
+    if (!memory) return GetLastError();
+    void *text = GlobalLock(memory.get());
+    if (!text) return GetLastError();
+    std::memcpy(text, diagnosis.c_str(), bytes);
+    GlobalUnlock(memory.get());
+    if (!OpenClipboard(owner)) return GetLastError();
+    DWORD error = ERROR_SUCCESS;
+    if (!EmptyClipboard() || !SetClipboardData(CF_UNICODETEXT, memory.get())) error = GetLastError();
+    else memory.release(); // Clipboard owns the allocation only after successful transfer.
+    CloseClipboard();
+    return error;
+}
+DWORD openStorageDirectory(HWND owner, const std::wstring &directory) {
+    if (directory.empty()) return ERROR_PATH_NOT_FOUND;
+    const DWORD attributes = GetFileAttributesW(directory.c_str());
+    if (attributes == INVALID_FILE_ATTRIBUTES) return GetLastError();
+    if (!(attributes & FILE_ATTRIBUTE_DIRECTORY)) return ERROR_DIRECTORY;
+    wchar_t windows[MAX_PATH];
+    const UINT length = GetSystemWindowsDirectoryW(windows, ARRAYSIZE(windows));
+    if (!length) return GetLastError();
+    if (length >= ARRAYSIZE(windows)) return ERROR_INSUFFICIENT_BUFFER;
+    const std::wstring explorer = std::wstring(windows, length) + L"\\explorer.exe";
+    const auto arguments = quoteCommandArgument(directory.c_str());
+    SHELLEXECUTEINFOW info = {sizeof(info)};
+    info.hwnd = owner;
+    info.fMask = SEE_MASK_NOASYNC | SEE_MASK_FLAG_NO_UI;
+    info.lpFile = explorer.c_str(); // Never recurse through FileSpacer's default folder association.
+    info.lpParameters = arguments.c_str();
+    info.nShow = SW_SHOWNORMAL;
+    return ShellExecuteExW(&info) ? ERROR_SUCCESS : GetLastError();
+}
+struct StorageErrorDialog {
+    std::wstring path, directory, diagnosis;
+    bool usersLoaded = false;
+};
+void loadStorageUsers(StorageErrorDialog &dialog) {
+    if (dialog.usersLoaded) return;
+    dialog.usersLoaded = true;
+    DWORD session = 0;
+    wchar_t key[CCH_RM_SESSION_KEY + 1] = {};
+    std::wstring users;
+    DWORD error = RmStartSession(&session, 0, key);
+    if (error == ERROR_SUCCESS) {
+        auto endSession = [](DWORD *handle) { RmEndSession(*handle); };
+        const std::unique_ptr<DWORD, decltype(endSession)> guard(&session, endSession);
+        std::wstring paths[] = {dialog.path, dialog.path + L"-wal", dialog.path + L"-shm", dialog.path + L"-journal"};
+        LPCWSTR files[] = {paths[0].c_str(), paths[1].c_str(), paths[2].c_str(), paths[3].c_str()};
+        error = dialog.path.empty() ? ERROR_PATH_NOT_FOUND
+            : RmRegisterResources(session, ARRAYSIZE(files), files, 0, nullptr, 0, nullptr);
+        if (error == ERROR_SUCCESS) {
+            UINT required = 0, count = 0;
+            DWORD reboot = 0;
+            error = RmGetList(session, &required, &count, nullptr, &reboot);
+            // A changing process list can require one resize; never spin waiting for it.
+            for (int attempt = 0; error == ERROR_MORE_DATA && attempt < 2; ++attempt) {
+                std::vector<RM_PROCESS_INFO> processes(required);
+                count = required;
+                error = RmGetList(session, &required, &count, processes.data(), &reboot);
+                if (error == ERROR_SUCCESS) {
+                    for (UINT index = 0; index < count; ++index)
+                        users += L"\n" + std::wstring(processes[index].strAppName) + L" — PID "
+                            + std::to_wstring(processes[index].Process.dwProcessId);
+                }
+            }
+        }
+    }
+    dialog.diagnosis += L"\n\n";
+    dialog.diagnosis += getString(users.empty() ? IDS_STORAGE_USERS_UNAVAILABLE : IDS_STORAGE_USERS);
+    dialog.diagnosis += users;
+    if (error != ERROR_SUCCESS) dialog.diagnosis += L"\nRestart Manager: " + std::to_wstring(error);
+}
+HRESULT CALLBACK storageErrorCallback(HWND window, UINT notification, WPARAM button, LPARAM, LONG_PTR data) {
+    auto &dialog = *reinterpret_cast<StorageErrorDialog *>(data);
+    if (notification == TDN_EXPANDO_BUTTON_CLICKED && button) {
+        loadStorageUsers(dialog);
+        SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_EXPANDED_INFORMATION,
+            reinterpret_cast<LPARAM>(dialog.diagnosis.c_str()));
+        return S_OK;
+    }
+    if (notification == TDN_BUTTON_CLICKED && button == IDC_STORAGE_RESET) {
+        int confirmed = IDNO;
+        TASKDIALOGCONFIG confirmation = {sizeof(confirmation)};
+        confirmation.hwndParent = window;
+        confirmation.dwFlags = TDF_ALLOW_DIALOG_CANCELLATION;
+        confirmation.pszWindowTitle = getString(IDS_CONFIRM_CAPTION);
+        confirmation.pszMainInstruction = getString(IDS_STORAGE_RESET);
+        confirmation.pszContent = getString(IDS_STORAGE_RESET_CONFIRM);
+        confirmation.pszMainIcon = TD_WARNING_ICON;
+        confirmation.dwCommonButtons = TDCBF_NO_BUTTON | TDCBF_YES_BUTTON;
+        confirmation.nDefaultButton = IDNO;
+        if (FAILED(TaskDialogIndirect(&confirmation, &confirmed, nullptr, nullptr)) || confirmed != IDYES)
+            return S_FALSE;
+        // Confirmation pumps messages. Recheck the current path and retry native
+        // recovery before deciding whether any destructive operation is still needed.
+        if (folderStateStore()) {
+            SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_FOOTER,
+                reinterpret_cast<LPARAM>(getString(IDS_STORAGE_RECOVERED)));
+            SendMessageW(window, TDM_ENABLE_BUTTON, IDC_STORAGE_RESET, FALSE);
+            return S_FALSE;
+        }
+        GUID guid;
+        wchar_t id[40];
+        const bool named = SUCCEEDED(CoCreateGuid(&guid)) && StringFromGUID2(guid, id, ARRAYSIZE(id));
+        const std::wstring backup = named ? dialog.path + L".backup-" + id : std::wstring();
+        if (!named || dialog.path != attemptedPath || !failedStore || !failedStore->canResetDamagedDatabase()
+                || !failedStore->resetDamagedDatabase(toUtf8(dialog.path.c_str()).c_str(), backup.c_str())) {
+            const std::wstring reason = failedStore ? storageErrorText(failedStore->error())
+                : std::wstring(getString(IDS_STORAGE_UNKNOWN_ERROR));
+            const auto message = formatString(IDS_STORAGE_RESET_FAILED, reason.c_str());
+            SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_FOOTER, reinterpret_cast<LPARAM>(message.get()));
+            return S_FALSE;
+        }
+        const auto message = formatString(IDS_STORAGE_RESET_DONE, backup.c_str());
+        TaskDialog(window, nullptr, getString(IDS_APP_NAME), getString(IDS_STORAGE_RESET),
+            message.get(), TDCBF_OK_BUTTON, TD_INFORMATION_ICON, nullptr);
+        return S_OK;
+    }
+    if (notification != TDN_BUTTON_CLICKED
+            || (button != IDC_STORAGE_OPEN_DATA && button != IDC_STORAGE_COPY_DIAGNOSIS)) return S_OK;
+    if (button == IDC_STORAGE_COPY_DIAGNOSIS) loadStorageUsers(dialog);
+    const DWORD error = button == IDC_STORAGE_OPEN_DATA
+        ? openStorageDirectory(window, dialog.directory) : copyStorageDiagnosis(window, dialog.diagnosis);
+    if (error) {
+        const auto message = formatString(IDS_STORAGE_ACTION_ERROR, error, getErrorMessage(error).get());
+        SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_FOOTER, reinterpret_cast<LPARAM>(message.get()));
+    } else {
+        SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_FOOTER,
+            reinterpret_cast<LPARAM>(getString(button == IDC_STORAGE_COPY_DIAGNOSIS
+                ? IDS_STORAGE_DIAGNOSIS_COPIED : IDS_STORAGE_DATA_OPENED)));
+    }
+    return S_FALSE; // Auxiliary actions leave the original error and its owned snapshot available.
+}
+}
 void reportFolderStateError(void *owner) {
-    MessageBoxW(static_cast<HWND>(owner), getString(IDS_FOLDER_STATE_ERROR),
-        getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
+    // Snapshot before any modal message loop can retry initialization or change the last error.
+    const auto store = currentStore() ? currentStore().get() : failedStore.get();
+    std::wstring cause = store ? storageErrorText(store->error()) : std::wstring();
+    const int code = store ? store->errorCode() : 0;
+    if (FAILED(pathError))
+        cause = format(L"HRESULT 0x%1!08lX!: %2!s!", static_cast<unsigned long>(pathError),
+            getErrorMessage(HRESULT_FACILITY(pathError) == FACILITY_WIN32
+                ? HRESULT_CODE(pathError) : static_cast<DWORD>(pathError)).get()).get();
+    if (cause.empty()) cause = getString(IDS_STORAGE_UNKNOWN_ERROR);
+    std::vector<wchar_t> executable(32768);
+    const DWORD length = GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size()));
+    const std::wstring module = length && length < executable.size()
+        ? std::wstring(executable.data(), length) : std::wstring();
+    StorageErrorDialog dialog;
+    dialog.path = attemptedPath;
+    const size_t slash = attemptedPath.find_last_of(L"\\/");
+    if (slash != std::wstring::npos) dialog.directory = attemptedPath.substr(0, slash);
+    const auto details = formatString(IDS_STORAGE_DIAGNOSIS, TEXT(FILESPACER_VERSION_STRING), module.c_str(),
+        attemptedPath.c_str(), storageErrorText(sqlite3_libversion()).c_str(), code, cause.c_str());
+    dialog.diagnosis = std::wstring(details.get()) + L"\n\n" + getString(IDS_STORAGE_RECOVERY_HELP);
+    const std::wstring initialDetails = dialog.diagnosis;
+    TASKDIALOG_BUTTON buttons[] = {
+        {IDC_STORAGE_OPEN_DATA, getString(IDS_STORAGE_OPEN_DATA)},
+        {IDC_STORAGE_COPY_DIAGNOSIS, getString(IDS_STORAGE_COPY_DIAGNOSIS)},
+        {IDC_STORAGE_RESET, getString(IDS_STORAGE_RESET)}
+    };
+    TASKDIALOGCONFIG config = {sizeof(config)};
+    config.hwndParent = static_cast<HWND>(owner);
+    config.dwFlags = TDF_ALLOW_DIALOG_CANCELLATION | TDF_SIZE_TO_CONTENT;
+    config.dwCommonButtons = TDCBF_OK_BUTTON;
+    config.pszWindowTitle = getString(IDS_ERROR_CAPTION);
+    config.pszMainIcon = TD_ERROR_ICON;
+    config.pszMainInstruction = cause.c_str();
+    config.pszContent = getString(IDS_FOLDER_STATE_ERROR);
+    config.cButtons = SUCCEEDED(pathError) && store && store->canResetDamagedDatabase()
+        ? ARRAYSIZE(buttons) : ARRAYSIZE(buttons) - 1;
+    config.pButtons = buttons;
+    config.nDefaultButton = IDOK;
+    config.pszExpandedControlText = getString(IDS_STORAGE_DETAILS);
+    config.pszExpandedInformation = initialDetails.c_str();
+    config.pszFooter = L" "; // Reserve the footer for action results.
+    config.pfCallback = storageErrorCallback;
+    config.lpCallbackData = reinterpret_cast<LONG_PTR>(&dialog);
+    if (FAILED(TaskDialogIndirect(&config, nullptr, nullptr, nullptr)))
+        MessageBoxW(static_cast<HWND>(owner), dialog.diagnosis.c_str(),
+            getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
 }
 #endif
 
