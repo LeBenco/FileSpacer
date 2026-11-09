@@ -2,6 +2,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Automatische aanpassing van kolombreedtes in de detailweergave toevoegen, met optionele live-updates.
 - Sneltoetsen van Verkenner en aanpassingen voor de ruimtelijke werkwijze toevoegen (Ctrl+N en Ctrl+Backspace).
 - Het verkleinen van grote selecties door op een item of de achtergrond van klassieke Shell-weergaven te klikken sterk versnellen, met een automatische, stille terugval als de private Windows-functie ontbreekt.
 - Volledige en grote gedeeltelijke selecties sneller uitlezen in pictogramweergaven met vrije plaatsing via openbare Windows-API’s.

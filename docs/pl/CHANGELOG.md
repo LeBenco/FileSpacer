@@ -2,6 +2,7 @@
 
 ## 1.4.0 — 2026-11-09
 
+- Dodać automatyczne dostosowywanie szerokości kolumn w widoku Szczegóły, z opcjonalną aktualizacją na bieżąco.
 - Dodać skróty Eksploratora plików i ich dostosowania do trybu przestrzennego (Ctrl+N i Ctrl+Backspace).
 - Znacznie przyspieszyć ograniczanie dużych zaznaczeń przez kliknięcie elementu lub tła w klasycznych widokach powłoki, z automatycznym i cichym powrotem do ścieżki publicznej, gdy prywatna funkcja Windows jest niedostępna.
 - Przyspieszyć odczyt pełnych i dużych częściowych zaznaczeń w widokach ikon ze swobodnym rozmieszczeniem za pomocą publicznych interfejsów API systemu Windows.
