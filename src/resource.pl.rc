@@ -3,6 +3,12 @@
 
 LANGUAGE LANG_POLISH, SUBLANG_NEUTRAL
 
+STRINGTABLE
+BEGIN
+  IDS_FILL_COLUMNS "Kolumny szczegółów na całą szerokość (ten folder)"
+  IDS_FILL_COLUMNS_WARNING "Ciągłe odświeżanie może zmniejszyć płynność zmiany rozmiaru i zwiększyć użycie CPU nawet w małych folderach. Zalecane jest odświeżanie po zwolnieniu przycisku.\n\nMimo to włączyć kolumny na całą szerokość dla tego folderu?"
+END
+
 IDR_ITEM_MENU   MENU {
     MENUITEM    "Dokumentacja\tF1", IDM_HELP
     MENUITEM    "Ustawienia FileSpacer\tCtrl+,", IDM_SETTINGS

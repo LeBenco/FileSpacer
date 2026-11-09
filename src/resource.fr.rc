@@ -3,6 +3,12 @@
 
 LANGUAGE LANG_FRENCH, SUBLANG_NEUTRAL
 
+STRINGTABLE
+BEGIN
+  IDS_FILL_COLUMNS "Remplir la largeur avec les colonnes Détails (ce dossier)"
+  IDS_FILL_COLUMNS_WARNING "L’actualisation en continu peut rendre le redimensionnement moins fluide et augmenter la charge CPU, même dans un petit dossier. L’actualisation au relâchement est recommandée.\n\nActiver quand même les colonnes Détails sur toute la largeur pour ce dossier ?"
+END
+
 IDR_ITEM_MENU   MENU {
     MENUITEM    "Documentation\tF1", IDM_HELP
     MENUITEM    "Paramètres de FileSpacer\tCtrl+,", IDM_SETTINGS

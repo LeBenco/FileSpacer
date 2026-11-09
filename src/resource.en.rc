@@ -3,6 +3,12 @@
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
+STRINGTABLE
+BEGIN
+  IDS_FILL_COLUMNS "Fill width with Details columns (this folder)"
+  IDS_FILL_COLUMNS_WARNING "Continuous column updates can make resizing less smooth and increase CPU use, even in small folders. Updating only on release is recommended.\n\nEnable full-width Details columns for this folder anyway?"
+END
+
 IDR_ITEM_MENU   MENU {
     MENUITEM    "Documentation\tF1", IDM_HELP
     MENUITEM    "FileSpacer Settings\tCtrl+,", IDM_SETTINGS

@@ -3,6 +3,12 @@
 
 LANGUAGE LANG_PORTUGUESE, SUBLANG_NEUTRAL
 
+STRINGTABLE
+BEGIN
+  IDS_FILL_COLUMNS "Colunas de Detalhes em toda a largura (esta pasta)"
+  IDS_FILL_COLUMNS_WARNING "A atualização contínua pode reduzir a fluidez e aumentar o uso de CPU, mesmo em pastas pequenas. Recomenda-se atualizar ao soltar o botão.\n\nAtivar mesmo assim as colunas em toda a largura para esta pasta?"
+END
+
 IDR_ITEM_MENU   MENU {
     MENUITEM    "Documentação\tF1", IDM_HELP
     MENUITEM    "Definições do FileSpacer\tCtrl+,", IDM_SETTINGS
