@@ -14,6 +14,15 @@ function Check-Range([string]$Name,[string[]]$Arguments) {
 $worker=Invoke-NativeProgram $exe @('--build-cache',$cache) (Join-Path $RunDirectory 'qualified-worker.log') (Join-Path $RunDirectory 'qualified-worker.errors.log')
 if($worker-ne0-and$worker-ne50){throw ('Range worker failed: '+$worker)}
 $base=@(Get-ChildItem -LiteralPath $cache -Filter '*.bin' -File)
+if(!$base.Count-and$worker-eq50){
+    $negative=@(Get-ChildItem -LiteralPath $cache -Filter '*.bin.public' -File)
+    if($negative.Count-ne1-or!(Get-Content $negative[0].FullName -Raw).StartsWith('FSPUBLIC01')){throw 'Private discovery failed without a saved structural fallback decision.'}
+    Check-Range 'unsupported-shell-public-reuse' @('--public-persist',$cache)
+    if(@(Get-ChildItem -LiteralPath $cache -Filter '*.attempt').Count){throw 'Saved public fallback restarted discovery.'}
+    if($RequireRange){throw 'Private Shell path unavailable on the required host.'}
+    Write-Host 'PASS: unsupported private Shell path reuses public clearing. Optional private range not exercised.'
+    return
+}
 if($base.Count-ne1-or$base[0].Length-ne160){throw 'Shell selection descriptor missing.'}
 $range=@(Get-ChildItem -LiteralPath $cache -Filter '*.range' -File)
 function New-BaseCache([string]$Name) {
