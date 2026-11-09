@@ -39,7 +39,8 @@ try {
     $window=Open-UiFolder $folder 3
     Activate-Ui $window
     Use-UiView $window {param($view) $view.SetViewModeAndIconSize(1,48)}
-    Wait-Ui { (Use-UiView $window {param($view) $view.Mode -eq 1 -and $view.IconSize -eq 48 -and $view.Count -eq 3}) } '48-pixel native icon fixture' 400
+    Wait-UiViewMode $window 1 48
+    Wait-Ui { (Use-UiView $window {param($view) $view.Count}) -eq 3 } '48-pixel native icon fixture enumeration' 400
     Use-UiView $window {param($view) $view.AutoArrange=$false}
     Wait-Ui { !(Use-UiView $window {param($view) $view.AutoArrange}) } 'manual icon placement' 400
     Use-UiView $window {
