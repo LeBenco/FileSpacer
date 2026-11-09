@@ -17,20 +17,13 @@ try {
     [FileSpacerRegression.Native]::Keys($window,0x1b,$false,$false)
     Assert-SearchNames $window @('Renamed-by-F2',$createdDirectory)
     Rename-ShellFixture $window $folder $createdDirectory 'Created-by-command'
-    Focus-ShellFixture $window
-    Assert-Ui ([FileSpacerRegression.Native]::PostMessage($window,0x111,[IntPtr](Get-UiId 'IDM_NEW_TEXT_FILE'),[IntPtr]::Zero)) 'Cannot dispatch the application New Text File command.'
-    Wait-Ui { @([IO.Directory]::GetFiles($folder)).Count -eq 2 } 'application command creates exactly one text file'
-    $createdFile=@([IO.Directory]::GetFiles($folder) | Where-Object { [IO.Path]::GetFileName($_) -ne 'Renamed-by-F2' })[0]
-    Assert-Ui ([IO.Path]::GetExtension($createdFile) -ieq '.txt' -and (Get-Item -LiteralPath $createdFile).Length -eq 0) 'New Text File did not create an empty .txt file.'
-    [FileSpacerRegression.Native]::Keys($window,0x1b,$false,$false)
-    $createdName=[IO.Path]::GetFileName($createdFile)
-    Assert-SearchNames $window @('Renamed-by-F2','Created-by-command',$createdName)
-    Remove-ShellFixture $window $folder $createdName
+    # Text creation is now exposed only by the native New menu, not by an
+    # application command. Keep this case on the remaining application command.
     Assert-SearchNames $window @('Renamed-by-F2','Created-by-command')
     Remove-ShellFixture $window $folder 'Created-by-command'
     Assert-SearchNames $window @('Renamed-by-F2')
     Remove-ShellFixture $window $folder 'Renamed-by-F2'
     Assert-SearchNames $window @()
-    Write-Host 'PASS: application creation commands, F2 rename and native Shift+Delete update both disk and visible identities.'
+    Write-Host 'PASS: application New Folder, F2 rename and native Shift+Delete update both disk and visible identities.'
 } catch { $testFailure=$_;throw }
 finally { Stop-Ui -Failure $testFailure }
