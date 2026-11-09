@@ -84,6 +84,8 @@ static LRESULT CALLBACK toolbarMenuOwnerProc(HWND window, UINT message,
         case WM_DRAWITEM:
         case WM_MEASUREITEM:
         case WM_MENUCHAR:
+        case WM_USER + 7: // Existing WM_GETISHELLBROWSER_COMPAT query in FolderWindow.
+            // Stop Shell ancestor probing before 0x407 reaches the rebar as RB_SETPARENT.
             // Keep delayed Shell submenus and owner-drawn items on the existing host.
             return SendMessage(reinterpret_cast<HWND>(owner), message, wParam, lParam);
         case WM_NCDESTROY:
