@@ -85,6 +85,10 @@ function Get-UiView([IntPtr]$Window) {
         try {
             $view=[FileSpacerRegression.Native]::View($registered,$Window)
             if ($null -ne $view) { return $view }
+        } catch [InvalidCastException] {
+            # Replacing a renderer disconnects the old registered view before
+            # the replacement publishes IFolderView. The caller waits for it.
+            continue
         } finally { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($registered) }
     }
     return $null
