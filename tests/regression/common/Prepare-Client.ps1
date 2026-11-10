@@ -84,10 +84,18 @@ function New-ClientPackage {
             # directory. They are not checked-in scripts to copy to the client.
             if ($file -eq (Join-Path $regression 'cases\00-banc\02-Processus.ps1') -and
                     $value -in @('child.ps1','parent.ps1')) { continue }
+            # This contract reads the explicitly copied worker as data and puts
+            # case names in fixture JSON; it does not import or run those scripts.
+            if ($file -eq (Join-Path $regression 'cases\30-documentation\02-NettoyageCaptures.ps1') -and
+                    $value -in @('tests\client\HyperVSmoke.ps1','99-documentation\01-Capture.ps1',
+                        '99-documentation\03-ReclaimInputs.ps1','37-colonnes\01-Options.ps1')) { continue }
             if ($value -notmatch '\.(ps1|cs)$' -or $value -match '[*?\r\n]') { continue }
-            # Most paths are relative to PSScriptRoot; a few helper aliases
-            # name a unique CS file in another test group.
+            # Resolve paths relative to the script or project root before
+            # looking up uniquely named helpers in another test group.
             $candidate=[IO.Path]::GetFullPath((Join-Path (Split-Path $file -Parent) $value))
+            if (!(Test-Path -LiteralPath $candidate -PathType Leaf)) {
+                $candidate=[IO.Path]::GetFullPath((Join-Path $ProjectRoot $value))
+            }
             if (!(Test-Path -LiteralPath $candidate -PathType Leaf)) {
                 $matches=@(Get-ChildItem -LiteralPath $regression -Recurse -File | Where-Object { $_.Name -eq [IO.Path]::GetFileName($value) })
                 if ($matches.Count -ne 1) { throw ('Unresolved test dependency: '+$file+' -> '+$value) }
