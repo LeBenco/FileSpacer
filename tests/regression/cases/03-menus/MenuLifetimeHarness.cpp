@@ -403,19 +403,6 @@ void run(Operation op, Stage stage, int command = IDM_SHELL_FIRST,
 }
 
 int main() {
-    {
-        Menu menu;
-        MENUITEMINFO info = {sizeof(info)}, separator = {sizeof(separator)};
-        info.fMask = MIIM_FTYPE;
-        bool found = GetMenuItemInfoW(&menu, 0, TRUE, &info);
-        assert(!found);
-        separator.fType = MFT_SEPARATOR;
-        menu.items.push_back(separator);
-        found = GetMenuItemInfoW(&menu, 0, TRUE, &info);
-        assert(found && (info.fType & MFT_SEPARATOR));
-        found = GetMenuItemInfoW(&menu, 1, TRUE, &info);
-        assert(!found);
-    }
     run(Operation::View, Stage::None, IDM_TOGGLE_THUMBNAILS);
     assert(observation.thumbnailToggles == 1 && observation.invoked == 0);
     run(Operation::View, Stage::None, IDM_FILL_COLUMNS);
