@@ -2,6 +2,15 @@
 
 # Historia zmian
 
+<a id="141--2026-11-09"></a>
+
+## 1.4.1 — 2026-11-09
+
+- Objaśniać błędy bazy danych stanu folderów za pomocą informacji diagnostycznych, które można skopiować, dostępu do folderu danych i identyfikacji procesów, gdy jest dostępna. Gdy bazy nie można wczytać ani odzyskać, proponować resetowanie po potwierdzeniu, z pełną kopią zapasową.
+- Unikać zbędnych zapisów historii wyszukiwania podczas stosowania niezmienionych preferencji, aby niedostępna baza danych stanu folderów nie blokowała tego kroku przed automatyczną aktualizacją.
+
+- Naprawić blokowanie zmiany rozmiaru paska narzędzi po otwarciu jego menu lub Ustawień, także w widoku Szczegóły z odroczoną zmianą szerokości kolumn.
+
 <a id="140--2026-11-09"></a>
 
 ## 1.4.0 — 2026-11-09
