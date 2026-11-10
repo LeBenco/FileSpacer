@@ -1,6 +1,7 @@
 #pragma once
 #include <common.h>
 #include "FolderStateStore.h"
+#include "FolderOpeningAnimation.h"
 
 #include "COMUtils.h"
 #include "ProxyIcon.h"
@@ -20,7 +21,8 @@ enum class FolderOpenResult;
 struct ItemValidation;
 
 class ItemWindow : public WindowImpl, public UnknownImpl {
-    friend FolderOpenResult openFolderWindow(IShellItem *, HMONITOR, int, const ClosedWindow *, HWND);
+    friend FolderOpenResult openFolderWindow(IShellItem *, HMONITOR, int, const ClosedWindow *, HWND,
+        const RECT *, const std::function<void()> &);
     friend ProxyIcon;
 protected:
     static HACCEL accelTable;
@@ -143,7 +145,7 @@ protected:
     HWND getToolbarMenuOwner() const;
 	int trackContextMenu(POINT pos, HMENU menu, HWND owner = nullptr);
 
-    void openChild(IShellItem *childItem, bool closeSource);
+    void openChild(IShellItem *childItem, bool closeSource, const RECT *openingOrigin = nullptr);
 
     virtual IDispatch * getShellViewDispatch();
     void onViewReady();
@@ -161,7 +163,8 @@ protected:
     CComQIPtr<IContextMenu3> contextMenu3;
 
 private:
-    bool create(RECT rect, int showCommand);
+    bool create(RECT rect, int showCommand, const RECT *openingOrigin);
+    std::unique_ptr<FolderOpeningAnimation> openingAnimation;
     virtual const wchar_t * className() const;
 
     bool centeredProxy() const; // requires useCustomFrame() == true

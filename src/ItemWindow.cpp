@@ -1,6 +1,7 @@
 #define GDIPVER 0x0110 // Enable GDI+ 1.1 declarations.
 #include "ItemWindow.h"
 #include "CreateItemWindow.h"
+#include "FolderOpeningAnimation.h"
 #include "ClosedWindows.h"
 #include "ShellMenuIcons.h"
 #include "FolderIdentity.h"
@@ -375,6 +376,7 @@ void ItemWindow::init() {
 }
 
 void ItemWindow::uninit() {
+    FolderOpeningAnimation::uninit();
     if (ancestorNotifyID) SHChangeNotifyDeregister(ancestorNotifyID);
     ancestorNotifyID = 0;
     ancestorNotifyWindow.reset();
@@ -770,7 +772,7 @@ void ItemWindow::viewStateClean(uint32_t mask) {
     dirtyViewState &= ~mask;
 }
 
-bool ItemWindow::create(RECT rect, int showCommand) {
+bool ItemWindow::create(RECT rect, int showCommand, const RECT *openingOrigin) {
     if (identityProperty.empty() || !checkHR(item->GetDisplayName(SIGDN_NORMALDISPLAY, &title)))
         return false;
     debugPrintf(L"Open %s\n", &*title);
@@ -787,8 +789,17 @@ bool ItemWindow::create(RECT rect, int showCommand) {
     if (restoreMaximized && (showCommand == SW_SHOWNORMAL || showCommand == SW_SHOW
             || showCommand == SW_SHOWDEFAULT || showCommand == SW_RESTORE))
         showCommand = SW_SHOWMAXIMIZED;
-    ShowWindow(createHwnd, showCommand);
-    return true;
+    std::unique_ptr<FolderOpeningAnimation> animation;
+    if (openingOrigin && showCommand != SW_HIDE && showCommand != SW_SHOWMINIMIZED
+            && showCommand != SW_MINIMIZE && showCommand != SW_SHOWMINNOACTIVE) {
+        animation.reset(new FolderOpeningAnimation);
+        if (!animation->begin(createHwnd, *openingOrigin, showCommand)) animation.reset();
+    }
+    if (!isWindowOperational() || hwnd != createHwnd) return false;
+    if (animation) openingAnimation = std::move(animation);
+    else ShowWindow(createHwnd, showCommand);
+    FolderOpeningAnimation::prepare();
+    return isWindowOperational();
 }
 
 void ItemWindow::close(bool remember) {
@@ -921,6 +932,7 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             break; // pass to DefWindowProc
         }
         case WM_DESTROY:
+            openingAnimation.reset();
             removeWindowPlacement(hwnd);
             onDestroy();
             return 0;
@@ -1868,7 +1880,7 @@ void ItemWindow::onPaint(PAINTSTRUCT paint) {
     }
 }
 
-void ItemWindow::openChild(IShellItem *const childItem, bool closeSource) {
+void ItemWindow::openChild(IShellItem *const childItem, bool closeSource, const RECT *openingOrigin) {
     CComPtr<ItemWindow> keepAlive(this); // a COM wait may dispatch window messages
     if (!isWindowOperational())
         return;
@@ -1897,10 +1909,15 @@ void ItemWindow::openChild(IShellItem *const childItem, bool closeSource) {
         return;
     }
     HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+    std::function<void()> onShown;
+    if (closeSource) {
+        onShown = [keepAlive]() {
+            if (keepAlive->isWindowOperational()) keepAlive->close(false);
+        };
+    }
     FolderOpenResult result = openFolderWindow(resolved, monitor, SW_SHOWNORMAL,
-        nullptr, closeSource ? hwnd : nullptr);
-    if (isWindowOperational() && closeSource
-            && (result == FolderOpenResult::Created || result == FolderOpenResult::Activated))
+        nullptr, closeSource ? hwnd : nullptr, openingOrigin, onShown);
+    if (isWindowOperational() && closeSource && result == FolderOpenResult::Activated)
         close(false);
 }
 
