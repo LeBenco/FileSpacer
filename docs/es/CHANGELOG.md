@@ -2,6 +2,15 @@
 
 # Historial de versiones
 
+<a id="141--2026-11-09"></a>
+
+## 1.4.1 — 2026-11-09
+
+- Explicar los errores de la base de datos del estado de las carpetas con un diagnóstico que se puede copiar, acceso a la carpeta de datos e identificación de procesos cuando esté disponible. Ofrecer un restablecimiento con confirmación y una copia de seguridad completa si la base de datos no se puede cargar ni recuperar.
+- Evitar escrituras innecesarias en el historial de búsqueda al aplicar preferencias que no han cambiado, para que una base de datos del estado de las carpetas no disponible no bloquee este paso antes de una actualización automática.
+
+- Corregir el bloqueo del cambio de tamaño de la barra de herramientas tras abrir su menú o Configuración, también en la vista Detalles con el ajuste diferido de columnas.
+
 <a id="140--2026-11-09"></a>
 
 ## 1.4.0 — 2026-11-09
@@ -34,10 +43,11 @@
 
 ## 1.3.0 — 2026-11-02
 
-- Añade vistas previas opcionales de PowerToys Peek y deja que Grab And Move gestione los gestos de ventana en conflicto.
+- Registrar las operaciones detalladas del instalador, los fallos de comandos y las excepciones completas de la limpieza de la documentación en registros de diagnóstico persistentes.
 - Corrige el acceso simultáneo al estado de las carpetas, conserva los cambios durante la recuperación diferida y reduce el redibujado de grandes distribuciones libres de iconos.
 - Evita movimientos de ventana y menús contextuales no deseados tras interrumpir gestos de ventana.
 
+- Añade vistas previas opcionales de PowerToys Peek y deja que Grab And Move gestione los gestos de ventana en conflicto.
 - Personaliza el menú de la barra de título en siete idiomas, con arrastrar y soltar, valores predeterminados y apariencia nativa o de Nilesoft Shell.
 - Añade acciones sobre las disposiciones guardadas, ajuste al contenido, cierre de ventanas descendientes u otras ventanas, grupos de carpetas con nombre y comandos estables de Nilesoft.
 - Corrige la desinstalación para que continúe si falla la limpieza de la ayuda y la detección de varios procesos Explorer en una misma sesión de escritorio en las pruebas de VM.
@@ -47,6 +57,9 @@
 
 ## 1.2.3 — 2026-10-30
 
+- Suavizar el logotipo de la barra lateral del instalador y del desinstalador mediante un escalado de alta calidad al tamaño de visualización actual.
+- Conservar las comillas de los argumentos de elevación para que una actualización para todos los usuarios inicie su proceso silencioso en lugar de volver a abrir el instalador.
+- Actualizar de forma predeterminada la instalación de origen y restaurar las ventanas con el ejecutable exacto indicado por el instalador, incluso cuando coexisten instalaciones personales y para todos los usuarios.
 - Corrige las identidades, las superposiciones de iconos y las notificaciones de carpetas con el orden mixto. Conserva las posiciones libres de los iconos y usa vistas nativas cuando el proveedor no está disponible o es incompatible.
 - Garantiza una sola ventana de Preferencias entre procesos y corrige la validación de atajos, las rutas de Everything, las teclas de acceso y las traducciones regionales.
 - Corrige el cierre de carpetas, los clics de activación y la restauración tras la vista previa del menú Ver.

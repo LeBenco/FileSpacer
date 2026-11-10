@@ -21,8 +21,9 @@ function MovePointer($Target,[int]$Milliseconds=700) {
         Start-Sleep -Milliseconds 25
     }
 }
-function ClickPoint([IntPtr]$Owner,$Point) {
+function ClickPoint([IntPtr]$Owner,$Point,[int]$PauseBeforeClickMilliseconds=0) {
     MovePointer $Point
+    if($PauseBeforeClickMilliseconds-gt0){Start-Sleep -Milliseconds $PauseBeforeClickMilliseconds}
     [FileSpacerViewMenuTests.MenuUi]::Click($Point.X,$Point.Y,$Owner)
     Start-Sleep -Milliseconds 300
 }
@@ -244,12 +245,14 @@ function Record([IntPtr]$Window,[string]$Kind,[scriptblock]$Action=$null,[Drawin
     } finally {
       [FileSpacerRegression.AltDragInput]::End()
       $recorderClosed=$false
-      try {CloseRecorder $recorder;$recorderClosed=$true} catch {if($null-eq$recordFailure){throw};Write-Host ('CLEANUP ERROR: '+$_)}
-      if($null-eq$recordFailure -and $recorderClosed) {
+      try {CloseRecorder $recorder;$recorderClosed=$true} catch {if($null-eq$recordFailure){throw};[void]$script:CaptureCleanupErrors.Add($_.Exception.Message);Write-Host ('CLEANUP ERROR: '+$_)}
+      if($recorderClosed -and (Test-Path -LiteralPath $cache)) {
+        try {
         $cacheRoot=[IO.Path]::GetFullPath((Join-Path $env:FS_REGRESSION_RUN 'recording')).TrimEnd('\')+'\'
         $resolvedCache=(Resolve-Path -LiteralPath $cache).Path
         Assert-Ui ($resolvedCache.StartsWith($cacheRoot,[StringComparison]::OrdinalIgnoreCase)) 'The recorder cache must remain inside this capture run.'
         Remove-Item -LiteralPath $resolvedCache -Recurse -Force
+        }catch{if($null-eq$recordFailure){throw};[void]$script:CaptureCleanupErrors.Add($_.Exception.Message);Write-Warning ('Recorder cache cleanup: '+$_)}
       }
     }
 }

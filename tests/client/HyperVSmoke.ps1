@@ -12,6 +12,20 @@ $database=Join-Path $env:LOCALAPPDATA 'FileSpacer\folder-state-test.sqlite3'
 $normalDirectory=Split-Path $database -Parent
 $parentExisted=$true;$directoryExisted=$true
 $testFingerprint=$null
+$documentationCapture=$false;$captureWorkerExited=$false
+function Remove-DocumentationCaptureInput([string]$Root,[string]$RunId) {
+    $full=[IO.Path]::GetFullPath($Root).TrimEnd('\')
+    $parent=Split-Path $full -Parent
+    if((Split-Path $full -Leaf)-ne'input' -or (Split-Path $parent -Leaf)-notmatch'^[0-9a-f]{8}$' -or (Split-Path (Split-Path $parent -Parent) -Leaf)-ne'FileSpacerTests' -or $RunId-notmatch'^vm-[0-9a-f]{32}$'){throw 'Unexpected disposable capture input path or run identity.'}
+    if((Resolve-Path -LiteralPath $full).Path-ne$full){throw 'Capture input resolution differs.'}
+    foreach($container in @($full,$parent,(Split-Path $parent -Parent))){if((Get-Item -LiteralPath $container -Force).Attributes-band[IO.FileAttributes]::ReparsePoint){throw 'Capture input ancestry contains a reparse point.'}}
+    if(@(@(Get-Item -LiteralPath $full)+@(Get-ChildItem -LiteralPath $full -Force -Recurse)|Where-Object {$_.Attributes-band[IO.FileAttributes]::ReparsePoint}).Count){throw 'Capture input contains a reparse point.'}
+    $identity=Get-Content -LiteralPath (Join-Path $full 'manifest.json') -Raw|ConvertFrom-Json
+    $cases=Get-Content -LiteralPath (Join-Path $full 'selection.json') -Raw|ConvertFrom-Json
+    if($identity.RunId-ne$RunId -or @($cases.Cases).Count-ne1 -or $cases.Cases[0]-notin@('99-documentation\01-Capture.ps1','99-documentation\03-ReclaimInputs.ps1')){throw 'Only the verified documentation capture input may be removed.'}
+    Remove-Item -LiteralPath $full -Recurse -Force
+    return !(Test-Path -LiteralPath $full)
+}
 function Get-TestFingerprint {
     function Read-Key([Microsoft.Win32.RegistryKey]$Key) {
         $tree=[ordered]@{Values=@();Children=@()}
@@ -97,12 +111,14 @@ try {
         }
         $selection=Get-Content -LiteralPath (Join-Path $inputRoot 'selection.json') -Raw | ConvertFrom-Json
         if($selection.BuildLocation-ne'Host' -or $selection.HostMachine-ne$manifest.HostMachine){throw 'Unexpected package build identity.'}
+        $documentationCapture=@($selection.Cases).Count-eq1 -and $selection.Cases[0]-in@('99-documentation\01-Capture.ps1','99-documentation\03-ReclaimInputs.ps1')
         . (Join-Path $inputRoot 'tests\regression\common\Process.ps1')
         $arguments='-NoProfile -ExecutionPolicy Bypass -File "'+(Join-Path $inputRoot 'tests\regression\Run-Regression.ps1')+'" -ProjectRoot "'+$inputRoot+'" -Prepared -RunDirectory "'+(Join-Path $outputRoot 'regression')+'"'
         $job=Start-RecordedProcess -Executable (Join-Path $PSHOME 'powershell.exe') -Arguments $arguments -OutputPath (Join-Path $outputRoot 'runner.stdout.log') -ErrorPath (Join-Path $outputRoot 'runner.stderr.log')
         try{
             $seconds=60+@($selection.Cases).Count*([int]$selection.TimeoutSeconds+15)
             if(!$job.Process.WaitForExit($seconds*1000)){throw 'Guest regression runner timed out; preserve its state for diagnosis.'}
+            $captureWorkerExited=$true
             $report.RunnerExitCode=Complete-RecordedProcess $job
         }finally{$job.Process.Dispose()}
         $report.RegressionSummary=Get-Content -LiteralPath (Join-Path $outputRoot 'regression\summary.json') -Raw | ConvertFrom-Json
@@ -149,6 +165,12 @@ finally {
         try{
             $report.ProductionUnchanged=(Get-ProductionFingerprint)-eq$initialFingerprint
             if(!$report.ProductionUnchanged){throw 'Production preferences or database changed during the guest test.'}
+        }catch{$report.CleanupErrors+=@($_.Exception.Message)}
+    }
+    if($documentationCapture -and $captureWorkerExited -and $report.StateRestored -and $report.ProductionUnchanged){
+        try{
+            if(@(Get-Process FileSpacer,ScreenToGif -ErrorAction SilentlyContinue).Count){throw 'A capture application remains. Preserve its input for diagnosis.'}
+            $report.DocumentationInputRemoved=Remove-DocumentationCaptureInput $inputRoot $report.RunId
         }catch{$report.CleanupErrors+=@($_.Exception.Message)}
     }
     if($transcriptStarted){try{[void](Stop-Transcript)}catch{$report.CleanupErrors+=@($_.Exception.Message)}}
