@@ -61,6 +61,9 @@ try {
     Press-UiSettings 3
     Wait-Ui { (Get-ColumnsViewWindow $script:window) -ne [IntPtr]::Zero } 'native view rebuilt after applying column preferences'
     Use-UiView $script:window {param($view) $view.Mode=4};Wait-UiViewMode $script:window 4
+    $work=[FileSpacerRegression.Native]::WorkArea($script:window)
+    Assert-Ui ($work.Width -ge 1016 -and $work.Height -ge 624) 'The test needs room for four real border resizes.'
+    Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($script:window,[IntPtr]::Zero,($work.Left+16),($work.Top+16),600,400,0x14)) 'Cannot save starting geometry with room for border resizes.'
     [void](Wait-Columns $script:window)
     Close-UiFolder $script:window
     foreach($process in $script:UiProcesses) { Assert-Ui ($process.WaitForExit(10000)) 'FileSpacer did not exit before the cold restart.' }
