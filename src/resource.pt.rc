@@ -5,8 +5,7 @@ LANGUAGE LANG_PORTUGUESE, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
-  IDS_FILL_COLUMNS "Colunas de Detalhes em toda a largura (esta pasta)"
-  IDS_FILL_COLUMNS_WARNING "A atualização contínua pode reduzir a fluidez e aumentar o uso de CPU, mesmo em pastas pequenas. Recomenda-se atualizar ao soltar o botão.\n\nAtivar mesmo assim as colunas em toda a largura para esta pasta?"
+  IDS_FILL_COLUMNS "Redimensionar colunas"
 END
 
 IDR_ITEM_MENU   MENU {
@@ -15,7 +14,7 @@ IDR_ITEM_MENU   MENU {
 }
 
 STRINGTABLE {
-    IDS_GLOBAL_THUMBNAILS, "Miniaturas (definição global)"
+    IDS_GLOBAL_THUMBNAILS, "Miniaturas"
     IDS_DOCUMENTATION_ERROR, "Não foi possível abrir a documentação local:\n%1\n\n%2"
     IDS_CAPTION_COPY_PATH, "Copiar caminho"
     IDS_CAPTION_RENAME, "Mudar o nome"

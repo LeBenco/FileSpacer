@@ -5,8 +5,7 @@ LANGUAGE LANG_POLISH, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
-  IDS_FILL_COLUMNS "Kolumny szczegółów na całą szerokość (ten folder)"
-  IDS_FILL_COLUMNS_WARNING "Ciągłe odświeżanie może zmniejszyć płynność zmiany rozmiaru i zwiększyć użycie CPU nawet w małych folderach. Zalecane jest odświeżanie po zwolnieniu przycisku.\n\nMimo to włączyć kolumny na całą szerokość dla tego folderu?"
+  IDS_FILL_COLUMNS "Zmień rozmiar kolumn"
 END
 
 IDR_ITEM_MENU   MENU {
@@ -15,7 +14,7 @@ IDR_ITEM_MENU   MENU {
 }
 
 STRINGTABLE {
-    IDS_GLOBAL_THUMBNAILS, "Miniatury (ustawienie globalne)"
+    IDS_GLOBAL_THUMBNAILS, "Miniatury"
     IDS_DOCUMENTATION_ERROR, "Nie można otworzyć dokumentacji lokalnej:\n%1\n\n%2"
     IDS_CAPTION_COPY_PATH, "Kopiuj ścieżkę"
     IDS_CAPTION_RENAME, "Zmień nazwę"
