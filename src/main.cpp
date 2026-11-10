@@ -124,7 +124,7 @@ public:
 };
 
 // Borrowed from main's initial reference, which remains alive until process idle.
-// Accessed only by commands dispatched on the main STA.
+// Main STA only: shared by explicit commands and native drag dispatch.
 ShellThreadReference *shellCommandReference = nullptr;
 
 class ScopedShellThreadReference {
@@ -426,7 +426,17 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
                 continue;
         }
         TranslateMessage(&msg);
-        DispatchMessage(&msg);
+        // A native view can defer the start of an OLE drag to a control message.
+        // Publish during button-held dispatch, including that deferred start,
+        // so its data object/target can retain the STA for an asynchronous drop.
+        if ((msg.message == WM_MOUSEMOVE || msg.message >= WM_USER)
+                && (GetKeyState(VK_LBUTTON) < 0 || GetKeyState(VK_RBUTTON) < 0)) {
+            ScopedShellThreadReference reference(shellCommandReference);
+            checkHR(reference.status());
+            DispatchMessage(&msg);
+        } else {
+            DispatchMessage(&msg);
+        }
 #ifdef FILESPACER_DEBUG
         ULONGLONG time = GetTickCount64() - tick;
         if (time > 100 && msg.message != WM_NCLBUTTONDOWN) {
