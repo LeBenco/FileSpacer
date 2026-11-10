@@ -1909,15 +1909,10 @@ void ItemWindow::openChild(IShellItem *const childItem, bool closeSource, const 
         return;
     }
     HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-    std::function<void()> onShown;
-    if (closeSource) {
-        onShown = [keepAlive]() {
-            if (keepAlive->isWindowOperational()) keepAlive->close(false);
-        };
-    }
     FolderOpenResult result = openFolderWindow(resolved, monitor, SW_SHOWNORMAL,
-        nullptr, closeSource ? hwnd : nullptr, openingOrigin, onShown);
-    if (isWindowOperational() && closeSource && result == FolderOpenResult::Activated)
+        nullptr, closeSource ? hwnd : nullptr, openingOrigin);
+    if (isWindowOperational() && closeSource
+            && (result == FolderOpenResult::Created || result == FolderOpenResult::Activated))
         close(false);
 }
 
