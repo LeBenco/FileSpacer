@@ -2,6 +2,15 @@
 
 # Wijzigingsgeschiedenis
 
+<a id="141--2026-11-09"></a>
+
+## 1.4.1 — 2026-11-09
+
+- Fouten in de database met opgeslagen mapgegevens toelichten met kopieerbare diagnostische informatie, toegang tot de gegevensmap en waar mogelijk informatie over betrokken processen. Als de database niet kan worden geladen of hersteld, opnieuw instellen na bevestiging en met een volledige back-up aanbieden.
+- Onnodige schrijfacties naar de zoekgeschiedenis vermijden bij het toepassen van ongewijzigde instellingen, zodat een niet-beschikbare database met mapgegevens deze stap vóór een automatische update niet blokkeert.
+
+- Het vastlopen van de grootteaanpassing van de werkbalk na het openen van het bijbehorende menu of Instellingen verhelpen, ook in de detailweergave met uitgestelde aanpassing van de kolombreedtes.
+
 <a id="140--2026-11-09"></a>
 
 ## 1.4.0 — 2026-11-09
