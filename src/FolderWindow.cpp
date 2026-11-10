@@ -3547,6 +3547,59 @@ STDMETHODIMP FolderWindow::QueryService(
 
 /* ICommDlgBrowser */
 
+// The focused, selected item's public accessibility bounds are already scrolled
+// screen coordinates. Never discover a private Shell child control for this effect.
+static bool openingIconRect(IShellView *view, IFolderView2 *folder,
+        const std::function<bool()> &current, RECT &rect) {
+    HWND body = nullptr;
+    FOLDERVIEWMODE mode = FVM_AUTO;
+    int size = 0;
+    if (FAILED(view->GetWindow(&body)) || !current() || !body
+            || FAILED(folder->GetViewModeAndIconSize(&mode, &size)) || !current()
+            || size <= 0) return false;
+    HWND focus = GetFocus();
+    if (!focus || (focus != body && !IsChild(body, focus))) return false;
+    CComPtr<IAccessible> accessible;
+    if (FAILED(AccessibleObjectFromWindow(focus, static_cast<DWORD>(OBJID_CLIENT), IID_PPV_ARGS(&accessible)))
+            || !current() || !accessible) return false;
+    CComVariant child(CHILDID_SELF);
+    for (unsigned depth = 0; depth < 8; ++depth) {
+        CComVariant role, state;
+        if (FAILED(accessible->get_accRole(child, &role)) || !current()) return false;
+        if (role.vt == VT_I4 && (role.lVal == ROLE_SYSTEM_LISTITEM || role.lVal == ROLE_SYSTEM_OUTLINEITEM)) {
+            if (FAILED(accessible->get_accState(child, &state)) || !current() || state.vt != VT_I4
+                    || !(state.lVal & STATE_SYSTEM_SELECTED)
+                    || (state.lVal & (STATE_SYSTEM_INVISIBLE | STATE_SYSTEM_OFFSCREEN))) return false;
+            long x = 0, y = 0, width = 0, height = 0;
+            if (FAILED(accessible->accLocation(&x, &y, &width, &height, child)) || !current()
+                    || width <= 0 || height <= 0) return false;
+            POINT topLeft = {x, y}, bottomRight = {x + width, y + height};
+            if (!PhysicalToLogicalPointForPerMonitorDPI(body, &topLeft)
+                    || !PhysicalToLogicalPointForPerMonitorDPI(body, &bottomRight)) return false;
+            const bool large = mode == FVM_ICON || mode == FVM_THUMBNAIL || mode == FVM_THUMBSTRIP;
+            // Icon layouts put the image above the label; rows put it to its left.
+            const LONG left = large ? topLeft.x + (bottomRight.x - topLeft.x - size) / 2 : topLeft.x;
+            const LONG top = large ? topLeft.y : topLeft.y + (bottomRight.y - topLeft.y - size) / 2;
+            rect = {left, top, left + size, top + size};
+            RECT client = {}, visible = {};
+            if (!GetClientRect(body, &client)) return false;
+            MapWindowPoints(body, nullptr, reinterpret_cast<POINT *>(&client), 2);
+            return IntersectRect(&visible, &rect, &client) && EqualRect(&visible, &rect);
+        }
+        CComVariant focused;
+        if (accessible->get_accFocus(&focused) != S_OK || !current()) return false;
+        if (focused.vt == VT_DISPATCH && focused.pdispVal) {
+            CComQIPtr<IAccessible> next(focused.pdispVal);
+            if (!current() || !next) return false;
+            accessible = next;
+            child = CComVariant(CHILDID_SELF);
+        } else if (focused.vt == VT_I4 && focused.lVal != CHILDID_SELF) {
+            child = focused;
+        } else return false;
+    }
+    return false;
+}
+
 // Called when double-clicking an item or pressing Enter.
 STDMETHODIMP FolderWindow::OnDefaultCommand(IShellView *const view) {
     CComPtr<ItemWindow> keepAlive(this);
@@ -3579,8 +3632,11 @@ STDMETHODIMP FolderWindow::OnDefaultCommand(IShellView *const view) {
                 if (resolved && checkHR(access) && (attributes & SFGAO_FOLDER)) {
 
                     // Folder activation is handled by our spatial window logic.
+                    RECT origin = {};
+                    const bool animate = openingIconRect(view, folderView, current, origin);
+                    if (!current()) return S_OK;
                     selected = selectedItem;
-                    openChild(selectedItem, closeSource);
+                    openChild(selectedItem, closeSource, animate ? &origin : nullptr);
                     return S_OK;
                 }
             }
