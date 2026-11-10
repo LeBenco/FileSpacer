@@ -7,16 +7,6 @@ function Find-ColumnWarning([IntPtr]$Window) {
     return @([FileSpacerRegression.Native]::Top('#32770','FileSpacer',$windowProcessId) |
         Where-Object { [FileSpacerRegression.Native]::IsWindowEnabled($_) -and [FileSpacerRegression.Native]::IsWindowVisible($_) })
 }
-function Wait-ColumnWarning([IntPtr]$Window) {
-    $result=@{Dialog=[IntPtr]::Zero}
-    Wait-Ui {
-        $dialogs=@(Find-ColumnWarning $Window)
-        if($dialogs.Count -ne 1) { return $false }
-        $result.Dialog=$dialogs[0];return $true
-    } 'large-folder column confirmation'
-    Assert-Ui (![FileSpacerRegression.Native]::IsWindowEnabled($Window)) 'The warning must be modal to its folder window.'
-    return $result.Dialog
-}
 function Request-ColumnFill([IntPtr]$Window,[switch]$Menu) {
     if($Menu) {
         [void](Open-PreviewMenu $Window)
@@ -32,7 +22,7 @@ function Request-ColumnFill([IntPtr]$Window,[switch]$Menu) {
 }
 $failure=$null
 try {
-    Initialize-Ui 'column-warning' -FixtureParent (Join-Path $ProjectRoot 'build')
+    Initialize-Ui 'column-no-warning' -FixtureParent (Join-Path $ProjectRoot 'build')
     Set-UiPreference 'DetailsColumnsEnabled' 1
     Set-UiPreference 'DetailsColumnsDeferred' 1
     Set-UiPreference 'ViewMenuPreviewEnabled' 0
@@ -53,18 +43,8 @@ try {
     Request-ColumnFill $window
     Wait-ModernColumns $window
     Request-ColumnFill $window -Menu
-    $dialog=Wait-ColumnWarning $window
-    Activate-Ui $dialog
-    [FileSpacerRegression.Native]::Keys($dialog,0x0d,$false,$false)
-    Wait-Ui {![FileSpacerRegression.Native]::IsWindow($dialog) -and [FileSpacerRegression.Native]::IsWindowEnabled($window)} 'Enter confirms default No'
-    Wait-ModernColumns $window
-    Close-UiFolder $window
-    $window=Open-UiFolder $folder 5
-    Wait-ModernColumns $window
-    Request-ColumnFill $window -Menu
-    $dialog=Wait-ColumnWarning $window
-    [void][FileSpacerRegression.Native]::Message($dialog,0x466,6,0)
     [void](Wait-Columns $window)
+    Assert-Ui ([FileSpacerRegression.Native]::IsWindowEnabled($window) -and @(Find-ColumnWarning $window).Count -eq 0) 'Continuous activation must apply without a modal warning.'
     Close-UiFolder $window
     $window=Open-UiFolder $folder 5
     [void](Wait-Columns $window)
@@ -72,7 +52,7 @@ try {
     Request-ColumnFill $window
     Wait-ModernColumns $window
     Assert-Ui (@(Find-ColumnWarning $window).Count -eq 0) 'Disabling column fill asked for confirmation.'
-    Write-Host 'PASS: no warning for deferred activation, continuous-mode warning even in a small folder, native Yes/No with No on Enter, refusal preserved, acceptance persisted and no prompt when restoring or disabling.'
+    Write-Host 'PASS: deferred and continuous activation apply without warning, the enabled choice persists, and restoring or disabling does not prompt.'
 } catch {$failure=$_;throw} finally {
     foreach($process in @($script:UiProcesses)){
         if(!$process.HasExited){
