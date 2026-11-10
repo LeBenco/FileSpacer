@@ -21,6 +21,7 @@ if($plan.Scenes-contains'details-columns'){
 $names=Get-Content -LiteralPath (Join-Path $source 'scenes.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $displayOverride=Get-WinUILanguageOverride
 $windowsUiLanguage=if($displayOverride){$displayOverride.Name}else{[Globalization.CultureInfo]::CurrentUICulture.Name}
+$script:CaptureResourceLanguage=$windowsUiLanguage
 $sessionLanguage=[Globalization.CultureInfo]::GetCultureInfo($windowsUiLanguage).TwoLetterISOLanguageName
 Write-Host ('Windows display language: '+$windowsUiLanguage+'; PowerShell UI culture: '+[Globalization.CultureInfo]::CurrentUICulture.Name)
 foreach($requestedLanguage in $plan.Languages) {
@@ -34,6 +35,7 @@ if($animations) {
 $originalMode=[CaptureDesktop]::CurrentMode()
 $originalWallpaper=[CaptureDesktop]::GetWallpaperState()
 $records=New-Object Collections.ArrayList
+$script:CaptureCleanupErrors=New-Object Collections.ArrayList
 $backgroundWindows=New-Object Collections.ArrayList
 $captureFailure=$null
 $captureComplete=$false
@@ -99,7 +101,15 @@ try {
             Assert-Ui (![FileSpacerRegression.Native]::IsWindow($recentWindow)) 'The preparation folder must really close before recording.'
             $window=Open-UiFolder $folder 7
             Place $window 340 220 720 440
-            Use-UiView $window {param($view)$view.SetViewModeAndIconSize(1,48);$view.AutoArrange=$true}
+            # Use the application's real View command, so renderer policies are applied.
+            OpenRecordedMenu $window 'IDM_VIEW_MENU'
+            $viewMenu=[FileSpacerViewMenuTests.MenuUi]::Active($window)
+            Assert-Ui ($viewMenu.Entries.Count-ge6) 'The actual View menu must expose the standard display modes.'
+            $mediumIcons=$viewMenu.Entries[2]
+            ClickPoint $window (Point (($mediumIcons.Bounds.Left+$mediumIcons.Bounds.Right)/2) (($mediumIcons.Bounds.Top+$mediumIcons.Bounds.Bottom)/2))
+            Wait-Ui {$null-eq[FileSpacerViewMenuTests.MenuUi]::Active($window)} 'View menu closed after selecting medium icons'
+            Wait-UiViewMode $window 1 48
+            [void](CaptureIconView $window)
             $selectionFile=Join-Path $folder $n[3]
             Wait-Ui {Use-UiView $window {param($view)$view.ParsingNames($false)-contains$selectionFile}} 'the actual fixture file appears in the Shell view'
             $actualNames=@(Use-UiView $window {param($view)$view.Names()})
@@ -108,6 +118,14 @@ try {
             Assert-Ui ($displayNames.Count-eq1) 'The fixture must have one unambiguous Shell display name.'
             $selectionName=$displayNames[0]
             Use-UiView $window {param($view)$view.Select($selectionName)}
+            # Check the worker's resource language before starting any recorder.
+            OpenRecordedMenu $window 'IDM_PROXY_BUTTON'
+            $initialMenu=[FileSpacerViewMenuTests.MenuUi]::Active($window,$true)
+            $lockEntry=@($initialMenu.Entries|Where-Object {$_.Command-eq(Get-UiId 'IDM_TOGGLE_STATE_LOCK')})
+            $lockLabel=[CaptureDesktop]::Resource($script:UiExecutable,(Get-UiId 'IDS_LOCK_WINDOW_STATE'),$script:CaptureResourceLanguage).Split("`t")[0].Replace('&','')
+            @{WindowsUiLanguage=$windowsUiLanguage;PowerShellUiCulture=[Globalization.CultureInfo]::CurrentUICulture.Name;ExpectedLockLabel=$lockLabel;ActualLockLabels=@($lockEntry|ForEach-Object {$_.Label})}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $env:FS_REGRESSION_RUN 'resource-labels.json') -Encoding UTF8
+            Assert-Ui ($lockEntry.Count-eq1 -and $lockEntry[0].Label.Replace('&','').Split("`t")[0]-ceq$lockLabel) ('Initial menu language differs from the Windows resource: expected '+$lockLabel+'; observed '+($lockEntry.Label-join', '))
+            CloseMenu $window
             foreach($scene in $plan.Scenes) {
                 [CaptureDesktop]::VerifyWallpaper($wallpaper)
                 switch($scene) {
@@ -148,6 +166,7 @@ try {
 } catch {$captureFailure=$_;throw}
 finally {
     $cleanupErrors=New-Object Collections.ArrayList
+    foreach($cleanupError in $script:CaptureCleanupErrors){[void]$cleanupErrors.Add($cleanupError)}
     try {[CaptureDesktop]::RestoreWallpaper($originalWallpaper)} catch {[void]$cleanupErrors.Add($_.Exception.Message)}
     try {[CaptureDesktop]::SetMode($originalMode)} catch {[void]$cleanupErrors.Add($_.Exception.Message)}
     foreach($background in $backgroundWindows){try{$background.Pattern.SetWindowVisualState($background.State)}catch{[void]$cleanupErrors.Add($_.Exception.Message)}}
