@@ -9,7 +9,6 @@
 #include <atomic>
 #include <algorithm>
 #include <type_traits>
-#include <cstdio>
 
 #pragma comment(lib, "D3d11.lib")
 #pragma comment(lib, "D2d1.lib")
@@ -19,6 +18,8 @@
 namespace filespacer {
 namespace {
 const wchar_t animationClass[] = L"FileSpacer Folder Opening Animation";
+constexpr UINT finishAnimation = WM_APP + 1;
+constexpr LONG strokeWidth = 2;
 struct OpeningGraphics {
     CComPtr<ID3D11Device> d3d;
     CComPtr<IDCompositionDesktopDevice> composition;
@@ -47,18 +48,10 @@ DWORD WINAPI prepareGraphics(void *) {
     if (checkHR(initialized)) {
         try {
             auto candidate = std::make_shared<OpeningGraphics>();
-            if (candidate->initialize()) {
-                std::atomic_store(&graphics, candidate);
-                debugPrintf(L"ANIMATION graphics ready\n");
-            } else {
-                debugPrintf(L"ANIMATION graphics initialization failed\n");
-            }
+            if (candidate->initialize()) std::atomic_store(&graphics, candidate);
         } catch (...) {
-            debugPrintf(L"ANIMATION graphics initialization raised an exception\n");
+            debugPrintf(L"Could not prepare folder-opening graphics\n");
         }
-#ifdef FILESPACER_DEBUG
-        std::fflush(stdout);
-#endif
         CoUninitialize();
     }
     unlockProcess();
@@ -78,10 +71,11 @@ struct FolderOpeningAnimation::State {
     CComPtr<IDCompositionSurface> pattern;
     std::unique_ptr<std::remove_pointer<HWND>::type, decltype(&DestroyWindow)>
         overlay{nullptr, DestroyWindow};
+    std::unique_ptr<std::remove_pointer<PTP_TIMER>::type, decltype(&CloseThreadpoolTimer)>
+        completion{nullptr, CloseThreadpoolTimer};
     HWND window = nullptr;
     HWND foreground = nullptr;
     LONG_PTR identity = 0;
-    const wchar_t *stage = L"graphics availability";
 
     bool current() const {
         return window && IsWindow(window)
@@ -89,7 +83,13 @@ struct FolderOpeningAnimation::State {
     }
 
     void finish(bool activate) {
-        if (overlay) KillTimer(overlay.get(), 1);
+        // The callback uses only these immutable HWNDs. Drain it before changing
+        // them or releasing the state, including when the destination closes early.
+        if (completion) {
+            SetThreadpoolTimer(completion.get(), nullptr, 0, 0);
+            WaitForThreadpoolTimerCallbacks(completion.get(), TRUE);
+            completion.reset();
+        }
         const HWND destination = current() ? window : nullptr;
         const HWND previousForeground = foreground;
         window = nullptr;
@@ -115,14 +115,24 @@ struct FolderOpeningAnimation::State {
 
     ~State() { finish(false); }
 
+    static void CALLBACK revealWindow(PTP_CALLBACK_INSTANCE, void *context, PTP_TIMER) {
+        auto self = static_cast<State *>(context);
+        if (self->current()) {
+            const BOOL disabled = FALSE;
+            // DWM visibility does not wait for the UI thread's Shell navigation.
+            checkHR(DwmSetWindowAttribute(self->window, DWMWA_CLOAK, &disabled, sizeof(disabled)));
+        }
+        // HWND destruction, focus and COM cleanup remain on the owning UI thread.
+        checkLE(PostMessageW(self->overlay.get(), finishAnimation, 0, 0));
+    }
+
     static LRESULT CALLBACK windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
         auto self = reinterpret_cast<State *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
         if (message == WM_NCCREATE) {
             self = static_cast<State *>(reinterpret_cast<CREATESTRUCTW *>(lParam)->lpCreateParams);
             SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
         }
-        if (self && message == WM_TIMER && wParam == 1) {
-            debugPrintf(L"ANIMATION completed: tick=%llu\n", GetTickCount64());
+        if (self && message == finishAnimation) {
             self->finish(true);
             return 0;
         }
@@ -132,7 +142,6 @@ struct FolderOpeningAnimation::State {
             EndPaint(hwnd, &paint);
             BOOL valid = FALSE;
             if (!self->resources || !checkHR(self->resources->health->CheckDeviceState(&valid)) || !valid) {
-                debugPrintf(L"ANIMATION interrupted: graphics device invalid\n");
                 self->finish(true);
             }
             return 0;
@@ -142,12 +151,13 @@ struct FolderOpeningAnimation::State {
         return DefWindowProcW(hwnd, message, wParam, lParam);
     }
 
-    bool animate(IDCompositionAnimation **out, float from, float to, LARGE_INTEGER start) {
+    bool animate(IDCompositionAnimation **out, float from, float to, LARGE_INTEGER start, double delay) {
         const double duration = FolderOpeningAnimation::durationMs / 1000.0;
         CComPtr<IDCompositionAnimation> animation;
-        if (!checkHR(resources->composition->CreateAnimation(&animation))
-                || !checkHR(animation->AddCubic(0.0, from, static_cast<float>((to - from) / duration), 0.0f, 0.0f))
-                || !checkHR(animation->End(duration, to))
+        if (!checkHR(resources->composition->CreateAnimation(&animation))) return false;
+        if (delay > 0.0 && !checkHR(animation->AddCubic(0.0, from, 0.0f, 0.0f, 0.0f))) return false;
+        if (!checkHR(animation->AddCubic(delay, from, static_cast<float>((to - from) / duration), 0.0f, 0.0f))
+                || !checkHR(animation->End(duration + delay, to))
                 || !checkHR(animation->SetAbsoluteBeginTime(start))) return false;
         *out = animation.Detach();
         return true;
@@ -161,7 +171,7 @@ struct FolderOpeningAnimation::State {
         if (!checkHR(pattern->BeginDraw(nullptr, IID_PPV_ARGS(&context), &offset))) return false;
         CComPtr<ID2D1Bitmap> dots;
         CComPtr<ID2D1BitmapBrush> brush;
-        const UINT32 pixels[] = {0xFF999999, 0, 0, 0xFF999999};
+        const UINT32 pixels[] = {0xFF000000, 0xFFFFFFFF, 0xFFFFFFFF, 0xFF000000};
         const D2D1_BITMAP_PROPERTIES format = D2D1::BitmapProperties(
             D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED));
         HRESULT result = context->CreateBitmap(D2D1::SizeU(2, 2), pixels, 2 * sizeof(UINT32), format, &dots);
@@ -169,7 +179,7 @@ struct FolderOpeningAnimation::State {
             const D2D1_BITMAP_BRUSH_PROPERTIES tiling = D2D1::BitmapBrushProperties(
                 D2D1_EXTEND_MODE_WRAP, D2D1_EXTEND_MODE_WRAP, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
             const D2D1_BRUSH_PROPERTIES properties = D2D1::BrushProperties(1.0f,
-                D2D1::Matrix3x2F::Scale(3.0f, 3.0f));
+                D2D1::Matrix3x2F::Scale(2.0f, 2.0f));
             result = context->CreateBitmapBrush(dots, tiling, properties, &brush);
         }
         if (checkHR(result)) {
@@ -181,7 +191,7 @@ struct FolderOpeningAnimation::State {
         return checkHR(result) && checkHR(ended);
     }
 
-    bool addEdge(IDCompositionAnimation *width, IDCompositionAnimation *height,
+    bool addEdge(IDCompositionVisual2 *contour, IDCompositionAnimation *width, IDCompositionAnimation *height,
             IDCompositionAnimation *innerWidth, IDCompositionAnimation *innerHeight, unsigned edge) {
         CComPtr<IDCompositionVisual2> line;
         CComPtr<IDCompositionRectangleClip> clip;
@@ -192,29 +202,41 @@ struct FolderOpeningAnimation::State {
         if (!checkHR(edge == 3 ? clip->SetLeft(innerWidth) : clip->SetLeft(0.0f))
                 || !checkHR(edge == 1 ? clip->SetTop(innerHeight) : clip->SetTop(0.0f))) return false;
         if (edge == 2) {
-            if (!checkHR(clip->SetRight(1.0f))) return false;
+            if (!checkHR(clip->SetRight(static_cast<float>(strokeWidth)))) return false;
         } else if (!checkHR(clip->SetRight(width))) return false;
         if (edge == 0) {
-            if (!checkHR(clip->SetBottom(1.0f))) return false;
+            if (!checkHR(clip->SetBottom(static_cast<float>(strokeWidth)))) return false;
         } else if (!checkHR(clip->SetBottom(height))) return false;
         return checkHR(line->SetContent(pattern)) && checkHR(line->SetClip(clip))
-            && checkHR(visual->AddVisual(line, FALSE, nullptr));
+            && checkHR(contour->AddVisual(line, FALSE, nullptr));
+    }
+
+    bool addContour(const RECT &origin, const RECT &end, const RECT &bounds,
+            LARGE_INTEGER start, double delay) {
+        CComPtr<IDCompositionVisual2> contour;
+        if (!checkHR(resources->composition->CreateVisual(&contour))) return false;
+        CComPtr<IDCompositionAnimation> x, y, width, height, innerWidth, innerHeight;
+        if (!animate(&x, static_cast<float>(origin.left - bounds.left), static_cast<float>(end.left - bounds.left), start, delay)
+                || !animate(&y, static_cast<float>(origin.top - bounds.top), static_cast<float>(end.top - bounds.top), start, delay)
+                || !animate(&width, static_cast<float>(origin.right - origin.left), static_cast<float>(end.right - end.left), start, delay)
+                || !animate(&height, static_cast<float>(origin.bottom - origin.top), static_cast<float>(end.bottom - end.top), start, delay)
+                || !animate(&innerWidth, static_cast<float>(origin.right - origin.left - strokeWidth), static_cast<float>(end.right - end.left - strokeWidth), start, delay)
+                || !animate(&innerHeight, static_cast<float>(origin.bottom - origin.top - strokeWidth), static_cast<float>(end.bottom - end.top - strokeWidth), start, delay)
+                || !checkHR(contour->SetOffsetX(x)) || !checkHR(contour->SetOffsetY(y))
+                || !addEdge(contour, width, height, innerWidth, innerHeight, 0)
+                || !addEdge(contour, width, height, innerWidth, innerHeight, 1)
+                || !addEdge(contour, width, height, innerWidth, innerHeight, 2)
+                || !addEdge(contour, width, height, innerWidth, innerHeight, 3)) return false;
+        return checkHR(visual->AddVisual(contour, FALSE, nullptr));
     }
 
     bool begin(HWND destination, const RECT &origin, int showCommand) {
         resources = std::atomic_load(&graphics);
-        if (!resources) {
-            debugPrintf(L"ANIMATION skipped: graphics not ready or initialization failed\n");
-            return false;
-        }
-        stage = L"Windows animation preference";
+        if (!resources) return false;
         if (!animationsEnabled()) return false;
-        stage = L"origin rectangle";
         if (origin.right <= origin.left || origin.bottom <= origin.top) return false;
-        stage = L"device health";
         BOOL valid = FALSE;
         if (!checkHR(resources->health->CheckDeviceState(&valid)) || !valid) return false;
-        stage = L"overlay class registration";
         WNDCLASSW cls = {};
         cls.hInstance = GetModuleHandleW(nullptr);
         cls.lpfnWndProc = windowProc;
@@ -223,7 +245,6 @@ struct FolderOpeningAnimation::State {
         window = destination;
         identity = GetWindowLongPtrW(window, GWLP_USERDATA);
         foreground = GetForegroundWindow();
-        stage = L"cloaking the destination";
         const BOOL enabled = TRUE;
         if (!checkHR(DwmSetWindowAttribute(window, DWMWA_CLOAK, &enabled, sizeof(enabled)))) {
             window = nullptr;
@@ -232,7 +253,6 @@ struct FolderOpeningAnimation::State {
         DwmSetWindowAttribute(window, DWMWA_TRANSITIONS_FORCEDISABLED, &enabled, sizeof(enabled));
         ShowWindow(window, showCommand);
         if (!current()) return false;
-        stage = L"destination geometry";
         RECT end = {};
         if (!checkHR(DwmGetWindowAttribute(window, DWMWA_EXTENDED_FRAME_BOUNDS, &end, sizeof(end)))
                 || end.right <= end.left || end.bottom <= end.top) {
@@ -246,7 +266,6 @@ struct FolderOpeningAnimation::State {
         }
         RECT bounds = {};
         if (!UnionRect(&bounds, &origin, &end)) return false;
-        stage = L"overlay and composition surface";
         overlay.reset(checkLE(CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT
                 | WS_EX_NOREDIRECTIONBITMAP, animationClass, L"", WS_POPUP,
             bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top,
@@ -256,27 +275,38 @@ struct FolderOpeningAnimation::State {
                 || !drawPattern(static_cast<UINT>((std::max)(origin.right - origin.left, end.right - end.left)),
                     static_cast<UINT>((std::max)(origin.bottom - origin.top, end.bottom - end.top)))
                 || !checkHR(target->SetRoot(visual))) return false;
-        stage = L"animation curves and completion timer";
-        LARGE_INTEGER start = {};
-        if (!checkLE(QueryPerformanceCounter(&start))) return false;
-        CComPtr<IDCompositionAnimation> x, y, width, height, innerWidth, innerHeight;
-        if (!animate(&x, static_cast<float>(origin.left - bounds.left), static_cast<float>(end.left - bounds.left), start)
-                || !animate(&y, static_cast<float>(origin.top - bounds.top), static_cast<float>(end.top - bounds.top), start)
-                || !animate(&width, static_cast<float>(origin.right - origin.left), static_cast<float>(end.right - end.left), start)
-                || !animate(&height, static_cast<float>(origin.bottom - origin.top), static_cast<float>(end.bottom - end.top), start)
-                || !animate(&innerWidth, static_cast<float>(origin.right - origin.left - 1), static_cast<float>(end.right - end.left - 1), start)
-                || !animate(&innerHeight, static_cast<float>(origin.bottom - origin.top - 1), static_cast<float>(end.bottom - end.top - 1), start)
-                || !checkHR(visual->SetOffsetX(x)) || !checkHR(visual->SetOffsetY(y))
-                || !addEdge(width, height, innerWidth, innerHeight, 0)
-                || !addEdge(width, height, innerWidth, innerHeight, 1)
-                || !addEdge(width, height, innerWidth, innerHeight, 2)
-                || !addEdge(width, height, innerWidth, innerHeight, 3)
-                || !checkLE(SetTimer(overlay.get(), 1, FolderOpeningAnimation::durationMs, nullptr))) return false;
+        LARGE_INTEGER start = {}, frequency = {};
+        if (!checkLE(QueryPerformanceCounter(&start)) || !checkLE(QueryPerformanceFrequency(&frequency))
+                || frequency.QuadPart <= 0) return false;
+        CComPtr<IDCompositionAnimation> visibility;
+        CComPtr<IDCompositionRectangleClip> clip;
+        const double duration = FolderOpeningAnimation::durationMs / 1000.0;
+        if (!checkHR(resources->composition->CreateAnimation(&visibility))
+                || !checkHR(visibility->AddCubic(0.0, static_cast<float>(bounds.right - bounds.left), 0.0f, 0.0f, 0.0f))
+                || !checkHR(visibility->End(duration, 0.0f))
+                || !checkHR(visibility->SetAbsoluteBeginTime(start))
+                || !checkHR(resources->composition->CreateRectangleClip(&clip))
+                || !checkHR(clip->SetLeft(0.0f)) || !checkHR(clip->SetTop(0.0f))
+                || !checkHR(clip->SetRight(visibility))
+                || !checkHR(clip->SetBottom(static_cast<float>(bounds.bottom - bounds.top)))
+                || !checkHR(visual->SetClip(clip))) return false;
+        for (unsigned index = 0; index < 3; ++index) {
+            if (!addContour(origin, end, bounds, start, index * 0.020)) return false;
+        }
+        completion.reset(checkLE(CreateThreadpoolTimer(revealWindow, this, nullptr)));
+        if (!completion) return false;
         if (!checkLE(SetWindowPos(overlay.get(), HWND_TOP, 0, 0, 0, 0,
                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW))) return false;
-        // One submission; DWM drives every intermediate frame. The timer only ends the effect.
-        stage = L"composition commit";
-        return checkHR(resources->composition->Commit());
+        // DWM hides the whole trail at 200 ms, including the delayed contours.
+        if (!checkHR(resources->composition->Commit())) return false;
+        LARGE_INTEGER now = {};
+        if (!checkLE(QueryPerformanceCounter(&now))) return false;
+        const LONGLONG elapsed = (now.QuadPart - start.QuadPart) * 10000000LL / frequency.QuadPart;
+        LARGE_INTEGER remaining = {};
+        remaining.QuadPart = -(std::max)(1LL, FolderOpeningAnimation::durationMs * 10000LL - elapsed);
+        FILETIME due = {remaining.LowPart, static_cast<DWORD>(remaining.HighPart)};
+        SetThreadpoolTimer(completion.get(), &due, 0, 0);
+        return true;
     }
 };
 
@@ -284,22 +314,11 @@ FolderOpeningAnimation::FolderOpeningAnimation() : state(new State) {}
 FolderOpeningAnimation::~FolderOpeningAnimation() = default;
 
 bool FolderOpeningAnimation::begin(HWND window, const RECT &origin, int showCommand) {
-    const bool started = state->begin(window, origin, showCommand);
-    debugPrintf(L"ANIMATION %s: stage=%s duration=%u ms tick=%llu\n",
-        started ? L"started" : L"skipped", state->stage, durationMs, GetTickCount64());
-#ifdef FILESPACER_DEBUG
-    std::fflush(stdout);
-#endif
-    return started;
+    return state->begin(window, origin, showCommand);
 }
 
 void FolderOpeningAnimation::prepare() {
-    if (!animationsEnabled()) {
-        debugPrintf(L"ANIMATION preparation skipped: Windows client-area animations disabled\n");
-        return;
-    }
-    if (preparing.exchange(true)) return;
-    debugPrintf(L"ANIMATION preparing graphics in background\n");
+    if (!animationsEnabled() || preparing.exchange(true)) return;
     lockProcess();
     if (!checkLE(QueueUserWorkItem(prepareGraphics, nullptr, WT_EXECUTEDEFAULT))) {
         preparing.store(false);
