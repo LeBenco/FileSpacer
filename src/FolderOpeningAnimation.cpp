@@ -65,7 +65,6 @@ struct FolderOpeningAnimation::State {
     CComPtr<IDCompositionTarget> target;
     CComPtr<IDCompositionVisual2> visual;
     CComPtr<IDCompositionSurface> pattern;
-    std::function<void()> onFinished;
     std::unique_ptr<std::remove_pointer<HWND>::type, decltype(&DestroyWindow)>
         overlay{nullptr, DestroyWindow};
     HWND window = nullptr;
@@ -81,7 +80,6 @@ struct FolderOpeningAnimation::State {
         if (overlay) KillTimer(overlay.get(), 1);
         const HWND destination = current() ? window : nullptr;
         const HWND previousForeground = foreground;
-        auto finishedCallback = std::move(onFinished);
         window = nullptr;
         auto finishedOverlay = std::move(overlay);
         if (finishedOverlay) SetWindowLongPtrW(finishedOverlay.get(), GWLP_USERDATA, 0);
@@ -100,7 +98,6 @@ struct FolderOpeningAnimation::State {
             DwmSetWindowAttribute(destination, DWMWA_TRANSITIONS_FORCEDISABLED, &disabled, sizeof(disabled));
             finishedOverlay.reset();
             if (restoreFocus) SetForegroundWindow(destination);
-            if (activate && finishedCallback) finishedCallback();
         }
     }
 
@@ -259,11 +256,6 @@ FolderOpeningAnimation::~FolderOpeningAnimation() = default;
 
 bool FolderOpeningAnimation::begin(HWND window, const RECT &origin, int showCommand) {
     return state->begin(window, origin, showCommand);
-}
-
-void FolderOpeningAnimation::whenFinished(const std::function<void()> &callback) {
-    if (state->window) state->onFinished = callback;
-    else if (callback) callback();
 }
 
 void FolderOpeningAnimation::prepare() {

@@ -21,8 +21,7 @@ enum class FolderOpenResult;
 struct ItemValidation;
 
 class ItemWindow : public WindowImpl, public UnknownImpl {
-    friend FolderOpenResult openFolderWindow(IShellItem *, HMONITOR, int, const ClosedWindow *, HWND,
-        const RECT *, const std::function<void()> &);
+    friend FolderOpenResult openFolderWindow(IShellItem *, HMONITOR, int, const ClosedWindow *, HWND, const RECT *);
     friend ProxyIcon;
 protected:
     static HACCEL accelTable;
