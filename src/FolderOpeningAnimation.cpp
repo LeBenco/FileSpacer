@@ -128,10 +128,11 @@ struct FolderOpeningAnimation::State {
     }
 
     bool animate(IDCompositionAnimation **out, float from, float to, LARGE_INTEGER start) {
+        const double duration = FolderOpeningAnimation::durationMs / 1000.0;
         CComPtr<IDCompositionAnimation> animation;
         if (FAILED(resources->composition->CreateAnimation(&animation))
-                || FAILED(animation->AddCubic(0.0, from, (to - from) * 10.0f, 0.0f, 0.0f))
-                || FAILED(animation->End(0.1, to))
+                || FAILED(animation->AddCubic(0.0, from, static_cast<float>((to - from) / duration), 0.0f, 0.0f))
+                || FAILED(animation->End(duration, to))
                 || FAILED(animation->SetAbsoluteBeginTime(start))) return false;
         *out = animation.Detach();
         return true;
