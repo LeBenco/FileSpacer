@@ -3244,7 +3244,10 @@ void FolderWindow::openQuickAccessMenu(POINT point) {
             unavailable(IDS_QUICK_ACCESS_TARGET, result);
             return;
         }
-        openChild(target, closeSource);
+        RECT origin = {};
+        const HWND toolbar = getQuickAccessToolbar();
+        if (toolbar && IsWindowVisible(toolbar)) origin = windowRect(toolbar);
+        openChild(target, closeSource, IsRectEmpty(&origin) ? nullptr : &origin);
     }
 }
 
