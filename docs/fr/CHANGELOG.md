@@ -2,6 +2,15 @@
 
 # Historique des versions
 
+<a id="141--2026-11-09"></a>
+
+## 1.4.1 — 2026-11-09
+
+- Expliquer les erreurs de la base de données des dossiers avec un diagnostic copiable, un accès au dossier de données et l’identification des processus lorsque c’est possible. Proposer une réinitialisation après confirmation, avec une sauvegarde complète, si la base ne peut être chargée ni récupérée.
+- Éviter les écritures inutiles dans l’historique de recherche lors de l’application de paramètres inchangés, afin qu’une base de données des dossiers indisponible ne bloque pas cette étape avant une mise à jour automatique.
+
+- Corriger le blocage du redimensionnement de la barre d’outils après l’ouverture de son menu ou des paramètres, y compris dans la vue Détails avec redimensionnement différé des colonnes.
+
 <a id="140--2026-11-09"></a>
 
 ## 1.4.0 — 2026-11-09
@@ -34,10 +43,11 @@
 
 ## 1.3.0 — 2026-11-02
 
-- Ajouter les aperçus PowerToys Peek facultatifs et laisser Grab And Move traiter les gestes de fenêtre en conflit.
+- Consigner le détail des opérations de l’installateur, les échecs de commandes et les détails complets des erreurs de nettoyage de la documentation dans des journaux de diagnostic conservés.
 - Corriger les accès concurrents à l’état des dossiers, préserver les modifications pendant une reprise différée et réduire les redessins des grands placements libres.
 - Corriger les mouvements de fenêtre et les menus contextuels parasites après l’interruption d’un geste.
 
+- Ajouter les aperçus PowerToys Peek facultatifs et laisser Grab And Move traiter les gestes de fenêtre en conflit.
 - Personnaliser le menu de barre de titre dans sept langues, avec glisser-déposer, réglages par défaut et apparence native ou Nilesoft Shell.
 - Ajouter les actions sur les dispositions enregistrées, l’ajustement au contenu, la fermeture des fenêtres descendantes ou des autres fenêtres, les groupes de dossiers nommés et des commandes Nilesoft stables.
 - Corriger la désinstallation pour qu’elle se poursuive si le nettoyage de l’aide échoue, ainsi que la détection de plusieurs processus Explorer dans une même session par les tests VM.
@@ -47,6 +57,9 @@
 
 ## 1.2.3 — 2026-10-30
 
+- Lisser le logo de la barre latérale de l’installateur et du désinstallateur avec une mise à l’échelle de haute qualité adaptée à sa taille d’affichage.
+- Conserver les guillemets des arguments transmis lors de l’élévation des droits, pour qu’une mise à jour pour tous les utilisateurs démarre son processus silencieux au lieu de rouvrir l’installateur.
+- Mettre à jour par défaut l’installation d’origine et restaurer les fenêtres avec l’exécutable exact indiqué par l’installateur, y compris lorsque les installations personnelle et pour tous les utilisateurs coexistent.
 - Corriger les identités, les surimpressions d’icônes et les notifications de dossiers du tri mixte. Conserver les positions libres des icônes et utiliser les vues natives si le fournisseur est indisponible ou incompatible.
 - Garantir une seule fenêtre Préférences entre processus et corriger la validation des raccourcis, les chemins Everything, les mnémoniques clavier et les traductions régionales.
 - Corriger la fermeture des dossiers, les clics d’activation et la restauration après un aperçu du menu Affichage.

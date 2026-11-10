@@ -2,6 +2,15 @@
 
 # Histórico de versões
 
+<a id="141--2026-11-09"></a>
+
+## 1.4.1 — 2026-11-09
+
+- Explicar os erros da base de dados do estado das pastas com um diagnóstico que se pode copiar, acesso à pasta de dados e identificação de processos quando disponível. Propor a reposição após confirmação, com uma cópia de segurança completa, se não for possível carregar ou recuperar a base de dados.
+- Evitar escritas desnecessárias no histórico de pesquisa ao aplicar preferências inalteradas, para que uma base de dados do estado das pastas indisponível não bloqueie este passo antes de uma atualização automática.
+
+- Corrigir o bloqueio do redimensionamento da barra de ferramentas após abrir o respetivo menu ou as Definições, incluindo na vista Detalhes com redimensionamento diferido das colunas.
+
 <a id="140--2026-11-09"></a>
 
 ## 1.4.0 — 2026-11-09
@@ -34,10 +43,11 @@
 
 ## 1.3.0 — 2026-11-02
 
-- Adiciona pré-visualizações opcionais do PowerToys Peek e deixa o Grab And Move tratar os gestos de janela em conflito.
+- Registar as operações detalhadas do instalador, as falhas de comandos e as exceções completas da limpeza da documentação em registos de diagnóstico permanentes.
 - Corrige o acesso concorrente ao estado das pastas, preserva alterações durante a recuperação diferida e reduz o redesenho de grandes disposições livres de ícones.
 - Evita movimentos de janela e menus de contexto indesejados após gestos interrompidos.
 
+- Adiciona pré-visualizações opcionais do PowerToys Peek e deixa o Grab And Move tratar os gestos de janela em conflito.
 - Personaliza o menu da barra de título em sete idiomas, com arrastar e largar, predefinições e aparência nativa ou do Nilesoft Shell.
 - Adiciona ações sobre disposições guardadas, ajuste ao conteúdo, fecho de janelas descendentes ou de outras janelas, grupos de pastas com nome e comandos estáveis do Nilesoft.
 - Corrige a desinstalação para que prossiga se a limpeza da ajuda falhar e a deteção de vários processos Explorer na mesma sessão de ambiente de trabalho nos testes da VM.
@@ -47,6 +57,9 @@
 
 ## 1.2.3 — 2026-10-30
 
+- Suavizar o logótipo da barra lateral do instalador e do desinstalador com redimensionamento de alta qualidade para o tamanho de apresentação atual.
+- Preservar as aspas dos argumentos de elevação, para que uma atualização para todos os utilizadores inicie o seu processo silencioso em vez de reabrir o instalador.
+- Atualizar por predefinição a instalação de origem e restaurar as janelas com o executável exato indicado pelo instalador, incluindo quando coexistem instalações pessoais e para todos os utilizadores.
 - Corrige as identidades, as sobreposições de ícones e as notificações de pastas na ordenação mista. Conserva as posições livres dos ícones e usa vistas nativas quando o fornecedor está indisponível ou é incompatível.
 - Garante uma única janela de Preferências entre processos e corrige a validação dos atalhos, os caminhos do Everything, as teclas de acesso e as traduções regionais.
 - Corrige o fecho de pastas, os cliques de ativação e a reposição após a pré-visualização do menu Ver.
