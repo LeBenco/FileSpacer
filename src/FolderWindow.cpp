@@ -2348,29 +2348,6 @@ void FolderWindow::toggleFillColumns() {
             || provisionalBaseline || provisionalInputBlocked || provisionalCaptureBusy) return;
     loadColumnFill();
     if (!columnFillLoaded || !isWindowOperational()) return;
-    if (!fillColumns && !settings::getDetailsColumnsDeferred()) {
-        CComPtr<IShellView> source = shellView;
-        const ULONG_PTR generation = viewGeneration;
-        auto current = [&]() {
-            return isWindowOperational() && shellView == source && viewGeneration == generation
-                && settings::getDetailsColumnsEnabled() && !fillColumns;
-        };
-        if (current()) {
-            TASKDIALOGCONFIG config = {sizeof(config)};
-            config.hwndParent = hwnd;
-            config.hInstance = GetModuleHandleW(nullptr);
-            config.pszWindowTitle = MAKEINTRESOURCEW(IDS_APP_NAME);
-            config.pszMainInstruction = getString(IDS_FILL_COLUMNS);
-            config.pszContent = getString(IDS_FILL_COLUMNS_WARNING);
-            config.pszMainIcon = TD_WARNING_ICON;
-            config.dwFlags = TDF_ALLOW_DIALOG_CANCELLATION;
-            config.dwCommonButtons = TDCBF_YES_BUTTON | TDCBF_NO_BUTTON;
-            config.nDefaultButton = IDNO;
-            int button = IDNO;
-            const HRESULT result = TaskDialogIndirect(&config, &button, nullptr, nullptr);
-            if (!current() || !checkHR(result) || button != IDYES) return;
-        } else return;
-    }
     fillColumns = !fillColumns;
     columnFillSet = true;
     viewStateDirty(FolderState::View);
@@ -3350,15 +3327,10 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     if (menuCount < 0) return;
     int thumbnailPosition = menuCount;
     for (int i = 0; i < menuCount; ++i) {
-        const UINT command = GetMenuItemID(subMenu, i);
-        if (command < IDM_SHELL_FIRST || command > IDM_SHELL_LAST) continue;
-        wchar_t verb[64] = {};
-        const HRESULT result = contextMenu->GetCommandString(command - IDM_SHELL_FIRST,
-            GCS_VERBW, nullptr, reinterpret_cast<char *>(verb), _countof(verb));
-        if (!isWindowOperational()) return;
-        // Canonical Shell verb; the translated label is never used as an identifier.
-        if (SUCCEEDED(result) && lstrcmpiW(verb, L"arrangeautogrid") == 0) {
-            thumbnailPosition = i + 1;
+        MENUITEMINFOW menuItem = {sizeof(menuItem)};
+        menuItem.fMask = MIIM_FTYPE;
+        if (GetMenuItemInfoW(subMenu, i, TRUE, &menuItem) && (menuItem.fType & MFT_SEPARATOR)) {
+            thumbnailPosition = i;
             break;
         }
     }
