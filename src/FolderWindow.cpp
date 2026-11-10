@@ -3554,33 +3554,28 @@ static bool openingIconRect(IShellView *view, IFolderView2 *folder,
     HWND body = nullptr;
     FOLDERVIEWMODE mode = FVM_AUTO;
     int size = 0;
-    if (!checkHR(view->GetWindow(&body)) || !current() || !body
-            || !checkHR(folder->GetViewModeAndIconSize(&mode, &size)) || !current()
+    if (FAILED(view->GetWindow(&body)) || !current() || !body
+            || FAILED(folder->GetViewModeAndIconSize(&mode, &size)) || !current()
             || size <= 0) return false;
     HWND focus = GetFocus();
-    debugPrintf(L"ANIMATION origin view: mode=%d size=%d body=%p focus=%p\n", mode, size, body, focus);
     if (!focus || (focus != body && !IsChild(body, focus))) return false;
     CComPtr<IAccessible> accessible;
-    if (!checkHR(AccessibleObjectFromWindow(focus, static_cast<DWORD>(OBJID_CLIENT), IID_PPV_ARGS(&accessible)))
+    if (FAILED(AccessibleObjectFromWindow(focus, static_cast<DWORD>(OBJID_CLIENT), IID_PPV_ARGS(&accessible)))
             || !current() || !accessible) return false;
     CComVariant child(CHILDID_SELF);
     for (unsigned depth = 0; depth < 8; ++depth) {
         CComVariant role, state;
-        if (!checkHR(accessible->get_accRole(child, &role)) || !current()) return false;
-        debugPrintf(L"ANIMATION origin accessibility: depth=%u roleType=%u role=%ld\n",
-            depth, role.vt, role.vt == VT_I4 ? role.lVal : -1L);
+        if (FAILED(accessible->get_accRole(child, &role)) || !current()) return false;
         if (role.vt == VT_I4 && (role.lVal == ROLE_SYSTEM_LISTITEM || role.lVal == ROLE_SYSTEM_OUTLINEITEM)) {
-            if (!checkHR(accessible->get_accState(child, &state)) || !current()) return false;
-            debugPrintf(L"ANIMATION origin accessibility state: type=%u flags=0x%lX\n",
-                state.vt, state.vt == VT_I4 ? static_cast<unsigned long>(state.lVal) : 0UL);
-            if (state.vt != VT_I4 || !(state.lVal & STATE_SYSTEM_SELECTED)
+            if (FAILED(accessible->get_accState(child, &state)) || !current() || state.vt != VT_I4
+                    || !(state.lVal & STATE_SYSTEM_SELECTED)
                     || (state.lVal & (STATE_SYSTEM_INVISIBLE | STATE_SYSTEM_OFFSCREEN))) return false;
             long x = 0, y = 0, width = 0, height = 0;
-            if (!checkHR(accessible->accLocation(&x, &y, &width, &height, child)) || !current()
+            if (FAILED(accessible->accLocation(&x, &y, &width, &height, child)) || !current()
                     || width <= 0 || height <= 0) return false;
             POINT topLeft = {x, y}, bottomRight = {x + width, y + height};
-            if (!checkLE(PhysicalToLogicalPointForPerMonitorDPI(body, &topLeft))
-                    || !checkLE(PhysicalToLogicalPointForPerMonitorDPI(body, &bottomRight))) return false;
+            if (!PhysicalToLogicalPointForPerMonitorDPI(body, &topLeft)
+                    || !PhysicalToLogicalPointForPerMonitorDPI(body, &bottomRight)) return false;
             const bool large = mode == FVM_ICON || mode == FVM_THUMBNAIL || mode == FVM_THUMBSTRIP;
             // Icon layouts put the image above the label; rows put it to its left.
             const LONG left = large ? topLeft.x + (bottomRight.x - topLeft.x - size) / 2 : topLeft.x;
@@ -3593,8 +3588,6 @@ static bool openingIconRect(IShellView *view, IFolderView2 *folder,
         }
         CComVariant focused;
         if (accessible->get_accFocus(&focused) != S_OK || !current()) return false;
-        debugPrintf(L"ANIMATION origin accessibility focus: type=%u child=%ld\n",
-            focused.vt, focused.vt == VT_I4 ? focused.lVal : -1L);
         if (focused.vt == VT_DISPATCH && focused.pdispVal) {
             CComQIPtr<IAccessible> next(focused.pdispVal);
             if (!current() || !next) return false;
@@ -3641,8 +3634,6 @@ STDMETHODIMP FolderWindow::OnDefaultCommand(IShellView *const view) {
                     // Folder activation is handled by our spatial window logic.
                     RECT origin = {};
                     const bool animate = openingIconRect(view, folderView, current, origin);
-                    debugPrintf(L"ANIMATION origin: found=%d rect=(%ld,%ld)-(%ld,%ld)\n",
-                        animate ? 1 : 0, origin.left, origin.top, origin.right, origin.bottom);
                     if (!current()) return S_OK;
                     selected = selectedItem;
                     openChild(selectedItem, closeSource, animate ? &origin : nullptr);
