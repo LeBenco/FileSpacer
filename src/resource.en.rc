@@ -5,8 +5,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 STRINGTABLE
 BEGIN
-  IDS_FILL_COLUMNS "Fill width with Details columns (this folder)"
-  IDS_FILL_COLUMNS_WARNING "Continuous column updates can make resizing less smooth and increase CPU use, even in small folders. Updating only on release is recommended.\n\nEnable full-width Details columns for this folder anyway?"
+  IDS_FILL_COLUMNS "Resize columns"
 END
 
 IDR_ITEM_MENU   MENU {
@@ -15,7 +14,7 @@ IDR_ITEM_MENU   MENU {
 }
 
 STRINGTABLE {
-    IDS_GLOBAL_THUMBNAILS, "Thumbnails (global setting)"
+    IDS_GLOBAL_THUMBNAILS, "Thumbnails"
     IDS_DOCUMENTATION_ERROR, "Unable to open the local documentation:\n%1\n\n%2"
     IDS_CAPTION_COPY_PATH, "Copy path"
     IDS_CAPTION_RENAME, "Rename"

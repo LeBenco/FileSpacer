@@ -5,8 +5,7 @@ LANGUAGE LANG_UKRAINIAN, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
-  IDS_FILL_COLUMNS "Стовпці подробиць на всю ширину (ця папка)"
-  IDS_FILL_COLUMNS_WARNING "Безперервне оновлення може зменшувати плавність зміни розміру й збільшувати навантаження на CPU навіть у малих папках. Рекомендовано оновлення після відпускання кнопки.\n\nУсе одно ввімкнути стовпці на всю ширину для цієї папки?"
+  IDS_FILL_COLUMNS "Змінювати розмір стовпців"
 END
 
 IDR_ITEM_MENU   MENU {
@@ -15,7 +14,7 @@ IDR_ITEM_MENU   MENU {
 }
 
 STRINGTABLE {
-    IDS_GLOBAL_THUMBNAILS, "Ескізи (глобальний параметр)"
+    IDS_GLOBAL_THUMBNAILS, "Ескізи"
     IDS_DOCUMENTATION_ERROR, "Не вдалося відкрити локальну документацію:\n%1\n\n%2"
     IDS_CAPTION_COPY_PATH, "Копіювати шлях"
     IDS_CAPTION_RENAME, "Перейменувати"

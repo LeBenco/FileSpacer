@@ -5,8 +5,7 @@ LANGUAGE LANG_FRENCH, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
-  IDS_FILL_COLUMNS "Remplir la largeur avec les colonnes Détails (ce dossier)"
-  IDS_FILL_COLUMNS_WARNING "L’actualisation en continu peut rendre le redimensionnement moins fluide et augmenter la charge CPU, même dans un petit dossier. L’actualisation au relâchement est recommandée.\n\nActiver quand même les colonnes Détails sur toute la largeur pour ce dossier ?"
+  IDS_FILL_COLUMNS "Redimensionner les colonnes"
 END
 
 IDR_ITEM_MENU   MENU {
@@ -15,7 +14,7 @@ IDR_ITEM_MENU   MENU {
 }
 
 STRINGTABLE {
-    IDS_GLOBAL_THUMBNAILS, "Vignettes (réglage global)"
+    IDS_GLOBAL_THUMBNAILS, "Vignettes"
     IDS_DOCUMENTATION_ERROR, "Impossible d’ouvrir la documentation locale :\n%1\n\n%2"
     IDS_CAPTION_COPY_PATH, "Copier le chemin"
     IDS_CAPTION_RENAME, "Renommer"

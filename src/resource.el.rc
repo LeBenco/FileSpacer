@@ -5,8 +5,7 @@ LANGUAGE LANG_GREEK, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
-  IDS_FILL_COLUMNS "Στήλες Λεπτομερειών σε όλο το πλάτος (αυτός ο φάκελος)"
-  IDS_FILL_COLUMNS_WARNING "Η συνεχής ενημέρωση μπορεί να κάνει την αλλαγή μεγέθους λιγότερο ομαλή και να αυξήσει τη χρήση CPU, ακόμη και σε μικρούς φακέλους. Συνιστάται ενημέρωση κατά την απελευθέρωση.\n\nΕνεργοποίηση στηλών πλήρους πλάτους για αυτόν τον φάκελο;"
+  IDS_FILL_COLUMNS "Αλλαγή μεγέθους στηλών"
 END
 
 IDR_ITEM_MENU   MENU {
@@ -15,7 +14,7 @@ IDR_ITEM_MENU   MENU {
 }
 
 STRINGTABLE {
-    IDS_GLOBAL_THUMBNAILS, "Μικρογραφίες (καθολική ρύθμιση)"
+    IDS_GLOBAL_THUMBNAILS, "Μικρογραφίες"
     IDS_DOCUMENTATION_ERROR, "Δεν ήταν δυνατό το άνοιγμα της τοπικής τεκμηρίωσης:\n%1\n\n%2"
     IDS_CAPTION_COPY_PATH, "Αντιγραφή διαδρομής"
     IDS_CAPTION_RENAME, "Μετονομασία"
