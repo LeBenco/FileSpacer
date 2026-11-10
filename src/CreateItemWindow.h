@@ -11,7 +11,7 @@ enum class FolderOpenResult { Failed, Created, Activated, Pending, OpenedExterna
 // Other items must have SFGAO_FOLDER and use the spatial window creation path.
 FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCmd,
     const ClosedWindow *reopening = nullptr, HWND replacingWindow = nullptr,
-    const RECT *openingOrigin = nullptr, const std::function<void()> &onShown = {});
+    const RECT *openingOrigin = nullptr);
 // Only offer the latest history entry when its folder has no live window.
 bool canReopenClosedWindow(const ClosedWindow &window);
 CComPtr<IShellItem> resolveLink(IShellItem *linkItem);

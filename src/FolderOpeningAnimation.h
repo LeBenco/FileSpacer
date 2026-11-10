@@ -1,7 +1,6 @@
 #pragma once
 #include <common.h>
 #include <memory>
-#include <functional>
 #include <windows.h>
 
 namespace filespacer {
@@ -19,7 +18,6 @@ public:
     FolderOpeningAnimation(const FolderOpeningAnimation &) = delete;
     FolderOpeningAnimation &operator=(const FolderOpeningAnimation &) = delete;
     bool begin(HWND window, const RECT &origin, int showCommand);
-    void whenFinished(const std::function<void()> &callback);
 
 private:
     struct State;
