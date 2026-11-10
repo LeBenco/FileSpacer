@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Collections.Generic;
 using System.Text;
+using System.Globalization;
 
 public static class CaptureDesktop {
     [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr window,out uint processId);
@@ -93,15 +94,53 @@ public static class CaptureDesktop {
     [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)]
     static extern IntPtr LoadLibraryExW(string file,IntPtr reserved,uint flags);
     [DllImport("kernel32.dll")] static extern bool FreeLibrary(IntPtr module);
-    [DllImport("user32.dll",CharSet=CharSet.Unicode)]
-    static extern int LoadStringW(IntPtr module,uint id,StringBuilder value,int capacity);
-    public static string Resource(string file,uint id) {
+    delegate bool ResourceLanguage(IntPtr module,IntPtr type,IntPtr name,ushort language,IntPtr parameter);
+    [DllImport("kernel32.dll",ExactSpelling=true,SetLastError=true)]
+    static extern bool EnumResourceLanguagesW(IntPtr module,IntPtr type,IntPtr name,ResourceLanguage callback,IntPtr parameter);
+    [DllImport("kernel32.dll",ExactSpelling=true,SetLastError=true)]
+    static extern IntPtr FindResourceExW(IntPtr module,IntPtr type,IntPtr name,ushort language);
+    [DllImport("kernel32.dll",SetLastError=true)] static extern IntPtr LoadResource(IntPtr module,IntPtr resource);
+    [DllImport("kernel32.dll")] static extern IntPtr LockResource(IntPtr resource);
+    [DllImport("kernel32.dll",SetLastError=true)] static extern uint SizeofResource(IntPtr module,IntPtr resource);
+    public static string Resource(string file,uint id,string language) {
+        var culture=CultureInfo.GetCultureInfo(language);
+        if(id>UInt16.MaxValue)throw new ArgumentOutOfRangeException("id");
         IntPtr module=LoadLibraryExW(file,IntPtr.Zero,0x22);
         if(module==IntPtr.Zero)throw new Win32Exception();
         try {
-            var value=new StringBuilder(4096);
-            if(LoadStringW(module,id,value,value.Capacity)==0)throw new InvalidOperationException("Missing resource "+id);
-            return value.ToString();
+            IntPtr type=new IntPtr(6),block=new IntPtr((id>>4)+1); // RT_STRING: 16 counted UTF-16 strings per block.
+            var available=new List<ushort>();
+            ResourceLanguage callback=delegate(IntPtr m,IntPtr t,IntPtr n,ushort value,IntPtr p){available.Add(value);return true;};
+            if(!EnumResourceLanguagesW(module,type,block,callback,IntPtr.Zero))throw new Win32Exception();
+            ushort selected=0;bool found=false;
+            foreach(ushort candidate in available)if(candidate==(ushort)culture.LCID){selected=candidate;found=true;break;}
+            if(!found)foreach(ushort candidate in available) {
+                try {
+                    if(CultureInfo.GetCultureInfo(candidate).TwoLetterISOLanguageName!=culture.TwoLetterISOLanguageName)continue;
+                    selected=candidate;found=true;break;
+                }catch(CultureNotFoundException){}
+            }
+            if(!found)throw new InvalidOperationException("Missing resource language "+language);
+            IntPtr resource=FindResourceExW(module,type,block,selected);
+            if(resource==IntPtr.Zero)throw new Win32Exception();
+            int size=checked((int)SizeofResource(module,resource));
+            IntPtr handle=LoadResource(module,resource);
+            if(handle==IntPtr.Zero)throw new Win32Exception();
+            IntPtr data=LockResource(handle);
+            if(data==IntPtr.Zero)throw new InvalidOperationException("Cannot read string resource.");
+            int offset=0;
+            for(uint index=0;index<=id%16;index++) {
+                if(offset+2>size)throw new InvalidOperationException("Truncated string resource.");
+                int length=(ushort)Marshal.ReadInt16(data,offset);offset+=2;
+                if(offset+length*2>size)throw new InvalidOperationException("Truncated string resource.");
+                if(index==id%16) {
+                    if(length==0)throw new InvalidOperationException("Missing localized string "+id);
+                    // This application compiles resources with rc.exe /n.
+                    return Marshal.PtrToStringUni(IntPtr.Add(data,offset),length).TrimEnd('\0');
+                }
+                offset+=length*2;
+            }
+            throw new InvalidOperationException("Missing string resource "+id);
         } finally {FreeLibrary(module);}
     }
     [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
