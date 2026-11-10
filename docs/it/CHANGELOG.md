@@ -2,6 +2,15 @@
 
 # Cronologia delle versioni
 
+<a id="141--2026-11-09"></a>
+
+## 1.4.1 — 2026-11-09
+
+- Spiegare gli errori del database dello stato delle cartelle con una diagnostica copiabile, l’accesso alla cartella dei dati e l’identificazione dei processi quando disponibile. Offrire un ripristino con conferma e una copia di backup completa se il database non può essere caricato o recuperato.
+- Evitare scritture inutili nella cronologia delle ricerche quando si applicano preferenze invariate, così che un database dello stato delle cartelle non disponibile non blocchi questo passaggio prima di un aggiornamento automatico.
+
+- Correggere il blocco del ridimensionamento della barra degli strumenti dopo l’apertura del suo menu o delle Impostazioni, anche nella vista Dettagli con ridimensionamento differito delle colonne.
+
 <a id="140--2026-11-09"></a>
 
 ## 1.4.0 — 2026-11-09
@@ -34,10 +43,11 @@
 
 ## 1.3.0 — 2026-11-02
 
-- Aggiunge anteprime facoltative con PowerToys Peek e lascia a Grab And Move la gestione dei gesti della finestra in conflitto.
+- Registrare le operazioni dettagliate del programma di installazione, gli errori dei comandi e i dettagli completi degli errori di pulizia della documentazione in registri diagnostici permanenti.
 - Corregge gli accessi concorrenti allo stato delle cartelle, conserva le modifiche durante il recupero differito e riduce i ridisegni delle grandi disposizioni libere delle icone.
 - Evita spostamenti delle finestre e menu contestuali indesiderati dopo gesti interrotti.
 
+- Aggiunge anteprime facoltative con PowerToys Peek e lascia a Grab And Move la gestione dei gesti della finestra in conflitto.
 - Personalizzare il menu della barra del titolo in sette lingue, con trascinamento, impostazioni predefinite e aspetto nativo o Nilesoft Shell.
 - Aggiungere azioni per le disposizioni salvate, adattamento al contenuto, chiusura delle finestre discendenti o delle altre finestre, gruppi di cartelle con nome e comandi Nilesoft stabili.
 - Correggere la disinstallazione affinché prosegua se la pulizia della guida non riesce e il rilevamento di più processi Explorer nella stessa sessione desktop nei test VM.
@@ -47,6 +57,9 @@
 
 ## 1.2.3 — 2026-10-30
 
+- Migliorare la resa del logo della barra laterale del programma di installazione e disinstallazione con un ridimensionamento di alta qualità alle dimensioni di visualizzazione correnti.
+- Conservare le virgolette degli argomenti per l’elevazione dei privilegi, affinché un aggiornamento per tutti gli utenti avvii il processo silenzioso anziché riaprire il programma di installazione.
+- Aggiornare per impostazione predefinita l’installazione di origine e ripristinare le finestre con l’eseguibile esatto indicato dal programma di installazione, anche quando coesistono installazioni personali e per tutti gli utenti.
 - Correggere identità, sovrapposizioni delle icone e notifiche delle cartelle nell’ordinamento misto. Conservare le posizioni libere delle icone e usare le viste native quando il provider non è disponibile o è incompatibile.
 - Garantire una sola finestra Preferenze tra processi e correggere la convalida delle scorciatoie, i percorsi di Everything, i tasti di accesso e le traduzioni regionali.
 - Correggere la chiusura delle cartelle, i clic di attivazione e il ripristino dopo un’anteprima nel menu Visualizza.

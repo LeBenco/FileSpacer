@@ -2,6 +2,15 @@
 
 # Versionsverlauf
 
+<a id="141--2026-11-09"></a>
+
+## 1.4.1 — 2026-11-09
+
+- Fehler der Datenbank für Ordnerzustände mit kopierbaren Diagnosedaten, Zugriff auf den Datenordner und nach Möglichkeit Angaben zu beteiligten Prozessen erläutern. Wenn sich die Datenbank weder laden noch wiederherstellen lässt, ein Zurücksetzen nach Bestätigung und mit vollständiger Sicherung anbieten.
+- Unnötige Schreibzugriffe auf den Suchverlauf beim Anwenden unveränderter Einstellungen vermeiden, damit eine nicht verfügbare Ordnerdatenbank diesen Schritt vor einer automatischen Aktualisierung nicht blockiert.
+
+- Blockierte Größenanpassung der Symbolleiste nach dem Öffnen ihres Menüs oder der Einstellungen beheben, auch in der Detailansicht mit verzögerter Anpassung der Spaltenbreiten.
+
 <a id="140--2026-11-09"></a>
 
 ## 1.4.0 — 2026-11-09
@@ -34,10 +43,11 @@
 
 ## 1.3.0 — 2026-11-02
 
-- Fügt optionale PowerToys-Peek-Vorschauen hinzu und überlässt kollidierende Fenstergesten Grab And Move.
+- Detaillierte Installationsvorgänge, fehlgeschlagene Befehle und vollständige Fehlerdetails bei der Bereinigung der Dokumentation in dauerhaft gespeicherten Diagnoseprotokollen erfassen.
 - Behebt gleichzeitige Zugriffe auf Ordnerzustände, erhält Änderungen bei verzögerter Wiederherstellung und reduziert Neuzeichnungen großer freier Symbolanordnungen.
 - Verhindert unbeabsichtigte Fensterbewegungen und Kontextmenüs nach unterbrochenen Fenstergesten.
 
+- Fügt optionale PowerToys-Peek-Vorschauen hinzu und überlässt kollidierende Fenstergesten Grab And Move.
 - Das Titelleistenmenü in sieben Sprachen anpassen, mit Drag-and-drop, Standardeinstellungen und nativer oder Nilesoft-Shell-Darstellung.
 - Aktionen für gespeicherte Anordnungen, Anpassung an den Inhalt, Schließen untergeordneter oder anderer Fenster, benannte Ordnergruppen und stabile Nilesoft-Befehle hinzufügen.
 - Die Deinstallation auch bei fehlgeschlagener Hilfebereinigung fortsetzen und die Erkennung mehrerer Explorer-Prozesse in derselben Desktopsitzung durch VM-Tests korrigieren.
@@ -47,6 +57,9 @@
 
 ## 1.2.3 — 2026-10-30
 
+- Das Seitenleistenlogo des Installations- und Deinstallationsprogramms durch hochwertige Skalierung auf die aktuelle Anzeigegröße glätten.
+- Anführungszeichen in den Argumenten für erhöhte Rechte beibehalten, damit eine Aktualisierung für alle Benutzer ihren stillen Hintergrundprozess startet, statt das Installationsprogramm erneut zu öffnen.
+- Standardmäßig die ursprüngliche Installation aktualisieren und Fenster mit genau der vom Installationsprogramm angegebenen Programmdatei wiederherstellen, auch wenn eine persönliche Installation und eine Installation für alle Benutzer nebeneinander vorhanden sind.
 - Identitäten, Symbolüberlagerungen und Ordnerbenachrichtigungen bei gemischter Sortierung korrigieren. Freie Symbolpositionen erhalten und die native Ansicht verwenden, wenn der Anbieter fehlt oder inkompatibel ist.
 - Prozessübergreifend nur ein Einstellungsfenster zulassen sowie Tastenkürzelprüfung, Everything-Pfade, Zugriffstasten und regionale Übersetzungen korrigieren.
 - Das Schließen von Ordnerfenstern, Aktivierungsklicks und die Wiederherstellung nach einer Vorschau im Menü Ansicht korrigieren.
