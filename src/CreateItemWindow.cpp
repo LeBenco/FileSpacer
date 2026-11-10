@@ -151,7 +151,8 @@ static bool isControlPanelFolder(IShellItem *item) {
 }
 
 FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCmd,
-        const ClosedWindow *reopening, HWND replacingWindow) {
+        const ClosedWindow *reopening, HWND replacingWindow, const RECT *openingOrigin,
+        const std::function<void()> &onShown) {
     // The caller keeps its C++ window object alive, but Shell calls below may
     // destroy its HWND. Do not withdraw a subsequently recycled window handle.
     const LONG_PTR replacingIdentity = replacingWindow
@@ -197,7 +198,7 @@ FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCm
     // Withdraw once before placement. Failure restores only this source's
     // contribution; success leaves it withdrawn until its deferred destruction.
     PlacementWithdrawal withdrawal(settings::getSmartWindowPlacement() ? replacingWindow : nullptr);
-    if (!window->create(window->requestedRect(monitor, replacingWindow), showCmd))
+    if (!window->create(window->requestedRect(monitor, replacingWindow), showCmd, openingOrigin))
         return FolderOpenResult::Failed;
     if (isProcessQuitRequested()) {
         HWND created = nullptr;
@@ -210,6 +211,12 @@ FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCm
     if (showCmd == SW_SHOWNORMAL)
         window->setForeground();
     withdrawal.commit();
+    // Closing the parent follows the actual reveal, including when the effect
+    // already finished during a reentrant Shell call above.
+    if (onShown) {
+        if (window->openingAnimation) window->openingAnimation->whenFinished(onShown);
+        else onShown();
+    }
     return FolderOpenResult::Created;
 }
 
