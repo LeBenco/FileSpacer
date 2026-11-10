@@ -39,6 +39,9 @@ try {
     [void][IO.Directory]::CreateDirectory($folder)
     1..5 | ForEach-Object { [IO.File]::WriteAllText((Join-Path $folder ('item-'+$_+'.txt')),'columns') }
     $window=Open-UiFolder $folder 5
+    $work=[FileSpacerRegression.Native]::WorkArea($window)
+    Assert-Ui ($work.Width -ge 1016 -and $work.Height -ge 624) 'The test needs room for eight real border resizes.'
+    Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($window,[IntPtr]::Zero,($work.Left+16),($work.Top+16),600,400,0x14)) 'Cannot place the test window with room for border resizes.'
     Use-UiView $window {param($view) $view.Mode=4};Wait-UiViewMode $window 4
     [void](Wait-Columns $window)
     $otherFolder=Join-Path $script:UiRoot 'Other'
