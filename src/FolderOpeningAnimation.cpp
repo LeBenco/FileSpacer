@@ -9,6 +9,7 @@
 #include <atomic>
 #include <algorithm>
 #include <type_traits>
+#include <cstdio>
 
 #pragma comment(lib, "D3d11.lib")
 #pragma comment(lib, "D2d1.lib")
@@ -24,7 +25,7 @@ struct OpeningGraphics {
     CComPtr<IDCompositionDevice> health;
 
     bool initialize() {
-        if (FAILED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
+        if (!checkHR(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
                 D3D11_CREATE_DEVICE_BGRA_SUPPORT, nullptr, 0, D3D11_SDK_VERSION,
                 &d3d, nullptr, nullptr))) return false;
         CComQIPtr<IDXGIDevice> dxgi(d3d);
@@ -32,9 +33,9 @@ struct OpeningGraphics {
         const D2D1_CREATION_PROPERTIES properties = {
             D2D1_THREADING_MODE_MULTI_THREADED, D2D1_DEBUG_LEVEL_NONE,
             D2D1_DEVICE_CONTEXT_OPTIONS_NONE};
-        if (!dxgi || FAILED(D2D1CreateDevice(dxgi, &properties, &drawing))
-                || FAILED(DCompositionCreateDevice2(drawing, IID_PPV_ARGS(&composition)))
-                || FAILED(composition->QueryInterface(IID_PPV_ARGS(&health)))) return false;
+        if (!dxgi || !checkHR(D2D1CreateDevice(dxgi, &properties, &drawing))
+                || !checkHR(DCompositionCreateDevice2(drawing, IID_PPV_ARGS(&composition)))
+                || !checkHR(composition->QueryInterface(IID_PPV_ARGS(&health)))) return false;
         return true;
     }
 };
@@ -43,11 +44,21 @@ std::atomic_bool preparing{false};
 
 DWORD WINAPI prepareGraphics(void *) {
     const HRESULT initialized = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    if (SUCCEEDED(initialized)) {
+    if (checkHR(initialized)) {
         try {
             auto candidate = std::make_shared<OpeningGraphics>();
-            if (candidate->initialize()) std::atomic_store(&graphics, candidate);
-        } catch (...) { /* Optional effect: opening folders must remain available. */ }
+            if (candidate->initialize()) {
+                std::atomic_store(&graphics, candidate);
+                debugPrintf(L"ANIMATION graphics ready\n");
+            } else {
+                debugPrintf(L"ANIMATION graphics initialization failed\n");
+            }
+        } catch (...) {
+            debugPrintf(L"ANIMATION graphics initialization raised an exception\n");
+        }
+#ifdef FILESPACER_DEBUG
+        std::fflush(stdout);
+#endif
         CoUninitialize();
     }
     unlockProcess();
@@ -70,6 +81,7 @@ struct FolderOpeningAnimation::State {
     HWND window = nullptr;
     HWND foreground = nullptr;
     LONG_PTR identity = 0;
+    const wchar_t *stage = L"graphics availability";
 
     bool current() const {
         return window && IsWindow(window)
@@ -110,6 +122,7 @@ struct FolderOpeningAnimation::State {
             SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
         }
         if (self && message == WM_TIMER && wParam == 1) {
+            debugPrintf(L"ANIMATION completed: tick=%llu\n", GetTickCount64());
             self->finish(true);
             return 0;
         }
@@ -118,8 +131,10 @@ struct FolderOpeningAnimation::State {
             BeginPaint(hwnd, &paint);
             EndPaint(hwnd, &paint);
             BOOL valid = FALSE;
-            if (!self->resources || FAILED(self->resources->health->CheckDeviceState(&valid)) || !valid)
+            if (!self->resources || !checkHR(self->resources->health->CheckDeviceState(&valid)) || !valid) {
+                debugPrintf(L"ANIMATION interrupted: graphics device invalid\n");
                 self->finish(true);
+            }
             return 0;
         }
         if (message == WM_NCHITTEST) return HTTRANSPARENT;
@@ -130,68 +145,76 @@ struct FolderOpeningAnimation::State {
     bool animate(IDCompositionAnimation **out, float from, float to, LARGE_INTEGER start) {
         const double duration = FolderOpeningAnimation::durationMs / 1000.0;
         CComPtr<IDCompositionAnimation> animation;
-        if (FAILED(resources->composition->CreateAnimation(&animation))
-                || FAILED(animation->AddCubic(0.0, from, static_cast<float>((to - from) / duration), 0.0f, 0.0f))
-                || FAILED(animation->End(duration, to))
-                || FAILED(animation->SetAbsoluteBeginTime(start))) return false;
+        if (!checkHR(resources->composition->CreateAnimation(&animation))
+                || !checkHR(animation->AddCubic(0.0, from, static_cast<float>((to - from) / duration), 0.0f, 0.0f))
+                || !checkHR(animation->End(duration, to))
+                || !checkHR(animation->SetAbsoluteBeginTime(start))) return false;
         *out = animation.Detach();
         return true;
     }
 
     bool drawPattern(UINT width, UINT height) {
-        if (FAILED(resources->composition->CreateSurface(width, height, DXGI_FORMAT_B8G8R8A8_UNORM,
+        if (!checkHR(resources->composition->CreateSurface(width, height, DXGI_FORMAT_B8G8R8A8_UNORM,
                 DXGI_ALPHA_MODE_PREMULTIPLIED, &pattern))) return false;
         CComPtr<ID2D1DeviceContext> context;
         POINT offset = {};
-        if (FAILED(pattern->BeginDraw(nullptr, IID_PPV_ARGS(&context), &offset))) return false;
+        if (!checkHR(pattern->BeginDraw(nullptr, IID_PPV_ARGS(&context), &offset))) return false;
         CComPtr<ID2D1Bitmap> dots;
         CComPtr<ID2D1BitmapBrush> brush;
         const UINT32 pixels[] = {0xFF999999, 0, 0, 0xFF999999};
         const D2D1_BITMAP_PROPERTIES format = D2D1::BitmapProperties(
             D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED));
         HRESULT result = context->CreateBitmap(D2D1::SizeU(2, 2), pixels, 2 * sizeof(UINT32), format, &dots);
-        if (SUCCEEDED(result)) {
+        if (checkHR(result)) {
             const D2D1_BITMAP_BRUSH_PROPERTIES tiling = D2D1::BitmapBrushProperties(
                 D2D1_EXTEND_MODE_WRAP, D2D1_EXTEND_MODE_WRAP, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
             const D2D1_BRUSH_PROPERTIES properties = D2D1::BrushProperties(1.0f,
                 D2D1::Matrix3x2F::Scale(3.0f, 3.0f));
             result = context->CreateBitmapBrush(dots, tiling, properties, &brush);
         }
-        if (SUCCEEDED(result)) {
+        if (checkHR(result)) {
             context->SetTransform(D2D1::Matrix3x2F::Translation(static_cast<float>(offset.x), static_cast<float>(offset.y)));
             context->Clear(D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.0f));
             context->FillRectangle(D2D1::RectF(0, 0, static_cast<float>(width), static_cast<float>(height)), brush);
         }
         const HRESULT ended = pattern->EndDraw();
-        return SUCCEEDED(result) && SUCCEEDED(ended);
+        return checkHR(result) && checkHR(ended);
     }
 
     bool addEdge(IDCompositionAnimation *width, IDCompositionAnimation *height,
             IDCompositionAnimation *innerWidth, IDCompositionAnimation *innerHeight, unsigned edge) {
         CComPtr<IDCompositionVisual2> line;
         CComPtr<IDCompositionRectangleClip> clip;
-        if (FAILED(resources->composition->CreateVisual(&line))
-                || FAILED(resources->composition->CreateRectangleClip(&clip))) return false;
+        if (!checkHR(resources->composition->CreateVisual(&line))
+                || !checkHR(resources->composition->CreateRectangleClip(&clip))) return false;
         // Four moving strips expose the fixed dotted pattern. Neither the stroke
         // thickness nor the dots stretch as the rectangle grows.
-        if (FAILED(edge == 3 ? clip->SetLeft(innerWidth) : clip->SetLeft(0.0f))
-                || FAILED(edge == 1 ? clip->SetTop(innerHeight) : clip->SetTop(0.0f))) return false;
+        if (!checkHR(edge == 3 ? clip->SetLeft(innerWidth) : clip->SetLeft(0.0f))
+                || !checkHR(edge == 1 ? clip->SetTop(innerHeight) : clip->SetTop(0.0f))) return false;
         if (edge == 2) {
-            if (FAILED(clip->SetRight(1.0f))) return false;
-        } else if (FAILED(clip->SetRight(width))) return false;
+            if (!checkHR(clip->SetRight(1.0f))) return false;
+        } else if (!checkHR(clip->SetRight(width))) return false;
         if (edge == 0) {
-            if (FAILED(clip->SetBottom(1.0f))) return false;
-        } else if (FAILED(clip->SetBottom(height))) return false;
-        return SUCCEEDED(line->SetContent(pattern)) && SUCCEEDED(line->SetClip(clip))
-            && SUCCEEDED(visual->AddVisual(line, FALSE, nullptr));
+            if (!checkHR(clip->SetBottom(1.0f))) return false;
+        } else if (!checkHR(clip->SetBottom(height))) return false;
+        return checkHR(line->SetContent(pattern)) && checkHR(line->SetClip(clip))
+            && checkHR(visual->AddVisual(line, FALSE, nullptr));
     }
 
     bool begin(HWND destination, const RECT &origin, int showCommand) {
         resources = std::atomic_load(&graphics);
-        if (!resources || !animationsEnabled() || origin.right <= origin.left || origin.bottom <= origin.top)
+        if (!resources) {
+            debugPrintf(L"ANIMATION skipped: graphics not ready or initialization failed\n");
             return false;
+        }
+        stage = L"Windows animation preference";
+        if (!animationsEnabled()) return false;
+        stage = L"origin rectangle";
+        if (origin.right <= origin.left || origin.bottom <= origin.top) return false;
+        stage = L"device health";
         BOOL valid = FALSE;
-        if (FAILED(resources->health->CheckDeviceState(&valid)) || !valid) return false;
+        if (!checkHR(resources->health->CheckDeviceState(&valid)) || !valid) return false;
+        stage = L"overlay class registration";
         WNDCLASSW cls = {};
         cls.hInstance = GetModuleHandleW(nullptr);
         cls.lpfnWndProc = windowProc;
@@ -200,38 +223,42 @@ struct FolderOpeningAnimation::State {
         window = destination;
         identity = GetWindowLongPtrW(window, GWLP_USERDATA);
         foreground = GetForegroundWindow();
+        stage = L"cloaking the destination";
         const BOOL enabled = TRUE;
-        if (FAILED(DwmSetWindowAttribute(window, DWMWA_CLOAK, &enabled, sizeof(enabled)))) {
+        if (!checkHR(DwmSetWindowAttribute(window, DWMWA_CLOAK, &enabled, sizeof(enabled)))) {
             window = nullptr;
             return false;
         }
         DwmSetWindowAttribute(window, DWMWA_TRANSITIONS_FORCEDISABLED, &enabled, sizeof(enabled));
         ShowWindow(window, showCommand);
         if (!current()) return false;
+        stage = L"destination geometry";
         RECT end = {};
-        if (FAILED(DwmGetWindowAttribute(window, DWMWA_EXTENDED_FRAME_BOUNDS, &end, sizeof(end)))
+        if (!checkHR(DwmGetWindowAttribute(window, DWMWA_EXTENDED_FRAME_BOUNDS, &end, sizeof(end)))
                 || end.right <= end.left || end.bottom <= end.top) {
-            if (!GetWindowRect(window, &end)) return false;
+            if (!checkLE(GetWindowRect(window, &end))) return false;
         } else {
             // DWM/MSAA use physical screen pixels; this application is system-DPI-aware.
             POINT topLeft = {end.left, end.top}, bottomRight = {end.right, end.bottom};
-            if (!PhysicalToLogicalPointForPerMonitorDPI(window, &topLeft)
-                    || !PhysicalToLogicalPointForPerMonitorDPI(window, &bottomRight)) return false;
+            if (!checkLE(PhysicalToLogicalPointForPerMonitorDPI(window, &topLeft))
+                    || !checkLE(PhysicalToLogicalPointForPerMonitorDPI(window, &bottomRight))) return false;
             end = {topLeft.x, topLeft.y, bottomRight.x, bottomRight.y};
         }
         RECT bounds = {};
         if (!UnionRect(&bounds, &origin, &end)) return false;
-        overlay.reset(CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT
+        stage = L"overlay and composition surface";
+        overlay.reset(checkLE(CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT
                 | WS_EX_NOREDIRECTIONBITMAP, animationClass, L"", WS_POPUP,
             bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top,
-            nullptr, nullptr, cls.hInstance, this));
-        if (!overlay || FAILED(resources->composition->CreateTargetForHwnd(overlay.get(), TRUE, &target))
-                || FAILED(resources->composition->CreateVisual(&visual))
+            nullptr, nullptr, cls.hInstance, this)));
+        if (!overlay || !checkHR(resources->composition->CreateTargetForHwnd(overlay.get(), TRUE, &target))
+                || !checkHR(resources->composition->CreateVisual(&visual))
                 || !drawPattern(static_cast<UINT>((std::max)(origin.right - origin.left, end.right - end.left)),
                     static_cast<UINT>((std::max)(origin.bottom - origin.top, end.bottom - end.top)))
-                || FAILED(target->SetRoot(visual))) return false;
+                || !checkHR(target->SetRoot(visual))) return false;
+        stage = L"animation curves and completion timer";
         LARGE_INTEGER start = {};
-        if (!QueryPerformanceCounter(&start)) return false;
+        if (!checkLE(QueryPerformanceCounter(&start))) return false;
         CComPtr<IDCompositionAnimation> x, y, width, height, innerWidth, innerHeight;
         if (!animate(&x, static_cast<float>(origin.left - bounds.left), static_cast<float>(end.left - bounds.left), start)
                 || !animate(&y, static_cast<float>(origin.top - bounds.top), static_cast<float>(end.top - bounds.top), start)
@@ -239,16 +266,17 @@ struct FolderOpeningAnimation::State {
                 || !animate(&height, static_cast<float>(origin.bottom - origin.top), static_cast<float>(end.bottom - end.top), start)
                 || !animate(&innerWidth, static_cast<float>(origin.right - origin.left - 1), static_cast<float>(end.right - end.left - 1), start)
                 || !animate(&innerHeight, static_cast<float>(origin.bottom - origin.top - 1), static_cast<float>(end.bottom - end.top - 1), start)
-                || FAILED(visual->SetOffsetX(x)) || FAILED(visual->SetOffsetY(y))
+                || !checkHR(visual->SetOffsetX(x)) || !checkHR(visual->SetOffsetY(y))
                 || !addEdge(width, height, innerWidth, innerHeight, 0)
                 || !addEdge(width, height, innerWidth, innerHeight, 1)
                 || !addEdge(width, height, innerWidth, innerHeight, 2)
                 || !addEdge(width, height, innerWidth, innerHeight, 3)
-                || !SetTimer(overlay.get(), 1, FolderOpeningAnimation::durationMs, nullptr)) return false;
-        if (!SetWindowPos(overlay.get(), HWND_TOP, 0, 0, 0, 0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW)) return false;
+                || !checkLE(SetTimer(overlay.get(), 1, FolderOpeningAnimation::durationMs, nullptr))) return false;
+        if (!checkLE(SetWindowPos(overlay.get(), HWND_TOP, 0, 0, 0, 0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW))) return false;
         // One submission; DWM drives every intermediate frame. The timer only ends the effect.
-        return SUCCEEDED(resources->composition->Commit());
+        stage = L"composition commit";
+        return checkHR(resources->composition->Commit());
     }
 };
 
@@ -256,13 +284,24 @@ FolderOpeningAnimation::FolderOpeningAnimation() : state(new State) {}
 FolderOpeningAnimation::~FolderOpeningAnimation() = default;
 
 bool FolderOpeningAnimation::begin(HWND window, const RECT &origin, int showCommand) {
-    return state->begin(window, origin, showCommand);
+    const bool started = state->begin(window, origin, showCommand);
+    debugPrintf(L"ANIMATION %s: stage=%s duration=%u ms tick=%llu\n",
+        started ? L"started" : L"skipped", state->stage, durationMs, GetTickCount64());
+#ifdef FILESPACER_DEBUG
+    std::fflush(stdout);
+#endif
+    return started;
 }
 
 void FolderOpeningAnimation::prepare() {
-    if (!animationsEnabled() || preparing.exchange(true)) return;
+    if (!animationsEnabled()) {
+        debugPrintf(L"ANIMATION preparation skipped: Windows client-area animations disabled\n");
+        return;
+    }
+    if (preparing.exchange(true)) return;
+    debugPrintf(L"ANIMATION preparing graphics in background\n");
     lockProcess();
-    if (!QueueUserWorkItem(prepareGraphics, nullptr, WT_EXECUTEDEFAULT)) {
+    if (!checkLE(QueueUserWorkItem(prepareGraphics, nullptr, WT_EXECUTEDEFAULT))) {
         preparing.store(false);
         unlockProcess();
     }
