@@ -112,12 +112,13 @@ using HBITMAP = Bitmap *;
 struct MENUITEMINFO {
     unsigned cbSize, fMask = 0;
     HBITMAP hbmpItem = nullptr;
-    unsigned wID = 0, fState = 0;
+    unsigned wID = 0, fState = 0, fType = 0;
     wchar_t *dwTypeData = nullptr;
 };
 using MENUITEMINFOW = MENUITEMINFO;
 constexpr int COLOR_MENUTEXT=7, MENU_POPUPITEM=14, MPI_NORMAL=1, TMT_TEXTCOLOR=3803, SM_CXSMICON=49;
 constexpr unsigned MIIM_BITMAP=128;
+constexpr unsigned MIIM_FTYPE=256, MFT_SEPARATOR=2048;
 constexpr unsigned MIIM_ID=2, MIIM_STRING=64, MIIM_STATE=1, MFS_UNCHECKED=0, MFS_CHECKED=8, SSF_ICONSONLY=1;
 constexpr unsigned GCS_VERBW=4;
 constexpr bool TRUE=true;
@@ -138,6 +139,7 @@ struct Menu {};
 using HMENU = Menu *;
 int GetMenuItemCount(HMENU menu) { assert(menu); return 0; }
 UINT GetMenuItemID(HMENU menu, int) { assert(menu); return static_cast<UINT>(-1); }
+bool GetMenuItemInfoW(HMENU menu, UINT, bool, MENUITEMINFO *) { assert(menu); return false; }
 bool InsertMenuItemW(HMENU menu, UINT, bool, const MENUITEMINFO *info) {
     assert(menu && (info->wID == IDM_TOGGLE_THUMBNAILS || info->wID == IDM_FILL_COLUMNS));
     return true;
