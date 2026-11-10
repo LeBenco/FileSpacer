@@ -1572,8 +1572,10 @@ bool ItemWindow::onControlCommand(HWND controlHwnd, WORD notif) {
 LRESULT ItemWindow::onNotify(NMHDR *nmHdr) {
     if (pathBar.isWindow(nmHdr->hwndFrom) && nmHdr->code == PathBar::OPEN_ITEM) {
         auto notification = reinterpret_cast<PathBar::OpenItemNotification *>(nmHdr);
+        const RECT origin = notification->openingOrigin;
         openChild(notification->item,
-            settings::getKeepSourceWindowOpen() == notification->control);
+            settings::getKeepSourceWindowOpen() == notification->control,
+            IsRectEmpty(&origin) ? nullptr : &origin);
         return 0;
     }
     if (toolbarRebar && nmHdr->hwndFrom == toolbarRebar
@@ -1922,8 +1924,11 @@ void ItemWindow::openParent(bool closeSource) {
     if (!isWindowOperational())
         return;
     CComPtr<IShellItem> parentItem;
-    if (SUCCEEDED(item->GetParent(&parentItem)) && isWindowOperational())
-        openChild(parentItem, closeSource);
+    if (SUCCEEDED(item->GetParent(&parentItem)) && isWindowOperational()) {
+        RECT origin = {};
+        if (parentToolbar && IsWindowVisible(parentToolbar)) origin = windowRect(parentToolbar);
+        openChild(parentItem, closeSource, IsRectEmpty(&origin) ? nullptr : &origin);
+    }
 }
 
 
@@ -2545,8 +2550,11 @@ void ItemWindow::openParentMenu() {
             targetItem = nextItem;
         }
 
-        if (isWindowOperational() && found && targetItem)
-            openChild(targetItem, closeSource);
+        if (isWindowOperational() && found && targetItem) {
+            RECT origin = {};
+            if (parentToolbar && IsWindowVisible(parentToolbar)) origin = windowRect(parentToolbar);
+            openChild(targetItem, closeSource, IsRectEmpty(&origin) ? nullptr : &origin);
+        }
     }
 
 
