@@ -1,0 +1,1344 @@
+{
+  "application": "FileSpacer",
+  "version": "1.4.0",
+  "captured": "2026-11-10",
+  "sourceCommit": "2ab4fc2ad566aac895410032c0132c972ede11d8",
+  "sourceApplicationSha256": "7f7ade31533392417f945c4abb1bcb2870f1bd85df4660533778b16759ca701a",
+  "folderDllSha256": "7ea5a4fbf90ca4f27fec287081bb5e569479c1417468d3853ca5964e187c25a0",
+  "method": "Actual screen pixels from AgentWin10 using the unchanged compiled application executable and DLL. Every language uses the same binary SHA-256; the installed Windows display language selects the application and native Shell translations. No resource-only relinking, compositing, translated overlays, image editing or frame cuts.",
+  "captureScripts": "tools/documentation-capture/",
+  "preparationScriptSha256": "bb6695de3ccfc68931c0d1ac4cb880ae1aa5a17502d96aa145c0ceaad87fc12b",
+  "captureTool": {
+    "name": "ScreenToGif",
+    "version": "2.43.2",
+    "archiveSha256": "42a0b53d67ecae22698b4881ffb2c9c7a9049663f5fbdd2edb779e1971000664",
+    "cursor": true,
+    "clickHighlights": true,
+    "recordedModifierKeys": true
+  },
+  "wallpaper": {
+    "source": "https://images.unsplash.com/photo-1599148521725-dbd1ee6c0817",
+    "license": "https://unsplash.com/license",
+    "sha256": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714"
+  },
+  "storyboard": "Icon mode is selected through the actual application View menu and checked for absent column headers. The native lock close-up includes the left-hand padlock, title, toolbar and content. Moving, resizing and menu customization retain their original uninterrupted pointer paths and pauses. In Details view, the pointer pauses over the automatic-filling option for one second before clicking, then widens Name manually to reveal the remaining long names.",
+  "validation": {
+    "scope": "Documentation capture scenarios, not a complete application regression suite.",
+    "visualReview": "Original lock and native-menu PNGs and per-language decoded GIF contact sheets reviewed for actual native modes, localized text, framing, pointer motion and pauses. The hover pause is also recorded in the scenario assertions.",
+    "stateRestored": true,
+    "productionUnchanged": true,
+    "cleanupErrors": []
+  },
+  "supersedesProvenance": [
+    "docs/capture-provenance/window-interactions-2026-11-08-provenance.json",
+    "docs/capture-provenance/details-columns-2026-11-09-provenance.json"
+  ],
+  "initialTemporaryCleanup": {
+    "run": "vm-209e1962f3d74193ad899b150970c45e",
+    "bytesFreed": 2987757568,
+    "pathsRemoved": 33,
+    "reportsMediaAndStateBackupsPreserved": true
+  },
+  "languages": [
+    {
+      "language": "en",
+      "windowsDisplayLanguage": "en-GB",
+      "powerShellUiCulture": "en-GB",
+      "run": "vm-90b3040d061e4463acad0a07d0bd3a48",
+      "captured": "2026-11-09T19:24:33.3470793Z",
+      "executableSha256": "7f7ade31533392417f945c4abb1bcb2870f1bd85df4660533778b16759ca701a",
+      "scenarioStatus": "PASS",
+      "temporaryInputRemoved": true,
+      "inputCleanupMethod": "verified initial cleanup",
+      "recorderExitCodes": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "files": [
+        {
+          "file": "docs/en/images/move-window.gif",
+          "sha256": "4977107bac676168ea89bdc1d16154beb3a360c44e6b05a3642579a865efb917",
+          "bytes": 1635567,
+          "width": 900,
+          "height": 600,
+          "frames": 39,
+          "durationMilliseconds": 5870
+        },
+        {
+          "file": "docs/en/images/resize-window.gif",
+          "sha256": "6249093fd766f85d3ab8f69f85c34f3e2549be979e3d6ef10af205e044a22e34",
+          "bytes": 1120086,
+          "width": 900,
+          "height": 600,
+          "frames": 40,
+          "durationMilliseconds": 5950
+        },
+        {
+          "file": "docs/en/images/customize-title-menu.gif",
+          "sha256": "7f89b1d53a16a38ffb33a9fa80a42702d009ad9a0cb95a56fee31da588805a0c",
+          "bytes": 1164416,
+          "width": 949,
+          "height": 757,
+          "frames": 228,
+          "durationMilliseconds": 23870
+        },
+        {
+          "file": "docs/en/images/details-columns.gif",
+          "sha256": "3e241a15276f68deaa530bc3a3afbddf03f94d79c59bf4f0c3b5349a979ad7ed",
+          "bytes": 410357,
+          "width": 1134,
+          "height": 541,
+          "frames": 86,
+          "durationMilliseconds": 17770
+        },
+        {
+          "file": "docs/en/images/customized-title-menu.png",
+          "sha256": "6caa9c4639d892afa8c5cc104a25dc11737ae9f25edbf1cc01406126e05150ba",
+          "bytes": 15441,
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/en/images/locked-title.png",
+          "sha256": "a14f0988f09f76c8cd55488d388b8b814be7d8d7d734a25332a25f4fc6eaa786",
+          "bytes": 8395,
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "assertions": {
+        "lockedTitle": {
+          "Width": 480,
+          "Height": 220,
+          "ViewMode": 1,
+          "Left": 347,
+          "BinarySha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "IconSize": 48,
+          "VisibleColumnHeaders": 0,
+          "Nilesoft": false,
+          "Language": "en",
+          "Top": 220,
+          "File": "en/locked-title.png"
+        },
+        "detailsColumns": {
+          "LongNameTextWidths": [
+            502,
+            513
+          ],
+          "SourceExecutableSha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "GlobalEnabled": 1,
+          "Files": [
+            "Studio project — complete specifications and detailed comments for the final presentation.txt",
+            "Studio project — complete schedule and detailed preparation notes for the final presentation.txt",
+            "Presentation draft for review.txt",
+            "Reference images and sketches.txt"
+          ],
+          "FilledWidths": [
+            271,
+            544,
+            149,
+            120
+          ],
+          "UpdateOnRelease": 1,
+          "Language": "en",
+          "BeforeWidths": [
+            182,
+            364,
+            100,
+            80
+          ],
+          "CommandId": 1131,
+          "AfterWidths": [
+            553,
+            262,
+            149,
+            120
+          ],
+          "Scene": "DetailsColumns",
+          "ContinuousPointer": true,
+          "OptionHoverPauseMilliseconds": 1000
+        }
+      },
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "2b1102667862e5fb8d0d65c9ee001657efb66079390dba795e47e30d9e00a9af",
+        "tools/documentation-capture/Capture.ps1": "0b929f528d42628a671c1c126b867e648bb6e6ab1ca24803dd50301082c3534a",
+        "tools/documentation-capture/CaptureDesktop.cs": "867c6061da21c314c8d0d013aaf20a4d35c7af8e01e1612977cc815ce1b414be",
+        "tools/documentation-capture/details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "tools/documentation-capture/SceneActions.ps1": "95ab168ac3b0a6ccf82af88ff8c96443c6381cc587b105bd8c4328e621e45aa9",
+        "tools/documentation-capture/scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33"
+      }
+    },
+    {
+      "language": "de",
+      "windowsDisplayLanguage": "de-DE",
+      "powerShellUiCulture": "de-DE",
+      "run": "vm-fd20d6b0c02149138f88d652a19b7d8c",
+      "captured": "2026-11-09T19:28:53.4915374Z",
+      "executableSha256": "7f7ade31533392417f945c4abb1bcb2870f1bd85df4660533778b16759ca701a",
+      "scenarioStatus": "PASS",
+      "temporaryInputRemoved": true,
+      "inputCleanupMethod": "verified initial cleanup",
+      "recorderExitCodes": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "files": [
+        {
+          "file": "docs/de/images/move-window.gif",
+          "sha256": "6d2324b37316853cff301b9a6d30c6349961705bdf500c03985fbfb6c8ebb25e",
+          "bytes": 1684975,
+          "width": 900,
+          "height": 600,
+          "frames": 40,
+          "durationMilliseconds": 5950
+        },
+        {
+          "file": "docs/de/images/resize-window.gif",
+          "sha256": "c32e0e64728991d89d2f0b5a40558a12ca972e34e2179abdbcb02c97e9008ca6",
+          "bytes": 1149452,
+          "width": 900,
+          "height": 600,
+          "frames": 41,
+          "durationMilliseconds": 6030
+        },
+        {
+          "file": "docs/de/images/customize-title-menu.gif",
+          "sha256": "fffecb1c7d65dd5396a5fdd25d3f0f93838aea89d981a00cd06c91644452d570",
+          "bytes": 1430255,
+          "width": 982,
+          "height": 757,
+          "frames": 227,
+          "durationMilliseconds": 23600
+        },
+        {
+          "file": "docs/de/images/details-columns.gif",
+          "sha256": "44388e394f6b2e508ea7d32986631fbc851fe3abca6a383edc9bf254c8f648b6",
+          "bytes": 406857,
+          "width": 1134,
+          "height": 541,
+          "frames": 84,
+          "durationMilliseconds": 17880
+        },
+        {
+          "file": "docs/de/images/customized-title-menu.png",
+          "sha256": "f9ab60da32f259620bd18c20e97b79eb2d3b421bf4625733a9b7b76b8cd928c3",
+          "bytes": 14800,
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/de/images/locked-title.png",
+          "sha256": "f2252ba5116b948f8123227b492c6da9c0a3a124e821e10864993b6ca30b31e3",
+          "bytes": 8505,
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "assertions": {
+        "lockedTitle": {
+          "Width": 480,
+          "Height": 220,
+          "ViewMode": 1,
+          "Left": 347,
+          "BinarySha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "IconSize": 48,
+          "VisibleColumnHeaders": 0,
+          "Nilesoft": false,
+          "Language": "de",
+          "Top": 220,
+          "File": "de/locked-title.png"
+        },
+        "detailsColumns": {
+          "LongNameTextWidths": [
+            573,
+            511
+          ],
+          "SourceExecutableSha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "GlobalEnabled": 1,
+          "Files": [
+            "Studioprojekt — vollständige Anforderungen und ausführliche Anmerkungen zur Abschlusspräsentation.txt",
+            "Studioprojekt — vollständiger Zeitplan und ausführliche Hinweise zur Abschlusspräsentation.txt",
+            "Präsentationsentwurf zur Prüfung.txt",
+            "Referenzbilder und erste Skizzen.txt"
+          ],
+          "FilledWidths": [
+            277,
+            556,
+            139,
+            112
+          ],
+          "UpdateOnRelease": 1,
+          "Language": "de",
+          "BeforeWidths": [
+            200,
+            400,
+            100,
+            80
+          ],
+          "CommandId": 1131,
+          "AfterWidths": [
+            613,
+            220,
+            139,
+            112
+          ],
+          "Scene": "DetailsColumns",
+          "ContinuousPointer": true,
+          "OptionHoverPauseMilliseconds": 1000
+        }
+      },
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "2b1102667862e5fb8d0d65c9ee001657efb66079390dba795e47e30d9e00a9af",
+        "tools/documentation-capture/Capture.ps1": "0b929f528d42628a671c1c126b867e648bb6e6ab1ca24803dd50301082c3534a",
+        "tools/documentation-capture/CaptureDesktop.cs": "867c6061da21c314c8d0d013aaf20a4d35c7af8e01e1612977cc815ce1b414be",
+        "tools/documentation-capture/details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "tools/documentation-capture/SceneActions.ps1": "95ab168ac3b0a6ccf82af88ff8c96443c6381cc587b105bd8c4328e621e45aa9",
+        "tools/documentation-capture/scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33"
+      }
+    },
+    {
+      "language": "it",
+      "windowsDisplayLanguage": "it-IT",
+      "powerShellUiCulture": "it-IT",
+      "run": "vm-e10c079be3004a8393c0b8aa24224b86",
+      "captured": "2026-11-09T19:33:13.4057196Z",
+      "executableSha256": "7f7ade31533392417f945c4abb1bcb2870f1bd85df4660533778b16759ca701a",
+      "scenarioStatus": "PASS",
+      "temporaryInputRemoved": true,
+      "inputCleanupMethod": "verified initial cleanup",
+      "recorderExitCodes": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "files": [
+        {
+          "file": "docs/it/images/move-window.gif",
+          "sha256": "df361a68fc325ed8f190264b00f750db03fe159c98af49155979afd0e2162ef6",
+          "bytes": 1730170,
+          "width": 900,
+          "height": 600,
+          "frames": 41,
+          "durationMilliseconds": 7030
+        },
+        {
+          "file": "docs/it/images/resize-window.gif",
+          "sha256": "802113c9e7311893cc5f920d55aff1325956102379f400ce71b0f84b888aec76",
+          "bytes": 1130572,
+          "width": 900,
+          "height": 600,
+          "frames": 41,
+          "durationMilliseconds": 5950
+        },
+        {
+          "file": "docs/it/images/customize-title-menu.gif",
+          "sha256": "da0f33c27fe340e83ca2438ad431a331824151954db97d8f0d945ed7fa6704c1",
+          "bytes": 1503647,
+          "width": 988,
+          "height": 757,
+          "frames": 229,
+          "durationMilliseconds": 23580
+        },
+        {
+          "file": "docs/it/images/details-columns.gif",
+          "sha256": "6b7cc6f0a30a828dd2adee3c7815cb33ff39766a3ca127aeaee1feefba095cdf",
+          "bytes": 416899,
+          "width": 1134,
+          "height": 541,
+          "frames": 84,
+          "durationMilliseconds": 17790
+        },
+        {
+          "file": "docs/it/images/customized-title-menu.png",
+          "sha256": "4b6b7d7e7fdf200c468adef9be2598cc8d77e30b0a6ee74912ade7ef85a7caa7",
+          "bytes": 14654,
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/it/images/locked-title.png",
+          "sha256": "aad857c0c45143b2a60c363cb4246e9ba197ac8313b400a0f3284129050b26dc",
+          "bytes": 9519,
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "assertions": {
+        "lockedTitle": {
+          "Width": 480,
+          "Height": 220,
+          "ViewMode": 1,
+          "Left": 347,
+          "BinarySha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "IconSize": 48,
+          "VisibleColumnHeaders": 0,
+          "Nilesoft": false,
+          "Language": "it",
+          "Top": 220,
+          "File": "it/locked-title.png"
+        },
+        "detailsColumns": {
+          "LongNameTextWidths": [
+            493,
+            521
+          ],
+          "SourceExecutableSha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "GlobalEnabled": 1,
+          "Files": [
+            "Progetto studio — specifiche complete e commenti dettagliati per la presentazione finale.txt",
+            "Progetto studio — calendario completo e note dettagliate per preparare la presentazione finale.txt",
+            "Bozza della presentazione da rivedere.txt",
+            "Immagini di riferimento e schizzi.txt"
+          ],
+          "FilledWidths": [
+            272,
+            545,
+            148,
+            119
+          ],
+          "UpdateOnRelease": 1,
+          "Language": "it",
+          "BeforeWidths": [
+            184,
+            368,
+            100,
+            80
+          ],
+          "CommandId": 1131,
+          "AfterWidths": [
+            561,
+            256,
+            148,
+            119
+          ],
+          "Scene": "DetailsColumns",
+          "ContinuousPointer": true,
+          "OptionHoverPauseMilliseconds": 1000
+        }
+      },
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "2b1102667862e5fb8d0d65c9ee001657efb66079390dba795e47e30d9e00a9af",
+        "tools/documentation-capture/Capture.ps1": "0b929f528d42628a671c1c126b867e648bb6e6ab1ca24803dd50301082c3534a",
+        "tools/documentation-capture/CaptureDesktop.cs": "867c6061da21c314c8d0d013aaf20a4d35c7af8e01e1612977cc815ce1b414be",
+        "tools/documentation-capture/details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "tools/documentation-capture/SceneActions.ps1": "95ab168ac3b0a6ccf82af88ff8c96443c6381cc587b105bd8c4328e621e45aa9",
+        "tools/documentation-capture/scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33"
+      }
+    },
+    {
+      "language": "es",
+      "windowsDisplayLanguage": "es-ES",
+      "powerShellUiCulture": "es-ES",
+      "run": "vm-4f7e3f2eb8ac4985b514d7f1e7f0e538",
+      "captured": "2026-11-09T22:54:12.6146229Z",
+      "executableSha256": "7f7ade31533392417f945c4abb1bcb2870f1bd85df4660533778b16759ca701a",
+      "scenarioStatus": "PASS",
+      "temporaryInputRemoved": true,
+      "inputCleanupMethod": "automatic guest cleanup",
+      "recorderExitCodes": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "files": [
+        {
+          "file": "docs/es/images/move-window.gif",
+          "sha256": "b06aedcc464619d683a41dad825fb583d0dbbdf3757113a053e22ac9632b1dbc",
+          "bytes": 1702403,
+          "width": 900,
+          "height": 600,
+          "frames": 41,
+          "durationMilliseconds": 6030
+        },
+        {
+          "file": "docs/es/images/resize-window.gif",
+          "sha256": "c5a43c2fc1b0675848b5a210911e30fabec04db92f25ccbfc2b041c0b5d386cf",
+          "bytes": 1182132,
+          "width": 900,
+          "height": 600,
+          "frames": 42,
+          "durationMilliseconds": 6110
+        },
+        {
+          "file": "docs/es/images/customize-title-menu.gif",
+          "sha256": "2903635263f2b4ad3693aa6233f7a7599e54fd01b844707bd8ce1b8566770896",
+          "bytes": 1490286,
+          "width": 999,
+          "height": 757,
+          "frames": 243,
+          "durationMilliseconds": 25140
+        },
+        {
+          "file": "docs/es/images/details-columns.gif",
+          "sha256": "6100235f5909f6fdf5ffd2bd449df84cb0ee9eb66601da2b565e5acf909c3d43",
+          "bytes": 413624,
+          "width": 1134,
+          "height": 541,
+          "frames": 91,
+          "durationMilliseconds": 18350
+        },
+        {
+          "file": "docs/es/images/customized-title-menu.png",
+          "sha256": "abc292ee3be0ded00f75b7446e108734717d7d05e00a12b2b3b1869fc21411ff",
+          "bytes": 15975,
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/es/images/locked-title.png",
+          "sha256": "f0d5af6ce08d7f6f68bb0dac9c324e58b4ffe49d2bae098bc4f99a78482cf357",
+          "bytes": 9828,
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "assertions": {
+        "lockedTitle": {
+          "Width": 480,
+          "Height": 220,
+          "ViewMode": 1,
+          "Left": 347,
+          "BinarySha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "IconSize": 48,
+          "VisibleColumnHeaders": 0,
+          "Nilesoft": false,
+          "Language": "es",
+          "Top": 220,
+          "File": "es/locked-title.png"
+        },
+        "detailsColumns": {
+          "LongNameTextWidths": [
+            504,
+            514
+          ],
+          "SourceExecutableSha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "GlobalEnabled": 1,
+          "Files": [
+            "Proyecto de estudio — especificaciones completas y comentarios para la presentación final.txt",
+            "Proyecto de estudio — calendario completo y notas de preparación para la presentación final.txt",
+            "Borrador de la presentación para revisar.txt",
+            "Imágenes de referencia y bocetos.txt"
+          ],
+          "FilledWidths": [
+            271,
+            544,
+            149,
+            120
+          ],
+          "UpdateOnRelease": 1,
+          "Language": "es",
+          "BeforeWidths": [
+            182,
+            364,
+            100,
+            80
+          ],
+          "CommandId": 1131,
+          "AfterWidths": [
+            554,
+            261,
+            149,
+            120
+          ],
+          "Scene": "DetailsColumns",
+          "ContinuousPointer": true,
+          "OptionHoverPauseMilliseconds": 1000
+        }
+      },
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "tools/documentation-capture/Capture.ps1": "595f85131247eb0d51a0574dcf4b6af95d86be9604e6fa67f7c6d751bed02270",
+        "tools/documentation-capture/CaptureDesktop.cs": "867c6061da21c314c8d0d013aaf20a4d35c7af8e01e1612977cc815ce1b414be",
+        "tools/documentation-capture/details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "tools/documentation-capture/SceneActions.ps1": "95ab168ac3b0a6ccf82af88ff8c96443c6381cc587b105bd8c4328e621e45aa9",
+        "tools/documentation-capture/scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33"
+      }
+    },
+    {
+      "language": "pt",
+      "windowsDisplayLanguage": "pt-PT",
+      "powerShellUiCulture": "pt-PT",
+      "run": "vm-c0b07b690e444c45948a6fa12a732f34",
+      "captured": "2026-11-09T22:59:51.9597905Z",
+      "executableSha256": "7f7ade31533392417f945c4abb1bcb2870f1bd85df4660533778b16759ca701a",
+      "scenarioStatus": "PASS",
+      "temporaryInputRemoved": true,
+      "inputCleanupMethod": "automatic guest cleanup",
+      "recorderExitCodes": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "files": [
+        {
+          "file": "docs/pt/images/move-window.gif",
+          "sha256": "af8a25fc818a810c96c590c1e87be0286da4dc491c60955158f384562fdf9660",
+          "bytes": 1657141,
+          "width": 900,
+          "height": 600,
+          "frames": 41,
+          "durationMilliseconds": 6110
+        },
+        {
+          "file": "docs/pt/images/resize-window.gif",
+          "sha256": "5c0333c92d901114ff3137599d064cb21511f08fff4d3152d998308cd85b8de4",
+          "bytes": 1154655,
+          "width": 900,
+          "height": 600,
+          "frames": 42,
+          "durationMilliseconds": 6030
+        },
+        {
+          "file": "docs/pt/images/customize-title-menu.gif",
+          "sha256": "d16bbb073cf23bffa194ac75450eaedd13ff40d31791ca852040dcf9ed964e50",
+          "bytes": 1363509,
+          "width": 979,
+          "height": 757,
+          "frames": 226,
+          "durationMilliseconds": 23440
+        },
+        {
+          "file": "docs/pt/images/details-columns.gif",
+          "sha256": "72803e6756cfdcfea7fb3bdc7df9442ad57ac77e65197456cbe706d571bb75d4",
+          "bytes": 375079,
+          "width": 1134,
+          "height": 541,
+          "frames": 83,
+          "durationMilliseconds": 17700
+        },
+        {
+          "file": "docs/pt/images/customized-title-menu.png",
+          "sha256": "6955584c5b34874d0768b9f31095b6600cf99c80870d01928231d5eae740593b",
+          "bytes": 16525,
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/pt/images/locked-title.png",
+          "sha256": "9f4a57bcaa2be158cdeefecc1c4b0727dde2ec61cd94a0bc9b6b223fb5fc7d2a",
+          "bytes": 9653,
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "assertions": {
+        "lockedTitle": {
+          "Width": 480,
+          "Height": 220,
+          "ViewMode": 1,
+          "Left": 347,
+          "BinarySha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "IconSize": 48,
+          "VisibleColumnHeaders": 0,
+          "Nilesoft": false,
+          "Language": "pt",
+          "Top": 220,
+          "File": "pt/locked-title.png"
+        },
+        "detailsColumns": {
+          "LongNameTextWidths": [
+            485,
+            501
+          ],
+          "SourceExecutableSha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "GlobalEnabled": 1,
+          "Files": [
+            "Projeto do estúdio — especificações completas e comentários para a apresentação final.txt",
+            "Projeto do estúdio — calendário completo e notas de preparação para a apresentação final.txt",
+            "Rascunho da apresentação para revisão.txt",
+            "Imagens de referência e esboços.txt"
+          ],
+          "FilledWidths": [
+            270,
+            540,
+            152,
+            122
+          ],
+          "UpdateOnRelease": 1,
+          "Language": "pt",
+          "BeforeWidths": [
+            178,
+            356,
+            100,
+            80
+          ],
+          "CommandId": 1131,
+          "AfterWidths": [
+            541,
+            269,
+            152,
+            122
+          ],
+          "Scene": "DetailsColumns",
+          "ContinuousPointer": true,
+          "OptionHoverPauseMilliseconds": 1000
+        }
+      },
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "tools/documentation-capture/Capture.ps1": "595f85131247eb0d51a0574dcf4b6af95d86be9604e6fa67f7c6d751bed02270",
+        "tools/documentation-capture/CaptureDesktop.cs": "867c6061da21c314c8d0d013aaf20a4d35c7af8e01e1612977cc815ce1b414be",
+        "tools/documentation-capture/details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "tools/documentation-capture/SceneActions.ps1": "95ab168ac3b0a6ccf82af88ff8c96443c6381cc587b105bd8c4328e621e45aa9",
+        "tools/documentation-capture/scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33"
+      }
+    },
+    {
+      "language": "el",
+      "windowsDisplayLanguage": "el",
+      "powerShellUiCulture": "en-US",
+      "run": "vm-8e320a40474a447e8e0f2ba3420ca9d1",
+      "captured": "2026-11-09T23:54:04.2992521Z",
+      "executableSha256": "7f7ade31533392417f945c4abb1bcb2870f1bd85df4660533778b16759ca701a",
+      "scenarioStatus": "PASS",
+      "temporaryInputRemoved": true,
+      "inputCleanupMethod": "automatic guest cleanup",
+      "recorderExitCodes": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "files": [
+        {
+          "file": "docs/el/images/move-window.gif",
+          "sha256": "ee83f2077bec2ad93c7168b5a28c1532be6e1916e4e3891c7822cd512dd14489",
+          "bytes": 1737704,
+          "width": 900,
+          "height": 600,
+          "frames": 42,
+          "durationMilliseconds": 6110
+        },
+        {
+          "file": "docs/el/images/resize-window.gif",
+          "sha256": "e1c196af93039467e9c7e7ac2d32dc709d740af48e9207b6c404fdf63f17653e",
+          "bytes": 1153435,
+          "width": 900,
+          "height": 600,
+          "frames": 41,
+          "durationMilliseconds": 6110
+        },
+        {
+          "file": "docs/el/images/customize-title-menu.gif",
+          "sha256": "c7d6f2c0549e8bf6cb05105016d2167aa23f30d2818a682fe9ce7738b4abff5a",
+          "bytes": 1589586,
+          "width": 989,
+          "height": 757,
+          "frames": 234,
+          "durationMilliseconds": 24420
+        },
+        {
+          "file": "docs/el/images/details-columns.gif",
+          "sha256": "aae71109a0486d751e592ad5ea23d9b2036e240be51299a78c345f8fd0340adb",
+          "bytes": 470613,
+          "width": 1134,
+          "height": 541,
+          "frames": 89,
+          "durationMilliseconds": 18110
+        },
+        {
+          "file": "docs/el/images/customized-title-menu.png",
+          "sha256": "ed788f23761e85a4a5269ff4542e75d32edae6c010d43512c5a6a37a89d6cf59",
+          "bytes": 16456,
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/el/images/locked-title.png",
+          "sha256": "7fbbd520372b1f37ee11189db9c80d60ab0b3cfa0f9802ff72dc54ecf70a2b91",
+          "bytes": 8959,
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "assertions": {
+        "lockedTitle": {
+          "Width": 480,
+          "Height": 220,
+          "ViewMode": 1,
+          "Left": 347,
+          "BinarySha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "IconSize": 48,
+          "VisibleColumnHeaders": 0,
+          "Nilesoft": false,
+          "Language": "el",
+          "Top": 220,
+          "File": "el/locked-title.png"
+        },
+        "detailsColumns": {
+          "LongNameTextWidths": [
+            508,
+            546
+          ],
+          "SourceExecutableSha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "GlobalEnabled": 1,
+          "Files": [
+            "Έργο στούντιο — πλήρεις προδιαγραφές και αναλυτικά σχόλια για την τελική παρουσίαση.txt",
+            "Έργο στούντιο — πλήρες χρονοδιάγραμμα και αναλυτικές σημειώσεις για την τελική παρουσίαση.txt",
+            "Προσχέδιο παρουσίασης για έλεγχο.txt",
+            "Εικόνες αναφοράς και πρώτα σχέδια.txt"
+          ],
+          "FilledWidths": [
+            275,
+            550,
+            144,
+            115
+          ],
+          "UpdateOnRelease": 1,
+          "Language": "el",
+          "BeforeWidths": [
+            192,
+            384,
+            100,
+            80
+          ],
+          "CommandId": 1131,
+          "AfterWidths": [
+            586,
+            239,
+            144,
+            115
+          ],
+          "Scene": "DetailsColumns",
+          "ContinuousPointer": true,
+          "OptionHoverPauseMilliseconds": 1000
+        }
+      },
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "tools/documentation-capture/Capture.ps1": "1123d02ca8edf747555cadabb7a60a495f0c08d5ea3d6a9a3771930ce81dadde",
+        "tools/documentation-capture/CaptureDesktop.cs": "1b59cb29bf10b34179dc3b7458fcde73c705050130346ab8b0e3df3a2544074d",
+        "tools/documentation-capture/details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "tools/documentation-capture/SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+        "tools/documentation-capture/scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33"
+      }
+    },
+    {
+      "language": "pl",
+      "windowsDisplayLanguage": "pl",
+      "powerShellUiCulture": "pl-PL",
+      "run": "vm-05ffaaf6899d40b08d345b29967ca2fa",
+      "captured": "2026-11-09T23:58:40.3433108Z",
+      "executableSha256": "7f7ade31533392417f945c4abb1bcb2870f1bd85df4660533778b16759ca701a",
+      "scenarioStatus": "PASS",
+      "temporaryInputRemoved": true,
+      "inputCleanupMethod": "automatic guest cleanup",
+      "recorderExitCodes": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "files": [
+        {
+          "file": "docs/pl/images/move-window.gif",
+          "sha256": "2dac69b89dbe2a22b6a0aad311fc0ed4b30200455a092afb7912778e6a50e6ff",
+          "bytes": 1658903,
+          "width": 900,
+          "height": 600,
+          "frames": 40,
+          "durationMilliseconds": 5870
+        },
+        {
+          "file": "docs/pl/images/resize-window.gif",
+          "sha256": "e05439c9e2cb2fe18ef55e2b7e92b62aacf3a6785b9e9b45f2550fe4ee2a402b",
+          "bytes": 1179891,
+          "width": 900,
+          "height": 600,
+          "frames": 42,
+          "durationMilliseconds": 6110
+        },
+        {
+          "file": "docs/pl/images/customize-title-menu.gif",
+          "sha256": "186e73e2b2bbd1fbfdacfbae3cfff8265e4b1f97491c5fdea4457c997f3ca2a9",
+          "bytes": 1238341,
+          "width": 964,
+          "height": 757,
+          "frames": 222,
+          "durationMilliseconds": 23120
+        },
+        {
+          "file": "docs/pl/images/details-columns.gif",
+          "sha256": "c2eedccac44ce48888d2bf0b3fc1248a064ed72bc22154314c78d1ed9050416d",
+          "bytes": 428284,
+          "width": 1134,
+          "height": 541,
+          "frames": 86,
+          "durationMilliseconds": 17690
+        },
+        {
+          "file": "docs/pl/images/customized-title-menu.png",
+          "sha256": "0dbcb316ea37b17f27cf66bab916b935a011be9d2fb85e49fce39c279872caad",
+          "bytes": 15988,
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/pl/images/locked-title.png",
+          "sha256": "177e191bdf2508f0936f7e7159ceddf72f59d2da5cc9c8b85ed1b024e79f1728",
+          "bytes": 8997,
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "assertions": {
+        "lockedTitle": {
+          "Width": 480,
+          "Height": 220,
+          "ViewMode": 1,
+          "Left": 347,
+          "BinarySha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "IconSize": 48,
+          "VisibleColumnHeaders": 0,
+          "Nilesoft": false,
+          "Language": "pl",
+          "Top": 220,
+          "File": "pl/locked-title.png"
+        },
+        "detailsColumns": {
+          "LongNameTextWidths": [
+            529,
+            550
+          ],
+          "SourceExecutableSha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "GlobalEnabled": 1,
+          "Files": [
+            "Projekt studia — pełne wymagania i szczegółowe uwagi do przygotowania prezentacji końcowej.txt",
+            "Projekt studia — pełny harmonogram i szczegółowe notatki do przygotowania prezentacji końcowej.txt",
+            "Wstępna prezentacja do sprawdzenia.txt",
+            "Materiały referencyjne i szkice.txt"
+          ],
+          "FilledWidths": [
+            275,
+            551,
+            143,
+            115
+          ],
+          "UpdateOnRelease": 1,
+          "Language": "pl",
+          "BeforeWidths": [
+            193,
+            386,
+            100,
+            80
+          ],
+          "CommandId": 1131,
+          "AfterWidths": [
+            590,
+            236,
+            143,
+            115
+          ],
+          "Scene": "DetailsColumns",
+          "ContinuousPointer": true,
+          "OptionHoverPauseMilliseconds": 1000
+        }
+      },
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "tools/documentation-capture/Capture.ps1": "1123d02ca8edf747555cadabb7a60a495f0c08d5ea3d6a9a3771930ce81dadde",
+        "tools/documentation-capture/CaptureDesktop.cs": "1b59cb29bf10b34179dc3b7458fcde73c705050130346ab8b0e3df3a2544074d",
+        "tools/documentation-capture/details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "tools/documentation-capture/SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+        "tools/documentation-capture/scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33"
+      }
+    },
+    {
+      "language": "nl",
+      "windowsDisplayLanguage": "nl-NL",
+      "powerShellUiCulture": "nl-NL",
+      "run": "vm-29592de3ed4144a480cae7f64cb4080e",
+      "captured": "2026-11-10T00:02:59.5978061Z",
+      "executableSha256": "7f7ade31533392417f945c4abb1bcb2870f1bd85df4660533778b16759ca701a",
+      "scenarioStatus": "PASS",
+      "temporaryInputRemoved": true,
+      "inputCleanupMethod": "automatic guest cleanup",
+      "recorderExitCodes": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "files": [
+        {
+          "file": "docs/nl/images/move-window.gif",
+          "sha256": "0c6619c5b3a56a1629afae834f35d3cec7e883479d35427a0ae3d3410b411c30",
+          "bytes": 1648240,
+          "width": 900,
+          "height": 600,
+          "frames": 39,
+          "durationMilliseconds": 5860
+        },
+        {
+          "file": "docs/nl/images/resize-window.gif",
+          "sha256": "1ba46d8432b5e70020dfddfc1ac57b236fe9b509a5a8da8c563cd79b88b57c76",
+          "bytes": 1104708,
+          "width": 900,
+          "height": 600,
+          "frames": 39,
+          "durationMilliseconds": 5860
+        },
+        {
+          "file": "docs/nl/images/customize-title-menu.gif",
+          "sha256": "102de1e87be11662dda71132e6cb83a735a8ec262631ea03e618d29f30dca9f7",
+          "bytes": 1332651,
+          "width": 970,
+          "height": 757,
+          "frames": 226,
+          "durationMilliseconds": 23520
+        },
+        {
+          "file": "docs/nl/images/details-columns.gif",
+          "sha256": "bd948f4fcee859b80c1aea8906879bc734e071987e43cc0fcde00f0ce7706527",
+          "bytes": 373755,
+          "width": 1134,
+          "height": 541,
+          "frames": 86,
+          "durationMilliseconds": 17860
+        },
+        {
+          "file": "docs/nl/images/customized-title-menu.png",
+          "sha256": "30f17cc2c9d4d171c5c9d7e3fa6073942568f59aefc468dec07e2f931663965a",
+          "bytes": 14994,
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/nl/images/locked-title.png",
+          "sha256": "b92537bd0bf9445d35dcc1f2af02654763979c1d7f49bc4e3e7758881df4ef5e",
+          "bytes": 8387,
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "assertions": {
+        "lockedTitle": {
+          "Width": 480,
+          "Height": 220,
+          "ViewMode": 1,
+          "Left": 347,
+          "BinarySha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "IconSize": 48,
+          "VisibleColumnHeaders": 0,
+          "Nilesoft": false,
+          "Language": "nl",
+          "Top": 220,
+          "File": "nl/locked-title.png"
+        },
+        "detailsColumns": {
+          "LongNameTextWidths": [
+            508,
+            545
+          ],
+          "SourceExecutableSha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "GlobalEnabled": 1,
+          "Files": [
+            "Studioproject — volledige specificaties en uitgebreide opmerkingen voor de eindpresentatie.txt",
+            "Studioproject — volledige planning en uitgebreide voorbereidende notities voor de eindpresentatie.txt",
+            "Conceptpresentatie ter beoordeling.txt",
+            "Referentiebeelden en eerste schetsen.txt"
+          ],
+          "FilledWidths": [
+            275,
+            550,
+            144,
+            115
+          ],
+          "UpdateOnRelease": 1,
+          "Language": "nl",
+          "BeforeWidths": [
+            192,
+            384,
+            100,
+            80
+          ],
+          "CommandId": 1131,
+          "AfterWidths": [
+            585,
+            240,
+            144,
+            115
+          ],
+          "Scene": "DetailsColumns",
+          "ContinuousPointer": true,
+          "OptionHoverPauseMilliseconds": 1000
+        }
+      },
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "tools/documentation-capture/Capture.ps1": "1123d02ca8edf747555cadabb7a60a495f0c08d5ea3d6a9a3771930ce81dadde",
+        "tools/documentation-capture/CaptureDesktop.cs": "1b59cb29bf10b34179dc3b7458fcde73c705050130346ab8b0e3df3a2544074d",
+        "tools/documentation-capture/details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "tools/documentation-capture/SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+        "tools/documentation-capture/scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33"
+      }
+    },
+    {
+      "language": "uk",
+      "windowsDisplayLanguage": "uk",
+      "powerShellUiCulture": "en-US",
+      "run": "vm-a7248ea12e51460284d6e37319618950",
+      "captured": "2026-11-10T00:07:21.4143047Z",
+      "executableSha256": "7f7ade31533392417f945c4abb1bcb2870f1bd85df4660533778b16759ca701a",
+      "scenarioStatus": "PASS",
+      "temporaryInputRemoved": true,
+      "inputCleanupMethod": "automatic guest cleanup",
+      "recorderExitCodes": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "files": [
+        {
+          "file": "docs/uk/images/move-window.gif",
+          "sha256": "b5c65ba45a53b7d4b70ebfe87db516f3bffc2aae95a0cb64678cb160b1ee9354",
+          "bytes": 1674118,
+          "width": 900,
+          "height": 600,
+          "frames": 57,
+          "durationMilliseconds": 5900
+        },
+        {
+          "file": "docs/uk/images/resize-window.gif",
+          "sha256": "a09850a97312bb8c6436b1c0578df9ac613b41e001eddfb8bbe90fd4d3d4d19a",
+          "bytes": 1101298,
+          "width": 900,
+          "height": 600,
+          "frames": 39,
+          "durationMilliseconds": 5860
+        },
+        {
+          "file": "docs/uk/images/customize-title-menu.gif",
+          "sha256": "0134f58f3177a66b0d343be29d361f2f1093bf55616b39658fdc3fb42bb6e1b8",
+          "bytes": 1377643,
+          "width": 967,
+          "height": 757,
+          "frames": 220,
+          "durationMilliseconds": 23120
+        },
+        {
+          "file": "docs/uk/images/details-columns.gif",
+          "sha256": "14dee989d3bad0980b8d492dc69cd10ec5d5bea15e6a180c49d4a794e6ab66fd",
+          "bytes": 422194,
+          "width": 1134,
+          "height": 541,
+          "frames": 85,
+          "durationMilliseconds": 17860
+        },
+        {
+          "file": "docs/uk/images/customized-title-menu.png",
+          "sha256": "a1315a05e7a02a7ec58199a0a11506354547dde3cb44121b3118bfb1c1d741f0",
+          "bytes": 15552,
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/uk/images/locked-title.png",
+          "sha256": "ad0db5da3441896a0d6316e7ce9f32dcd90e4741ce170d1bc7a5f468e9e17042",
+          "bytes": 9659,
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "assertions": {
+        "lockedTitle": {
+          "Width": 480,
+          "Height": 220,
+          "ViewMode": 1,
+          "Left": 347,
+          "BinarySha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "IconSize": 48,
+          "VisibleColumnHeaders": 0,
+          "Nilesoft": false,
+          "Language": "uk",
+          "Top": 220,
+          "File": "uk/locked-title.png"
+        },
+        "detailsColumns": {
+          "LongNameTextWidths": [
+            524,
+            517
+          ],
+          "SourceExecutableSha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "GlobalEnabled": 1,
+          "Files": [
+            "Проєкт студії — повні вимоги та докладні коментарі для підготовки остаточної презентації.txt",
+            "Проєкт студії — повний розклад і докладні нотатки для підготовки остаточної презентації.txt",
+            "Чернетка презентації для перевірки.txt",
+            "Довідкові зображення та ескізи.txt"
+          ],
+          "FilledWidths": [
+            272,
+            546,
+            148,
+            118
+          ],
+          "UpdateOnRelease": 1,
+          "Language": "uk",
+          "BeforeWidths": [
+            185,
+            370,
+            100,
+            80
+          ],
+          "CommandId": 1131,
+          "AfterWidths": [
+            564,
+            254,
+            148,
+            118
+          ],
+          "Scene": "DetailsColumns",
+          "ContinuousPointer": true,
+          "OptionHoverPauseMilliseconds": 1000
+        }
+      },
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "tools/documentation-capture/Capture.ps1": "1123d02ca8edf747555cadabb7a60a495f0c08d5ea3d6a9a3771930ce81dadde",
+        "tools/documentation-capture/CaptureDesktop.cs": "1b59cb29bf10b34179dc3b7458fcde73c705050130346ab8b0e3df3a2544074d",
+        "tools/documentation-capture/details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "tools/documentation-capture/SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+        "tools/documentation-capture/scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33"
+      }
+    },
+    {
+      "language": "fr",
+      "windowsDisplayLanguage": "fr-FR",
+      "powerShellUiCulture": "fr-FR",
+      "run": "vm-f949a23491cf42e99297a2175d1a5653",
+      "captured": "2026-11-10T00:11:40.0775837Z",
+      "executableSha256": "7f7ade31533392417f945c4abb1bcb2870f1bd85df4660533778b16759ca701a",
+      "scenarioStatus": "PASS",
+      "temporaryInputRemoved": true,
+      "inputCleanupMethod": "automatic guest cleanup",
+      "recorderExitCodes": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "files": [
+        {
+          "file": "docs/fr/images/move-window.gif",
+          "sha256": "980aebe35855928f1a5bf657d04a99f072b83f418bad82776255c551d4244080",
+          "bytes": 1690798,
+          "width": 900,
+          "height": 600,
+          "frames": 40,
+          "durationMilliseconds": 5950
+        },
+        {
+          "file": "docs/fr/images/resize-window.gif",
+          "sha256": "f0a94aa8306b6ef72248156f0267939d05b056fe8046dece8a749d7796cab6c2",
+          "bytes": 1126797,
+          "width": 900,
+          "height": 600,
+          "frames": 39,
+          "durationMilliseconds": 5950
+        },
+        {
+          "file": "docs/fr/images/customize-title-menu.gif",
+          "sha256": "a4aa9f1c04a657472e0848988f389411b2e822d55a580fd70536b1cab14700c4",
+          "bytes": 1381855,
+          "width": 982,
+          "height": 757,
+          "frames": 225,
+          "durationMilliseconds": 23280
+        },
+        {
+          "file": "docs/fr/images/details-columns.gif",
+          "sha256": "ccf857262a4e81a8b3a6901de4f4c83552d0ec0b2a098fb9b0347fdb6c45ff45",
+          "bytes": 394973,
+          "width": 1134,
+          "height": 541,
+          "frames": 82,
+          "durationMilliseconds": 17550
+        },
+        {
+          "file": "docs/fr/images/customized-title-menu.png",
+          "sha256": "28fa03ec8c644b12e666bac07cece42ef3674f748fa24d6636fda9ddb4b22178",
+          "bytes": 15918,
+          "width": 706,
+          "height": 433
+        },
+        {
+          "file": "docs/fr/images/locked-title.png",
+          "sha256": "43afda48258a05a6a91c9f969d8e9b0cfffbb89057621cb19644f5189a523c92",
+          "bytes": 9284,
+          "width": 480,
+          "height": 220
+        }
+      ],
+      "assertions": {
+        "lockedTitle": {
+          "Width": 480,
+          "Height": 220,
+          "ViewMode": 1,
+          "Left": 347,
+          "BinarySha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "IconSize": 48,
+          "VisibleColumnHeaders": 0,
+          "Nilesoft": false,
+          "Language": "fr",
+          "Top": 220,
+          "File": "fr/locked-title.png"
+        },
+        "detailsColumns": {
+          "LongNameTextWidths": [
+            532,
+            526
+          ],
+          "SourceExecutableSha256": "7F7ADE31533392417F945C4ABB1BCB2870F1BD85DF4660533778B16759CA701A",
+          "GlobalEnabled": 1,
+          "Files": [
+            "Projet studio — cahier des charges complet et commentaires détaillés pour la présentation finale.txt",
+            "Projet studio — calendrier complet et notes de préparation détaillées pour la présentation finale.txt",
+            "Présentation provisoire à relire.txt",
+            "Images de référence et croquis.txt"
+          ],
+          "FilledWidths": [
+            273,
+            548,
+            146,
+            117
+          ],
+          "UpdateOnRelease": 1,
+          "Language": "fr",
+          "BeforeWidths": [
+            188,
+            376,
+            100,
+            80
+          ],
+          "CommandId": 1131,
+          "AfterWidths": [
+            572,
+            249,
+            146,
+            117
+          ],
+          "Scene": "DetailsColumns",
+          "ContinuousPointer": true,
+          "OptionHoverPauseMilliseconds": 1000
+        }
+      },
+      "captureSourceSha256": {
+        "tools/documentation-capture/Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "tools/documentation-capture/Capture.ps1": "1123d02ca8edf747555cadabb7a60a495f0c08d5ea3d6a9a3771930ce81dadde",
+        "tools/documentation-capture/CaptureDesktop.cs": "1b59cb29bf10b34179dc3b7458fcde73c705050130346ab8b0e3df3a2544074d",
+        "tools/documentation-capture/details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "tools/documentation-capture/SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+        "tools/documentation-capture/scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33"
+      }
+    }
+  ]
+}

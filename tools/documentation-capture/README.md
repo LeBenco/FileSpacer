@@ -8,17 +8,18 @@ not assemble frames, edit out pauses or composite application windows.
 
 Wait until the VM and the application build are available. Use the checkout
 containing the validated Debug build as `ProjectRoot`, even if these capture
-scripts live in another checkout. Preparation reads its actual object files,
-resources, native helper DLL and regression helpers. It relinks resource-only
-executables for each requested language without rebuilding application C++.
+scripts live in another checkout. Preparation reads its actual application,
+native helper DLL and regression helpers. It copies the validated application's
+executable and DLL unchanged for each requested language and verifies their hashes.
+The Windows display language selects the application's existing translations.
 It writes only generated files under that checkout's `build/` directory.
 
 <a id="run"></a>
 
 ## Run
 
-Use CMD with the project's MSVC/Windows SDK environment available (`rc.exe` and
-`link.exe`). Build the desired Debug application first. The existing protected
+Use CMD with the project's MSVC/Windows SDK environment available for preparing
+the regression helpers. Build the desired Debug application first. The existing protected
 Hyper-V runner must be configured and the VM must have an unlocked graphical
 session. Do not use VMConnect or run another VM test at the same time.
 Animations require at least 4 GiB free on the guest drive after package transfer;
@@ -37,6 +38,11 @@ headers. Change the VM's display language and sign in again between languages.
 The scenario checks `Get-WinUILanguageOverride`, falling back to the current UI
 culture when no override is configured. The setting and PowerShell's own UI culture
 are recorded separately, since PowerShell can fall back to another language.
+Reference labels explicitly use the capture's verified Windows display language,
+not PowerShell's culture or the user's fallback list. They are read directly from
+that language's compiled string table in the unchanged application executable.
+The actual title-menu language is checked before starting any recorder, and
+`resource-labels.json` retains the exact Unicode values for diagnosis.
 The check rejects a display-language setting that differs from the requested
 capture language. An override can be pending until sign-in, so a fresh session
 and visual review of native Shell labels are still required.
@@ -77,7 +83,8 @@ center of the folder window and preserve its actual selection.
 
 The Details-columns scene starts with filling disabled for the folder and a
 normal-width Name column that reveals about 30% of the long names. It enables
-filling through the visible View menu, pauses, then drags the Name divider to
+filling through the visible View menu, holding the pointer over the option for
+one second before clicking. It then pauses and drags the Name divider to
 show the complete names. At least two names remain more than 20% hidden between
 activation and the manual drag. The global permission and update-on-release
 option are enabled before recording. The window and measured View menu define
@@ -108,14 +115,23 @@ overlay is visible. The 90-second recorder limit is a watchdog, not an editing
 operation.
 
 After a GIF decodes successfully and ScreenToGif closes normally, its temporary
-frame cache is removed to limit VM disk usage. Exported media and capture logs
-remain available for review. Failed recordings keep their diagnostic files.
+frame cache is removed before the next recording. Failed recordings also remove
+their frame cache after the recorder closes, keeping diagnostic screenshots and
+logs. An application that cannot close leaves an explicit cleanup error.
 After a successful complete scenario, the guest copy of ScreenToGif and its
 archive are removed too. The original host archive remains available for reuse.
+At the end of each documentation capture run, the guest launcher removes that
+run's disposable input package after the worker exits and its state is restored,
+including when the scenario fails. It verifies the run identity and path first.
+Other test packages are unaffected. Original packages remain on the host, and
+exported captures, reports and state backups remain in the separate output folder.
 
 The lock close-up captures the upper-left 480 × 220 pixels of an actual locked
 folder window, including its new left-hand padlock, the title and part of the
 window below. It does not reuse the old centered title crop.
+The icon view is selected through the application's actual View menu. Before
+capturing, the scenario verifies its mode, icon size and absence of visible
+Details column headers. No Shell flags or image pixels are changed to hide them.
 
 <a id="wallpaper-and-isolation"></a>
 
