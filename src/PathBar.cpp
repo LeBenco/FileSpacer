@@ -245,8 +245,18 @@ void PathBar::endEdit(bool restoreFocus) {
     ShowWindow(toolbar, SW_SHOWNOACTIVATE);
 }
 
-void PathBar::openItem(IShellItem *item, bool control) {
-    OpenItemNotification notification = {{hwnd, 0, OPEN_ITEM}, item, control};
+void PathBar::openItem(IShellItem *item, bool control, int sourceCommand) {
+    RECT origin = {};
+    if (IsWindowVisible(hwnd)) {
+        if (!sourceCommand) {
+            origin = windowRect(hwnd); // Address entry opens from the visible path bar.
+        } else if (SendMessage(toolbar, TB_GETRECT, sourceCommand, reinterpret_cast<LPARAM>(&origin))) {
+            MapWindowPoints(toolbar, nullptr, reinterpret_cast<POINT *>(&origin), 2);
+        } else {
+            origin = {};
+        }
+    }
+    OpenItemNotification notification = {{hwnd, 0, OPEN_ITEM}, item, control, origin};
     SendMessage(owner, WM_NOTIFY, 0, (LPARAM)&notification);
 }
 
@@ -315,7 +325,7 @@ void PathBar::showHiddenSegments() {
     bool control = GetKeyState(VK_CONTROL) < 0;
     DestroyMenu(menu);
     if (command > 0 && (size_t)command <= firstVisible)
-        openItem(segments[(size_t)command - 1].item, control);
+        openItem(segments[(size_t)command - 1].item, control, OVERFLOW_COMMAND);
 }
 
 bool PathBar::handleTopLevelMessage(MSG *msg) {
@@ -387,7 +397,7 @@ LRESULT PathBar::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
                 else if (command >= FIRST_SEGMENT_COMMAND && command % 2 == 1) {
                     size_t index = (size_t)(command - FIRST_SEGMENT_COMMAND) / 2;
                     if (index < segments.size())
-                        openItem(segments[index].item, GetKeyState(VK_CONTROL) < 0);
+                        openItem(segments[index].item, GetKeyState(VK_CONTROL) < 0, command);
                 }
                 return 0;
             }
