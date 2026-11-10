@@ -8,8 +8,8 @@ function EnsureCaptureLocked([IntPtr]$Window) {
     OpenRecordedMenu $Window 'IDM_PROXY_BUTTON'
     $menu=[FileSpacerViewMenuTests.MenuUi]::Active($Window,$true)
     $entry=@($menu.Entries|Where-Object {$_.Command-eq(Get-UiId 'IDM_TOGGLE_STATE_LOCK')})
-    $expected=[CaptureDesktop]::Resource($script:UiExecutable,(Get-UiId 'IDS_UNLOCK_WINDOW_STATE')).Split("`t")[0]
-    Assert-Ui ($entry.Count-eq1 -and $entry[0].Label.Replace('&','').Split("`t")[0]-ceq$expected.Replace('&','')) 'The actual menu must offer Unlock before recording a locked layout.'
+    $expected=[CaptureDesktop]::Resource($script:UiExecutable,(Get-UiId 'IDS_UNLOCK_WINDOW_STATE'),$script:CaptureResourceLanguage).Split("`t")[0]
+    Assert-Ui ($entry.Count-eq1 -and $entry[0].Label.Replace('&','').Split("`t")[0]-ceq$expected.Replace('&','')) ('The actual menu must offer Unlock before recording a locked layout. Expected: '+$expected+'; observed: '+($entry.Label-join', '))
     $script:CaptureTitleMenuBounds=[FileSpacerRegression.Native]::Bounds($menu.Window)
     CloseMenu $Window
 }
@@ -66,7 +66,7 @@ function Customize([IntPtr]$Window) {
         Assert-Ui ($otherFolders.Count-eq0) 'Dismissing the menu must not open another folder.'
         OpenCaptureEditor $Window
         $catalog=[FileSpacerRegression.Native]::GetDlgItem($script:editor,(Get-UiId 'IDC_TITLE_MENU_ACTIONS'))
-        $label=[CaptureDesktop]::Resource($script:UiExecutable,(Get-UiId 'IDS_TITLE_MENU_RESTORE')).Split("`t")[0]
+        $label=[CaptureDesktop]::Resource($script:UiExecutable,(Get-UiId 'IDS_TITLE_MENU_RESTORE'),$script:CaptureResourceLanguage).Split("`t")[0]
         $source=[CaptureDesktop]::CatalogItem($catalog,$label)
         $target=MenuPoint (Get-UiId 'IDM_CAPTION_COPY_PATH')
         $target.Y-=8
@@ -94,11 +94,21 @@ function Customize([IntPtr]$Window) {
     Shot 'customized-title-menu' @($Window,$popup.Window)
     CloseMenu $Window
 }
+function CaptureIconView([IntPtr]$Window) {
+    $state=Use-UiView $Window {param($view) @{Mode=$view.Mode;Size=$view.IconSize}}
+    Assert-Ui ($state.Mode-eq1 -and $state.Size-eq48) 'The screenshot must show the actual medium-icons view.'
+    $headers=@([FileSpacerRegression.Native]::Children($Window,'SysHeader32')|Where-Object {[FileSpacerRegression.Native]::IsWindowVisible($_) -and [FileSpacerRegression.Native]::Bounds($_).Height-gt0})
+    $root=[Windows.Automation.AutomationElement]::FromHandle($Window)
+    $modernHeaders=@($root.FindAll([Windows.Automation.TreeScope]::Descendants,[Windows.Automation.Condition]::TrueCondition)|Where-Object {$_.Current.ClassName-eq'UIColumnHeader' -and !$_.Current.IsOffscreen -and $_.Current.BoundingRectangle.Height-gt0})
+    Assert-Ui ($headers.Count-eq0 -and $modernHeaders.Count-eq0) 'Icon view must not contain visible Details column headers.'
+    return $state
+}
 function LockedTitle([IntPtr]$Window) {
     Place $Window 340 220 680 480
     # The locked state is prepared outside any animation; no product data is used.
     EnsureCaptureLocked $Window
     Activate-Ui $Window
+    $view=CaptureIconView $Window
     Start-Sleep -Milliseconds 500
     $frame=[CaptureDesktop]::Frame($Window)
     $point=Point 1560 80
@@ -106,7 +116,7 @@ function LockedTitle([IntPtr]$Window) {
     Start-Sleep -Milliseconds 250
     $file=Join-Path $script:captures 'locked-title.png'
     [CaptureDesktop]::Region($file,$frame.Left,$frame.Top,480,220)
-    [void]$records.Add(@{File=$script:language+'/locked-title.png';Language=$script:language;Left=$frame.Left;Top=$frame.Top;Width=480;Height=220;BinarySha256=(Get-FileHash -LiteralPath $script:UiExecutable -Algorithm SHA256).Hash;Nilesoft=$false})
+    [void]$records.Add(@{File=$script:language+'/locked-title.png';Language=$script:language;Left=$frame.Left;Top=$frame.Top;Width=480;Height=220;ViewMode=$view.Mode;IconSize=$view.Size;VisibleColumnHeaders=0;BinarySha256=(Get-FileHash -LiteralPath $script:UiExecutable -Algorithm SHA256).Hash;Nilesoft=$false})
 }
 
 function CaptureColumnHeaders([IntPtr]$Window) {
@@ -172,7 +182,7 @@ function DetailsColumns([IntPtr]$Window,[string]$Folder) {
         $entry=@($popup.Entries|Where-Object {$_.Command-eq(Get-UiId 'IDM_FILL_COLUMNS')})
         Assert-Ui ($entry.Count-eq1) 'The visible menu must contain the actual per-folder column command.'
         $rect=$entry[0].Bounds
-        ClickPoint $Window (Point (($rect.Left+$rect.Right)/2) (($rect.Top+$rect.Bottom)/2))
+        ClickPoint $Window (Point (($rect.Left+$rect.Right)/2) (($rect.Top+$rect.Bottom)/2)) 1000
         Wait-UiViewMode $Window 4
         Wait-Ui {Use-UiView $Window {param($view)@([FileSpacerRegression.Native]::Children($view.Window,'SysListView32')).Count-eq1}} 'full-width Details view after the visible menu activation' 300
         $filled=CaptureColumnHeaders $Window
@@ -191,6 +201,6 @@ function DetailsColumns([IntPtr]$Window,[string]$Folder) {
         $after=CaptureColumnHeaders $Window
         Start-Sleep -Milliseconds 1500
         MovePointer (Background $Window)
-        [void]$records.Add(@{Scene='DetailsColumns';Language=$script:language;Files=@($files.Long)+@($files.Medium);GlobalEnabled=1;UpdateOnRelease=1;BeforeWidths=@($initialHeaders|ForEach-Object Width);FilledWidths=@($filled|ForEach-Object Width);AfterWidths=@($after|ForEach-Object Width);LongNameTextWidths=$textWidths;CommandId=(Get-UiId 'IDM_FILL_COLUMNS');ContinuousPointer=$true;SourceExecutableSha256=(Get-FileHash -LiteralPath $script:UiExecutable).Hash})
+        [void]$records.Add(@{Scene='DetailsColumns';Language=$script:language;Files=@($files.Long)+@($files.Medium);GlobalEnabled=1;UpdateOnRelease=1;BeforeWidths=@($initialHeaders|ForEach-Object Width);FilledWidths=@($filled|ForEach-Object Width);AfterWidths=@($after|ForEach-Object Width);LongNameTextWidths=$textWidths;CommandId=(Get-UiId 'IDM_FILL_COLUMNS');OptionHoverPauseMilliseconds=1000;ContinuousPointer=$true;SourceExecutableSha256=(Get-FileHash -LiteralPath $script:UiExecutable).Hash})
     } $area
 }
