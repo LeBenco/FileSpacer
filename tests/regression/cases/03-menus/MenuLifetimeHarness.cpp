@@ -9,6 +9,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 using HRESULT = int;
 using UINT = unsigned;
@@ -135,13 +136,24 @@ void CloseThemeData(HTHEME) {}
 int GetSystemMetrics(int) { return 16; }
 HBITMAP captionCommandBitmap(wchar_t, int, COLORREF) { return new Bitmap; }
 bool DeleteObject(HBITMAP bitmap) { delete bitmap; return true; }
-struct Menu {};
+struct Menu { std::vector<MENUITEMINFO> items; };
 using HMENU = Menu *;
-int GetMenuItemCount(HMENU menu) { assert(menu); return 0; }
-UINT GetMenuItemID(HMENU menu, int) { assert(menu); return static_cast<UINT>(-1); }
-bool GetMenuItemInfoW(HMENU menu, UINT, bool, MENUITEMINFO *) { assert(menu); return false; }
-bool InsertMenuItemW(HMENU menu, UINT, bool, const MENUITEMINFO *info) {
-    assert(menu && (info->wID == IDM_TOGGLE_THUMBNAILS || info->wID == IDM_FILL_COLUMNS));
+int GetMenuItemCount(HMENU menu) { assert(menu); return static_cast<int>(menu->items.size()); }
+UINT GetMenuItemID(HMENU menu, int index) {
+    assert(menu);
+    if (index < 0 || static_cast<std::size_t>(index) >= menu->items.size()) return static_cast<UINT>(-1);
+    return menu->items[static_cast<std::size_t>(index)].wID;
+}
+bool GetMenuItemInfoW(HMENU menu, UINT index, bool byPosition, MENUITEMINFO *info) {
+    assert(menu && byPosition && info && info->fMask == MIIM_FTYPE);
+    if (index >= menu->items.size()) return false;
+    info->fType = menu->items[index].fType;
+    return true;
+}
+bool InsertMenuItemW(HMENU menu, UINT index, bool byPosition, const MENUITEMINFO *info) {
+    assert(menu && byPosition && info && (info->wID == IDM_TOGGLE_THUMBNAILS || info->wID == IDM_FILL_COLUMNS));
+    if (index > menu->items.size()) return false;
+    menu->items.insert(menu->items.begin() + index, *info);
     return true;
 }
 bool SetMenuItemInfo(HMENU, UINT, bool, MENUITEMINFO *) { return true; }
@@ -159,6 +171,10 @@ int WideCharToMultiByte(int, int, const wchar_t *p, int, char *out, int count, v
 }
 int TrackPopupMenuEx(HMENU m, UINT, int, int, HWND owner, void *) {
     assert(m && owner && !observation.closed);
+    for (std::size_t i = 0; i < m->items.size(); ++i) {
+        if (m->items[i].wID == IDM_TOGGLE_THUMBNAILS)
+            assert(i + 1 < m->items.size() && (m->items[i + 1].fType & MFT_SEPARATOR));
+    }
     boundary(Stage::Popup);
     return observation.command;
 }
@@ -178,7 +194,13 @@ struct IContextMenu : Ref {
     HRESULT QueryContextMenu(HMENU m, UINT, UINT, UINT, UINT) {
         assert(m && !observation.closed);
         boundary(Stage::QueryMenu);
-        return observation.failQuery ? E_FAIL : S_OK;
+        if (observation.failQuery) return E_FAIL;
+        MENUITEMINFO command = {sizeof(command)}, separator = {sizeof(separator)};
+        command.wID = IDM_SHELL_FIRST;
+        separator.fType = MFT_SEPARATOR;
+        m->items = {command, separator, command};
+        m->items.back().wID = IDM_SHELL_FIRST + 1;
+        return S_OK;
     }
     HRESULT InvokeCommand(CMINVOKECOMMANDINFO *) {
         assert(!observation.closed);
@@ -381,6 +403,19 @@ void run(Operation op, Stage stage, int command = IDM_SHELL_FIRST,
 }
 
 int main() {
+    {
+        Menu menu;
+        MENUITEMINFO info = {sizeof(info)}, separator = {sizeof(separator)};
+        info.fMask = MIIM_FTYPE;
+        bool found = GetMenuItemInfoW(&menu, 0, TRUE, &info);
+        assert(!found);
+        separator.fType = MFT_SEPARATOR;
+        menu.items.push_back(separator);
+        found = GetMenuItemInfoW(&menu, 0, TRUE, &info);
+        assert(found && (info.fType & MFT_SEPARATOR));
+        found = GetMenuItemInfoW(&menu, 1, TRUE, &info);
+        assert(!found);
+    }
     run(Operation::View, Stage::None, IDM_TOGGLE_THUMBNAILS);
     assert(observation.thumbnailToggles == 1 && observation.invoked == 0);
     run(Operation::View, Stage::None, IDM_FILL_COLUMNS);
