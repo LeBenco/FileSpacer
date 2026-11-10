@@ -16,6 +16,7 @@ public:
         NMHDR header;
         IShellItem *item; // borrowed for the synchronous WM_NOTIFY call
         bool control;
+        RECT openingOrigin = {}; // screen coordinates captured before notifying the owner
     };
 
     static void init();
@@ -43,7 +44,7 @@ private:
     void beginEdit();
     void endEdit(bool restoreFocus);
     void submit(bool control);
-    void openItem(IShellItem *item, bool control);
+    void openItem(IShellItem *item, bool control, int sourceCommand = 0);
     void showHiddenSegments();
 
     HWND owner = nullptr, toolbar = nullptr, edit = nullptr, previousFocus = nullptr;
