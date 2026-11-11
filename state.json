@@ -1,8 +1,27 @@
 {
   "version": 1,
   "channel": "winget",
-  "initialized": false,
+  "initialized": true,
   "accepted": null,
-  "active": [],
+  "active": [
+    {
+      "tag": "v1.4.1",
+      "pr": 476223,
+      "phase": "submitted",
+      "status": "pending"
+    },
+    {
+      "tag": "v1.4.0",
+      "pr": 475624,
+      "phase": "submitted",
+      "status": "pending"
+    },
+    {
+      "tag": "v1.3.2",
+      "pr": 470943,
+      "phase": "submitted",
+      "status": "pending"
+    }
+  ],
   "pending": null
 }
