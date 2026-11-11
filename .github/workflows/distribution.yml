@@ -1,0 +1,88 @@
+name: Distribute FileSpacer
+
+on:
+  workflow_run:
+    workflows: [Publish FileSpacer]
+    types: [completed]
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Published stable tag; leave empty to check existing queues'
+        type: string
+      channel:
+        description: 'Distribution channel'
+        type: choice
+        default: all
+        options: [all, winget, chocolatey]
+      dry_run:
+        description: 'Chocolatey only: validate a tag without modifying the queue or submitting'
+        type: boolean
+        default: false
+      retry:
+        description: 'One channel only: retry this same tag after a failed or closed submission was investigated'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  selection:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.selection.outputs.tag }}
+      winget: ${{ steps.selection.outputs.winget }}
+      chocolatey: ${{ steps.selection.outputs.chocolatey }}
+      dry_run: ${{ steps.selection.outputs.dry_run }}
+      retry: ${{ steps.selection.outputs.retry }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+      - name: Test distribution selection and queue transitions
+        run: node --test .github/scripts/release-distribution.test.mjs .github/scripts/distribution-queue.test.mjs
+      - name: Download metadata from this successful publication
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-publication
+          path: build/publication
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Select requested channels or check existing queues
+        id: selection
+        run: node .github/scripts/release-distribution.mjs coordinate build/publication/release-publication.json
+
+  winget:
+    needs: selection
+    if: needs.selection.outputs.winget == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/winget.yml
+    with:
+      tag: ${{ needs.selection.outputs.tag }}
+      retry: ${{ needs.selection.outputs.retry == 'true' }}
+    secrets:
+      WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+
+  chocolatey:
+    needs: selection
+    if: needs.selection.outputs.chocolatey == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/chocolatey.yml
+    with:
+      tag: ${{ needs.selection.outputs.tag }}
+      dry_run: ${{ needs.selection.outputs.dry_run == 'true' }}
+      retry: ${{ needs.selection.outputs.retry == 'true' }}
+    secrets:
+      CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
