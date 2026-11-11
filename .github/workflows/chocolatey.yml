@@ -1,39 +1,39 @@
 name: Submit FileSpacer to Chocolatey
 
 on:
-  workflow_run:
-    workflows: [Publish FileSpacer]
-    types: [completed]
-  workflow_dispatch:
+  workflow_call:
     inputs:
       tag:
-        description: 'Published stable release tag (for example v1.3.2)'
-        required: true
         type: string
-      dry_run:
-        description: 'Validate the package and real installation without submitting it'
+        default: ''
+      retry:
         type: boolean
         default: false
+      dry_run:
+        type: boolean
+        default: false
+    secrets:
+      CHOCO_API_KEY:
+        required: false
 
 permissions:
-  contents: read
-  actions: read
-
-concurrency:
-  group: chocolatey-${{ inputs.tag || github.event.workflow_run.id }}
-  cancel-in-progress: false
+  contents: write
 
 jobs:
-  selection:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    outputs:
-      enabled: ${{ steps.selection.outputs.enabled }}
-      tag: ${{ steps.selection.outputs.tag }}
+  submit:
+    runs-on: windows-2022
+    timeout-minutes: 40
+    # Serialize the whole decision/package/reservation/submission transaction.
+    # Native run queuing must not discard a release in favor of a scheduled check.
+    concurrency:
+      group: distribution-chocolatey
+      cancel-in-progress: false
+      queue: max
     env:
       RELEASE_TAG: ${{ inputs.tag }}
       DISTRIBUTION_CHANNEL: chocolatey
+      RETRY_SUBMISSION: ${{ inputs.retry }}
+      DRY_RUN: ${{ inputs.dry_run }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -42,57 +42,39 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
-      - name: Test distribution selection
-        run: node --test .github/scripts/release-distribution.test.mjs
-      - name: Download publication metadata from the successful release run
-        if: github.event_name == 'workflow_run'
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: release-publication
-          path: build/publication
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ github.token }}
-      - name: Select automatic distribution or the explicit manual request
-        id: selection
-        run: node .github/scripts/release-distribution.mjs select build/publication/release-publication.json
-
-  submit:
-    needs: selection
-    if: needs.selection.outputs.enabled == 'true'
-    runs-on: windows-2022
-    timeout-minutes: 20
-    env:
-      RELEASE_TAG: ${{ needs.selection.outputs.tag }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-          persist-credentials: false
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version: 24
+      - name: Reconcile moderation and retain the latest pending release
+        id: queue
+        shell: cmd
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/distribution-queue.mjs plan
       - name: Test package generation
+        if: steps.queue.outputs.submit == 'true'
         shell: cmd
         run: node --test .github/scripts/chocolatey.test.mjs .github/scripts/winget.test.mjs
       - name: Prepare the package from verified public release assets
+        if: steps.queue.outputs.submit == 'true'
         id: prepare
         shell: cmd
         env:
           GH_TOKEN: ${{ github.token }}
         run: node .github/scripts/chocolatey.mjs
       - name: Build the Chocolatey package
+        if: steps.queue.outputs.submit == 'true'
         id: package
         shell: pwsh
         run: |
           choco pack build/chocolatey/filespacer/filespacer.nuspec --output-directory build/chocolatey --no-progress
           if ($LASTEXITCODE -ne 0) { throw 'Chocolatey packaging failed.' }
       - name: Preserve the package for review
+        if: steps.queue.outputs.submit == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: chocolatey-${{ env.RELEASE_TAG }}
           path: build/chocolatey
           if-no-files-found: error
       - name: Smoke test the real installation on the disposable runner
+        if: steps.queue.outputs.submit == 'true'
         id: smoke
         shell: pwsh
         env:
@@ -105,7 +87,7 @@ jobs:
             throw 'The installed FileSpacer version or executable does not match the package.'
           }
       - name: Smoke test uninstallation and clean up the runner
-        if: always() && steps.smoke.outcome != 'skipped' && steps.smoke.outcome != ''
+        if: steps.queue.outputs.submit == 'true' && (always() && steps.smoke.outcome != 'skipped' && steps.smoke.outcome != '')
         shell: pwsh
         run: |
           choco uninstall filespacer --yes --no-progress
@@ -114,13 +96,29 @@ jobs:
             throw 'FileSpacer remains registered after uninstallation.'
           }
       - name: Submit the package to the Chocolatey community repository
-        if: github.event_name != 'workflow_dispatch' || !inputs.dry_run
+        id: submit
+        if: steps.queue.outputs.submit == 'true' && (!inputs.dry_run)
         shell: pwsh
         env:
+          GH_TOKEN: ${{ github.token }}
           CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
           PACKAGE_VERSION: ${{ steps.prepare.outputs.version }}
         run: |
           if (!$env:CHOCO_API_KEY) { throw 'Configure the CHOCO_API_KEY Actions secret, then retry this workflow. The package is available in the artifact.' }
+          node .github/scripts/distribution-queue.mjs begin
+          if ($LASTEXITCODE -ne 0) { throw 'Could not reserve the distribution queue.' }
           choco push "build/chocolatey/filespacer.$env:PACKAGE_VERSION.nupkg" --source https://push.chocolatey.org/ --api-key "$env:CHOCO_API_KEY" --no-progress
           if ($LASTEXITCODE -ne 0) { throw 'Chocolatey submission failed. Check the package page for an existing submission or moderation feedback before retrying.' }
           "Submitted filespacer $env:PACKAGE_VERSION. Availability requires Chocolatey moderation: https://community.chocolatey.org/packages/filespacer/$env:PACKAGE_VERSION" >> $env:GITHUB_STEP_SUMMARY
+      - name: Record the successful submission
+        if: steps.submit.outcome == 'success'
+        shell: cmd
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/distribution-queue.mjs submitted
+      - name: Report durable queue state
+        if: always() && !inputs.dry_run
+        shell: cmd
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/distribution-queue.mjs report
