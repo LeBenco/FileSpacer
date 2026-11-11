@@ -29,7 +29,7 @@ Volg de [releaseprocedure](build.md#releases). Na succes haalt WinGet `release-p
 
 De installer behoudt componentstandaarden en opgeslagen upgradekeuzes. Het manifest vraagt geen andere standaardbeheerder. Inzenden maakt niet direct beschikbaar: Microsoft-controles en review moeten de PR accepteren. Volg de PR-link in het log en reageer op verzoeken.
 
-Inzendfalen behoudt GitHub-release en geslaagd releaseresultaat; alleen distributie faalt. Herstel de oorzaak en kies **Actions > Submit FileSpacer to WinGet > Run workflow**, standaardbranch en gepubliceerde tag. Dit herhaalt alleen distributie zonder bouwen/publiceren. Een ontbrekend geheim faalt expliciet na bewaren van manifesten. Handmatig ondersteunt ook oudere en extern gepubliceerde releases. Mislukte/geannuleerde releases dienen niets in. Geaccepteerde versies worden overgeslagen en niet vervangen; houd publieke versie-assets ongewijzigd.
+Inzendfalen behoudt GitHub-release en geslaagd releaseresultaat; alleen distributie faalt. Herstel de oorzaak en kies **Actions > Distribute FileSpacer (channel=winget) > Run workflow**, standaardbranch en gepubliceerde tag. Dit herhaalt alleen distributie zonder bouwen/publiceren. Een ontbrekend geheim faalt expliciet na bewaren van manifesten. Handmatig ondersteunt ook oudere en extern gepubliceerde releases. Mislukte/geannuleerde releases dienen niets in. Geaccepteerde versies worden overgeslagen en niet vervangen; houd publieke versie-assets ongewijzigd.
 
 Na acceptatie van de eerste PR en catalogusvernieuwing:
 
