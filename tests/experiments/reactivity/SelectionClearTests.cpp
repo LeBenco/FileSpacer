@@ -287,6 +287,9 @@ void runClear(const std::wstring &output,const wchar_t *path) {
             need(SUCCEEDED(bulk->Select(SFVS_SELECT_ALLITEMS)),"Global select through product binding failed");
             const double elapsed=clockMs()-started;
             const bool expected=selectionDiscovery::image().selectAllSupported;
+            if(accelerated.acceleratedSelectAllCount()!=(expected?1u:0u))std::fprintf(stderr,
+                "DISPATCH_MISMATCH operation=select-all view=%s count=%d qualified=%d calls=%llu expected_calls=%u\n",
+                mode.name,fixtureCount,expected,static_cast<unsigned long long>(accelerated.acceleratedSelectAllCount()),expected?1u:0u);
             need(accelerated.acceleratedSelectAllCount()==(expected?1u:0u),"Wrong global-selection backend used");
             checkAll();
             int focused=-1;CComHeapPtr<ITEMID_CHILD> focusedId;
@@ -314,6 +317,10 @@ void runClear(const std::wstring &output,const wchar_t *path) {
                 const uint64_t before=accelerated.acceleratedSelectAllCount();const double partialStarted=clockMs();
                 need(SUCCEEDED(bulk->Select(SFVS_SELECT_ALLITEMS)),"Partial-to-all selection failed");
                 const double partialElapsed=clockMs()-partialStarted;
+                if(accelerated.acceleratedSelectAllCount()!=before+(expected?1u:0u))std::fprintf(stderr,
+                    "DISPATCH_MISMATCH operation=partial-to-all view=%s previous=%d count=%d qualified=%d calls_before=%llu calls_after=%llu expected_calls_after=%llu\n",
+                    mode.name,quantity,fixtureCount,expected,static_cast<unsigned long long>(before),
+                    static_cast<unsigned long long>(accelerated.acceleratedSelectAllCount()),static_cast<unsigned long long>(before+(expected?1u:0u)));
                 need(accelerated.acceleratedSelectAllCount()==before+(expected?1u:0u),"Wrong partial-to-all backend used");
                 checkAll();need(arrayPaths(previous)==partial,"Partial-to-all selection corrupted retained snapshot");
                 need(SUCCEEDED(accelerated.clear(shell,current)),"Partial-to-all selection clear failed");
