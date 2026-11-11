@@ -283,6 +283,7 @@ test('GitHub requests authenticate only the API and reject rate limits and bad s
 
 test('dry run validates its release but never reads or writes queue state', async t => {
   const root = fileURLToPath(new URL('../../', import.meta.url));
+  await fs.mkdir(path.join(root, 'build'), {recursive: true});
   const directory = await fs.mkdtemp(path.join(root, 'build/queue-dry-run-'));
   t.after(() => fs.rm(directory, {recursive: true, force: true}));
   const preload = path.join(directory, 'http.mjs');
