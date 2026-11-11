@@ -21,6 +21,7 @@
 #include <shobjidl_core.h>
 #include <uxtheme.h>
 #include <vsstyle.h>
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -330,6 +331,45 @@ struct GeneralHelp {
                 bounds.left + labelWidth + scaleDPI(4) - padding,
                 bounds.top + (metrics.tmHeight - size) / 2, size, size, SWP_NOACTIVATE));
         }
+        // Position each spinner beside the actual localized label, using dialog spacing.
+        RECT gap = {0, 0, 4, 0};
+        checkLE(MapDialogRect(page, &gap));
+        const struct { int label, value, spin, unit; } fields[] = {
+            {IDC_OPENING_ANIMATION_DURATION_LABEL, IDC_OPENING_ANIMATION_DURATION,
+                IDC_OPENING_ANIMATION_SPIN, IDC_OPENING_ANIMATION_UNIT},
+            {IDC_SEARCH_HISTORY_LIMIT_LABEL, IDC_SEARCH_HISTORY_LIMIT, IDC_SEARCH_HISTORY_SPIN, 0}};
+        auto controlRect = [page](int control) {
+            RECT rect = windowRect(GetDlgItem(page, control));
+            MapWindowPoints(nullptr, page, reinterpret_cast<POINT *>(&rect), 2);
+            return rect;
+        };
+        for (const auto &field : fields) {
+            const HWND label = GetDlgItem(page, field.label);
+            const int length = GetWindowTextLengthW(label);
+            std::wstring text(static_cast<size_t>(length) + 1, L'\0');
+            GetWindowTextW(label, &text[0], length + 1);
+            RECT extent = {};
+            DrawTextW(context.get(), text.c_str(), length, &extent,
+                DT_CALCRECT | DT_SINGLELINE | DT_NOPREFIX);
+            const RECT labelBounds = controlRect(field.label);
+            const RECT valueBounds = controlRect(field.value);
+            const RECT spinBounds = controlRect(field.spin);
+            const int offset = labelBounds.left + extent.right + gap.right - valueBounds.left;
+            checkLE(SetWindowPos(label, nullptr, 0, 0, extent.right,
+                labelBounds.bottom - labelBounds.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE));
+            checkLE(SetWindowPos(GetDlgItem(page, field.value), nullptr,
+                valueBounds.left + offset, valueBounds.top, 0, 0,
+                SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE));
+            checkLE(SetWindowPos(GetDlgItem(page, field.spin), nullptr,
+                spinBounds.left + offset, spinBounds.top, 0, 0,
+                SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE));
+            if (field.unit) {
+                const RECT unitBounds = controlRect(field.unit);
+                checkLE(SetWindowPos(GetDlgItem(page, field.unit), nullptr,
+                    (std::max)(valueBounds.right, spinBounds.right) + offset + gap.right,
+                    unitBounds.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE));
+            }
+        }
         SelectObject(context.get(), previous);
     }
     bool draw(const DRAWITEMSTRUCT &item) const {
@@ -383,12 +423,12 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::getKeepSourceWindowOpen() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_OPENING_ANIMATION_ENABLED,
                 settings::getOpeningAnimationEnabled() ? BST_CHECKED : BST_UNCHECKED);
-            SendDlgItemMessageW(hwnd, IDC_OPENING_ANIMATION_DURATION, EM_SETLIMITTEXT, 10, 0);
+            SendDlgItemMessageW(hwnd, IDC_OPENING_ANIMATION_DURATION, EM_SETLIMITTEXT, 3, 0);
             SendDlgItemMessageW(hwnd, IDC_OPENING_ANIMATION_SPIN, UDM_SETRANGE32, 0,
                 static_cast<LPARAM>(settings::MAX_OPENING_ANIMATION_DURATION));
             SendDlgItemMessageW(hwnd, IDC_OPENING_ANIMATION_SPIN, UDM_SETPOS32, 0,
                 static_cast<LPARAM>(settings::getOpeningAnimationDuration()));
-            for (int control : {IDC_OPENING_ANIMATION_DURATION_LABEL,
+            for (int control : {IDC_OPENING_ANIMATION_DURATION_LABEL, IDC_OPENING_ANIMATION_UNIT,
                     IDC_OPENING_ANIMATION_DURATION, IDC_OPENING_ANIMATION_SPIN})
                 EnableWindow(GetDlgItem(hwnd, control),
                     !!IsDlgButtonChecked(hwnd, IDC_OPENING_ANIMATION_ENABLED));
@@ -410,7 +450,11 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_LOCK_ENABLED));
             CheckDlgButton(hwnd, IDC_LIVE_NAME_SEARCH,
                 settings::getLiveNameSearch() ? BST_CHECKED : BST_UNCHECKED);
-            SetDlgItemInt(hwnd, IDC_SEARCH_HISTORY_LIMIT, settings::getSearchHistoryLimit(), FALSE);
+            SendDlgItemMessageW(hwnd, IDC_SEARCH_HISTORY_LIMIT, EM_SETLIMITTEXT, 2, 0);
+            SendDlgItemMessageW(hwnd, IDC_SEARCH_HISTORY_SPIN, UDM_SETRANGE32, 0,
+                static_cast<LPARAM>(settings::MAX_SEARCH_HISTORY_LIMIT));
+            SendDlgItemMessageW(hwnd, IDC_SEARCH_HISTORY_SPIN, UDM_SETPOS32, 0,
+                static_cast<LPARAM>(settings::getSearchHistoryLimit()));
             return TRUE;
         }
         case WM_NOTIFY: {
@@ -524,7 +568,7 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     || LOWORD(wParam) == IDC_LIVE_NAME_SEARCH && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_KEEP_SELECTION_ON_ACTIVATE && HIWORD(wParam) == BN_CLICKED) {
                 if (LOWORD(wParam) == IDC_OPENING_ANIMATION_ENABLED && HIWORD(wParam) == BN_CLICKED)
-                    for (int control : {IDC_OPENING_ANIMATION_DURATION_LABEL,
+                    for (int control : {IDC_OPENING_ANIMATION_DURATION_LABEL, IDC_OPENING_ANIMATION_UNIT,
                             IDC_OPENING_ANIMATION_DURATION, IDC_OPENING_ANIMATION_SPIN})
                         EnableWindow(GetDlgItem(hwnd, control),
                             !!IsDlgButtonChecked(hwnd, IDC_OPENING_ANIMATION_ENABLED));
@@ -773,7 +817,7 @@ static bool openingAnimationDuration(HWND hwnd, DWORD *value) {
     GetDlgItemTextW(hwnd, IDC_OPENING_ANIMATION_DURATION, text, _countof(text));
     BOOL translated = FALSE;
     const UINT number = GetDlgItemInt(hwnd, IDC_OPENING_ANIMATION_DURATION, &translated, FALSE);
-    bool valid = translated && length > 0 && length <= 10
+    bool valid = translated && length > 0 && length <= 3
         && number <= settings::MAX_OPENING_ANIMATION_DURATION;
     for (int index = 0; valid && index < length; ++index)
         valid = text[index] >= L'0' && text[index] <= L'9';
