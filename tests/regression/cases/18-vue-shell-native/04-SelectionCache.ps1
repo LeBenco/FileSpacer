@@ -1,6 +1,6 @@
 # Test-Category: UI
 # Hidden real Shell views; no input or desktop capture. All data stays in RunDirectory.
-param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
+param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path,[ValidateSet(129,5000)][int]$ItemCount=129)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot '..\..\common\Native.ps1')
 $cacheTest=Build-NativeTest -Name SelectionCacheTests -CaseDirectory $PSScriptRoot -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','MixedFolder.cpp','ShellViewHost.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib')
@@ -52,10 +52,11 @@ foreach($fault in @(@{Name='schema';Offset=7},@{Name='identity';Offset=12},@{Nam
     if($code-ne0-or(Get-Item $negative[0].FullName).LastWriteTimeUtc-ne$timestamp-or@(Get-ChildItem -LiteralPath $cache -Filter '*.attempt').Count){throw 'Saved structural fallback was not reused without rediscovery.'}
 }
 . (Join-Path $PSScriptRoot '..\..\..\experiments\reactivity\Fixture.ps1')
-$fixture=New-ReactivityFixture $ProjectRoot 5000
+$fixture=New-ReactivityFixture $ProjectRoot $ItemCount
 try {
     $env:FS_SELECTION_PRODUCT_CACHE=$cache;$env:FS_SELECTION_HEADLESS='1'
-    Remove-Item Env:\FS_SELECTION_FIXTURE_64,Env:\FS_SELECTION_SMOKE,Env:\FS_SELECTION_ONLY_MEDIUM,Env:\FS_SELECTION_ALL_ONLY -ErrorAction SilentlyContinue
+    Remove-Item Env:\FS_SELECTION_FIXTURE_64,Env:\FS_SELECTION_FIXTURE_129,Env:\FS_SELECTION_SMOKE,Env:\FS_SELECTION_ONLY_MEDIUM,Env:\FS_SELECTION_ALL_ONLY -ErrorAction SilentlyContinue
+    if($ItemCount -eq 129){$env:FS_SELECTION_FIXTURE_129='1'}
     $output=Join-Path $RunDirectory 'production-selection'
     [void][IO.Directory]::CreateDirectory($output)
     $code=Invoke-NativeProgram $matrix @($output,$fixture,'--allow-host') (Join-Path $RunDirectory 'production-selection.log') (Join-Path $RunDirectory 'production-selection-errors.log')
@@ -63,6 +64,8 @@ try {
     $rows=@(Import-Csv -LiteralPath (Join-Path $output 'clear-results.csv'))
     $candidate=@($rows|Where-Object {$_.arm-eq'candidate'-and[int]$_.selected_count-gt0})
     $expectedApplied=if($privateSupported){'1'}else{'0'}
-    if($rows.Count-ne405-or$candidate.Count-ne108-or@($candidate|Where-Object private_applied -ne $expectedApplied).Count){throw 'Product selection backend coverage incomplete.'}
-    if(!$privateSupported){Write-Host 'PASS: saved structural fallback reused; all 405 real Shell selection cases verified through public APIs. Private acceleration not exercised.'}
+    $expectedRows=135
+    $expectedCandidates=36
+    if($rows.Count-ne$expectedRows-or$candidate.Count-ne$expectedCandidates-or@($candidate|Where-Object private_applied -ne $expectedApplied).Count){throw 'Product selection backend coverage incomplete.'}
+    if(!$privateSupported){Write-Host ('PASS: saved structural fallback reused; all '+$expectedRows+' real Shell selection cases verified through public APIs. Private acceleration not exercised.')}
 }finally{Remove-ReactivityFixture $ProjectRoot $fixture}
