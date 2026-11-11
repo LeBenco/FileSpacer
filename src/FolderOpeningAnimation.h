@@ -8,7 +8,9 @@ namespace filespacer {
 // A dotted grey outline; the Shell window keeps its final size throughout.
 class FolderOpeningAnimation {
 public:
-    static constexpr UINT durationMs = 200;
+    // Cached preference and system policy; no Registry or graphics work here.
+    static bool isEnabled();
+    static void reloadSettings();
     // Warm the shared graphics resources off the UI thread after a folder opens.
     static void prepare();
     static void uninit();
