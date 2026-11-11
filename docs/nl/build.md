@@ -119,7 +119,7 @@ Zonder optie wordt geen kanaal geselecteerd; `--distribute none` maakt dit expli
 
 Het script vereist een schone werkboom, controleert externe branch/tag, toont wijzigingen en kanalen en vraagt bevestiging vóór push van `main` en de geannoteerde tag. Controleer daarna workflow en beide bestanden. Foutsamenvattingen en bouwlogboeken blijven workflowartefacten.
 
-Een bestaande release kan later worden ingediend via **Submit FileSpacer to WinGet** en/of **Submit FileSpacer to Chocolatey**, met branch `main` en de gepubliceerde tag. Handmatig starten selecteert dat kanaal ongeacht de oorspronkelijke keuze en hergebruikt installer en SHA-256. Gebruik bijvoorbeeld `gh workflow run winget.yml --ref main -f tag=vX.Y.Z` of dezelfde opdracht met `chocolatey.yml`. Herstart hiervoor niet de releasegeneratie: die kan de installer vervangen en cataloguschecksums ongeldig maken.
+Een bestaande release kan later worden ingediend via **Distribute FileSpacer (channel=winget)** en/of **Distribute FileSpacer (channel=chocolatey)**, met branch `main` en de gepubliceerde tag. Handmatig starten selecteert dat kanaal ongeacht de oorspronkelijke keuze en hergebruikt installer en SHA-256. Gebruik bijvoorbeeld `gh workflow run distribution.yml --ref main -f channel=winget -f tag=vX.Y.Z` of dezelfde opdracht met `-f channel=chocolatey`. Herstart hiervoor niet de releasegeneratie: die kan de installer vervangen en cataloguschecksums ongeldig maken.
 
 <a id="tests"></a>
 
