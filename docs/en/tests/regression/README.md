@@ -215,9 +215,10 @@ its `build/regression/vm-<id>` report location and records the suite in its pack
 Stress includes 5,000-item SQLite recovery, saved-layout redraw, load/restarts,
 View-menu cancellation, clear/select-all selection matrices, repeated concurrent
 Preferences requests, the comparative slow-column probe and column/frame drag
-CPU measurements. Functional selection regressions use 129 items to retain the native 128-item
-threshold for partial and complete selections; concurrency
-uses one simultaneous pair plus the initialization, owner-close and abandoned
+CPU measurements. It also includes 50,000 deterministic malformed manifest
+inputs. Functional selection regressions use 129 items to retain the native
+128-item threshold for partial and complete selections; concurrency uses one
+simultaneous pair plus the initialization, owner-close and abandoned
 mutex boundaries. Large and repeated variants run only through the stress suite.
 Production selection matrices use one pass per distinct combination rather than
 three timing repetitions: 135 operations for 129 items and 135 for 5,000 items.
