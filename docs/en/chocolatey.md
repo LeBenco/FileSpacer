@@ -2,11 +2,12 @@
 
 # Chocolatey distribution
 
-The **Submit FileSpacer to Chocolatey** workflow runs independently when
+The **Distribute FileSpacer** coordinator calls the reusable **Submit FileSpacer
+to Chocolatey** workflow independently when
 **Publish FileSpacer** finishes successfully and Chocolatey was explicitly selected
 with `release.sh X.Y.Z --distribute chocolatey`. Repeat `--distribute` to select
 several channels; no option means no automatic catalog distribution.
-It can also be started manually
+The coordinator can also be started manually
 with a published stable `vX.Y.Z` tag, including releases made before this
 workflow was introduced. A manual run explicitly selects Chocolatey regardless of
 the tag's original preference. A failed or cancelled release does not submit a package.
@@ -31,9 +32,19 @@ Automatic runs skip submission if Chocolatey is not selected or the list is abse
 ## Publication
 
 The workflow calls `.github/scripts/chocolatey.mjs` to download the official
-versioned installer and `FileSpacer-update.txt`. It reuses the WinGet script's
+versioned installer and `FileSpacer-update.txt`. Both channels use `release-assets.mjs` for
 stable-version and installer integrity checks, comparing the downloaded size and
 SHA-256 with the update manifest and GitHub asset digest when available.
+
+The shared coordinator retains only the latest requested version while any older
+submission awaits approval. A new request replaces the pending version, without
+changing the upload already being moderated. An hourly check uses official
+Chocolatey CLI exact-version searches with `--approved-only` to detect acceptance
+and submit the retained release. Merely finding the package is not approval.
+On first use, exact-version lookups of published stable GitHub releases import
+existing uploads under moderation. Later submissions should all use the coordinator.
+The [shared queue and recovery procedure](build.md#releases) describes persistent
+state, migration, retries and schedule limitations.
 
 The generator fills the templates in `installer/chocolatey`. The resulting
 `filespacer` package contains metadata and PowerShell scripts, without embedding
@@ -64,12 +75,16 @@ created by distribution, and its failure does not change the successful release.
 
 ## Retry and use
 
-For a distribution failure, open **Actions > Submit FileSpacer to Chocolatey >
-Run workflow**, choose the default branch, and enter the already published tag.
+For a distribution failure, open **Actions > Distribute FileSpacer >
+Run workflow**, choose the default branch, `channel=chocolatey`, and enter the already published tag.
 The equivalent client command is
-`gh workflow run chocolatey.yml --ref main -f tag=vX.Y.Z`.
+`gh workflow run distribution.yml --ref main -f channel=chocolatey -f tag=vX.Y.Z`.
+Leave the tag empty to check the current queue without requesting a release.
+Failures before upload retain the pending release. An uncertain upload keeps the
+queue blocked; inspect its remote status before using `retry=true` for that same
+tag. A submission still present under moderation is not automatically resent.
 Enable **dry_run** to validate packaging, installation and uninstallation without
-submitting anything or using the API key.
+submitting anything, modifying queue state or using the API key.
 This rebuilds the package from the same public release assets. It does not rebuild
 the application. An existing version may be rejected by the server: inspect its
 submission/moderation status before retrying. Do not force an overwrite of an
@@ -92,7 +107,7 @@ choco uninstall filespacer --yes
 Run in CMD from the repository root:
 
 ```cmd
-node --test .github/scripts/chocolatey.test.mjs .github/scripts/winget.test.mjs
+node --test .github/scripts/release-distribution.test.mjs .github/scripts/distribution-queue.test.mjs .github/scripts/chocolatey.test.mjs .github/scripts/winget.test.mjs
 ```
 
 The unit tests simulate HTTP and Chocolatey helper calls; they do not install
