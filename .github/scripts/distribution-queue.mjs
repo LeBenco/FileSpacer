@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only; Copyright (C) 2026 Benco
 import fs from 'node:fs/promises';
-import {spawnSync} from 'node:child_process';
+import {execFile} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 import {repository, githubApi, releaseVersion, publishedRelease} from './release-assets.mjs';
 
@@ -101,12 +101,24 @@ export async function openWingetSubmissions(api) {
   }
 }
 
-export function chocolateySearch(version, approvedOnly, run = spawnSync) {
+function runChocolatey(command, args, options) {
+  // Keep Node's network/timer loop running while Chocolatey performs its queries.
+  // Blocking it through the migration scan leaves GitHub keep-alive sockets
+  // stale when the final state update starts.
+  return new Promise(resolve => {
+    execFile(command, args, options, (error, stdout, stderr) => resolve({
+      status: error ? (Number.isInteger(error.code) ? error.code : null) : 0,
+      error: error && !Number.isInteger(error.code) ? error : null, stdout, stderr
+    }));
+  });
+}
+
+export async function chocolateySearch(version, approvedOnly, run = runChocolatey) {
   releaseVersion(`v${version}`);
   const args = ['search', 'filespacer', '--exact', `--version=${version}`,
     '--source=https://community.chocolatey.org/api/v2/', '--limit-output', '--no-progress', '--ignore-http-cache'];
   if (approvedOnly) args.push('--approved-only');
-  const result = run('choco.exe', args, {encoding: 'utf8', timeout: 90000, windowsHide: true});
+  const result = await run('choco.exe', args, {encoding: 'utf8', timeout: 90000, windowsHide: true});
   // Enhanced exit codes may report 2 for an empty search. Any other error,
   // warning or unexpected output is inconclusive, never proof of absence.
   if (result.error || ![0, 2].includes(result.status) || result.stderr?.trim()) {
@@ -125,8 +137,8 @@ export function channelRemote(channel, api, search = chocolateySearch) {
     async inspect(entry) {
       const version = releaseVersion(entry.tag);
       if (channel === 'chocolatey') {
-        if (search(version, true)) return {status: 'accepted'};
-        return {status: search(version, false) ? 'pending' : 'missing'};
+        if (await search(version, true)) return {status: 'accepted'};
+        return {status: await search(version, false) ? 'pending' : 'missing'};
       }
       if (entry.pr) {
         const pr = await api(`${wingetRepo}/pulls/${entry.pr}`);
