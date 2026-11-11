@@ -1,6 +1,7 @@
 #include <common.h>
 #include "FolderOpeningAnimation.h"
 #include "main.h"
+#include "Settings.h"
 #include <atlbase.h>
 #include <d3d11.h>
 #include <d2d1_1.h>
@@ -15,13 +16,14 @@
 #pragma comment(lib, "D2d1.lib")
 #pragma comment(lib, "Dcomp.lib")
 #pragma comment(lib, "Dwmapi.lib")
+#pragma comment(lib, "Delayimp.lib")
 
 namespace filespacer {
 namespace {
 const wchar_t animationClass[] = L"FileSpacer Folder Opening Animation";
 constexpr UINT finishAnimation = WM_APP + 1;
 constexpr LONG strokeWidth = 3;
-constexpr double contourDuration = FolderOpeningAnimation::durationMs / 1000.0;
+std::atomic<UINT> configuredDuration{0};
 struct OpeningGraphics {
     CComPtr<ID3D11Device> d3d;
     CComPtr<IDCompositionDesktopDevice> composition;
@@ -78,6 +80,7 @@ struct FolderOpeningAnimation::State {
     HWND window = nullptr;
     HWND foreground = nullptr;
     LONG_PTR identity = 0;
+    UINT durationMs = 0;
 
     bool current() const {
         return window && IsWindow(window)
@@ -155,7 +158,7 @@ struct FolderOpeningAnimation::State {
 
     bool animate(IDCompositionAnimation **out, float from, float to,
             std::vector<CComPtr<IDCompositionAnimation>> &animations) {
-        const double duration = contourDuration;
+        const double duration = durationMs / 1000.0;
         CComPtr<IDCompositionAnimation> animation;
         if (!checkHR(resources->composition->CreateAnimation(&animation))) return false;
         if (!checkHR(animation->AddCubic(0.0, from, static_cast<float>((to - from) / duration), 0.0f, 0.0f))
@@ -236,7 +239,7 @@ struct FolderOpeningAnimation::State {
         if (!checkHR(visibility->AddCubic(0.0,
                     static_cast<float>((std::max)(origin.right - origin.left, end.right - end.left)),
                     0.0f, 0.0f, 0.0f))
-                || !checkHR(visibility->End(contourDuration, 0.0f))
+                || !checkHR(visibility->End(durationMs / 1000.0, 0.0f))
                 || !checkHR(resources->composition->CreateRectangleClip(&clip))
                 || !checkHR(clip->SetLeft(0.0f)) || !checkHR(clip->SetTop(0.0f))
                 || !checkHR(clip->SetRight(visibility))
@@ -248,9 +251,10 @@ struct FolderOpeningAnimation::State {
     }
 
     bool begin(HWND destination, const RECT &origin, int showCommand) {
+        durationMs = configuredDuration.load();
+        if (!durationMs) return false;
         resources = std::atomic_load(&graphics);
         if (!resources) return false;
-        if (!animationsEnabled()) return false;
         if (origin.right <= origin.left || origin.bottom <= origin.top) return false;
         BOOL valid = FALSE;
         if (!checkHR(resources->health->CheckDeviceState(&valid)) || !valid) return false;
@@ -308,13 +312,13 @@ struct FolderOpeningAnimation::State {
         for (const auto &animation : animations) {
             if (!checkHR(animation->SetAbsoluteBeginTime(start))) return false;
         }
-        // DWM hides the contour on arrival at 200 ms.
+        // DWM hides the contour on arrival at the captured duration.
         if (!checkHR(resources->composition->Commit())) return false;
         LARGE_INTEGER now = {};
         if (!checkLE(QueryPerformanceCounter(&now))) return false;
         const LONGLONG elapsed = (now.QuadPart - start.QuadPart) * 10000000LL / frequency.QuadPart;
         LARGE_INTEGER remaining = {};
-        remaining.QuadPart = -(std::max)(1LL, FolderOpeningAnimation::durationMs * 10000LL - elapsed);
+        remaining.QuadPart = -(std::max)(1LL, durationMs * 10000LL - elapsed);
         FILETIME due = {remaining.LowPart, static_cast<DWORD>(remaining.HighPart)};
         SetThreadpoolTimer(completion.get(), &due, 0, 0);
         return true;
@@ -328,8 +332,21 @@ bool FolderOpeningAnimation::begin(HWND window, const RECT &origin, int showComm
     return state->begin(window, origin, showCommand);
 }
 
+bool FolderOpeningAnimation::isEnabled() {
+    return configuredDuration.load() != 0;
+}
+
+void FolderOpeningAnimation::reloadSettings() {
+    UINT duration = 0;
+    if (settings::getOpeningAnimationEnabled()) {
+        duration = settings::getOpeningAnimationDuration();
+        if (duration && !animationsEnabled()) duration = 0;
+    }
+    configuredDuration.store(duration);
+}
+
 void FolderOpeningAnimation::prepare() {
-    if (!animationsEnabled() || preparing.exchange(true)) return;
+    if (!isEnabled() || preparing.exchange(true)) return;
     lockProcess();
     if (!checkLE(QueueUserWorkItem(prepareGraphics, nullptr, WT_EXECUTEDEFAULT))) {
         preparing.store(false);
