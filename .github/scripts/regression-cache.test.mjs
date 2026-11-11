@@ -6,10 +6,12 @@ import {applicationInput, fingerprint, cacheKey, reusable} from './regression-ca
 const entry = (file, hash = 'a'.repeat(40)) => `100644 blob ${hash}\t${file}\0`;
 const base = entry('src/main.cpp') + entry('tests/regression/cases/example.ps1');
 
-test('documentation, screenshots and NSIS-only changes preserve the tested application identity', () => {
+test('documentation, screenshots, stress-only and NSIS-only changes preserve the tested application identity', () => {
   const original = fingerprint(base);
   for (const file of ['README.md', 'docs/en/privacy-policy.md', 'docs/pl/images/overview.png',
-    'website/generate.mjs', 'installer/install.nsi', 'installer/generate-notes.mjs', '.github/workflows/winget.yml']) {
+    'website/generate.mjs', 'installer/install.nsi', 'installer/generate-notes.mjs', '.github/workflows/winget.yml',
+    'stress-tests.cmd', 'tests/stress/cases/18-vue-shell-native/05-SelectionAll.ps1',
+    'tests/stress/cases/10-manifeste-maj/UpdateManifestStressTests.cpp', 'tests/stress/common/PrivateDiagnostics.ps1']) {
     assert.equal(applicationInput(file), false, file);
     assert.equal(fingerprint(base + entry(file, 'b'.repeat(40))), original, file);
   }
@@ -18,7 +20,8 @@ test('documentation, screenshots and NSIS-only changes preserve the tested appli
 test('application code, resources, dependencies, build inputs and the test harness invalidate reuse', () => {
   for (const file of ['src/main.cpp', 'src/resource.h', 'src/resource.pl.rc', 'src/res/FileSpacer.svg',
     'third_party/sqlite/sqlite3.c', '.gitattributes', 'Makefile', 'build.cmd', 'tests.cmd', 'generate-icon.py',
-    'installer/installer.mak', 'tests/regression/common/EssentialUi.cs', '.github/workflows/regression.yml',
+    'installer/installer.mak', 'tests/regression/common/EssentialUi.cs', 'tests/client/HyperVSmoke.ps1',
+    'tests/experiments/reactivity/SelectionClearTests.cpp', '.github/workflows/regression.yml',
     '.github/scripts/regression-cache.mjs']) {
     assert.equal(applicationInput(file), true, file);
     assert.notEqual(fingerprint(base + entry(file, 'b'.repeat(40))), fingerprint(base), file);
