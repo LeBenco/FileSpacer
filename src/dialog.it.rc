@@ -45,7 +45,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   PUSHBUTTON "Impostazione predefinita", IDC_SHORTCUT_DEFAULT, 0, 125, 100, 14
 }
 
-IDD_SETTINGS_GENERAL DIALOGEX DISCARDABLE 0, 0, 300, 277
+IDD_SETTINGS_GENERAL DIALOGEX DISCARDABLE 0, 0, 300, 313
 STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
 CAPTION "Generale"
 FONT 8, "MS Shell Dlg", 400, 0, 0
@@ -53,23 +53,27 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "&Cartella iniziale", -1, "Button", BS_GROUPBOX, 7, 7, 286, 30
   CONTROL "", IDC_START_FOLDER_PATH, "ComboBoxEx32", CBS_DROPDOWN|WS_TABSTOP|0x00000040, 14, 18, 210, 300
   CONTROL "&Sfoglia...", IDC_START_FOLDER_BROWSE, "Button", WS_TABSTOP, 231, 18, 55, 14
-  CONTROL "Navigazione tra cartelle", -1, "Button", BS_GROUPBOX, 7, 41, 286, 55
+  CONTROL "Navigazione tra cartelle", -1, "Button", BS_GROUPBOX, 7, 41, 286, 91
   CONTROL "&Mantieni aperta la finestra di origine", IDC_KEEP_SOURCE_WINDOW_OPEN, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 52, 272, 12
   CONTROL "Mantieni la selezione facendo clic su una finestra &inattiva", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 66, 272, 12
   CONTROL "Disponi le &nuove finestre nello spazio libero", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 80, 250, 12
   CONTROL "Informazioni sul posizionamento delle finestre", IDC_SMART_WINDOW_PLACEMENT_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 79, 12, 14
-  CONTROL "Blocco delle finestre", -1, "Button", BS_GROUPBOX, 7, 100, 286, 72
-  CONTROL "Attiva il &blocco dello stato delle finestre", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 111, 272, 12
-  CONTROL "Mostra un lucchetto aperto nella barra del titolo", IDC_WINDOW_STATE_UNLOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 125, 260, 12
-  CONTROL "Mostra un &lucchetto nella barra del titolo delle cartelle bloccate", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 139, 260, 12
-  CONTROL "Cambia il blocco facendo clic sull’icona", IDC_WINDOW_STATE_LOCK_CLICK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 153, 260, 12
-  CONTROL "Casella di ricerca", -1, "Button", BS_GROUPBOX, 7, 176, 286, 52
-  CONTROL "Filtra durante la &digitazione", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 187, 272, 12
-  LTEXT "Ricerche recenti per cartella (0–20; 0 disattiva la cronologia)", -1, 14, 205, 222, 16
-  EDITTEXT IDC_SEARCH_HISTORY_LIMIT, 246, 204, 40, 14, ES_NUMBER|WS_TABSTOP
-  CONTROL "Barra delle applicazioni", -1, "Button", BS_GROUPBOX, 7, 232, 286, 30
-  CONTROL "&Raggruppa le finestre nella barra delle applicazioni", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 243, 250, 12
-  CONTROL "Informazioni sul raggruppamento nella barra delle applicazioni", IDC_GROUP_FOLDER_WINDOWS_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 242, 12, 14
+  CONTROL "Anima l’apertura delle cartelle", IDC_OPENING_ANIMATION_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 94, 272, 12
+  LTEXT "Durata (ms; 0 disattiva)", IDC_OPENING_ANIMATION_DURATION_LABEL, 26, 113, 182, 9
+  EDITTEXT IDC_OPENING_ANIMATION_DURATION, 214, 110, 72, 14, ES_NUMBER|ES_AUTOHSCROLL|WS_TABSTOP
+  CONTROL "", IDC_OPENING_ANIMATION_SPIN, "msctls_updown32", UDS_ALIGNRIGHT|UDS_AUTOBUDDY|UDS_SETBUDDYINT|UDS_ARROWKEYS|UDS_NOTHOUSANDS, 275, 110, 11, 14
+  CONTROL "Blocco delle finestre", -1, "Button", BS_GROUPBOX, 7, 136, 286, 72
+  CONTROL "Attiva il &blocco dello stato delle finestre", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 147, 272, 12
+  CONTROL "Mostra un lucchetto aperto nella barra del titolo", IDC_WINDOW_STATE_UNLOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 161, 260, 12
+  CONTROL "Mostra un &lucchetto nella barra del titolo delle cartelle bloccate", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 175, 260, 12
+  CONTROL "Cambia il blocco facendo clic sull’icona", IDC_WINDOW_STATE_LOCK_CLICK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 189, 260, 12
+  CONTROL "Casella di ricerca", -1, "Button", BS_GROUPBOX, 7, 212, 286, 52
+  CONTROL "Filtra durante la &digitazione", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 223, 272, 12
+  LTEXT "Ricerche recenti per cartella (0–20; 0 disattiva la cronologia)", -1, 14, 241, 222, 16
+  EDITTEXT IDC_SEARCH_HISTORY_LIMIT, 246, 240, 40, 14, ES_NUMBER|WS_TABSTOP
+  CONTROL "Barra delle applicazioni", -1, "Button", BS_GROUPBOX, 7, 268, 286, 30
+  CONTROL "&Raggruppa le finestre nella barra delle applicazioni", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 279, 250, 12
+  CONTROL "Informazioni sul raggruppamento nella barra delle applicazioni", IDC_GROUP_FOLDER_WINDOWS_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 278, 12, 14
 }
 
 IDD_SETTINGS_DISPLAY DIALOGEX DISCARDABLE 0, 0, 300, 333
