@@ -1,6 +1,7 @@
 ﻿# Test-Category: UI
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
 . (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
+. (Join-Path $PSScriptRoot '..\..\common\SearchUi.ps1')
 $testFailure=$null
 function Check-Windows([bool]$Status,[bool]$Toolbar,[bool]$Path) {
     foreach ($window in @($first,$second)) {
@@ -10,19 +11,15 @@ function Check-Windows([bool]$Status,[bool]$Toolbar,[bool]$Path) {
         Assert-UiVisible $window 'FileSpacer Search Box' $Toolbar
     }
 }
-function Check-Counts([int]$Count) {
+function Check-Names([string[]]$Names) {
     foreach ($window in @($first,$second)) {
-        $observed=@{Count=$null}
         try {
-            Wait-Ui {
-                $observed.Count=Use-UiView $window {param($view) $view.Count}
-                return $observed.Count -eq $Count
-            } "filtered view count = $Count" 400
+            Assert-SearchNames $window $Names
         } catch {
             $failure=$_
             try {
                 $text=[FileSpacerRegression.Native]::Text((Get-UiSearchEdit $window))
-                Write-Host "DIAG: HWND=$window, expected=$Count, observed=$($observed.Count), search='$text', saved LiveNameSearch=$(Get-UiPreference 'LiveNameSearch')"
+                Write-Host "DIAG: HWND=$window, expected=[$($Names -join ';')], search='$text', saved LiveNameSearch=$(Get-UiPreference 'LiveNameSearch')"
                 $windowProcessId=[uint32]0
                 [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($window,[ref]$windowProcessId)
                 foreach ($dialog in [FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,$windowProcessId)) {
@@ -48,6 +45,18 @@ try {
     [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($second,[ref]$secondPid)
     Assert-Ui ($firstPid -ne $secondPid) 'Cross-process propagation requires two distinct application processes.'
     Check-Windows $true $true $true
+
+    # Exercise explicit search before any preference change as well as after
+    # cross-process live-search disablement below. Exact identities imply counts.
+    foreach ($window in @($first,$second)) { [FileSpacerRegression.Native]::SetText((Get-UiSearchEdit $window),'keep') }
+    Check-Names @('keep.txt','other.txt')
+    foreach ($window in @($first,$second)) { [void][FileSpacerRegression.Native]::Message((Get-UiSearchSubmit $window),0xf5,0,0) }
+    Check-Names @('keep.txt')
+    foreach ($window in @($first,$second)) { [FileSpacerRegression.Native]::SetText((Get-UiSearchEdit $window),'') }
+    Check-Names @('keep.txt')
+    foreach ($window in @($first,$second)) { [void][FileSpacerRegression.Native]::Message((Get-UiSearchSubmit $window),0xf5,0,0) }
+    Check-Names @('keep.txt','other.txt')
+    Write-Host 'PASS: initially disabled live search requires explicit submit for filtering and clearing in both processes.'
 
     [void](Show-UiSettings $first); $page=Set-UiPage 1
     Assert-Ui ([FileSpacerRegression.Native]::IsWindowEnabled([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_FULL_NAMES_ON_SELECTION')))) 'Single selected-name rendering must be available in Settings.'
@@ -94,26 +103,26 @@ try {
     Write-Host 'PASS: applied values survive reopening the preferences and creating a new folder window.'
 
     foreach ($window in @($first,$second)) { [FileSpacerRegression.Native]::SetText((Get-UiSearchEdit $window),'keep') }
-    Check-Counts 2 # Live search is initially disabled.
+    Check-Names @('keep.txt','other.txt') # Live search is initially disabled.
     $page=Set-UiPage 0
     Assert-Ui ([FileSpacerRegression.Native]::IsWindowEnabled([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_KEEP_SELECTION_ON_ACTIVATE')))) 'Restored activation-selection behavior must be enabled in Settings.'
     Set-UiCheck $page 'IDC_LIVE_NAME_SEARCH' $true
     Press-UiSettings 4
     Write-Host "STEP: saved LiveNameSearch=$(Get-UiPreference 'LiveNameSearch'); waiting for filtering in both processes."
-    Check-Counts 1
+    Check-Names @('keep.txt')
     Press-UiSettings 3
     foreach ($window in @($first,$second)) { [FileSpacerRegression.Native]::SetText((Get-UiSearchEdit $window),'') }
-    Check-Counts 2
+    Check-Names @('keep.txt','other.txt')
     [void](Show-UiSettings $first); $page=Set-UiPage 0
     Set-UiCheck $page 'IDC_LIVE_NAME_SEARCH' $false
     Press-UiSettings 3
     foreach ($window in @($first,$second)) { [FileSpacerRegression.Native]::SetText((Get-UiSearchEdit $window),'keep') }
-    Check-Counts 2
+    Check-Names @('keep.txt','other.txt')
     foreach ($window in @($first,$second)) {
         $button=Get-UiSearchSubmit $window
         [void][FileSpacerRegression.Native]::Message($button,0xf5,0,0)
     }
-    Check-Counts 1
+    Check-Names @('keep.txt')
     Write-Host 'PASS: live-search enable/disable propagates to both processes; explicit search remains functional.'
 } catch { $testFailure=$_; throw }
 finally { Stop-Ui -Failure $testFailure }
