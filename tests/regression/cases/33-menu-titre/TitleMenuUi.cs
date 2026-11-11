@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Drawing;
@@ -25,7 +26,7 @@ public static class TitleMenuUi {
     [StructLayout(LayoutKind.Sequential)] struct Input { public uint Type; public Union Data; }
     [DllImport("user32.dll")] static extern uint SendInput(uint count,Input[] input,int size);
     [DllImport("user32.dll")] static extern int GetSystemMetrics(int metric);
-    [DllImport("user32.dll")] static extern bool GetCursorPos(out Point point);
+    [DllImport("user32.dll",SetLastError=true)] static extern bool GetCursorPos(out Point point);
     [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(Point point);
     [StructLayout(LayoutKind.Sequential)] struct MenuBar {
         public int Size; public FileSpacerRegression.Rect Rect; public IntPtr Menu,MenuWindow; public uint Flags;
@@ -37,9 +38,19 @@ public static class TitleMenuUi {
     }
     static void Move(int x,int y) {
         int left=GetSystemMetrics(76),top=GetSystemMetrics(77),width=GetSystemMetrics(78),height=GetSystemMetrics(79);
-        Emit(0xc001,(x-left)*65535/Math.Max(1,width-1),(y-top)*65535/Math.Max(1,height-1));
-        Thread.Sleep(12); Point point;
-        if(!GetCursorPos(out point) || Math.Abs(point.X-x)>1 || Math.Abs(point.Y-y)>1) throw new InvalidOperationException("Pointer did not reach the requested VM point");
+        if(width<=0 || height<=0) throw new InvalidOperationException("The virtual desktop has no usable dimensions.");
+        // Match the pixel-centre mapping used by the shared Alt gesture helper.
+        // Inject once, then observe the actual position; a VM may need more than 12 ms.
+        Emit(0xc001,(int)(((long)(x-left)*65536+32768)/width),(int)(((long)(y-top)*65536+32768)/height));
+        var deadline=Stopwatch.StartNew();
+        while(true) {
+            Point point;
+            if(!GetCursorPos(out point)) throw new Win32Exception();
+            if(point.X==x && point.Y==y) return;
+            if(deadline.ElapsedMilliseconds>=2000)
+                throw new InvalidOperationException(String.Format("Pointer did not reach the requested VM point: requested=({0},{1}), actual=({2},{3}), desktop=({4},{5},{6},{7}).",x,y,point.X,point.Y,left,top,width,height));
+            Thread.Sleep(10);
+        }
     }
     public static void Click(IntPtr control) {
         var rect=FileSpacerRegression.Native.Bounds(control); int x=(rect.Left+rect.Right)/2,y=(rect.Top+rect.Bottom)/2;
