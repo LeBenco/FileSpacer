@@ -93,7 +93,7 @@ $(OUTDIR):
 	@if not exist "$(OUTDIR)" mkdir "$(OUTDIR)"
 
 $(TARGET): $(OBJECTS) $(SQLITE_OBJECT) $(RESOURCE) $(OUTDIR)\FileSpacerFolder.dll Makefile
-	cl.exe /nologo /Fe$(TARGET) $(OBJECTS) $(SQLITE_OBJECT) $(RESOURCE) /link /incremental:no /manifest:no /debug /pdb:$(OUTDIR)\FileSpacer.pdb $(LINKFLAGS) Uuid.lib
+	cl.exe /nologo /Fe$(TARGET) $(OBJECTS) $(SQLITE_OBJECT) $(RESOURCE) /link /incremental:no /manifest:no /debug /pdb:$(OUTDIR)\FileSpacer.pdb $(LINKFLAGS) /DELAYLOAD:D3d11.dll /DELAYLOAD:D2d1.dll /DELAYLOAD:Dcomp.dll Uuid.lib
 
 $(OUTDIR)\FileSpacerFolder.dll: src\MixedFolderProvider.cpp src\MixedFolder.h src\common.h src\MixedFolderProvider.def $(PROVIDER_RESOURCE) Makefile
 	cl.exe $(CXXFLAGS) /DSTRICT_TYPED_ITEMIDS /Fd$(OUTDIR)\MixedFolder-compiler.pdb /Fo$(OUTDIR)\MixedFolderProvider.obj /LD /Fe$@ src\MixedFolderProvider.cpp $(PROVIDER_RESOURCE) /link /guard:cf /incremental:no /debug /pdb:$(OUTDIR)\FileSpacerFolder.pdb /def:src\MixedFolderProvider.def User32.lib Shell32.lib Shlwapi.lib Ole32.lib OleAut32.lib Propsys.lib Uuid.lib Version.lib
