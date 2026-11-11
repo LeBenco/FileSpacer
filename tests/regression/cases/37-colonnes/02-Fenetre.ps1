@@ -81,7 +81,7 @@ try {
         Assert-Ui ([Math]::Abs($after.Widths[$i]-$dragged.Widths[$i]*$after.Available/$dragged.Available) -le 2) 'The new manual proportions were not retained.'
     }
     [void][FileSpacerRegression.Native]::PostMessage($window,0x111,[IntPtr](Get-UiId 'IDM_FILL_COLUMNS'),[IntPtr]::Zero)
-    Wait-Ui { $body=Use-UiView $window {param($view) $view.Window}; @([FileSpacerRegression.Native]::Children($body,'SysListView32')).Count -eq 0 } 'native modern profile after disabling the option' 300
+    Wait-ModernColumns $window
     Set-UiPreference 'ViewMenuPreviewEnabled' 1
     $popup=Open-PreviewMenu $window
     $popup=[FileSpacerViewMenuTests.MenuUi]::Active($window,$true)
