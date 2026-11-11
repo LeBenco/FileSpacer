@@ -290,6 +290,7 @@ int ItemWindow::cascadeSize() {
 }
 
 void ItemWindow::init() {
+    FolderOpeningAnimation::reloadSettings();
     settingsChangedMessage = checkLE(RegisterWindowMessage(L"FileSpacer.SettingsChanged"));
     closeDescendantsMessage = checkLE(RegisterWindowMessageW(L"FileSpacer.CloseDescendants"));
     itemValidatedMessage = checkLE(RegisterWindowMessageW(L"FileSpacer.ItemValidated"));
@@ -790,7 +791,8 @@ bool ItemWindow::create(RECT rect, int showCommand, const RECT *openingOrigin) {
             || showCommand == SW_SHOWDEFAULT || showCommand == SW_RESTORE))
         showCommand = SW_SHOWMAXIMIZED;
     std::unique_ptr<FolderOpeningAnimation> animation;
-    if (openingOrigin && showCommand != SW_HIDE && showCommand != SW_SHOWMINIMIZED
+    if (openingOrigin && FolderOpeningAnimation::isEnabled()
+            && showCommand != SW_HIDE && showCommand != SW_SHOWMINIMIZED
             && showCommand != SW_MINIMIZE && showCommand != SW_SHOWMINNOACTIVE) {
         animation.reset(new FolderOpeningAnimation);
         if (!animation->begin(createHwnd, *openingOrigin, showCommand)) animation.reset();
@@ -798,7 +800,7 @@ bool ItemWindow::create(RECT rect, int showCommand, const RECT *openingOrigin) {
     if (!isWindowOperational() || hwnd != createHwnd) return false;
     if (animation) openingAnimation = std::move(animation);
     else ShowWindow(createHwnd, showCommand);
-    FolderOpeningAnimation::prepare();
+    if (FolderOpeningAnimation::isEnabled()) FolderOpeningAnimation::prepare();
     return isWindowOperational();
 }
 
@@ -841,6 +843,14 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     if (message == WM_EXITSIZEMOVE)
         persistViewState();
     if (settingsChangedMessage && message == settingsChangedMessage) {
+        LPARAM testNamespace = 0;
+#ifdef FILESPACER_DEBUG
+        testNamespace = settings::testMode ? 1 : 0;
+#endif
+        if (lParam == testNamespace) {
+            FolderOpeningAnimation::reloadSettings();
+            if (FolderOpeningAnimation::isEnabled()) FolderOpeningAnimation::prepare();
+        }
         onSettingsChanged();
         return 0;
     }
@@ -1009,6 +1019,10 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
         }
         case WM_SYSCOLORCHANGE:
         case WM_SETTINGCHANGE:
+            if (message == WM_SETTINGCHANGE) {
+                FolderOpeningAnimation::reloadSettings();
+                if (FolderOpeningAnimation::isEnabled()) FolderOpeningAnimation::prepare();
+            }
             invalidateNavigationIconColors();
             if (parentToolbar) {
                 if (message == WM_SYSCOLORCHANGE)
@@ -1926,7 +1940,8 @@ void ItemWindow::openParent(bool closeSource) {
     CComPtr<IShellItem> parentItem;
     if (SUCCEEDED(item->GetParent(&parentItem)) && isWindowOperational()) {
         RECT origin = {};
-        if (parentToolbar && IsWindowVisible(parentToolbar)) origin = windowRect(parentToolbar);
+        if (FolderOpeningAnimation::isEnabled() && parentToolbar && IsWindowVisible(parentToolbar))
+            origin = windowRect(parentToolbar);
         openChild(parentItem, closeSource, IsRectEmpty(&origin) ? nullptr : &origin);
     }
 }
@@ -2552,7 +2567,8 @@ void ItemWindow::openParentMenu() {
 
         if (isWindowOperational() && found && targetItem) {
             RECT origin = {};
-            if (parentToolbar && IsWindowVisible(parentToolbar)) origin = windowRect(parentToolbar);
+            if (FolderOpeningAnimation::isEnabled() && parentToolbar && IsWindowVisible(parentToolbar))
+                origin = windowRect(parentToolbar);
             openChild(targetItem, closeSource, IsRectEmpty(&origin) ? nullptr : &origin);
         }
     }
