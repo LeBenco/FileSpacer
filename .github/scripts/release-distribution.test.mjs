@@ -5,7 +5,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {execFileSync, spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {distributionFromMessage, publicationForTag, selectDistribution} from './release-distribution.mjs';
+import {distributionFromMessage, publicationForTag, selectDistribution, coordinate} from './release-distribution.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 await fs.mkdir(path.join(root, 'build'), {recursive: true});
@@ -41,6 +41,35 @@ test('automatic jobs respect only selected channels; manual jobs can submit a Gi
   assert.throws(() => selectDistribution(null, 'winget', repository, 'v1.3.2\n'));
 });
 
+test('coordinator selects only opted-in channels and scheduled checks never enqueue a release', () => {
+  for (const distribution of [[], ['winget'], ['chocolatey'], ['winget', 'chocolatey']]) {
+    const selected = coordinate('workflow_run', {repository, tag: 'v1.3.3', distribution}, repository);
+    assert.equal(selected.tag, 'v1.3.3');
+    for (const channel of ['winget', 'chocolatey']) assert.equal(selected[channel], distribution.includes(channel));
+    assert.equal(selected.retry, false);
+    assert.equal(selected.dry_run, false);
+  }
+  assert.deepEqual(coordinate('schedule', null, repository), {
+    tag: '', winget: true, chocolatey: true, dry_run: false, retry: false
+  });
+});
+
+test('manual coordinator supports queue checks, one-channel recovery and isolated Chocolatey dry runs', () => {
+  assert.deepEqual(coordinate('workflow_dispatch', null, repository, {channel: 'all'}), {
+    tag: '', winget: true, chocolatey: true, dry_run: false, retry: false
+  });
+  const dry = coordinate('workflow_dispatch', null, repository, {channel: 'chocolatey', tag: 'v1.3.3', dry_run: true});
+  assert.equal(dry.dry_run, true); assert.equal(dry.winget, false);
+  assert.equal(coordinate('workflow_dispatch', null, repository, {channel: 'winget', tag: 'v1.3.3', retry: true}).retry, true);
+  for (const inputs of [{channel: 'none'}, {channel: 'winget', tag: 'v256.0.0'},
+    {channel: 'all', tag: 'v1.3.3', dry_run: true}, {channel: 'chocolatey', dry_run: true},
+    {channel: 'chocolatey', tag: 'v1.3.3', dry_run: true, retry: true},
+    {channel: 'all', tag: 'v1.3.3', retry: true}, {channel: 'winget', retry: true}]) {
+    assert.throws(() => coordinate('workflow_dispatch', null, repository, inputs));
+  }
+  assert.throws(() => coordinate('push', null, repository));
+});
+
 test('the workflow CLI records the tag selection and exposes explicit manual selection without an artifact', async t => {
   const directory = await fs.mkdtemp(path.join(root, 'build/distribution-cli-'));
   t.after(() => fs.rm(directory, {recursive: true, force: true}));
@@ -56,6 +85,33 @@ test('the workflow CLI records the tag selection and exposes explicit manual sel
   await fs.writeFile(output, '');
   execFileSync(process.execPath, [script, 'select', path.join(directory, 'missing.json')], {env: {...env, GITHUB_EVENT_NAME: 'workflow_dispatch', DISTRIBUTION_CHANNEL: 'chocolatey'}});
   assert.equal(await fs.readFile(output, 'utf8'), 'tag=v1.3.3\nenabled=true\n');
+});
+
+test('coordinator CLI reads dispatch booleans and validates publication provenance and the default branch', async t => {
+  const directory = await fs.mkdtemp(path.join(root, 'build/coordinator-cli-'));
+  t.after(() => fs.rm(directory, {recursive: true, force: true}));
+  const eventFile = path.join(directory, 'event.json'), output = path.join(directory, 'output');
+  const publication = path.join(directory, 'publication.json');
+  const script = fileURLToPath(new URL('release-distribution.mjs', import.meta.url));
+  const env = {...process.env, GITHUB_EVENT_PATH: eventFile, GITHUB_OUTPUT: output,
+    GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REPOSITORY: repository, GITHUB_REF: 'refs/heads/main'};
+  await fs.writeFile(eventFile, JSON.stringify({repository: {default_branch: 'main'}, inputs: {
+    channel: 'chocolatey', tag: 'v1.3.3', dry_run: 'true', retry: 'false'
+  }}));
+  execFileSync(process.execPath, [script, 'coordinate', publication], {env});
+  assert.equal(await fs.readFile(output, 'utf8'), 'tag=v1.3.3\nwinget=false\nchocolatey=true\ndry_run=true\nretry=false\n');
+  const run = change => spawnSync(process.execPath, [script, 'coordinate', publication], {env: {...env, ...change}});
+  assert.equal(run({GITHUB_REF: 'refs/heads/other'}).status, 1);
+  await fs.writeFile(publication, JSON.stringify({repository, tag: 'v1.3.3', distribution: ['winget']}));
+  await fs.writeFile(eventFile, JSON.stringify({workflow_run: {conclusion: 'success', repository: {full_name: repository}}}));
+  await fs.writeFile(output, '');
+  assert.equal(run({GITHUB_EVENT_NAME: 'workflow_run'}).status, 0);
+  assert.match(await fs.readFile(output, 'utf8'), /winget=true\nchocolatey=false/);
+  for (const workflow_run of [{conclusion: 'failure', repository: {full_name: repository}},
+    {conclusion: 'success', repository: {full_name: 'someone/else'}}]) {
+    await fs.writeFile(eventFile, JSON.stringify({workflow_run}));
+    assert.equal(run({GITHUB_EVENT_NAME: 'workflow_run'}).status, 1);
+  }
 });
 
 test('release.sh rejects invalid selections before touching Git', async t => {
