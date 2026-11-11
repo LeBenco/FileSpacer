@@ -1,4 +1,4 @@
-# Test-Category: UI
+﻿# Test-Category: UI
 # M-17 probe: can the mixed comparator be limited to PIDL columns? Observes, on
 # the real DefView, whether SHCOLSTATE_NOSORTBYFOLDERNESS is still honoured when
 # the provider keeps SHCOLSTATE_PREFER_VARCMP (DefView compares values itself):
@@ -9,11 +9,11 @@
 #   native  : mixed sorting disabled (DefView + CFSFolder, folders-first baseline).
 # Each run reports the real view order, the folder/file mixing and sort timings.
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
-. (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
+. (Join-Path $PSScriptRoot '..\..\..\regression\common\EssentialUi.ps1')
 Add-Type -AssemblyName System.Drawing
-Add-Type -Path (Join-Path $PSScriptRoot 'SlowColumnProbe.cs')
+Add-Type -Path (Join-Path $PSScriptRoot '..\..\..\regression\cases\30-tri-melange\SlowColumnProbe.cs')
 $variantRoot=Join-Path $ProjectRoot 'build\regression\slow-column-provider'
-if(!$env:FS_REGRESSION_PREPARED){[void](& (Join-Path $PSScriptRoot '..\..\common\Prepare-SlowColumnMixedProvider.ps1') -ProjectRoot $ProjectRoot)}
+if(!$env:FS_REGRESSION_PREPARED){[void](& (Join-Path $PSScriptRoot '..\..\..\regression\common\Prepare-SlowColumnMixedProvider.ps1') -ProjectRoot $ProjectRoot)}
 $providers=[ordered]@{
     current=(Join-Path $ProjectRoot 'build\debug\FileSpacerFolder.dll')
     counted=(Join-Path $variantRoot 'counted\FileSpacerFolder.dll')
