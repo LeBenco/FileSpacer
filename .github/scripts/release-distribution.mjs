@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only; Copyright (C) 2026 Benco
 import fs from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
+import {releaseVersion} from './release-assets.mjs';
 
 const channels = ['winget', 'chocolatey'];
-function checkTag(tag) {
-  if (typeof tag !== 'string' || tag !== tag.trim() || !/^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(tag)) {
-    throw new Error('Expected a stable vX.Y.Z release tag.');
-  }
-}
 
 export function distributionFromMessage(message) {
   const fields = [...message.replaceAll('\r\n', '\n').matchAll(/^FileSpacer-Distribution:[ \t]*(.*)$/gm)];
@@ -23,7 +19,7 @@ export function distributionFromMessage(message) {
 }
 
 export function publicationForTag(message, tag, repository) {
-  checkTag(tag);
+  releaseVersion(tag);
   return {tag, repository, distribution: distributionFromMessage(message)};
 }
 
@@ -31,16 +27,34 @@ export function selectDistribution(publication, channel, repository, manualTag =
   if (!channels.includes(channel)) throw new Error('Unknown distribution channel.');
   // A manual dispatch is an explicit request, including for older GitHub-only releases.
   if (manualTag !== null) {
-    checkTag(manualTag);
+    releaseVersion(manualTag);
     return {tag: manualTag, enabled: true};
   }
   if (publication?.repository !== repository) throw new Error('Invalid release publication repository.');
-  checkTag(publication.tag);
+  releaseVersion(publication.tag);
   const selected = publication.distribution ?? [];
   if (!Array.isArray(selected) || selected.some(item => !channels.includes(item))) {
     throw new Error('Invalid release publication distribution list.');
   }
   return {tag: publication.tag, enabled: selected.includes(channel)};
+}
+
+export function coordinate(event, publication, repository, inputs = {}) {
+  if (event === 'schedule') return {tag: '', winget: true, chocolatey: true, dry_run: false, retry: false};
+  if (event === 'workflow_dispatch') {
+    if (!['all', ...channels].includes(inputs.channel)) throw new Error('Select all, winget or chocolatey.');
+    const tag = inputs.tag || '';
+    if (tag) releaseVersion(tag);
+    const dry_run = inputs.dry_run === true, retry = inputs.retry === true;
+    if (dry_run && (!tag || inputs.channel !== 'chocolatey' || retry)) {
+      throw new Error('Dry run requires a tag, the chocolatey channel and no retry.');
+    }
+    if (retry && (!tag || inputs.channel === 'all')) throw new Error('Retry requires a tag and one channel.');
+    return {tag, winget: inputs.channel !== 'chocolatey', chocolatey: inputs.channel !== 'winget', dry_run, retry};
+  }
+  if (event !== 'workflow_run') throw new Error('Unsupported distribution event.');
+  const selected = Object.fromEntries(channels.map(channel => [channel, selectDistribution(publication, channel, repository).enabled]));
+  return {tag: publication.tag, ...selected, dry_run: false, retry: false};
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -55,7 +69,24 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const selection = selectDistribution(publication, process.env.DISTRIBUTION_CHANNEL, process.env.GITHUB_REPOSITORY, manual ? process.env.RELEASE_TAG : null);
     if (process.env.GITHUB_OUTPUT) await fs.appendFile(process.env.GITHUB_OUTPUT, `tag=${selection.tag}\nenabled=${selection.enabled}\n`);
     console.log(`${selection.enabled ? 'Selected' : 'Skipped'} ${process.env.DISTRIBUTION_CHANNEL} for ${selection.tag}.`);
+  } else if (mode === 'coordinate') {
+    const event = JSON.parse(await fs.readFile(process.env.GITHUB_EVENT_PATH, 'utf8'));
+    const automatic = process.env.GITHUB_EVENT_NAME === 'workflow_run';
+    if (process.env.GITHUB_EVENT_NAME === 'workflow_dispatch'
+        && process.env.GITHUB_REF !== `refs/heads/${event.repository.default_branch}`) {
+      throw new Error('Run distribution from the default branch.');
+    }
+    if (automatic && (event.workflow_run.conclusion !== 'success'
+        || event.workflow_run.repository.full_name !== process.env.GITHUB_REPOSITORY)) {
+      throw new Error('Expected a successful publication from this repository.');
+    }
+    const selection = coordinate(process.env.GITHUB_EVENT_NAME,
+      automatic ? JSON.parse(await fs.readFile(input, 'utf8')) : null, process.env.GITHUB_REPOSITORY, {
+        ...event.inputs, dry_run: event.inputs?.dry_run === 'true', retry: event.inputs?.retry === 'true'
+      });
+    await fs.appendFile(process.env.GITHUB_OUTPUT, Object.entries(selection).map(([key, value]) => `${key}=${value}\n`).join(''));
+    console.log(JSON.stringify(selection));
   } else {
-    throw new Error('Usage: release-distribution.mjs record <tag-message> <publication> | select <publication>');
+    throw new Error('Usage: release-distribution.mjs record <tag-message> <publication> | select|coordinate <publication>');
   }
 }
