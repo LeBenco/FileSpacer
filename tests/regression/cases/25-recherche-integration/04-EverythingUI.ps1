@@ -23,7 +23,7 @@ function Expect-LaunchError([IntPtr]$Window,[string]$Path) {
         $dialogs=@([FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,$ownerId))
         if ($dialogs.Count -ne 1) { return $false };$found.Dialog=$dialogs[0];return $true
     } 'explicit Everything launch error dialog'
-    $text=(@([FileSpacerRegression.Native]::Children($found.Dialog,'Static') | ForEach-Object { [FileSpacerRegression.Native]::Text($_) }) -join ' ')
+    $text=Read-SearchDialogText $found.Dialog $Path
     Write-Host ('DIAG: launch error dialog text=['+$text+'] expected path=['+$Path+'] stored EverythingPath=['+(Get-UiPreference 'EverythingPath')+']')
     Assert-Ui ($text.Contains('Everything') -and $text.Contains($Path) -and $text -match '([Ee]rreur|[Ee]rror)') 'Launch error is not explicit.'
     $ok=Get-UiControl $found.Dialog 'Button'
