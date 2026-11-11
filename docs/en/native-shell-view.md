@@ -239,8 +239,10 @@ establish runtime compatibility with their Windows version.
 
 The host regression case `18-vue-shell-native/04-SelectionCache.ps1` exercises
 the production adapter, asynchronous publication, persistent positive/negative
-decisions, transient failure backoff, concurrent discovery and the 405-row real
-Shell matrix with 5000 files. Its views are invisible; this is not presentation
+decisions, transient failure backoff, concurrent discovery and a 135-operation
+real Shell matrix with 129 files. The separate stress suite exercises 135 distinct
+operations with 5000 files and records private-capability diagnostics. Its views
+are invisible; this is not presentation
 latency or a full Explorer benchmark. Ordinary `/test` launches do not read or
 populate the user's capability cache.
 
