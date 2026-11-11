@@ -217,7 +217,7 @@ SETTINGS_STRING_VALUE(EverythingPath, REG_SZ, L"EverythingPath", L"")
 DWORD getOpeningAnimationDuration() {
     DWORD value = DEFAULT_OPENING_ANIMATION_DURATION;
     getSettingsValue(L"OpeningAnimationDuration", RRF_RT_DWORD, &value, sizeof(value));
-    return value <= MAX_OPENING_ANIMATION_DURATION ? value : DEFAULT_OPENING_ANIMATION_DURATION;
+    return value <= MAX_OPENING_ANIMATION_DURATION ? value : MAX_OPENING_ANIMATION_DURATION;
 }
 
 void setOpeningAnimationDuration(DWORD value) {
