@@ -236,7 +236,7 @@ test('successful submission retains the PR reference and ambiguous output keeps 
 
 test('Chocolatey uses official exact-version searches and approval is distinct from mere presence', async () => {
   for (const approved of [false, true]) {
-    const present = chocolateySearch('1.2.3', approved, (command, args, options) => {
+    const present = await chocolateySearch('1.2.3', approved, (command, args, options) => {
       assert.equal(command, 'choco.exe');
       assert.ok(args.includes('--version=1.2.3') && args.includes('--exact') && args.includes('--limit-output'));
       assert.equal(args.includes('--approved-only'), approved);
@@ -245,14 +245,28 @@ test('Chocolatey uses official exact-version searches and approval is distinct f
     });
     assert.equal(present, true);
   }
-  for (const status of [0, 2]) assert.equal(chocolateySearch('1.2.3', true, () => ({status, stdout: ''})), false);
+  for (const status of [0, 2]) assert.equal(await chocolateySearch('1.2.3', true, () => ({status, stdout: ''})), false);
   for (const result of [{status: 1}, {status: null, error: {code: 'ETIMEDOUT'}},
     {status: 0, stdout: 'service unavailable'}, {status: 0, stdout: 'filespacer|1.2.4'},
     {status: 0, stderr: 'network error'}, {status: 2, stdout: 'filespacer|1.2.3'}]) {
-    assert.throws(() => chocolateySearch('1.2.3', true, () => result));
+    await assert.rejects(chocolateySearch('1.2.3', true, () => result));
   }
   const remote = channelRemote('chocolatey', null, (_version, approvedOnly) => !approvedOnly);
   assert.equal((await remote.inspect({tag: X})).status, 'pending');
+});
+
+test('Chocolatey waits for asynchronous status results before declaring approval or availability', async () => {
+  const calls = [];
+  const remote = channelRemote('chocolatey', null, async (version, approvedOnly) => {
+    await new Promise(resolve => setImmediate(resolve));
+    calls.push({version, approvedOnly});
+    return !approvedOnly;
+  });
+  assert.equal((await remote.inspect({tag: X})).status, 'pending');
+  assert.deepEqual(calls, [{version: '1.2.3', approvedOnly: true}, {version: '1.2.3', approvedOnly: false}]);
+  await assert.rejects(channelRemote('chocolatey', null, async () => {
+    throw new Error('lookup failed');
+  }).inspect({tag: X}), /lookup failed/);
 });
 
 test('Chocolatey migration checks published versions individually, imports moderation and runs only once', async () => {
