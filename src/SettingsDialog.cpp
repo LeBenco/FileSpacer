@@ -200,6 +200,8 @@ bool pathCBChanged(WPARAM wParam, LPARAM lParam) {
 }
 
 void notifyWindowSettingsChanged() {
+    FolderOpeningAnimation::reloadSettings();
+    if (FolderOpeningAnimation::isEnabled()) FolderOpeningAnimation::prepare();
     if (ItemWindow::settingsChangedMessage) {
         auto notify = [](HWND window, LPARAM historyLimit) -> BOOL {
             LPARAM testNamespace = 0;
@@ -220,6 +222,7 @@ void notifyWindowSettingsChanged() {
 }
 
 static bool searchHistoryLimit(HWND hwnd, DWORD *value);
+static bool openingAnimationDuration(HWND hwnd, DWORD *value);
 
 struct GeneralHelp {
     struct WindowDeleter { void operator()(HWND window) const { DestroyWindow(window); } };
@@ -378,6 +381,17 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::getGroupFolderWindows() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_KEEP_SOURCE_WINDOW_OPEN,
                 settings::getKeepSourceWindowOpen() ? BST_CHECKED : BST_UNCHECKED);
+            CheckDlgButton(hwnd, IDC_OPENING_ANIMATION_ENABLED,
+                settings::getOpeningAnimationEnabled() ? BST_CHECKED : BST_UNCHECKED);
+            SendDlgItemMessageW(hwnd, IDC_OPENING_ANIMATION_DURATION, EM_SETLIMITTEXT, 10, 0);
+            SendDlgItemMessageW(hwnd, IDC_OPENING_ANIMATION_SPIN, UDM_SETRANGE32, 0,
+                static_cast<LPARAM>(settings::MAX_OPENING_ANIMATION_DURATION));
+            SendDlgItemMessageW(hwnd, IDC_OPENING_ANIMATION_SPIN, UDM_SETPOS32, 0,
+                static_cast<LPARAM>(settings::getOpeningAnimationDuration()));
+            for (int control : {IDC_OPENING_ANIMATION_DURATION_LABEL,
+                    IDC_OPENING_ANIMATION_DURATION, IDC_OPENING_ANIMATION_SPIN})
+                EnableWindow(GetDlgItem(hwnd, control),
+                    !!IsDlgButtonChecked(hwnd, IDC_OPENING_ANIMATION_ENABLED));
             CheckDlgButton(hwnd, IDC_SMART_WINDOW_PLACEMENT,
                 settings::getSmartWindowPlacement() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_KEEP_SELECTION_ON_ACTIVATE,
@@ -403,13 +417,14 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             NMHDR *notif = (NMHDR *)lParam;
             if (notif->code == PSN_KILLACTIVE) {
                 if (help) help->hide();
-                DWORD limit = 0;
-                SetWindowLongPtr(hwnd, DWLP_MSGRESULT, !searchHistoryLimit(hwnd, &limit));
+                DWORD limit = 0, duration = 0;
+                SetWindowLongPtr(hwnd, DWLP_MSGRESULT,
+                    !searchHistoryLimit(hwnd, &limit) || !openingAnimationDuration(hwnd, &duration));
                 return TRUE;
             } else if (notif->code == PSN_APPLY) {
                 if (help) help->hide();
-                DWORD limit = 0;
-                if (!searchHistoryLimit(hwnd, &limit)) {
+                DWORD limit = 0, duration = 0;
+                if (!searchHistoryLimit(hwnd, &limit) || !openingAnimationDuration(hwnd, &duration)) {
                     SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
                     return TRUE;
                 }
@@ -454,12 +469,17 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 const bool lockBadgeEnabled = !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_LOCK_BADGE_ENABLED);
                 const bool unlockBadgeEnabled = !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_UNLOCK_BADGE_ENABLED);
                 const bool lockClickEnabled = !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_LOCK_CLICK_ENABLED);
+                const bool openingEnabled = !!IsDlgButtonChecked(hwnd, IDC_OPENING_ANIMATION_ENABLED);
                 bool windowSettingsChanged = historyChanged
+                    || openingEnabled != settings::getOpeningAnimationEnabled()
+                    || duration != settings::getOpeningAnimationDuration()
                     || liveNameSearch != settings::getLiveNameSearch()
                     || smartPlacement != settings::getSmartWindowPlacement()
                     || lockBadgeEnabled != settings::getWindowStateLockBadgeEnabled()
                     || unlockBadgeEnabled != settings::getWindowStateUnlockBadgeEnabled()
                     || lockClickEnabled != settings::getWindowStateLockClickEnabled();
+                settings::setOpeningAnimationEnabled(openingEnabled);
+                settings::setOpeningAnimationDuration(duration);
                 settings::setGroupFolderWindows(groupFolderWindows);
                 settings::setKeepSourceWindowOpen(!!IsDlgButtonChecked(hwnd, IDC_KEEP_SOURCE_WINDOW_OPEN));
                 settings::setSmartWindowPlacement(smartPlacement);
@@ -495,6 +515,7 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     || LOWORD(wParam) == IDC_START_FOLDER_PATH && pathCBChanged(wParam, lParam)
                     || LOWORD(wParam) == IDC_GROUP_FOLDER_WINDOWS && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_KEEP_SOURCE_WINDOW_OPEN && HIWORD(wParam) == BN_CLICKED
+                    || LOWORD(wParam) == IDC_OPENING_ANIMATION_ENABLED && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_SMART_WINDOW_PLACEMENT && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_WINDOW_STATE_LOCK_ENABLED && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_WINDOW_STATE_LOCK_BADGE_ENABLED && HIWORD(wParam) == BN_CLICKED
@@ -502,6 +523,11 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     || LOWORD(wParam) == IDC_WINDOW_STATE_LOCK_CLICK_ENABLED && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_LIVE_NAME_SEARCH && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_KEEP_SELECTION_ON_ACTIVATE && HIWORD(wParam) == BN_CLICKED) {
+                if (LOWORD(wParam) == IDC_OPENING_ANIMATION_ENABLED && HIWORD(wParam) == BN_CLICKED)
+                    for (int control : {IDC_OPENING_ANIMATION_DURATION_LABEL,
+                            IDC_OPENING_ANIMATION_DURATION, IDC_OPENING_ANIMATION_SPIN})
+                        EnableWindow(GetDlgItem(hwnd, control),
+                            !!IsDlgButtonChecked(hwnd, IDC_OPENING_ANIMATION_ENABLED));
                 if (LOWORD(wParam) == IDC_WINDOW_STATE_LOCK_ENABLED && HIWORD(wParam) == BN_CLICKED)
                     for (int control : {IDC_WINDOW_STATE_LOCK_BADGE_ENABLED,
                             IDC_WINDOW_STATE_UNLOCK_BADGE_ENABLED, IDC_WINDOW_STATE_LOCK_CLICK_ENABLED})
@@ -738,6 +764,33 @@ void changeDefaultBrowser(HWND owner, bool value) {
         TaskDialog(owner, instance, MAKEINTRESOURCE(IDS_BROWSER_SET_FAILED),
             nullptr, message.get(), TDCBF_OK_BUTTON, TD_ERROR_ICON, nullptr);
     }
+}
+
+static bool openingAnimationDuration(HWND hwnd, DWORD *value) {
+    const HWND edit = GetDlgItem(hwnd, IDC_OPENING_ANIMATION_DURATION);
+    wchar_t text[16] = {};
+    const int length = GetWindowTextLengthW(edit);
+    GetDlgItemTextW(hwnd, IDC_OPENING_ANIMATION_DURATION, text, _countof(text));
+    BOOL translated = FALSE;
+    const UINT number = GetDlgItemInt(hwnd, IDC_OPENING_ANIMATION_DURATION, &translated, FALSE);
+    bool valid = translated && length > 0 && length <= 10
+        && number <= settings::MAX_OPENING_ANIMATION_DURATION;
+    for (int index = 0; valid && index < length; ++index)
+        valid = text[index] >= L'0' && text[index] <= L'9';
+    if (valid) {
+        *value = number;
+        return true;
+    }
+    if (!IsDlgButtonChecked(hwnd, IDC_OPENING_ANIMATION_ENABLED)) {
+        *value = settings::getOpeningAnimationDuration();
+        return true;
+    }
+    MessageBoxW(GetParent(hwnd), getString(IDS_OPENING_ANIMATION_DURATION_INVALID),
+        getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
+    SendDlgItemMessageW(hwnd, IDC_OPENING_ANIMATION_SPIN, UDM_SETPOS32, 0,
+        static_cast<LPARAM>(settings::getOpeningAnimationDuration()));
+    PostMessageW(hwnd, WM_NEXTDLGCTL, reinterpret_cast<WPARAM>(edit), TRUE);
+    return false;
 }
 
 static bool searchHistoryLimit(HWND hwnd, DWORD *value) {
@@ -1041,7 +1094,7 @@ void queueSettings(HWND owner, SettingsPage page) {
 }
 
 void openSettingsDialog(HWND owner, SettingsPage page) {
-    INITCOMMONCONTROLSEX controls = {sizeof(controls), ICC_LINK_CLASS};
+    INITCOMMONCONTROLSEX controls = {sizeof(controls), ICC_LINK_CLASS | ICC_UPDOWN_CLASS};
     InitCommonControlsEx(&controls);
     settingsRequest.cancel();
     if (!IsWindow(owner)) return;
