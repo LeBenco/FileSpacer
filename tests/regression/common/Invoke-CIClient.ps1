@@ -29,8 +29,9 @@ public static class CIDesktop {
 }
 '@
         $selection=Get-Content (Join-Path $Package 'selection.json') -Raw|ConvertFrom-Json
+        $caseRoot=if($selection.PSObject.Properties['Suite'] -and $selection.Suite -eq 'Stress'){'tests\stress\cases\'}else{'tests\regression\cases\'}
         $ui=@($selection.Cases|Where-Object {
-            (Get-Content (Join-Path $Package ('tests\regression\cases\'+$_)) -TotalCount 1) -eq '# Test-Category: UI'
+            (Get-Content (Join-Path $Package ($caseRoot+$_)) -TotalCount 1) -eq '# Test-Category: UI'
         }).Count-gt0
         if($ui){
             if(![CIDesktop]::Read(0x26,0,[ref]$dragOriginal,0)){throw 'Cannot read full-window drag setting.'}
