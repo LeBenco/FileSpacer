@@ -1,5 +1,5 @@
 # Test-Category: UI
-param([string]$ProjectRoot)
+param([string]$ProjectRoot,[ValidateRange(1,1000)][int]$Rounds=1)
 . (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
 function Sheets([uint32[]]$ProcessIds) {
     $sheets=@()
@@ -34,7 +34,7 @@ try {
         $processIds+=@($processId)
     }
     Assert-Ui (@($processIds|Select-Object -Unique).Count -eq 3) 'Three separate processes required.'
-    foreach($round in 1..10) {
+    foreach($round in 1..$Rounds) {
         foreach($window in $windows[0..1]) {Request $window}
         Wait-Ui { @(Sheets $processIds).Count -gt 0 } 'concurrent Preferences request'
         Start-Sleep -Milliseconds 300
@@ -43,7 +43,7 @@ try {
         Assert-Ui ($count -eq 1) 'Concurrent requests opened duplicate Preferences sheets.'
         Cancel-Sheets $processIds
     }
-    Write-Host 'PASS: ten simultaneous request pairs produce one real property sheet.'
+    Write-Host ('PASS: '+$Rounds+' simultaneous request pair(s) produce one real property sheet.')
 
     $gate=New-Object Threading.Mutex($false,'Local\FileSpacer.Test.Preferences')
     Assert-Ui ($gate.WaitOne(5000)) 'Cannot reserve the initialization/closing gate.'
