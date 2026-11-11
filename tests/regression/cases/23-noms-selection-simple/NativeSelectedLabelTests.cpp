@@ -4,6 +4,7 @@
 #include <shlobj.h>
 #include <shlwapi.h>
 #include <commctrl.h>
+#include <dwmapi.h>
 #include <algorithm>
 #include <array>
 #include <cstdio>
@@ -54,8 +55,10 @@ class LabelTests : public IServiceProvider, public ICommDlgBrowser2, public IExp
         RECT client = {};
         if (!GetClientRect(list, &client)) { expect(false, "read render bounds"); return {}; }
         Raster image; image.width = client.right; image.height = client.bottom;
-        const auto releaseScreen = [this](HDC dc) { ReleaseDC(list, dc); };
-        std::unique_ptr<std::remove_pointer<HDC>::type, decltype(releaseScreen)> screen(GetDC(list), releaseScreen);
+        POINT origin = {};
+        if (!ClientToScreen(list, &origin)) { expect(false, "locate native render surface"); return {}; }
+        const auto releaseScreen = [](HDC dc) { ReleaseDC(nullptr, dc); };
+        std::unique_ptr<std::remove_pointer<HDC>::type, decltype(releaseScreen)> screen(GetDC(nullptr), releaseScreen);
         std::unique_ptr<std::remove_pointer<HDC>::type, decltype(&DeleteDC)> dc(
             CreateCompatibleDC(screen.get()), DeleteDC);
         BITMAPINFO info = {};
@@ -72,12 +75,19 @@ class LabelTests : public IServiceProvider, public ICommDlgBrowser2, public IExp
                 ~Selection() { SelectObject(target, previous); }
             } selection = {dc.get(), SelectObject(dc.get(), bitmap.get())};
             FillRect(dc.get(), &client, GetSysColorBrush(COLOR_WINDOW));
-            // Documented ListView WM_PAINT behavior: a supplied HDC receives the
-            // real control's rendering, including the production custom draw.
-            SendMessageW(list, WM_PAINT, reinterpret_cast<WPARAM>(dc.get()), 0);
+            // Capture the composed, visible control after native painting,
+            // including the optional production custom draw.
+            RedrawWindow(viewWindow, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW);
+            expect(SUCCEEDED(DwmFlush()),"wait for the composed Shell frame");
+            expect(BitBlt(dc.get(),0,0,image.width,image.height,screen.get(),origin.x,origin.y,SRCCOPY|CAPTUREBLT)!=FALSE,"capture the painted Shell view");
+            expect(GdiFlush()!=FALSE,"complete GDI drawing before reading captured pixels");
             const auto start = static_cast<const DWORD *>(bits);
             image.pixels.assign(start, start + image.width * image.height);
             for (auto &pixel : image.pixels) pixel &= 0x00ffffff;
+            const DWORD background = GetSysColor(COLOR_WINDOW);
+            const DWORD rasterBackground = RGB(GetBValue(background), GetGValue(background), GetRValue(background));
+            expect(std::any_of(image.pixels.begin(), image.pixels.end(), [=](DWORD pixel) { return pixel != rasterBackground; }),
+                "capture contains the actual Shell rendering");
         } else expect(false, "allocate real-control render surface");
         return image;
     }
@@ -161,6 +171,7 @@ class LabelTests : public IServiceProvider, public ICommDlgBrowser2, public IExp
             expect(SUCCEEDED(folder->SelectAndPositionItems(1, ids, &point, SVSI_POSITIONITEM)), "position fixture");
             folder->GetItemPosition(item, &positions[i]);
         }
+        expect(SUCCEEDED(folder->SetRedraw(TRUE)),"enable native drawing after fixture placement");
         view->UIActivate(SVUIA_ACTIVATE_FOCUS);
         RedrawWindow(viewWindow, nullptr, nullptr, RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
         if (!expect(list != nullptr, "observe the actual notification emitter")) { finish(); return; }
