@@ -1317,37 +1317,35 @@ HRESULT restoreViewScroll(IShellView *view, const std::vector<uint8_t> &bytes, c
     if (!current()) return E_ABORT;
     if (FAILED(result) || !window) return S_FALSE;
     if (state.kind == 1) {
-        const HWND list = scrollList(folder, window, state.mode, current);
+        HWND list = scrollList(folder, window, state.mode, current);
         if (!current()) return E_ABORT;
         if (!list) return S_FALSE;
         RECT first = {};
-        const BOOL located = ListView_GetItemRect(list, 0, &first, LVIR_BOUNDS);
+        BOOL located = ListView_GetItemRect(list, 0, &first, LVIR_BOUNDS);
         if (!current()) return E_ABORT;
-        const UINT dpi = GetDpiForWindow(list);
+        UINT dpi = GetDpiForWindow(list);
+        if (located && dpi && dpi <= INT32_MAX
+                && static_cast<int64_t>(first.left) == static_cast<int64_t>(state.x) * dpi / state.dpi
+                && static_cast<int64_t>(first.top) == static_cast<int64_t>(state.y) * dpi / state.dpi)
+            return S_OK;
+        // Re-enabling redraw completes a newly enumerated view's pending
+        // layout. Measure and scroll only after its native range is available.
+        result = folder->SetRedraw(TRUE);
+        if (!current()) return E_ABORT;
+        if (FAILED(result)) return result;
+        list = scrollList(folder, window, state.mode, current);
+        if (!current()) return E_ABORT;
+        if (!list) return S_FALSE;
+        located = ListView_GetItemRect(list, 0, &first, LVIR_BOUNDS);
+        if (!current()) return E_ABORT;
+        dpi = GetDpiForWindow(list);
         if (!located || !dpi || dpi > INT32_MAX) return S_FALSE;
         const int64_t x = static_cast<int64_t>(first.left) - static_cast<int64_t>(state.x) * dpi / state.dpi;
         const int64_t y = static_cast<int64_t>(first.top) - static_cast<int64_t>(state.y) * dpi / state.dpi;
         if (x < INT32_MIN || x > INT32_MAX || y < INT32_MIN || y > INT32_MAX) return S_FALSE;
         if (!x && !y) return S_OK;
-        // A visible native ListView animates LVM_SCROLL for roughly 200 ms.
-        // One explicit pixel delta needs no intermediate frame or layout query.
-        struct Resume {
-            IFolderView2 *view;
-            bool held = false;
-            ~Resume() { if (held) view->SetRedraw(TRUE); }
-        } redraw{folder};
-        redraw.held = SUCCEEDED(folder->SetRedraw(FALSE));
-        if (!current()) return E_ABORT;
         const BOOL scrolled = ListView_Scroll(list, static_cast<int>(x), static_cast<int>(y));
-        if (!current()) return E_ABORT;
-        HRESULT resumed = S_OK;
-        if (redraw.held) {
-            redraw.held = false;
-            resumed = folder->SetRedraw(TRUE);
-            if (!current()) return E_ABORT;
-            if (SUCCEEDED(resumed)) RedrawWindow(window, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
-        }
-        return !current() ? E_ABORT : FAILED(resumed) ? resumed : scrolled ? S_OK : S_FALSE;
+        return !current() ? E_ABORT : scrolled ? S_OK : S_FALSE;
     }
     CComPtr<IScrollProvider> pattern;
     result = getScrollPattern(window, current, &pattern);
