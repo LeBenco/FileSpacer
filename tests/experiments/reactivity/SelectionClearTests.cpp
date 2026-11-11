@@ -305,7 +305,7 @@ void runClear(const std::wstring &output,const wchar_t *path) {
             std::puts("SELECT_PHASE post-sort-clear");std::fflush(stdout);
             checkState(view,shell,folder,path,ids,{});
             need(arrayPaths(retained)==wanted,"Global clear corrupted retained snapshot");
-            for(int quantity:{1,1000,fixtureCount-1}) {
+            for(int quantity:{1,fixtureCount==129?64:1000,fixtureCount-1}) {
                 need(SUCCEEDED(view->SelectAndPositionItems(static_cast<UINT>(quantity),ids.data(),nullptr,selectNoFocus)),"Partial selection setup failed");
                 std::vector<std::wstring> partial(orderedPaths.begin(),orderedPaths.begin()+quantity);std::sort(partial.begin(),partial.end());
                 CComPtr<IShellItemArray> previous;
@@ -330,12 +330,18 @@ void runClear(const std::wstring &output,const wchar_t *path) {
         }
 #endif
 #ifdef FILESPACER_SELECTION_DISCOVERY_TEST
+        const bool visual=!headless&&GetEnvironmentVariableW(L"FS_SELECTION_VISUAL",nullptr,0)!=0;
+#ifdef FILESPACER_SELECTION_PRODUCT_TEST
+        // 129 retains the native 128-item threshold for both partial and full selection.
+        const std::vector<int> quantities=fixtureCount==129?std::vector<int>{0,1,32,128,129}:std::vector<int>{0,1,32,1000,5000};
+        const int repetitions=1;
+#else
         const bool smoke=GetEnvironmentVariableW(L"FS_SELECTION_SMOKE",nullptr,0)!=0;
         wchar_t smokeCount[16]={};GetEnvironmentVariableW(L"FS_SELECTION_SMOKE",smokeCount,_countof(smokeCount));
         const int smokeQuantity=wcscmp(smokeCount,L"5000")==0?5000:32;
-        const bool visual=!headless&&GetEnvironmentVariableW(L"FS_SELECTION_VISUAL",nullptr,0)!=0;
         const std::vector<int> quantities=fixtureCount==64?std::vector<int>{0,1,32,64}:visual?std::vector<int>{5000}:smoke?std::vector<int>{smokeQuantity}:std::vector<int>{0,1,32,1000,5000};
         const int repetitions=(smoke||fixtureCount==64)?1:3;
+#endif
         need(accelerated.clear(shell,[]{return false;})==E_ABORT,"Stale continuation was not stopped");
         need(fallback.clear(shell,[]{return false;})==E_ABORT,"Stale native continuation was not stopped");
 #else
@@ -346,7 +352,11 @@ void runClear(const std::wstring &output,const wchar_t *path) {
 #ifdef FILESPACER_SELECTION_DISCOVERY_TEST
             if(locked||cancelled)requireSession();
             std::printf("OP_BEGIN view=%s count=%d repetition=%d arm=%d\n",mode.name,quantity,repetition,arm);std::fflush(stdout);
+#ifdef FILESPACER_SELECTION_PRODUCT_TEST
+            const bool checkPositions=quantity==fixtureCount;
+#else
             const bool checkPositions=quantity==5000&&repetition==0;
+#endif
 #else
             const bool checkPositions=true;
 #endif
@@ -416,6 +426,46 @@ void runClear(const std::wstring &output,const wchar_t *path) {
 #endif
 }
 }
+#ifdef FILESPACER_SELECTION_PRODUCT_TEST
+static void writePrivateDiagnostics(const wchar_t *output) {
+    const std::wstring path=std::wstring(output)+L"\\private-capabilities.tsv";
+    FILE *file=_wfsopen(path.c_str(),L"wb",_SH_DENYNO);
+    need(file!=nullptr,"Cannot create private capability diagnostics");
+    std::unique_ptr<FILE,decltype(&std::fclose)> close(file,&std::fclose);
+    const auto &image=selectionDiscovery::image();const auto &range=selectionDiscovery::rangeImage();
+    const char *rangeReason="Optional range descriptor absent";
+    if(range.base)range.qualifies(&rangeReason);
+    std::fprintf(file,"Kind\tName\tValue\tDetail\ncapability\tclear\t%d\t%s\ncapability\tselect-all\t%d\t%s\ncapability\trange-clear\t%d\t%s\n",
+        image.supported,image.reason,image.selectAllSupported,image.selectAllSupported?"Qualified":image.supported?"Select-all ABI not qualified":image.reason,
+        range.supported,rangeReason);
+    std::fprintf(file,"module\tshell32-image-size\t%lu\tLoaded image\nmodule\tcomctl32-image-size\t%lu\tLoaded control identity\nmodule\tcomctl32-pdb-age\t%lu\tLoaded control identity\n",
+        image.size,range.data.size,range.data.age);
+    IMAGE_DOS_HEADER dos={};IMAGE_NT_HEADERS64 nt={};
+    if(image.base&&selectionDiscovery::read(image.base,dos)&&dos.e_lfanew>=64&&dos.e_lfanew<=4096&&selectionDiscovery::read(image.base+dos.e_lfanew,nt))
+        std::fprintf(file,"module\tshell32-pe-timestamp\t%lu\tLoaded image\n",nt.FileHeader.TimeDateStamp);
+    const std::pair<selectionDiscovery::Field,const char *> fields[]={
+        {selectionDiscovery::OnClear,"CListViewHost::_OnClearSelection"},{selectionDiscovery::Select,"CListViewHost::Select"},
+        {selectionDiscovery::Purge,"CSelectionManager::ClearSelection"},{selectionDiscovery::Callback,"CSelectionManager::s_ClearSelectedItemEntry"},
+        {selectionDiscovery::Init,"CSelectionManager::Init"},{selectionDiscovery::QueryService,"CDefView::QueryService"},
+        {selectionDiscovery::Notify,"CDefView::OnItemStateChanged"},{selectionDiscovery::Cancel,"CDefView::CancelDelayActivation"},
+        {selectionDiscovery::HostQI,"CListViewHost::QueryInterface"},{selectionDiscovery::ArrayGetter,"DSA_GetItemPtr"},
+        {selectionDiscovery::HostQueryObject,"CListViewHost::QueryObject"},{selectionDiscovery::ViewQueryObject,"CDefView::QueryObject"},
+        {selectionDiscovery::ManagerQI,"CSelectionManager::QueryInterface"},{selectionDiscovery::Retain,"CSelectionManager::AddRef"},
+        {selectionDiscovery::Release,"CSelectionManager::Release"},{selectionDiscovery::NativeInsert,"DSA_InsertItem"},
+        {selectionDiscovery::NativeWindowProcedure,"CListViewHost::s_ViewSubclassWndProc"},
+        {selectionDiscovery::NativeSelectOne,"CSelectionManager::SelectItem"},{selectionDiscovery::NativeNotify,"CListViewHost::_OnLVNotify"}};
+    for(const auto &field:fields)std::fprintf(file,"function\t%s\t%lu\t%s\n",field.second,image.fields[field.first],
+        image.fields[field.first]?"Discovered RVA; capability qualification still required":"Not resolved in the loaded descriptor; absence from the DLL is not established");
+    const std::pair<selectionDiscovery::RangeMethod,const char *> rangeMethods[]={
+        {selectionDiscovery::ControlQuery,"CListView::QueryInterface"},{selectionDiscovery::ControlRetain,"CListView::AddRef"},
+        {selectionDiscovery::ControlRelease,"CListView::Release"},{selectionDiscovery::ControlCount,"CListView::GetSelectedCount"},
+        {selectionDiscovery::RangeQuery,"CLVRange::QueryInterface"},{selectionDiscovery::RangeRetain,"CLVRange::AddRef"},
+        {selectionDiscovery::RangeRelease,"CLVRange::Release"},{selectionDiscovery::RangeClear,"CLVRange::Clear"},
+        {selectionDiscovery::RangeCount,"CLVRange::CountIncluded"}};
+    for(const auto &method:rangeMethods)std::fprintf(file,"function\tcomctl32!%s\t%lu\tRange descriptor: %s\n",method.second,range.data.methods[method.first],rangeReason);
+    need(std::ferror(file)==0,"Private capability diagnostics write failed");
+}
+#endif
 int wmain(int argc,wchar_t **argv) {
 #ifdef FILESPACER_SELECTION_DISCOVERY_TEST
     if(argc==2&&wcscmp(argv[1],L"--session-state")==0){const bool unlocked=sessionUnlocked();std::printf("SESSION unlocked=%d\n",unlocked);return unlocked?0:3;}
@@ -436,6 +486,9 @@ int wmain(int argc,wchar_t **argv) {
 #ifdef FILESPACER_SELECTION_DISCOVERY_TEST
     headless=GetEnvironmentVariableW(L"FS_SELECTION_HEADLESS",nullptr,0)!=0;
     if(GetEnvironmentVariableW(L"FS_SELECTION_FIXTURE_64",nullptr,0))fixtureCount=64;
+#ifdef FILESPACER_SELECTION_PRODUCT_TEST
+    if(GetEnvironmentVariableW(L"FS_SELECTION_FIXTURE_129",nullptr,0))fixtureCount=129;
+#endif
     std::printf("CONTEXT headless=%d fixture_count=%d presentation=%s\n",headless,fixtureCount,headless?"DISABLED":"SEPARATE_PASS");
 #endif
     const double started=clockMs();
@@ -457,7 +510,11 @@ int wmain(int argc,wchar_t **argv) {
     type.lpfnWndProc=testWindowProc;
 #endif
     int result=0;
-    try{need(RegisterClassW(&type)!=0,"Cannot register prototype window");runClear(argv[1],argv[2]);}
+    try{
+#ifdef FILESPACER_SELECTION_PRODUCT_TEST
+        writePrivateDiagnostics(argv[1]);
+#endif
+        need(RegisterClassW(&type)!=0,"Cannot register prototype window");runClear(argv[1],argv[2]);}
 #ifdef FILESPACER_SELECTION_DISCOVERY_TEST
     catch(const Precondition &error){std::fprintf(stderr,"PRECONDITION: %s\n",error.what());result=3;}
 #endif
