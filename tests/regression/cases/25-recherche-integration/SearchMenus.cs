@@ -8,6 +8,11 @@ using System.Windows.Automation;
 
 namespace FileSpacerRegression {
     public static class SearchMenus {
+        static readonly Lazy<bool> clientProviders = new Lazy<bool>(delegate() {
+            ClientSettings.RegisterClientSideProviderAssembly(new System.Reflection.AssemblyName(
+                "UIAutomationClientsideProviders, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"));
+            return true;
+        });
         [DllImport("user32.dll",CharSet=CharSet.Unicode)] static extern IntPtr FindWindowEx(IntPtr parent,IntPtr after,string name,string text);
         [DllImport("user32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern IntPtr SendMessageTimeout(IntPtr window,uint message,UIntPtr wParam,StringBuilder text,uint flags,uint timeout,out UIntPtr result);
         [DllImport("user32.dll",SetLastError=true)] static extern IntPtr SendMessageTimeout(IntPtr window,uint message,UIntPtr wParam,IntPtr data,uint flags,uint timeout,out UIntPtr result);
@@ -48,6 +53,7 @@ namespace FileSpacerRegression {
             string[] names=null;Exception error=null;
             var worker=new Thread(delegate() {
                 try {
+                    bool registered=clientProviders.Value;
                     var root=AutomationElement.FromHandle(window);
                     var items=root.FindAll(TreeScope.Descendants,new OrCondition(
                         new PropertyCondition(AutomationElement.ControlTypeProperty,ControlType.DataItem),
