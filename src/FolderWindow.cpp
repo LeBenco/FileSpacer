@@ -1196,8 +1196,7 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
     return true;
 }
 
-void FolderWindow::onCreate() {
-    ItemWindow::onCreate();
+void FolderWindow::onCreateContent() {
     const DWORD historyLimit = settings::getSearchHistoryLimit();
     searchBox.setDropdownEnabled(settings::getEverythingEnabled() || historyLimit != 0, settings::getEverythingPath().get());
     loadSearchHistory();
@@ -1246,7 +1245,8 @@ void FolderWindow::onCreate() {
 
     RECT browserRect = windowBody();
     browserRect.bottom -= bottomStatusHeight;
-    browserRect.bottom += CAPTION_HEIGHT; // initial rect is wrong
+    // Animated openings already have their final frame and client geometry.
+    if (!IsWindowVisible(hwnd)) browserRect.bottom += CAPTION_HEIGHT;
 
     FOLDERSETTINGS initial = folderSettings();
     SFGAOF attributes = SFGAO_FILESYSTEM | SFGAO_STREAM;
@@ -1293,6 +1293,11 @@ void FolderWindow::onCreate() {
     // Start the first navigation only after the window has been shown.
     initialNavigationPending = true;
     searchBox.setLiveSearch(settings::getLiveNameSearch());
+    // The animated path was shown before the browser was initialized.
+    if (isWindowOperational() && IsWindowVisible(hwnd)) {
+        initialNavigationPending = false;
+        checkLE(PostMessageW(hwnd, MSG_INITIAL_NAVIGATION, 0, 0));
+    }
 }
 
 FolderWindow::QuickAccessIconThread::QuickAccessIconThread(HWND ownerWindow, int imageSize)
