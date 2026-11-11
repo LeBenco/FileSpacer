@@ -1,0 +1,10 @@
+﻿# Test-Category: UI
+param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
+. (Join-Path $PSScriptRoot '..\..\common\PrivateDiagnostics.ps1')
+$failure=$null
+try { & (Join-Path $PSScriptRoot '..\..\..\regression\cases\18-vue-shell-native\04-SelectionCache.ps1') -ProjectRoot $ProjectRoot -ItemCount 5000 }
+catch {$failure=$_;throw}
+finally {
+    try { Write-PrivateDiagnostics $ProjectRoot $env:FS_REGRESSION_RUN }
+    catch { if(!$failure){throw};Write-Warning ('Additional private diagnostic failure: '+$_.Exception.Message) }
+}
