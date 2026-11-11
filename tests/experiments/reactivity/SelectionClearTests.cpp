@@ -262,6 +262,10 @@ void runClear(const std::wstring &output,const wchar_t *path) {
         const DWORD focusOnly=static_cast<DWORD>(SVSI_FOCUSED)|static_cast<DWORD>(SVSI_NOTAKEFOCUS);
         const DWORD selectNoFocus=static_cast<DWORD>(SVSI_SELECT)|static_cast<DWORD>(SVSI_NOTAKEFOCUS);
 #ifdef FILESPACER_SELECTION_PRODUCT_TEST
+        HWND positionControl=nullptr;POINT positionOrigin={};
+        if(hasPositions&&mode.mode!=FVM_ICON){HWND root=nullptr;
+            if(SUCCEEDED(shell->GetWindow(&root))&&root)positionControl=FindWindowExW(root,nullptr,WC_LISTVIEWW,nullptr);
+            if(positionControl&&!ListView_GetOrigin(positionControl,&positionOrigin))positionControl=nullptr;}
         const bool selectAllOnly=GetEnvironmentVariableW(L"FS_SELECTION_ALL_ONLY",nullptr,0)!=0;
         CComQIPtr<IShellFolderView> bulk(shell);
         const auto checkAll=[&]{waitSelectedIdentities(view,wanted);checkState(view,shell,folder,path,ids,wanted);};
@@ -295,8 +299,14 @@ void runClear(const std::wstring &output,const wchar_t *path) {
             int focused=-1;CComHeapPtr<ITEMID_CHILD> focusedId;
             need(SUCCEEDED(view->GetFocusedItem(&focused))&&focused>=0&&SUCCEEDED(view->Item(focused,&focusedId))
                 &&ILIsEqual(focusedId,ids[7])&&GetFocus()==keyboard,"Global selection changed focus");
+            POINT currentOrigin={};
+            if(positionControl)need(ListView_GetOrigin(positionControl,&currentOrigin)!=FALSE,"Cannot read native view origin");
             if(hasPositions)for(size_t i=0;i<positionIndices.size();++i){POINT currentPosition={};
-                need(SUCCEEDED(view->GetItemPosition(ids[positionIndices[i]],&currentPosition))&&currentPosition.x==positions[i].x
+                need(SUCCEEDED(view->GetItemPosition(ids[positionIndices[i]],&currentPosition)),"Cannot read global-selection position");
+                // Non-icon positions include the native view origin. Keep
+                // content placement distinct from its viewport translation.
+                if(positionControl){currentPosition.x+=currentOrigin.x-positionOrigin.x;currentPosition.y+=currentOrigin.y-positionOrigin.y;}
+                need(currentPosition.x==positions[i].x
                     &&currentPosition.y==positions[i].y,"Global selection changed positions");}
             CComPtr<IShellItemArray> retained;
             need(SUCCEEDED(view->GetSelection(FALSE,&retained)),"No retained global selection snapshot");
