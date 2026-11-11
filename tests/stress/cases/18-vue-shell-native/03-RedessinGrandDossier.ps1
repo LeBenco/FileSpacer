@@ -1,4 +1,4 @@
-# Test-Category: UI
+﻿# Test-Category: UI
 # A folder of 5,000 files opens with saved free positions for every item.
 # The product restores them in one SelectAndPositionItems batch under the
 # redraw guard (ShellViewIcons.cpp, IconRedrawGuard). The case checks that
@@ -8,9 +8,9 @@
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path,
     [ValidateRange(2,5000)][int]$ItemCount=5000)
 $ErrorActionPreference='Stop'
-. (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
-Add-Type -Path (Join-Path $PSScriptRoot '..\01-stockage-sqlite\StorageRecoveryUi.cs')
-$seed=Build-NativeTest -Name LargeLayoutSeed -CaseDirectory $PSScriptRoot -ProductionSources @('FolderIdentity.cpp','FolderStateStore.cpp') -Sqlite -Storage -Standard c++14
+. (Join-Path $PSScriptRoot '..\..\..\regression\common\EssentialUi.ps1')
+Add-Type -Path (Join-Path $PSScriptRoot '..\..\..\regression\cases\01-stockage-sqlite\StorageRecoveryUi.cs')
+$seed=Build-NativeTest -Name LargeLayoutSeed -CaseDirectory (Join-Path $PSScriptRoot '..\..\..\regression\cases\18-vue-shell-native') -ProductionSources @('FolderIdentity.cpp','FolderStateStore.cpp') -Sqlite -Storage -Standard c++14
 # Same bound as the loaded recovery of case 13: LimitSeconds=25 in 09-RepriseProvisoire.ps1.
 $limitSeconds=25
 # Layout seeded in 96-DPI units; the product applies MulDiv(value, dpi, 96).
