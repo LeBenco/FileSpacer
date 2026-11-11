@@ -2,7 +2,7 @@
 # scenario (or UI setup) on the development host.
 Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1') -ErrorAction Stop
 function Invoke-ClientRegression {
-    param([string]$VM,$Selected,[int]$TimeoutSeconds,[string]$RunDirectory)
+    param([string]$VM,$Selected,[int]$TimeoutSeconds,[string]$RunDirectory,[ValidateSet('Regression','Stress')][string]$Suite='Regression')
     if ($VM -match '[\\/:*?"<>|]' -or $VM -in @('.','..')) { throw 'Invalid VM profile name.' }
     $configFile=Join-Path $env:ProgramData ('FileSpacerTests\'+$VM+'\runner.json')
     if (!(Test-Path -LiteralPath $configFile)) { throw ('VM is not configured for unattended tests: '+$VM) }
@@ -30,7 +30,7 @@ function Invoke-ClientRegression {
     $package=Join-Path $run 'package'
     [void][IO.Directory]::CreateDirectory($package)
     [void](Start-Transcript -LiteralPath (Join-Path $run 'preparation.log'))
-    try { New-ClientPackage -Selected $Selected -Destination $package -TimeoutSeconds $TimeoutSeconds }
+    try { New-ClientPackage -Selected $Selected -Destination $package -TimeoutSeconds $TimeoutSeconds -Suite $Suite }
     finally { [void](Stop-Transcript) }
     try {
         & (Join-Path $ProjectRoot 'tests\client\Invoke-HyperVRunner.ps1') -ProjectRoot $ProjectRoot -VMName $VM -RegressionRunId $runId
@@ -44,12 +44,12 @@ function Invoke-ClientRegression {
 }
 
 function New-ClientPackage {
-    param($Selected,[string]$Destination,[int]$TimeoutSeconds)
+    param($Selected,[string]$Destination,[int]$TimeoutSeconds,[ValidateSet('Regression','Stress')][string]$Suite='Regression')
     $regression=Join-Path $ProjectRoot 'tests\regression'
     $prepared=Join-Path $Destination 'prepared'
     [void][IO.Directory]::CreateDirectory($prepared)
     $managed=New-Object Collections.ArrayList; $native=New-Object Collections.ArrayList
-    $copied=@{}; $built=@{}
+    $copied=@{}; $built=@{}; $managedBuilds=@{}
     function Copy-PackageFile([string]$File) {
         $file=[IO.Path]::GetFullPath($File)
         if (!$file.StartsWith($ProjectRoot+'\',[StringComparison]::OrdinalIgnoreCase)) { throw ('Dependency outside checkout: '+$file) }
@@ -134,9 +134,17 @@ function New-ClientPackage {
         $framework=Join-Path $env:SystemRoot 'Microsoft.NET\Framework64\v4.0.30319'
         $arguments=@('/nologo','/target:library','/platform:x64',('/out:'+$assembly),'/reference:System.Windows.Forms.dll','/reference:System.Drawing.dll')
         foreach($name in @('UIAutomationClient','UIAutomationTypes','WindowsBase')) { $arguments+=('/reference:'+(Join-Path $framework ('WPF\'+$name+'.dll'))) }
-        & (Join-Path $framework 'csc.exe') @arguments @sources | Out-Host
-        if ($LASTEXITCODE -ne 0) { throw ('Host helper compilation failed: '+$Case) }
-        [void]$managed.Add(@{Case=$Case;Assembly=($bundle+'.dll');Hashes=$hashes;Sha256=(Get-FileHash -LiteralPath $assembly -Algorithm SHA256).Hash})
+        # Within one package the compiler, references and flags are fixed.
+        # Reuse identical ordered source contents, retaining a manifest entry per case.
+        $signature=$hashes -join '|'
+        if($managedBuilds.ContainsKey($signature)) {
+            $assembly=$managedBuilds[$signature]
+        } else {
+            & (Join-Path $framework 'csc.exe') @arguments @sources | Out-Host
+            if ($LASTEXITCODE -ne 0) { throw ('Host helper compilation failed: '+$Case) }
+            $managedBuilds[$signature]=$assembly
+        }
+        [void]$managed.Add(@{Case=$Case;Assembly=[IO.Path]::GetFileName($assembly);Hashes=$hashes;Sha256=(Get-FileHash -LiteralPath $assembly -Algorithm SHA256).Hash})
     }
     # Only inspect selected scripts and their dependencies, plus runner helpers.
     foreach($relative in @('Run-Regression.ps1','common\Process.ps1','common\Results.ps1','common\StorageSnapshot.ps1','common\Prepared.ps1','common\Prepared-Case.ps1')) { Copy-PackageFile (Join-Path $regression $relative) }
@@ -216,7 +224,7 @@ function New-ClientPackage {
         Build-ManagedBundle $entry.Relative $dependencies
     }
     @{Native=@($native);Managed=@($managed)} | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $prepared 'index.json') -Encoding UTF8
-    @{Cases=@($Selected | ForEach-Object {$_.Relative});TimeoutSeconds=$TimeoutSeconds;BuildLocation='Host';HostMachine=$env:COMPUTERNAME;Configuration='Debug'} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $Destination 'selection.json') -Encoding UTF8
+    @{Suite=$Suite;Cases=@($Selected | ForEach-Object {$_.Relative});TimeoutSeconds=$TimeoutSeconds;BuildLocation='Host';HostMachine=$env:COMPUTERNAME;Configuration='Debug'} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $Destination 'selection.json') -Encoding UTF8
     $files=@(Get-ChildItem -LiteralPath $Destination -Recurse -File | ForEach-Object { @{Path=$_.FullName.Substring($Destination.Length+1);Sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash} })
     ConvertTo-Json -InputObject $files -Depth 3 | Set-Content -LiteralPath (Join-Path $Destination 'files.json') -Encoding UTF8
 }
