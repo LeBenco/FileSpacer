@@ -213,6 +213,7 @@ BEGIN
   IDS_EVERYTHING_NOT_FOUND "No se ha encontrado Everything. Instálalo o selecciona manualmente su archivo ejecutable."
   IDS_EVERYTHING_PATH_INVALID "La ruta de Everything no se puede aplicar: %1!s!\n\nIndica la ruta completa de un archivo Everything.exe existente o deja el campo vacío para la detección automática."
   IDS_SEARCH_HISTORY_INVALID "Introduce un límite del historial de búsquedas entre 0 y 20."
+  IDS_OPENING_ANIMATION_DURATION_INVALID "Introduce un número entero de milisegundos entre 0 y 2147483647."
   IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer coloca las ventanas nuevas para minimizar la superposición con otras ventanas de carpetas.\n\nEsto se aplica a carpetas sin posición de ventana guardada o cuya posición guardada deja de ser accesible tras cambiar la configuración de las pantallas. Siempre tiene prioridad una posición guardada que siga siendo utilizable."
   IDS_GROUP_FOLDER_WINDOWS_HELP "Las nuevas ventanas de carpetas pueden agruparse en un solo botón de la barra de tareas, según la configuración de la barra de tareas de Windows.\n\nSi se desactiva esta opción, las carpetas pueden anclarse por separado a la barra de tareas.\n\nEl cambio se aplica a las ventanas abiertas después. Las ya abiertas conservan su agrupación actual."
   IDS_EVERYTHING_EXECUTABLE "Ejecutable de Everything (*.exe)"

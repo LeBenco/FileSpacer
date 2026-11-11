@@ -213,6 +213,7 @@ BEGIN
   IDS_EVERYTHING_NOT_FOUND "O Everything não foi encontrado. Instale-o ou selecione manualmente o executável."
   IDS_EVERYTHING_PATH_INVALID "O caminho do Everything não pode ser aplicado: %1!s!\n\nIndique o caminho completo de um ficheiro Everything.exe existente ou deixe o campo vazio para a deteção automática."
   IDS_SEARCH_HISTORY_INVALID "Introduza um limite do histórico de pesquisas entre 0 e 20."
+  IDS_OPENING_ANIMATION_DURATION_INVALID "Introduza um número inteiro de milissegundos entre 0 e 2147483647."
   IDS_SMART_WINDOW_PLACEMENT_HELP "O FileSpacer coloca as novas janelas de modo a minimizar a sobreposição com outras janelas de pastas.\n\nIsto aplica-se a pastas sem uma posição de janela guardada ou cuja posição já não é acessível após uma alteração da configuração dos ecrãs. Uma posição guardada ainda utilizável tem prioridade."
   IDS_GROUP_FOLDER_WINDOWS_HELP "As novas janelas de pastas podem ser agrupadas num único botão da barra de tarefas, de acordo com as definições do Windows.\n\nQuando esta opção está desativada, as pastas podem ser afixadas separadamente na barra de tarefas.\n\nEsta definição aplica-se às janelas abertas após a alteração. As janelas já abertas mantêm o agrupamento atual."
   IDS_EVERYTHING_EXECUTABLE "Executável do Everything (*.exe)"

@@ -213,6 +213,7 @@ BEGIN
   IDS_EVERYTHING_NOT_FOUND "Everything non è stato trovato. Installalo o seleziona manualmente il file eseguibile."
   IDS_EVERYTHING_PATH_INVALID "Il percorso di Everything non può essere applicato: %1!s!\n\nInserisci il percorso completo di un file Everything.exe esistente oppure lascia il campo vuoto per il rilevamento automatico."
   IDS_SEARCH_HISTORY_INVALID "Inserisci un limite per la cronologia delle ricerche compreso tra 0 e 20."
+  IDS_OPENING_ANIMATION_DURATION_INVALID "Inserisci un numero intero di millisecondi da 0 a 2147483647."
   IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer posiziona le nuove finestre riducendo al minimo la sovrapposizione con le altre finestre delle cartelle.\n\nQuesto vale per le cartelle senza una posizione della finestra salvata o la cui posizione salvata non è più accessibile dopo una modifica della configurazione dello schermo. Una posizione salvata ancora utilizzabile ha la precedenza."
   IDS_GROUP_FOLDER_WINDOWS_HELP "Le nuove finestre delle cartelle possono essere raggruppate sotto un solo pulsante della barra delle applicazioni, in base alle impostazioni di Windows.\n\nQuando questa opzione è disattivata, le cartelle possono essere aggiunte separatamente alla barra delle applicazioni.\n\nQuesta impostazione si applica alle finestre aperte dopo la modifica. Quelle già aperte mantengono il raggruppamento attuale."
   IDS_EVERYTHING_EXECUTABLE "Eseguibile di Everything (*.exe)"
