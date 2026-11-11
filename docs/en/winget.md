@@ -2,7 +2,8 @@
 
 # WinGet distribution
 
-GitHub Actions submits `Benco.FileSpacer` to the public
+The **Distribute FileSpacer** coordinator calls the reusable **Submit FileSpacer
+to WinGet** workflow to submit `Benco.FileSpacer` to the public
 [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs) repository
 when **Publish FileSpacer** completes successfully (`workflow_run`) and WinGet
 was explicitly selected with `release.sh X.Y.Z --distribute winget`. Distribution
@@ -10,7 +11,7 @@ has its own run and result; failure does not change the successful release run.
 The default is no automatic catalog distribution. Repeat `--distribute` to select
 several channels; the selection is recorded in the annotated tag and carried in
 `release-publication`. Missing selection metadata also means no automatic submission.
-The workflow can also be dispatched for an existing published stable release tag;
+The coordinator can also be dispatched for an existing published stable release tag;
 that explicit request selects WinGet even if the tag originally selected none.
 
 <a id="one-time-setup"></a>
@@ -47,13 +48,16 @@ submission; catalog publication remains pending while the CLA or Microsoft revie
 is outstanding.
 
 Follow the existing [release procedure](build.md#releases). Once publication
-succeeds, the independent WinGet workflow downloads `release-publication` from
+succeeds, the common coordinator downloads `release-publication` from
 that exact successful run and skips submission unless its channel is selected.
 This small artifact records the published tag and channel list, also
 for releases started manually with a tag input. It then:
 
-1. Checks that the tag is a stable `vX.Y.Z` release, and skips versions already
-   present in `winget-pkgs` or with an open submission PR.
+1. Retains the latest requested stable `vX.Y.Z` release in the WinGet queue.
+   Any older active submission blocks new versions until its PR is merged.
+   A newer request replaces the pending release, while delayed older requests
+   cannot roll it back. Already accepted versions are skipped. All existing open
+   FileSpacer PRs are imported, including submissions predating this coordinator.
 2. Downloads the versioned public installer and `FileSpacer-update.txt`.
    Verifies the installer size and SHA-256 against the update manifest and,
    when available, GitHub's asset digest. It does not build another installer.
@@ -70,16 +74,21 @@ The installer retains its existing component defaults and saved upgrade choices.
 The WinGet manifest does not request a change of default file manager.
 WinGet submission does not mean immediate catalog availability: Microsoft's
 automated checks and review must accept the PR. Monitor the PR link in the
-job log and respond to review requests if necessary.
+job log and respond to review requests if necessary. An hourly check submits the
+latest pending release after acceptance. Closing a PR without merging it keeps
+the queue blocked. See the [shared queue and recovery procedure](build.md#releases).
 
 If submission fails, the GitHub release and its successful workflow result are
 preserved; only the distribution workflow reports failure. Fix the cause, then
-open **Actions > Submit FileSpacer to WinGet > Run workflow**, select the default
-branch, and enter the published
-tag. This retries only distribution, without rebuilding or republishing the
+open **Actions > Distribute FileSpacer > Run workflow**, select the default
+branch, `channel=winget`, and enter the published
+tag. This requests only distribution, without rebuilding or republishing the
 application. A missing secret also fails explicitly, after retaining manifests.
 From a client, the equivalent explicit request is
-`gh workflow run winget.yml --ref main -f tag=vX.Y.Z`.
+`gh workflow run distribution.yml --ref main -f channel=winget -f tag=vX.Y.Z`.
+Leave the tag empty to check the existing queue. Use `retry=true` with the same
+tag only after investigating a missing submission or a closed unmerged PR;
+ordinary requests never resend an active submission.
 This manual entry point also supports releases made before the metadata artifact
 was introduced, or published outside the normal release workflow. Failed or
 cancelled release workflows do not submit anything.
@@ -102,7 +111,7 @@ winget uninstall --id Benco.FileSpacer --exact
 Run the distribution tests in CMD:
 
 ```cmd
-node --test .github/scripts/winget.test.mjs
+node --test .github/scripts/release-distribution.test.mjs .github/scripts/distribution-queue.test.mjs .github/scripts/winget.test.mjs
 ```
 
 These cover manifest generation, release eligibility, updater/asset integrity,
