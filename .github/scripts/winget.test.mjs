@@ -5,7 +5,8 @@ import {createHash} from 'node:crypto';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {installerMetadata, manifests, prepare, releaseVersion} from './winget.mjs';
+import {manifests, prepare} from './winget.mjs';
+import {installerMetadata, releaseVersion} from './release-assets.mjs';
 
 const root = 'https://github.com/LeBenco/FileSpacer';
 const installer = Buffer.from('test installer, not a real NSIS executable');
