@@ -117,6 +117,7 @@ protected:
 
     // message callbacks
     virtual void onCreate();
+    virtual void onCreateContent() {}
     virtual bool onCloseRequest(); // return false to block close (probably a bad idea)
     virtual std::vector<uint8_t> captureReopenViewState() { return {}; }
     virtual void onDestroy();
@@ -164,6 +165,7 @@ protected:
 private:
     bool create(RECT rect, int showCommand, const RECT *openingOrigin);
     std::unique_ptr<FolderOpeningAnimation> openingAnimation;
+    bool deferContentCreation = false;
     virtual const wchar_t * className() const;
 
     bool centeredProxy() const; // requires useCustomFrame() == true
