@@ -279,6 +279,12 @@ test('GitHub requests authenticate only the API and reject rate limits and bad s
     return new Response('', {status: 403});
   });
   await assert.rejects(api('repos/LeBenco/FileSpacer/git/ref/heads/distribution-winget', {allowMissing: true}), /403/);
+  const unavailable = githubApi('fixture-token', async () => {
+    throw new TypeError('fetch failed', {cause: {code: 'ENETUNREACH'}});
+  });
+  await assert.rejects(unavailable('repos/LeBenco/FileSpacer/releases?per_page=100'),
+    error => error.message.includes('GET repos/LeBenco/FileSpacer/releases?per_page=100')
+      && error.message.includes('ENETUNREACH') && !error.message.includes('fixture-token'));
 });
 
 test('dry run validates its release but never reads or writes queue state', async t => {
