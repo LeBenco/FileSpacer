@@ -1,6 +1,6 @@
-# Test-Category: UI
+﻿# Test-Category: UI
 param([string]$ProjectRoot)
-. (Join-Path $PSScriptRoot 'ViewMenu.ps1')
+. (Join-Path $PSScriptRoot '..\..\..\regression\cases\28-apercu-affichage\ViewMenu.ps1')
 $failure=$null
 try {
     Initialize-Ui 'view-preview-large' -FixtureParent (Join-Path $ProjectRoot 'build')
