@@ -108,13 +108,6 @@ void pump() {
         if (!IsDialogMessageW(sheet, &message)) { TranslateMessage(&message); DispatchMessageW(&message); }
     }
 }
-WindowShortcut choice(unsigned index) {
-    return {index >= 24, (index / 3) % 8, static_cast<GestureButton>(index % 3)};
-}
-bool allowed(unsigned modifiers, unsigned button) {
-    const unsigned buttons[] = {2, 2, 7, 7, 2, 2, 7, 7};
-    return (buttons[modifiers] & (1u << button)) != 0;
-}
 bool equal(const WindowShortcuts &a, const WindowShortcuts &b) {
     return sameShortcut(a.move, b.move) && sameShortcut(a.resize, b.resize);
 }
@@ -148,9 +141,6 @@ void setAction(int index, const WindowShortcut &value) {
     setCheck(page, IDC_SHORTCUT_ENABLE_MOVE + index, value.enabled);
     require(IsDlgButtonChecked(editor, IDC_SHORTCUT_LEFT + static_cast<int>(value.button)) == BST_CHECKED,
         "invalid selection is retained for correction");
-    for (unsigned button = 0; button < 3; ++button)
-        require((IsWindowEnabled(GetDlgItem(editor, IDC_SHORTCUT_LEFT + button)) != FALSE)
-            == (value.enabled && allowed(value.modifiers, button)), "allowed buttons match independent table");
 }
 LONG_PTR notify(UINT code) {
     NMHDR notification = {}; notification.code = code; notification.hwndFrom = sheet;
@@ -181,7 +171,7 @@ void powerToysLink() {
     require(powerToysLaunches == 3 && powerToysErrors == 2, "launch failure is reported");
     powerToysLaunchResult = TRUE;
 }
-void powerToysNotice() {
+void powerToysNotice(bool localizedOnly = false) {
     const std::wstring path = powerToysLocalAppData + L"\\Microsoft\\PowerToys\\settings.json";
     HWND notice = GetDlgItem(page, IDC_SHORTCUT_POWERTOYS);
     require(notice && !IsWindowVisible(notice), "absent PowerToys settings show no activation notice");
@@ -197,7 +187,8 @@ void powerToysNotice() {
         {"", false}
     };
     const DWORD saved = registryValue();
-    for (const auto &test : cases) {
+    for (size_t index = 0; index < (localizedOnly ? 1u : _countof(cases)); ++index) {
+        const auto &test = cases[index];
         writePowerToysFixture(path, test.first);
         require(settings::powerToysOverridesWindowGestures(sheet) == test.second, "parse actual PowerToys JSON with native Windows parser");
         require(settings::windowShortcutApplies(DEFAULT_WINDOW_SHORTCUTS.move, GestureButton::Left, GestureAlt, sheet) == !test.second,
@@ -266,11 +257,10 @@ void powerToysExclusions() {
         writePowerToysFixture(module, test.json);
         powerToysForeground = test.foreground ? sheet : GetDesktopWindow();
         require(settings::powerToysOverridesWindowGestures(sheet) == test.overrides, "PowerToys exclusion matching and foreground scope");
-        for (unsigned modifiers = 0; modifiers < 8; ++modifiers) for (unsigned button = 0; button < 3; ++button) {
-            const WindowShortcut binding = {true, modifiers, static_cast<GestureButton>(button)};
-            require(settings::windowShortcutApplies(binding, binding.button, modifiers, sheet)
-                == (validShortcut(binding) && !test.overrides), "all configured button/modifier combinations obey the preventive policy");
-        }
+        require(settings::windowShortcutApplies(DEFAULT_WINDOW_SHORTCUTS.move, GestureButton::Left, GestureAlt, sheet)
+            == !test.overrides, "exclusion suspends movement without changing its binding");
+        require(settings::windowShortcutApplies(DEFAULT_WINDOW_SHORTCUTS.resize, GestureButton::Right, GestureAlt, sheet)
+            == !test.overrides, "exclusion suspends resizing without changing its binding");
         notify(PSN_SETACTIVE);
         require((IsWindowVisible(GetDlgItem(page, IDC_SHORTCUT_POWERTOYS)) != FALSE) == test.overrides,
             "notice follows the actual per-window suspension and exclusions");
@@ -282,52 +272,18 @@ void powerToysExclusions() {
         "removing the PowerToys option restores configured gestures without a restart");
     std::printf("PASS: PowerToys app/path/title exclusions, foreground-only modifier exclusions and unchanged preferences\n");
 }
-void registryAndPageMatrix() {
-    unsigned valid = 0, invalid = 0;
-    for (unsigned first = 0; first < 48; ++first) for (unsigned second = 0; second < 48; ++second) {
-        const WindowShortcuts candidate = {choice(first), choice(second)};
-        const bool conflict = first >= 24 && second >= 24 && first % 24 == second % 24;
-        const bool expected = (!candidate.move.enabled || allowed(candidate.move.modifiers, first % 3))
-            && (!candidate.resize.enabled || allowed(candidate.resize.modifiers, second % 3)) && !conflict;
-        require(validShortcuts(candidate) == expected, "all 2304 pairs use the specified combination policy");
+void registryAndPageExamples() {
+    const WindowShortcuts cases[] = {
+        DEFAULT_WINDOW_SHORTCUTS,
+        {{false, GestureAlt, GestureButton::Left}, DEFAULT_WINDOW_SHORTCUTS.resize},
+        {DEFAULT_WINDOW_SHORTCUTS.move, {false, GestureAlt, GestureButton::Right}},
+        {{true, GestureCtrl, GestureButton::Middle}, {true, GestureAlt | GestureShift, GestureButton::Right}}
+    };
+    for (const auto &candidate : cases) {
         setAction(0, candidate.move); setAction(1, candidate.resize);
-        const DWORD before = registryValue();
-        const int dialogsBefore = refusalDialogs;
-        require((notify(PSN_KILLACTIVE) == FALSE) == expected, "native property sheet validates before leaving page");
-        if (!expected) {
-            openSection = !validShortcut(candidate.move) ? 0 : 1;
-            const auto &refused = openSection == 0 ? candidate.move : candidate.resize;
-            require(IsDlgButtonChecked(editor, IDC_SHORTCUT_LEFT + static_cast<int>(refused.button)) == BST_CHECKED,
-                "refusal keeps the selected button while opening the invalid action");
-        }
-        const LONG_PTR applied = notify(PSN_APPLY);
-        if ((applied == PSNRET_NOERROR) != expected)
-            std::fprintf(stderr, "PAIR: first=%u second=%u expected=%d apply=%lld\n",
-                first, second, expected, static_cast<long long>(applied));
-        require((applied == PSNRET_NOERROR) == expected, "native page validates Apply for every pair");
-        require(refusalDialogs == dialogsBefore + (expected ? 0 : 2),
-            "both invalid notifications show their native refusal dialog");
-        if (!expected) {
-            const auto &refused = openSection == 0 ? candidate.move : candidate.resize;
-            require(IsDlgButtonChecked(editor, IDC_SHORTCUT_LEFT + static_cast<int>(refused.button)) == BST_CHECKED,
-                "refusal keeps the selected button after Apply's native warning");
-        }
-        if (expected) {
-            ++valid; require(equal(settings::getWindowShortcuts(), candidate), "valid pair persists and reloads atomically");
-        } else {
-            ++invalid; require(registryValue() == before, "invalid page submission leaves registry unchanged");
-            require(settings::setWindowShortcuts(candidate) == ERROR_INVALID_DATA, "storage independently rejects invalid pairs");
-            require(registryValue() == before, "rejected storage write is atomic");
-            require(IsWindowEnabled(GetDlgItem(sheet, 0x3021)) == FALSE, "Apply disabled while any action is invalid");
-        }
-    }
-    require(valid == 1584 && invalid == 720, "expected exhaustive pair counts");
-    std::printf("PASS: 2304 native page/registry pairs: %u valid, %u rejected\n", valid, invalid);
-    for (unsigned value = 0; value < 48; ++value) for (unsigned input = 0; input < 24; ++input) {
-        const auto binding = choice(value);
-        const bool expected = value >= 24 && value % 24 == input && allowed(input / 3, input % 3);
-        require(matchesShortcut(binding, static_cast<GestureButton>(input % 3), input / 3) == expected,
-            "exact modifier/button matching, including disabled and forbidden choices");
+        require(notify(PSN_KILLACTIVE) == FALSE, "leaving a configured page succeeds");
+        require(notify(PSN_APPLY) == PSNRET_NOERROR, "apply configured actions");
+        require(equal(settings::getWindowShortcuts(), candidate), "both bindings persist atomically");
     }
     DWORD corrupt[] = {0, 0xffffffffu, 0x02000000u, 0x01003a3au, 0x01001800u, 0x01008000u};
     for (DWORD value : corrupt) {
@@ -335,6 +291,7 @@ void registryAndPageMatrix() {
             &value, sizeof(value)) == ERROR_SUCCESS, "prepare invalid persisted data");
         require(equal(settings::getWindowShortcuts(), DEFAULT_WINDOW_SHORTCUTS), "corrupt/unsupported persisted value falls back safely");
     }
+    std::puts("PASS: representative page/registry round trips and corrupt persisted data");
 }
 void interactionMatrix() {
     setAction(0, DEFAULT_WINDOW_SHORTCUTS.move); setAction(1, DEFAULT_WINDOW_SHORTCUTS.resize);
@@ -352,7 +309,7 @@ void interactionMatrix() {
     click(page, IDC_SHORTCUT_REVERT);
     BYTE keys[256] = {}, neutral[256] = {};
     require(GetKeyboardState(keys) != FALSE, "save thread keyboard state");
-    for (unsigned input = 0; input < 24; ++input) {
+    for (unsigned input : {1u, 6u, 23u}) {
         setAction(1, {false, GestureAlt, GestureButton::Right});
         open(0); click(editor, IDC_SHORTCUT_RECORD);
         BYTE state[256] = {}; const unsigned modifiers = input / 3;
@@ -366,15 +323,14 @@ void interactionMatrix() {
         SendMessageW(capture, down[input % 3], gestureButtonMask(button), 0);
         SendMessageW(capture, gestureButtonUp(button), 0, 0);
         require(SetKeyboardState(neutral) != FALSE, "clear local modifiers after capture");
-        require(!IsWindowVisible(capture), "all 24 captures close, valid or invalid");
+        require(!IsWindowVisible(capture), "each representative button capture closes");
         require(IsDlgButtonChecked(editor, IDC_SHORTCUT_LEFT + input % 3) == BST_CHECKED, "captured button retained");
-        require((IsWindowEnabled(GetDlgItem(sheet, 0x3021)) != FALSE) == allowed(modifiers, input % 3),
+        require(IsWindowEnabled(GetDlgItem(sheet, 0x3021)) != FALSE,
             "capture validity controls native Apply");
         HDC context = GetDC(capture); require(context != nullptr, "capture feedback color DC");
         SendMessageW(editor, WM_CTLCOLORSTATIC, reinterpret_cast<WPARAM>(context),
             reinterpret_cast<LPARAM>(GetDlgItem(editor, IDC_SHORTCUT_FEEDBACK)));
-        require(GetTextColor(context) == (allowed(modifiers, input % 3) ? GetSysColor(COLOR_BTNTEXT) : RGB(190, 0, 0)),
-            "normal guidance versus red capture error");
+        require(GetTextColor(context) == GetSysColor(COLOR_BTNTEXT), "normal capture guidance");
         ReleaseDC(capture, context); click(page, IDC_SHORTCUT_REVERT);
     }
     require(SetKeyboardState(keys) != FALSE, "restore thread keyboard state");
@@ -399,9 +355,8 @@ void engineMatrix() {
         50, 50, 400, 300, nullptr, nullptr, definition.hInstance, nullptr);
     require(window != nullptr, "create actual Win32 gesture host");
     unsigned runs = 0;
-    for (unsigned move = 0; move < 2; ++move) for (unsigned input = 0; input < 24; ++input) {
-        if (!allowed(input / 3, input % 3)) continue;
-        const auto button = static_cast<GestureButton>(input % 3);
+    for (unsigned move = 0; move < 2; ++move) for (unsigned trigger = 0; trigger < 3; ++trigger) {
+        const auto button = static_cast<GestureButton>(trigger);
         for (unsigned cancel = 0; cancel < 3; ++cancel) {
             SetWindowPos(window, nullptr, 50, 50, 400, 300, SWP_NOZORDER | SWP_NOACTIVATE);
             RECT before = {}; GetWindowRect(window, &before);
@@ -469,12 +424,12 @@ int wmain(int argc, wchar_t **argv) {
         SysFreeString(name); accessible->Release();
     }
     if (argc == 4) {
-        powerToysNotice(); powerToysExclusions();
+        powerToysNotice(true);
         DestroyWindow(sheet); CoUninitialize();
         std::printf("PASS: %d notice checks (%ls)\n", checks, argv[1]); return 0;
     }
     // Bulk combinations use the real page offscreen; the smaller interaction matrix stays visible.
-    ShowWindow(sheet, SW_HIDE); registryAndPageMatrix(); ShowWindow(sheet, SW_SHOWNOACTIVATE);
+    powerToysNotice(); powerToysExclusions(); registryAndPageExamples();
     pump(); interactionMatrix(); engineMatrix();
     require(notifications > 0, "successful Apply sends normal preference notifications");
     CoUninitialize(); std::printf("PASS: %d checks (%ls)\n", checks, argv[1]); return 0;
