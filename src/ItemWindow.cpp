@@ -779,6 +779,10 @@ bool ItemWindow::create(RECT rect, int showCommand, const RECT *openingOrigin) {
     debugPrintf(L"Open %s\n", &*title);
     const bool restoreMaximized = loadFolderState()
         && (savedState.present & FolderState::Maximized) && savedState.maximized;
+    // Keep the usual WM_CREATE initialization when no opening effect is requested.
+    deferContentCreation = openingOrigin && FolderOpeningAnimation::isEnabled()
+        && showCommand != SW_HIDE && showCommand != SW_SHOWMINIMIZED
+        && showCommand != SW_MINIMIZE && showCommand != SW_SHOWMINNOACTIVE;
     HWND createHwnd = checkLE(CreateWindowEx(
         windowExStyle(), className(), title, windowStyle(),
         rect.left, rect.top, rectWidth(rect), rectHeight(rect),
@@ -791,15 +795,19 @@ bool ItemWindow::create(RECT rect, int showCommand, const RECT *openingOrigin) {
             || showCommand == SW_SHOWDEFAULT || showCommand == SW_RESTORE))
         showCommand = SW_SHOWMAXIMIZED;
     std::unique_ptr<FolderOpeningAnimation> animation;
-    if (openingOrigin && FolderOpeningAnimation::isEnabled()
-            && showCommand != SW_HIDE && showCommand != SW_SHOWMINIMIZED
-            && showCommand != SW_MINIMIZE && showCommand != SW_SHOWMINNOACTIVE) {
+    if (deferContentCreation) {
         animation.reset(new FolderOpeningAnimation);
         if (!animation->begin(createHwnd, *openingOrigin, showCommand)) animation.reset();
     }
     if (!isWindowOperational() || hwnd != createHwnd) return false;
+    const bool animated = animation != nullptr;
     if (animation) openingAnimation = std::move(animation);
-    else ShowWindow(createHwnd, showCommand);
+    if (deferContentCreation) {
+        deferContentCreation = false; // Consume before content initialization can reenter.
+        onCreateContent();
+        if (!isWindowOperational() || hwnd != createHwnd) return false;
+    }
+    if (!animated) ShowWindow(createHwnd, showCommand);
     if (FolderOpeningAnimation::isEnabled()) FolderOpeningAnimation::prepare();
     return isWindowOperational();
 }
@@ -902,6 +910,8 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             break;
         case WM_CREATE:
             onCreate();
+            if (isWindowOperational() && !deferContentCreation) onCreateContent();
+            if (!isWindowOperational()) return -1;
             // ensure WM_NCCALCSIZE gets called; necessary for custom frame
             SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);

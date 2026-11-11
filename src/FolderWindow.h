@@ -184,7 +184,7 @@ protected:
 
     virtual FOLDERSETTINGS folderSettings() const;
 
-    void onCreate() override;
+    void onCreateContent() override;
     void onDestroy() override;
     bool onCommand(WORD command) override;
     void restoreReferenceLayout();
