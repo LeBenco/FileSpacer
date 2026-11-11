@@ -1,5 +1,6 @@
 ﻿. (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
 . (Join-Path $PSScriptRoot '..\..\common\SearchUi.ps1')
+Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes
 Add-Type -Path (Join-Path $PSScriptRoot 'SearchMenus.cs') -ReferencedAssemblies UIAutomationClient,UIAutomationTypes
 
 function Set-SearchOptions([IntPtr]$Window,[bool]$Everything,[int]$Limit,[string]$Path='',[int]$Scope=0) {
@@ -17,6 +18,16 @@ function Set-SearchOptions([IntPtr]$Window,[bool]$Everything,[int]$Limit,[string
 # Apply refuses a typed Everything path that is relative, not an .exe or names no
 # file: an explicit error naming the path, the sheet left open with the focus on
 # the field, and the stored preference unchanged.
+function Read-SearchDialogText([IntPtr]$Dialog,[string]$ExpectedPath) {
+    $observed=@{Text=''}
+    Wait-Ui {
+        $root=[System.Windows.Automation.AutomationElement]::FromHandle($Dialog)
+        $observed.Text=$root.Current.Name+' '+(@($root.FindAll([System.Windows.Automation.TreeScope]::Descendants,
+            [System.Windows.Automation.Condition]::TrueCondition) | ForEach-Object { $_.Current.Name }) -join ' ')
+        return $observed.Text.Contains('Everything') -and $observed.Text.Contains($ExpectedPath)
+    } 'actual Everything error text and exact path'
+    return $observed.Text
+}
 function Expect-EverythingPathRefused([IntPtr]$Window,[string]$Path) {
     $before=[string](Get-UiPreference 'EverythingPath')
     $sheet=Show-UiSettings $Window; $page=Set-UiPage 3
@@ -30,7 +41,7 @@ function Expect-EverythingPathRefused([IntPtr]$Window,[string]$Path) {
         $dialogs=@([FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,$ownerId) | Where-Object { $_ -ne $sheet })
         if ($dialogs.Count -ne 1) { return $false };$found.Dialog=$dialogs[0];return $true
     } 'Everything path refusal dialog'
-    $text=(@([FileSpacerRegression.Native]::Children($found.Dialog,'Static') | ForEach-Object { [FileSpacerRegression.Native]::Text($_) }) -join ' ')
+    $text=Read-SearchDialogText $found.Dialog $Path
     Write-Host ('DIAG: path refusal dialog text=['+$text+'] refused path=['+$Path+']')
     Assert-Ui ($text.Contains('Everything') -and $text.Contains($Path)) 'Path refusal is not explicit.'
     $ok=Get-UiControl $found.Dialog 'Button'
