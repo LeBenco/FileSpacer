@@ -230,7 +230,12 @@ Symbols symbols(const Identity &id, const std::wstring &path, bool control=false
             IMAGEHLP_MODULEW64 info={};info.SizeOfStruct=sizeof(info);
             require(moduleInfo(session.get(),base,&info) && info.SymType==SymPdb && !info.PdbUnmatched
                 && info.PdbAge==id.age && IsEqualGUID(info.PdbSig70,id.guid),"Matching PDB was not loaded");
-            supported(!control&&(i == EnumGlobal || i == DeleteGlobal || i >= 17), "Required private symbol absent"); continue;
+            if(control || (i != EnumGlobal && i != DeleteGlobal && i < 17)) {
+                std::string reason="Required private symbol absent: ";
+                for(const wchar_t character:name)reason+=static_cast<char>(character); // Symbol names are ASCII.
+                throw Unsupported(reason.c_str());
+            }
+            continue;
         }
         require(symbol.info.Address >= base && symbol.info.Address - base < id.size, "Symbol outside loaded image");
         result.methods[i] = static_cast<DWORD>(symbol.info.Address - base);
@@ -260,10 +265,10 @@ std::array<DWORD, FieldCount> extract(const Identity &id, const Symbols &foundSy
     unsigned char qi[20] = {}; copy(fields[HostQI], qi);
     const unsigned char qiPrefix[] = {0x4d,0x8b,0xc8,0x4c,0x8b,0xc2,0x48,0x8d,0x15};
     const unsigned char qiJump[] = {0x48,0xff,0x25};
-    supported(match(qi,sizeof(qi),0,qiPrefix) && match(qi,sizeof(qi),13,qiJump), "Unknown QISearch stub");
+    supported(match(qi,sizeof(qi),0,qiPrefix) && match(qi,sizeof(qi),13,qiJump), "shell32!CListViewHost::QueryInterface: unsupported QISearch stub");
     // A delay-import slot can still contain its resolver thunk. Read the PE
     // import-name metadata instead of comparing that transient function pointer.
-    supported(namedImport(view,relative(fields[HostQI],qi,16,20),"QISearch"), "Unexpected QISearch import");
+    supported(namedImport(view,relative(fields[HostQI],qi,16,20),"QISearch"), "shell32!CListViewHost::QueryInterface: unexpected QISearch import");
     const DWORD qit = relative(fields[HostQI],qi,9,13); unsigned interfaces = 0; bool terminated = false;
     const GUID control = {0xc401f7ac,0x9572,0x42cd,{0xae,0x05,0x3b,0xd0,0x84,0x27,0x0c,0xb1}};
     for (DWORD i = 0; i < 64; ++i) {
@@ -274,7 +279,7 @@ std::array<DWORD, FieldCount> extract(const Identity &id, const Symbols &foundSy
         GUID guid = {}; supported(read(entry.id, guid), "Unreadable QITAB GUID");
         if (IsEqualGUID(guid,control)) { fields[HostOffset] = entry.offset; ++interfaces; }
     }
-    supported(terminated && interfaces == 1, "Missing or ambiguous host interface");
+    supported(terminated && interfaces == 1, "shell32!CListViewHost::QueryInterface: missing or ambiguous host interface");
     unsigned char clear[256] = {}; copy(fields[OnClear], clear); unsigned chains = 0, calls = 0;
     for (size_t i = 0; i + 18 < sizeof(clear); ++i) {
         const bool first = clear[i]==0x48 && clear[i+1]==0x8b && clear[i+2]==0x89 && clear[i+7]==0x48 && clear[i+8]==0x8b
@@ -282,22 +287,22 @@ std::array<DWORD, FieldCount> extract(const Identity &id, const Symbols &foundSy
         const bool second = clear[i]==0x48 && clear[i+1]==0x8b && clear[i+2]==0x81 && clear[i+7]==0x48 && clear[i+8]==0x8b
             && clear[i+9]==0x48 && clear[i+11]==0x48 && clear[i+12]==0x85 && clear[i+13]==0xc9 && clear[i+14]==0x74 && clear[i+16]==0x8b && clear[i+17]==0x31;
         if (first || second) { DWORD manager=0; std::memcpy(&manager,clear+i+3,4);
-            supported(manager > fields[HostOffset] && manager < 4096 && manager%8==0 && clear[i+10]%8==0, "Invalid manager layout");
+            supported(manager > fields[HostOffset] && manager < 4096 && manager%8==0 && clear[i+10]%8==0, "shell32!CListViewHost::_OnClearSelection: invalid manager layout");
             fields[ManagerOffset]=manager-fields[HostOffset];fields[ArrayOffset]=clear[i+10];++chains; }
     }
     for (size_t i=0;i+5<=sizeof(clear);++i) if(clear[i]==0xe8) {
         LONG delta=0;std::memcpy(&delta,clear+i+1,4);
         if(static_cast<LONGLONG>(fields[OnClear])+static_cast<LONGLONG>(i)+5+delta==fields[Purge])++calls;
     }
-    supported(chains==1 && calls==1, "Unknown public-clear procedure");
+    supported(chains==1 && calls==1, "shell32!CListViewHost::_OnClearSelection: unsupported clear procedure");
     unsigned char purge[128]={};copy(fields[Purge],purge);
     const unsigned char helper[]={0x40,0x53,0x48,0x83,0xec,0x20,0x48,0x8b,0xd9,0x48,0x8d,0x15};
     ArrayLayout layout;
     if(match(purge,sizeof(purge),0,helper))fields[Procedure]=1;
-    else { supported(decodeInlineArrayLoop(purge,sizeof(purge),fields[Purge],fields[Callback],fields[ArrayOffset],layout),"Unknown native purge form");fields[Procedure]=2; }
+    else { supported(decodeInlineArrayLoop(purge,sizeof(purge),fields[Purge],fields[Callback],fields[ArrayOffset],layout),"shell32!CSelectionManager::ClearSelection: unsupported purge form");fields[Procedure]=2; }
     unsigned char getter[32]={};copy(fields[ArrayGetter],getter);ArrayLayout getterLayout;
-    supported(decodeArrayGetter(getter,sizeof(getter),getterLayout),"Unknown array getter");
-    if(fields[Procedure]==2)supported(layout.data==getterLayout.data && layout.stride==getterLayout.stride,"Array decoders disagree");
+    supported(decodeArrayGetter(getter,sizeof(getter),getterLayout),"shell32!DSA_GetItemPtr: unsupported array getter");
+    if(fields[Procedure]==2)supported(layout.data==getterLayout.data && layout.stride==getterLayout.stride,"shell32!CSelectionManager::ClearSelection / DSA_GetItemPtr: array layouts disagree");
     const auto next=std::min_element(foundSymbols.tables.begin(),foundSymbols.tables.end(),[&](DWORD a,DWORD b){
         return (a>fields[NotifyTable]?a:MAXDWORD)<(b>fields[NotifyTable]?b:MAXDWORD);});
     supported(next!=foundSymbols.tables.end() && *next>fields[NotifyTable] && *next-fields[NotifyTable]<=1024 && (*next-fields[NotifyTable])%8==0,"Unbounded notification table");
@@ -333,7 +338,7 @@ void discoverRange(const std::wstring &root,const std::wstring &path) {
     std::copy_n(found.methods.begin(),RangeMethodCount,result.data.methods.begin());
     unsigned char count[96]={};
     supported(read(result.base+result.data.methods[ControlCount],count)
-        &&decodeControlCount(count,sizeof(count),result.data.managerOffset,result.data.rangeOffset),"Unknown control count form");
+        &&decodeControlCount(count,sizeof(count),result.data.managerOffset,result.data.rangeOffset),"comctl32!CListView::GetSelectedCount: unsupported operand form");
     unsigned matches=0;
     for(const auto table:found.tables)for(DWORD slot=3;slot<13;++slot) {
         void *clear=nullptr,*included=nullptr;
@@ -342,7 +347,7 @@ void discoverRange(const std::wstring &root,const std::wstring &path) {
             result.data.clearSlot=slot;result.data.tableRva=table;++matches;
         }
     }
-    supported(matches==1,"Control range virtual table missing or ambiguous");
+    supported(matches==1,"comctl32!CLVRange::Clear / CountIncluded: virtual table missing or ambiguous");
     const char *reason=nullptr;const bool valid=result.qualifies(&reason);supported(valid,reason);
     std::ofstream file(path.c_str(),std::ios::binary|std::ios::trunc);
     file.write("FSLVR001",8);file.write(reinterpret_cast<const char *>(&result.data),sizeof(result.data));file.flush();
