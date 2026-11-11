@@ -119,7 +119,7 @@ Brak opcji oznacza brak kanałów; `--distribute none` wskazuje to jawnie i nie 
 
 Skrypt wymaga czystego drzewa, sprawdza zdalną gałąź/tag, pokazuje zmiany i kanały oraz prosi o potwierdzenie przed wypchnięciem `main` i tagu z adnotacją. Potem sprawdź workflow i oba artefakty. Podsumowania błędów i logi pozostają artefaktami workflow.
 
-Istniejące wydanie można zgłosić później przez **Submit FileSpacer to WinGet** i/lub **Submit FileSpacer to Chocolatey**, wybierając `main` oraz opublikowany tag. Ręczny start wybiera dany kanał niezależnie od wcześniejszej decyzji i używa tego samego instalatora oraz SHA-256. Przykład: `gh workflow run winget.yml --ref main -f tag=vX.Y.Z` lub ta sama komenda z `chocolatey.yml`. Nie uruchamiaj w tym celu ponownie generowania wydania: może ono zastąpić instalator i unieważnić sumy kontrolne katalogów.
+Istniejące wydanie można zgłosić później przez **Distribute FileSpacer (channel=winget)** i/lub **Distribute FileSpacer (channel=chocolatey)**, wybierając `main` oraz opublikowany tag. Ręczny start wybiera dany kanał niezależnie od wcześniejszej decyzji i używa tego samego instalatora oraz SHA-256. Przykład: `gh workflow run distribution.yml --ref main -f channel=winget -f tag=vX.Y.Z` lub ta sama komenda z `-f channel=chocolatey`. Nie uruchamiaj w tym celu ponownie generowania wydania: może ono zastąpić instalator i unieważnić sumy kontrolne katalogów.
 
 <a id="tests"></a>
 
