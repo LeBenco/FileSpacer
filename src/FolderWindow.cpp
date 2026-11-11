@@ -3245,8 +3245,10 @@ void FolderWindow::openQuickAccessMenu(POINT point) {
             return;
         }
         RECT origin = {};
-        const HWND toolbar = getQuickAccessToolbar();
-        if (toolbar && IsWindowVisible(toolbar)) origin = windowRect(toolbar);
+        if (FolderOpeningAnimation::isEnabled()) {
+            const HWND toolbar = getQuickAccessToolbar();
+            if (toolbar && IsWindowVisible(toolbar)) origin = windowRect(toolbar);
+        }
         openChild(target, closeSource, IsRectEmpty(&origin) ? nullptr : &origin);
     }
 }
@@ -3636,7 +3638,8 @@ STDMETHODIMP FolderWindow::OnDefaultCommand(IShellView *const view) {
 
                     // Folder activation is handled by our spatial window logic.
                     RECT origin = {};
-                    const bool animate = openingIconRect(view, folderView, current, origin);
+                    const bool animate = FolderOpeningAnimation::isEnabled()
+                        && openingIconRect(view, folderView, current, origin);
                     if (!current()) return S_OK;
                     selected = selectedItem;
                     openChild(selectedItem, closeSource, animate ? &origin : nullptr);
