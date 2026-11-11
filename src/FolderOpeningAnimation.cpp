@@ -20,11 +20,8 @@ namespace filespacer {
 namespace {
 const wchar_t animationClass[] = L"FileSpacer Folder Opening Animation";
 constexpr UINT finishAnimation = WM_APP + 1;
-constexpr LONG strokeWidth = 2;
-constexpr unsigned contourCount = 3;
-constexpr double contourDelay = 0.020;
-constexpr double contourDuration = FolderOpeningAnimation::durationMs / 1000.0
-    - (contourCount - 1) * contourDelay;
+constexpr LONG strokeWidth = 3;
+constexpr double contourDuration = FolderOpeningAnimation::durationMs / 1000.0;
 struct OpeningGraphics {
     CComPtr<ID3D11Device> d3d;
     CComPtr<IDCompositionDesktopDevice> composition;
@@ -157,13 +154,12 @@ struct FolderOpeningAnimation::State {
     }
 
     bool animate(IDCompositionAnimation **out, float from, float to,
-            std::vector<CComPtr<IDCompositionAnimation>> &animations, double delay) {
+            std::vector<CComPtr<IDCompositionAnimation>> &animations) {
         const double duration = contourDuration;
         CComPtr<IDCompositionAnimation> animation;
         if (!checkHR(resources->composition->CreateAnimation(&animation))) return false;
-        if (delay > 0.0 && !checkHR(animation->AddCubic(0.0, from, 0.0f, 0.0f, 0.0f))) return false;
-        if (!checkHR(animation->AddCubic(delay, from, static_cast<float>((to - from) / duration), 0.0f, 0.0f))
-                || !checkHR(animation->End(duration + delay, to))) return false;
+        if (!checkHR(animation->AddCubic(0.0, from, static_cast<float>((to - from) / duration), 0.0f, 0.0f))
+                || !checkHR(animation->End(duration, to))) return false;
         animations.push_back(animation);
         *out = animation.Detach();
         return true;
@@ -218,30 +214,29 @@ struct FolderOpeningAnimation::State {
     }
 
     bool addContour(const RECT &origin, const RECT &end, const RECT &bounds,
-            std::vector<CComPtr<IDCompositionAnimation>> &animations, double delay) {
+            std::vector<CComPtr<IDCompositionAnimation>> &animations) {
         CComPtr<IDCompositionVisual2> contour;
         if (!checkHR(resources->composition->CreateVisual(&contour))) return false;
         CComPtr<IDCompositionAnimation> x, y, width, height, innerWidth, innerHeight;
-        if (!animate(&x, static_cast<float>(origin.left - bounds.left), static_cast<float>(end.left - bounds.left), animations, delay)
-                || !animate(&y, static_cast<float>(origin.top - bounds.top), static_cast<float>(end.top - bounds.top), animations, delay)
-                || !animate(&width, static_cast<float>(origin.right - origin.left), static_cast<float>(end.right - end.left), animations, delay)
-                || !animate(&height, static_cast<float>(origin.bottom - origin.top), static_cast<float>(end.bottom - end.top), animations, delay)
-                || !animate(&innerWidth, static_cast<float>(origin.right - origin.left - strokeWidth), static_cast<float>(end.right - end.left - strokeWidth), animations, delay)
-                || !animate(&innerHeight, static_cast<float>(origin.bottom - origin.top - strokeWidth), static_cast<float>(end.bottom - end.top - strokeWidth), animations, delay)
+        if (!animate(&x, static_cast<float>(origin.left - bounds.left), static_cast<float>(end.left - bounds.left), animations)
+                || !animate(&y, static_cast<float>(origin.top - bounds.top), static_cast<float>(end.top - bounds.top), animations)
+                || !animate(&width, static_cast<float>(origin.right - origin.left), static_cast<float>(end.right - end.left), animations)
+                || !animate(&height, static_cast<float>(origin.bottom - origin.top), static_cast<float>(end.bottom - end.top), animations)
+                || !animate(&innerWidth, static_cast<float>(origin.right - origin.left - strokeWidth), static_cast<float>(end.right - end.left - strokeWidth), animations)
+                || !animate(&innerHeight, static_cast<float>(origin.bottom - origin.top - strokeWidth), static_cast<float>(end.bottom - end.top - strokeWidth), animations)
                 || !checkHR(contour->SetOffsetX(x)) || !checkHR(contour->SetOffsetY(y))
                 || !addEdge(contour, width, height, innerWidth, innerHeight, 0)
                 || !addEdge(contour, width, height, innerWidth, innerHeight, 1)
                 || !addEdge(contour, width, height, innerWidth, innerHeight, 2)
                 || !addEdge(contour, width, height, innerWidth, innerHeight, 3)) return false;
-        // Hide each contour before its departure and after its own arrival.
+        // Hide the contour when it reaches the destination.
         CComPtr<IDCompositionAnimation> visibility;
         CComPtr<IDCompositionRectangleClip> clip;
         if (!checkHR(resources->composition->CreateAnimation(&visibility))) return false;
-        if (delay > 0.0 && !checkHR(visibility->AddCubic(0.0, 0.0f, 0.0f, 0.0f, 0.0f))) return false;
-        if (!checkHR(visibility->AddCubic(delay,
+        if (!checkHR(visibility->AddCubic(0.0,
                     static_cast<float>((std::max)(origin.right - origin.left, end.right - end.left)),
                     0.0f, 0.0f, 0.0f))
-                || !checkHR(visibility->End(contourDuration + delay, 0.0f))
+                || !checkHR(visibility->End(contourDuration, 0.0f))
                 || !checkHR(resources->composition->CreateRectangleClip(&clip))
                 || !checkHR(clip->SetLeft(0.0f)) || !checkHR(clip->SetTop(0.0f))
                 || !checkHR(clip->SetRight(visibility))
@@ -300,11 +295,8 @@ struct FolderOpeningAnimation::State {
                     static_cast<UINT>((std::max)(origin.bottom - origin.top, end.bottom - end.top)))
                 || !checkHR(target->SetRoot(visual))) return false;
         std::vector<CComPtr<IDCompositionAnimation>> animations;
-        animations.reserve(contourCount * 7);
-        for (unsigned index = 0; index < contourCount; ++index) {
-            // Equal travel times preserve the separation between moving contours.
-            if (!addContour(origin, end, bounds, animations, index * contourDelay)) return false;
-        }
+        animations.reserve(7);
+        if (!addContour(origin, end, bounds, animations)) return false;
         completion.reset(checkLE(CreateThreadpoolTimer(revealWindow, this, nullptr)));
         if (!completion) return false;
         if (!checkLE(SetWindowPos(overlay.get(), HWND_TOP, 0, 0, 0, 0,
@@ -316,7 +308,7 @@ struct FolderOpeningAnimation::State {
         for (const auto &animation : animations) {
             if (!checkHR(animation->SetAbsoluteBeginTime(start))) return false;
         }
-        // DWM hides each contour on arrival; the last arrives at 200 ms.
+        // DWM hides the contour on arrival at 200 ms.
         if (!checkHR(resources->composition->Commit())) return false;
         LARGE_INTEGER now = {};
         if (!checkLE(QueryPerformanceCounter(&now))) return false;
