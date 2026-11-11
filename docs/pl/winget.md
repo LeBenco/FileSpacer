@@ -29,7 +29,7 @@ Stosuj [procedurę wydania](build.md#releases). Po sukcesie osobny workflow WinG
 
 Instalator zachowuje domyślne składniki i zapisane wybory aktualizacji. Manifest nie żąda zmiany domyślnego menedżera. Zgłoszenie nie oznacza natychmiastowej dostępności: kontrole i przegląd Microsoft muszą przyjąć PR. Obserwuj link PR w logu i odpowiadaj na uwagi.
 
-Błąd zgłoszenia zachowuje wydanie GitHub i sukces jego workflow; tylko dystrybucja zawodzi. Po naprawie otwórz **Actions > Submit FileSpacer to WinGet > Run workflow**, wybierz gałąź domyślną i opublikowany tag. Powtarza tylko dystrybucję, bez kompilacji i publikacji. Brak sekretu jawnie kończy się błędem po zachowaniu manifestów. Tryb ręczny obsługuje stare i zewnętrznie opublikowane wydania. Nieudane lub anulowane wydania nic nie zgłaszają. Wersje już przyjęte są pomijane, ich instalatory i manifesty nie są zastępowane; opublikowane pliki zachowaj niezmienione.
+Błąd zgłoszenia zachowuje wydanie GitHub i sukces jego workflow; tylko dystrybucja zawodzi. Po naprawie otwórz **Actions > Distribute FileSpacer (channel=winget) > Run workflow**, wybierz gałąź domyślną i opublikowany tag. Powtarza tylko dystrybucję, bez kompilacji i publikacji. Brak sekretu jawnie kończy się błędem po zachowaniu manifestów. Tryb ręczny obsługuje stare i zewnętrznie opublikowane wydania. Nieudane lub anulowane wydania nic nie zgłaszają. Wersje już przyjęte są pomijane, ich instalatory i manifesty nie są zastępowane; opublikowane pliki zachowaj niezmienione.
 
 Po przyjęciu pierwszego PR i odświeżeniu katalogu:
 
