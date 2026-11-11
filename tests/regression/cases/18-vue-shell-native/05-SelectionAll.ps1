@@ -1,6 +1,6 @@
 # Test-Category: UI
 # Real Shell views (hidden by default), isolated fixtures/cache, no input injection.
-param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path,[switch]$Presented)
+param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path,[switch]$Presented,[ValidateSet(129,5000)][int]$ItemCount=129)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot '..\..\common\Native.ps1')
 $cacheTest=Build-NativeTest -Name SelectionCacheTests -CaseDirectory $PSScriptRoot -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','MixedFolder.cpp','ShellViewHost.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib')
@@ -23,11 +23,12 @@ $bytes=[IO.File]::ReadAllBytes($records[0].FullName)
  if($code-ne0-or@(Get-ChildItem -LiteralPath $cache -Filter '*.attempt').Count){throw 'Persisted public fallback was not reused.'}
 }
 . (Join-Path $PSScriptRoot '..\..\..\experiments\reactivity\Fixture.ps1')
-$fixture=New-ReactivityFixture $ProjectRoot 5000
+$fixture=New-ReactivityFixture $ProjectRoot $ItemCount
 try {
  $env:FS_SELECTION_ALL_ONLY='1';$env:FS_SELECTION_HEADLESS='1'
  if($Presented){Remove-Item Env:\FS_SELECTION_HEADLESS -ErrorAction SilentlyContinue}
- Remove-Item Env:\FS_SELECTION_FIXTURE_64,Env:\FS_SELECTION_SMOKE,Env:\FS_SELECTION_ONLY_MEDIUM -ErrorAction SilentlyContinue
+ Remove-Item Env:\FS_SELECTION_FIXTURE_64,Env:\FS_SELECTION_FIXTURE_129,Env:\FS_SELECTION_SMOKE,Env:\FS_SELECTION_ONLY_MEDIUM -ErrorAction SilentlyContinue
+ if($ItemCount -eq 129){$env:FS_SELECTION_FIXTURE_129='1'}
  $arms=@(if($privateSupported){@(@('qualified',$cache),@('missing-select-capability',$fallback))}else{,@('unsupported-private',$cache)})
  foreach($arm in $arms){
   $output=Join-Path $RunDirectory $arm[0];[void][IO.Directory]::CreateDirectory($output)
