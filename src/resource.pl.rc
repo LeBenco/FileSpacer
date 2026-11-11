@@ -213,7 +213,7 @@ BEGIN
   IDS_EVERYTHING_NOT_FOUND "Nie znaleziono Everything. Zainstaluj program lub ręcznie wybierz jego plik wykonywalny."
   IDS_EVERYTHING_PATH_INVALID "Nie można zastosować ścieżki Everything: %1!s!\n\nPodaj pełną ścieżkę istniejącego pliku Everything.exe albo pozostaw pole puste, aby włączyć automatyczne wykrywanie."
   IDS_SEARCH_HISTORY_INVALID "Wprowadź limit historii wyszukiwania od 0 do 20."
-  IDS_OPENING_ANIMATION_DURATION_INVALID "Wprowadź całkowitą liczbę milisekund od 0 do 2147483647."
+  IDS_OPENING_ANIMATION_DURATION_INVALID "Wprowadź całkowitą liczbę milisekund od 0 do 999."
   IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer umieszcza nowe okna tak, aby ograniczyć nakładanie się okien folderów.\n\nDotyczy folderów bez zapisanego położenia okna lub z położeniem niedostępnym po zmianie ekranu. Nadal dostępne zapisane położenie ma pierwszeństwo."
   IDS_GROUP_FOLDER_WINDOWS_HELP "Nowe okna folderów można grupować pod jednym przyciskiem paska zadań, zgodnie z ustawieniami paska zadań Windows.\n\nGdy opcja jest wyłączona, foldery można przypinać oddzielnie do paska zadań.\n\nUstawienie dotyczy okien otwartych po zmianie. Już otwarte okna zachowują bieżące grupowanie."
   IDS_EVERYTHING_EXECUTABLE "Plik wykonywalny Everything (*.exe)"
