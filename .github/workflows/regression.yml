@@ -220,8 +220,8 @@ jobs:
         run: |
           call "%VS_INSTALL%\VC\Auxiliary\Build\vcvars64.bat"
           if errorlevel 1 exit /b 1
-          rem Cold symbol qualification plus the 405-case native matrix can
-          rem exceed five minutes. Individual product latency assertions remain.
+          rem Regression catalogue only; stress is launched separately outside CI.
+          rem Cold private-symbol qualification can still take several minutes.
           powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '.\tests\regression\Run-Regression.ps1' -CI -Scope $env:TEST_SCOPE -Category $env:TEST_CATEGORY -Pattern $env:TEST_PATTERN -TimeoutSeconds 900 -RunDirectory $env:TEST_DIRECTORY"
           exit /b %errorlevel%
 
