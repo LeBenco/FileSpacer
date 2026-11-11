@@ -13,6 +13,8 @@ try {
     $edit=Get-UiSearchEdit $window
     foreach ($step in @(
         @{Query='keep'; Names=@('keep.txt')},
+        @{Query=''; Names=@('keep.txt','notes.md','other.txt')},
+        @{Query='keep'; Names=@('keep.txt')},
         @{Query='other'; Names=@('other.txt')},
         @{Query='*.md'; Names=@('notes.md')},
         @{Query='no-match-unique'; Names=@()},
