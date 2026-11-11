@@ -1,5 +1,6 @@
 #include "PathBar.h"
 #include "CreateItemWindow.h"
+#include "FolderOpeningAnimation.h"
 #include "DPI.h"
 #include "GeomUtils.h"
 #include "UIStrings.h"
@@ -247,7 +248,7 @@ void PathBar::endEdit(bool restoreFocus) {
 
 void PathBar::openItem(IShellItem *item, bool control, int sourceCommand) {
     RECT origin = {};
-    if (IsWindowVisible(hwnd)) {
+    if (FolderOpeningAnimation::isEnabled() && IsWindowVisible(hwnd)) {
         if (!sourceCommand) {
             origin = windowRect(hwnd); // Address entry opens from the visible path bar.
         } else if (SendMessage(toolbar, TB_GETRECT, sourceCommand, reinterpret_cast<LPARAM>(&origin))) {
