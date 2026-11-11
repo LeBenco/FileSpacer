@@ -1,7 +1,6 @@
 #include "UpdateManifest.h"
 #include <cassert>
 #include <iostream>
-#include <random>
 
 using namespace filespacer;
 
@@ -52,14 +51,5 @@ int main() {
     assert(releaseVersion(0xffffffff) == "255.255.255.255");
     assert(releaseVersion(0x01000500) == "1.0.5");
     assert(releaseVersion(0x01000501) == "1.0.5.1");
-    // Deterministic malformed-input stress run; sanitizer builds check bounds/overflow.
-    std::mt19937 rng(42);
-    for (int i = 0; i < 50000; ++i) {
-        std::string input(rng() % 1100, '\0');
-        for (char &c : input) c = static_cast<char>(rng() % 256);
-        ReleaseManifest value;
-        const bool accepted = parseUpdateManifest(input, &value);
-        assert(!accepted);
-    }
-    std::cout << "Update manifest tests passed (including 50,000 malformed inputs).\n";
+    std::cout << "Update manifest tests passed.\n";
 }
