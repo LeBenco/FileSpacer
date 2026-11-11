@@ -7,6 +7,7 @@ import {pathToFileURL} from 'node:url';
 export const evidencePath = 'build/ci/regression-pass.json';
 
 export function applicationInput(file) {
+  if (file.startsWith('tests/stress/')) return false;
   return /^(src|third_party|tests)\//.test(file)
     || ['.gitattributes', 'Makefile', 'build.cmd', 'tests.cmd', 'generate-icon.py', 'installer/installer.mak',
       '.github/workflows/regression.yml'].includes(file)
