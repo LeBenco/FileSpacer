@@ -136,6 +136,53 @@ stable selectors; they need not be translated to use this English guide.
 These are coverage entry points, not a record of executed tests. Inspect each
 case's setup and assertions before deciding whether it covers a change.
 
+<a id="reduce-redundant-tests"></a>
+
+### Reduce redundant tests
+
+Compare behavioral obligations, not case names or past PASS results. Record the
+initial state, action, observations and environment before replacing a case.
+
+- **Implication** (`X => Y`): under the stated preconditions, X establishes every
+  obligation of Y. The reverse need not hold. Exact visible identities imply
+  their count; a matching count does not establish identities. Keep X and move
+  any missing transition from Y into it before removing Y.
+- **Equivalence** (`X <=> Y`): establish both implications under the same
+  preconditions. Keep one representative only when neither case observes a
+  distinct failure. For a complete enumeration and unique expected names,
+  exact-name equality is equivalent to exact-name equality AND the expected
+  count, so the extra count assertion is unnecessary.
+
+These are scoped arguments about the checks, not proofs that a passing finite
+test implies correctness for every input. A stronger-looking action, more items,
+or a more complex environment alone establishes neither relation. In particular,
+multiselection need not cover single selection; inactive-window behavior need
+not cover active-window behavior. If a relation depends on several retained
+cases, all of them are required. Follow implications transitively only when
+their preconditions remain compatible; a cycle is not evidence of equivalence.
+
+The following reductions retain the original search obligations:
+
+| Retained case | Replaced case / check | Relation and preserved boundary |
+| --- | --- | --- |
+| `13-preferences/05-FiltresSuccessifs.ps1` | `03-RecherchePendantSaisie.ps1` | Its exact-identity checks imply live filtering, no-match results and full restoration on clearing. Direct nonempty-result clearing was added before removal; same-cardinality query changes and native notifications remain. |
+| `13-preferences/01-FenetresOuvertes.ps1` | `04-RechercheExplicite.ps1` | The initial disabled-search stage retains typing, submit, clear-without-submit and explicit clearing on the original two-item fixtures, in both processes. Later live enable/disable propagation remains independently checked. |
+| Exact-identity assertions in both retained cases | Count-only search assertions and their unused helper | One-way implication from identities to counts; equivalence only between exact identities and the conjunction of those same identities with their implied count. |
+
+No equivalence between independent cases is assumed. Keep ordinary reopening
+(`07/08`) separate from the closed-window-history command (`07/05`), hidden
+selection views (`18/05`) separate from presented views (`18/06-SelectionAllVisible`),
+and filtered persistence (`13/06`) separate from successive filters (`13/05`).
+Those pairs observe different entry points, rendering or saved-state boundaries.
+Likewise, mixed-provider wrappers share scenario code with filesystem tests but
+exercise a different provider; they are not redundant executions.
+
+Validate each retained case alone and through the prepared runner when changing
+its dependencies. Deleted cases are removed from discovery, not reported as
+inferred PASS results. A failed, blocked or unexecuted representative never
+validates a replaced obligation. `-Category` and `-Pattern` still filter the
+remaining catalogue normally; use the retained path above for a deleted case.
+
 <a id="native-view-persistence"></a>
 
 ### Native view persistence
