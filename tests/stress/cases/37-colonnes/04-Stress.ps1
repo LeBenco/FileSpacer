@@ -1,6 +1,6 @@
-# Test-Category: UI
+﻿# Test-Category: UI
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
-. (Join-Path $PSScriptRoot 'Columns.ps1')
+. (Join-Path $PSScriptRoot '..\..\..\regression\cases\37-colonnes\Columns.ps1')
 $failure=$null;$records=New-Object Collections.ArrayList
 $counts=@(100,1000)
 if($env:FS_COLUMN_STRESS_COUNTS){$counts=@($env:FS_COLUMN_STRESS_COUNTS.Split(',')|ForEach-Object{[int]$_}|Sort-Object -Unique)}
