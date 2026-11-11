@@ -2,6 +2,7 @@ param(
     [string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
     [ValidateSet('All','Internal','UI')][string]$Category='All',
     [ValidateSet('All','Application')][string]$Scope='All',
+    [ValidateSet('Regression','Stress')][string]$Suite='Regression',
     [string]$Pattern='*',
     [ValidateRange(30,3600)][int]$TimeoutSeconds=300,
     [string]$RunDirectory='',
@@ -17,9 +18,15 @@ Set-StrictMode -Version 2
 . (Join-Path $PSScriptRoot 'common\StorageSnapshot.ps1')
 $ProjectRoot=(Resolve-Path -LiteralPath $ProjectRoot).Path
 if ($CI -and ($VM -or $Prepared -or $env:GITHUB_ACTIONS -ne 'true')) { throw '-CI requires GitHub Actions and cannot be combined with -VM or -Prepared.' }
-$caseRoot=Join-Path $PSScriptRoot 'cases'
 $preparedSelection=$null
 if ($Prepared) { $preparedSelection=Get-Content -LiteralPath (Join-Path $ProjectRoot 'selection.json') -Raw | ConvertFrom-Json }
+if ($Prepared -and $preparedSelection.PSObject.Properties['Suite']) {
+    if ($PSBoundParameters.ContainsKey('Suite') -and $Suite -ne $preparedSelection.Suite) { throw 'Prepared suite differs from the requested suite.' }
+    $Suite=[string]$preparedSelection.Suite
+    if ($Suite -notin @('Regression','Stress')) { throw 'Invalid prepared suite.' }
+}
+$caseRoot=if($Suite -eq 'Stress'){Join-Path $ProjectRoot 'tests\stress\cases'}else{Join-Path $PSScriptRoot 'cases'}
+if($Suite -eq 'Stress' -and !$PSBoundParameters.ContainsKey('TimeoutSeconds')){$TimeoutSeconds=900}
 $tests=@(Get-ChildItem -LiteralPath $caseRoot -Recurse -File -Filter '*.ps1' | Where-Object { $_.Name -match '^\d{2}-.+\.ps1$' } | Sort-Object FullName)
 $selected=@()
 foreach ($test in $tests) {
@@ -45,7 +52,7 @@ if ($Prepared) { $TimeoutSeconds=[int]$preparedSelection.TimeoutSeconds }
 if ($VM) {
     if ($Prepared) { throw 'A prepared guest run cannot dispatch another VM.' }
     . (Join-Path $PSScriptRoot 'common\Prepare-Client.ps1')
-    Invoke-ClientRegression -VM $VM -Selected $selected -TimeoutSeconds $TimeoutSeconds -RunDirectory $RunDirectory
+    Invoke-ClientRegression -VM $VM -Selected $selected -TimeoutSeconds $TimeoutSeconds -RunDirectory $RunDirectory -Suite $Suite
     exit $LASTEXITCODE
 }
 if ($Prepared) { . (Join-Path $PSScriptRoot 'common\Prepared.ps1') }
@@ -58,7 +65,7 @@ if ($ui -and !(Test-Path -LiteralPath (Join-Path $ProjectRoot 'build\debug\FileS
 if ($RunDirectory) {
     $run=[IO.Path]::GetFullPath($RunDirectory)
     if (Test-Path -LiteralPath $run) { throw 'The requested result directory already exists; previous results will not be overwritten.' }
-} else { $run=Join-Path $ProjectRoot ('build\regression\'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'-'+[Guid]::NewGuid().ToString('N')) }
+} else { $run=Join-Path $ProjectRoot ('build\'+$Suite.ToLowerInvariant()+'\'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'-'+[Guid]::NewGuid().ToString('N')) }
 [void][IO.Directory]::CreateDirectory($run)
 if ($CI) {
     # Reuse the VM package builder, including installer fixtures and the exact
@@ -67,7 +74,7 @@ if ($CI) {
     $package=Join-Path $run 'package'
     [void][IO.Directory]::CreateDirectory($package)
     [void](Start-Transcript -LiteralPath (Join-Path $run 'preparation.log'))
-    try { New-ClientPackage -Selected $selected -Destination $package -TimeoutSeconds $TimeoutSeconds }
+    try { New-ClientPackage -Selected $selected -Destination $package -TimeoutSeconds $TimeoutSeconds -Suite $Suite }
     finally { [void](Stop-Transcript) }
     & (Join-Path $PSScriptRoot 'common\Invoke-CIClient.ps1') -Package $package -RunDirectory $run
     exit $LASTEXITCODE
@@ -210,7 +217,7 @@ try {
         $arguments='-NoProfile -ExecutionPolicy Bypass -File "'+$entry.File.FullName+'" -ProjectRoot "'+$ProjectRoot+'"'
         if ($Prepared) {
             $env:FS_REGRESSION_CASE=$relative
-            $arguments='-NoProfile -ExecutionPolicy Bypass -File "'+(Join-Path $PSScriptRoot 'common\Prepared-Case.ps1')+'" -ProjectRoot "'+$ProjectRoot+'" -Case "'+$relative+'"'
+            $arguments='-NoProfile -ExecutionPolicy Bypass -File "'+(Join-Path $PSScriptRoot 'common\Prepared-Case.ps1')+'" -ProjectRoot "'+$ProjectRoot+'" -Case "'+$relative+'" -Suite '+$Suite
         }
         $job=Start-RecordedProcess -Executable (Join-Path $PSHOME 'powershell.exe') -Arguments $arguments -OutputPath $log -ErrorPath $errors
         $process=$job.Process
@@ -252,7 +259,7 @@ try {
         $outcome=Get-RegressionOutcome $status $exitCode $detail $errors $testRun $cleanupDetail
         $status=$outcome.Status; $detail=$outcome.Detail
         $seconds=((Get-Date)-$started).TotalSeconds
-        $results.Add([pscustomobject]@{Test=$relative; Category=$entry.Category; Status=$status; ExitCode=$exitCode; Seconds=[Math]::Round($seconds,2); Detail=$detail; Log=$log; ErrorLog=$errors})
+        $results.Add([pscustomobject]@{Test=$relative; Suite=$Suite; Category=$entry.Category; Status=$status; ExitCode=$exitCode; Seconds=[Math]::Round($seconds,2); Detail=$detail; Log=$log; ErrorLog=$errors})
         ConvertTo-Json -InputObject $results -Depth 5 | Set-Content -LiteralPath (Join-Path $run 'results.json') -Encoding UTF8
         Write-Host "$status $relative ($([Math]::Round($seconds,1)) s)"
         if ($detail) { Write-Warning "$relative : $detail" }
@@ -312,6 +319,7 @@ finally {
     }
 }
 $summary=Get-RegressionSummary @($results.ToArray()) $selected.Count $fatal
+$summary|Add-Member -NotePropertyName Suite -NotePropertyValue $Suite
 ConvertTo-Json -InputObject $results -Depth 5 | Set-Content -LiteralPath (Join-Path $run 'results.json') -Encoding UTF8
 $summary | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $run 'summary.json') -Encoding UTF8
 Show-RegressionSummary @($results.ToArray()) $summary $run
