@@ -43,6 +43,8 @@ public static class TitleMenuUi {
         // Inject once, then observe the actual position; a VM may need more than 12 ms.
         Emit(0xc001,(int)(((long)(x-left)*65536+32768)/width),(int)(((long)(y-top)*65536+32768)/height));
         var deadline=Stopwatch.StartNew();
+        // Preserve the drag cadence even when GetCursorPos updates immediately.
+        Thread.Sleep(12);
         while(true) {
             Point point;
             if(!GetCursorPos(out point)) throw new Win32Exception();
