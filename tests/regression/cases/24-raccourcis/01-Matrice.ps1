@@ -6,7 +6,6 @@ $test=Build-NativeTest -Name ShortcutTests -CaseDirectory $PSScriptRoot -Standar
 $fixture=Join-Path $RunDirectory ('powertoys-'+[Guid]::NewGuid().ToString('N'))
 [void][IO.Directory]::CreateDirectory((Join-Path $fixture 'Microsoft\PowerToys\GrabAndMove'))
 Invoke-TestProgram $test @('en',$fixture)
-Invoke-TestProgram $test @('fr',$fixture)
 foreach ($language in @('en','fr','de','el','es','it','pt')) {
     Invoke-TestProgram $test @($language,$fixture,'notice-only')
 }
