@@ -2,9 +2,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {installerMetadata, releaseVersion} from './winget.mjs';
+import {repository, githubApi, publishedRelease, releaseVersion, downloadInstaller} from './release-assets.mjs';
 
-const project = 'https://github.com/LeBenco/FileSpacer';
 const templates = new URL('../../installer/chocolatey/', import.meta.url);
 
 export async function packageFiles(metadata) {
@@ -20,26 +19,9 @@ export async function packageFiles(metadata) {
 }
 
 export async function prepare(tag, output, request = fetch) {
-  const version = releaseVersion(tag);
-  const headers = {Accept: 'application/vnd.github+json'};
-  if (process.env.GH_TOKEN) headers.Authorization = `Bearer ${process.env.GH_TOKEN}`;
-  const response = await request(`https://api.github.com/repos/LeBenco/FileSpacer/releases/tags/${tag}`, {headers});
-  if (!response.ok) throw new Error(`GitHub release lookup failed (${response.status}).`);
-  const release = await response.json();
-  if (release.draft || release.prerelease || release.tag_name !== tag) throw new Error('A published stable release is required.');
-  async function download(name) {
-    const url = `${project}/releases/download/${tag}/${name}`;
-    if (!release.assets.some(asset => asset.name === name && asset.browser_download_url === url)) {
-      throw new Error(`Missing official release asset: ${name}`);
-    }
-    // The API credential must never be forwarded to public download hosts.
-    const result = await request(url);
-    if (!result.ok) throw new Error(`Release download failed (${result.status}): ${name}`);
-    return Buffer.from(await result.arrayBuffer());
-  }
-  const installer = await download(`FileSpacer-${version}-install.exe`);
-  const update = await download('FileSpacer-update.txt');
-  const metadata = installerMetadata(release, tag, update.toString('utf8'), installer);
+  releaseVersion(tag);
+  const release = publishedRelease(await githubApi(process.env.GH_TOKEN, request)(`repos/${repository}/releases/tags/${tag}`), tag);
+  const metadata = await downloadInstaller(release, tag, request);
   for (const [name, content] of Object.entries(await packageFiles(metadata))) {
     const target = path.join(output, name);
     await fs.mkdir(path.dirname(target), {recursive: true});
