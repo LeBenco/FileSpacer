@@ -206,12 +206,24 @@ SETTINGS_BOOL_VALUE(DetailsColumnsEnabled, L"DetailsColumnsEnabled", true)
 SETTINGS_BOOL_VALUE(DetailsColumnsDeferred, L"DetailsColumnsDeferred", true)
 SETTINGS_BOOL_VALUE(GroupFolderWindows, L"GroupFolderWindows", DEFAULT_GROUP_FOLDER_WINDOWS)
 SETTINGS_BOOL_VALUE(KeepSourceWindowOpen, L"KeepSourceWindowOpen", DEFAULT_KEEP_SOURCE_WINDOW_OPEN)
+SETTINGS_BOOL_VALUE(OpeningAnimationEnabled, L"OpeningAnimationEnabled", DEFAULT_OPENING_ANIMATION_ENABLED)
 SETTINGS_BOOL_VALUE(SmartWindowPlacement, L"SmartWindowPlacement", DEFAULT_SMART_WINDOW_PLACEMENT)
 SETTINGS_BOOL_VALUE(KeepSelectionOnActivate, L"KeepSelectionOnActivate", DEFAULT_KEEP_SELECTION_ON_ACTIVATE)
 SETTINGS_BOOL_VALUE(LiveNameSearch, L"LiveNameSearch", DEFAULT_LIVE_NAME_SEARCH)
 SETTINGS_BOOL_VALUE(EverythingEnabled, L"EverythingEnabled", false)
 SETTINGS_BOOL_VALUE(PeekEnabled, L"PeekEnabled", false)
 SETTINGS_STRING_VALUE(EverythingPath, REG_SZ, L"EverythingPath", L"")
+
+DWORD getOpeningAnimationDuration() {
+    DWORD value = DEFAULT_OPENING_ANIMATION_DURATION;
+    getSettingsValue(L"OpeningAnimationDuration", RRF_RT_DWORD, &value, sizeof(value));
+    return value <= MAX_OPENING_ANIMATION_DURATION ? value : DEFAULT_OPENING_ANIMATION_DURATION;
+}
+
+void setOpeningAnimationDuration(DWORD value) {
+    if (value <= MAX_OPENING_ANIMATION_DURATION)
+        setSettingsValue(L"OpeningAnimationDuration", REG_DWORD, &value, sizeof(value));
+}
 
 DWORD getSearchHistoryLimit() {
     DWORD value = DEFAULT_SEARCH_HISTORY_LIMIT;
