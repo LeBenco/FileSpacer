@@ -9,6 +9,7 @@
 #include <atomic>
 #include <algorithm>
 #include <type_traits>
+#include <vector>
 
 #pragma comment(lib, "D3d11.lib")
 #pragma comment(lib, "D2d1.lib")
@@ -151,14 +152,15 @@ struct FolderOpeningAnimation::State {
         return DefWindowProcW(hwnd, message, wParam, lParam);
     }
 
-    bool animate(IDCompositionAnimation **out, float from, float to, LARGE_INTEGER start, double delay) {
-        const double duration = FolderOpeningAnimation::durationMs / 1000.0;
+    bool animate(IDCompositionAnimation **out, float from, float to,
+            std::vector<CComPtr<IDCompositionAnimation>> &animations, double delay) {
+        const double duration = FolderOpeningAnimation::durationMs / 1000.0 - delay;
         CComPtr<IDCompositionAnimation> animation;
         if (!checkHR(resources->composition->CreateAnimation(&animation))) return false;
         if (delay > 0.0 && !checkHR(animation->AddCubic(0.0, from, 0.0f, 0.0f, 0.0f))) return false;
         if (!checkHR(animation->AddCubic(delay, from, static_cast<float>((to - from) / duration), 0.0f, 0.0f))
-                || !checkHR(animation->End(duration + delay, to))
-                || !checkHR(animation->SetAbsoluteBeginTime(start))) return false;
+                || !checkHR(animation->End(duration + delay, to))) return false;
+        animations.push_back(animation);
         *out = animation.Detach();
         return true;
     }
@@ -212,16 +214,16 @@ struct FolderOpeningAnimation::State {
     }
 
     bool addContour(const RECT &origin, const RECT &end, const RECT &bounds,
-            LARGE_INTEGER start, double delay) {
+            std::vector<CComPtr<IDCompositionAnimation>> &animations, double delay) {
         CComPtr<IDCompositionVisual2> contour;
         if (!checkHR(resources->composition->CreateVisual(&contour))) return false;
         CComPtr<IDCompositionAnimation> x, y, width, height, innerWidth, innerHeight;
-        if (!animate(&x, static_cast<float>(origin.left - bounds.left), static_cast<float>(end.left - bounds.left), start, delay)
-                || !animate(&y, static_cast<float>(origin.top - bounds.top), static_cast<float>(end.top - bounds.top), start, delay)
-                || !animate(&width, static_cast<float>(origin.right - origin.left), static_cast<float>(end.right - end.left), start, delay)
-                || !animate(&height, static_cast<float>(origin.bottom - origin.top), static_cast<float>(end.bottom - end.top), start, delay)
-                || !animate(&innerWidth, static_cast<float>(origin.right - origin.left - strokeWidth), static_cast<float>(end.right - end.left - strokeWidth), start, delay)
-                || !animate(&innerHeight, static_cast<float>(origin.bottom - origin.top - strokeWidth), static_cast<float>(end.bottom - end.top - strokeWidth), start, delay)
+        if (!animate(&x, static_cast<float>(origin.left - bounds.left), static_cast<float>(end.left - bounds.left), animations, delay)
+                || !animate(&y, static_cast<float>(origin.top - bounds.top), static_cast<float>(end.top - bounds.top), animations, delay)
+                || !animate(&width, static_cast<float>(origin.right - origin.left), static_cast<float>(end.right - end.left), animations, delay)
+                || !animate(&height, static_cast<float>(origin.bottom - origin.top), static_cast<float>(end.bottom - end.top), animations, delay)
+                || !animate(&innerWidth, static_cast<float>(origin.right - origin.left - strokeWidth), static_cast<float>(end.right - end.left - strokeWidth), animations, delay)
+                || !animate(&innerHeight, static_cast<float>(origin.bottom - origin.top - strokeWidth), static_cast<float>(end.bottom - end.top - strokeWidth), animations, delay)
                 || !checkHR(contour->SetOffsetX(x)) || !checkHR(contour->SetOffsetY(y))
                 || !addEdge(contour, width, height, innerWidth, innerHeight, 0)
                 || !addEdge(contour, width, height, innerWidth, innerHeight, 1)
@@ -272,32 +274,41 @@ struct FolderOpeningAnimation::State {
             nullptr, nullptr, cls.hInstance, this)));
         if (!overlay || !checkHR(resources->composition->CreateTargetForHwnd(overlay.get(), TRUE, &target))
                 || !checkHR(resources->composition->CreateVisual(&visual))
+                || !checkHR(visual->SetBorderMode(DCOMPOSITION_BORDER_MODE_SOFT))
+                || !checkHR(visual->SetBitmapInterpolationMode(DCOMPOSITION_BITMAP_INTERPOLATION_MODE_LINEAR))
                 || !drawPattern(static_cast<UINT>((std::max)(origin.right - origin.left, end.right - end.left)),
                     static_cast<UINT>((std::max)(origin.bottom - origin.top, end.bottom - end.top)))
                 || !checkHR(target->SetRoot(visual))) return false;
-        LARGE_INTEGER start = {}, frequency = {};
-        if (!checkLE(QueryPerformanceCounter(&start)) || !checkLE(QueryPerformanceFrequency(&frequency))
-                || frequency.QuadPart <= 0) return false;
+        std::vector<CComPtr<IDCompositionAnimation>> animations;
+        animations.reserve(19);
         CComPtr<IDCompositionAnimation> visibility;
         CComPtr<IDCompositionRectangleClip> clip;
         const double duration = FolderOpeningAnimation::durationMs / 1000.0;
         if (!checkHR(resources->composition->CreateAnimation(&visibility))
                 || !checkHR(visibility->AddCubic(0.0, static_cast<float>(bounds.right - bounds.left), 0.0f, 0.0f, 0.0f))
                 || !checkHR(visibility->End(duration, 0.0f))
-                || !checkHR(visibility->SetAbsoluteBeginTime(start))
                 || !checkHR(resources->composition->CreateRectangleClip(&clip))
                 || !checkHR(clip->SetLeft(0.0f)) || !checkHR(clip->SetTop(0.0f))
                 || !checkHR(clip->SetRight(visibility))
                 || !checkHR(clip->SetBottom(static_cast<float>(bounds.bottom - bounds.top)))
                 || !checkHR(visual->SetClip(clip))) return false;
+        animations.push_back(visibility);
         for (unsigned index = 0; index < 3; ++index) {
-            if (!addContour(origin, end, bounds, start, index * 0.020)) return false;
+            // Each delayed contour still reaches the destination at 200 ms.
+            if (!addContour(origin, end, bounds, animations, index * 0.020)) return false;
         }
         completion.reset(checkLE(CreateThreadpoolTimer(revealWindow, this, nullptr)));
         if (!completion) return false;
         if (!checkLE(SetWindowPos(overlay.get(), HWND_TOP, 0, 0, 0, 0,
                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW))) return false;
-        // DWM hides the whole trail at 200 ms, including the delayed contours.
+        // Timestamp only after preparation, immediately before submitting the batch.
+        LARGE_INTEGER start = {}, frequency = {};
+        if (!checkLE(QueryPerformanceFrequency(&frequency)) || frequency.QuadPart <= 0
+                || !checkLE(QueryPerformanceCounter(&start))) return false;
+        for (const auto &animation : animations) {
+            if (!checkHR(animation->SetAbsoluteBeginTime(start))) return false;
+        }
+        // DWM hides the whole trail when all three contours reach the destination.
         if (!checkHR(resources->composition->Commit())) return false;
         LARGE_INTEGER now = {};
         if (!checkLE(QueryPerformanceCounter(&now))) return false;
