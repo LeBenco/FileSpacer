@@ -1,8 +1,8 @@
 {
   "version": 1,
   "channel": "chocolatey",
-  "initialized": false,
-  "accepted": null,
+  "initialized": true,
+  "accepted": "v1.4.1",
   "active": [],
   "pending": null
 }
