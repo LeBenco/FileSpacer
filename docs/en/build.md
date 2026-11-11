@@ -170,7 +170,7 @@ An exact successful result for unchanged application/test inputs may be reused
 without rerunning the suite; see the [regression result cache](tests/regression/README.md#run-on-github).
 
 Distribution is opt-in: by default, a release is published only on GitHub.
-When selected, a separate WinGet workflow submits the
+When selected, **Distribute FileSpacer** calls a reusable WinGet workflow to submit the
 installer to the community catalog. It requires the one-time `WINGET_TOKEN`
 secret; submission failures do not undo the GitHub release.
 See [WinGet distribution](winget.md) for setup,
@@ -180,6 +180,42 @@ When selected, Chocolatey distribution also runs independently after a successfu
 uses the `CHOCO_API_KEY` secret, builds and smoke-tests the `filespacer` package,
 then submits it for community moderation. See [Chocolatey distribution](chocolatey.md)
 for setup, validation, and manual retries.
+
+The common coordinator runs after successful publication and checks both queues
+hourly, at minute 17. Each channel has one latest pending release and its own
+acceptance barrier. If X awaits acceptance, Y is retained; if Z is requested
+before X is accepted, Z replaces Y. Once X is accepted, only the retained version
+is submitted. Older or replayed requests cannot replace a newer pending version.
+Only releases selected for that channel, or explicitly requested manually, enter
+its queue. A GitHub-only release never replaces a queued catalog release.
+
+The shared `.github/scripts/distribution-queue.mjs` stores `state.json` in the
+orphan branches `distribution-winget` and `distribution-chocolatey`, created on
+first use with the workflow's `contents: write` permission. The branches contain
+only state; they are not merged into `main`. Blob-SHA checks reject conflicting
+writes. Native per-channel concurrency serializes short runs with `queue: max`;
+the latest pending VERSION is maintained in state, not by leaving a runner waiting
+for moderation. Channel failures do not cancel the other channel or the release.
+
+Migration imports all open `Benco.FileSpacer` PRs. For Chocolatey, it checks each
+published stable GitHub release using exact-version Chocolatey CLI searches,
+including unapproved uploads. Any imported submissions must all be accepted
+before a new version is sent. After migration, submit through the coordinator so
+its state also tracks Chocolatey uploads; unrelated manual Chocolatey uploads
+outside this workflow are not automatically discovered.
+
+WinGet unblocks after the tracked PR is merged (catalog propagation can take
+longer). Chocolatey unblocks only when the official CLI reports that exact
+version as approved. Network failures, closed unmerged PRs and uncertain uploads
+keep the barrier closed. A reservation is saved before each external upload, so
+cancellation or a lost response cannot cause an automatic duplicate. The Actions
+summary shows accepted, active and pending versions, with PR links when available.
+
+This layout uses GitHub's [reusable workflows](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows),
+as illustrated by [WhatPulse's package coordinator](https://github.com/whatpulse/external-packages/blob/main/.github/workflows/release.yml).
+Persistent branch state follows the same principle as [GitHub's lock action](https://github.com/github/lock),
+without adding a dependency. Scheduled checks may be delayed by GitHub, and public
+repositories' schedules are disabled after 60 days without repository activity.
 
 Before publication, update both version definitions in `src/resource.h`, add
 the matching `CHANGELOG.md` section, and commit the intended changes. From Git
@@ -209,16 +245,28 @@ changelog and selected channels, and asks for confirmation before pushing `main`
 tag. Check the workflow outcome and both release assets afterward. Failure
 summaries/build logs remain workflow artifacts.
 
-An existing GitHub release can be distributed later: run **Submit FileSpacer to
-WinGet** and/or **Submit FileSpacer to Chocolatey**, selecting `main` and its
-published tag. A manual dispatch explicitly selects that channel regardless of
+An existing GitHub release can be distributed later: run **Distribute FileSpacer**,
+select `main`, its published tag and `channel=winget`, `chocolatey` or `all`.
+A manual dispatch explicitly selects those channels regardless of
 the original tag preference, and reuses the published installer and SHA-256.
 From a client with GitHub CLI installed:
 
 ```bash
-gh workflow run winget.yml --ref main -f tag=vX.Y.Z
-gh workflow run chocolatey.yml --ref main -f tag=vX.Y.Z
+gh workflow run distribution.yml --ref main -f channel=winget -f tag=vX.Y.Z
+gh workflow run distribution.yml --ref main -f channel=chocolatey -f tag=vX.Y.Z
 ```
+
+Leave `tag` empty to reconcile existing queues without requesting a release.
+If preparation fails before reservation (for example, a missing secret), the
+pending release remains eligible for a later check. After reservation, inspect
+the upstream PR/package and the failed run before requesting `retry=true`, with
+that SAME tag and one channel. This permits another attempt only if the tracked
+submission is missing or its WinGet PR was closed without merging; it cannot
+bypass an open submission or discard a newer pending release. Never delete state
+branches to recover a failure: losing an uncertain reservation can create duplicates.
+Chocolatey's `dry_run=true`, with a tag and `channel=chocolatey`, validates the
+package and real installation on the runner without reading or writing queue
+state, reserving a submission or using the Chocolatey API key.
 
 Do not rerun the release-generation workflow merely to submit to a catalog:
 it rebuilds and can replace release assets, invalidating existing catalog checksums.
