@@ -25,7 +25,8 @@ tests.cmd
 ```
 
 During development, run new and affected cases. `tests.cmd` without filters runs
-the full application suite; the GitHub regression workflow also supports it.
+the functional regression suite; the GitHub regression workflow also supports it.
+Stress tests are a separate, explicitly selected suite and never run by default.
 Do not run a native test a second time when the selected suite already includes it.
 
 | Option | Meaning |
@@ -33,7 +34,8 @@ Do not run a native test a second time when the selected suite already includes 
 | `-Category Internal\|UI\|All` | Filter by the category declared in each case; default `All`. |
 | `-Pattern "group\case-pattern"` | PowerShell wildcard matched against the relative case path; default `*`. Combine with `-Category`. |
 | `-Scope Application\|All` | Both select the application suite; default `All`. |
-| `-TimeoutSeconds N` | Per-case deadline, 30–3600 seconds; default 300. A timeout is a failure. |
+| `-Suite Regression\|Stress` | Select one disjoint catalogue; default `Regression`. |
+| `-TimeoutSeconds N` | Per-case deadline, 30–3600 seconds; default 300 for regressions and 900 for stress. A timeout is a failure. |
 | `-RunDirectory "path"` | Store or copy reports to a new directory; existing reports are never overwritten. |
 | `-VM "name"` | Run selected cases in a configured Hyper-V client. |
 
@@ -161,6 +163,16 @@ not cover active-window behavior. If a relation depends on several retained
 cases, all of them are required. Follow implications transitively only when
 their preconditions remain compatible; a cycle is not evidence of equivalence.
 
+A test may also be retired because its cost and maintenance outweigh its
+regression value. This is an explicit reduction of the obligations, not an
+implication claim. The exhaustive forbidden-shortcut truth tables have been
+retired on that basis. Keep representative page/Registry round trips, input
+capture, exchange, defaults, real geometry and cancellation checks instead.
+Run functional logic once, independently of language. Only checks of translated
+text, accessibility, layout, mnemonic collisions or resource selection vary by
+language. In particular, shortcut and context-menu logic is no longer repeated
+in English and French, and PowerToys exclusions are not repeated per translation.
+
 The following reductions retain the original search obligations:
 
 | Retained case | Replaced case / check | Relation and preserved boundary |
@@ -182,6 +194,55 @@ its dependencies. Deleted cases are removed from discovery, not reported as
 inferred PASS results. A failed, blocked or unexecuted representative never
 validates a replaced obligation. `-Category` and `-Pattern` still filter the
 remaining catalogue normally; use the retained path above for a deleted case.
+
+<a id="stress-suite"></a>
+
+### Separate stress suite
+
+```cmd
+stress-tests.cmd -VM AgentWin10
+stress-tests.cmd -VM AgentWin10 -Pattern "18-vue-shell-native\04-*"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\regression\Run-Regression.ps1 -Suite Stress -ListOnly
+```
+
+The stress catalogue lives in `tests/stress/cases`, outside regression discovery.
+It reuses the same runner, isolation, host compilation and VM transport. The
+prepared selection, result entries and summary record `Suite`; a prepared worker
+uses that saved suite, never the other catalogue. No `All` suite combines them.
+Local stress reports live under `build/stress`; the existing VM transport keeps
+its `build/regression/vm-<id>` report location and records the suite in its package.
+
+Stress includes 5,000-item SQLite recovery, saved-layout redraw, load/restarts,
+View-menu cancellation, clear/select-all selection matrices, repeated concurrent
+Preferences requests, the comparative slow-column probe and column/frame drag
+CPU measurements. Functional selection regressions use 129 items to retain the native 128-item
+threshold for partial and complete selections; concurrency
+uses one simultaneous pair plus the initialization, owner-close and abandoned
+mutex boundaries. Large and repeated variants run only through the stress suite.
+Production selection matrices use one pass per distinct combination rather than
+three timing repetitions: 135 operations for 129 items and 135 for 5,000 items.
+
+Managed helper source bundles are compiled once per identical ordered contents
+within a prepared package, with the package's fixed compiler, references and
+options. Each case retains its own manifest entry and hash checks. Native helper
+argument combinations continue to be compiled once per package as before.
+
+Selection stress cases emit `private-diagnostics.json`, including:
+
+- separate clear, select-all and optional range capability observations;
+- discovered function RVAs, qualification reasons and module identity evidence;
+- the original structural `.public` and transient `.attempt` decision reasons,
+  with checksums, including the first required private symbol that blocks discovery;
+- observed per-view dispatch, backend use and retained stdout/stderr evidence.
+
+`AVAILABLE`, `PARTIAL` and `NOT_OBSERVED` describe private-capability coverage,
+independently of the functional PASS/FAIL result. Observations include deliberately
+degraded test arms identified by their source path. A public fallback PASS does not
+certify private acceleration. A zero RVA means unresolved in the descriptor, not
+proof that the function is absent from Windows. A symbol reported missing by the
+worker was looked up against the matching PDB; an ABI/CFG/identity rejection and
+a transient symbol-download failure remain distinct. System DLL versions/hashes
+are labeled as system copies, separately from the loaded probe's identity.
 
 <a id="native-view-persistence"></a>
 
@@ -293,7 +354,7 @@ Useful pitfalls when diagnosing UI failures:
   `/Z7` to avoid shared-PDB failures.
 
 For search diagnosis, `set FS_SEARCH_TIMINGS=1` enables real-read durations in
-`search-observations.jsonl`; case 20/01 also writes `load-phases.jsonl`. These
+`search-observations.jsonl`; stress case 20/01 also writes `load-phases.jsonl`. These
 logs do not alter deadlines or assertions. Concurrent accessibility inspection
 can substantially change load timings. Compare builds under the same observer,
 fixture and environment conditions; load timings are not universal performance
