@@ -1,5 +1,4 @@
 ﻿. (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
-. (Join-Path $PSScriptRoot '..\..\common\SearchAssertions.ps1')
 . (Join-Path $PSScriptRoot '..\..\common\SearchUi.ps1')
 Add-Type -Path (Join-Path $PSScriptRoot 'SearchMenus.cs') -ReferencedAssemblies UIAutomationClient,UIAutomationTypes
 
