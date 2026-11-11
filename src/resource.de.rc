@@ -213,7 +213,7 @@ BEGIN
   IDS_EVERYTHING_NOT_FOUND "Everything wurde nicht gefunden. Installieren Sie es oder wählen Sie die ausführbare Datei manuell aus."
   IDS_EVERYTHING_PATH_INVALID "Der Everything-Pfad kann nicht übernommen werden: %1!s!\n\nGeben Sie den vollständigen Pfad einer vorhandenen Everything.exe an oder lassen Sie das Feld für die automatische Erkennung leer."
   IDS_SEARCH_HISTORY_INVALID "Geben Sie einen Wert zwischen 0 und 20 für den Suchverlauf ein."
-  IDS_OPENING_ANIMATION_DURATION_INVALID "Geben Sie eine ganze Zahl von 0 bis 2147483647 Millisekunden ein."
+  IDS_OPENING_ANIMATION_DURATION_INVALID "Geben Sie eine ganze Zahl von 0 bis 999 Millisekunden ein."
   IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer platziert neue Fenster so, dass sie andere Ordnerfenster möglichst wenig überlappen.\n\nDas gilt für Ordner ohne gespeicherte Fensterposition oder wenn eine gespeicherte Position nach einem Wechsel der Bildschirmanordnung nicht mehr erreichbar ist. Eine weiterhin nutzbare gespeicherte Position hat Vorrang."
   IDS_GROUP_FOLDER_WINDOWS_HELP "Neue Ordnerfenster können entsprechend Ihren Windows-Einstellungen unter einer gemeinsamen Schaltfläche in der Taskleiste gruppiert werden.\n\nIst diese Option deaktiviert, können Ordner einzeln an die Taskleiste angeheftet werden.\n\nDie Änderung gilt nur für danach geöffnete Fenster. Bereits geöffnete Fenster behalten ihre aktuelle Gruppierung."
   IDS_EVERYTHING_EXECUTABLE "Ausführbare Everything-Datei (*.exe)"

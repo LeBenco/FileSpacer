@@ -213,7 +213,7 @@ BEGIN
   IDS_EVERYTHING_NOT_FOUND "Everything is niet gevonden. Installeer het of selecteer het uitvoerbare bestand handmatig."
   IDS_EVERYTHING_PATH_INVALID "Het pad naar Everything kan niet worden toegepast: %1!s!\n\nVoer het volledige pad van een bestaand Everything.exe-bestand in of laat het veld leeg voor automatische detectie."
   IDS_SEARCH_HISTORY_INVALID "Voer een limiet voor de zoekgeschiedenis van 0 tot 20 in."
-  IDS_OPENING_ANIMATION_DURATION_INVALID "Voer een geheel aantal milliseconden van 0 tot 2147483647 in."
+  IDS_OPENING_ANIMATION_DURATION_INVALID "Voer een geheel aantal milliseconden van 0 tot 999 in."
   IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer plaatst nieuwe vensters zo dat ze andere mapvensters zo min mogelijk overlappen.\n\nDit geldt voor mappen zonder opgeslagen vensterpositie of waarvan de opgeslagen positie na een beeldschermwijziging niet meer bereikbaar is. Een nog bruikbare opgeslagen positie heeft voorrang."
   IDS_GROUP_FOLDER_WINDOWS_HELP "Nieuwe mapvensters kunnen onder één taakbalkknop worden gegroepeerd, volgens uw Windows-taakbalkinstellingen.\n\nAls deze optie uitstaat, kunnen mappen afzonderlijk aan de taakbalk worden vastgemaakt.\n\nDeze instelling geldt voor vensters die na de wijziging worden geopend. Al geopende vensters behouden hun huidige taakbalkgroepering."
   IDS_EVERYTHING_EXECUTABLE "Uitvoerbaar bestand van Everything (*.exe)"
