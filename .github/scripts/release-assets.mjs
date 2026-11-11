@@ -26,13 +26,17 @@ export function githubApi(token = process.env.GH_TOKEN, request = fetch) {
     const headers = {Accept: 'application/vnd.github+json'};
     if (token) headers.Authorization = `Bearer ${token}`;
     if (body !== undefined) headers['Content-Type'] = 'application/json';
-    const response = await request(`https://api.github.com/${endpoint}`, {
-      method, headers, signal: AbortSignal.timeout(60000),
-      ...(body === undefined ? {} : {body: JSON.stringify(body)})
-    });
-    if (allowMissing && response.status === 404) return null;
-    if (!response.ok) throw new Error(`GitHub API failed (${response.status}): ${endpoint}`);
-    return response.json();
+    try {
+      const response = await request(`https://api.github.com/${endpoint}`, {
+        method, headers, signal: AbortSignal.timeout(60000),
+        ...(body === undefined ? {} : {body: JSON.stringify(body)})
+      });
+      if (allowMissing && response.status === 404) return null;
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      throw new Error(`GitHub API failed (${method} ${endpoint}): ${error.cause?.code || error.message}`);
+    }
   };
 }
 
