@@ -172,6 +172,7 @@ Copyright (c) 2013 Afrow Soft Ltd. Zie LockedList-LICENSE.txt.\r\n\
 STRINGTABLE
 BEGIN
     IDS_OPEN_IN_EXPLORER, "Openen in Windows Bestandenverkenner"
+    IDS_OPEN_COMMAND, "Openen"
     IDS_CONTEXT_MENU_SYNC_FAILED, "Kan de mapsnelmenu’s niet bijwerken (fout %1!u!): %2"
   IDS_LOCK_WINDOW_STATE "Vensterstatus vergrendelen"
   IDS_UNLOCK_WINDOW_STATE "Vensterstatus ontgrendelen"

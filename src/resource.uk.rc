@@ -172,6 +172,7 @@ Copyright (c) 2013 Afrow Soft Ltd. Див. LockedList-LICENSE.txt.\r\n\
 STRINGTABLE
 BEGIN
     IDS_OPEN_IN_EXPLORER, "Відкрити у Файловому провіднику Windows"
+    IDS_OPEN_COMMAND, "Відкрити"
     IDS_CONTEXT_MENU_SYNC_FAILED, "Не вдалося оновити контекстні меню папок (помилка %1!u!): %2"
   IDS_LOCK_WINDOW_STATE "Заблокувати стан вікна"
   IDS_UNLOCK_WINDOW_STATE "Розблокувати стан вікна"

@@ -172,6 +172,7 @@ Copyright (c) 2013 Afrow Soft Ltd. Consulta LockedList-LICENSE.txt.\r\n\
 STRINGTABLE
 BEGIN
     IDS_OPEN_IN_EXPLORER, "Abrir en el Explorador de archivos de Windows"
+    IDS_OPEN_COMMAND, "Abrir"
     IDS_CONTEXT_MENU_SYNC_FAILED, "No se han podido actualizar los menús contextuales de las carpetas (error %1!u!): %2"
   IDS_LOCK_WINDOW_STATE "Bloquear el estado de la ventana"
   IDS_UNLOCK_WINDOW_STATE "Desbloquear el estado de la ventana"

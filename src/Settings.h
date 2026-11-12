@@ -146,5 +146,7 @@ struct DefaultBrowserResult {
 };
 DefaultBrowserResult setDefaultBrowser(bool value);
 DefaultBrowserResult synchronizeContextMenus();
+// Installer cleanup, optionally for a hive temporarily mounted under HKEY_USERS.
+LSTATUS restoreOpenVerbs(const wchar_t *userHive = nullptr);
 
 }} // namespace
