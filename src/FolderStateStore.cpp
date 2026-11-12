@@ -18,8 +18,6 @@
 #include <commctrl.h>
 #include <shellapi.h>
 #include <type_traits>
-#include <RestartManager.h>
-#pragma comment(lib, "Rstrtmgr.lib")
 #endif
 
 namespace filespacer {
@@ -1167,57 +1165,9 @@ struct StorageErrorDialog {
     std::wstring path, directory, diagnosis;
     // Last formatted footer: the control is not documented to copy element text.
     std::wstring footer;
-    bool usersLoaded = false;
 };
-void loadStorageUsers(StorageErrorDialog &dialog) {
-    if (dialog.usersLoaded) return;
-    dialog.usersLoaded = true;
-    DWORD session = 0;
-    wchar_t key[CCH_RM_SESSION_KEY + 1] = {};
-    std::wstring users;
-    // Rstrtmgr.dll is delay-loaded: only this diagnosis needs it. Loading the
-    // System32 copy first turns an absent library into the "unavailable" text
-    // below instead of the delay-load helper's structured exception. The
-    // reference is kept: the helper binds its imports to this module.
-    DWORD error = LoadLibraryExW(L"Rstrtmgr.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32)
-        ? RmStartSession(&session, 0, key) : GetLastError();
-    if (error == ERROR_SUCCESS) {
-        auto endSession = [](DWORD *handle) { RmEndSession(*handle); };
-        const std::unique_ptr<DWORD, decltype(endSession)> guard(&session, endSession);
-        std::wstring paths[] = {dialog.path, dialog.path + L"-wal", dialog.path + L"-shm", dialog.path + L"-journal"};
-        LPCWSTR files[] = {paths[0].c_str(), paths[1].c_str(), paths[2].c_str(), paths[3].c_str()};
-        error = dialog.path.empty() ? ERROR_PATH_NOT_FOUND
-            : RmRegisterResources(session, ARRAYSIZE(files), files, 0, nullptr, 0, nullptr);
-        if (error == ERROR_SUCCESS) {
-            UINT required = 0, count = 0;
-            DWORD reboot = 0;
-            error = RmGetList(session, &required, &count, nullptr, &reboot);
-            // A changing process list can require one resize; never spin waiting for it.
-            for (int attempt = 0; error == ERROR_MORE_DATA && attempt < 2; ++attempt) {
-                std::vector<RM_PROCESS_INFO> processes(required);
-                count = required;
-                error = RmGetList(session, &required, &count, processes.data(), &reboot);
-                if (error == ERROR_SUCCESS) {
-                    for (UINT index = 0; index < count; ++index)
-                        users += L"\n" + std::wstring(processes[index].strAppName) + L" - PID "
-                            + std::to_wstring(processes[index].Process.dwProcessId);
-                }
-            }
-        }
-    }
-    dialog.diagnosis += L"\n\n";
-    dialog.diagnosis += getString(users.empty() ? IDS_STORAGE_USERS_UNAVAILABLE : IDS_STORAGE_USERS);
-    dialog.diagnosis += users;
-    if (error != ERROR_SUCCESS) dialog.diagnosis += L"\nRestart Manager: " + std::to_wstring(error);
-}
 HRESULT CALLBACK storageErrorCallback(HWND window, UINT notification, WPARAM button, LPARAM, LONG_PTR data) {
     auto &dialog = *reinterpret_cast<StorageErrorDialog *>(data);
-    if (notification == TDN_EXPANDO_BUTTON_CLICKED && button) {
-        loadStorageUsers(dialog);
-        SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_EXPANDED_INFORMATION,
-            reinterpret_cast<LPARAM>(dialog.diagnosis.c_str()));
-        return S_OK;
-    }
     if (notification == TDN_BUTTON_CLICKED && button == IDC_STORAGE_RESET) {
         int confirmed = IDNO;
         TASKDIALOGCONFIG confirmation = {sizeof(confirmation)};
@@ -1260,7 +1210,6 @@ HRESULT CALLBACK storageErrorCallback(HWND window, UINT notification, WPARAM but
     }
     if (notification != TDN_BUTTON_CLICKED
             || (button != IDC_STORAGE_OPEN_DATA && button != IDC_STORAGE_COPY_DIAGNOSIS)) return S_OK;
-    if (button == IDC_STORAGE_COPY_DIAGNOSIS) loadStorageUsers(dialog);
     const DWORD error = button == IDC_STORAGE_OPEN_DATA
         ? openStorageDirectory(window, dialog.directory) : copyStorageDiagnosis(window, dialog.diagnosis);
     if (error) {
