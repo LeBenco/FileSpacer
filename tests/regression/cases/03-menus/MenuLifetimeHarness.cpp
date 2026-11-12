@@ -303,7 +303,8 @@ struct ShellViewHost {
 // Column geometry is outside this lifetime harness; retain its suspend/resume
 // boundary so closure during a menu must still balance the scoped ownership.
 struct ShellViewColumns {
-    void suspend(bool value) { if (value) ++observation.columnSuspends; else ++observation.columnResumes; }
+    enum class Hold { Menu, Resize };
+    void suspend(Hold, bool value) { if (value) ++observation.columnSuspends; else ++observation.columnResumes; }
 };
 struct FolderWindow : ItemWindow {
     struct ViewMenuPreview {
@@ -345,6 +346,8 @@ struct FolderWindow : ItemWindow {
     unsigned viewProfile = FVO_DEFAULT, viewMenuDepth = 0;
     POINT pendingViewMenuPoint = {};
     void requestViewProfile() { if (isWindowOperational()) ++observation.profileRequests; }
+    // The mixed-sorting provider is outside this lifetime harness.
+    void replayProviderSync() {}
     HRESULT invokeViewCommand(IContextMenu *menu, CMINVOKECOMMANDINFO *info);
     void resumeDeferredClose();
     CComPtr<IContextMenu> queryBackgroundMenu(HMENU *);
