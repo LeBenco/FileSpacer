@@ -121,7 +121,8 @@ public:
                 signal->generation, static_cast<LPARAM>(serial));
             return S_OK;
         }
-        if (id == DISPID_VIEWMODECHANGED || id == DISPID_ORDERCHANGED || id == DISPID_FOLDERCHANGED) {
+        if (id == DISPID_VIEWMODECHANGED || id == DISPID_ORDERCHANGED || id == DISPID_FOLDERCHANGED
+                || id == DISPID_COLUMNSCHANGED) {
             const HWND target = signal->target.load();
             if (target && signal->changedMessage)
                 PostMessage(target, signal->changedMessage, signal->generation, 0);
