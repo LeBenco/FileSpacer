@@ -114,8 +114,22 @@ HRESULT restoreOptions(IFolderView2 *view, const FolderViewSettings &state) {
         const HRESULT result = view->SetCurrentFolderFlags(FWF_AUTOARRANGE | FWF_SNAPTOGRID, state.flags);
         record(result);
     }
+    // Like the mode and the flags: identical columns, sort and group are not
+    // written again, unless the mode change above may have reset them.
+    bool sameColumns = !changeMode && (actual.present & FolderViewSettings::Columns)
+        && actual.columns.size() == state.columns.size();
+    for (size_t i = 0; sameColumns && i < state.columns.size(); ++i)
+        sameColumns = !(actual.columns[i].key != state.columns[i].key)
+            && actual.columns[i].width == state.columns[i].width;
+    bool sameSort = !changeMode && (actual.present & FolderViewSettings::Sort)
+        && actual.sort.size() == state.sort.size();
+    for (size_t i = 0; sameSort && i < state.sort.size(); ++i)
+        sameSort = !(actual.sort[i].key != state.sort[i].key)
+            && actual.sort[i].direction == state.sort[i].direction;
+    const bool sameGroup = !changeMode && (actual.present & FolderViewSettings::Group)
+        && !(actual.groupBy != state.groupBy) && actual.groupAscending == state.groupAscending;
     CComQIPtr<IColumnManager> manager(view);
-    if ((state.present & FolderViewSettings::Columns) && !state.columns.empty()) {
+    if ((state.present & FolderViewSettings::Columns) && !state.columns.empty() && !sameColumns) {
         if (!manager) record(E_FAIL);
         else {
             std::vector<PROPERTYKEY> keys;
@@ -132,14 +146,14 @@ HRESULT restoreOptions(IFolderView2 *view, const FolderViewSettings &state) {
             }
         }
     }
-    if ((state.present & FolderViewSettings::Sort) && !state.sort.empty()) {
+    if ((state.present & FolderViewSettings::Sort) && !state.sort.empty() && !sameSort) {
         std::vector<SORTCOLUMN> columns;
         for (const auto &column : state.sort)
             columns.push_back({propertyKey(column.key), static_cast<SORTDIRECTION>(column.direction)});
         const HRESULT result = view->SetSortColumns(columns.data(), static_cast<int>(columns.size()));
         record(result);
     }
-    if (state.present & FolderViewSettings::Group) {
+    if ((state.present & FolderViewSettings::Group) && !sameGroup) {
         const HRESULT result = view->SetGroupBy(propertyKey(state.groupBy), state.groupAscending);
         record(result);
     }
