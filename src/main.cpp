@@ -280,18 +280,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     if (!checkHR(OleInitialize(0))) // needed for drag/drop
         return 0;
 
-#ifdef FILESPACER_DEBUG
-    if (settings::testMode) {
-        // UI experiments may opt into an isolated, already qualified cache.
-        // Ordinary /test runs retain the deterministic public path.
-        wchar_t cache[MAX_PATH] = {};
-        const DWORD cacheLength = GetEnvironmentVariableW(L"FS_SELECTION_PRODUCT_CACHE", cache, _countof(cache));
-        initializeShellSelectionClear(cacheLength && cacheLength < _countof(cache) ? cache : L"", false);
-    }
-    else
-#endif
-        initializeShellSelectionClear();
-
     // Auto-reset notification: a modal loop cannot consume this wakeup.
     // Keep it alive until every Shell/application Release has finished signaling.
     CHandle idleEvent(checkLE(CreateEvent(nullptr, FALSE, FALSE, nullptr)));
@@ -390,6 +378,23 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     }
     const bool runServer = type != LAUNCH_FAIL && type != LAUNCH_FOUND;
 
+    // A launch that only delegates to an existing instance hosts no view: the
+    // optional selection capabilities are resolved by a serving process only.
+    // Windows created above bind when the capability is published.
+    if (runServer) {
+#ifdef FILESPACER_DEBUG
+        if (settings::testMode) {
+            // UI experiments may opt into an isolated, already qualified cache.
+            // Ordinary /test runs retain the deterministic public path.
+            wchar_t cache[MAX_PATH] = {};
+            const DWORD cacheLength = GetEnvironmentVariableW(L"FS_SELECTION_PRODUCT_CACHE", cache, _countof(cache));
+            initializeShellSelectionClear(cacheLength && cacheLength < _countof(cache) ? cache : L"", false);
+        }
+        else
+#endif
+            initializeShellSelectionClear();
+    }
+
     FSExecuteFactory executeFactory;
     HRESULT regHR = E_FAIL;
     DWORD regCookie = 0;
@@ -469,6 +474,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     }
     stopUpdateChecks();
     waitForUpdateThread();
+    // Joined like the threads above: no resolution code may still run when
+    // static objects are destroyed after this function returns.
+    stopShellSelectionClear();
     uninitProcessLifetime();
 
     ItemWindow::uninit();

@@ -10,6 +10,11 @@ namespace filespacer {
 // Nonblocking startup. Public operations are available immediately; a qualified
 // private capability may be published once without changing an in-flight call.
 void initializeShellSelectionClear(const wchar_t *cacheRoot = nullptr, bool background = true);
+// Same thread as the initialization, before the process returns from its entry
+// point: stops the background resolution and waits until its thread has exited.
+// The resolution observes the request in each of its waits. No effect when none
+// was started.
+void stopShellSelectionClear();
 
 // Bind once when a new view's initial presentation is ready. An unbound or
 // unsupported view uses the public API. A call retains its binding through
