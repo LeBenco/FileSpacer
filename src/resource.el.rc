@@ -172,6 +172,7 @@ Copyright (c) 2013 Afrow Soft Ltd. Δείτε το LockedList-LICENSE.txt.\r\n\
 STRINGTABLE
 BEGIN
     IDS_OPEN_IN_EXPLORER, "Άνοιγμα στην Εξερεύνηση αρχείων των Windows"
+    IDS_OPEN_COMMAND, "Άνοιγμα"
     IDS_CONTEXT_MENU_SYNC_FAILED, "Δεν ήταν δυνατή η ενημέρωση των μενού περιβάλλοντος φακέλων (σφάλμα %1!u!): %2"
   IDS_LOCK_WINDOW_STATE "Κλείδωμα κατάστασης παραθύρου"
   IDS_UNLOCK_WINDOW_STATE "Ξεκλείδωμα κατάστασης παραθύρου"

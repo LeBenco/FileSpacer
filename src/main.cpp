@@ -217,6 +217,17 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     }
     const bool maintenance = handleUpdateCommandLine(recoveryArgc, recoveryArgv, &maintenanceExit)
         || recovery::handleCommandLine(recoveryArgc, recoveryArgv, &maintenanceExit);
+    // Association maintenance must finish before starting recovery or COM.
+    if (!maintenance && recoveryArgc == 2 && lstrcmpiW(recoveryArgv[1], L"/set-default-browser") == 0) {
+        LocalFree(static_cast<HLOCAL>(recoveryArgv));
+        return settings::setDefaultBrowser(true).status();
+    }
+    if (!maintenance && (recoveryArgc == 2 || recoveryArgc == 3)
+            && lstrcmpiW(recoveryArgv[1], L"/restore-open-verbs") == 0) {
+        const LSTATUS status = settings::restoreOpenVerbs(recoveryArgc == 3 ? recoveryArgv[2] : nullptr);
+        LocalFree(static_cast<HLOCAL>(recoveryArgv));
+        return status;
+    }
     const bool synchronizeMenus = !maintenance && recoveryArgc == 2
         && lstrcmpiW(recoveryArgv[1], L"/sync-context-menus") == 0;
     wstr_ptr startingFolder;
