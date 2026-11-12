@@ -341,6 +341,7 @@ private:
     CComPtr<IContextMenu> queryBackgroundMenu(HMENU *popupMenu);
     void newItem(const char *verb);
     void openQuickAccessMenu(POINT point);
+    int trackQuickAccessContextMenu(IShellItem *target, POINT point, CComPtr<IContextMenu> &handler);
     void openViewMenu(POINT point);
     void openBackgroundSubMenu(IContextMenu *contextMenu, HMENU subMenu, POINT point);
 
