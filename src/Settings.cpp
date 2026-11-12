@@ -230,7 +230,9 @@ bool setSearchHistoryLimit(DWORD value) {
     const DWORD previous = getSearchHistoryLimit();
     if (setSettingsValue(L"SearchHistoryLimit", REG_DWORD, &value, sizeof(value)) != ERROR_SUCCESS)
         return false;
-    if (value == previous) return true; // Persist the choice without touching unchanged histories.
+    // Persist the choice without touching the histories unless they must shrink:
+    // reads and saves are already bounded by the limit.
+    if (value >= previous) return true;
     auto store = folderStateStore();
     if (!store || !store->trimSearchHistory(value)) {
         setSettingsValue(L"SearchHistoryLimit", REG_DWORD, &previous, sizeof(previous));
@@ -703,7 +705,34 @@ LSTATUS synchronizeMenu(const std::wstring &shell, bool background, bool &change
     return visible == ERROR_FILE_NOT_FOUND || visible == ERROR_PATH_NOT_FOUND ? ERROR_SUCCESS : visible;
 }
 
+// Whether the effective registration of the menu state class (the HKCR view
+// merges HKCU over HKLM) is missing or names a module that no longer exists.
+// REG_EXPAND_SZ values are expanded by SHRegGetValue. A registration that
+// cannot be read or checked is not reported as missing.
+bool menuStateMissing() {
+    const std::wstring key = std::wstring(L"CLSID\\") + MENU_STATE_ID + L"\\InprocServer32";
+    wchar_t module[MAX_PATH];
+    DWORD bytes = sizeof(module);
+    const LSTATUS status = SHRegGetValueW(HKEY_CLASSES_ROOT, key.c_str(), nullptr, SRRF_RT_REG_SZ,
+        nullptr, module, &bytes);
+    if (status == ERROR_FILE_NOT_FOUND || status == ERROR_PATH_NOT_FOUND) return true;
+    if (status != ERROR_SUCCESS || GetFileAttributesW(module) != INVALID_FILE_ATTRIBUTES) return false;
+    const DWORD error = GetLastError();
+    return error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND;
+}
+
+// The installer registers the class. The application only verifies it, once
+// per process, and writes the per-user registration of its own module when
+// the class is missing or names an absent module: a portable or development
+// copy must not redirect the class of an installation to itself, nor mask a
+// per-machine registration.
 LSTATUS registerMenuState() {
+    static bool verified = false;
+    if (verified) return ERROR_SUCCESS;
+    if (!menuStateMissing()) {
+        verified = true;
+        return ERROR_SUCCESS;
+    }
     wchar_t path[MAX_PATH];
     const DWORD length = GetModuleFileNameW(nullptr, path, _countof(path));
     if (!length) return GetLastError();
@@ -717,6 +746,7 @@ LSTATUS registerMenuState() {
     const auto install = reinterpret_cast<Register>(GetProcAddress(module.get(), "RegisterFileSpacerMenuState"));
     if (!install) return ERROR_PROC_NOT_FOUND;
     const HRESULT hr = install();
+    if (SUCCEEDED(hr)) verified = true;
     return SUCCEEDED(hr) ? ERROR_SUCCESS
         : HRESULT_FACILITY(hr) == FACILITY_WIN32 ? HRESULT_CODE(hr) : ERROR_INVALID_FUNCTION;
 }
