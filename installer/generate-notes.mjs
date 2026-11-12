@@ -7,6 +7,7 @@ for (const [language, locale] of [['en', null], ['fr', 'fr-FR'], ['pl', 'pl-PL']
   const source = locale ? `docs/${language}/CHANGELOG.md` : 'CHANGELOG.md';
   const lines = (await fs.readFile(source, 'utf8')).replace(/^\uFEFF/, '').split(/\r?\n/);
   const notes = lines.filter(line => !line.startsWith('# ') && !line.startsWith('[')
+      && !/^\s*<a\b[^>]*>\s*<\/a>\s*$/i.test(line)
       && !unreleased.has(line.replace(/^#+\s+/, '')))
     .map(line => line.replace(/^#+\s+/, '')).join('\r\n').trim() + '\r\n';
   await fs.writeFile(`build/installer-assets/changelog-${language}.txt`, Buffer.from('\uFEFF' + notes, 'utf16le'));
