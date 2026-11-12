@@ -614,6 +614,9 @@ FunctionEnd
         WriteRegStr ${ROOT} "${PREFIX}${TYPE}\shell" "" "none"
     ${EndIf}
     DeleteRegValue ${ROOT} "${PREFIX}${TYPE}\shell\filespacer" "ProgrammaticAccessOnly"
+    DeleteRegValue ${ROOT} "${PREFIX}${TYPE}\shell\filespacer" "CommandStateHandler"
+    DeleteRegValue ${ROOT} "${PREFIX}${TYPE}\shell\filespacer" "CommandStateSync"
+    DeleteRegKey ${ROOT} "${PREFIX}CLSID\{B6AE98A3-F59D-4F07-B5E8-CAD54DC5516C}"
     DeleteRegKey /ifempty ${ROOT} "${PREFIX}${TYPE}\shell\filespacer"
     DeleteRegKey ${ROOT} "${PREFIX}${TYPE}\shell\filespacer.explorer"
 !macroend
@@ -632,6 +635,14 @@ FunctionEnd
 
 !macro CLEANUP_FUNCTIONS PREFIX
 Function ${PREFIX}CleanupCurrentUser
+    ClearErrors
+    ExecWait '"$INSTDIR\FileSpacer.exe" /restore-open-verbs' $9
+    ${If} ${Errors}
+    ${OrIf} $9 != 0
+        MessageBox MB_OK|MB_ICONSTOP $(ERROR_DEFAULT) /SD IDOK
+        SetErrorLevel 2
+        Abort
+    ${EndIf}
     !insertmacro CLEAR_DEFAULT HKCU "" "Directory"
     !insertmacro CLEAR_DEFAULT HKCU "" "CompressedFolder"
     !insertmacro CLEAR_DEFAULT HKCU "" "Drive"
@@ -641,6 +652,14 @@ Function ${PREFIX}CleanupCurrentUser
 FunctionEnd
 Function ${PREFIX}CleanupUser
     Pop $0
+    ClearErrors
+    ExecWait '"$INSTDIR\FileSpacer.exe" /restore-open-verbs "$0"' $9
+    ${If} ${Errors}
+    ${OrIf} $9 != 0
+        MessageBox MB_OK|MB_ICONSTOP $(ERROR_DEFAULT) /SD IDOK
+        SetErrorLevel 2
+        Abort
+    ${EndIf}
     StrCpy $1 $0 8 -8
     ${If} $1 == "_Classes"
         ; UsrClass.dat contains the Classes subtree itself, not Software\Classes.
@@ -925,21 +944,13 @@ Section /o "$(SEC_DEFAULT)" SecDefault
         Goto default_done
     ${EndIf}
     ClearErrors
-    !insertmacro INSTALL_STEP "Set personal default: Software\Classes\Directory\shell"
-    WriteRegStr HKCU "Software\Classes\Directory\shell" "" "filespacer"
+    !insertmacro INSTALL_STEP "Set personal default through FileSpacer"
+    ExecWait '"$INSTDIR\FileSpacer.exe" /set-default-browser' $0
     IfErrors default_failed
-    !insertmacro INSTALL_STEP "Set personal default: Software\Classes\CompressedFolder\shell"
-    WriteRegStr HKCU "Software\Classes\CompressedFolder\shell" "" "filespacer"
-    IfErrors default_failed
-    !insertmacro INSTALL_STEP "Set personal default: Software\Classes\Drive\shell"
-    WriteRegStr HKCU "Software\Classes\Drive\shell" "" "filespacer"
-    IfErrors default_failed
-    !insertmacro INSTALL_STEP "Set personal default: Software\Classes\NetServer\shell"
-    WriteRegStr HKCU "Software\Classes\NetServer\shell" "" "filespacer"
-    IfErrors default_failed
-    !insertmacro INSTALL_STEP "Set personal default: Software\Classes\NetShare\shell"
-    WriteRegStr HKCU "Software\Classes\NetShare\shell" "" "filespacer"
-    IfErrors 0 default_done
+    ${If} $0 != 0
+        Goto default_failed
+    ${EndIf}
+    Goto default_done
 default_failed:
     !insertmacro WORKER_LOG "ERROR: $installStep"
     System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
@@ -1007,6 +1018,11 @@ Function RestoreInstallChoices
         ReadRegStr $0 HKCR "Directory\shell" ""
         ${If} $0 == "filespacer"
             !insertmacro SelectSection ${SecDefault}
+        ${ElseIf} $0 == "open"
+            ReadRegStr $0 HKCR "Directory\shell\open\command" "DelegateExecute"
+            ${If} $0 == "${EXECUTE_GUID}"
+                !insertmacro SelectSection ${SecDefault}
+            ${EndIf}
         ${EndIf}
         !insertmacro RESTORE_COMPONENT ${SecStart} "StartMenu"
         !insertmacro RESTORE_COMPONENT ${SecContext} "ContextMenu"
@@ -1341,6 +1357,8 @@ SectionEnd
 
 Section "Uninstall"
     Call un.CheckClosed
+    ; Restore open while the executable and its saved values are still available.
+    !insertmacro CLEANUP_DEFAULTS "un."
     ; Delete owned files only. No wildcards and no recursive installation-directory deletion.
     StrCpy $documentationCleanupFailed 0
     ClearErrors
@@ -1380,7 +1398,6 @@ provider_removed:
     DeleteRegKey SHCTX "${REG_APPPATH_KEY}"
     DeleteRegKey SHCTX "Software\Classes\CLSID\${EXECUTE_GUID}"
     !insertmacro REMOVE_VERBS
-    !insertmacro CLEANUP_DEFAULTS "un."
     DeleteRegValue SHCTX "Software\FileSpacer" "InstallMode"
     DeleteRegValue SHCTX "Software\FileSpacer" "Install_Dir"
     DeleteRegKey /ifempty SHCTX "Software\FileSpacer"

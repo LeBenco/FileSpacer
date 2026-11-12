@@ -16,51 +16,61 @@ space- or comma-separated ordered list: use its first verb rather than comparing
 the whole string. A server root such as `\\server` is `NetServer`, not
 `Directory`; omitting network classes leaves those targets with another manager.
 
-`setDefaultBrowser()` changes each association independently and reports errors
-per class. `synchronizeContextMenus()` only reconciles FileSpacer-owned menu
-registrations under the current user's `Software\Classes`; it never changes
-the default association or Windows-owned verbs. This also supplies user-level
-overrides for a FileSpacer command installed for all users.
+`setDefaultBrowser()` redirects each class's canonical `open` command to
+FileSpacer and selects `open` as the default verb. The label remains **Open**.
+Only the current user's overrides are written. The original values, types and
+absence are saved under `Software\Classes\FileSpacer.OpenVerbBackup` before any change.
+The journal stays in the same Classes hive as the overrides, including when
+the installer mounts an offline user's `UsrClass.dat`.
+Disabling FileSpacer as the default restores those values, but preserves values
+subsequently replaced by another application. Existing empty keys are preserved;
+empty keys created by FileSpacer are removed during restoration.
 
-When FileSpacer is the default, item menus retain **Open in FileSpacer** and add
-**Open in Windows File Explorer**. Otherwise they offer **Open in FileSpacer**.
-The directory background follows the directory association and shows only the
-alternative manager command.
+The explicit `filespacer` and `filespacer.explorer` verbs are independent of that
+association. Their shared `IExplorerCommandState` implementation, shipped in
+`FileSpacerFolder.dll`, controls visibility in the process hosting the menu:
 
-The visibility distinction matters: `CMF_DEFAULTONLY` omits verbs marked
-`ProgrammaticAccessOnly`, even when the association names that verb. Keep
-FileSpacer's **item** verb visible so Shell default invocation still selects it.
-Apply `ProgrammaticAccessOnly` only to its **background** verb, which is not used
-to open an item. Preserve the registered command and `DelegateExecute` values.
+- FileSpacer shows **Open in Windows File Explorer**.
+- Windows Explorer shows **Open in FileSpacer**.
+- Other hosts show neither extra command.
 
-The separate `filespacer.explorer` verb invokes
-`"%SystemRoot%\explorer.exe" "%1"` (`%V` for a background). Resetting the default
-removes this alternate verb and FileSpacer's visibility override. Avoid rewriting
-unchanged values; notify `SHCNE_ASSOCCHANGED` after an actual menu change.
+The base `open` command has no FileSpacer visibility filter, including in
+`CMF_DEFAULTONLY` menus. Default invocation therefore remains available when
+both explicit commands are hidden. FileSpacer's internal folder activation
+continues to use its spatial-window logic.
+
+The Explorer command invokes `"%SystemRoot%\explorer.exe" "%1"` (`%V` for a
+background). The FileSpacer command retains its installed command and COM
+delegate. Avoid rewriting unchanged menu values; notify `SHCNE_ASSOCCHANGED`
+after an actual menu change. No foreground-window heuristic or resident watcher
+is involved.
 
 <a id="startup-settings-and-installer-boundary"></a>
 
 ## Startup, settings and installer boundary
 
-Normal startup synchronizes existing registrations; portable startup installs
-nothing. Debug `/test` skips production synchronization. Integration settings
+Normal startup synchronizes existing registrations and migrates the old
+`filespacer` default to `open`; portable startup installs nothing. Debug `/test` skips production synchronization. Integration settings
 synchronize after association changes and retain separate errors for each class.
 Missing installed network verbs require an installation update, not a claim
 that setting the default succeeded fully.
 
-The installer calls `/sync-context-menus` without opening a folder or starting
-crash recovery, and checks its exit code. Component removal/uninstall removes
-FileSpacer's per-user overrides through the user-hive cleanup. Neither startup
-nor synchronization silently changes a user's default-manager choice.
+The installer uses `/set-default-browser` for the explicit default-manager
+choice and `/sync-context-menus` to reconcile the menus. Both run without
+opening a folder or starting crash recovery; their exit codes are checked.
+Component removal and uninstall call `/restore-open-verbs` before deleting the
+executable, including for user hives mounted by the existing cleanup. Startup
+does not reclaim a default changed by another application.
 
 <a id="testing-the-boundary"></a>
 
 ## Testing the boundary
 
 Group `29-menu-gestionnaire` uses isolated Registry handles and the real
-`SHCreateDefaultContextMenu`. It checks independent class defaults, alternate
-verbs, preservation of commands/COM delegates, failure propagation and native
-default-only selection. Both `ShellExecuteEx` invocation paths launch a real
+`SHCreateDefaultContextMenu`. It checks independent class defaults, host-filter
+registrations,
+restoration and external replacements, preservation of commands/COM delegates,
+failure propagation and native default-only selection. Both `ShellExecuteEx` invocation paths launch a real
 test subprocess. Network shortcut resolution exercises the Shell's association
 lookup for the target, not just the `.lnk` file's class.
 
