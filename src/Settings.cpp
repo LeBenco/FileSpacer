@@ -10,6 +10,7 @@
 #include <windows.data.json.h>
 #include <wrl/wrappers/corewrappers.h>
 #include <cwchar>
+#include <type_traits>
 
 #pragma comment(lib, "RuntimeObject.lib")
 
@@ -27,13 +28,6 @@ const wchar_t KEY_SETTINGS_TEST[]       = L"Software\\FileSpacer\\Test";
 #endif
 
 const wchar_t KEY_DIRECTORY_VERB[]      = L"Directory\\shell\\filespacer";
-const wchar_t KEY_DIRECTORY_BROWSER[]   = L"Software\\Classes\\Directory\\Shell";
-const wchar_t KEY_COMPRESSED_BROWSER[]  = L"Software\\Classes\\CompressedFolder\\Shell";
-const wchar_t KEY_DRIVE_BROWSER[]       = L"Software\\Classes\\Drive\\Shell";
-const wchar_t KEY_SERVER_BROWSER[]      = L"Software\\Classes\\NetServer\\Shell";
-const wchar_t KEY_SHARE_BROWSER[]       = L"Software\\Classes\\NetShare\\Shell";
-const wchar_t DATA_BROWSER_SET[]        = L"filespacer";
-const wchar_t DATA_BROWSER_CLEAR[]      = L"none";
 
 // type should be a RRF_RT_* constant
 // data should already contain default value
@@ -454,81 +448,291 @@ bool supportsDefaultBrowser() {
 }
 
 namespace {
+const wchar_t MENU_STATE_ID[] = L"{B6AE98A3-F59D-4F07-B5E8-CAD54DC5516C}";
+const wchar_t KEY_OPEN_BACKUP[] = L"Software\\Classes\\FileSpacer.OpenVerbBackup";
+const wchar_t *const BROWSER_TYPES[] = {L"Directory", L"CompressedFolder", L"Drive", L"NetServer", L"NetShare"};
+
+struct RegistryValue {
+    bool present = false;
+    DWORD type = 0;
+    std::vector<BYTE> data;
+};
+
+LSTATUS readRegistryValue(HKEY root, const std::wstring &key, const wchar_t *name, RegistryValue &value) {
+    value = {};
+    DWORD size = 0;
+    LSTATUS status = RegGetValueW(root, key.c_str(), name, RRF_RT_ANY | RRF_NOEXPAND,
+        &value.type, nullptr, &size);
+    if (status == ERROR_FILE_NOT_FOUND || status == ERROR_PATH_NOT_FOUND) return ERROR_SUCCESS;
+    if (status != ERROR_SUCCESS) return status;
+    value.data.resize(size);
+    status = RegGetValueW(root, key.c_str(), name, RRF_RT_ANY | RRF_NOEXPAND,
+        &value.type, value.data.data(), &size);
+    if (status == ERROR_SUCCESS) {
+        value.present = true;
+        value.data.resize(size);
+    }
+    return status;
+}
+
+LSTATUS writeRegistryValue(HKEY root, const std::wstring &key, const wchar_t *name, const RegistryValue &value) {
+    if (value.present)
+        return RegSetKeyValueW(root, key.c_str(), name, value.type,
+            value.data.data(), static_cast<DWORD>(value.data.size()));
+    const LSTATUS status = RegDeleteKeyValueW(root, key.c_str(), name);
+    return status == ERROR_FILE_NOT_FOUND || status == ERROR_PATH_NOT_FOUND ? ERROR_SUCCESS : status;
+}
+
 LSTATUS setMenuString(const std::wstring &key, const wchar_t *name, DWORD type,
         const wchar_t *value, bool &changed) {
+    RegistryValue current;
+    const LSTATUS read = readRegistryValue(HKEY_CURRENT_USER, key, name, current);
+    if (read != ERROR_SUCCESS) return read;
     const DWORD size = (lstrlenW(value) + 1) * sizeof(wchar_t);
-    std::wstring current(size / sizeof(wchar_t), L'\0');
-    DWORD actualSize = size, actualType = 0;
-    if (RegGetValueW(HKEY_CURRENT_USER, key.c_str(), name, RRF_RT_ANY | RRF_NOEXPAND,
-            &actualType, &current[0], &actualSize) == ERROR_SUCCESS
-            && actualType == type && actualSize == size
-            && memcmp(current.data(), value, size) == 0) return ERROR_SUCCESS;
+    if (current.present && current.type == type && current.data.size() == size
+            && memcmp(current.data.data(), value, size) == 0) return ERROR_SUCCESS;
     const LSTATUS status = RegSetKeyValueW(HKEY_CURRENT_USER, key.c_str(), name, type, value, size);
     if (status == ERROR_SUCCESS) changed = true;
     return status;
 }
 
-LSTATUS removeMenuValue(const std::wstring &key, bool &changed) {
-    const LSTATUS status = RegDeleteKeyValueW(HKEY_CURRENT_USER, key.c_str(), L"ProgrammaticAccessOnly");
-    if (status == ERROR_FILE_NOT_FOUND || status == ERROR_PATH_NOT_FOUND) return ERROR_SUCCESS;
-    if (status == ERROR_SUCCESS) changed = true;
+LSTATUS menuString(const std::wstring &key, const wchar_t *name, std::wstring &value) {
+    DWORD size = 0;
+    LSTATUS status = RegGetValueW(HKEY_CLASSES_ROOT, key.c_str(), name,
+        RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ, nullptr, nullptr, &size);
+    if (status != ERROR_SUCCESS) return status;
+    value.assign(size / sizeof(wchar_t) + 1, L'\0');
+    return RegGetValueW(HKEY_CLASSES_ROOT, key.c_str(), name,
+        RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ, nullptr, &value[0], &size);
+}
+
+bool legacyDefault(const std::wstring &value) {
+    const size_t first = value.find_first_not_of(L" ,");
+    if (first == std::wstring::npos) return false;
+    const size_t end = value.find_first_of(L" ,", first);
+    return _wcsicmp(value.substr(first, end == std::wstring::npos ? end : end - first).c_str(),
+        L"filespacer") == 0;
+}
+
+struct OpenValue { const wchar_t *suffix, *name, *record; };
+const OpenValue OPEN_VALUES[] = {
+    {L"\\open", L"MUIVerb", L"Caption"},
+    {L"\\open\\command", nullptr, L"Command"},
+    {L"\\open\\command", L"DelegateExecute", L"Delegate"},
+    {L"", nullptr, L"Default"},
+};
+
+// Save just the values we change, including their original types and absence.
+// The journal is recorded before each write, so a failed/partial switch can be
+// restored. Repeated activation never replaces the original with our own data.
+LSTATUS overrideOpenValue(const std::wstring &shell, const std::wstring &backup,
+        const OpenValue &entry, const wchar_t *text, bool &changed) {
+    const std::wstring record = backup + L"\\" + entry.record;
+    DWORD ready = 0, size = sizeof(ready);
+    LSTATUS status = RegGetValueW(HKEY_CURRENT_USER, record.c_str(), L"Ready",
+        RRF_RT_REG_DWORD, nullptr, &ready, &size);
+    if (status != ERROR_SUCCESS && status != ERROR_FILE_NOT_FOUND && status != ERROR_PATH_NOT_FOUND)
+        return status;
+    if (ready) {
+        RegistryValue applied, current;
+        status = readRegistryValue(HKEY_CURRENT_USER, record, L"Applied", applied);
+        if (status == ERROR_SUCCESS)
+            status = readRegistryValue(HKEY_CURRENT_USER, shell + entry.suffix, entry.name, current);
+        if (status != ERROR_SUCCESS) return status;
+        if (applied.present && (!current.present || current.type != applied.type || current.data != applied.data))
+            ready = 0; // A new explicit activation adopts the external replacement.
+    }
+    if (!ready) {
+        RegistryValue before;
+        status = readRegistryValue(HKEY_CURRENT_USER, shell + entry.suffix, entry.name, before);
+        if (status != ERROR_SUCCESS) return status;
+        CRegKey originalKey;
+        status = originalKey.Open(HKEY_CURRENT_USER, (shell + entry.suffix).c_str(), KEY_READ);
+        if (status != ERROR_SUCCESS && status != ERROR_FILE_NOT_FOUND && status != ERROR_PATH_NOT_FOUND)
+            return status;
+        const DWORD keyPresent = status == ERROR_SUCCESS ? 1 : 0;
+        // Migrating the old default must not restore a now-conditional verb.
+        if (!*entry.suffix && before.present && before.type == REG_SZ) {
+            std::wstring previous(before.data.size() / sizeof(wchar_t), L'\0');
+            if (!before.data.empty()) memcpy(&previous[0], before.data.data(), before.data.size());
+            if (legacyDefault(previous)) {
+                const wchar_t none[] = L"none";
+                before.data.assign(reinterpret_cast<const BYTE *>(none),
+                    reinterpret_cast<const BYTE *>(none) + sizeof(none));
+            }
+        }
+        status = writeRegistryValue(HKEY_CURRENT_USER, record, L"Before", before);
+        const DWORD present = before.present ? 1 : 0;
+        if (status == ERROR_SUCCESS) status = RegSetKeyValueW(HKEY_CURRENT_USER, record.c_str(),
+            L"KeyPresent", REG_DWORD, &keyPresent, sizeof(keyPresent));
+        if (status == ERROR_SUCCESS) status = RegSetKeyValueW(HKEY_CURRENT_USER, record.c_str(),
+            L"Present", REG_DWORD, &present, sizeof(present));
+        ready = 1;
+        if (status == ERROR_SUCCESS) status = RegSetKeyValueW(HKEY_CURRENT_USER, record.c_str(),
+            L"Ready", REG_DWORD, &ready, sizeof(ready));
+        if (status != ERROR_SUCCESS) return status;
+    }
+    RegistryValue previousApplied;
+    status = readRegistryValue(HKEY_CURRENT_USER, record, L"Applied", previousApplied);
+    if (status != ERROR_SUCCESS) return status;
+    status = RegSetKeyValueW(HKEY_CURRENT_USER, record.c_str(), L"Applied", REG_SZ,
+        text, static_cast<DWORD>((std::wcslen(text) + 1) * sizeof(wchar_t)));
+    if (status != ERROR_SUCCESS) return status;
+    status = setMenuString(shell + entry.suffix, entry.name, REG_SZ, text, changed);
+    if (status != ERROR_SUCCESS)
+        writeRegistryValue(HKEY_CURRENT_USER, record, L"Applied", previousApplied);
     return status;
 }
 
-LSTATUS synchronizeMenu(const std::wstring &shell, bool explorer, bool background, bool &changed) {
+LSTATUS removeEmptyMenuKey(HKEY root, const std::wstring &path) {
+    CRegKey key;
+    LSTATUS status = key.Open(root, path.c_str(), KEY_READ | KEY_WOW64_64KEY);
+    if (status == ERROR_FILE_NOT_FOUND || status == ERROR_PATH_NOT_FOUND) return ERROR_SUCCESS;
+    if (status != ERROR_SUCCESS) return status;
+    DWORD subkeys = 0, values = 0;
+    status = RegQueryInfoKeyW(key, nullptr, nullptr, nullptr, &subkeys, nullptr, nullptr,
+        &values, nullptr, nullptr, nullptr, nullptr);
+    if (status != ERROR_SUCCESS) return status;
+    if (subkeys || values) return ERROR_SUCCESS;
+    key.Close();
+    status = RegDeleteKeyExW(root, path.c_str(), KEY_WOW64_64KEY, 0);
+    return status == ERROR_FILE_NOT_FOUND || status == ERROR_PATH_NOT_FOUND ? ERROR_SUCCESS : status;
+}
+
+LSTATUS restoreOpenType(HKEY root, const std::wstring &prefix, const wchar_t *type, bool &changed) {
+    const std::wstring shell = prefix + type + L"\\shell";
+    const std::wstring backup = prefix + L"FileSpacer.OpenVerbBackup\\" + type;
+    bool removeOpen = false, removeCommand = false;
+    for (const auto &entry : OPEN_VALUES) {
+        const std::wstring record = backup + L"\\" + entry.record;
+        RegistryValue applied, current, before;
+        LSTATUS status = readRegistryValue(root, record, L"Applied", applied);
+        if (status != ERROR_SUCCESS) return status;
+        if (!applied.present) continue; // No actual override was attempted.
+        DWORD keyPresent = 0, keySize = sizeof(keyPresent);
+        status = RegGetValueW(root, record.c_str(), L"KeyPresent", RRF_RT_REG_DWORD,
+            nullptr, &keyPresent, &keySize);
+        if (status != ERROR_SUCCESS) return status;
+        if (!keyPresent && wcscmp(entry.record, L"Caption") == 0) removeOpen = true;
+        if (!keyPresent && wcscmp(entry.record, L"Command") == 0) removeCommand = true;
+        status = readRegistryValue(root, shell + entry.suffix, entry.name, current);
+        if (status != ERROR_SUCCESS) return status;
+        // An external replacement is authoritative: do not overwrite it.
+        if (current.present && current.type == applied.type && current.data == applied.data) {
+            DWORD present = 0, size = sizeof(present);
+            status = RegGetValueW(root, record.c_str(), L"Present", RRF_RT_REG_DWORD,
+                nullptr, &present, &size);
+            if (status != ERROR_SUCCESS) return status;
+            status = readRegistryValue(root, record, L"Before", before);
+            if (status != ERROR_SUCCESS) return status;
+            if (present && !before.present) return ERROR_INVALID_DATA;
+            status = writeRegistryValue(root, shell + entry.suffix, entry.name, before);
+            if (status != ERROR_SUCCESS) return status;
+            changed = true;
+        }
+    }
+    // Keys created for our overrides must not mask a machine-level command.
+    if (removeCommand) {
+        const LSTATUS status = removeEmptyMenuKey(root, shell + L"\\open\\command");
+        if (status != ERROR_SUCCESS) return status;
+    }
+    if (removeOpen) {
+        const LSTATUS status = removeEmptyMenuKey(root, shell + L"\\open");
+        if (status != ERROR_SUCCESS) return status;
+    }
+    const LSTATUS removed = RegDeleteTreeW(root, backup.c_str());
+    return removed == ERROR_FILE_NOT_FOUND || removed == ERROR_PATH_NOT_FOUND ? ERROR_SUCCESS : removed;
+}
+
+LSTATUS setDefaultType(const wchar_t *type, bool enable, bool &changed) {
+    if (!enable) {
+        const LSTATUS restored = restoreOpenType(HKEY_CURRENT_USER, L"Software\\Classes\\", type, changed);
+        if (restored != ERROR_SUCCESS) return restored;
+        std::wstring previous;
+        const LSTATUS read = menuString(std::wstring(type) + L"\\shell", nullptr, previous);
+        if (read != ERROR_SUCCESS && read != ERROR_FILE_NOT_FOUND && read != ERROR_PATH_NOT_FOUND) return read;
+        return legacyDefault(previous)
+            ? setMenuString(std::wstring(L"Software\\Classes\\") + type + L"\\shell", nullptr, REG_SZ, L"none", changed)
+            : ERROR_SUCCESS;
+    }
+    const std::wstring shell = std::wstring(L"Software\\Classes\\") + type + L"\\shell";
+    const std::wstring installed = std::wstring(type) + L"\\shell\\filespacer\\command";
+    std::wstring command, delegate;
+    LSTATUS status = menuString(installed, nullptr, command);
+    if (status == ERROR_SUCCESS) status = menuString(installed, L"DelegateExecute", delegate);
+    if (status != ERROR_SUCCESS) return status;
+    const std::wstring backup = std::wstring(KEY_OPEN_BACKUP) + L"\\" + type;
+    const wchar_t *values[] = {getString(IDS_OPEN_COMMAND), command.c_str(), delegate.c_str(), L"open"};
+    for (size_t index = 0; index < _countof(OPEN_VALUES); ++index) {
+        status = overrideOpenValue(shell, backup, OPEN_VALUES[index], values[index], changed);
+        if (status != ERROR_SUCCESS) {
+            restoreOpenType(HKEY_CURRENT_USER, L"Software\\Classes\\", type, changed);
+            return status;
+        }
+    }
+    return ERROR_SUCCESS;
+}
+
+LSTATUS synchronizeMenu(const std::wstring &shell, bool background, bool &changed) {
     const std::wstring verb = shell + L"\\filespacer";
-    const std::wstring alternate = L"Software\\Classes\\" + shell + L"\\filespacer.explorer";
     const std::wstring userVerb = L"Software\\Classes\\" + verb;
-    // Only update installed FileSpacer menus; portable and /test launches install nothing.
+    const std::wstring alternate = L"Software\\Classes\\" + shell + L"\\filespacer.explorer";
     const LSTATUS installed = RegGetValueW(HKEY_CLASSES_ROOT, verb.c_str(), nullptr,
         RRF_RT_REG_SZ, nullptr, nullptr, nullptr);
-    if (installed != ERROR_SUCCESS && installed != ERROR_FILE_NOT_FOUND
-            && installed != ERROR_PATH_NOT_FOUND) return installed;
-    if (!explorer || installed != ERROR_SUCCESS) {
-        const LSTATUS visible = removeMenuValue(userVerb, changed);
+    if (installed == ERROR_FILE_NOT_FOUND || installed == ERROR_PATH_NOT_FOUND) {
         const LSTATUS removed = RegDeleteTreeW(HKEY_CURRENT_USER, alternate.c_str());
         if (removed == ERROR_SUCCESS) changed = true;
-        if (visible != ERROR_SUCCESS) return visible;
         return removed == ERROR_FILE_NOT_FOUND || removed == ERROR_PATH_NOT_FOUND ? ERROR_SUCCESS : removed;
     }
+    if (installed != ERROR_SUCCESS) return installed;
     LSTATUS status = setMenuString(alternate, nullptr, REG_SZ, getString(IDS_OPEN_IN_EXPLORER), changed);
     if (status == ERROR_SUCCESS) status = setMenuString(alternate, L"Icon", REG_EXPAND_SZ,
         L"%SystemRoot%\\explorer.exe,0", changed);
     if (status == ERROR_SUCCESS) status = setMenuString(alternate + L"\\command", nullptr, REG_EXPAND_SZ,
         background ? L"\"%SystemRoot%\\explorer.exe\" \"%V\"" : L"\"%SystemRoot%\\explorer.exe\" \"%1\"", changed);
-    // A verb left without "command" would still be listed by the Shell: never keep a partial write.
+    for (const auto &key : {userVerb, alternate}) {
+        if (status == ERROR_SUCCESS) status = setMenuString(key, L"CommandStateHandler", REG_SZ, MENU_STATE_ID, changed);
+        if (status == ERROR_SUCCESS) status = setMenuString(key, L"CommandStateSync", REG_SZ, L"", changed);
+    }
     if (status != ERROR_SUCCESS) {
         RegDeleteTreeW(HKEY_CURRENT_USER, alternate.c_str());
         return status;
     }
-    // Default-only Shell menus omit programmatic-only verbs, even the selected default.
-    // Hide only the background entry, which is never used to open an item.
-    if (status == ERROR_SUCCESS) status = background
-        ? setMenuString(userVerb, L"ProgrammaticAccessOnly", REG_SZ, L"", changed)
-        : removeMenuValue(userVerb, changed);
-    return status;
+    const LSTATUS visible = RegDeleteKeyValueW(HKEY_CURRENT_USER, userVerb.c_str(), L"ProgrammaticAccessOnly");
+    if (visible == ERROR_SUCCESS) changed = true;
+    return visible == ERROR_FILE_NOT_FOUND || visible == ERROR_PATH_NOT_FOUND ? ERROR_SUCCESS : visible;
+}
+
+LSTATUS registerMenuState() {
+    wchar_t path[MAX_PATH];
+    const DWORD length = GetModuleFileNameW(nullptr, path, _countof(path));
+    if (!length) return GetLastError();
+    if (length == _countof(path)) return ERROR_INSUFFICIENT_BUFFER;
+    if (!PathRemoveFileSpecW(path) || !PathAppendW(path, L"FileSpacerFolder.dll")) return ERROR_INSUFFICIENT_BUFFER;
+    const auto unload = [](HMODULE module) { FreeLibrary(module); };
+    std::unique_ptr<std::remove_pointer<HMODULE>::type, decltype(unload)> module(
+        LoadLibraryExW(path, nullptr, LOAD_WITH_ALTERED_SEARCH_PATH), unload);
+    if (!module) return GetLastError();
+    using Register = HRESULT (WINAPI *)();
+    const auto install = reinterpret_cast<Register>(GetProcAddress(module.get(), "RegisterFileSpacerMenuState"));
+    if (!install) return ERROR_PROC_NOT_FOUND;
+    const HRESULT hr = install();
+    return SUCCEEDED(hr) ? ERROR_SUCCESS
+        : HRESULT_FACILITY(hr) == FACILITY_WIN32 ? HRESULT_CODE(hr) : ERROR_INVALID_FUNCTION;
 }
 
 LSTATUS synchronizeType(const wchar_t *type, bool &changed) {
-    const std::wstring shell = std::wstring(type) + L"\\shell";
-    DWORD size = 0;
-    LSTATUS status = RegGetValueW(HKEY_CLASSES_ROOT, shell.c_str(), nullptr,
-        RRF_RT_REG_SZ, nullptr, nullptr, &size);
-    if (status != ERROR_SUCCESS && status != ERROR_FILE_NOT_FOUND && status != ERROR_PATH_NOT_FOUND)
-        return status;
-    std::wstring browser(size / sizeof(wchar_t) + 1, L'\0');
-    if (status == ERROR_SUCCESS) {
-        status = RegGetValueW(HKEY_CLASSES_ROOT, shell.c_str(), nullptr,
-            RRF_RT_REG_SZ, nullptr, &browser[0], &size);
-        if (status != ERROR_SUCCESS) return status;
+    std::wstring browser;
+    const LSTATUS read = menuString(std::wstring(type) + L"\\shell", nullptr, browser);
+    if (read != ERROR_SUCCESS && read != ERROR_FILE_NOT_FOUND && read != ERROR_PATH_NOT_FOUND) return read;
+    // Upgrade the old default before making its explicit menu entry conditional.
+    if (legacyDefault(browser)) {
+        const LSTATUS migrated = setDefaultType(type, true, changed);
+        if (migrated != ERROR_SUCCESS) return migrated;
     }
-    // Shell's default value may be an ordered list of verbs separated by spaces or commas.
-    wchar_t *first = &browser[0] + std::wcsspn(browser.c_str(), L" ,");
-    first[std::wcscspn(first, L" ,")] = L'\0';
-    const bool explorer = lstrcmpiW(first, DATA_BROWSER_SET) == 0;
-    const LSTATUS menu = synchronizeMenu(shell, explorer, false, changed);
+    const LSTATUS menu = synchronizeMenu(std::wstring(type) + L"\\shell", false, changed);
     if (lstrcmpW(type, L"Directory") != 0) return menu;
-    const LSTATUS background = synchronizeMenu(L"Directory\\Background\\shell", explorer, true, changed);
+    const LSTATUS background = synchronizeMenu(L"Directory\\Background\\shell", true, changed);
     return menu != ERROR_SUCCESS ? menu : background;
 }
 }
@@ -536,33 +740,62 @@ LSTATUS synchronizeType(const wchar_t *type, bool &changed) {
 DefaultBrowserResult synchronizeContextMenus() {
     bool changed = false;
     DefaultBrowserResult result = {};
-    result.directory = synchronizeType(L"Directory", changed);
-    result.compressedFolder = synchronizeType(L"CompressedFolder", changed);
-    result.drive = synchronizeType(L"Drive", changed);
-    result.networkServer = synchronizeType(L"NetServer", changed);
-    result.networkShare = synchronizeType(L"NetShare", changed);
+    // Portable launches do not install a Shell extension or menu registrations.
+    bool installed = false;
+    for (const wchar_t *type : BROWSER_TYPES) {
+        const std::wstring key = std::wstring(type) + L"\\shell\\filespacer";
+        if (RegGetValueW(HKEY_CLASSES_ROOT, key.c_str(), nullptr, RRF_RT_REG_SZ,
+                nullptr, nullptr, nullptr) == ERROR_SUCCESS) installed = true;
+    }
+    if (installed) {
+        const LSTATUS registered = registerMenuState();
+        if (registered != ERROR_SUCCESS) return {registered, registered, registered, registered, registered};
+    }
+    result.directory = synchronizeType(BROWSER_TYPES[0], changed);
+    result.compressedFolder = synchronizeType(BROWSER_TYPES[1], changed);
+    result.drive = synchronizeType(BROWSER_TYPES[2], changed);
+    result.networkServer = synchronizeType(BROWSER_TYPES[3], changed);
+    result.networkShare = synchronizeType(BROWSER_TYPES[4], changed);
     if (changed) SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     return result;
 }
 
 DefaultBrowserResult setDefaultBrowser(bool value) {
-    const wchar_t *data = value ? DATA_BROWSER_SET : DATA_BROWSER_CLEAR;
-    DWORD size = value ? sizeof(DATA_BROWSER_SET) : sizeof(DATA_BROWSER_CLEAR);
+    bool changed = false;
     DefaultBrowserResult result = {};
-    // Each association is independent; a failure must not skip the remaining writes.
-    result.directory = RegSetKeyValue(HKEY_CURRENT_USER, KEY_DIRECTORY_BROWSER, L"", REG_SZ, data, size);
-    result.compressedFolder = RegSetKeyValue(HKEY_CURRENT_USER, KEY_COMPRESSED_BROWSER, L"", REG_SZ, data, size);
-    result.drive = RegSetKeyValue(HKEY_CURRENT_USER, KEY_DRIVE_BROWSER, L"", REG_SZ, data, size);
-    result.networkServer = RegSetKeyValue(HKEY_CURRENT_USER, KEY_SERVER_BROWSER, L"", REG_SZ, data, size);
-    result.networkShare = RegSetKeyValue(HKEY_CURRENT_USER, KEY_SHARE_BROWSER, L"", REG_SZ, data, size);
+    result.directory = setDefaultType(BROWSER_TYPES[0], value, changed);
+    result.compressedFolder = setDefaultType(BROWSER_TYPES[1], value, changed);
+    result.drive = setDefaultType(BROWSER_TYPES[2], value, changed);
+    result.networkServer = setDefaultType(BROWSER_TYPES[3], value, changed);
+    result.networkShare = setDefaultType(BROWSER_TYPES[4], value, changed);
     const DefaultBrowserResult menus = synchronizeContextMenus();
     if (result.directory == ERROR_SUCCESS) result.directory = menus.directory;
     if (result.compressedFolder == ERROR_SUCCESS) result.compressedFolder = menus.compressedFolder;
     if (result.drive == ERROR_SUCCESS) result.drive = menus.drive;
     if (result.networkServer == ERROR_SUCCESS) result.networkServer = menus.networkServer;
     if (result.networkShare == ERROR_SUCCESS) result.networkShare = menus.networkShare;
-    // Associations can change even when the menus were already synchronized.
     SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
+    return result;
+}
+
+LSTATUS restoreOpenVerbs(const wchar_t *userHive) {
+    if (userHive && (!*userHive || wcspbrk(userHive, L"\\/"))) return ERROR_INVALID_PARAMETER;
+    const HKEY root = userHive ? HKEY_USERS : HKEY_CURRENT_USER;
+    std::wstring prefix = L"Software\\Classes\\";
+    if (userHive) {
+        const size_t length = std::wcslen(userHive);
+        const bool classes = length >= 8 && _wcsicmp(userHive + length - 8, L"_Classes") == 0;
+        prefix = std::wstring(userHive) + L"\\" + (classes ? L"" : L"Software\\Classes\\");
+    }
+    bool changed = false;
+    LSTATUS result = ERROR_SUCCESS;
+    for (const wchar_t *type : BROWSER_TYPES) {
+        const LSTATUS status = restoreOpenType(root, prefix, type, changed);
+        if (result == ERROR_SUCCESS) result = status;
+    }
+    if (result == ERROR_SUCCESS)
+        result = removeEmptyMenuKey(root, prefix + L"FileSpacer.OpenVerbBackup");
+    if (changed) SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     return result;
 }
 

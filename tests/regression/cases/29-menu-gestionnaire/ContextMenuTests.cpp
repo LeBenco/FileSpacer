@@ -33,15 +33,18 @@ bool exists(HKEY root, const std::wstring &key, const wchar_t *name = nullptr) {
 }
 void checkMenu(const wchar_t *type, bool explorer, bool background = false) {
     const std::wstring shell = std::wstring(type) + (background ? L"\\Background\\shell" : L"\\shell");
-    require(exists(HKEY_CLASSES_ROOT, shell + L"\\filespacer", L"ProgrammaticAccessOnly") == (explorer && background),
-        "FileSpacer visibility follows the effective default");
-    require(exists(HKEY_CLASSES_ROOT, shell + L"\\filespacer.explorer") == explorer,
-        "Explorer alternative follows the effective default");
+    require(exists(HKEY_CLASSES_ROOT, shell + L"\\filespacer", L"ProgrammaticAccessOnly") == false,
+        "explicit commands use dynamic state instead of a global visibility mask");
+    require(exists(HKEY_CLASSES_ROOT, shell + L"\\filespacer.explorer") == true,
+        "Explorer command exists independently of the effective default");
     require(read(HKEY_CLASSES_ROOT, shell + L"\\filespacer\\command") == L"original command",
         "original FileSpacer command preserved");
     require(read(HKEY_CLASSES_ROOT, shell + L"\\filespacer\\command", L"DelegateExecute") == L"original delegate",
         "original COM delegate preserved");
-    if (!explorer) return;
+    require(read(HKEY_CLASSES_ROOT, shell + L"\\filespacer", L"CommandStateHandler")
+        == L"{B6AE98A3-F59D-4F07-B5E8-CAD54DC5516C}", "FileSpacer command has host-dependent visibility");
+    require(read(HKEY_CLASSES_ROOT, shell + L"\\filespacer.explorer", L"CommandStateHandler")
+        == read(HKEY_CLASSES_ROOT, shell + L"\\filespacer", L"CommandStateHandler"), "both commands use the same host filter");
     const std::wstring alternate = shell + L"\\filespacer.explorer";
     require(read(HKEY_CLASSES_ROOT, alternate) == getString(IDS_OPEN_IN_EXPLORER), "localized Explorer caption");
     require(read(HKEY_CLASSES_ROOT, alternate + L"\\command") == (background
@@ -56,7 +59,7 @@ void checkMenu(const wchar_t *type, bool explorer, bool background = false) {
     DEFCONTEXTMENU context = {}; context.cKeys = 1; context.aKeys = &classKey.m_hKey;
     CComPtr<IContextMenu> menu;
     require(SUCCEEDED(SHCreateDefaultContextMenu(&context, IID_PPV_ARGS(&menu))), "create real Shell menu");
-    if (!background) {
+    if (!background && explorer) {
         const std::wstring competing = shell + L"\\aaa-other-manager";
         put(HKEY_CLASSES_ROOT, competing, nullptr, L"Other file manager");
         put(HKEY_CLASSES_ROOT, competing + L"\\command", nullptr, L"other manager command");
@@ -71,8 +74,8 @@ void checkMenu(const wchar_t *type, bool explorer, bool background = false) {
         DestroyMenu(defaultPopup);
         require(RegDeleteTreeW(HKEY_CLASSES_ROOT, competing.c_str()) == ERROR_SUCCESS, "remove competing manager fixture");
         require(SUCCEEDED(defaultResult) && SUCCEEDED(defaultName)
-            && lstrcmpiW(defaultVerb, L"filespacer") == 0,
-            "native default-only menu keeps FileSpacer as the opening action");
+            && lstrcmpiW(defaultVerb, L"open") == 0,
+            "native default-only menu keeps the unconditional open action");
     }
     menu.Release();
     require(SUCCEEDED(SHCreateDefaultContextMenu(&context, IID_PPV_ARGS(&menu))), "recreate normal Shell menu");
@@ -80,15 +83,15 @@ void checkMenu(const wchar_t *type, bool explorer, bool background = false) {
     require(popup != nullptr, "create undisplayed menu");
     HRESULT queried = menu->QueryContextMenu(popup, 0, 1, 1000, CMF_NORMAL);
     const int count = GetMenuItemCount(popup);
-    wchar_t caption[256] = {}, verb[256] = {};
-    const int alternativeIndex = background ? 0 : 1;
-    const UINT id = GetMenuItemID(popup, alternativeIndex);
-    GetMenuStringW(popup, alternativeIndex, caption, _countof(caption), MF_BYPOSITION);
-    HRESULT named = menu->GetCommandString(id - 1, GCS_VERBW, nullptr, reinterpret_cast<char *>(verb), _countof(verb));
+    wchar_t verb[256] = {};
+    // This executable is neither Explorer nor FileSpacer: both explicit verbs are hidden.
+    const UINT id = background ? 0 : GetMenuItemID(popup, 0);
+    const HRESULT named = background ? S_OK : menu->GetCommandString(id - 1, GCS_VERBW,
+        nullptr, reinterpret_cast<char *>(verb), _countof(verb));
     DestroyMenu(popup);
-    require(SUCCEEDED(queried) && count == (background ? 1 : 2) && SUCCEEDED(named), "both item commands remain visible; background has only the alternative");
-    require(lstrcmpW(verb, L"filespacer.explorer") == 0 && lstrcmpW(caption, getString(IDS_OPEN_IN_EXPLORER)) == 0,
-        "real Shell displays the Explorer command");
+    require(SUCCEEDED(queried) && count == (background ? 0 : 1) && SUCCEEDED(named),
+        "foreign host retains only the base open command");
+    if (!background) require(lstrcmpW(verb, L"open") == 0, "base open keeps its canonical verb");
 }
 void fixtures() {
     put(HKEY_CLASSES_ROOT, L"Folder\\shell", nullptr, L"open");
@@ -97,6 +100,9 @@ void fixtures() {
     for (const wchar_t *type : types) {
         const std::wstring shell = std::wstring(type) + L"\\shell";
         put(HKEY_CLASSES_ROOT, shell, nullptr, L"none");
+        if (lstrcmpW(type, L"Directory\\Background") != 0) {
+            put(HKEY_CLASSES_ROOT, shell + L"\\open\\command", nullptr, L"native Explorer command");
+        }
         put(HKEY_CLASSES_ROOT, shell + L"\\filespacer", nullptr, L"Open in FileSpacer");
         put(HKEY_CLASSES_ROOT, shell + L"\\filespacer", L"ProgrammaticAccessOnly", L"");
         put(HKEY_CLASSES_ROOT, shell + L"\\filespacer\\command", nullptr, L"original command");
@@ -128,9 +134,9 @@ void checkDefaultOpening() {
     require(file.get() != INVALID_HANDLE_VALUE, "create unique launch fixture");
     file.reset();
     const std::wstring shell = L"Directory\\shell\\";
-    put(HKEY_CLASSES_ROOT, shell + L"filespacer\\command", nullptr,
+    put(HKEY_CLASSES_ROOT, shell + L"open\\command", nullptr,
         L"\"" + std::wstring(image) + L"\" /record \"" + marker + L"\"");
-    require(RegDeleteKeyValueW(HKEY_CLASSES_ROOT, (shell + L"filespacer\\command").c_str(), L"DelegateExecute") == ERROR_SUCCESS,
+    require(RegDeleteKeyValueW(HKEY_CLASSES_ROOT, (shell + L"open\\command").c_str(), L"DelegateExecute") == ERROR_SUCCESS,
         "use test subprocess instead of the production COM server");
     put(HKEY_CLASSES_ROOT, shell + L"filespacer.explorer\\command", nullptr,
         L"\"" + std::wstring(image) + L"\" /wrong \"" + marker + L"\"");
@@ -169,8 +175,8 @@ void checkDefaultOpening() {
     require(GetFileAttributesW(marker.c_str()) != INVALID_FILE_ATTRIBUTES,
         "native default action actually ran FileSpacer's command");
     require(!!DeleteFileW(marker.c_str()), "remove native default invocation marker");
-    put(HKEY_CLASSES_ROOT, shell + L"filespacer\\command", nullptr, L"original command");
-    put(HKEY_CLASSES_ROOT, shell + L"filespacer\\command", L"DelegateExecute", L"original delegate");
+    put(HKEY_CLASSES_ROOT, shell + L"open\\command", nullptr, L"original command");
+    put(HKEY_CLASSES_ROOT, shell + L"open\\command", L"DelegateExecute", L"original delegate");
 }
 }
 
@@ -229,10 +235,21 @@ int wmain(int argc, wchar_t **argv) {
             checkMenu(L"CompressedFolder", explorer); checkMenu(L"Drive", explorer);
             checkMenu(L"NetServer", explorer); checkMenu(L"NetShare", explorer);
             checkServerDefault(shortcutTarget, explorer);
-            require(read(HKEY_CLASSES_ROOT, L"Directory\\shell") == (explorer ? L"filespacer" : L"none"), "default association preserved");
+            require(read(HKEY_CLASSES_ROOT, L"Directory\\shell\\open\\command")
+                == (explorer ? L"original command" : L"native Explorer command"),
+                "switching the default changes and restores the base open command");
+            require(exists(HKEY_CLASSES_ROOT, L"Directory\\shell\\open\\command", L"DelegateExecute") == explorer,
+                "restoration preserves the original absence of a COM delegate");
+            require(read(HKEY_CLASSES_ROOT, L"Directory\\shell") == (explorer ? L"open" : L"none"), "default association preserved");
             require(settings::synchronizeContextMenus().status() == ERROR_SUCCESS, "repeat synchronization succeeds");
             if (pass == 0) checkDefaultOpening();
         }
+        require(settings::setDefaultBrowser(true).status() == ERROR_SUCCESS, "activate before an external command change");
+        put(HKEY_CLASSES_ROOT, L"Directory\\shell\\open\\command", nullptr, L"external command");
+        require(settings::setDefaultBrowser(false).status() == ERROR_SUCCESS, "deactivate after an external command change");
+        require(read(HKEY_CLASSES_ROOT, L"Directory\\shell\\open\\command") == L"external command",
+            "restoration preserves an external replacement");
+        put(HKEY_CLASSES_ROOT, L"Directory\\shell\\open\\command", nullptr, L"native Explorer command");
         // External changes can differ between classes; startup sync must not overwrite them.
         put(HKEY_CLASSES_ROOT, L"Directory\\shell", nullptr, L"FILESPACER");
         put(HKEY_CLASSES_ROOT, L"CompressedFolder\\shell", nullptr, L"other-manager");
