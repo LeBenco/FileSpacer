@@ -415,6 +415,20 @@ bool FolderStateStore::resetDamagedDatabase(const char *utf8Path, const wchar_t 
         // Keep every source exclusively open until backup and deletion finish.
         // Existing users prevent this operation; no foreign handle is closed.
         if (!CreateDirectoryW(backupDirectory, nullptr)) return failed();
+        // An incomplete backup removes only what this attempt created: the
+        // directory is new, and so is every file recorded in it (CREATE_NEW).
+        // It is destroyed after failed() has read the error and after the
+        // destination handle of the interrupted copy has been closed.
+        struct PartialBackup {
+            const wchar_t *directory;
+            std::vector<std::wstring> copies;
+            bool complete;
+            ~PartialBackup() {
+                if (complete) return;
+                for (const auto &created : copies) DeleteFileW(created.c_str());
+                RemoveDirectoryW(directory);
+            }
+        } partial = {backupDirectory, {}, false};
         const size_t slash = path.find_last_of(L"\\/");
         const std::wstring name = path.substr(slash == std::wstring::npos ? 0 : slash + 1);
         std::vector<uint8_t> buffer(64 * 1024);
@@ -425,6 +439,7 @@ bool FolderStateStore::resetDamagedDatabase(const char *utf8Path, const wchar_t 
                 CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
             if (raw == INVALID_HANDLE_VALUE) return failed();
             const std::unique_ptr<void, CloseHandle> copy(raw);
+            partial.copies.push_back(destination);
             for (;;) {
                 DWORD read = 0, written = 0;
                 if (!ReadFile(files[index].get(), buffer.data(), static_cast<DWORD>(buffer.size()), &read, nullptr))
@@ -438,6 +453,7 @@ bool FolderStateStore::resetDamagedDatabase(const char *utf8Path, const wchar_t 
             }
             if (!FlushFileBuffers(copy.get())) return failed();
         }
+        partial.complete = true;
         FILE_DISPOSITION_INFO disposition = {TRUE};
         // Mark the main database last; keep all handles open until every mark
         // succeeds. On failure cancel pending deletions before releasing them.
@@ -907,7 +923,8 @@ bool FolderStateStore::move(const std::string &oldKey, const std::string &newKey
     if (!execute("BEGIN IMMEDIATE")) return false;
     sqlite3_stmt *raw = nullptr;
     bool success = result(sqlite3_prepare_v2(db,
-        "INSERT OR REPLACE INTO folder_state "
+        "INSERT OR REPLACE INTO folder_state"
+        "(key,x,y,width,height,view,icons,last_success_at,first_failed_at,maximized,locked,scroll) "
         "SELECT ?2,x,y,width,height,view,icons,last_success_at,first_failed_at,maximized,locked,scroll "
         "FROM folder_state WHERE key=?1", -1, &raw, nullptr));
     {
@@ -1148,6 +1165,8 @@ DWORD openStorageDirectory(HWND owner, const std::wstring &directory) {
 }
 struct StorageErrorDialog {
     std::wstring path, directory, diagnosis;
+    // Last formatted footer: the control is not documented to copy element text.
+    std::wstring footer;
     bool usersLoaded = false;
 };
 void loadStorageUsers(StorageErrorDialog &dialog) {
@@ -1156,7 +1175,12 @@ void loadStorageUsers(StorageErrorDialog &dialog) {
     DWORD session = 0;
     wchar_t key[CCH_RM_SESSION_KEY + 1] = {};
     std::wstring users;
-    DWORD error = RmStartSession(&session, 0, key);
+    // Rstrtmgr.dll is delay-loaded: only this diagnosis needs it. Loading the
+    // System32 copy first turns an absent library into the "unavailable" text
+    // below instead of the delay-load helper's structured exception. The
+    // reference is kept: the helper binds its imports to this module.
+    DWORD error = LoadLibraryExW(L"Rstrtmgr.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32)
+        ? RmStartSession(&session, 0, key) : GetLastError();
     if (error == ERROR_SUCCESS) {
         auto endSession = [](DWORD *handle) { RmEndSession(*handle); };
         const std::unique_ptr<DWORD, decltype(endSession)> guard(&session, endSession);
@@ -1224,7 +1248,9 @@ HRESULT CALLBACK storageErrorCallback(HWND window, UINT notification, WPARAM but
             const std::wstring reason = failedStore ? storageErrorText(failedStore->error())
                 : std::wstring(getString(IDS_STORAGE_UNKNOWN_ERROR));
             const auto message = formatString(IDS_STORAGE_RESET_FAILED, reason.c_str());
-            SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_FOOTER, reinterpret_cast<LPARAM>(message.get()));
+            dialog.footer = message ? message.get() : L"";
+            SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_FOOTER,
+                reinterpret_cast<LPARAM>(dialog.footer.c_str()));
             return S_FALSE;
         }
         const auto message = formatString(IDS_STORAGE_RESET_DONE, backup.c_str());
@@ -1239,7 +1265,9 @@ HRESULT CALLBACK storageErrorCallback(HWND window, UINT notification, WPARAM but
         ? openStorageDirectory(window, dialog.directory) : copyStorageDiagnosis(window, dialog.diagnosis);
     if (error) {
         const auto message = formatString(IDS_STORAGE_ACTION_ERROR, error, getErrorMessage(error).get());
-        SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_FOOTER, reinterpret_cast<LPARAM>(message.get()));
+        dialog.footer = message ? message.get() : L"";
+        SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_FOOTER,
+            reinterpret_cast<LPARAM>(dialog.footer.c_str()));
     } else {
         SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_FOOTER,
             reinterpret_cast<LPARAM>(getString(button == IDC_STORAGE_COPY_DIAGNOSIS
