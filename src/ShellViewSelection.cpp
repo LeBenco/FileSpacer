@@ -199,7 +199,7 @@ bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
     // staged temporarily; no private item constructor or ABI is called.
     struct Construction {
         Binding &owner;HDSA array;std::vector<Entry> entries;size_t filled=0;bool committed=false;
-        Construction(Binding &binding,HDSA selected,int count):owner(binding),array(selected),entries(static_cast<size_t>(count)){}
+        Construction(Binding &binding,HDSA selectionArray,int itemCount):owner(binding),array(selectionArray),entries(static_cast<size_t>(itemCount)){}
         ~Construction(){
             if(committed)return;
             ArraySnapshot current;Entry pending;
@@ -245,9 +245,9 @@ bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
             if(!writable(const_cast<LONG *>(capacityField),sizeof(LONG)))return false;
             struct Growth {
                 Binding &owner;HDSA array;volatile LONG *field,*capacityField;LONG previous,capacity;const unsigned char *data;
-                Growth(Binding &binding,HDSA selected,const ArraySnapshot &snapshot)
-                    :owner(binding),array(selected),field(nullptr),capacityField(nullptr),previous(0),capacity(0),data(snapshot.data){}
-                ~Growth(){ArraySnapshot now;LONG reserved=0;if(owner.nativeArray(array,now)){
+                Growth(Binding &binding,HDSA selectionArray,const ArraySnapshot &initialArray)
+                    :owner(binding),array(selectionArray),field(nullptr),capacityField(nullptr),previous(0),capacity(0),data(initialArray.data){}
+                ~Growth(){ArraySnapshot now;if(owner.nativeArray(array,now)){LONG reserved=0;
                     InterlockedExchange(field,previous);
                     if(now.data==data&&read(const_cast<const LONG *>(capacityField),reserved)&&reserved==0)InterlockedExchange(capacityField,capacity);
                 }}
