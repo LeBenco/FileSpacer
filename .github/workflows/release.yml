@@ -145,6 +145,50 @@ jobs:
             [System.Text.UTF8Encoding]::new($false)
           )
 
+      - name: Locate an existing Pandoc
+        id: pandoc-existing
+        shell: pwsh
+        run: |
+          $pandoc = Get-Command pandoc -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($pandoc) { "path=$($pandoc.Source)" >> $env:GITHUB_OUTPUT }
+
+      - name: Restore portable Pandoc
+        if: steps.pandoc-existing.outputs.path == ''
+        id: pandoc-cache
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5, Node.js 24
+        with:
+          path: ${{ runner.tool_cache }}/filespacer-pandoc/2.12
+          key: pandoc-${{ runner.os }}-${{ runner.arch }}-2.12-3ed32834
+
+      - name: Prepare Pandoc for the shared installer build
+        shell: pwsh
+        env:
+          EXISTING_PANDOC: ${{ steps.pandoc-existing.outputs.path }}
+        run: |
+          $pandoc = $env:EXISTING_PANDOC
+          if (!$pandoc) {
+            $directory = Join-Path $env:RUNNER_TOOL_CACHE 'filespacer-pandoc/2.12'
+            $pandoc = Join-Path $directory 'pandoc-2.12/pandoc.exe'
+            if (!(Test-Path -LiteralPath $pandoc -PathType Leaf)) {
+              $archive = Join-Path $env:RUNNER_TEMP 'pandoc-2.12-windows-x86_64.zip'
+              Invoke-WebRequest 'https://github.com/jgm/pandoc/releases/download/2.12/pandoc-2.12-windows-x86_64.zip' -OutFile $archive
+              if ((Get-FileHash $archive -Algorithm SHA256).Hash -cne '3ED3283438A1A3D45B8C1FB3CDDB87CF93C86064B84DE4F8521436292ED94E50') {
+                throw 'Pandoc archive checksum mismatch.'
+              }
+              Expand-Archive -LiteralPath $archive -DestinationPath $directory -Force
+            }
+          }
+          & $pandoc --version
+          if ($LASTEXITCODE -ne 0) { throw 'Pandoc could not be started.' }
+          "PANDOC=$pandoc" >> $env:GITHUB_ENV
+
+      - name: Cache portable Pandoc
+        if: steps.pandoc-existing.outputs.path == '' && steps.pandoc-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5, Node.js 24
+        with:
+          path: ${{ runner.tool_cache }}/filespacer-pandoc/2.12
+          key: pandoc-${{ runner.os }}-${{ runner.arch }}-2.12-3ed32834
+
       - name: Install Inkscape and locate MSVC
         shell: pwsh
         run: |
@@ -166,7 +210,7 @@ jobs:
           call "%VS_INSTALL%\VC\Auxiliary\Build\vcvars64.bat"
           if errorlevel 1 exit /b 1
           if not exist build\ci mkdir build\ci
-          nmake.exe /nologo /f Makefile CFG=Release installer "INKSCAPE=%ProgramFiles%\Inkscape\bin\inkscape.com" "MAKENSIS=%ProgramFiles(x86)%\NSIS\makensis.exe" > build\ci\build-release.log 2>&1
+          nmake.exe /nologo /f Makefile CFG=Release installer "PANDOC=%PANDOC%" "INKSCAPE=%ProgramFiles%\Inkscape\bin\inkscape.com" "MAKENSIS=%ProgramFiles(x86)%\NSIS\makensis.exe" > build\ci\build-release.log 2>&1
           if errorlevel 1 (type build\ci\build-release.log & exit /b 1)
 
       - name: Check the release version
