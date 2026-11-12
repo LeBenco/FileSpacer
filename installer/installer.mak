@@ -7,6 +7,10 @@ MAKENSIS = makensis.exe
 NODE = node
 !ENDIF
 
+!IFNDEF PANDOC
+PANDOC = pandoc
+!ENDIF
+
 INSTALLER_BITMAP = $(OUTDIR)\WizardBitmap.dll
 
 # NSIS is x86 even when the installed application is x64. Reuse the current
@@ -34,7 +38,7 @@ installer-documentation: FORCE_INSTALLER
 installer-assets: $(ICON_ICO) $(INSTALLER_BITMAP) FORCE_INSTALLER
 	"$(ICON_PYTHON)" generate-installer-assets.py --source "$(ICON_SVG)" --icon "$(ICON_ICO)" --output build\installer-assets --inkscape "$(INKSCAPE)"
 	copy /y "$(INSTALLER_BITMAP)" build\installer-assets\WizardBitmap.dll >nul
-	"$(NODE)" installer\generate-notes.mjs
+	"$(NODE)" installer\generate-notes.mjs --pandoc "$(PANDOC)"
 	rc.exe /nologo /fo build\installer-assets\wizard-ui.res installer\wizard-ui.rc
 	link.exe /nologo /dll /noentry /machine:x86 /out:build\installer-assets\wizard-ui.dll build\installer-assets\wizard-ui.res
 
@@ -45,6 +49,7 @@ clean-installer:
 	@if exist "build\installer-assets\*.png" del /q "build\installer-assets\*.png"
 	@if exist "build\installer-assets\*.svg" del /q "build\installer-assets\*.svg"
 	@if exist "build\installer-assets\changelog-*.txt" del /q "build\installer-assets\changelog-*.txt"
+	@if exist "build\installer-assets\changelog-*.rtf" del /q "build\installer-assets\changelog-*.rtf"
 	@if exist "build\installer-assets\wizard-ui.res" del /q "build\installer-assets\wizard-ui.res"
 	@if exist "build\installer-assets\wizard-ui.dll" del /q "build\installer-assets\wizard-ui.dll"
 	@if exist "build\installer-assets\WizardBitmap.dll" del /q "build\installer-assets\WizardBitmap.dll"
