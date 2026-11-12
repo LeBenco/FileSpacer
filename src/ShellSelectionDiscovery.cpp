@@ -34,8 +34,14 @@ std::atomic<bool> rangeFinished{false};
 enum class Resolution : unsigned char { Running, Public, Private };
 std::atomic<Resolution> resolution{Resolution::Running};
 std::once_flag initialized;
+// Owned by initialize() and shutdown(), on the initializing thread only. Kept
+// as plain handles: no static destructor may close the event while a resolver
+// that was never joined still waits on it.
+HANDLE resolveStop=nullptr,resolveThread=nullptr;
 
 struct Unsupported : std::runtime_error { using std::runtime_error::runtime_error; };
+// Transient: the symbol file itself, not the loaded image, was rejected.
+struct UnmatchedPdb : std::runtime_error { using std::runtime_error::runtime_error; };
 void supported(bool condition,const char *reason){if(!condition)throw Unsupported(reason);}
 void require(bool condition, const char *reason) {
     if (!condition) throw std::runtime_error(reason);
@@ -102,6 +108,7 @@ Identity identity() {
     }
     throw std::runtime_error("No Shell RSDS identity");
 }
+std::wstring cachePath(const std::wstring &root,const Identity &id) { return root+L"\\"+id.cacheKey+L".bin"; }
 std::wstring rangeCacheFile(const std::wstring &base) {
     RangeData data;if(!controlIdentity(data))return {};
     // Shell identity remains in the stem; control identity is checked inside
@@ -142,15 +149,20 @@ bool recentAttempt(const std::wstring &path) {
     ULARGE_INTEGER current = {}, previous = {};
     current.LowPart = now.dwLowDateTime; current.HighPart = now.dwHighDateTime;
     previous.LowPart = info.ftLastWriteTime.dwLowDateTime; previous.HighPart = info.ftLastWriteTime.dwHighDateTime;
-    return current.QuadPart <= previous.QuadPart || current.QuadPart - previous.QuadPart < 24ull * 60 * 60 * 10000000;
+    // A marker dated further ahead of the clock than the backoff itself is
+    // not a recent attempt: it must not postpone discovery without limit.
+    const ULONGLONG backoff = 24ull * 60 * 60 * 10000000;
+    return current.QuadPart <= previous.QuadPart ? previous.QuadPart - current.QuadPart < backoff
+        : current.QuadPart - previous.QuadPart < backoff;
 }
 template<class T> T api(HMODULE module, const char *name) {
     const FARPROC address = GetProcAddress(module, name);
     require(address != nullptr, "Required system export absent");
     return reinterpret_cast<T>(address);
 }
-void downloadPdb(const Identity &id, const std::wstring &destination, const wchar_t *pdb=L"shell32.pdb") {
-    if (GetFileAttributesW(destination.c_str()) != INVALID_FILE_ATTRIBUTES) return;
+// Returns false when a file left by an earlier run is reused without a download.
+bool downloadPdb(const Identity &id, const std::wstring &destination, const wchar_t *pdb=L"shell32.pdb") {
+    if (GetFileAttributesW(destination.c_str()) != INVALID_FILE_ATTRIBUTES) return false;
     Internet session(WinHttpOpen(L"FileSpacer symbol discovery", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
         WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0), &WinHttpCloseHandle);
     require(session && WinHttpSetTimeouts(session.get(), 5000, 5000, 15000, 15000), "Cannot initialize symbol download");
@@ -180,6 +192,7 @@ void downloadPdb(const Identity &id, const std::wstring &destination, const wcha
     require(total != 0 && FlushFileBuffers(file.get()), "Empty or incomplete symbol file");
     file.reset();
     require(MoveFileExW(temporary.c_str(), destination.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != FALSE, "Cannot publish symbol file");
+    return true;
 }
 struct SymbolTables { DWORD64 base; DWORD size; std::vector<DWORD> tables; const wchar_t *prefix=L"??_7CDefView@@"; };
 BOOL CALLBACK collectTables(PSYMBOL_INFOW symbol, ULONG, void *context) {
@@ -219,6 +232,7 @@ Symbols symbols(const Identity &id, const std::wstring &path, bool control=false
         L"?QueryInterface@CLVRange@@UEAAJAEBU_GUID@@PEAPEAX@Z",L"?AddRef@CLVRange@@UEAAKXZ",L"?Release@CLVRange@@UEAAKXZ",
         L"?GetSelectedCount@CListView@@UEAAJPEAH@Z",L"?Clear@CLVRange@@UEAAJXZ",L"CLVRange::CountIncluded"};
     Symbols result;
+    bool matched = false;
     for (size_t i = 0; i < (control?_countof(controlNames):_countof(names)); ++i) {
         const auto method=control?controlNames[i]:names[i];
         struct Symbol { SYMBOL_INFOW info; wchar_t extra[MAX_SYM_NAME]; } symbol = {};
@@ -226,11 +240,21 @@ Symbols symbols(const Identity &id, const std::wstring &path, bool control=false
         options(SYMOPT_DEFERRED_LOADS | SYMOPT_EXACT_SYMBOLS | SYMOPT_FAIL_CRITICAL_ERRORS | SYMOPT_NO_PROMPTS
             | (method[0] == L'?' ? 0 : SYMOPT_UNDNAME));
         const std::wstring name = std::wstring(moduleName)+L"!"+method;
-        if (!lookup(session.get(), name.c_str(), &symbol.info)) {
+        const bool found = lookup(session.get(), name.c_str(), &symbol.info) != FALSE;
+        if (!matched) {
+            // The first lookup loads the deferred module. Whatever its result,
+            // check the file once against the loaded image (GUID and age)
+            // before accepting an address or treating an absence as structural.
             IMAGEHLP_MODULEW64 info={};info.SizeOfStruct=sizeof(info);
-            require(moduleInfo(session.get(),base,&info) && info.SymType==SymPdb && !info.PdbUnmatched
-                && info.PdbAge==id.age && IsEqualGUID(info.PdbSig70,id.guid),"Matching PDB was not loaded");
-            if(control || (i != OnClear && i != EnumGlobal && i != DeleteGlobal && i < 17)) {
+            if(!moduleInfo(session.get(),base,&info) || info.SymType!=SymPdb || info.PdbUnmatched
+                || info.PdbAge!=id.age || !IsEqualGUID(info.PdbSig70,id.guid))throw UnmatchedPdb("Matching PDB was not loaded");
+            matched = true;
+        }
+        if (!found) {
+            // Select, Init, QueryService and both QueryObject are recorded when
+            // present, but no capability reads them: their absence refuses nothing.
+            if(control || (i != OnClear && i != Select && i != Init && i != QueryService && i != EnumGlobal && i != DeleteGlobal
+                    && i != HostQueryObject && i != ViewQueryObject && i < 17)) {
                 std::string reason="Required private symbol absent: ";
                 for(const wchar_t character:name)reason+=static_cast<char>(character); // Symbol names are ASCII.
                 throw Unsupported(reason.c_str());
@@ -247,6 +271,20 @@ Symbols symbols(const Identity &id, const std::wstring &path, bool control=false
     require(enumerate(session.get(), base,mask.c_str(), collectTables, &tables) != FALSE, "Cannot enumerate notification tables");
     result.tables = std::move(tables.tables);
     return result;
+}
+// A file left by an earlier run is not trusted on its mere presence: when it is
+// not the PDB of the loaded image, it is removed and handled as absent, once.
+// file receives its path, for the caller to discard after recording a decision.
+Symbols matchedSymbols(const Identity &id, const std::wstring &folder, const wchar_t *pdb, bool control, std::wstring &file) {
+    file = folder + L"\\" + pdb;
+    const bool downloaded = downloadPdb(id, file, pdb);
+    try { return symbols(id, folder, control); }
+    catch (const UnmatchedPdb &) {
+        DeleteFileW(file.c_str()); // The symbol session is already closed.
+        if (downloaded) throw;
+    }
+    require(downloadPdb(id, file, pdb), "Cannot replace unmatched symbol file");
+    return symbols(id, folder, control);
 }
 template<size_t N> bool match(const unsigned char *data, size_t length, size_t offset, const unsigned char (&pattern)[N]) {
     return offset <= length && N <= length - offset && std::memcmp(data + offset, pattern, N) == 0;
@@ -344,15 +382,14 @@ void save(const Identity &id, const std::array<DWORD,FieldCount> &fields, const 
     file.write(reinterpret_cast<const char *>(&count),4);file.write(reinterpret_cast<const char *>(fields.data()),sizeof(fields));file.flush();
     require(file.good(),"Cannot save discovered data");
 }
-void discoverRange(const std::wstring &root,const std::wstring &path) {
+void discoverRange(const std::wstring &root,const std::wstring &path,std::wstring &pdb) {
     RangeImage result;require(controlIdentity(result.data),"Control identity unavailable");result.base=controlModule();
     Identity id;id.base=result.base;id.size=result.data.size;id.guid=result.data.guid;id.age=result.data.age;
     wchar_t guid[40]={},age[16]={};require(StringFromGUID2(id.guid,guid,_countof(guid))!=0,"Control GUID unavailable");
     for(wchar_t character:guid)if(character&&character!=L'{'&&character!=L'}'&&character!=L'-')id.key+=character;
     swprintf_s(age,L"%X",id.age);id.key+=age;
     const std::wstring directoryName=root+L"\\symbols\\comctl32.pdb\\"+id.key;directory(directoryName);
-    downloadPdb(id,directoryName+L"\\comctl32.pdb",L"comctl32.pdb");
-    const auto found=symbols(id,directoryName,true);
+    const auto found=matchedSymbols(id,directoryName,L"comctl32.pdb",true,pdb);
     std::copy_n(found.methods.begin(),RangeMethodCount,result.data.methods.begin());
     unsigned char count[96]={};
     supported(read(result.base+result.data.methods[ControlCount],count)
@@ -648,21 +685,24 @@ const RangeImage &rangeImage() {
 }
 bool rangeResolved(){return rangeFinished.load(std::memory_order_acquire);}
 bool resolved() { return resolution.load(std::memory_order_acquire)!=Resolution::Running; }
-std::wstring cacheFile(const std::wstring &root) { return root+L"\\"+identity().cacheKey+L".bin"; }
+std::wstring cacheFile(const std::wstring &root) { return cachePath(root,identity()); }
 namespace {
-struct ResolveContext { std::wstring root; bool custom,background; DWORD uiThread; };
+// stop is borrowed: shutdown() closes it only after this resolver has exited.
+struct ResolveContext { std::wstring root; bool custom,background; DWORD uiThread; HANDLE stop; };
 BOOL CALLBACK notifyWindow(HWND window,LPARAM message) {
     PostMessageW(window,static_cast<UINT>(message),0,0);return TRUE;
 }
-void publish(Image candidate,DWORD uiThread) {
+void publish(Image candidate) {
     // Exactly one writer, at most one publication. Both images remain alive
     // for the process lifetime; an in-flight call retains its chosen path.
     selectedImage=candidate;
     resolution.store(Resolution::Private,std::memory_order_release);
-    if(readyMessage())EnumThreadWindows(uiThread,notifyWindow,readyMessage());
 }
-void publishRange(RangeImage candidate,DWORD uiThread) {
+void publishRange(RangeImage candidate) {
     selectedRange=candidate;rangeReady.store(true,std::memory_order_release);
+}
+// Posted once after the publications of one adoption: each window binds once.
+void notifyWindows(DWORD uiThread) {
     if(readyMessage())EnumThreadWindows(uiThread,notifyWindow,readyMessage());
 }
 bool savedPublic(const std::wstring &file) {
@@ -680,7 +720,8 @@ Handle startWorker(const ResolveContext &context) {
     if(!size || size>=executable.size())return Handle(nullptr,&closeHandle);
     std::wstring command=L"\""+std::wstring(executable.data(),size)+L"\" ";
     command+=context.custom?L"/test /selection-discovery \""+context.root+L"\"":L"/selection-discovery";
-    STARTUPINFOW startup={};startup.cb=sizeof(startup);startup.dwFlags=STARTF_USESHOWWINDOW;startup.wShowWindow=SW_HIDE;
+    // A hidden background process must not show the application-starting cursor.
+    STARTUPINFOW startup={};startup.cb=sizeof(startup);startup.dwFlags=STARTF_USESHOWWINDOW|STARTF_FORCEOFFFEEDBACK;startup.wShowWindow=SW_HIDE;
     PROCESS_INFORMATION child={};
     if(!CreateProcessW(executable.data(),&command[0],nullptr,nullptr,FALSE,CREATE_NO_WINDOW|BELOW_NORMAL_PRIORITY_CLASS,
             nullptr,nullptr,&startup,&child))return Handle(nullptr,&closeHandle);
@@ -717,18 +758,27 @@ DWORD WINAPI resolve(void *raw) {
     try {
         if(!limitedProcess() || !cfgCompatible() || (context->custom && context->root.empty()))throw std::runtime_error("Public path selected");
         if(!context->custom)context->root=defaultRoot();
-        const std::wstring final=cacheFile(context->root),negative=final+L".public";
+        const Identity id=identity();
+        const std::wstring final=cachePath(context->root,id),negative=final+L".public";
         const std::wstring rangeFinal=rangeCacheFile(final);
         const auto adopt=[&]() {
             const Image candidate=published?image():Image::discover(final);
-            if(!candidate.supported)return false;
+            if(!candidate.supported) {
+                debugPrintf(L"Shell selection capability not adopted: %S\n",candidate.reason);
+                return false;
+            }
             const RangeImage range=rangeFinal.empty()?RangeImage{}:RangeImage::discover(rangeFinal);
-            if(range.supported)publishRange(range,context->uiThread);
-            if(!published){publish(candidate,context->uiThread);published=true;}
+            const bool first=!published;
+            if(range.supported)publishRange(range);
+            if(first){publish(candidate);published=true;}
+            if(first||range.supported)notifyWindows(context->uiThread);
             // A missing optional range never takes an existing private path
             // away. Its independent immutable publication can arrive later.
             return range.supported||rangeFinal.empty()||savedRangePublic(rangeFinal+L".public")||!context->background;
         };
+        // Signaled by shutdown(): every wait below observes it, and no
+        // discovery is started for a process that is already exiting.
+        const auto stopping=[&]{return WaitForSingleObject(context->stop,0)!=WAIT_TIMEOUT;};
         if(adopt())return 0;
         if(!context->background || savedPublic(negative))throw std::runtime_error("No discovery required");
         directory(context->root);DirectoryWatch watch;
@@ -737,22 +787,24 @@ DWORD WINAPI resolve(void *raw) {
         // our initial lookup and the notification subscription.
         if(adopt())return 0;
         Handle child(nullptr,&closeHandle);
+        if(stopping())throw std::runtime_error("Process is exiting");
         if(!producerActive(context->root)) {
-            const std::wstring attempt=published&&!rangeFinal.empty()?rangeFinal+L".attempt":context->root+L"\\"+identity().cacheKey+L".attempt";
+            const std::wstring attempt=published&&!rangeFinal.empty()?rangeFinal+L".attempt":context->root+L"\\"+id.cacheKey+L".attempt";
             if(recentAttempt(attempt)&&(!published||savedRangePublic(attempt)))throw std::runtime_error("Transient failure backoff");
             child=startWorker(*context);
             if(!child)throw std::runtime_error("Cannot start isolated discovery");
         }
         for(;;) {
             if(!watching) {
-                if(child)WaitForSingleObject(child.get(),INFINITE);
+                HANDLE handles[2]={context->stop,child.get()};
+                if(child&&WaitForMultipleObjects(2,handles,FALSE,INFINITE)!=WAIT_OBJECT_0+1)break;
                 if(adopt())return 0;
                 break;
             }
-            HANDLE handles[2]={watch.event.get(),child.get()};
-            const DWORD waited=WaitForMultipleObjects(child?2:1,handles,FALSE,INFINITE);
-            if(waited==WAIT_OBJECT_0){if(!watch.next())break;}
-            else if(child && waited==WAIT_OBJECT_0+1)child.reset();
+            HANDLE handles[3]={context->stop,watch.event.get(),child.get()};
+            const DWORD waited=WaitForMultipleObjects(child?3:2,handles,FALSE,INFINITE);
+            if(waited==WAIT_OBJECT_0+1){if(!watch.next())break;}
+            else if(child && waited==WAIT_OBJECT_0+2)child.reset();
             else break;
             if(adopt())return 0;
             if(savedPublic(negative))break;
@@ -763,8 +815,39 @@ DWORD WINAPI resolve(void *raw) {
                 break;
             }
         }
-    }catch(const std::exception &){ /* Public is already callable; no UI wait. */ }
+    }catch(const std::exception &error){
+        // Public is already callable; no UI wait.
+        (void)error;
+        debugPrintf(L"Shell selection capability resolution ended: %S\n",error.what());
+    }
     if(!published)resolution.store(Resolution::Public,std::memory_order_release);return 0;
+}
+void closeFind(HANDLE value) { if(value && value!=INVALID_HANDLE_VALUE)FindClose(value); }
+// Reparse points are neither followed nor removed.
+template<class Visit> void forEachEntry(const std::wstring &folder,const wchar_t *pattern,Visit visit) {
+    WIN32_FIND_DATAW entry={};
+    Handle search(FindFirstFileW((folder+L"\\"+pattern).c_str(),&entry),&closeFind);
+    if(search.get()==INVALID_HANDLE_VALUE)return;
+    do {
+        if((entry.dwFileAttributes&FILE_ATTRIBUTE_REPARSE_POINT)||wcscmp(entry.cFileName,L".")==0||wcscmp(entry.cFileName,L"..")==0)continue;
+        visit(folder+L"\\"+entry.cFileName,(entry.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)!=0);
+    }while(FindNextFileW(search.get(),&entry));
+}
+// A producer that crashed or was ended by its watchdog unwinds nothing: its
+// fixture, pending descriptors and partial downloads remain. Only the next
+// producer, while it holds discovery.lock, removes them.
+void removeOrphans(const std::wstring &root) {
+    forEachEntry(root,L"*.pending",[](const std::wstring &path,bool folder){if(!folder)DeleteFileW(path.c_str());});
+    forEachEntry(root,L"qualification-*",[](const std::wstring &path,bool folder){
+        if(!folder)return;
+        forEachEntry(path,L"*",[](const std::wstring &item,bool nested){if(!nested)DeleteFileW(item.c_str());});
+        RemoveDirectoryW(path.c_str());
+    });
+    forEachEntry(root+L"\\symbols",L"*",[](const std::wstring &name,bool folder){
+        if(folder)forEachEntry(name,L"*",[](const std::wstring &key,bool nested){
+            if(nested)forEachEntry(key,L"*.partial",[](const std::wstring &path,bool deeper){if(!deeper)DeleteFileW(path.c_str());});
+        });
+    });
 }
 DWORD WINAPI discoveryWatchdog(void *stop) {
     if(WaitForSingleObject(static_cast<HANDLE>(stop),180000)==WAIT_TIMEOUT)
@@ -786,24 +869,41 @@ void initialize(const wchar_t *cacheRoot,bool background) {
             if(cacheRoot)context->root=cacheRoot;
             context->background=background;context->uiThread=GetCurrentThreadId();
             (void)readyMessage();
-            if(QueueUserWorkItem(resolve,context.get(),WT_EXECUTELONGFUNCTION)){(void)context.release();return;}
+            // A joinable thread and its stop request, like the other threads
+            // joined before the process leaves its entry point.
+            Handle stop(CreateEventW(nullptr,TRUE,FALSE,nullptr),&closeHandle);HANDLE thread=nullptr;
+            context->stop=stop.get();
+            if(stop&&SHCreateThreadWithHandle(resolve,context.get(),0,nullptr,&thread)) {
+                (void)context.release();resolveStop=stop.release();resolveThread=thread;return;
+            }
         }catch(const std::bad_alloc &){ }
         rangeFinished.store(true,std::memory_order_release);
         resolution.store(Resolution::Public,std::memory_order_release);
     });
 }
+void shutdown() {
+    // The resolver uses the C++ runtime: none of its code may run while or
+    // after static objects are destroyed. It observes the request in each of
+    // its waits, so only bounded local work remains before its thread exits.
+    Handle stop(resolveStop,&closeHandle),thread(resolveThread,&closeHandle);
+    resolveStop=nullptr;resolveThread=nullptr;
+    if(!thread)return;
+    SetEvent(stop.get());
+    WaitForSingleObject(thread.get(),INFINITE);
+}
 int runWorker(const wchar_t *cacheRoot) {
     if(!limitedProcess() || !cfgCompatible())return ERROR_ACCESS_DENIED;
     const bool background=SetPriorityClass(GetCurrentProcess(),PROCESS_MODE_BACKGROUND_BEGIN)!=FALSE;
     struct Priority {bool changed;~Priority(){if(changed)SetPriorityClass(GetCurrentProcess(),PROCESS_MODE_BACKGROUND_END);}} priority={background};
-    std::wstring candidate,attempt,negative;bool rangePhase=false;
+    std::wstring candidate,attempt,negative,pdb;bool rangePhase=false;
     try {
         Watchdog watchdog;
         const std::wstring root=cacheRoot?cacheRoot:defaultRoot();directory(root);
-        const Identity id=identity();const std::wstring final=cacheFile(root);negative=final+L".public";
+        const Identity id=identity();const std::wstring final=cachePath(root,id);negative=final+L".public";
         Handle lock(CreateFileW((root+L"\\discovery.lock").c_str(),GENERIC_READ|GENERIC_WRITE,0,nullptr,
             OPEN_ALWAYS,FILE_ATTRIBUTE_TEMPORARY|FILE_FLAG_DELETE_ON_CLOSE,nullptr),&closeHandle);
         if(lock.get()==INVALID_HANDLE_VALUE)return ERROR_BUSY;
+        removeOrphans(root);
         if(savedPublic(final+L".public"))return 0;
         const Image previous=Image::discover(final);
         const std::wstring rangeFinal=rangeCacheFile(final);
@@ -815,12 +915,15 @@ int runWorker(const wchar_t *cacheRoot) {
         else {std::ofstream mark(attempt.c_str(),std::ios::trunc);mark<<"Discovery running\n";}
         if(!previous.supported) {
             const std::wstring pdbDirectory=root+L"\\symbols\\shell32.pdb\\"+id.key;directory(pdbDirectory);
-            downloadPdb(id,pdbDirectory+L"\\shell32.pdb");
-            const auto foundSymbols=symbols(id,pdbDirectory);const auto fields=extract(id,foundSymbols);
+            const auto foundSymbols=matchedSymbols(id,pdbDirectory,L"shell32.pdb",false,pdb);const auto fields=extract(id,foundSymbols);
             candidate=final+L".pending";save(id,fields,candidate);
         }
-        std::call_once(initialized,[&]{selectedImage=previous.supported?previous:Image::discover(candidate);
+        bool unreadable=false;
+        std::call_once(initialized,[&]{selectedImage=previous.supported?previous:Image::discover(candidate,&unreadable);
             resolution.store(selectedImage.supported?Resolution::Private:Resolution::Public,std::memory_order_release);});
+        // The descriptor was written just above. Failing to read it back is an
+        // I/O failure to retry, never a durable decision about the loaded image.
+        require(!unreadable,"Cannot read back discovered data");
         supported(selectedImage.supported,"Loaded-image/CFG validation rejected discovery");
         if(!previous.supported) {
             require(qualify(root),"Real Shell qualification failed");
@@ -834,8 +937,11 @@ int runWorker(const wchar_t *cacheRoot) {
             const std::wstring nextAttempt=rangeFinal+L".attempt";
             if(attempt!=nextAttempt){DeleteFileW(attempt.c_str());attempt=nextAttempt;}
             saveRangeRecord(attempt,"Discovery running");
-            discoverRange(root,candidate);
-            selectedRange=RangeImage::discover(candidate);supported(selectedRange.supported,"Loaded range qualification rejected discovery");
+            discoverRange(root,candidate,pdb);
+            // discoverRange has just qualified these operands in memory against
+            // the same loaded module: a rejection of the file it wrote is an
+            // I/O failure to retry, never a durable decision.
+            selectedRange=RangeImage::discover(candidate);require(selectedRange.supported,"Cannot read back range discovery");
             rangeReady.store(true,std::memory_order_release);
             // API/qualification failures can be transient (busy Shell, UIA,
             // unavailable desktop). Only structural Unsupported failures get a
