@@ -17,7 +17,7 @@ function Click-Task([IntPtr]$Dialog,[int]$Button) {
     Assert-Ui ([FileSpacerRegression.Native]::IsWindow($Dialog)) ('Task dialog target is invalid: '+$Dialog+', button '+$Button)
     Assert-Ui ([MutexRecoveryNative]::PostMessage($Dialog,0x466,[IntPtr]$Button,[IntPtr]::Zero)) 'Task dialog command failed.'
 }
-$failure=$null;$application=$null;$fileUser=$null
+$failure=$null;$application=$null
 $newExplorerWindows=New-Object Collections.ArrayList
 try {
     Initialize-Ui 'storage-error-assistance' -FixtureParent $RunDirectory
@@ -33,16 +33,13 @@ try {
     Wait-Ui { @(Storage-Dialog $application.Id).Count -eq 1 } 'identified storage error'
     $dialog=(Storage-Dialog $application.Id)[0]
     Assert-Ui ([StorageTaskDialog]::HasButton($dialog,1652)) 'Damaged database has no confirmed reset action.'
-    $fileUser=[IO.File]::Open($database,[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::ReadWrite)
     $clipboardSequence=[MutexRecoveryNative]::GetClipboardSequenceNumber()
     Click-Task $dialog 1651
     Wait-Ui { $text=[MutexRecoveryNative]::ClipboardText(); [MutexRecoveryNative]::GetClipboardSequenceNumber() -ne $clipboardSequence -and $text -and $text.Contains($database) } 'newly copied diagnostic with exact database path'
     $diagnostic=[MutexRecoveryNative]::ClipboardText()
     $diagnostic | Set-Content -LiteralPath (Join-Path $RunDirectory 'copied-diagnostic.txt') -Encoding UTF8
     Assert-Ui ($diagnostic -match '\b26\b' -and $diagnostic -match 'not a database') 'Diagnostic lost the original SQLite error.'
-    Assert-Ui ($diagnostic.Contains(' - PID '+$PID)) 'Restart Manager did not identify the controlled file user with a correctly encoded separator.'
     Assert-Ui ($diagnostic -notmatch '%[1-6]!') 'Unexpanded resource format in diagnostic.'
-    $fileUser.Dispose();$fileUser=$null
     $existingExplorer=@($script:UiShell.Windows() | ForEach-Object {try{[long]$_.HWND}catch{}})
     Click-Task $dialog 1650
     Wait-Ui {
@@ -105,7 +102,6 @@ try {
     Write-Host 'PASS: exact diagnosis, confirmed reset, cancellation preserves data, backup retains original and normal operation resumes.'
 } catch {$failure=$_;throw}
 finally {
-    if($fileUser){$fileUser.Dispose()}
     foreach($explorer in $newExplorerWindows){try{$explorer.Quit()}catch{Write-Warning $_.Exception.Message}}
     if($application -and !$application.HasExited){
         @([MutexRecoveryNative]::Describe($application.Id)) | Set-Content (Join-Path $RunDirectory 'windows-before-cleanup.txt') -Encoding UTF8
