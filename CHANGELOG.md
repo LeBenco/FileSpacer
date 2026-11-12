@@ -6,6 +6,10 @@
 
 ## Unreleased
 
+<a id="142--2026-11-12"></a>
+
+## 1.4.2 — 2026-11-12
+
 - Add native right-click context menus for folders in Quick access.
 - Fix the Quick access button icon on Windows 11.
 - Fix navigation button icon colors to match the Windows theme.
