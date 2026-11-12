@@ -278,7 +278,8 @@ LRESULT CALLBACK ProxyIcon::captionProc(HWND window, UINT message,
         // Only the documented title-menu actions are relayed.
         const UINT command = LOWORD(wParam);
         for (int entry = 0; entry < TITLE_SEPARATOR; ++entry) {
-            if (titleMenuCommand(entry) != command) continue;
+            // The retired slot maps to no command, not to command 0.
+            if (!validTitleMenuEntry(entry) || titleMenuCommand(entry) != command) continue;
             PostMessageW(GetParent(window), WM_COMMAND, command, 0);
             break;
         }
