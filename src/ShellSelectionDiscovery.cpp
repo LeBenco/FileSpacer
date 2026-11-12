@@ -97,7 +97,7 @@ Identity identity() {
         for (wchar_t character : text) if (character && character != L'{' && character != L'}' && character != L'-') result.key += character;
         swprintf_s(age, L"%X", code.age); result.key += age;
         wchar_t size[16]={};swprintf_s(size,L"%X",result.size);
-        result.cacheKey=result.key+L"-"+size+L"-s2";
+        result.cacheKey=result.key+L"-"+size+L"-s3";
         return result;
     }
     throw std::runtime_error("No Shell RSDS identity");
@@ -188,7 +188,7 @@ BOOL CALLBACK collectTables(PSYMBOL_INFOW symbol, ULONG, void *context) {
         && symbol->Address - result.base < result.size) result.tables.push_back(static_cast<DWORD>(symbol->Address - result.base));
     return TRUE;
 }
-struct Symbols { std::array<DWORD, 22> methods = {}; std::vector<DWORD> tables; };
+struct Symbols { std::array<DWORD, 23> methods = {}; std::vector<DWORD> tables; };
 Symbols symbols(const Identity &id, const std::wstring &path, bool control=false) {
     Module library(LoadLibraryExW(systemFile(L"dbghelp.dll").c_str(), nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32), &FreeLibrary);
     require(library != nullptr, "System DbgHelp unavailable");
@@ -214,7 +214,7 @@ Symbols symbols(const Identity &id, const std::wstring &path, bool control=false
         L"?QueryInterface@CListViewHost@@UEAAJAEBU_GUID@@PEAPEAX@Z",L"_imp_DSA_EnumCallback",L"_imp_DSA_DeleteAllItems",
         L"CSelectionManager::s_ClearSelectedItemEntry",L"??_7CDefView@@6BIListControlHost@@@",L"??_7CListViewHost@@6BIListControl@@@",
         L"CListViewHost::QueryObject",L"CDefView::QueryObject",L"??_7CSelectionManager@@6B@",L"DSA_GetItemPtr",
-        L"CListViewHost::s_ViewSubclassWndProc",L"_imp_DSA_InsertItem",L"DSA_InsertItem",L"CSelectionManager::SelectItem",L"CListViewHost::_OnLVNotify"};
+        L"CListViewHost::s_ViewSubclassWndProc",L"_imp_DSA_InsertItem",L"DSA_InsertItem",L"CSelectionManager::SelectItem",L"CListViewHost::_OnLVNotify",L"DSA_DeleteAllItems"};
     const wchar_t *controlNames[]={L"?QueryInterface@CListView@@UEAAJAEBU_GUID@@PEAPEAX@Z",L"?AddRef@CListView@@UEAAKXZ",L"?Release@CListView@@UEAAKXZ",
         L"?QueryInterface@CLVRange@@UEAAJAEBU_GUID@@PEAPEAX@Z",L"?AddRef@CLVRange@@UEAAKXZ",L"?Release@CLVRange@@UEAAKXZ",
         L"?GetSelectedCount@CListView@@UEAAJPEAH@Z",L"?Clear@CLVRange@@UEAAJXZ",L"CLVRange::CountIncluded"};
@@ -230,7 +230,7 @@ Symbols symbols(const Identity &id, const std::wstring &path, bool control=false
             IMAGEHLP_MODULEW64 info={};info.SizeOfStruct=sizeof(info);
             require(moduleInfo(session.get(),base,&info) && info.SymType==SymPdb && !info.PdbUnmatched
                 && info.PdbAge==id.age && IsEqualGUID(info.PdbSig70,id.guid),"Matching PDB was not loaded");
-            if(control || (i != EnumGlobal && i != DeleteGlobal && i < 17)) {
+            if(control || (i != OnClear && i != EnumGlobal && i != DeleteGlobal && i < 17)) {
                 std::string reason="Required private symbol absent: ";
                 for(const wchar_t character:name)reason+=static_cast<char>(character); // Symbol names are ASCII.
                 throw Unsupported(reason.c_str());
@@ -261,7 +261,7 @@ std::array<DWORD, FieldCount> extract(const Identity &id, const Symbols &foundSy
     };
     std::array<DWORD, FieldCount> fields = {};
     std::copy_n(foundSymbols.methods.begin(), 16, fields.begin()); fields[ArrayGetter] = foundSymbols.methods[16];
-    std::copy_n(foundSymbols.methods.begin()+17,5,fields.begin()+NativeWindowProcedure);
+    std::copy_n(foundSymbols.methods.begin()+17,6,fields.begin()+NativeWindowProcedure);
     unsigned char qi[20] = {}; copy(fields[HostQI], qi);
     const unsigned char qiPrefix[] = {0x4d,0x8b,0xc8,0x4c,0x8b,0xc2,0x48,0x8d,0x15};
     const unsigned char qiJump[] = {0x48,0xff,0x25};
@@ -280,7 +280,23 @@ std::array<DWORD, FieldCount> extract(const Identity &id, const Symbols &foundSy
         if (IsEqualGUID(guid,control)) { fields[HostOffset] = entry.offset; ++interfaces; }
     }
     supported(terminated && interfaces == 1, "shell32!CListViewHost::QueryInterface: missing or ambiguous host interface");
-    unsigned char clear[256] = {}; copy(fields[OnClear], clear); unsigned chains = 0, calls = 0;
+    unsigned char clear[256] = {}; unsigned chains = 0, calls = 0;
+    if(!fields[OnClear]) {
+        supported(fields[NativeNotify]&&fields[NativeErase],"shell32: neither standalone nor inline clear symbols available");
+        unsigned char notices[4096]={};copy(fields[NativeNotify],notices);
+        unsigned found=0;
+        for(size_t i=0;i+81<=sizeof(notices);++i) {
+            auto candidate=fields;candidate[OnClear]=fields[NativeNotify]+static_cast<DWORD>(i);HostClearLayout layout;
+            if(!decodeInlineHostClear(notices+i,sizeof(notices)-i,candidate,layout))continue;
+            supported(layout.manager>fields[HostOffset],"shell32: invalid inline manager displacement");
+            fields[OnClear]=candidate[OnClear];
+            fields[ManagerOffset]=layout.manager-fields[HostOffset];fields[ArrayOffset]=layout.array;++found;
+        }
+        supported(found==1,"shell32!CListViewHost::_OnLVNotify: missing or ambiguous inline clear loop");
+        fields[Procedure]=HostClearInline;
+    }
+    copy(fields[OnClear],clear);
+    if(!(fields[Procedure]&HostClearInline)) {
     for (size_t i = 0; i + 18 < sizeof(clear); ++i) {
         const bool first = clear[i]==0x48 && clear[i+1]==0x8b && clear[i+2]==0x89 && clear[i+7]==0x48 && clear[i+8]==0x8b
             && clear[i+9]==0x41 && clear[i+11]==0x48 && clear[i+12]==0x85 && clear[i+13]==0xc0 && clear[i+14]==0x74 && clear[i+16]==0x8b && clear[i+17]==0x30;
@@ -295,14 +311,15 @@ std::array<DWORD, FieldCount> extract(const Identity &id, const Symbols &foundSy
         if(static_cast<LONGLONG>(fields[OnClear])+static_cast<LONGLONG>(i)+5+delta==fields[Purge])++calls;
     }
     supported(chains==1 && calls==1, "shell32!CListViewHost::_OnClearSelection: unsupported clear procedure");
+    }
     unsigned char purge[128]={};copy(fields[Purge],purge);
     const unsigned char helper[]={0x40,0x53,0x48,0x83,0xec,0x20,0x48,0x8b,0xd9,0x48,0x8d,0x15};
     ArrayLayout layout;
-    if(match(purge,sizeof(purge),0,helper))fields[Procedure]=1;
-    else { supported(decodeInlineArrayLoop(purge,sizeof(purge),fields[Purge],fields[Callback],fields[ArrayOffset],layout),"shell32!CSelectionManager::ClearSelection: unsupported purge form");fields[Procedure]=2; }
+    if(match(purge,sizeof(purge),0,helper))fields[Procedure]|=PurgeHelper;
+    else { supported(decodeInlineArrayLoop(purge,sizeof(purge),fields[Purge],fields[Callback],fields[ArrayOffset],layout),"shell32!CSelectionManager::ClearSelection: unsupported purge form");fields[Procedure]|=PurgeInline; }
     unsigned char getter[32]={};copy(fields[ArrayGetter],getter);ArrayLayout getterLayout;
     supported(decodeArrayGetter(getter,sizeof(getter),getterLayout),"shell32!DSA_GetItemPtr: unsupported array getter");
-    if(fields[Procedure]==2)supported(layout.data==getterLayout.data && layout.stride==getterLayout.stride,"shell32!CSelectionManager::ClearSelection / DSA_GetItemPtr: array layouts disagree");
+    if((fields[Procedure]&3u)==PurgeInline)supported(layout.data==getterLayout.data && layout.stride==getterLayout.stride,"shell32!CSelectionManager::ClearSelection / DSA_GetItemPtr: array layouts disagree");
     const auto next=std::min_element(foundSymbols.tables.begin(),foundSymbols.tables.end(),[&](DWORD a,DWORD b){
         return (a>fields[NotifyTable]?a:MAXDWORD)<(b>fields[NotifyTable]?b:MAXDWORD);});
     supported(next!=foundSymbols.tables.end() && *next>fields[NotifyTable] && *next-fields[NotifyTable]<=1024 && (*next-fields[NotifyTable])%8==0,"Unbounded notification table");
@@ -321,7 +338,7 @@ std::array<DWORD, FieldCount> extract(const Identity &id, const Symbols &foundSy
 }
 void save(const Identity &id, const std::array<DWORD,FieldCount> &fields, const std::wstring &path) {
     std::ofstream file(path.c_str(),std::ios::binary|std::ios::trunc);const DWORD count=FieldCount;
-    file.write("FSDISC02",8);file.write(reinterpret_cast<const char *>(&id.size),4);
+    file.write("FSDISC03",8);file.write(reinterpret_cast<const char *>(&id.size),4);
     file.write(reinterpret_cast<const char *>(&id.guid),sizeof(id.guid));file.write(reinterpret_cast<const char *>(&id.age),4);
     file.write(reinterpret_cast<const char *>(&count),4);file.write(reinterpret_cast<const char *>(fields.data()),sizeof(fields));file.flush();
     require(file.good(),"Cannot save discovered data");
