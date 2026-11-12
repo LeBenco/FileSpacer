@@ -175,9 +175,7 @@ inline bool decodeInlineHostClear(const unsigned char *code,SIZE_T length,const 
 }
 struct Image {
     unsigned char *base=nullptr;DWORD size=0;std::array<DWORD,FieldCount> fields={};
-    void *enumerate=nullptr,*erase=nullptr;
-    bool clearViaCount=false;
-    bool manualEnumeration=false;DWORD dataOffset=0,strideOffset=0;
+    DWORD dataOffset=0,strideOffset=0;
     bool supported=false;const char *reason="missing discovery data";
     bool selectAllSupported=false;
     DWORD ignoredStateOffset=0;
@@ -200,28 +198,35 @@ struct Image {
         while(low<high){const SIZE_T middle=low+(high-low)/2;DWORD target=0;
             if(!read(base+table+middle*stride,target))return false;
             if(target<rva)low=middle+1;else high=middle;}
+        // An export-suppressed entry is not callable either while the
+        // accepted export-suppression policy is in force.
         DWORD target=0;unsigned char flags=0;
         return low<config.GuardCFFunctionCount&&read(base+table+low*stride,target)&&target==rva
-            &&(stride==4||(read(base+table+low*stride+4,flags)&&(flags&1u)==0));
+            &&(stride==4||(read(base+table+low*stride+4,flags)
+                &&(flags&(IMAGE_GUARD_FLAG_FID_SUPPRESSED|IMAGE_GUARD_FLAG_EXPORT_SUPPRESSED))==0));
     }
-    static Image discover(const std::wstring &input) {
-        Image result;
+    // unreadable reports a file that is not one complete record of this schema.
+    // For a record its caller has just written, that is an I/O failure and not
+    // a rejection of the loaded image.
+    static Image discover(const std::wstring &input,bool *unreadable=nullptr) {
+        Image result;if(unreadable)*unreadable=false;
         HANDLE rawToken=nullptr;result.reason="process token cannot be qualified";
         if(!OpenProcessToken(GetCurrentProcess(),TOKEN_QUERY,&rawToken))return result;
         std::unique_ptr<void,decltype(&CloseHandle)> token(rawToken,&CloseHandle);
         TOKEN_ELEVATION elevation={};DWORD returned=0;
         if(!GetTokenInformation(token.get(),TokenElevation,&elevation,sizeof(elevation),&returned)||elevation.TokenIsElevated)return result;
         result.reason="missing discovery data";
-        result.clearViaCount=true;result.manualEnumeration=true;
         const SIZE_T length=input.size();
         if(!length)return result;
         std::ifstream data(input.c_str(),std::ios::binary);char magic[8]={};DWORD count=0,expectedSize=0,age=0;GUID guid={};
         data.read(magic,sizeof(magic));data.read(reinterpret_cast<char *>(&expectedSize),sizeof(expectedSize));
         data.read(reinterpret_cast<char *>(&guid),sizeof(guid));data.read(reinterpret_cast<char *>(&age),sizeof(age));
         data.read(reinterpret_cast<char *>(&count),sizeof(count));
-        if(!data||std::memcmp(magic,"FSDISC03",8)!=0||count!=FieldCount){result.reason="invalid discovery schema";return result;}
+        if(!data||std::memcmp(magic,"FSDISC03",8)!=0||count!=FieldCount){
+            result.reason="invalid discovery schema";if(unreadable)*unreadable=true;return result;}
         data.read(reinterpret_cast<char *>(result.fields.data()),sizeof(result.fields));
-        if(!data||data.peek()!=std::char_traits<char>::eof()){result.reason="truncated or trailing discovery data";return result;}
+        if(!data||data.peek()!=std::char_traits<char>::eof()){
+            result.reason="truncated or trailing discovery data";if(unreadable)*unreadable=true;return result;}
         wchar_t system[MAX_PATH]={},loaded[MAX_PATH]={};
         const UINT systemLength=GetSystemDirectoryW(system,_countof(system));
         if(!systemLength||systemLength>=_countof(system))return result;
@@ -251,10 +256,7 @@ struct Image {
                 ||!policy.EnableControlFlowGuard)return result;
         PROCESS_MITIGATION_CONTROL_FLOW_GUARD_POLICY known={};known.EnableControlFlowGuard=1;known.EnableExportSuppression=1;known.StrictMode=1;
         if(policy.Flags&~known.Flags)return result; // Unknown/XFG policy: keep public calls.
-        result.manualEnumeration=true;result.clearViaCount=true;
-
-        result.clearViaCount=result.clearViaCount||result.manualEnumeration;
-        for(int i=0;i<=Release;++i)if(!(result.manualEnumeration&&(i==EnumGlobal||i==DeleteGlobal))&&!result.range(result.fields[i],64))return result;
+        for(int i=0;i<=Release;++i)if(i!=EnumGlobal&&i!=DeleteGlobal&&!result.range(result.fields[i],64))return result;
         const DWORD purgeKind=result.fields[Procedure]&3u;
         if((purgeKind!=PurgeHelper&&purgeKind!=PurgeInline)||(result.fields[Procedure]&~7u)||result.fields[NotifySlot]>127||result.fields[CancelSlot]>127
                 ||result.fields[HostOffset]>4096||result.fields[ManagerOffset]>4096||result.fields[ArrayOffset]>4096)return result;
@@ -262,15 +264,6 @@ struct Image {
         // not only against an external file. Recognize the inspected helper and
         // inlined compiler forms; unknown forms fail closed.
         for(Field field:{Callback,Notify,Cancel,ManagerQI,Retain,Release})if(!result.cfg(result.fields[field]))return result;
-        // These are Shell32's own linked DSA implementations, not necessarily
-        // Comctl32 exports. Capture its actual typed native call targets once.
-        if(!result.manualEnumeration){
-        if(!read(result.base+result.fields[EnumGlobal],result.enumerate)||!read(result.base+result.fields[DeleteGlobal],result.erase))return result;
-        for(const void *target:{result.enumerate,result.erase}){
-            const ULONG_PTR value=reinterpret_cast<ULONG_PTR>(target),start=reinterpret_cast<ULONG_PTR>(result.base);
-            if(value<start||value-start>=result.size||!result.cfg(static_cast<DWORD>(value-start)))return result;
-        }
-        }
         if(purgeKind==PurgeHelper){
         unsigned char purge[62]={};
         const unsigned char prefix[]={0x40,0x53,0x48,0x83,0xec,0x20,0x48,0x8b,0xd9,0x48,0x8d,0x15};
@@ -294,7 +287,7 @@ struct Image {
                     ||!decodeInlineArrayLoop(purge,sizeof(purge),result.fields[Purge],result.fields[Callback],result.fields[ArrayOffset],layout))return result;
             result.dataOffset=layout.data;result.strideOffset=layout.stride;
         }
-        if(result.clearViaCount&&purgeKind==PurgeHelper){
+        if(purgeKind==PurgeHelper){
             unsigned char getter[32]={};ArrayLayout layout;
             if(!result.range(result.fields[ArrayGetter],sizeof(getter))||!read(result.base+result.fields[ArrayGetter],getter)
                     ||!decodeArrayGetter(getter,sizeof(getter),layout))return result;
@@ -579,6 +572,7 @@ UINT readyMessage();
 bool resolved();
 std::wstring cacheFile(const std::wstring &root);
 void initialize(const wchar_t *cacheRoot,bool background);
+void shutdown();
 int runWorker(const wchar_t *cacheRoot=nullptr);
 }
 }
