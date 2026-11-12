@@ -519,8 +519,10 @@ static HRESULT registerMenuState(HKEY root, bool install) {
     return status == ERROR_SUCCESS ? S_OK : HRESULT_FROM_WIN32(status);
 }
 
-// Startup upgrades installed menu registrations without depending on whether
-// mixed sorting is enabled. Portable launches without installed verbs skip it.
+// Per-user repair, independent of whether mixed sorting is enabled. The
+// application calls it at startup only when installed verbs exist and the
+// effective registration is missing or names an absent module; an existing
+// registration, typically the installer's, is never redirected to this module.
 extern "C" HRESULT WINAPI RegisterFileSpacerMenuState() {
     return registerMenuState(HKEY_CURRENT_USER, true);
 }
