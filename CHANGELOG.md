@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- Add native right-click context menus for folders in Quick access.
+- Fix the Quick access button icon on Windows 11.
 - Fix navigation button icon colors to match the Windows theme.
 - Extend the massive speedup for Select All and clearing selections of thousands of files in classic Shell views to Windows 11.
 - Fix all folder windows becoming unresponsive during long drag-and-drop copies between FileSpacer windows.
