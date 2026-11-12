@@ -6,6 +6,7 @@
 
 ## Unreleased
 
+- Extend the massive speedup for Select All and clearing selections of thousands of files in classic Shell views to Windows 11.
 - Fix all folder windows becoming unresponsive during long drag-and-drop copies between FileSpacer windows.
 - Show only the "Open in..." command for the other file manager in folder context menus.
 - Add a smooth dotted-outline animation when opening folders, with global enable/disable and duration controls in General preferences.
