@@ -24,6 +24,7 @@ class ShellViewColumns : public std::enable_shared_from_this<ShellViewColumns> {
     UINT message = 0;
     ULONG_PTR generation = 0;
     bool posted = false, applying = false, suspended = false;
+    bool menuHold = false, resizeHold = false; // The two independent owners of `suspended`.
     bool deferred = false, tracking = false;
     int changedColumn = -1, requestedWidth = -1;
     LONG observedWidth = 0;
@@ -94,13 +95,18 @@ class ShellViewColumns : public std::enable_shared_from_this<ShellViewColumns> {
         applying = true;
         struct Guard { bool &flag; ~Guard() { flag = false; } } guard{applying};
         // Shrink before growing, to avoid transient horizontal overflow.
+        bool wrote = false;
         for (int pass = 0; pass < 2; ++pass) for (size_t i = 0; i < desired.size(); ++i) {
             if (desired[i].width == columns[i].width
                     || (desired[i].width < columns[i].width) != (pass == 0)) continue;
+            // A width below 1 would wrap to CM_WIDTH_USEDEFAULT/AUTOSIZE as UINT.
+            if (desired[i].width < 1) return false;
             CM_COLUMNINFO info = {sizeof(info), CM_MASK_WIDTH};
             info.uWidth = static_cast<UINT>(desired[i].width);
+            wrote = true;
             if (FAILED(manager->SetColumnInfo(desired[i].key, &info)) || !current()) return false;
         }
+        if (!wrote) return true; // The cache the caller just captured still describes the view.
         std::vector<Column> actual;
         if (!capture(actual) || !sameKeys(desired, actual)) return false;
         for (size_t i = 0; i < desired.size(); ++i)
@@ -111,6 +117,17 @@ class ShellViewColumns : public std::enable_shared_from_this<ShellViewColumns> {
     void request() {
         if (!posted && target) posted = PostMessageW(target, message, generation, 0) != FALSE;
     }
+    static bool childOfClass(HWND parent, HWND child, const wchar_t *className) {
+        wchar_t name[32] = {};
+        return GetClassNameW(child, name, _countof(name)) && lstrcmpW(name, className) == 0
+            && IsChild(parent, child);
+    }
+    static bool headerCode(UINT code) {
+        return code == HDN_ITEMCHANGINGW || code == HDN_ITEMCHANGINGA
+            || code == HDN_BEGINTRACKW || code == HDN_BEGINTRACKA
+            || code == HDN_ENDTRACKW || code == HDN_ENDTRACKA
+            || code == HDN_TRACKW || code == HDN_TRACKA || code == HDN_ENDDRAG;
+    }
     static LRESULT CALLBACK procedure(HWND source, UINT msg, WPARAM wParam,
             LPARAM lParam, UINT_PTR id, DWORD_PTR data) {
         auto self = reinterpret_cast<ShellViewColumns *>(data)->shared_from_this();
@@ -118,18 +135,24 @@ class ShellViewColumns : public std::enable_shared_from_this<ShellViewColumns> {
             RemoveWindowSubclass(source, procedure, id);
             self->window = self->list = self->target = nullptr;
             self->headerWindow = nullptr;
-        } else if (msg == WM_NOTIFY && lParam && !self->applying && !self->suspended) {
+        } else if (msg == WM_NOTIFY && lParam && !self->applying) {
+            // The view relays every notification of its controls: the code is
+            // tested before the sender's class.
             const auto notice = reinterpret_cast<const NMHDR *>(lParam);
-            wchar_t name[32] = {};
-            if (GetClassNameW(notice->hwndFrom, name, _countof(name)) && IsChild(source, notice->hwndFrom)) {
-                if (notice->code == NM_CUSTOMDRAW && lstrcmpW(name, WC_LISTVIEWW) == 0) {
+            if (notice->code == NM_CUSTOMDRAW) {
+                if (notice->hwndFrom == self->list || childOfClass(source, notice->hwndFrom, WC_LISTVIEWW)) {
+                    // The list is learnt even while suspended: the resumption can then fit it.
+                    const bool discovered = self->list != notice->hwndFrom;
+                    self->list = notice->hwndFrom;
                     RECT bounds = {};
-                    if (GetClientRect(notice->hwndFrom, &bounds)
-                            && (self->list != notice->hwndFrom || self->observedWidth != bounds.right)) {
-                        self->list = notice->hwndFrom; self->observedWidth = bounds.right; self->request();
+                    if (!self->suspended && GetClientRect(notice->hwndFrom, &bounds)
+                            && (discovered || self->observedWidth != bounds.right)) {
+                        self->observedWidth = bounds.right; self->request();
                         self->configureHeaderTracking();
                     }
-                } else if (lstrcmpW(name, WC_HEADERW) == 0) {
+                }
+            } else if (!self->suspended && headerCode(notice->code)) {
+                if (childOfClass(source, notice->hwndFrom, WC_HEADERW)) {
                     const bool width = notice->code == HDN_ITEMCHANGINGW || notice->code == HDN_ITEMCHANGINGA;
                     const auto change = reinterpret_cast<const NMHEADERW *>(lParam);
                     const bool begin = notice->code == HDN_BEGINTRACKW || notice->code == HDN_BEGINTRACKA;
@@ -198,11 +221,17 @@ public:
         RedrawWindow(result->window, nullptr, nullptr, RDW_INVALIDATE | RDW_ALLCHILDREN);
         return result;
     }
-    void suspend(bool value) {
-        const bool resume = suspended && !value;
-        suspended = value;
+    // The View menu and a window resize suspend independently: neither lifts
+    // the other's hold.
+    enum class Hold { Menu, Resize };
+    void suspend(Hold owner, bool value) {
+        (owner == Hold::Menu ? menuHold : resizeHold) = value;
+        const bool resume = suspended && !menuHold && !resizeHold;
+        suspended = menuHold || resizeHold;
         if (resume) request();
     }
+    // The posted request was received, whether or not it leads to synchronize().
+    void acknowledge() { posted = false; }
     void resize() { request(); }
     void setDeferred(bool value) { deferred = value; configureHeaderTracking(); }
     bool synchronize() {
@@ -222,7 +251,12 @@ public:
                 desired[index].width = adjacentWidth(columns, index, proposed >= 0 ? proposed : actual[index].width);
                 desired[index + 1].width = total - desired[index].width;
                 columns = actual;
-                if (!apply(desired)) return false;
+                if (!apply(desired)) {
+                    // Possibly partial: the next pass takes the real widths as the
+                    // new proportions instead of undoing the gesture from the old ones.
+                    columns.clear();
+                    return false;
+                }
                 weights = columns;
             }
         } else {
