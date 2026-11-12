@@ -4,6 +4,7 @@
 #include <uxtheme.h>
 #include <vssym32.h>
 #include <map>
+#include <vector>
 
 #pragma comment(lib, "UxTheme.lib")
 
@@ -37,12 +38,11 @@ static COLORREF navigationIconColors[2];
 static bool navigationIconColorsValid = false;
 static COLORREF navigationIconBackground = CLR_INVALID;
 
-// HACK: the Back button's colors can be baked into its theme image rather
-// than exposed as COLOR properties. Render NAV_BACKBUTTON in its normal/disabled
-// states on our toolbar background, then reuse the most frequent non-background
-// RGB value for the Lucide icons. This is a pixel heuristic, not a theme color
-// contract: a multicolored/framed image may yield a different dominant color.
-// No .msstyles parsing, resource IDs, atlas slicing or fixed sampling point.
+// Image-based Navigation themes need not expose a foreground color. Compare
+// the public normal/disabled renders to ignore their common button background,
+// then reuse the dominant remaining RGB for the vector commands. This remains
+// a pixel heuristic, not a color-property contract; unsupported renders leave
+// the documented toolbar/system foreground in place. No theme-file parsing.
 static bool sampleNavigationIconColor(HTHEME theme, int state,
         COLORREF background, COLORREF &color) {
     HDC dc = CreateCompatibleDC(nullptr);
@@ -83,17 +83,26 @@ static bool sampleNavigationIconColor(HTHEME theme, int state,
     for (int i = 0; i < pixelCount; ++i)
         pixels[i] = backgroundPixel;
     RECT rect = {0, 0, size.cx, size.cy};
+    const int otherState = state == NAV_BB_DISABLED ? NAV_BB_NORMAL : NAV_BB_DISABLED;
+    const HRESULT otherResult = DrawThemeBackground(theme, dc, NAV_BACKBUTTON,
+        otherState, &rect, nullptr);
+    const BOOL otherFlushed = GdiFlush();
+    std::vector<DWORD> otherPixels;
+    if (SUCCEEDED(otherResult) && otherFlushed)
+        otherPixels.assign(pixels, pixels + pixelCount);
+    for (int i = 0; i < pixelCount; ++i)
+        pixels[i] = backgroundPixel;
     const HRESULT hr = DrawThemeBackground(theme, dc, NAV_BACKBUTTON,
         state, &rect, nullptr);
     // Synchronize GDI before reading the DIB's memory directly.
     const BOOL flushed = GdiFlush();
     unsigned bestCount = 0;
     DWORD bestPixel = 0;
-    if (SUCCEEDED(hr) && flushed) {
+    if (SUCCEEDED(hr) && flushed && !otherPixels.empty()) {
         std::map<DWORD, unsigned> counts;
         for (int i = 0; i < pixelCount; ++i) {
             const DWORD pixel = pixels[i] & 0x00FFFFFF;
-            if (pixel == backgroundPixel)
+            if (pixel == backgroundPixel || pixel == (otherPixels[i] & 0x00FFFFFF))
                 continue;
             const unsigned count = ++counts[pixel];
             if (count > bestCount) {
@@ -124,7 +133,7 @@ COLORREF getNavigationIconColor(bool disabled, COLORREF background) {
             if (theme) {
                 // Image-based themes expose no color property for the Back button:
                 // start from the documented toolbar text colors, then let the sample
-                // of the actual glyph override them when it can be read.
+                // of the differing glyph pixels override them when readable.
                 HTHEME toolbar = OpenThemeData(nullptr, L"Toolbar");
                 if (toolbar) {
                     COLORREF color = 0;
