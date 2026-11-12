@@ -1374,11 +1374,24 @@ HBITMAP FolderWindow::QuickAccessIconThread::takeBitmap() {
 
 void FolderWindow::QuickAccessIconThread::run() {
     // Extract the namespace's own icon, independently of the UI thread's COM objects.
+    // Quick Access resolves to Home on Shells exposing that namespace. Use
+    // the Shell's legacy Favorites image for this pinned-folders-only menu.
+    // These namespace identities are empirical, not SDK known-folder IDs;
+    // extraction still uses public APIs and no DLL resource position.
+    const wchar_t *iconNamespace = L"shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}";
+    CComPtr<IShellItem> home;
+    SFGAOF attributes = 0;
+    if (SUCCEEDED(SHCreateItemFromParsingName(
+            L"shell:::{F874310E-B6B7-47DC-BC84-B9E6B38F5903}", nullptr,
+            IID_PPV_ARGS(&home))) && SUCCEEDED(home->GetAttributes(SFGAO_FOLDER, &attributes))
+            && (attributes & SFGAO_FOLDER))
+        iconNamespace = L"shell:::{323CA680-C24D-4099-B94D-446DD2D7249E}";
     CComPtr<IShellItem> quickAccess;
     HBITMAP image = nullptr;
     if (FAILED(SHCreateItemFromParsingName(
-            L"shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}", nullptr,
-            IID_PPV_ARGS(&quickAccess))))
+            iconNamespace, nullptr, IID_PPV_ARGS(&quickAccess)))
+            || FAILED(quickAccess->GetAttributes(SFGAO_FOLDER, &attributes))
+            || !(attributes & SFGAO_FOLDER))
         return;
     CComHeapPtr<ITEMIDLIST> idList;
     SHFILEINFO fileInfo = {};
@@ -3217,15 +3230,53 @@ void FolderWindow::openQuickAccessMenu(POINT point) {
         result = HRESULT_FROM_WIN32(GetLastError());
     int command = 0;
     bool closeSource = false;
+    // Track the item's native menu recursively so this destination popup stays
+    // visible and resumes unchanged when the context menu is cancelled.
+    struct ContextTarget {
+        FolderWindow &owner;
+        HMENU menu;
+        const std::vector<CComPtr<IShellItem>> &folders;
+        CComPtr<IContextMenu> handler;
+        int command = 0;
+        POINT point = {};
+        bool tracking = false;
+    } contextTarget{*this, menu, folders};
+    const auto menuProc = [](HWND window, UINT message, WPARAM wParam, LPARAM lParam,
+            UINT_PTR, DWORD_PTR data) -> LRESULT {
+        auto &target = *reinterpret_cast<ContextTarget *>(data);
+        if (message == WM_MENURBUTTONUP && reinterpret_cast<HMENU>(lParam) == target.menu
+                && wParam < target.folders.size()) {
+            POINT position = {};
+            if (!target.tracking && GetCursorPos(&position)) {
+                target.tracking = true;
+                CComPtr<IContextMenu> handler;
+                const int selected = target.owner.trackQuickAccessContextMenu(
+                    target.folders[wParam], position, handler);
+                target.tracking = false;
+                if (selected >= IDM_SHELL_FIRST && selected <= IDM_SHELL_LAST) {
+                    target.handler = handler;
+                    target.command = selected;
+                    target.point = position;
+                    EndMenu(); // A validated command closes the complete menu chain.
+                }
+            }
+            return 0;
+        }
+        return DefSubclassProc(window, message, wParam, lParam);
+    };
     ShellMenuIcons icons;
     if (SUCCEEDED(result) && isWindowOperational()) {
         std::vector<std::wstring> paths;
         for (const Entry &entry : entries)
             paths.push_back(entry.path);
         icons.start(hwnd, menu, iconSize, std::move(paths));
+        const UINT_PTR subclassId = reinterpret_cast<UINT_PTR>(&contextTarget);
+        const bool subclassed = isWindowOperational() && checkLE(SetWindowSubclass(
+            hwnd, menuProc, subclassId, reinterpret_cast<DWORD_PTR>(&contextTarget)));
         if (isWindowOperational())
-            command = TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_NONOTIFY,
+            command = TrackPopupMenuEx(menu, TPM_RETURNCMD,
                 point.x, point.y, hwnd, nullptr);
+        if (subclassed) RemoveWindowSubclass(hwnd, menuProc, subclassId);
         // Sample Ctrl at validation (mouse or Enter), before any Shell work.
         closeSource = settings::getKeepSourceWindowOpen() == (GetKeyState(VK_CONTROL) < 0);
     }
@@ -3236,6 +3287,13 @@ void FolderWindow::openQuickAccessMenu(POINT point) {
         return;
     if (FAILED(result)) {
         unavailable(IDS_QUICK_ACCESS_MENU, result);
+        return;
+    }
+    if (contextTarget.handler) {
+        auto info = makeInvokeInfo(contextTarget.command - IDM_SHELL_FIRST, contextTarget.point);
+        checkHR(invokeShellCommand(contextTarget.handler,
+            reinterpret_cast<CMINVOKECOMMANDINFO *>(&info)));
+        if (isWindowOperational()) refreshReopenJumpLists();
         return;
     }
     if (command > 0 && static_cast<size_t>(command) <= entries.size()) {
@@ -3256,6 +3314,31 @@ void FolderWindow::openQuickAccessMenu(POINT point) {
         }
         openChild(target, closeSource, IsRectEmpty(&origin) ? nullptr : &origin);
     }
+}
+
+int FolderWindow::trackQuickAccessContextMenu(IShellItem *target, POINT point,
+        CComPtr<IContextMenu> &handler) {
+    // Keep the namespace item: reparsing its destination can lose Shell verbs.
+    if (!checkHR(target->BindToHandler(nullptr, BHID_SFUIObject, IID_PPV_ARGS(&handler)))
+            || !isWindowOperational()) return 0;
+    auto destroyMenu = [](HMENU menu) { DestroyMenu(menu); };
+    std::unique_ptr<std::remove_pointer_t<HMENU>, decltype(destroyMenu)>
+        menu(CreatePopupMenu(), destroyMenu);
+    UINT flags = CMF_NORMAL | CMF_ITEMMENU;
+    if (GetKeyState(VK_SHIFT) < 0) flags |= CMF_EXTENDEDVERBS;
+    if (!menu || !checkHR(handler->QueryContextMenu(menu.get(), 0,
+            IDM_SHELL_FIRST, IDM_SHELL_LAST, flags)) || !isWindowOperational()) return 0;
+    CComPtr<IContextMenu2> previousMenu2 = contextMenu2;
+    CComPtr<IContextMenu3> previousMenu3 = contextMenu3;
+    contextMenu2 = handler;
+    if (isWindowOperational()) contextMenu3 = handler;
+    int command = 0;
+    if (isWindowOperational())
+        command = TrackPopupMenuEx(menu.get(), TPM_RETURNCMD | TPM_RIGHTBUTTON | TPM_RECURSE,
+            point.x, point.y, hwnd, nullptr);
+    contextMenu2 = previousMenu2;
+    contextMenu3 = previousMenu3;
+    return isWindowOperational() ? command : 0;
 }
 
 HMENU findViewMenu(IContextMenu *const contextMenu, HMENU popupMenu) {
