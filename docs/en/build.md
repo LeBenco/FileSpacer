@@ -17,6 +17,8 @@ CMake. Run build and test commands from CMD at the repository root. See the
   uses the adjacent `python.exe`. `ICON_PYTHON` can select another installation.
 - ImageMagick, with `magick` on PATH.
 - NSIS, normally `%ProgramFiles(x86)%\NSIS\makensis.exe`, for packaging.
+- Pandoc on PATH for the installer changelog (also supplied by Anaconda).
+  Set `PANDOC` to its executable path to override the default lookup.
 - Node.js 22+, Ruby 3.3 and Bundler when generating offline help; see
   [website and offline builds](website/README.md#shared-website-and-offline-builds).
 
@@ -79,7 +81,13 @@ projection from its 4D/camera metadata. Changing the folder silhouette or its
 Keep the website's [16 px favicon](website/README.md) in sync.
 
 Packaging runs `generate-installer-assets.py` for the download badge, sidebars,
-wizard resource DLL and UTF-16 changelog. Generated assets live under
+wizard resource DLL and RTF changelog. The shared `installer/generate-notes.mjs`
+calls Pandoc to convert Markdown for the native NSIS RichEdit control.
+NMAKE passes `PANDOC` through `--pandoc`; the generator also accepts that option
+directly and defaults to PATH. GitHub Actions reuses an available Pandoc, or
+restores/downloads a cached portable copy, then passes its absolute path to NMAKE.
+The installer, uninstaller and changelog support all ten application languages.
+Generated assets live under
 `build\installer-assets`, not in source control. `installer\wizard-ui.rc`
 defines the shared setup/uninstaller layout. The x86 `WizardBitmap.dll` uses
 GDI+ to scale sidebars to the actual control size, with the NSIS loader as a
