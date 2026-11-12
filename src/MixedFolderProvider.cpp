@@ -10,12 +10,15 @@
 #include <cstring>
 #include <limits>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace filespacer {
 namespace {
 const CLSID providerClass = {0x4fdd0ce1,0x6fd0,0x441c,{0xad,0x2d,0x6d,0xd0,0x56,0x61,0x0d,0xe3}};
 const CLSID testProviderClass = {0xe129740c,0x52fd,0x4c7b,{0x98,0xaa,0x9e,0xd6,0xeb,0xf9,0xa6,0x04}};
+const CLSID menuStateClass = {0xb6ae98a3,0xf59d,0x4f07,{0xb5,0xe8,0xca,0xd5,0x4d,0xc5,0x51,0x6c}};
+const wchar_t MENU_STATE_ID[] = L"{B6AE98A3-F59D-4F07-B5E8-CAD54DC5516C}";
 const GUID itemSignature = {0x3e07595c,0x9b09,0x45ba,{0xb8,0xe3,0x20,0x68,0x9d,0x72,0x91,0x2a}};
 HINSTANCE moduleInstance = nullptr;
 std::atomic<long> objects{0}, serverLocks{0};
@@ -409,6 +412,61 @@ public:
     STDMETHODIMP MapColumnToSCID(UINT column, SHCOLUMNID *out) override { return source ? source->MapColumnToSCID(column, out) : E_NOTIMPL; }
 };
 
+// Static verbs keep their normal command/DelegateExecute invocation. Only
+// their visibility depends on the process hosting the Shell menu, never on
+// the default association or the foreground window.
+class MenuState : public IExplorerCommandState, public IInitializeCommand {
+    LONG references = 1;
+    enum class Command { None, FileSpacer, Explorer } command = Command::None;
+public:
+    MenuState() { ++objects; }
+    ~MenuState() { --objects; }
+    STDMETHODIMP QueryInterface(REFIID iid, void **out) override {
+        if (!out) return E_POINTER;
+        *out = nullptr;
+        if (iid == IID_IUnknown || iid == __uuidof(IExplorerCommandState))
+            *out = static_cast<IExplorerCommandState *>(this);
+        else if (iid == __uuidof(IInitializeCommand))
+            *out = static_cast<IInitializeCommand *>(this);
+        else return E_NOINTERFACE;
+        AddRef();
+        return S_OK;
+    }
+    STDMETHODIMP_(ULONG) AddRef() override { return static_cast<ULONG>(InterlockedIncrement(&references)); }
+    STDMETHODIMP_(ULONG) Release() override {
+        const ULONG remaining = static_cast<ULONG>(InterlockedDecrement(&references));
+        if (!remaining) delete this;
+        return remaining;
+    }
+    STDMETHODIMP Initialize(PCWSTR name, IPropertyBag *) override {
+        command = Command::None;
+        if (!name) return E_INVALIDARG;
+        if (_wcsicmp(name, L"filespacer") == 0) command = Command::FileSpacer;
+        else if (_wcsicmp(name, L"filespacer.explorer") == 0) command = Command::Explorer;
+        return S_OK;
+    }
+    STDMETHODIMP GetState(IShellItemArray *, BOOL, EXPCMDSTATE *state) override {
+        if (!state) return E_POINTER;
+        *state = ECS_HIDDEN;
+        WNDCLASSW windowClass = {};
+        const bool fileSpacer = GetClassInfoW(GetModuleHandleW(nullptr),
+            L"FileSpacer Item Window", &windowClass) != FALSE;
+        if (command == Command::Explorer && fileSpacer) {
+            *state = ECS_ENABLED;
+        } else if (command == Command::FileSpacer && !fileSpacer) {
+            wchar_t image[MAX_PATH], explorer[MAX_PATH];
+            const DWORD length = GetModuleFileNameW(nullptr, image, ARRAYSIZE(image));
+            const UINT windowsLength = GetWindowsDirectoryW(explorer, ARRAYSIZE(explorer));
+            if (length && length < ARRAYSIZE(image) && windowsLength
+                    && windowsLength < ARRAYSIZE(explorer)
+                    && PathAppendW(explorer, L"explorer.exe")
+                    && _wcsicmp(image, explorer) == 0)
+                *state = ECS_ENABLED;
+        }
+        return S_OK;
+    }
+};
+
 class Factory : public IClassFactory {
     LONG references = 1;
     CLSID clsid;
@@ -425,6 +483,13 @@ public:
     STDMETHODIMP CreateInstance(IUnknown *outer, REFIID iid, void **out) override {
         if (!out) return E_POINTER; *out = nullptr;
         if (outer) return CLASS_E_NOAGGREGATION;
+        if (clsid == menuStateClass) {
+            auto *state = new(std::nothrow) MenuState();
+            if (!state) return E_OUTOFMEMORY;
+            const HRESULT hr = state->QueryInterface(iid, out);
+            state->Release();
+            return hr;
+        }
         auto *folder = new(std::nothrow) Folder(clsid); if (!folder) return E_OUTOFMEMORY;
         const HRESULT hr = folder->QueryInterface(iid, out); folder->Release(); return hr;
     }
@@ -434,11 +499,31 @@ public:
 
 extern "C" HRESULT WINAPI DllGetClassObject(REFCLSID clsid, REFIID iid, void **out) {
     if (!out) return E_POINTER; *out = nullptr;
-    if (clsid != providerClass && clsid != testProviderClass) return CLASS_E_CLASSNOTAVAILABLE;
+    if (clsid != providerClass && clsid != testProviderClass && clsid != menuStateClass)
+        return CLASS_E_CLASSNOTAVAILABLE;
     auto *factory = new(std::nothrow) Factory(clsid); if (!factory) return E_OUTOFMEMORY;
     const HRESULT hr = factory->QueryInterface(iid, out); factory->Release(); return hr;
 }
 extern "C" HRESULT WINAPI DllCanUnloadNow() { return !objects.load() && !serverLocks.load() ? S_OK : S_FALSE; }
+
+static HRESULT registerMenuState(HKEY root, bool install) {
+    if (!install) return unregisterClass(root, MENU_STATE_ID) == ERROR_SUCCESS ? S_OK : SELFREG_E_CLASS;
+    wchar_t path[MAX_PATH];
+    const DWORD length = GetModuleFileNameW(moduleInstance, path, ARRAYSIZE(path));
+    if (!length || length == ARRAYSIZE(path)) return SELFREG_E_CLASS;
+    const std::wstring key = std::wstring(L"Software\\Classes\\CLSID\\") + MENU_STATE_ID + L"\\InprocServer32";
+    CRegKey server;
+    LSTATUS status = server.Create(root, key.c_str());
+    if (status == ERROR_SUCCESS) status = ensureStringValue(server, nullptr, path);
+    if (status == ERROR_SUCCESS) status = ensureStringValue(server, L"ThreadingModel", L"Both");
+    return status == ERROR_SUCCESS ? S_OK : HRESULT_FROM_WIN32(status);
+}
+
+// Startup upgrades installed menu registrations without depending on whether
+// mixed sorting is enabled. Portable launches without installed verbs skip it.
+extern "C" HRESULT WINAPI RegisterFileSpacerMenuState() {
+    return registerMenuState(HKEY_CURRENT_USER, true);
+}
 
 // Self-registration of the shipped class (the test class belongs to /test mode
 // and is written by CreateMixedFolderItem only), with the documented scopes:
@@ -448,6 +533,8 @@ extern "C" HRESULT WINAPI DllCanUnloadNow() { return !objects.load() && !serverL
 // scope is the caller's choice, never inferred from its elevation: an elevated
 // per-user installation must not leave per-machine entries behind.
 static HRESULT registerProvider(HKEY root, bool install) {
+    const HRESULT menu = registerMenuState(root, install);
+    if (FAILED(menu)) return menu;
     wchar_t id[40], path[MAX_PATH];
     if (!StringFromGUID2(providerClass, id, ARRAYSIZE(id))) return SELFREG_E_CLASS;
     if (!install) return unregisterClass(root, id) == ERROR_SUCCESS ? S_OK : SELFREG_E_CLASS;
