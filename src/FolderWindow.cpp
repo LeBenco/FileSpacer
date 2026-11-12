@@ -390,11 +390,15 @@ struct FolderWindow::ViewMenuPreview {
         if (chosenCommand != currentCommand) {
             window.viewMenuRestore.reset();
             window.replayProviderSync();
+            window.resumeColumnSync();
             return;
         }
         if (window.enumerationComplete) window.viewMenuRestore.reset(); // Else another refill was observed.
         window.scheduleStateSave();
-        if (!window.viewMenuRestore) window.replayProviderSync();
+        if (!window.viewMenuRestore) {
+            window.replayProviderSync();
+            window.resumeColumnSync();
+        }
     }
 
     void finish(UINT command) {
@@ -433,7 +437,10 @@ struct FolderWindow::ViewMenuPreview {
         if (settled) window.scheduleStateSave();
         // A preference changed while the menu was open: synchronized now that
         // it is closed, unless a refill still running replays it on completion.
-        if (!window.viewMenuRestore) window.replayProviderSync();
+        if (!window.viewMenuRestore) {
+            window.replayProviderSync();
+            window.resumeColumnSync();
+        }
     }
 };
 
@@ -702,7 +709,10 @@ bool FolderWindow::recoverProvisionalView() {
     // A closing window never re-registers with the input hook after onDestroy removed it.
     watchProvisionalInput(!isClosing && iconRestoreFailed);
     if (!isClosing) blockProvisionalInput(false);
-    if (!isClosing && currentView()) replayProviderSync(); // Outside this restoration, not from within it.
+    if (!isClosing && currentView()) {
+        replayProviderSync(); // Outside this restoration, not from within it.
+        resumeColumnSync();
+    }
     return currentView();
 }
 
@@ -713,6 +723,13 @@ void FolderWindow::replayProviderSync() {
     if (!providerSyncPending || !isWindowOperational()) return;
     providerSyncPending = false;
     checkLE(PostMessage(hwnd, MSG_SYNCHRONIZE_VIEW_PROVIDER, 0, 0));
+}
+
+// A column pass refused while a preview, its pending replay or the provisional
+// state was in progress is asked again once that blocker is lifted.
+void FolderWindow::resumeColumnSync() {
+    if (isWindowOperational() && (columnLayout || columnFillActive()))
+        checkLE(PostMessageW(hwnd, MSG_COLUMNS_CHANGED, viewGeneration, 0));
 }
 
 bool FolderWindow::hasStatusText() {
@@ -754,22 +771,33 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         if (!isWindowOperational())
             return false;
     }
+    // A native rename in the view keeps its keys and its wheel; the search and
+    // address fields deliberately share the window shortcuts.
+    auto renaming = [&]() {
+        const CComPtr<IShellView> view = shellView;
+        HWND root = nullptr;
+        const HWND focus = GetFocus();
+        if (!view || !focus || FAILED(view->GetWindow(&root)) || !root
+                || (focus != root && !IsChild(root, focus))) return false;
+        return (SendMessage(focus, WM_GETDLGCODE, 0, 0) & (DLGC_HASSETSEL | DLGC_WANTALLKEYS)) != 0;
+    };
     if (msg->message == WM_KEYDOWN && GetKeyState(VK_MENU) >= 0) {
         const bool control = GetKeyState(VK_CONTROL) < 0;
         const bool shift = GetKeyState(VK_SHIFT) < 0;
-        if (!shift && ((!control && msg->wParam == VK_F5)
-                || (control && msg->wParam == L'R'))) {
-            onCommand(IDM_REFRESH);
+        const bool refreshKey = !shift && ((!control && msg->wParam == VK_F5)
+            || (control && msg->wParam == L'R'));
+        const bool windowKey = control && !shift && (msg->wParam == L'N' || msg->wParam == L'W');
+        const bool modeKey = control && shift && msg->wParam >= L'1' && msg->wParam <= L'8';
+        // Only a key typed in this window, outside a rename, is a shortcut.
+        if ((refreshKey || windowKey || modeKey) && GetAncestor(msg->hwnd, GA_ROOT) == hwnd
+                && !renaming()) {
+            if (!isWindowOperational()) return false;
+            if (refreshKey) onCommand(IDM_REFRESH);
+            else if (windowKey) onCommand(msg->wParam == L'N' ? IDM_NEW_WINDOW : IDM_CLOSE_WINDOW);
+            else changeViewMode(static_cast<int>(msg->wParam - L'1'));
             return true;
         }
-        if (control && !shift && (msg->wParam == L'N' || msg->wParam == L'W')) {
-            onCommand(msg->wParam == L'N' ? IDM_NEW_WINDOW : IDM_CLOSE_WINDOW);
-            return true;
-        }
-        if (control && shift && msg->wParam >= L'1' && msg->wParam <= L'8') {
-            changeViewMode(static_cast<int>(msg->wParam - L'1'));
-            return true;
-        }
+        if (!isWindowOperational()) return false;
     }
     if ((msg->message == WM_KEYUP && msg->wParam == VK_CONTROL)
             || (msg->message == WM_MOUSEWHEEL && !(GET_KEYSTATE_WPARAM(msg->wParam) & MK_CONTROL)))
@@ -785,7 +813,7 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
             zoomWheelDelta += GET_WHEEL_DELTA_WPARAM(msg->wParam);
             const int steps = zoomWheelDelta / WHEEL_DELTA;
             zoomWheelDelta %= WHEEL_DELTA;
-            if (steps) changeViewMode(-1, steps);
+            if (steps && !renaming() && isWindowOperational()) changeViewMode(-1, steps);
             return true;
         }
     }
@@ -797,7 +825,8 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         return true;
     }
     if (msg->message == WM_KEYDOWN && GetKeyState(VK_MENU) >= 0
-            && (((msg->wParam == L'F' || msg->wParam == L'E') && GetKeyState(VK_CONTROL) < 0)
+            && (((msg->wParam == L'F' || msg->wParam == L'E') && GetKeyState(VK_CONTROL) < 0
+                    && GetKeyState(VK_SHIFT) >= 0)
                 || (msg->wParam == VK_F3 && GetKeyState(VK_CONTROL) >= 0 && GetKeyState(VK_SHIFT) >= 0)))
         return searchBox.focus();
     if (searchBox.hasFocus()) {
@@ -1038,6 +1067,10 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
                 && SUCCEEDED(view->GetWindow(&root)) && root
                 && (click.hwnd == root || IsChild(root, click.hwnd))) {
             if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+            // Same containment test as the gesture's start: a window that appeared
+            // under the first press is neither queried nor selected through MSAA.
+            const HWND hitWindow = WindowFromPoint(click.pt);
+            if (hitWindow != root && !IsChild(root, hitWindow)) return false;
             ViewGestureTarget target;
             viewGestureTargetAt(click.pt, target);
             const auto &accessible = target.accessible;
@@ -1183,7 +1216,7 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
         const bool begun = resizeGesture.begin(owner, owner, point, button, moving);
         if (begun && !moving) {
             resizingColumns = true;
-            if (columnLayout) columnLayout->suspend(settings::getDetailsColumnsDeferred());
+            if (columnLayout) columnLayout->suspend(ShellViewColumns::Hold::Resize, settings::getDetailsColumnsDeferred());
         }
         return begun;
     }
@@ -1508,22 +1541,69 @@ void FolderWindow::synchronizeViewProfile() {
     viewProfilePosted = false;
     if (!hybridViewEligible || !isWindowOperational() || !viewReady || !initialStateApplied
             || !enumerationComplete || restoringState || viewProfileChanging || navigationDepth
-            || viewMenuDepth || viewMenuPreview || viewMenuRestore || provisionalBaseline) return;
+            || viewMenuDepth || viewMenuPreview || viewMenuRestore || provisionalBaseline) {
+        // A provisional state cannot change profile: a View menu request must
+        // not stay armed for whatever event ends that state later.
+        if (provisionalBaseline) viewMenuRequested = false;
+        return;
+    }
     GUITHREADINFO gui = {sizeof(gui)};
     if (!GetGUIThreadInfo(GetCurrentThreadId(), &gui)
             || (gui.flags & (GUI_INMENUMODE | GUI_POPUPMENUMODE | GUI_SYSTEMMENUMODE))) return;
     CComPtr<ItemWindow> keepAlive(this);
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    auto current = [&]() { return isWindowOperational() && shellView == source && viewGeneration == generation; };
+    HWND body = nullptr;
+    if (source) source->GetWindow(&body);
+    if (!current()) return;
+    // This runs from a posted message, possibly replayed by an unrelated event:
+    // never destroy the view under one of its own mouse interactions (selection
+    // rectangle, drag, scroll bar, column header) or a native rename.
+    const HWND capture = GetCapture();
+    const HWND focus = GetFocus();
+    bool interacting = body && capture && (capture == body || IsChild(body, capture));
+    if (!interacting && body && focus && (focus == body || IsChild(body, focus))) {
+        const LRESULT code = SendMessage(focus, WM_GETDLGCODE, 0, 0);
+        if (!current()) return;
+        interacting = (code & DLGC_HASSETSEL) != 0; // Native rename/text editing.
+    }
+    if (interacting) {
+        // A mode-driven request stays pending and is asked again by the next
+        // state capture; a View menu request is dropped with the interaction.
+        viewMenuRequested = false;
+        return;
+    }
     viewProfilePending = false;
     ++navigationDepth;
     struct Navigation {
         FolderWindow &owner;
         ~Navigation() { owner.resumeDeferredClose(); }
     } navigation{*this};
-    CComPtr<IShellView> source = shellView;
-    const ULONG_PTR generation = viewGeneration;
-    auto current = [&]() { return isWindowOperational() && shellView == source && viewGeneration == generation; };
+    // An abandoned change must not leave the View menu request armed either.
+    struct MenuRequest {
+        FolderWindow &owner;
+        bool abandoned = true;
+        ~MenuRequest() { if (abandoned) owner.viewMenuRequested = false; }
+    } menuRequest{*this};
     CComPtr<IFolderView2> view;
     if (FAILED(viewHost.currentView(IID_PPV_ARGS(&view))) || !current()) return;
+    // The mode alone decides the profile: the complete capture below is only
+    // needed for an actual change.
+    UINT mode = 0;
+    if (FAILED(view->GetCurrentViewMode(&mode)) || !current()) return;
+    const auto desired = viewMenuRequested
+        ? static_cast<FOLDERVIEWOPTIONS>(FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING)
+        : profileForMode(mode);
+    if (desired == viewProfile) {
+        // Already in the profile the menu needs: open it now, not at the
+        // next enumeration event.
+        if (viewMenuRequested) {
+            menuRequest.abandoned = false;
+            checkLE(PostMessageW(hwnd, MSG_OPEN_PENDING_VIEW_MENU, viewGeneration, 0));
+        }
+        return;
+    }
     auto state = std::make_unique<ShellViewState>();
     state->view = captureOptions(view, getSavedFolderState().view);
     if (columnFillSet) {
@@ -1531,10 +1611,6 @@ void FolderWindow::synchronizeViewProfile() {
         state->view.fillColumns = fillColumns;
     }
     if (!current() || !(state->view.present & FolderViewSettings::Mode)) return;
-    const auto desired = viewMenuRequested
-        ? static_cast<FOLDERVIEWOPTIONS>(FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING)
-        : profileForMode(static_cast<UINT>(state->view.mode));
-    if (desired == viewProfile) return;
     // Reuse the complete capture path, including protection of positions that
     // could not yet be restored. A profile change must not trust a partial grid.
     viewStateDirty(FolderState::Icons);
@@ -1542,10 +1618,7 @@ void FolderWindow::synchronizeViewProfile() {
     if (!current() || deferredCloseMessage) return;
     state->icons = getSavedFolderState().icons;
     if (FAILED(captureReopenSelection(source, current, state->selection)) || !current() || deferredCloseMessage) return;
-    HWND body = nullptr;
-    source->GetWindow(&body);
-    if (!current()) return;
-    const HWND focus = GetFocus();
+    menuRequest.abandoned = false;
     pendingKeyboardView = body && focus && (focus == body || IsChild(body, focus));
     pendingKeyboardControl = pendingKeyboardView ? nullptr : focus;
     if (!sameView(state->view, getSavedFolderState().view)) {
@@ -1560,13 +1633,26 @@ void FolderWindow::synchronizeViewProfile() {
     KillTimer(hwnd, TIMER_UPDATE_SELECTION);
     viewReady = false;
     checkHR(viewHost.stopObserving());
+    // Nothing stays attached to the view about to be destroyed, as on the
+    // other paths that release it (onItemChanged, onDestroy).
+    if (columnLayout) columnLayout->stop();
+    columnLayout.reset();
+    selectionClear.reset();
     shellView.Release();
     checkHR(viewHost.destroy());
     if (!isWindowOperational() || deferredCloseMessage) return;
     viewProfile = desired;
     RECT bounds = windowBody();
     if (hasStatusText()) bounds.bottom -= scaleDPI(BOTTOM_STATUS_HEIGHT_DIP);
-    FOLDERSETTINGS initial = {static_cast<UINT>(storedViewState->view.mode), storedViewState->view.flags};
+    // Same initial settings as a direct opening: only the mode and the
+    // placement flags come from the captured state.
+    FOLDERSETTINGS initial = folderSettings();
+    initial.ViewMode = static_cast<UINT>(storedViewState->view.mode);
+    if (storedViewState->view.present & FolderViewSettings::Flags) {
+        const DWORD placementFlags = FWF_AUTOARRANGE | FWF_SNAPTOGRID;
+        initial.fFlags = (initial.fFlags & ~placementFlags) | (storedViewState->view.flags & placementFlags);
+    }
+    if (!isWindowOperational()) return;
     HRESULT result = viewHost.initialize(hwnd, bounds, initial, static_cast<IServiceProvider *>(this), this, viewProfile);
     if (SUCCEEDED(result) && isWindowOperational()) result = viewHost.setFilter(nameFilter);
     if (SUCCEEDED(result) && isWindowOperational()) result = browseToItem();
@@ -1794,6 +1880,9 @@ HRESULT FolderWindow::loadIconPositions(bool pruneMissing) {
 std::vector<uint8_t> FolderWindow::captureReopenViewState() {
     const auto &session = viewMenuPreview ? viewMenuPreview : viewMenuRestore;
     if (session && !session->restoreFailed) return session->initial.selection;
+    // During a profile change the recreated view is not restored yet: the
+    // selection and viewport still belong to the transient snapshot.
+    if (viewProfileChanging && storedViewState) return storedViewState->selection;
     // Closing is already set: use HWND/view identity rather than isWindowOperational.
     const HWND owner = hwnd;
     CComPtr<IShellView> view = shellView;
@@ -1970,6 +2059,16 @@ void FolderWindow::restoreReferenceLayout() {
     CComQIPtr<IFolderView2> view(source);
     if (!view || !current()) return;
     getSavedFolderState() = reference;
+    // The column fill must neither veto nor reinterpret the widths written
+    // below as a user gesture: detach it, and take the folder's fill choice
+    // from the reference like the other frozen settings.
+    if (columnLayout) columnLayout->stop();
+    columnLayout.reset();
+    if (reference.present & FolderState::View) {
+        columnFillSet = (reference.view.present & FolderViewSettings::ColumnFill) != 0;
+        fillColumns = !columnFillSet || reference.view.fillColumns;
+        columnFillLoaded = true;
+    }
     restoringState = true;
     auto apply = [&]() {
         const RECT rect = requestedRect(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST));
@@ -1986,6 +2085,9 @@ void FolderWindow::restoreReferenceLayout() {
     };
     apply();
     restoringState = false;
+    if (!current()) return;
+    synchronizeColumns(); // Reattached on the reference widths.
+    if (current()) requestViewProfile(); // The fill choice takes part in the profile.
 }
 
 void FolderWindow::fitWindowToContents() {
@@ -2412,7 +2514,7 @@ void FolderWindow::synchronizeColumns() {
     auto layout = columnLayout;
     if (layout) {
         layout->setDeferred(settings::getDetailsColumnsDeferred());
-        layout->suspend(resizingColumns && settings::getDetailsColumnsDeferred());
+        layout->suspend(ShellViewColumns::Hold::Resize, resizingColumns && settings::getDetailsColumnsDeferred());
         layout->synchronize();
     }
 }
@@ -2522,6 +2624,7 @@ void FolderWindow::resumeDeferredClose() {
             checkLE(PostMessageW(hwnd, selectionDetail::readyMessage(), 0, 0));
         }
         if (viewProfilePending) requestViewProfile();
+        replayProviderSync(); // Refused while this navigation was in progress.
     }
 }
 
@@ -2564,10 +2667,12 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
     CComPtr<ItemWindow> messageKeepAlive(this);
     if (message == WM_ENTERSIZEMOVE) {
         resizingColumns = true;
-        if (columnLayout) columnLayout->suspend(settings::getDetailsColumnsDeferred());
+        if (columnLayout) columnLayout->suspend(ShellViewColumns::Hold::Resize, settings::getDetailsColumnsDeferred());
     } else if (message == WM_EXITSIZEMOVE) {
         finishColumnResize();
     } else if (message == MSG_COLUMNS_CHANGED) {
+        // Received, whatever follows: a refused pass must not mute later requests.
+        if (columnLayout) columnLayout->acknowledge();
         if (wParam == viewGeneration) synchronizeColumns();
         return 0;
     }
@@ -2660,7 +2765,10 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         case MSG_VIEW_CHANGED:
             if (isWindowOperational() && viewHost.isViewNotification(wParam)) {
                 scheduleStateSave();
-                requestViewProfile();
+                // A mode or column-set change needs no EnumDone: attach, detach
+                // or refit the Details columns from the event itself.
+                synchronizeColumns();
+                if (isWindowOperational()) requestViewProfile();
             }
             return 0;
         case MSG_SYNCHRONIZE_VIEW_PROFILE:
@@ -2740,8 +2848,17 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         case WM_SETTINGCHANGE:
             // ShlObj_core.h documents "ShellState" for Shell option changes.
             if (shellView && lParam
-                    && lstrcmpi(reinterpret_cast<LPCWSTR>(lParam), L"ShellState") == 0)
-                checkHR(refreshEnumeration());
+                    && lstrcmpi(reinterpret_cast<LPCWSTR>(lParam), L"ShellState") == 0) {
+                // Same sequence as an explicit refresh: the free positions are
+                // persisted before the refill and restored after it.
+                CComPtr<ItemWindow> keepAlive(this);
+                viewStateDirty(FolderState::Icons);
+                persistViewState();
+                if (isWindowOperational() && shellView) {
+                    restoreIconsPending = searchText.empty();
+                    checkHR(refreshEnumeration());
+                }
+            }
             break;
         case WM_WINDOWPOSCHANGED: {
             CComPtr<ItemWindow> keepAlive(this);
@@ -2956,7 +3073,10 @@ void FolderWindow::onItemChanged() {
             return isWindowOperational() && shellView == source && viewGeneration == generation;
         };
         CComPtr<IFolderView2> folderView;
-        if (checkHR(viewHost.currentView(IID_PPV_ARGS(&folderView)))) {
+        // A profile change in progress already holds the snapshot to apply: the
+        // recreated view, not restored yet, must not replace it.
+        if (!(viewProfileChanging && storedViewState)
+                && checkHR(viewHost.currentView(IID_PPV_ARGS(&folderView)))) {
             auto state = std::make_unique<ShellViewState>();
             state->view = captureOptions(folderView, {});
             if (!current()) return;
@@ -3395,10 +3515,10 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     // The parent menu and this object are owned by openViewMenu.
     if (!isWindowOperational())
         return;
-    if (columnLayout) columnLayout->suspend(true);
+    if (columnLayout) columnLayout->suspend(ShellViewColumns::Hold::Menu, true);
     struct ColumnsResume {
         std::shared_ptr<ShellViewColumns> layout;
-        ~ColumnsResume() { if (layout) layout->suspend(false); }
+        ~ColumnsResume() { if (layout) layout->suspend(ShellViewColumns::Hold::Menu, false); }
     } columnsResume{columnLayout};
     viewMenuRestore.reset(); // A new menu supersedes a previous preview's pending replay.
     const bool previewEnabled = settings::getViewMenuPreviewEnabled();
