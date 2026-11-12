@@ -307,6 +307,7 @@ private:
     void scheduleStateSave(bool icons = false);
     void synchronizeViewProvider();
     void replayProviderSync();
+    void resumeColumnSync();
     bool providerSyncPending = false; // A refused synchronizeViewProvider() to replay once its guard clears.
 
     // Unavailable storage of a provisional window: wait for the named mutex
