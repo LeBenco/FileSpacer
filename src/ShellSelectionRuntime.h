@@ -26,7 +26,8 @@ template<class T> bool read(const void *address,T &value) {
 enum Field : unsigned char {OnClear,Select,Purge,Init,QueryService,Notify,Cancel,HostQI,EnumGlobal,DeleteGlobal,
     Callback,NotifyTable,HostTable,HostQueryObject,ViewQueryObject,ManagerTable,ManagerQI,Retain,Release,
     HostOffset,ManagerOffset,ArrayOffset,NotifySlot,CancelSlot,Procedure,ArrayGetter,
-    NativeWindowProcedure,NativeInsertSlot,NativeInsert,NativeSelectOne,NativeNotify,FieldCount};
+    NativeWindowProcedure,NativeInsertSlot,NativeInsert,NativeSelectOne,NativeNotify,NativeErase,FieldCount};
+enum : DWORD {PurgeHelper=1,PurgeInline=2,HostClearInline=4};
 inline bool writable(const void *pointer,SIZE_T length) {
     const auto *cursor=static_cast<const unsigned char *>(pointer);
     if(length>(std::numeric_limits<ULONG_PTR>::max)()-reinterpret_cast<ULONG_PTR>(cursor))return false;
@@ -77,6 +78,16 @@ inline bool controlIdentity(RangeData &identity) {
     return false;
 }
 inline bool decodeControlCount(const unsigned char *code,SIZE_T length,DWORD &manager,DWORD &range) {
+    // A CFG dispatch thunk can replace the indirect import call. In this
+    // compiler form RBX holds the address of the same manager member.
+    const unsigned char prologue[]={0x48,0x89,0x5c,0x24,0x08,0x48,0x89,0x74,0x24,0x10,0x57,0x48,0x83,0xec,0x20};
+    const unsigned char before[]={0xf7,0x41,0x70,0x00,0x10,0x00,0x00,0x8b,0xf8,0x74,0x17,0x48,0x8b,0x13,0x48,0x8b,0x4a};
+    const unsigned char after[]={0x48,0x83,0xc2,0x0c,0x48,0x8b,0x01,0x48,0x8b,0x40,0x68,0xe8};
+    if(length>=78&&std::memcmp(code,prologue,sizeof(prologue))==0&&code[29]==0x48&&code[30]==0x8d&&code[31]==0x99
+            &&std::memcmp(code+36,before,sizeof(before))==0&&std::memcmp(code+54,after,sizeof(after))==0) {
+        std::memcpy(&manager,code+32,4);range=code[53];
+        return manager<=4096&&manager%sizeof(void *)==0&&range<=128&&range%sizeof(void *)==0;
+    }
     bool found=false;
     for(SIZE_T i=0;i+23<length;++i) {
         const unsigned char middle[]={0x48,0x83,0xc2};
@@ -138,6 +149,30 @@ inline bool decodeInlineArrayLoop(const unsigned char *code,SIZE_T length,DWORD 
     if(!found||value.data<sizeof(void *)||value.data>64||value.stride<sizeof(void *)||value.stride>64)return false;
     layout=value;return true;
 }
+// Some Shell builds inline _OnClearSelection in _OnLVNotify. This is a data
+// reference, never a callable entry point. Check the entire inspected loop and
+// both cleanup targets before accepting its manager/array operands.
+struct HostClearLayout {DWORD manager=0,array=0;ArrayLayout entry;};
+inline bool decodeInlineHostClear(const unsigned char *code,SIZE_T length,const std::array<DWORD,FieldCount> &fields,HostClearLayout &layout) {
+    if(length<81)return false;
+    const unsigned char head[]={0x4d,0x8b,0xae};
+    const unsigned char body[]={0x4d,0x85,0xff,0x74,0x33,0x8b,0xfb,0x41,0x8b,0x07,0x85,0xc0,0x7e,0x2a,
+        0x48,0x8b,0xcb,0x85,0xff,0x78,0x0f,0x3b,0xf8,0x7d,0x0b,0x8b,0xcf,0x41,0x0f,0xaf,0x4f};
+    const unsigned char middle[]={0x33,0xd2,0xe8};
+    const unsigned char tail[]={0x85,0xc0,0x74,0x09,0xff,0xc7,0x41,0x8b,0x07,0x3b,0xf8,0x7c,0xd6,0x49,0x8b,0x4d};
+    if(std::memcmp(code,head,sizeof(head))!=0||code[7]!=0x4d||code[8]!=0x8b||code[9]!=0x7d
+            ||std::memcmp(code+11,body,sizeof(body))!=0||code[43]!=0x49||code[44]!=0x03||code[45]!=0x4f
+            ||std::memcmp(code+47,middle,sizeof(middle))!=0||std::memcmp(code+54,tail,sizeof(tail))!=0
+            ||code[70]!=code[10]||code[71]!=0x48||code[72]!=0x85||code[73]!=0xc9||code[74]!=0x74
+            ||code[75]!=0x0f||code[76]!=0xe8)return false;
+    LONG delta=0;std::memcpy(&delta,code+50,4);
+    if(static_cast<LONGLONG>(fields[OnClear])+54+delta!=fields[Callback])return false;
+    std::memcpy(&delta,code+77,4);
+    if(static_cast<LONGLONG>(fields[OnClear])+81+delta!=fields[NativeErase])return false;
+    std::memcpy(&layout.manager,code+3,4);layout.array=code[10];layout.entry.stride=code[42];layout.entry.data=code[46];
+    return layout.manager<4096&&layout.manager%8==0&&layout.array<128&&layout.array%8==0&&layout.entry.data>=8&&layout.entry.data<=64
+        &&layout.entry.stride>=8&&layout.entry.stride<=64;
+}
 struct Image {
     unsigned char *base=nullptr;DWORD size=0;std::array<DWORD,FieldCount> fields={};
     void *enumerate=nullptr,*erase=nullptr;
@@ -146,6 +181,7 @@ struct Image {
     bool supported=false;const char *reason="missing discovery data";
     bool selectAllSupported=false;
     DWORD ignoredStateOffset=0;
+    bool nativeReservation=false;DWORD capacityOffset=0,growthOffset=0;
     bool range(DWORD rva,SIZE_T length)const{return rva<size&&length<=size-rva;}
     bool cfg(DWORD rva)const {
         IMAGE_DOS_HEADER dos={};IMAGE_NT_HEADERS64 nt={};
@@ -183,7 +219,7 @@ struct Image {
         data.read(magic,sizeof(magic));data.read(reinterpret_cast<char *>(&expectedSize),sizeof(expectedSize));
         data.read(reinterpret_cast<char *>(&guid),sizeof(guid));data.read(reinterpret_cast<char *>(&age),sizeof(age));
         data.read(reinterpret_cast<char *>(&count),sizeof(count));
-        if(!data||std::memcmp(magic,"FSDISC02",8)!=0||count!=FieldCount){result.reason="invalid discovery schema";return result;}
+        if(!data||std::memcmp(magic,"FSDISC03",8)!=0||count!=FieldCount){result.reason="invalid discovery schema";return result;}
         data.read(reinterpret_cast<char *>(result.fields.data()),sizeof(result.fields));
         if(!data||data.peek()!=std::char_traits<char>::eof()){result.reason="truncated or trailing discovery data";return result;}
         wchar_t system[MAX_PATH]={},loaded[MAX_PATH]={};
@@ -219,7 +255,8 @@ struct Image {
 
         result.clearViaCount=result.clearViaCount||result.manualEnumeration;
         for(int i=0;i<=Release;++i)if(!(result.manualEnumeration&&(i==EnumGlobal||i==DeleteGlobal))&&!result.range(result.fields[i],64))return result;
-        if((result.fields[Procedure]!=1&&result.fields[Procedure]!=2)||result.fields[NotifySlot]>127||result.fields[CancelSlot]>127
+        const DWORD purgeKind=result.fields[Procedure]&3u;
+        if((purgeKind!=PurgeHelper&&purgeKind!=PurgeInline)||(result.fields[Procedure]&~7u)||result.fields[NotifySlot]>127||result.fields[CancelSlot]>127
                 ||result.fields[HostOffset]>4096||result.fields[ManagerOffset]>4096||result.fields[ArrayOffset]>4096)return result;
         // Cross-check the discovered field/callback against loaded instructions,
         // not only against an external file. Recognize the inspected helper and
@@ -234,7 +271,7 @@ struct Image {
             if(value<start||value-start>=result.size||!result.cfg(static_cast<DWORD>(value-start)))return result;
         }
         }
-        if(result.fields[Procedure]==1){
+        if(purgeKind==PurgeHelper){
         unsigned char purge[62]={};
         const unsigned char prefix[]={0x40,0x53,0x48,0x83,0xec,0x20,0x48,0x8b,0xd9,0x48,0x8d,0x15};
         if(!read(result.base+result.fields[Purge],purge)||std::memcmp(purge,prefix,sizeof(prefix))!=0)return result;
@@ -257,7 +294,7 @@ struct Image {
                     ||!decodeInlineArrayLoop(purge,sizeof(purge),result.fields[Purge],result.fields[Callback],result.fields[ArrayOffset],layout))return result;
             result.dataOffset=layout.data;result.strideOffset=layout.stride;
         }
-        if(result.clearViaCount&&result.fields[Procedure]==1){
+        if(result.clearViaCount&&purgeKind==PurgeHelper){
             unsigned char getter[32]={};ArrayLayout layout;
             if(!result.range(result.fields[ArrayGetter],sizeof(getter))||!read(result.base+result.fields[ArrayGetter],getter)
                     ||!decodeArrayGetter(getter,sizeof(getter),layout))return result;
@@ -281,6 +318,20 @@ struct Image {
                     &&clear[i+11]==0x48&&clear[i+12]==0x85&&clear[i+13]==0xc9
                     &&clear[i+14]==0x74&&clear[i+16]==0x8b&&clear[i+17]==0x31)operands=true;
         }
+        if(result.fields[Procedure]&HostClearInline) {
+            HostClearLayout layout;
+            unsigned char entry[64]={};
+            const unsigned char prefix[]={0x48,0x89,0x5c,0x24,0x18,0x55,0x56,0x57,0x41,0x54,0x41,0x55,0x41,0x56,0x41,0x57,
+                0x48,0x8d,0xac,0x24,0x50,0xfe,0xff,0xff,0x48,0x81,0xec,0xb0,0x02,0x00,0x00};
+            operands=result.fields[NativeNotify]&&result.fields[OnClear]>=result.fields[NativeNotify]
+                &&result.fields[OnClear]-result.fields[NativeNotify]<4096
+                &&result.range(result.fields[NativeNotify],sizeof(entry))&&read(result.base+result.fields[NativeNotify],entry)
+                &&std::memcmp(entry,prefix,sizeof(prefix))==0&&entry[51]==0x4c&&entry[52]==0x8b&&entry[53]==0xf1
+                &&result.range(result.fields[NativeErase],64)
+                &&decodeInlineHostClear(clear,sizeof(clear),result.fields,layout)
+                &&layout.manager==result.fields[HostOffset]+result.fields[ManagerOffset]&&layout.array==result.fields[ArrayOffset]
+                &&layout.entry.data==result.dataOffset&&layout.entry.stride==result.strideOffset;
+        }
         if(!operands)return result;
 
         void *target=nullptr;
@@ -292,43 +343,68 @@ struct Image {
         if(!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_PIN,path.c_str(),&module))return result;
         // Optional global-selection capability. Unknown compiler forms keep
         // the independently qualified clear capability and native selection.
-        unsigned char insert[110]={},select[128]={};void *insertTarget=nullptr;
+        unsigned char insert[330]={},select[128]={};void *insertTarget=nullptr;
         const unsigned char insertPrefix[]={0x48,0x89,0x5c,0x24,0x20,0x55,0x56,0x57,0x48,0x83,0xec,0x20,0x49,0x8b,0xe8,0x8b,0xfa,0x48,0x8b,0xd9};
         const unsigned char append[]={0x8d,0x48,0x01,0x48,0x8b,0xd5,0x89,0x0b,0x8b,0x4b,0x14,0x44,0x8b,0xc1,0x0f,0xaf,0xcf,0x48,0x03,0x4b,0x08,0xe8};
+        const unsigned char checkedPrefix[]={0x48,0x89,0x5c,0x24,0x20,0x55,0x56,0x57,0x41,0x56,0x41,0x57,0x48,0x83,0xec,0x30};
+        const unsigned char checkedAppend[]={0x8b,0x4f,0x14,0x49,0x8b,0xd7,0xff,0x07,0x44,0x8b,0xc1,0x0f,0xaf,0xce,0x48,0x03,0x4f,0x08,0xe8};
+        const unsigned char checkedArguments[]={0x4d,0x8b,0xf8,0x8b,0xf2,0x48,0x8b,0xf9};
+        const bool insertImport=result.fields[NativeInsertSlot]&&result.range(result.fields[NativeInsertSlot],sizeof(insertTarget))
+            &&read(result.base+result.fields[NativeInsertSlot],insertTarget)&&insertTarget==result.base+result.fields[NativeInsert];
         if(result.range(result.fields[NativeWindowProcedure],128)&&result.fields[NativeWindowProcedure]
-                &&result.cfg(result.fields[NativeWindowProcedure])&&result.cfg(result.fields[NativeInsert])
+                &&result.cfg(result.fields[NativeWindowProcedure])
                 &&result.range(result.fields[NativeInsert],sizeof(insert))&&result.range(result.fields[NativeSelectOne],sizeof(select))
-                &&result.range(result.fields[NativeInsertSlot],sizeof(insertTarget))
-                &&read(result.base+result.fields[NativeInsertSlot],insertTarget)&&insertTarget==result.base+result.fields[NativeInsert]
                 &&read(result.base+result.fields[NativeInsert],insert)&&read(result.base+result.fields[NativeSelectOne],select)
-                &&std::memcmp(insert,insertPrefix,sizeof(insertPrefix))==0
-                &&std::memcmp(insert+0x40,append,sizeof(append))==0&&insert[0x68]==0xc3
+                &&((insertImport&&result.cfg(result.fields[NativeInsert])&&std::memcmp(insert,insertPrefix,sizeof(insertPrefix))==0
+                    &&std::memcmp(insert+0x40,append,sizeof(append))==0&&insert[0x68]==0xc3)
+                    ||(std::memcmp(insert,checkedPrefix,sizeof(checkedPrefix))==0
+                        &&std::memcmp(insert+0x1f,checkedArguments,sizeof(checkedArguments))==0
+                        &&insert[0x41]==0x8b&&insert[0x42]==0x49&&insert[0x43]==16
+                        &&insert[0x44]==0x3b&&insert[0x45]==0xe9&&insert[0x46]==0x0f&&insert[0x47]==0x86
+                        &&insert[0x4c]==0x03&&insert[0x4d]==0x4f&&insert[0x4e]==24
+                        &&std::memcmp(insert+0xd3,checkedAppend,sizeof(checkedAppend))==0&&insert[0x109]==0xc3))
                 &&result.dataOffset==8&&result.strideOffset==20) {
             unsigned calls=0;
             for(size_t i=0;i+21<=sizeof(select);++i) {
                 const unsigned char arguments[]={0x4c,0x8d,0x44,0x24,0x20,0xba,0xff,0xff,0xff,0x7f,0x48,0xff,0x15};
-                if(select[i]!=0x48||select[i+1]!=0x8b||select[i+2]!=0x4b||select[i+3]!=result.fields[ArrayOffset]
-                        ||std::memcmp(select+i+4,arguments,sizeof(arguments))!=0)continue;
-                LONG delta=0;std::memcpy(&delta,select+i+17,4);
-                if(static_cast<LONGLONG>(result.fields[NativeSelectOne])+static_cast<LONGLONG>(i)+21+delta==result.fields[NativeInsertSlot])++calls;
+                if(select[i]!=0x48||select[i+1]!=0x8b||select[i+2]!=0x4b||select[i+3]!=result.fields[ArrayOffset])continue;
+                LONG delta=0;
+                if(insertImport&&std::memcmp(select+i+4,arguments,sizeof(arguments))==0) {
+                    std::memcpy(&delta,select+i+17,4);
+                    if(static_cast<LONGLONG>(result.fields[NativeSelectOne])+static_cast<LONGLONG>(i)+21+delta==result.fields[NativeInsertSlot])++calls;
+                }
+                const unsigned char direct[]={0x4c,0x8d,0x44,0x24,0x20,0xba,0xff,0xff,0xff,0x7f,0xe8};
+                if(std::memcmp(select+i+4,direct,sizeof(direct))==0) {
+                    std::memcpy(&delta,select+i+15,4);
+                    if(static_cast<LONGLONG>(result.fields[NativeSelectOne])+static_cast<LONGLONG>(i)+19+delta==result.fields[NativeInsert])++calls;
+                }
             }
             // Respect the two native state-notification guards. They are set
             // while Windows synchronizes its own selection; those notices
             // must never be turned into a new user selection by our observer.
-            unsigned char notices[2048]={};unsigned guards=0;DWORD member=0;
+            unsigned char notices[4096]={};unsigned guards=0;DWORD member=0;
             if(calls==1&&result.fields[NativeNotify]&&result.range(result.fields[NativeNotify],sizeof(notices))
                     &&read(result.base+result.fields[NativeNotify],notices)) {
                 for(size_t i=0;i+12<=sizeof(notices);++i) {
-                    if(notices[i]!=0xf7||notices[i+1]!=0x83||notices[i+6]!=0||notices[i+7]!=0x20
-                            ||notices[i+8]!=0||notices[i+9]!=0
-                            ||(notices[i+10]!=0x75&&(notices[i+10]!=0x0f||notices[i+11]!=0x85)))continue;
-                    DWORD field=0;std::memcpy(&field,notices+i+2,4);
+                    const size_t rex=notices[i]==0x41?1:0,at=i+rex;
+                    if(at+12>sizeof(notices)||notices[at]!=0xf7||notices[at+1]!=(rex?0x86:0x83)
+                            ||notices[at+6]!=0||notices[at+7]!=0x20||notices[at+8]!=0||notices[at+9]!=0
+                            ||(notices[at+10]!=0x75&&(notices[at+10]!=0x0f||notices[at+11]!=0x85)))continue;
+                    if(rex==0&&i&&notices[i-1]==0x41)continue;
+                    DWORD field=0;std::memcpy(&field,notices+at+2,4);
                     if(field>4092||field%4||(guards&&field!=member)){guards=0;break;}
                     member=field;++guards;
                 }
             }
             result.selectAllSupported=guards==2;
-            if(result.selectAllSupported)result.ignoredStateOffset=member;
+            if(result.selectAllSupported) {
+                result.ignoredStateOffset=member;
+                // A directly linked insert routine need not be a CFG target.
+                // Do not call it indirectly: let the native item notification
+                // grow its own array, using its inspected capacity/growth fields.
+                result.nativeReservation=std::memcmp(insert,checkedPrefix,sizeof(checkedPrefix))==0;
+                if(result.nativeReservation){result.capacityOffset=insert[0x43];result.growthOffset=insert[0x4e];}
+            }
         }
         result.supported=true;result.reason="current-image symbols and loaded operands agree; CFG enabled";
         return result;
@@ -385,6 +461,32 @@ inline bool RangeImage::qualifies(const char **reason)const {
     // Recognize the complete native Clear implementation, excluding only
     // relative import/call displacements. This also qualifies its no-argument
     // HRESULT ABI; a cache cannot substitute a different CFG-valid range method.
+    // Same no-argument HRESULT contract, with a different register allocation.
+    const unsigned char checkedClear[]={0x48,0x89,0x5c,0x24,0x08,0x48,0x89,0x74,0x24,0x10,0x48,0x89,0x7c,0x24,0x18,0x41,0x56,0x48,0x83,0xec,
+        0x20,0x48,0x8b,0xf1,0x33,0xff,0x48,0xff,0x15,0x00,0x00,0x00,0x00,0x0f,0x1f,0x44,0x00,0x00,0x8d,0x57,
+        0x08,0x48,0x8b,0xc8,0x44,0x8b,0xc2,0x44,0x8d,0x4f,0x06,0xe8,0x00,0x00,0x00,0x00,0x4c,0x8b,0xf0,0x48,
+        0x85,0xc0,0x74,0x77,0x48,0x8b,0x5e,0x10,0x48,0xff,0x15,0x00,0x00,0x00,0x00,0x0f,0x1f,0x44,0x00,0x00,
+        0x4c,0x8b,0xc3,0x33,0xd2,0x48,0x8b,0xc8,0x48,0xff,0x15,0x00,0x00,0x00,0x00,0x0f,0x1f,0x44,0x00,0x00,
+        0x4c,0x89,0x76,0x10,0xb9,0xff,0xff,0xff,0x7f,0xc7,0x46,0x18,0x06,0x00,0x00,0x00,0xc7,0x46,0x1c,0x02,
+        0x00,0x00,0x00,0x41,0xc7,0x06,0x00,0x00,0x00,0x80,0x48,0x8b,0x46,0x10,0xc7,0x40,0x04,0xfe,0xff,0xff,
+        0xff,0x48,0x8b,0x46,0x10,0x89,0x48,0x08,0x48,0x8b,0x46,0x10,0x89,0x48,0x0c,0x89,0x7e,0x20,0x48,0x8b,
+        0x5c,0x24,0x30,0x8b,0xc7,0x48,0x8b,0x7c,0x24,0x40,0x48,0x8b,0x74,0x24,0x38,0x48,0x83,0xc4,0x20,0x41,
+        0x5e,0xc3,0xcc,0xbf,0x05,0x40,0x00,0x80,0xeb,0xe0};
+    unsigned char checked[sizeof(checkedClear)]={};
+    if(!read(base+data.methods[RangeClear],checked))return reject("Range clear unreadable");
+    if(std::memcmp(checked,checkedClear,15)==0) {
+        for(size_t i=0;i<sizeof(checked);++i) {
+            if((i>=29&&i<33)||(i>=52&&i<56)||(i>=71&&i<75)||(i>=91&&i<95))continue;
+            if(checked[i]!=checkedClear[i])return reject("Range clear implementation rejected");
+        }
+        for(const auto entry:{std::make_pair(size_t(29),"GetProcessHeap"),
+                std::make_pair(size_t(71),"GetProcessHeap"),std::make_pair(size_t(91),"HeapFree")}) {
+            LONG displacement=0;std::memcpy(&displacement,checked+entry.first,4);
+            const LONGLONG slot=static_cast<LONGLONG>(data.methods[RangeClear])+static_cast<LONGLONG>(entry.first)+4+displacement;
+            if(slot<0||slot>=data.size||!namedImport(image,static_cast<DWORD>(slot),entry.second))return reject("Range allocator import rejected");
+        }
+        return true;
+    }
     const unsigned char expected[]={0x48,0x89,0x5c,0x24,0x08,0x48,0x89,0x74,0x24,0x10,0x57,0x48,0x83,0xec,0x20,
         0x48,0x8b,0xf9,0x33,0xdb,0x48,0xff,0x15,0,0,0,0,0x0f,0x1f,0x44,0,0,0x48,0x8b,0xc8,0x44,0x8d,0x4b,6,
         0x8d,0x43,8,0x44,0x8b,0xc0,0x8b,0xd0,0xe8,0,0,0,0,0x48,0x8b,0xf0,0x48,0x85,0xc0,0x74,0x5c,
