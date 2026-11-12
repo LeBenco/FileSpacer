@@ -280,7 +280,7 @@ std::array<DWORD, FieldCount> extract(const Identity &id, const Symbols &foundSy
         if (IsEqualGUID(guid,control)) { fields[HostOffset] = entry.offset; ++interfaces; }
     }
     supported(terminated && interfaces == 1, "shell32!CListViewHost::QueryInterface: missing or ambiguous host interface");
-    unsigned char clear[256] = {}; unsigned chains = 0, calls = 0;
+    unsigned char clear[256] = {};
     if(!fields[OnClear]) {
         supported(fields[NativeNotify]&&fields[NativeErase],"shell32: neither standalone nor inline clear symbols available");
         unsigned char notices[4096]={};copy(fields[NativeNotify],notices);
@@ -297,6 +297,7 @@ std::array<DWORD, FieldCount> extract(const Identity &id, const Symbols &foundSy
     }
     copy(fields[OnClear],clear);
     if(!(fields[Procedure]&HostClearInline)) {
+    unsigned chains = 0, calls = 0;
     for (size_t i = 0; i + 18 < sizeof(clear); ++i) {
         const bool first = clear[i]==0x48 && clear[i+1]==0x8b && clear[i+2]==0x89 && clear[i+7]==0x48 && clear[i+8]==0x8b
             && clear[i+9]==0x41 && clear[i+11]==0x48 && clear[i+12]==0x85 && clear[i+13]==0xc0 && clear[i+14]==0x74 && clear[i+16]==0x8b && clear[i+17]==0x30;
