@@ -385,9 +385,20 @@ struct Image {
             unsigned char notices[4096]={};unsigned guards=0;DWORD member=0;
             if(calls==1&&result.fields[NativeNotify]&&result.range(result.fields[NativeNotify],sizeof(notices))
                     &&read(result.base+result.fields[NativeNotify],notices)) {
+                // This notification receiver can keep its object in RDI.
+                // Qualify the prologue and argument moves before accepting
+                // guard operands addressed through that register.
+                const unsigned char rdiPrefix[]={0x48,0x89,0x5c,0x24,0x18,0x55,0x56,0x57,0x41,0x54,0x41,0x55,0x41,0x56,0x41,0x57,
+                    0x48,0x8d,0xac,0x24,0x30,0xfe,0xff,0xff,0x48,0x81,0xec,0xd0,0x02,0x00,0x00};
+                const unsigned char rdiArguments[]={0x48,0x33,0xc4,0x48,0x89,0x85,0xc0,0x01,0x00,0x00,0x48,0x8b,0xda,0x48,0x8b,0xf9};
+                const bool rdiObject=std::memcmp(notices,rdiPrefix,sizeof(rdiPrefix))==0
+                    &&notices[31]==0x48&&notices[32]==0x8b&&notices[33]==0x05
+                    &&std::memcmp(notices+38,rdiArguments,sizeof(rdiArguments))==0;
                 for(size_t i=0;i+12<=sizeof(notices);++i) {
                     const size_t rex=notices[i]==0x41?1:0,at=i+rex;
-                    if(at+12>sizeof(notices)||notices[at]!=0xf7||notices[at+1]!=(rex?0x86:0x83)
+                    const bool objectRegister=rex?notices[at+1]==0x86
+                        :(notices[at+1]==0x83||(rdiObject&&notices[at+1]==0x87));
+                    if(at+12>sizeof(notices)||notices[at]!=0xf7||!objectRegister
                             ||notices[at+6]!=0||notices[at+7]!=0x20||notices[at+8]!=0||notices[at+9]!=0
                             ||(notices[at+10]!=0x75&&(notices[at+10]!=0x0f||notices[at+11]!=0x85)))continue;
                     if(rex==0&&i&&notices[i-1]==0x41)continue;
