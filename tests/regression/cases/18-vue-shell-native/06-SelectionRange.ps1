@@ -23,7 +23,7 @@ if(!$base.Count-and$worker-eq50){
     Write-Host 'PASS: unsupported private Shell path reuses public clearing. Optional private range not exercised.'
     return
 }
-if($base.Count-ne1-or$base[0].Length-ne160){throw 'Shell selection descriptor missing.'}
+if($base.Count-ne1-or$base[0].Length-ne164){throw 'Shell selection descriptor missing.'}
 $range=@(Get-ChildItem -LiteralPath $cache -Filter '*.range' -File)
 function New-BaseCache([string]$Name) {
     $folder=Join-Path $RunDirectory $Name;[void][IO.Directory]::CreateDirectory($folder)

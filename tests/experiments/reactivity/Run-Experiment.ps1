@@ -59,7 +59,7 @@ try{
         }
         if($CacheRecord-and$name -in @('38-RestoreAll.ps1','39-RestoreFreeBalance.ps1','40-RestoreVisual.ps1','41-FreeRestorePhases.ps1','43-FreeRestoreIdentical.ps1','44-LayoutPaths.ps1','49-SelectionArray.ps1','53-NativePositionTransaction.ps1')){
             $record=Get-Item -LiteralPath $CacheRecord
-            if($record.Length-ne160-or$record.Name -notmatch '^[0-9a-f]{32,40}-[0-9a-f]+-s[0-9]+[.]bin$'){throw 'A runtime-generated 160-byte selection cache is required.'}
+            if($record.Length-ne164-or$record.Name -notmatch '^[0-9a-f]{32,40}-[0-9a-f]+-s[0-9]+[.]bin$'){throw 'A runtime-generated 164-byte selection cache is required.'}
             # Fixture only; the client revalidates the exact loaded DLL and CFG.
             $encoded=[Convert]::ToBase64String([IO.File]::ReadAllBytes($record.FullName))
             $seed="[IO.File]::WriteAllBytes((Join-Path `$cache '"+$record.Name+"'),[Convert]::FromBase64String('"+$encoded+"'))`r`n"

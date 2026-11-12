@@ -10,7 +10,7 @@ $code=Invoke-NativeProgram $cacheTest @('--live',$cache) (Join-Path $RunDirector
 if($code-ne0-and$code-ne50){throw 'Global-selection discovery/qualification failed.'}
 $privateSupported=$code-eq0
 $records=@(Get-ChildItem -LiteralPath $cache -Filter '*.bin' -File)
-if($privateSupported-and($records.Count-ne1-or$records[0].Length-ne160)){throw 'Qualified selection descriptor absent.'}
+if($privateSupported-and($records.Count-ne1-or$records[0].Length-ne164)){throw 'Qualified selection descriptor absent.'}
 $fallback=Join-Path $RunDirectory 'without-select';[void][IO.Directory]::CreateDirectory($fallback)
 if($privateSupported){
 $bytes=[IO.File]::ReadAllBytes($records[0].FullName)
