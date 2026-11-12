@@ -118,10 +118,20 @@ UninstPage Custom un.LockedListShow un.LockedListLeave
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "English"
 !insertmacro MUI_LANGUAGE "French"
+!insertmacro MUI_LANGUAGE "German"
+!insertmacro MUI_LANGUAGE "Italian"
+!insertmacro MUI_LANGUAGE "Spanish"
+!insertmacro MUI_LANGUAGE "Portuguese"
+!insertmacro MUI_LANGUAGE "Greek"
 !insertmacro MUI_LANGUAGE "Polish"
 !insertmacro MUI_LANGUAGE "Dutch"
 !insertmacro MUI_LANGUAGE "Ukrainian"
 ChangeUI IDD_INST "..\build\installer-assets\wizard-ui.dll"
+!include "language.de.nsh"
+!include "language.it.nsh"
+!include "language.es.nsh"
+!include "language.pt.nsh"
+!include "language.el.nsh"
 !include "language.pl.nsh"
 !include "language.nl.nsh"
 !include "language.uk.nsh"
@@ -411,20 +421,30 @@ Function ScopePageShow
     nsDialogs::CreateControl STATIC "${DEFAULT_STYLES}|${SS_LEFT}" 0 0 30% 100% 10u "$(NOTES_TITLE)"
     Pop $0
     SetCtlColors $0 20252E FFFFFF
-    nsDialogs::CreateControl EDIT "${DEFAULT_STYLES}|${WS_TABSTOP}|${WS_VSCROLL}|${ES_MULTILINE}|${ES_AUTOVSCROLL}" "${WS_EX_CLIENTEDGE}" 0 40% 100% 60% ""
+    nsDialogs::CreateControl ${__NSD_RichEdit_CLASS} "${DEFAULT_STYLES}|${WS_TABSTOP}|${WS_VSCROLL}|${ES_MULTILINE}|${ES_AUTOVSCROLL}" "${WS_EX_CLIENTEDGE}" 0 40% 100% 60% ""
     Pop $notesText
-    SendMessage $notesText ${EM_SETLIMITTEXT} 1048576 0
-    FileOpen $1 "$PLUGINSDIR\changelog.txt" r
+    ${NSD_RichEd_SetTextLimit} $notesText 1048576
+    ${NSD_RichEd_SetCustomBackgroundColor} $notesText 0xFFFFFF
+    FileOpen $1 "$PLUGINSDIR\changelog.rtf" r
     IfErrors notes_ready
-    FileSeek $1 2 SET ; Skip the UTF-16LE BOM.
-notes_read:
-    ClearErrors
-    FileReadUTF16LE $1 $0
-    IfErrors notes_close
-    SendMessage $notesText ${EM_SETSEL} -1 -1
-    SendMessage $notesText ${EM_REPLACESEL} 0 "STR:$0"
-    Goto notes_read
-notes_close:
+    FileSeek $1 0 END $3
+    FileSeek $1 0 SET
+    IntOp $4 $3 + 1
+    ; Load the complete RTF without the NSIS string-length limit.
+    System::Call 'kernel32::GlobalAlloc(i 0x40,p r4)p.r2'
+    ${If} $2 P<> 0
+        System::Call 'kernel32::ReadFile(p r1,p r2,i r3,*i.r4,p 0)i.r5'
+        ${If} $5 != 0
+        ${AndIf} $4 == $3
+            ; SETTEXTEX: ST_DEFAULT, CP_ACP. RTF carries Unicode escapes.
+            System::Call '*(i 0,i 0)p.r6'
+            ${If} $6 P<> 0
+                SendMessage $notesText ${EM_SETTEXTEX} $6 $2
+                System::Free $6
+            ${EndIf}
+        ${EndIf}
+        System::Call 'kernel32::GlobalFree(p r2)'
+    ${EndIf}
     FileClose $1
 notes_ready:
     SendMessage $notesText ${EM_SETREADONLY} 1 0
@@ -455,15 +475,25 @@ Function .onInit
     Call InitializeInstall
     InitPluginsDir
     ${If} $LANGUAGE == ${LANG_FRENCH}
-        File /oname=$PLUGINSDIR\changelog.txt "..\build\installer-assets\changelog-fr.txt"
+        File /oname=$PLUGINSDIR\changelog.rtf "..\build\installer-assets\changelog-fr.rtf"
+    ${ElseIf} $LANGUAGE == ${LANG_GERMAN}
+        File /oname=$PLUGINSDIR\changelog.rtf "..\build\installer-assets\changelog-de.rtf"
+    ${ElseIf} $LANGUAGE == ${LANG_ITALIAN}
+        File /oname=$PLUGINSDIR\changelog.rtf "..\build\installer-assets\changelog-it.rtf"
+    ${ElseIf} $LANGUAGE == ${LANG_SPANISH}
+        File /oname=$PLUGINSDIR\changelog.rtf "..\build\installer-assets\changelog-es.rtf"
+    ${ElseIf} $LANGUAGE == ${LANG_PORTUGUESE}
+        File /oname=$PLUGINSDIR\changelog.rtf "..\build\installer-assets\changelog-pt.rtf"
+    ${ElseIf} $LANGUAGE == ${LANG_GREEK}
+        File /oname=$PLUGINSDIR\changelog.rtf "..\build\installer-assets\changelog-el.rtf"
     ${ElseIf} $LANGUAGE == ${LANG_POLISH}
-        File /oname=$PLUGINSDIR\changelog.txt "..\build\installer-assets\changelog-pl.txt"
+        File /oname=$PLUGINSDIR\changelog.rtf "..\build\installer-assets\changelog-pl.rtf"
     ${ElseIf} $LANGUAGE == ${LANG_DUTCH}
-        File /oname=$PLUGINSDIR\changelog.txt "..\build\installer-assets\changelog-nl.txt"
+        File /oname=$PLUGINSDIR\changelog.rtf "..\build\installer-assets\changelog-nl.rtf"
     ${ElseIf} $LANGUAGE == ${LANG_UKRAINIAN}
-        File /oname=$PLUGINSDIR\changelog.txt "..\build\installer-assets\changelog-uk.txt"
+        File /oname=$PLUGINSDIR\changelog.rtf "..\build\installer-assets\changelog-uk.rtf"
     ${Else}
-        File /oname=$PLUGINSDIR\changelog.txt "..\build\installer-assets\changelog-en.txt"
+        File /oname=$PLUGINSDIR\changelog.rtf "..\build\installer-assets\changelog-en.rtf"
     ${EndIf}
     ; The NSIS host is x86; this worker lets LockedList inspect x64 processes.
     File /oname=$PLUGINSDIR\LockedList64.dll "plugins\LockedList64.dll"
@@ -475,6 +505,11 @@ Function un.onInit
     ReadINIStr $1 "$INSTDIR\install-info.ini" "Installation" "Language"
     ${If} $1 == ${LANG_ENGLISH}
     ${OrIf} $1 == ${LANG_FRENCH}
+    ${OrIf} $1 == ${LANG_GERMAN}
+    ${OrIf} $1 == ${LANG_ITALIAN}
+    ${OrIf} $1 == ${LANG_SPANISH}
+    ${OrIf} $1 == ${LANG_PORTUGUESE}
+    ${OrIf} $1 == ${LANG_GREEK}
     ${OrIf} $1 == ${LANG_POLISH}
     ${OrIf} $1 == ${LANG_DUTCH}
     ${OrIf} $1 == ${LANG_UKRAINIAN}
@@ -1038,6 +1073,11 @@ Function RestoreInstallLanguage
     ReadINIStr $0 "$INSTDIR\install-info.ini" "Installation" "Language"
     ${If} $0 == ${LANG_ENGLISH}
     ${OrIf} $0 == ${LANG_FRENCH}
+    ${OrIf} $0 == ${LANG_GERMAN}
+    ${OrIf} $0 == ${LANG_ITALIAN}
+    ${OrIf} $0 == ${LANG_SPANISH}
+    ${OrIf} $0 == ${LANG_PORTUGUESE}
+    ${OrIf} $0 == ${LANG_GREEK}
     ${OrIf} $0 == ${LANG_POLISH}
     ${OrIf} $0 == ${LANG_DUTCH}
     ${OrIf} $0 == ${LANG_UKRAINIAN}
@@ -1123,6 +1163,11 @@ Function InitializeInstall
         IfErrors worker_invalid
         ${If} $0 != ${LANG_ENGLISH}
         ${AndIf} $0 != ${LANG_FRENCH}
+        ${AndIf} $0 != ${LANG_GERMAN}
+        ${AndIf} $0 != ${LANG_ITALIAN}
+        ${AndIf} $0 != ${LANG_SPANISH}
+        ${AndIf} $0 != ${LANG_PORTUGUESE}
+        ${AndIf} $0 != ${LANG_GREEK}
         ${AndIf} $0 != ${LANG_POLISH}
         ${AndIf} $0 != ${LANG_DUTCH}
         ${AndIf} $0 != ${LANG_UKRAINIAN}
