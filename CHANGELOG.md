@@ -7,6 +7,8 @@
 ## Unreleased
 
 - Fix HTML anchor tags appearing in the installer changelog.
+- Format the installer changelog with version headings, bullet lists and emphasis.
+- Add German, Italian, Spanish, Portuguese (Portugal) and Greek to the installer and uninstaller.
 
 <a id="142--2026-11-12"></a>
 
