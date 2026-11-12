@@ -285,8 +285,10 @@ bool placementRect(HWND window, RECT &rect) {
 #endif
     if ((GetPropW(window, testProperty) != nullptr) != testWindow) return false;
     DWORD cloaked = 0;
+    // A window cloaked by its own application is the destination of a folder
+    // opening animation: it already occupies its place.
     if (SUCCEEDED(DwmGetWindowAttribute(window, DWMWA_CLOAKED, &cloaked, sizeof(cloaked)))
-            && cloaked)
+            && (cloaked & (DWM_CLOAKED_SHELL | DWM_CLOAKED_INHERITED)))
         return false;
     // Keep the same DPI-virtualized outer coordinates as requestedRect and
     // MONITORINFO.rcWork; do not mix them with DWM's physical frame bounds.
