@@ -6,6 +6,7 @@
 
 ## Unreleased
 
+- Show only the "Open in..." command for the other file manager in folder context menus.
 - Add a smooth dotted-outline animation when opening folders, with global enable/disable and duration controls in General preferences.
 
 <a id="141--2026-11-09"></a>
