@@ -7,6 +7,7 @@
 #include <d2d1_1.h>
 #include <dcomp.h>
 #include <dwmapi.h>
+#include <delayimp.h>
 #include <atomic>
 #include <algorithm>
 #include <type_traits>
@@ -24,22 +25,58 @@ const wchar_t animationClass[] = L"FileSpacer Folder Opening Animation";
 constexpr UINT finishAnimation = WM_APP + 1;
 constexpr LONG strokeWidth = 3;
 std::atomic<UINT> configuredDuration{0};
+
+// A delay-loaded import raises a structured exception when its DLL or its
+// export is missing; catch (...) does not handle it under /EHsc.
+int delayLoadFailure(DWORD code) {
+    return (code == VcppException(ERROR_SEVERITY_ERROR, ERROR_MOD_NOT_FOUND)
+            || code == VcppException(ERROR_SEVERITY_ERROR, ERROR_PROC_NOT_FOUND))
+        ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH;
+}
+
+// One function per delay-loaded import: __try is not allowed in a function
+// that has objects to unwind. The low word of the code is the Win32 error.
+HRESULT createD3DDevice(ID3D11Device **device) {
+    __try {
+        return D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
+            D3D11_CREATE_DEVICE_BGRA_SUPPORT, nullptr, 0, D3D11_SDK_VERSION,
+            device, nullptr, nullptr);
+    } __except (delayLoadFailure(GetExceptionCode())) {
+        return HRESULT_FROM_WIN32(GetExceptionCode() & 0xFFFF);
+    }
+}
+
+HRESULT createDrawingDevice(IDXGIDevice *dxgi, const D2D1_CREATION_PROPERTIES *properties,
+        ID2D1Device **drawing) {
+    __try {
+        return D2D1CreateDevice(dxgi, properties, drawing);
+    } __except (delayLoadFailure(GetExceptionCode())) {
+        return HRESULT_FROM_WIN32(GetExceptionCode() & 0xFFFF);
+    }
+}
+
+HRESULT createCompositionDevice(IUnknown *rendering, IDCompositionDesktopDevice **composition) {
+    __try {
+        return DCompositionCreateDevice2(rendering, IID_PPV_ARGS(composition));
+    } __except (delayLoadFailure(GetExceptionCode())) {
+        return HRESULT_FROM_WIN32(GetExceptionCode() & 0xFFFF);
+    }
+}
+
 struct OpeningGraphics {
     CComPtr<ID3D11Device> d3d;
     CComPtr<IDCompositionDesktopDevice> composition;
     CComPtr<IDCompositionDevice> health;
 
     bool initialize() {
-        if (!checkHR(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
-                D3D11_CREATE_DEVICE_BGRA_SUPPORT, nullptr, 0, D3D11_SDK_VERSION,
-                &d3d, nullptr, nullptr))) return false;
+        if (!checkHR(createD3DDevice(&d3d))) return false;
         CComQIPtr<IDXGIDevice> dxgi(d3d);
         CComPtr<ID2D1Device> drawing;
         const D2D1_CREATION_PROPERTIES properties = {
             D2D1_THREADING_MODE_MULTI_THREADED, D2D1_DEBUG_LEVEL_NONE,
             D2D1_DEVICE_CONTEXT_OPTIONS_NONE};
-        if (!dxgi || !checkHR(D2D1CreateDevice(dxgi, &properties, &drawing))
-                || !checkHR(DCompositionCreateDevice2(drawing, IID_PPV_ARGS(&composition)))
+        if (!dxgi || !checkHR(createDrawingDevice(dxgi, &properties, &drawing))
+                || !checkHR(createCompositionDevice(drawing, &composition))
                 || !checkHR(composition->QueryInterface(IID_PPV_ARGS(&health)))) return false;
         return true;
     }
@@ -48,16 +85,22 @@ std::shared_ptr<OpeningGraphics> graphics;
 std::atomic_bool preparing{false};
 
 DWORD WINAPI prepareGraphics(void *) {
+    bool prepared = false;
     const HRESULT initialized = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     if (checkHR(initialized)) {
         try {
             auto candidate = std::make_shared<OpeningGraphics>();
-            if (candidate->initialize()) std::atomic_store(&graphics, candidate);
+            if (candidate->initialize()) {
+                std::atomic_store(&graphics, candidate);
+                prepared = true;
+            }
         } catch (...) {
             debugPrintf(L"Could not prepare folder-opening graphics\n");
         }
         CoUninitialize();
     }
+    // The next prepare() call tries again after a failure.
+    if (!prepared) preparing.store(false);
     unlockProcess();
     return 0;
 }
@@ -257,7 +300,14 @@ struct FolderOpeningAnimation::State {
         if (!resources) return false;
         if (origin.right <= origin.left || origin.bottom <= origin.top) return false;
         BOOL valid = FALSE;
-        if (!checkHR(resources->health->CheckDeviceState(&valid)) || !valid) return false;
+        if (!checkHR(resources->health->CheckDeviceState(&valid)) || !valid) {
+            // A lost device does not become valid again: withdraw it so that the
+            // next prepare() call creates new devices.
+            auto lost = resources;
+            if (std::atomic_compare_exchange_strong(&graphics, &lost, std::shared_ptr<OpeningGraphics>()))
+                preparing.store(false);
+            return false;
+        }
         WNDCLASSW cls = {};
         cls.hInstance = GetModuleHandleW(nullptr);
         cls.lpfnWndProc = windowProc;
