@@ -6,6 +6,7 @@
 
 ## Unreleased
 
+- Fix navigation button icon colors to match the Windows theme.
 - Extend the massive speedup for Select All and clearing selections of thousands of files in classic Shell views to Windows 11.
 - Fix all folder windows becoming unresponsive during long drag-and-drop copies between FileSpacer windows.
 - Show only the "Open in..." command for the other file manager in folder context menus.
