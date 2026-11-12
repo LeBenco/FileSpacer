@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- Fix HTML anchor tags appearing in the installer changelog.
+
 <a id="142--2026-11-12"></a>
 
 ## 1.4.2 — 2026-11-12
