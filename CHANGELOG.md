@@ -2,6 +2,12 @@
 
 # Changelog
 
+<a id="unreleased"></a>
+
+## Unreleased
+
+- Add a smooth dotted-outline animation when opening folders, with global enable/disable and duration controls in General preferences.
+
 <a id="141--2026-11-09"></a>
 
 ## 1.4.1 — 2026-11-09
