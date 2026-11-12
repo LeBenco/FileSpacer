@@ -142,9 +142,6 @@ struct ShellSelectionClear::Binding : std::enable_shared_from_this<ShellSelectio
         mutable std::atomic<bool> usable{true};
         CComPtr<IShellView> source;CComPtr<IFolderView2> folder;CComPtr<IUnknown> host,manager,notification;
         selectionDetail::RangeBinding range;
-        using Enumerate=void(WINAPI *)(HDSA,PFNDAENUMCALLBACK,void *);
-        using Erase=BOOL(WINAPI *)(HDSA);
-        Enumerate enumerate=nullptr;Erase erase=nullptr;
         PFNDAENUMCALLBACK callback=nullptr;NotifyFunction notify=nullptr;CancelFunction cancel=nullptr;
         HWND window=nullptr;
         SUBCLASSPROC nativeProcedure=nullptr;
@@ -227,7 +224,10 @@ bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
             const size_t index=--construction.filled;
             Entry previous=construction.entries[index];construction.entries[index]={};
             callback(&previous,nullptr);
-            if(!nativeArray(array,snapshot)||snapshot.stride!=16){nativeProcedure=nullptr;return true;}
+            // Every staged entry is released on exit: the original notification
+            // must reach the native handler, which rebuilds its cache. A closed
+            // or replaced view is silenced by the caller.
+            if(!nativeArray(array,snapshot)||snapshot.stride!=16){nativeProcedure=nullptr;return false;}
             if(snapshot.count){nativeProcedure=nullptr;return false;}
         }
     }
@@ -277,11 +277,19 @@ bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
     const unsigned char *reserved=snapshot.data;
     for(int index=static_cast<int>(construction.filled);index<count;++index) {
         selectNativeItem(index);
-        if(!nativeArray(array,snapshot)||snapshot.stride!=16||snapshot.data!=reserved){nativeProcedure=nullptr;return true;}
+        if(!nativeArray(array,snapshot)||snapshot.stride!=16||snapshot.data!=reserved){nativeProcedure=nullptr;return false;}
         if(snapshot.count!=1||!read(snapshot.data,construction.entries[construction.filled])){nativeProcedure=nullptr;return false;}
         ++construction.filled;
         InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);
     }
+    // The replayed indexes are only those of the content counted above. If a
+    // reentrant handler changed it, release the staged entries and let the
+    // original notification rebuild natively. These are external calls: check
+    // the native array again before writing to it.
+    int finalCount=0,finalSelected=0;
+    if(FAILED(folder->ItemCount(SVGIO_ALLVIEW,&finalCount))||finalCount!=count
+            ||FAILED(folder->ItemCount(SVGIO_SELECTION,&finalSelected))||finalSelected!=count)return false;
+    if(!nativeArray(array,snapshot)||snapshot.stride!=16||snapshot.data!=reserved||snapshot.count!=0){nativeProcedure=nullptr;return false;}
     std::memcpy(snapshot.data,construction.entries.data(),static_cast<SIZE_T>(count)*16);
     InterlockedExchange(reinterpret_cast<volatile LONG *>(array),count);
     construction.committed=true;++selectAllCount;
@@ -293,40 +301,44 @@ bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
 
 HRESULT ShellSelectionClear::Binding::purgeArray(HDSA array,int selected,const std::function<bool()> &current,bool *applied)const {
         using namespace selectionDetail;const Image &module=image();
-        if(module.clearViaCount&&(reinterpret_cast<ULONG_PTR>(array)%alignof(LONG)!=0||!writable(array,sizeof(LONG))))return S_FALSE;
+        if(reinterpret_cast<ULONG_PTR>(array)%alignof(LONG)!=0||!writable(array,sizeof(LONG)))return S_FALSE;
         // Same DSA implementation and callback as Shell32. Finish the purge
         // phase even if callback releases reenter. Never retry after mutation.
-        if(module.manualEnumeration){ArraySnapshot snapshot;
-            if(!snapshotArray(array,module.dataOffset,module.strideOffset,snapshot)||snapshot.count!=selected||snapshot.stride!=16||!snapshot.data
-                    ||!writable(snapshot.data,static_cast<SIZE_T>(selected)*snapshot.stride))return S_FALSE;
-            const unsigned char *verified=snapshot.data;int verifiedCount=selected;
-            for(int index=0;index<snapshot.count;++index){
-                if(!callback(snapshot.data+static_cast<SIZE_T>(index)*snapshot.stride,nullptr))break;
-                if(!current())return E_ABORT;
-                IUnknown *sameManager=nullptr;HDSA sameArray=nullptr;
-                if(!read(reinterpret_cast<unsigned char *>(host.p)+module.fields[ManagerOffset],sameManager)||sameManager!=manager.p
-                        ||!read(reinterpret_cast<unsigned char *>(manager.p)+module.fields[ArrayOffset],sameArray)||sameArray!=array
-                        ||!snapshotArray(array,module.dataOffset,module.strideOffset,snapshot)||snapshot.count<0
-                        ||(snapshot.count>0&&(snapshot.stride!=16||!snapshot.data)))return E_ABORT;
-                if(snapshot.count>0&&(snapshot.data!=verified||snapshot.count>verifiedCount)){
-                    if(!writable(snapshot.data,static_cast<SIZE_T>(snapshot.count)*snapshot.stride))return E_ABORT;
-                    verified=snapshot.data;verifiedCount=snapshot.count;
-                }
+        ArraySnapshot snapshot;
+        if(!snapshotArray(array,module.dataOffset,module.strideOffset,snapshot)||snapshot.count!=selected||snapshot.stride!=16||!snapshot.data
+                ||!writable(snapshot.data,static_cast<SIZE_T>(selected)*snapshot.stride))return S_FALSE;
+        const auto owned=[&]{IUnknown *sameManager=nullptr;HDSA sameArray=nullptr;
+            return read(reinterpret_cast<unsigned char *>(host.p)+module.fields[ManagerOffset],sameManager)&&sameManager==manager.p
+                &&read(reinterpret_cast<unsigned char *>(manager.p)+module.fields[ArrayOffset],sameArray)&&sameArray==array;};
+        const unsigned char *verified=snapshot.data;int verifiedCount=selected;
+        // From the first released entry on, the continuation no longer decides
+        // anything here: the native array must never stay published with
+        // released entries. An entry buffer that cannot be followed ends the
+        // enumeration, and the count is still reset. Only the loss of the
+        // array itself returns at once: nothing is left to write to.
+        bool complete=true;
+        // A view destroyed by a reentrant release has nothing left to finish
+        // here: its teardown is native, and its array may be gone with it.
+        const HWND view=window;
+        const auto destroyed=[&]{return view&&!IsWindow(view);};
+        for(int index=0;index<snapshot.count;++index){
+            if(!callback(snapshot.data+static_cast<SIZE_T>(index)*snapshot.stride,nullptr))break;
+            if(destroyed())return E_ABORT;
+            if(!owned()||!snapshotArray(array,module.dataOffset,module.strideOffset,snapshot))return E_ABORT;
+            if(snapshot.count<0||(snapshot.count>0&&(snapshot.stride!=16||!snapshot.data))){complete=false;break;}
+            if(snapshot.count>0&&(snapshot.data!=verified||snapshot.count>verifiedCount)){
+                if(!writable(snapshot.data,static_cast<SIZE_T>(snapshot.count)*snapshot.stride)){complete=false;break;}
+                verified=snapshot.data;verifiedCount=snapshot.count;
             }
-        }else enumerate(array,callback,nullptr);
-        BOOL erased=TRUE;
-        if(module.clearViaCount){
-            // Qualified internal data write, not a public API contract.
-            // Public native clear then reaches its own zero-count purge, using
-            // its own allocator and a direct, CFG-compatible internal call.
-            if(!current())return E_ABORT;
-            HDSA same=nullptr;IUnknown *sameManager=nullptr;
-            if(!read(reinterpret_cast<unsigned char *>(host.p)+module.fields[ManagerOffset],sameManager)||sameManager!=manager.p
-                    ||!read(reinterpret_cast<unsigned char *>(manager.p)+module.fields[ArrayOffset],same)||same!=array)return E_ABORT;
-            InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);
-        }else erased=erase(array);
+        }
+        // Qualified internal data write, not a public API contract.
+        // Public native clear then reaches its own zero-count purge, using
+        // its own allocator and a direct, CFG-compatible internal call.
+        const bool live=current();
+        if(destroyed()||!owned())return E_ABORT;
+        InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);
+        if(!live||!complete)return E_ABORT;
         if(applied)*applied=true;
-        if(!erased)return E_FAIL;
         return S_OK;
 }
 
@@ -389,6 +401,7 @@ LRESULT CALLBACK ShellSelectionClear::Binding::procedure(HWND window,UINT messag
 }
 
 void initializeShellSelectionClear(const wchar_t *cacheRoot,bool background) { selectionDetail::initialize(cacheRoot,background); }
+void stopShellSelectionClear() { selectionDetail::shutdown(); }
 void ShellSelectionClear::reset(){auto previous=std::move(binding);if(previous)previous->detach();}
 bool ShellSelectionClear::accelerated()const {const auto value=binding;return value && value->usable.load();}
 bool ShellSelectionClear::acceleratesSelectAll()const {const auto value=binding;return value && value->usable.load() && value->nativeProcedure;}
@@ -424,12 +437,8 @@ uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value
         void *rawNotification=nullptr;
         if(!current()||FAILED(source->QueryInterface(notification,&rawNotification)))return;
         value->notification.Attach(static_cast<IUnknown *>(rawNotification));
-        if(!current()||!read(value->notification.p,table)||table!=module.base+module.fields[NotifyTable]
-                ||(!module.manualEnumeration&&(!module.enumerate||!module.erase))){
-            return;}
+        if(!current()||!read(value->notification.p,table)||table!=module.base+module.fields[NotifyTable])return;
         value->callback=reinterpret_cast<PFNDAENUMCALLBACK>(module.base+module.fields[Callback]);
-        value->enumerate=reinterpret_cast<Binding::Enumerate>(module.enumerate);
-        value->erase=reinterpret_cast<Binding::Erase>(module.erase);
         value->notify=reinterpret_cast<NotifyFunction>(module.base+module.fields[Notify]);
         value->cancel=reinterpret_cast<CancelFunction>(module.base+module.fields[Cancel]);
         const bool hasWindow=SUCCEEDED(source->GetWindow(&value->window))&&current();
@@ -470,7 +479,9 @@ uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value
                 ||!read(array,count)||count!=selected)return reject();
         const HRESULT purged=value->purgeArray(array,selected,current,applied);
         if(purged==S_FALSE)return reject();
-        if(FAILED(purged))return purged;
+        // Entries were released before this failure: the binding is not used
+        // again for this view, whatever the caller does with the result.
+        if(FAILED(purged)){value->usable.store(false);return purged;}
         if(!current())return E_ABORT;
         // The native range owns only selected indexes. Clear it after releasing
         // Shell subscriptions and before public cleanup; otherwise classic free
@@ -1130,19 +1141,26 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
             planned = result == S_OK;
             if (!planned) { deselect.clear(); select.clear(); }
         }
+        // Selection, focus and scroll are distinct parts. A failed deselection
+        // abandons the selection only: it is never completed over a stale one,
+        // and focus and scroll are still restored below.
+        bool deselected = true;
         if (!planned) {
             // Providers without a usable selection enumeration keep the original path.
             result = clear ? clear->clear(view, current) : view->SelectItem(nullptr, SVSI_DESELECTOTHERS);
             if (!current()) return E_ABORT;
-            if (FAILED(result)) return result;
+            // Refused during a reentrant global selection: unchanged, nothing else is attempted.
+            if (result == E_PENDING) return result;
+            if (FAILED(result)) { record(result); deselected = false; }
         } else {
             for (const auto &item : deselect) {
                 result = view->SelectItem(item.get(), SVSI_NOTAKEFOCUS);
                 if (!current()) return E_ABORT;
-                if (FAILED(result)) return result;
+                if (FAILED(result)) { record(result); deselected = false; break; }
             }
         }
-        if (!planned || selectedCount == 0)
+        if (!deselected) select.clear();
+        else if (!planned || selectedCount == 0)
             for (const auto &item : selectedItems) select.push_back(item);
         for (const auto item : select) {
             record(view->SelectItem(item, SVSI_SELECT | SVSI_NOTAKEFOCUS));
