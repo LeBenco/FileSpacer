@@ -231,7 +231,43 @@ bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
             if(snapshot.count){nativeProcedure=nullptr;return false;}
         }
     }
-    {
+    const auto selectNativeItem=[&](int index) {
+        NMLISTVIEW item=notice;item.iItem=index;item.uOldState=0;item.uNewState=LVIS_SELECTED;item.uChanged=LVIF_STATE;
+        nativeProcedure(window,WM_NOTIFY,item.hdr.idFrom,reinterpret_cast<LPARAM>(&item),0,nativeData);
+    };
+    if(module.nativeReservation) {
+        auto *growth=reinterpret_cast<volatile LONG *>(reinterpret_cast<unsigned char *>(array)+module.growthOffset);
+        LONG capacity=0,previous=0;
+        if(!read(reinterpret_cast<unsigned char *>(array)+module.capacityOffset,capacity)||capacity<0
+                ||!read(const_cast<const LONG *>(growth),previous)||previous<=0||!writable(const_cast<LONG *>(growth),sizeof(LONG)))return false;
+        if(capacity<count) {
+            auto *capacityField=reinterpret_cast<volatile LONG *>(reinterpret_cast<unsigned char *>(array)+module.capacityOffset);
+            if(!writable(const_cast<LONG *>(capacityField),sizeof(LONG)))return false;
+            struct Growth {
+                Binding &owner;HDSA array;volatile LONG *field,*capacityField;LONG previous,capacity;const unsigned char *data;
+                Growth(Binding &binding,HDSA selected,const ArraySnapshot &snapshot)
+                    :owner(binding),array(selected),field(nullptr),capacityField(nullptr),previous(0),capacity(0),data(snapshot.data){}
+                ~Growth(){ArraySnapshot now;LONG reserved=0;if(owner.nativeArray(array,now)){
+                    InterlockedExchange(field,previous);
+                    if(now.data==data&&read(const_cast<const LONG *>(capacityField),reserved)&&reserved==0)InterlockedExchange(capacityField,capacity);
+                }}
+            } restore{*this,array,snapshot};
+            restore.field=growth;restore.capacityField=capacityField;restore.previous=previous;restore.capacity=capacity;
+            // Force the native allocation branch even if a smaller buffer
+            // remains. Restore its capacity if allocation fails; only Windows
+            // reallocates the buffer and publishes its actual new capacity.
+            InterlockedExchange(capacityField,0);
+            InterlockedExchange(growth,count);
+            selectNativeItem(0);
+            if(!nativeArray(array,snapshot)||snapshot.stride!=16||snapshot.count!=1||!snapshot.data
+                    ||!read(snapshot.data,construction.entries[0])){nativeProcedure=nullptr;return false;}
+            construction.filled=1;
+            InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);
+            if(!read(reinterpret_cast<unsigned char *>(array)+module.capacityOffset,capacity)||capacity<count)return false;
+        }
+        if(!nativeArray(array,snapshot)||snapshot.count!=0||snapshot.stride!=16||!snapshot.data
+                ||!writable(snapshot.data,static_cast<SIZE_T>(count)*16))return false;
+    }else{
         struct EmptyReservation {HDSA array;~EmptyReservation(){InterlockedExchange(reinterpret_cast<volatile LONG *>(array),0);}} reset{array};
         const Entry empty;
         for(int i=0;i<count;++i)if(insert(array,INT_MAX,&empty)<0)return false;
@@ -239,9 +275,8 @@ bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
                 ||!writable(snapshot.data,static_cast<SIZE_T>(count)*16))return false;
     }
     const unsigned char *reserved=snapshot.data;
-    for(int index=0;index<count;++index) {
-        NMLISTVIEW item=notice;item.iItem=index;item.uOldState=0;item.uNewState=LVIS_SELECTED;item.uChanged=LVIF_STATE;
-        nativeProcedure(window,WM_NOTIFY,item.hdr.idFrom,reinterpret_cast<LPARAM>(&item),0,nativeData);
+    for(int index=static_cast<int>(construction.filled);index<count;++index) {
+        selectNativeItem(index);
         if(!nativeArray(array,snapshot)||snapshot.stride!=16||snapshot.data!=reserved){nativeProcedure=nullptr;return true;}
         if(snapshot.count!=1||!read(snapshot.data,construction.entries[construction.filled])){nativeProcedure=nullptr;return false;}
         ++construction.filled;
@@ -405,7 +440,7 @@ uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value
                     &&value->nativeData==reinterpret_cast<ULONG_PTR>(value->host.p)-module.fields[HostOffset]) {
                 value->nativeProcedure=procedure;
                 value->registeredProcedure=procedure;
-                value->insert=reinterpret_cast<decltype(value->insert)>(module.base+module.fields[NativeInsert]);
+                if(!module.nativeReservation)value->insert=reinterpret_cast<decltype(value->insert)>(module.base+module.fields[NativeInsert]);
                 if(!SetWindowSubclass(value->window,Binding::procedure,Binding::selectionSubclassId,reinterpret_cast<DWORD_PTR>(value.get())))
                     value->nativeProcedure=nullptr;
             }
