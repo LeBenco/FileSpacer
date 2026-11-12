@@ -23,7 +23,7 @@ FileSpacer stawia na lekkość i przejrzystość. Aby ograniczyć gromadzenie ok
 
 **Instalacja:**
 
-- **Instalacja ręczna:** pobierz i uruchom <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.4.1/FileSpacer-1.4.1-install.exe" id="last-release-url">instalator najnowszej wersji</a>.
+- **Instalacja ręczna:** pobierz i uruchom <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.4.2/FileSpacer-1.4.2-install.exe" id="last-release-url">instalator najnowszej wersji</a>.
 - **WinGet:** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (terminal uruchomiony jako administrator): `choco install filespacer -y`
 

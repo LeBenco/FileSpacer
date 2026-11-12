@@ -24,7 +24,7 @@ O FileSpacer privilegia uma experiência leve e descomplicada. Para limitar a ac
 
 **Instalação:**
 
-- **Instalação manual:** transferir e executar <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.4.1/FileSpacer-1.4.1-install.exe" id="last-release-url">o instalador da versão mais recente</a>.
+- **Instalação manual:** transferir e executar <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.4.2/FileSpacer-1.4.2-install.exe" id="last-release-url">o instalador da versão mais recente</a>.
 - **WinGet:** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (terminal como administrador): `choco install filespacer -y`
 
