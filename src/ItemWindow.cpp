@@ -109,6 +109,8 @@ static LRESULT CALLBACK toolbarHostProc(
             case WM_NOTIFY:
             case WM_COMMAND:
             case WM_CTLCOLORSTATIC:
+            case WM_USER + 7: // Shell ancestor probing from any descendant: answered here,
+                              // before 0x407 reaches the parent rebar as RB_SETPARENT.
                 return SendMessage(owner, message, wParam, lParam);
             case WM_LBUTTONDOWN: {
                 POINT cursor;
@@ -2291,7 +2293,11 @@ void ItemWindow::validateItem() {
     pending->path = path.m_pData;
     if (checkedLink) {
         if (!checkHR(SHGetIDListFromObject(checkedItem, &pending->idList))
-                || !checkHR(saveValidationLink(checkedLink, pending->linkState))) return;
+                || !checkHR(saveValidationLink(checkedLink, pending->linkState))) {
+            // Only the search for a moved target is given up, not the validation.
+            pending->idList.Free();
+            pending->linkState.clear();
+        }
     }
     if (!isWindowOperational() || generation != validationToken) return;
     auto *const work = new std::shared_ptr<ItemValidation>(pending); // The callback frees its reference.
