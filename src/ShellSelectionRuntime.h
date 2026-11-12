@@ -27,7 +27,7 @@ enum Field : unsigned char {OnClear,Select,Purge,Init,QueryService,Notify,Cancel
     Callback,NotifyTable,HostTable,HostQueryObject,ViewQueryObject,ManagerTable,ManagerQI,Retain,Release,
     HostOffset,ManagerOffset,ArrayOffset,NotifySlot,CancelSlot,Procedure,ArrayGetter,
     NativeWindowProcedure,NativeInsertSlot,NativeInsert,NativeSelectOne,NativeNotify,NativeErase,FieldCount};
-enum : DWORD {PurgeHelper=1,PurgeInline=2,HostClearInline=4};
+constexpr DWORD PurgeHelper=1,PurgeInline=2,HostClearInline=4;
 inline bool writable(const void *pointer,SIZE_T length) {
     const auto *cursor=static_cast<const unsigned char *>(pointer);
     if(length>(std::numeric_limits<ULONG_PTR>::max)()-reinterpret_cast<ULONG_PTR>(cursor))return false;
