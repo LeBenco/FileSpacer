@@ -917,6 +917,7 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             // ensure WM_NCCALCSIZE gets called; necessary for custom frame
             SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+            frameApplied = true;
             return 0;
         case MSG_CLOSE_AUTOMATIC:
         case WM_CLOSE: {
@@ -1032,7 +1033,8 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
         case WM_SYSCOLORCHANGE:
         case WM_SETTINGCHANGE:
             if (message == WM_SETTINGCHANGE) {
-                FolderOpeningAnimation::reloadSettings();
+                // The preference has its own notification; only the system policy can have changed.
+                FolderOpeningAnimation::reloadSystemPolicy();
                 if (FolderOpeningAnimation::isEnabled()) FolderOpeningAnimation::prepare();
             }
             invalidateNavigationIconColors();
