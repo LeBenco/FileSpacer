@@ -1723,6 +1723,10 @@ uint32_t FolderWindow::captureViewState(uint32_t mask) {
         const HRESULT result = captureViewScroll(source, current, bytes);
         if (!current()) return captured;
         if (result == S_OK) closingScroll.swap(bytes);
+    } else if (!isWindowOperational() && !preview && enumerationComplete && !searchText.empty()) {
+        // The filtered view has no position to keep, and the stored one is older
+        // than what the user last saw unfiltered: it must not be replayed.
+        closingScrollStale = true;
     }
     FolderViewSettings options = captureOptions(view, getSavedFolderState().view);
     if (columnFillSet) {
@@ -1940,10 +1944,11 @@ void FolderWindow::onDestroy() {
     viewStateDirty(FolderState::Icons);
     persistViewState();
     saveSearchHistory();
-    if (!closingScroll.empty() && !getFolderStateKey().empty()
+    // The viewport is a convenience: failing to keep it never deserves the
+    // storage dialog. An empty one erases the stored position.
+    if ((!closingScroll.empty() || closingScrollStale) && !getFolderStateKey().empty()
             && !getSavedFolderState().firstFailedAt) {
-        auto store = folderStateStore();
-        if (!store || !store->saveViewScroll(getFolderStateKey(), closingScroll)) stateStorageError();
+        if (auto store = folderStateStore()) store->saveViewScroll(getFolderStateKey(), closingScroll);
     }
     searchBox.destroy();
     if (quickAccessIconThread)
@@ -4378,7 +4383,7 @@ void FolderWindow::finishViewInitialization() {
             if (!provisionalBaseline && searchText.empty() && !getFolderStateKey().empty()) {
                 std::vector<uint8_t> bytes;
                 auto store = folderStateStore();
-                if (!store || !store->readViewScroll(getFolderStateKey(), &bytes)) stateStorageError();
+                if (!store || !store->readViewScroll(getFolderStateKey(), &bytes)) bytes.clear();
                 if (!current()) return;
                 if (!bytes.empty()) checkHR(restoreViewScroll(view, bytes, current));
                 if (!current()) return;

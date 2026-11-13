@@ -231,6 +231,7 @@ private:
 
     ClosedWindow reopeningWindow;
     std::vector<uint8_t> closingScroll;
+    bool closingScrollStale = false; // Closed under a filter: the stored viewport is erased.
     bool restoreScrollPending = true; // Once for this window, never on refresh/profile changes.
     bool initialEnumerationReady = false;
     bool viewOptionsApplied = false;
