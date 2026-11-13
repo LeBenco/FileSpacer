@@ -221,7 +221,17 @@ int main(int argc, char **argv) {
         {
             FolderStateStore store(path.c_str()); require(!store.ready(),"future schema accepted");
             require(store.error().find("99")!=std::string::npos && store.error().find("7")!=std::string::npos
-                && store.errorCode()==0 && store.canResetDamagedDatabase(),"unsupported schema diagnosis was lost");
+                && store.errorCode()==0,"newer schema diagnosis was lost");
+            // A database of a later version is intact: it is never offered for a reset.
+            require(store.createdByNewerVersion() && !store.canResetDamagedDatabase(),"newer schema offered for reset");
+#ifdef _WIN32
+            require(!store.resetDamagedDatabase(path.c_str(),L"unused"),"newer schema was reset");
+#endif
+        }
+        rawSQL(path,"PRAGMA user_version=1");
+        {
+            FolderStateStore store(path.c_str()); require(!store.ready(),"unknown old schema accepted");
+            require(!store.createdByNewerVersion() && store.canResetDamagedDatabase(),"unsupported schema diagnosis was lost");
 #ifdef _WIN32
             const int count=MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,path.c_str(),-1,nullptr,0);
             require(count>0,"reset path length");
@@ -236,7 +246,68 @@ int main(int argc, char **argv) {
                 && fresh.lastClosedWindow(&closed) && !closed.sequence,
                 "deletion/recreation differs from clearAll for saved layouts and histories");
             std::cout << "PASS: deletion/recreation and clearAll both remove saved layouts, search and closed-window histories.\n";
+            // The backup still holds every row. Its view settings were made
+            // undecodable above: they alone are left out, so the recovery is partial.
+            const size_t slash=path.find_last_of("\\/");
+            const std::string saved=path+".schema-backup\\"+path.substr(slash==std::string::npos?0:slash+1);
+            require(fresh.recoverFrom(saved.c_str())==FolderStateStore::Recovery::Partial,"recovery verdict with one undecodable view");
+            const FolderState expected=fixture();
+            require(fresh.read("folder",&state) && (state.present&FolderState::Position) && state.x==expected.x
+                && state.y==expected.y && (state.present&FolderState::Icons) && state.icons==expected.icons
+                && !(state.present&FolderState::View),"recovered layout differs, or undecodable settings were kept");
+            require(fresh.readSearchHistory("folder",20,&history) && history.size()==1 && history[0]=="reset-history"
+                && fresh.lastClosedWindow(&closed) && closed.key=="folder","recovery lost search or closed-window history");
+            std::cout << "PASS: recovery keeps every readable row, leaves out undecodable settings alone, and reports it as partial.\n";
 #endif
+        }
+        erase(path);
+        // A former schema whose table already has a recent column: the
+        // migration adds only what is missing, and the database then stores states.
+        rawSQL(path,"CREATE TABLE folder_state(key TEXT PRIMARY KEY NOT NULL,x INTEGER,y INTEGER,width INTEGER,height INTEGER,"
+            "view BLOB,icons BLOB,last_success_at INTEGER NOT NULL DEFAULT 0,first_failed_at INTEGER,maximized INTEGER,"
+            "scroll BLOB) WITHOUT ROWID;"
+            "INSERT INTO folder_state(key,x,y,width,height) VALUES('edited',5,6,700,500);PRAGMA user_version=4;");
+        {
+            FolderStateStore store(path.c_str());FolderState s;
+            require(store.ready(),store.error().c_str());
+            require(store.read("edited",&s) && s.x==5 && s.y==6 && !s.locked,"tolerant migration lost a layout");
+            require(store.save("later",fixture(),FolderState::All) && store.read("later",&s)
+                && s.x==fixture().x,"tolerantly migrated database does not store new states");
+            std::cout << "PASS: a schema that already has a recent column migrates and stores new states.\n";
+        }
+        erase(path);
+        // A damaged page stops a scan: the rows on both sides of it are kept.
+        {
+            const std::string damaged=path+".damaged";erase(damaged);
+            {
+                FolderStateStore source(damaged.c_str());require(source.ready(),source.error().c_str());
+                FolderState filler=fixture();filler.icons.assign(1500,0x5a);
+                for(int index=0;index<300;++index) {
+                    char key[32];std::snprintf(key,sizeof(key),"row-%04d",index);
+                    require(source.save(key,filler,FolderState::All),"create recovery fixture");
+                }
+            }
+            rawSQL(damaged,"PRAGMA wal_checkpoint(TRUNCATE)");
+            FILE *file=std::fopen(damaged.c_str(),"r+b");require(file!=nullptr,"open recovery fixture");
+            require(std::fseek(file,0,SEEK_END)==0,"measure recovery fixture");
+            const long pages=std::ftell(file)/4096;
+            require(pages>30,"recovery fixture is too small to damage in the middle");
+            const std::vector<char> zeros(4096*3,0);
+            require(std::fseek(file,(pages/2)*4096,SEEK_SET)==0
+                && std::fwrite(zeros.data(),1,zeros.size(),file)==zeros.size(),"damage recovery fixture");
+            std::fclose(file);
+            FolderStateStore rebuilt(path.c_str());require(rebuilt.ready(),rebuilt.error().c_str());
+            require(rebuilt.recoverFrom(damaged.c_str())==FolderStateStore::Recovery::Partial,"recovery verdict on a damaged page");
+            int recovered=0;FolderState s;
+            for(int index=0;index<300;++index) {
+                char key[32];std::snprintf(key,sizeof(key),"row-%04d",index);
+                require(rebuilt.read(key,&s),"rebuilt database cannot be read");
+                if(s.present) { ++recovered; require(s.icons.size()==1500 && s.icons[0]==0x5a,"recovered row was altered"); }
+            }
+            require(recovered>0 && recovered<300,"a damaged page lost everything or nothing");
+            require(rebuilt.save("after",fixture(),FolderState::All),"rebuilt database does not store new states");
+            std::cout << "PASS: recovery from a damaged page keeps " << recovered << " of 300 rows, unaltered, in a usable database.\n";
+            erase(damaged);
         }
         erase(path);
         rawSQL(path,"CREATE TABLE folder_state(key TEXT PRIMARY KEY NOT NULL,x INTEGER,y INTEGER,width INTEGER,height INTEGER,"
