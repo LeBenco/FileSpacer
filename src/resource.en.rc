@@ -184,6 +184,7 @@ BEGIN
   IDS_UNLOCK_WINDOW_STATE "Unlock window state"
   IDS_WINDOW_STATE_LOCKED "Window state locked. Layout changes remain temporary."
   IDS_WINDOW_STATE_UNLOCKED "Window state not locked."
+  IDS_SYMBOLS_DOWNLOADED "FileSpacer downloaded a Microsoft symbol file to speed up the handling of large folders (a thousand items or more). This download can be turned off in Settings."
   IDS_DISABLE_STATE_LOCK_CONFIRM "Disabling this feature will delete all window state locks. Windows will resume saving their state normally. Do you want to continue?"
 END
 

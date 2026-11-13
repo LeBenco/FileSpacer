@@ -184,6 +184,7 @@ BEGIN
   IDS_UNLOCK_WINDOW_STATE "Fensterzustand entsperren"
   IDS_WINDOW_STATE_LOCKED "Fensterzustand gesperrt. Layoutänderungen bleiben vorübergehend."
   IDS_WINDOW_STATE_UNLOCKED "Fensterzustand nicht gesperrt."
+  IDS_SYMBOLS_DOWNLOADED "FileSpacer hat eine Microsoft-Symboldatei heruntergeladen, um den Umgang mit großen Ordnern (ab etwa tausend Elementen) zu beschleunigen. Dieser Download lässt sich in den Einstellungen deaktivieren."
   IDS_DISABLE_STATE_LOCK_CONFIRM "Beim Deaktivieren dieser Funktion werden alle Sperren von Fensterzuständen gelöscht. Fenster speichern ihren Zustand anschließend wieder wie gewohnt. Möchten Sie fortfahren?"
 END
 

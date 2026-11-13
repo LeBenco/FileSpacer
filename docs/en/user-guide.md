@@ -179,6 +179,8 @@ FileSpacer has no telemetry, usage tracking or advertising. Crash reports are ne
 
 Updates contact GitHub, which receives the IP address and application version, but no file paths or folder state.
 
+To speed up the handling of large folders (a thousand items or more), FileSpacer downloads symbol files from Microsoft, which receives the IP address and the version of the Windows components concerned, but no file paths or folder state. A notification reports each download, which can be turned off under **Settings > Integration**.
+
 Network-drive credentials are handled directly by Windows. FileSpacer neither reads nor stores them.
 
 An Everything search sends the query and, when limited to a folder, its path to the local Everything application.

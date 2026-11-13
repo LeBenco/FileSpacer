@@ -194,6 +194,8 @@ FileSpacer nie zawiera telemetrii, śledzenia użycia ani reklam. Raporty awarii
 
 Aktualizacje łączą się z GitHubem, który otrzymuje adres IP i wersję aplikacji, ale nie ścieżki plików ani stan folderów.
 
+Aby przyspieszyć obsługę dużych folderów (od około tysiąca elementów), FileSpacer pobiera pliki symboli od Microsoftu, który otrzymuje adres IP i wersję odpowiednich składników systemu Windows, ale nie ścieżki plików ani stan folderów. O każdym pobraniu informuje powiadomienie; pobieranie można wyłączyć w **Ustawienia > Integracja**.
+
 Poświadczeniami dysków sieciowych zarządza bezpośrednio Windows. FileSpacer ich nie odczytuje ani nie zapisuje.
 
 Wyszukiwanie Everything przekazuje zapytanie i, jeśli jest ograniczone do folderu, jego ścieżkę do lokalnej aplikacji Everything.

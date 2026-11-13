@@ -2,7 +2,7 @@
 
 # Polityka prywatności
 
-Bez telemetrii, śledzenia użycia i reklam. Sprawdzanie aktualizacji łączy się z GitHub. Cotygodniowe sprawdzanie jest opcjonalne i domyślnie wyłączone. Pobieranie i instalacja wymagają potwierdzenia.
+Bez telemetrii, śledzenia użycia i reklam. Sprawdzanie aktualizacji łączy się z GitHub. Cotygodniowe sprawdzanie jest opcjonalne i domyślnie wyłączone. Pobieranie i instalacja wymagają potwierdzenia. Aby przyspieszyć obsługę dużych folderów, FileSpacer pobiera pliki symboli od Microsoftu; pobieranie jest opcjonalne i domyślnie włączone.
 
 [Szczegóły w instrukcji użytkownika](user-guide.md#privacy).
 

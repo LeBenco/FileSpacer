@@ -206,6 +206,7 @@ SETTINGS_BOOL_VALUE(KeepSelectionOnActivate, L"KeepSelectionOnActivate", DEFAULT
 SETTINGS_BOOL_VALUE(LiveNameSearch, L"LiveNameSearch", DEFAULT_LIVE_NAME_SEARCH)
 SETTINGS_BOOL_VALUE(EverythingEnabled, L"EverythingEnabled", false)
 SETTINGS_BOOL_VALUE(PeekEnabled, L"PeekEnabled", false)
+SETTINGS_BOOL_VALUE(SelectionSymbolsDownload, L"SelectionSymbolsDownload", true)
 SETTINGS_STRING_VALUE(EverythingPath, REG_SZ, L"EverythingPath", L"")
 
 DWORD getOpeningAnimationDuration() {

@@ -392,7 +392,8 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         }
         else
 #endif
-            initializeShellSelectionClear();
+            // Without the download, only a decision already in the cache is used.
+            initializeShellSelectionClear(nullptr, settings::getSelectionSymbolsDownload());
     }
 
     FSExecuteFactory executeFactory;

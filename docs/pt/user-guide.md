@@ -194,6 +194,8 @@ O FileSpacer não inclui telemetria, acompanhamento da utilização nem publicid
 
 As atualizações contactam o GitHub, que recebe o endereço IP e a versão da aplicação, mas nenhum caminho de ficheiro ou estado de pasta.
 
+Para acelerar a gestão de pastas grandes (a partir de mil elementos), o FileSpacer transfere ficheiros de símbolos da Microsoft, que recebe o endereço IP e a versão dos componentes do Windows em causa, mas nenhum caminho de ficheiro ou estado de pasta. Uma notificação assinala cada transferência, que pode ser desativada em **Definições > Integração**.
+
 As credenciais das unidades de rede são geridas diretamente pelo Windows. O FileSpacer não as lê nem guarda.
 
 Uma pesquisa do Everything envia a consulta e, quando limitada a uma pasta, o respetivo caminho para a aplicação Everything local.

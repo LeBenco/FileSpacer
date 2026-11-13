@@ -184,6 +184,7 @@ BEGIN
   IDS_UNLOCK_WINDOW_STATE "Desbloquear el estado de la ventana"
   IDS_WINDOW_STATE_LOCKED "Estado de la ventana bloqueado. Los cambios de disposición son temporales."
   IDS_WINDOW_STATE_UNLOCKED "Estado de la ventana no bloqueado."
+  IDS_SYMBOLS_DOWNLOADED "FileSpacer ha descargado un archivo de símbolos de Microsoft para acelerar el manejo de carpetas grandes (a partir de mil elementos). Esta descarga se puede desactivar en la configuración."
   IDS_DISABLE_STATE_LOCK_CONFIRM "Al desactivar esta función se eliminarán todos los bloqueos del estado de las ventanas. Las ventanas volverán a guardar su estado normalmente. ¿Quieres continuar?"
 END
 

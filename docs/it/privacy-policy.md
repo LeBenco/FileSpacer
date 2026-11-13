@@ -2,7 +2,7 @@
 
 # Informativa sulla privacy
 
-Nessuna telemetria, monitoraggio dell’utilizzo o pubblicità. I controlli degli aggiornamenti contattano GitHub. Quelli settimanali sono facoltativi e disattivati per impostazione predefinita. Scaricamento e installazione richiedono conferma.
+Nessuna telemetria, monitoraggio dell’utilizzo o pubblicità. I controlli degli aggiornamenti contattano GitHub. Quelli settimanali sono facoltativi e disattivati per impostazione predefinita. Scaricamento e installazione richiedono conferma. Per velocizzare la gestione delle cartelle grandi, FileSpacer scarica file di simboli da Microsoft; lo scaricamento è facoltativo e attivato per impostazione predefinita.
 
 [Dettagli nella guida utente](user-guide.md#privacy).
 

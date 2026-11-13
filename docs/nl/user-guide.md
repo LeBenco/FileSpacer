@@ -194,6 +194,8 @@ FileSpacer bevat geen telemetrie, gebruiksregistratie of advertenties. Crashrapp
 
 Updates maken verbinding met GitHub, dat het IP-adres en de toepassingsversie ontvangt, maar geen bestandspaden of mapstatus.
 
+Om grote mappen (vanaf ongeveer duizend items) sneller te verwerken downloadt FileSpacer symboolbestanden van Microsoft, dat het IP-adres en de versie van de betrokken Windows-onderdelen ontvangt, maar geen bestandspaden of mapstatus. Een melding meldt elke download; die kan worden uitgeschakeld onder **Instellingen > Integratie**.
+
 Windows beheert de aanmeldgegevens voor netwerkstations rechtstreeks. FileSpacer leest of bewaart deze niet.
 
 Een Everything-zoekopdracht geeft de zoektekst en, bij een zoekopdracht binnen een map, het pad door aan de lokale Everything-toepassing.

@@ -19,7 +19,7 @@ FileSpacer prioritizes a lightweight and uncluttered experience. To address the 
 
 <a id="system--languages"></a>**System & Languages:** Windows 10 or later, x64. Available in ten languages: English, French, German, Italian, Spanish, Portuguese (Portugal), Greek, Polish, Dutch and Ukrainian.
 
-<a id="privacy"></a>**Privacy:** **No telemetry, usage tracking or advertising**. Update checks contact GitHub. Weekly checks are optional and off by default. Downloading and installing require confirmation. [Privacy policy](docs/en/user-guide.md#privacy).
+<a id="privacy"></a>**Privacy:** **No telemetry, usage tracking or advertising**. Update checks contact GitHub. Weekly checks are optional and off by default. Downloading and installing require confirmation. Symbol files that speed up the handling of large folders are downloaded from Microsoft; this is optional and on by default. [Privacy policy](docs/en/user-guide.md#privacy).
 
 **Install:**
 

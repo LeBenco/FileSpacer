@@ -194,6 +194,8 @@ FileSpacer ne contient ni télémétrie, ni suivi d’usage, ni publicité. Aucu
 
 Les mises à jour contactent GitHub, qui reçoit l’adresse IP et la version de l’application, mais aucun chemin de fichier ni état de dossier.
 
+Pour accélérer la gestion des gros dossiers (à partir du millier d’éléments), FileSpacer télécharge des fichiers de symboles auprès de Microsoft, qui reçoit l’adresse IP et la version des composants Windows concernés, mais aucun chemin de fichier ni état de dossier. Une notification signale chaque téléchargement, qui se désactive dans **Paramètres > Intégration**.
+
 Les identifiants d’accès aux lecteurs réseau sont gérés directement par Windows. FileSpacer ne les lit ni ne les enregistre.
 
 Une recherche Everything transmet la requête et, lorsqu’elle est limitée au dossier, son chemin à l’application Everything locale.

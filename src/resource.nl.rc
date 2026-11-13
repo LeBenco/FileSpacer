@@ -184,6 +184,7 @@ BEGIN
   IDS_UNLOCK_WINDOW_STATE "Vensterstatus ontgrendelen"
   IDS_WINDOW_STATE_LOCKED "Vensterstatus vergrendeld. Wijzigingen in de indeling zijn tijdelijk."
   IDS_WINDOW_STATE_UNLOCKED "Vensterstatus niet vergrendeld."
+  IDS_SYMBOLS_DOWNLOADED "FileSpacer heeft een Microsoft-symboolbestand gedownload om grote mappen (vanaf ongeveer duizend items) sneller te verwerken. Deze download kan worden uitgeschakeld in de instellingen."
   IDS_DISABLE_STATE_LOCK_CONFIRM "Als u deze functie uitschakelt, worden alle vensterstatusvergrendelingen verwijderd. Vensters slaan hun status weer normaal op. Wilt u doorgaan?"
 END
 

@@ -194,6 +194,8 @@ FileSpacer no incluye telemetría, seguimiento de uso ni publicidad. Nunca se en
 
 Las actualizaciones contactan con GitHub, que recibe la dirección IP y la versión de la aplicación, pero no rutas de archivos ni estados de carpetas.
 
+Para acelerar el manejo de carpetas grandes (a partir de mil elementos), FileSpacer descarga archivos de símbolos de Microsoft, que recibe la dirección IP y la versión de los componentes de Windows correspondientes, pero no rutas de archivos ni estados de carpetas. Una notificación informa de cada descarga, que se puede desactivar en **Configuración > Integración**.
+
 Windows gestiona directamente las credenciales de las unidades de red. FileSpacer no las lee ni las guarda.
 
 Una búsqueda de Everything envía la consulta y, si se limita a una carpeta, su ruta a la aplicación local de Everything.

@@ -229,6 +229,11 @@ publishes the cache. Concurrent processes share a single producer and receive
 cache-publication notifications without polling the UI. A watchdog terminates
 only the disposable worker after three minutes.
 
+The download is subject to the **Settings > Integration** option, on by default.
+Without it no worker is started and only a decision already in the cache is
+used. When a discovery started by a process ends in an adopted decision, that
+process reports the download once in the notification area.
+
 This optimization uses private COM interfaces, a native entry callback and an
 undocumented selection-array count write. Public native clear performs its own
 allocation cleanup; FileSpacer does not free another component's allocation.

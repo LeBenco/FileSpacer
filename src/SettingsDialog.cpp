@@ -893,6 +893,8 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
     switch (message) {
         case WM_INITDIALOG:
             CheckDlgButton(hwnd, IDC_PEEK_ENABLED, settings::getPeekEnabled() ? BST_CHECKED : BST_UNCHECKED);
+            CheckDlgButton(hwnd, IDC_SELECTION_SYMBOLS,
+                settings::getSelectionSymbolsDownload() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_EVERYTHING_ENABLED,
                 settings::getEverythingEnabled() ? BST_CHECKED : BST_UNCHECKED);
             SetDlgItemTextW(hwnd, IDC_EVERYTHING_PATH, settings::getEverythingPath().get());
@@ -948,6 +950,7 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::setEverythingPath(path.data());
                 settings::setEverythingEnabled(!!IsDlgButtonChecked(hwnd, IDC_EVERYTHING_ENABLED));
                 settings::setPeekEnabled(!!IsDlgButtonChecked(hwnd, IDC_PEEK_ENABLED));
+                settings::setSelectionSymbolsDownload(!!IsDlgButtonChecked(hwnd, IDC_SELECTION_SYMBOLS));
                 const LRESULT scope = SendDlgItemMessageW(hwnd, IDC_EVERYTHING_SCOPE, CB_GETCURSEL, 0, 0);
                 settings::setEverythingScope(scope == 1 ? settings::EverythingScope::Everywhere
                     : settings::EverythingScope::Folder);
@@ -995,6 +998,7 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             }
             if ((LOWORD(wParam) == IDC_EVERYTHING_ENABLED && HIWORD(wParam) == BN_CLICKED)
                     || (LOWORD(wParam) == IDC_PEEK_ENABLED && HIWORD(wParam) == BN_CLICKED)
+                    || (LOWORD(wParam) == IDC_SELECTION_SYMBOLS && HIWORD(wParam) == BN_CLICKED)
                     || (LOWORD(wParam) == IDC_EVERYTHING_SCOPE && HIWORD(wParam) == CBN_SELCHANGE)
                     || (LOWORD(wParam) == IDC_EVERYTHING_PATH && HIWORD(wParam) == EN_CHANGE))
                 PropSheet_Changed(GetParent(hwnd), hwnd);

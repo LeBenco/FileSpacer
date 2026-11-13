@@ -193,6 +193,8 @@ FileSpacer enthält weder Telemetrie noch Nutzungsverfolgung oder Werbung. Abstu
 
 Updates kontaktieren GitHub. Dabei werden IP-Adresse und Anwendungsversion übermittelt, aber keine Dateipfade oder Ordnerzustände.
 
+Um den Umgang mit großen Ordnern (ab etwa tausend Elementen) zu beschleunigen, lädt FileSpacer Symboldateien von Microsoft herunter. Dabei werden IP-Adresse und Version der betreffenden Windows-Komponenten übermittelt, aber keine Dateipfade oder Ordnerzustände. Eine Benachrichtigung meldet jeden Download; er lässt sich unter **Einstellungen > Integration** deaktivieren.
+
 Anmeldedaten für Netzlaufwerke werden direkt von Windows verwaltet. FileSpacer liest oder speichert sie nicht.
 
 Eine Everything-Suche übergibt die Suchanfrage und bei einer auf einen Ordner begrenzten Suche dessen Pfad an die lokale Everything-Anwendung.

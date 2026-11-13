@@ -104,6 +104,9 @@ bool setSearchHistoryLimit(DWORD value, LSTATUS *registryError = nullptr);
 bool getEverythingEnabled();
 bool getPeekEnabled();
 void setPeekEnabled(bool value);
+// Whether the Microsoft symbol files of the fast selection may be downloaded.
+bool getSelectionSymbolsDownload();
+void setSelectionSymbolsDownload(bool value);
 void setEverythingEnabled(bool value);
 wstr_ptr getEverythingPath(); // Empty selects automatic detection.
 void setEverythingPath(wchar_t *value);

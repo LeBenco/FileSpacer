@@ -4,9 +4,12 @@
 #include "ShellViewHost.h"
 #include "DPI.h"
 #include "UpdateInstaller.h"
+#include "resource.h"
 #include <dbghelp.h>
 #include <winhttp.h>
 #include <shlwapi.h>
+#include <shellapi.h>
+#include <commctrl.h>
 #include <shldisp.h>
 #include <shdispid.h>
 #include <propkey.h>
@@ -766,8 +769,8 @@ struct DirectoryWatch {
         pending=false;return (result || error==ERROR_NOTIFY_ENUM_DIR) && arm();
     }
 };
-DWORD WINAPI resolve(void *raw) {
-    std::unique_ptr<ResolveContext> context(static_cast<ResolveContext *>(raw));
+// downloaded: a discovery this process started ended in an adopted decision.
+DWORD resolveCapability(ResolveContext *context,bool &downloaded) {
     struct FinishRange {~FinishRange(){rangeFinished.store(true,std::memory_order_release);}} finish;
     bool published=false;
     try {
@@ -776,6 +779,7 @@ DWORD WINAPI resolve(void *raw) {
         const Identity id=identity();
         const std::wstring final=cachePath(context->root,id),negative=final+L".public";
         const std::wstring rangeFinal=rangeCacheFile(final);
+        bool started=false; // This process launched the discovery.
         const auto adopt=[&]() {
             const Image candidate=published?image():Image::discover(final);
             if(!candidate.supported) {
@@ -787,6 +791,7 @@ DWORD WINAPI resolve(void *raw) {
             if(range.supported)publishRange(range);
             if(first){publish(candidate);published=true;}
             if(first||range.supported)notifyWindows(context->uiThread);
+            if(started&&(first||range.supported))downloaded=true;
             // A missing optional range never takes an existing private path
             // away. Its independent immutable publication can arrive later.
             return range.supported||rangeFinal.empty()||savedRangePublic(rangeFinal+L".public")||!context->background;
@@ -809,6 +814,7 @@ DWORD WINAPI resolve(void *raw) {
             if(updateInstalling())throw std::runtime_error("Update installation running");
             child=startWorker(*context);
             if(!child)throw std::runtime_error("Cannot start isolated discovery");
+            started=true;
         }
         for(;;) {
             if(!watching) {
@@ -837,6 +843,53 @@ DWORD WINAPI resolve(void *raw) {
         debugPrintf(L"Shell selection capability resolution ended: %S\n",error.what());
     }
     if(!published)resolution.store(Resolution::Public,std::memory_order_release);return 0;
+}
+LRESULT CALLBACK announcementProc(HWND window,UINT message,WPARAM wParam,LPARAM lParam) {
+    if(message==WM_USER) {
+        const UINT event=LOWORD(lParam);
+        if(event==NIN_BALLOONUSERCLICK||event==NIN_BALLOONTIMEOUT||event==NIN_BALLOONHIDE)PostQuitMessage(0);
+        return 0;
+    }
+    return DefWindowProcW(window,message,wParam,lParam);
+}
+// One notification-area message, like the one of an available update: the
+// symbol download is said once it has served. It stays until it is dismissed,
+// and no longer than the process: stop is the request of shutdown().
+void announceDownload(HANDLE stop) {
+    const HINSTANCE instance=GetModuleHandleW(nullptr);
+    NOTIFYICONDATAW notify={sizeof(notify)};
+    // Nothing to say without the text: a process that carries no resources.
+    if(!LoadStringW(instance,IDS_SYMBOLS_DOWNLOADED,notify.szInfo,_countof(notify.szInfo)))return;
+    WNDCLASSW type={};type.lpfnWndProc=announcementProc;type.hInstance=instance;type.lpszClassName=L"FileSpacer Symbol Notify";
+    if(!RegisterClassW(&type))return;
+    const HWND window=CreateWindowW(type.lpszClassName,L"FileSpacer",0,0,0,0,0,HWND_MESSAGE,nullptr,instance,nullptr);
+    if(window) {
+        notify.uFlags=NIF_INFO|NIF_ICON|NIF_MESSAGE;notify.uCallbackMessage=WM_USER;notify.hWnd=window;
+        notify.dwInfoFlags=NIIF_RESPECT_QUIET_TIME;notify.uVersion=NOTIFYICON_VERSION_4;
+        if(FAILED(LoadIconMetric(instance,MAKEINTRESOURCEW(IDR_APP_ICON),LIM_SMALL,&notify.hIcon)))notify.hIcon=nullptr;
+        if(Shell_NotifyIconW(NIM_ADD,&notify)) {
+            Shell_NotifyIconW(NIM_SETVERSION,&notify);
+            // A notification that reports nothing back is withdrawn after a minute.
+            for(bool shown=true;shown&&MsgWaitForMultipleObjects(1,&stop,FALSE,60000,QS_ALLINPUT)==WAIT_OBJECT_0+1;) {
+                MSG message;
+                while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)) {
+                    if(message.message==WM_QUIT)shown=false;else DispatchMessageW(&message);
+                }
+            }
+            Shell_NotifyIconW(NIM_DELETE,&notify);
+        }
+        if(notify.hIcon)DestroyIcon(notify.hIcon);
+        DestroyWindow(window);
+    }
+    UnregisterClassW(type.lpszClassName,instance);
+}
+DWORD WINAPI resolve(void *raw) {
+    std::unique_ptr<ResolveContext> context(static_cast<ResolveContext *>(raw));
+    bool downloaded=false;
+    resolveCapability(context.get(),downloaded);
+    // After the resolution is over for every reader of its state.
+    if(downloaded)announceDownload(context->stop);
+    return 0;
 }
 void closeFind(HANDLE value) { if(value && value!=INVALID_HANDLE_VALUE)FindClose(value); }
 // Reparse points are neither followed nor removed.
