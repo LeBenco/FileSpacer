@@ -215,6 +215,7 @@ private:
     std::shared_ptr<ShellViewColumns> columnLayout;
     bool columnFillActive() const;
     void loadColumnFill();
+    void captureColumnWeights(FolderViewSettings &view) const;
     void toggleFillColumns();
     void synchronizeColumns();
     void finishColumnResize();

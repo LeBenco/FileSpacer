@@ -167,6 +167,15 @@ int main(int argc, char **argv) {
             require(unknown.fillColumns && (unknown.present & FolderViewSettings::ColumnFill),"unobserved option erased saved choice");
             baseline = enabled.view; current = disabled.view;
             require(!enabled.view.mergeChanges(baseline,current).fillColumns,"explicit column option change was not merged");
+            auto weighted = enabled;
+            weighted.view.present |= FolderViewSettings::ColumnWeights;
+            weighted.view.columnWeights = weighted.view.columns; weighted.view.columnWeights[0].width = 77;
+            require(store.save("column-weights",weighted,FolderState::View),"save column weights");
+            auto resized = weighted.view; resized.columnWeights[0].width = 78;
+            const auto kept = weighted.view.mergeChanges(baseline,current);
+            require((kept.present & FolderViewSettings::ColumnWeights) && kept.columnWeights.size()==1
+                && kept.columnWeights[0].width==77,"unobserved column weights were erased");
+            require(weighted.view.mergeChanges(baseline,resized).columnWeights[0].width==78,"supplied column weights were not merged");
         }
         {
             FolderStateStore store(path.c_str()); FolderState s;
@@ -177,10 +186,15 @@ int main(int argc, char **argv) {
             require(store.read("column-fill-off",&s) && (s.view.present & FolderViewSettings::ColumnFill)
                 && !s.view.fillColumns,"disabled option lost after reopen");
             require(store.read("column-fill-locked",&s) && s.locked && s.view.fillColumns,"locked saved option changed");
+            require(!(s.view.present & FolderViewSettings::ColumnWeights) && s.view.columnWeights.empty(),"earlier view encoding gained column weights");
+            require(store.read("column-weights",&s) && (s.view.present & FolderViewSettings::ColumnWeights) && s.view.fillColumns
+                && s.view.columnWeights.size()==1 && s.view.columnWeights[0].key==s.view.columns[0].key
+                && s.view.columnWeights[0].width==77 && s.view.columns[0].width==220,"column weights lost after reopen");
             rawSQL(path,"UPDATE folder_state SET view=CAST(substr(view,1,length(view)-4)||x'02000000' AS BLOB) WHERE key='column-fill-off'");
             require(!store.read("column-fill-off",&s),"invalid column-option boolean accepted");
-            require(store.remove("column-fill-on") && store.remove("column-fill-off") && store.remove("column-fill-locked"),"column option cleanup");
-            std::cout << "PASS: column option versioning, per-folder choices, reopen, partial writes, lock and provisional merge.\n";
+            require(store.remove("column-fill-on") && store.remove("column-fill-off") && store.remove("column-fill-locked")
+                && store.remove("column-weights"),"column option cleanup");
+            std::cout << "PASS: column option and weight versioning, per-folder choices, reopen, partial writes, lock and provisional merge.\n";
             std::cout << "PASS: data survives closing and reopening the database.\n";
             std::vector<uint8_t> scroll;
             std::vector<uint8_t> expected(48,0);expected.front()=1;expected.back()=6;

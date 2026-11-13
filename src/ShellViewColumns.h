@@ -1,5 +1,6 @@
 #pragma once
 #include <common.h>
+#include "ShellViewSettings.h"
 #include <windows.h>
 #include <commctrl.h>
 #include <shobjidl.h>
@@ -41,6 +42,9 @@ class ShellViewColumns : public std::enable_shared_from_this<ShellViewColumns> {
     int changedColumn = -1, requestedWidth = -1;
     LONG observedWidth = 0;
     std::vector<Column> columns, weights;
+    // Proportions of an earlier session, until a capture tells whether they
+    // were recorded for the columns of this view.
+    std::vector<FolderViewSettings::Column> saved;
 
     bool current() const { return window && IsWindow(window); }
     static int adjacentWidth(const std::vector<Column> &items, size_t index, int proposed) {
@@ -69,6 +73,17 @@ class ShellViewColumns : public std::enable_shared_from_this<ShellViewColumns> {
         }
         const DWORD desired = (style & ~static_cast<DWORD>(HDS_FULLDRAG)) | (deferred ? 0 : originalFullDrag);
         if (desired != style) SetWindowLongPtrW(header, GWL_STYLE, static_cast<LONG_PTR>(desired));
+    }
+    // The widths of a new set of columns are its proportions, unless the saved
+    // ones were recorded for the same columns in the same order.
+    void adopt(const std::vector<Column> &actual) {
+        weights = actual;
+        bool recorded = saved.size() == actual.size();
+        for (size_t i = 0; recorded && i < actual.size(); ++i)
+            recorded = viewSettingsKey(actual[i].key) == saved[i].key;
+        for (size_t i = 0; recorded && i < actual.size(); ++i)
+            weights[i].width = static_cast<int>((std::min)(saved[i].width, 32768u));
+        saved.clear();
     }
     static bool sameKeys(const std::vector<Column> &left, const std::vector<Column> &right) {
         if (left.size() != right.size()) return false;
@@ -223,9 +238,10 @@ public:
         restoreTrackingStyle(oldWindow, oldHeader, fullDrag);
     }
     static std::shared_ptr<ShellViewColumns> attach(IShellView *source, HWND target,
-            UINT message, ULONG_PTR generation) {
+            UINT message, ULONG_PTR generation, std::vector<FolderViewSettings::Column> proportions) {
         auto result = std::make_shared<ShellViewColumns>();
         result->view = source; result->target = target; result->message = message; result->generation = generation;
+        result->saved = std::move(proportions);
         if (!source || FAILED(source->GetWindow(&result->window)) || !result->window
                 || GetWindowThreadProcessId(result->window, nullptr) != GetCurrentThreadId()
                 || !SetWindowSubclass(result->window, procedure, 0, reinterpret_cast<DWORD_PTR>(result.get()))) return {};
@@ -246,6 +262,18 @@ public:
     void acknowledge() { posted = false; }
     void resize() { request(); }
     void setDeferred(bool value) { deferred = value; configureHeaderTracking(); }
+    // The proportions in use, for the saved state; nothing before the first fit.
+    void describe(FolderViewSettings &settings) const {
+        if (weights.empty()) return;
+        settings.columnWeights.clear();
+        for (const auto &weight : weights) {
+            FolderViewSettings::Column column;
+            column.key = viewSettingsKey(weight.key);
+            column.width = static_cast<uint32_t>((std::max)(1, weight.width));
+            settings.columnWeights.push_back(column);
+        }
+        settings.present |= FolderViewSettings::ColumnWeights;
+    }
     bool synchronize() {
         auto keepAlive = shared_from_this();
         posted = false;
@@ -274,7 +302,7 @@ public:
         } else {
             changedColumn = -1;
             requestedWidth = -1;
-            if (!sameKeys(columns, actual)) weights = actual;
+            if (!sameKeys(columns, actual)) adopt(actual);
             columns = actual;
         }
         if (weights.empty()) weights = columns;

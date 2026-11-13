@@ -1670,6 +1670,7 @@ void FolderWindow::synchronizeViewProfile() {
         state->view.present |= FolderViewSettings::ColumnFill;
         state->view.fillColumns = fillColumns;
     }
+    captureColumnWeights(state->view);
     if (!current() || !(state->view.present & FolderViewSettings::Mode)) return;
     // Reuse the complete capture path, including protection of positions that
     // could not yet be restored. A profile change must not trust a partial grid.
@@ -1778,6 +1779,7 @@ uint32_t FolderWindow::captureViewState(uint32_t mask) {
         options.present |= FolderViewSettings::ColumnFill;
         options.fillColumns = fillColumns;
     }
+    captureColumnWeights(options);
     if (!current()) return captured;
     const bool profileMismatch = (options.present & FolderViewSettings::Mode)
         && profileForMode(static_cast<UINT>(options.mode)) != viewProfile;
@@ -2524,6 +2526,17 @@ bool FolderWindow::columnFillActive() const {
     return settings::getDetailsColumnsEnabled() && fillColumns;
 }
 
+// The proportions belong to the fill: without it, the widths alone describe
+// the columns, and a later fill starts from them.
+void FolderWindow::captureColumnWeights(FolderViewSettings &view) const {
+    if (columnLayout) {
+        columnLayout->describe(view);
+    } else if (!columnFillActive()) {
+        view.present &= ~static_cast<uint32_t>(FolderViewSettings::ColumnWeights);
+        view.columnWeights.clear();
+    }
+}
+
 void FolderWindow::loadColumnFill() {
     if (columnFillLoaded || !loadFolderState()) return;
     const auto &state = getSavedFolderState().view;
@@ -2574,7 +2587,10 @@ void FolderWindow::synchronizeColumns() {
         return;
     }
     if (!columnLayout) {
-        auto attached = ShellViewColumns::attach(source, hwnd, MSG_COLUMNS_CHANGED, generation);
+        const FolderViewSettings &saved = getSavedFolderState().view;
+        auto attached = ShellViewColumns::attach(source, hwnd, MSG_COLUMNS_CHANGED, generation,
+            (saved.present & FolderViewSettings::ColumnWeights) ? saved.columnWeights
+                : std::vector<FolderViewSettings::Column>());
         if (!isWindowOperational() || shellView != source || viewGeneration != generation) {
             if (attached) attached->stop();
             return;

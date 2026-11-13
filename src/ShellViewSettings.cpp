@@ -25,7 +25,11 @@ bool sameView(const FolderViewSettings &a, const FolderViewSettings &b) {
             || a.flags != b.flags || a.groupBy != b.groupBy
             || a.groupAscending != b.groupAscending
             || ((a.present & FolderViewSettings::ColumnFill) && a.fillColumns != b.fillColumns)
-            || a.columns.size() != b.columns.size() || a.sort.size() != b.sort.size()) return false;
+            || a.columns.size() != b.columns.size() || a.sort.size() != b.sort.size()
+            || a.columnWeights.size() != b.columnWeights.size()) return false;
+    for (size_t i = 0; i < a.columnWeights.size(); ++i)
+        if (a.columnWeights[i].key != b.columnWeights[i].key
+                || a.columnWeights[i].width != b.columnWeights[i].width) return false;
     for (size_t i = 0; i < a.columns.size(); ++i)
         if (a.columns[i].key != b.columns[i].key || a.columns[i].width != b.columns[i].width) return false;
     for (size_t i = 0; i < a.sort.size(); ++i)
@@ -91,8 +95,9 @@ HRESULT restoreOptions(IFolderView2 *view, const FolderViewSettings &state) {
     // Compare supported parts of a partial capture before changing them.
     if (!state.present) return S_OK;
     FolderViewSettings metadata;
-    metadata.present = state.present & FolderViewSettings::ColumnFill;
+    metadata.present = state.present & (FolderViewSettings::ColumnFill | FolderViewSettings::ColumnWeights);
     metadata.fillColumns = state.fillColumns;
+    metadata.columnWeights = state.columnWeights;
     const FolderViewSettings actual = captureOptions(view, metadata);
     if (sameView(actual, state)) return S_OK;
     HRESULT restored = S_OK;

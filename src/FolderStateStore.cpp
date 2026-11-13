@@ -34,7 +34,9 @@ void appendInt(std::vector<uint8_t> &bytes, uint32_t value) {
 std::vector<uint8_t> encodeView(const FolderViewSettings &view) {
     std::vector<uint8_t> bytes;
     const bool columnFill = (view.present & FolderViewSettings::ColumnFill) != 0;
-    appendInt(bytes, columnFill ? 2 : 1); // Keep the original encoding when no new choice is present.
+    const bool weights = (view.present & FolderViewSettings::ColumnWeights) != 0;
+    // Keep the earliest encoding able to hold what is present.
+    appendInt(bytes, weights ? 3 : columnFill ? 2 : 1);
     appendInt(bytes, view.present);
     appendInt(bytes, static_cast<uint32_t>(view.mode));
     appendInt(bytes, static_cast<uint32_t>(view.iconSize));
@@ -51,7 +53,14 @@ std::vector<uint8_t> encodeView(const FolderViewSettings &view) {
     }
     bytes.insert(bytes.end(), view.groupBy.begin(), view.groupBy.end());
     appendInt(bytes, view.groupAscending ? 1 : 0);
-    if (columnFill) appendInt(bytes, view.fillColumns ? 1 : 0);
+    if (columnFill || weights) appendInt(bytes, view.fillColumns ? 1 : 0);
+    if (weights) {
+        appendInt(bytes, static_cast<uint32_t>(view.columnWeights.size()));
+        for (const auto &column : view.columnWeights) {
+            bytes.insert(bytes.end(), column.key.begin(), column.key.end());
+            appendInt(bytes, column.width);
+        }
+    }
     return bytes;
 }
 
@@ -72,8 +81,8 @@ bool decodeView(const uint8_t *bytes, size_t size, FolderViewSettings *out) {
     };
     FolderViewSettings view;
     uint32_t version, mode, iconSize, count;
-    if (!integer(&version) || (version != 1 && version != 2) || !integer(&view.present)
-            || (view.present & ~(version == 1 ? 31u : 63u)) || !integer(&mode) || !integer(&iconSize)
+    if (!integer(&version) || version < 1 || version > 3 || !integer(&view.present)
+            || (view.present & ~(version == 1 ? 31u : version == 2 ? 63u : 127u)) || !integer(&mode) || !integer(&iconSize)
             || !integer(&view.flags) || !integer(&count) || count > (size-offset)/24)
         return false;
     view.mode = static_cast<int32_t>(mode);
@@ -91,10 +100,16 @@ bool decodeView(const uint8_t *bytes, size_t size, FolderViewSettings *out) {
     uint32_t ascending;
     if (!key(&view.groupBy) || !integer(&ascending) || ascending > 1) return false;
     view.groupAscending = ascending != 0;
-    if (version == 2) {
+    if (version >= 2) {
         uint32_t fill;
         if (!integer(&fill) || fill > 1) return false;
         view.fillColumns = fill != 0;
+    }
+    if (version == 3) {
+        if (!integer(&count) || count > (size-offset)/24) return false;
+        view.columnWeights.resize(count);
+        for (auto &column : view.columnWeights)
+            if (!key(&column.key) || !integer(&column.width)) return false;
     }
     if (offset != size) return false;
     *out = std::move(view);
@@ -110,6 +125,11 @@ FolderViewSettings FolderViewSettings::mergeChanges(const FolderViewSettings &ba
         if (!(present & ColumnFill) || (observed(ColumnFill) && current.fillColumns != baseline.fillColumns))
             merged.fillColumns = current.fillColumns;
         merged.present |= ColumnFill;
+    }
+    // Not read from the view: the window supplies them whenever its columns fill it.
+    if (current.present & ColumnWeights) {
+        merged.columnWeights = current.columnWeights;
+        merged.present |= ColumnWeights;
     }
     if (current.present & Mode) {
         if (!(present & Mode) || (observed(Mode) && current.mode != baseline.mode)) merged.mode = current.mode;
