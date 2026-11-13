@@ -146,6 +146,7 @@ protected:
 	int trackContextMenu(POINT pos, HMENU menu, HWND owner = nullptr);
 
     void openChild(IShellItem *childItem, bool closeSource, const RECT *openingOrigin = nullptr);
+    void openParent(bool closeSource);
 
     virtual IDispatch * getShellViewDispatch();
     void onViewReady();
@@ -181,7 +182,6 @@ private:
     void layoutToolbarRow(int width);
     LRESULT hitTestNCA(POINT cursor);
 
-    void openParent(bool closeSource);
 
     // Activation revalidates the item; a file-system path is checked off the UI
     // thread (and a moved target searched for there), one check in flight per

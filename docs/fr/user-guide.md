@@ -43,7 +43,7 @@ Le menu à côté du titre permet de passer entre les dossiers ouverts et de fer
 | Ctrl+N | Ouvrir le dossier de démarrage choisi dans les paramètres, ou réactiver sa fenêtre, en conservant la fenêtre source. |
 | Ctrl+W | Fermer la fenêtre, y compris depuis l’adresse ou la recherche. |
 | Retour arrière | Remonter au parent en respectant le réglage de conservation de la fenêtre source. |
-| Ctrl+Retour arrière | Ouvrir ou réactiver le parent en conservant toujours la fenêtre source. |
+| Ctrl+Retour arrière | Ouvrir ou réactiver le parent en inversant le réglage de conservation de la fenêtre source. |
 | F4, Ctrl+L ou Alt+D | Sélectionner l’adresse. |
 | F3, Ctrl+E ou Ctrl+F | Placer le curseur dans la recherche. |
 | F5 ou Ctrl+R | Actualiser le dossier, y compris pendant la saisie dans l’adresse ou la recherche. |

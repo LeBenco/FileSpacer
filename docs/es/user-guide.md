@@ -43,7 +43,7 @@ El menú junto al título permite cambiar entre carpetas abiertas y cerrar las v
 | Ctrl+N | Abrir la carpeta inicial elegida en Configuración o activar su ventana existente, manteniendo abierta la de origen. |
 | Ctrl+W | Cerrar la ventana, también desde el campo de dirección o búsqueda. |
 | Retroceso | Abrir la carpeta principal respetando el ajuste para mantener abierta la ventana de origen. |
-| Ctrl+Retroceso | Abrir o activar la carpeta principal manteniendo siempre abierta la ventana de origen. |
+| Ctrl+Retroceso | Abrir o activar la carpeta principal invirtiendo el ajuste de mantener abierta la ventana de origen. |
 | F4, Ctrl+L o Alt+D | Seleccionar la dirección. |
 | F3, Ctrl+E o Ctrl+F | Llevar el foco a la búsqueda. |
 | F5 o Ctrl+R | Actualizar la carpeta, incluso al escribir en la dirección o la búsqueda. |

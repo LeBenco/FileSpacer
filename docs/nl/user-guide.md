@@ -43,7 +43,7 @@ Het menu naast de titel wisselt tussen geopende mappen en sluit bovenliggende ve
 | Ctrl+N | De in Instellingen gekozen startmap openen of het bestaande venster activeren; het bronvenster blijft open. |
 | Ctrl+W | Het venster sluiten, ook vanuit het adres- of zoekveld. |
 | Backspace | De bovenliggende map openen volgens de instelling voor het openhouden van het bronvenster. |
-| Ctrl+Backspace | De bovenliggende map openen of activeren en het bronvenster altijd openhouden. |
+| Ctrl+Backspace | De bovenliggende map openen of activeren met de omgekeerde instelling voor het openhouden van het bronvenster. |
 | F4, Ctrl+L of Alt+D | Het adres selecteren. |
 | F3, Ctrl+E of Ctrl+F | Het zoekveld activeren. |
 | F5 of Ctrl+R | De map vernieuwen, ook tijdens het typen in het adres- of zoekveld. |
