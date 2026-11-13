@@ -118,7 +118,7 @@ switch ($Mode) {
     }
     'Settings' {
         $source=Read-Source 'SettingsDialog.cpp'; $pieces=@()
-        foreach ($signature in @('void enableToolbarOptions(HWND hwnd)', 'static SIZE minimumFolderWindowSize()', 'static bool readFolderWindowSize(HWND hwnd, SIZE &size)', 'INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)')) {
+        foreach ($signature in @('void enableToolbarOptions(HWND hwnd)', 'static SIZE minimumFolderWindowSize()', 'static void rejectNumber(HWND page, HWND edit, const wchar_t *message)', 'static bool readFolderWindowSize(HWND hwnd, SIZE &size)', 'INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)')) {
             $pieces+=Get-SourceBlock $source $signature
         }
         Save-Source 'SettingsDisplayProduction.inc' ($pieces -join "`n`n")
