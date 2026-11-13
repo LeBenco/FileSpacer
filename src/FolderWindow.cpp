@@ -1529,6 +1529,21 @@ FOLDERSETTINGS FolderWindow::folderSettings() const {
     return settings;
 }
 
+// Records the mode and icon size of the view. True when they differ from the
+// ones recorded before: the Shell has then laid the icons out again.
+bool FolderWindow::arrangementChanged(IFolderView *const folderView) {
+    CComQIPtr<IFolderView2> sized(folderView);
+    FOLDERVIEWMODE mode = FVM_AUTO;
+    int size = -1;
+    if (!sized || FAILED(sized->GetViewModeAndIconSize(&mode, &size))) return false;
+    const bool changed = arrangedKnown
+        && (arrangedMode != static_cast<UINT>(mode) || arrangedSize != size);
+    arrangedMode = static_cast<UINT>(mode);
+    arrangedSize = size;
+    arrangedKnown = true;
+    return changed;
+}
+
 void FolderWindow::scheduleStateSave(bool icons) {
     if (restoringState || !viewReady || viewMenuPreview) return;
     if (initialStateApplied) {
@@ -1539,6 +1554,18 @@ void FolderWindow::scheduleStateSave(bool icons) {
                 || generation != viewGeneration) return;
         const bool spatial = spatialView(view);
         if (!isWindowOperational() || generation != viewGeneration) return;
+        const bool resized = arrangementChanged(view);
+        if (!isWindowOperational() || generation != viewGeneration) return;
+        if (spatial && spatial == spatialLayout && resized && !viewStateIsDirty(FolderState::Icons)) {
+            // Another icon size inside the spatial modes: the Shell laid the
+            // icons out again. Whatever asked for it (wheel, shortcut or View
+            // menu), the positions saved before it are replayed. Moves not
+            // saved yet are never traded for older positions.
+            restoreIconsPending = searchText.empty();
+            restoreIconsUnpruned = restoreIconsPending;
+            finishViewInitialization();
+            if (!isWindowOperational() || generation != viewGeneration) return;
+        }
         if (spatial != spatialLayout) {
             spatialLayout = spatial;
             // Changing mode can discard the Shell's free positions even when
@@ -2076,6 +2103,8 @@ void FolderWindow::changeViewMode(int index, int steps) {
         restoreIconsPending = searchText.empty();
         restoreIconsUnpruned = restoreIconsPending;
         finishViewInitialization();
+        if (!current()) return;
+        arrangementChanged(view); // Replayed just above: not once more by the save.
         if (!current()) return;
         scheduleStateSave();
         requestViewProfile();
@@ -3567,12 +3596,11 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     } columnsResume{columnLayout};
     viewMenuRestore.reset(); // A new menu supersedes a previous preview's pending replay.
     const bool previewEnabled = settings::getViewMenuPreviewEnabled();
-    if (previewEnabled) {
-        // Native icon moves may not have scheduled a save yet. Preserve the
-        // complete original placement before a preview can be closed.
-        viewStateDirty(FolderState::Icons);
-        persistViewState();
-    }
+    // Native icon moves may not have scheduled a save yet. Preserve the
+    // complete original placement before a preview can be closed, and before
+    // a chosen icon size lays the icons out again.
+    viewStateDirty(FolderState::Icons);
+    persistViewState();
     if (!isWindowOperational()) return;
     CComPtr<IFolderView2> folderView;
     auto detachSite = [](IContextMenu *handler) { checkHR(IUnknown_SetSite(handler, nullptr)); };
@@ -4369,6 +4397,7 @@ void FolderWindow::finishViewInitialization() {
         CComQIPtr<IFolderView> folderView(view);
         if (!folderView || !current()) return;
         spatialLayout = spatialView(folderView);
+        arrangementChanged(folderView);
         if (!current()) return;
     }
     if (restoreIconsPending) {

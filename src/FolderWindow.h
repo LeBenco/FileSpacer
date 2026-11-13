@@ -239,6 +239,11 @@ private:
     bool restoreIconsPending = false;
     bool restoreIconsUnpruned = false; // Restore after a Shell mode change: no EnumDone proves completeness.
     bool spatialLayout = false;
+    // The mode and icon size the icons were last laid out for.
+    UINT arrangedMode = 0;
+    int arrangedSize = -1;
+    bool arrangedKnown = false;
+    bool arrangementChanged(IFolderView *folderView);
     ULONG_PTR viewGeneration = 0;
     ULONG_PTR viewOptionsEnumerationBaseline = 0;
     void finishViewInitialization();

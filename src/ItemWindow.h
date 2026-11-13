@@ -147,6 +147,8 @@ protected:
 
     void openChild(IShellItem *childItem, bool closeSource, const RECT *openingOrigin = nullptr);
     void openParent(bool closeSource);
+    // Whether a part of the view state still waits to be saved.
+    bool viewStateIsDirty(uint32_t mask) const { return (dirtyViewState & mask) != 0; }
 
     virtual IDispatch * getShellViewDispatch();
     void onViewReady();
