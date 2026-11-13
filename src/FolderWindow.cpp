@@ -871,8 +871,7 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         return false;
     if (msg->message == WM_KEYDOWN && msg->wParam == VK_BACK
             && GetKeyState(VK_MENU) >= 0 && GetKeyState(VK_SHIFT) >= 0) {
-        // Like the Parent button, Ctrl inverts the preference.
-        const bool closeSource = settings::getKeepSourceWindowOpen() == (GetKeyState(VK_CONTROL) < 0);
+        const bool closeSource = GetKeyState(VK_CONTROL) >= 0 && !settings::getKeepSourceWindowOpen();
         const ULONG_PTR generation = viewGeneration;
         const HWND focus = GetFocus();
         HWND root = nullptr;
@@ -884,7 +883,7 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
                 return true;
             if (!(code & (DLGC_HASSETSEL | DLGC_WANTALLKEYS))) {
                 // A held key would climb through each parent that takes the focus.
-                if (!(msg->lParam & (1 << 30))) openParent(closeSource);
+                if (!(HIWORD(msg->lParam) & KF_REPEAT)) openParent(closeSource);
                 return true;
             }
         }
