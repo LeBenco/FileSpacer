@@ -42,7 +42,7 @@ Das Menü neben dem Titel wechselt zwischen geöffneten Ordnern und schließt ü
 | Strg+N | Den in den Einstellungen gewählten Startordner öffnen oder sein vorhandenes Fenster aktivieren; das Ausgangsfenster bleibt offen. |
 | Strg+W | Das Fenster schließen, auch aus dem Adress- oder Suchfeld. |
 | Rücktaste | Den übergeordneten Ordner öffnen; die Einstellung zum Offenhalten des Ausgangsfensters gilt weiterhin. |
-| Strg+Rücktaste | Den übergeordneten Ordner öffnen oder aktivieren und dabei die Einstellung zum Offenhalten des Ausgangsfensters umkehren. |
+| Strg+Rücktaste | Den übergeordneten Ordner öffnen oder aktivieren und das Ausgangsfenster immer offen halten. |
 | F4, Strg+L oder Alt+D | Die Adresse markieren. |
 | F3, Strg+E oder Strg+F | Die Suche fokussieren. |
 | F5 oder Strg+R | Den Ordner aktualisieren, auch beim Schreiben im Adress- oder Suchfeld. |
