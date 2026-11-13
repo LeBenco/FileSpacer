@@ -24,6 +24,8 @@ namespace {
 const wchar_t animationClass[] = L"FileSpacer Folder Opening Animation";
 constexpr UINT finishAnimation = WM_APP + 1;
 constexpr LONG strokeWidth = 3;
+// The preference alone, then the preference under the system animation policy.
+std::atomic<UINT> preferredDuration{0};
 std::atomic<UINT> configuredDuration{0};
 
 // A delay-loaded import raises a structured exception when its DLL or its
@@ -337,11 +339,15 @@ struct FolderOpeningAnimation::State {
         }
         RECT bounds = {};
         if (!UnionRect(&bounds, &origin, &end)) return false;
+        // Layered and transparent: the pointer also reaches the windows of other
+        // threads beneath the outline. HTTRANSPARENT alone only passes it on to
+        // windows of this thread. A layered window is shown once its attributes are set.
         overlay.reset(checkLE(CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT
-                | WS_EX_NOREDIRECTIONBITMAP, animationClass, L"", WS_POPUP,
+                | WS_EX_LAYERED | WS_EX_NOREDIRECTIONBITMAP, animationClass, L"", WS_POPUP,
             bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top,
             nullptr, nullptr, cls.hInstance, this)));
-        if (!overlay || !checkHR(resources->composition->CreateTargetForHwnd(overlay.get(), TRUE, &target))
+        if (!overlay || !checkLE(SetLayeredWindowAttributes(overlay.get(), 0, 255, LWA_ALPHA))
+                || !checkHR(resources->composition->CreateTargetForHwnd(overlay.get(), TRUE, &target))
                 || !checkHR(resources->composition->CreateVisual(&visual))
                 || !checkHR(visual->SetBorderMode(DCOMPOSITION_BORDER_MODE_SOFT))
                 || !checkHR(visual->SetBitmapInterpolationMode(DCOMPOSITION_BITMAP_INTERPOLATION_MODE_LINEAR))
@@ -387,12 +393,14 @@ bool FolderOpeningAnimation::isEnabled() {
 }
 
 void FolderOpeningAnimation::reloadSettings() {
-    UINT duration = 0;
-    if (settings::getOpeningAnimationEnabled()) {
-        duration = settings::getOpeningAnimationDuration();
-        if (duration && !animationsEnabled()) duration = 0;
-    }
-    configuredDuration.store(duration);
+    preferredDuration.store(settings::getOpeningAnimationEnabled()
+        ? settings::getOpeningAnimationDuration() : 0);
+    reloadSystemPolicy();
+}
+
+void FolderOpeningAnimation::reloadSystemPolicy() {
+    const UINT duration = preferredDuration.load();
+    configuredDuration.store(duration && animationsEnabled() ? duration : 0);
 }
 
 void FolderOpeningAnimation::prepare() {
