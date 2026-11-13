@@ -279,34 +279,43 @@ int main(int argc, char **argv) {
         // A damaged page stops a scan: the rows on both sides of it are kept.
         {
             const std::string damaged=path+".damaged";erase(damaged);
+            const int rows=24;
+            FolderState filler=fixture();filler.icons.assign(600,0x5a);
             {
                 FolderStateStore source(damaged.c_str());require(source.ready(),source.error().c_str());
-                FolderState filler=fixture();filler.icons.assign(1500,0x5a);
-                for(int index=0;index<300;++index) {
+                for(int index=0;index<rows;++index) {
                     char key[32];std::snprintf(key,sizeof(key),"row-%04d",index);
                     require(source.save(key,filler,FolderState::All),"create recovery fixture");
                 }
             }
             rawSQL(damaged,"PRAGMA wal_checkpoint(TRUNCATE)");
+            // The damage is aimed at a populated leaf of the folder_state tree, the
+            // only populated tree here: SQLite reads a zeroed overflow page back
+            // without any error, so damage placed blindly may stop no scan at all.
             FILE *file=std::fopen(damaged.c_str(),"r+b");require(file!=nullptr,"open recovery fixture");
-            require(std::fseek(file,0,SEEK_END)==0,"measure recovery fixture");
-            const long pages=std::ftell(file)/4096;
-            require(pages>30,"recovery fixture is too small to damage in the middle");
-            const std::vector<char> zeros(4096*3,0);
-            require(std::fseek(file,(pages/2)*4096,SEEK_SET)==0
+            std::vector<long> leaves;std::vector<int> cells;unsigned char header[8];
+            for(long page=0;std::fseek(file,page*4096,SEEK_SET)==0 && std::fread(header,1,sizeof(header),file)==sizeof(header);++page) {
+                const int count=header[3]<<8|header[4];
+                if(header[0]==0x0a && count>0) { leaves.push_back(page);cells.push_back(count); }
+            }
+            require(leaves.size()>=3,"recovery fixture has too few leaf pages to damage one between two others");
+            const size_t middle=leaves.size()/2;
+            const std::vector<char> zeros(4096,0);
+            require(std::fseek(file,leaves[middle]*4096,SEEK_SET)==0
                 && std::fwrite(zeros.data(),1,zeros.size(),file)==zeros.size(),"damage recovery fixture");
             std::fclose(file);
             FolderStateStore rebuilt(path.c_str());require(rebuilt.ready(),rebuilt.error().c_str());
             require(rebuilt.recoverFrom(damaged.c_str())==FolderStateStore::Recovery::Partial,"recovery verdict on a damaged page");
             int recovered=0;FolderState s;
-            for(int index=0;index<300;++index) {
+            for(int index=0;index<rows;++index) {
                 char key[32];std::snprintf(key,sizeof(key),"row-%04d",index);
                 require(rebuilt.read(key,&s),"rebuilt database cannot be read");
-                if(s.present) { ++recovered; require(s.icons.size()==1500 && s.icons[0]==0x5a,"recovered row was altered"); }
+                if(s.present) { ++recovered; require(s.icons==filler.icons,"recovered row was altered"); }
             }
-            require(recovered>0 && recovered<300,"a damaged page lost everything or nothing");
+            require(recovered==rows-cells[middle],"a damaged page lost other rows than its own");
             require(rebuilt.save("after",fixture(),FolderState::All),"rebuilt database does not store new states");
-            std::cout << "PASS: recovery from a damaged page keeps " << recovered << " of 300 rows, unaltered, in a usable database.\n";
+            std::cout << "PASS: recovery around a damaged page keeps the " << recovered << " rows of " << rows
+                << " stored elsewhere, unaltered, in a usable database.\n";
             erase(damaged);
         }
         erase(path);
