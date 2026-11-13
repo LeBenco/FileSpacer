@@ -236,6 +236,16 @@ POINT ProxyIcon::getMenuPoint(HWND parent) {
     return clientToScreen(parent, {0, 0});
 }
 
+// The badge names the action a click performs, or the state itself when it
+// cannot be clicked: an unavailable action is not what a screen reader should announce.
+static void nameLockBadge(HWND badge, bool locked, bool action) {
+    TBBUTTONINFO info = {sizeof(info), TBIF_TEXT};
+    info.pszText = const_cast<wchar_t *>(getString(action
+        ? (locked ? IDS_UNLOCK_WINDOW_STATE : IDS_LOCK_WINDOW_STATE)
+        : (locked ? IDS_WINDOW_STATE_LOCKED : IDS_WINDOW_STATE_UNLOCKED)));
+    SendMessage(badge, TB_SETBUTTONINFO, IDM_TOGGLE_STATE_LOCK, (LPARAM)&info);
+}
+
 void ProxyIcon::setTitle(wchar_t *) {
     if (caption)
         setLocked(stateLocked);
@@ -254,10 +264,8 @@ void ProxyIcon::setLocked(bool locked) {
         InvalidateRect(caption, nullptr, FALSE);
     }
     if (lockBadge) {
-        TBBUTTONINFO info = {sizeof(info), TBIF_TEXT};
-        info.pszText = const_cast<wchar_t *>(getString(
-            locked ? IDS_UNLOCK_WINDOW_STATE : IDS_LOCK_WINDOW_STATE));
-        SendMessage(lockBadge, TB_SETBUTTONINFO, IDM_TOGGLE_STATE_LOCK, (LPARAM)&info);
+        nameLockBadge(lockBadge, locked,
+            settings::getWindowStateLockClickEnabled() && !outer->stateKey.empty());
         InvalidateRect(lockBadge, nullptr, FALSE);
     }
 }
@@ -402,8 +410,12 @@ void ProxyIcon::autoSize(LONG parentWidth, LONG captionLeft, LONG captionRight) 
         }
     }
     if (lockBadge) {
+        // Without a saved state to lock there is nothing the click could do.
+        const bool action = settings::getWindowStateLockClickEnabled() && !outer->stateKey.empty();
+        const bool enabled = SendMessage(lockBadge, TB_ISBUTTONENABLED, IDM_TOGGLE_STATE_LOCK, 0) != 0;
         SendMessage(lockBadge, TB_ENABLEBUTTON, IDM_TOGGLE_STATE_LOCK,
-            MAKELPARAM(showLockBadge && settings::getWindowStateLockClickEnabled(), 0));
+            MAKELPARAM(showLockBadge && action, 0));
+        if (enabled != (showLockBadge && action)) nameLockBadge(lockBadge, stateLocked, action);
         SendMessage(lockBadge, TB_SETBUTTONSIZE, 0, MAKELPARAM(badgeWidth, rectHeight(rect)));
         SetWindowPos(lockBadge, nullptr, captionLeft, top,
             min(badgeWidth, max(0, parentWidth - captionLeft - captionRight)), rectHeight(rect),

@@ -183,6 +183,7 @@ BEGIN
   IDS_LOCK_WINDOW_STATE "Vensterstatus vergrendelen"
   IDS_UNLOCK_WINDOW_STATE "Vensterstatus ontgrendelen"
   IDS_WINDOW_STATE_LOCKED "Vensterstatus vergrendeld. Wijzigingen in de indeling zijn tijdelijk."
+  IDS_WINDOW_STATE_UNLOCKED "Vensterstatus niet vergrendeld."
   IDS_DISABLE_STATE_LOCK_CONFIRM "Als u deze functie uitschakelt, worden alle vensterstatusvergrendelingen verwijderd. Vensters slaan hun status weer normaal op. Wilt u doorgaan?"
 END
 

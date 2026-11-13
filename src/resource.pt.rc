@@ -183,6 +183,7 @@ BEGIN
   IDS_LOCK_WINDOW_STATE "Bloquear o estado da janela"
   IDS_UNLOCK_WINDOW_STATE "Desbloquear o estado da janela"
   IDS_WINDOW_STATE_LOCKED "Estado da janela bloqueado. As alterações de disposição são temporárias."
+  IDS_WINDOW_STATE_UNLOCKED "Estado da janela não bloqueado."
   IDS_DISABLE_STATE_LOCK_CONFIRM "A desativação desta funcionalidade eliminará todos os bloqueios do estado das janelas. As janelas voltarão a guardar normalmente o seu estado. Pretende continuar?"
 END
 

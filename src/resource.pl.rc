@@ -183,6 +183,7 @@ BEGIN
   IDS_LOCK_WINDOW_STATE "Zablokuj stan okna"
   IDS_UNLOCK_WINDOW_STATE "Odblokuj stan okna"
   IDS_WINDOW_STATE_LOCKED "Stan okna zablokowany. Zmiany układu są tymczasowe."
+  IDS_WINDOW_STATE_UNLOCKED "Stan okna niezablokowany."
   IDS_DISABLE_STATE_LOCK_CONFIRM "Wyłączenie tej funkcji usunie wszystkie blokady stanu okien. Okna znów będą normalnie zapisywać swój stan. Kontynuować?"
 END
 

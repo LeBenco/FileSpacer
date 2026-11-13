@@ -183,6 +183,7 @@ BEGIN
   IDS_LOCK_WINDOW_STATE "Fensterzustand sperren"
   IDS_UNLOCK_WINDOW_STATE "Fensterzustand entsperren"
   IDS_WINDOW_STATE_LOCKED "Fensterzustand gesperrt. Layoutänderungen bleiben vorübergehend."
+  IDS_WINDOW_STATE_UNLOCKED "Fensterzustand nicht gesperrt."
   IDS_DISABLE_STATE_LOCK_CONFIRM "Beim Deaktivieren dieser Funktion werden alle Sperren von Fensterzuständen gelöscht. Fenster speichern ihren Zustand anschließend wieder wie gewohnt. Möchten Sie fortfahren?"
 END
 

@@ -182,6 +182,7 @@ BEGIN
   IDS_LOCK_WINDOW_STATE "Verrouiller l’état de la fenêtre"
   IDS_UNLOCK_WINDOW_STATE "Déverrouiller l’état de la fenêtre"
   IDS_WINDOW_STATE_LOCKED "État de la fenêtre verrouillé. Les changements de disposition restent temporaires."
+  IDS_WINDOW_STATE_UNLOCKED "État de la fenêtre non verrouillé."
   IDS_DISABLE_STATE_LOCK_CONFIRM "Désactiver cette fonctionnalité supprimera toutes les informations de verrouillage des fenêtres. Les fenêtres reprendront l’enregistrement normal de leur état. Voulez-vous continuer ?"
 END
 

@@ -183,6 +183,7 @@ BEGIN
   IDS_LOCK_WINDOW_STATE "Заблокувати стан вікна"
   IDS_UNLOCK_WINDOW_STATE "Розблокувати стан вікна"
   IDS_WINDOW_STATE_LOCKED "Стан вікна заблоковано. Зміни розташування тимчасові."
+  IDS_WINDOW_STATE_UNLOCKED "Стан вікна не заблоковано."
   IDS_DISABLE_STATE_LOCK_CONFIRM "Вимкнення цієї функції видалить усі блокування стану вікон. Вікна знову зберігатимуть свій стан як зазвичай. Продовжити?"
 END
 
