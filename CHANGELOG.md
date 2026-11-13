@@ -11,7 +11,7 @@
 - Add German, Italian, Spanish, Portuguese (Portugal) and Greek to the installer and uninstaller.
 - Rebuild a damaged folder state database from everything that can still be read, explain storage errors in plain words, and never offer to reset a database created by a newer version.
 - Offer "Open in FileSpacer" in the folder context menus of every program.
-- Fix several view and input issues (free icon positions loss on Small icons/tiles, Ctrl+wheel, Backspace auto-repeat, invalid numeric preferences).
+- Fix several view and input issues (free icon positions loss on Small icons/tiles, Ctrl+wheel, Backspace auto-repeat, invalid numeric preferences, opening animation origin on a display with another scale).
 - Keep the proportions of Details columns that fill the window when a folder is closed and reopened.
 - Add an option to turn off the Microsoft symbol download that speeds up large folders, and show a notification when it happens.
 - Make Ctrl+Backspace invert the source window setting, like Ctrl with every other way of opening a folder.
