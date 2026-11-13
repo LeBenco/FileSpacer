@@ -225,11 +225,16 @@ DWORD getSearchHistoryLimit() {
     return value > MAX_SEARCH_HISTORY_LIMIT ? MAX_SEARCH_HISTORY_LIMIT : value;
 }
 
-bool setSearchHistoryLimit(DWORD value) {
+bool setSearchHistoryLimit(DWORD value, LSTATUS *registryError) {
+    if (registryError) *registryError = ERROR_SUCCESS;
     if (value > MAX_SEARCH_HISTORY_LIMIT) return false;
     const DWORD previous = getSearchHistoryLimit();
-    if (setSettingsValue(L"SearchHistoryLimit", REG_DWORD, &value, sizeof(value)) != ERROR_SUCCESS)
+    const LSTATUS written = setSettingsValue(L"SearchHistoryLimit", REG_DWORD, &value, sizeof(value));
+    if (written != ERROR_SUCCESS) {
+        // Not a failure of the folder-state database: reported apart by the caller.
+        if (registryError) *registryError = written;
         return false;
+    }
     // Persist the choice without touching the histories unless they must shrink:
     // reads and saves are already bounded by the limit.
     if (value >= previous) return true;
@@ -604,6 +609,15 @@ LSTATUS removeEmptyMenuKey(HKEY root, const std::wstring &path) {
 LSTATUS restoreOpenType(HKEY root, const std::wstring &prefix, const wchar_t *type, bool &changed) {
     const std::wstring shell = prefix + type + L"\\shell";
     const std::wstring backup = prefix + L"FileSpacer.OpenVerbBackup\\" + type;
+    // Mark the journal first: a restoration that fails part-way leaves a mixed
+    // open verb, and the next start completes it. The mark disappears with the
+    // journal. Nothing is created when there is no journal to restore.
+    CRegKey journal;
+    LSTATUS marked = journal.Open(root, backup.c_str(), KEY_SET_VALUE);
+    if (marked == ERROR_SUCCESS) marked = journal.SetDWORDValue(L"Restoring", 1);
+    else if (marked == ERROR_FILE_NOT_FOUND || marked == ERROR_PATH_NOT_FOUND) marked = ERROR_SUCCESS;
+    if (marked != ERROR_SUCCESS) return marked;
+    journal.Close();
     bool removeOpen = false, removeCommand = false;
     for (const auto &entry : OPEN_VALUES) {
         const std::wstring record = backup + L"\\" + entry.record;
@@ -664,6 +678,9 @@ LSTATUS setDefaultType(const wchar_t *type, bool enable, bool &changed) {
     if (status == ERROR_SUCCESS) status = menuString(installed, L"DelegateExecute", delegate);
     if (status != ERROR_SUCCESS) return status;
     const std::wstring backup = std::wstring(KEY_OPEN_BACKUP) + L"\\" + type;
+    // An explicit activation supersedes a restoration left unfinished.
+    status = RegDeleteKeyValueW(HKEY_CURRENT_USER, backup.c_str(), L"Restoring");
+    if (status != ERROR_SUCCESS && status != ERROR_FILE_NOT_FOUND && status != ERROR_PATH_NOT_FOUND) return status;
     const wchar_t *values[] = {getString(IDS_OPEN_COMMAND), command.c_str(), delegate.c_str(), L"open"};
     for (size_t index = 0; index < _countof(OPEN_VALUES); ++index) {
         status = overrideOpenValue(shell, backup, OPEN_VALUES[index], values[index], changed);
@@ -751,7 +768,45 @@ LSTATUS registerMenuState() {
         : HRESULT_FACILITY(hr) == FACILITY_WIN32 ? HRESULT_CODE(hr) : ERROR_INVALID_FUNCTION;
 }
 
+// The caption of the overridden open verb is written in the application's
+// language when the default is activated. Rewrite it when that language has
+// changed, only while the journal says the current caption is still the one
+// written here: a restored or externally replaced value is left alone.
+LSTATUS refreshOpenCaption(const wchar_t *type, bool &changed) {
+    const std::wstring shell = std::wstring(L"Software\\Classes\\") + type + L"\\shell";
+    const std::wstring backup = std::wstring(KEY_OPEN_BACKUP) + L"\\" + type;
+    const OpenValue &caption = OPEN_VALUES[0];
+    const std::wstring record = backup + L"\\" + caption.record;
+    DWORD ready = 0, size = sizeof(ready);
+    LSTATUS status = RegGetValueW(HKEY_CURRENT_USER, record.c_str(), L"Ready",
+        RRF_RT_REG_DWORD, nullptr, &ready, &size);
+    if (status == ERROR_FILE_NOT_FOUND || status == ERROR_PATH_NOT_FOUND) return ERROR_SUCCESS;
+    if (status != ERROR_SUCCESS) return status;
+    if (!ready) return ERROR_SUCCESS;
+    RegistryValue applied, current;
+    status = readRegistryValue(HKEY_CURRENT_USER, record, L"Applied", applied);
+    if (status == ERROR_SUCCESS)
+        status = readRegistryValue(HKEY_CURRENT_USER, shell + caption.suffix, caption.name, current);
+    if (status != ERROR_SUCCESS) return status;
+    if (!applied.present || !current.present || current.type != applied.type || current.data != applied.data)
+        return ERROR_SUCCESS;
+    const wchar_t *text = getString(IDS_OPEN_COMMAND);
+    const size_t bytes = (std::wcslen(text) + 1) * sizeof(wchar_t);
+    if (current.type == REG_SZ && current.data.size() == bytes && memcmp(current.data.data(), text, bytes) == 0)
+        return ERROR_SUCCESS;
+    return overrideOpenValue(shell, backup, caption, text, changed);
+}
+
 LSTATUS synchronizeType(const wchar_t *type, bool &changed) {
+    // A restoration that failed part-way is completed before anything else. A
+    // new failure keeps its mark for the next start; the first one was reported
+    // when the restoration was requested.
+    DWORD restoring = 0, restoringSize = sizeof(restoring);
+    if (RegGetValueW(HKEY_CURRENT_USER, (std::wstring(KEY_OPEN_BACKUP) + L"\\" + type).c_str(), L"Restoring",
+            RRF_RT_REG_DWORD, nullptr, &restoring, &restoringSize) == ERROR_SUCCESS && restoring)
+        setDefaultType(type, false, changed);
+    const LSTATUS caption = refreshOpenCaption(type, changed);
+    if (caption != ERROR_SUCCESS) return caption;
     std::wstring browser;
     const LSTATUS read = menuString(std::wstring(type) + L"\\shell", nullptr, browser);
     if (read != ERROR_SUCCESS && read != ERROR_FILE_NOT_FOUND && read != ERROR_PATH_NOT_FOUND) return read;
