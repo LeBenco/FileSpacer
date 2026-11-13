@@ -106,6 +106,7 @@ STRINGTABLE {
     IDS_STORAGE_RESET_CONFIRM, "Odbudować bazę stanów folderów? FileSpacer najpierw skopiuje bazę i jej dzienniki, a następnie utworzy nową bazę i przeniesie do niej wszystkie zapisane układy, które da się jeszcze odczytać. To, czego nie da się odczytać, zostanie utracone. Twoje pliki i globalne ustawienia zostaną zachowane. Jeśli kopia się nie powiedzie lub pliki są używane, nic nie zostanie zmienione."
     IDS_STORAGE_RESET_DONE, "Baza została zresetowana. Otwórz lub zapisz folder, aby kontynuować.\n\nKopia: %1!s!"
     IDS_STORAGE_RESET_FAILED, "Nie można zresetować bazy. Nie próbowano wymuszać usunięcia.\n%1!s!"
+    IDS_STORAGE_RESET_USE_BACKUP, "Niektóre pliki bazy danych mogły już zostać usunięte. Przywróć je z pełnej kopii zapasowej:\n%1!s!"
     IDS_STORAGE_RECOVERED, "Baza otworzyła się przy kolejnej próbie. Reset nie był potrzebny."
     IDS_STORAGE_REBUILT_TOTAL, "Baza została odbudowana i odzyskano wszystkie zapisane układy.\n\nKopia: %1!s!"
     IDS_STORAGE_REBUILT_PARTIAL, "Baza została odbudowana. Odzyskano część zapisanych układów; reszty nie udało się odczytać.\n\nKopia: %1!s!"

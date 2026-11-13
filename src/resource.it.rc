@@ -106,6 +106,7 @@ STRINGTABLE {
     IDS_STORAGE_RESET_CONFIRM, "Ricostruire il database degli stati delle cartelle? FileSpacer salverà prima database e journal, poi creerà un nuovo database e vi copierà tutte le disposizioni salvate ancora leggibili. Ciò che non può essere letto andrà perso. File e preferenze globali saranno conservati. Se il backup fallisce o i file sono in uso, non sarà modificato nulla."
     IDS_STORAGE_RESET_DONE, "Database reimpostato. Apri o salva una cartella per continuare.\n\nBackup: %1!s!"
     IDS_STORAGE_RESET_FAILED, "Impossibile reimpostare il database. Nessuna eliminazione forzata è stata tentata.\n%1!s!"
+    IDS_STORAGE_RESET_USE_BACKUP, "Alcuni file del database potrebbero essere già stati rimossi. Ripristinarli dal backup completo:\n%1!s!"
     IDS_STORAGE_RECOVERED, "Il database si è aperto al nuovo tentativo. Non è stato necessario reimpostarlo."
     IDS_STORAGE_REBUILT_TOTAL, "Database ricostruito: tutte le disposizioni salvate sono state recuperate.\n\nBackup: %1!s!"
     IDS_STORAGE_REBUILT_PARTIAL, "Database ricostruito. Una parte delle disposizioni salvate è stata recuperata; il resto non era leggibile.\n\nBackup: %1!s!"

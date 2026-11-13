@@ -106,6 +106,7 @@ STRINGTABLE {
     IDS_STORAGE_RESET_CONFIRM, "Reconstruir a base dos estados das pastas? O FileSpacer fará primeiro uma cópia da base e dos diários, depois criará uma nova base e copiará para ela todas as disposições guardadas que ainda possam ser lidas. O que não puder ser lido será perdido. Os ficheiros e as preferências globais serão mantidos. Se a cópia falhar ou os ficheiros estiverem em uso, nada será alterado."
     IDS_STORAGE_RESET_DONE, "Base reposta. Abra ou guarde uma pasta para continuar.\n\nCópia de segurança: %1!s!"
     IDS_STORAGE_RESET_FAILED, "Não foi possível repor a base. Não se tentou forçar a eliminação.\n%1!s!"
+    IDS_STORAGE_RESET_USE_BACKUP, "Alguns ficheiros da base de dados podem já ter sido removidos. Restaure-os a partir da cópia de segurança completa:\n%1!s!"
     IDS_STORAGE_RECOVERED, "A base abriu na nova tentativa. Não foi necessário repor."
     IDS_STORAGE_REBUILT_TOTAL, "Base reconstruída; todas as disposições guardadas foram recuperadas.\n\nCópia de segurança: %1!s!"
     IDS_STORAGE_REBUILT_PARTIAL, "Base reconstruída. Parte das disposições guardadas foi recuperada; o resto não pôde ser lido.\n\nCópia de segurança: %1!s!"

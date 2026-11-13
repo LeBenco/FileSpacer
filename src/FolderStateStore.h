@@ -74,6 +74,9 @@ public:
     bool canResetDamagedDatabase() const;
     // The database is intact but belongs to a later version of the program.
     bool createdByNewerVersion() const { return newerSchema; }
+    // A failed reset could not cancel its deletions: the database files may be
+    // gone, and the complete backup is then the only copy.
+    bool resetLeftBackupOnly() const { return backupOnly; }
     // What a rebuilt database kept of the one it replaces.
     enum class Recovery : uint8_t { None, Partial, Total };
     // Copies into this ready database every row of a former one that can still
@@ -129,7 +132,7 @@ private:
     bool finishWrite(bool success);
     sqlite3 *db = nullptr;
     bool initialized = false;
-    bool unsupportedSchema = false, newerSchema = false;
+    bool unsupportedSchema = false, newerSchema = false, backupOnly = false;
     bool mutexBlocked = false, sqliteBusy = false;
     std::string lastError;
     int lastErrorCode = 0;

@@ -503,8 +503,8 @@ bool FolderStateStore::resetDamagedDatabase(const char *utf8Path, const wchar_t 
                     if (file && !SetFileInformationByHandle(file.get(), FileDispositionInfo, &cancel, sizeof(cancel)))
                         restored = false;
                 lastErrorCode = 0;
-                lastError = "Cannot reset folder-state database (Windows error " + std::to_string(error) + ")"
-                    + (restored ? "" : "; use the complete backup to restore the files");
+                backupOnly = !restored; // Said to the user in their language by the dialog.
+                lastError = "Cannot reset folder-state database (Windows error " + std::to_string(error) + ")";
                 return false;
             }
         }
@@ -1390,6 +1390,10 @@ HRESULT CALLBACK storageErrorCallback(HWND window, UINT notification, WPARAM but
                 : std::wstring(getString(IDS_STORAGE_UNKNOWN_ERROR));
             const auto message = formatString(IDS_STORAGE_RESET_FAILED, reason.c_str());
             dialog.footer = message ? message.get() : L"";
+            if (failedStore && failedStore->resetLeftBackupOnly()) {
+                const auto advice = formatString(IDS_STORAGE_RESET_USE_BACKUP, backup.c_str());
+                if (advice) dialog.footer.append(L"\n").append(advice.get());
+            }
             SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_FOOTER,
                 reinterpret_cast<LPARAM>(dialog.footer.c_str()));
             return S_FALSE;

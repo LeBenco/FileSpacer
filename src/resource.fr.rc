@@ -106,6 +106,7 @@ STRINGTABLE {
     IDS_STORAGE_RESET_CONFIRM, "Reconstruire la base des états de dossiers ? FileSpacer sauvegardera d’abord la base et ses journaux, puis créera une nouvelle base et y recopiera toutes les dispositions enregistrées encore lisibles. Ce qui ne peut pas être lu sera perdu. Vos fichiers et les préférences globales seront conservés. Si la sauvegarde échoue ou si les fichiers sont utilisés, rien ne sera modifié."
     IDS_STORAGE_RESET_DONE, "La base a été réinitialisée. Ouvrez ou enregistrez un dossier pour reprendre le fonctionnement normal.\n\nSauvegarde : %1!s!"
     IDS_STORAGE_RESET_FAILED, "La base n’a pas pu être réinitialisée. Aucune suppression forcée n’a été tentée.\n%1!s!"
+    IDS_STORAGE_RESET_USE_BACKUP, "Certains fichiers de la base ont peut-être déjà été supprimés. Restaurez-les à partir de la sauvegarde complète :\n%1!s!"
     IDS_STORAGE_RECOVERED, "La base s’est ouverte lors de la nouvelle tentative. Aucune réinitialisation n’était nécessaire."
     IDS_STORAGE_REBUILT_TOTAL, "La base a été reconstruite et toutes les dispositions enregistrées ont été récupérées.\n\nSauvegarde : %1!s!"
     IDS_STORAGE_REBUILT_PARTIAL, "La base a été reconstruite. Une partie des dispositions enregistrées a été récupérée ; le reste n’a pas pu être lu.\n\nSauvegarde : %1!s!"
