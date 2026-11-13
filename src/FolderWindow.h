@@ -209,6 +209,7 @@ protected:
 
 private:
     bool fillColumns = true, resizingColumns = false;
+    bool resizeDeferred = false; // The deferred-columns preference, read once per resize gesture.
     bool columnBoundsPending = false;
     bool columnFillLoaded = false, columnFillSet = false;
     std::shared_ptr<ShellViewColumns> columnLayout;
