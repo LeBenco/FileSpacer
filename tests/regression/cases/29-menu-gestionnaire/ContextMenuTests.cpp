@@ -84,14 +84,47 @@ void checkMenu(const wchar_t *type, bool explorer, bool background = false) {
     HRESULT queried = menu->QueryContextMenu(popup, 0, 1, 1000, CMF_NORMAL);
     const int count = GetMenuItemCount(popup);
     wchar_t verb[256] = {};
-    // This executable is neither Explorer nor FileSpacer: both explicit verbs are hidden.
+    // COM does not read the isolated registry: the state class cannot be
+    // created here and the Shell hides both explicit verbs. The host rule
+    // itself is checked on the class in checkHostFilter().
     const UINT id = background ? 0 : GetMenuItemID(popup, 0);
     const HRESULT named = background ? S_OK : menu->GetCommandString(id - 1, GCS_VERBW,
         nullptr, reinterpret_cast<char *>(verb), _countof(verb));
     DestroyMenu(popup);
     require(SUCCEEDED(queried) && count == (background ? 0 : 1) && SUCCEEDED(named),
-        "foreign host retains only the base open command");
+        "a menu without the state class retains only the base open command");
     if (!background) require(lstrcmpW(verb, L"open") == 0, "base open keeps its canonical verb");
+}
+// The state class of the provider beside this executable, asked directly: a
+// host that is not FileSpacer is offered FileSpacer, never the way back to
+// Explorer.
+void checkHostFilter(const wchar_t *image) {
+    wchar_t module[MAX_PATH] = {};
+    require(lstrcpynW(module, image, _countof(module)) && PathRemoveFileSpecW(module)
+        && PathAppendW(module, L"FileSpacerFolder.dll"), "provider path beside the test");
+    std::unique_ptr<std::remove_pointer<HMODULE>::type, decltype(&FreeLibrary)> provider(
+        LoadLibraryExW(module, nullptr, LOAD_WITH_ALTERED_SEARCH_PATH), FreeLibrary);
+    require(provider != nullptr, "load the provider beside the test");
+    using ClassObject = HRESULT (WINAPI *)(REFCLSID, REFIID, void **);
+    const auto classObject = reinterpret_cast<ClassObject>(GetProcAddress(provider.get(), "DllGetClassObject"));
+    CLSID stateClass = {};
+    require(classObject && SUCCEEDED(CLSIDFromString(L"{B6AE98A3-F59D-4F07-B5E8-CAD54DC5516C}", &stateClass)),
+        "state class entry point");
+    {
+        CComPtr<IClassFactory> factory;
+        require(SUCCEEDED(classObject(stateClass, IID_PPV_ARGS(&factory))), "state class factory");
+        CComPtr<IExplorerCommandState> state;
+        require(SUCCEEDED(factory->CreateInstance(nullptr, IID_PPV_ARGS(&state))), "create the state object");
+        CComQIPtr<IInitializeCommand> command(state);
+        require(command != nullptr, "state object accepts its verb name");
+        EXPCMDSTATE visible = ECS_HIDDEN, hidden = ECS_ENABLED;
+        require(SUCCEEDED(command->Initialize(L"filespacer", nullptr))
+            && SUCCEEDED(state->GetState(nullptr, FALSE, &visible)) && visible == ECS_ENABLED,
+            "a host other than FileSpacer is offered FileSpacer");
+        require(SUCCEEDED(command->Initialize(L"filespacer.explorer", nullptr))
+            && SUCCEEDED(state->GetState(nullptr, FALSE, &hidden)) && hidden == ECS_HIDDEN,
+            "a host other than FileSpacer is not offered the way back to Explorer");
+    } // Release every object before the module is freed.
 }
 void fixtures() {
     put(HKEY_CLASSES_ROOT, L"Folder\\shell", nullptr, L"open");
@@ -201,6 +234,7 @@ int wmain(int argc, wchar_t **argv) {
     try {
         const DWORD imageLength = GetModuleFileNameW(nullptr, image, _countof(image));
         require(imageLength && imageLength < _countof(image), "shortcut fixture executable path");
+        checkHostFilter(image);
         shortcutPath = std::wstring(image) + L".lnk";
         CComPtr<IShellItem> server, shortcut, shortcutTarget;
         require(SUCCEEDED(SHCreateItemFromParsingName(L"\\\\localhost", nullptr, IID_PPV_ARGS(&server))),
