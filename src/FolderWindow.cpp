@@ -767,6 +767,16 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
     CComPtr<ItemWindow> messageKeepAlive(this);
     if (!isWindowOperational())
         return false;
+    // A deferred View menu answers the click that asked for it. Any later
+    // input means the user moved on: the menu must not surface afterwards.
+    if (viewMenuRequested && (((msg->message == WM_KEYDOWN || msg->message == WM_SYSKEYDOWN)
+                && !(HIWORD(msg->lParam) & KF_REPEAT)) // Not the key still held that asked for it.
+            || msg->message == WM_LBUTTONDOWN || msg->message == WM_RBUTTONDOWN
+            || msg->message == WM_MBUTTONDOWN || msg->message == WM_NCLBUTTONDOWN
+            || msg->message == WM_NCRBUTTONDOWN || msg->message == WM_MOUSEWHEEL)) {
+        viewMenuRequested = false;
+        requestViewProfile(); // The profile forced for the menu is no longer wanted.
+    }
     if (handleAltMouseMessage(msg))
         return true;
     if (!isWindowOperational())
@@ -826,6 +836,14 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
                 && root && (msg->hwnd == root || IsChild(root, msg->hwnd)
                     || target == root || IsChild(root, target))) {
             zoomWheelDelta += GET_WHEEL_DELTA_WPARAM(msg->wParam);
+            // The notches already queued belong to the same gesture: one mode
+            // change, with one capture and one replay of the positions, serves them all.
+            MSG queued;
+            while (PeekMessageW(&queued, msg->hwnd, WM_MOUSEWHEEL, WM_MOUSEWHEEL, PM_NOREMOVE)
+                    && (GET_KEYSTATE_WPARAM(queued.wParam) & MK_CONTROL)
+                    && !(GET_KEYSTATE_WPARAM(queued.wParam) & MK_SHIFT)
+                    && PeekMessageW(&queued, msg->hwnd, WM_MOUSEWHEEL, WM_MOUSEWHEEL, PM_REMOVE))
+                zoomWheelDelta += GET_WHEEL_DELTA_WPARAM(queued.wParam);
             const int steps = zoomWheelDelta / WHEEL_DELTA;
             zoomWheelDelta %= WHEEL_DELTA;
             if (steps && !renaming() && isWindowOperational()) changeViewMode(-1, steps);
@@ -3510,7 +3528,9 @@ void FolderWindow::openViewMenu(POINT point) {
     CComPtr<ItemWindow> keepAlive(this);
     if (!isWindowOperational() || provisionalInputBlocked || provisionalCaptureBusy)
         return;
-    if (hybridViewEligible && viewProfile == FVO_DEFAULT) {
+    // Only the preview needs the classic view. Without it the menu opens on the
+    // native view at once, like the Shell's own background menu.
+    if (hybridViewEligible && viewProfile == FVO_DEFAULT && settings::getViewMenuPreviewEnabled()) {
         viewMenuRequested = true;
         pendingViewMenuPoint = point;
         requestViewProfile();
