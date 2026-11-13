@@ -286,7 +286,7 @@ private:
     bool watchProvisionalInput(bool watch);
     static LRESULT CALLBACK provisionalMessageHook(int code, WPARAM removed, LPARAM data);
     static thread_local HHOOK provisionalHook;
-    static thread_local std::vector<FolderWindow *> provisionalWindows;
+    static std::vector<FolderWindow *> &provisionalWindowList();
 
     struct ViewMenuPreview;
     std::shared_ptr<ViewMenuPreview> viewMenuPreview;

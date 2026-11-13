@@ -446,9 +446,18 @@ struct FolderWindow::ViewMenuPreview {
 
 thread_local FolderWindow::ViewMenuPreview *FolderWindow::ViewMenuPreview::active = nullptr;
 thread_local HHOOK FolderWindow::provisionalHook = nullptr;
-thread_local std::vector<FolderWindow *> FolderWindow::provisionalWindows;
+
+// Created by the first thread that watches a window, not by every thread: a
+// thread_local member with a dynamic initializer would run it, and allocate,
+// on each thread the process starts, including one started while the process
+// exits and the Debug runtime has already released its heap lock.
+std::vector<FolderWindow *> &FolderWindow::provisionalWindowList() {
+    static thread_local std::vector<FolderWindow *> windows;
+    return windows;
+}
 
 bool FolderWindow::watchProvisionalInput(bool watch) {
+    auto &provisionalWindows = provisionalWindowList();
     auto found = std::find(provisionalWindows.begin(), provisionalWindows.end(), this);
     if (watch) {
         if (found != provisionalWindows.end()) return true;
@@ -475,7 +484,7 @@ LRESULT CALLBACK FolderWindow::provisionalMessageHook(int code, WPARAM removed, 
         const bool up = msg->message == WM_LBUTTONUP;
         ItemWindow *target = (down || key || wheel || up) ? ItemWindow::fromChildWindow(msg->hwnd) : nullptr;
         FolderWindow *window = nullptr;
-        for (auto candidate : provisionalWindows)
+        for (auto candidate : provisionalWindowList())
             if (static_cast<ItemWindow *>(candidate) == target) { window = candidate; break; }
         if (window && window->isWindowOperational()) {
             CComPtr<ItemWindow> keepAlive(window);
