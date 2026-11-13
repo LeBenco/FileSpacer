@@ -31,6 +31,10 @@ IDR_LOCK_BADGE_ICON ICON "res\\window-state-lock.ico"
 IDR_UNLOCK_BADGE_ICON ICON "res\\window-state-unlock.ico"
 
 
+// A folder window handles Ctrl+W, F5, Ctrl+R and Ctrl+N itself, before this
+// table, and withholds them from it during a rename in the view. These four
+// entries remain for the base item window, and for a key typed in another
+// top-level window of the thread while a folder window is active.
 IDR_ITEM_ACCEL  ACCELERATORS {
     VK_UP,          IDM_PREV_WINDOW,    VIRTKEY, ALT
     VK_UP,          IDM_PREV_WINDOW,    VIRTKEY, ALT, CONTROL
