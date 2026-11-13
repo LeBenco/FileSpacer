@@ -11,6 +11,8 @@ public:
     // Cached preference and system policy; no Registry or graphics work here.
     static bool isEnabled();
     static void reloadSettings();
+    // A system setting changed: the preference is not read again.
+    static void reloadSystemPolicy();
     // Warm the shared graphics resources off the UI thread after a folder opens.
     static void prepare();
     static void uninit();
