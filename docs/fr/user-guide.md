@@ -33,7 +33,7 @@ Le verrouillage s’active dans **Paramètres > Général**. On peut aussi y per
 
 <img src="images/locked-title.png" alt="Gros plan du titre du dossier et de son badge de cadenas." width="280">
 
-Ouvrir un dossier ou son parent ferme par défaut la fenêtre source. **Maintenir Ctrl pendant l’ouverture** permet de la conserver. Ce comportement se règle dans **Paramètres > Général**. L’ouverture de plusieurs dossiers sélectionnés garde la fenêtre source ouverte.
+Ouvrir un dossier ou son parent ferme par défaut la fenêtre source. **Maintenir Ctrl pendant l’ouverture** fait l’inverse, quelle que soit la manière d’ouvrir. Ce comportement se règle dans **Paramètres > Général**. L’ouverture de plusieurs dossiers sélectionnés garde la fenêtre source ouverte.
 
 Le menu à côté du titre permet de passer entre les dossiers ouverts et de fermer les fenêtres parentes. **Ctrl+Maj+T** rouvre le dernier dossier fermé avec sa disposition et sa sélection. La liste de raccourcis de la barre des tâches retrouve aussi les dossiers fermés récemment et ceux épinglés dans l’Accès rapide.
 
@@ -43,7 +43,7 @@ Le menu à côté du titre permet de passer entre les dossiers ouverts et de fer
 | Ctrl+N | Ouvrir le dossier de démarrage choisi dans les paramètres, ou réactiver sa fenêtre, en conservant la fenêtre source. |
 | Ctrl+W | Fermer la fenêtre, y compris depuis l’adresse ou la recherche. |
 | Retour arrière | Remonter au parent en respectant le réglage de conservation de la fenêtre source. |
-| Ctrl+Retour arrière | Ouvrir ou réactiver le parent en conservant toujours la fenêtre source. |
+| Ctrl+Retour arrière | Ouvrir ou réactiver le parent en inversant le réglage de conservation de la fenêtre source. |
 | F4, Ctrl+L ou Alt+D | Sélectionner l’adresse. |
 | F3, Ctrl+E ou Ctrl+F | Placer le curseur dans la recherche. |
 | F5 ou Ctrl+R | Actualiser le dossier, y compris pendant la saisie dans l’adresse ou la recherche. |

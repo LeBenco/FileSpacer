@@ -889,7 +889,7 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         return false;
     if (msg->message == WM_KEYDOWN && msg->wParam == VK_BACK
             && GetKeyState(VK_MENU) >= 0 && GetKeyState(VK_SHIFT) >= 0) {
-        const bool closeSource = GetKeyState(VK_CONTROL) >= 0 && !settings::getKeepSourceWindowOpen();
+        const bool closeSource = settings::getKeepSourceWindowOpen() == (GetKeyState(VK_CONTROL) < 0);
         const ULONG_PTR generation = viewGeneration;
         const HWND focus = GetFocus();
         HWND root = nullptr;

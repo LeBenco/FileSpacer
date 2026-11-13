@@ -33,7 +33,7 @@ O bloqueio ativa-se em **Definições > Geral**. Também é possível personaliz
 
 <img src="images/locked-title.png" alt="Pormenor do título da pasta com o indicador de cadeado." width="280">
 
-Abrir uma pasta ou a pasta superior fecha a janela de origem por predefinição. **Manter Ctrl premido durante a abertura** permite deixá-la aberta. Este comportamento configura-se em **Definições > Geral**. Abrir várias pastas selecionadas mantém a janela de origem aberta.
+Abrir uma pasta ou a pasta superior fecha a janela de origem por predefinição. **Manter Ctrl premido durante a abertura** faz o contrário, seja qual for a forma de abrir. Este comportamento configura-se em **Definições > Geral**. Abrir várias pastas selecionadas mantém a janela de origem aberta.
 
 O menu junto ao título permite alternar entre pastas abertas e fechar as janelas das pastas superiores. **Ctrl+Shift+T** reabre a última pasta fechada com a sua disposição e seleção. A lista de atalhos da barra de tarefas também inclui pastas fechadas recentemente e afixadas no Acesso rápido.
 
@@ -43,7 +43,7 @@ O menu junto ao título permite alternar entre pastas abertas e fechar as janela
 | Ctrl+N | Abrir a pasta inicial escolhida nas definições ou ativar a sua janela existente, mantendo aberta a janela de origem. |
 | Ctrl+W | Fechar a janela, incluindo a partir dos campos de endereço ou pesquisa. |
 | Retrocesso | Abrir a pasta superior, respeitando a definição para manter aberta a janela de origem. |
-| Ctrl+Retrocesso | Abrir ou ativar a pasta superior, mantendo sempre aberta a janela de origem. |
+| Ctrl+Retrocesso | Abrir ou ativar a pasta superior, invertendo a definição para manter aberta a janela de origem. |
 | F4, Ctrl+L ou Alt+D | Selecionar o endereço. |
 | F3, Ctrl+E ou Ctrl+F | Colocar o foco na pesquisa. |
 | F5 ou Ctrl+R | Atualizar a pasta, mesmo durante a escrita no endereço ou na pesquisa. |

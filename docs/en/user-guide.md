@@ -28,7 +28,7 @@ Enable locking under **Settings > General**. The same settings let you customize
 
 <img src="images/locked-title.png" alt="Close-up of the folder title and its padlock badge." width="280">
 
-Opening a folder or its parent closes the source window by default. **Hold Ctrl while opening** to keep it open. This behavior can be changed under **Settings > General**. Opening several selected folders keeps the source window open.
+Opening a folder or its parent closes the source window by default. **Holding Ctrl while opening** does the opposite, however the folder is opened. This behavior can be changed under **Settings > General**. Opening several selected folders keeps the source window open.
 
 The menu beside the title switches between open folders and closes parent windows. **Ctrl+Shift+T** reopens the last closed folder with its layout and selection. The taskbar Jump List also provides recently closed folders and folders pinned in Quick access.
 
@@ -37,7 +37,7 @@ The menu beside the title switches between open folders and closes parent window
 | Ctrl+N | Open the starting folder chosen in Settings, or activate its existing window, keeping the source window open. |
 | Ctrl+W | Close the window, including from the address or search field. |
 | Backspace | Open the parent, respecting the setting for keeping the source window open. |
-| Ctrl+Backspace | Open or activate the parent, always keeping the source window open. |
+| Ctrl+Backspace | Open or activate the parent, inverting the setting for keeping the source window open. |
 | F4, Ctrl+L or Alt+D | Select the address. |
 | F3, Ctrl+E or Ctrl+F | Focus search. |
 | F5 or Ctrl+R | Refresh the folder, including while typing in the address or search field. |

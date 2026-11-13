@@ -33,7 +33,7 @@ Il blocco si attiva in **Impostazioni > Generale**. Qui si può anche personaliz
 
 <img src="images/locked-title.png" alt="Dettaglio del titolo della cartella con il lucchetto." width="280">
 
-Aprire una cartella o la cartella superiore chiude per impostazione predefinita la finestra di origine. **Tenere premuto Ctrl durante l’apertura** permette di lasciarla aperta. Il comportamento si imposta in **Impostazioni > Generale**. L’apertura di più cartelle selezionate mantiene aperta la finestra di origine.
+Aprire una cartella o la cartella superiore chiude per impostazione predefinita la finestra di origine. **Tenere premuto Ctrl durante l’apertura** fa il contrario, qualunque sia il modo di aprire. Il comportamento si imposta in **Impostazioni > Generale**. L’apertura di più cartelle selezionate mantiene aperta la finestra di origine.
 
 Il menu accanto al titolo permette di passare tra le cartelle aperte e chiudere le finestre delle cartelle superiori. **Ctrl+Maiusc+T** riapre l’ultima cartella chiusa con la sua disposizione e selezione. La Jump List della barra delle applicazioni include anche le cartelle chiuse di recente e quelle aggiunte ad Accesso rapido.
 
@@ -43,7 +43,7 @@ Il menu accanto al titolo permette di passare tra le cartelle aperte e chiudere 
 | Ctrl+N | Aprire la cartella iniziale scelta nelle impostazioni o attivare la sua finestra esistente, lasciando aperta quella di origine. |
 | Ctrl+W | Chiudere la finestra, anche dai campi dell’indirizzo o della ricerca. |
 | Backspace | Aprire la cartella superiore rispettando l’impostazione per mantenere aperta la finestra di origine. |
-| Ctrl+Backspace | Aprire o attivare la cartella superiore lasciando sempre aperta la finestra di origine. |
+| Ctrl+Backspace | Aprire o attivare la cartella superiore invertendo l’impostazione che lascia aperta la finestra di origine. |
 | F4, Ctrl+L o Alt+D | Selezionare l’indirizzo. |
 | F3, Ctrl+E o Ctrl+F | Spostare il focus sulla ricerca. |
 | F5 o Ctrl+R | Aggiornare la cartella, anche durante la digitazione nell’indirizzo o nella ricerca. |

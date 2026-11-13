@@ -33,7 +33,7 @@ Blokowanie włącza się w **Ustawienia > Ogólne**. Można tam również dostos
 
 <img src="images/locked-title.png" alt="Zbliżenie tytułu folderu z oznaczeniem kłódki." width="280">
 
-Otwarcie folderu lub folderu nadrzędnego domyślnie zamyka okno źródłowe. **Przytrzymanie Ctrl podczas otwierania** pozostawia je otwarte. Zachowanie można ustawić w **Ustawienia > Ogólne**. Otwarcie kilku zaznaczonych folderów pozostawia okno źródłowe otwarte.
+Otwarcie folderu lub folderu nadrzędnego domyślnie zamyka okno źródłowe. **Przytrzymanie Ctrl podczas otwierania** działa odwrotnie, niezależnie od sposobu otwierania. Zachowanie można ustawić w **Ustawienia > Ogólne**. Otwarcie kilku zaznaczonych folderów pozostawia okno źródłowe otwarte.
 
 Menu obok tytułu pozwala przełączać otwarte foldery i zamykać okna nadrzędne. **Ctrl+Shift+T** otwiera ostatnio zamknięty folder z jego układem i zaznaczeniem. Lista szybkiego dostępu na pasku zadań zawiera też ostatnio zamknięte foldery i foldery przypięte do Szybkiego dostępu.
 
@@ -43,7 +43,7 @@ Menu obok tytułu pozwala przełączać otwarte foldery i zamykać okna nadrzęd
 | Ctrl+N | Otworzyć folder początkowy wybrany w ustawieniach lub uaktywnić jego istniejące okno, pozostawiając okno źródłowe otwarte. |
 | Ctrl+W | Zamknąć okno, także z pola adresu lub wyszukiwania. |
 | Backspace | Otworzyć folder nadrzędny zgodnie z ustawieniem zachowania okna źródłowego. |
-| Ctrl+Backspace | Otworzyć lub uaktywnić folder nadrzędny, zawsze pozostawiając okno źródłowe otwarte. |
+| Ctrl+Backspace | Otworzyć lub uaktywnić folder nadrzędny, odwracając ustawienie pozostawiania okna źródłowego otwartego. |
 | F4, Ctrl+L lub Alt+D | Zaznaczyć adres. |
 | F3, Ctrl+E lub Ctrl+F | Przenieść fokus do wyszukiwania. |
 | F5 lub Ctrl+R | Odświeżyć folder, także podczas pisania w polu adresu lub wyszukiwania. |

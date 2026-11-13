@@ -33,7 +33,7 @@ El bloqueo se activa en **Configuración > General**. Allí también se puede pe
 
 <img src="images/locked-title.png" alt="Detalle del título de una carpeta con el distintivo de candado." width="280">
 
-Abrir una carpeta o su carpeta superior cierra de forma predeterminada la ventana de origen. **Mantener pulsada Ctrl al abrirla** permite dejarla abierta. Este comportamiento se configura en **Configuración > General**. Abrir varias carpetas seleccionadas mantiene abierta la ventana de origen.
+Abrir una carpeta o su carpeta superior cierra de forma predeterminada la ventana de origen. **Mantener pulsada Ctrl al abrirla** hace lo contrario, sea cual sea la forma de abrirla. Este comportamiento se configura en **Configuración > General**. Abrir varias carpetas seleccionadas mantiene abierta la ventana de origen.
 
 El menú junto al título permite cambiar entre carpetas abiertas y cerrar las ventanas de las carpetas superiores. **Ctrl+Mayús+T** vuelve a abrir la última carpeta cerrada con su disposición y selección. La lista de accesos directos de la barra de tareas también incluye carpetas cerradas recientemente y ancladas en Acceso rápido.
 
@@ -43,7 +43,7 @@ El menú junto al título permite cambiar entre carpetas abiertas y cerrar las v
 | Ctrl+N | Abrir la carpeta inicial elegida en Configuración o activar su ventana existente, manteniendo abierta la de origen. |
 | Ctrl+W | Cerrar la ventana, también desde el campo de dirección o búsqueda. |
 | Retroceso | Abrir la carpeta principal respetando el ajuste para mantener abierta la ventana de origen. |
-| Ctrl+Retroceso | Abrir o activar la carpeta principal manteniendo siempre abierta la ventana de origen. |
+| Ctrl+Retroceso | Abrir o activar la carpeta principal invirtiendo el ajuste de mantener abierta la ventana de origen. |
 | F4, Ctrl+L o Alt+D | Seleccionar la dirección. |
 | F3, Ctrl+E o Ctrl+F | Llevar el foco a la búsqueda. |
 | F5 o Ctrl+R | Actualizar la carpeta, incluso al escribir en la dirección o la búsqueda. |

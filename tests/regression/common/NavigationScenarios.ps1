@@ -70,20 +70,22 @@ function Invoke-BackspacePolicy([int]$keep) {
     [void][IO.Directory]::CreateDirectory($childPath)
     [IO.File]::WriteAllText((Join-Path $parentPath 'keep.txt'),'fixture')
     [IO.File]::WriteAllText((Join-Path $childPath 'rename.txt'),'fixture')
+    # Ctrl inverts the preference: one of the two gestures keeps the source, the other closes it.
+    $keepWithControl=($keep -eq 0)
     $child=Open-UiFolder $childPath 1
     Activate-Ui $child
     Use-UiView $child {param($view) $view.Focus()}
-    [FileSpacerRegression.Native]::Keys($child,0x08,$true,$false)
+    [FileSpacerRegression.Native]::Keys($child,0x08,$keepWithControl,$false)
     $parent=Track-UiFolder $parentPath
-    Wait-Ui {[FileSpacerRegression.Native]::GetForegroundWindow() -eq $parent} 'Ctrl+Backspace opens the parent'
-    Assert-Ui ([FileSpacerRegression.Native]::IsWindow($child)) ('Ctrl+Backspace closed the source; preference='+$keep)
+    Wait-Ui {[FileSpacerRegression.Native]::GetForegroundWindow() -eq $parent} 'Backspace opens the parent'
+    Assert-Ui ([FileSpacerRegression.Native]::IsWindow($child)) ('Backspace closed the source it had to keep; preference='+$keep+' control='+$keepWithControl)
     Use-UiView $parent {param($view) $view.Select('keep.txt')}
     Activate-Ui $child
     Use-UiView $child {param($view) $view.Focus()}
-    [FileSpacerRegression.Native]::Keys($child,0x08,$true,$false)
-    Wait-Ui {[FileSpacerRegression.Native]::GetForegroundWindow() -eq $parent} 'Ctrl+Backspace activates the existing parent'
-    Assert-Ui ([FileSpacerRegression.Native]::IsWindow($child)) 'Ctrl+Backspace closed the source with an existing parent.'
-    Assert-Ui (@(Find-UiFolder $parentPath).Count -eq 1) 'Ctrl+Backspace duplicated the parent.'
+    [FileSpacerRegression.Native]::Keys($child,0x08,$keepWithControl,$false)
+    Wait-Ui {[FileSpacerRegression.Native]::GetForegroundWindow() -eq $parent} 'Backspace activates the existing parent'
+    Assert-Ui ([FileSpacerRegression.Native]::IsWindow($child)) 'Backspace closed the source it had to keep with an existing parent.'
+    Assert-Ui (@(Find-UiFolder $parentPath).Count -eq 1) 'Backspace duplicated the parent.'
     Assert-UiSelected $parent 'keep.txt'
     Activate-Ui $child
     foreach($area in @('address','search','rename')) {
@@ -111,9 +113,9 @@ function Invoke-BackspacePolicy([int]$keep) {
         Wait-Ui {[FileSpacerRegression.Native]::FocusedWindowInOwningThread($child) -ne $edit} ('left '+$area+' editing')
     }
     Use-UiView $child {param($view) $view.Focus()}
-    [FileSpacerRegression.Native]::Keys($child,0x08,$false,$false)
+    [FileSpacerRegression.Native]::Keys($child,0x08,!$keepWithControl,$false)
     Wait-Ui {[FileSpacerRegression.Native]::GetForegroundWindow() -eq $parent} 'Backspace activates the parent'
-    Wait-Ui {[FileSpacerRegression.Native]::IsWindow($child) -eq [bool]$keep} ('Backspace respects KeepSourceWindowOpen='+$keep) 300
+    Wait-Ui {![FileSpacerRegression.Native]::IsWindow($child)} ('Backspace kept the source it had to close; preference='+$keep+' control='+(!$keepWithControl)) 300
     Assert-UiSelected $parent 'keep.txt'
     Close-UiFolder $child
     Close-UiFolder $parent

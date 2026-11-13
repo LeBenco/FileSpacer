@@ -32,7 +32,7 @@ Die Sperrfunktion wird unter **Einstellungen > Allgemein** aktiviert. Dort lasse
 
 <img src="images/locked-title.png" alt="Nahaufnahme des Ordnertitels mit Schlosssymbol." width="280">
 
-Beim Öffnen eines Ordners oder seines übergeordneten Ordners wird das Ausgangsfenster standardmäßig geschlossen. **Strg beim Öffnen gedrückt halten**, um es offen zu lassen. Das Verhalten lässt sich unter **Einstellungen > Allgemein** ändern. Beim Öffnen mehrerer ausgewählter Ordner bleibt das Ausgangsfenster offen.
+Beim Öffnen eines Ordners oder seines übergeordneten Ordners wird das Ausgangsfenster standardmäßig geschlossen. **Strg beim Öffnen gedrückt halten** bewirkt das Gegenteil, unabhängig von der Art des Öffnens. Das Verhalten lässt sich unter **Einstellungen > Allgemein** ändern. Beim Öffnen mehrerer ausgewählter Ordner bleibt das Ausgangsfenster offen.
 
 Das Menü neben dem Titel wechselt zwischen geöffneten Ordnern und schließt übergeordnete Fenster. **Strg+Umschalt+T** öffnet den zuletzt geschlossenen Ordner mit seiner Anordnung und Auswahl erneut. Die Sprungliste der Taskleiste bietet auch zuletzt geschlossene und im Schnellzugriff angeheftete Ordner.
 
@@ -42,7 +42,7 @@ Das Menü neben dem Titel wechselt zwischen geöffneten Ordnern und schließt ü
 | Strg+N | Den in den Einstellungen gewählten Startordner öffnen oder sein vorhandenes Fenster aktivieren; das Ausgangsfenster bleibt offen. |
 | Strg+W | Das Fenster schließen, auch aus dem Adress- oder Suchfeld. |
 | Rücktaste | Den übergeordneten Ordner öffnen; die Einstellung zum Offenhalten des Ausgangsfensters gilt weiterhin. |
-| Strg+Rücktaste | Den übergeordneten Ordner öffnen oder aktivieren und das Ausgangsfenster immer offen halten. |
+| Strg+Rücktaste | Den übergeordneten Ordner öffnen oder aktivieren und dabei die Einstellung zum Offenhalten des Ausgangsfensters umkehren. |
 | F4, Strg+L oder Alt+D | Die Adresse markieren. |
 | F3, Strg+E oder Strg+F | Die Suche fokussieren. |
 | F5 oder Strg+R | Den Ordner aktualisieren, auch beim Schreiben im Adress- oder Suchfeld. |
