@@ -31,13 +31,13 @@ association. Their shared `IExplorerCommandState` implementation, shipped in
 `FileSpacerFolder.dll`, controls visibility in the process hosting the menu:
 
 - FileSpacer shows **Open in Windows File Explorer**.
-- Windows Explorer shows **Open in FileSpacer**.
-- Other hosts show neither extra command.
+- Every other host of a folder menu (Windows Explorer, file dialogs, other
+  file managers) shows **Open in FileSpacer**.
 
 The base `open` command has no FileSpacer visibility filter, including in
-`CMF_DEFAULTONLY` menus. Default invocation therefore remains available when
-both explicit commands are hidden. FileSpacer's internal folder activation
-continues to use its spatial-window logic.
+`CMF_DEFAULTONLY` menus. Default invocation therefore never depends on the
+explicit commands. FileSpacer's internal folder activation continues to use
+its spatial-window logic.
 
 The Explorer command invokes `"%SystemRoot%\explorer.exe" "%1"` (`%V` for a
 background). The FileSpacer command retains its installed command and COM

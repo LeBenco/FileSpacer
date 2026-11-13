@@ -451,18 +451,11 @@ public:
         WNDCLASSW windowClass = {};
         const bool fileSpacer = GetClassInfoW(GetModuleHandleW(nullptr),
             L"FileSpacer Item Window", &windowClass) != FALSE;
-        if (command == Command::Explorer && fileSpacer) {
+        // FileSpacer offers the way back to Explorer; every other host of a
+        // folder menu (Explorer, file dialogs, other file managers) offers
+        // FileSpacer.
+        if (command == (fileSpacer ? Command::Explorer : Command::FileSpacer))
             *state = ECS_ENABLED;
-        } else if (command == Command::FileSpacer && !fileSpacer) {
-            wchar_t image[MAX_PATH], explorer[MAX_PATH];
-            const DWORD length = GetModuleFileNameW(nullptr, image, ARRAYSIZE(image));
-            const UINT windowsLength = GetWindowsDirectoryW(explorer, ARRAYSIZE(explorer));
-            if (length && length < ARRAYSIZE(image) && windowsLength
-                    && windowsLength < ARRAYSIZE(explorer)
-                    && PathAppendW(explorer, L"explorer.exe")
-                    && _wcsicmp(image, explorer) == 0)
-                *state = ECS_ENABLED;
-        }
         return S_OK;
     }
 };
