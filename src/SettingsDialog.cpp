@@ -461,7 +461,7 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             NMHDR *notif = (NMHDR *)lParam;
             if (notif->idFrom == IDC_OPENING_ANIMATION_SPIN && notif->code == UDN_DELTAPOS) {
                 // The arrows skip the durations too short to be seen.
-                auto change = reinterpret_cast<NMUPDOWN *>(lParam);
+                auto change = reinterpret_cast<NMUPDOWN *>(notif);
                 const int next = change->iPos + change->iDelta;
                 const int minimum = static_cast<int>(settings::MIN_OPENING_ANIMATION_DURATION);
                 if (next > 0 && next < minimum)
