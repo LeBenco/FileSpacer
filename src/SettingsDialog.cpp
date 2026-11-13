@@ -497,8 +497,16 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     notifyWindowSettingsChanged();
                 }
                 const bool historyChanged = limit != settings::getSearchHistoryLimit();
-                if (!settings::setSearchHistoryLimit(limit)) {
-                    reportFolderStateError(GetParent(hwnd));
+                LSTATUS registryError = ERROR_SUCCESS;
+                if (!settings::setSearchHistoryLimit(limit, &registryError)) {
+                    if (registryError != ERROR_SUCCESS) {
+                        // The preference itself could not be written: not a database error.
+                        const auto text = formatString(IDS_STORAGE_ACTION_ERROR,
+                            static_cast<DWORD>(registryError), getErrorMessage(static_cast<DWORD>(registryError)).get());
+                        MessageBoxW(GetParent(hwnd), text.get(), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
+                    } else {
+                        reportFolderStateError(GetParent(hwnd));
+                    }
                     SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
                     return TRUE;
                 }

@@ -96,7 +96,9 @@ void setKeepSelectionOnActivate(bool value);
 bool getLiveNameSearch();
 void setLiveNameSearch(bool value);
 DWORD getSearchHistoryLimit();
-bool setSearchHistoryLimit(DWORD value);
+// On failure, registryError receives the error of the preference write itself;
+// it stays ERROR_SUCCESS when the folder-state database refused the change.
+bool setSearchHistoryLimit(DWORD value, LSTATUS *registryError = nullptr);
 bool getEverythingEnabled();
 bool getPeekEnabled();
 void setPeekEnabled(bool value);
