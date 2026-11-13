@@ -24,7 +24,10 @@ namespace {
 void closeHandle(HANDLE value) { if(value && value!=INVALID_HANDLE_VALUE)CloseHandle(value); }
 using Handle = std::unique_ptr<void, decltype(&closeHandle)>;
 using Module = std::unique_ptr<HINSTANCE__, decltype(&FreeLibrary)>;
-using Internet = std::unique_ptr<void, decltype(&WinHttpCloseHandle)>;
+// winhttp.dll is delay-loaded: a direct call, not the address of the import,
+// which is that of the loading thunk until the first call.
+struct InternetCloser { void operator()(void *handle) const { WinHttpCloseHandle(handle); } };
+using Internet = std::unique_ptr<void, InternetCloser>;
 Image selectedImage;
 const Image publicImage;
 RangeImage selectedRange;
@@ -163,14 +166,20 @@ template<class T> T api(HMODULE module, const char *name) {
 // Returns false when a file left by an earlier run is reused without a download.
 bool downloadPdb(const Identity &id, const std::wstring &destination, const wchar_t *pdb=L"shell32.pdb") {
     if (GetFileAttributesW(destination.c_str()) != INVALID_FILE_ATTRIBUTES) return false;
+    // Load the System32 copy before the first delay-loaded call: a missing
+    // library is an ordinary failure here, not a structured exception, and the
+    // delay-load helper then finds the module already loaded. Declared first:
+    // released after the handles below; the helper keeps its own reference.
+    const Module http(LoadLibraryExW(L"winhttp.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32), &FreeLibrary);
+    require(http != nullptr, "Cannot load the HTTP library");
     Internet session(WinHttpOpen(L"FileSpacer symbol discovery", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
-        WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0), &WinHttpCloseHandle);
+        WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0));
     require(session && WinHttpSetTimeouts(session.get(), 5000, 5000, 15000, 15000), "Cannot initialize symbol download");
-    Internet connection(WinHttpConnect(session.get(), L"msdl.microsoft.com", INTERNET_DEFAULT_HTTPS_PORT, 0), &WinHttpCloseHandle);
+    Internet connection(WinHttpConnect(session.get(), L"msdl.microsoft.com", INTERNET_DEFAULT_HTTPS_PORT, 0));
     require(connection != nullptr, "Cannot connect to symbol server");
     const std::wstring url = L"/download/symbols/"+std::wstring(pdb)+L"/"+id.key+L"/"+pdb;
     Internet request(WinHttpOpenRequest(connection.get(), L"GET", url.c_str(), nullptr, WINHTTP_NO_REFERER,
-        WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE), &WinHttpCloseHandle);
+        WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE));
     require(request && WinHttpSendRequest(request.get(), WINHTTP_NO_ADDITIONAL_HEADERS, 0,
         WINHTTP_NO_REQUEST_DATA, 0, 0, 0) && WinHttpReceiveResponse(request.get(), nullptr), "Symbol request failed");
     DWORD status = 0, bytes = sizeof(status);
@@ -274,9 +283,8 @@ Symbols symbols(const Identity &id, const std::wstring &path, bool control=false
 }
 // A file left by an earlier run is not trusted on its mere presence: when it is
 // not the PDB of the loaded image, it is removed and handled as absent, once.
-// file receives its path, for the caller to discard after recording a decision.
-Symbols matchedSymbols(const Identity &id, const std::wstring &folder, const wchar_t *pdb, bool control, std::wstring &file) {
-    file = folder + L"\\" + pdb;
+Symbols matchedSymbols(const Identity &id, const std::wstring &folder, const wchar_t *pdb, bool control) {
+    const std::wstring file = folder + L"\\" + pdb;
     const bool downloaded = downloadPdb(id, file, pdb);
     try { return symbols(id, folder, control); }
     catch (const UnmatchedPdb &) {
@@ -382,14 +390,14 @@ void save(const Identity &id, const std::array<DWORD,FieldCount> &fields, const 
     file.write(reinterpret_cast<const char *>(&count),4);file.write(reinterpret_cast<const char *>(fields.data()),sizeof(fields));file.flush();
     require(file.good(),"Cannot save discovered data");
 }
-void discoverRange(const std::wstring &root,const std::wstring &path,std::wstring &pdb) {
+void discoverRange(const std::wstring &root,const std::wstring &path) {
     RangeImage result;require(controlIdentity(result.data),"Control identity unavailable");result.base=controlModule();
     Identity id;id.base=result.base;id.size=result.data.size;id.guid=result.data.guid;id.age=result.data.age;
     wchar_t guid[40]={},age[16]={};require(StringFromGUID2(id.guid,guid,_countof(guid))!=0,"Control GUID unavailable");
     for(wchar_t character:guid)if(character&&character!=L'{'&&character!=L'}'&&character!=L'-')id.key+=character;
     swprintf_s(age,L"%X",id.age);id.key+=age;
     const std::wstring directoryName=root+L"\\symbols\\comctl32.pdb\\"+id.key;directory(directoryName);
-    const auto found=matchedSymbols(id,directoryName,L"comctl32.pdb",true,pdb);
+    const auto found=matchedSymbols(id,directoryName,L"comctl32.pdb",true);
     std::copy_n(found.methods.begin(),RangeMethodCount,result.data.methods.begin());
     unsigned char count[96]={};
     supported(read(result.base+result.data.methods[ControlCount],count)
@@ -849,6 +857,21 @@ void removeOrphans(const std::wstring &root) {
         });
     });
 }
+// Symbol files are read only to produce a decision. Once one is durable they are
+// removed, for every identity: none is read again. No effect for an empty root.
+void discardSymbols(const std::wstring &root) {
+    if(root.empty())return;
+    forEachEntry(root+L"\\symbols",L"*",[](const std::wstring &name,bool folder){
+        if(!folder)return;
+        forEachEntry(name,L"*",[](const std::wstring &key,bool nested){
+            if(!nested)return;
+            forEachEntry(key,L"*",[](const std::wstring &path,bool deeper){if(!deeper)DeleteFileW(path.c_str());});
+            RemoveDirectoryW(key.c_str());
+        });
+        RemoveDirectoryW(name.c_str());
+    });
+    RemoveDirectoryW((root+L"\\symbols").c_str());
+}
 DWORD WINAPI discoveryWatchdog(void *stop) {
     if(WaitForSingleObject(static_cast<HANDLE>(stop),180000)==WAIT_TIMEOUT)
         TerminateProcess(GetCurrentProcess(),ERROR_TIMEOUT); // Only the isolated discovery process.
@@ -895,15 +918,20 @@ int runWorker(const wchar_t *cacheRoot) {
     if(!limitedProcess() || !cfgCompatible())return ERROR_ACCESS_DENIED;
     const bool background=SetPriorityClass(GetCurrentProcess(),PROCESS_MODE_BACKGROUND_BEGIN)!=FALSE;
     struct Priority {bool changed;~Priority(){if(changed)SetPriorityClass(GetCurrentProcess(),PROCESS_MODE_BACKGROUND_END);}} priority={background};
-    std::wstring candidate,attempt,negative,pdb;bool rangePhase=false;
+    std::wstring candidate,attempt,negative,purge;bool rangePhase=false;
+    // Held until the decision and its cleanup are recorded, handlers included.
+    Handle lock(nullptr,&closeHandle);
     try {
         Watchdog watchdog;
         const std::wstring root=cacheRoot?cacheRoot:defaultRoot();directory(root);
         const Identity id=identity();const std::wstring final=cachePath(root,id);negative=final+L".public";
-        Handle lock(CreateFileW((root+L"\\discovery.lock").c_str(),GENERIC_READ|GENERIC_WRITE,0,nullptr,
-            OPEN_ALWAYS,FILE_ATTRIBUTE_TEMPORARY|FILE_FLAG_DELETE_ON_CLOSE,nullptr),&closeHandle);
+        lock.reset(CreateFileW((root+L"\\discovery.lock").c_str(),GENERIC_READ|GENERIC_WRITE,0,nullptr,
+            OPEN_ALWAYS,FILE_ATTRIBUTE_TEMPORARY|FILE_FLAG_DELETE_ON_CLOSE,nullptr));
         if(lock.get()==INVALID_HANDLE_VALUE)return ERROR_BUSY;
         removeOrphans(root);
+        // The product cache keeps no symbol file once a decision is durable. A
+        // cache supplied by the caller keeps them: its later runs reuse them.
+        if(!cacheRoot)purge=root;
         if(savedPublic(final+L".public"))return 0;
         const Image previous=Image::discover(final);
         const std::wstring rangeFinal=rangeCacheFile(final);
@@ -915,7 +943,7 @@ int runWorker(const wchar_t *cacheRoot) {
         else {std::ofstream mark(attempt.c_str(),std::ios::trunc);mark<<"Discovery running\n";}
         if(!previous.supported) {
             const std::wstring pdbDirectory=root+L"\\symbols\\shell32.pdb\\"+id.key;directory(pdbDirectory);
-            const auto foundSymbols=matchedSymbols(id,pdbDirectory,L"shell32.pdb",false,pdb);const auto fields=extract(id,foundSymbols);
+            const auto foundSymbols=matchedSymbols(id,pdbDirectory,L"shell32.pdb",false);const auto fields=extract(id,foundSymbols);
             candidate=final+L".pending";save(id,fields,candidate);
         }
         bool unreadable=false;
@@ -937,7 +965,7 @@ int runWorker(const wchar_t *cacheRoot) {
             const std::wstring nextAttempt=rangeFinal+L".attempt";
             if(attempt!=nextAttempt){DeleteFileW(attempt.c_str());attempt=nextAttempt;}
             saveRangeRecord(attempt,"Discovery running");
-            discoverRange(root,candidate,pdb);
+            discoverRange(root,candidate);
             // discoverRange has just qualified these operands in memory against
             // the same loaded module: a rejection of the file it wrote is an
             // I/O failure to retry, never a durable decision.
@@ -951,12 +979,13 @@ int runWorker(const wchar_t *cacheRoot) {
             require(MoveFileExW(candidate.c_str(),rangeFinal.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)!=FALSE,"Cannot publish qualified range cache");
             candidate.clear();
         }
-        DeleteFileW(attempt.c_str());return 0;
+        DeleteFileW(attempt.c_str());discardSymbols(purge);return 0;
     }catch(const Unsupported &error){
         if(!candidate.empty())DeleteFileW(candidate.c_str());
         if(rangePhase)saveRangeRecord(negative,error.what());
         else if(!negative.empty()){std::ofstream report(negative.c_str(),std::ios::binary|std::ios::trunc);report<<"FSPUBLIC01"<<error.what()<<"\n";}
         if(!attempt.empty())DeleteFileW(attempt.c_str());
+        discardSymbols(purge);
         return ERROR_NOT_SUPPORTED;
     }catch(const std::exception &error){
         if(!candidate.empty())DeleteFileW(candidate.c_str());
