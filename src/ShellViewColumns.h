@@ -11,8 +11,20 @@
 
 namespace filespacer {
 // Full-width Details columns for the classic Shell view. Only the public IShellView
-// window is subclassed. Notifications identify their senders; child controls
-// are neither searched for nor subclassed. All width changes use IColumnManager.
+// window is subclassed, and every width is written through IColumnManager.
+//
+// The rest depends on the list control the Shell happens to compose the view
+// with, an optional adaptation like the one of ShellViewLabels.h:
+// - the list is learned from the sender of an NM_CUSTOMDRAW notification, never
+//   searched for, and its header is the one the list reports;
+// - the display order and the minimum widths are read with list-view messages,
+//   and the display position of a dragged column from its header item;
+// - the header notifications of a divider drag are observed; a width change
+//   is refused for the last column, and for the dragged column until the
+//   button is released when the deferred preference is active;
+// - the HDS_FULLDRAG style of the header is cleared while the deferred
+//   preference is active, and its original value is restored afterwards.
+// No child control is subclassed. Without such a list nothing is adjusted.
 class ShellViewColumns : public std::enable_shared_from_this<ShellViewColumns> {
     struct Column {
         PROPERTYKEY key = {};
