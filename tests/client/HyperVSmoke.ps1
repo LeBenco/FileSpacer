@@ -4,7 +4,7 @@ Set-StrictMode -Version 2
 $inputRoot=if($Regression){[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))}else{$PSScriptRoot}
 $outputRoot=Join-Path (Split-Path $inputRoot -Parent) 'output'
 [void][IO.Directory]::CreateDirectory($outputRoot)
-$report=[ordered]@{Status='BLOCKED';RunId=$null;GuestMachine=$env:COMPUTERNAME;SessionId=[Diagnostics.Process]::GetCurrentProcess().SessionId;IsAdministrator=$null;SessionQuery=$null;SessionQueryExitCode=$null;DesktopProcesses=@();BuildLocation='Host';Configuration='Debug';GuestCompilation=$false;ExecutableSha256=$null;Gesture=$null;StateRestored=$false;ProductionUnchanged=$false;Error=$null;CleanupErrors=@()}
+$report=[ordered]@{Status='BLOCKED';RunId=$null;GuestMachine=$env:COMPUTERNAME;SessionId=[Diagnostics.Process]::GetCurrentProcess().SessionId;IsAdministrator=$null;SessionQuery=$null;SessionQueryExitCode=$null;DesktopProcesses=@();BuildLocation='Host';Configuration='Debug';GuestCompilation=$false;ExecutableSha256=$null;Gesture=$null;StateRestored=$false;ProductionUnchanged=$false;FormerPackages=$null;Error=$null;CleanupErrors=@()}
 $activity=$null;$statePrepared=$false;$initialFingerprint=$null
 $transcriptStarted=$false
 $testKey='Software\FileSpacer\Test'
@@ -25,6 +25,32 @@ function Remove-DocumentationCaptureInput([string]$Root,[string]$RunId) {
     if($identity.RunId-ne$RunId -or @($cases.Cases).Count-ne1 -or $cases.Cases[0]-notin@('99-documentation\01-Capture.ps1','99-documentation\03-ReclaimInputs.ps1')){throw 'Only the verified documentation capture input may be removed.'}
     Remove-Item -LiteralPath $full -Recurse -Force
     return !(Test-Path -LiteralPath $full)
+}
+# The host copies every report back: the package of an earlier run has no
+# further use in the guest, and they filled its disk. Only directories named
+# like a run, beside this one, are removed. A link is never followed: one named
+# like a package is kept, and rd removes those met inside a package as links.
+# A directory still in use stays, and is reported.
+function Remove-FormerPackages([string]$CurrentRoot) {
+    $current=[IO.Path]::GetFullPath($CurrentRoot).TrimEnd('\')
+    $container=Split-Path $current -Parent
+    if((Split-Path $current -Leaf)-notmatch'^[0-9a-f]{8}$' -or (Split-Path $container -Leaf)-ne'FileSpacerTests'){throw 'Unexpected package location.'}
+    if((Get-Item -LiteralPath $container -Force).Attributes-band[IO.FileAttributes]::ReparsePoint){throw 'The package container is a reparse point.'}
+    $removed=0;$kept=@()
+    foreach($entry in @(Get-ChildItem -LiteralPath $container -Force -Directory)){
+        if($entry.FullName-eq$current -or $entry.Name-notmatch'^[0-9a-f]{8}$'){continue}
+        if(!($entry.Attributes-band[IO.FileAttributes]::ReparsePoint)){
+            # The extended-length form also reaches the deep fixture paths of some cases.
+            $start=New-Object Diagnostics.ProcessStartInfo
+            $start.FileName=$env:ComSpec
+            $start.Arguments='/d /c rd /s /q "\\?\'+$entry.FullName+'"'
+            $start.UseShellExecute=$false;$start.CreateNoWindow=$true
+            $process=[Diagnostics.Process]::Start($start)
+            try{$process.WaitForExit()}finally{$process.Dispose()}
+        }
+        if(Test-Path -LiteralPath $entry.FullName){$kept+=$entry.Name}else{$removed++}
+    }
+    return [pscustomobject]@{Removed=$removed;Kept=@($kept);Error=$null}
 }
 function Get-TestFingerprint {
     function Read-Key([Microsoft.Win32.RegistryKey]$Key) {
@@ -70,6 +96,9 @@ try {
     $report.DesktopProcesses=@(Get-Process LogonUI,LockApp,explorer,rdpclip -ErrorAction SilentlyContinue | Select-Object ProcessName,Id,SessionId)
     if($report.SessionQuery-notmatch'(?m)^>\s*console\s'){throw 'The guest session is not attached to its console after preparation.'}
     if(@(Get-Process FileSpacer -ErrorAction SilentlyContinue).Count){throw 'Close existing guest FileSpacer processes before the smoke test.'}
+    # Housekeeping only: its failure is reported and never decides the result of the tests.
+    try{$report.FormerPackages=Remove-FormerPackages (Split-Path $inputRoot -Parent)}
+    catch{$report.FormerPackages=[pscustomobject]@{Removed=0;Kept=@();Error=$_.Exception.Message}}
     if($Regression){
         # The guest signs in with Everything's installed client started automatically.
         # Like the GitHub workflow, stop it in this session before any case runs:
