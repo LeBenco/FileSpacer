@@ -330,6 +330,7 @@ struct FolderWindow::ViewMenuPreview {
                 // restoration made here, so a transient view is never persisted.
                 if (FAILED(counted) || FAILED(recounted) || before != after) {
                     owner.enumerationComplete = false;
+                    owner.beginLoading();
                     owner.viewOptionsEnumerationBaseline = baseline;
                 }
                 restoreDetails();
@@ -672,6 +673,7 @@ bool FolderWindow::recoverProvisionalView() {
                 // EnumDone that completes the view. The merge is recomputed
                 // then, so interactions made meanwhile are still observed.
                 enumerationComplete = false;
+                beginLoading();
                 provisionalRestore.reset();
                 blockProvisionalInput(false);
                 return false;
@@ -1986,6 +1988,7 @@ void FolderWindow::onDestroy() {
     resizeGesture.stop();
     checkHR(viewHost.stopObserving());
     KillTimer(hwnd, TIMER_SAVE_STATE);
+    endLoading(false);
     cancelStorageWait();
     providerSyncPending = false;
     viewStateDirty(FolderState::Icons);
@@ -2691,9 +2694,68 @@ HRESULT FolderWindow::refreshView() {
 // Restart the enumeration. The baseline is read before the call so that only
 // an EnumDone of the new enumeration marks it complete; a stale event still
 // queued from the previous one can no longer let positions be captured early.
+// The view fills in the background and reports the end of its enumeration by an
+// event. Meanwhile, once half a second has passed, the address bar and the
+// taskbar button show a bar that fills as in Explorer. No real proportion is
+// known: it advances with time and completes on the event. The timer only
+// animates the bar; nothing is decided from it.
+void FolderWindow::beginLoading() {
+    if (!hwnd) return;
+    if (loadingFinishing) clearLoading();
+    if (loadingSince) return;
+    loadingSince = GetTickCount64();
+    loadingShownAt = 0;
+    SetTimer(hwnd, TIMER_LOADING, 500, nullptr);
+}
+
+void FolderWindow::clearLoading() {
+    if (hwnd) KillTimer(hwnd, TIMER_LOADING);
+    if (loadingShownAt) debugPrintf(L"LOADING hidden\n");
+    loadingSince = loadingShownAt = 0;
+    loadingFinishing = false;
+    pathBar.setProgress(-1);
+    if (loadingTaskbar && hwnd) loadingTaskbar->SetProgressState(hwnd, TBPF_NOPROGRESS);
+    loadingTaskbar.Release();
+}
+
+void FolderWindow::endLoading(bool completed) {
+    if (!loadingSince) return;
+    if (!loadingShownAt || !completed || !isWindowOperational()) {
+        clearLoading();
+        return;
+    }
+    if (loadingFinishing) return;
+    // Shown complete for a moment, then removed by the next tick.
+    loadingFinishing = true;
+    pathBar.setProgress(1000);
+    if (loadingTaskbar) loadingTaskbar->SetProgressValue(hwnd, 1000, 1000);
+    SetTimer(hwnd, TIMER_LOADING, 200, nullptr);
+}
+
+void FolderWindow::loadingTick() {
+    if (loadingFinishing || !loadingSince || !isWindowOperational()) {
+        clearLoading();
+        return;
+    }
+    const ULONGLONG now = GetTickCount64();
+    if (!loadingShownAt) {
+        loadingShownAt = now;
+        SetTimer(hwnd, TIMER_LOADING, 50, nullptr);
+        if (SUCCEEDED(loadingTaskbar.CoCreateInstance(CLSID_TaskbarList)) && FAILED(loadingTaskbar->HrInit()))
+            loadingTaskbar.Release();
+        debugPrintf(L"LOADING shown after %llu ms\n", now - loadingSince);
+    }
+    // Quick at first, then ever slower: never complete before the event.
+    const ULONGLONG elapsed = now - loadingShownAt;
+    const int value = static_cast<int>(50 + 850 * elapsed / (elapsed + 3000));
+    pathBar.setProgress(value);
+    if (loadingTaskbar) loadingTaskbar->SetProgressValue(hwnd, static_cast<ULONGLONG>(value), 1000);
+}
+
 HRESULT FolderWindow::refreshEnumeration() {
     viewMenuRestore.reset(); // An explicit restart supersedes a preview's pending replay.
     enumerationComplete = false;
+    beginLoading();
     viewOptionsEnumerationBaseline = viewHost.enumerationSerial();
     return refreshView();
 }
@@ -2840,6 +2902,7 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
                 if (message == MSG_ENUM_READY) initialEnumerationReady = true;
                 else if (static_cast<ULONG_PTR>(lParam) > viewOptionsEnumerationBaseline)
                     enumerationComplete = true;
+                if (enumerationComplete) endLoading(true);
                 finishViewInitialization();
                 auto preview = viewMenuPreview;
                 if (message == MSG_ENUM_DONE && preview)
@@ -2981,6 +3044,10 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             requestViewProfile();
             break;
         case WM_TIMER:
+            if (wParam == TIMER_LOADING) {
+                loadingTick();
+                return 0;
+            }
             if (wParam == TIMER_SAVE_STATE) {
                 KillTimer(hwnd, TIMER_SAVE_STATE);
                 if (!isWindowOperational()) return 0;
@@ -4027,6 +4094,7 @@ STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
     restoreIconsPending = true;
     restoreIconsUnpruned = false;
     enumerationComplete = false;
+    beginLoading();
     provisionalRestoreOptionsApplied = false;
     return S_OK;
 }
@@ -4049,6 +4117,7 @@ STDMETHODIMP FolderWindow::OnNavigationFailed(PCIDLIST_ABSOLUTE) {
     debugPrintf(L"NATIVE HWND=%p OnNavigationFailed\n", hwnd);
     // This callback also reports cancellation and has no HRESULT: do not count a failure.
     checkHR(viewHost.stopObserving());
+    endLoading(false);
     viewReady = false;
     setStatusText(getString(IDS_FOLDER_ERROR));
     if (reopeningWindow.sequence) {
@@ -4080,6 +4149,7 @@ STDMETHODIMP FolderWindow::OnViewCreated(IShellView *const view) {
     restoringState = true;
     viewReady = false;
     enumerationComplete = false;
+    beginLoading();
     const HRESULT observed = viewHost.observeView(view, hwnd, MSG_ENUM_READY,
         MSG_ENUM_DONE, viewGeneration, MSG_VIEW_CHANGED);
     debugPrintf(L"NATIVE HWND=%p observeView: HRESULT=0x%08lX generation=%llu\n",
@@ -4341,6 +4411,7 @@ void FolderWindow::finishViewInitialization() {
             if (viewHost.enumerationSerial() == enumeration) {
                 viewOptionsEnumerationBaseline = enumeration;
                 enumerationComplete = false;
+                beginLoading();
             } else if (enumerationComplete) {
                 // A newer public completion arrived reentrantly during the
                 // probe. Continue outside that call, without inventing one.
@@ -4399,6 +4470,7 @@ void FolderWindow::finishViewInitialization() {
             // completes this initialization.
             if (FAILED(beforeResult) || FAILED(afterResult) || before != after) {
                 enumerationComplete = false;
+                beginLoading();
                 if ((!provisionalBaseline || provisionalReady) && provisionalInputBlocked)
                     blockProvisionalInput(false);
                 return;

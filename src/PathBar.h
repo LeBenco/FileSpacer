@@ -26,6 +26,8 @@ public:
     void setFont(HFONT font);
     void place(int left, int right, int height);
     void show(bool visible);
+    // Loading progress behind the path, in thousandths; a negative value removes it.
+    void setProgress(int thousandths);
     bool isWindow(HWND window) const;
     bool hasFocus() const;
     bool handleTopLevelMessage(MSG *msg);
@@ -46,6 +48,8 @@ private:
     void submit(bool control);
     void openItem(IShellItem *item, bool control, int sourceCommand = 0);
     void showHiddenSegments();
+    void paintBackground(HDC dc);
+    int progressWidth() const;
 
     HWND owner = nullptr, toolbar = nullptr, edit = nullptr, previousFocus = nullptr;
     HFONT chevronFont = nullptr; // owned compact icon font
@@ -54,6 +58,7 @@ private:
     std::wstring address;
     size_t firstVisible = 0;
     bool editing = false;
+    int progress = -1;
 };
 
 } // namespace

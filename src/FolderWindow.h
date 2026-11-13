@@ -150,6 +150,7 @@ protected:
     enum TimerID {
         TIMER_UPDATE_SELECTION = 1,
         TIMER_SAVE_STATE,
+        TIMER_LOADING,
         TIMER_LAST
     };
     enum UserMessage {
@@ -340,6 +341,15 @@ private:
     bool viewReady = false;
     bool enumerationComplete = false;
     bool restoringState = false;
+    // Loading indicator of the address bar and the taskbar button, from the
+    // start of an enumeration to the event that ends it.
+    void beginLoading();
+    void endLoading(bool completed);
+    void loadingTick();
+    void clearLoading();
+    ULONGLONG loadingSince = 0, loadingShownAt = 0;
+    bool loadingFinishing = false;
+    CComPtr<ITaskbarList3> loadingTaskbar;
 
     void selectionChanged();
     void scheduleUpdateSelection();

@@ -41,7 +41,8 @@ void PathBar::create(HWND parent, HWND ownerWindow, IShellItem *item, HFONT font
     lstrcpy(iconFont.lfFaceName, L"Segoe MDL2 Assets");
     chevronFont = checkLE(CreateFontIndirect(&iconFont));
     toolbar = checkLE(CreateWindowEx(0, TOOLBARCLASSNAME, nullptr,
-        WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_TOOLTIPS
+        // Transparent: the loading progress painted by this window shows behind the path.
+        WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT | TBSTYLE_TRANSPARENT | TBSTYLE_LIST | TBSTYLE_TOOLTIPS
             | CCS_NOPARENTALIGN | CCS_NORESIZE | CCS_NODIVIDER,
         0, 0, 0, 0, hwnd, nullptr, GetModuleHandle(nullptr), nullptr));
     edit = checkLE(CreateWindowEx(0, L"EDIT", nullptr,
@@ -53,7 +54,7 @@ void PathBar::create(HWND parent, HWND ownerWindow, IShellItem *item, HFONT font
     }
     // Flat native buttons provide themed hover and pressed states.
     SendMessage(toolbar, TB_BUTTONSTRUCTSIZE, sizeof(TBBUTTON), 0);
-    SendMessage(toolbar, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_MIXEDBUTTONS);
+    SendMessage(toolbar, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_DOUBLEBUFFER);
     SendMessage(toolbar, TB_SETBITMAPSIZE, 0, 0);
     SendMessage(toolbar, TB_SETMAXTEXTROWS, 1, 0);
     SendMessage(toolbar, TB_SETDRAWTEXTFLAGS,
@@ -139,6 +140,40 @@ void PathBar::setFont(HFONT font) {
         SendMessage(edit, WM_SETFONT, (WPARAM)font, TRUE);
     }
     layout();
+}
+
+// The width covered by the progress, inside the one-pixel frame.
+int PathBar::progressWidth() const {
+    if (progress < 0 || !hwnd) return 0;
+    return MulDiv((std::max)(0L, clientSize(hwnd).cx - 2), (std::min)(progress, 1000), 1000);
+}
+
+void PathBar::setProgress(int thousandths) {
+    if (!hwnd) return;
+    const bool shown = progress >= 0;
+    const int width = progressWidth();
+    progress = thousandths;
+    // Repaint only when a pixel changes: the timer of the owner is finer than the bar.
+    if (shown != (progress >= 0) || width != progressWidth())
+        RedrawWindow(hwnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+}
+
+// Also what the transparent toolbar shows as its own background.
+void PathBar::paintBackground(HDC dc) {
+    RECT client = clientRect(hwnd);
+    FillRect(dc, &client, GetSysColorBrush(COLOR_WINDOW));
+    const int width = progressWidth();
+    if (width <= 0) return;
+    RECT fill = {1, 1, 1 + width, client.bottom - 1};
+    HIGHCONTRASTW contrast = {sizeof(contrast)};
+    // A full fill could hide the text of a high-contrast scheme: a strip under it.
+    if (SystemParametersInfoW(SPI_GETHIGHCONTRAST, sizeof(contrast), &contrast, 0)
+            && (contrast.dwFlags & HCF_HIGHCONTRASTON))
+        fill.top = (std::max)(fill.top, fill.bottom - scaleDPI(3));
+    const HTHEME theme = OpenThemeData(hwnd, L"PROGRESS");
+    if (!theme || FAILED(DrawThemeBackground(theme, dc, PP_FILL, PBFS_NORMAL, &fill, nullptr)))
+        FillRect(dc, &fill, GetSysColorBrush(COLOR_HIGHLIGHT));
+    if (theme) (void)checkHR(CloseThemeData(theme));
 }
 
 void PathBar::place(int left, int right, int height) {
@@ -378,6 +413,10 @@ LRESULT PathBar::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             EndPaint(hwnd, &paint);
             return 0;
         }
+        case WM_ERASEBKGND:
+        case WM_PRINTCLIENT:
+            paintBackground(reinterpret_cast<HDC>(wParam));
+            return 1;
         case WM_THEMECHANGED:
         case WM_SYSCOLORCHANGE:
             RedrawWindow(hwnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
