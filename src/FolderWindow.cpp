@@ -781,6 +781,7 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
                 || (focus != root && !IsChild(root, focus))) return false;
         return (SendMessage(focus, WM_GETDLGCODE, 0, 0) & (DLGC_HASSETSEL | DLGC_WANTALLKEYS)) != 0;
     };
+    bool editorKey = false;
     if (msg->message == WM_KEYDOWN && GetKeyState(VK_MENU) >= 0) {
         const bool control = GetKeyState(VK_CONTROL) < 0;
         const bool shift = GetKeyState(VK_SHIFT) < 0;
@@ -789,13 +790,18 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         const bool windowKey = control && !shift && (msg->wParam == L'N' || msg->wParam == L'W');
         const bool modeKey = control && shift && msg->wParam >= L'1' && msg->wParam <= L'8';
         // Only a key typed in this window, outside a rename, is a shortcut.
-        if ((refreshKey || windowKey || modeKey) && GetAncestor(msg->hwnd, GA_ROOT) == hwnd
-                && !renaming()) {
-            if (!isWindowOperational()) return false;
-            if (refreshKey) onCommand(IDM_REFRESH);
-            else if (windowKey) onCommand(msg->wParam == L'N' ? IDM_NEW_WINDOW : IDM_CLOSE_WINDOW);
-            else changeViewMode(static_cast<int>(msg->wParam - L'1'));
-            return true;
+        if ((refreshKey || windowKey || modeKey) && GetAncestor(msg->hwnd, GA_ROOT) == hwnd) {
+            if (renaming()) {
+                // The accelerator table holds the same refresh and window keys:
+                // the editor keeps them too, and the Shell view decides.
+                editorKey = true;
+            } else {
+                if (!isWindowOperational()) return false;
+                if (refreshKey) onCommand(IDM_REFRESH);
+                else if (windowKey) onCommand(msg->wParam == L'N' ? IDM_NEW_WINDOW : IDM_CLOSE_WINDOW);
+                else changeViewMode(static_cast<int>(msg->wParam - L'1'));
+                return true;
+            }
         }
         if (!isWindowOperational()) return false;
     }
@@ -837,7 +843,7 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         // Keep native edit shortcuts away from the Shell's file commands.
         return searchBox.handleTopLevelMessage(msg);
     }
-    if (ItemWindow::handleTopLevelMessage(msg))
+    if (!editorKey && ItemWindow::handleTopLevelMessage(msg))
         return true;
     if (!isWindowOperational() || pathBar.hasFocus())
         return false; // The Shell view must not consume Ctrl+C/Ctrl+V from the address.
@@ -1216,7 +1222,8 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
         const bool begun = resizeGesture.begin(owner, owner, point, button, moving);
         if (begun && !moving) {
             resizingColumns = true;
-            if (columnLayout) columnLayout->suspend(ShellViewColumns::Hold::Resize, settings::getDetailsColumnsDeferred());
+            resizeDeferred = settings::getDetailsColumnsDeferred();
+            if (columnLayout) columnLayout->suspend(ShellViewColumns::Hold::Resize, resizeDeferred);
         }
         return begun;
     }
@@ -1278,8 +1285,9 @@ void FolderWindow::onCreateContent() {
 
     RECT browserRect = windowBody();
     browserRect.bottom -= bottomStatusHeight;
-    // Animated openings already have their final frame and client geometry.
-    if (!IsWindowVisible(hwnd)) browserRect.bottom += CAPTION_HEIGHT;
+    // Content created after WM_CREATE, for an opening effect that started or
+    // not, already has its final frame and client geometry.
+    if (!frameApplied) browserRect.bottom += CAPTION_HEIGHT;
 
     FOLDERSETTINGS initial = folderSettings();
     SFGAOF attributes = SFGAO_FILESYSTEM | SFGAO_STREAM;
@@ -2409,7 +2417,7 @@ void FolderWindow::onActivate(WORD state, HWND prevWindow) {
 }
 
 void FolderWindow::onSize(SIZE size) {
-    if (viewHost && columnLayout && resizingColumns && settings::getDetailsColumnsDeferred()) {
+    if (viewHost && columnLayout && resizingColumns && resizeDeferred) {
         // Keep the whole client layout stable; Shell-only deferral still redraws the toolbars.
         columnBoundsPending = true;
         return;
@@ -2447,7 +2455,7 @@ void FolderWindow::onSize(SIZE size) {
         if (folderView)
             folderView->SetRedraw(true); // Windows 11 has so many cool bugs
     }
-    if (columnLayout && (!resizingColumns || !settings::getDetailsColumnsDeferred())) columnLayout->resize();
+    if (columnLayout && (!resizingColumns || !resizeDeferred)) columnLayout->resize();
 }
 
 bool FolderWindow::columnFillActive() const {
@@ -2514,7 +2522,8 @@ void FolderWindow::synchronizeColumns() {
     auto layout = columnLayout;
     if (layout) {
         layout->setDeferred(settings::getDetailsColumnsDeferred());
-        layout->suspend(ShellViewColumns::Hold::Resize, resizingColumns && settings::getDetailsColumnsDeferred());
+        // A resize gesture keeps the value it started with.
+        layout->suspend(ShellViewColumns::Hold::Resize, resizingColumns && resizeDeferred);
         layout->synchronize();
     }
 }
@@ -2667,7 +2676,8 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
     CComPtr<ItemWindow> messageKeepAlive(this);
     if (message == WM_ENTERSIZEMOVE) {
         resizingColumns = true;
-        if (columnLayout) columnLayout->suspend(ShellViewColumns::Hold::Resize, settings::getDetailsColumnsDeferred());
+        resizeDeferred = settings::getDetailsColumnsDeferred();
+        if (columnLayout) columnLayout->suspend(ShellViewColumns::Hold::Resize, resizeDeferred);
     } else if (message == WM_EXITSIZEMOVE) {
         finishColumnResize();
     } else if (message == MSG_COLUMNS_CHANGED) {
