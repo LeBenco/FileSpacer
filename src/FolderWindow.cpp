@@ -871,7 +871,8 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         return false;
     if (msg->message == WM_KEYDOWN && msg->wParam == VK_BACK
             && GetKeyState(VK_MENU) >= 0 && GetKeyState(VK_SHIFT) >= 0) {
-        const bool closeSource = GetKeyState(VK_CONTROL) >= 0 && !settings::getKeepSourceWindowOpen();
+        // Like the Parent button, Ctrl inverts the preference.
+        const bool closeSource = settings::getKeepSourceWindowOpen() == (GetKeyState(VK_CONTROL) < 0);
         const ULONG_PTR generation = viewGeneration;
         const HWND focus = GetFocus();
         HWND root = nullptr;
@@ -882,10 +883,8 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
             if (!isWindowOperational() || shellView != view || viewGeneration != generation || GetFocus() != focus)
                 return true;
             if (!(code & (DLGC_HASSETSEL | DLGC_WANTALLKEYS))) {
-                CComPtr<IShellItem> parent;
-                if (SUCCEEDED(item->GetParent(&parent)) && isWindowOperational()
-                        && shellView == view && viewGeneration == generation)
-                    openChild(parent, closeSource);
+                // A held key would climb through each parent that takes the focus.
+                if (!(msg->lParam & (1 << 30))) openParent(closeSource);
                 return true;
             }
         }
@@ -2154,8 +2153,11 @@ void FolderWindow::fitWindowToContents() {
     MONITORINFO monitor = {sizeof(monitor)};
     if (!GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &monitor)) return;
     const UINT dpi = GetDpiForWindow(hwnd);
-    const LONG width = (std::min<LONG>)(rectWidth(monitor.rcWork),
-        (std::max<LONG>)(GetSystemMetricsForDpi(SM_CXMINTRACK, dpi),
+    // Columns that fill the window follow its width: their sum says nothing
+    // about the content, and fitting to it would widen the window each time.
+    const bool keepWidth = mode == FVM_DETAILS && columnFillActive();
+    const LONG width = (std::min<LONG>)(rectWidth(monitor.rcWork), keepWidth ? rectWidth(windowRect)
+        : (std::max<LONG>)(GetSystemMetricsForDpi(SM_CXMINTRACK, dpi),
         content.cx + rectWidth(windowRect) - rectWidth(viewRect) + scaleDPI(12)));
     const LONG height = (std::min<LONG>)(rectHeight(monitor.rcWork),
         (std::max<LONG>)(GetSystemMetricsForDpi(SM_CYMINTRACK, dpi),
