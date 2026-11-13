@@ -35,6 +35,8 @@ const bool      DEFAULT_KEEP_SOURCE_WINDOW_OPEN = false;
 const bool      DEFAULT_OPENING_ANIMATION_ENABLED = true;
 const DWORD     DEFAULT_OPENING_ANIMATION_DURATION = 200;
 const DWORD     MAX_OPENING_ANIMATION_DURATION = 999;
+// Shorter than a few frames, the effect cannot be seen. 0 still turns it off.
+const DWORD     MIN_OPENING_ANIMATION_DURATION = 50;
 const bool      DEFAULT_SMART_WINDOW_PLACEMENT = true;
 const bool      DEFAULT_KEEP_SELECTION_ON_ACTIVATE = true;
 const bool      DEFAULT_LIVE_NAME_SEARCH     = false;

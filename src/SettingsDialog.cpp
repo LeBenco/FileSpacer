@@ -459,6 +459,15 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
         }
         case WM_NOTIFY: {
             NMHDR *notif = (NMHDR *)lParam;
+            if (notif->idFrom == IDC_OPENING_ANIMATION_SPIN && notif->code == UDN_DELTAPOS) {
+                // The arrows skip the durations too short to be seen.
+                auto change = reinterpret_cast<NMUPDOWN *>(lParam);
+                const int next = change->iPos + change->iDelta;
+                const int minimum = static_cast<int>(settings::MIN_OPENING_ANIMATION_DURATION);
+                if (next > 0 && next < minimum)
+                    change->iDelta = (change->iDelta > 0 ? minimum : 0) - change->iPos;
+                return FALSE;
+            }
             if (notif->code == PSN_KILLACTIVE) {
                 if (help) help->hide();
                 DWORD limit = 0, duration = 0;
@@ -826,7 +835,8 @@ static bool openingAnimationDuration(HWND hwnd, DWORD *value) {
     BOOL translated = FALSE;
     const UINT number = GetDlgItemInt(hwnd, IDC_OPENING_ANIMATION_DURATION, &translated, FALSE);
     bool valid = translated && length > 0 && length <= 3
-        && number <= settings::MAX_OPENING_ANIMATION_DURATION;
+        && number <= settings::MAX_OPENING_ANIMATION_DURATION
+        && (!number || number >= settings::MIN_OPENING_ANIMATION_DURATION);
     for (int index = 0; valid && index < length; ++index)
         valid = text[index] >= L'0' && text[index] <= L'9';
     if (valid) {
