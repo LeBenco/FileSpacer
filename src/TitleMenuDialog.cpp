@@ -134,10 +134,10 @@ struct App {
     std::wstring directory, desktopName, nilesoftPath;
     RECT arrowRect = {}, blockRect = {};
     SIZE frameSize = {}, menuSize = {};
-    POINT frameInset = {}, pressedPoint = {}, catalogPoint = {};
+    POINT frameInset = {}, pressedPoint = {};
     int previewWidth = 500, previewHeight = 500, scrollY = 0, blockExtra = 0, insertion = -1;
     int fullStackHeight = 0, stackSeparatorHeight = 0, renderError = 0, pendingMove = -1;
-    int pressedRow = -1, catalogPressed = -1;
+    int pressedRow = -1;
     CLIPFORMAT format = 0;
     unsigned drops = 0;
     bool blockedTipActive = false, dragging = false, closePending = false;
@@ -875,37 +875,6 @@ LRESULT CALLBACK previewProc(HWND window, UINT message, WPARAM wParam, LPARAM lP
     return DefWindowProcW(window, message, wParam, lParam);
 }
 
-LRESULT CALLBACK catalogInput(HWND window, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR data) {
-    App &app = *reinterpret_cast<App *>(data);
-    if (message == WM_LBUTTONDOWN || message == WM_LBUTTONDBLCLK) {
-        if (app.rendering) return 0;
-        app.catalogPoint = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
-        LVHITTESTINFO hit = {}; hit.pt = app.catalogPoint;
-        const int row = ListView_SubItemHitTest(window, &hit);
-        app.catalogPressed = catalogCommand(window, row);
-        if (row >= 0) {
-            ListView_SetItemState(window, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
-            ListView_SetItemState(window, row, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-            SetFocus(window); SetCapture(window);
-        }
-        return 0;
-    }
-    if (message == WM_LBUTTONUP || message == WM_CANCELMODE) {
-        app.catalogPressed = -1; if (GetCapture() == window) ReleaseCapture(); return 0;
-    }
-    if (message == WM_MOUSEMOVE && (wParam & MK_LBUTTON) && app.catalogPressed >= 0) {
-        if (abs(GET_X_LPARAM(lParam) - app.catalogPoint.x) >= GetSystemMetrics(SM_CXDRAG)
-                || abs(GET_Y_LPARAM(lParam) - app.catalogPoint.y) >= GetSystemMetrics(SM_CYDRAG)) {
-            const int command = app.catalogPressed; app.catalogPressed = -1; ReleaseCapture();
-            startDrag(app, command, -1);
-        }
-        return 0;
-    }
-    if (message == WM_CAPTURECHANGED) { app.catalogPressed = -1; return 0; }
-    if (message == WM_NCDESTROY) RemoveWindowSubclass(window, catalogInput, 1);
-    return DefSubclassProc(window, message, wParam, lParam);
-}
-
 INT_PTR CALLBACK dialogProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
     App *app = reinterpret_cast<App *>(GetWindowLongPtrW(window, DWLP_USER));
     if (message == WM_INITDIALOG) {
@@ -946,7 +915,6 @@ INT_PTR CALLBACK dialogProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         SendMessageW(app->catalog, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
         LVCOLUMNW column = {}; column.mask = LVCF_WIDTH; column.cx = 300;
         ListView_InsertColumn(app->catalog, 0, &column);
-        SetWindowSubclass(app->catalog, catalogInput, 1, reinterpret_cast<DWORD_PTR>(app));
         CComPtr<IDropTarget> menuTarget, removeTarget;
         menuTarget.Attach(new Target(*app, 0, false, true));
         removeTarget.Attach(new Target(*app, -1, true));
@@ -987,6 +955,12 @@ INT_PTR CALLBACK dialogProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
             break;
         case WM_NOTIFY: {
             const NMHDR *notice = reinterpret_cast<NMHDR *>(lParam);
+            if (notice->hwndFrom == app->catalog && notice->code == LVN_BEGINDRAG) {
+                // The list selects the row and detects the drag itself.
+                const int command = catalogCommand(app->catalog, reinterpret_cast<const NMLISTVIEW *>(lParam)->iItem);
+                if (command >= 0) startDrag(*app, command, -1);
+                return TRUE;
+            }
             if (notice->hwndFrom == app->settingsLink && (notice->code == NM_CLICK || notice->code == NM_RETURN)) {
                 const std::wstring directory = nilesoftSettingsDirectory(app->nilesoftPath);
                 const std::wstring argument = L"\"" + directory + L"\"";
