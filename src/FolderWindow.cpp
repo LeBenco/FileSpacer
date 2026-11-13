@@ -3875,9 +3875,10 @@ static bool openingIconRect(IShellView *view, IFolderView2 *folder,
             long x = 0, y = 0, width = 0, height = 0;
             if (FAILED(accessible->accLocation(&x, &y, &width, &height, child)) || !current()
                     || width <= 0 || height <= 0) return false;
-            POINT topLeft = {x, y}, bottomRight = {x + width, y + height};
-            if (!PhysicalToLogicalPointForPerMonitorDPI(body, &topLeft)
-                    || !PhysicalToLogicalPointForPerMonitorDPI(body, &bottomRight)) return false;
+            // Asked from inside the process, the accessible object of the view
+            // answers in the coordinates of this system-DPI-aware process, already
+            // scaled when the display has another DPI: they are not converted again.
+            const POINT topLeft = {x, y}, bottomRight = {x + width, y + height};
             const bool large = mode == FVM_ICON || mode == FVM_THUMBNAIL || mode == FVM_THUMBSTRIP;
             // Icon layouts put the image above the label; rows put it to its left.
             const LONG left = large ? topLeft.x + (bottomRight.x - topLeft.x - size) / 2 : topLeft.x;

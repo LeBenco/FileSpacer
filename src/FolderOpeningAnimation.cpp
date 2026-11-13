@@ -330,7 +330,7 @@ struct FolderOpeningAnimation::State {
                 || end.right <= end.left || end.bottom <= end.top) {
             if (!checkLE(GetWindowRect(window, &end))) return false;
         } else {
-            // DWM/MSAA use physical screen pixels; this application is system-DPI-aware.
+            // DWM reports physical screen pixels; this application is system-DPI-aware.
             POINT topLeft = {end.left, end.top}, bottomRight = {end.right, end.bottom};
             if (!checkLE(PhysicalToLogicalPointForPerMonitorDPI(window, &topLeft))
                     || !checkLE(PhysicalToLogicalPointForPerMonitorDPI(window, &bottomRight))) return false;
