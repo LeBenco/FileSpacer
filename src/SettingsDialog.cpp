@@ -224,6 +224,14 @@ void notifyWindowSettingsChanged() {
 
 static bool searchHistoryLimit(HWND hwnd, DWORD *value);
 static bool openingAnimationDuration(HWND hwnd, DWORD *value);
+// One way to refuse a number: the message, then the field selected again once
+// the property sheet has settled the focus (WM_NEXTDLGCTL selects the whole
+// text of an edit control). The caller puts the stored value back first.
+static void rejectNumber(HWND page, HWND edit, const wchar_t *message) {
+    TaskDialog(GetParent(page), GetModuleHandle(nullptr), MAKEINTRESOURCE(IDS_ERROR_CAPTION),
+        nullptr, message, TDCBF_OK_BUTTON, TD_ERROR_ICON, nullptr);
+    PostMessageW(page, WM_NEXTDLGCTL, reinterpret_cast<WPARAM>(edit), TRUE);
+}
 
 struct GeneralHelp {
     struct WindowDeleter { void operator()(HWND window) const { DestroyWindow(window); } };
@@ -354,8 +362,21 @@ struct GeneralHelp {
             const RECT labelBounds = controlRect(field.label);
             const RECT valueBounds = controlRect(field.value);
             const RECT spinBounds = controlRect(field.spin);
-            const int offset = labelBounds.left + extent.right + gap.right - valueBounds.left;
-            checkLE(SetWindowPos(label, nullptr, 0, 0, extent.right,
+            // A long translation must not push the field out of the page: the
+            // label is cut short instead, with the margin it has on the left.
+            RECT client = {};
+            GetClientRect(page, &client);
+            int reserved = (std::max)(valueBounds.right, spinBounds.right) + labelBounds.left;
+            if (field.unit) {
+                const RECT unitBounds = controlRect(field.unit);
+                reserved += gap.right + unitBounds.right - unitBounds.left;
+            }
+            const int offset = (std::min)(
+                static_cast<int>(labelBounds.left + extent.right + gap.right - valueBounds.left),
+                static_cast<int>(client.right) - reserved);
+            const int labelWidth = (std::min)(static_cast<int>(extent.right),
+                static_cast<int>(valueBounds.left + offset - gap.right - labelBounds.left));
+            checkLE(SetWindowPos(label, nullptr, 0, 0, (std::max)(labelWidth, 0),
                 labelBounds.bottom - labelBounds.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE));
             checkLE(SetWindowPos(GetDlgItem(page, field.value), nullptr,
                 valueBounds.left + offset, valueBounds.top, 0, 0,
@@ -649,13 +670,9 @@ static bool readFolderWindowSize(HWND hwnd, SIZE &size) {
             continue;
         }
         auto error = formatString(errors[index], minima[index]);
-        TaskDialog(GetParent(hwnd), GetModuleHandle(nullptr), MAKEINTRESOURCE(IDS_ERROR_CAPTION),
-            nullptr, error.get(), TDCBF_OK_BUTTON, TD_ERROR_ICON, nullptr);
         const SIZE previous = settings::getFolderWindowSize();
         SetDlgItemInt(hwnd, controls[index], index == 0 ? previous.cx : previous.cy, TRUE);
-        // Let the property sheet finish changing focus before selecting this edit.
-        // WM_NEXTDLGCTL also selects the entire text of an edit control.
-        PostMessage(hwnd, WM_NEXTDLGCTL, reinterpret_cast<WPARAM>(edit), TRUE);
+        rejectNumber(hwnd, edit, error.get());
         return false;
     }
     return true;
@@ -847,11 +864,9 @@ static bool openingAnimationDuration(HWND hwnd, DWORD *value) {
         *value = settings::getOpeningAnimationDuration();
         return true;
     }
-    MessageBoxW(GetParent(hwnd), getString(IDS_OPENING_ANIMATION_DURATION_INVALID),
-        getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
     SendDlgItemMessageW(hwnd, IDC_OPENING_ANIMATION_SPIN, UDM_SETPOS32, 0,
         static_cast<LPARAM>(settings::getOpeningAnimationDuration()));
-    PostMessageW(hwnd, WM_NEXTDLGCTL, reinterpret_cast<WPARAM>(edit), TRUE);
+    rejectNumber(hwnd, edit, getString(IDS_OPENING_ANIMATION_DURATION_INVALID));
     return false;
 }
 
@@ -869,11 +884,8 @@ static bool searchHistoryLimit(HWND hwnd, DWORD *value) {
         *value = number;
         return true;
     }
-    MessageBoxW(GetParent(hwnd), getString(IDS_SEARCH_HISTORY_INVALID),
-        getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
     SetDlgItemInt(hwnd, IDC_SEARCH_HISTORY_LIMIT, settings::getSearchHistoryLimit(), FALSE);
-    SetFocus(GetDlgItem(hwnd, IDC_SEARCH_HISTORY_LIMIT));
-    SendDlgItemMessageW(hwnd, IDC_SEARCH_HISTORY_LIMIT, EM_SETSEL, 0, -1);
+    rejectNumber(hwnd, GetDlgItem(hwnd, IDC_SEARCH_HISTORY_LIMIT), getString(IDS_SEARCH_HISTORY_INVALID));
     return false;
 }
 
