@@ -2710,7 +2710,7 @@ void FolderWindow::beginLoading() {
 
 void FolderWindow::clearLoading() {
     if (hwnd) KillTimer(hwnd, TIMER_LOADING);
-    if (loadingShownAt) debugPrintf(L"LOADING hidden\n");
+    if (loadingShownAt) { debugPrintf(L"LOADING hidden\n"); }
     loadingSince = loadingShownAt = 0;
     loadingFinishing = false;
     pathBar.setProgress(-1);
