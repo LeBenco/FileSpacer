@@ -50,7 +50,8 @@ inline bool checkResult(HRESULT hr) { return SUCCEEDED(hr); }
 // This deterministic harness exercises the non-preview menu lifetime path.
 // Real preview capture/hover/restore is exercised by group 28 on the Shell.
 namespace settings {
-    bool getViewMenuPreviewEnabled() { return false; }
+    bool previewEnabled = false;
+    bool getViewMenuPreviewEnabled() { return previewEnabled; }
     bool getDetailsColumnsEnabled() { return true; }
 }
 struct FolderState { enum { Icons = 8 }; };
@@ -68,7 +69,7 @@ struct Observation {
     Stage closeAt = Stage::None;
     bool fired = false, closed = false, destroyed = false, cleared = false;
     int menus = 0, objects = 0, invoked = 0, saves = 0, sites = 0, detaches = 0;
-    int profileRequests = 0, selectionReadyPosts = 0;
+    int profileRequests = 0, selectionReadyPosts = 0, openingSaves = 0;
     int columnSuspends = 0, columnResumes = 0, thumbnailToggles = 0, columnToggles = 0;
     int command = IDM_SHELL_FIRST;
     bool failSelection = false, failQuery = false, failView = false, failSite = false;
@@ -323,8 +324,10 @@ struct FolderWindow : ItemWindow {
     bool provisionalInputBlocked = false, provisionalCaptureBusy = false, provisionalBaseline = false;
     bool captureProvisionalCurrent(bool, bool) { assert(false); return false; }
     enum { TIMER_SAVE_STATE = 2 };
-    void viewStateDirty(unsigned) { assert(false); }
-    void persistViewState() { assert(false); }
+    // The View menu saves the icon positions before it opens: while the
+    // window is still operational, never after it closed.
+    void viewStateDirty(unsigned parts) { assert(isWindowOperational() && parts == FolderState::Icons); }
+    void persistViewState() { assert(isWindowOperational() && !observation.closed); ++observation.openingSaves; }
     CComPtr<IShellView> shellView;
     ShellViewHost viewHost;
     FolderWindow() { shellView.Attach(new IShellView); }
@@ -434,10 +437,15 @@ int main() {
     observation = {};
     auto source = new FolderWindow;
     observation.source = source;
+    // Only the preview needs the classic view: with it the native profile
+    // defers the menu, and nothing is saved or shown before the profile changes.
+    settings::previewEnabled = true;
     source->hybridViewEligible = true;
     source->openViewMenu({12, 34});
+    settings::previewEnabled = false;
     assert(source->viewMenuRequested && source->pendingViewMenuPoint.x == 12 && source->pendingViewMenuPoint.y == 34);
-    assert(observation.profileRequests == 1 && observation.menus == 0 && observation.invoked == 0);
+    assert(observation.profileRequests == 1 && observation.menus == 0 && observation.invoked == 0
+        && observation.openingSaves == 0);
     source->selectionBindingPending = true;
     source->navigationDepth = 1;
     source->resumeDeferredClose();
