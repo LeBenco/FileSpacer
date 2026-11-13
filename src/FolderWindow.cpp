@@ -4053,7 +4053,7 @@ STDMETHODIMP FolderWindow::OnNavigationFailed(PCIDLIST_ABSOLUTE) {
     setStatusText(getString(IDS_FOLDER_ERROR));
     if (reopeningWindow.sequence) {
         auto store = folderStateStore();
-        if (!store || !store->returnClosedWindow(reopeningWindow)) reportFolderStateError(hwnd);
+        if (!store || !store->returnClosedWindow(reopeningWindow)) stateStorageError();
         reopeningWindow = {};
         refreshReopenJumpLists();
     }

@@ -615,6 +615,16 @@ void ItemWindow::propStoreWriteString(IPropertyStore *const propStore,
     }
 }
 
+namespace {
+// One error dialog per outage for the whole process, not one per window: the
+// windows share the database, and a success of any of them ends the outage.
+bool storageOutageReported = false;
+void storageSucceeded(bool &shown) {
+    shown = false;
+    storageOutageReported = false;
+}
+}
+
 bool ItemWindow::loadFolderState() {
     if (stateLoaded && pendingMoveKey.empty()) return true;
     // Closing may wait for unavailable storage once; the later close callbacks
@@ -634,7 +644,7 @@ bool ItemWindow::loadFolderState() {
         }
         pendingMoveKey.clear();
         if (stateLoaded) {
-            storageErrorShown = false;
+            storageSucceeded(storageErrorShown);
             return true;
         }
     }
@@ -643,15 +653,16 @@ bool ItemWindow::loadFolderState() {
         return false;
     }
     stateLoaded = true;
-    storageErrorShown = false;
+    storageSucceeded(storageErrorShown);
     return true;
 }
 
 void ItemWindow::stateStorageError() {
-    if (!storageErrorShown) {
-        storageErrorShown = true;
-        reportFolderStateError(hwnd);
-    }
+    if (storageErrorShown) return;
+    storageErrorShown = true;
+    if (storageOutageReported) return; // Another window already said it.
+    storageOutageReported = true;
+    reportFolderStateError(hwnd);
 }
 
 void ItemWindow::recordFolderAccess(HRESULT result) {
@@ -683,7 +694,7 @@ void ItemWindow::recordFolderAccess(HRESULT result) {
         stateKey.clear();
         updateStateLock();
     }
-    storageErrorShown = false;
+    storageSucceeded(storageErrorShown);
 }
 
 bool ItemWindow::updateStateLock() {
@@ -728,7 +739,7 @@ void ItemWindow::toggleStateLock(bool replaceReference) {
     }
     savedState.present |= captured;
     viewStateClean(captured);
-    storageErrorShown = false;
+    storageSucceeded(storageErrorShown);
     updateStateLock();
     onSize(clientSize(hwnd));
 }
@@ -742,7 +753,7 @@ void ItemWindow::persistViewState() {
     if (store && store->save(stateKey, savedState, captured)) {
         savedState.present |= captured;
         viewStateClean(captured);
-        storageErrorShown = false;
+        storageSucceeded(storageErrorShown);
         if (stateLocked) updateStateLock(); // Quota eviction removes the lock too.
     } else {
         stateStorageError(); // Failed writes remain dirty for the next event or close.
@@ -1473,7 +1484,7 @@ void ItemWindow::onDestroy() {
     if (!closingWindow.key.empty()) {
         auto store = folderStateStore();
         if (!store || !store->rememberClosedWindow(closingWindow))
-            reportFolderStateError(hwnd);
+            stateStorageError();
         closingWindow = {};
     }
     refreshReopenJumpLists();
@@ -2819,7 +2830,7 @@ void ItemWindow::openCaptionMenu(POINT pos) {
     ClosedWindow lastClosed;
     auto store = folderStateStore();
     if (!store || !store->lastClosedWindow(&lastClosed))
-        reportFolderStateError(hwnd);
+        stateStorageError();
     if (!isWindowOperational()) return;
     std::wstring reopenLabel = getString(IDS_REOPEN_MENU);
     if (lastClosed.sequence) {
