@@ -3,6 +3,7 @@
 #include "ShellViewSelection.h"
 #include "ShellViewHost.h"
 #include "DPI.h"
+#include "UpdateInstaller.h"
 #include <dbghelp.h>
 #include <winhttp.h>
 #include <shlwapi.h>
@@ -23,6 +24,12 @@ namespace filespacer { namespace selectionDetail {
 namespace {
 void closeHandle(HANDLE value) { if(value && value!=INVALID_HANDLE_VALUE)CloseHandle(value); }
 using Handle = std::unique_ptr<void, decltype(&closeHandle)>;
+// The gate of an update exists only while that update is prepared: it cannot
+// be waited for from the start of a discovery, so it is looked for.
+bool updateInstalling() {
+    Handle gate(OpenEventW(SYNCHRONIZE, FALSE, UPDATE_INSTALL_EVENT), &closeHandle);
+    return gate && WaitForSingleObject(gate.get(), 0) == WAIT_OBJECT_0;
+}
 using Module = std::unique_ptr<HINSTANCE__, decltype(&FreeLibrary)>;
 // winhttp.dll is delay-loaded: a direct call, not the address of the import,
 // which is that of the loading thunk until the first call.
@@ -799,6 +806,7 @@ DWORD WINAPI resolve(void *raw) {
         if(!producerActive(context->root)) {
             const std::wstring attempt=published&&!rangeFinal.empty()?rangeFinal+L".attempt":context->root+L"\\"+id.cacheKey+L".attempt";
             if(recentAttempt(attempt)&&(!published||savedRangePublic(attempt)))throw std::runtime_error("Transient failure backoff");
+            if(updateInstalling())throw std::runtime_error("Update installation running");
             child=startWorker(*context);
             if(!child)throw std::runtime_error("Cannot start isolated discovery");
         }
@@ -872,9 +880,27 @@ void discardSymbols(const std::wstring &root) {
     });
     RemoveDirectoryW((root+L"\\symbols").c_str());
 }
+// The marker of the attempt in progress. An update that ends the worker
+// removes it: an interrupted attempt is not a failure to back off from.
+std::mutex attemptLock;
+std::wstring runningAttempt;
+void markAttempt(const std::wstring &path,bool range) {
+    std::lock_guard<std::mutex> guard(attemptLock);
+    runningAttempt=path;
+    if(range)saveRangeRecord(path,"Discovery running");
+    else {std::ofstream mark(path.c_str(),std::ios::trunc);mark<<"Discovery running\n";}
+}
 DWORD WINAPI discoveryWatchdog(void *stop) {
-    if(WaitForSingleObject(static_cast<HANDLE>(stop),180000)==WAIT_TIMEOUT)
-        TerminateProcess(GetCurrentProcess(),ERROR_TIMEOUT); // Only the isolated discovery process.
+    // The update waits one minute for every process of this image to leave.
+    for(DWORD elapsed=0;WaitForSingleObject(static_cast<HANDLE>(stop),1000)==WAIT_TIMEOUT;) {
+        elapsed+=1000;
+        if(updateInstalling()) {
+            attemptLock.lock(); // Never released: the marker is not written again.
+            if(!runningAttempt.empty())DeleteFileW(runningAttempt.c_str());
+            TerminateProcess(GetCurrentProcess(),ERROR_CANCELLED);
+        }
+        if(elapsed>=180000)TerminateProcess(GetCurrentProcess(),ERROR_TIMEOUT); // Only the isolated discovery process.
+    }
     return 0;
 }
 struct Watchdog {
@@ -916,6 +942,7 @@ void shutdown() {
 }
 int runWorker(const wchar_t *cacheRoot) {
     if(!limitedProcess() || !cfgCompatible())return ERROR_ACCESS_DENIED;
+    if(updateInstalling())return ERROR_CANCELLED;
     const bool background=SetPriorityClass(GetCurrentProcess(),PROCESS_MODE_BACKGROUND_BEGIN)!=FALSE;
     struct Priority {bool changed;~Priority(){if(changed)SetPriorityClass(GetCurrentProcess(),PROCESS_MODE_BACKGROUND_END);}} priority={background};
     std::wstring candidate,attempt,negative,purge;bool rangePhase=false;
@@ -939,8 +966,7 @@ int runWorker(const wchar_t *cacheRoot) {
         if(previous.supported){rangePhase=true;negative=rangeFinal+L".public";}
         attempt=previous.supported&&!rangeFinal.empty()?rangeFinal+L".attempt":root+L"\\"+id.cacheKey+L".attempt";
         if(!cacheRoot&&recentAttempt(attempt)&&(!rangePhase||savedRangePublic(attempt)))return ERROR_RETRY;
-        if(rangePhase)saveRangeRecord(attempt,"Discovery running");
-        else {std::ofstream mark(attempt.c_str(),std::ios::trunc);mark<<"Discovery running\n";}
+        markAttempt(attempt,rangePhase);
         if(!previous.supported) {
             const std::wstring pdbDirectory=root+L"\\symbols\\shell32.pdb\\"+id.key;directory(pdbDirectory);
             const auto foundSymbols=matchedSymbols(id,pdbDirectory,L"shell32.pdb",false);const auto fields=extract(id,foundSymbols);
@@ -964,7 +990,7 @@ int runWorker(const wchar_t *cacheRoot) {
             negative=rangeFinal+L".public";candidate=rangeFinal+L".pending";
             const std::wstring nextAttempt=rangeFinal+L".attempt";
             if(attempt!=nextAttempt){DeleteFileW(attempt.c_str());attempt=nextAttempt;}
-            saveRangeRecord(attempt,"Discovery running");
+            markAttempt(attempt,true);
             discoverRange(root,candidate);
             // discoverRange has just qualified these operands in memory against
             // the same loaded module: a rejection of the file it wrote is an

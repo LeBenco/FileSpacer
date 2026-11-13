@@ -23,7 +23,6 @@
 
 namespace filespacer {
 namespace {
-const wchar_t INSTALL_EVENT[] = L"Local\\FileSpacer.UpdateInstall";
 // Documented exception to the "no catch-up timer" principle (docs/en/build.md):
 // this 200 ms window timer polls the worker's done flag and byte count. The
 // worker deliberately holds no HWND (the page or progress dialog may be
@@ -220,7 +219,7 @@ void startJob(HWND page, UpdateControls &controls, bool download) {
         if (download) {
             job->info = controls.available;
             SECURITY_ATTRIBUTES security = {sizeof(security), nullptr, TRUE};
-            job->gate.Attach(CreateEventW(&security, TRUE, FALSE, INSTALL_EVENT));
+            job->gate.Attach(CreateEventW(&security, TRUE, FALSE, UPDATE_INSTALL_EVENT));
             DWORD error = GetLastError();
             if (!job->gate || error == ERROR_ALREADY_EXISTS) {
                 setLabel(page, getString(IDS_UPDATE_BUSY)); return;
@@ -297,7 +296,7 @@ LRESULT CALLBACK updateControlsProc(HWND page, UINT message, WPARAM wParam, LPAR
     }
     if (message == WM_TIMER && wParam == UPDATE_TIMER) {
         if (controls.installing) {
-            CHandle gate(OpenEventW(SYNCHRONIZE, FALSE, INSTALL_EVENT));
+            CHandle gate(OpenEventW(SYNCHRONIZE, FALSE, UPDATE_INSTALL_EVENT));
             if (!gate) {
                 controls.installing = false;
                 setLabel(page, getString(IDS_UPDATE_FAILED));
@@ -675,7 +674,7 @@ bool handleUpdateCommandLine(int argc, wchar_t **argv, int *exitCode) {
 }
 
 bool isUpdateInstallationRunning() {
-    CHandle gate(OpenEventW(SYNCHRONIZE, FALSE, INSTALL_EVENT));
+    CHandle gate(OpenEventW(SYNCHRONIZE, FALSE, UPDATE_INSTALL_EVENT));
     return gate && WaitForSingleObject(gate, 0) == WAIT_OBJECT_0;
 }
 
