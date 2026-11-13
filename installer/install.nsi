@@ -598,8 +598,10 @@ Function ${PREFIX}SearchCallback
 FunctionEnd
 Function ${PREFIX}SearchModules
     StrCpy $locked 0
+    ; Only the application has to be closed. Explorer and every other host of
+    ; a folder menu load FileSpacerFolder.dll for the verb state class and can
+    ; keep it for a long time: that copy is moved aside, see PROVIDER_RELEASE.
     LockedList::AddModule "$INSTDIR\FileSpacer.exe"
-    LockedList::AddModule "$INSTDIR\FileSpacerFolder.dll"
     GetFunctionAddress $R0 ${PREFIX}SearchCallback
     LockedList::SilentSearch $R0
     Pop $R0
@@ -609,7 +611,7 @@ Function ${PREFIX}CheckClosed
     Call ${PREFIX}SearchModules
     ${If} $locked != 0
     ${OrIf} $R0 != "done"
-        !insertmacro WORKER_LOG "FileSpacer.exe or FileSpacerFolder.dll is still loaded (exit code ${EXIT_CLOSED})."
+        !insertmacro WORKER_LOG "FileSpacer.exe is still running (exit code ${EXIT_CLOSED})."
         DetailPrint $(CLOSE_TEXT)
         MessageBox MB_OK|MB_ICONSTOP $(CLOSE_TEXT) /SD IDOK
         !insertmacro WORKER_EXIT ${EXIT_CLOSED}
@@ -619,6 +621,46 @@ FunctionEnd
 !macroend
 !insertmacro LOCKED_PAGE ""
 !insertmacro LOCKED_PAGE "un."
+
+; Windows refuses to replace or delete a module another program has loaded,
+; but lets it be renamed. A provider still loaded by Explorer is therefore
+; moved aside under a numbered name, and the copies that are no longer loaded
+; are deleted by a later installation or by the uninstaller.
+!macro PROVIDER_RELEASE PREFIX
+Function ${PREFIX}ClearRetiredProviders
+    Push $R1
+    ${For} $R1 0 9
+        Delete "$INSTDIR\FileSpacerFolder.old$R1.dll" ; Fails while still loaded.
+    ${Next}
+    ClearErrors
+    Pop $R1
+FunctionEnd
+; Frees the name FileSpacerFolder.dll; sets the error flag when it cannot.
+Function ${PREFIX}ReleaseProvider
+    Push $R1
+    ClearErrors
+    Delete "$INSTDIR\FileSpacerFolder.dll"
+    ${If} ${FileExists} "$INSTDIR\FileSpacerFolder.dll"
+        ${For} $R1 0 9
+            ${IfNot} ${FileExists} "$INSTDIR\FileSpacerFolder.old$R1.dll"
+                ClearErrors
+                Rename "$INSTDIR\FileSpacerFolder.dll" "$INSTDIR\FileSpacerFolder.old$R1.dll"
+                ${IfNot} ${Errors}
+                    !insertmacro WORKER_LOG "FileSpacerFolder.dll is loaded by another program: moved aside as FileSpacerFolder.old$R1.dll."
+                    ${Break}
+                ${EndIf}
+            ${EndIf}
+        ${Next}
+    ${EndIf}
+    ClearErrors
+    ${If} ${FileExists} "$INSTDIR\FileSpacerFolder.dll"
+        SetErrors
+    ${EndIf}
+    Pop $R1
+FunctionEnd
+!macroend
+!insertmacro PROVIDER_RELEASE ""
+!insertmacro PROVIDER_RELEASE "un."
 
 !macro INSTALL_VERB TYPE ARG
     ; Avoid making an added verb implicitly become the default.
@@ -793,6 +835,10 @@ Section "FileSpacer" SecBase
     IfErrors files_failed
     !insertmacro INSTALL_STEP "Extract file: $INSTDIR\FileSpacer.exe"
     File "..\build\release\FileSpacer.exe"
+    IfErrors files_failed
+    !insertmacro INSTALL_STEP "Release the installed provider: $INSTDIR\FileSpacerFolder.dll"
+    Call ClearRetiredProviders
+    Call ReleaseProvider
     IfErrors files_failed
     !insertmacro INSTALL_STEP "Extract file: $INSTDIR\FileSpacerFolder.dll"
     File "..\build\release\FileSpacerFolder.dll"
@@ -1412,10 +1458,9 @@ Section "Uninstall"
     Delete "$INSTDIR\FileSpacer.exe"
     IfErrors uninstall_failed ; Keep the registration when the executable cannot be removed.
 exe_removed:
-    IfFileExists "$INSTDIR\FileSpacerFolder.dll" 0 provider_removed
-    Delete "$INSTDIR\FileSpacerFolder.dll"
+    Call un.ClearRetiredProviders
+    Call un.ReleaseProvider
     IfErrors uninstall_failed
-provider_removed:
     ReadRegStr $0 HKCU "Software\Classes\CLSID\{4FDD0CE1-6FD0-441C-AD2D-6DD056610DE3}\InprocServer32" ""
     ${If} $0 == "$INSTDIR\FileSpacerFolder.dll"
         DeleteRegKey HKCU "Software\Classes\CLSID\{4FDD0CE1-6FD0-441C-AD2D-6DD056610DE3}"
@@ -1437,7 +1482,21 @@ provider_removed:
     Delete "$INSTDIR\ShortcutProperties-LICENSE.txt"
     Delete "$INSTDIR\install-info.ini"
     Delete "$INSTDIR\uninstall.exe"
-    RMDir "$INSTDIR"
+    ${If} ${FileExists} "$INSTDIR\FileSpacerFolder.old?.dll"
+        ; A provider still loaded by another program cannot be deleted now.
+        ; An elevated uninstaller hands it and the directory to Windows for
+        ; the next restart; nothing of the removal itself waits for one.
+        ${For} $R1 0 9
+            ${If} ${FileExists} "$INSTDIR\FileSpacerFolder.old$R1.dll"
+                Delete /REBOOTOK "$INSTDIR\FileSpacerFolder.old$R1.dll"
+            ${EndIf}
+        ${Next}
+        RMDir /REBOOTOK "$INSTDIR"
+        SetRebootFlag false
+        ClearErrors
+    ${Else}
+        RMDir "$INSTDIR"
+    ${EndIf}
     Delete "$SMPROGRAMS\FileSpacer.lnk"
     DeleteRegKey SHCTX "${REG_UNINST_KEY}"
     DeleteRegKey SHCTX "${REG_APPPATH_KEY}"
