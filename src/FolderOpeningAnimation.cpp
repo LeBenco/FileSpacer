@@ -123,7 +123,6 @@ struct FolderOpeningAnimation::State {
     std::unique_ptr<std::remove_pointer<PTP_TIMER>::type, decltype(&CloseThreadpoolTimer)>
         completion{nullptr, CloseThreadpoolTimer};
     HWND window = nullptr;
-    HWND foreground = nullptr;
     LONG_PTR identity = 0;
     UINT durationMs = 0;
 
@@ -141,7 +140,6 @@ struct FolderOpeningAnimation::State {
             completion.reset();
         }
         const HWND destination = current() ? window : nullptr;
-        const HWND previousForeground = foreground;
         window = nullptr;
         auto finishedOverlay = std::move(overlay);
         if (finishedOverlay) SetWindowLongPtrW(finishedOverlay.get(), GWLP_USERDATA, 0);
@@ -153,7 +151,9 @@ struct FolderOpeningAnimation::State {
         // Clear the callback state before activation can reenter and close its owner.
         if (destination) {
             const HWND active = GetForegroundWindow();
-            const bool restoreFocus = activate && (active == destination || active == previousForeground || !active);
+            // Only when nothing else was chosen meanwhile: a window the user
+            // returned to during the effect, its origin included, keeps the foreground.
+            const bool restoreFocus = activate && (active == destination || !active);
             // The window has been laid out and can paint during the animation.
             const BOOL disabled = FALSE;
             DwmSetWindowAttribute(destination, DWMWA_CLOAK, &disabled, sizeof(disabled));
@@ -317,7 +317,6 @@ struct FolderOpeningAnimation::State {
         if (!RegisterClassW(&cls) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS) return false;
         window = destination;
         identity = GetWindowLongPtrW(window, GWLP_USERDATA);
-        foreground = GetForegroundWindow();
         const BOOL enabled = TRUE;
         if (!checkHR(DwmSetWindowAttribute(window, DWMWA_CLOAK, &enabled, sizeof(enabled)))) {
             window = nullptr;
