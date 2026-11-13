@@ -158,6 +158,10 @@ protected:
     CComHeapPtr<wchar_t> title;
 
 
+    // Set once the frame change that follows WM_CREATE has given the client
+    // area its final height: content created before it must compensate.
+    bool frameApplied = false;
+
     // for handling delayed context menu messages while open (eg. for Open With menu)
     CComQIPtr<IContextMenu2> contextMenu2;
     CComQIPtr<IContextMenu3> contextMenu3;
