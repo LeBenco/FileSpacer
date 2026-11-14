@@ -26,7 +26,7 @@ template<class T> bool read(const void *address,T &value) {
 enum Field : unsigned char {OnClear,Select,Purge,Init,QueryService,Notify,Cancel,HostQI,EnumGlobal,DeleteGlobal,
     Callback,NotifyTable,HostTable,HostQueryObject,ViewQueryObject,ManagerTable,ManagerQI,Retain,Release,
     HostOffset,ManagerOffset,ArrayOffset,NotifySlot,CancelSlot,Procedure,ArrayGetter,
-    NativeWindowProcedure,NativeInsertSlot,NativeInsert,NativeSelectOne,NativeNotify,NativeErase,FieldCount};
+    NativeWindowProcedure,NativeInsertSlot,NativeInsert,NativeSelectOne,NativeNotify,NativeErase,NativeEnum,FieldCount};
 constexpr DWORD PurgeHelper=1,PurgeInline=2,HostClearInline=4;
 inline bool writable(const void *pointer,SIZE_T length) {
     const auto *cursor=static_cast<const unsigned char *>(pointer);
@@ -155,6 +155,20 @@ inline bool decodeInlineArrayLoop(const unsigned char *code,SIZE_T length,DWORD 
     if(!found||value.data<sizeof(void *)||value.data>64||value.stride<sizeof(void *)||value.stride>64)return false;
     layout=value;return true;
 }
+// Some Shell builds link their own copy of DSA_EnumCallback. Accept it only
+// when its loop addresses the entries exactly as the array getter does.
+inline bool decodeArrayEnumeration(const unsigned char *code,SIZE_T length,ArrayLayout &layout) {
+    const unsigned char prefix[]={0x48,0x85,0xc9,0x74};
+    if(length<12||std::memcmp(code,prefix,sizeof(prefix))!=0)return false;
+    bool found=false;ArrayLayout value;
+    for(SIZE_T i=sizeof(prefix);i+8<=length;++i){
+        if(code[i]!=0x0f||code[i+1]!=0xaf||code[i+2]!=0x4f||code[i+4]!=0x48||code[i+5]!=0x03||code[i+6]!=0x4f)continue;
+        if(found)return false;
+        value.stride=code[i+3];value.data=code[i+7];found=true;
+    }
+    if(!found)return false;
+    layout=value;return true;
+}
 // Some Shell builds inline _OnClearSelection in _OnLVNotify. This is a data
 // reference, never a callable entry point. Check the entire inspected loop and
 // both cleanup targets before accepting its manager/array operands.
@@ -228,7 +242,7 @@ struct Image {
         data.read(magic,sizeof(magic));data.read(reinterpret_cast<char *>(&expectedSize),sizeof(expectedSize));
         data.read(reinterpret_cast<char *>(&guid),sizeof(guid));data.read(reinterpret_cast<char *>(&age),sizeof(age));
         data.read(reinterpret_cast<char *>(&count),sizeof(count));
-        if(!data||std::memcmp(magic,"FSDISC03",8)!=0||count!=FieldCount){
+        if(!data||std::memcmp(magic,"FSDISC04",8)!=0||count!=FieldCount){
             result.reason="invalid discovery schema";if(unreadable)*unreadable=true;return result;}
         data.read(reinterpret_cast<char *>(result.fields.data()),sizeof(result.fields));
         if(!data||data.peek()!=std::char_traits<char>::eof()){
@@ -259,6 +273,7 @@ struct Image {
         // not only against an external file. Recognize the inspected helper and
         // inlined compiler forms; unknown forms fail closed.
         for(Field field:{Callback,Notify,Cancel,ManagerQI,Retain,Release})if(!result.cfg(result.fields[field]))return result;
+        bool linkedPurge=false;
         if(purgeKind==PurgeHelper){
         unsigned char purge[62]={};
         const unsigned char prefix[]={0x40,0x53,0x48,0x83,0xec,0x20,0x48,0x8b,0xd9,0x48,0x8d,0x15};
@@ -267,14 +282,30 @@ struct Image {
         const auto relative=[&](DWORD start,DWORD next,LONG delta,DWORD wanted){
             return static_cast<LONGLONG>(start)+next+delta==wanted;};
         if(!relative(result.fields[Purge],16,displacement,result.fields[Callback])
-                ||purge[16]!=0x48||purge[17]!=0x8b||purge[18]!=0x49||purge[19]!=result.fields[ArrayOffset]
-                ||purge[23]!=0x48||purge[24]!=0xff||purge[25]!=0x15)return result;
+                ||purge[16]!=0x48||purge[17]!=0x8b||purge[18]!=0x49||purge[19]!=result.fields[ArrayOffset])return result;
+        // The two array routines are either comctl32 imports or the copies
+        // linked into Shell32, reached by a direct call and a tail jump.
+        const unsigned char linkedCall[]={0x45,0x33,0xc0,0xe8};
+        const unsigned char linkedTail[]={0x48,0x85,0xc9,0x75,0x07,0x48,0x83,0xc4,0x20,0x5b,0xc3,0xcc,0x48,0x83,0xc4,0x20,0x5b,0xe9};
+        linkedPurge=std::memcmp(purge+20,linkedCall,sizeof(linkedCall))==0;
+        if(linkedPurge){
+        if(!result.fields[NativeEnum]||!result.fields[NativeErase]
+                ||!result.range(result.fields[NativeEnum],96)||!result.range(result.fields[NativeErase],64))return result;
+        std::memcpy(&displacement,purge+24,4);
+        if(!relative(result.fields[Purge],28,displacement,result.fields[NativeEnum])
+                ||purge[28]!=0x48||purge[29]!=0x8b||purge[30]!=0x4b||purge[31]!=result.fields[ArrayOffset]
+                ||std::memcmp(purge+32,linkedTail,sizeof(linkedTail))!=0)return result;
+        std::memcpy(&displacement,purge+50,4);
+        if(!relative(result.fields[Purge],54,displacement,result.fields[NativeErase]))return result;
+        }else{
+        if(purge[23]!=0x48||purge[24]!=0xff||purge[25]!=0x15)return result;
         std::memcpy(&displacement,purge+26,4);
         if(!relative(result.fields[Purge],30,displacement,result.fields[EnumGlobal])
                 ||purge[35]!=0x48||purge[36]!=0x8b||purge[37]!=0x4b||purge[38]!=result.fields[ArrayOffset]
                 ||purge[44]!=0x48||purge[45]!=0xff||purge[46]!=0x15)return result;
         std::memcpy(&displacement,purge+47,4);
         if(!relative(result.fields[Purge],51,displacement,result.fields[DeleteGlobal]))return result;
+        }
         }else{
             unsigned char purge[128]={};
             ArrayLayout layout;
@@ -287,6 +318,10 @@ struct Image {
             if(!result.range(result.fields[ArrayGetter],sizeof(getter))||!read(result.base+result.fields[ArrayGetter],getter)
                     ||!decodeArrayGetter(getter,sizeof(getter),layout))return result;
             result.dataOffset=layout.data;result.strideOffset=layout.stride;
+            unsigned char enumeration[96]={};ArrayLayout walked;
+            if(linkedPurge&&(!read(result.base+result.fields[NativeEnum],enumeration)
+                    ||!decodeArrayEnumeration(enumeration,sizeof(enumeration),walked)
+                    ||walked.data!=layout.data||walked.stride!=layout.stride))return result;
         }
         // Native OnClear reads the manager and its selected-array count. Match
         // the register/operand form, never a Windows version or prepared RVA.
@@ -387,8 +422,12 @@ struct Image {
                     const bool objectRegister=rex?notices[at+1]==0x86
                         :(notices[at+1]==0x83||(rdiObject&&notices[at+1]==0x87));
                     if(at+12>sizeof(notices)||notices[at]!=0xf7||!objectRegister
-                            ||notices[at+6]!=0||notices[at+7]!=0x20||notices[at+8]!=0||notices[at+9]!=0
-                            ||(notices[at+10]!=0x75&&(notices[at+10]!=0x0f||notices[at+11]!=0x85)))continue;
+                            ||notices[at+6]!=0||notices[at+7]!=0x20||notices[at+8]!=0||notices[at+9]!=0)continue;
+                    // A guard jumps when the flag is set, or folds the cleared
+                    // flag into AL and skips when the combined test is zero.
+                    const unsigned char folded[]={0x0f,0x94,0xc0,0x84,0xc8,0x74};
+                    if(notices[at+10]!=0x75&&(notices[at+10]!=0x0f||notices[at+11]!=0x85)
+                            &&(at+10+sizeof(folded)>sizeof(notices)||std::memcmp(notices+at+10,folded,sizeof(folded))!=0))continue;
                     if(rex==0&&i&&notices[i-1]==0x41)continue;
                     DWORD field=0;std::memcpy(&field,notices+at+2,4);
                     if(field>4092||field%4||(guards&&field!=member)){guards=0;break;}
