@@ -216,7 +216,8 @@ addresses/member offsets, not absolute pointers. Its key includes the loaded
 Shell32 PDB GUID, age, PE image size and qualification-schema revision. Every
 process validates cached data against its loaded system image, recognized
 operands and CFG targets. Discovery
-only runs when no usable decision exists for this image/schema. A saved
+only runs when no usable decision exists for this image/schema; it then removes
+the records of other images from the product cache. A saved
 unsupported decision avoids repeated discovery; transient failures back off for
 24 hours before a later launch may retry. The same failure three times in a
 row for one image, or three attempts in a row that never finished, is saved as

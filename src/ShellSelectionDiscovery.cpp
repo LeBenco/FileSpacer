@@ -922,6 +922,20 @@ void removeOrphans(const std::wstring &root) {
         });
     });
 }
+// A record is only ever read for the identity of the loaded Shell image: those
+// of the images that a Windows update replaced are removed. Only the record
+// files of this cache, directly in its folder, are considered.
+void removeOtherIdentities(const std::wstring &root,const std::wstring &cacheKey) {
+    forEachEntry(root,L"*",[&](const std::wstring &path,bool folder){
+        if(folder||path.compare(root.size()+1,cacheKey.size(),cacheKey)==0)return;
+        for(const wchar_t *suffix:{L".bin",L".public",L".attempt",L".range"}) {
+            const size_t length=wcslen(suffix);
+            if(path.size()>root.size()+1+length&&_wcsicmp(path.c_str()+path.size()-length,suffix)==0) {
+                DeleteFileW(path.c_str());return;
+            }
+        }
+    });
+}
 // Symbol files are read only to produce a decision. Once one is durable they are
 // removed, for every identity: none is read again. No effect for an empty root.
 void discardSymbols(const std::wstring &root) {
@@ -1073,9 +1087,10 @@ int runWorker(const wchar_t *cacheRoot) {
             OPEN_ALWAYS,FILE_ATTRIBUTE_TEMPORARY|FILE_FLAG_DELETE_ON_CLOSE,nullptr));
         if(lock.get()==INVALID_HANDLE_VALUE)return ERROR_BUSY;
         removeOrphans(root);
-        // The product cache keeps no symbol file once a decision is durable. A
-        // cache supplied by the caller keeps them: its later runs reuse them.
-        if(!cacheRoot)purge=root;
+        // The product cache keeps no symbol file once a decision is durable, and
+        // no record of another image. A cache supplied by the caller keeps
+        // them: its later runs reuse them.
+        if(!cacheRoot){purge=root;removeOtherIdentities(root,id.cacheKey);}
         if(savedPublic(final+L".public"))return 0;
         const Image previous=Image::discover(final);
         const std::wstring rangeFinal=rangeCacheFile(final);
