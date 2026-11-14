@@ -55,6 +55,8 @@ HANDLE resolveStop=nullptr,resolveThread=nullptr;
 struct Unsupported : std::runtime_error { using std::runtime_error::runtime_error; };
 // Transient: the symbol file itself, not the loaded image, was rejected.
 struct UnmatchedPdb : std::runtime_error { using std::runtime_error::runtime_error; };
+// Transient and never counted: the symbol file could not be obtained.
+struct DownloadFailure : std::runtime_error { using std::runtime_error::runtime_error; };
 void supported(bool condition,const char *reason){if(!condition)throw Unsupported(reason);}
 void require(bool condition, const char *reason) {
     if (!condition) throw std::runtime_error(reason);
@@ -176,41 +178,42 @@ template<class T> T api(HMODULE module, const char *name) {
 // Returns false when a file left by an earlier run is reused without a download.
 bool downloadPdb(const Identity &id, const std::wstring &destination, const wchar_t *pdb=L"shell32.pdb") {
     if (GetFileAttributesW(destination.c_str()) != INVALID_FILE_ATTRIBUTES) return false;
+    const auto need = [](bool condition, const char *reason) { if (!condition) throw DownloadFailure(reason); };
     // Load the System32 copy before the first delay-loaded call: a missing
     // library is an ordinary failure here, not a structured exception, and the
     // delay-load helper then finds the module already loaded. Declared first:
     // released after the handles below; the helper keeps its own reference.
     const Module http(LoadLibraryExW(L"winhttp.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32), &FreeLibrary);
-    require(http != nullptr, "Cannot load the HTTP library");
+    need(http != nullptr, "Cannot load the HTTP library");
     Internet session(WinHttpOpen(L"FileSpacer symbol discovery", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
         WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0));
-    require(session && WinHttpSetTimeouts(session.get(), 5000, 5000, 15000, 15000), "Cannot initialize symbol download");
+    need(session && WinHttpSetTimeouts(session.get(), 5000, 5000, 15000, 15000), "Cannot initialize symbol download");
     Internet connection(WinHttpConnect(session.get(), L"msdl.microsoft.com", INTERNET_DEFAULT_HTTPS_PORT, 0));
-    require(connection != nullptr, "Cannot connect to symbol server");
+    need(connection != nullptr, "Cannot connect to symbol server");
     const std::wstring url = L"/download/symbols/"+std::wstring(pdb)+L"/"+id.key+L"/"+pdb;
     Internet request(WinHttpOpenRequest(connection.get(), L"GET", url.c_str(), nullptr, WINHTTP_NO_REFERER,
         WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE));
-    require(request && WinHttpSendRequest(request.get(), WINHTTP_NO_ADDITIONAL_HEADERS, 0,
-        WINHTTP_NO_REQUEST_DATA, 0, 0, 0) && WinHttpReceiveResponse(request.get(), nullptr), "Symbol request failed");
+    need(request && WinHttpSendRequest(request.get(), WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+        WINHTTP_NO_REQUEST_DATA, 0, 0, 0) && WinHttpReceiveResponse(request.get(), nullptr), "Symbol request need");
     DWORD status = 0, bytes = sizeof(status);
-    require(WinHttpQueryHeaders(request.get(), WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+    need(WinHttpQueryHeaders(request.get(), WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
         WINHTTP_HEADER_NAME_BY_INDEX, &status, &bytes, WINHTTP_NO_HEADER_INDEX) && status == 200, "Matching Microsoft symbols unavailable");
     const std::wstring temporary = destination + L".partial";
     Handle file(CreateFileW(temporary.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr), &closeHandle);
-    require(file.get() != INVALID_HANDLE_VALUE, "Cannot save symbol file");
+    need(file.get() != INVALID_HANDLE_VALUE, "Cannot save symbol file");
     const ULONGLONG began = GetTickCount64(); DWORD total = 0;
     std::array<unsigned char, 65536> buffer = {};
     for (;;) {
         DWORD received = 0, written = 0;
-        require(WinHttpReadData(request.get(), buffer.data(), static_cast<DWORD>(buffer.size()), &received) != FALSE, "Symbol read failed");
+        need(WinHttpReadData(request.get(), buffer.data(), static_cast<DWORD>(buffer.size()), &received) != FALSE, "Symbol read need");
         if (!received) break;
-        require(total <= 256u * 1024 * 1024 - received && GetTickCount64() - began < 60000, "Symbol download limit exceeded");
-        require(WriteFile(file.get(), buffer.data(), received, &written, nullptr) && written == received, "Symbol save failed");
+        need(total <= 256u * 1024 * 1024 - received && GetTickCount64() - began < 60000, "Symbol download limit exceeded");
+        need(WriteFile(file.get(), buffer.data(), received, &written, nullptr) && written == received, "Symbol save need");
         total += received;
     }
-    require(total != 0 && FlushFileBuffers(file.get()), "Empty or incomplete symbol file");
+    need(total != 0 && FlushFileBuffers(file.get()), "Empty or incomplete symbol file");
     file.reset();
-    require(MoveFileExW(temporary.c_str(), destination.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != FALSE, "Cannot publish symbol file");
+    need(MoveFileExW(temporary.c_str(), destination.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != FALSE, "Cannot publish symbol file");
     return true;
 }
 struct SymbolTables { DWORD64 base; DWORD size; std::vector<DWORD> tables; const wchar_t *prefix=L"??_7CDefView@@"; };
@@ -934,15 +937,52 @@ void discardSymbols(const std::wstring &root) {
     });
     RemoveDirectoryW((root+L"\\symbols").c_str());
 }
+// A failed attempt is retried after the backoff. The same failure for the third
+// time in a row, for one image identity, becomes a durable decision instead.
+constexpr int REPEATED_FAILURE_LIMIT=3;
+const char RUNNING_ATTEMPT[]="Discovery running";
+// message: how the previous attempt of this identity ended; the marker of an
+// attempt that never finished is itself a failure. repeated: how many times in
+// a row it ended that way, zero when that end is not counted.
+struct AttemptRecord { std::string message; int repeated=0; };
+void writeAttempt(const std::wstring &path,bool range,const std::string &text) {
+    if(range)saveRangeRecord(path,text.c_str());
+    else {std::ofstream record(path.c_str(),std::ios::binary|std::ios::trunc);record<<text<<"\n";}
+}
+AttemptRecord previousAttempt(const std::wstring &path,bool range) {
+    AttemptRecord record;
+    // A range record of another control image says nothing about this one.
+    if(range&&!savedRangePublic(path))return record;
+    std::ifstream file(path.c_str(),std::ios::binary);
+    if(range)file.seekg(10+sizeof(GUID)+2*sizeof(DWORD));
+    const auto line=[&](std::string &text){
+        if(!std::getline(file,text))return false;
+        if(!text.empty()&&text.back()=='\r')text.pop_back();
+        return true;
+    };
+    std::string detail;
+    if(!line(record.message))return record;
+    const bool described=line(detail);
+    if(record.message==RUNNING_ATTEMPT) {
+        // "previous=<count> <message>": what preceded the unfinished attempt.
+        char *end=nullptr;
+        const long before=described&&detail.compare(0,9,"previous=")==0?std::strtol(detail.c_str()+9,&end,10):0;
+        const bool unfinished=end&&*end==' '&&before>0&&before<REPEATED_FAILURE_LIMIT&&RUNNING_ATTEMPT==std::string(end+1);
+        record.repeated=(unfinished?static_cast<int>(before):0)+1;
+    } else if(described&&detail.compare(0,7,"repeat=")==0) {
+        const long counted=std::strtol(detail.c_str()+7,nullptr,10);
+        record.repeated=counted>0&&counted<REPEATED_FAILURE_LIMIT?static_cast<int>(counted):0;
+    } else record.repeated=1;
+    return record;
+}
 // The marker of the attempt in progress. An update that ends the worker
 // removes it: an interrupted attempt is not a failure to back off from.
 std::mutex attemptLock;
 std::wstring runningAttempt;
-void markAttempt(const std::wstring &path,bool range) {
+void markAttempt(const std::wstring &path,bool range,const AttemptRecord &previous) {
     std::lock_guard<std::mutex> guard(attemptLock);
     runningAttempt=path;
-    if(range)saveRangeRecord(path,"Discovery running");
-    else {std::ofstream mark(path.c_str(),std::ios::trunc);mark<<"Discovery running\n";}
+    writeAttempt(path,range,std::string(RUNNING_ATTEMPT)+"\nprevious="+std::to_string(previous.repeated)+" "+previous.message);
 }
 DWORD WINAPI discoveryWatchdog(void *stop) {
     // The update waits one minute for every process of this image to leave.
@@ -1000,8 +1040,27 @@ int runWorker(const wchar_t *cacheRoot) {
     const bool background=SetPriorityClass(GetCurrentProcess(),PROCESS_MODE_BACKGROUND_BEGIN)!=FALSE;
     struct Priority {bool changed;~Priority(){if(changed)SetPriorityClass(GetCurrentProcess(),PROCESS_MODE_BACKGROUND_END);}} priority={background};
     std::wstring candidate,attempt,negative,purge;bool rangePhase=false;
+    AttemptRecord last;
     // Held until the decision and its cleanup are recorded, handlers included.
     Handle lock(nullptr,&closeHandle);
+    // The durable negative decision for the loaded image, in the current phase.
+    const auto decline=[&](const char *reason) {
+        if(!candidate.empty())DeleteFileW(candidate.c_str());
+        if(rangePhase)saveRangeRecord(negative,reason);
+        else if(!negative.empty()){std::ofstream report(negative.c_str(),std::ios::binary|std::ios::trunc);report<<"FSPUBLIC01"<<reason<<"\n";}
+        if(!attempt.empty())DeleteFileW(attempt.c_str());
+        discardSymbols(purge);
+        return ERROR_NOT_SUPPORTED;
+    };
+    // counted: a failed download is cheap and may succeed later, so it never
+    // leads to a decision; any other failure does once it has repeated.
+    const auto retryLater=[&](const char *reason,bool counted) {
+        const int repeated=!counted?0:last.message==reason?last.repeated+1:1;
+        if(repeated>=REPEATED_FAILURE_LIMIT)return decline(reason);
+        if(!candidate.empty())DeleteFileW(candidate.c_str());
+        if(!attempt.empty())writeAttempt(attempt,rangePhase,std::string(reason)+"\nrepeat="+std::to_string(repeated));
+        return ERROR_NOT_SUPPORTED;
+    };
     try {
         Watchdog watchdog;
         const std::wstring root=cacheRoot?cacheRoot:defaultRoot();directory(root);
@@ -1020,7 +1079,9 @@ int runWorker(const wchar_t *cacheRoot) {
         if(previous.supported){rangePhase=true;negative=rangeFinal+L".public";}
         attempt=previous.supported&&!rangeFinal.empty()?rangeFinal+L".attempt":root+L"\\"+id.cacheKey+L".attempt";
         if(!cacheRoot&&recentAttempt(attempt)&&(!rangePhase||savedRangePublic(attempt)))return ERROR_RETRY;
-        markAttempt(attempt,rangePhase);
+        last=previousAttempt(attempt,rangePhase);
+        supported(last.repeated<REPEATED_FAILURE_LIMIT,"Discovery repeatedly did not finish");
+        markAttempt(attempt,rangePhase,last);
         if(!previous.supported) {
             const std::wstring pdbDirectory=root+L"\\symbols\\shell32.pdb\\"+id.key;directory(pdbDirectory);
             const auto foundSymbols=matchedSymbols(id,pdbDirectory,L"shell32.pdb",false);const auto fields=extract(id,foundSymbols);
@@ -1043,8 +1104,11 @@ int runWorker(const wchar_t *cacheRoot) {
             rangePhase=true;
             negative=rangeFinal+L".public";candidate=rangeFinal+L".pending";
             const std::wstring nextAttempt=rangeFinal+L".attempt";
-            if(attempt!=nextAttempt){DeleteFileW(attempt.c_str());attempt=nextAttempt;}
-            markAttempt(attempt,true);
+            if(attempt!=nextAttempt) {
+                DeleteFileW(attempt.c_str());attempt=nextAttempt;last=previousAttempt(attempt,true);
+                supported(last.repeated<REPEATED_FAILURE_LIMIT,"Discovery repeatedly did not finish");
+            }
+            markAttempt(attempt,true,last);
             discoverRange(root,candidate);
             // discoverRange has just qualified these operands in memory against
             // the same loaded module: a rejection of the file it wrote is an
@@ -1052,8 +1116,9 @@ int runWorker(const wchar_t *cacheRoot) {
             selectedRange=RangeImage::discover(candidate);require(selectedRange.supported,"Cannot read back range discovery");
             rangeReady.store(true,std::memory_order_release);
             // API/qualification failures can be transient (busy Shell, UIA,
-            // unavailable desktop). Only structural Unsupported failures get a
-            // permanent negative record; this failure uses the scoped backoff.
+            // unavailable desktop): this failure uses the scoped backoff. Only
+            // structural Unsupported failures, and a failure that keeps
+            // repeating, get a permanent negative record.
             require(qualify(root),"Real Shell range qualification failed");
             require(selectedRange.qualifies(),"Control image changed during qualification");
             require(MoveFileExW(candidate.c_str(),rangeFinal.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)!=FALSE,"Cannot publish qualified range cache");
@@ -1061,17 +1126,11 @@ int runWorker(const wchar_t *cacheRoot) {
         }
         DeleteFileW(attempt.c_str());discardSymbols(purge);return 0;
     }catch(const Unsupported &error){
-        if(!candidate.empty())DeleteFileW(candidate.c_str());
-        if(rangePhase)saveRangeRecord(negative,error.what());
-        else if(!negative.empty()){std::ofstream report(negative.c_str(),std::ios::binary|std::ios::trunc);report<<"FSPUBLIC01"<<error.what()<<"\n";}
-        if(!attempt.empty())DeleteFileW(attempt.c_str());
-        discardSymbols(purge);
-        return ERROR_NOT_SUPPORTED;
+        return decline(error.what());
+    }catch(const DownloadFailure &error){
+        return retryLater(error.what(),false);
     }catch(const std::exception &error){
-        if(!candidate.empty())DeleteFileW(candidate.c_str());
-        if(rangePhase)saveRangeRecord(attempt,error.what());
-        else if(!attempt.empty()){std::ofstream report(attempt.c_str(),std::ios::trunc);report<<error.what()<<"\n";}
-        return ERROR_NOT_SUPPORTED;
+        return retryLater(error.what(),true);
     }
 }
 } } // namespace filespacer::selectionDetail

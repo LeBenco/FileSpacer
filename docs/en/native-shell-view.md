@@ -218,7 +218,9 @@ process validates cached data against its loaded system image, recognized
 operands and CFG targets. Discovery
 only runs when no usable decision exists for this image/schema. A saved
 unsupported decision avoids repeated discovery; transient failures back off for
-24 hours before a later launch may retry.
+24 hours before a later launch may retry. The same failure three times in a
+row for one image, or three attempts in a row that never finished, is saved as
+an unsupported decision. A failed symbol download is never counted.
 
 An isolated native worker obtains the matching Microsoft PDB through HTTPS and
 uses system DbgHelp and bounded instruction recognition. No development tools,

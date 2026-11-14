@@ -26,6 +26,12 @@ $backoff=Join-Path $RunDirectory 'transient-failure';[void][IO.Directory]::Creat
 [IO.File]::WriteAllText((Join-Path $backoff ([IO.Path]::GetFileNameWithoutExtension($data[0].Name)+'.attempt')),'network failure')
 $code=Invoke-NativeProgram $cacheTest @('--public-persist',$backoff) (Join-Path $RunDirectory 'transient-backoff.log') (Join-Path $RunDirectory 'transient-backoff-errors.log')
 if($code-ne0-or(Test-Path -LiteralPath (Join-Path $backoff 'symbols'))){throw 'Transient error backoff did not preserve public operations.'}
+# Two attempts in a row never finished: the third start records a decision instead of running again.
+$repeated=Join-Path $RunDirectory 'repeated-failure';[void][IO.Directory]::CreateDirectory($repeated)
+[IO.File]::WriteAllText((Join-Path $repeated ([IO.Path]::GetFileNameWithoutExtension($data[0].Name)+'.attempt')),"Discovery running`nprevious=2 Discovery running`n")
+$code=Invoke-NativeProgram $cacheTest @('--build-cache',$repeated) (Join-Path $RunDirectory 'repeated-failure.log') (Join-Path $RunDirectory 'repeated-failure-errors.log')
+$declined=Join-Path $repeated ($data[0].Name+'.public')
+if($code-ne50-or!(Test-Path -LiteralPath $declined)-or!(Get-Content -LiteralPath $declined -Raw).StartsWith('FSPUBLIC01Discovery repeatedly did not finish')-or@(Get-ChildItem -LiteralPath $repeated -Filter '*.attempt').Count-or(Test-Path -LiteralPath (Join-Path $repeated 'symbols'))){throw 'A third unfinished discovery did not become a saved public decision.'}
 $shared=Join-Path $RunDirectory 'shared-discovery';[void][IO.Directory]::CreateDirectory($shared)
 Copy-Item -LiteralPath (Join-Path $cache 'symbols') -Destination $shared -Recurse
 $processes=@()
