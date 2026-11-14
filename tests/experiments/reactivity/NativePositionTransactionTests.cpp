@@ -56,8 +56,7 @@ public:
         Search search;
         EnumChildWindows(parent, findList, reinterpret_cast<LPARAM>(&search));
         DWORD_PTR existing = 0;
-        if (search.count != 1 || (!suspendLayout && (!IsWindowVisible(search.window)
-                || GetPropW(search.window, L"SysSetRedraw")))
+        if (search.count != 1 || (!suspendLayout && !IsWindowVisible(search.window))
                 || GetWindowSubclass(search.window, subclass, 1, &existing)) return;
         state.reset(new State);
         state->window = search.window;

@@ -1231,8 +1231,7 @@ HWND scrollList(IFolderView2 *view, HWND parent, UINT mode, const std::function<
             || process != GetCurrentProcessId()) return nullptr;
     ScrollListSearch search;
     EnumChildWindows(parent, findScrollList, reinterpret_cast<LPARAM>(&search));
-    if (!current() || search.count != 1 || !IsWindowVisible(search.window)
-            || GetPropW(search.window, L"SysSetRedraw")) return nullptr;
+    if (!current() || search.count != 1 || !IsWindowVisible(search.window)) return nullptr;
     int expected = -1;
     switch (mode) {
         case FVM_ICON: expected = LV_VIEW_ICON; break;
