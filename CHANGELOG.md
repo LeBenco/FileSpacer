@@ -14,6 +14,7 @@
 - Fix several view and input issues (free icon positions loss on Small icons/tiles, Ctrl+wheel, Backspace auto-repeat, invalid numeric preferences, opening animation origin for various DPI, scroll position on reopening under Windows 11).
 - Keep the proportions of Details columns that fill the window when a folder is closed and reopened.
 - Add an option to turn off the Microsoft symbol download that speeds up large folders, and show a notification when it happens.
+- Stop the daily retry of the large-folder speed-up preparation once it has failed the same way three times, and remove its data for replaced Windows versions.
 - Make Ctrl+Backspace invert the source window setting, like Ctrl with every other way of opening a folder.
 - Show a loading bar in the address bar and on the taskbar button while a large or slow folder is being listed.
 
