@@ -21,7 +21,9 @@ try {
     $invalid=@{Dialog=[IntPtr]::Zero}
     Wait-Ui {
         $dialogs=@([FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,$ownerId) | Where-Object {$_ -ne $script:UiSettings})
-        if($dialogs.Count -ne 1){return $false};$invalid.Dialog=$dialogs[0];return $true
+        if($dialogs.Count -ne 1){return $false};$invalid.Dialog=$dialogs[0]
+        # The dialog is enumerable before its controls exist.
+        return @([FileSpacerRegression.Native]::Children($dialogs[0],'Button')).Count -eq 1
     } 'invalid limit error dialog'
     [void][FileSpacerRegression.Native]::PostMessage((Get-UiControl $invalid.Dialog 'Button'),0xf5,[IntPtr]::Zero,[IntPtr]::Zero)
     Wait-Ui { ![FileSpacerRegression.Native]::IsWindow($invalid.Dialog) -and [FileSpacerRegression.Native]::Text($limitEdit) -eq '5' } 'invalid limit rejected and restored'
