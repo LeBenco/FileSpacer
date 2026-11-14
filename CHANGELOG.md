@@ -15,6 +15,7 @@
 - Keep the proportions of Details columns that fill the window when a folder is closed and reopened.
 - Add an option to turn off the Microsoft symbol download that speeds up large folders, and show a notification when it happens.
 - Stop the daily retry of the large-folder speed-up preparation once it has failed the same way three times, and remove its data for replaced Windows versions.
+- Restore the large-folder selection speed-up on current Windows 11 builds, where a Windows update had turned it off.
 - Make Ctrl+Backspace invert the source window setting, like Ctrl with every other way of opening a folder.
 - Show a loading bar in the address bar and on the taskbar button while a large or slow folder is being listed.
 
