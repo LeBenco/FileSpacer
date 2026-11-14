@@ -943,7 +943,7 @@ const char RUNNING_ATTEMPT[]="Discovery running";
 struct AttemptRecord { std::string message; int repeated=0; };
 void writeAttempt(const std::wstring &path,bool range,const std::string &text) {
     if(range)saveRangeRecord(path,text.c_str());
-    else {std::ofstream record(path.c_str(),std::ios::binary|std::ios::trunc);record<<text<<"\n";}
+    else {std::ofstream record(path.c_str(),std::ios::binary);record<<text<<"\n";} // An output stream replaces the file.
 }
 AttemptRecord previousAttempt(const std::wstring &path,bool range) {
     AttemptRecord record;
@@ -983,6 +983,7 @@ void markAttempt(const std::wstring &path,bool range,const AttemptRecord &previo
 // Each phase (Shell image, then control image) downloads and qualifies on its
 // own time budget: a slow first phase does not shorten the second one.
 std::atomic<ULONGLONG> phaseStarted{0};
+void startPhase(){phaseStarted.store(GetTickCount64(),std::memory_order_relaxed);}
 DWORD WINAPI discoveryWatchdog(void *stop) {
     // The update waits one minute for every process of this image to leave.
     while(WaitForSingleObject(static_cast<HANDLE>(stop),1000)==WAIT_TIMEOUT) {
@@ -999,10 +1000,9 @@ DWORD WINAPI discoveryWatchdog(void *stop) {
 struct Watchdog {
     Handle stop{CreateEventW(nullptr,TRUE,FALSE,nullptr),&closeHandle};
     Handle thread{nullptr,&closeHandle};
-    Watchdog(){require(stop!=nullptr,"Cannot create discovery watchdog");nextPhase();
+    Watchdog(){require(stop!=nullptr,"Cannot create discovery watchdog");startPhase();
         thread.reset(CreateThread(nullptr,0,discoveryWatchdog,stop.get(),0,nullptr));require(thread!=nullptr,"Cannot start discovery watchdog");}
     ~Watchdog(){SetEvent(stop.get());WaitForSingleObject(thread.get(),INFINITE);}
-    void nextPhase(){phaseStarted.store(GetTickCount64(),std::memory_order_relaxed);}
 };
 } // namespace
 void initialize(const wchar_t *cacheRoot,bool background) {
@@ -1106,7 +1106,7 @@ int runWorker(const wchar_t *cacheRoot) {
             negative=rangeFinal+L".public";candidate=rangeFinal+L".pending";
             const std::wstring nextAttempt=rangeFinal+L".attempt";
             if(attempt!=nextAttempt) {
-                watchdog.nextPhase(); // The Shell phase ran first in this process.
+                startPhase(); // The Shell phase ran first in this process.
                 DeleteFileW(attempt.c_str());attempt=nextAttempt;last=previousAttempt(attempt,true);
                 supported(last.repeated<REPEATED_FAILURE_LIMIT,"Discovery repeatedly did not finish");
             }
