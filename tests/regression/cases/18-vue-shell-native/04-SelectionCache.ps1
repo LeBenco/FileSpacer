@@ -14,7 +14,7 @@ if($code-ne0-and$code-ne50){throw ('Native discovery/qualification/cache lifecyc
 $privateSupported=$code-eq0
 $data=@(Get-ChildItem -LiteralPath $cache -Filter '*.bin' -File)
 if($privateSupported){
-if($data.Count-ne1-or$data[0].Length-ne164){throw 'No unique qualified cache.'}
+if($data.Count-ne1-or$data[0].Length-ne168){throw 'No unique qualified cache.'}
 $timestamp=$data[0].LastWriteTimeUtc
 $code=Invoke-NativeProgram $cacheTest @('--build-cache',$cache) (Join-Path $RunDirectory 'reuse-cache.log') (Join-Path $RunDirectory 'reuse-cache-errors.log')
 if($code-ne0-or(Get-Item -LiteralPath $data[0].FullName).LastWriteTimeUtc-ne$timestamp){throw 'An unchanged DLL recomputed the qualified cache.'}
@@ -46,6 +46,8 @@ $bad=Join-Path $RunDirectory 'bad-cache';[void][IO.Directory]::CreateDirectory($
 $bytes=[IO.File]::ReadAllBytes($data[0].FullName)
 $faults=@(@{Name='schema';Offset=7},@{Name='identity';Offset=12},@{Name='callback';Offset=76},@{Name='layout';Offset=116},@{Name='procedure';Offset=132})
 if(([BitConverter]::ToUInt32($bytes,132)-band4)-ne0){$faults+=@(@{Name='inline-clear';Offset=36},@{Name='inline-notify';Offset=156},@{Name='inline-erase';Offset=160})}
+# Helper form whose array routines are linked into Shell32: both of its targets are checked.
+if(([BitConverter]::ToUInt32($bytes,132)-band3)-eq1-and[BitConverter]::ToUInt32($bytes,68)-eq0-and[BitConverter]::ToUInt32($bytes,164)-ne0){$faults+=@(@{Name='linked-erase';Offset=160},@{Name='linked-enum';Offset=164})}
 foreach($fault in $faults){
     $mutated=[byte[]]$bytes.Clone();$mutated[$fault.Offset]=$mutated[$fault.Offset]-bxor1
     [IO.File]::WriteAllBytes((Join-Path $bad $data[0].Name),$mutated)

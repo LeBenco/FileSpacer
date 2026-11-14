@@ -102,7 +102,7 @@ Identity identity() {
     for (wchar_t character : text) if (character && character != L'{' && character != L'}' && character != L'-') result.key += character;
     swprintf_s(age, L"%X", result.age); result.key += age;
     wchar_t size[16]={};swprintf_s(size,L"%X",result.size);
-    result.cacheKey=result.key+L"-"+size+L"-s3";
+    result.cacheKey=result.key+L"-"+size+L"-s4";
     return result;
 }
 std::wstring cachePath(const std::wstring &root,const Identity &id) { return root+L"\\"+id.cacheKey+L".bin"; }
@@ -205,7 +205,7 @@ BOOL CALLBACK collectTables(PSYMBOL_INFOW symbol, ULONG, void *context) {
         && symbol->Address - result.base < result.size) result.tables.push_back(static_cast<DWORD>(symbol->Address - result.base));
     return TRUE;
 }
-struct Symbols { std::array<DWORD, 23> methods = {}; std::vector<DWORD> tables; };
+struct Symbols { std::array<DWORD, 24> methods = {}; std::vector<DWORD> tables; };
 Symbols symbols(const Identity &id, const std::wstring &path, bool control=false) {
     Module library(LoadLibraryExW(systemFile(L"dbghelp.dll").c_str(), nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32), &FreeLibrary);
     require(library != nullptr, "System DbgHelp unavailable");
@@ -231,7 +231,7 @@ Symbols symbols(const Identity &id, const std::wstring &path, bool control=false
         L"?QueryInterface@CListViewHost@@UEAAJAEBU_GUID@@PEAPEAX@Z",L"_imp_DSA_EnumCallback",L"_imp_DSA_DeleteAllItems",
         L"CSelectionManager::s_ClearSelectedItemEntry",L"??_7CDefView@@6BIListControlHost@@@",L"??_7CListViewHost@@6BIListControl@@@",
         L"CListViewHost::QueryObject",L"CDefView::QueryObject",L"??_7CSelectionManager@@6B@",L"DSA_GetItemPtr",
-        L"CListViewHost::s_ViewSubclassWndProc",L"_imp_DSA_InsertItem",L"DSA_InsertItem",L"CSelectionManager::SelectItem",L"CListViewHost::_OnLVNotify",L"DSA_DeleteAllItems"};
+        L"CListViewHost::s_ViewSubclassWndProc",L"_imp_DSA_InsertItem",L"DSA_InsertItem",L"CSelectionManager::SelectItem",L"CListViewHost::_OnLVNotify",L"DSA_DeleteAllItems",L"DSA_EnumCallback"};
     const wchar_t *controlNames[]={L"?QueryInterface@CListView@@UEAAJAEBU_GUID@@PEAPEAX@Z",L"?AddRef@CListView@@UEAAKXZ",L"?Release@CListView@@UEAAKXZ",
         L"?QueryInterface@CLVRange@@UEAAJAEBU_GUID@@PEAPEAX@Z",L"?AddRef@CLVRange@@UEAAKXZ",L"?Release@CLVRange@@UEAAKXZ",
         L"?GetSelectedCount@CListView@@UEAAJPEAH@Z",L"?Clear@CLVRange@@UEAAJXZ",L"CLVRange::CountIncluded"};
@@ -302,7 +302,7 @@ std::array<DWORD, FieldCount> extract(const Identity &id, const Symbols &foundSy
     };
     std::array<DWORD, FieldCount> fields = {};
     std::copy_n(foundSymbols.methods.begin(), 16, fields.begin()); fields[ArrayGetter] = foundSymbols.methods[16];
-    std::copy_n(foundSymbols.methods.begin()+17,6,fields.begin()+NativeWindowProcedure);
+    std::copy_n(foundSymbols.methods.begin()+17,7,fields.begin()+NativeWindowProcedure);
     unsigned char qi[20] = {}; copy(fields[HostQI], qi);
     const unsigned char qiPrefix[] = {0x4d,0x8b,0xc8,0x4c,0x8b,0xc2,0x48,0x8d,0x15};
     const unsigned char qiJump[] = {0x48,0xff,0x25};
@@ -380,7 +380,7 @@ std::array<DWORD, FieldCount> extract(const Identity &id, const Symbols &foundSy
 }
 void save(const Identity &id, const std::array<DWORD,FieldCount> &fields, const std::wstring &path) {
     std::ofstream file(path.c_str(),std::ios::binary|std::ios::trunc);const DWORD count=FieldCount;
-    file.write("FSDISC03",8);file.write(reinterpret_cast<const char *>(&id.size),4);
+    file.write("FSDISC04",8);file.write(reinterpret_cast<const char *>(&id.size),4);
     file.write(reinterpret_cast<const char *>(&id.guid),sizeof(id.guid));file.write(reinterpret_cast<const char *>(&id.age),4);
     file.write(reinterpret_cast<const char *>(&count),4);file.write(reinterpret_cast<const char *>(fields.data()),sizeof(fields));file.flush();
     require(file.good(),"Cannot save discovered data");
