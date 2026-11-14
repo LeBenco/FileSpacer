@@ -984,25 +984,29 @@ void markAttempt(const std::wstring &path,bool range,const AttemptRecord &previo
     runningAttempt=path;
     writeAttempt(path,range,std::string(RUNNING_ATTEMPT)+"\nprevious="+std::to_string(previous.repeated)+" "+previous.message);
 }
+// Each phase (Shell image, then control image) downloads and qualifies on its
+// own time budget: a slow first phase does not shorten the second one.
+std::atomic<ULONGLONG> phaseStarted{0};
 DWORD WINAPI discoveryWatchdog(void *stop) {
     // The update waits one minute for every process of this image to leave.
-    for(DWORD elapsed=0;WaitForSingleObject(static_cast<HANDLE>(stop),1000)==WAIT_TIMEOUT;) {
-        elapsed+=1000;
+    while(WaitForSingleObject(static_cast<HANDLE>(stop),1000)==WAIT_TIMEOUT) {
         if(updateInstalling()) {
             attemptLock.lock(); // Never released: the marker is not written again.
             if(!runningAttempt.empty())DeleteFileW(runningAttempt.c_str());
             TerminateProcess(GetCurrentProcess(),ERROR_CANCELLED);
         }
-        if(elapsed>=180000)TerminateProcess(GetCurrentProcess(),ERROR_TIMEOUT); // Only the isolated discovery process.
+        // Only the isolated discovery process.
+        if(GetTickCount64()-phaseStarted.load(std::memory_order_relaxed)>=180000)TerminateProcess(GetCurrentProcess(),ERROR_TIMEOUT);
     }
     return 0;
 }
 struct Watchdog {
     Handle stop{CreateEventW(nullptr,TRUE,FALSE,nullptr),&closeHandle};
     Handle thread{nullptr,&closeHandle};
-    Watchdog(){require(stop!=nullptr,"Cannot create discovery watchdog");
+    Watchdog(){require(stop!=nullptr,"Cannot create discovery watchdog");nextPhase();
         thread.reset(CreateThread(nullptr,0,discoveryWatchdog,stop.get(),0,nullptr));require(thread!=nullptr,"Cannot start discovery watchdog");}
     ~Watchdog(){SetEvent(stop.get());WaitForSingleObject(thread.get(),INFINITE);}
+    void nextPhase(){phaseStarted.store(GetTickCount64(),std::memory_order_relaxed);}
 };
 } // namespace
 void initialize(const wchar_t *cacheRoot,bool background) {
@@ -1105,6 +1109,7 @@ int runWorker(const wchar_t *cacheRoot) {
             negative=rangeFinal+L".public";candidate=rangeFinal+L".pending";
             const std::wstring nextAttempt=rangeFinal+L".attempt";
             if(attempt!=nextAttempt) {
+                watchdog.nextPhase(); // The Shell phase ran first in this process.
                 DeleteFileW(attempt.c_str());attempt=nextAttempt;last=previousAttempt(attempt,true);
                 supported(last.repeated<REPEATED_FAILURE_LIMIT,"Discovery repeatedly did not finish");
             }

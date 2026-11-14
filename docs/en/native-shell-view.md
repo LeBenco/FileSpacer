@@ -230,7 +230,8 @@ nine configurations, including selection caches, identities, retained snapshots,
 focus, follow-up actions and refresh. Only a successful qualification atomically
 publishes the cache. Concurrent processes share a single producer and receive
 cache-publication notifications without polling the UI. A watchdog terminates
-only the disposable worker after three minutes.
+only the disposable worker, after three minutes in one phase: the Shell image
+and the control image are each downloaded and qualified on their own budget.
 
 The download is subject to the **Settings > Integration** option, on by default.
 Without it no worker is started and only a decision already in the cache is
