@@ -59,23 +59,29 @@ inline unsigned char *controlModule() {
     }();
     return result;
 }
-inline bool controlIdentity(RangeData &identity) {
-    const auto base=controlModule();IMAGE_DOS_HEADER dos={};IMAGE_NT_HEADERS64 nt={};
+// Identity of a loaded 64-bit image: its size, and the GUID and age of its
+// first RSDS debug record, as the symbol server names its PDB. Every read is
+// checked; a false result leaves the outputs unspecified.
+inline bool imageIdentity(unsigned char *base,DWORD &size,GUID &guid,DWORD &age) {
+    IMAGE_DOS_HEADER dos={};IMAGE_NT_HEADERS64 nt={};
     if(!base||!read(base,dos)||dos.e_magic!=IMAGE_DOS_SIGNATURE||dos.e_lfanew<64||dos.e_lfanew>4096
             ||!read(base+dos.e_lfanew,nt)||nt.Signature!=IMAGE_NT_SIGNATURE
             ||nt.FileHeader.Machine!=IMAGE_FILE_MACHINE_AMD64||nt.OptionalHeader.Magic!=IMAGE_NT_OPTIONAL_HDR64_MAGIC)return false;
-    identity.size=nt.OptionalHeader.SizeOfImage;
+    size=nt.OptionalHeader.SizeOfImage;
     const auto &debug=nt.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
-    if(debug.VirtualAddress>=identity.size||debug.Size>identity.size-debug.VirtualAddress||debug.Size>32*sizeof(IMAGE_DEBUG_DIRECTORY))return false;
+    if(debug.VirtualAddress>=size||debug.Size>size-debug.VirtualAddress||debug.Size>32*sizeof(IMAGE_DEBUG_DIRECTORY))return false;
     for(DWORD offset=0;offset+sizeof(IMAGE_DEBUG_DIRECTORY)<=debug.Size;offset+=sizeof(IMAGE_DEBUG_DIRECTORY)) {
         IMAGE_DEBUG_DIRECTORY entry={};struct CodeView {DWORD signature;GUID guid;DWORD age;} code={};
         if(!read(base+debug.VirtualAddress+offset,entry))return false;
-        if(entry.Type==IMAGE_DEBUG_TYPE_CODEVIEW&&entry.AddressOfRawData<identity.size
-                &&sizeof(code)<=identity.size-entry.AddressOfRawData&&read(base+entry.AddressOfRawData,code)&&code.signature==0x53445352) {
-            identity.guid=code.guid;identity.age=code.age;return true;
+        if(entry.Type==IMAGE_DEBUG_TYPE_CODEVIEW&&entry.AddressOfRawData<size
+                &&sizeof(code)<=size-entry.AddressOfRawData&&read(base+entry.AddressOfRawData,code)&&code.signature==0x53445352) {
+            guid=code.guid;age=code.age;return true;
         }
     }
     return false;
+}
+inline bool controlIdentity(RangeData &identity) {
+    return imageIdentity(controlModule(),identity.size,identity.guid,identity.age);
 }
 inline bool decodeControlCount(const unsigned char *code,SIZE_T length,DWORD &manager,DWORD &range) {
     // A CFG dispatch thunk can replace the indirect import call. In this
@@ -235,24 +241,13 @@ struct Image {
         const DWORD loadedLength=GetModuleFileNameW(module,loaded,_countof(loaded));
         if(!module||!loadedLength||loadedLength>=_countof(loaded)||_wcsicmp(loaded,path.c_str())!=0)return result;
         result.base=reinterpret_cast<unsigned char *>(module);
-        IMAGE_DOS_HEADER dos={};IMAGE_NT_HEADERS64 nt={};
         result.reason="image identity or CFG mismatch";
-        if(!read(result.base,dos)||dos.e_magic!=IMAGE_DOS_SIGNATURE||dos.e_lfanew<64||dos.e_lfanew>4096
-                ||!read(result.base+dos.e_lfanew,nt)||nt.Signature!=IMAGE_NT_SIGNATURE
-                ||nt.FileHeader.Machine!=IMAGE_FILE_MACHINE_AMD64||nt.OptionalHeader.Magic!=IMAGE_NT_OPTIONAL_HDR64_MAGIC
-                ||nt.OptionalHeader.SizeOfImage!=expectedSize||expectedSize<sizeof(nt))return result;
+        DWORD loadedSize=0,loadedAge=0;GUID loadedGuid={};
+        if(!imageIdentity(result.base,loadedSize,loadedGuid,loadedAge)||loadedSize!=expectedSize||expectedSize<sizeof(IMAGE_NT_HEADERS64)
+                ||loadedAge!=age||!IsEqualGUID(loadedGuid,guid))return result;
         result.size=expectedSize;
-        const auto &debug=nt.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];bool identity=false;
-        if(!result.range(debug.VirtualAddress,debug.Size)||debug.Size>32*sizeof(IMAGE_DEBUG_DIRECTORY))return result;
-        for(DWORD offset=0;offset+sizeof(IMAGE_DEBUG_DIRECTORY)<=debug.Size;offset+=sizeof(IMAGE_DEBUG_DIRECTORY)){
-            IMAGE_DEBUG_DIRECTORY entry={};struct CodeView {DWORD signature=0;GUID guid={};DWORD age=0;} code={};
-            if(!read(result.base+debug.VirtualAddress+offset,entry))return result;
-            if(entry.Type==IMAGE_DEBUG_TYPE_CODEVIEW&&result.range(entry.AddressOfRawData,sizeof(code))
-                    &&read(result.base+entry.AddressOfRawData,code)&&code.signature==0x53445352
-                    &&code.age==age&&IsEqualGUID(code.guid,guid))identity=true;
-        }
         PROCESS_MITIGATION_CONTROL_FLOW_GUARD_POLICY policy={};
-        if(!identity||!GetProcessMitigationPolicy(GetCurrentProcess(),ProcessControlFlowGuardPolicy,&policy,sizeof(policy))
+        if(!GetProcessMitigationPolicy(GetCurrentProcess(),ProcessControlFlowGuardPolicy,&policy,sizeof(policy))
                 ||!policy.EnableControlFlowGuard)return result;
         PROCESS_MITIGATION_CONTROL_FLOW_GUARD_POLICY known={};known.EnableControlFlowGuard=1;known.EnableExportSuppression=1;known.StrictMode=1;
         if(policy.Flags&~known.Flags)return result; // Unknown/XFG policy: keep public calls.

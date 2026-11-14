@@ -96,32 +96,14 @@ Identity identity() {
     const DWORD length = GetModuleFileNameW(module, loaded, _countof(loaded));
     require(module && length && length < _countof(loaded) && !_wcsicmp(path.c_str(), loaded), "Unexpected Shell image");
     result.base = reinterpret_cast<unsigned char *>(module);
-    IMAGE_DOS_HEADER dos = {}; IMAGE_NT_HEADERS64 nt = {};
-    require(read(result.base, dos) && dos.e_magic == IMAGE_DOS_SIGNATURE && dos.e_lfanew >= 64
-        && dos.e_lfanew <= 4096 && read(result.base + dos.e_lfanew, nt)
-        && nt.Signature == IMAGE_NT_SIGNATURE && nt.FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64
-        && nt.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC, "Invalid Shell PE");
-    result.size = nt.OptionalHeader.SizeOfImage;
-    const auto &debug = nt.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
-    require(debug.VirtualAddress < result.size && debug.Size <= result.size - debug.VirtualAddress
-        && debug.Size <= 32 * sizeof(IMAGE_DEBUG_DIRECTORY), "Invalid debug directory");
-    for (DWORD offset = 0; offset + sizeof(IMAGE_DEBUG_DIRECTORY) <= debug.Size; offset += sizeof(IMAGE_DEBUG_DIRECTORY)) {
-        IMAGE_DEBUG_DIRECTORY entry = {};
-        struct CodeView { DWORD signature; GUID guid; DWORD age; } code = {};
-        require(read(result.base + debug.VirtualAddress + offset, entry), "Unreadable debug entry");
-        if (entry.Type != IMAGE_DEBUG_TYPE_CODEVIEW || entry.AddressOfRawData >= result.size
-            || sizeof(code) > result.size - entry.AddressOfRawData) continue;
-        if (!read(result.base + entry.AddressOfRawData, code) || code.signature != 0x53445352) continue;
-        result.guid = code.guid; result.age = code.age;
-        wchar_t text[40] = {}, age[16] = {};
-        require(StringFromGUID2(code.guid, text, _countof(text)) != 0, "GUID formatting failed");
-        for (wchar_t character : text) if (character && character != L'{' && character != L'}' && character != L'-') result.key += character;
-        swprintf_s(age, L"%X", code.age); result.key += age;
-        wchar_t size[16]={};swprintf_s(size,L"%X",result.size);
-        result.cacheKey=result.key+L"-"+size+L"-s3";
-        return result;
-    }
-    throw std::runtime_error("No Shell RSDS identity");
+    require(imageIdentity(result.base, result.size, result.guid, result.age), "No Shell image identity");
+    wchar_t text[40] = {}, age[16] = {};
+    require(StringFromGUID2(result.guid, text, _countof(text)) != 0, "GUID formatting failed");
+    for (wchar_t character : text) if (character && character != L'{' && character != L'}' && character != L'-') result.key += character;
+    swprintf_s(age, L"%X", result.age); result.key += age;
+    wchar_t size[16]={};swprintf_s(size,L"%X",result.size);
+    result.cacheKey=result.key+L"-"+size+L"-s3";
+    return result;
 }
 std::wstring cachePath(const std::wstring &root,const Identity &id) { return root+L"\\"+id.cacheKey+L".bin"; }
 std::wstring rangeCacheFile(const std::wstring &base) {
