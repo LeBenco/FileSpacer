@@ -618,7 +618,8 @@ bool qualify(const std::wstring &root) {
             require(sameId&&GetFocus()==focus,focusError.c_str());
             require(SUCCEEDED(candidate.clear(shell,current)),"Linear selection clear failed");
         }
-        for(int selected:{0,1,32,64,128}) {
+        // Both sides of the count from which explicit clearing uses the candidate.
+        for(int selected:{0,1,SELECTION_BULK_THRESHOLD-1,SELECTION_BULK_THRESHOLD,192}) {
             require(SUCCEEDED(shell->SelectItem(nullptr,SVSI_DESELECTOTHERS)),"Cannot clear qualification setup");
             std::vector<PCUITEMID_CHILD> chosen;std::vector<std::wstring> wanted;
             for(int i=0;i<selected;++i){const size_t index=(static_cast<size_t>(i)*37)%ids.size();chosen.push_back(ids[index]);wanted.push_back(names[index]);}
@@ -628,10 +629,10 @@ bool qualify(const std::wstring &root) {
             CComPtr<IShellItemArray> retained;
             if(selected){require(SUCCEEDED(view->GetSelection(FALSE,&retained)) && paths(retained)==wanted,"Qualification identities differ");
                 CComPtr<IShellItemArray> parent;require(SUCCEEDED(view->GetSelection(TRUE,&parent)) && paths(parent)==wanted,"Qualification parent cache differs");}
-            const bool observeRange=selectionEvents&&selected>=128;
+            const bool viaCandidate=selected>=SELECTION_BULK_THRESHOLD,observeRange=selectionEvents&&viaCandidate;
             if(observeRange){pump(100);selectionEvents->begin();}
-            bool applied=false;require(SUCCEEDED(candidate.clear(shell,current,&applied)) && (!selected || applied),"Qualification did not clear through candidate");
-            if(selected){bool known=false;const bool released=candidate.backingBufferReleased(known);
+            bool applied=false;require(SUCCEEDED(candidate.clear(shell,current,&applied)) && applied==viaCandidate,"Qualification did not clear through candidate");
+            if(applied){bool known=false;const bool released=candidate.backingBufferReleased(known);
                 require(known && released,"Native clear did not release its own backing allocation");}
             pump(100);require(SUCCEEDED(view->ItemCount(SVGIO_SELECTION,&count)) && count==0,"Qualification clear left selection");
             if(observeRange)require(selectionEvents->finish(),"Range clear lost aggregate selection notification");

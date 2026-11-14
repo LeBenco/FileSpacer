@@ -208,6 +208,8 @@ binding, so publication cannot change an operation already in progress.
 Existing folder windows receive a posted notification and bind the new
 capability on their UI thread; navigation/closure and view-generation guards
 still apply. A rejected binding or failed safety check retains the public path.
+Explicit clearing uses the private path from 128 selected items, like the other
+accelerated operations; a smaller selection is cleared by the public call alone.
 
 The cache under `%LOCALAPPDATA%\FileSpacer\ShellSelection-v1` contains relative
 addresses/member offsets, not absolute pointers. Its key includes the loaded

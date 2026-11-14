@@ -48,7 +48,7 @@ try {
         if($job.ExitCode-ne0){throw ('Echec du prototype, code '+$job.ExitCode+'. Consulter native.stderr.log.')}
     } finally {$job.Dispose()}
     $rows=@(Import-Csv -LiteralPath (Join-Path $run 'clear-results.csv'))
-    if($rows.Count-ne54-or@($rows|Where-Object {$_.arm-eq'candidate'-and$_.private_applied-ne'1'}).Count){throw 'La couverture du prototype est incomplete.'}
+    if($rows.Count-ne54-or@($rows|Where-Object {$_.arm-eq'candidate'-and[int]$_.selected_count-ge128-and$_.private_applied-ne'1'}).Count){throw 'La couverture du prototype est incomplete.'}
     $report.Status=if($report.Trace-eq'UNAVAILABLE'){'REVIEW'}else{'PASS'}
     $code=0
 } catch {$failure=$_.Exception.Message;$report.Error=$failure;Write-Host $failure -ForegroundColor Red}

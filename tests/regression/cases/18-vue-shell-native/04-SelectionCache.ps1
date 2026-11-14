@@ -65,9 +65,8 @@ try {
     if($code-ne0){throw ('Product selection matrix failed: '+$code)}
     $rows=@(Import-Csv -LiteralPath (Join-Path $output 'clear-results.csv'))
     $candidate=@($rows|Where-Object {$_.arm-eq'candidate'-and[int]$_.selected_count-gt0})
-    $expectedApplied=if($privateSupported){'1'}else{'0'}
     $expectedRows=135
     $expectedCandidates=36
-    if($rows.Count-ne$expectedRows-or$candidate.Count-ne$expectedCandidates-or@($candidate|Where-Object private_applied -ne $expectedApplied).Count){throw 'Product selection backend coverage incomplete.'}
+    if($rows.Count-ne$expectedRows-or$candidate.Count-ne$expectedCandidates-or@($candidate|Where-Object {$_.private_applied-ne$(if($privateSupported-and[int]$_.selected_count-ge128){'1'}else{'0'})}).Count){throw 'Product selection backend coverage incomplete.'}
     if(!$privateSupported){Write-Host ('PASS: saved structural fallback reused; all '+$expectedRows+' real Shell selection cases verified through public APIs. Private acceleration not exercised.')}
 }finally{Remove-ReactivityFixture $ProjectRoot $fixture}

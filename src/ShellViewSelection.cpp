@@ -475,7 +475,8 @@ uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value
         const HRESULT counted=value->folder->ItemCount(SVGIO_SELECTION,&selected);
         if(!current())return E_ABORT;
         if(FAILED(counted))return reject();
-        if(selected<=0)return native();
+        // A small selection gains nothing from the private purge.
+        if(selected<SELECTION_BULK_THRESHOLD)return native();
         if(!read(reinterpret_cast<unsigned char *>(value->host.p)+module.fields[ManagerOffset],manager)||manager!=value->manager.p
                 ||!read(reinterpret_cast<unsigned char *>(manager)+module.fields[ArrayOffset],array)||!array
                 ||!read(array,count)||count!=selected)return reject();
@@ -489,7 +490,7 @@ uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value
         // Shell subscriptions and before public cleanup; otherwise classic free
         // Tiles measures every off-screen label merely to invalidate it. Native
         // failure/missing capability leaves the ordinary cleanup in charge.
-        if(selected>=SELECTION_BULK_THRESHOLD&&value->range.clear(value->window)!=S_OK)value->range=RangeBinding{};
+        if(value->range.clear(value->window)!=S_OK)value->range=RangeBinding{};
         if(!current())return E_ABORT;
         const HRESULT cleared=native();
         if(!current())return E_ABORT;

@@ -410,7 +410,7 @@ void runClear(const std::wstring &output,const wchar_t *path) {
             need(SUCCEEDED(view->GetFocusedItem(&focused))&&focused>=0&&SUCCEEDED(view->Item(focused,&focus))&&ILIsEqual(focus,ids[7]),"Clear changed logical focus");
             need(GetFocus()==keyboard,"Clear changed keyboard focus");
             if(hasPositions&&checkPositions)for(size_t i=0;i<positionIndices.size();++i){POINT point={};need(SUCCEEDED(view->GetItemPosition(ids[positionIndices[i]],&point))&&point.x==positions[i].x&&point.y==positions[i].y,"Clear moved an item");}
-            if(arm==1&&quantity&&!applied)unavailable=true;
+            if(arm==1&&quantity>=filespacer::SELECTION_BULK_THRESHOLD&&!applied)unavailable=true;
             std::fprintf(file,"%s,%d,%d,%d,%d,%s,%d,%d,%.3f,PASS,PASS,%s,PASS,PASS\n",mode.name,actual,size,quantity,repetition,
                 arm==0?"normal":arm==1?"candidate":"forced-fallback",accelerated.accelerated(),arm==1&&applied,elapsed,hasPositions?(checkPositions?(positionIndices.size()==ids.size()?"PASS":"SAMPLED_6"):"NOT_CHECKED"):"UNAVAILABLE");std::fflush(file);
             // A normal subsequent action must remain usable after every arm.
