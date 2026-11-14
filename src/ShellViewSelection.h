@@ -33,6 +33,8 @@ public:
     bool acceleratesSelectAll() const;
     uint64_t acceleratedSelectAllCount() const;
     bool backingBufferReleased(bool &known) const;
+    // E_PENDING: called from within a global selection or deselection that
+    // this binding is handling. Nothing is cleared and nothing is deferred.
     HRESULT clear(IShellView *view, const std::function<bool()> &current,
         bool *applied = nullptr) const;
 private:

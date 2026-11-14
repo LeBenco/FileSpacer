@@ -1152,8 +1152,8 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
             // Providers without a usable selection enumeration keep the original path.
             result = clear ? clear->clear(view, current) : view->SelectItem(nullptr, SVSI_DESELECTOTHERS);
             if (!current()) return E_ABORT;
-            // Refused during a reentrant global selection: unchanged, nothing else is attempted.
-            if (result == E_PENDING) return result;
+            // A clear refused during a reentrant global selection (E_PENDING) is a
+            // failed deselection like any other: recorded, never replayed later.
             if (FAILED(result)) { record(result); deselected = false; }
         } else {
             for (const auto &item : deselect) {
