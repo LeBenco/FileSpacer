@@ -56,14 +56,21 @@ class LabelTests : public IServiceProvider, public ICommDlgBrowser2, public IExp
         if (!GetClientRect(list, &client)) { expect(false, "read render bounds"); return {}; }
         Raster image; image.width = client.right; image.height = client.bottom;
         POINT origin = {};
-        if (!ClientToScreen(list, &origin)) { expect(false, "locate native render surface"); return {}; }
+        RECT frame = {};
+        if (!ClientToScreen(list, &origin) || !GetWindowRect(window, &frame)) { expect(false, "locate native render surface"); return {}; }
+        // The list inside the image of its top-level window.
+        const LONG fullWidth = frame.right - frame.left, fullHeight = frame.bottom - frame.top;
+        const LONG left = origin.x - frame.left, top = origin.y - frame.top;
+        if (left < 0 || top < 0 || left + image.width > fullWidth || top + image.height > fullHeight) {
+            expect(false, "the list lies inside its top-level window"); return {};
+        }
         const auto releaseScreen = [](HDC dc) { ReleaseDC(nullptr, dc); };
         std::unique_ptr<std::remove_pointer<HDC>::type, decltype(releaseScreen)> screen(GetDC(nullptr), releaseScreen);
         std::unique_ptr<std::remove_pointer<HDC>::type, decltype(&DeleteDC)> dc(
             CreateCompatibleDC(screen.get()), DeleteDC);
         BITMAPINFO info = {};
         info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-        info.bmiHeader.biWidth = image.width; info.bmiHeader.biHeight = -image.height;
+        info.bmiHeader.biWidth = fullWidth; info.bmiHeader.biHeight = -fullHeight;
         info.bmiHeader.biPlanes = 1; info.bmiHeader.biBitCount = 32;
         void *bits = nullptr;
         std::unique_ptr<std::remove_pointer<HBITMAP>::type, decltype(&DeleteObject)> bitmap(
@@ -74,20 +81,38 @@ class LabelTests : public IServiceProvider, public ICommDlgBrowser2, public IExp
                 HGDIOBJ previous;
                 ~Selection() { SelectObject(target, previous); }
             } selection = {dc.get(), SelectObject(dc.get(), bitmap.get())};
-            FillRect(dc.get(), &client, GetSysColorBrush(COLOR_WINDOW));
-            // Capture the composed, visible control after native painting,
-            // including the optional production custom draw.
+            const RECT whole = {0, 0, fullWidth, fullHeight};
+            FillRect(dc.get(), &whole, GetSysColorBrush(COLOR_WINDOW));
+            // The composed content of the window itself after native painting,
+            // including the optional production custom draw. Unlike a copy of
+            // the screen, it does not depend on the compositor having presented
+            // this window yet, nor on what covers it: a first screen capture
+            // showed what was behind the window.
             RedrawWindow(viewWindow, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW);
-            expect(SUCCEEDED(DwmFlush()),"wait for the composed Shell frame");
-            expect(BitBlt(dc.get(),0,0,image.width,image.height,screen.get(),origin.x,origin.y,SRCCOPY|CAPTUREBLT)!=FALSE,"capture the painted Shell view");
-            expect(GdiFlush()!=FALSE,"complete GDI drawing before reading captured pixels");
-            const auto start = static_cast<const DWORD *>(bits);
-            image.pixels.assign(start, start + image.width * image.height);
-            for (auto &pixel : image.pixels) pixel &= 0x00ffffff;
             const DWORD background = GetSysColor(COLOR_WINDOW);
             const DWORD rasterBackground = RGB(GetBValue(background), GetGValue(background), GetRValue(background));
-            expect(std::any_of(image.pixels.begin(), image.pixels.end(), [=](DWORD pixel) { return pixel != rasterBackground; }),
-                "capture contains the actual Shell rendering");
+            // A window shown a moment ago may not have been presented yet, and
+            // its composed content is then uniformly empty. Wait for presented
+            // frames, within a bound, until the image shows the view: its own
+            // background and something drawn on it.
+            bool captured = false, shown = false;
+            for (int frame = 0; frame < 120 && !shown; ++frame) {
+                if (frame && FAILED(DwmFlush())) break;
+                captured = PrintWindow(window, dc.get(), PW_RENDERFULLCONTENT) != FALSE && GdiFlush() != FALSE;
+                if (!captured) break;
+                const auto start = static_cast<const DWORD *>(bits);
+                image.pixels.clear();
+                image.pixels.reserve(static_cast<size_t>(image.width) * image.height);
+                for (LONG y = 0; y < image.height; ++y) {
+                    const DWORD *row = start + static_cast<size_t>(top + y) * fullWidth + left;
+                    image.pixels.insert(image.pixels.end(), row, row + image.width);
+                }
+                for (auto &pixel : image.pixels) pixel &= 0x00ffffff;
+                shown = std::any_of(image.pixels.begin(), image.pixels.end(), [=](DWORD pixel) { return pixel == rasterBackground; })
+                    && std::any_of(image.pixels.begin(), image.pixels.end(), [=](DWORD pixel) { return pixel != rasterBackground; });
+            }
+            expect(captured, "capture the painted Shell view");
+            if (!expect(shown, "capture contains the actual Shell rendering")) image.pixels.clear();
         } else expect(false, "allocate real-control render surface");
         return image;
     }
