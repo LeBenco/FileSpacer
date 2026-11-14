@@ -7,6 +7,10 @@
 #include <vector>
 
 namespace filespacer {
+// Item count from which the accelerated selection, clearing, capture and
+// restoration paths apply. Below it the ordinary Shell calls are used alone.
+constexpr int SELECTION_BULK_THRESHOLD = 128;
+
 // Nonblocking startup. Public operations are available immediately; a qualified
 // private capability may be published once without changing an in-flight call.
 void initializeShellSelectionClear(const wchar_t *cacheRoot = nullptr, bool background = true);

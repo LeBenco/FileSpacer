@@ -30,6 +30,8 @@ struct ReopenViewHeader {
 constexpr uint32_t REOPEN_ANCHOR = 2, REOPEN_FOCUS = 4;
 constexpr uint32_t REOPEN_SCROLL = 8;
 constexpr uint32_t REOPEN_VIEWPORT = 16;
+// A partial selection in a free icon view is captured by index from this count.
+constexpr int SPATIAL_PARTIAL_THRESHOLD = 1024;
 struct ViewScrollState {
     uint32_t version = 1, kind = 0, mode = 0;
     int32_t iconSize = 0, x = 0, y = 0;
@@ -188,7 +190,7 @@ bool ShellSelectionClear::Binding::selectAll(const NMLISTVIEW &notice) {
             ||!nativeArray(array,snapshot)||snapshot.count<0||snapshot.stride!=16
             ||reinterpret_cast<ULONG_PTR>(array)%alignof(LONG)||!writable(array,sizeof(LONG)))return false;
     int count=0,selected=0;
-    if(FAILED(folder->ItemCount(SVGIO_ALLVIEW,&count))||count<128
+    if(FAILED(folder->ItemCount(SVGIO_ALLVIEW,&count))||count<SELECTION_BULK_THRESHOLD
             ||FAILED(folder->ItemCount(SVGIO_SELECTION,&selected))||selected!=count
             ||!nativeArray(array,snapshot)||snapshot.count<0||snapshot.count>count)return false;
     struct alignas(void *) Entry {unsigned char bytes[16]={};};
@@ -357,7 +359,7 @@ bool ShellSelectionClear::Binding::deselectAll(const NMLISTVIEW &notice) {
     int selected=-1,count=0;
     if(!current()||FAILED(folder->ItemCount(SVGIO_SELECTION,&selected))||selected!=0||!current()
             ||FAILED(folder->ItemCount(SVGIO_ALLVIEW,&count))||!current()
-            ||!nativeArray(array,snapshot)||snapshot.count<128||snapshot.count>count||snapshot.stride!=16||!snapshot.data
+            ||!nativeArray(array,snapshot)||snapshot.count<SELECTION_BULK_THRESHOLD||snapshot.count>count||snapshot.stride!=16||!snapshot.data
             ||!writable(snapshot.data,static_cast<SIZE_T>(snapshot.count)*snapshot.stride))return false;
     // The control has already applied the global deselection. Purge its Shell
     // subscriptions as one batch, then retain the original notification for
@@ -487,7 +489,7 @@ uint64_t ShellSelectionClear::acceleratedSelectAllCount()const {const auto value
         // Shell subscriptions and before public cleanup; otherwise classic free
         // Tiles measures every off-screen label merely to invalidate it. Native
         // failure/missing capability leaves the ordinary cleanup in charge.
-        if(selected>=128&&value->range.clear(value->window)!=S_OK)value->range=RangeBinding{};
+        if(selected>=SELECTION_BULK_THRESHOLD&&value->range.clear(value->window)!=S_OK)value->range=RangeBinding{};
         if(!current())return E_ABORT;
         const HRESULT cleared=native();
         if(!current())return E_ABORT;
@@ -527,11 +529,11 @@ HRESULT captureSpatialSelection(IFolderView2 *view, const std::function<bool()> 
     int count = 0, selected = 0, focused = -1;
     result = view->ItemCount(SVGIO_ALLVIEW, &count);
     if (!current()) return E_ABORT;
-    if (FAILED(result) || count < 128) return S_FALSE;
+    if (FAILED(result) || count < SELECTION_BULK_THRESHOLD) return S_FALSE;
     result = view->ItemCount(SVGIO_SELECTION, &selected);
     if (!current()) return E_ABORT;
-    if (FAILED(result) || selected < 128 || selected > count) return S_FALSE;
-    if (selected != count && selected < 1024) return S_FALSE;
+    if (FAILED(result) || selected < SELECTION_BULK_THRESHOLD || selected > count) return S_FALSE;
+    if (selected != count && selected < SPATIAL_PARTIAL_THRESHOLD) return S_FALSE;
     result = view->GetFocusedItem(&focused);
     if (!current()) return E_ABORT;
     if (FAILED(result) || focused < 0 || focused >= count) return S_FALSE;
@@ -808,7 +810,7 @@ HRESULT captureReopenSelection(IShellView *view, const std::function<bool()> &cu
         // A complete selection is an unordered set in this snapshot. Avoid the
         // native spatial sort; providers without usable indices keep Items.
         std::vector<CComHeapPtr<ITEMID_CHILD>> complete;
-        const bool indexed = count >= 128 && isFreeIconView(folderView, current);
+        const bool indexed = count >= SELECTION_BULK_THRESHOLD && isFreeIconView(folderView, current);
         if (!current()) return E_ABORT;
         if (indexed) {
             int allCount = 0;
@@ -1041,7 +1043,7 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
         }
     }
     bool useBulkSelection = clear && clear->acceleratesSelectAll();
-    if (!sameSelection && !useBulkSelection && selectedItems.size() >= 128) {
+    if (!sameSelection && !useBulkSelection && selectedItems.size() >= static_cast<size_t>(SELECTION_BULK_THRESHOLD)) {
         FOLDERVIEWMODE mode = FVM_AUTO;
         int iconSize = 0;
         result = folderView->GetViewModeAndIconSize(&mode, &iconSize);
@@ -1054,7 +1056,7 @@ HRESULT restoreReopenSelection(IShellView *view, std::vector<uint8_t> &pending,
             }
         }
     }
-    if (!sameSelection && useBulkSelection && selectedItems.size() >= 128) {
+    if (!sameSelection && useBulkSelection && selectedItems.size() >= static_cast<size_t>(SELECTION_BULK_THRESHOLD)) {
         CComQIPtr<IShellFolderView> bulk(view);
         if (!current()) return E_ABORT;
         if (bulk) {
