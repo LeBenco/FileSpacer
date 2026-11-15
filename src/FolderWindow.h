@@ -393,6 +393,7 @@ private:
     FOLDERVIEWOPTIONS viewProfile = FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING;
     bool viewProfilePending = false, viewProfilePosted = false, viewProfileChanging = false;
     unsigned viewMenuDepth = 0;
+    CComPtr<IClassFactory> viewMenuExtension;
     HWND pendingKeyboardControl = nullptr;
     bool pendingKeyboardView = false;
     FOLDERVIEWOPTIONS profileForMode(UINT mode) const;
