@@ -61,6 +61,8 @@ FileSpacer lets you arrange a folder’s contents on a grid, as in File Explorer
 
 In **View**, **Keep icons aligned** keeps icons on the Windows grid during future moves. **Realign icons** adjusts their current positions without changing that setting or filling the gaps. To align only the icons you are dragging, hold **S** until you release the mouse button; the other icons stay in place. Releasing **S** before the drop keeps free placement.
 
+In Icon view, a grey marker previews an available grid position while **S** is held. Release **S** to hide it; press **S** again during the same drag to bring it back.
+
 <div id="details-columns"></div>
 
 In **Details** view, columns can automatically fill the entire window width. Allow this under **Settings > Display**, then enable or disable it for each folder from its **View** menu.

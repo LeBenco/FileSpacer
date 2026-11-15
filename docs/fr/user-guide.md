@@ -69,6 +69,8 @@ FileSpacer permet de disposer les éléments d’un dossier en grille, comme l�
 
 Dans **Affichage**, **Garder les icônes alignées** maintient les icônes sur la grille Windows lors des déplacements suivants. **Réaligner les icônes** recale leurs positions actuelles sans modifier ce réglage ni combler les espaces vides. Pour aligner uniquement les icônes déplacées, maintenir **S** jusqu’au relâchement du bouton de la souris ; les autres icônes restent en place. Relâcher **S** avant le dépôt conserve le placement libre.
 
+En mode Icônes, un repère gris indique un emplacement disponible sur la grille pendant que **S** est maintenue. Relâcher **S** masque le repère ; appuyer à nouveau sur **S** pendant le même déplacement le fait réapparaître.
+
 <div id="details-columns"></div>
 
 En mode **Détails**, les colonnes peuvent remplir automatiquement toute la largeur de la fenêtre. On peut l’autoriser dans **Paramètres > Affichage**, puis activer ou désactiver l’option pour chaque dossier dans son menu **Affichage**.

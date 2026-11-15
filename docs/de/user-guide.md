@@ -68,6 +68,8 @@ In FileSpacer lassen sich die Inhalte eines Ordners in einem Raster anordnen, wi
 
 Im Menü **Ansicht** hält **Symbole ausgerichtet halten** die Symbole auch bei künftigen Verschiebungen am Windows-Raster ausgerichtet. **Symbole neu ausrichten** richtet die aktuellen Positionen aus, ohne diese Einstellung zu ändern oder Lücken zu schließen. Um nur die gerade gezogenen Symbole auszurichten, **S** bis zum Loslassen der Maustaste gedrückt halten; die anderen Symbole bleiben an ihrem Platz. Wird **S** vor dem Ablegen losgelassen, bleibt die Platzierung frei.
 
+In der Symbolansicht zeigt eine graue Markierung eine freie Rasterposition an, solange **S** gedrückt gehalten wird. Beim Loslassen von **S** verschwindet sie; erneutes Drücken während desselben Ziehvorgangs blendet sie wieder ein.
+
 <div id="details-columns"></div>
 
 In der Ansicht **Details** können die Spalten automatisch die gesamte Fensterbreite ausfüllen. Die Funktion wird unter **Einstellungen > Anzeige** allgemein zugelassen und lässt sich für jeden Ordner im Menü **Ansicht** ein- oder ausschalten.

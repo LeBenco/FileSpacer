@@ -69,6 +69,8 @@ In FileSpacer kunnen de items in een map op een raster worden gerangschikt, zoal
 
 In **Beeld** houdt **Pictogrammen uitgelijnd houden** de pictogrammen ook bij volgende verplaatsingen op het Windows-raster. **Pictogrammen opnieuw uitlijnen** past de huidige posities aan zonder deze instelling te wijzigen of lege plekken op te vullen. Houd **S** ingedrukt totdat de muisknop wordt losgelaten om alleen de versleepte pictogrammen uit te lijnen; de andere pictogrammen blijven op hun plaats. Laat **S** vóór het neerzetten los om de vrije plaatsing te behouden.
 
+In de pictogramweergave geeft een grijze markering een beschikbare rasterpositie aan zolang **S** ingedrukt blijft. Laat **S** los om de markering te verbergen; druk tijdens dezelfde sleepbeweging opnieuw op **S** om deze weer te tonen.
+
 <div id="details-columns"></div>
 
 In de weergave **Details** kunnen de kolommen automatisch de volledige vensterbreedte vullen. Sta dit toe onder **Instellingen > Weergave** en schakel het daarna voor elke map afzonderlijk in of uit via het menu **Beeld**.

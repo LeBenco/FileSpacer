@@ -69,6 +69,8 @@ FileSpacer pozwala rozmieszczać elementy folderu w siatce, jak w Eksploratorze 
 
 W menu **Widok** opcja **Utrzymuj wyrównanie ikon** zachowuje wyrównanie do siatki Windows także podczas kolejnych przesunięć. Polecenie **Wyrównaj ikony ponownie** dopasowuje bieżące pozycje bez zmiany tego ustawienia i bez wypełniania pustych miejsc. Aby wyrównać tylko przeciągane ikony, przytrzymać **S** do zwolnienia przycisku myszy; pozostałe ikony pozostają na swoich miejscach. Zwolnienie **S** przed upuszczeniem zachowuje dowolne rozmieszczenie.
 
+W widoku ikon szary znacznik wskazuje wolne miejsce na siatce, gdy klawisz **S** jest przytrzymany. Zwolnienie **S** ukrywa znacznik; ponowne naciśnięcie podczas tego samego przeciągania wyświetla go z powrotem.
+
 <div id="details-columns"></div>
 
 W widoku **Szczegóły** kolumny mogą automatycznie wypełniać całą szerokość okna. Można na to zezwolić w **Ustawienia > Wyświetlanie**, a następnie włączać lub wyłączać tę opcję osobno dla każdego folderu w menu **Widok**.

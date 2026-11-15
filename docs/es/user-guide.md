@@ -69,6 +69,8 @@ FileSpacer permite distribuir los elementos de una carpeta en una cuadrícula, c
 
 En **Vista**, **Mantener los iconos alineados** mantiene los iconos en la cuadrícula de Windows durante los siguientes movimientos. **Volver a alinear los iconos** ajusta sus posiciones actuales sin cambiar esa opción ni rellenar los huecos. Para alinear solo los iconos que se están arrastrando, mantener **S** pulsada hasta soltar el botón del ratón; los demás iconos permanecen en su sitio. Soltar **S** antes de la colocación conserva la posición libre.
 
+En la vista de iconos, una marca gris indica una posición disponible en la cuadrícula mientras se mantiene **S** pulsada. Al soltar **S**, la marca desaparece; al pulsarla de nuevo durante el mismo arrastre, vuelve a aparecer.
+
 <div id="details-columns"></div>
 
 En la vista **Detalles**, las columnas pueden ajustarse automáticamente a todo el ancho de la ventana. La función se habilita en **Configuración > Visualización** y se activa o desactiva para cada carpeta desde su menú **Ver**.

@@ -69,6 +69,8 @@ FileSpacer permette di disporre gli elementi di una cartella in una griglia, com
 
 In **Visualizza**, **Mantieni le icone allineate** mantiene le icone sulla griglia di Windows anche durante gli spostamenti successivi. **Riallinea le icone** sistema le posizioni attuali senza modificare questa impostazione né riempire gli spazi vuoti. Per allineare solo le icone trascinate, tenere premuto **S** fino al rilascio del pulsante del mouse; le altre icone restano al loro posto. Rilasciando **S** prima di posarle, il posizionamento rimane libero.
 
+Nella vista a icone, un indicatore grigio mostra una posizione disponibile sulla griglia mentre si tiene premuto **S**. Rilasciando **S**, l’indicatore scompare; premendo di nuovo **S** durante lo stesso trascinamento, riappare.
+
 <div id="details-columns"></div>
 
 Nella visualizzazione **Dettagli**, le colonne possono occupare automaticamente tutta la larghezza della finestra. La funzione si abilita in **Impostazioni > Visualizzazione** e si attiva o disattiva per ogni cartella dal relativo menu **Visualizza**.
