@@ -168,7 +168,8 @@ protected:
         MSG_SYNCHRONIZE_VIEW_PROVIDER = WM_APP + 53,
         MSG_SYNCHRONIZE_VIEW_PROFILE = WM_APP + 54,
         MSG_OPEN_PENDING_VIEW_MENU = WM_APP + 55,
-        MSG_COLUMNS_CHANGED = WM_APP + 56
+        MSG_COLUMNS_CHANGED = WM_APP + 56,
+        MSG_ICON_SNAP = WM_APP + 57
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
 
@@ -218,6 +219,12 @@ private:
     void loadColumnFill();
     void captureColumnWeights(FolderViewSettings &view) const;
     void toggleFillColumns();
+    void realignIcons(bool selectedOnly = false);
+    void watchIconDrag(const MSG *message);
+    struct IconSnap;
+    std::shared_ptr<IconSnap> iconSnap;
+    ULONG_PTR iconSnapSerial = 0;
+    bool iconRealignPending = false;
     void synchronizeColumns();
     void finishColumnResize();
     bool handleAltMouseMessage(MSG *msg);
