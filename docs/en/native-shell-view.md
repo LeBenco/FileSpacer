@@ -200,6 +200,26 @@ contains a scroll offset.
 
 ## Optional selection capabilities
 
+Snap has a separate, optional grid-arithmetic capability. Discovery matches
+Microsoft symbols and the loaded control image, then qualifies the calculation
+on invisible real Shell views before publishing a `-g1.grid` sidecar. Its schema,
+publication, retry record and unsupported decision are independent of the
+existing selection and range descriptors. A new compiler form requires a new
+qualification; a change to accepted forms must bump the grid cache revision.
+
+The inspected `CLVView::SnapToGrid` and `_NearestSlot` functions are not callable
+CFG targets on the tested Windows 10 and 11 builds. FileSpacer never calls these
+functions or creates executable copies. It validates read-only instruction witnesses for rounding and
+icon margins, uses current public view measurements, and positions selected IDs
+through `IFolderView::SelectAndPositionItems`. An initial read-only scan rejects
+colliding destination cells, since the global native command has an additional
+collision pass. Only ordinary, ungrouped Icon views without special work areas
+use this calculation. Missing or invalid data, unsupported layouts and
+collisions retain the native global alignment followed by restoration of
+unselected positions. Selection, focus and persistent arrangement flags are
+unchanged. Stress case `28-apercu-affichage/06-Grille.ps1` compares the two paths
+over 3,000 items and requires proof that the qualified calculation was used.
+
 `ShellViewSelection` starts with an immediately usable public clear path.
 `ShellSelectionDiscovery` asynchronously reads the capability cache; it never
 waits for symbols or filesystem I/O on the UI thread. A qualified private path
