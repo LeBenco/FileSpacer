@@ -220,6 +220,23 @@ unselected positions. Selection, focus and persistent arrangement flags are
 unchanged. Stress case `28-apercu-affichage/06-Grille.ps1` compares the two paths
 over 3,000 items and requires proof that the qualified calculation was used.
 
+The S-drag preview shares the grid rounding calculation. It learns the native
+list from the actual input target and reads positions once per gesture, without
+searching for or subclassing Shell children. The initial anchor reuses the
+existing MSAA hit, validated against its native icon/label bounds. Mouse motion
+checks the moved selection against cached destination cells and native visible
+icon/label rectangles; these rectangles are refreshed on scrolling or viewport
+resize. It never repeats the native whole-view hit-test. Unsupported geometry and
+collisions suppress the preview; they do not change the native drop fallback.
+The preview itself is the real Windows insertion mark, rendered by a separate
+one-item ListView owned by FileSpacer. A clipped, colour-keyed, disabled tool
+window exposes only that mark above the drag image, without taking focus or
+intercepting input. Its height follows the icon size and its stroke/end caps
+remain native. No Shell item is moved to render a preview. Thread-local keyboard
+observation includes non-removing OLE peeks so releasing/repressing S updates the
+mark even with a stationary mouse; updates are posted and coalesced outside
+the hooks. Releasing the mouse, cancellation, closure and stale views remove it.
+
 `ShellViewSelection` starts with an immediately usable public clear path.
 `ShellSelectionDiscovery` asynchronously reads the capability cache; it never
 waits for symbols or filesystem I/O on the UI thread. A qualified private path
