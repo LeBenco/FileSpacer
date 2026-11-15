@@ -834,15 +834,13 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         if (view && SUCCEEDED(view->GetWindow(&root)) && isWindowOperational() && shellView == view
                 && root && (msg->hwnd == root || IsChild(root, msg->hwnd)
                     || target == root || IsChild(root, target))) {
-            // As in Explorer, a wheel message is one step whatever its delta,
-            // and the notches received while it is applied are dropped.
+            // A wheel message is at least one step, as in Explorer. Windows merges
+            // the notches received while a change is applied into one message:
+            // its delta counts them, and one change then takes them all.
             const int delta = GET_WHEEL_DELTA_WPARAM(msg->wParam);
-            if (delta && !renaming()) changeViewMode(-1, delta > 0);
-            MSG queued;
-            while (PeekMessageW(&queued, msg->hwnd, WM_MOUSEWHEEL, WM_MOUSEWHEEL, PM_NOREMOVE)
-                    && (GET_KEYSTATE_WPARAM(queued.wParam) & MK_CONTROL)
-                    && !(GET_KEYSTATE_WPARAM(queued.wParam) & MK_SHIFT)
-                    && PeekMessageW(&queued, msg->hwnd, WM_MOUSEWHEEL, WM_MOUSEWHEEL, PM_REMOVE)) {}
+            const int notches = delta / WHEEL_DELTA;
+            const int steps = notches ? notches : (delta > 0) - (delta < 0);
+            if (steps && !renaming()) changeViewMode(steps, true);
             return true;
         }
     }
@@ -2054,7 +2052,7 @@ bool FolderWindow::onCommand(WORD command) {
     return ItemWindow::onCommand(command);
 }
 
-void FolderWindow::changeViewMode(int index, bool larger) {
+void FolderWindow::changeViewMode(int amount, bool wheel) {
     CComPtr<ItemWindow> keepAlive(this);
     if (!isWindowOperational() || !viewReady || !initialStateApplied || !enumerationComplete
             || restoringState || viewProfileChanging || navigationDepth || viewMenuDepth
@@ -2076,7 +2074,7 @@ void FolderWindow::changeViewMode(int index, bool larger) {
     int size;
     if (!checkHR(view->GetViewModeAndIconSize(&mode, &size)) || !current()) return;
     Mode target = {mode, size};
-    if (index < 0) {
+    if (wheel) {
         // The steps of Explorer's own Ctrl+wheel, measured at 96 DPI on Windows 10
         // and 11: Content, Tiles, Details, List, the small icons, then the icons.
         // Among the small icons Explorer does not take the same sizes both ways.
@@ -2084,38 +2082,43 @@ void FolderWindow::changeViewMode(int index, bool larger) {
             102, 110, 118, 126, 136, 145, 156, 168, 180, 193, 207, 223, 239, 256};
         static const int smallLarger[] = {16, 18, 20, 22, 23, 25, 27, 29, 31};
         static const int smallSmaller[] = {16, 17, 18, 19, 20, 22, 23, 25, 27, 29, 31};
-        // The first size past the current one, walking the scale in the step's direction.
+        const bool larger = amount > 0;
+        // The first size past the one reached, walking the scale in the steps' direction.
         auto beyond = [&](const int *sizes, int count) {
             for (int i = 0; i < count; ++i) {
                 const int candidate = scaleDPI(sizes[larger ? i : count - 1 - i]);
-                if (larger ? candidate > size : candidate < size) return candidate;
+                if (larger ? candidate > target.size : candidate < target.size) return candidate;
             }
             return 0;
         };
-        if (mode == FVM_ICON || mode == FVM_SMALLICON) {
-            const int icon = larger || mode == FVM_ICON ? beyond(icons, _countof(icons)) : 0;
-            if (larger) {
-                const int smallIcon = mode == FVM_SMALLICON ? beyond(smallLarger, _countof(smallLarger)) : 0;
-                if (smallIcon) target = {FVM_SMALLICON, smallIcon};
-                else if (icon) target = {FVM_ICON, icon};
+        for (int remaining = larger ? amount : -amount; remaining > 0; --remaining) {
+            const Mode from = target;
+            if (from.mode == FVM_ICON || from.mode == FVM_SMALLICON) {
+                const int icon = larger || from.mode == FVM_ICON ? beyond(icons, _countof(icons)) : 0;
+                if (larger) {
+                    const int smallIcon = from.mode == FVM_SMALLICON ? beyond(smallLarger, _countof(smallLarger)) : 0;
+                    if (smallIcon) target = {FVM_SMALLICON, smallIcon};
+                    else if (icon) target = {FVM_ICON, icon};
+                } else {
+                    const int smallIcon = beyond(smallSmaller, _countof(smallSmaller));
+                    if (icon) target = {FVM_ICON, icon};
+                    else if (smallIcon) target = {FVM_SMALLICON, smallIcon};
+                    else target = {FVM_LIST, -1};
+                }
+            } else if (from.mode == FVM_LIST) {
+                target = larger ? Mode{FVM_SMALLICON, scaleDPI(smallLarger[0])} : Mode{FVM_DETAILS, -1};
+            } else if (from.mode == FVM_TILE) {
+                target = larger ? Mode{FVM_DETAILS, -1} : Mode{FVM_CONTENT, -1};
+            } else if (from.mode == FVM_CONTENT) {
+                if (larger) target = {FVM_TILE, -1};
             } else {
-                const int smallIcon = beyond(smallSmaller, _countof(smallSmaller));
-                if (icon) target = {FVM_ICON, icon};
-                else if (smallIcon) target = {FVM_SMALLICON, smallIcon};
-                else target = {FVM_LIST, -1};
+                // Details, and the modes of other providers, which start from Details.
+                target = larger ? Mode{FVM_LIST, -1} : Mode{FVM_TILE, -1};
             }
-        } else if (mode == FVM_LIST) {
-            target = larger ? Mode{FVM_SMALLICON, scaleDPI(smallLarger[0])} : Mode{FVM_DETAILS, -1};
-        } else if (mode == FVM_TILE) {
-            target = larger ? Mode{FVM_DETAILS, -1} : Mode{FVM_CONTENT, -1};
-        } else if (mode == FVM_CONTENT) {
-            if (larger) target = {FVM_TILE, -1};
-        } else {
-            // Details, and the modes of other providers, which start from Details.
-            target = larger ? Mode{FVM_LIST, -1} : Mode{FVM_TILE, -1};
+            if (target.mode == from.mode && target.size == from.size) break; // An end of the scale.
         }
-    } else if (index < static_cast<int>(_countof(modes))) {
-        target = modes[index];
+    } else if (amount >= 0 && amount < static_cast<int>(_countof(modes))) {
+        target = modes[amount];
     } else {
         return;
     }

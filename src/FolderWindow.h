@@ -228,8 +228,8 @@ private:
     ULONG_PTR deferredGestureGeneration = 0;
     bool suppressAltUp = false;
     bool peekPressActive = false; // The current Space press started a preview: its repeats are consumed.
-    // A negative index takes one step of the wheel scale instead of a preset.
-    void changeViewMode(int index, bool larger = false);
+    // The amount is a preset, or a number of steps along the wheel scale.
+    void changeViewMode(int amount, bool wheel = false);
 
     ClosedWindow reopeningWindow;
     std::vector<uint8_t> closingScroll;
