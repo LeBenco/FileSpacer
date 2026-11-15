@@ -5,6 +5,8 @@ LANGUAGE LANG_ITALIAN, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
+  IDS_KEEP_ICONS_ALIGNED "Mantieni le icone allineate"
+  IDS_REALIGN_ICONS "Riallinea le icone"
   IDS_FILL_COLUMNS "Ridimensiona colonne"
 END
 

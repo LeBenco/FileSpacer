@@ -5,6 +5,8 @@ LANGUAGE LANG_GREEK, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
+  IDS_KEEP_ICONS_ALIGNED "Διατήρηση ευθυγράμμισης εικονιδίων"
+  IDS_REALIGN_ICONS "Ευθυγράμμιση εικονιδίων"
   IDS_FILL_COLUMNS "Αλλαγή μεγέθους στηλών"
 END
 

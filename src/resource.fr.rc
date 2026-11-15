@@ -5,6 +5,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
+  IDS_KEEP_ICONS_ALIGNED "Garder les icônes alignées"
+  IDS_REALIGN_ICONS "Réaligner les icônes"
   IDS_FILL_COLUMNS "Redimensionner les colonnes"
 END
 

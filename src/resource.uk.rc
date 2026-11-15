@@ -5,6 +5,8 @@ LANGUAGE LANG_UKRAINIAN, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
+  IDS_KEEP_ICONS_ALIGNED "Зберігати вирівнювання піктограм"
+  IDS_REALIGN_ICONS "Повторно вирівняти піктограми"
   IDS_FILL_COLUMNS "Змінювати розмір стовпців"
 END
 

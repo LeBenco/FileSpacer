@@ -5,6 +5,8 @@ LANGUAGE LANG_POLISH, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
+  IDS_KEEP_ICONS_ALIGNED "Utrzymuj wyrównanie ikon"
+  IDS_REALIGN_ICONS "Wyrównaj ikony ponownie"
   IDS_FILL_COLUMNS "Zmień rozmiar kolumn"
 END
 

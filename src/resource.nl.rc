@@ -5,6 +5,8 @@ LANGUAGE LANG_DUTCH, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
+  IDS_KEEP_ICONS_ALIGNED "Pictogrammen uitgelijnd houden"
+  IDS_REALIGN_ICONS "Pictogrammen opnieuw uitlijnen"
   IDS_FILL_COLUMNS "Kolommen aanpassen"
 END
 
