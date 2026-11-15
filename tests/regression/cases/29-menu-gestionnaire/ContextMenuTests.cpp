@@ -285,6 +285,23 @@ int wmain(int argc, wchar_t **argv) {
             "restoration preserves an external replacement");
         put(HKEY_CLASSES_ROOT, L"Directory\\shell\\open\\command", nullptr, L"native Explorer command");
         // External changes can differ between classes; startup sync must not overwrite them.
+        require(settings::setDefaultBrowser(true).status() == ERROR_SUCCESS, "activate before a failed restoration");
+        const wchar_t *commandRecord = L"Software\\Classes\\FileSpacer.OpenVerbBackup\\Directory\\Command";
+        put(HKEY_CURRENT_USER, commandRecord, L"KeyPresent", L"invalid DWORD");
+        put(HKEY_CLASSES_ROOT, L"Directory\\shell", nullptr, L"filespacer");
+        require(settings::setDefaultBrowser(false).directory != ERROR_SUCCESS, "malformed journal did not refuse restoration");
+        require(settings::synchronizeContextMenus().status() == ERROR_SUCCESS, "a failed marked retry must stay silent");
+        DWORD restoring = 0, bytes = sizeof(restoring);
+        require(RegGetValueW(HKEY_CURRENT_USER, L"Software\\Classes\\FileSpacer.OpenVerbBackup\\Directory", L"Restoring",
+            RRF_RT_REG_DWORD, nullptr, &restoring, &bytes) == ERROR_SUCCESS && restoring == 1,
+            "legacy migration erased a pending restoration marker");
+        require(read(HKEY_CLASSES_ROOT, L"Directory\\shell") == L"filespacer", "failed retry reactivated the default");
+        const DWORD keyPresent = 1;
+        require(RegSetKeyValueW(HKEY_CURRENT_USER, commandRecord, L"KeyPresent", REG_DWORD, &keyPresent, sizeof(keyPresent))
+            == ERROR_SUCCESS, "repair controlled journal fault");
+        require(settings::synchronizeContextMenus().status() == ERROR_SUCCESS
+            && !exists(HKEY_CURRENT_USER, L"Software\\Classes\\FileSpacer.OpenVerbBackup\\Directory", L"Restoring")
+            && read(HKEY_CLASSES_ROOT, L"Directory\\shell") == L"none", "repaired journal did not finish deactivation");
         put(HKEY_CLASSES_ROOT, L"Directory\\shell", nullptr, L"FILESPACER");
         put(HKEY_CLASSES_ROOT, L"CompressedFolder\\shell", nullptr, L"other-manager");
         require(settings::synchronizeContextMenus().status() == ERROR_SUCCESS, "resynchronize external changes");
