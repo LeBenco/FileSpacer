@@ -826,9 +826,6 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         }
         if (!isWindowOperational()) return false;
     }
-    if ((msg->message == WM_KEYUP && msg->wParam == VK_CONTROL)
-            || (msg->message == WM_MOUSEWHEEL && !(GET_KEYSTATE_WPARAM(msg->wParam) & MK_CONTROL)))
-        zoomWheelDelta = 0;
     if (msg->message == WM_MOUSEWHEEL && (GET_KEYSTATE_WPARAM(msg->wParam) & MK_CONTROL)
             && !(GET_KEYSTATE_WPARAM(msg->wParam) & MK_SHIFT) && GetKeyState(VK_MENU) >= 0) {
         CComPtr<IShellView> view = shellView;
@@ -837,18 +834,15 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         if (view && SUCCEEDED(view->GetWindow(&root)) && isWindowOperational() && shellView == view
                 && root && (msg->hwnd == root || IsChild(root, msg->hwnd)
                     || target == root || IsChild(root, target))) {
-            zoomWheelDelta += GET_WHEEL_DELTA_WPARAM(msg->wParam);
-            // The notches already queued belong to the same gesture: one mode
-            // change, with one capture and one replay of the positions, serves them all.
+            // As in Explorer, a wheel message is one step whatever its delta,
+            // and the notches received while it is applied are dropped.
+            const int delta = GET_WHEEL_DELTA_WPARAM(msg->wParam);
+            if (delta && !renaming()) changeViewMode(-1, delta > 0);
             MSG queued;
             while (PeekMessageW(&queued, msg->hwnd, WM_MOUSEWHEEL, WM_MOUSEWHEEL, PM_NOREMOVE)
                     && (GET_KEYSTATE_WPARAM(queued.wParam) & MK_CONTROL)
                     && !(GET_KEYSTATE_WPARAM(queued.wParam) & MK_SHIFT)
-                    && PeekMessageW(&queued, msg->hwnd, WM_MOUSEWHEEL, WM_MOUSEWHEEL, PM_REMOVE))
-                zoomWheelDelta += GET_WHEEL_DELTA_WPARAM(queued.wParam);
-            const int steps = zoomWheelDelta / WHEEL_DELTA;
-            zoomWheelDelta %= WHEEL_DELTA;
-            if (steps && !renaming() && isWindowOperational()) changeViewMode(-1, steps);
+                    && PeekMessageW(&queued, msg->hwnd, WM_MOUSEWHEEL, WM_MOUSEWHEEL, PM_REMOVE)) {}
             return true;
         }
     }
@@ -2060,7 +2054,7 @@ bool FolderWindow::onCommand(WORD command) {
     return ItemWindow::onCommand(command);
 }
 
-void FolderWindow::changeViewMode(int index, int steps) {
+void FolderWindow::changeViewMode(int index, bool larger) {
     CComPtr<ItemWindow> keepAlive(this);
     if (!isWindowOperational() || !viewReady || !initialStateApplied || !enumerationComplete
             || restoringState || viewProfileChanging || navigationDepth || viewMenuDepth
@@ -2081,20 +2075,50 @@ void FolderWindow::changeViewMode(int index, int steps) {
     FOLDERVIEWMODE mode;
     int size;
     if (!checkHR(view->GetViewModeAndIconSize(&mode, &size)) || !current()) return;
+    Mode target = {mode, size};
     if (index < 0) {
-        index = 5; // Unknown provider modes start from Details.
-        for (int i = 0; i < static_cast<int>(_countof(modes)); ++i) {
-            if (mode != modes[i].mode) continue;
-            index = i;
-            if (mode != FVM_ICON || size >= modes[i].size) break;
+        // The steps of Explorer's own Ctrl+wheel, measured at 96 DPI on Windows 10
+        // and 11: Content, Tiles, Details, List, the small icons, then the icons.
+        // Among the small icons Explorer does not take the same sizes both ways.
+        static const int icons[] = {33, 35, 38, 41, 44, 47, 50, 54, 58, 62, 67, 72, 77, 83, 89, 95,
+            102, 110, 118, 126, 136, 145, 156, 168, 180, 193, 207, 223, 239, 256};
+        static const int smallLarger[] = {16, 18, 20, 22, 23, 25, 27, 29, 31};
+        static const int smallSmaller[] = {16, 17, 18, 19, 20, 22, 23, 25, 27, 29, 31};
+        // The first size past the current one, walking the scale in the step's direction.
+        auto beyond = [&](const int *sizes, int count) {
+            for (int i = 0; i < count; ++i) {
+                const int candidate = scaleDPI(sizes[larger ? i : count - 1 - i]);
+                if (larger ? candidate > size : candidate < size) return candidate;
+            }
+            return 0;
+        };
+        if (mode == FVM_ICON || mode == FVM_SMALLICON) {
+            const int icon = larger || mode == FVM_ICON ? beyond(icons, _countof(icons)) : 0;
+            if (larger) {
+                const int smallIcon = mode == FVM_SMALLICON ? beyond(smallLarger, _countof(smallLarger)) : 0;
+                if (smallIcon) target = {FVM_SMALLICON, smallIcon};
+                else if (icon) target = {FVM_ICON, icon};
+            } else {
+                const int smallIcon = beyond(smallSmaller, _countof(smallSmaller));
+                if (icon) target = {FVM_ICON, icon};
+                else if (smallIcon) target = {FVM_SMALLICON, smallIcon};
+                else target = {FVM_LIST, -1};
+            }
+        } else if (mode == FVM_LIST) {
+            target = larger ? Mode{FVM_SMALLICON, scaleDPI(smallLarger[0])} : Mode{FVM_DETAILS, -1};
+        } else if (mode == FVM_TILE) {
+            target = larger ? Mode{FVM_DETAILS, -1} : Mode{FVM_CONTENT, -1};
+        } else if (mode == FVM_CONTENT) {
+            if (larger) target = {FVM_TILE, -1};
+        } else {
+            // Details, and the modes of other providers, which start from Details.
+            target = larger ? Mode{FVM_LIST, -1} : Mode{FVM_TILE, -1};
         }
-        // Nonstandard icon sizes move to the next preset in the wheel direction.
-        if (mode == FVM_ICON && steps > 0 && size < modes[index].size) ++index;
-        if (mode == FVM_ICON && steps < 0 && size > modes[index].size) --index;
-        index = (std::max)(0, (std::min)(static_cast<int>(_countof(modes)) - 1, index - steps));
+    } else if (index < static_cast<int>(_countof(modes))) {
+        target = modes[index];
+    } else {
+        return;
     }
-    if (index < 0 || index >= static_cast<int>(_countof(modes))) return;
-    const Mode target = modes[index];
     if (mode == target.mode && (target.size < 0 || size == target.size)) return;
     viewStateDirty(FolderState::Icons);
     persistViewState();
