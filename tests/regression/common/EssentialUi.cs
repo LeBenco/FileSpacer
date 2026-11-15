@@ -218,6 +218,10 @@ namespace FileSpacerRegression {
             get { int result=view.GetAutoArrange(); Native.Check(result); return result==0; }
             set { Native.Check(((FolderView2)view).SetCurrentFolderFlags(1u,value?1u:0u)); } // FWF_AUTOARRANGE
         }
+        public bool SnapToGrid {
+            get { uint flags; Native.Check(((FolderView2)view).GetCurrentFolderFlags(out flags)); return (flags&4u)!=0; }
+            set { Native.Check(((FolderView2)view).SetCurrentFolderFlags(4u,value?4u:0u)); }
+        }
         public IntPtr Window { get { IntPtr window; Native.Check(shellView.GetWindow(out window)); return window; } }
         public Rect Bounds { get { IntPtr window; Native.Check(shellView.GetWindow(out window)); return Native.Bounds(window); } }
         public bool ContentVisible { get { return Native.ContentVisible(Window); } }
@@ -364,6 +368,32 @@ namespace FileSpacerRegression {
             } finally {
                 if(storage!=IntPtr.Zero) Marshal.FreeHGlobal(storage);
                 if(child!=IntPtr.Zero) Marshal.FreeCoTaskMem(child);
+            }
+        }
+        // Resolve every fixture identity once, then position the whole batch.
+        public void PositionAll(string[] names,Point[] points) {
+            if(names==null || points==null || names.Length!=points.Length || points.Length!=Count)
+                throw new ArgumentException("One named position per view item is required.");
+            if(points.Length==0) return;
+            var byName=new Dictionary<string,int>(StringComparer.OrdinalIgnoreCase);
+            for(int i=0;i<names.Length;++i) byName.Add(names[i],i);
+            var children=new IntPtr[points.Length];
+            int size=Marshal.SizeOf(typeof(Point));
+            IntPtr memory=Marshal.AllocHGlobal(checked(points.Length*(IntPtr.Size+size)));
+            IntPtr coordinates=IntPtr.Add(memory,points.Length*IntPtr.Size);
+            try {
+                for(int i=0;i<children.Length;++i) {
+                    Native.Check(view.Item(i,out children[i]));
+                    if(children[i]==IntPtr.Zero) throw new InvalidOperationException("No fixture item PIDL.");
+                    int index;
+                    if(!byName.TryGetValue(Name(children[i]),out index)) throw new InvalidOperationException("Unexpected fixture identity.");
+                    Marshal.WriteIntPtr(memory,i*IntPtr.Size,children[i]);
+                    Marshal.StructureToPtr(points[index],IntPtr.Add(coordinates,i*size),false);
+                }
+                Native.Check(view.SelectAndPositionItems((uint)points.Length,memory,coordinates,0x80000080u));
+            } finally {
+                Marshal.FreeHGlobal(memory);
+                foreach(IntPtr child in children) if(child!=IntPtr.Zero) Marshal.FreeCoTaskMem(child);
             }
         }
         // SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS: scroll to the item without selecting or focusing it.
