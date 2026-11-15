@@ -3,6 +3,8 @@ param([string]$ProjectRoot)
 . (Join-Path $PSScriptRoot '..\..\..\regression\cases\28-apercu-affichage\GridDrag.ps1')
 $failure=$null
 $samples=New-Object Collections.ArrayList
+$previousGridCache=$env:FS_SELECTION_PRODUCT_CACHE
+$cacheTest=Build-NativeTest -Name SelectionCacheTests -CaseDirectory (Join-Path $PSScriptRoot '..\..\..\regression\cases\18-vue-shell-native') -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','MixedFolder.cpp','ShellViewHost.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib')
 function Write-GridPhase([string]$Phase) {
     @{Phase=$Phase;Utc=[DateTime]::UtcNow.ToString('o')}|ConvertTo-Json -Compress|Add-Content (Join-Path $env:FS_REGRESSION_RUN 'phases.jsonl') -Encoding UTF8
 }
@@ -24,6 +26,7 @@ function Set-LargeGridSeed {
     }
 }
 try {
+    Remove-Item Env:\FS_SELECTION_PRODUCT_CACHE -ErrorAction SilentlyContinue
     Initialize-Ui 'large-icon-grid' -FixtureParent (Join-Path $ProjectRoot 'build')
     $folder=Join-Path $script:UiRoot 'LargeGrid'
     [void][IO.Directory]::CreateDirectory($folder)
@@ -89,6 +92,41 @@ try {
     Assert-Ui (Use-UiView $window {param($view) $view.Count-eq3000-and!$view.SnapToGrid-and!$view.AutoArrange}) 'Large Snap changed flags or contents.'
     @{Count=3000;NativeFreeDragMs=$freeDragMilliseconds;SnapDragMs=$snapDragMilliseconds}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'snap-timings.json') -Encoding UTF8
     Close-UiFolder $window
+    Wait-Ui {@($script:UiProcesses|Where-Object {!$_.HasExited}).Count-eq0} 'public broker exited before qualified comparison' 0 15
+    $cache=Join-Path $env:FS_REGRESSION_RUN 'qualified-cache'
+    [void][IO.Directory]::CreateDirectory($cache)
+    Write-GridPhase 'qualifying-grid'
+    Invoke-TestProgram $cacheTest @('--build-cache',$cache)
+    Invoke-TestProgram $cacheTest @('--grid-supported',$cache)
+    # A corrupt grid witness must disable only this optional calculation.
+    $bad=Join-Path $env:FS_REGRESSION_RUN 'invalid-grid-cache'
+    [void][IO.Directory]::CreateDirectory($bad)
+    Get-ChildItem -LiteralPath $cache -File|Where-Object {$_.Extension-in@('.bin','.range','.grid')}|Copy-Item -Destination $bad
+    $descriptor=@(Get-ChildItem -LiteralPath $bad -Filter '*.grid' -File)
+    Assert-Ui ($descriptor.Count-eq1) 'Missing qualified control descriptor.'
+    $bytes=[IO.File]::ReadAllBytes($descriptor[0].FullName);$bytes[32]=$bytes[32]-bxor1
+    [IO.File]::WriteAllBytes($descriptor[0].FullName,$bytes)
+    Invoke-TestProgram $cacheTest @('--grid-fallback',$bad)
+    Invoke-TestProgram $cacheTest @('--range-supported',$bad)
+    $env:FS_SELECTION_PRODUCT_CACHE=$cache
+    $window=Open-UiFolder $folder 3000
+    Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($window,[IntPtr]::Zero,40,40,850,600,0x14)) 'Cannot size qualified grid fixture.'
+    Set-GridMode
+    Set-LargeGridSeed
+    Write-GridPhase 'qualified-snap-drag'
+    Move-GridIcons $true
+    $qualified=Read-PreviewState $window
+    $qualifiedMilliseconds=1000.0*([Diagnostics.Stopwatch]::GetTimestamp()-$script:GridDropStartedAt)/[Diagnostics.Stopwatch]::Frequency
+    Assert-Ui ($qualified.Positions-eq$snapped.Positions-and$qualified.Selected-eq$snapped.Selected-and$qualified.Focus-eq$snapped.Focus) 'Qualified Snap differs from the public fallback.'
+    Assert-Ui (Use-UiView $window {param($view) !$view.SnapToGrid-and!$view.AutoArrange}) 'Qualified Snap changed persistent flags.'
+    Close-UiFolder $window
+    Wait-Ui {@($script:UiProcesses|Where-Object {!$_.HasExited}).Count-eq0} 'qualified process exited and flushed its activation proof' 0 15
+    $proof=($script:UiProcesses|ForEach-Object {if($_.PSObject.Properties['RegressionOutput']){$_.RegressionOutput.Output.GetAwaiter().GetResult()}})-join"`n"
+    Assert-Ui ($proof-match'GRID SNAP qualified=1 selected=\d+ count=3000') 'No proof that the real drag used the qualified calculation.'
+    $publicTime=[regex]::Match($proof,'GRID SNAP path=public elapsed_ms=(\d+)')
+    $qualifiedTime=[regex]::Match($proof,'GRID SNAP path=qualified elapsed_ms=(\d+)')
+    Assert-Ui ($publicTime.Success-and$qualifiedTime.Success) 'Missing internal measurements for one of the Snap paths.'
+    @{Count=3000;NativeFreeDragMs=$freeDragMilliseconds;PublicSnapMs=$snapDragMilliseconds;QualifiedSnapMs=$qualifiedMilliseconds;PublicOperationMs=[long]$publicTime.Groups[1].Value;QualifiedOperationMs=[long]$qualifiedTime.Groups[1].Value}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'snap-timings.json') -Encoding UTF8
     $samples|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'grid-timings.json') -Encoding UTF8
     Write-Host 'PASS: three alignment cycles over 3000 items; exact native coordinates, selection, focus and persistence. Timings include automation; no performance threshold.'
 } catch {
@@ -99,4 +137,5 @@ try {
     [FileSpacerViewMenuTests.GridKey]::Hold($false)
     [FileSpacerRegression.AltDragInput]::End()
     Stop-Ui -Failure $failure
+    if($null-eq$previousGridCache){Remove-Item Env:\FS_SELECTION_PRODUCT_CACHE -ErrorAction SilentlyContinue}else{$env:FS_SELECTION_PRODUCT_CACHE=$previousGridCache}
 }
