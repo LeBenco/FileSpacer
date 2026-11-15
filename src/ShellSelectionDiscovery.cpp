@@ -42,7 +42,10 @@ Image selectedImage;
 const Image publicImage;
 RangeImage selectedRange;
 const RangeImage publicRange;
+GridImage selectedGrid;
+const GridImage publicGrid;
 std::atomic<bool> rangeReady{false};
+std::atomic<bool> gridReady{false};
 std::atomic<bool> rangeFinished{false};
 enum class Resolution : unsigned char { Running, Public, Private };
 std::atomic<Resolution> resolution{Resolution::Running};
@@ -112,6 +115,10 @@ std::wstring rangeCacheFile(const std::wstring &base) {
     // both positive and negative records. Avoid two GUIDs in a long filename.
     // Change the suffix when the producer/qualification contract changes.
     return base.substr(0,base.size()-4)+L"-r1.range";
+}
+std::wstring gridCacheFile(const std::wstring &base) {
+    RangeData data;if(!controlIdentity(data))return {};
+    return base.substr(0,base.size()-4)+L"-g1.grid";
 }
 bool savedRangePublic(const std::wstring &path) {
     std::ifstream file(path.c_str(),std::ios::binary);char magic[10]={};RangeData saved,current;
@@ -234,7 +241,8 @@ Symbols symbols(const Identity &id, const std::wstring &path, bool control=false
         L"CListViewHost::s_ViewSubclassWndProc",L"_imp_DSA_InsertItem",L"DSA_InsertItem",L"CSelectionManager::SelectItem",L"CListViewHost::_OnLVNotify",L"DSA_DeleteAllItems",L"DSA_EnumCallback"};
     const wchar_t *controlNames[]={L"?QueryInterface@CListView@@UEAAJAEBU_GUID@@PEAPEAX@Z",L"?AddRef@CListView@@UEAAKXZ",L"?Release@CListView@@UEAAKXZ",
         L"?QueryInterface@CLVRange@@UEAAJAEBU_GUID@@PEAPEAX@Z",L"?AddRef@CLVRange@@UEAAKXZ",L"?Release@CLVRange@@UEAAKXZ",
-        L"?GetSelectedCount@CListView@@UEAAJPEAH@Z",L"?Clear@CLVRange@@UEAAJXZ",L"CLVRange::CountIncluded"};
+        L"?GetSelectedCount@CListView@@UEAAJPEAH@Z",L"?Clear@CLVRange@@UEAAJXZ",L"CLVRange::CountIncluded",
+        L"CLVView::_NearestSlot",L"CLVImageListManager::GetIconBufferX",L"CLVImageListManager::GetIconBufferY"};
     Symbols result;
     bool matched = false;
     for (size_t i = 0; i < (control?_countof(controlNames):_countof(names)); ++i) {
@@ -257,7 +265,7 @@ Symbols symbols(const Identity &id, const std::wstring &path, bool control=false
         if (!found) {
             // Select, Init, QueryService and both QueryObject are recorded when
             // present, but no capability reads them: their absence refuses nothing.
-            if(control || (i != OnClear && i != Select && i != Init && i != QueryService && i != EnumGlobal && i != DeleteGlobal
+            if((control&&i<RangeMethodCount) || (!control&&i != OnClear && i != Select && i != Init && i != QueryService && i != EnumGlobal && i != DeleteGlobal
                     && i != HostQueryObject && i != ViewQueryObject && i < 17)) {
                 std::string reason="Required private symbol absent: ";
                 for(const wchar_t character:name)reason+=static_cast<char>(character); // Symbol names are ASCII.
@@ -410,6 +418,21 @@ void discoverRange(const std::wstring &root,const std::wstring &path) {
     std::ofstream file(path.c_str(),std::ios::binary|std::ios::trunc);
     file.write("FSLVR001",8);file.write(reinterpret_cast<const char *>(&result.data),sizeof(result.data));file.flush();
     require(file.good(),"Cannot save range discovery");
+}
+void discoverGrid(const std::wstring &root,const std::wstring &path) {
+    RangeData control;require(controlIdentity(control),"Control identity unavailable");
+    GridImage result;result.base=controlModule();result.data.guid=control.guid;result.data.age=control.age;result.data.size=control.size;
+    Identity id;id.base=result.base;id.size=control.size;id.guid=control.guid;id.age=control.age;
+    wchar_t guid[40]={},age[16]={};require(StringFromGUID2(id.guid,guid,_countof(guid))!=0,"Control GUID unavailable");
+    for(wchar_t character:guid)if(character&&character!=L'{'&&character!=L'}'&&character!=L'-')id.key+=character;
+    swprintf_s(age,L"%X",id.age);id.key+=age;
+    const std::wstring directoryName=root+L"\\symbols\\comctl32.pdb\\"+id.key;directory(directoryName);
+    const auto found=matchedSymbols(id,directoryName,L"comctl32.pdb",true);
+    std::copy_n(found.methods.begin()+RangeMethodCount,result.data.gridCode.size(),result.data.gridCode.begin());
+    supported(result.qualifies(),"Native grid arithmetic form not recognized");
+    std::ofstream file(path.c_str(),std::ios::binary|std::ios::trunc);
+    file.write("FSLVG001",8);file.write(reinterpret_cast<const char *>(&result.data),sizeof(result.data));file.flush();
+    require(file.good(),"Cannot save grid discovery");
 }
 
 // Runs only in the isolated background process, with an invisible owned view.
@@ -675,6 +698,75 @@ bool qualify(const std::wstring &root) {
     }
     return true;
 }
+bool qualifyGrid(const std::wstring &root) {
+    if(!gridImage().supported)return true;
+    require(SUCCEEDED(OleInitialize(nullptr)),"Grid qualification COM failed");
+    struct Apartment {~Apartment(){OleUninitialize();}} apartment;
+    initDPI();QualificationFixture fixture;fixture.create(root);
+    WNDCLASSW type={};type.hInstance=GetModuleHandleW(nullptr);type.lpfnWndProc=DefWindowProcW;
+    type.lpszClassName=L"FileSpacer Selection Qualification";
+    require(RegisterClassW(&type)!=0,"Cannot register grid qualification class");
+    struct Class {~Class(){UnregisterClassW(L"FileSpacer Selection Qualification",GetModuleHandleW(nullptr));}} registration;
+    for(int size:{33,48,256}){
+        QualificationView owner;owner.create(fixture.folder);
+        CComPtr<IShellView> shell=owner.events->shell;CComQIPtr<IFolderView2> view(shell);
+        require(view&&SUCCEEDED(view->SetViewModeAndIconSize(FVM_ICON,size)),"Cannot set grid qualification size");pump(100);
+        require(SUCCEEDED(view->SetCurrentFolderFlags(FWF_AUTOARRANGE|FWF_SNAPTOGRID,0)),"Cannot prepare free grid qualification");pump(100);
+        POINT spacing={};FOLDERVIEWMODE mode=FVM_AUTO;int actual=0;
+        require(SUCCEEDED(view->GetSpacing(&spacing))&&SUCCEEDED(view->GetViewModeAndIconSize(&mode,&actual))
+            &&mode==FVM_ICON&&actual==size&&spacing.x>=size&&spacing.y>0,"Grid qualification geometry unavailable");
+        const POINT margin={(spacing.x-size)/2,2*GetSystemMetrics(SM_CYBORDER)};
+        using Id=std::unique_ptr<ITEMID_CHILD,decltype(&CoTaskMemFree)>;
+        std::vector<Id> owned;std::vector<PCUITEMID_CHILD> ids;std::vector<POINT> initial,native;
+        int count=0;require(SUCCEEDED(view->ItemCount(SVGIO_ALLVIEW,&count))&&count==256,"Grid qualification content incomplete");
+        for(int i=0;i<count;++i){ITEMID_CHILD *id=nullptr;require(SUCCEEDED(view->Item(i,&id))&&id,"Grid qualification identity missing");
+            owned.emplace_back(id,&CoTaskMemFree);ids.push_back(id);
+            initial.push_back({margin.x+(i%16)*spacing.x*8+((i%7)-3)*spacing.x/2+(i%3)-1,
+                margin.y+(i/16)*spacing.y*8+(((i/7)%7)-3)*spacing.y/2+(i%3)-1});}
+        PCUITEMID_CHILD selected[]={ids[7],ids[83]};
+        require(SUCCEEDED(shell->SelectItem(nullptr,SVSI_DESELECTOTHERS))
+            &&SUCCEEDED(shell->SelectItem(ids[7],static_cast<SVSIF>(SVSI_FOCUSED|SVSI_NOTAKEFOCUS)))
+            &&SUCCEEDED(view->SelectAndPositionItems(2,selected,nullptr,SVSI_SELECT|SVSI_NOTAKEFOCUS)),"Cannot seed grid qualification selection");
+        const HWND keyboardFocus=GetFocus();
+        const DWORD position=static_cast<DWORD>(SVSI_POSITIONITEM)|static_cast<DWORD>(SVSI_NOSTATECHANGE);
+        require(SUCCEEDED(view->SelectAndPositionItems(static_cast<UINT>(count),ids.data(),initial.data(),position)),"Cannot seed grid qualification positions");
+        for(size_t i=0;i<ids.size();++i)require(SUCCEEDED(view->GetItemPosition(ids[i],&initial[i])),"Cannot read initial grid position");
+        require(SUCCEEDED(view->SetCurrentFolderFlags(FWF_SNAPTOGRID,FWF_SNAPTOGRID)),"Cannot obtain native grid reference");pump(100);
+        native.resize(ids.size());
+        for(size_t i=0;i<ids.size();++i)require(SUCCEEDED(view->GetItemPosition(ids[i],&native[i])),"Cannot read native grid reference");
+        require(SUCCEEDED(view->SetCurrentFolderFlags(FWF_SNAPTOGRID,0))
+            &&SUCCEEDED(view->SelectAndPositionItems(static_cast<UINT>(count),ids.data(),initial.data(),position)),"Cannot restore grid qualification positions");
+        const auto current=[&]{return IsWindow(owner.window)&&owner.events->shell==shell;};
+        const auto before=gridCalls().load(std::memory_order_relaxed);
+        const HRESULT snapped=snapGridSelection(shell,current);
+        if(snapped!=S_OK){
+            HWND body=nullptr;RangeBinding bound;UINT areas=UINT_MAX;
+            shell->GetWindow(&body);const bool boundOk=bound.bind(body);
+            if(boundOk)ListView_GetNumberOfWorkAreas(bound.window,&areas);
+            throw std::runtime_error("Grid calculation declined: hr="+std::to_string(snapped)+" size="+std::to_string(size)
+                +" bound="+std::to_string(boundOk)+" style="+std::to_string(boundOk?GetWindowLongPtrW(bound.window,GWL_STYLE):0)
+                +" areas="+std::to_string(areas)+" group="+std::to_string(boundOk?ListView_IsGroupViewEnabled(bound.window):0));
+        }
+        require(gridCalls().load(std::memory_order_relaxed)==before+1,"Grid calculation did not run");
+        const auto verify=[&](bool snapped) {
+            for(size_t i=0;i<ids.size();++i){POINT point={};DWORD state=0;const bool selectedItem=i==7||i==83;
+                const POINT wanted=snapped&&selectedItem?native[i]:initial[i];
+                require(SUCCEEDED(view->GetItemPosition(ids[i],&point))&&point.x==wanted.x&&point.y==wanted.y,"Grid calculation changed a coordinate incorrectly");
+                require(SUCCEEDED(view->GetSelectionState(ids[i],&state))&&!!(state&SVSI_SELECT)==selectedItem,"Grid calculation changed selection");}
+            int focus=-1;CComHeapPtr<ITEMID_CHILD> focused;DWORD flags=0;
+            require(SUCCEEDED(view->GetFocusedItem(&focus))&&focus>=0&&SUCCEEDED(view->Item(focus,&focused))&&ILIsEqual(focused,ids[7])
+                &&GetFocus()==keyboardFocus&&SUCCEEDED(view->GetCurrentFolderFlags(&flags))&&!(flags&(FWF_SNAPTOGRID|FWF_AUTOARRANGE)),"Grid calculation changed focus or flags");
+        };
+        verify(true);
+        // Different free points that would collide after rounding. The whole
+        // candidate must decline without mutating even the selected positions.
+        initial[0]={margin.x+5,margin.y+5};initial[1]={margin.x+6,margin.y+6};
+        require(SUCCEEDED(view->SelectAndPositionItems(static_cast<UINT>(count),ids.data(),initial.data(),position)),"Cannot seed grid collision");
+        require(snapGridSelection(shell,current)==S_FALSE&&gridCalls().load(std::memory_order_relaxed)==before+1,"Grid collision was not declined");verify(false);
+        require(snapGridSelection(shell,[]{return false;})==E_ABORT,"Stale grid continuation accepted");
+    }
+    return true;
+}
 } // namespace
 
 UINT readyMessage() {
@@ -686,6 +778,9 @@ const Image &image() {
 }
 const RangeImage &rangeImage() {
     return rangeReady.load(std::memory_order_acquire)?selectedRange:publicRange;
+}
+const GridImage &gridImage() {
+    return gridReady.load(std::memory_order_acquire)?selectedGrid:publicGrid;
 }
 bool rangeResolved(){return rangeFinished.load(std::memory_order_acquire);}
 bool resolved() { return resolution.load(std::memory_order_acquire)!=Resolution::Running; }
@@ -765,6 +860,7 @@ DWORD resolveCapability(ResolveContext *context,bool &downloaded) {
         const Identity id=identity();
         const std::wstring final=cachePath(context->root,id),negative=final+L".public";
         const std::wstring rangeFinal=rangeCacheFile(final);
+        const std::wstring gridFinal=gridCacheFile(final);
         bool started=false; // This process launched the discovery.
         const auto adopt=[&]() {
             const Image candidate=published?image():Image::discover(final);
@@ -773,14 +869,20 @@ DWORD resolveCapability(ResolveContext *context,bool &downloaded) {
                 return false;
             }
             const RangeImage range=rangeFinal.empty()?RangeImage{}:RangeImage::discover(rangeFinal);
+            const GridImage grid=gridFinal.empty()?GridImage{}:GridImage::discover(gridFinal);
             const bool first=!published;
-            if(range.supported)publishRange(range);
+            const bool firstRange=range.supported&&!rangeReady.load(std::memory_order_acquire);
+            const bool firstGrid=range.supported&&grid.supported&&!gridReady.load(std::memory_order_acquire);
+            if(firstRange)publishRange(range);
+            if(firstGrid){selectedGrid=grid;gridReady.store(true,std::memory_order_release);}
             if(first){publish(candidate);published=true;}
-            if(first||range.supported)notifyWindows(context->uiThread);
-            if(started&&(first||range.supported))downloaded=true;
+            if(first||firstRange||firstGrid)notifyWindows(context->uiThread);
+            if(started&&(first||firstRange||firstGrid))downloaded=true;
             // A missing optional range never takes an existing private path
             // away. Its independent immutable publication can arrive later.
-            return range.supported||rangeFinal.empty()||savedRangePublic(rangeFinal+L".public")||!context->background;
+            const bool rangeDone=range.supported||rangeFinal.empty()||savedRangePublic(rangeFinal+L".public");
+            const bool gridDone=!range.supported||grid.supported||gridFinal.empty()||savedRangePublic(gridFinal+L".public");
+            return (rangeDone&&gridDone)||!context->background;
         };
         // Signaled by shutdown(): every wait below observes it, and no
         // discovery is started for a process that is already exiting.
@@ -795,7 +897,8 @@ DWORD resolveCapability(ResolveContext *context,bool &downloaded) {
         Handle child(nullptr,&closeHandle);
         if(stopping())throw std::runtime_error("Process is exiting");
         if(!producerActive(context->root)) {
-            const std::wstring attempt=published&&!rangeFinal.empty()?rangeFinal+L".attempt":context->root+L"\\"+id.cacheKey+L".attempt";
+            const std::wstring controlFinal=rangeReady.load(std::memory_order_acquire)?gridFinal:rangeFinal;
+            const std::wstring attempt=published&&!controlFinal.empty()?controlFinal+L".attempt":context->root+L"\\"+id.cacheKey+L".attempt";
             if(recentAttempt(attempt)&&(!published||savedRangePublic(attempt)))throw std::runtime_error("Transient failure backoff");
             if(updateInstalling())throw std::runtime_error("Update installation running");
             child=startWorker(*context);
@@ -910,7 +1013,7 @@ void removeOrphans(const std::wstring &root) {
 void removeOtherIdentities(const std::wstring &root,const std::wstring &cacheKey) {
     forEachEntry(root,L"*",[&](const std::wstring &path,bool folder){
         if(folder||path.compare(root.size()+1,cacheKey.size(),cacheKey)==0)return;
-        for(const wchar_t *suffix:{L".bin",L".public",L".attempt",L".range"}) {
+        for(const wchar_t *suffix:{L".bin",L".public",L".attempt",L".range",L".grid"}) {
             const size_t length=wcslen(suffix);
             if(path.size()>root.size()+1+length&&_wcsicmp(path.c_str()+path.size()-length,suffix)==0) {
                 DeleteFileW(path.c_str());return;
@@ -1076,9 +1179,14 @@ int runWorker(const wchar_t *cacheRoot) {
         if(savedPublic(final+L".public"))return 0;
         const Image previous=Image::discover(final);
         const std::wstring rangeFinal=rangeCacheFile(final);
-        if(previous.supported&&(rangeFinal.empty()||RangeImage::discover(rangeFinal).supported||savedRangePublic(rangeFinal+L".public")))return 0;
-        if(previous.supported){rangePhase=true;negative=rangeFinal+L".public";}
-        attempt=previous.supported&&!rangeFinal.empty()?rangeFinal+L".attempt":root+L"\\"+id.cacheKey+L".attempt";
+        const std::wstring gridFinal=gridCacheFile(final);
+        const RangeImage previousRange=rangeFinal.empty()?RangeImage{}:RangeImage::discover(rangeFinal);
+        const bool rangeDone=previousRange.supported||rangeFinal.empty()||savedRangePublic(rangeFinal+L".public");
+        const bool gridDone=!previousRange.supported||gridFinal.empty()||GridImage::discover(gridFinal).supported||savedRangePublic(gridFinal+L".public");
+        if(previous.supported&&rangeDone&&gridDone)return 0;
+        const std::wstring controlFinal=rangeDone?gridFinal:rangeFinal;
+        if(previous.supported){rangePhase=true;negative=controlFinal+L".public";}
+        attempt=previous.supported&&!controlFinal.empty()?controlFinal+L".attempt":root+L"\\"+id.cacheKey+L".attempt";
         if(!cacheRoot&&recentAttempt(attempt)&&(!rangePhase||savedRangePublic(attempt)))return ERROR_RETRY;
         last=previousAttempt(attempt,rangePhase);
         supported(last.repeated<REPEATED_FAILURE_LIMIT,"Discovery repeatedly did not finish");
@@ -1101,7 +1209,8 @@ int runWorker(const wchar_t *cacheRoot) {
             require(MoveFileExW(candidate.c_str(),final.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)!=FALSE,"Cannot publish qualified cache");
             candidate.clear();
         }
-        if(!rangeFinal.empty()) {
+        if(previousRange.supported){selectedRange=previousRange;rangeReady.store(true,std::memory_order_release);}
+        if(!rangeDone) {
             rangePhase=true;
             negative=rangeFinal+L".public";candidate=rangeFinal+L".pending";
             const std::wstring nextAttempt=rangeFinal+L".attempt";
@@ -1124,6 +1233,24 @@ int runWorker(const wchar_t *cacheRoot) {
             require(qualify(root),"Real Shell range qualification failed");
             require(selectedRange.qualifies(),"Control image changed during qualification");
             require(MoveFileExW(candidate.c_str(),rangeFinal.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)!=FALSE,"Cannot publish qualified range cache");
+            candidate.clear();
+        }
+        if(rangeImage().supported&&!gridFinal.empty()&&!GridImage::discover(gridFinal).supported&&!savedRangePublic(gridFinal+L".public")) {
+            // Independent third capability: a grid failure can never revoke
+            // an already qualified selection/range path or its cache schema.
+            rangePhase=true;negative=gridFinal+L".public";candidate=gridFinal+L".pending";
+            const std::wstring nextAttempt=gridFinal+L".attempt";
+            if(attempt!=nextAttempt){
+                startPhase();DeleteFileW(attempt.c_str());attempt=nextAttempt;last=previousAttempt(attempt,true);
+                supported(last.repeated<REPEATED_FAILURE_LIMIT,"Discovery repeatedly did not finish");
+            }
+            markAttempt(attempt,true,last);
+            discoverGrid(root,candidate);
+            selectedGrid=GridImage::discover(candidate);require(selectedGrid.supported,"Cannot read back grid discovery");
+            gridReady.store(true,std::memory_order_release);
+            require(qualifyGrid(root),"Real Shell grid qualification failed");
+            require(selectedGrid.qualifies(),"Control image changed during grid qualification");
+            require(MoveFileExW(candidate.c_str(),gridFinal.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)!=FALSE,"Cannot publish qualified grid cache");
             candidate.clear();
         }
         DeleteFileW(attempt.c_str());discardSymbols(purge);return 0;
