@@ -78,10 +78,11 @@ public:
     // gone, and the complete backup is then the only copy.
     bool resetLeftBackupOnly() const { return backupOnly; }
     // What a rebuilt database kept of the one it replaces.
-    enum class Recovery : uint8_t { None, Partial, Total };
+    enum class Recovery : uint8_t { Failed, None, Partial, Total };
     // Copies into this ready database every row of a former one that can still
     // be read and has the shape this program writes. The former database is
-    // only read; whatever fails is left out and this one stays consistent.
+    // only read; unreadable rows are left out. Failed reports a technical error
+    // opening the source or writing/verifying the destination, not an empty recovery.
     Recovery recoverFrom(const char *utf8Source);
 #ifdef _WIN32
     // Explicitly confirmed recovery only: exclusively open, back up, then delete the complete file set.
