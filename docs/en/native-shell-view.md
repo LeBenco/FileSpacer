@@ -25,9 +25,13 @@ the eight supported modes and placement settings. It uses the public
 `IFolderView2` methods for commands, without querying the folder's background
 context menu or recreating the view before opening the popup. Nilesoft uses the
 same registered COM activation and standard Win32 tracking path as local title
-menus. Other providers retain their native submenu. Transient previews reuse
-the existing state restoration; Content is committed after closing the menu,
-because its full-width renderer requires a profile change.
+menus; the successful activation is retained for the folder window. The local
+popup requests no animation and performs no SQLite write on opening. Its initial
+view, selection, scroll and icon snapshot is captured in memory only when a mode
+is first previewed or chosen. Original settings and coordinates remain available
+for a close during preview; actual changes and closure drive persistence. Other
+providers retain their native submenu and preparation. Content is committed
+after closing the menu because its full-width renderer requires a profile change.
 
 | Component | Responsibility |
 | --- | --- |
