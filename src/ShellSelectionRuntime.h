@@ -13,6 +13,8 @@
 #include <commctrl.h>
 #include <atomic>
 #include <utility>
+#include <set>
+#include <vector>
 
 // Optional private ABI, discovered and qualified in an isolated process on the
 // current machine. No version/RVA catalogue or private ClearSelection call,
@@ -48,6 +50,12 @@ struct RangeData {
     DWORD managerOffset=0,rangeOffset=0,clearSlot=0,tableRva=0;
 };
 static_assert(sizeof(RangeData)==76,"Fixed optional range-cache schema");
+struct GridData {
+    GUID guid={};DWORD age=0,size=0;
+    // Read-only witnesses, never callable targets: nearest cell, X/Y margins.
+    std::array<DWORD,3> gridCode={};
+};
+static_assert(sizeof(GridData)==36,"Fixed optional grid-cache schema");
 inline unsigned char *controlModule() {
     static unsigned char *const result=[]()->unsigned char * {
         const INITCOMMONCONTROLSEX controls={sizeof(controls),ICC_LISTVIEW_CLASSES};
@@ -112,6 +120,12 @@ struct RangeImage {
     static RangeImage discover(const std::wstring &path);
     bool qualifies(const char **reason=nullptr)const;
 };
+struct GridImage {
+    unsigned char *base=nullptr;GridData data;bool supported=false;
+    static GridImage discover(const std::wstring &path);
+    bool qualifies()const;
+};
+const GridImage &gridImage();
 const RangeImage &rangeImage();
 bool rangeResolved();
 inline std::atomic<uint64_t> &rangeCalls(){static std::atomic<uint64_t> calls{0};return calls;}
@@ -558,6 +572,86 @@ inline RangeImage RangeImage::discover(const std::wstring &path) {
     if(!file||std::memcmp(magic,"FSLVR001",8)!=0||file.peek()!=std::char_traits<char>::eof())return result;
     result.base=controlModule();result.supported=result.qualifies();return result;
 }
+// These are implementation witnesses, not entry points. Neither SnapToGrid
+// nor _NearestSlot is a CFG-callable target on the qualified systems. Match
+// the complete ordinary alignment path; split cold branches are never used
+// by the top-aligned, ungrouped view accepted below. No code is copied/executed.
+inline bool GridImage::qualifies()const {
+    Image image;image.base=base;image.size=data.size;
+    RangeData identity;
+    if(!base||base!=controlModule()||!controlIdentity(identity)||identity.size!=data.size
+            ||identity.age!=data.age||!IsEqualGUID(identity.guid,data.guid))return false;
+    for(DWORD rva:data.gridCode)if(!rva||!image.range(rva,512))return false;
+    static const unsigned char nearestModern[]={
+        0x45,0x85,0xc9,0x0f,0x84,0xf0,0x00,0x00,0x00,0x48,0x8b,0xc4,0x48,0x89,0x58,0x08,
+        0x48,0x89,0x70,0x10,0x48,0x89,0x78,0x18,0x4c,0x89,0x60,0x20,0x41,0x56,0x41,0x57,
+        0x83,0x7c,0x24,0x38,0x00,0x45,0x8b,0xf9,0x4c,0x8b,0x54,0x24,0x40,0x4d,0x8b,0xf0,
+        0x0f,0x84,0xab,0x00,0x00,0x00,0x45,0x8b,0x18,0x45,0x33,0xc9,0x41,0x8b,0x78,0x04,
+        0x33,0xdb,0x4d,0x85,0xd2,0x74,0x07,0x45,0x2b,0x1a,0x41,0x2b,0x7a,0x04,0x48,0x8b,
+        0x41,0x08,0xb9,0x00,0x0c,0x00,0x00,0x8b,0x70,0x70,0x23,0xf1,0x3b,0xf1,0x0f,0x84,
+        0xa2,0x00,0x00,0x00,0x81,0xfe,0x00,0x04,0x00,0x00,0x0f,0x84,0xbc,0x00,0x00,0x00,
+        0x45,0x8b,0xc3,0x41,0xbc,0x02,0x00,0x00,0x00,0x41,0x8b,0xc7,0x99,0x41,0xf7,0xfc,
+        0x44,0x2b,0xc0,0x45,0x85,0xdb,0x42,0x8d,0x0c,0x18,0x8b,0x44,0x24,0x38,0x44,0x0f,
+        0x49,0xc1,0x99,0x41,0xf7,0xfc,0x44,0x8b,0xdf,0x44,0x2b,0xd8,0x85,0xff,0x8d,0x0c,
+        0x38,0x41,0x8b,0xc0,0x44,0x0f,0x49,0xd9,0x99,0x41,0xf7,0xff,0x41,0x8b,0xc3,0x44,
+        0x2b,0xc2,0x99,0xf7,0x7c,0x24,0x38,0x44,0x2b,0xda,0x81,0xfe,0x00,0x0c,0x00,0x00,
+        0x74,0x39,0x81,0xfe,0x00,0x04,0x00,0x00,0x0f,0x84,0x82,0x00,0x00,0x00,0x4d,0x85,
+        0xd2,0x74,0x07,0x45,0x03,0x02,0x45,0x03,0x5a,0x04,0x45,0x89,0x06,0x45,0x89,0x5e,
+        0x04,0x48,0x8b,0x5c,0x24,0x18,0x48,0x8b,0x74,0x24,0x20,0x48,0x8b,0x7c,0x24,0x28,
+        0x4c,0x8b,0x64,0x24,0x30,0x41,0x5f,0x41,0x5e,0xc3};
+    static const unsigned char nearestSplit[]={
+        0x45,0x85,0xc9,0x0f,0x84,0xf7,0x00,0x00,0x00,0x48,0x8b,0xc4,0x48,0x89,0x58,0x08,
+        0x48,0x89,0x70,0x10,0x48,0x89,0x78,0x18,0x4c,0x89,0x60,0x20,0x41,0x56,0x41,0x57,
+        0x83,0x7c,0x24,0x38,0x00,0x45,0x8b,0xf9,0x4d,0x8b,0xf0,0x0f,0x84,0xb7,0x00,0x00,
+        0x00,0x45,0x8b,0x18,0x45,0x33,0xd2,0x41,0x8b,0x78,0x04,0x33,0xdb,0x4c,0x8b,0x44,
+        0x24,0x40,0x4d,0x85,0xc0,0x74,0x07,0x45,0x2b,0x18,0x41,0x2b,0x78,0x04,0x48,0x8b,
+        0x41,0x08,0x8b,0x70,0x70,0x81,0xe6,0x00,0x0c,0x00,0x00,0x81,0xfe,0x00,0x0c,0x00,
+        0x00,0x0f,0x84,0x00,0x00,0x00,0x00,0x81,0xfe,0x00,0x04,0x00,0x00,0x0f,0x84,0x00,
+        0x00,0x00,0x00,0x45,0x8b,0xcb,0x41,0xbc,0x02,0x00,0x00,0x00,0x41,0x8b,0xc7,0x99,
+        0x41,0xf7,0xfc,0x44,0x2b,0xc8,0x45,0x85,0xdb,0x42,0x8d,0x0c,0x18,0x8b,0x44,0x24,
+        0x38,0x44,0x0f,0x49,0xc9,0x99,0x41,0xf7,0xfc,0x44,0x8b,0xdf,0x44,0x2b,0xd8,0x85,
+        0xff,0x8d,0x0c,0x38,0x41,0x8b,0xc1,0x44,0x0f,0x49,0xd9,0x99,0x41,0xf7,0xff,0x41,
+        0x8b,0xc3,0x44,0x2b,0xca,0x99,0xf7,0x7c,0x24,0x38,0x44,0x2b,0xda,0x81,0xfe,0x00,
+        0x0c,0x00,0x00,0x0f,0x84,0x00,0x00,0x00,0x00,0x81,0xfe,0x00,0x04,0x00,0x00,0x0f,
+        0x84,0x00,0x00,0x00,0x00,0x4d,0x85,0xc0,0x74,0x07,0x45,0x03,0x08,0x45,0x03,0x58,
+        0x04,0x45,0x89,0x0e,0x45,0x89,0x5e,0x04,0x48,0x8b,0x5c,0x24,0x18,0x48,0x8b,0x74,
+        0x24,0x20,0x48,0x8b,0x7c,0x24,0x28,0x4c,0x8b,0x64,0x24,0x30,0x41,0x5f,0x41,0x5e,
+        0xc3};
+    std::array<unsigned char,512> nearest={};
+    if(!read(base+data.gridCode[0],nearest))return false;
+    if(std::memcmp(nearest.data(),nearestModern,sizeof(nearestModern))!=0){
+        for(SIZE_T offset:{SIZE_T(0x63),SIZE_T(0x6f),SIZE_T(0xc5),SIZE_T(0xd1)}){
+            LONG delta=0;std::memcpy(&delta,nearest.data()+offset,4);
+            const LONGLONG target=static_cast<LONGLONG>(data.gridCode[0])+static_cast<LONGLONG>(offset)+4+delta;
+            if(target<0||target>=data.size)return false;
+            std::memset(nearest.data()+offset,0,4);
+        }
+        if(std::memcmp(nearest.data(),nearestSplit,sizeof(nearestSplit))!=0)return false;
+    }
+    unsigned char x[48]={},y[64]={};
+    if(!read(base+data.gridCode[1],x)||!read(base+data.gridCode[2],y))return false;
+    const unsigned char xHead[]={0x48,0x8b,0x41,0x08,0x0f,0xb7,0x88,0xa4,0,0,0,0x66,0x85,0xc9};
+    const unsigned char xMath[]={0x8b,0x02,0xb9,0x02,0,0,0,0x2b,0x42,0x08,0x99,0xf7,0xf9,0xc3};
+    if(std::memcmp(x,xHead,sizeof(xHead))!=0)return false;
+    const SIZE_T xBranch=x[14]==0x75&&x[15]==0x0f?2:x[14]==0x0f&&x[15]==0x85?6:0;
+    if(!xBranch||std::memcmp(x+14+xBranch,xMath,sizeof(xMath))!=0)return false;
+    const unsigned char yHead[]={0x48,0x83,0xec,0x28,0x48,0x8b,0x41,0x08,0x0f,0xb7,0x88,0xa4,0,0,0,0x66,0x85,0xc9};
+    const SIZE_T yBranch=y[18]==0x75&&y[19]==0x19?2:y[18]==0x0f&&y[19]==0x85?6:0;
+    const unsigned char metric[]={0xb9,0x06,0,0,0,0x48,0xff,0x15};
+    const unsigned char yTail[]={0x0f,0x1f,0x44,0,0,0x03,0xc0,0x48,0x83,0xc4,0x28,0xc3};
+    if(std::memcmp(y,yHead,sizeof(yHead))!=0||!yBranch
+            ||std::memcmp(y+18+yBranch,metric,sizeof(metric))!=0
+            ||std::memcmp(y+30+yBranch,yTail,sizeof(yTail))!=0)return false;
+    LONG delta=0;std::memcpy(&delta,y+26+yBranch,4);
+    const LONGLONG slot=static_cast<LONGLONG>(data.gridCode[2])+30+static_cast<LONGLONG>(yBranch)+delta;
+    return slot>=0&&slot<data.size&&namedImport(image,static_cast<DWORD>(slot),"GetSystemMetrics");
+}
+inline GridImage GridImage::discover(const std::wstring &path) {
+    GridImage result;std::ifstream file(path.c_str(),std::ios::binary);char magic[8]={};
+    file.read(magic,sizeof(magic));file.read(reinterpret_cast<char *>(&result.data),sizeof(result.data));
+    if(!file||std::memcmp(magic,"FSLVG001",8)!=0||file.peek()!=std::char_traits<char>::eof())return result;
+    result.base=controlModule();result.supported=result.qualifies();return result;
+}
 inline bool RangeBinding::bind(HWND source) {
     const RangeImage &image=rangeImage();if(!image.supported||!source)return false;
     const auto find=[](HWND child,LPARAM out)->BOOL {
@@ -601,6 +695,88 @@ inline HRESULT RangeBinding::clear(HWND source)const {
     if(SUCCEEDED(result)){rangeCalls().fetch_add(1,std::memory_order_relaxed);RedrawWindow(window,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN);}
     return result;
 }
+inline std::atomic<uint64_t> &gridCalls(){static std::atomic<uint64_t> calls{0};return calls;}
+// Optional arithmetic qualified against this loaded control image and a real
+// Shell view. The scan detects collisions before any mutation: the native
+// global command has an additional collision pass which must remain its job.
+// Every write below is the public Shell positioning operation, on selected IDs
+// only. Missing data/unsupported layout never changes anything before fallback.
+inline HRESULT snapGridSelection(IShellView *source,const std::function<bool()> &current) try {
+    if(!source||!current())return E_ABORT;
+    if(!rangeImage().supported||!gridImage().supported)return S_FALSE;
+    CComPtr<IShellView> keepView(source);CComQIPtr<IFolderView2> view(source);
+    if(!view||!current())return E_ABORT;
+    FOLDERVIEWMODE mode=FVM_AUTO;int size=0;POINT spacing={};DWORD flags=0;
+    if(FAILED(view->GetViewModeAndIconSize(&mode,&size))||!current()||mode!=FVM_ICON
+            ||FAILED(view->GetSpacing(&spacing))||!current()||spacing.x<size||size<=0||spacing.y<=0
+            ||FAILED(view->GetCurrentFolderFlags(&flags))||!current()
+            ||(flags&(FWF_AUTOARRANGE|FWF_SNAPTOGRID|FWF_DESKTOP|FWF_NOSCROLL)))return S_FALSE;
+    HWND body=nullptr;RangeBinding bound;
+    if(FAILED(source->GetWindow(&body))||!current()||!bound.bind(body)||!current())return S_FALSE;
+    const auto style=GetWindowLongPtrW(bound.window,GWL_STYLE);
+    if((style&(LVS_TYPEMASK|LVS_AUTOARRANGE|LVS_NOSCROLL|LVS_ALIGNMASK))!=LVS_ICON
+            ||(GetWindowLongPtrW(bound.window,GWL_EXSTYLE)&WS_EX_LAYOUTRTL)
+            ||ListView_IsGroupViewEnabled(bound.window)||!current())return S_FALSE;
+    UINT areas=UINT_MAX;ListView_GetNumberOfWorkAreas(bound.window,&areas);
+    if(areas||!current())return S_FALSE;
+    const POINT margin={(spacing.x-size)/2,2*GetSystemMetrics(SM_CYBORDER)};
+    const auto snap=[&](POINT &point) {
+        const auto axis=[](LONG &value,LONG cell,LONG origin) {
+            LONGLONG relative=static_cast<LONGLONG>(value)-origin;
+            relative+=relative<0?-(cell/2):(cell/2);
+            const LONGLONG result=relative-relative%cell+origin;
+            if(result<LONG_MIN||result>LONG_MAX)return false;
+            value=static_cast<LONG>(result);return true;
+        };
+        return axis(point.x,spacing.x,margin.x)&&axis(point.y,spacing.y,margin.y);
+    };
+    int count=0,selected=0;
+    if(FAILED(view->ItemCount(SVGIO_ALLVIEW,&count))||!current()
+            ||FAILED(view->ItemCount(SVGIO_SELECTION,&selected))||!current()
+            ||selected<=0||selected>=count)return S_FALSE;
+    CComPtr<IEnumIDList> all;
+    if(FAILED(view->Items(SVGIO_ALLVIEW,IID_PPV_ARGS(&all)))||!current()||!all)return S_FALSE;
+    std::set<std::pair<LONG,LONG>> cells;
+    for(;;){
+        CComHeapPtr<ITEMID_CHILD> id;const HRESULT next=all->Next(1,&id,nullptr);
+        if(!current())return E_ABORT;
+        if(next==S_FALSE)break;
+        POINT point={};
+        if(next!=S_OK||!id||FAILED(view->GetItemPosition(id,&point))||!current()||!snap(point)
+                ||!cells.emplace(point.x,point.y).second)return S_FALSE;
+    }
+    if(cells.size()!=static_cast<size_t>(count))return S_FALSE;
+    using Id=std::unique_ptr<ITEMID_CHILD,decltype(&CoTaskMemFree)>;
+    std::vector<Id> owned;std::vector<PCUITEMID_CHILD> ids;std::vector<POINT> points;
+    CComPtr<IEnumIDList> chosen;
+    if(FAILED(view->Items(SVGIO_SELECTION,IID_PPV_ARGS(&chosen)))||!current()||!chosen)return S_FALSE;
+    for(;;){
+        CComHeapPtr<ITEMID_CHILD> id;const HRESULT next=chosen->Next(1,&id,nullptr);
+        if(!current())return E_ABORT;
+        if(next==S_FALSE)break;
+        POINT point={};DWORD state=0;
+        if(next!=S_OK||!id||FAILED(view->GetItemPosition(id,&point))||!current()||!snap(point)
+                ||FAILED(view->GetSelectionState(id,&state))||!current()||!(state&SVSI_SELECT))return S_FALSE;
+        owned.emplace_back(id.Detach(),&CoTaskMemFree);ids.push_back(owned.back().get());points.push_back(point);
+    }
+    if(ids.size()!=static_cast<size_t>(selected))return S_FALSE;
+    FOLDERVIEWMODE finalMode=FVM_AUTO;int finalSize=0;POINT finalSpacing={};DWORD finalFlags=0;int finalCount=0;
+    if(!current()||FAILED(view->GetViewModeAndIconSize(&finalMode,&finalSize))||!current()
+            ||FAILED(view->GetSpacing(&finalSpacing))||!current()
+            ||FAILED(view->GetCurrentFolderFlags(&finalFlags))||!current()
+            ||FAILED(view->ItemCount(SVGIO_ALLVIEW,&finalCount))||!current()
+            ||finalCount!=count||finalMode!=mode||finalSize!=size||finalFlags!=flags
+            ||finalSpacing.x!=spacing.x||finalSpacing.y!=spacing.y
+            ||reinterpret_cast<IUnknown *>(GetWindowLongPtrW(bound.window,0))!=bound.control.p)return S_FALSE;
+    const HRESULT result=view->SelectAndPositionItems(static_cast<UINT>(ids.size()),ids.data(),points.data(),
+        SVSI_POSITIONITEM|SVSI_NOSTATECHANGE);
+    if(!current())return E_ABORT;
+    if(SUCCEEDED(result)){
+        gridCalls().fetch_add(1,std::memory_order_relaxed);
+        debugPrintf(L"GRID SNAP qualified=1 selected=%zu count=%d\n",ids.size(),count);
+    }
+    return result;
+} catch(const std::bad_alloc &){return S_FALSE;}
 const Image &image();
 UINT readyMessage();
 bool resolved();
