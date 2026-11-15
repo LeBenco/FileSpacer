@@ -805,8 +805,10 @@ LSTATUS synchronizeType(const wchar_t *type, bool &changed) {
     // when the restoration was requested.
     DWORD restoring = 0, restoringSize = sizeof(restoring);
     if (RegGetValueW(HKEY_CURRENT_USER, (std::wstring(KEY_OPEN_BACKUP) + L"\\" + type).c_str(), L"Restoring",
-            RRF_RT_REG_DWORD, nullptr, &restoring, &restoringSize) == ERROR_SUCCESS && restoring)
-        setDefaultType(type, false, changed);
+            RRF_RT_REG_DWORD, nullptr, &restoring, &restoringSize) == ERROR_SUCCESS && restoring) {
+        if (setDefaultType(type, false, changed) != ERROR_SUCCESS)
+            return ERROR_SUCCESS; // Keep the marker; no migration may reactivate this type.
+    }
     const LSTATUS caption = refreshOpenCaption(type, changed);
     if (caption != ERROR_SUCCESS) return caption;
     std::wstring browser;
