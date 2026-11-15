@@ -142,7 +142,7 @@ struct FolderWindow::IconSnap {
     const ULONG_PTR generation, serial;
     POINT start, drop = {};
     HWND body = nullptr;
-    bool moved = false, finished = false, snap = false, heldS = false;
+    bool moved = false, finished = false, dropped = false, snap = false, heldS = false;
     HHOOK hook = nullptr;
     std::unique_ptr<std::remove_pointer<HHOOK>::type, decltype(&UnhookWindowsHookEx)> keyboardHook{nullptr, UnhookWindowsHookEx};
     bool markerPending = false;
@@ -415,6 +415,7 @@ struct FolderWindow::IconSnap {
                     } else if (message->message == WM_LBUTTONUP) {
                         session->hideMarker();
                         session->finished = true;
+                        session->dropped = true;
                         session->drop = message->pt;
                         const HWND target = WindowFromPoint(session->drop);
                         session->snap = session->moved && session->heldS
@@ -591,7 +592,7 @@ struct FolderWindow::ViewMenuPreview {
     UINT initialCommand = 0, currentCommand = 0, wantedCommand = 0;
     UINT pendingCommand = 0; // Entry outside the modes, run after the preview is cancelled.
     UINT chosenCommand = 0; // Mode retained when the menu closed: 0 for the initial one.
-    bool tracking = true, posted = false, busy = false;
+    bool tracking = true, posted = false, busy = false, prepared = false, capturedIcons = false;
     // The final apply() failed without any refill: no EnumDone replays it. The
     // session still withholds saving the preview, but its initial selection
     // no longer describes the view.
@@ -674,9 +675,32 @@ struct FolderWindow::ViewMenuPreview {
             && owner.viewGeneration == generation;
     }
 
-    bool capture() {
+    bool prepare() {
+        if (prepared) return current();
+        ++owner.navigationDepth;
+        struct Resume {
+            FolderWindow &owner;
+            ~Resume() { owner.resumeDeferredClose(); }
+        } resume{owner};
+        // Capture only in memory, on the first actual preview or command.
+        // Persistence belongs to changes and closure, not menu preparation.
+        if (!current() || owner.deferredCloseMessage) return false;
         initial.view = captureOptions(view, {});
         if (!current() || !(initial.view.present & FolderViewSettings::Mode)) return false;
+        if (owner.columnFillSet) {
+            initial.view.present |= FolderViewSettings::ColumnFill;
+            initial.view.fillColumns = owner.fillColumns;
+        }
+        owner.captureColumnWeights(initial.view);
+        if (!current()) return false;
+        auto &saved = owner.getSavedFolderState();
+        auto options = saved.view.mergeChanges(saved.view, initial.view);
+        owner.captureColumnWeights(options);
+        if (!(saved.present & FolderState::View) || !sameView(options, saved.view)) {
+            saved.view = std::move(options);
+            saved.present |= FolderState::View;
+            owner.viewStateDirty(FolderState::View);
+        }
         auto valid = [&]() { return current(); };
         HRESULT result = captureReopenSelection(source, valid, initial.selection);
         if (FAILED(result) || !current()) return false;
@@ -686,7 +710,23 @@ struct FolderWindow::ViewMenuPreview {
             result = captureIconPositions(view, valid, owner.enumerationComplete,
                 owner.getSavedFolderState().icons, initial.icons, !owner.searchText.empty());
             if (FAILED(result) || !current()) return false;
+            capturedIcons = result == S_OK;
+            if (capturedIcons) {
+                if (!(saved.present & FolderState::Icons) || saved.icons != initial.icons) {
+                    saved.icons = initial.icons;
+                    saved.present |= FolderState::Icons;
+                    owner.viewStateDirty(FolderState::Icons);
+                }
+            }
         }
+        if (!current() || owner.deferredCloseMessage) return false;
+        prepared = true;
+        KillTimer(owner.hwnd, TIMER_SAVE_STATE);
+        return true;
+    }
+
+    bool capture() {
+        if (context && !prepare()) return false;
         for (int i = 0, count = GetMenuItemCount(menu); i < count; ++i) {
             MENUITEMINFO info = {sizeof(info)};
             info.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_SUBMENU;
@@ -758,7 +798,7 @@ struct FolderWindow::ViewMenuPreview {
     }
 
     void restoreDetails() {
-        if (!current() || (tracking && currentCommand)) return;
+        if (!prepared || !current() || (tracking && currentCommand)) return;
         auto valid = [&]() { return current(); };
         ++owner.navigationDepth;
         if (!currentCommand && !initial.icons.empty() && owner.spatialView(view) && current()) {
@@ -776,6 +816,10 @@ struct FolderWindow::ViewMenuPreview {
 
     void apply(UINT command) {
         if (busy || !current() || command == currentCommand) return;
+        busy = true;
+        const bool ready = prepare();
+        busy = false;
+        if (!ready || !current()) return;
         positionChunks.clear();
         nextPositionChunk = 0;
         busy = true;
@@ -865,7 +909,7 @@ struct FolderWindow::ViewMenuPreview {
     // While tracking, a refill completed by this EnumDone rebuilt the items
     // the restoration concerned: restore them again (idempotent).
     void enumerated(ULONG_PTR enumeration) {
-        if (busy || enumeration <= enumerationBaseline || !current()) return;
+        if (!prepared || busy || enumeration <= enumerationBaseline || !current()) return;
         restoreDetails();
     }
 
@@ -894,6 +938,27 @@ struct FolderWindow::ViewMenuPreview {
     }
 
     void finish(UINT command) {
+        if (!prepared) {
+            if (command && command != initialCommand) {
+                busy = true;
+                const bool ready = prepare();
+                busy = false;
+                if (!ready || !current()) {
+                    if (owner.viewMenuPreview.get() == this) owner.viewMenuPreview.reset();
+                    return;
+                }
+            } else {
+                // Nothing was previewed. Escape/outside click has no snapshot
+                // to restore and must not perform a synchronous database write.
+                tracking = false;
+                if (owner.viewMenuPreview.get() == this) owner.viewMenuPreview.reset();
+                if (current()) {
+                    owner.replayProviderSync();
+                    owner.resumeColumnSync();
+                }
+                return;
+            }
+        }
         tracking = false;
         // An outside click / Escape retains the original mode. A chosen entry
         // already previewed is committed without another round trip through it.
@@ -2213,7 +2278,7 @@ void FolderWindow::synchronizeViewProvider() {
 
 uint32_t FolderWindow::captureViewState(uint32_t mask) {
     uint32_t captured = ItemWindow::captureViewState(mask);
-    const auto &preview = viewMenuPreview ? viewMenuPreview : viewMenuRestore;
+    const auto &preview = viewMenuPreview && viewMenuPreview->prepared ? viewMenuPreview : viewMenuRestore;
     if (!isWindowOperational() && preview && !preview->restoreFailed) closingScroll = preview->initial.scroll;
     if (provisionalBaseline) {
         if (!recoverProvisionalView()) return captured;
@@ -2221,7 +2286,16 @@ uint32_t FolderWindow::captureViewState(uint32_t mask) {
         // not immediately recapture its fallback over the merged reference.
         return captured | FolderState::View | FolderState::Icons;
     }
-    if (!viewHost || !viewReady || !initialStateApplied || restoringState || viewMenuPreview || viewProfileChanging
+    if (viewMenuPreview && viewMenuPreview->prepared) {
+        // A close during preview saves the trusted original state held in
+        // memory, never the transient preview or an older disk reference.
+        if (viewStateIsDirty(FolderState::View)) captured |= mask & FolderState::View;
+        if (viewMenuPreview->capturedIcons && viewStateIsDirty(FolderState::Icons))
+            captured |= mask & FolderState::Icons;
+        return captured;
+    }
+    if (!viewHost || !viewReady || !initialStateApplied || restoringState
+            || viewProfileChanging
             || getSavedFolderState().firstFailedAt) return captured;
     CComPtr<IShellView> source = shellView;
     const ULONG_PTR generation = viewGeneration;
@@ -2410,7 +2484,7 @@ HRESULT FolderWindow::loadIconPositions(bool pruneMissing) {
 
 std::vector<uint8_t> FolderWindow::captureReopenViewState() {
     const auto &session = viewMenuPreview ? viewMenuPreview : viewMenuRestore;
-    if (session && !session->restoreFailed) return session->initial.selection;
+    if (session && session->prepared && !session->restoreFailed) return session->initial.selection;
     // During a profile change the recreated view is not restored yet: the
     // selection and viewport still belong to the transient snapshot.
     if (viewProfileChanging && storedViewState) return storedViewState->selection;
@@ -2446,7 +2520,7 @@ void FolderWindow::onDestroy() {
     columnLayout.reset();
     viewProfilePosted = false;
     watchProvisionalInput(false);
-    if (viewMenuPreview) restoringState = true;
+    if (viewMenuPreview && viewMenuPreview->prepared) restoringState = true;
     viewMenuPreview.reset();
     viewMenuRestore.reset();
     resizeGesture.stop();
@@ -3327,6 +3401,8 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             iconSnap.reset();
             if (session->current() && session->snap && !GetCapture())
                 realignIcons(true);
+            if (session->current() && session->dropped && session->moved && !GetCapture())
+                scheduleStateSave(true);
         }
         return 0;
     }
@@ -4195,8 +4271,7 @@ void FolderWindow::openViewMenu(POINT point) {
         }
         // The registered extension already styles and modifies local title and
         // toolbar menus. Keep the same Win32 tracking and COM activation path.
-        CComPtr<IClassFactory> extension;
-        activateTitleMenuExtension(&extension);
+        if (!viewMenuExtension) activateTitleMenuExtension(&viewMenuExtension);
         if (isWindowOperational() && shellView == source && viewGeneration == generation)
             openBackgroundSubMenu(nullptr, menu.get(), point);
         return;
@@ -4225,11 +4300,12 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     } columnsResume{columnLayout};
     viewMenuRestore.reset(); // A new menu supersedes a previous preview's pending replay.
     const bool previewEnabled = settings::getViewMenuPreviewEnabled();
-    // Native icon moves may not have scheduled a save yet. Preserve the
-    // complete original placement before a preview can be closed, and before
-    // a chosen icon size lays the icons out again.
-    viewStateDirty(FolderState::Icons);
-    persistViewState();
+    // Unknown providers keep their established native path. Local commands
+    // capture in memory on first use, after the popup is already visible.
+    if (contextMenu) {
+        viewStateDirty(FolderState::Icons);
+        persistViewState();
+    }
     if (!isWindowOperational()) return;
     CComPtr<IFolderView2> folderView;
     auto detachSite = [](IContextMenu *handler) { checkHR(IUnknown_SetSite(handler, nullptr)); };
@@ -4300,11 +4376,12 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
             if (hook) {
                 ViewMenuPreview::active = preview.get();
                 viewMenuPreview = preview;
-                KillTimer(hwnd, TIMER_SAVE_STATE);
+                if (contextMenu) KillTimer(hwnd, TIMER_SAVE_STATE);
             }
         }
     }
-    const int cmd = isWindowOperational() ? TrackPopupMenuEx(subMenu, TPM_RETURNCMD | TPM_RIGHTBUTTON,
+    const UINT trackingFlags = TPM_RETURNCMD | TPM_RIGHTBUTTON | (contextMenu ? 0u : TPM_NOANIMATION);
+    const int cmd = isWindowOperational() ? TrackPopupMenuEx(subMenu, trackingFlags,
         point.x, point.y, hwnd, nullptr) : 0;
     if (hook) {
         UnhookWindowsHookEx(hook);
@@ -4320,6 +4397,23 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     } else if (isWindowOperational() && cmd == IDM_TOGGLE_THUMBNAILS) {
         toggleGlobalThumbnails();
     } else if (isWindowOperational() && !contextMenu && cmd) {
+        // Preserve free coordinates in memory before a native mode change.
+        // Save the resulting state through the ordinary change notification.
+        std::vector<uint8_t> icons;
+        CComPtr<IShellView> source = shellView;
+        const ULONG_PTR generation = viewGeneration;
+        const auto current = [&]() { return isWindowOperational() && shellView == source && viewGeneration == generation; };
+        if (isViewMenuMode(static_cast<UINT>(cmd)) && folderView && spatialView(folderView)) {
+            const HRESULT result = captureIconPositions(folderView, current, enumerationComplete,
+                getSavedFolderState().icons, icons, !searchText.empty());
+            if (!current() || FAILED(result)) return;
+            if (result == S_OK && icons != getSavedFolderState().icons) {
+                getSavedFolderState().icons = std::move(icons);
+                getSavedFolderState().present |= FolderState::Icons;
+                viewStateDirty(FolderState::Icons);
+            }
+        }
+        if (!current()) return;
         ++navigationDepth;
         checkHR(invokeDisplayCommand(folderView, static_cast<UINT>(cmd)));
         resumeDeferredClose();
