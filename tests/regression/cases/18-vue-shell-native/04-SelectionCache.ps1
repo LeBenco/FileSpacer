@@ -24,6 +24,10 @@ $code=Invoke-NativeProgram $cacheTest @('--public-persist',$negative) (Join-Path
 if($code-ne0-or@(Get-ChildItem -LiteralPath $negative -Filter '*.attempt').Count){throw 'Saved public decision caused rediscovery.'}
 $backoff=Join-Path $RunDirectory 'transient-failure';[void][IO.Directory]::CreateDirectory($backoff)
 [IO.File]::WriteAllText((Join-Path $backoff ([IO.Path]::GetFileNameWithoutExtension($data[0].Name)+'.attempt')),'network failure')
+$retryRecord=@(Get-ChildItem -LiteralPath $backoff -Filter '*.attempt' -File)[0]
+$retryHash=(Get-FileHash -LiteralPath $retryRecord.FullName -Algorithm SHA256).Hash
+$code=Invoke-NativeProgram $cacheTest @('--live',$backoff) (Join-Path $RunDirectory 'transient-resolution.log') (Join-Path $RunDirectory 'transient-resolution-errors.log')
+if($code-ne50-or@(Get-ChildItem -LiteralPath $backoff -Filter '*.bin.public').Count-or(Get-FileHash -LiteralPath $retryRecord.FullName -Algorithm SHA256).Hash-ne$retryHash){throw 'A transient discovery backoff became a structural decision.'}
 $code=Invoke-NativeProgram $cacheTest @('--public-persist',$backoff) (Join-Path $RunDirectory 'transient-backoff.log') (Join-Path $RunDirectory 'transient-backoff-errors.log')
 if($code-ne0-or(Test-Path -LiteralPath (Join-Path $backoff 'symbols'))){throw 'Transient error backoff did not preserve public operations.'}
 # Two attempts in a row never finished: the third start records a decision instead of running again.
@@ -56,10 +60,15 @@ foreach($fault in $faults){
 }
 }else{
     $negative=@(Get-ChildItem -LiteralPath $cache -Filter '*.bin.public' -File)
-    if($data.Count-or$negative.Count-ne1-or!(Get-Content $negative[0].FullName -Raw).StartsWith('FSPUBLIC01')){throw 'Private discovery failed without a saved structural fallback decision.'}
-    $timestamp=$negative[0].LastWriteTimeUtc
+    $transient=@(Get-ChildItem -LiteralPath $cache -Filter '*.attempt' -File)
+    if($data.Count-or$negative.Count+$transient.Count-ne1){throw 'Private discovery failed without one saved fallback or retry record.'}
+    $record=if($negative.Count){$negative[0]}else{$transient[0]}
+    $reason=Get-Content -LiteralPath $record.FullName -Raw
+    if(!$reason-or($negative.Count-and!$reason.StartsWith('FSPUBLIC01'))-or($transient.Count-and$reason-notmatch'\A[^\r\n]+\r?\nrepeat=[0-2]\s*\z')){throw 'Discovery failure record is invalid or unfinished.'}
+    $timestamp=$record.LastWriteTimeUtc;$hash=(Get-FileHash -LiteralPath $record.FullName -Algorithm SHA256).Hash
     $code=Invoke-NativeProgram $cacheTest @('--public-persist',$cache) (Join-Path $RunDirectory 'unsupported-public.log') (Join-Path $RunDirectory 'unsupported-public-errors.log')
-    if($code-ne0-or(Get-Item $negative[0].FullName).LastWriteTimeUtc-ne$timestamp-or@(Get-ChildItem -LiteralPath $cache -Filter '*.attempt').Count){throw 'Saved structural fallback was not reused without rediscovery.'}
+    if($code-ne0-or(Get-Item $record.FullName).LastWriteTimeUtc-ne$timestamp-or(Get-FileHash -LiteralPath $record.FullName -Algorithm SHA256).Hash-ne$hash-or@(Get-ChildItem -LiteralPath $cache -Filter '*.attempt').Count-ne$transient.Count){throw 'Saved fallback or transient backoff was not reused without rediscovery.'}
+    Write-Host ('DISCOVERY: '+$(if($negative.Count){'saved structural fallback'}else{'transient backoff'})+'; '+$reason.Trim())
 }
 . (Join-Path $PSScriptRoot '..\..\..\experiments\reactivity\Fixture.ps1')
 $fixture=New-ReactivityFixture $ProjectRoot $ItemCount
@@ -76,5 +85,5 @@ try {
     $expectedRows=135
     $expectedCandidates=36
     if($rows.Count-ne$expectedRows-or$candidate.Count-ne$expectedCandidates-or@($candidate|Where-Object {$_.private_applied-ne$(if($privateSupported-and[int]$_.selected_count-ge128){'1'}else{'0'})}).Count){throw 'Product selection backend coverage incomplete.'}
-    if(!$privateSupported){Write-Host ('PASS: saved structural fallback reused; all '+$expectedRows+' real Shell selection cases verified through public APIs. Private acceleration not exercised.')}
+    if(!$privateSupported){Write-Host ('PASS: public fallback retained; all '+$expectedRows+' real Shell selection cases verified through public APIs. Private acceleration not exercised.')}
 }finally{Remove-ReactivityFixture $ProjectRoot $fixture}
