@@ -518,22 +518,27 @@ bool FolderStateStore::resetDamagedDatabase(const char *utf8Path, const wchar_t 
 #endif
 
 FolderStateStore::Recovery FolderStateStore::recoverFrom(const char *utf8Source) {
-    if (!initialized) return Recovery::None;
+    if (!initialized) return Recovery::Failed;
     sqlite3 *rawSource = nullptr;
     // Read-only: the former database, usually a backup, keeps its bytes. Its
     // write-ahead log, copied beside it, is still read.
     const int opened = sqlite3_open_v2(utf8Source, &rawSource, SQLITE_OPEN_READONLY, nullptr);
     const std::unique_ptr<sqlite3, decltype(&sqlite3_close)> source(rawSource, sqlite3_close);
-    if (opened != SQLITE_OK) return Recovery::None;
+    if (opened != SQLITE_OK) {
+        lastErrorCode = opened;
+        lastError = rawSource ? sqlite3_errmsg(rawSource) : sqlite3_errstr(opened);
+        return Recovery::Failed;
+    }
     // The former file is damaged or foreign: its schema is data, not code.
     sqlite3_db_config(rawSource, SQLITE_DBCONFIG_DEFENSIVE, 1, nullptr);
     sqlite3_db_config(rawSource, SQLITE_DBCONFIG_TRUSTED_SCHEMA, 0, nullptr);
     sqlite3_busy_timeout(rawSource, 0);
     Lock lock(*this);
-    if (!lock || !execute("BEGIN IMMEDIATE")) return Recovery::None;
+    if (!lock || !execute("BEGIN IMMEDIATE")) return Recovery::Failed;
     // Expected shape of each column: 't' non-empty text, 'T' text, 'i' integer
     // or NULL, 'I' integer (0 when the former schema lacks it), 'b' blob or NULL,
-    // 'v' view settings this program can decode (dropped alone otherwise).
+    // 'v' view settings this program can decode (dropped alone otherwise),
+    // 's' an existing integer sequence, preserved even in the descending scan.
     struct Table {
         const char *name, *order, *insert;
         const char *columns[12];
@@ -546,20 +551,20 @@ FolderStateStore::Recovery FolderStateStore::recoverFrom(const char *utf8Source)
             {"key", "x", "y", "width", "height", "view", "icons", "last_success_at",
                 "first_failed_at", "maximized", "locked", "scroll"}, "tiiiivbIiiIb"},
         {"closed_windows", "sequence",
-            "INSERT OR IGNORE INTO closed_windows(key,parsing_name,display_name,view_state) VALUES(?1,?2,?3,?4)",
-            {"key", "parsing_name", "display_name", "view_state"}, "ttTb"},
+            "INSERT OR IGNORE INTO closed_windows(key,parsing_name,display_name,view_state,sequence) VALUES(?1,?2,?3,?4,?5)",
+            {"key", "parsing_name", "display_name", "view_state", "sequence"}, "ttTbs"},
         // Like saveSearchHistory(): a history belongs to a folder that has a state.
         {"search_history", "sequence",
-            "INSERT OR IGNORE INTO search_history(key,query) "
-            "SELECT ?1,?2 WHERE EXISTS(SELECT 1 FROM folder_state WHERE key=?1)",
-            {"key", "query"}, "tt"},
+            "INSERT OR IGNORE INTO search_history(key,query,sequence) "
+            "SELECT ?1,?2,?3 WHERE EXISTS(SELECT 1 FROM folder_state WHERE key=?1)",
+            {"key", "query", "sequence"}, "tts"},
     };
     bool complete = true, written = true;
     sqlite3_int64 kept = 0;
     for (const Table &table : tables) {
         const size_t count = std::strlen(table.shapes);
         sqlite3_stmt *raw = nullptr;
-        if (sqlite3_prepare_v2(db, table.insert, -1, &raw, nullptr) != SQLITE_OK) {
+        if (!result(sqlite3_prepare_v2(db, table.insert, -1, &raw, nullptr))) {
             written = false;
             break;
         }
@@ -586,6 +591,7 @@ FolderStateStore::Recovery FolderStateStore::recoverFrom(const char *utf8Source)
         // A damaged page stops a scan: what lies beyond it is read from the
         // other end. Rows met twice are ignored by their key.
         for (const char *direction : {" ASC", " DESC"}) {
+            if (!written) break;
             raw = nullptr;
             const std::string query = "SELECT " + list + " FROM " + table.name + " ORDER BY " + table.order + direction;
             if (sqlite3_prepare_v2(rawSource, query.c_str(), -1, &raw, nullptr) != SQLITE_OK) {
@@ -602,6 +608,7 @@ FolderStateStore::Recovery FolderStateStore::recoverFrom(const char *utf8Source)
                     if (shape == 't') valid = type == SQLITE_TEXT && sqlite3_column_bytes(raw, static_cast<int>(index)) > 0;
                     else if (shape == 'T') valid = type == SQLITE_TEXT;
                     else if (shape == 'b' || shape == 'v') valid = type == SQLITE_BLOB || type == SQLITE_NULL;
+                    else if (shape == 's') valid = type == SQLITE_INTEGER;
                     else valid = type == SQLITE_INTEGER || type == SQLITE_NULL;
                     // Settings that read() would refuse are left out; the rest of the row is kept.
                     FolderViewSettings decoded;
@@ -613,31 +620,42 @@ FolderStateStore::Recovery FolderStateStore::recoverFrom(const char *utf8Source)
                         ? sqlite3_bind_int(insert.get(), static_cast<int>(index) + 1, 0)
                         : sqlite3_bind_value(insert.get(), static_cast<int>(index) + 1,
                             sqlite3_column_value(raw, static_cast<int>(index)));
-                    if (bound != SQLITE_OK) valid = false;
+                    if (!result(bound)) { valid = false; written = false; }
                 }
-                if (valid && sqlite3_step(insert.get()) == SQLITE_DONE) kept += sqlite3_changes(db);
-                else complete = false;
+                if (valid) {
+                    if (result(sqlite3_step(insert.get()))) kept += sqlite3_changes(db);
+                    else written = false;
+                } else complete = false;
                 sqlite3_reset(insert.get());
                 sqlite3_clear_bindings(insert.get());
+                if (!written) break;
             }
             if (step == SQLITE_DONE) break; // The whole table was read.
             complete = false;
         }
+        if (!written) break;
     }
-    if (!finishWrite(written)) return Recovery::None;
+    if (!written) {
+        finishWrite(false);
+        return Recovery::Failed;
+    }
     // The rebuilt database must be sound whatever the former one contained.
+    // Verify before committing: an error rolls back, without a second,
+    // unchecked transaction that would try to clear a failed reconstruction.
     bool sound = false;
     sqlite3_stmt *raw = nullptr;
-    if (sqlite3_prepare_v2(db, "PRAGMA quick_check(1)", -1, &raw, nullptr) == SQLITE_OK
-            && sqlite3_step(raw) == SQLITE_ROW) {
+    if (result(sqlite3_prepare_v2(db, "PRAGMA quick_check(1)", -1, &raw, nullptr))
+            && result(sqlite3_step(raw))) {
         const unsigned char *verdict = sqlite3_column_text(raw, 0);
         sound = verdict && std::strcmp(reinterpret_cast<const char *>(verdict), "ok") == 0;
     }
     sqlite3_finalize(raw);
     if (!sound) {
-        clearAll();
-        return Recovery::None;
+        if (lastError.empty()) { lastError = "Rebuilt database integrity check failed"; lastErrorCode = 0; }
+        finishWrite(false);
+        return Recovery::Failed;
     }
+    if (!finishWrite(true)) return Recovery::Failed;
     return complete ? Recovery::Total : kept ? Recovery::Partial : Recovery::None;
 }
 
@@ -1400,11 +1418,22 @@ HRESULT CALLBACK storageErrorCallback(HWND window, UINT notification, WPARAM but
         }
         // A new database, then whatever the former one still yields. The
         // backup just written is the only one kept.
-        auto recovered = FolderStateStore::Recovery::None;
         const size_t slash = dialog.path.find_last_of(L"\\/");
         const std::wstring name = dialog.path.substr(slash == std::wstring::npos ? 0 : slash + 1);
-        if (FolderStateStore *rebuilt = folderStateStore(true))
-            recovered = rebuilt->recoverFrom(toUtf8((backup + L"\\" + name).c_str()).c_str());
+        FolderStateStore *rebuilt = folderStateStore(true);
+        const auto recovered = rebuilt ? rebuilt->recoverFrom(toUtf8((backup + L"\\" + name).c_str()).c_str())
+            : FolderStateStore::Recovery::Failed;
+        if (recovered == FolderStateStore::Recovery::Failed) {
+            const std::wstring reason = rebuilt ? storageErrorText(rebuilt->error())
+                : failedStore ? storageErrorText(failedStore->error()) : std::wstring(getString(IDS_STORAGE_UNKNOWN_ERROR));
+            const auto message = formatString(IDS_STORAGE_RESET_FAILED, reason.c_str());
+            const auto advice = formatString(IDS_STORAGE_RESET_USE_BACKUP, backup.c_str());
+            dialog.footer = message ? message.get() : L"";
+            if (advice) dialog.footer.append(L"\n").append(advice.get());
+            SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_FOOTER, reinterpret_cast<LPARAM>(dialog.footer.c_str()));
+            SendMessageW(window, TDM_ENABLE_BUTTON, IDC_STORAGE_RESET, FALSE);
+            return S_FALSE; // Keep every backup and never report an unsuccessful rebuild as done.
+        }
         removeOlderBackups(dialog, backup);
         const auto message = formatString(recovered == FolderStateStore::Recovery::Total ? IDS_STORAGE_REBUILT_TOTAL
             : recovered == FolderStateStore::Recovery::Partial ? IDS_STORAGE_REBUILT_PARTIAL
