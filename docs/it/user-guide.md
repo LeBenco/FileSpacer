@@ -67,6 +67,8 @@ Nei campi dell’indirizzo, della ricerca e di ridenominazione, Backspace e Ctrl
 
 FileSpacer permette di disporre gli elementi di una cartella in una griglia, come in Esplora file, oppure liberamente, come sul desktop di Windows. Il posizionamento libero è disponibile con qualsiasi dimensione delle icone e nella vista **Riquadri**. Le viste **Elenco** e **Dettagli** non consentono il posizionamento libero. Per scegliere le posizioni, disattivare **Disponi icone automaticamente**. Resta disponibile l’allineamento alla griglia. Il menu **Visualizza** di ogni finestra offre un accesso rapido alle impostazioni delle icone, comprese quelle specifiche di FileSpacer.
 
+In **Visualizza**, **Mantieni le icone allineate** mantiene le icone sulla griglia di Windows anche durante gli spostamenti successivi. **Riallinea le icone** sistema le posizioni attuali senza modificare questa impostazione né riempire gli spazi vuoti. Per allineare solo le icone trascinate, tenere premuto **S** fino al rilascio del pulsante del mouse; le altre icone restano al loro posto. Rilasciando **S** prima di posarle, il posizionamento rimane libero.
+
 <div id="details-columns"></div>
 
 Nella visualizzazione **Dettagli**, le colonne possono occupare automaticamente tutta la larghezza della finestra. La funzione si abilita in **Impostazioni > Visualizzazione** e si attiva o disattiva per ogni cartella dal relativo menu **Visualizza**.

@@ -67,6 +67,8 @@ In de velden voor adres, zoeken en bestandsnamen behouden Backspace en Ctrl+Back
 
 In FileSpacer kunnen de items in een map op een raster worden gerangschikt, zoals in Bestandenverkenner, of vrij worden geplaatst, zoals op het Windows-bureaublad. Vrije plaatsing is beschikbaar bij elke pictogramgrootte en in de weergave **Tegels**. De weergaven **Lijst** en **Details** ondersteunen geen vrije plaatsing. Daarvoor **Pictogrammen automatisch schikken** uitschakelen. Uitlijnen op het raster blijft mogelijk. Het menu **Beeld** in elk venster biedt snelle toegang tot de pictograminstellingen, inclusief de eigen opties van FileSpacer.
 
+In **Beeld** houdt **Pictogrammen uitgelijnd houden** de pictogrammen ook bij volgende verplaatsingen op het Windows-raster. **Pictogrammen opnieuw uitlijnen** past de huidige posities aan zonder deze instelling te wijzigen of lege plekken op te vullen. Houd **S** ingedrukt totdat de muisknop wordt losgelaten om alleen de versleepte pictogrammen uit te lijnen; de andere pictogrammen blijven op hun plaats. Laat **S** vóór het neerzetten los om de vrije plaatsing te behouden.
+
 <div id="details-columns"></div>
 
 In de weergave **Details** kunnen de kolommen automatisch de volledige vensterbreedte vullen. Sta dit toe onder **Instellingen > Weergave** en schakel het daarna voor elke map afzonderlijk in of uit via het menu **Beeld**.

@@ -67,6 +67,8 @@ Nos campos de endereço, pesquisa e mudança de nome, Retrocesso e Ctrl+Retroces
 
 O FileSpacer permite dispor os elementos de uma pasta numa grelha, como no Explorador de Ficheiros, ou livremente, como no ambiente de trabalho do Windows. A disposição livre está disponível com qualquer tamanho de ícones e na vista **Mosaicos**. As vistas **Lista** e **Detalhes** não permitem esta disposição livre. Para escolher as posições, desativar **Dispor ícones automaticamente**. O alinhamento pela grelha continua disponível. O menu **Ver** de cada janela dá acesso rápido às definições dos ícones, incluindo as opções próprias do FileSpacer.
 
+No menu **Ver**, **Manter os ícones alinhados** mantém os ícones na grelha do Windows também nas deslocações seguintes. **Realinhar os ícones** ajusta as posições atuais sem alterar essa definição nem preencher os espaços vazios. Para alinhar apenas os ícones arrastados, manter **S** premido até soltar o botão do rato; os restantes ícones ficam no seu lugar. Soltar **S** antes de largar os ícones mantém a disposição livre.
+
 <div id="details-columns"></div>
 
 Na vista **Detalhes**, as colunas podem ajustar-se automaticamente a toda a largura da janela. A função é permitida em **Definições > Apresentação** e ativada ou desativada para cada pasta no respetivo menu **Ver**.

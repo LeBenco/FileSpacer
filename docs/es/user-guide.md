@@ -67,6 +67,8 @@ En los campos de dirección, búsqueda y cambio de nombre, Retroceso y Ctrl+Retr
 
 FileSpacer permite distribuir los elementos de una carpeta en una cuadrícula, como en el Explorador de archivos, o libremente, como en el escritorio de Windows. La colocación libre está disponible con cualquier tamaño de icono y en la vista **Mosaicos**. Las vistas **Lista** y **Detalles** no permiten esta colocación libre. Para elegir sus posiciones, desactivar **Organizar iconos automáticamente**. La alineación con la cuadrícula sigue disponible. El menú **Vista** de cada ventana permite acceder rápidamente a los ajustes de los iconos, incluidas las opciones propias de FileSpacer.
 
+En **Vista**, **Mantener los iconos alineados** mantiene los iconos en la cuadrícula de Windows durante los siguientes movimientos. **Volver a alinear los iconos** ajusta sus posiciones actuales sin cambiar esa opción ni rellenar los huecos. Para alinear solo los iconos que se están arrastrando, mantener **S** pulsada hasta soltar el botón del ratón; los demás iconos permanecen en su sitio. Soltar **S** antes de la colocación conserva la posición libre.
+
 <div id="details-columns"></div>
 
 En la vista **Detalles**, las columnas pueden ajustarse automáticamente a todo el ancho de la ventana. La función se habilita en **Configuración > Visualización** y se activa o desactiva para cada carpeta desde su menú **Ver**.

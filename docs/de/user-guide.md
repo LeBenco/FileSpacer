@@ -66,6 +66,8 @@ In Adress-, Such- und Dateiumbenennungsfeldern behalten Rücktaste und Strg+Rüc
 
 In FileSpacer lassen sich die Inhalte eines Ordners in einem Raster anordnen, wie im Datei-Explorer, oder frei platzieren, wie auf dem Windows-Desktop. Die freie Platzierung ist bei jeder Symbolgröße und in der Ansicht **Kacheln** möglich. Die Ansichten **Liste** und **Details** unterstützen keine freie Platzierung. Dazu **Symbole automatisch anordnen** ausschalten. Die Ausrichtung am Raster bleibt möglich. Das Menü **Ansicht** in jedem Fenster bietet schnellen Zugriff auf die Symboleinstellungen, einschließlich der zusätzlichen Optionen von FileSpacer.
 
+Im Menü **Ansicht** hält **Symbole ausgerichtet halten** die Symbole auch bei künftigen Verschiebungen am Windows-Raster ausgerichtet. **Symbole neu ausrichten** richtet die aktuellen Positionen aus, ohne diese Einstellung zu ändern oder Lücken zu schließen. Um nur die gerade gezogenen Symbole auszurichten, **S** bis zum Loslassen der Maustaste gedrückt halten; die anderen Symbole bleiben an ihrem Platz. Wird **S** vor dem Ablegen losgelassen, bleibt die Platzierung frei.
+
 <div id="details-columns"></div>
 
 In der Ansicht **Details** können die Spalten automatisch die gesamte Fensterbreite ausfüllen. Die Funktion wird unter **Einstellungen > Anzeige** allgemein zugelassen und lässt sich für jeden Ordner im Menü **Ansicht** ein- oder ausschalten.

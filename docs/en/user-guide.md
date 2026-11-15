@@ -59,6 +59,8 @@ In the address, search and file rename fields, Backspace and Ctrl+Backspace reta
 
 FileSpacer lets you arrange a folder’s contents on a grid, as in File Explorer, or freely, as on the Windows desktop. Free placement is available at every icon size and in **Tiles** view. **List** and **Details** views do not support free placement. To choose their positions, turn off **Auto arrange icons**. Alignment to the grid remains available. The **View** menu in each window gives quick access to icon settings, including those specific to FileSpacer.
 
+In **View**, **Keep icons aligned** keeps icons on the Windows grid during future moves. **Realign icons** adjusts their current positions without changing that setting or filling the gaps. To align only the icons you are dragging, hold **S** until you release the mouse button; the other icons stay in place. Releasing **S** before the drop keeps free placement.
+
 <div id="details-columns"></div>
 
 In **Details** view, columns can automatically fill the entire window width. Allow this under **Settings > Display**, then enable or disable it for each folder from its **View** menu.

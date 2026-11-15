@@ -67,6 +67,8 @@ Dans l’adresse, la recherche et le renommage d’un fichier, Retour arrière e
 
 FileSpacer permet de disposer les éléments d’un dossier en grille, comme l’Explorateur de fichiers, mais aussi librement, comme sur le Bureau Windows. Le placement libre est disponible avec toutes les tailles d’icônes et en mode **Mosaïque**. Les modes **Liste** et **Détails** ne permettent pas ce placement libre. Pour choisir leurs positions, désactiver **Réorganiser automatiquement les icônes**. L’alignement sur la grille reste disponible. Le menu **Affichage** de chaque fenêtre donne un accès rapide aux réglages des icônes, y compris ceux propres à FileSpacer.
 
+Dans **Affichage**, **Garder les icônes alignées** maintient les icônes sur la grille Windows lors des déplacements suivants. **Réaligner les icônes** recale leurs positions actuelles sans modifier ce réglage ni combler les espaces vides. Pour aligner uniquement les icônes déplacées, maintenir **S** jusqu’au relâchement du bouton de la souris ; les autres icônes restent en place. Relâcher **S** avant le dépôt conserve le placement libre.
+
 <div id="details-columns"></div>
 
 En mode **Détails**, les colonnes peuvent remplir automatiquement toute la largeur de la fenêtre. On peut l’autoriser dans **Paramètres > Affichage**, puis activer ou désactiver l’option pour chaque dossier dans son menu **Affichage**.
