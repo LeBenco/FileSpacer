@@ -43,7 +43,7 @@ function Assert-GridPrediction([int]$Size) {
     $spacing=[FileSpacerRegression.Native]::Message($list[0],0x1033,0,0)-band0xffff
     $mark=$script:GridMarkerBeforeDrop
     $origin=[FileSpacerViewMenuTests.GridKey]::Origin($list[0])
-    $predictedX=$mark.Left+[int][Math]::Floor($mark.Width/2)+[int][Math]::Floor(($spacing-$Size)/2)-$client.Left+$origin[0]
+    $predictedX=$mark.Left-$client.Left+$origin[0]
     $predictedY=$mark.Top-$client.Top+$origin[1]
     $point=@((Read-GridState).Positions-split';'|Where-Object {$_-like'item-0000=*'})[0]-split'=',2
     Assert-Ui ($point[1]-eq('{0},{1}'-f$predictedX,$predictedY)) ('The marker did not predict the actual snapped icon position: actual='+$point[1]+' predicted='+$predictedX+','+$predictedY+' spacing='+$spacing+' client='+($client|ConvertTo-Json -Compress))
