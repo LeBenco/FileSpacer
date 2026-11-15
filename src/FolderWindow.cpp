@@ -204,6 +204,9 @@ void FolderWindow::watchIconDrag(const MSG *message) {
 }
 
 void FolderWindow::realignIcons(bool selectedOnly) {
+#ifdef FILESPACER_DEBUG
+    const ULONGLONG snapStarted = GetTickCount64();
+#endif
     if (!selectedOnly && (viewMenuPreview || viewMenuRestore)) {
         iconRealignPending = true;
         return;
@@ -223,6 +226,28 @@ void FolderWindow::realignIcons(bool selectedOnly) {
     if (!view || !current() || !spatialView(view) || !current()
             || FAILED(view->GetCurrentFolderFlags(&flags)) || !current()) return;
     if (selectedOnly && (flags & FWF_SNAPTOGRID)) return;
+    ++navigationDepth;
+    restoringState = true;
+    struct Resume {
+        FolderWindow &owner;
+        decltype(current) &valid;
+        ~Resume() {
+            if (valid()) owner.restoringState = false;
+            owner.resumeDeferredClose();
+        }
+    } resume{*this, current};
+    // A qualified calculation positions only selected IDs through the public
+    // API. Unknown geometry or collisions retain the whole-view native path.
+    if (selectedOnly) {
+        const HRESULT fast = selectionDetail::snapGridSelection(source, current);
+        if (!current()) return;
+        if (fast == S_OK) {
+            debugPrintf(L"GRID SNAP path=qualified elapsed_ms=%llu\n", GetTickCount64() - snapStarted);
+            viewStateDirty(FolderState::Icons);
+            SetTimer(hwnd, TIMER_SAVE_STATE, 250, nullptr);
+            return;
+        }
+    }
     std::vector<PreparedIconPosition> stationary;
     if (selectedOnly) {
         int count = 0;
@@ -248,16 +273,6 @@ void FolderWindow::realignIcons(bool selectedOnly) {
     points.reserve(stationary.size());
     // Suppress intermediate whole-view alignment for a selected-only snap.
     // Always restore the native flag before saves or deferred closure resume.
-    ++navigationDepth;
-    restoringState = true;
-    struct Resume {
-        FolderWindow &owner;
-        decltype(current) &valid;
-        ~Resume() {
-            if (valid()) owner.restoringState = false;
-            owner.resumeDeferredClose();
-        }
-    } resume{*this, current};
     const bool redraw = SUCCEEDED(view->SetRedraw(FALSE));
     HRESULT result = current() ? S_OK : E_ABORT;
     if (SUCCEEDED(result) && (flags & FWF_SNAPTOGRID))
@@ -288,6 +303,7 @@ void FolderWindow::realignIcons(bool selectedOnly) {
     if (redraw && current()) checkHR(view->SetRedraw(TRUE));
     if (!current()) return;
     if (!checkHR(result)) setStatusText(getErrorMessage(result).get());
+    if (selectedOnly) debugPrintf(L"GRID SNAP path=public elapsed_ms=%llu\n", GetTickCount64() - snapStarted);
     viewStateDirty(FolderState::Icons);
     SetTimer(hwnd, TIMER_SAVE_STATE, 250, nullptr);
 }
