@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <chrono>
+#include <algorithm>
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -39,6 +40,41 @@ static void rawSQL(const std::string &path, const char *sql) {
     const int result = sqlite3_exec(db, sql, nullptr, nullptr, nullptr);
     sqlite3_close(db);
     require(result == SQLITE_OK, "raw SQL failed");
+}
+// A small history spans one interior page and several table leaves. Damage a
+// middle leaf of that tree, so recovery must use its descending scan too.
+static int damageHistoryPage(const std::string &path, const char *table) {
+    sqlite3 *db = nullptr;
+    require(sqlite3_open(path.c_str(), &db) == SQLITE_OK, "open history tree");
+    sqlite3_stmt *statement = nullptr;
+    require(sqlite3_prepare_v2(db, "SELECT rootpage FROM sqlite_schema WHERE name=?1", -1, &statement, nullptr) == SQLITE_OK
+        && sqlite3_bind_text(statement,1,table,-1,SQLITE_STATIC) == SQLITE_OK
+        && sqlite3_step(statement) == SQLITE_ROW, "locate history root");
+    const int root = sqlite3_column_int(statement,0);
+    sqlite3_finalize(statement);
+    sqlite3_close(db);
+    const std::unique_ptr<FILE, decltype(&std::fclose)> file(std::fopen(path.c_str(),"r+b"), std::fclose);
+    if (!file) throw std::runtime_error("open history page");
+    unsigned char page[4096];
+    require(std::fseek(file.get(),static_cast<long>(root-1)*4096,SEEK_SET) == 0
+        && std::fread(page,1,sizeof(page),file.get()) == sizeof(page) && page[0] == 5,
+        "history tree must have an interior root");
+    const unsigned cells = (static_cast<unsigned>(page[3])<<8u)|page[4];
+    require(cells >= 2 && cells < 100, "history needs middle and terminal leaves");
+    const unsigned slot = 12 + 2*(cells/2);
+    const unsigned cell = (static_cast<unsigned>(page[slot])<<8u)|page[slot+1];
+    require(cell <= sizeof(page)-4, "history cell outside root");
+    const unsigned child = (static_cast<unsigned>(page[cell])<<24u)|(static_cast<unsigned>(page[cell+1])<<16u)
+        |(static_cast<unsigned>(page[cell+2])<<8u)|page[cell+3];
+    require(child > 0 && std::fseek(file.get(),static_cast<long>(child-1)*4096,SEEK_SET) == 0
+        && std::fread(page,1,sizeof(page),file.get()) == sizeof(page) && page[0] == 13,
+        "selected history child must be a table leaf");
+    const int lost = static_cast<int>((static_cast<unsigned>(page[3])<<8u)|page[4]);
+    require(lost > 0, "history leaf must contain rows");
+    std::fill_n(page,sizeof(page),static_cast<unsigned char>(0));
+    require(std::fseek(file.get(),static_cast<long>(child-1)*4096,SEEK_SET) == 0
+        && std::fwrite(page,1,sizeof(page),file.get()) == sizeof(page), "damage history leaf");
+    return lost;
 }
 int main(int argc, char **argv) {
     try {
@@ -333,6 +369,83 @@ int main(int argc, char **argv) {
             erase(damaged);
         }
         erase(path);
+        {
+            const std::string sourcePath = path+".recovery-source";
+            erase(sourcePath);
+            {
+                FolderStateStore source(sourcePath.c_str());
+                require(source.ready() && source.save("recover",fixture(),FolderState::All), "prepare recovery source");
+            }
+            FolderStateStore rebuilt(path.c_str()); FolderState state;
+            require(rebuilt.ready(),rebuilt.error().c_str());
+            require(rebuilt.recoverFrom((sourcePath+".missing").c_str()) == FolderStateStore::Recovery::Failed,
+                "source opening failure reported as an empty recovery");
+            rawSQL(path,"CREATE TRIGGER fail_recovery BEFORE INSERT ON folder_state "
+                "BEGIN SELECT RAISE(ABORT,'controlled recovery write failure'); END;");
+            require(rebuilt.recoverFrom(sourcePath.c_str()) == FolderStateStore::Recovery::Failed
+                && (static_cast<unsigned>(rebuilt.errorCode())&255u) == SQLITE_CONSTRAINT, "destination error reported as a successful recovery");
+            require(rebuilt.read("recover",&state) && !state.present, "failed recovery committed a partial row");
+            rawSQL(path,"DROP TRIGGER fail_recovery;");
+            require(rebuilt.recoverFrom(sourcePath.c_str()) == FolderStateStore::Recovery::Total
+                && rebuilt.read("recover",&state) && state.icons == fixture().icons && state.x == fixture().x,
+                "recovery after the write error did not restore the exact state");
+            erase(sourcePath);
+            std::cout << "PASS: recovery distinguishes technical failures, rolls back, and can recover totally afterwards.\n";
+        }
+        erase(path);
+        for (const char *table : {"closed_windows", "search_history"}) {
+            const std::string damaged = path+".history"; erase(damaged);
+            {
+                FolderStateStore source(damaged.c_str());
+                require(source.ready() && source.save("folder",fixture(),FolderState::Position), "prepare history owner");
+            }
+            const int rows = 18;
+            std::vector<std::string> expected;
+            for (int index=0; index<rows; ++index) {
+                const std::string name = "row-"+std::to_string(index+100);
+                expected.push_back(name+std::string(850,'x'));
+                const bool closed = std::string(table) == "closed_windows";
+                std::string insert = "INSERT INTO ";
+                insert += table;
+                insert += closed ? "(sequence,key,parsing_name,display_name) VALUES(" : "(sequence,key,query) VALUES(";
+                insert += std::to_string(1000+index);
+                insert += ",'";
+                insert += closed ? name : "folder";
+                insert += "','";
+                insert += expected.back();
+                if (closed) { insert += "','"; insert += name; }
+                insert += "')";
+                rawSQL(damaged,insert.c_str());
+            }
+            const int lost = damageHistoryPage(damaged,table);
+            {
+                FolderStateStore rebuilt(path.c_str());
+                require(rebuilt.ready() && rebuilt.recoverFrom(damaged.c_str()) == FolderStateStore::Recovery::Partial,
+                    "history recovery must scan from both ends");
+                std::vector<std::string> recovered;
+                if (std::string(table) == "search_history") {
+                    require(rebuilt.readSearchHistory("folder",20,&recovered), "read recovered search history");
+                } else {
+                    ClosedWindow closed;
+                    for (;;) {
+                        require(rebuilt.takeClosedWindow(&closed), "read recovered closed-window history");
+                        if (!closed.sequence) break;
+                        require(closed.sequence >= 1000 && closed.sequence < 1000+rows
+                            && closed.parsingName == expected[static_cast<size_t>(closed.sequence-1000)],
+                            "closed-window recovery changed a sequence or identity");
+                        recovered.push_back(closed.parsingName);
+                    }
+                }
+                require(recovered.size() == static_cast<size_t>(rows-lost) && recovered.front() == expected.back()
+                    && recovered.back() == expected.front(), "history recovery lost rows outside the damaged leaf");
+                for (size_t index=0; index<recovered.size(); ++index) {
+                    require(std::find(expected.begin(),expected.end(),recovered[index]) != expected.end(), "history identity changed");
+                    if (index) require(recovered[index-1] > recovered[index], "recovered history recency is reversed");
+                }
+            }
+            erase(damaged); erase(path);
+        }
+        std::cout << "PASS: both histories keep their exact identities and recency across a damaged middle page.\n";
         rawSQL(path,"CREATE TABLE folder_state(key TEXT PRIMARY KEY NOT NULL,x INTEGER,y INTEGER,width INTEGER,height INTEGER,"
             "view BLOB,icons BLOB,last_success_at INTEGER NOT NULL DEFAULT 0,first_failed_at INTEGER,maximized INTEGER,locked INTEGER NOT NULL DEFAULT 0) WITHOUT ROWID;"
             "INSERT INTO folder_state(key,x,y,width,height,maximized,locked) VALUES('legacy-six',12,34,600,400,1,1);PRAGMA user_version=6;");
