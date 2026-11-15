@@ -5,6 +5,15 @@ LANGUAGE LANG_GREEK, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
+  IDS_VIEW_EXTRA_LARGE_ICONS "&Πολύ μεγάλα εικονίδια"
+  IDS_VIEW_LARGE_ICONS "&Μεγάλα εικονίδια"
+  IDS_VIEW_MEDIUM_ICONS "Με&σαία εικονίδια"
+  IDS_VIEW_SMALL_ICONS "Μ&ικρά εικονίδια"
+  IDS_VIEW_LIST "&Λίστα"
+  IDS_VIEW_DETAILS "Λ&επτομέρειες"
+  IDS_VIEW_TILES "Πλα&κίδια"
+  IDS_VIEW_CONTENT "Πε&ριεχόμενο"
+  IDS_AUTO_ARRANGE_ICONS "&Αυτόματη τακτοποίηση εικονιδίων"
   IDS_KEEP_ICONS_ALIGNED "Διατήρηση ευθυγράμμισης εικονιδίων"
   IDS_REALIGN_ICONS "Ευθυγράμμιση εικονιδίων"
   IDS_FILL_COLUMNS "Αλλαγή μεγέθους στηλών"

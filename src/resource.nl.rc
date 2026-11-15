@@ -5,6 +5,15 @@ LANGUAGE LANG_DUTCH, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
+  IDS_VIEW_EXTRA_LARGE_ICONS "E&xtra grote pictogrammen"
+  IDS_VIEW_LARGE_ICONS "&Grote pictogrammen"
+  IDS_VIEW_MEDIUM_ICONS "&Middelgrote pictogrammen"
+  IDS_VIEW_SMALL_ICONS "&Kleine pictogrammen"
+  IDS_VIEW_LIST "&Lijst"
+  IDS_VIEW_DETAILS "&Details"
+  IDS_VIEW_TILES "&Tegels"
+  IDS_VIEW_CONTENT "&Inhoud"
+  IDS_AUTO_ARRANGE_ICONS "Pictogrammen &automatisch schikken"
   IDS_KEEP_ICONS_ALIGNED "Pictogrammen uitgelijnd houden"
   IDS_REALIGN_ICONS "Pictogrammen opnieuw uitlijnen"
   IDS_FILL_COLUMNS "Kolommen aanpassen"

@@ -5,6 +5,15 @@ LANGUAGE LANG_SPANISH, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
+  IDS_VIEW_EXTRA_LARGE_ICONS "Iconos mu&y grandes"
+  IDS_VIEW_LARGE_ICONS "Iconos &grandes"
+  IDS_VIEW_MEDIUM_ICONS "Iconos &medianos"
+  IDS_VIEW_SMALL_ICONS "Iconos &pequeños"
+  IDS_VIEW_LIST "&Lista"
+  IDS_VIEW_DETAILS "&Detalles"
+  IDS_VIEW_TILES "M&osaicos"
+  IDS_VIEW_CONTENT "Co&ntenido"
+  IDS_AUTO_ARRANGE_ICONS "Organi&zar iconos automáticamente"
   IDS_KEEP_ICONS_ALIGNED "Mantener los iconos alineados"
   IDS_REALIGN_ICONS "Volver a alinear los iconos"
   IDS_FILL_COLUMNS "Redimensionar columnas"

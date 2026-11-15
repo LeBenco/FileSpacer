@@ -5,6 +5,15 @@ LANGUAGE LANG_GERMAN, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
+  IDS_VIEW_EXTRA_LARGE_ICONS "&Extra große Symbole"
+  IDS_VIEW_LARGE_ICONS "&Große Symbole"
+  IDS_VIEW_MEDIUM_ICONS "&Mittelgroße Symbole"
+  IDS_VIEW_SMALL_ICONS "&Kleine Symbole"
+  IDS_VIEW_LIST "&Liste"
+  IDS_VIEW_DETAILS "&Details"
+  IDS_VIEW_TILES "Ka&cheln"
+  IDS_VIEW_CONTENT "In&halt"
+  IDS_AUTO_ARRANGE_ICONS "Symbole &automatisch anordnen"
   IDS_KEEP_ICONS_ALIGNED "Symbole ausgerichtet halten"
   IDS_REALIGN_ICONS "Symbole neu ausrichten"
   IDS_FILL_COLUMNS "Spaltenbreite anpassen"
