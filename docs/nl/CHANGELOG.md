@@ -2,6 +2,37 @@
 
 # Wijzigingsgeschiedenis
 
+<a id="150"></a>
+
+## 1.5.0
+
+- De acht weergaven van Bestandenverkenner toevoegen: Extra grote pictogrammen, Grote pictogrammen, Middelgrote pictogrammen, Kleine pictogrammen, Lijst, Details, Tegels en Inhoud, met de sneltoetsen Ctrl+Shift+1 tot 8.
+- De opdracht **Pictogrammen opnieuw uitlijnen** toevoegen om de huidige indeling eenmalig uit te lijnen, en **Snap** tijdens het slepen: houd **S** ingedrukt om alleen de gesleepte pictogrammen op het Windows-raster uit te lijnen zonder de andere te verplaatsen, met een ingebouwde bestemmingsmarkering in de pictogramweergave.
+- Voorkomen dat HTML-ankertags in het wijzigingsoverzicht van het installatieprogramma verschijnen.
+- Het wijzigingsoverzicht van het installatieprogramma opmaken met versiekoppen, opsommingen en nadruk.
+- Duits, Italiaans, Spaans, Portugees (Portugal) en Grieks toevoegen aan het installatie- en verwijderprogramma.
+- Een beschadigde database met maptoestanden herstellen uit alle nog leesbare gegevens, opslagfouten in eenvoudige woorden uitleggen, de databasefout slechts eenmaal per storing tonen en nooit aanbieden een database van een nieuwere versie opnieuw in te stellen.
+- ‘Openen in FileSpacer’ aanbieden in de mapcontextmenu’s van alle programma’s.
+- Verschillende weergave- en invoerproblemen oplossen: verlies van vrije posities bij Kleine pictogrammen of Tegels, Ctrl+muiswiel-stappen die afwijken van Bestandenverkenner, automatisch herhaalde Backspace, ongeldige getallen in de voorkeuren, het beginpunt van de openingsanimatie bij verschillende DPI-waarden en de schuifpositie bij heropenen onder Windows 11.
+- De verhoudingen van venstervullende kolommen in de detailweergave behouden bij het sluiten en heropenen van een map.
+- Een optie toevoegen om de download van Microsoft-symbolen voor het versnellen van grote mappen uit te schakelen en een melding tonen wanneer deze plaatsvindt.
+- De dagelijkse pogingen om de versnelling van grote mappen voor te bereiden stoppen na drie identieke fouten en de bijbehorende gegevens voor vervangen Windows-versies verwijderen.
+- De versnelling van selecties in grote mappen herstellen op huidige Windows 11-versies waar een Windows-update deze had uitgeschakeld.
+- Ctrl+Backspace de instelling van het bronvenster laten omkeren, zoals Ctrl bij alle andere manieren om een map te openen.
+- Een voortgangsbalk tonen in de adresbalk en op de taakbalkknop tijdens het inlezen van een grote of trage map.
+
+<a id="142--2026-11-12"></a>
+
+## 1.4.2 — 2026-11-12
+
+- Ingebouwde contextmenu’s toevoegen bij rechtsklikken op mappen in Snelle toegang.
+- Het pictogram van de knop Snelle toegang onder Windows 11 corrigeren.
+- De kleuren van de navigatiepictogrammen aanpassen aan het Windows-thema.
+- De sterke versnelling van Alles selecteren en het opheffen van de selectie van duizenden bestanden in klassieke Shell-weergaven uitbreiden naar Windows 11.
+- Voorkomen dat alle mapvensters vastlopen tijdens langdurige kopieeracties via slepen en neerzetten tussen FileSpacer-vensters.
+- In mapcontextmenu’s alleen de opdracht ‘Openen in…’ voor de andere bestandsbeheerder tonen.
+- Een vloeiende animatie met een gestippelde omtrek toevoegen bij het openen van mappen, met een algemene aan-uitinstelling en instelbare duur in de algemene voorkeuren.
+
 <a id="141--2026-11-09"></a>
 
 ## 1.4.1 — 2026-11-09

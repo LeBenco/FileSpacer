@@ -2,6 +2,37 @@
 
 # Historia zmian
 
+<a id="150"></a>
+
+## 1.5.0
+
+- Dodać osiem widoków Eksploratora plików: Bardzo duże ikony, Duże ikony, Średnie ikony, Małe ikony, Lista, Szczegóły, Kafelki i Zawartość, ze skrótami Ctrl+Shift+1–8.
+- Dodać polecenie **Wyrównaj ikony ponownie**, które jednorazowo wyrównuje bieżący układ, oraz **Snap** podczas przeciągania: przytrzymanie **S** wyrównuje do siatki Windows tylko przeciągane ikony, bez przesuwania pozostałych, z natywnym znacznikiem miejsca docelowego w widoku ikon.
+- Usunąć znaczniki kotwic HTML wyświetlane w historii wersji instalatora.
+- Sformatować historię wersji instalatora za pomocą nagłówków wersji, list punktowanych i wyróżnień.
+- Dodać język niemiecki, włoski, hiszpański, portugalski (Portugalia) i grecki do instalatora i deinstalatora.
+- Odbudowywać uszkodzoną bazę danych folderów ze wszystkich nadal czytelnych danych, wyjaśniać błędy zapisu prostym językiem, pokazywać błąd bazy tylko raz na awarię i nigdy nie proponować resetowania bazy utworzonej przez nowszą wersję.
+- Udostępnić polecenie „Otwórz w FileSpacer” w menu kontekstowych folderów we wszystkich programach.
+- Naprawić problemy z widokiem i wprowadzaniem danych: utratę dowolnych pozycji w widokach Małe ikony i Kafelki, kroki Ctrl+kółko inne niż w Eksploratorze plików, automatyczne powtarzanie Backspace, nieprawidłowe wartości liczbowe w ustawieniach, punkt początkowy animacji otwierania przy różnych DPI i pozycję przewijania po ponownym otwarciu w Windows 11.
+- Zachowywać proporcje kolumn widoku Szczegóły wypełniających okno po zamknięciu i ponownym otwarciu folderu.
+- Dodać opcję wyłączenia pobierania symboli Microsoft przyspieszających duże foldery i wyświetlać powiadomienie o ich pobieraniu.
+- Zakończyć codzienne próby przygotowania przyspieszenia dużych folderów po trzech takich samych błędach i usuwać jego dane dla zastąpionych wersji Windows.
+- Przywrócić przyspieszenie zaznaczania w dużych folderach w bieżących wersjach Windows 11, w których wyłączyła je aktualizacja Windows.
+- Sprawić, by Ctrl+Backspace odwracał ustawienie okna źródłowego, tak jak Ctrl przy pozostałych sposobach otwierania folderu.
+- Pokazywać pasek postępu na pasku adresu i przycisku na pasku zadań podczas wczytywania dużego lub wolno działającego folderu.
+
+<a id="142--2026-11-12"></a>
+
+## 1.4.2 — 2026-11-12
+
+- Dodać natywne menu kontekstowe otwierane prawym przyciskiem myszy dla folderów w Szybkim dostępie.
+- Poprawić ikonę przycisku Szybki dostęp w Windows 11.
+- Dostosować kolory ikon przycisków nawigacji do motywu Windows.
+- Rozszerzyć na Windows 11 znaczne przyspieszenie polecenia Zaznacz wszystko i usuwania zaznaczenia tysięcy plików w klasycznych widokach Shell.
+- Naprawić zawieszanie się wszystkich okien folderów podczas długiego kopiowania metodą przeciągnij i upuść między oknami FileSpacer.
+- Wyświetlać w menu kontekstowych folderów tylko polecenie „Otwórz w…” drugiego menedżera plików.
+- Dodać płynną animację kropkowanego obrysu przy otwieraniu folderów, z globalnym włączaniem i wyłączaniem oraz regulacją czasu trwania w ustawieniach ogólnych.
+
 <a id="141--2026-11-09"></a>
 
 ## 1.4.1 — 2026-11-09

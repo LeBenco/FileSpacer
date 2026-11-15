@@ -2,6 +2,37 @@
 
 # Histórico de versões
 
+<a id="150"></a>
+
+## 1.5.0
+
+- Adicionar as oito vistas do Explorador de Ficheiros: Ícones extra grandes, Ícones grandes, Ícones médios, Ícones pequenos, Lista, Detalhes, Mosaicos e Conteúdo, com os atalhos Ctrl+Shift+1 a 8.
+- Adicionar o comando **Realinhar os ícones** para reajustar uma vez a disposição atual e **Snap** durante o arrasto: manter **S** premido para alinhar apenas os ícones arrastados à grelha do Windows, sem mover os restantes, com um indicador de destino nativo na vista de ícones.
+- Corrigir a apresentação de etiquetas de âncora HTML no histórico de versões do instalador.
+- Formatar o histórico de versões do instalador com títulos de versão, listas com marcas e destaques.
+- Adicionar alemão, italiano, espanhol, português (Portugal) e grego ao instalador e ao desinstalador.
+- Reconstruir uma base de dados de pastas danificada a partir de todos os dados ainda legíveis, explicar os erros de armazenamento em linguagem simples, apresentar o erro da base de dados apenas uma vez por interrupção e nunca propor a reposição de uma base criada por uma versão mais recente.
+- Disponibilizar «Abrir no FileSpacer» nos menus de contexto das pastas de todos os programas.
+- Corrigir vários problemas de apresentação e introdução de dados: perda das posições livres em Ícones pequenos ou Mosaicos, passos de Ctrl+roda diferentes dos do Explorador de Ficheiros, repetição automática de Backspace, valores numéricos inválidos nas preferências, origem da animação de abertura para diferentes valores de PPP e posição de deslocamento ao reabrir no Windows 11.
+- Manter as proporções das colunas da vista Detalhes que preenchem a janela ao fechar e reabrir uma pasta.
+- Adicionar uma opção para desativar a transferência de símbolos da Microsoft que acelera as pastas grandes e apresentar uma notificação quando ocorrer.
+- Parar as tentativas diárias de preparação da aceleração de pastas grandes após três falhas iguais e remover os dados relativos às versões do Windows substituídas.
+- Restaurar a aceleração da seleção em pastas grandes nas versões atuais do Windows 11, onde uma atualização do Windows a tinha desativado.
+- Fazer com que Ctrl+Backspace inverta a definição da janela de origem, tal como Ctrl nas restantes formas de abrir uma pasta.
+- Apresentar uma barra de progresso na barra de endereço e no botão da barra de tarefas enquanto uma pasta grande ou lenta está a ser carregada.
+
+<a id="142--2026-11-12"></a>
+
+## 1.4.2 — 2026-11-12
+
+- Adicionar menus de contexto nativos ao clicar com o botão direito nas pastas do Acesso rápido.
+- Corrigir o ícone do botão Acesso rápido no Windows 11.
+- Adaptar as cores dos ícones dos botões de navegação ao tema do Windows.
+- Alargar ao Windows 11 a grande aceleração de Selecionar tudo e da remoção da seleção de milhares de ficheiros nas vistas Shell clássicas.
+- Corrigir o bloqueio de todas as janelas de pastas durante cópias demoradas por arrastar e largar entre janelas do FileSpacer.
+- Apresentar apenas o comando «Abrir em…» do outro gestor de ficheiros nos menus de contexto das pastas.
+- Adicionar uma animação fluida de contorno pontilhado ao abrir pastas, com ativação global e ajuste da duração nas preferências gerais.
+
 <a id="141--2026-11-09"></a>
 
 ## 1.4.1 — 2026-11-09

@@ -2,6 +2,37 @@
 
 # Historial de versiones
 
+<a id="150"></a>
+
+## 1.5.0
+
+- Añadir las ocho vistas del Explorador de archivos: Iconos muy grandes, Iconos grandes, Iconos medianos, Iconos pequeños, Lista, Detalles, Mosaicos y Contenido, con los atajos Ctrl+Mayús+1 a 8.
+- Añadir el comando **Volver a alinear los iconos** para reajustar una vez la distribución actual y **Snap** durante el arrastre: mantener pulsada **S** para alinear con la cuadrícula de Windows solo los iconos arrastrados, sin mover los demás, con un indicador de destino nativo en la vista Iconos.
+- Corregir la aparición de etiquetas de anclaje HTML en el historial de versiones del instalador.
+- Dar formato al historial de versiones del instalador con títulos de versión, listas con viñetas y énfasis.
+- Añadir alemán, italiano, español, portugués (Portugal) y griego al instalador y al desinstalador.
+- Reconstruir una base de datos de carpetas dañada a partir de todos los datos que aún se puedan leer, explicar los errores de almacenamiento con palabras sencillas, mostrar el error de la base de datos una sola vez por interrupción y no ofrecer nunca restablecer una base creada por una versión más reciente.
+- Ofrecer «Abrir en FileSpacer» en los menús contextuales de carpetas de todos los programas.
+- Corregir varios problemas de visualización y entrada: pérdida de posiciones libres en Iconos pequeños o Mosaicos, pasos de Ctrl+rueda distintos a los del Explorador de archivos, repetición automática de Retroceso, valores numéricos no válidos en las preferencias, origen de la animación de apertura con distintos valores de PPP y posición de desplazamiento al reabrir en Windows 11.
+- Conservar las proporciones de las columnas que llenan la ventana en la vista Detalles al cerrar y volver a abrir una carpeta.
+- Añadir una opción para desactivar la descarga de símbolos de Microsoft que acelera las carpetas grandes y mostrar una notificación cuando se realice.
+- Detener los reintentos diarios de preparación de la aceleración de carpetas grandes tras tres errores iguales y eliminar sus datos para las versiones de Windows sustituidas.
+- Restaurar la aceleración de la selección en carpetas grandes en las versiones actuales de Windows 11, donde una actualización de Windows la había desactivado.
+- Hacer que Ctrl+Retroceso invierta la opción de la ventana de origen, como Ctrl con las demás formas de abrir una carpeta.
+- Mostrar una barra de progreso en la barra de direcciones y en el botón de la barra de tareas mientras se carga una carpeta grande o lenta.
+
+<a id="142--2026-11-12"></a>
+
+## 1.4.2 — 2026-11-12
+
+- Añadir menús contextuales nativos al hacer clic derecho en las carpetas de Acceso rápido.
+- Corregir el icono del botón de Acceso rápido en Windows 11.
+- Adaptar los colores de los iconos de los botones de navegación al tema de Windows.
+- Extender a Windows 11 la gran aceleración de Seleccionar todo y de la deselección de miles de archivos en las vistas Shell clásicas.
+- Corregir el bloqueo de todas las ventanas de carpetas durante las copias largas mediante arrastrar y soltar entre ventanas de FileSpacer.
+- Mostrar en los menús contextuales de carpetas solo el comando «Abrir en…» del otro gestor de archivos.
+- Añadir una animación fluida de contorno punteado al abrir carpetas, con activación global y ajuste de duración en las preferencias generales.
+
 <a id="141--2026-11-09"></a>
 
 ## 1.4.1 — 2026-11-09

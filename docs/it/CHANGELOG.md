@@ -2,6 +2,37 @@
 
 # Cronologia delle versioni
 
+<a id="150"></a>
+
+## 1.5.0
+
+- Aggiungere le otto visualizzazioni di Esplora file: Icone molto grandi, Icone grandi, Icone medie, Icone piccole, Elenco, Dettagli, Riquadri e Contenuto, con le scorciatoie Ctrl+Maiusc+1–8.
+- Aggiungere il comando **Riallinea le icone** per riallineare una sola volta la disposizione attuale e **Snap** durante il trascinamento: tenere premuto **S** per allineare alla griglia di Windows solo le icone trascinate, senza spostare le altre, con un indicatore di destinazione nativo nella visualizzazione Icone.
+- Correggere la comparsa dei tag di ancoraggio HTML nella cronologia delle versioni del programma di installazione.
+- Formattare la cronologia delle versioni del programma di installazione con titoli delle versioni, elenchi puntati ed enfasi.
+- Aggiungere tedesco, italiano, spagnolo, portoghese (Portogallo) e greco ai programmi di installazione e disinstallazione.
+- Ricostruire un database delle cartelle danneggiato recuperando tutti i dati ancora leggibili, spiegare gli errori di archiviazione con parole semplici, mostrare l’errore del database una sola volta per interruzione e non proporre mai di reimpostare un database creato da una versione più recente.
+- Offrire «Apri in FileSpacer» nei menu contestuali delle cartelle di tutti i programmi.
+- Correggere vari problemi di visualizzazione e immissione: perdita delle posizioni libere nelle viste Icone piccole e Riquadri, passi di Ctrl+rotellina diversi da Esplora file, ripetizione automatica di Backspace, valori numerici non validi nelle preferenze, origine dell’animazione di apertura con diversi valori DPI e posizione di scorrimento alla riapertura in Windows 11.
+- Mantenere le proporzioni delle colonne che riempiono la finestra nella visualizzazione Dettagli quando si chiude e si riapre una cartella.
+- Aggiungere un’opzione per disattivare il download dei simboli Microsoft che velocizza le cartelle di grandi dimensioni e mostrare una notifica quando avviene.
+- Interrompere i tentativi giornalieri di preparazione dell’accelerazione delle cartelle di grandi dimensioni dopo tre errori identici e rimuovere i dati relativi alle versioni di Windows sostituite.
+- Ripristinare l’accelerazione della selezione nelle cartelle di grandi dimensioni sulle versioni attuali di Windows 11, dove un aggiornamento di Windows l’aveva disattivata.
+- Fare in modo che Ctrl+Backspace inverta l’impostazione della finestra di origine, come Ctrl negli altri modi di aprire una cartella.
+- Mostrare una barra di avanzamento nella barra degli indirizzi e sul pulsante della barra delle applicazioni durante il caricamento di una cartella grande o lenta.
+
+<a id="142--2026-11-12"></a>
+
+## 1.4.2 — 2026-11-12
+
+- Aggiungere i menu contestuali nativi con clic destro per le cartelle in Accesso rapido.
+- Correggere l’icona del pulsante Accesso rapido in Windows 11.
+- Adattare i colori delle icone dei pulsanti di navigazione al tema di Windows.
+- Estendere a Windows 11 la notevole accelerazione di Seleziona tutto e della deselezione di migliaia di file nelle visualizzazioni Shell classiche.
+- Correggere il blocco di tutte le finestre delle cartelle durante le lunghe copie mediante trascinamento tra finestre di FileSpacer.
+- Mostrare nei menu contestuali delle cartelle solo il comando «Apri in…» dell’altro gestore di file.
+- Aggiungere un’animazione fluida con contorno puntinato all’apertura delle cartelle, con attivazione globale e regolazione della durata nelle preferenze generali.
+
 <a id="141--2026-11-09"></a>
 
 ## 1.4.1 — 2026-11-09

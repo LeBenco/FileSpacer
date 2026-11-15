@@ -2,6 +2,37 @@
 
 # Versionsverlauf
 
+<a id="150"></a>
+
+## 1.5.0
+
+- Die acht Ansichten des Datei-Explorers hinzufügen: Extra große Symbole, Große Symbole, Mittelgroße Symbole, Kleine Symbole, Liste, Details, Kacheln und Inhalt, mit den Tastenkombinationen Strg+Umschalt+1 bis 8.
+- Den Befehl **Symbole neu ausrichten** zum einmaligen Ausrichten der aktuellen Anordnung sowie **Snap** beim Ziehen hinzufügen: **S** gedrückt halten, um nur die gezogenen Symbole am Windows-Raster auszurichten, ohne die anderen zu verschieben. In der Symbolansicht zeigt eine native Markierung das Ziel an.
+- Verhindern, dass HTML-Anker im Änderungsprotokoll des Installationsprogramms angezeigt werden.
+- Das Änderungsprotokoll des Installationsprogramms mit Versionsüberschriften, Aufzählungen und Hervorhebungen formatieren.
+- Deutsch, Italienisch, Spanisch, Portugiesisch (Portugal) und Griechisch zum Installations- und Deinstallationsprogramm hinzufügen.
+- Eine beschädigte Ordnerdatenbank aus allen noch lesbaren Daten wiederherstellen, Speicherfehler verständlich erklären, Datenbankfehler nur einmal pro Ausfall anzeigen und niemals das Zurücksetzen einer von einer neueren Version erstellten Datenbank anbieten.
+- „In FileSpacer öffnen“ in den Ordner-Kontextmenüs aller Programme anbieten.
+- Mehrere Anzeige- und Eingabeprobleme beheben: Verlust frei gesetzter Positionen bei kleinen Symbolen oder Kacheln, vom Datei-Explorer abweichende Strg+Mausrad-Schritte, automatische Wiederholung der Rücktaste, ungültige Zahlenwerte in den Einstellungen, Ausgangspunkt der Öffnungsanimation bei unterschiedlichen DPI-Werten und Bildlaufposition beim erneuten Öffnen unter Windows 11.
+- Die Proportionen fensterfüllender Spalten in der Detailansicht beim Schließen und erneuten Öffnen eines Ordners beibehalten.
+- Eine Option zum Abschalten des Downloads von Microsoft-Symbolen zur Beschleunigung großer Ordner hinzufügen und beim Download eine Benachrichtigung anzeigen.
+- Die täglichen Versuche zur Vorbereitung der Beschleunigung großer Ordner nach drei gleichen Fehlern beenden und die Daten für ersetzte Windows-Versionen entfernen.
+- Die Beschleunigung der Auswahl in großen Ordnern auf aktuellen Windows-11-Versionen wiederherstellen, nachdem ein Windows-Update sie deaktiviert hatte.
+- Strg+Rücktaste die Einstellung des Quellfensters umkehren lassen, wie Strg bei allen anderen Arten, einen Ordner zu öffnen.
+- Beim Einlesen eines großen oder langsamen Ordners einen Fortschrittsbalken in der Adressleiste und auf der Taskleistenschaltfläche anzeigen.
+
+<a id="142--2026-11-12"></a>
+
+## 1.4.2 — 2026-11-12
+
+- Native Rechtsklick-Kontextmenüs für Ordner im Schnellzugriff hinzufügen.
+- Das Symbol der Schnellzugriff-Schaltfläche unter Windows 11 korrigieren.
+- Die Farben der Navigationsschaltflächen-Symbole an das Windows-Design anpassen.
+- Die starke Beschleunigung von „Alles auswählen“ und dem Aufheben der Auswahl tausender Dateien in klassischen Shell-Ansichten auf Windows 11 erweitern.
+- Beheben, dass alle Ordnerfenster während langer Kopiervorgänge per Drag-and-drop zwischen FileSpacer-Fenstern nicht mehr reagieren.
+- In Ordner-Kontextmenüs nur den Befehl „Öffnen in…“ des jeweils anderen Dateimanagers anzeigen.
+- Beim Öffnen von Ordnern eine flüssige Animation mit gepunkteter Umrandung hinzufügen, die sich in den allgemeinen Einstellungen global ein- und ausschalten sowie in der Dauer anpassen lässt.
+
 <a id="141--2026-11-09"></a>
 
 ## 1.4.1 — 2026-11-09

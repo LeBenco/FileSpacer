@@ -2,6 +2,37 @@
 
 # Historique des versions
 
+<a id="150"></a>
+
+## 1.5.0
+
+- Ajouter les huit modes d’affichage de l’Explorateur de fichiers : Très grandes icônes, Grandes icônes, Icônes moyennes, Petites icônes, Liste, Détails, Mosaïques et Contenu, avec les raccourcis Ctrl+Maj+1 à 8.
+- Ajouter la commande **Réaligner les icônes** pour recaler ponctuellement la disposition actuelle, ainsi que **Snap** pendant un déplacement : maintenir **S** pour aligner uniquement les icônes déplacées sur la grille Windows sans déplacer les autres, avec un repère de destination natif en vue Icônes.
+- Corriger l’affichage des balises d’ancrage HTML dans l’historique des versions de l’installateur.
+- Mettre en forme l’historique des versions de l’installateur avec des titres de version, des listes à puces et des mises en évidence.
+- Ajouter l’allemand, l’italien, l’espagnol, le portugais (Portugal) et le grec à l’installateur et au programme de désinstallation.
+- Reconstruire une base de données des dossiers endommagée à partir de toutes les données encore lisibles, expliquer simplement les erreurs de stockage, afficher l’erreur de base de données une seule fois par interruption et ne jamais proposer de réinitialiser une base créée par une version plus récente.
+- Proposer « Ouvrir dans FileSpacer » dans les menus contextuels des dossiers de tous les programmes.
+- Corriger plusieurs problèmes d’affichage et de saisie : perte des positions libres en Petites icônes ou Mosaïques, pas de Ctrl+molette différents de ceux de l’Explorateur de fichiers, répétition de Retour arrière, valeurs numériques invalides dans les préférences, origine de l’animation d’ouverture selon la densité d’affichage et position de défilement à la réouverture sous Windows 11.
+- Conserver les proportions des colonnes de la vue Détails qui remplissent la fenêtre lors de la fermeture et de la réouverture d’un dossier.
+- Ajouter une option pour désactiver le téléchargement des symboles Microsoft qui accélère les dossiers volumineux et afficher une notification lors de ce téléchargement.
+- Arrêter les nouvelles tentatives quotidiennes de préparation de l’accélération des dossiers volumineux après trois échecs identiques et supprimer ses données pour les versions de Windows remplacées.
+- Rétablir l’accélération de la sélection dans les dossiers volumineux sur les versions actuelles de Windows 11, où une mise à jour de Windows l’avait désactivée.
+- Faire inverser par Ctrl+Retour arrière le réglage de la fenêtre source, comme Ctrl avec les autres façons d’ouvrir un dossier.
+- Afficher une barre de progression dans la barre d’adresse et sur le bouton de la barre des tâches pendant le chargement d’un dossier volumineux ou lent.
+
+<a id="142--2026-11-12"></a>
+
+## 1.4.2 — 2026-11-12
+
+- Ajouter les menus contextuels natifs au clic droit sur les dossiers de l’Accès rapide.
+- Corriger l’icône du bouton Accès rapide sous Windows 11.
+- Adapter les couleurs des icônes des boutons de navigation au thème Windows.
+- Étendre à Windows 11 l’accélération majeure de Tout sélectionner et de la désélection de milliers de fichiers dans les vues Shell classiques.
+- Corriger le blocage de toutes les fenêtres de dossiers pendant les longues copies par glisser-déposer entre fenêtres FileSpacer.
+- Afficher uniquement la commande « Ouvrir dans… » de l’autre gestionnaire de fichiers dans les menus contextuels des dossiers.
+- Ajouter une animation fluide de contour pointillé à l’ouverture des dossiers, avec activation globale et réglage de la durée dans les préférences générales.
+
 <a id="141--2026-11-09"></a>
 
 ## 1.4.1 — 2026-11-09
