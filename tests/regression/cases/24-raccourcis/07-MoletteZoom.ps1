@@ -37,11 +37,15 @@ try {
         # A partial notch is a whole step, as in Explorer.
         Turn (-60) 1 (Scale 44)
         Assert-Placement 'two steps down'
+        # Windows merges the notches received during a change into one message:
+        # a message of three notches is three steps, applied by one change.
+        Turn 360 1 (Scale 54)
+        Assert-Placement 'three notches in one message'
         # Below the smallest icons, the wheel moves on to the modes.
         Use-UiView $window {param($view) $view.SetViewModeAndIconSize(2,(Scale 16))}
         Wait-UiViewMode $window 2 (Scale 16)
         Turn (-120) 3 (-1)
     } finally { [FileSpacerRegression.WheelInput]::Control($false) }
-    Write-Host 'PASS: Ctrl+wheel follows the Explorer steps, one per message, and keeps free icon positions.'
+    Write-Host 'PASS: Ctrl+wheel follows the Explorer steps, one per notch, and keeps free icon positions.'
 } catch { $testFailure=$_; throw }
 finally { Stop-Ui -Failure $testFailure }
