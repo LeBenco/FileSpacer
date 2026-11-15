@@ -6,8 +6,10 @@
 
 ## 1.5.0
 
+- Build the View menu locally, retaining Nilesoft menu customization without loading the folder’s complete context menu or recreating its view before opening it.
+- Keep Content in its native ordered layout, without free icon placement, realignment or Snap.
 - Add File Explorer's eight view modes: Extra large icons, Large icons, Medium icons, Small icons, List, Details, Tiles and Content, with Ctrl+Shift+1 to 8 shortcuts.
-- Add the **Realign icons** command to realign the current layout once, and **Snap** while dragging: hold **S** to align only the dragged icons to the Windows grid without moving the others, with a native destination marker in icon view.
+- Add the **Realign icons** command to realign the current layout once, and **Snap** while dragging: hold **S** to align only the dragged icons to the Windows grid without moving the others, with an icon-sized translucent destination frame.
 - Fix HTML anchor tags appearing in the installer changelog.
 - Format the installer changelog with version headings, bullet lists and emphasis.
 - Add German, Italian, Spanish, Portuguese (Portugal) and Greek to the installer and uninstaller.

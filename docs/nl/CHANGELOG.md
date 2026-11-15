@@ -6,8 +6,10 @@
 
 ## 1.5.0
 
+- Het menu Beeld lokaal opbouwen met behoud van Nilesoft-aanpassingen, zonder het volledige mapcontextmenu te laden of de weergave opnieuw op te bouwen voordat het menu opent.
+- De ingebouwde indeling in rijen behouden in de weergave Inhoud, zonder vrije pictogramplaatsing, opnieuw uitlijnen of Snap.
 - De acht weergaven van Bestandenverkenner toevoegen: Extra grote pictogrammen, Grote pictogrammen, Middelgrote pictogrammen, Kleine pictogrammen, Lijst, Details, Tegels en Inhoud, met de sneltoetsen Ctrl+Shift+1 tot 8.
-- De opdracht **Pictogrammen opnieuw uitlijnen** toevoegen om de huidige indeling eenmalig uit te lijnen, en **Snap** tijdens het slepen: houd **S** ingedrukt om alleen de gesleepte pictogrammen op het Windows-raster uit te lijnen zonder de andere te verplaatsen, met een ingebouwde bestemmingsmarkering in de pictogramweergave.
+- De opdracht **Pictogrammen opnieuw uitlijnen** toevoegen om de huidige indeling eenmalig uit te lijnen, en **Snap** tijdens het slepen: houd **S** ingedrukt om alleen de gesleepte pictogrammen op het Windows-raster uit te lijnen zonder de andere te verplaatsen, met een halfdoorzichtig bestemmingskader ter grootte van het pictogram.
 - Voorkomen dat HTML-ankertags in het wijzigingsoverzicht van het installatieprogramma verschijnen.
 - Het wijzigingsoverzicht van het installatieprogramma opmaken met versiekoppen, opsommingen en nadruk.
 - Duits, Italiaans, Spaans, Portugees (Portugal) en Grieks toevoegen aan het installatie- en verwijderprogramma.

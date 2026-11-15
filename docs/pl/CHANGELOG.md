@@ -6,8 +6,10 @@
 
 ## 1.5.0
 
+- Budować menu Widok lokalnie, zachowując dostosowania Nilesoft, bez wczytywania całego menu kontekstowego folderu ani odtwarzania widoku przed otwarciem menu.
+- Zachować natywny układ w wierszach w widoku Zawartość, bez dowolnego rozmieszczania ikon, ponownego wyrównywania ani Snap.
 - Dodać osiem widoków Eksploratora plików: Bardzo duże ikony, Duże ikony, Średnie ikony, Małe ikony, Lista, Szczegóły, Kafelki i Zawartość, ze skrótami Ctrl+Shift+1–8.
-- Dodać polecenie **Wyrównaj ikony ponownie**, które jednorazowo wyrównuje bieżący układ, oraz **Snap** podczas przeciągania: przytrzymanie **S** wyrównuje do siatki Windows tylko przeciągane ikony, bez przesuwania pozostałych, z natywnym znacznikiem miejsca docelowego w widoku ikon.
+- Dodać polecenie **Wyrównaj ikony ponownie**, które jednorazowo wyrównuje bieżący układ, oraz **Snap** podczas przeciągania: przytrzymanie **S** wyrównuje do siatki Windows tylko przeciągane ikony, bez przesuwania pozostałych, z półprzezroczystą ramką miejsca docelowego o rozmiarze ikony.
 - Usunąć znaczniki kotwic HTML wyświetlane w historii wersji instalatora.
 - Sformatować historię wersji instalatora za pomocą nagłówków wersji, list punktowanych i wyróżnień.
 - Dodać język niemiecki, włoski, hiszpański, portugalski (Portugalia) i grecki do instalatora i deinstalatora.

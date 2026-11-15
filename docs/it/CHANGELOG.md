@@ -6,8 +6,10 @@
 
 ## 1.5.0
 
+- Costruire localmente il menu Visualizza mantenendo le personalizzazioni Nilesoft, senza caricare l’intero menu contestuale della cartella né ricrearne la vista prima di aprire il menu.
+- Mantenere la disposizione nativa in righe della vista Contenuto, senza posizionamento libero delle icone, riallineamento o Snap.
 - Aggiungere le otto visualizzazioni di Esplora file: Icone molto grandi, Icone grandi, Icone medie, Icone piccole, Elenco, Dettagli, Riquadri e Contenuto, con le scorciatoie Ctrl+Maiusc+1–8.
-- Aggiungere il comando **Riallinea le icone** per riallineare una sola volta la disposizione attuale e **Snap** durante il trascinamento: tenere premuto **S** per allineare alla griglia di Windows solo le icone trascinate, senza spostare le altre, con un indicatore di destinazione nativo nella visualizzazione Icone.
+- Aggiungere il comando **Riallinea le icone** per riallineare una sola volta la disposizione attuale e **Snap** durante il trascinamento: tenere premuto **S** per allineare alla griglia di Windows solo le icone trascinate, senza spostare le altre, con un riquadro di destinazione semitrasparente delle dimensioni dell’icona.
 - Correggere la comparsa dei tag di ancoraggio HTML nella cronologia delle versioni del programma di installazione.
 - Formattare la cronologia delle versioni del programma di installazione con titoli delle versioni, elenchi puntati ed enfasi.
 - Aggiungere tedesco, italiano, spagnolo, portoghese (Portogallo) e greco ai programmi di installazione e disinstallazione.

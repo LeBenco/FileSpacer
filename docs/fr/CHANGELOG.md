@@ -6,8 +6,10 @@
 
 ## 1.5.0
 
+- Construire localement le menu Affichage en conservant la personnalisation Nilesoft, sans charger le menu contextuel complet du dossier ni recréer sa vue avant l’ouverture du menu.
+- Conserver la disposition native en lignes du mode Contenu, sans placement libre des icônes, réalignement ni Snap.
 - Ajouter les huit modes d’affichage de l’Explorateur de fichiers : Très grandes icônes, Grandes icônes, Icônes moyennes, Petites icônes, Liste, Détails, Mosaïques et Contenu, avec les raccourcis Ctrl+Maj+1 à 8.
-- Ajouter la commande **Réaligner les icônes** pour recaler ponctuellement la disposition actuelle, ainsi que **Snap** pendant un déplacement : maintenir **S** pour aligner uniquement les icônes déplacées sur la grille Windows sans déplacer les autres, avec un repère de destination natif en vue Icônes.
+- Ajouter la commande **Réaligner les icônes** pour recaler ponctuellement la disposition actuelle, ainsi que **Snap** pendant un déplacement : maintenir **S** pour aligner uniquement les icônes déplacées sur la grille Windows sans déplacer les autres, avec un cadre de destination translucide de la taille de l’icône.
 - Corriger l’affichage des balises d’ancrage HTML dans l’historique des versions de l’installateur.
 - Mettre en forme l’historique des versions de l’installateur avec des titres de version, des listes à puces et des mises en évidence.
 - Ajouter l’allemand, l’italien, l’espagnol, le portugais (Portugal) et le grec à l’installateur et au programme de désinstallation.

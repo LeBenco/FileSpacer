@@ -6,8 +6,10 @@
 
 ## 1.5.0
 
+- Das Menü Ansicht lokal aufbauen und die Nilesoft-Anpassung beibehalten, ohne das vollständige Ordner-Kontextmenü zu laden oder die Ansicht vor dem Öffnen des Menüs neu zu erstellen.
+- Die native Anordnung in Zeilen in der Ansicht Inhalt beibehalten, ohne freie Symbolplatzierung, Neuausrichtung oder Snap.
 - Die acht Ansichten des Datei-Explorers hinzufügen: Extra große Symbole, Große Symbole, Mittelgroße Symbole, Kleine Symbole, Liste, Details, Kacheln und Inhalt, mit den Tastenkombinationen Strg+Umschalt+1 bis 8.
-- Den Befehl **Symbole neu ausrichten** zum einmaligen Ausrichten der aktuellen Anordnung sowie **Snap** beim Ziehen hinzufügen: **S** gedrückt halten, um nur die gezogenen Symbole am Windows-Raster auszurichten, ohne die anderen zu verschieben. In der Symbolansicht zeigt eine native Markierung das Ziel an.
+- Den Befehl **Symbole neu ausrichten** zum einmaligen Ausrichten der aktuellen Anordnung sowie **Snap** beim Ziehen hinzufügen: **S** gedrückt halten, um nur die gezogenen Symbole am Windows-Raster auszurichten, ohne die anderen zu verschieben. Ein durchscheinender Rahmen in Symbolgröße zeigt das Ziel an.
 - Verhindern, dass HTML-Anker im Änderungsprotokoll des Installationsprogramms angezeigt werden.
 - Das Änderungsprotokoll des Installationsprogramms mit Versionsüberschriften, Aufzählungen und Hervorhebungen formatieren.
 - Deutsch, Italienisch, Spanisch, Portugiesisch (Portugal) und Griechisch zum Installations- und Deinstallationsprogramm hinzufügen.

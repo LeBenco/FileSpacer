@@ -6,8 +6,10 @@
 
 ## 1.5.0
 
+- Construir localmente o menu Ver, mantendo a personalização do Nilesoft, sem carregar todo o menu de contexto da pasta nem recriar a sua vista antes de abrir o menu.
+- Manter a disposição nativa em linhas da vista Conteúdo, sem disposição livre dos ícones, realinhamento ou Snap.
 - Adicionar as oito vistas do Explorador de Ficheiros: Ícones extra grandes, Ícones grandes, Ícones médios, Ícones pequenos, Lista, Detalhes, Mosaicos e Conteúdo, com os atalhos Ctrl+Shift+1 a 8.
-- Adicionar o comando **Realinhar os ícones** para reajustar uma vez a disposição atual e **Snap** durante o arrasto: manter **S** premido para alinhar apenas os ícones arrastados à grelha do Windows, sem mover os restantes, com um indicador de destino nativo na vista de ícones.
+- Adicionar o comando **Realinhar os ícones** para reajustar uma vez a disposição atual e **Snap** durante o arrasto: manter **S** premido para alinhar apenas os ícones arrastados à grelha do Windows, sem mover os restantes, com uma moldura de destino semitransparente do tamanho do ícone.
 - Corrigir a apresentação de etiquetas de âncora HTML no histórico de versões do instalador.
 - Formatar o histórico de versões do instalador com títulos de versão, listas com marcas e destaques.
 - Adicionar alemão, italiano, espanhol, português (Portugal) e grego ao instalador e ao desinstalador.
