@@ -32,8 +32,14 @@ try {
     do {
         $recordFile=Join-Path $installation 'last-run.json'
         if(Test-Path -LiteralPath $recordFile){
-            $record=Get-Content -LiteralPath $recordFile -Raw | ConvertFrom-Json
-            if($record.RunId-eq$runId -and $record.State-eq'Complete'){break}
+            # The controller replaces this snapshot while we poll it. A sharing
+            # conflict, empty file or partial JSON is not a completed result.
+            $record=$null
+            try{$record=[IO.File]::ReadAllText($recordFile)|ConvertFrom-Json -ErrorAction Stop}
+            catch [IO.IOException]{}
+            catch [ArgumentException]{}
+            if($null-ne$record -and $record.PSObject.Properties['RunId'] -and $record.PSObject.Properties['State'] -and
+                    $record.RunId-eq$runId -and $record.State-eq'Complete'){break}
         }
         if([DateTime]::UtcNow-ge$deadline){throw ('No matching completed runner result before deadline: '+$run)}
         Start-Sleep -Milliseconds 250
