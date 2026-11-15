@@ -68,8 +68,8 @@ function Move-GridIcons([bool]$Snap,[bool]$ReleaseEarly=$false,[bool]$InspectMar
         if($Snap-and$InspectMarker){
             Wait-Ui {[FileSpacerViewMenuTests.GridKey]::Marker($body).Visible} 'native Snap marker shown during S drag' 0 5
             $before=[FileSpacerViewMenuTests.GridKey]::Marker($body)
-            Assert-Ui ($before.Class-eq'SysListView32'-and$before.InputTransparent) 'Snap marker must use an input-transparent native control.'
-            Assert-Ui ($before.Height-eq$iconSize) ('Snap marker height differs from the icons: '+($before|ConvertTo-Json -Compress))
+            Assert-Ui ($before.Class-eq'Static'-and$before.InputTransparent) 'Snap frame must remain input-transparent.'
+            Assert-Ui ($before.Height-eq$iconSize-and$before.Width-eq$iconSize) ('Snap frame size differs from the icons: '+($before|ConvertTo-Json -Compress))
             [FileSpacerViewMenuTests.GridKey]::Hold($false)
             Wait-Ui {![FileSpacerViewMenuTests.GridKey]::Marker($body).Visible} 'releasing S removes marker without releasing mouse' 0 5
             [FileSpacerViewMenuTests.GridKey]::Hold($true)
