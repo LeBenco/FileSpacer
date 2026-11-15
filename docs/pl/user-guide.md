@@ -65,7 +65,7 @@ W polach adresu, wyszukiwania i zmiany nazwy Backspace oraz Ctrl+Backspace zacho
 <div id="układ-ikon"></div>
 <div id="icon-layout"></div>
 
-FileSpacer pozwala rozmieszczać elementy folderu w siatce, jak w Eksploratorze plików, lub dowolnie, jak na pulpicie systemu Windows. Dowolne rozmieszczanie jest dostępne przy każdym rozmiarze ikon oraz w widoku **Kafelki**. Widoki **Lista** i **Szczegóły** nie obsługują dowolnego rozmieszczania. Aby wybrać pozycje, wyłączyć opcję **Autorozmieszczanie ikon**. Wyrównywanie do siatki pozostaje dostępne. Menu **Widok** w każdym oknie zapewnia szybki dostęp do ustawień ikon, w tym opcji dostępnych w FileSpacer.
+FileSpacer pozwala rozmieszczać elementy folderu w siatce, jak w Eksploratorze plików, lub dowolnie, jak na pulpicie systemu Windows. Dowolne rozmieszczanie jest dostępne przy każdym rozmiarze ikon oraz w widoku **Kafelki**. Widoki **Lista**, **Szczegóły** i **Zawartość** nie obsługują dowolnego rozmieszczania. Aby wybrać pozycje, wyłączyć opcję **Autorozmieszczanie ikon**. Wyrównywanie do siatki pozostaje dostępne. Menu **Widok** w każdym oknie zapewnia szybki dostęp do ustawień ikon, w tym opcji dostępnych w FileSpacer.
 
 W menu **Widok** opcja **Utrzymuj wyrównanie ikon** zachowuje wyrównanie do siatki Windows także podczas kolejnych przesunięć. Polecenie **Wyrównaj ikony ponownie** dopasowuje bieżące pozycje bez zmiany tego ustawienia i bez wypełniania pustych miejsc. Aby wyrównać tylko przeciągane ikony, przytrzymać **S** do zwolnienia przycisku myszy; pozostałe ikony pozostają na swoich miejscach. Zwolnienie **S** przed upuszczeniem zachowuje dowolne rozmieszczenie.
 
