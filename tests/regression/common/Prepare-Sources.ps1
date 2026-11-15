@@ -144,6 +144,8 @@ if ($Mode -eq 'StorageRetry') {
     $source=Read-Source 'FolderWindow.cpp'
     Save-Source 'SaveStateTimer.inc' (Get-SourceBlock $source 'if (wParam == TIMER_SAVE_STATE)')
     Save-Source 'StorageRetry.inc' (Get-SourceBlock $source 'void FolderWindow::scheduleStorageRetry()')
+    $item=Read-Source 'ItemWindow.cpp'
+    Save-Source 'StorageOutage.inc' ((Get-SourceBlock $item "namespace {`n// One error dialog per outage")+"`n"+(Get-SourceBlock $item 'void ItemWindow::stateStorageError()'))
 }
 Save-Source 'production-hashes.json' ($hashes | ConvertTo-Json)
 

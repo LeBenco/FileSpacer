@@ -96,7 +96,28 @@ void FolderWindow::scheduleStorageRetry() {
 #include "StorageRetry.inc"
 #undef scheduleStorageRetry
 
+// The same production outage state is shared by distinct windows. The dialog
+// is counted here; its native UI is covered by 20-UnDialogueParPanne.
+namespace {
+unsigned storageDialogs = 0;
+void reportFolderStateError(HWND) { ++storageDialogs; }
+struct ItemWindow {
+    HWND hwnd = 1;
+    void stateStorageError();
+};
+}
+#include "StorageOutage.inc"
+
 int main() {
+    ItemWindow first, second;
+    first.stateStorageError();
+    second.stateStorageError();
+    require(storageDialogs == 1, "one dialog for the shared outage");
+    storageSucceeded(); // A successful operation in another window ends it.
+    second.stateStorageError();
+    first.stateStorageError();
+    require(storageDialogs == 2, "another window's success rearms the next outage");
+
     // Timer block: a failed load schedules the retry once, re-arms no timer
     // itself and captures nothing; a successful load saves and resets the delay.
     FolderWindow pending;
