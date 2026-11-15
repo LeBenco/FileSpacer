@@ -18,6 +18,7 @@
 #include "Peek.h"
 #include "DPI.h"
 #include "UIStrings.h"
+#include "TitleMenu.h"
 #include <windowsx.h>
 #include <shlobj.h>
 #include <shellapi.h>
@@ -52,6 +53,30 @@ FolderWindow::~FolderWindow() {
 static constexpr int BOTTOM_STATUS_HEIGHT_DIP = 23;
 // Coalesce selection notifications before updating the selected item and status.
 static constexpr UINT SELECTION_UPDATE_DELAY_MS = 100;
+
+struct ViewMenuMode { FOLDERVIEWMODE mode; int size; };
+static const ViewMenuMode VIEW_MENU_MODES[] = {
+    {FVM_ICON, 256}, {FVM_ICON, 96}, {FVM_ICON, 48}, {FVM_SMALLICON, 16},
+    {FVM_LIST, -1}, {FVM_DETAILS, -1}, {FVM_TILE, -1}, {FVM_CONTENT, -1}
+};
+
+static bool isViewMenuMode(UINT command) {
+    return command >= IDM_VIEW_MODE_FIRST && command <= IDM_VIEW_MODE_LAST;
+}
+
+static HRESULT invokeDisplayCommand(IFolderView2 *view, UINT command) {
+    if (!view) return E_NOINTERFACE;
+    if (isViewMenuMode(command)) {
+        const auto &mode = VIEW_MENU_MODES[command - IDM_VIEW_MODE_FIRST];
+        return view->SetViewModeAndIconSize(mode.mode, mode.size < 0 ? -1 : scaleDPI(mode.size));
+    }
+    const DWORD flag = command == IDM_AUTO_ARRANGE_ICONS ? FWF_AUTOARRANGE
+        : command == IDM_KEEP_ICONS_ALIGNED ? FWF_SNAPTOGRID : 0;
+    if (!flag) return E_INVALIDARG;
+    DWORD flags = 0;
+    const HRESULT read = view->GetCurrentFolderFlags(&flags);
+    return FAILED(read) ? read : view->SetCurrentFolderFlags(flag, flags ^ flag);
+}
 
 static void toggleGlobalThumbnails() {
     SHELLSTATE state = {};
@@ -88,7 +113,7 @@ bool FolderWindow::spatialView(IFolderView *const folderView) const {
     UINT viewMode;
     return folderView->GetAutoArrange() == S_FALSE
         && checkHR(folderView->GetCurrentViewMode(&viewMode))
-        && viewMode != FVM_DETAILS && viewMode != FVM_LIST;
+        && viewMode != FVM_DETAILS && viewMode != FVM_LIST && viewMode != FVM_CONTENT;
 }
 
 void FolderWindow::init() {
@@ -236,27 +261,37 @@ struct FolderWindow::IconSnap {
                     || !stationary.emplace(point.x, point.y).second) return false;
         }
         destinations.reserve(dragged.size());
-        // A separate, input-transparent native ListView supplies the real Windows
-        // insertion mark, including its end caps. Its region exposes only that
-        // mark; the Shell control and its items are never changed for preview.
-        marker = CreateWindowExW(WS_EX_NOACTIVATE | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_TOOLWINDOW, WC_LISTVIEWW, L"",
-            WS_POPUP | WS_DISABLED | LVS_ICON | LVS_AUTOARRANGE | LVS_NOSCROLL,
-            0, 0, spacing.x * 3, iconSize * 3, owner.hwnd, nullptr, GetModuleHandleW(nullptr), nullptr);
+        // Prepare one icon-sized surface per gesture. Windows retains its pixels
+        // while it moves; no repaint or bitmap allocation is needed on motion.
+        marker = CreateWindowExW(WS_EX_NOACTIVATE | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_TOOLWINDOW, WC_STATICW, L"",
+            WS_POPUP | WS_DISABLED, 0, 0, iconSize, iconSize, owner.hwnd, nullptr, GetModuleHandleW(nullptr), nullptr);
         if (!marker) return false;
         if (!SetPropW(marker, L"FileSpacer.SnapMarker", this)) { DestroyWindow(marker); marker = nullptr; return false; }
-        COLORREF background = ListView_GetBkColor(list);
-        if (background == CLR_NONE) background = GetSysColor(COLOR_WINDOW);
-        ListView_SetBkColor(marker, background);
-        if (!SetLayeredWindowAttributes(marker, background, 0, LWA_COLORKEY)) return false;
-        ListView_SetInsertMarkColor(marker, GetSysColor(COLOR_GRAYTEXT));
-        ListView_SetIconSpacing(marker, spacing.x, iconSize);
-        LVITEMW entry = {}; entry.mask = LVIF_TEXT; entry.pszText = const_cast<wchar_t *>(L"");
-        LVINSERTMARK mark = {sizeof(mark), LVIM_AFTER, 0, 0};
-        const int inserted = ListView_InsertItem(marker, &entry);
-        if (inserted < 0 || !ListView_Arrange(marker, LVA_DEFAULT)) return false;
-        const bool marked = inserted >= 0 && ListView_SetInsertMark(marker, &mark);
-        const bool rectangle = marked && ListView_GetInsertMarkRect(marker, &markerRect);
-        if (!rectangle || IsRectEmpty(&markerRect)) return false;
+        std::unique_ptr<std::remove_pointer<HDC>::type, decltype(&DeleteDC)> dc(CreateCompatibleDC(nullptr), DeleteDC);
+        BITMAPINFO info = {{sizeof(BITMAPINFOHEADER), iconSize, -iconSize, 1, 32, BI_RGB}};
+        void *pixels = nullptr;
+        std::unique_ptr<std::remove_pointer<HBITMAP>::type, decltype(&DeleteObject)> bitmap(
+            dc ? CreateDIBSection(dc.get(), &info, DIB_RGB_COLORS, &pixels, nullptr, 0) : nullptr, DeleteObject);
+        if (!bitmap || !pixels) return false;
+        const int border = (std::max)(1, scaleDPI(1));
+        const COLORREF outline = GetSysColor(COLOR_GRAYTEXT);
+        for (int y = 0; y < iconSize; ++y) for (int x = 0; x < iconSize; ++x) {
+            const bool edge = x < border || y < border || x >= iconSize - border || y >= iconSize - border;
+            const DWORD alpha = edge ? 255u : 128u;
+            const COLORREF colour = edge ? outline : RGB(224, 224, 224);
+            // UpdateLayeredWindow requires premultiplied BGRA pixels.
+            static_cast<DWORD *>(pixels)[y * iconSize + x] = (alpha << 24)
+                | ((GetRValue(colour) * alpha / 255u) << 16)
+                | ((GetGValue(colour) * alpha / 255u) << 8) | (GetBValue(colour) * alpha / 255u);
+        }
+        const HGDIOBJ previous = SelectObject(dc.get(), bitmap.get());
+        if (!previous || previous == HGDI_ERROR) return false;
+        POINT origin = {}; SIZE size = {iconSize, iconSize};
+        BLENDFUNCTION blend = {AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
+        const bool drawn = UpdateLayeredWindow(marker, nullptr, nullptr, &size, dc.get(), &origin, 0, &blend, ULW_ALPHA) != FALSE;
+        SelectObject(dc.get(), previous);
+        if (!drawn) return false;
+        markerRect = {0, 0, iconSize, iconSize};
         auto region = std::unique_ptr<std::remove_pointer<HRGN>::type, decltype(&DeleteObject)>(
             CreateRectRgnIndirect(&markerRect), DeleteObject);
         if (!region || !SetWindowRgn(marker, region.get(), FALSE)) return false;
@@ -333,10 +368,10 @@ struct FolderWindow::IconSnap {
         if (std::adjacent_find(destinations.begin(), destinations.end()) != destinations.end()) { hideMarker(); return; }
         POINT point = anchorPoint;
         if (!destination(point)) { hideMarker(); return; }
-        // The line marks the leading edge of the destination cell. Preserve
-        // the original cursor-to-icon offset and account for native scrolling.
+        // Frame the icon's destination, preserving its original cursor offset
+        // and accounting for native scrolling.
         const int width = rectWidth(markerRect), height = rectHeight(markerRect);
-        const LONGLONG horizontal = static_cast<LONGLONG>(point.x) - origin.x - (spacing.x - iconSize) / 2 - width / 2;
+        const LONGLONG horizontal = static_cast<LONGLONG>(point.x) - origin.x;
         const LONGLONG vertical = static_cast<LONGLONG>(point.y) - origin.y;
         if (horizontal < LONG_MIN || horizontal > LONG_MAX - width || vertical < LONG_MIN || vertical > LONG_MAX - height
                 || horizontal - markerRect.left < INT_MIN || horizontal - markerRect.left > INT_MAX
@@ -656,8 +691,17 @@ struct FolderWindow::ViewMenuPreview {
             MENUITEMINFO info = {sizeof(info)};
             info.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_SUBMENU;
             if (!GetMenuItemInfo(menu, i, TRUE, &info) || info.hSubMenu
-                    || (info.fType & MFT_SEPARATOR) || (info.fState & (MFS_DISABLED | MFS_GRAYED))
-                    || info.wID < IDM_SHELL_FIRST || info.wID > IDM_SHELL_LAST) continue;
+                    || (info.fType & MFT_SEPARATOR) || (info.fState & (MFS_DISABLED | MFS_GRAYED))) continue;
+            if (!context) {
+                if (!isViewMenuMode(info.wID)) continue;
+                if (info.fState & MFS_CHECKED) initialCommand = info.wID;
+                // Content needs its full-width renderer. Commit it after the
+                // menu closes instead of previewing the classic Tiles alias.
+                if (info.wID == IDM_VIEW_MODE_LAST) continue;
+                entries.push_back({info.wID});
+                continue;
+            }
+            if (info.wID < IDM_SHELL_FIRST || info.wID > IDM_SHELL_LAST) continue;
             wchar_t verb[64] = {};
             if (FAILED(context->GetCommandString(info.wID - IDM_SHELL_FIRST, GCS_VERBW,
                     nullptr, reinterpret_cast<char *>(verb), _countof(verb))) || !current()) continue;
@@ -741,9 +785,15 @@ struct FolderWindow::ViewMenuPreview {
         const ULONG_PTR baseline = owner.viewHost.enumerationSerial();
         HRESULT result;
         if (command) {
-            auto info = owner.makeInvokeInfo(static_cast<int>(command - IDM_SHELL_FIRST), POINT{});
-            info.hwnd = owner.hwnd;
-            result = owner.invokeViewCommand(context, reinterpret_cast<CMINVOKECOMMANDINFO *>(&info));
+            if (context) {
+                auto info = owner.makeInvokeInfo(static_cast<int>(command - IDM_SHELL_FIRST), POINT{});
+                info.hwnd = owner.hwnd;
+                result = owner.invokeViewCommand(context, reinterpret_cast<CMINVOKECOMMANDINFO *>(&info));
+            } else {
+                ++owner.navigationDepth;
+                result = invokeDisplayCommand(view, command);
+                owner.resumeDeferredClose();
+            }
         } else {
             FolderViewSettings presentation = initial.view;
             presentation.present &= FolderViewSettings::Mode | FolderViewSettings::Flags;
@@ -799,6 +849,12 @@ struct FolderWindow::ViewMenuPreview {
         }
         if (command == IDM_REALIGN_ICONS) {
             owner.realignIcons();
+            return;
+        }
+        if (!context) {
+            ++owner.navigationDepth;
+            checkHR(invokeDisplayCommand(view, command));
+            owner.resumeDeferredClose();
             return;
         }
         auto info = owner.makeInvokeInfo(static_cast<int>(command - IDM_SHELL_FIRST), POINT{});
@@ -1204,16 +1260,6 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
     CComPtr<ItemWindow> messageKeepAlive(this);
     if (!isWindowOperational())
         return false;
-    // A deferred View menu answers the click that asked for it. Any later
-    // input means the user moved on: the menu must not surface afterwards.
-    if (viewMenuRequested && (((msg->message == WM_KEYDOWN || msg->message == WM_SYSKEYDOWN)
-                && !(HIWORD(msg->lParam) & KF_REPEAT)) // Not the key still held that asked for it.
-            || msg->message == WM_LBUTTONDOWN || msg->message == WM_RBUTTONDOWN
-            || msg->message == WM_MBUTTONDOWN || msg->message == WM_NCLBUTTONDOWN
-            || msg->message == WM_NCRBUTTONDOWN || msg->message == WM_MOUSEWHEEL)) {
-        viewMenuRequested = false;
-        requestViewProfile(); // The profile forced for the menu is no longer wanted.
-    }
     if (handleAltMouseMessage(msg))
         return true;
     if (!isWindowOperational())
@@ -2028,7 +2074,7 @@ void FolderWindow::scheduleStateSave(bool icons) {
 }
 
 FOLDERVIEWOPTIONS FolderWindow::profileForMode(UINT mode) const {
-    return hybridViewEligible && (mode == FVM_LIST || (mode == FVM_DETAILS && !columnFillActive()))
+    return hybridViewEligible && (mode == FVM_LIST || mode == FVM_CONTENT || (mode == FVM_DETAILS && !columnFillActive()))
         ? FVO_DEFAULT : static_cast<FOLDERVIEWOPTIONS>(FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING);
 }
 
@@ -2044,9 +2090,6 @@ void FolderWindow::synchronizeViewProfile() {
     if (!hybridViewEligible || !isWindowOperational() || !viewReady || !initialStateApplied
             || !enumerationComplete || restoringState || viewProfileChanging || navigationDepth
             || viewMenuDepth || viewMenuPreview || viewMenuRestore || provisionalBaseline) {
-        // A provisional state cannot change profile: a View menu request must
-        // not stay armed for whatever event ends that state later.
-        if (provisionalBaseline) viewMenuRequested = false;
         return;
     }
     GUITHREADINFO gui = {sizeof(gui)};
@@ -2071,9 +2114,7 @@ void FolderWindow::synchronizeViewProfile() {
         interacting = (code & DLGC_HASSETSEL) != 0; // Native rename/text editing.
     }
     if (interacting) {
-        // A mode-driven request stays pending and is asked again by the next
-        // state capture; a View menu request is dropped with the interaction.
-        viewMenuRequested = false;
+        // Ask again after this native interaction, at the next state capture.
         return;
     }
     viewProfilePending = false;
@@ -2082,30 +2123,14 @@ void FolderWindow::synchronizeViewProfile() {
         FolderWindow &owner;
         ~Navigation() { owner.resumeDeferredClose(); }
     } navigation{*this};
-    // An abandoned change must not leave the View menu request armed either.
-    struct MenuRequest {
-        FolderWindow &owner;
-        bool abandoned = true;
-        ~MenuRequest() { if (abandoned) owner.viewMenuRequested = false; }
-    } menuRequest{*this};
     CComPtr<IFolderView2> view;
     if (FAILED(viewHost.currentView(IID_PPV_ARGS(&view))) || !current()) return;
     // The mode alone decides the profile: the complete capture below is only
     // needed for an actual change.
     UINT mode = 0;
     if (FAILED(view->GetCurrentViewMode(&mode)) || !current()) return;
-    const auto desired = viewMenuRequested
-        ? static_cast<FOLDERVIEWOPTIONS>(FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING)
-        : profileForMode(mode);
-    if (desired == viewProfile) {
-        // Already in the profile the menu needs: open it now, not at the
-        // next enumeration event.
-        if (viewMenuRequested) {
-            menuRequest.abandoned = false;
-            checkLE(PostMessageW(hwnd, MSG_OPEN_PENDING_VIEW_MENU, viewGeneration, 0));
-        }
-        return;
-    }
+    const auto desired = profileForMode(mode);
+    if (desired == viewProfile) return;
     auto state = std::make_unique<ShellViewState>();
     state->view = captureOptions(view, getSavedFolderState().view);
     if (columnFillSet) {
@@ -2121,7 +2146,6 @@ void FolderWindow::synchronizeViewProfile() {
     if (!current() || deferredCloseMessage) return;
     state->icons = getSavedFolderState().icons;
     if (FAILED(captureReopenSelection(source, current, state->selection)) || !current() || deferredCloseMessage) return;
-    menuRequest.abandoned = false;
     pendingKeyboardView = body && focus && (focus == body || IsChild(body, focus));
     pendingKeyboardControl = pendingKeyboardView ? nullptr : focus;
     if (!sameView(state->view, getSavedFolderState().view)) {
@@ -2164,7 +2188,6 @@ void FolderWindow::synchronizeViewProfile() {
     if (!checkHR(result)) {
         viewProfileChanging = false;
         restoringState = false;
-        viewMenuRequested = false;
         setStatusText(getString(IDS_FOLDER_ERROR));
     }
 }
@@ -2421,7 +2444,6 @@ void FolderWindow::onDestroy() {
     iconRealignPending = false;
     if (columnLayout) columnLayout->stop();
     columnLayout.reset();
-    viewMenuRequested = false;
     viewProfilePosted = false;
     watchProvisionalInput(false);
     if (viewMenuPreview) restoringState = true;
@@ -3420,14 +3442,6 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         case MSG_SYNCHRONIZE_VIEW_PROFILE:
             synchronizeViewProfile();
             return 0;
-        case MSG_OPEN_PENDING_VIEW_MENU:
-            if (viewMenuRequested && viewGeneration == wParam && isWindowOperational()
-                    && initialStateApplied && !viewProfileChanging) {
-                viewMenuRequested = false;
-                if (GetForegroundWindow() == hwnd) openViewMenu(pendingViewMenuPoint);
-                else requestViewProfile();
-            }
-            return 0;
         case MSG_FINISH_VIEW_INITIALIZATION:
             if (isWindowOperational() && viewHost.isViewNotification(wParam))
                 finishViewInitialization();
@@ -4135,14 +4149,6 @@ void FolderWindow::openViewMenu(POINT point) {
     CComPtr<ItemWindow> keepAlive(this);
     if (!isWindowOperational() || provisionalInputBlocked || provisionalCaptureBusy)
         return;
-    // Only the preview needs the classic view. Without it the menu opens on the
-    // native view at once, like the Shell's own background menu.
-    if (hybridViewEligible && viewProfile == FVO_DEFAULT && settings::getViewMenuPreviewEnabled()) {
-        viewMenuRequested = true;
-        pendingViewMenuPoint = point;
-        requestViewProfile();
-        return;
-    }
     ++viewMenuDepth;
     struct MenuScope {
         FolderWindow &owner;
@@ -4150,6 +4156,51 @@ void FolderWindow::openViewMenu(POINT point) {
     } menuScope{*this};
     if (provisionalBaseline && !captureProvisionalCurrent(true, true)) return;
     if (!isWindowOperational()) return;
+    if (hybridViewEligible) {
+        // This popup contains application commands. Opening it never queries
+        // the folder's context-menu extensions or recreates its Shell view.
+        CComPtr<IShellView> source = shellView;
+        const ULONG_PTR generation = viewGeneration;
+        CComQIPtr<IFolderView2> view(source);
+        FOLDERVIEWMODE mode = FVM_AUTO; int size = 0; DWORD flags = 0;
+        if (!view || FAILED(view->GetViewModeAndIconSize(&mode, &size))
+                || FAILED(view->GetCurrentFolderFlags(&flags)) || !isWindowOperational()
+                || shellView != source || viewGeneration != generation) return;
+        auto destroy = [](HMENU handle) { DestroyMenu(handle); };
+        std::unique_ptr<std::remove_pointer<HMENU>::type, decltype(destroy)> menu(CreatePopupMenu(), destroy);
+        if (!menu) return;
+        int checked = -1, distance = INT_MAX;
+        for (int i = 0; i < static_cast<int>(_countof(VIEW_MENU_MODES)); ++i) {
+            const auto &choice = VIEW_MENU_MODES[i];
+            if (choice.mode != mode) continue;
+            const int difference = choice.size < 0 ? 0 : std::abs(size - scaleDPI(choice.size));
+            if (difference < distance) { checked = i; distance = difference; }
+        }
+        for (UINT i = 0; i < _countof(VIEW_MENU_MODES); ++i) {
+            MENUITEMINFOW entry = {sizeof(entry)};
+            entry.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE | MIIM_FTYPE;
+            entry.wID = IDM_VIEW_MODE_FIRST + i;
+            entry.dwTypeData = const_cast<wchar_t *>(getString(IDS_VIEW_MODE_FIRST + i));
+            entry.fType = MFT_RADIOCHECK;
+            entry.fState = static_cast<int>(i) == checked ? MFS_CHECKED : MFS_UNCHECKED;
+            if (!InsertMenuItemW(menu.get(), i, TRUE, &entry)) return;
+        }
+        if (!AppendMenuW(menu.get(), MF_SEPARATOR, 0, nullptr)) return;
+        const bool placement = mode == FVM_ICON || mode == FVM_SMALLICON || mode == FVM_TILE;
+        for (UINT command : {IDM_AUTO_ARRANGE_ICONS, IDM_KEEP_ICONS_ALIGNED}) {
+            const DWORD flag = command == IDM_AUTO_ARRANGE_ICONS ? FWF_AUTOARRANGE : FWF_SNAPTOGRID;
+            const UINT label = command == IDM_AUTO_ARRANGE_ICONS ? IDS_AUTO_ARRANGE_ICONS : IDS_KEEP_ICONS_ALIGNED;
+            const UINT state = (placement ? MF_ENABLED : MF_GRAYED) | ((flags & flag) ? MF_CHECKED : MF_UNCHECKED);
+            if (!AppendMenuW(menu.get(), MF_STRING | state, command, getString(label))) return;
+        }
+        // The registered extension already styles and modifies local title and
+        // toolbar menus. Keep the same Win32 tracking and COM activation path.
+        CComPtr<IClassFactory> extension;
+        activateTitleMenuExtension(&extension);
+        if (isWindowOperational() && shellView == source && viewGeneration == generation)
+            openBackgroundSubMenu(nullptr, menu.get(), point);
+        return;
+    }
     HMENU popupMenu = nullptr;
     CComPtr<IContextMenu> contextMenu = queryBackgroundMenu(&popupMenu);
     auto destroyMenu = [](HMENU handle) { checkLE(DestroyMenu(handle)); };
@@ -4184,12 +4235,12 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     auto detachSite = [](IContextMenu *handler) { checkHR(IUnknown_SetSite(handler, nullptr)); };
     std::unique_ptr<IContextMenu, decltype(detachSite)> site(nullptr, detachSite);
     if (checkHR(viewHost.currentView(IID_PPV_ARGS(&folderView))) && isWindowOperational()
-            && checkHR(IUnknown_SetSite(contextMenu, folderView)))
+            && contextMenu && checkHR(IUnknown_SetSite(contextMenu, folderView)))
         site.reset(contextMenu);
     if (!isWindowOperational()) return;
     const int menuCount = GetMenuItemCount(subMenu);
     if (menuCount < 0) return;
-    for (int i = 0; i < menuCount; ++i) {
+    for (int i = 0; contextMenu && i < menuCount; ++i) {
         MENUITEMINFOW entry = {sizeof(entry)};
         entry.fMask = MIIM_ID | MIIM_FTYPE;
         if (!GetMenuItemInfoW(subMenu, i, TRUE, &entry) || (entry.fType & MFT_SEPARATOR)
@@ -4258,7 +4309,9 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     if (hook) {
         UnhookWindowsHookEx(hook);
         ViewMenuPreview::active = previous;
-        preview->finish((cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) || cmd == IDM_TOGGLE_THUMBNAILS || cmd == IDM_FILL_COLUMNS || cmd == IDM_REALIGN_ICONS
+        preview->finish((cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) || isViewMenuMode(cmd)
+            || cmd == IDM_AUTO_ARRANGE_ICONS || cmd == IDM_KEEP_ICONS_ALIGNED
+            || cmd == IDM_TOGGLE_THUMBNAILS || cmd == IDM_FILL_COLUMNS || cmd == IDM_REALIGN_ICONS
             ? static_cast<UINT>(cmd) : 0);
     } else if (isWindowOperational() && cmd == IDM_REALIGN_ICONS) {
         realignIcons();
@@ -4266,6 +4319,11 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
         toggleFillColumns();
     } else if (isWindowOperational() && cmd == IDM_TOGGLE_THUMBNAILS) {
         toggleGlobalThumbnails();
+    } else if (isWindowOperational() && !contextMenu && cmd) {
+        ++navigationDepth;
+        checkHR(invokeDisplayCommand(folderView, static_cast<UINT>(cmd)));
+        resumeDeferredClose();
+        if (isWindowOperational()) scheduleStateSave();
     } else if (isWindowOperational() && viewHost && cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) {
         auto info = makeInvokeInfo(cmd - IDM_SHELL_FIRST, point);
         info.hwnd = hwnd;
@@ -5072,11 +5130,7 @@ void FolderWindow::finishViewInitialization() {
     updateSelection();
     if (current()) synchronizeColumns();
     if (current()) replayProviderSync(); // Outside this callback, not from within it.
-    if (current()) {
-        if (viewMenuRequested && viewProfile != FVO_DEFAULT)
-            checkLE(PostMessageW(hwnd, MSG_OPEN_PENDING_VIEW_MENU, viewGeneration, 0));
-        else requestViewProfile();
-    }
+    if (current()) requestViewProfile();
 }
 
 /* IDispatch */
