@@ -13,10 +13,21 @@ see [Working on FileSpacer](README.md).
 `ShellViewHost` embeds `CLSID_ExplorerBrowser`. Windows owns enumeration,
 rendering, icons, view modes and file operations. `FolderWindow` owns spatial
 navigation policy and coordinates persistence. Eligible filesystem folders use
-`FVO_DEFAULT` for Details and List, and
-`FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING` for spatial presentations. Virtual
+`FVO_DEFAULT` for List and Content, and for Details without automatic column
+filling. Spatial presentations and Details with column filling use
+`FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING`. Content never enables spatial
+placement, one-shot realignment or S-drag Snap. Virtual
 folders can choose their initial presentation. `EBO_NOPERSISTVIEWSTATE`
 keeps per-folder persistence under FileSpacer's control.
+
+For ordinary filesystem folders, FileSpacer builds its View popup locally from
+the eight supported modes and placement settings. It uses the public
+`IFolderView2` methods for commands, without querying the folder's background
+context menu or recreating the view before opening the popup. Nilesoft uses the
+same registered COM activation and standard Win32 tracking path as local title
+menus. Other providers retain their native submenu. Transient previews reuse
+the existing state restoration; Content is committed after closing the menu,
+because its full-width renderer requires a profile change.
 
 | Component | Responsibility |
 | --- | --- |
@@ -228,11 +239,12 @@ checks the moved selection against cached destination cells and native visible
 icon/label rectangles; these rectangles are refreshed on scrolling or viewport
 resize. It never repeats the native whole-view hit-test. Unsupported geometry and
 collisions suppress the preview; they do not change the native drop fallback.
-The preview itself is the real Windows insertion mark, rendered by a separate
-one-item ListView owned by FileSpacer. A clipped, colour-keyed, disabled tool
-window exposes only that mark above the drag image, without taking focus or
-intercepting input. Its height follows the icon size and its stroke/end caps
-remain native. No Shell item is moved to render a preview. Thread-local keyboard
+The preview is an icon-sized grey frame with an opaque outline and a light-grey
+interior at 50% opacity. A disabled, input-transparent layered tool window shows
+one premultiplied BGRA surface prepared per gesture through `UpdateLayeredWindow`.
+Mouse movement only repositions that surface; it never allocates or repaints it.
+The frame retains the original cursor offset and follows native scrolling.
+No Shell item is moved to render a preview. Thread-local keyboard
 observation includes non-removing OLE peeks so releasing/repressing S updates the
 mark even with a stationary mouse; updates are posted and coalesced outside
 the hooks. Releasing the mouse, cancellation, closure and stale views remove it.
