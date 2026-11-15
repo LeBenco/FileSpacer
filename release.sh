@@ -103,7 +103,7 @@ fi
 
 NOTES="$(
     awk -v version="$VERSION" '
-        $0 ~ "^## " version "([[:space:]]|—)" {
+        $0 ~ "^## " version "([[:space:]]|—|$)" {
             found = 1
             next
         }
@@ -122,7 +122,7 @@ if [ -z "$(printf '%s' "$NOTES" | tr -d '[:space:]')" ]; then
     echo "Error: no changelog entry found for version $VERSION."
     echo
     echo "Expected a section such as:"
-    echo "## $VERSION — YYYY-MM-DD"
+    echo "## $VERSION"
     exit 1
 fi
 
