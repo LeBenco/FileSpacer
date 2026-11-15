@@ -66,6 +66,13 @@ restrained humour of the English text rather than translating word for word.
 License files, command names, registry paths, identifiers and executable names
 remain unchanged.
 
+The root changelog is the English reference for every translated changelog.
+Every release section must start with its version number, including work in
+progress on a branch. Never add an `Unreleased` section or its translations, or
+a publication date before publication. Code, comments, commit messages, workflows
+and technical documentation are written in English; application text and user
+documentation are translated.
+
 Prefer short descriptions of behavior and useful subtleties over instructions
 for self-explanatory controls. In French, use neutral descriptions or infinitives
 for actions and avoid repeated direct address. This is an editorial choice, not
