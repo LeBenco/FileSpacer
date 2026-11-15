@@ -131,6 +131,10 @@ int wmain(int argc,wchar_t **argv) {
     }
     std::printf("RESOLVED supported=%d reason=%s\n",supported,filespacer::selectionDetail::image().reason);
     if(wcscmp(argv[1],L"--range-supported")==0)return supported&&filespacer::selectionDetail::rangeImage().supported?0:1;
+    if(wcscmp(argv[1],L"--grid-supported")==0)return filespacer::selectionDetail::gridImage().supported?0:1;
+    if(wcscmp(argv[1],L"--grid-fallback")==0)return !filespacer::selectionDetail::gridImage().supported
+        &&filespacer::selectionDetail::snapGridSelection(&view,[]{return true;})==S_FALSE
+        &&filespacer::selectionDetail::gridCalls().load()==0?0:1;
     if(wcscmp(argv[1],L"--range-fallback")==0)return supported&&!filespacer::selectionDetail::rangeImage().supported?0:1;
     if(wcscmp(argv[1],L"--supported")==0)return supported?0:1;
     if(wcscmp(argv[1],L"--fallback")==0 || publicOnly)return supported?1:0;
