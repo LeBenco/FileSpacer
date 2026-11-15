@@ -165,8 +165,9 @@ export async function generate(repository = path.dirname(template), destination 
           : target?.id || (first ? id : `${id}--${originalId}`);
         token.siteDepth = Math.min(6, token.depth + 1);
         token.siteTitle = first ? language.ui[id] : null;
-        if (source === 'CHANGELOG.md' && token.depth === 2 && options.releaseDates) {
-          token.siteTitle = releaseHeading(text(token.text), language.code, options.releaseDates);
+        if (source === 'CHANGELOG.md' && token.depth === 2) {
+          const title = releaseHeading(text(token.text), language.code, options.releaseDates || {});
+          if (options.releaseDates) token.siteTitle = title;
         }
         anchors.set(originalId, token.siteId);
         anchors.set(anchor, token.siteId);
