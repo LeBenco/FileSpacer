@@ -8,6 +8,7 @@ try {
     Set-UiPreference 'ViewMenuPreviewEnabled' 0
     Set-UiPreference 'DetailsColumnsEnabled' 1
     Set-UiPreference 'DetailsColumnsDeferred' 1
+    Set-UiPreference 'WindowStateLockEnabled' 1
     $folder=Join-Path $script:UiRoot 'Proportions'
     [void][IO.Directory]::CreateDirectory($folder)
     1..5 | ForEach-Object { [IO.File]::WriteAllText((Join-Path $folder ('item-'+$_+'.txt')),'columns') }
@@ -43,5 +44,30 @@ try {
     for($i=0;$i -lt $wide.Widths.Count;++$i) {
         Assert-Ui ([Math]::Abs($restored.Widths[$i]-$wide.Widths[$i]) -le 1) ('Column '+$i+' lost its proportion across the session: '+$restored.Widths[$i]+' instead of '+$wide.Widths[$i]+'.')
     }
-    Write-Host 'PASS: proportions hidden by minimum widths in a narrow window survive closing and reopening.'
+    # Proportions are retained metadata in Icons, not a Shell getter that can
+    # make the strict lock capture fail. Exercise both transition directions.
+    $toggle=Get-UiId 'IDM_TOGGLE_STATE_LOCK'
+    Use-UiView $window {param($view) $view.SetViewModeAndIconSize(1,48)}
+    Wait-UiViewMode $window 1 48
+    Assert-Ui ([FileSpacerRegression.Native]::PostMessage($window,0x111,[IntPtr]$toggle,[IntPtr]::Zero)) 'Cannot request locking.'
+    Wait-Ui { (@([FileSpacerRegression.Native]::Children($window,'Static') | ForEach-Object {[FileSpacerRegression.Native]::Text($_)}) -join '|') -match 'Window state locked|tat de la fen.tre verrouill' } 'lock in Icons with retained proportions'
+    Close-UiFolder $window
+    $window=Open-UiFolder $folder 5
+    Wait-UiViewMode $window 1 48
+    Wait-Ui { (@([FileSpacerRegression.Native]::Children($window,'Static') | ForEach-Object {[FileSpacerRegression.Native]::Text($_)}) -join '|') -match 'Window state locked|tat de la fen.tre verrouill' } 'lock persisted after reopening in Icons'
+    Assert-Ui ([FileSpacerRegression.Native]::PostMessage($window,0x111,[IntPtr]$toggle,[IntPtr]::Zero)) 'Cannot request unlocking.'
+    Wait-Ui { (@([FileSpacerRegression.Native]::Children($window,'Static') | ForEach-Object {[FileSpacerRegression.Native]::Text($_)}) -join '|') -notmatch 'Window state locked|tat de la fen.tre verrouill' } 'unlock in Icons with retained proportions'
+    Close-UiFolder $window
+    $window=Open-UiFolder $folder 5
+    Wait-UiViewMode $window 1 48
+    Use-UiView $window {param($view) $view.Mode=4}
+    Wait-UiViewMode $window 4
+    $afterLock=Wait-Columns $window
+    for($i=0;$i -lt $wide.Widths.Count;++$i) {
+        Assert-Ui ([Math]::Abs($afterLock.Widths[$i]-$wide.Widths[$i]) -le 1) ('Locking in Icons lost column proportion '+$i+'.')
+    }
+    Close-UiFolder $window
+    $window=Open-UiFolder $folder 5
+    Wait-UiViewMode $window 4
+    Write-Host 'PASS: column proportions survive narrowing, reopening and locking/unlocking in Icons.'
 } catch {$failure=$_;throw} finally {Stop-Ui -Failure $failure}
