@@ -114,7 +114,7 @@ try {
     Set-GridMode
     Set-LargeGridSeed
     Write-GridPhase 'qualified-snap-drag'
-    Move-GridIcons $true
+    Move-GridIcons $true $false $false $true
     $qualified=Read-PreviewState $window
     $qualifiedMilliseconds=1000.0*([Diagnostics.Stopwatch]::GetTimestamp()-$script:GridDropStartedAt)/[Diagnostics.Stopwatch]::Frequency
     Assert-Ui ($qualified.Positions-eq$snapped.Positions-and$qualified.Selected-eq$snapped.Selected-and$qualified.Focus-eq$snapped.Focus) 'Qualified Snap differs from the public fallback.'
@@ -126,6 +126,9 @@ try {
     $publicTime=[regex]::Match($proof,'GRID SNAP path=public elapsed_ms=(\d+)')
     $qualifiedTime=[regex]::Match($proof,'GRID SNAP path=qualified elapsed_ms=(\d+)')
     Assert-Ui ($publicTime.Success-and$qualifiedTime.Success) 'Missing internal measurements for one of the Snap paths.'
+    $preview=@([regex]::Matches($proof,'GRID PREVIEW updates=(\d+) total_us=(\d+) max_us=(\d+) setup_us=(\d+)')|Where-Object {[int]$_.Groups[1].Value-ge60})
+    Assert-Ui ($preview.Count-eq1) 'Missing the measured marker motion stress in the real drag.'
+    @{Items=3000;Updates=[int]$preview[0].Groups[1].Value;TotalMicroseconds=[long]$preview[0].Groups[2].Value;MaximumMicroseconds=[long]$preview[0].Groups[3].Value;SetupMicroseconds=[long]$preview[0].Groups[4].Value}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'marker-timings.json') -Encoding UTF8
     @{Count=3000;NativeFreeDragMs=$freeDragMilliseconds;PublicSnapMs=$snapDragMilliseconds;QualifiedSnapMs=$qualifiedMilliseconds;PublicOperationMs=[long]$publicTime.Groups[1].Value;QualifiedOperationMs=[long]$qualifiedTime.Groups[1].Value}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'snap-timings.json') -Encoding UTF8
     $samples|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'grid-timings.json') -Encoding UTF8
     Write-Host 'PASS: three alignment cycles over 3000 items; exact native coordinates, selection, focus and persistence. Timings include automation; no performance threshold.'
