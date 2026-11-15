@@ -167,7 +167,6 @@ protected:
         // Deferred synchronizeViewProvider(), posted when a guard that refused it clears.
         MSG_SYNCHRONIZE_VIEW_PROVIDER = WM_APP + 53,
         MSG_SYNCHRONIZE_VIEW_PROFILE = WM_APP + 54,
-        MSG_OPEN_PENDING_VIEW_MENU = WM_APP + 55,
         MSG_COLUMNS_CHANGED = WM_APP + 56,
         MSG_ICON_SNAP = WM_APP + 57
     };
@@ -393,9 +392,7 @@ private:
     bool hybridViewEligible = false;
     FOLDERVIEWOPTIONS viewProfile = FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING;
     bool viewProfilePending = false, viewProfilePosted = false, viewProfileChanging = false;
-    bool viewMenuRequested = false;
     unsigned viewMenuDepth = 0;
-    POINT pendingViewMenuPoint = {};
     HWND pendingKeyboardControl = nullptr;
     bool pendingKeyboardView = false;
     FOLDERVIEWOPTIONS profileForMode(UINT mode) const;
