@@ -18,9 +18,15 @@ $bytes=[IO.File]::ReadAllBytes($records[0].FullName)
 [IO.File]::WriteAllBytes((Join-Path $fallback $records[0].Name),$bytes)
 }else{
  $negative=@(Get-ChildItem -LiteralPath $cache -Filter '*.bin.public' -File)
- if($records.Count-or$negative.Count-ne1-or!(Get-Content $negative[0].FullName -Raw).StartsWith('FSPUBLIC01')){throw 'Unsupported discovery did not persist its structural fallback decision.'}
+ $transient=@(Get-ChildItem -LiteralPath $cache -Filter '*.attempt' -File)
+ if($records.Count-or$negative.Count+$transient.Count-ne1){throw 'Discovery failed without one saved fallback or retry record.'}
+ $record=if($negative.Count){$negative[0]}else{$transient[0]}
+ $reason=Get-Content -LiteralPath $record.FullName -Raw
+ if(!$reason-or($negative.Count-and!$reason.StartsWith('FSPUBLIC01'))-or($transient.Count-and$reason-notmatch'\A[^\r\n]+\r?\nrepeat=[0-2]\s*\z')){throw 'Discovery failure record is invalid or unfinished.'}
+ $timestamp=$record.LastWriteTimeUtc;$hash=(Get-FileHash -LiteralPath $record.FullName -Algorithm SHA256).Hash
  $code=Invoke-NativeProgram $cacheTest @('--public-persist',$cache) (Join-Path $RunDirectory 'public-reuse.log') (Join-Path $RunDirectory 'public-reuse-errors.log')
- if($code-ne0-or@(Get-ChildItem -LiteralPath $cache -Filter '*.attempt').Count){throw 'Persisted public fallback was not reused.'}
+ if($code-ne0-or(Get-Item $record.FullName).LastWriteTimeUtc-ne$timestamp-or(Get-FileHash -LiteralPath $record.FullName -Algorithm SHA256).Hash-ne$hash-or@(Get-ChildItem -LiteralPath $cache -Filter '*.attempt').Count-ne$transient.Count){throw 'Saved fallback or transient backoff was not reused without rediscovery.'}
+ Write-Host ('DISCOVERY: '+$(if($negative.Count){'saved structural fallback'}else{'transient backoff'})+'; '+$reason.Trim())
 }
 . (Join-Path $PSScriptRoot '..\..\..\experiments\reactivity\Fixture.ps1')
 $fixture=New-ReactivityFixture $ProjectRoot $ItemCount
@@ -40,5 +46,5 @@ try {
   if(@(Select-String -LiteralPath $log -Pattern '^PARTIAL_ALL ').Count-ne27){throw 'Partial-to-all representation coverage incomplete.'}
   if(!$privateSupported-and@(Select-String -LiteralPath $log -Pattern 'private_applied=1').Count){throw 'Unsupported private path was used.'}
  }
- if(!$privateSupported){Write-Host 'PASS: structurally unsupported private path; persisted public fallback verified in all nine real Shell representations. Private acceleration not exercised.'}
+ if(!$privateSupported){Write-Host 'PASS: public fallback verified in all nine real Shell representations. Private acceleration not exercised.'}
 }finally{Remove-ReactivityFixture $ProjectRoot $fixture}
