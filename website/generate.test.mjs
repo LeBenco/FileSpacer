@@ -219,6 +219,18 @@ async function translatedFixture(t) {
   return {root, target};
 }
 
+test('changelogs reject unversioned sections in English and translations, even without release dates', async t => {
+  const {root, target} = await translatedFixture(t);
+  const source = path.join(root, 'CHANGELOG.md');
+  const original = await fs.readFile(source, 'utf8');
+  await fs.appendFile(source, '\n## Unreleased\n\n- Pending change.\n');
+  await assert.rejects(generate(root, path.join(root, 'output')), /must start with a release version/);
+  await fs.writeFile(source, original);
+  const translated = path.join(target, 'CHANGELOG.md');
+  await fs.writeFile(translated, (await fs.readFile(translated, 'utf8')).replace('## 1.3.1', '## Non publié'));
+  await assert.rejects(generate(root, path.join(root, 'output')), /must start with a release version/);
+});
+
 test('technical references use an available translation and preserve its section link', async t => {
   const {root, target} = await translatedFixture(t);
   const output = path.join(root, 'output');
