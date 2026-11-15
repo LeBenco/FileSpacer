@@ -696,6 +696,19 @@ inline HRESULT RangeBinding::clear(HWND source)const {
     return result;
 }
 inline std::atomic<uint64_t> &gridCalls(){static std::atomic<uint64_t> calls{0};return calls;}
+// Shared by the qualified positioning path and its read-only drag preview.
+inline bool snapGridPoint(POINT &point,const POINT &spacing,int size) {
+    if(size<=0||spacing.x<size||spacing.y<=0)return false;
+    const POINT margin={(spacing.x-size)/2,2*GetSystemMetrics(SM_CYBORDER)};
+    const auto axis=[](LONG &value,LONG cell,LONG origin) {
+        LONGLONG relative=static_cast<LONGLONG>(value)-origin;
+        relative+=relative<0?-(cell/2):(cell/2);
+        const LONGLONG result=relative-relative%cell+origin;
+        if(result<LONG_MIN||result>LONG_MAX)return false;
+        value=static_cast<LONG>(result);return true;
+    };
+    return axis(point.x,spacing.x,margin.x)&&axis(point.y,spacing.y,margin.y);
+}
 // Optional arithmetic qualified against this loaded control image and a real
 // Shell view. The scan detects collisions before any mutation: the native
 // global command has an additional collision pass which must remain its job.
@@ -719,17 +732,7 @@ inline HRESULT snapGridSelection(IShellView *source,const std::function<bool()> 
             ||ListView_IsGroupViewEnabled(bound.window)||!current())return S_FALSE;
     UINT areas=UINT_MAX;ListView_GetNumberOfWorkAreas(bound.window,&areas);
     if(areas||!current())return S_FALSE;
-    const POINT margin={(spacing.x-size)/2,2*GetSystemMetrics(SM_CYBORDER)};
-    const auto snap=[&](POINT &point) {
-        const auto axis=[](LONG &value,LONG cell,LONG origin) {
-            LONGLONG relative=static_cast<LONGLONG>(value)-origin;
-            relative+=relative<0?-(cell/2):(cell/2);
-            const LONGLONG result=relative-relative%cell+origin;
-            if(result<LONG_MIN||result>LONG_MAX)return false;
-            value=static_cast<LONG>(result);return true;
-        };
-        return axis(point.x,spacing.x,margin.x)&&axis(point.y,spacing.y,margin.y);
-    };
+    const auto snap=[&](POINT &point) {return snapGridPoint(point,spacing,size);};
     int count=0,selected=0;
     if(FAILED(view->ItemCount(SVGIO_ALLVIEW,&count))||!current()
             ||FAILED(view->ItemCount(SVGIO_SELECTION,&selected))||!current()
