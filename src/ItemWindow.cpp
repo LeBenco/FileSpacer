@@ -619,8 +619,7 @@ namespace {
 // One error dialog per outage for the whole process, not one per window: the
 // windows share the database, and a success of any of them ends the outage.
 bool storageOutageReported = false;
-void storageSucceeded(bool &shown) {
-    shown = false;
+void storageSucceeded() {
     storageOutageReported = false;
 }
 }
@@ -644,7 +643,7 @@ bool ItemWindow::loadFolderState() {
         }
         pendingMoveKey.clear();
         if (stateLoaded) {
-            storageSucceeded(storageErrorShown);
+            storageSucceeded();
             return true;
         }
     }
@@ -653,13 +652,11 @@ bool ItemWindow::loadFolderState() {
         return false;
     }
     stateLoaded = true;
-    storageSucceeded(storageErrorShown);
+    storageSucceeded();
     return true;
 }
 
 void ItemWindow::stateStorageError() {
-    if (storageErrorShown) return;
-    storageErrorShown = true;
     if (storageOutageReported) return; // Another window already said it.
     storageOutageReported = true;
     reportFolderStateError(hwnd);
@@ -694,7 +691,7 @@ void ItemWindow::recordFolderAccess(HRESULT result) {
         stateKey.clear();
         updateStateLock();
     }
-    storageSucceeded(storageErrorShown);
+    storageSucceeded();
 }
 
 bool ItemWindow::updateStateLock() {
@@ -725,12 +722,18 @@ void ItemWindow::toggleStateLock(bool replaceReference) {
     // A transition must capture the visible view, never fill failed getters from
     // an older snapshot. Require every previously supported view property.
     savedState.view = {};
+    // Column proportions are application metadata, not a Shell getter. Keep
+    // the known reference until an attached fill supplies newer weights (or
+    // capture clears them because the fill is no longer enabled).
+    savedState.view.present = previous.view.present & FolderViewSettings::ColumnWeights;
+    savedState.view.columnWeights = previous.view.columnWeights;
+    const uint32_t requiredView = previous.view.present & ~static_cast<uint32_t>(FolderViewSettings::ColumnWeights);
     const uint32_t protectedParts = FolderState::All & ~FolderState::Icons;
     const uint32_t captured = captureViewState(FolderState::All);
     if (!isWindowOperational()) return;
     auto store = folderStateStore();
     if ((captured & protectedParts) != protectedParts
-            || (savedState.view.present & previous.view.present) != previous.view.present
+            || (savedState.view.present & requiredView) != requiredView
             || !store || !store->setLocked(stateKey, savedState, captured, locking)) {
         savedState = previous;
         viewStateDirty(FolderState::All);
@@ -739,7 +742,7 @@ void ItemWindow::toggleStateLock(bool replaceReference) {
     }
     savedState.present |= captured;
     viewStateClean(captured);
-    storageSucceeded(storageErrorShown);
+    storageSucceeded();
     updateStateLock();
     onSize(clientSize(hwnd));
 }
@@ -753,7 +756,7 @@ void ItemWindow::persistViewState() {
     if (store && store->save(stateKey, savedState, captured)) {
         savedState.present |= captured;
         viewStateClean(captured);
-        storageSucceeded(storageErrorShown);
+        storageSucceeded();
         if (stateLocked) updateStateLock(); // Quota eviction removes the lock too.
     } else {
         stateStorageError(); // Failed writes remain dirty for the next event or close.
