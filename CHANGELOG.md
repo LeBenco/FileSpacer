@@ -11,13 +11,14 @@
 - Add German, Italian, Spanish, Portuguese (Portugal) and Greek to the installer and uninstaller.
 - Rebuild a damaged folder state database from everything that can still be read, explain storage errors in plain words, show the database error once per outage, and never offer to reset a database created by a newer version.
 - Offer "Open in FileSpacer" in the folder context menus of every program.
-- Fix several view and input issues (free icon positions loss on Small icons/tiles, Ctrl+wheel, Backspace auto-repeat, invalid numeric preferences, opening animation origin for various DPI, scroll position on reopening under Windows 11).
+- Fix several view and input issues (free icon positions loss on Small icons/tiles, Backspace auto-repeat, invalid numeric preferences, opening animation origin for various DPI, scroll position on reopening under Windows 11).
 - Keep the proportions of Details columns that fill the window when a folder is closed and reopened.
 - Add an option to turn off the Microsoft symbol download that speeds up large folders, and show a notification when it happens.
 - Stop the daily retry of the large-folder speed-up preparation once it has failed the same way three times, and remove its data for replaced Windows versions.
 - Restore the large-folder selection speed-up on current Windows 11 builds, where a Windows update had turned it off.
 - Make Ctrl+Backspace invert the source window setting, like Ctrl with every other way of opening a folder.
 - Show a loading bar in the address bar and on the taskbar button while a large or slow folder is being listed.
+- Make Ctrl+mouse wheel follow the steps of File Explorer: finer icon sizes, then List, Details, Tiles and Content, one step per notch.
 
 <a id="142--2026-11-12"></a>
 
