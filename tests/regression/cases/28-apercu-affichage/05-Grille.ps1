@@ -35,6 +35,19 @@ function Choose-GridCommand([int]$Command) {
     Wait-PreviewMenuClosed $window
     Wait-PreviewMode $window $initialMode
 }
+function Assert-GridPrediction([int]$Size) {
+    $body=Use-UiView $window {param($view) $view.Window}
+    $list=@([FileSpacerRegression.Native]::Children($body,'SysListView32')|Where-Object {[FileSpacerRegression.Native]::IsWindowEnabled($_)})
+    Assert-Ui ($list.Count-eq1) 'Expected one interactive Shell list.'
+    $client=[FileSpacerRegression.Native]::ClientBounds($list[0])
+    $spacing=[FileSpacerRegression.Native]::Message($list[0],0x1033,0,0)-band0xffff
+    $mark=$script:GridMarkerBeforeDrop
+    $origin=[FileSpacerViewMenuTests.GridKey]::Origin($list[0])
+    $predictedX=$mark.Left+[int][Math]::Floor($mark.Width/2)+[int][Math]::Floor(($spacing-$Size)/2)-$client.Left+$origin[0]
+    $predictedY=$mark.Top-$client.Top+$origin[1]
+    $point=@((Read-GridState).Positions-split';'|Where-Object {$_-like'item-0000=*'})[0]-split'=',2
+    Assert-Ui ($point[1]-eq('{0},{1}'-f$predictedX,$predictedY)) ('The marker did not predict the actual snapped icon position: actual='+$point[1]+' predicted='+$predictedX+','+$predictedY+' spacing='+$spacing+' client='+($client|ConvertTo-Json -Compress))
+}
 
 try {
     Initialize-Ui 'icon-grid' -FixtureParent (Join-Path $ProjectRoot 'build')
@@ -66,22 +79,42 @@ try {
     Use-UiView $window {param($view) $view.SnapToGrid=$true}
     $nativeDrop=Read-GridState
     $initial=Set-GridSeed
-    Move-GridIcons $true
+    Move-GridIcons $true $false $true
     $snapped=Read-GridState
     @($free,$nativeDrop,$snapped)|ConvertTo-Json -Depth 5|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'grid-drag.json') -Encoding UTF8
     Assert-Ui (!$snapped.Grid-and!$snapped.Auto-and$snapped.Selected-eq$free.Selected-and$snapped.Focus-eq$free.Focus) 'S changed the persistent placement settings or native selection/focus.'
     # The native-grid comparison covers actual coordinates, not a hard-coded pitch or origin.
     $expected=@{};foreach($entry in ($nativeDrop.Positions-split';')){$pair=$entry-split'=',2;$expected[$pair[0]]=$pair[1]}
     $actual=@{};foreach($entry in ($snapped.Positions-split';')){$pair=$entry-split'=',2;$actual[$pair[0]]=$pair[1]}
+    Assert-GridPrediction 48
     foreach($name in ($free.Selected-split';')){Assert-Ui ($actual[$name]-eq$expected[$name]) ('S did not use the native grid for '+$name)}
     $original=@{};foreach($entry in ($initial.Positions-split';')){$pair=$entry-split'=',2;$original[$pair[0]]=$pair[1]}
     foreach($name in @($original.Keys|Where-Object {$_-notin($free.Selected-split';')})){
         Assert-Ui ($actual[$name]-eq$original[$name]) ('S moved an unselected icon: '+$name)
     }
     $null=Set-GridSeed
-    Move-GridIcons $true $true
+    Move-GridIcons $true $true $true
     Wait-Ui { (Read-GridState).Positions-eq$free.Positions } 'releasing S before the drop retains native free placement' 150
     Write-Host 'PASS: real Shell drag with S uses the native grid; releasing S leaves free placement.'
+    # A second size covers zoom-dependent marker geometry, using the actual
+    # mode command rather than changing the Shell behind the product.
+    $popup=Open-PreviewMenu $window
+    [FileSpacerViewMenuTests.MenuUi]::Choose($popup,1,$window)
+    Wait-PreviewMenuClosed $window
+    Wait-PreviewMode $window @{Mode=1;Size=96}
+    $null=Set-GridSeed
+    Move-GridIcons $true $false $true
+    Assert-GridPrediction 96
+    Write-Host 'PASS: native marker toggles with S, follows motion, predicts the drop and adapts to icon zoom.'
+    $initial=Set-GridSeed
+    # Extend the viewport without adding files, to exercise the preview cache
+    # while the native view scrolls during an otherwise ordinary drag.
+    Use-UiView $window {param($view) $view.Position('item-0005',483,1000)}
+    Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($window,[IntPtr]::Zero,40,40,850,599,0x14)) 'Cannot refresh the scrollable fixture viewport.'
+    $initial=Read-GridState
+    Move-GridIcons $true $false $false $false $true
+    Wait-Ui {(Read-GridState).Positions-eq$initial.Positions} 'cancelled Snap retains every original position' 150
+    Write-Host 'PASS: Escape removes the marker without dropping or moving icons.'
     Close-UiFolder $window
 } catch {
     $failure=$_
