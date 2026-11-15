@@ -2,9 +2,9 @@
 
 # Changelog
 
-<a id="unreleased"></a>
+<a id="150"></a>
 
-## Unreleased
+## 1.5.0
 
 - Add File Explorer's eight view modes: Extra large icons, Large icons, Medium icons, Small icons, List, Details, Tiles and Content, with Ctrl+Shift+1 to 8 shortcuts.
 - Add the **Realign icons** command to realign the current layout once, and **Snap** while dragging: hold **S** to align only the dragged icons to the Windows grid without moving the others, with a native destination marker in icon view.
