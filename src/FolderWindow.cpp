@@ -109,7 +109,7 @@ FolderWindow::FolderWindow(IShellItem *const item, const std::wstring &identity)
 
 // Observe only a left-button gesture that began on an icon. The thread hook
 // also sees the messages consumed by the Shell's nested drag/drop loop.
-static LONG gestureRoleAt(POINT point);
+static LONG gestureRoleAt(POINT point, int *itemIndex = nullptr);
 struct FolderWindow::IconSnap {
     static thread_local IconSnap *active;
     FolderWindow &owner;
@@ -117,19 +117,241 @@ struct FolderWindow::IconSnap {
     const ULONG_PTR generation, serial;
     POINT start, drop = {};
     HWND body = nullptr;
-    bool moved = false, finished = false, snap = false;
+    bool moved = false, finished = false, snap = false, heldS = false;
     HHOOK hook = nullptr;
+    std::unique_ptr<std::remove_pointer<HHOOK>::type, decltype(&UnhookWindowsHookEx)> keyboardHook{nullptr, UnhookWindowsHookEx};
+    bool markerPending = false;
+    HWND list = nullptr, marker = nullptr;
+    int anchor = -1, iconSize = 0, itemCount = 0;
+    POINT press = {}, anchorPoint = {}, spacing = {};
+    RECT markerRect = {}, shownRect = {};
+    bool prepared = false, previewReady = false;
+    std::vector<POINT> dragged;
+    std::vector<POINT> initialPoints;
+    std::vector<RECT> dropTargets;
+    POINT targetOrigin = {};
+    RECT targetClient = {};
+    bool targetsReady = false;
+    std::vector<std::pair<LONG,LONG>> destinations;
+    std::set<std::pair<LONG,LONG>> stationary;
+#ifdef FILESPACER_DEBUG
+    ULONGLONG previewTicks = 0, previewMaximum = 0, previewSetupTicks = 0;
+    unsigned previewUpdates = 0;
+#endif
 
-    IconSnap(FolderWindow &window, POINT point, HWND root) : owner(window), view(window.shellView),
-        generation(window.viewGeneration), serial(++window.iconSnapSerial), start(point), body(root) {}
+    IconSnap(FolderWindow &window, POINT point, HWND root, int itemIndex) : owner(window), view(window.shellView),
+        generation(window.viewGeneration), serial(++window.iconSnapSerial), start(point), body(root), anchor(itemIndex) {
+        heldS = GetAsyncKeyState(L'S') < 0;
+        // Learn the control from the actual input target, never a child search.
+        const HWND target = WindowFromPoint(point);
+        wchar_t type[32] = {};
+        POINT origin = {};
+        if (target && IsChild(body, target) && GetClassNameW(target, type, _countof(type))
+                && lstrcmpW(type, WC_LISTVIEWW) == 0 && ListView_GetOrigin(target, &origin)) {
+            const POINT position = screenToClient(target, point);
+            RECT icon = {}, label = {};
+            if (anchor >= 0 && anchor < ListView_GetItemCount(target) && ListView_GetItemPosition(target, anchor, &anchorPoint)
+                    && ListView_GetItemRect(target, anchor, &icon, LVIR_ICON) && ListView_GetItemRect(target, anchor, &label, LVIR_LABEL)
+                    && (PtInRect(&icon, position) || PtInRect(&label, position))) {
+                list = target;
+                press = {position.x + origin.x, position.y + origin.y};
+            }
+        }
+    }
     ~IconSnap() { stop(); }
     bool current() const {
         return owner.isWindowOperational() && owner.shellView == view
             && owner.viewGeneration == generation;
     }
     void stop() {
+        finished = true;
+        markerPending = false;
         if (active == this) active = nullptr;
         if (hook) { UnhookWindowsHookEx(hook); hook = nullptr; }
+        keyboardHook.reset();
+        if (marker && GetPropW(marker, L"FileSpacer.SnapMarker") == this) DestroyWindow(marker);
+        marker = nullptr;
+#ifdef FILESPACER_DEBUG
+        if (previewUpdates) {
+            LARGE_INTEGER frequency = {}; QueryPerformanceFrequency(&frequency);
+            debugPrintf(L"GRID PREVIEW updates=%u total_us=%llu max_us=%llu setup_us=%llu\n", previewUpdates,
+                previewTicks * 1000000 / frequency.QuadPart, previewMaximum * 1000000 / frequency.QuadPart,
+                previewSetupTicks * 1000000 / frequency.QuadPart);
+            previewUpdates = 0;
+        }
+#endif
+    }
+    void hideMarker() {
+        if (marker) ShowWindow(marker, SW_HIDE);
+        SetRectEmpty(&shownRect);
+    }
+    void queueMarker() {
+        if (!markerPending && current() && !finished)
+            markerPending = PostMessageW(owner.hwnd, MSG_ICON_SNAP, serial, 1) != FALSE;
+    }
+    static LRESULT CALLBACK keys(int code, WPARAM key, LPARAM state) {
+        if ((code == HC_ACTION || code == HC_NOREMOVE) && (key == L'S' || key == VK_ESCAPE) && active) {
+            auto session = active->owner.iconSnap;
+            if (session && session->current()) {
+                const bool down = !(static_cast<ULONG_PTR>(state) & (ULONG_PTR(1) << 31));
+                if (key == VK_ESCAPE && down) {
+                    session->snap = false;
+                    session->finished = true;
+                    PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0);
+                } else if (key == L'S' && down != session->heldS) {
+                    session->heldS = down;
+                    session->queueMarker();
+                }
+            }
+        }
+        return CallNextHookEx(nullptr, code, key, state);
+    }
+    bool preparePreview() {
+        prepared = true;
+        if (!list || !IsWindow(list) || !IsChild(body, list) || !current()) return false;
+        CComQIPtr<IFolderView2> folder(view);
+        FOLDERVIEWMODE mode = FVM_AUTO; DWORD flags = 0; UINT areas = UINT_MAX;
+        const auto style = GetWindowLongPtrW(list, GWL_STYLE);
+        if (!folder || FAILED(folder->GetViewModeAndIconSize(&mode, &iconSize)) || !current()
+                || mode != FVM_ICON || FAILED(folder->GetSpacing(&spacing)) || !current()
+                || iconSize <= 0 || iconSize > MAXSHORT / 3 || spacing.x < iconSize || spacing.x > MAXSHORT / 3 || spacing.y <= 0
+                || FAILED(folder->GetCurrentFolderFlags(&flags)) || !current()
+                || (flags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID | FWF_DESKTOP | FWF_NOSCROLL))
+                || (style & (LVS_TYPEMASK | LVS_AUTOARRANGE | LVS_NOSCROLL | LVS_ALIGNMASK)) != LVS_ICON
+                || (GetWindowLongPtrW(list, GWL_EXSTYLE) & WS_EX_LAYOUTRTL)
+                || ListView_IsGroupViewEnabled(list)) return false;
+        ListView_GetNumberOfWorkAreas(list, &areas);
+        if (areas || !current()) return false;
+        itemCount = ListView_GetItemCount(list);
+        if (anchor < 0 || anchor >= itemCount || !(ListView_GetItemState(list, anchor, LVIS_SELECTED) & LVIS_SELECTED)) return false;
+        // One snapshot per gesture. No folder enumeration or native alignment
+        // is performed on mouse movement, including after releasing/repressing S.
+        initialPoints.reserve(static_cast<size_t>(itemCount));
+        for (int i = 0; i < itemCount; ++i) {
+            POINT point = {};
+            if (!ListView_GetItemPosition(list, i, &point) || !current()) return false;
+            initialPoints.push_back(point);
+            if (ListView_GetItemState(list, i, LVIS_SELECTED) & LVIS_SELECTED) dragged.push_back(point);
+            else if (!selectionDetail::snapGridPoint(point, spacing, iconSize)
+                    || !stationary.emplace(point.x, point.y).second) return false;
+        }
+        destinations.reserve(dragged.size());
+        // A separate, input-transparent native ListView supplies the real Windows
+        // insertion mark, including its end caps. Its region exposes only that
+        // mark; the Shell control and its items are never changed for preview.
+        marker = CreateWindowExW(WS_EX_NOACTIVATE | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_TOOLWINDOW, WC_LISTVIEWW, L"",
+            WS_POPUP | WS_DISABLED | LVS_ICON | LVS_AUTOARRANGE | LVS_NOSCROLL,
+            0, 0, spacing.x * 3, iconSize * 3, owner.hwnd, nullptr, GetModuleHandleW(nullptr), nullptr);
+        if (!marker) return false;
+        if (!SetPropW(marker, L"FileSpacer.SnapMarker", this)) { DestroyWindow(marker); marker = nullptr; return false; }
+        COLORREF background = ListView_GetBkColor(list);
+        if (background == CLR_NONE) background = GetSysColor(COLOR_WINDOW);
+        ListView_SetBkColor(marker, background);
+        if (!SetLayeredWindowAttributes(marker, background, 0, LWA_COLORKEY)) return false;
+        ListView_SetInsertMarkColor(marker, GetSysColor(COLOR_GRAYTEXT));
+        ListView_SetIconSpacing(marker, spacing.x, iconSize);
+        LVITEMW entry = {}; entry.mask = LVIF_TEXT; entry.pszText = const_cast<wchar_t *>(L"");
+        LVINSERTMARK mark = {sizeof(mark), LVIM_AFTER, 0, 0};
+        const int inserted = ListView_InsertItem(marker, &entry);
+        if (inserted < 0 || !ListView_Arrange(marker, LVA_DEFAULT)) return false;
+        const bool marked = inserted >= 0 && ListView_SetInsertMark(marker, &mark);
+        const bool rectangle = marked && ListView_GetInsertMarkRect(marker, &markerRect);
+        if (!rectangle || IsRectEmpty(&markerRect)) return false;
+        auto region = std::unique_ptr<std::remove_pointer<HRGN>::type, decltype(&DeleteObject)>(
+            CreateRectRgnIndirect(&markerRect), DeleteObject);
+        if (!region || !SetWindowRgn(marker, region.get(), FALSE)) return false;
+        region.release(); // The native window owns its clipping region.
+        return current();
+    }
+    bool overDropTarget(POINT cursor, POINT origin, const RECT &client) {
+        if (!targetsReady || origin.x != targetOrigin.x || origin.y != targetOrigin.y || !EqualRect(&client, &targetClient)) {
+            dropTargets.clear();
+            // LVM_HITTEST traverses the whole free-position view. Cache the
+            // native visible icon/label rectangles for subsequent mouse moves
+            // instead. Off-screen points need no native rectangle query.
+            for (size_t i = 0; i < initialPoints.size(); ++i) {
+                const LONGLONG x = static_cast<LONGLONG>(initialPoints[i].x) - origin.x;
+                const LONGLONG y = static_cast<LONGLONG>(initialPoints[i].y) - origin.y;
+                if (static_cast<int>(i) != anchor && (x < client.left - 2LL * spacing.x || x > client.right + 2LL * spacing.x
+                        || y < client.top - 2LL * spacing.y || y > client.bottom + 2LL * spacing.y)) continue;
+                for (int part : {LVIR_ICON, LVIR_LABEL}) {
+                    RECT rectangle = {};
+                    if (!ListView_GetItemRect(list, static_cast<int>(i), &rectangle, part) || !current()) {
+                        previewReady = false; return true;
+                    }
+                    dropTargets.push_back(rectangle);
+                }
+            }
+            targetOrigin = origin; targetClient = client; targetsReady = true;
+        }
+        return std::any_of(dropTargets.begin(), dropTargets.end(), [&](const RECT &rectangle) {return PtInRect(&rectangle, cursor) != FALSE;});
+    }
+    void updateMarker(POINT cursor) try {
+#ifdef FILESPACER_DEBUG
+        LARGE_INTEGER began = {}, ended = {}; QueryPerformanceCounter(&began);
+        struct Timing {
+            IconSnap &session; LARGE_INTEGER &began, &ended;
+            bool preparing = false;
+            ~Timing() {
+                QueryPerformanceCounter(&ended);
+                const ULONGLONG ticks = ended.QuadPart - began.QuadPart;
+                if (preparing) { session.previewSetupTicks += ticks; return; }
+                session.previewTicks += ticks;
+                session.previewMaximum = (std::max)(session.previewMaximum, ticks);
+                ++session.previewUpdates;
+            }
+        } timing{*this, began, ended};
+#endif
+        if (!moved || finished || !heldS || GetKeyState(VK_CONTROL) < 0
+                || GetKeyState(VK_MENU) < 0 || !current() || !list || WindowFromPoint(cursor) != list) {
+            hideMarker(); return;
+        }
+        if (!prepared) {
+#ifdef FILESPACER_DEBUG
+            timing.preparing = true;
+#endif
+            previewReady = preparePreview();
+        }
+        if (!previewReady || !current() || ListView_GetItemCount(list) != itemCount) { hideMarker(); return; }
+        POINT origin = {}; const POINT position = screenToClient(list, cursor); RECT client = {};
+        if (!ListView_GetOrigin(list, &origin) || !GetClientRect(list, &client)
+                || overDropTarget(position, origin, client)) { hideMarker(); return; }
+        const LONGLONG dx = static_cast<LONGLONG>(position.x) + origin.x - press.x;
+        const LONGLONG dy = static_cast<LONGLONG>(position.y) + origin.y - press.y;
+        const auto destination = [&](POINT &point) {
+            const LONGLONG x = point.x + dx, y = point.y + dy;
+            if (x < LONG_MIN || x > LONG_MAX || y < LONG_MIN || y > LONG_MAX) return false;
+            point = {static_cast<LONG>(x), static_cast<LONG>(y)};
+            return selectionDetail::snapGridPoint(point, spacing, iconSize);
+        };
+        destinations.clear();
+        for (POINT point : dragged) {
+            if (!destination(point) || stationary.count({point.x, point.y})) { hideMarker(); return; }
+            destinations.emplace_back(point.x, point.y);
+        }
+        std::sort(destinations.begin(), destinations.end());
+        if (std::adjacent_find(destinations.begin(), destinations.end()) != destinations.end()) { hideMarker(); return; }
+        POINT point = anchorPoint;
+        if (!destination(point)) { hideMarker(); return; }
+        // The line marks the leading edge of the destination cell. Preserve
+        // the original cursor-to-icon offset and account for native scrolling.
+        const int width = rectWidth(markerRect), height = rectHeight(markerRect);
+        const LONGLONG horizontal = static_cast<LONGLONG>(point.x) - origin.x - (spacing.x - iconSize) / 2 - width / 2;
+        const LONGLONG vertical = static_cast<LONGLONG>(point.y) - origin.y;
+        if (horizontal < LONG_MIN || horizontal > LONG_MAX - width || vertical < LONG_MIN || vertical > LONG_MAX - height
+                || horizontal - markerRect.left < INT_MIN || horizontal - markerRect.left > INT_MAX
+                || vertical - markerRect.top < INT_MIN || vertical - markerRect.top > INT_MAX) { hideMarker(); return; }
+        const int x = static_cast<int>(horizontal), y = static_cast<int>(vertical);
+        RECT next = {x, y, x + width, y + height}, clipped = {};
+        if (!IntersectRect(&clipped, &client, &next) || !EqualRect(&clipped, &next)) { hideMarker(); return; }
+        if (!EqualRect(&next, &shownRect)) {
+            MapWindowPoints(list, nullptr, reinterpret_cast<POINT *>(&next), 2);
+            if (!SetWindowPos(marker, HWND_TOPMOST, next.left - markerRect.left, next.top - markerRect.top, 0, 0,
+                    SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW)) { hideMarker(); return; }
+            shownRect = {x, y, x + width, y + height};
+        }
+    } catch (const std::bad_alloc &) {
+        previewReady = false; hideMarker();
     }
     static LRESULT CALLBACK messages(int code, WPARAM removed, LPARAM data) {
         if (code == HC_ACTION && removed == PM_REMOVE && active) {
@@ -147,6 +369,8 @@ struct FolderWindow::IconSnap {
                     }
                     if ((message->message == WM_KEYDOWN || message->message == WM_KEYUP)
                             && message->wParam == L'S') {
+                        session->heldS = message->message == WM_KEYDOWN;
+                        session->queueMarker();
                         // S belongs to this gesture, not the view's type-to-select.
                         message->message = WM_NULL;
                         message->wParam = message->lParam = 0;
@@ -154,10 +378,11 @@ struct FolderWindow::IconSnap {
                             || message->message == WM_CANCELMODE) {
                         session->stop();
                     } else if (message->message == WM_LBUTTONUP) {
+                        session->hideMarker();
                         session->finished = true;
                         session->drop = message->pt;
                         const HWND target = WindowFromPoint(session->drop);
-                        session->snap = session->moved && GetKeyState(L'S') < 0
+                        session->snap = session->moved && session->heldS
                             && GetKeyState(VK_CONTROL) >= 0 && GetKeyState(VK_MENU) >= 0;
                         // Test the target before the native drop puts the moved
                         // icons underneath the pointer. Folder/file drops stay native.
@@ -168,6 +393,8 @@ struct FolderWindow::IconSnap {
                         // loop handles this; never reposition inside the hook.
                         if (session->current())
                             PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0);
+                    } else if (message->message == WM_MOUSEMOVE) {
+                        if (session->heldS || !IsRectEmpty(&session->shownRect)) session->queueMarker();
                     }
                 }
             }
@@ -190,15 +417,17 @@ void FolderWindow::watchIconDrag(const MSG *message) {
     HWND body = nullptr;
     CComQIPtr<IFolderView2> view(source);
     DWORD flags = 0;
+    int itemIndex = -1;
     if (!view || FAILED(source->GetWindow(&body)) || !body
             || (message->hwnd != body && !IsChild(body, message->hwnd))
             || !spatialView(view) || FAILED(view->GetCurrentFolderFlags(&flags))
-            || (flags & FWF_SNAPTOGRID) || gestureRoleAt(message->pt) != ROLE_SYSTEM_LISTITEM
+            || (flags & FWF_SNAPTOGRID) || gestureRoleAt(message->pt, &itemIndex) != ROLE_SYSTEM_LISTITEM
             || !isWindowOperational() || shellView != source || viewGeneration != generation) return;
     if (IconSnap::active) IconSnap::active->stop();
-    auto session = std::make_shared<IconSnap>(*this, message->pt, body);
+    auto session = std::make_shared<IconSnap>(*this, message->pt, body, itemIndex);
     session->hook = SetWindowsHookExW(WH_GETMESSAGE, IconSnap::messages, nullptr, GetCurrentThreadId());
-    if (!session->hook) return;
+    session->keyboardHook.reset(SetWindowsHookExW(WH_KEYBOARD, IconSnap::keys, nullptr, GetCurrentThreadId()));
+    if (!session->hook || !session->keyboardHook) return;
     iconSnap = session;
     IconSnap::active = session.get();
 }
@@ -1231,9 +1460,18 @@ static void viewGestureTargetAt(POINT point, ViewGestureTarget &target) {
     }
 }
 
-static LONG gestureRoleAt(POINT point) {
+static LONG gestureRoleAt(POINT point, int *itemIndex) {
     ViewGestureTarget target;
     viewGestureTargetAt(point, target);
+    if (itemIndex) {
+        *itemIndex = -1;
+        HWND window = nullptr;
+        // Reuse the standard provider's one-based child as a candidate instead
+        // of a second full hit-test. The preview checks its native bounds.
+        if (target.role == ROLE_SYSTEM_LISTITEM && target.child.vt == VT_I4 && target.child.lVal > 0
+                && SUCCEEDED(WindowFromAccessibleObject(target.accessible, &window)) && window == WindowFromPoint(point))
+            *itemIndex = target.child.lVal - 1;
+    }
     return target.role;
 }
 
@@ -3056,6 +3294,12 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
     CComPtr<ItemWindow> messageKeepAlive(this);
     if (message == MSG_ICON_SNAP) {
         auto session = iconSnap;
+        if (session && session->serial == wParam && lParam == 1) {
+            session->markerPending = false;
+            POINT cursor = {};
+            if (!session->finished && session->current() && GetCursorPos(&cursor)) session->updateMarker(cursor);
+            return 0;
+        }
         if (session && session->serial == wParam && session->finished) {
             session->stop();
             iconSnap.reset();
