@@ -225,9 +225,14 @@ Persistent branch state follows the same principle as [GitHub's lock action](htt
 without adding a dependency. Scheduled checks may be delayed by GitHub, and public
 repositories' schedules are disabled after 60 days without repository activity.
 
-Before publication, update both version definitions in `src/resource.h`, add
-the matching `CHANGELOG.md` section, and commit the intended changes. From Git
-Bash, substitute the intended version:
+Keep development notes under their intended version in `CHANGELOG.md`, including
+on branches that have not been merged into `main`. Never add an `Unreleased`
+section or its translations. The root English changelog is the reference for all
+localized changelogs; keep them synchronized and leave future versions undated.
+
+Before publication, update both version definitions in `src/resource.h`, check
+the matching changelog section and translations, and commit the intended changes.
+From Git Bash, substitute the intended version:
 
 ```bash
 bash release.sh X.Y.Z
