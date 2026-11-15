@@ -44,6 +44,7 @@
 namespace filespacer {
 
 FolderWindow::~FolderWindow() {
+    iconSnap.reset();
     if (columnLayout) columnLayout->stop();
     watchProvisionalInput(false); // The hook must never compare a destroyed window.
 }
@@ -105,6 +106,191 @@ void FolderWindow::init() {
 
 FolderWindow::FolderWindow(IShellItem *const item, const std::wstring &identity)
         : ItemWindow(item, identity) {}
+
+// Observe only a left-button gesture that began on an icon. The thread hook
+// also sees the messages consumed by the Shell's nested drag/drop loop.
+static LONG gestureRoleAt(POINT point);
+struct FolderWindow::IconSnap {
+    static thread_local IconSnap *active;
+    FolderWindow &owner;
+    CComPtr<IShellView> view;
+    const ULONG_PTR generation, serial;
+    POINT start, drop = {};
+    HWND body = nullptr;
+    bool moved = false, finished = false, snap = false;
+    HHOOK hook = nullptr;
+
+    IconSnap(FolderWindow &window, POINT point, HWND root) : owner(window), view(window.shellView),
+        generation(window.viewGeneration), serial(++window.iconSnapSerial), start(point), body(root) {}
+    ~IconSnap() { stop(); }
+    bool current() const {
+        return owner.isWindowOperational() && owner.shellView == view
+            && owner.viewGeneration == generation;
+    }
+    void stop() {
+        if (active == this) active = nullptr;
+        if (hook) { UnhookWindowsHookEx(hook); hook = nullptr; }
+    }
+    static LRESULT CALLBACK messages(int code, WPARAM removed, LPARAM data) {
+        if (code == HC_ACTION && removed == PM_REMOVE && active) {
+            auto session = active->owner.iconSnap;
+            if (session) {
+                CComPtr<ItemWindow> keepAlive(&session->owner);
+                auto message = reinterpret_cast<MSG *>(data);
+                if (!session->current()) {
+                    session->stop();
+                } else if (!session->finished) {
+                    if (message->message == WM_MOUSEMOVE || message->message == WM_LBUTTONUP) {
+                        session->moved = session->moved
+                            || std::abs(message->pt.x - session->start.x) >= GetSystemMetrics(SM_CXDRAG)
+                            || std::abs(message->pt.y - session->start.y) >= GetSystemMetrics(SM_CYDRAG);
+                    }
+                    if ((message->message == WM_KEYDOWN || message->message == WM_KEYUP)
+                            && message->wParam == L'S') {
+                        // S belongs to this gesture, not the view's type-to-select.
+                        message->message = WM_NULL;
+                        message->wParam = message->lParam = 0;
+                    } else if ((message->message == WM_KEYDOWN && message->wParam == VK_ESCAPE)
+                            || message->message == WM_CANCELMODE) {
+                        session->stop();
+                    } else if (message->message == WM_LBUTTONUP) {
+                        session->finished = true;
+                        session->drop = message->pt;
+                        const HWND target = WindowFromPoint(session->drop);
+                        session->snap = session->moved && GetKeyState(L'S') < 0
+                            && GetKeyState(VK_CONTROL) >= 0 && GetKeyState(VK_MENU) >= 0;
+                        // Test the target before the native drop puts the moved
+                        // icons underneath the pointer. Folder/file drops stay native.
+                        session->snap = session->snap
+                            && (target == session->body || IsChild(session->body, target))
+                            && gestureRoleAt(session->drop) == ROLE_SYSTEM_LIST;
+                        // The native drop completes before the ordinary message
+                        // loop handles this; never reposition inside the hook.
+                        if (session->current())
+                            PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0);
+                    }
+                }
+            }
+        }
+        return CallNextHookEx(nullptr, code, removed, data);
+    }
+};
+
+thread_local FolderWindow::IconSnap *FolderWindow::IconSnap::active = nullptr;
+
+void FolderWindow::watchIconDrag(const MSG *message) {
+    if (message->message != WM_LBUTTONDOWN) return;
+    iconSnap.reset();
+    if (!viewReady || !initialStateApplied || !enumerationComplete || restoringState
+            || provisionalInputBlocked || provisionalCaptureBusy || viewMenuPreview || viewMenuRestore
+            || !searchText.empty() || !shellView) return;
+    CComPtr<ItemWindow> keepAlive(this);
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    HWND body = nullptr;
+    CComQIPtr<IFolderView2> view(source);
+    DWORD flags = 0;
+    if (!view || FAILED(source->GetWindow(&body)) || !body
+            || (message->hwnd != body && !IsChild(body, message->hwnd))
+            || !spatialView(view) || FAILED(view->GetCurrentFolderFlags(&flags))
+            || (flags & FWF_SNAPTOGRID) || gestureRoleAt(message->pt) != ROLE_SYSTEM_LISTITEM
+            || !isWindowOperational() || shellView != source || viewGeneration != generation) return;
+    if (IconSnap::active) IconSnap::active->stop();
+    auto session = std::make_shared<IconSnap>(*this, message->pt, body);
+    session->hook = SetWindowsHookExW(WH_GETMESSAGE, IconSnap::messages, nullptr, GetCurrentThreadId());
+    if (!session->hook) return;
+    iconSnap = session;
+    IconSnap::active = session.get();
+}
+
+void FolderWindow::realignIcons(bool selectedOnly) {
+    if (!selectedOnly && (viewMenuPreview || viewMenuRestore)) {
+        iconRealignPending = true;
+        return;
+    }
+    if (!viewReady || !initialStateApplied || !enumerationComplete || restoringState
+            || provisionalInputBlocked || provisionalCaptureBusy || viewMenuPreview || viewMenuRestore
+            || !searchText.empty() || GetCapture()) return;
+    iconRealignPending = false;
+    CComPtr<ItemWindow> keepAlive(this);
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration;
+    auto current = [&]() {
+        return isWindowOperational() && shellView == source && viewGeneration == generation;
+    };
+    CComQIPtr<IFolderView2> view(source);
+    DWORD flags = 0;
+    if (!view || !current() || !spatialView(view) || !current()
+            || FAILED(view->GetCurrentFolderFlags(&flags)) || !current()) return;
+    if (selectedOnly && (flags & FWF_SNAPTOGRID)) return;
+    std::vector<PreparedIconPosition> stationary;
+    if (selectedOnly) {
+        int count = 0;
+        if (FAILED(view->ItemCount(SVGIO_SELECTION, &count)) || !current() || !count) return;
+        CComPtr<IEnumIDList> items;
+        if (FAILED(view->Items(SVGIO_ALLVIEW, IID_PPV_ARGS(&items))) || !current() || !items) return;
+        for (;;) {
+            PreparedIconPosition position;
+            const HRESULT next = items->Next(1, &position.id, nullptr);
+            if (!current() || next == S_FALSE) break;
+            if (next != S_OK || !position.id) return;
+            DWORD state = 0;
+            if (FAILED(view->GetSelectionState(position.id, &state)) || !current()) return;
+            if (state & SVSI_SELECT) continue;
+            if (FAILED(view->GetItemPosition(position.id, &position.point)) || !current()) return;
+            stationary.push_back(std::move(position));
+        }
+    }
+    if (!current()) return;
+    std::vector<PCUITEMID_CHILD> ids;
+    std::vector<POINT> points;
+    ids.reserve(stationary.size());
+    points.reserve(stationary.size());
+    // Suppress intermediate whole-view alignment for a selected-only snap.
+    // Always restore the native flag before saves or deferred closure resume.
+    ++navigationDepth;
+    restoringState = true;
+    struct Resume {
+        FolderWindow &owner;
+        decltype(current) &valid;
+        ~Resume() {
+            if (valid()) owner.restoringState = false;
+            owner.resumeDeferredClose();
+        }
+    } resume{*this, current};
+    const bool redraw = SUCCEEDED(view->SetRedraw(FALSE));
+    HRESULT result = current() ? S_OK : E_ABORT;
+    if (SUCCEEDED(result) && (flags & FWF_SNAPTOGRID))
+        result = view->SetCurrentFolderFlags(FWF_SNAPTOGRID, 0);
+    if (SUCCEEDED(result) && current())
+        result = view->SetCurrentFolderFlags(FWF_SNAPTOGRID, FWF_SNAPTOGRID);
+    if (current()) {
+        const HRESULT restored = view->SetCurrentFolderFlags(FWF_SNAPTOGRID, flags & FWF_SNAPTOGRID);
+        if (FAILED(restored)) result = restored;
+    }
+    if (current() && !(flags & FWF_SNAPTOGRID)) {
+        for (const auto &position : stationary) {
+            POINT actual = {};
+            const HRESULT read = view->GetItemPosition(position.id, &actual);
+            if (!current()) break;
+            if (FAILED(read)) { result = read; break; }
+            if (actual.x != position.point.x || actual.y != position.point.y) {
+                ids.push_back(position.id);
+                points.push_back(position.point);
+            }
+        }
+        if (current() && !ids.empty()) {
+            const HRESULT restored = view->SelectAndPositionItems(static_cast<UINT>(ids.size()),
+                ids.data(), points.data(), SVSI_POSITIONITEM | SVSI_NOSTATECHANGE);
+            if (FAILED(restored)) result = restored;
+        }
+    }
+    if (redraw && current()) checkHR(view->SetRedraw(TRUE));
+    if (!current()) return;
+    if (!checkHR(result)) setStatusText(getErrorMessage(result).get());
+    viewStateDirty(FolderState::Icons);
+    SetTimer(hwnd, TIMER_SAVE_STATE, 250, nullptr);
+}
 
 // The menu owns this session while tracking. Once the menu closes, the window
 // retains it only while a refill observed by apply() is still running, to replay
@@ -364,6 +550,10 @@ struct FolderWindow::ViewMenuPreview {
         }
         if (command == IDM_FILL_COLUMNS) {
             owner.toggleFillColumns();
+            return;
+        }
+        if (command == IDM_REALIGN_ICONS) {
+            owner.realignIcons();
             return;
         }
         auto info = owner.makeInvokeInfo(static_cast<int>(command - IDM_SHELL_FIRST), POINT{});
@@ -783,6 +973,8 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         return true;
     if (!isWindowOperational())
         return false;
+    watchIconDrag(msg);
+    if (!isWindowOperational()) return false;
     if (activationClickPending && msg->message >= WM_MOUSEFIRST && msg->message <= WM_MOUSELAST
             && msg->message != WM_MOUSEMOVE) {
         // Only the button-down that caused the activation is a candidate.
@@ -1541,6 +1733,7 @@ bool FolderWindow::arrangementChanged(IFolderView *const folderView) {
 
 void FolderWindow::scheduleStateSave(bool icons) {
     if (restoringState || !viewReady || viewMenuPreview) return;
+    if (iconRealignPending && !viewMenuRestore && enumerationComplete) realignIcons();
     if (initialStateApplied) {
         CComPtr<ItemWindow> keepAlive(this);
         CComPtr<IFolderView> view;
@@ -1970,6 +2163,8 @@ void FolderWindow::restoreReopenViewState() {
 }
 
 void FolderWindow::onDestroy() {
+    iconSnap.reset();
+    iconRealignPending = false;
     if (columnLayout) columnLayout->stop();
     columnLayout.reset();
     viewMenuRequested = false;
@@ -2013,6 +2208,7 @@ void FolderWindow::onDestroy() {
 }
 
 bool FolderWindow::onCommand(WORD command) {
+    if (command == IDM_REALIGN_ICONS) { realignIcons(); return true; }
     if (command == IDM_FILL_COLUMNS) { toggleFillColumns(); return true; }
     if (provisionalBaseline && (command == IDM_RESTORE_LAYOUT || command == IDM_REPLACE_LAYOUT
             || command == IDM_TOGGLE_STATE_LOCK)) {
@@ -2842,6 +3038,17 @@ bool FolderWindow::isBackgroundActivationClick(const MSG *msg) const {
 
 LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     CComPtr<ItemWindow> messageKeepAlive(this);
+    if (message == MSG_ICON_SNAP) {
+        auto session = iconSnap;
+        if (session && session->serial == wParam && session->finished) {
+            session->stop();
+            iconSnap.reset();
+            if (session->current() && session->snap && !GetCapture())
+                realignIcons(true);
+        }
+        return 0;
+    }
+    if (message == WM_CANCELMODE) iconSnap.reset();
     if (message == WM_ENTERSIZEMOVE) {
         resizingColumns = true;
         resizeDeferred = settings::getDetailsColumnsDeferred();
@@ -3722,6 +3929,22 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     if (!isWindowOperational()) return;
     const int menuCount = GetMenuItemCount(subMenu);
     if (menuCount < 0) return;
+    for (int i = 0; i < menuCount; ++i) {
+        MENUITEMINFOW entry = {sizeof(entry)};
+        entry.fMask = MIIM_ID | MIIM_FTYPE;
+        if (!GetMenuItemInfoW(subMenu, i, TRUE, &entry) || (entry.fType & MFT_SEPARATOR)
+                || entry.wID < IDM_SHELL_FIRST || entry.wID > IDM_SHELL_LAST) continue;
+        wchar_t verb[64] = {};
+        if (SUCCEEDED(contextMenu->GetCommandString(entry.wID - IDM_SHELL_FIRST,
+                GCS_VERBW, nullptr, reinterpret_cast<char *>(verb), _countof(verb)))
+                && lstrcmpiW(verb, L"arrangeautogrid") == 0) {
+            // Observed on the native View menu. An unrecognized provider keeps
+            // its own label; no translated-text or numeric-command matching.
+            entry.fMask = MIIM_STRING;
+            entry.dwTypeData = const_cast<wchar_t *>(getString(IDS_KEEP_ICONS_ALIGNED));
+            checkLE(SetMenuItemInfoW(subMenu, i, TRUE, &entry));
+        }
+    }
     int thumbnailPosition = menuCount;
     for (int i = 0; i < menuCount; ++i) {
         MENUITEMINFOW menuItem = {sizeof(menuItem)};
@@ -3739,6 +3962,14 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     thumbnailItem.dwTypeData = const_cast<wchar_t *>(getString(IDS_GLOBAL_THUMBNAILS));
     thumbnailItem.fState = thumbnailState.fIconsOnly ? MFS_UNCHECKED : MFS_CHECKED;
     checkLE(InsertMenuItemW(subMenu, thumbnailPosition, TRUE, &thumbnailItem));
+    MENUITEMINFOW realignItem = {sizeof(realignItem)};
+    realignItem.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE;
+    realignItem.wID = IDM_REALIGN_ICONS;
+    realignItem.dwTypeData = const_cast<wchar_t *>(getString(IDS_REALIGN_ICONS));
+    realignItem.fState = folderView && spatialView(folderView) && searchText.empty()
+        ? MFS_ENABLED : MFS_DISABLED;
+    if (!isWindowOperational()) return;
+    checkLE(InsertMenuItemW(subMenu, GetMenuItemCount(subMenu), TRUE, &realignItem));
     if (settings::getDetailsColumnsEnabled()) {
         MENUITEMINFOW columnsItem = {sizeof(columnsItem)};
         columnsItem.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE;
@@ -3767,8 +3998,10 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     if (hook) {
         UnhookWindowsHookEx(hook);
         ViewMenuPreview::active = previous;
-        preview->finish((cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) || cmd == IDM_TOGGLE_THUMBNAILS || cmd == IDM_FILL_COLUMNS
+        preview->finish((cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) || cmd == IDM_TOGGLE_THUMBNAILS || cmd == IDM_FILL_COLUMNS || cmd == IDM_REALIGN_ICONS
             ? static_cast<UINT>(cmd) : 0);
+    } else if (isWindowOperational() && cmd == IDM_REALIGN_ICONS) {
+        realignIcons();
     } else if (isWindowOperational() && cmd == IDM_FILL_COLUMNS) {
         toggleFillColumns();
     } else if (isWindowOperational() && cmd == IDM_TOGGLE_THUMBNAILS) {
@@ -4104,6 +4337,8 @@ STDMETHODIMP FolderWindow::Notify(IShellView *, DWORD) {
 // OR: OnNavigationPending, OnNavigationFailed
 STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
     CComPtr<ItemWindow> keepAlive(this);
+    iconSnap.reset();
+    iconRealignPending = false;
     viewMenuPreview.reset();
     viewMenuRestore.reset();
     cancelAltGesture();
@@ -4159,6 +4394,7 @@ STDMETHODIMP FolderWindow::OnNavigationFailed(PCIDLIST_ABSOLUTE) {
 
 STDMETHODIMP FolderWindow::OnViewCreated(IShellView *const view) {
     CComPtr<ItemWindow> keepAlive(this);
+    iconSnap.reset();
     if (columnLayout) columnLayout->stop();
     columnLayout.reset();
     debugPrintf(L"NATIVE HWND=%p OnViewCreated\n", hwnd);
