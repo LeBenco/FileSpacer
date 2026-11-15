@@ -792,8 +792,9 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
         if (!isWindowOperational())
             return false;
     }
-    // A native rename in the view keeps its keys and its wheel; the search and
-    // address fields deliberately share the window shortcuts.
+    // A native rename keeps its keys and ordinary wheel. Ctrl+wheel is consumed
+    // without zooming: native zoom would bypass the position-preserving path.
+    // The search and address fields deliberately share the window shortcuts.
     auto renaming = [&]() {
         const CComPtr<IShellView> view = shellView;
         HWND root = nullptr;
