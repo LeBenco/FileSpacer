@@ -198,14 +198,16 @@ struct FolderWindow::IconSnap {
     HWND body = nullptr;
     bool moved = false, finished = false, dropped = false, snap = false, heldS = false, placement = false;
     CComPtr<IIconDropPolicySite> dropSite;
+    // A native target can reenter after the source gesture was finalized.
+    std::shared_ptr<HRESULT> dropResult;
     PreparedIconPositions movingPositions;
+    ShellIconGrid grid;
     CComHeapPtr<ITEMID_CHILD> originalFocus;
-    int focusIndex = -1;
-    struct ImageTarget { RECT bounds; int index; };
+    int focusIndex = -1, nativeDropIndex = -1;
+    struct ImageTarget { RECT bounds, itemBounds; int index; };
     std::map<std::pair<LONG,LONG>, ImageTarget> images;
     std::vector<bool> movingItems;
-    bool pointsCaptured = false, hoverKnown = false, hoverPlacement = false;
-    POINT hoverPoint = {};
+    bool pointsCaptured = false;
     FOLDERVIEWMODE previewMode = FVM_AUTO;
     HHOOK hook = nullptr;
     std::unique_ptr<std::remove_pointer<HHOOK>::type, decltype(&UnhookWindowsHookEx)> keyboardHook{nullptr, UnhookWindowsHookEx};
@@ -220,6 +222,7 @@ struct FolderWindow::IconSnap {
     std::vector<POINT> dragged;
     std::vector<POINT> initialPoints;
     std::vector<RECT> dropTargets;
+    std::vector<std::pair<RECT,int>> itemTargets;
     POINT targetOrigin = {};
     RECT targetClient = {};
     bool targetsReady = false;
@@ -257,6 +260,7 @@ struct FolderWindow::IconSnap {
             && owner.viewGeneration == generation;
     }
     void stop() {
+        if (dropResult && *dropResult == E_PENDING) *dropResult = E_ABORT;
         finished = true;
         markerPending = false;
         if (active == this) active = nullptr;
@@ -287,7 +291,8 @@ struct FolderWindow::IconSnap {
         LONG references = 1;
         const DWORD thread = GetCurrentThreadId();
         std::weak_ptr<IconSnap> gesture;
-        explicit Policy(const std::shared_ptr<IconSnap> &value) : gesture(value) {}
+        const std::shared_ptr<HRESULT> result;
+        explicit Policy(const std::shared_ptr<IconSnap> &value) : gesture(value), result(value->dropResult) {}
         STDMETHODIMP QueryInterface(REFIID iid, void **out) override {
             if (!out) return E_POINTER;
             *out = nullptr;
@@ -302,6 +307,9 @@ struct FolderWindow::IconSnap {
         }
         STDMETHODIMP Placement(PCUITEMID_CHILD target, POINTL point, DWORD keys) override {
             if (thread != GetCurrentThreadId()) return E_ABORT;
+            if (*result != E_PENDING) {
+                return *result;
+            }
             auto session = gesture.lock();
             if (!session) return E_ABORT;
             CComPtr<ItemWindow> keepAlive(&session->owner);
@@ -327,47 +335,52 @@ struct FolderWindow::IconSnap {
     }
     void clearDropHighlight() {
         if (!list || !current()) return;
-        const int dropIndex = ListView_GetNextItem(list, -1, LVNI_DROPHILITED);
-        if (dropIndex >= 0) ListView_SetItemState(list, dropIndex, 0, LVIS_DROPHILITED);
+        int index = ListView_GetNextItem(list, -1, LVNI_DROPHILITED);
+        if (index < 0) {
+            POINT cursor = {};
+            if (!GetCursorPos(&cursor)) return;
+            overImage(cursor); // Refresh the visible rectangle cache if needed.
+            const POINT point = screenToClient(list, cursor);
+            for (const auto &target : itemTargets) {
+                if (PtInRect(&target.first, point)
+                        && (ListView_GetItemState(list, target.second, LVIS_DROPHILITED) & LVIS_DROPHILITED)) {
+                    index = target.second; break;
+                }
+            }
+            if (index < 0) return;
+        }
+        // Clearing the visual state leaves the Shell's target cache intact.
+        // Remember its valid feedback so releasing S can restore it in place.
+        nativeDropIndex = index;
+        if (current()) ListView_SetItemState(list, index, 0, LVIS_DROPHILITED);
     }
     bool overImage(POINT cursor) {
         if (!list) return false;
         POINT origin = {}, point = screenToClient(list, cursor); RECT client = {};
         if (!ListView_GetOrigin(list, &origin) || !GetClientRect(list, &client)) return false;
         if (!targetsReady || origin.x != targetOrigin.x || origin.y != targetOrigin.y || !EqualRect(&client, &targetClient)) {
-            dropTargets.clear();
+            dropTargets.clear(); itemTargets.clear();
             for (const auto &image : images) {
                 if (movingItems[image.second.index]) continue;
                 RECT rectangle = image.second.bounds, visible = {};
                 OffsetRect(&rectangle, -origin.x, -origin.y);
                 if (IntersectRect(&visible, &rectangle, &client)) dropTargets.push_back(rectangle);
+                rectangle = image.second.itemBounds;
+                OffsetRect(&rectangle, -origin.x, -origin.y);
+                if (IntersectRect(&visible, &rectangle, &client)) itemTargets.emplace_back(rectangle, image.second.index);
             }
             targetsReady = true; targetOrigin = origin; targetClient = client;
         }
         return std::any_of(dropTargets.begin(), dropTargets.end(), [&](const RECT &rectangle) { return PtInRect(&rectangle, point) != FALSE; });
     }
-    HRESULT placementForTarget(PCUITEMID_CHILD target, POINT cursor, DWORD keys) try {
+    HRESULT placementForTarget(PCUITEMID_CHILD, POINT cursor, DWORD keys) try {
         if (!current() || (finished && !dropped)) return E_ABORT;
         if (permanent()) return S_FALSE;
         const bool force = finished ? snap : heldS;
         if (!force && ((keys & MK_CONTROL) || GetKeyState(VK_MENU) < 0)) return S_FALSE;
-        bool place = true;
-        if (!force && target) {
-            if (!prepared) previewReady = preparePreview();
-            if (!previewReady || !current()) return E_ABORT;
-            CComQIPtr<IFolderView2> folder(view);
-            POINT position = {}; DWORD state = 0;
-            if (!folder || FAILED(folder->GetItemPosition(target, &position)) || !current()
-                    || FAILED(folder->GetSelectionState(target, &state)) || !current()) return E_ABORT;
-            const auto found = images.find({position.x, position.y});
-            if (found == images.end()) return E_ABORT;
-            POINT origin = {}, point = screenToClient(list, cursor);
-            if (!ListView_GetOrigin(list, &origin)) return E_ABORT;
-            point.x += origin.x; point.y += origin.y;
-            place = (state & SVSI_SELECT) || !PtInRect(&found->second.bounds, point);
-        }
-        hoverKnown = true; hoverPoint = cursor; hoverPlacement = place;
-        if (finished && dropped) placement = place;
+        if (!prepared) previewReady = preparePreview();
+        if (!previewReady || !current()) return E_ABORT;
+        const bool place = force || !overImage(cursor);
         if (place) clearDropHighlight();
         return place ? S_OK : S_FALSE;
     } catch (const std::bad_alloc &) { return E_OUTOFMEMORY; }
@@ -383,14 +396,14 @@ struct FolderWindow::IconSnap {
             const LONGLONG x = position.point.x + dx, y = position.point.y + dy;
             if (x < LONG_MIN || x > LONG_MAX || y < LONG_MIN || y > LONG_MAX) return false;
             POINT destination = {static_cast<LONG>(x), static_cast<LONG>(y)};
-            if (snap && previewMode == FVM_ICON && !alignIconToGrid(destination, spacing, iconSize)) return false;
             movingPositions.items.push_back(position.id); movingPositions.points.push_back(destination);
         }
         movingPositions.ready = true;
         auto valid = [&]() { return current(); };
         ++owner.navigationDepth;
         owner.restoringState = true;
-        HRESULT result = applyIconPositions(movingPositions.view, movingPositions, valid);
+        HRESULT result = snap && previewMode == FVM_ICON ? grid.apply(movingPositions, valid)
+            : applyIconPositions(movingPositions.view, movingPositions, valid);
         if (!current()) { owner.resumeDeferredClose(); return false; }
         CComQIPtr<IFolderView2> folder(view);
         if (SUCCEEDED(result) && current() && folder) {
@@ -484,15 +497,18 @@ struct FolderWindow::IconSnap {
                 }
             } else if (permanent() && !automatic()) stationary.emplace(point.x, point.y);
             if (!permanent()) {
-                RECT image = {};
-                if (!ListView_GetItemRect(list, i, &image, LVIR_ICON) || !current()) return false;
-                OffsetRect(&image, snapshotOrigin.x, snapshotOrigin.y);
+                RECT image = {}, itemBounds = {};
+                if (!ListView_GetItemRect(list, i, &itemBounds, LVIR_SELECTBOUNDS) || !current()) return false;
+                OffsetRect(&itemBounds, snapshotOrigin.x, snapshotOrigin.y);
                 if (mode == FVM_ICON) {
                     if (point.x > LONG_MAX - iconSize || point.y > LONG_MAX - iconSize) return false;
                     image = {point.x, point.y, point.x + iconSize, point.y + iconSize};
+                } else {
+                    if (!ListView_GetItemRect(list, i, &image, LVIR_ICON) || !current()) return false;
+                    OffsetRect(&image, snapshotOrigin.x, snapshotOrigin.y);
                 }
-                const auto inserted = images.emplace(std::make_pair(point.x, point.y), ImageTarget{image, i});
-                if (!inserted.second && !moving) inserted.first->second.index = i;
+                const auto inserted = images.emplace(std::make_pair(point.x, point.y), ImageTarget{image, itemBounds, i});
+                if (!inserted.second && !moving) inserted.first->second = ImageTarget{image, itemBounds, i};
             }
         }
         POINT actualAnchor = {}; RECT icon = {};
@@ -608,7 +624,17 @@ struct FolderWindow::IconSnap {
         }
         if (!previewReady || !current() || ListView_GetItemCount(list) != itemCount) { hideMarker(); return; }
         if (!permanent()) {
-            if (heldS) clearDropHighlight();
+            if (heldS || !overImage(cursor)) clearDropHighlight();
+            else if (nativeDropIndex >= 0 && nativeDropIndex < itemCount) {
+                const POINT point = initialPoints[nativeDropIndex];
+                const auto found = images.find({point.x, point.y});
+                POINT origin = {}, position = screenToClient(list, cursor);
+                if (found != images.end() && ListView_GetOrigin(list, &origin)) {
+                    position.x += origin.x; position.y += origin.y;
+                    if (PtInRect(&found->second.bounds, position))
+                        ListView_SetItemState(list, nativeDropIndex, LVIS_DROPHILITED, LVIS_DROPHILITED);
+                }
+            }
             if (!heldS || previewMode != FVM_ICON) {
                 hideMarker();
                 if (!heldS && !overImage(cursor) && GetKeyState(VK_CONTROL) >= 0 && GetKeyState(VK_MENU) >= 0)
@@ -640,7 +666,7 @@ struct FolderWindow::IconSnap {
                 return true;
             }
             point = {static_cast<LONG>(x), static_cast<LONG>(y)};
-            return alignIconToGrid(point, spacing, iconSize);
+            return grid.align(point);
         };
         POINT point = anchorPoint;
         if (automatic()) {
@@ -723,11 +749,10 @@ struct FolderWindow::IconSnap {
                         const HWND target = WindowFromPoint(session->drop);
                         const bool inside = target == session->body || IsChild(session->body, target);
                         session->snap = session->moved && session->heldS && !session->permanent();
-                        const bool hover = session->hoverKnown && session->hoverPoint.x == session->drop.x
-                            && session->hoverPoint.y == session->drop.y;
                         session->placement = session->moved && session->list && session->pointsCaptured && !session->permanent() && inside
                             && (session->snap || (GetKeyState(VK_CONTROL) >= 0 && GetKeyState(VK_MENU) >= 0
-                                && (hover ? session->hoverPlacement : !session->overImage(session->drop))));
+                                && !session->overImage(session->drop)));
+                        if (session->dropResult) *session->dropResult = session->placement || session->snap ? S_OK : S_FALSE;
                         if (session->placement || session->snap) {
                             // Finish the Shell drag as cancellation before it can
                             // transfer a file. Apply only icon coordinates later.
@@ -776,12 +801,24 @@ void FolderWindow::watchIconDrag(const MSG *message) {
             || !isWindowOperational() || shellView != source || viewGeneration != generation) return;
     if (IconSnap::active) IconSnap::active->stop();
     auto session = std::make_shared<IconSnap>(*this, message->pt, body, itemIndex, flags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID));
+    if (mode == FVM_ICON && !(flags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID)) && session->list) {
+        ++navigationDepth;
+        restoringState = true;
+        const HRESULT result = session->grid.prepare(source, session->list, [&]() {
+            return isWindowOperational() && shellView == source && viewGeneration == generation;
+        });
+        if (isWindowOperational() && shellView == source && viewGeneration == generation) restoringState = false;
+        resumeDeferredClose();
+        if (!session->current()) return;
+        checkHR(result); // Keep the drop veto even if grid preparation fails.
+    }
     session->hook = SetWindowsHookExW(WH_GETMESSAGE, IconSnap::messages, nullptr, GetCurrentThreadId());
     session->keyboardHook.reset(SetWindowsHookExW(WH_KEYBOARD, IconSnap::keys, nullptr, GetCurrentThreadId()));
     if (!session->hook || !session->keyboardHook) return;
     iconSnap = session;
     IconSnap::active = session.get();
     if (!session->permanent() && SUCCEEDED(view->GetFolder(IID_PPV_ARGS(&session->dropSite)))) {
+        session->dropResult = std::make_shared<HRESULT>(E_PENDING);
         CComPtr<IIconDropPolicy> policy;
         policy.Attach(new(std::nothrow) IconSnap::Policy(session));
         if (policy) session->dropSite->SetIconDropPolicy(policy);
@@ -1845,6 +1882,22 @@ static void viewGestureTargetAt(POINT point, ViewGestureTarget &target) {
 }
 
 static LONG gestureRoleAt(POINT point, int *itemIndex) {
+    if (itemIndex) *itemIndex = -1;
+    const HWND input = WindowFromPoint(point);
+    wchar_t type[32] = {};
+    if (input && GetClassNameW(input, type, _countof(type)) && lstrcmpW(type, WC_LISTVIEWW) == 0
+            && !ListView_IsGroupViewEnabled(input)) {
+        // Read the actual input control before entering any accessibility RPC
+        // that could dispatch a queued second click reentrantly.
+        RECT client = {}; LVHITTESTINFO hit = {}; hit.pt = screenToClient(input, point);
+        if (!GetClientRect(input, &client) || !PtInRect(&client, hit.pt)) return 0;
+        const int index = ListView_HitTest(input, &hit);
+        if (index >= 0 && (hit.flags & LVHT_ONITEM)) {
+            if (itemIndex) *itemIndex = index;
+            return ROLE_SYSTEM_LISTITEM;
+        }
+        return ROLE_SYSTEM_LIST;
+    }
     ViewGestureTarget target;
     viewGestureTargetAt(point, target);
     if (itemIndex) {
@@ -1927,18 +1980,33 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
             // under the first press is neither queried nor selected through MSAA.
             const HWND hitWindow = WindowFromPoint(click.pt);
             if (hitWindow != root && !IsChild(root, hitWindow)) return false;
+            // Classic views expose a synchronous public hit-test. Resolve the
+            // actual item before entering the accessibility proxy, which may
+            // dispatch pending native input while its RPC is in progress.
+            int pointedIndex = -1; wchar_t type[32] = {};
+            if (GetClassNameW(click.hwnd, type, _countof(type)) && lstrcmpW(type, WC_LISTVIEWW) == 0
+                    && !ListView_IsGroupViewEnabled(click.hwnd)) {
+                LVHITTESTINFO hit = {}; hit.pt = screenToClient(click.hwnd, click.pt);
+                const int candidate = ListView_HitTest(click.hwnd, &hit);
+                if (candidate >= 0 && (hit.flags & LVHT_ONITEM)) pointedIndex = candidate;
+            }
             ViewGestureTarget target;
-            viewGestureTargetAt(click.pt, target);
+            if (pointedIndex < 0) viewGestureTargetAt(click.pt, target);
             const auto &accessible = target.accessible;
             const auto &child = target.child;
             CComVariant state;
-            if (accessible && target.role == ROLE_SYSTEM_LISTITEM) {
+            if (pointedIndex >= 0 || (accessible && target.role == ROLE_SYSTEM_LISTITEM)) {
                 LONG flags = SELFLAG_NONE;
                 if (rendererDoubleClick && (click.wParam & MK_SHIFT)) {
                     flags = SELFLAG_ADDSELECTION;
                 } else if (click.wParam & MK_CONTROL) {
-                    if (FAILED(accessible->get_accState(child, &state)) || state.vt != VT_I4) return false;
-                    flags |= state.lVal & STATE_SYSTEM_SELECTED ? SELFLAG_REMOVESELECTION : SELFLAG_ADDSELECTION;
+                    bool itemSelected = false;
+                    if (pointedIndex >= 0) itemSelected = (ListView_GetItemState(click.hwnd, pointedIndex, LVIS_SELECTED) & LVIS_SELECTED) != 0;
+                    else {
+                        if (FAILED(accessible->get_accState(child, &state)) || state.vt != VT_I4) return false;
+                        itemSelected = (state.lVal & STATE_SYSTEM_SELECTED) != 0;
+                    }
+                    flags |= itemSelected ? SELFLAG_REMOVESELECTION : SELFLAG_ADDSELECTION;
                 } else {
                     flags |= SELFLAG_TAKESELECTION;
                 }
@@ -1975,10 +2043,20 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
                         if (hr != S_OK) { checkHR(hr); return false; }
                     }
                 }
-                checkHR(accessible->accSelect(SELFLAG_TAKESELECTION, child));
+                if (pointedIndex >= 0) {
+                    int count = 0;
+                    if (FAILED(folderView->ItemCount(SVGIO_ALLVIEW, &count))
+                            || !isWindowOperational() || shellView != view || viewGeneration != generation
+                            || count != ListView_GetItemCount(click.hwnd) || pointedIndex >= count) return true;
+                }
                 if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
-                int index = -1;
-                const HRESULT found = folderView->GetSelectedItem(-1, &index);
+                const HRESULT selectionResult = pointedIndex >= 0
+                    ? folderView->SelectItem(pointedIndex, SVSI_SELECT | SVSI_DESELECTOTHERS | SVSI_NOTAKEFOCUS)
+                    : accessible->accSelect(SELFLAG_TAKESELECTION, child);
+                if (FAILED(selectionResult)) { checkHR(selectionResult); return true; }
+                if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
+                int index = pointedIndex;
+                const HRESULT found = pointedIndex >= 0 ? S_OK : folderView->GetSelectedItem(-1, &index);
                 if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
                 CComHeapPtr<ITEMID_CHILD> pointed;
                 if (found == S_OK && index >= 0) {
@@ -2002,12 +2080,17 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
                             checkHR(folderView->SelectItem(rangeIndex, SVSI_SELECT | SVSI_NOTAKEFOCUS));
                             if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
                         }
-                    } else checkHR(accessible->accSelect(flags, child));
+                    } else if (pointedIndex >= 0)
+                        checkHR(folderView->SelectItem(pointedIndex,
+                            ((flags & SELFLAG_REMOVESELECTION) ? SVSI_DESELECT : SVSI_SELECT) | SVSI_NOTAKEFOCUS));
+                    else checkHR(accessible->accSelect(flags, child));
                     if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
                 }
                 if (pointed) {
                     DWORD selection = 0;
-                    checkHR(folderView->GetSelectionState(pointed, &selection));
+                    if (pointedIndex >= 0)
+                        selection = (flags & SELFLAG_REMOVESELECTION) ? 0 : SVSI_SELECT;
+                    else checkHR(folderView->GetSelectionState(pointed, &selection));
                     if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
                     const UINT mark = rendererDoubleClick ? 0 : SVSI_SELECTIONMARK;
                     checkHR(view->SelectItem(pointed, (selection & SVSI_SELECT) | SVSI_FOCUSED | mark | SVSI_NOTAKEFOCUS));
@@ -2078,9 +2161,9 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
         return begun;
     }
     suppressAltUp = (modifiers & GestureAlt) != 0;
-    if (DragDetect(owner, point) && current()) {
+    if (DragDetect(msg->hwnd, point) && current()) {
         deferredGestureClick = {};
-        if (GetCapture() == owner) ReleaseCapture();
+        if (GetCapture() == msg->hwnd) ReleaseCapture();
         SendMessage(owner, WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(point.x, point.y));
     }
     return true;
