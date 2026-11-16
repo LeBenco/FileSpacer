@@ -30,6 +30,7 @@
 #include <cstring>
 #include <vector>
 #include <set>
+#include <map>
 #include <algorithm>
 #include <memory>
 #include <atomic>
@@ -195,7 +196,17 @@ struct FolderWindow::IconSnap {
     const DWORD placementFlags;
     POINT start, drop = {};
     HWND body = nullptr;
-    bool moved = false, finished = false, dropped = false, snap = false, heldS = false;
+    bool moved = false, finished = false, dropped = false, snap = false, heldS = false, placement = false;
+    CComPtr<IIconDropPolicySite> dropSite;
+    PreparedIconPositions movingPositions;
+    CComHeapPtr<ITEMID_CHILD> originalFocus;
+    int focusIndex = -1;
+    struct ImageTarget { RECT bounds; int index; };
+    std::map<std::pair<LONG,LONG>, ImageTarget> images;
+    std::vector<bool> movingItems;
+    bool pointsCaptured = false, hoverKnown = false, hoverPlacement = false;
+    POINT hoverPoint = {};
+    FOLDERVIEWMODE previewMode = FVM_AUTO;
     HHOOK hook = nullptr;
     std::unique_ptr<std::remove_pointer<HHOOK>::type, decltype(&UnhookWindowsHookEx)> keyboardHook{nullptr, UnhookWindowsHookEx};
     bool markerPending = false;
@@ -251,6 +262,7 @@ struct FolderWindow::IconSnap {
         if (active == this) active = nullptr;
         if (hook) { UnhookWindowsHookEx(hook); hook = nullptr; }
         keyboardHook.reset();
+        if (dropSite) { dropSite->SetIconDropPolicy(nullptr); dropSite.Release(); }
         if (marker && GetPropW(marker, L"FileSpacer.SnapMarker") == this) DestroyWindow(marker);
         marker = nullptr;
 #ifdef FILESPACER_DEBUG
@@ -271,6 +283,145 @@ struct FolderWindow::IconSnap {
         if (!markerPending && current() && !finished)
             markerPending = PostMessageW(owner.hwnd, MSG_ICON_SNAP, serial, 1) != FALSE;
     }
+    struct Policy : IIconDropPolicy {
+        LONG references = 1;
+        const DWORD thread = GetCurrentThreadId();
+        std::weak_ptr<IconSnap> gesture;
+        explicit Policy(const std::shared_ptr<IconSnap> &value) : gesture(value) {}
+        STDMETHODIMP QueryInterface(REFIID iid, void **out) override {
+            if (!out) return E_POINTER;
+            *out = nullptr;
+            if (iid != IID_IUnknown && iid != __uuidof(IIconDropPolicy)) return E_NOINTERFACE;
+            *out = static_cast<IIconDropPolicy *>(this); AddRef(); return S_OK;
+        }
+        STDMETHODIMP_(ULONG) AddRef() override { return static_cast<ULONG>(InterlockedIncrement(&references)); }
+        STDMETHODIMP_(ULONG) Release() override {
+            const ULONG count = static_cast<ULONG>(InterlockedDecrement(&references));
+            if (!count) delete this;
+            return count;
+        }
+        STDMETHODIMP Placement(PCUITEMID_CHILD target, POINTL point, DWORD keys) override {
+            if (thread != GetCurrentThreadId()) return E_ABORT;
+            auto session = gesture.lock();
+            if (!session) return E_ABORT;
+            CComPtr<ItemWindow> keepAlive(&session->owner);
+            return session->placementForTarget(target, {point.x, point.y}, keys);
+        }
+    };
+    bool capturePoints() {
+        if (pointsCaptured) return current() && ListView_GetItemCount(list) == itemCount;
+        if (!list || !current()) return false;
+        itemCount = ListView_GetItemCount(list);
+        if (anchor < 0 || anchor >= itemCount) return false;
+        initialPoints.clear(); movingItems.clear();
+        initialPoints.reserve(static_cast<size_t>(itemCount)); movingItems.reserve(static_cast<size_t>(itemCount));
+        for (int i = 0; i < itemCount; ++i) {
+            POINT point = {};
+            if (!ListView_GetItemPosition(list, i, &point) || !current()) return false;
+            initialPoints.push_back(point);
+            movingItems.push_back((ListView_GetItemState(list, i, LVIS_SELECTED) & LVIS_SELECTED) != 0);
+        }
+        focusIndex = ListView_GetNextItem(list, -1, LVNI_FOCUSED);
+        pointsCaptured = movingItems[anchor];
+        return pointsCaptured;
+    }
+    void clearDropHighlight() {
+        if (!list || !current()) return;
+        const int dropIndex = ListView_GetNextItem(list, -1, LVNI_DROPHILITED);
+        if (dropIndex >= 0) ListView_SetItemState(list, dropIndex, 0, LVIS_DROPHILITED);
+    }
+    bool overImage(POINT cursor) {
+        if (!list) return false;
+        POINT origin = {}, point = screenToClient(list, cursor); RECT client = {};
+        if (!ListView_GetOrigin(list, &origin) || !GetClientRect(list, &client)) return false;
+        if (!targetsReady || origin.x != targetOrigin.x || origin.y != targetOrigin.y || !EqualRect(&client, &targetClient)) {
+            dropTargets.clear();
+            for (const auto &image : images) {
+                if (movingItems[image.second.index]) continue;
+                RECT rectangle = image.second.bounds, visible = {};
+                OffsetRect(&rectangle, -origin.x, -origin.y);
+                if (IntersectRect(&visible, &rectangle, &client)) dropTargets.push_back(rectangle);
+            }
+            targetsReady = true; targetOrigin = origin; targetClient = client;
+        }
+        return std::any_of(dropTargets.begin(), dropTargets.end(), [&](const RECT &rectangle) { return PtInRect(&rectangle, point) != FALSE; });
+    }
+    HRESULT placementForTarget(PCUITEMID_CHILD target, POINT cursor, DWORD keys) try {
+        if (!current() || (finished && !dropped)) return E_ABORT;
+        if (permanent()) return S_FALSE;
+        const bool force = finished ? snap : heldS;
+        if (!force && ((keys & MK_CONTROL) || GetKeyState(VK_MENU) < 0)) return S_FALSE;
+        bool place = true;
+        if (!force && target) {
+            if (!prepared) previewReady = preparePreview();
+            if (!previewReady || !current()) return E_ABORT;
+            CComQIPtr<IFolderView2> folder(view);
+            POINT position = {}; DWORD state = 0;
+            if (!folder || FAILED(folder->GetItemPosition(target, &position)) || !current()
+                    || FAILED(folder->GetSelectionState(target, &state)) || !current()) return E_ABORT;
+            const auto found = images.find({position.x, position.y});
+            if (found == images.end()) return E_ABORT;
+            POINT origin = {}, point = screenToClient(list, cursor);
+            if (!ListView_GetOrigin(list, &origin)) return E_ABORT;
+            point.x += origin.x; point.y += origin.y;
+            place = (state & SVSI_SELECT) || !PtInRect(&found->second.bounds, point);
+        }
+        hoverKnown = true; hoverPoint = cursor; hoverPlacement = place;
+        if (finished && dropped) placement = place;
+        if (place) clearDropHighlight();
+        return place ? S_OK : S_FALSE;
+    } catch (const std::bad_alloc &) { return E_OUTOFMEMORY; }
+    bool applyPlacement() try {
+        if (!prepared) previewReady = preparePreview();
+        if (!previewReady || !current() || ListView_GetItemCount(list) != itemCount) return false;
+        POINT origin = {}, point = screenToClient(list, drop);
+        if (!ListView_GetOrigin(list, &origin)) return false;
+        const LONGLONG dx = static_cast<LONGLONG>(point.x) + origin.x - press.x;
+        const LONGLONG dy = static_cast<LONGLONG>(point.y) + origin.y - press.y;
+        movingPositions.items.clear(); movingPositions.points.clear();
+        for (const auto &position : movingPositions.positions) {
+            const LONGLONG x = position.point.x + dx, y = position.point.y + dy;
+            if (x < LONG_MIN || x > LONG_MAX || y < LONG_MIN || y > LONG_MAX) return false;
+            POINT destination = {static_cast<LONG>(x), static_cast<LONG>(y)};
+            if (snap && previewMode == FVM_ICON && !alignIconToGrid(destination, spacing, iconSize)) return false;
+            movingPositions.items.push_back(position.id); movingPositions.points.push_back(destination);
+        }
+        movingPositions.ready = true;
+        auto valid = [&]() { return current(); };
+        ++owner.navigationDepth;
+        owner.restoringState = true;
+        HRESULT result = applyIconPositions(movingPositions.view, movingPositions, valid);
+        if (!current()) { owner.resumeDeferredClose(); return false; }
+        CComQIPtr<IFolderView2> folder(view);
+        if (SUCCEEDED(result) && current() && folder) {
+            int selectedCount = 0;
+            result = folder->ItemCount(SVGIO_SELECTION, &selectedCount);
+            bool changed = selectedCount != static_cast<int>(movingPositions.items.size());
+            if (SUCCEEDED(result) && current() && !changed) for (const auto id : movingPositions.items) {
+                DWORD state = 0;
+                result = folder->GetSelectionState(id, &state);
+                if (FAILED(result) || !current()) break;
+                if (!(state & SVSI_SELECT)) { changed = true; break; }
+            }
+            if (SUCCEEDED(result) && current() && changed) {
+                result = owner.selectionClear.clear(view, valid);
+                if (SUCCEEDED(result) && current())
+                    result = folder->SelectAndPositionItems(static_cast<UINT>(movingPositions.items.size()),
+                        movingPositions.items.data(), movingPositions.points.data(), SVSI_POSITIONITEM | SVSI_SELECT | SVSI_NOTAKEFOCUS);
+            }
+            int focused = -1;
+            if (SUCCEEDED(result) && current() && originalFocus && SUCCEEDED(folder->GetFocusedItem(&focused))
+                    && current() && focused != focusIndex) {
+                DWORD state = 0;
+                result = folder->GetSelectionState(originalFocus, &state);
+                if (SUCCEEDED(result) && current())
+                    result = view->SelectItem(originalFocus, (state & SVSI_SELECT) | SVSI_FOCUSED | SVSI_NOTAKEFOCUS);
+            }
+        }
+        if (current()) owner.restoringState = false;
+        owner.resumeDeferredClose();
+        return current() && checkHR(result);
+    } catch (const std::bad_alloc &) { return false; }
     static LRESULT CALLBACK keys(int code, WPARAM key, LPARAM state) {
         if ((code == HC_ACTION || code == HC_NOREMOVE) && (key == L'S' || key == VK_ESCAPE) && active) {
             auto session = active->owner.iconSnap;
@@ -301,7 +452,7 @@ struct FolderWindow::IconSnap {
         FOLDERVIEWMODE mode = FVM_AUTO; DWORD flags = 0; UINT areas = UINT_MAX;
         const auto style = GetWindowLongPtrW(list, GWL_STYLE);
         if (!folder || FAILED(folder->GetViewModeAndIconSize(&mode, &iconSize)) || !current()
-                || (!iconPlacementMode(mode) || (!permanent() && mode != FVM_ICON))
+                || !iconPlacementMode(mode)
                 || FAILED(folder->GetSpacing(&spacing)) || !current()
                 || iconSize <= 0 || iconSize > MAXSHORT / 3 || spacing.x < iconSize || spacing.x > MAXSHORT / 3 || spacing.y <= 0
                 || FAILED(folder->GetCurrentFolderFlags(&flags)) || !current()
@@ -312,29 +463,43 @@ struct FolderWindow::IconSnap {
                 || ListView_IsGroupViewEnabled(list)) return false;
         ListView_GetNumberOfWorkAreas(list, &areas);
         if (areas || !current()) return false;
-        itemCount = ListView_GetItemCount(list);
-        if (anchor < 0 || anchor >= itemCount || !(ListView_GetItemState(list, anchor, LVIS_SELECTED) & LVIS_SELECTED)) return false;
+        if (!capturePoints()) return false;
+        previewMode = mode;
+        movingPositions.view = folder;
+        if (focusIndex >= 0 && (FAILED(folder->Item(focusIndex, &originalFocus)) || !current())) return false;
+        POINT snapshotOrigin = {};
+        if (!ListView_GetOrigin(list, &snapshotOrigin)) return false;
         // One snapshot per gesture. No folder enumeration or native alignment
         // is performed on mouse movement, including after releasing/repressing S.
-        initialPoints.reserve(static_cast<size_t>(itemCount));
-        std::vector<bool> movingItems;
-        if (automatic()) movingItems.reserve(static_cast<size_t>(itemCount));
         for (int i = 0; i < itemCount; ++i) {
-            POINT point = {};
-            if (!ListView_GetItemPosition(list, i, &point) || !current()) return false;
-            initialPoints.push_back(point);
-            const bool moving = (ListView_GetItemState(list, i, LVIS_SELECTED) & LVIS_SELECTED) != 0;
-            if (automatic()) movingItems.push_back(moving);
-            if (moving) dragged.push_back(point);
-            else if (!automatic() && ((!permanent() && !alignIconToGrid(point, spacing, iconSize))
-                    || !stationary.emplace(point.x, point.y).second)) return false;
+            const POINT point = initialPoints[i];
+            const bool moving = movingItems[i];
+            if (moving) {
+                dragged.push_back(point);
+                if (!permanent()) {
+                    movingPositions.positions.emplace_back();
+                    auto &position = movingPositions.positions.back();
+                    if (FAILED(folder->Item(i, &position.id)) || !current()) return false;
+                    position.point = point;
+                }
+            } else if (permanent() && !automatic()) stationary.emplace(point.x, point.y);
+            if (!permanent()) {
+                RECT image = {};
+                if (!ListView_GetItemRect(list, i, &image, LVIR_ICON) || !current()) return false;
+                OffsetRect(&image, snapshotOrigin.x, snapshotOrigin.y);
+                if (mode == FVM_ICON) {
+                    if (point.x > LONG_MAX - iconSize || point.y > LONG_MAX - iconSize) return false;
+                    image = {point.x, point.y, point.x + iconSize, point.y + iconSize};
+                }
+                const auto inserted = images.emplace(std::make_pair(point.x, point.y), ImageTarget{image, i});
+                if (!inserted.second && !moving) inserted.first->second.index = i;
+            }
         }
-        if (permanent()) {
-            POINT origin = {}; RECT icon = {};
-            if (!ListView_GetOrigin(list, &origin) || !GetClientRect(list, &layoutClient)
-                    || !ListView_GetItemRect(list, anchor, &icon, LVIR_ICON) || !current()) return false;
-            iconOffset = {icon.left + origin.x - anchorPoint.x, icon.top + origin.y - anchorPoint.y};
-        }
+        POINT actualAnchor = {}; RECT icon = {};
+        if (!GetClientRect(list, &layoutClient) || !ListView_GetItemRect(list, anchor, &icon, LVIR_ICON)
+                || !ListView_GetItemPosition(list, anchor, &actualAnchor) || !current()) return false;
+        iconOffset = {icon.left + snapshotOrigin.x - actualAnchor.x, icon.top + snapshotOrigin.y - actualAnchor.y};
+        if (!permanent() && mode == FVM_ICON) iconOffset = {};
         if (automatic()) {
             orderedItems.reserve(static_cast<size_t>(itemCount));
             for (int i = 0; i < itemCount; ++i) orderedItems.push_back(i);
@@ -350,7 +515,11 @@ struct FolderWindow::IconSnap {
                 selectedBefore.push_back(selectedBefore.back() + (movingItems[itemIndex] ? 1 : 0));
             }
         }
+        dropTargets.reserve(initialPoints.size() * 2);
         destinations.reserve(dragged.size());
+        return current();
+    }
+    bool prepareMarker() {
         // Prepare one icon-sized surface per gesture. Windows retains its pixels
         // while it moves; no repaint or bitmap allocation is needed on motion.
         marker = CreateWindowExW(WS_EX_NOACTIVATE | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_TOOLWINDOW, WC_STATICW, L"",
@@ -427,8 +596,8 @@ struct FolderWindow::IconSnap {
             }
         } timing{*this, began, ended};
 #endif
-        if (!moved || finished || (!permanent() && !heldS) || GetKeyState(VK_CONTROL) < 0
-                || GetKeyState(VK_MENU) < 0 || !current() || !list || WindowFromPoint(cursor) != list) {
+        if (!moved || finished || !current() || !list || WindowFromPoint(cursor) != list
+                || (permanent() && (GetKeyState(VK_CONTROL) < 0 || GetKeyState(VK_MENU) < 0))) {
             hideMarker(); return;
         }
         if (!prepared) {
@@ -438,9 +607,20 @@ struct FolderWindow::IconSnap {
             previewReady = preparePreview();
         }
         if (!previewReady || !current() || ListView_GetItemCount(list) != itemCount) { hideMarker(); return; }
+        if (!permanent()) {
+            if (heldS) clearDropHighlight();
+            if (!heldS || previewMode != FVM_ICON) {
+                hideMarker();
+                if (!heldS && !overImage(cursor) && GetKeyState(VK_CONTROL) >= 0 && GetKeyState(VK_MENU) >= 0)
+                    SetCursor(LoadCursorW(nullptr, IDC_ARROW));
+                return;
+            }
+            SetCursor(LoadCursorW(nullptr, IDC_ARROW));
+        }
+        if (!marker && !prepareMarker()) { hideMarker(); return; }
         POINT origin = {}; const POINT position = screenToClient(list, cursor); RECT client = {};
         if (!ListView_GetOrigin(list, &origin) || !GetClientRect(list, &client)
-                || (automatic() ? !EqualRect(&client, &layoutClient) : overDropTarget(position, origin, client))) {
+                || (permanent() && (automatic() ? !EqualRect(&client, &layoutClient) : overDropTarget(position, origin, client)))) {
             hideMarker(); return;
         }
         const LONGLONG dx = static_cast<LONGLONG>(position.x) + origin.x - press.x;
@@ -478,7 +658,7 @@ struct FolderWindow::IconSnap {
                 hideMarker(); return;
             }
             point = initialPoints[orderedItems[slot]];
-        } else {
+        } else if (permanent()) {
             destinations.clear();
             for (POINT target : dragged) {
                 if (!destination(target) || stationary.count({target.x, target.y})) { hideMarker(); return; }
@@ -487,7 +667,7 @@ struct FolderWindow::IconSnap {
             std::sort(destinations.begin(), destinations.end());
             if (std::adjacent_find(destinations.begin(), destinations.end()) != destinations.end()
                     || !destination(point)) { hideMarker(); return; }
-        }
+        } else if (!destination(point)) { hideMarker(); return; }
         // Frame the icon's destination, preserving its original cursor offset
         // and accounting for native scrolling.
         const int width = rectWidth(markerRect), height = rectHeight(markerRect);
@@ -522,6 +702,9 @@ struct FolderWindow::IconSnap {
                             || std::abs(message->pt.x - session->start.x) >= GetSystemMetrics(SM_CXDRAG)
                             || std::abs(message->pt.y - session->start.y) >= GetSystemMetrics(SM_CYDRAG);
                     }
+                    if (session->moved && !session->pointsCaptured) {
+                        try { session->capturePoints(); } catch (const std::bad_alloc &) { session->stop(); }
+                    }
                     if ((message->message == WM_KEYDOWN || message->message == WM_KEYUP)
                             && message->wParam == L'S' && !session->permanent()) {
                         session->heldS = message->message == WM_KEYDOWN;
@@ -538,19 +721,29 @@ struct FolderWindow::IconSnap {
                         session->dropped = true;
                         session->drop = message->pt;
                         const HWND target = WindowFromPoint(session->drop);
-                        session->snap = session->moved && session->heldS && !session->permanent()
-                            && GetKeyState(VK_CONTROL) >= 0 && GetKeyState(VK_MENU) >= 0;
-                        // Test the target before the native drop puts the moved
-                        // icons underneath the pointer. Folder/file drops stay native.
-                        session->snap = session->snap
-                            && (target == session->body || IsChild(session->body, target))
-                            && gestureRoleAt(session->drop) == ROLE_SYSTEM_LIST;
+                        const bool inside = target == session->body || IsChild(session->body, target);
+                        session->snap = session->moved && session->heldS && !session->permanent();
+                        const bool hover = session->hoverKnown && session->hoverPoint.x == session->drop.x
+                            && session->hoverPoint.y == session->drop.y;
+                        session->placement = session->moved && session->list && session->pointsCaptured && !session->permanent() && inside
+                            && (session->snap || (GetKeyState(VK_CONTROL) >= 0 && GetKeyState(VK_MENU) >= 0
+                                && (hover ? session->hoverPlacement : !session->overImage(session->drop))));
+                        if (session->placement || session->snap) {
+                            // Finish the Shell drag as cancellation before it can
+                            // transfer a file. Apply only icon coordinates later.
+                            // A late translation must not deliver Escape's
+                            // character to the list and clear its selection.
+                            message->hwnd = session->owner.hwnd;
+                            message->message = WM_KEYDOWN;
+                            message->wParam = VK_ESCAPE;
+                            message->lParam = 1;
+                        }
                         // The native drop completes before the ordinary message
                         // loop handles this; never reposition inside the hook.
                         if (session->current())
                             PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0);
                     } else if (message->message == WM_MOUSEMOVE) {
-                        if (session->permanent() || session->heldS || !IsRectEmpty(&session->shownRect)) session->queueMarker();
+                        session->queueMarker();
                     }
                 }
             }
@@ -588,6 +781,11 @@ void FolderWindow::watchIconDrag(const MSG *message) {
     if (!session->hook || !session->keyboardHook) return;
     iconSnap = session;
     IconSnap::active = session.get();
+    if (!session->permanent() && SUCCEEDED(view->GetFolder(IID_PPV_ARGS(&session->dropSite)))) {
+        CComPtr<IIconDropPolicy> policy;
+        policy.Attach(new(std::nothrow) IconSnap::Policy(session));
+        if (policy) session->dropSite->SetIconDropPolicy(policy);
+    }
 }
 
 void FolderWindow::realignIcons(bool selectedOnly) {
@@ -3497,20 +3695,23 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         }
         if (session && session->serial == wParam && session->finished) {
             session->hideMarker();
-            const bool snap = session->snap, dropped = session->dropped;
-            session->snap = session->dropped = false; // A later S release only ends interception.
+            const bool place = session->placement, dropped = session->dropped;
+            session->placement = session->dropped = false;
+            if (session->current() && place && !GetCapture()) {
+                if (session->applyPlacement() && session->snap && session->previewMode != FVM_ICON)
+                    realignIcons(true); // Existing native support for Small icons and Tiles.
+            }
+            session->snap = false;
             if (!session->heldS || session->permanent()) {
                 session->stop();
-                iconSnap.reset();
+                if (iconSnap == session) iconSnap.reset();
             }
-            if (session->current() && snap && !GetCapture())
-                realignIcons(true);
             if (session->current() && dropped && session->moved && !GetCapture())
                 scheduleStateSave(true);
         }
         return 0;
     }
-    if (message == WM_CANCELMODE) iconSnap.reset();
+    if (message == WM_CANCELMODE && (!iconSnap || !iconSnap->placement)) iconSnap.reset();
     if (message == WM_ENTERSIZEMOVE) {
         resizingColumns = true;
         resizeDeferred = settings::getDetailsColumnsDeferred();
