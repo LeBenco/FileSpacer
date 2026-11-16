@@ -141,8 +141,11 @@ try {
     Assert-Ui ($feedbackFailures.Count-eq0) ($feedbackFailures-join'; ')
 } catch {
     $failure=$_
-    @{Message=$_.Exception.Message;Stack=$_.ScriptStackTrace;Route=$script:PlacementRoute}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'first-error.json') -Encoding UTF8
-    throw
+    $observedFiles=@();$fileObservationError=$null
+    try { $observedFiles=@(Get-ChildItem -LiteralPath $folder -Recurse -File | Select-Object FullName,Length) }
+    catch { $fileObservationError=$_.Exception.Message }
+    @{Message=$failure.Exception.Message;Stack=$failure.ScriptStackTrace;Route=$script:PlacementRoute;Files=$observedFiles;FileObservationError=$fileObservationError}|ConvertTo-Json -Depth 4|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'first-error.json') -Encoding UTF8
+    throw $failure
 } finally {
     [FileSpacerViewMenuTests.GridKey]::Hold($false)
     [FileSpacerRegression.AltDragInput]::End()
