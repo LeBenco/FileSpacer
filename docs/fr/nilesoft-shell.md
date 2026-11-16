@@ -29,6 +29,12 @@ Les propriétés du thème peuvent aussi utiliser des expressions propres à un 
 
 Avec FileSpacer, les modifications du thème s’appliquent aux nouveaux menus après avoir désenregistré puis réenregistré Nilesoft Shell, sans redémarrer l’Explorateur.
 
+<a id="menu-opening-delay"></a>
+
+## Délai d’ouverture des menus
+
+Pour supprimer le [délai d’ouverture des menus](https://nilesoft.org/docs/configuration/settings) de Nilesoft Shell, définir `showdelay = 0` dans le bloc `settings` existant de `shell.nss`. Pour limiter ce réglage à FileSpacer, utiliser plutôt `showdelay = if(process.name == 'FileSpacer', 0, 200)`, en remplaçant `200` par le délai à conserver pour les autres applications, en millisecondes.
+
 <a id="target-a-specific-menu"></a>
 
 ## Cibler un menu précis

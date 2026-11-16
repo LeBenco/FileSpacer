@@ -29,6 +29,12 @@ Thema-eigenschappen kunnen processpecifieke expressies gebruiken: `dark = if(pro
 
 Bij gebruik van FileSpacer in plaats van Bestandenverkenner gelden themawijzigingen direct voor nieuw geopende menu’s na afmelden en opnieuw registreren van Nilesoft Shell, zonder Verkenner te herstarten.
 
+<a id="menu-opening-delay"></a>
+
+## Vertraging bij het openen van menu’s
+
+Om de [vertraging bij het openen van menu’s](https://nilesoft.org/docs/configuration/settings) van Nilesoft Shell op te heffen, stelt u `showdelay = 0` in het bestaande `settings`-blok van `shell.nss` in. Gebruik `showdelay = if(process.name == 'FileSpacer', 0, 200)` om dit alleen op FileSpacer toe te passen. Vervang `200` door de vertraging die u voor andere toepassingen wilt behouden, in milliseconden.
+
 <a id="target-a-specific-menu"></a>
 
 ## Een specifiek menu kiezen

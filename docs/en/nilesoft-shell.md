@@ -29,6 +29,12 @@ Theme properties can also use process-specific expressions: for example, `dark =
 
 When using FileSpacer instead of File Explorer, theme changes apply directly to newly opened menus after unregistering and registering Nilesoft Shell again, without restarting Explorer.
 
+<a id="menu-opening-delay"></a>
+
+## Menu opening delay
+
+To remove Nilesoft Shell’s [menu opening delay](https://nilesoft.org/docs/configuration/settings), set `showdelay = 0` in the existing `settings` block of `shell.nss`. To apply this only to FileSpacer, use `showdelay = if(process.name == 'FileSpacer', 0, 200)` instead, replacing `200` with the delay to keep for other applications, in milliseconds.
+
 <a id="target-a-specific-menu"></a>
 
 ## Target a specific menu
