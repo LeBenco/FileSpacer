@@ -49,6 +49,40 @@ function Assert-GridPrediction([int]$Size) {
     Assert-Ui ($point[1]-eq('{0},{1}'-f$predictedX,$predictedY)) ('The marker did not predict the actual snapped icon position: actual='+$point[1]+' predicted='+$predictedX+','+$predictedY+' spacing='+$spacing+' client='+($client|ConvertTo-Json -Compress))
 }
 
+function Move-PlacementFrame([string]$Anchor) {
+    Activate-Ui $window
+    $body=Use-UiView $window {param($view) $view.Window}
+    $start=[FileSpacerRegression.AltDragInput]::ItemPoint($body,$Anchor)
+    $bounds=[FileSpacerRegression.Native]::ClientBounds($body)
+    $target=New-Object FileSpacerRegression.MousePoint
+    $target.X=$bounds.Left+620;$target.Y=$bounds.Top+345
+    try {
+        [FileSpacerRegression.AltDragInput]::Begin($window,$start,$false,$false)
+        for($step=1;$step-le6;++$step){
+            $point=New-Object FileSpacerRegression.MousePoint
+            $point.X=$start.X+[int](($target.X-$start.X)*$step/6)
+            $point.Y=$start.Y+[int](($target.Y-$start.Y)*$step/6)
+            [FileSpacerRegression.AltDragInput]::Move($point)
+        }
+        Wait-Ui {[FileSpacerViewMenuTests.GridKey]::Marker($body).Visible} 'permanent placement frame appears without S' 0 5
+        $frame=[FileSpacerViewMenuTests.GridKey]::Marker($body)
+        [FileSpacerViewMenuTests.GridKey]::Hold($true)
+        [FileSpacerViewMenuTests.GridKey]::Hold($false)
+        Assert-Ui ([FileSpacerViewMenuTests.GridKey]::Marker($body).Visible) 'Releasing S disabled a permanent placement frame.'
+        $script:GridDropStartedAt=[Diagnostics.Stopwatch]::GetTimestamp()
+        [FileSpacerRegression.AltDragInput]::ReleasePrimary()
+        Wait-Ui {[FileSpacerRegression.AltDragInput]::Idle($window)} 'native permanent-placement drop completed' 150
+        Wait-Ui {![FileSpacerViewMenuTests.GridKey]::Marker($body).Visible} 'permanent placement frame removed on release'
+        $list=@([FileSpacerRegression.Native]::Children($body,'SysListView32')|Where-Object {[FileSpacerRegression.Native]::IsWindowEnabled($_)})[0]
+        $client=[FileSpacerRegression.Native]::ClientBounds($list)
+        $item=Use-UiView $window {param($view) $view.IndexOf($Anchor)}
+        Assert-Ui ($item-ge0) 'Dragged anchor is absent after drop.'
+        $icon=[FileSpacerViewMenuTests.GridKey]::IconBounds($list,$item)
+        Assert-Ui ($frame.Left-eq$client.Left+$icon[0]-and$frame.Top-eq$client.Top+$icon[1]) ('Placement frame differs from actual icon destination: '+($frame|ConvertTo-Json -Compress)+' actual='+($icon-join','))
+        return $frame
+    } finally {[FileSpacerViewMenuTests.GridKey]::Hold($false);[FileSpacerRegression.AltDragInput]::End()}
+}
+
 try {
     Initialize-Ui 'icon-grid' -FixtureParent (Join-Path $ProjectRoot 'build')
     $folder=Join-Path $script:UiRoot 'GridFixture'
@@ -115,6 +149,45 @@ try {
     Move-GridIcons $true $false $false $false $true
     Wait-Ui {(Read-GridState).Positions-eq$initial.Positions} 'cancelled Snap retains every original position' 150
     Write-Host 'PASS: Escape removes the marker without dropping or moving icons.'
+    # Permanent placement uses the same frame without requiring the Snap key.
+    $popup=Open-PreviewMenu $window
+    [FileSpacerViewMenuTests.MenuUi]::Choose($popup,2,$window)
+    Wait-PreviewMenuClosed $window
+    Wait-PreviewMode $window @{Mode=1;Size=48}
+    $null=Set-GridSeed
+    Choose-Placement 'IDM_KEEP_ICONS_ALIGNED'
+    $gridFrame=Move-PlacementFrame 'item-0000'
+    Close-UiFolder $window
+    $window=Open-UiFolder $folder 6
+    Assert-PlacementChoice 'IDM_KEEP_ICONS_ALIGNED'
+    Choose-Placement 'IDM_AUTO_ARRANGE_ICONS'
+    # Click the later selected icon: prediction must account for all selected
+    # slots removed before the native insertion point and for the anchor offset.
+    Use-UiView $window {param($view) $view.Select('item-0000');$view.Select('item-0002',$true)}
+    $autoFrame=Move-PlacementFrame 'item-0002'
+    Close-UiFolder $window
+    $window=Open-UiFolder $folder 6
+    Assert-PlacementChoice 'IDM_AUTO_ARRANGE_ICONS'
+    Choose-Placement 'IDM_FREE_PLACEMENT_ICONS'
+    Close-UiFolder $window
+    $window=Open-UiFolder $folder 6
+    Assert-PlacementChoice 'IDM_FREE_PLACEMENT_ICONS'
+    # Small icons and Tiles use different native icon rectangles and cell sizes.
+    $popup=Open-PreviewMenu $window
+    [FileSpacerViewMenuTests.MenuUi]::Choose($popup,3,$window)
+    Wait-PreviewMenuClosed $window
+    Wait-UiViewMode $window 2
+    Choose-Placement 'IDM_KEEP_ICONS_ALIGNED'
+    $smallFrame=Move-PlacementFrame 'item-0000'
+    $popup=Open-PreviewMenu $window
+    [FileSpacerViewMenuTests.MenuUi]::Choose($popup,6,$window)
+    Wait-PreviewMenuClosed $window
+    Wait-UiViewMode $window 6
+    Choose-Placement 'IDM_AUTO_ARRANGE_ICONS'
+    Use-UiView $window {param($view) $view.Select('item-0000')}
+    $tileFrame=Move-PlacementFrame 'item-0000'
+    @{Grid=$gridFrame;Automatic=$autoFrame;SmallIcons=$smallFrame;Tiles=$tileFrame}|ConvertTo-Json -Depth 4|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'placement-frames.json') -Encoding UTF8
+    Write-Host 'PASS: three exclusive placement modes persist, and permanent frames predict native grid and automatic drops across icon views.'
     Close-UiFolder $window
 } catch {
     $failure=$_
