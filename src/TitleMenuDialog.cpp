@@ -140,7 +140,7 @@ struct App {
     int pressedRow = -1;
     CLIPFORMAT format = 0;
     unsigned drops = 0;
-    bool blockedTipActive = false, dragging = false, closePending = false;
+    bool blockedTipActive = false, dragging = false, closePending = false, acceptPending = false;
     bool frameAlpha = false, frameDecorated = false, frameSimplified = false, nilesoftModified = false;
     bool menuActive = false, measuringStack = false, moveRejected = false, rendering = false;
     ~App() {
@@ -365,6 +365,7 @@ void startDrag(App &app, int command, int sourceIndex) {
         }
     }
     if (app.closePending) PostMessageW(app.window, WM_CLOSE, 0, 0);
+    else if (app.acceptPending) PostMessageW(app.window, WM_COMMAND, IDOK, 0);
 }
 LSTATUS readRegistryString(HKEY key, const wchar_t *subkey, const wchar_t *value, std::wstring &text) {
     DWORD bytes = 0;
@@ -429,8 +430,8 @@ HBITMAP loadFrame(const std::wstring &path, LONG width, LONG height, void **pixe
 }
 
 // Waits for the private renderer while the dialog keeps dispatching its
-// messages. Commands that would start another rendering or validate the draft
-// are ignored meanwhile (app.rendering); Cancel and closing abort the wait.
+// messages. Rendering commands are ignored meanwhile (app.rendering);
+// validation is deferred. Cancel and closing abort the wait.
 // The deadline is a watchdog only: it can fail the preview, never pass it.
 bool waitForRenderer(App &app, HANDLE process) {
     const ULONGLONG deadline = GetTickCount64() + 8000;
@@ -935,6 +936,10 @@ INT_PTR CALLBACK dialogProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
             EnableWindow(GetDlgItem(window, IDOK), !app->renderError);
             if (app->renderError && !app->closePending) MessageBoxW(window, getString(IDS_TITLE_MENU_RENDER_ERROR),
                 getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
+            if (app->acceptPending && !app->rendering && !app->dragging && !app->renderError && !app->closePending) {
+                app->acceptPending = false;
+                PostMessageW(window, WM_COMMAND, IDOK, 0);
+            }
             return TRUE;
         case WM_COMMAND:
             if (LOWORD(wParam) == IDC_TITLE_MENU_DEFAULT) {
@@ -943,7 +948,8 @@ INT_PTR CALLBACK dialogProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
                 refreshCatalog(*app); PostMessageW(window, RENDER_FRAME, 0, 0); return TRUE;
             }
             if (LOWORD(wParam) == IDOK) {
-                if (app->dragging || app->rendering || app->renderError) return TRUE;
+                if (app->dragging || app->rendering) { app->acceptPending = true; return TRUE; }
+                if (app->renderError || app->closePending) return TRUE;
                 if (settings::setTitleMenu(app->items) != ERROR_SUCCESS) {
                     MessageBoxW(window, getString(IDS_TITLE_MENU_SAVE_ERROR), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
                     return TRUE;
