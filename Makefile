@@ -71,6 +71,7 @@ OBJECTS = \
     $(OUTDIR)\ShellViewFilter.obj \
     $(OUTDIR)\ShellViewSettings.obj \
     $(OUTDIR)\ShellViewSelection.obj \
+    $(OUTDIR)\ShellViewOperations.obj \
     $(OUTDIR)\ShellSelectionDiscovery.obj \
     $(OUTDIR)\ShellViewIcons.obj \
     $(OUTDIR)\UIStrings.obj \
