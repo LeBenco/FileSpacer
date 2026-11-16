@@ -65,18 +65,61 @@ static bool isViewMenuMode(UINT command) {
     return command >= IDM_VIEW_MODE_FIRST && command <= IDM_VIEW_MODE_LAST;
 }
 
+static bool isPlacementCommand(UINT command) {
+    return command == IDM_AUTO_ARRANGE_ICONS || command == IDM_KEEP_ICONS_ALIGNED
+        || command == IDM_FREE_PLACEMENT_ICONS;
+}
+
+static bool iconPlacementMode(UINT mode) {
+    return mode == FVM_ICON || mode == FVM_SMALLICON || mode == FVM_TILE;
+}
+
+static bool appendPlacementMenu(HMENU parent, UINT mode, DWORD flags) {
+    auto destroy = [](HMENU handle) { DestroyMenu(handle); };
+    std::unique_ptr<std::remove_pointer<HMENU>::type, decltype(destroy)> menu(CreatePopupMenu(), destroy);
+    if (!menu) return false;
+    const bool enabled = iconPlacementMode(mode);
+    const UINT selected = !enabled || (flags & FWF_AUTOARRANGE) ? IDM_AUTO_ARRANGE_ICONS
+        : (flags & FWF_SNAPTOGRID) ? IDM_KEEP_ICONS_ALIGNED : IDM_FREE_PLACEMENT_ICONS;
+    const UINT commands[] = {IDM_AUTO_ARRANGE_ICONS, IDM_KEEP_ICONS_ALIGNED, IDM_FREE_PLACEMENT_ICONS};
+    const UINT labels[] = {IDS_AUTO_ARRANGE_ICONS, IDS_KEEP_ICONS_ALIGNED, IDS_FREE_PLACEMENT_ICONS};
+    for (UINT i = 0; i < _countof(commands); ++i) {
+        MENUITEMINFOW entry = {sizeof(entry)};
+        entry.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE | MIIM_FTYPE;
+        entry.wID = commands[i];
+        entry.dwTypeData = const_cast<wchar_t *>(getString(labels[i]));
+        entry.fType = MFT_RADIOCHECK;
+        entry.fState = commands[i] == selected ? MFS_CHECKED : MFS_UNCHECKED;
+        if (!InsertMenuItemW(menu.get(), i, TRUE, &entry)) return false;
+    }
+    MENUITEMINFOW entry = {sizeof(entry)};
+    entry.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE | MIIM_SUBMENU;
+    entry.wID = IDM_ICON_PLACEMENT_MENU;
+    entry.dwTypeData = const_cast<wchar_t *>(getString(IDS_ICON_PLACEMENT));
+    entry.hSubMenu = menu.get();
+    entry.fState = enabled ? MFS_ENABLED : MFS_DISABLED;
+    if (!InsertMenuItemW(parent, GetMenuItemCount(parent), TRUE, &entry)) return false;
+    static_cast<void>(menu.release()); // Owned by the parent menu.
+    return true;
+}
+
 static HRESULT invokeDisplayCommand(IFolderView2 *view, UINT command) {
     if (!view) return E_NOINTERFACE;
     if (isViewMenuMode(command)) {
         const auto &mode = VIEW_MENU_MODES[command - IDM_VIEW_MODE_FIRST];
         return view->SetViewModeAndIconSize(mode.mode, mode.size < 0 ? -1 : scaleDPI(mode.size));
     }
-    const DWORD flag = command == IDM_AUTO_ARRANGE_ICONS ? FWF_AUTOARRANGE
+    if (!isPlacementCommand(command)) return E_INVALIDARG;
+    FOLDERVIEWMODE mode = FVM_AUTO; int size = 0; DWORD flags = 0;
+    HRESULT read = view->GetViewModeAndIconSize(&mode, &size);
+    if (FAILED(read)) return read;
+    if (!iconPlacementMode(mode)) return E_INVALIDARG;
+    read = view->GetCurrentFolderFlags(&flags);
+    if (FAILED(read)) return read;
+    const DWORD placement = command == IDM_AUTO_ARRANGE_ICONS ? FWF_AUTOARRANGE
         : command == IDM_KEEP_ICONS_ALIGNED ? FWF_SNAPTOGRID : 0;
-    if (!flag) return E_INVALIDARG;
-    DWORD flags = 0;
-    const HRESULT read = view->GetCurrentFolderFlags(&flags);
-    return FAILED(read) ? read : view->SetCurrentFolderFlags(flag, flags ^ flag);
+    const DWORD mask = FWF_AUTOARRANGE | FWF_SNAPTOGRID;
+    return (flags & mask) == placement ? S_FALSE : view->SetCurrentFolderFlags(mask, placement);
 }
 
 static void toggleGlobalThumbnails() {
@@ -141,6 +184,7 @@ struct FolderWindow::IconSnap {
     FolderWindow &owner;
     CComPtr<IShellView> view;
     const ULONG_PTR generation, serial;
+    const DWORD placementFlags;
     POINT start, drop = {};
     HWND body = nullptr;
     bool moved = false, finished = false, dropped = false, snap = false, heldS = false;
@@ -149,7 +193,9 @@ struct FolderWindow::IconSnap {
     bool markerPending = false;
     HWND list = nullptr, marker = nullptr;
     int anchor = -1, iconSize = 0, itemCount = 0;
-    POINT press = {}, anchorPoint = {}, spacing = {};
+    POINT press = {}, anchorPoint = {}, spacing = {}, iconOffset = {};
+    std::vector<int> orderedItems, ranks, selectedBefore;
+    RECT layoutClient = {};
     RECT markerRect = {}, shownRect = {};
     bool prepared = false, previewReady = false;
     std::vector<POINT> dragged;
@@ -165,8 +211,8 @@ struct FolderWindow::IconSnap {
     unsigned previewUpdates = 0;
 #endif
 
-    IconSnap(FolderWindow &window, POINT point, HWND root, int itemIndex) : owner(window), view(window.shellView),
-        generation(window.viewGeneration), serial(++window.iconSnapSerial), start(point), body(root), anchor(itemIndex) {
+    IconSnap(FolderWindow &window, POINT point, HWND root, int itemIndex, DWORD flags) : owner(window), view(window.shellView),
+        generation(window.viewGeneration), serial(++window.iconSnapSerial), placementFlags(flags), start(point), body(root), anchor(itemIndex) {
         heldS = GetAsyncKeyState(L'S') < 0;
         // Learn the control from the actual input target, never a child search.
         const HWND target = WindowFromPoint(point);
@@ -185,6 +231,8 @@ struct FolderWindow::IconSnap {
         }
     }
     ~IconSnap() { stop(); }
+    bool permanent() const { return (placementFlags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID)) != 0; }
+    bool automatic() const { return (placementFlags & FWF_AUTOARRANGE) != 0; }
     bool current() const {
         return owner.isWindowOperational() && owner.shellView == view
             && owner.viewGeneration == generation;
@@ -224,7 +272,7 @@ struct FolderWindow::IconSnap {
                     session->snap = false;
                     session->finished = true;
                     PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0);
-                } else if (key == L'S' && down != session->heldS) {
+                } else if (key == L'S' && !session->permanent() && down != session->heldS) {
                     session->heldS = down;
                     session->queueMarker();
                 }
@@ -239,11 +287,13 @@ struct FolderWindow::IconSnap {
         FOLDERVIEWMODE mode = FVM_AUTO; DWORD flags = 0; UINT areas = UINT_MAX;
         const auto style = GetWindowLongPtrW(list, GWL_STYLE);
         if (!folder || FAILED(folder->GetViewModeAndIconSize(&mode, &iconSize)) || !current()
-                || mode != FVM_ICON || FAILED(folder->GetSpacing(&spacing)) || !current()
+                || (!iconPlacementMode(mode) || (!permanent() && mode != FVM_ICON))
+                || FAILED(folder->GetSpacing(&spacing)) || !current()
                 || iconSize <= 0 || iconSize > MAXSHORT / 3 || spacing.x < iconSize || spacing.x > MAXSHORT / 3 || spacing.y <= 0
                 || FAILED(folder->GetCurrentFolderFlags(&flags)) || !current()
-                || (flags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID | FWF_DESKTOP | FWF_NOSCROLL))
-                || (style & (LVS_TYPEMASK | LVS_AUTOARRANGE | LVS_NOSCROLL | LVS_ALIGNMASK)) != LVS_ICON
+                || (flags & (FWF_DESKTOP | FWF_NOSCROLL))
+                || (flags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID)) != placementFlags
+                || (style & (LVS_NOSCROLL | LVS_ALIGNMASK))
                 || (GetWindowLongPtrW(list, GWL_EXSTYLE) & WS_EX_LAYOUTRTL)
                 || ListView_IsGroupViewEnabled(list)) return false;
         ListView_GetNumberOfWorkAreas(list, &areas);
@@ -253,13 +303,38 @@ struct FolderWindow::IconSnap {
         // One snapshot per gesture. No folder enumeration or native alignment
         // is performed on mouse movement, including after releasing/repressing S.
         initialPoints.reserve(static_cast<size_t>(itemCount));
+        std::vector<bool> movingItems;
+        if (automatic()) movingItems.reserve(static_cast<size_t>(itemCount));
         for (int i = 0; i < itemCount; ++i) {
             POINT point = {};
             if (!ListView_GetItemPosition(list, i, &point) || !current()) return false;
             initialPoints.push_back(point);
-            if (ListView_GetItemState(list, i, LVIS_SELECTED) & LVIS_SELECTED) dragged.push_back(point);
-            else if (!alignIconToGrid(point, spacing, iconSize)
-                    || !stationary.emplace(point.x, point.y).second) return false;
+            const bool moving = (ListView_GetItemState(list, i, LVIS_SELECTED) & LVIS_SELECTED) != 0;
+            if (automatic()) movingItems.push_back(moving);
+            if (moving) dragged.push_back(point);
+            else if (!automatic() && ((!permanent() && !alignIconToGrid(point, spacing, iconSize))
+                    || !stationary.emplace(point.x, point.y).second)) return false;
+        }
+        if (permanent()) {
+            POINT origin = {}; RECT icon = {};
+            if (!ListView_GetOrigin(list, &origin) || !GetClientRect(list, &layoutClient)
+                    || !ListView_GetItemRect(list, anchor, &icon, LVIR_ICON) || !current()) return false;
+            iconOffset = {icon.left + origin.x - anchorPoint.x, icon.top + origin.y - anchorPoint.y};
+        }
+        if (automatic()) {
+            orderedItems.reserve(static_cast<size_t>(itemCount));
+            for (int i = 0; i < itemCount; ++i) orderedItems.push_back(i);
+            std::sort(orderedItems.begin(), orderedItems.end(), [&](int a, int b) {
+                const POINT first = initialPoints[a], second = initialPoints[b];
+                return first.y != second.y ? first.y < second.y : first.x < second.x;
+            });
+            ranks.resize(static_cast<size_t>(itemCount));
+            selectedBefore.push_back(0);
+            for (int i = 0; i < itemCount; ++i) {
+                const int itemIndex = orderedItems[i];
+                ranks[itemIndex] = i;
+                selectedBefore.push_back(selectedBefore.back() + (movingItems[itemIndex] ? 1 : 0));
+            }
         }
         destinations.reserve(dragged.size());
         // Prepare one icon-sized surface per gesture. Windows retains its pixels
@@ -338,7 +413,7 @@ struct FolderWindow::IconSnap {
             }
         } timing{*this, began, ended};
 #endif
-        if (!moved || finished || !heldS || GetKeyState(VK_CONTROL) < 0
+        if (!moved || finished || (!permanent() && !heldS) || GetKeyState(VK_CONTROL) < 0
                 || GetKeyState(VK_MENU) < 0 || !current() || !list || WindowFromPoint(cursor) != list) {
             hideMarker(); return;
         }
@@ -351,29 +426,59 @@ struct FolderWindow::IconSnap {
         if (!previewReady || !current() || ListView_GetItemCount(list) != itemCount) { hideMarker(); return; }
         POINT origin = {}; const POINT position = screenToClient(list, cursor); RECT client = {};
         if (!ListView_GetOrigin(list, &origin) || !GetClientRect(list, &client)
-                || overDropTarget(position, origin, client)) { hideMarker(); return; }
+                || (automatic() ? !EqualRect(&client, &layoutClient) : overDropTarget(position, origin, client))) {
+            hideMarker(); return;
+        }
         const LONGLONG dx = static_cast<LONGLONG>(position.x) + origin.x - press.x;
         const LONGLONG dy = static_cast<LONGLONG>(position.y) + origin.y - press.y;
         const auto destination = [&](POINT &point) {
             const LONGLONG x = point.x + dx, y = point.y + dy;
             if (x < LONG_MIN || x > LONG_MAX || y < LONG_MIN || y > LONG_MAX) return false;
+            if (permanent()) {
+                // The existing grid supplies its phase in every icon-based view.
+                // Round the drag delta, keeping each icon's original grid slot.
+                const LONGLONG gridX = dx + (dx < 0 ? -(spacing.x / 2) : spacing.x / 2);
+                const LONGLONG gridY = dy + (dy < 0 ? -(spacing.y / 2) : spacing.y / 2);
+                const LONGLONG alignedX = point.x + gridX - gridX % spacing.x;
+                const LONGLONG alignedY = point.y + gridY - gridY % spacing.y;
+                if (alignedX < LONG_MIN || alignedX > LONG_MAX || alignedY < LONG_MIN || alignedY > LONG_MAX) return false;
+                point = {static_cast<LONG>(alignedX), static_cast<LONG>(alignedY)};
+                return true;
+            }
             point = {static_cast<LONG>(x), static_cast<LONG>(y)};
             return alignIconToGrid(point, spacing, iconSize);
         };
-        destinations.clear();
-        for (POINT point : dragged) {
-            if (!destination(point) || stationary.count({point.x, point.y})) { hideMarker(); return; }
-            destinations.emplace_back(point.x, point.y);
-        }
-        std::sort(destinations.begin(), destinations.end());
-        if (std::adjacent_find(destinations.begin(), destinations.end()) != destinations.end()) { hideMarker(); return; }
         POINT point = anchorPoint;
-        if (!destination(point)) { hideMarker(); return; }
+        if (automatic()) {
+            // Read the insertion decision already made by the Shell. Item indexes
+            // do not change when Windows rearranges their positions.
+            LVINSERTMARK insertion = {sizeof(insertion)};
+            if (!ListView_GetInsertMark(list, &insertion) || insertion.iItem < 0 || insertion.iItem >= itemCount) {
+                hideMarker(); return;
+            }
+            const int cut = ranks[insertion.iItem] + ((insertion.dwFlags & LVIM_AFTER) ? 1 : 0);
+            const int slot = cut - selectedBefore[cut] + selectedBefore[ranks[anchor]];
+            POINT actual = {};
+            if (slot < 0 || slot >= itemCount || !ListView_GetItemPosition(list, insertion.iItem, &actual)
+                    || actual.x != initialPoints[insertion.iItem].x || actual.y != initialPoints[insertion.iItem].y) {
+                hideMarker(); return;
+            }
+            point = initialPoints[orderedItems[slot]];
+        } else {
+            destinations.clear();
+            for (POINT target : dragged) {
+                if (!destination(target) || stationary.count({target.x, target.y})) { hideMarker(); return; }
+                destinations.emplace_back(target.x, target.y);
+            }
+            std::sort(destinations.begin(), destinations.end());
+            if (std::adjacent_find(destinations.begin(), destinations.end()) != destinations.end()
+                    || !destination(point)) { hideMarker(); return; }
+        }
         // Frame the icon's destination, preserving its original cursor offset
         // and accounting for native scrolling.
         const int width = rectWidth(markerRect), height = rectHeight(markerRect);
-        const LONGLONG horizontal = static_cast<LONGLONG>(point.x) - origin.x;
-        const LONGLONG vertical = static_cast<LONGLONG>(point.y) - origin.y;
+        const LONGLONG horizontal = static_cast<LONGLONG>(point.x) + iconOffset.x - origin.x;
+        const LONGLONG vertical = static_cast<LONGLONG>(point.y) + iconOffset.y - origin.y;
         if (horizontal < LONG_MIN || horizontal > LONG_MAX - width || vertical < LONG_MIN || vertical > LONG_MAX - height
                 || horizontal - markerRect.left < INT_MIN || horizontal - markerRect.left > INT_MAX
                 || vertical - markerRect.top < INT_MIN || vertical - markerRect.top > INT_MAX) { hideMarker(); return; }
@@ -404,7 +509,7 @@ struct FolderWindow::IconSnap {
                             || std::abs(message->pt.y - session->start.y) >= GetSystemMetrics(SM_CYDRAG);
                     }
                     if ((message->message == WM_KEYDOWN || message->message == WM_KEYUP)
-                            && message->wParam == L'S') {
+                            && message->wParam == L'S' && !session->permanent()) {
                         session->heldS = message->message == WM_KEYDOWN;
                         session->queueMarker();
                         // S belongs to this gesture, not the view's type-to-select.
@@ -419,7 +524,7 @@ struct FolderWindow::IconSnap {
                         session->dropped = true;
                         session->drop = message->pt;
                         const HWND target = WindowFromPoint(session->drop);
-                        session->snap = session->moved && session->heldS
+                        session->snap = session->moved && session->heldS && !session->permanent()
                             && GetKeyState(VK_CONTROL) >= 0 && GetKeyState(VK_MENU) >= 0;
                         // Test the target before the native drop puts the moved
                         // icons underneath the pointer. Folder/file drops stay native.
@@ -431,7 +536,7 @@ struct FolderWindow::IconSnap {
                         if (session->current())
                             PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0);
                     } else if (message->message == WM_MOUSEMOVE) {
-                        if (session->heldS || !IsRectEmpty(&session->shownRect)) session->queueMarker();
+                        if (session->permanent() || session->heldS || !IsRectEmpty(&session->shownRect)) session->queueMarker();
                     }
                 }
             }
@@ -453,15 +558,17 @@ void FolderWindow::watchIconDrag(const MSG *message) {
     const ULONG_PTR generation = viewGeneration;
     HWND body = nullptr;
     CComQIPtr<IFolderView2> view(source);
-    DWORD flags = 0;
+    DWORD flags = 0; FOLDERVIEWMODE mode = FVM_AUTO; int size = 0;
     int itemIndex = -1;
     if (!view || FAILED(source->GetWindow(&body)) || !body
             || (message->hwnd != body && !IsChild(body, message->hwnd))
-            || !spatialView(view) || FAILED(view->GetCurrentFolderFlags(&flags))
-            || (flags & FWF_SNAPTOGRID) || gestureRoleAt(message->pt, &itemIndex) != ROLE_SYSTEM_LISTITEM
+            || FAILED(view->GetViewModeAndIconSize(&mode, &size)) || !iconPlacementMode(mode)
+            || FAILED(view->GetCurrentFolderFlags(&flags))
+            || (!(flags & FWF_AUTOARRANGE) && !spatialView(view))
+            || gestureRoleAt(message->pt, &itemIndex) != ROLE_SYSTEM_LISTITEM
             || !isWindowOperational() || shellView != source || viewGeneration != generation) return;
     if (IconSnap::active) IconSnap::active->stop();
-    auto session = std::make_shared<IconSnap>(*this, message->pt, body, itemIndex);
+    auto session = std::make_shared<IconSnap>(*this, message->pt, body, itemIndex, flags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID));
     session->hook = SetWindowsHookExW(WH_GETMESSAGE, IconSnap::messages, nullptr, GetCurrentThreadId());
     session->keyboardHook.reset(SetWindowsHookExW(WH_KEYBOARD, IconSnap::keys, nullptr, GetCurrentThreadId()));
     if (!session->hook || !session->keyboardHook) return;
@@ -523,6 +630,7 @@ struct FolderWindow::ViewMenuPreview {
     UINT pendingCommand = 0; // Entry outside the modes, run after the preview is cancelled.
     UINT chosenCommand = 0; // Mode retained when the menu closed: 0 for the initial one.
     bool tracking = true, posted = false, busy = false, prepared = false, capturedIcons = false;
+    bool hoverEnabled = false;
     // The final apply() failed without any refill: no EnumDone replays it. The
     // session still withholds saving the preview, but its initial selection
     // no longer describes the view.
@@ -695,7 +803,7 @@ struct FolderWindow::ViewMenuPreview {
     }
 
     void pointAt(POINT point) {
-        if (!tracking || !current() || !displayedMenu) return;
+        if (!hoverEnabled || !tracking || !current() || !displayedMenu) return;
         // Mouse messages also arrive while the cursor stands still (the view
         // changes under the menu, the menu loop idles). Only a displacement is
         // a hover; otherwise a keyboard highlight would be cancelled at once.
@@ -714,7 +822,7 @@ struct FolderWindow::ViewMenuPreview {
     }
 
     void highlight(UINT command, HMENU popup) {
-        if (!tracking || !current()) return;
+        if (!hoverEnabled || !tracking || !current()) return;
         displayedMenu = popup;
         // Like pointAt: an entry outside the modes returns to the initial mode.
         UINT wanted = 0;
@@ -809,31 +917,34 @@ struct FolderWindow::ViewMenuPreview {
     }
 
     // Runs the entry chosen outside the modes once the initial mode is restored.
-    void invokePending() {
+    bool invokePending() {
         const UINT command = pendingCommand;
         pendingCommand = 0;
-        if (!command || !current()) return;
+        if (!command || !current()) return false;
         if (command == IDM_TOGGLE_THUMBNAILS) {
             toggleGlobalThumbnails();
-            return;
+            return true;
         }
         if (command == IDM_FILL_COLUMNS) {
             owner.toggleFillColumns();
-            return;
+            return true;
         }
         if (command == IDM_REALIGN_ICONS) {
             owner.realignIcons();
-            return;
+            return true;
         }
-        if (!context) {
+        if (!context || isPlacementCommand(command)) {
             ++owner.navigationDepth;
-            checkHR(invokeDisplayCommand(view, command));
+            const HRESULT result = invokeDisplayCommand(view, command);
+            checkHR(result);
             owner.resumeDeferredClose();
-            return;
+            return SUCCEEDED(result) && result != S_FALSE;
         }
         auto info = owner.makeInvokeInfo(static_cast<int>(command - IDM_SHELL_FIRST), POINT{});
         info.hwnd = owner.hwnd;
-        checkHR(owner.invokeViewCommand(context, reinterpret_cast<CMINVOKECOMMANDINFO *>(&info)));
+        const HRESULT result = owner.invokeViewCommand(context, reinterpret_cast<CMINVOKECOMMANDINFO *>(&info));
+        checkHR(result);
+        return SUCCEEDED(result);
     }
 
     // While tracking, a refill completed by this EnumDone rebuilt the items
@@ -906,7 +1017,7 @@ struct FolderWindow::ViewMenuPreview {
         // Only a committed preview still needs its selection/focus restored here.
         if (!applying && chosenCommand) restoreDetails();
         if (!current()) return;
-        invokePending();
+        const bool pendingChanged = invokePending();
         if (!current()) return;
         // The session stops holding back saves now. The restoration is final once
         // the view is complete; a refill observed by apply() is still running and
@@ -920,8 +1031,16 @@ struct FolderWindow::ViewMenuPreview {
                     && window.viewHost.enumerationSerial() == enumerationBefore)
                 restoreFailed = true;
         }
+        // The trusted in-memory layout may be newer than SQLite. Once the
+        // chosen mode is nonspatial, ordinary capture cannot write those icons.
+        // Flush this changed reference while the preview still owns it, after
+        // the menu has closed; opening an unchanged menu remains read-only.
+        if (capturedIcons && window.viewStateIsDirty(FolderState::Icons)) {
+            window.persistViewState();
+            if (!current()) return;
+        }
         window.viewMenuPreview.reset();
-        if (settled) window.scheduleStateSave();
+        if (settled && (chosenCommand || pendingChanged)) window.scheduleStateSave();
         // A preference changed while the menu was open: synchronized now that
         // it is closed, unless a refill still running replays it on completion.
         if (!window.viewMenuRestore) {
@@ -4192,13 +4311,7 @@ void FolderWindow::openViewMenu(POINT point) {
             if (!InsertMenuItemW(menu.get(), i, TRUE, &entry)) return;
         }
         if (!AppendMenuW(menu.get(), MF_SEPARATOR, 0, nullptr)) return;
-        const bool placement = mode == FVM_ICON || mode == FVM_SMALLICON || mode == FVM_TILE;
-        for (UINT command : {IDM_AUTO_ARRANGE_ICONS, IDM_KEEP_ICONS_ALIGNED}) {
-            const DWORD flag = command == IDM_AUTO_ARRANGE_ICONS ? FWF_AUTOARRANGE : FWF_SNAPTOGRID;
-            const UINT label = command == IDM_AUTO_ARRANGE_ICONS ? IDS_AUTO_ARRANGE_ICONS : IDS_KEEP_ICONS_ALIGNED;
-            const UINT state = (placement ? MF_ENABLED : MF_GRAYED) | ((flags & flag) ? MF_CHECKED : MF_UNCHECKED);
-            if (!AppendMenuW(menu.get(), MF_STRING | state, command, getString(label))) return;
-        }
+        if (!appendPlacementMenu(menu.get(), mode, flags)) return;
         // The registered extension already styles and modifies local title and
         // toolbar menus. Keep the same Win32 tracking and COM activation path.
         if (!viewMenuExtension) activateTitleMenuExtension(&viewMenuExtension);
@@ -4230,12 +4343,8 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     } columnsResume{columnLayout};
     viewMenuRestore.reset(); // A new menu supersedes a previous preview's pending replay.
     const bool previewEnabled = settings::getViewMenuPreviewEnabled();
-    // Unknown providers keep their established native path. Local commands
-    // capture in memory on first use, after the popup is already visible.
-    if (contextMenu) {
-        viewStateDirty(FolderState::Icons);
-        persistViewState();
-    }
+    // Keep any pending layout in memory. Opening the popup never requires
+    // a database flush, including on the native-provider path.
     if (!isWindowOperational()) return;
     CComPtr<IFolderView2> folderView;
     auto detachSite = [](IContextMenu *handler) { checkHR(IUnknown_SetSite(handler, nullptr)); };
@@ -4244,24 +4353,25 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
             && contextMenu && checkHR(IUnknown_SetSite(contextMenu, folderView)))
         site.reset(contextMenu);
     if (!isWindowOperational()) return;
-    const int menuCount = GetMenuItemCount(subMenu);
-    if (menuCount < 0) return;
-    for (int i = 0; contextMenu && i < menuCount; ++i) {
-        MENUITEMINFOW entry = {sizeof(entry)};
-        entry.fMask = MIIM_ID | MIIM_FTYPE;
-        if (!GetMenuItemInfoW(subMenu, i, TRUE, &entry) || (entry.fType & MFT_SEPARATOR)
-                || entry.wID < IDM_SHELL_FIRST || entry.wID > IDM_SHELL_LAST) continue;
-        wchar_t verb[64] = {};
-        if (SUCCEEDED(contextMenu->GetCommandString(entry.wID - IDM_SHELL_FIRST,
-                GCS_VERBW, nullptr, reinterpret_cast<char *>(verb), _countof(verb)))
-                && lstrcmpiW(verb, L"arrangeautogrid") == 0) {
-            // Observed on the native View menu. An unrecognized provider keeps
-            // its own label; no translated-text or numeric-command matching.
-            entry.fMask = MIIM_STRING;
-            entry.dwTypeData = const_cast<wchar_t *>(getString(IDS_KEEP_ICONS_ALIGNED));
-            checkLE(SetMenuItemInfoW(subMenu, i, TRUE, &entry));
+    if (contextMenu) {
+        for (int i = GetMenuItemCount(subMenu) - 1; i >= 0; --i) {
+            MENUITEMINFOW entry = {sizeof(entry)};
+            entry.fMask = MIIM_ID;
+            if (!GetMenuItemInfoW(subMenu, i, TRUE, &entry)
+                    || entry.wID < IDM_SHELL_FIRST || entry.wID > IDM_SHELL_LAST) continue;
+            wchar_t verb[64] = {};
+            if (SUCCEEDED(contextMenu->GetCommandString(entry.wID - IDM_SHELL_FIRST,
+                    GCS_VERBW, nullptr, reinterpret_cast<char *>(verb), _countof(verb)))
+                    && (lstrcmpiW(verb, L"arrangeauto") == 0 || lstrcmpiW(verb, L"arrangeautogrid") == 0))
+                checkLE(DeleteMenu(subMenu, i, MF_BYPOSITION));
         }
+        FOLDERVIEWMODE mode = FVM_AUTO; int size = 0; DWORD flags = 0;
+        if (folderView && SUCCEEDED(folderView->GetViewModeAndIconSize(&mode, &size))
+                && SUCCEEDED(folderView->GetCurrentFolderFlags(&flags)) && isWindowOperational())
+            checkLE(appendPlacementMenu(subMenu, mode, flags));
     }
+    const int menuCount = GetMenuItemCount(subMenu);
+    if (menuCount < 0 || !isWindowOperational()) return;
     int thumbnailPosition = menuCount;
     for (int i = 0; i < menuCount; ++i) {
         MENUITEMINFOW menuItem = {sizeof(menuItem)};
@@ -4298,16 +4408,17 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     std::shared_ptr<ViewMenuPreview> preview;
     HHOOK hook = nullptr;
     ViewMenuPreview *previous = ViewMenuPreview::active;
-    if (previewEnabled && folderView && viewReady && initialStateApplied && enumerationComplete && !restoringState) {
+    if (folderView && viewReady && initialStateApplied && enumerationComplete && !restoringState) {
         preview = std::make_shared<ViewMenuPreview>(*this, subMenu, contextMenu, folderView);
         if (preview->capture()) {
-            hook = SetWindowsHookEx(WH_MSGFILTER, ViewMenuPreview::filter, nullptr, GetCurrentThreadId());
-            checkLE(hook);
-            if (hook) {
-                ViewMenuPreview::active = preview.get();
-                viewMenuPreview = preview;
-                if (contextMenu) KillTimer(hwnd, TIMER_SAVE_STATE);
+            if (previewEnabled) {
+                hook = SetWindowsHookEx(WH_MSGFILTER, ViewMenuPreview::filter, nullptr, GetCurrentThreadId());
+                checkLE(hook);
             }
+            preview->hoverEnabled = hook != nullptr;
+            if (hook) ViewMenuPreview::active = preview.get();
+            viewMenuPreview = preview;
+            if (contextMenu) KillTimer(hwnd, TIMER_SAVE_STATE);
         }
     }
     const UINT trackingFlags = TPM_RETURNCMD | TPM_RIGHTBUTTON | (contextMenu ? 0u : TPM_NOANIMATION);
@@ -4316,8 +4427,10 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     if (hook) {
         UnhookWindowsHookEx(hook);
         ViewMenuPreview::active = previous;
+    }
+    if (preview && viewMenuPreview == preview) {
         preview->finish((cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) || isViewMenuMode(cmd)
-            || cmd == IDM_AUTO_ARRANGE_ICONS || cmd == IDM_KEEP_ICONS_ALIGNED
+            || isPlacementCommand(static_cast<UINT>(cmd))
             || cmd == IDM_TOGGLE_THUMBNAILS || cmd == IDM_FILL_COLUMNS || cmd == IDM_REALIGN_ICONS
             ? static_cast<UINT>(cmd) : 0);
     } else if (isWindowOperational() && cmd == IDM_REALIGN_ICONS) {
@@ -4326,7 +4439,7 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
         toggleFillColumns();
     } else if (isWindowOperational() && cmd == IDM_TOGGLE_THUMBNAILS) {
         toggleGlobalThumbnails();
-    } else if (isWindowOperational() && !contextMenu && cmd) {
+    } else if (isWindowOperational() && (!contextMenu || isPlacementCommand(static_cast<UINT>(cmd))) && cmd) {
         // Preserve free coordinates in memory before a native mode change.
         // Save the resulting state through the ordinary change notification.
         std::vector<uint8_t> icons;
