@@ -15,26 +15,24 @@ try {
     $all=[FileSpacerViewMenuTests.MenuUi]::Active($window,$true)
     Assert-Ui ($null -ne $all -and $all.Entries.Count -gt $modeCount) 'The native View menu has no entry after the display modes.'
     $all.Entries|ForEach-Object {[pscustomobject]@{Command=$_.Command;Label=$_.Label;State=$_.State}}|ConvertTo-Json -Depth 3|Set-Content -LiteralPath (Join-Path $env:FS_REGRESSION_RUN 'menu-entries.json') -Encoding UTF8
-    $toggle=$all.Entries[$modeCount]
+    Assert-Ui ($all.Entries[$modeCount].Command-eq(Get-UiId 'IDM_ICON_PLACEMENT_MENU')) 'Placement must follow the display modes.'
     # Down highlights the entries in order; the menu skips its separators.
     [FileSpacerViewMenuTests.MenuUi]::Key($window,0x28,4);Wait-PreviewMode $window $modes[3]
     [FileSpacerViewMenuTests.MenuUi]::Key($window,0x28,$modeCount-3);Wait-PreviewMode $window $initial
     Assert-PreviewState $window $state
     Write-Host 'PASS: keyboard highlight previews a mode and leaves it on an entry outside the modes.'
     [FileSpacerViewMenuTests.MenuUi]::Key($window,0x0D,1)
+    Wait-Ui {$null-ne[FileSpacerViewMenuTests.MenuUi]::Active($window,$true,(Get-UiId 'IDM_FREE_PLACEMENT_ICONS'))} 'Enter opens Placement submenu'
+    [FileSpacerViewMenuTests.MenuUi]::Key($window,0x24,1) # Home selects Automatic.
+    [FileSpacerViewMenuTests.MenuUi]::Key($window,0x0D,1)
     Wait-PreviewMenuClosed $window
     Wait-PreviewMode $window $initial
-    # The chosen entry (auto arrange, align to grid...) may legitimately move the icons.
+    # Automatic placement may legitimately move the icons.
     Wait-Ui {$now=Read-PreviewState $window; $now.Selected -eq $state.Selected -and $now.Focus -eq $state.Focus} 'original selection and focus after the chosen entry' 250
-    $popup=Open-PreviewMenu $window
-    $after=[FileSpacerViewMenuTests.MenuUi]::Active($window,$true)
-    $entry=@($after.Entries|Where-Object {$_.Command -eq $toggle.Command})
-    Assert-Ui ($entry.Count -eq 1) 'The chosen entry disappeared from the native View menu.'
-    Assert-Ui ((($entry[0].State -band 8) -ne 0) -ne (($toggle.State -band 8) -ne 0)) ('Enter did not run the chosen entry "{0}".' -f $toggle.Label)
-    [FileSpacerViewMenuTests.MenuUi]::Escape($window)
-    Wait-PreviewMenuClosed $window
+    Wait-Ui {Use-UiView $window {param($view) $view.AutoArrange-and!$view.SnapToGrid}} 'keyboard choice applies Automatic only'
+    Assert-PlacementChoice 'IDM_AUTO_ARRANGE_ICONS'
     Wait-PreviewMode $window $initial
-    Write-Host 'PASS: Enter on an entry outside the modes keeps the original mode and runs that entry.'
+    Write-Host 'PASS: keyboard navigation enters Placement, runs its exclusive Automatic choice and keeps the original display mode.'
     Close-UiFolder $window
     $window=Open-UiFolder $folder 300
     Wait-PreviewMode $window $initial
