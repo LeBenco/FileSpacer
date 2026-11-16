@@ -97,3 +97,37 @@ function Save-PreviewSettingsImage([IntPtr]$Sheet) {
         $bitmap.Save((Join-Path $env:FS_REGRESSION_RUN 'display-settings.png'),[Drawing.Imaging.ImageFormat]::Png)
     }finally{$graphics.Dispose();$bitmap.Dispose()}
 }
+
+function Open-PlacementChoices {
+    $null=Open-PreviewMenu $window
+    $parent=[FileSpacerViewMenuTests.MenuUi]::Active($window,$true)
+    $index=-1
+    for($i=0;$i-lt$parent.Entries.Count;++$i){if($parent.Entries[$i].Command-eq(Get-UiId 'IDM_ICON_PLACEMENT_MENU')){$index=$i;break}}
+    Assert-Ui ($index-ge0-and($parent.Entries[$index].State-band3)-eq0) 'Placement submenu is missing or disabled in an icon view.'
+    [FileSpacerViewMenuTests.MenuUi]::Hover($parent,$index)
+    Wait-Ui {$null-ne[FileSpacerViewMenuTests.MenuUi]::Active($window,$true,(Get-UiId 'IDM_FREE_PLACEMENT_ICONS'))} 'three placement choices opened'
+    return [FileSpacerViewMenuTests.MenuUi]::Active($window,$true,(Get-UiId 'IDM_FREE_PLACEMENT_ICONS'))
+}
+function Assert-PlacementChoice([string]$Command) {
+    $popup=Open-PlacementChoices
+    Assert-Ui ($popup.Entries.Count-eq3) 'Expected exactly three placement choices.'
+    $checked=@($popup.Entries|Where-Object {($_.State-band8)-ne0})
+    Assert-Ui ($checked.Count-eq1-and$checked[0].Command-eq(Get-UiId $Command)) 'Placement choices are not mutually exclusive.'
+    Assert-Ui (@($popup.Entries|Where-Object {($_.Type-band0x200)-eq0}).Count-eq0) 'Placement choices must use radio indicators.'
+    [FileSpacerViewMenuTests.MenuUi]::Escape($window)
+    [FileSpacerViewMenuTests.MenuUi]::Escape($window)
+    Wait-PreviewMenuClosed $window
+}
+function Choose-Placement([string]$Command) {
+    $popup=Open-PlacementChoices
+    $index=-1
+    for($i=0;$i-lt$popup.Entries.Count;++$i){if($popup.Entries[$i].Command-eq(Get-UiId $Command)){$index=$i;break}}
+    Assert-Ui ($index-ge0) 'Requested placement mode is absent.'
+    [FileSpacerViewMenuTests.MenuUi]::Choose($popup,$index,$window)
+    Wait-PreviewMenuClosed $window
+    Wait-Ui {
+        $state=Use-UiView $window {param($view) @{Auto=$view.AutoArrange;Grid=$view.SnapToGrid}}
+        $state.Auto-eq($Command-eq'IDM_AUTO_ARRANGE_ICONS')-and$state.Grid-eq($Command-eq'IDM_KEEP_ICONS_ALIGNED')
+    } 'exclusive native placement flags applied'
+    Assert-PlacementChoice $Command
+}
