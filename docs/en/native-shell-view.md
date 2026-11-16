@@ -270,27 +270,44 @@ feedback and drag/drop behavior are preserved. Grid placement rounds the drag
 delta using the current grid spacing and phase. Small icons and Tiles also use
 this permanent-placement preview; free S-drag prediction remains Icon-view only.
 
-The free S-drag preview shares the grid rounding calculation. It learns the native
-list from the actual input target and reads positions once per gesture, without
-searching for or subclassing Shell children. The initial anchor reuses the
-existing MSAA hit, validated against its native icon/label bounds. Mouse motion
-checks the moved selection against cached destination cells and native visible
-icon/label rectangles; these rectangles are refreshed on scrolling or viewport
-resize. It never repeats the native whole-view hit-test. Unsupported geometry and
-collisions suppress the preview; they do not change the native drop fallback.
-The preview is an icon-sized grey frame with an opaque outline and a light-grey
-interior at 50% opacity. A disabled, input-transparent layered tool window shows
-one premultiplied BGRA surface prepared per gesture through `UpdateLayeredWindow`.
-Mouse movement only repositions that surface; it never allocates or repaints it.
-The frame retains the original cursor offset and follows native scrolling.
-No Shell item is moved to render a preview. Thread-local keyboard
-observation includes non-removing OLE peeks so releasing/repressing S updates the
-mark even with a stationary mouse; updates are posted and coalesced outside
-the hooks. Releasing the mouse, cancellation, closure and stale views remove it.
-A free-placement S press is consumed by the thread keyboard hook, including
-repeats after the drop until its matching release. Drop alignment and saving run
-once; that release only removes the remaining keyboard interception. Ordinary
-type-to-select is available again for the next press.
+Free-placement drag/drop distinguishes the native image rectangle from the
+surrounding item cell and label. A release on a target image retains the native
+file/folder drop; a release in the surrounding space repositions icons. S reserves
+the gesture for icon placement even over a folder, permits overlap, and alone
+shows the destination frame. Releasing and repressing S updates the frame without
+requiring mouse motion. Ctrl/Alt gestures without S retain their native effects.
+
+The provider decorates native namespace drop targets with `IIconDropPolicy`, bound
+through a separate optional `IIconDropPolicySite` contract. Cached targets retrieve
+the current per-view policy at DragEnter. Native target handlers receive the same
+data, key state and `IObjectWithSite` context when a file drop is allowed. Placement targets leave the native
+handler and refuse the file transfer. The callback holds only a weak gesture
+reference, rejects stale generations and other threads, and is detached on stop.
+The original `IMixedFolder` contract remains unchanged for older provider DLLs.
+
+The input hook snapshots native pixel coordinates once after the drag threshold.
+Only native control reads occur there. On a placement release it converts the
+message to Escape, ending the Shell drag before a file operation; a posted window
+message then applies only the selected IDs with `SelectAndPositionItems` through
+the existing position-batch helper. Selection and focus are retained. Coordinate
+capture and restoration are distinct from persisted settings; transient layouts
+are excluded from state capture. S outside the source view cancels the transfer.
+
+The S preview reuses the existing grid rounding and current public view spacing;
+it does not activate the global grid or reorganize stationary items. Free-preview
+collision rejection is removed. The input target supplies the native list without
+child discovery or subclassing. Native image rectangles are cached per gesture;
+viewport changes rebuild only the visible hit-test cache. Mouse motion does not
+enumerate the Shell folder or extract images. The icon-sized grey frame has an
+opaque outline and a light-grey interior at 50% opacity. Its layered surface is
+allocated lazily when shown, not on ordinary free drags. Native automatic/grid
+previews retain their own insertion/collision checks. Free S-preview eligibility
+remains Icon view; Small icons and Tiles retain the existing native Snap fallback.
+
+A free-placement S press is consumed through its matching release, including
+repeats after the drop. The later release only removes keyboard interception;
+it cannot apply the drop or schedule its save twice. Cancellation and closure
+remove the frame. Temporary drop-highlight changes never modify selection/focus.
 
 `ShellViewOperations` is the operation boundary for optional private behavior.
 The application and `ShellViewSelection` ask for clear, complete-set selection or
