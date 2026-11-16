@@ -247,6 +247,18 @@ choices. One masked `IFolderView2::SetCurrentFolderFlags` call sets both native
 arrangement flags together. List, Details and Content do not enable this submenu.
 Realignment remains a separate one-shot operation.
 
+Grid zoom keeps occupied cells and holes rather than replaying the old pixel
+coordinates: large native size jumps can collapse rows and push collisions into
+long horizontal lines. `restoreIconGridPositions` reads public `GetSpacing`
+before and after the change and learns the current grid phase from a native item
+position. It maps the saved cells to that geometry in one positioning batch,
+with Snap temporarily disabled so intermediate batch collisions cannot displace
+later items; the original flag is restored even if positioning fails. Both wheel
+changes and committed/hovered View modes use this operation. Free placement
+retains exact coordinates instead. Native size changes suppress state capture
+until the intermediate layout has finished; unchanged menu opening adds no
+spacing query or database access.
+
 The drag preview runs throughout native automatic/grid placement and only while
 S is held in free placement. For Automatic, `ListView_GetInsertMark` supplies the
 Shell's actual insertion decision; cached spatial ranks and selected-prefix counts
@@ -275,6 +287,10 @@ No Shell item is moved to render a preview. Thread-local keyboard
 observation includes non-removing OLE peeks so releasing/repressing S updates the
 mark even with a stationary mouse; updates are posted and coalesced outside
 the hooks. Releasing the mouse, cancellation, closure and stale views remove it.
+A free-placement S press is consumed by the thread keyboard hook, including
+repeats after the drop until its matching release. Drop alignment and saving run
+once; that release only removes the remaining keyboard interception. Ordinary
+type-to-select is available again for the next press.
 
 `ShellViewOperations` is the operation boundary for optional private behavior.
 The application and `ShellViewSelection` ask for clear, complete-set selection or
