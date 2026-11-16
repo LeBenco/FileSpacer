@@ -29,6 +29,12 @@ Theme-Eigenschaften können auch prozessabhängige Ausdrücke verwenden. Beispie
 
 Bei FileSpacer gelten Theme-Änderungen nach dem Aufheben und erneuten Einrichten der Registrierung von Nilesoft Shell für neu geöffnete Menüs. Ein Neustart des Explorers ist nicht erforderlich.
 
+<a id="menu-opening-delay"></a>
+
+## Verzögerung beim Öffnen von Menüs
+
+Um die [Verzögerung beim Öffnen von Menüs](https://nilesoft.org/docs/configuration/settings) von Nilesoft Shell aufzuheben, setzen Sie `showdelay = 0` im bestehenden `settings`-Block von `shell.nss`. Soll dies nur für FileSpacer gelten, verwenden Sie stattdessen `showdelay = if(process.name == 'FileSpacer', 0, 200)`. Ersetzen Sie `200` durch die Verzögerung in Millisekunden, die für andere Anwendungen beibehalten werden soll.
+
 <a id="target-a-specific-menu"></a>
 
 ## Ein bestimmtes Menü ansprechen

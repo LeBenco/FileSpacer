@@ -29,6 +29,12 @@ import 'imports/theme.nss'
 
 Коли використовується FileSpacer замість Файлового провідника, зміни теми діють для нових меню після скасування реєстрації й повторної реєстрації Nilesoft Shell без перезапуску Провідника.
 
+<a id="menu-opening-delay"></a>
+
+## Затримка відкриття меню
+
+Щоб прибрати [затримку відкриття меню](https://nilesoft.org/docs/configuration/settings) в Nilesoft Shell, установіть `showdelay = 0` у наявному блоці `settings` файлу `shell.nss`. Щоб застосувати це лише до FileSpacer, використайте `showdelay = if(process.name == 'FileSpacer', 0, 200)`, замінивши `200` на затримку, яку потрібно зберегти для інших програм, у мілісекундах.
+
 <a id="target-a-specific-menu"></a>
 
 ## Вибір конкретного меню

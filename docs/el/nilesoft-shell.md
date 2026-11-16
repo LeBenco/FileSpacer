@@ -29,6 +29,12 @@ import 'imports/theme.nss'
 
 Στο FileSpacer, οι αλλαγές του θέματος ισχύουν για τα νέα μενού αφού καταργήσετε την καταχώριση του Nilesoft Shell και το καταχωρίσετε ξανά, χωρίς επανεκκίνηση της Εξερεύνησης αρχείων.
 
+<a id="menu-opening-delay"></a>
+
+## Καθυστέρηση ανοίγματος μενού
+
+Για να καταργήσετε την [καθυστέρηση ανοίγματος των μενού](https://nilesoft.org/docs/configuration/settings) του Nilesoft Shell, ορίστε `showdelay = 0` στο υπάρχον μπλοκ `settings` του `shell.nss`. Για να ισχύει μόνο στο FileSpacer, χρησιμοποιήστε `showdelay = if(process.name == 'FileSpacer', 0, 200)`, αντικαθιστώντας το `200` με την καθυστέρηση που θα διατηρηθεί στις άλλες εφαρμογές, σε χιλιοστά του δευτερολέπτου.
+
 <a id="target-a-specific-menu"></a>
 
 ## Στόχευση συγκεκριμένου μενού

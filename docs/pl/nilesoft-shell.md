@@ -29,6 +29,12 @@ Właściwości motywu mogą też używać wyrażeń zależnych od procesu: np. `
 
 Przy używaniu FileSpacer zamiast Eksploratora plików zmiany motywu działają w nowo otwieranych menu po wyrejestrowaniu i ponownym zarejestrowaniu Nilesoft Shell, bez restartu Eksploratora.
 
+<a id="menu-opening-delay"></a>
+
+## Opóźnienie otwierania menu
+
+Aby usunąć [opóźnienie otwierania menu](https://nilesoft.org/docs/configuration/settings) w Nilesoft Shell, należy ustawić `showdelay = 0` w istniejącym bloku `settings` pliku `shell.nss`. Aby zmiana dotyczyła tylko FileSpacer, użyć `showdelay = if(process.name == 'FileSpacer', 0, 200)`, zastępując `200` opóźnieniem, które ma pozostać w innych aplikacjach, w milisekundach.
+
 <a id="target-a-specific-menu"></a>
 
 ## Wybór konkretnego menu
