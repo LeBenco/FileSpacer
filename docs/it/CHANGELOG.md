@@ -6,7 +6,9 @@
 
 ## 1.5.0
 
-- Costruire localmente il menu Visualizza mantenendo le personalizzazioni Nilesoft, senza caricare l’intero menu contestuale della cartella né ricrearne la vista prima di aprire il menu.
+- Conservare le posizioni libere delle icone passando alla vista Contenuto e tornando indietro, anche dopo aver riaperto la cartella.
+- Aggiungere tre modalità di disposizione delle icone mutuamente esclusive: Automatica, Sulla griglia e Libera, con un’anteprima della destinazione durante il trascinamento in modalità Automatica o Sulla griglia.
+- Aprire più rapidamente il menu Visualizza mantenendo le personalizzazioni Nilesoft.
 - Mantenere la disposizione nativa in righe della vista Contenuto, senza posizionamento libero delle icone, riallineamento o Snap.
 - Aggiungere le otto visualizzazioni di Esplora file: Icone molto grandi, Icone grandi, Icone medie, Icone piccole, Elenco, Dettagli, Riquadri e Contenuto, con le scorciatoie Ctrl+Maiusc+1–8.
 - Aggiungere il comando **Riallinea le icone** per riallineare una sola volta la disposizione attuale e **Snap** durante il trascinamento: tenere premuto **S** per allineare alla griglia di Windows solo le icone trascinate, senza spostare le altre, con un riquadro di destinazione semitrasparente delle dimensioni dell’icona.

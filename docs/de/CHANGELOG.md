@@ -6,7 +6,9 @@
 
 ## 1.5.0
 
-- Das Menü Ansicht lokal aufbauen und die Nilesoft-Anpassung beibehalten, ohne das vollständige Ordner-Kontextmenü zu laden oder die Ansicht vor dem Öffnen des Menüs neu zu erstellen.
+- Freie Symbolpositionen beim Wechsel zu Inhalt und zurück beibehalten, auch nach erneutem Öffnen des Ordners.
+- Drei sich gegenseitig ausschließende Modi für die Symbolanordnung hinzufügen: Automatisch, Am Raster und Frei, mit einer Vorschau der Zielposition beim Ziehen in den Modi Automatisch und Am Raster.
+- Das Menü Ansicht schneller öffnen und dabei die Nilesoft-Anpassung beibehalten.
 - Die native Anordnung in Zeilen in der Ansicht Inhalt beibehalten, ohne freie Symbolplatzierung, Neuausrichtung oder Snap.
 - Die acht Ansichten des Datei-Explorers hinzufügen: Extra große Symbole, Große Symbole, Mittelgroße Symbole, Kleine Symbole, Liste, Details, Kacheln und Inhalt, mit den Tastenkombinationen Strg+Umschalt+1 bis 8.
 - Den Befehl **Symbole neu ausrichten** zum einmaligen Ausrichten der aktuellen Anordnung sowie **Snap** beim Ziehen hinzufügen: **S** gedrückt halten, um nur die gezogenen Symbole am Windows-Raster auszurichten, ohne die anderen zu verschieben. Ein durchscheinender Rahmen in Symbolgröße zeigt das Ziel an.

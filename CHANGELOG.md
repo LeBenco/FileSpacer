@@ -6,7 +6,9 @@
 
 ## 1.5.0
 
-- Build the View menu locally, retaining Nilesoft menu customization without loading the folder’s complete context menu or recreating its view before opening it.
+- Keep free icon positions when switching to Content and back, including after reopening the folder.
+- Add three mutually exclusive icon placement modes: Automatic, On a grid and Free, with a destination preview while dragging in Automatic or On a grid.
+- Open the View menu faster while retaining Nilesoft menu customization.
 - Keep Content in its native ordered layout, without free icon placement, realignment or Snap.
 - Add File Explorer's eight view modes: Extra large icons, Large icons, Medium icons, Small icons, List, Details, Tiles and Content, with Ctrl+Shift+1 to 8 shortcuts.
 - Add the **Realign icons** command to realign the current layout once, and **Snap** while dragging: hold **S** to align only the dragged icons to the Windows grid without moving the others, with an icon-sized translucent destination frame.

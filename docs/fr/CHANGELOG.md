@@ -6,7 +6,9 @@
 
 ## 1.5.0
 
-- Construire localement le menu Affichage en conservant la personnalisation Nilesoft, sans charger le menu contextuel complet du dossier ni recréer sa vue avant l’ouverture du menu.
+- Conserver les positions libres des icônes lors d’un passage par la vue Contenu, y compris après réouverture du dossier.
+- Proposer trois modes de placement exclusifs : Automatique, Sur la grille et Libre, avec un aperçu de la destination pendant les déplacements en mode Automatique ou Sur la grille.
+- Ouvrir plus rapidement le menu Affichage en conservant la personnalisation Nilesoft.
 - Conserver la disposition native en lignes du mode Contenu, sans placement libre des icônes, réalignement ni Snap.
 - Ajouter les huit modes d’affichage de l’Explorateur de fichiers : Très grandes icônes, Grandes icônes, Icônes moyennes, Petites icônes, Liste, Détails, Mosaïques et Contenu, avec les raccourcis Ctrl+Maj+1 à 8.
 - Ajouter la commande **Réaligner les icônes** pour recaler ponctuellement la disposition actuelle, ainsi que **Snap** pendant un déplacement : maintenir **S** pour aligner uniquement les icônes déplacées sur la grille Windows sans déplacer les autres, avec un cadre de destination translucide de la taille de l’icône.

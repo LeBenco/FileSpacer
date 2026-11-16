@@ -6,7 +6,9 @@
 
 ## 1.5.0
 
-- Budować menu Widok lokalnie, zachowując dostosowania Nilesoft, bez wczytywania całego menu kontekstowego folderu ani odtwarzania widoku przed otwarciem menu.
+- Zachować dowolne pozycje ikon przy przejściu do widoku Zawartość i z powrotem, również po ponownym otwarciu folderu.
+- Dodać trzy wzajemnie wykluczające się tryby rozmieszczenia ikon: Automatyczne, Na siatce i Dowolne, z podglądem miejsca docelowego podczas przeciągania w trybach Automatyczne i Na siatce.
+- Szybciej otwierać menu Widok z zachowaniem dostosowań Nilesoft.
 - Zachować natywny układ w wierszach w widoku Zawartość, bez dowolnego rozmieszczania ikon, ponownego wyrównywania ani Snap.
 - Dodać osiem widoków Eksploratora plików: Bardzo duże ikony, Duże ikony, Średnie ikony, Małe ikony, Lista, Szczegóły, Kafelki i Zawartość, ze skrótami Ctrl+Shift+1–8.
 - Dodać polecenie **Wyrównaj ikony ponownie**, które jednorazowo wyrównuje bieżący układ, oraz **Snap** podczas przeciągania: przytrzymanie **S** wyrównuje do siatki Windows tylko przeciągane ikony, bez przesuwania pozostałych, z półprzezroczystą ramką miejsca docelowego o rozmiarze ikony.

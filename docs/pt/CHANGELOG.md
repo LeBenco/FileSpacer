@@ -6,7 +6,9 @@
 
 ## 1.5.0
 
-- Construir localmente o menu Ver, mantendo a personalização do Nilesoft, sem carregar todo o menu de contexto da pasta nem recriar a sua vista antes de abrir o menu.
+- Preservar as posições livres dos ícones ao passar pela vista Conteúdo e regressar, mesmo depois de voltar a abrir a pasta.
+- Adicionar três modos de disposição de ícones mutuamente exclusivos: Automática, Na grelha e Livre, com uma pré-visualização do destino ao arrastar nos modos Automática e Na grelha.
+- Abrir mais rapidamente o menu Ver, mantendo a personalização do Nilesoft.
 - Manter a disposição nativa em linhas da vista Conteúdo, sem disposição livre dos ícones, realinhamento ou Snap.
 - Adicionar as oito vistas do Explorador de Ficheiros: Ícones extra grandes, Ícones grandes, Ícones médios, Ícones pequenos, Lista, Detalhes, Mosaicos e Conteúdo, com os atalhos Ctrl+Shift+1 a 8.
 - Adicionar o comando **Realinhar os ícones** para reajustar uma vez a disposição atual e **Snap** durante o arrasto: manter **S** premido para alinhar apenas os ícones arrastados à grelha do Windows, sem mover os restantes, com uma moldura de destino semitransparente do tamanho do ícone.

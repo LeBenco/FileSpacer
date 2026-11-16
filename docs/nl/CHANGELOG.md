@@ -6,7 +6,9 @@
 
 ## 1.5.0
 
-- Het menu Beeld lokaal opbouwen met behoud van Nilesoft-aanpassingen, zonder het volledige mapcontextmenu te laden of de weergave opnieuw op te bouwen voordat het menu opent.
+- Vrije pictogramposities behouden bij het wisselen naar Inhoud en terug, ook na het opnieuw openen van de map.
+- Drie elkaar uitsluitende modi voor pictogramplaatsing toevoegen: Automatisch, Op raster en Vrij, met een voorbeeld van de bestemming tijdens het slepen in de modi Automatisch en Op raster.
+- Het menu Beeld sneller openen met behoud van Nilesoft-aanpassingen.
 - De ingebouwde indeling in rijen behouden in de weergave Inhoud, zonder vrije pictogramplaatsing, opnieuw uitlijnen of Snap.
 - De acht weergaven van Bestandenverkenner toevoegen: Extra grote pictogrammen, Grote pictogrammen, Middelgrote pictogrammen, Kleine pictogrammen, Lijst, Details, Tegels en Inhoud, met de sneltoetsen Ctrl+Shift+1 tot 8.
 - De opdracht **Pictogrammen opnieuw uitlijnen** toevoegen om de huidige indeling eenmalig uit te lijnen, en **Snap** tijdens het slepen: houd **S** ingedrukt om alleen de gesleepte pictogrammen op het Windows-raster uit te lijnen zonder de andere te verplaatsen, met een halfdoorzichtig bestemmingskader ter grootte van het pictogram.

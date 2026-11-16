@@ -6,7 +6,9 @@
 
 ## 1.5.0
 
-- Construir localmente el menú Vista conservando la personalización de Nilesoft, sin cargar todo el menú contextual de la carpeta ni recrear su vista antes de abrir el menú.
+- Conservar las posiciones libres de los iconos al pasar por la vista Contenido, incluso después de volver a abrir la carpeta.
+- Añadir tres modos de colocación de iconos mutuamente excluyentes: Automática, En cuadrícula y Libre, con una vista previa del destino al arrastrar en los modos Automática y En cuadrícula.
+- Abrir más rápido el menú Vista conservando la personalización de Nilesoft.
 - Mantener la distribución nativa en filas de la vista Contenido, sin colocación libre de iconos, realineación ni Snap.
 - Añadir las ocho vistas del Explorador de archivos: Iconos muy grandes, Iconos grandes, Iconos medianos, Iconos pequeños, Lista, Detalles, Mosaicos y Contenido, con los atajos Ctrl+Mayús+1 a 8.
 - Añadir el comando **Volver a alinear los iconos** para reajustar una vez la distribución actual y **Snap** durante el arrastre: mantener pulsada **S** para alinear con la cuadrícula de Windows solo los iconos arrastrados, sin mover los demás, con un marco de destino semitransparente del tamaño del icono.
