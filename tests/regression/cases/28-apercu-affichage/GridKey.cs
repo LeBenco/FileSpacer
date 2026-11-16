@@ -73,6 +73,11 @@ namespace FileSpacerViewMenuTests {
             [FieldOffset(12)] public uint Flags;
         }
         [DllImport("user32.dll",SetLastError=true)] static extern uint SendInput(uint count,Input[] inputs,int size);
+        public static void Repeat() {
+            if(!held) throw new InvalidOperationException("S must be held before repeating it.");
+            if(SendInput(1,new Input[]{new Input{Type=1,Key=0x53}},40)!=1)
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+        }
         static bool held;
         public static void Hold(bool down) {
             if(held==down) return;
