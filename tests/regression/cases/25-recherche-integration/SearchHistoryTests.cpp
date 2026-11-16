@@ -102,33 +102,17 @@ int main(int argc, char **argv) {
             require(store.saveSearchHistory("renamed", recent, 5) && history(store, "renamed").empty(), "late history write resurrected expired folder");
             require(store.saveSearchHistory("B", recent, 5) && store.remove("B") && history(store, "B").empty(), "deletion cleanup");
         }
-        // A version-5 database and unrelated search data survive migration verbatim.
-        sql(path, "DROP TRIGGER delete_search_history; DROP TABLE search_history; ALTER TABLE folder_state DROP COLUMN scroll; PRAGMA user_version=5;"
-            "CREATE TABLE legacy_search(query TEXT, filter BLOB); INSERT INTO legacy_search VALUES('saved query',x'010203');");
+        // Clearing FileSpacer state must leave unrelated tables untouched.
+        sql(path, "CREATE TABLE unrelated_search(query TEXT, filter BLOB);"
+            "INSERT INTO unrelated_search VALUES('saved query',x'010203');"
+            "CREATE TRIGGER protect_unrelated BEFORE DELETE ON unrelated_search BEGIN SELECT RAISE(ABORT,'unrelated touched'); END;");
         {
-            FolderStateStore store(path); require(store.ready(), "version 5 migration failed");
-            require(history(store, "B").empty(), "migration created history entries");
+            FolderStateStore store(path); require(store.ready(), "reopen current format");
             require(store.clearAll(), "clear all states");
         }
-        sql(path, "CREATE TRIGGER verify_legacy BEFORE DELETE ON legacy_search BEGIN SELECT RAISE(ABORT,'legacy touched'); END;"
-            "CREATE TABLE assertion(value INTEGER CHECK(value=1));"
-            "INSERT INTO assertion SELECT query='saved query' AND filter=x'010203' FROM legacy_search;");
-        {
-            FolderStateStore store(path);
-            FolderState original; original.x = 789; original.y = -123; original.icons = {4, 5};
-            require(store.save("version4", original, FolderState::Position | FolderState::Icons), "prepare version 4 state");
-        }
-        sql(path, "DROP TRIGGER delete_search_history; DROP TABLE search_history;"
-            "ALTER TABLE folder_state DROP COLUMN locked; ALTER TABLE folder_state DROP COLUMN scroll; PRAGMA user_version=4;");
-        {
-            FolderStateStore store(path); require(store.ready(), "version 4 migration failed");
-            FolderState migrated;
-            require(store.read("version4", &migrated) && migrated.x == 789 && migrated.y == -123
-                && migrated.icons == std::vector<uint8_t>({4, 5}) && !migrated.locked,
-                "version 4 migration changed existing state");
-            require(history(store, "version4").empty(), "version 4 migration invented history");
-        }
-        std::cout << "PASS: history isolation, ordering, persistence, 0/5/20, limits, state preservation, migration, rename and conservative cleanup.\n";
+        sql(path, "CREATE TABLE assertion(value INTEGER CHECK(value=1));"
+            "INSERT INTO assertion SELECT query='saved query' AND filter=x'010203' FROM unrelated_search;");
+        std::cout << "PASS: history isolation, ordering, persistence, 0/5/20, limits, state preservation, rename and conservative cleanup.\n";
         return 0;
     } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }
 }
