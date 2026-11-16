@@ -1,7 +1,6 @@
 # Test-Category: UI
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
-. (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
-Add-Type -Path (Join-Path $PSScriptRoot '..\28-apercu-affichage\ViewMenuUi.cs')
+. (Join-Path $PSScriptRoot '..\28-apercu-affichage\ViewMenu.ps1')
 $failure=$null
 $providerKey='Registry::HKEY_CURRENT_USER\Software\Classes\CLSID\{E129740C-52FD-4C7B-98AA-9ED6EBF9A604}'
 $registrationExisted=Test-Path -LiteralPath $providerKey
@@ -58,16 +57,9 @@ function Expected-Order([bool]$Date,[bool]$Ascending,[bool]$Separated) {
     return $names
 }
 function Toggle-AutoArrange([IntPtr]$Window) {
-    Activate-Ui $Window
-    [void][FileSpacerViewMenuTests.MenuUi]::Open($Window,(Get-UiCommandToolbar $Window),(Get-UiId 'IDM_VIEW_MENU'))
-    $popup=[FileSpacerViewMenuTests.MenuUi]::Active($Window,$true)
-    $index=-1
-    for($i=0;$i-lt$popup.Entries.Count;$i++) {
-        if(($popup.Entries[$i].Label -replace '&','') -match '(?i)auto arrange|automatique'){$index=$i;break}
-    }
-    Assert-Ui ($index-ge0) ('Native auto-arrange command absent: '+(($popup.Entries|ForEach-Object Label)-join '|'))
-    [FileSpacerViewMenuTests.MenuUi]::Choose($popup,$index,$Window)
-    Wait-Ui {$null-eq[FileSpacerViewMenuTests.MenuUi]::Active($Window)} 'native auto-arrange menu closed'
+    $arranged=Use-UiView $Window {param($view) $view.AutoArrange}
+    $command=if($arranged){'IDM_FREE_PLACEMENT_ICONS'}else{'IDM_AUTO_ARRANGE_ICONS'}
+    Choose-Placement $command
 }
 try {
     Initialize-Ui 'mixed-sort'
