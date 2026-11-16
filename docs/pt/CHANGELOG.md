@@ -6,6 +6,7 @@
 
 ## 1.5.0
 
+- Passar para o formato 8 da base de dados do estado das pastas. Os formatos anteriores requerem uma reposição confirmada com cópia de segurança; as disposições e os históricos guardados não são importados.
 - Construir localmente o menu Ver, mantendo a personalização do Nilesoft, sem carregar todo o menu de contexto da pasta nem recriar a sua vista antes de abrir o menu.
 - Manter a disposição nativa em linhas da vista Conteúdo, sem disposição livre dos ícones, realinhamento ou Snap.
 - Adicionar as oito vistas do Explorador de Ficheiros: Ícones extra grandes, Ícones grandes, Ícones médios, Ícones pequenos, Lista, Detalhes, Mosaicos e Conteúdo, com os atalhos Ctrl+Shift+1 a 8.

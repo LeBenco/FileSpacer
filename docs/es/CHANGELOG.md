@@ -6,6 +6,7 @@
 
 ## 1.5.0
 
+- Cambiar al formato 8 de la base de datos del estado de las carpetas. Los formatos anteriores requieren un restablecimiento confirmado con copia de seguridad; no se importan las disposiciones ni los historiales guardados.
 - Construir localmente el menú Vista conservando la personalización de Nilesoft, sin cargar todo el menú contextual de la carpeta ni recrear su vista antes de abrir el menú.
 - Mantener la distribución nativa en filas de la vista Contenido, sin colocación libre de iconos, realineación ni Snap.
 - Añadir las ocho vistas del Explorador de archivos: Iconos muy grandes, Iconos grandes, Iconos medianos, Iconos pequeños, Lista, Detalles, Mosaicos y Contenido, con los atajos Ctrl+Mayús+1 a 8.
