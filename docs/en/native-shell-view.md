@@ -29,8 +29,14 @@ menus; the successful activation is retained for the folder window. The local
 popup requests no animation and performs no SQLite write on opening. Its initial
 view, selection, scroll and icon snapshot is captured in memory only when a mode
 is first previewed or chosen. Original settings and coordinates remain available
-for a close during preview; actual changes and closure drive persistence. Other
-providers retain their native submenu and preparation. Content is committed
+for a close during preview; actual changes and closure drive persistence. A
+changed trusted icon snapshot is flushed when a mode choice is validated,
+before a nonspatial view can prevent that snapshot from being captured again. Other
+providers retain their native submenu and an in-memory capture. Neither path
+flushes SQLite before opening the menu. Disabled hover preview still captures
+and commits chosen commands safely, without changing the view on hover.
+Unchanged placement choices do not arm a save timer. Lock-state reads are
+needed only when locking is enabled and the folder identity is valid. Content is committed
 after closing the menu because its full-width renderer requires a profile change.
 
 | Component | Responsibility |
@@ -236,7 +242,23 @@ unselected positions. Selection, focus and persistent arrangement flags are
 unchanged. Stress case `28-apercu-affichage/06-Grille.ps1` compares the two paths
 over 3,000 items and requires proof that the qualified calculation was used.
 
-The S-drag preview shares the grid rounding calculation. It learns the native
+The Placement submenu exposes mutually exclusive Automatic, On a grid and Free
+choices. One masked `IFolderView2::SetCurrentFolderFlags` call sets both native
+arrangement flags together. List, Details and Content do not enable this submenu.
+Realignment remains a separate one-shot operation.
+
+The drag preview runs throughout native automatic/grid placement and only while
+S is held in free placement. For Automatic, `ListView_GetInsertMark` supplies the
+Shell's actual insertion decision; cached spatial ranks and selected-prefix counts
+locate the dragged anchor after the selected items are removed and reinserted.
+The icon rectangle offset comes from the native view. No insertion hit-test,
+private function or Shell item enumeration is added on mouse movement. A stale
+layout or missing native insertion mark suppresses the frame. Native insertion
+feedback and drag/drop behavior are preserved. Grid placement rounds the drag
+delta using the current grid spacing and phase. Small icons and Tiles also use
+this permanent-placement preview; free S-drag prediction remains Icon-view only.
+
+The free S-drag preview shares the grid rounding calculation. It learns the native
 list from the actual input target and reads positions once per gesture, without
 searching for or subclassing Shell children. The initial anchor reuses the
 existing MSAA hit, validated against its native icon/label bounds. Mouse motion
