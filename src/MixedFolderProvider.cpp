@@ -194,19 +194,26 @@ class IconDropTarget : public IDropTarget, public IObjectWithSite {
     CComPtr<IDataObject> data;
     CComHeapPtr<ITEMID_CHILD> target;
     bool entered = false;
+    DWORD allowedEffects = DROPEFFECT_NONE;
     HRESULT update(DWORD keys, POINTL point, DWORD *effect) {
         if (!effect) return E_POINTER;
         const HRESULT decision = policy ? policy->Placement(target, point, keys) : S_FALSE;
-        if (decision != S_FALSE) {
+        if (FAILED(decision)) {
             if (entered) { native->DragLeave(); entered = false; }
             *effect = DROPEFFECT_NONE;
             return S_OK;
         }
+        // Keep the native negotiation alive while placement is reserved.
+        // The Shell caches a rejected target, and S is not an OLE modifier:
+        // returning NONE here can prevent recovery when S is released. Drop
+        // remains the authoritative veto for a reserved placement gesture.
         if (!entered) {
+            *effect = allowedEffects;
             const HRESULT result = native->DragEnter(data, keys, point, effect);
             entered = SUCCEEDED(result);
             return result;
         }
+        *effect = allowedEffects;
         return native->DragOver(keys, point, effect);
     }
 public:
@@ -249,6 +256,8 @@ public:
     STDMETHODIMP DragEnter(IDataObject *object, DWORD keys, POINTL point, DWORD *effect) override {
         CComPtr<IDropTarget> keepAlive(this);
         DragLeave();
+        if (!effect) return E_POINTER;
+        allowedEffects = *effect;
         data = object;
         const HRESULT result = site->GetIconDropPolicy(&policy);
         return FAILED(result) ? result : update(keys, point, effect);
@@ -274,11 +283,15 @@ public:
         if (decision != S_FALSE) { DragLeave(); *effect = DROPEFFECT_NONE; return DRAGDROP_S_CANCEL; }
         HRESULT result = S_OK;
         if (!entered) {
+            *effect = allowedEffects;
             result = native->DragEnter(object, keys, point, effect);
             entered = SUCCEEDED(result);
             if (entered && !*effect) { DragLeave(); return DRAGDROP_S_CANCEL; }
         }
-        if (SUCCEEDED(result)) result = native->Drop(object, keys, point, effect);
+        if (SUCCEEDED(result)) {
+            *effect = allowedEffects;
+            result = native->Drop(object, keys, point, effect);
+        }
         entered = false; data.Release(); policy.Release();
         return result;
     }
