@@ -188,6 +188,22 @@ try {
     $tileFrame=Move-PlacementFrame 'item-0000'
     @{Grid=$gridFrame;Automatic=$autoFrame;SmallIcons=$smallFrame;Tiles=$tileFrame}|ConvertTo-Json -Depth 4|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'placement-frames.json') -Encoding UTF8
     Write-Host 'PASS: three exclusive placement modes persist, and permanent frames predict native grid and automatic drops across icon views.'
+    # A physical held key can repeat after the mouse button was released.
+    # Reserve that whole press for Snap, then restore ordinary type-to-select.
+    Set-GridMode
+    Choose-Placement 'IDM_FREE_PLACEMENT_ICONS'
+    [IO.File]::WriteAllText((Join-Path $folder 'S-probe.txt'),'fixture')
+    Wait-Ui {(Use-UiView $window {param($view) $view.Count})-eq7} 'S-prefixed fixture appears'
+    Use-UiView $window {param($view)
+        for($i=0;$i-lt6;++$i){$view.Position(('item-{0:D4}'-f$i),43+($i%3)*220,37+[int][Math]::Floor($i/3)*190)}
+        $view.Position('S-probe.txt',680,37);$view.Select('item-0000')
+    }
+    $beforeKey=Read-GridState
+    Move-GridIcons $true $false $false $false $false $true
+    Wait-Ui {$state=Read-GridState;$state.Selected-eq$beforeKey.Selected-and$state.Focus-eq$beforeKey.Focus} 'Snap key repeats do not change selection or focus after the drop' 250
+    [FileSpacerRegression.Native]::Keys($window,0x53,$false,$false)
+    Wait-Ui {(Read-GridState).Selected-eq'S-probe.txt'} 'ordinary S typing works again outside the drag'
+    Write-Host 'PASS: a held Snap key cannot type-select another file after dropping; ordinary name search is restored on release.'
     Close-UiFolder $window
 } catch {
     $failure=$_
