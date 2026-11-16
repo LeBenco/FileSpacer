@@ -214,6 +214,7 @@ namespace FileSpacerRegression {
             } finally { Marshal.FreeHGlobal(keys); }
         }
         public int IconSize { get { uint mode; int size; Native.Check(((FolderView2)view).GetViewModeAndIconSize(out mode,out size)); return size; } }
+        public Point Spacing { get { Point spacing; Native.Check(view.GetSpacing(out spacing)); return spacing; } }
         public bool AutoArrange {
             get { int result=view.GetAutoArrange(); Native.Check(result); return result==0; }
             set { Native.Check(((FolderView2)view).SetCurrentFolderFlags(1u,value?1u:0u)); } // FWF_AUTOARRANGE
