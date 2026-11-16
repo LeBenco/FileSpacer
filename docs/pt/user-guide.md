@@ -65,11 +65,17 @@ Nos campos de endereço, pesquisa e mudança de nome, Retrocesso e Ctrl+Retroces
 <div id="disposição-dos-ícones"></div>
 <div id="icon-layout"></div>
 
-Em **Ver → Disposição**, escolher um dos três modos: **Automática** dispõe os ícones sem espaços vazios; **Na grelha** permite escolher posições na grelha e deixar espaços vazios; **Livre** permite escolher posições exatas. Os modos são mutuamente exclusivos e estão disponíveis em todos os tamanhos de ícones e na vista **Mosaicos**. **Lista**, **Detalhes** e **Conteúdo** mantêm a disposição nativa ordenada.
+Em **Ver > Disposição**, escolher como dispor os ícones:
 
-**Realinhar os ícones** ajusta as posições atuais à grelha do Windows uma única vez, sem mudar o modo de disposição nem preencher os espaços vazios. No modo **Livre**, manter **S** premida até soltar o botão do rato para alinhar apenas os ícones arrastados; os restantes ficam no mesmo lugar. Soltar **S** antes de terminar o arrasto mantém a disposição livre.
+- **Automática** dispõe os ícones sem espaços vazios.
+- **Na grelha** permite escolher posições na grelha e deixar espaços vazios.
+- **Livre** permite colocá-los em qualquer posição, como no ambiente de trabalho do Windows.
 
-Uma moldura cinzenta mostra o destino do ícone ao arrastar nos modos **Automática** e **Na grelha**. No modo **Livre**, a moldura aparece na vista de ícones enquanto **S** estiver premida; soltá-la oculta a moldura e voltar a premir **S** fá-la reaparecer. Soltar o botão do rato ou cancelar o arrasto remove a moldura.
+Estas opções estão disponíveis em todos os tamanhos de ícones e na vista **Mosaicos**. **Lista**, **Detalhes** e **Conteúdo** mantêm a disposição ordenada.
+
+**Realinhar os ícones** ajusta a disposição atual à grelha do Windows uma única vez, sem mudar o modo de disposição nem preencher os espaços vazios.
+
+No modo **Livre**, manter **S** premida durante o arrasto e até soltar o botão do rato para alinhar na grelha apenas os ícones arrastados. Os restantes ficam no mesmo lugar. Soltar **S** antes de largar os ícones mantém a disposição livre. Na vista de ícones, uma moldura cinzenta indica a posição de destino.
 
 <div id="details-columns"></div>
 
@@ -149,6 +155,8 @@ O [Everything](https://www.voidtools.com/) é uma ferramenta de pesquisa que enc
 O [Nilesoft Shell](https://nilesoft.org/) é uma extensão do Windows que permite personalizar o aspeto e os comandos dos menus de contexto. Se for utilizado, também pode gerir os menus do FileSpacer.
 
 O FileSpacer compõe o menu da barra de título e o Nilesoft Shell aplica depois as suas regras, que têm prioridade. A [referência de configuração](nilesoft-shell.md) descreve as definições visuais e o acesso às ações do FileSpacer.
+
+Se os menus abrirem com atraso, a definição `showdelay` do Nilesoft Shell permite eliminá-lo, em todas as aplicações ou apenas no FileSpacer ([configuração](nilesoft-shell.md#menu-opening-delay)).
 
 São recomendados [cantos retos](nilesoft-shell.md#recommended-menu-appearance) para os menus da barra de título e da barra de ferramentas.
 

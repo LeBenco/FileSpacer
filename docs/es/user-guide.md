@@ -65,11 +65,17 @@ En los campos de dirección, búsqueda y cambio de nombre, Retroceso y Ctrl+Retr
 <div id="disposición-de-iconos"></div>
 <div id="icon-layout"></div>
 
-En **Vista → Colocación**, elegir uno de los tres modos: **Automática** agrupa los iconos sin huecos; **En cuadrícula** permite elegir sus posiciones en la cuadrícula y dejar huecos; **Libre** permite elegir sus posiciones exactas. Los modos son mutuamente excluyentes y están disponibles con todos los tamaños de iconos y en la vista **Mosaicos**. **Lista**, **Detalles** y **Contenido** conservan su disposición nativa ordenada.
+En **Ver > Colocación**, elegir cómo se colocan los iconos:
 
-**Volver a alinear los iconos** ajusta sus posiciones actuales a la cuadrícula de Windows una sola vez, sin cambiar el modo de colocación ni rellenar los huecos. En modo **Libre**, mantener **S** hasta soltar el botón del ratón para alinear solo los iconos arrastrados; los demás permanecen en su sitio. Soltar **S** antes de terminar el arrastre mantiene la colocación libre.
+- **Automática** coloca los iconos seguidos, sin huecos.
+- **En cuadrícula** permite elegir sus posiciones en la cuadrícula y dejar huecos.
+- **Libre** permite colocarlos en cualquier posición, como en el escritorio de Windows.
 
-Un marco gris muestra el destino del icono al arrastrar en modo **Automática** o **En cuadrícula**. En modo **Libre**, el marco aparece en la vista de iconos mientras se mantiene **S**; al soltarla se oculta y al pulsarla de nuevo reaparece. Soltar el botón del ratón o cancelar el arrastre elimina el marco.
+Estas opciones están disponibles con todos los tamaños de iconos y en la vista **Mosaicos**. **Lista**, **Detalles** y **Contenido** conservan su disposición ordenada.
+
+**Volver a alinear los iconos** ajusta la disposición actual a la cuadrícula de Windows una sola vez, sin cambiar el modo de colocación ni rellenar los huecos.
+
+En modo **Libre**, mantener **S** durante el arrastre y hasta soltar el botón del ratón para alinear en la cuadrícula solo los iconos arrastrados. Los demás permanecen en su sitio. Soltar **S** antes de colocarlos mantiene la colocación libre. En la vista de iconos, un marco gris indica la posición de destino.
 
 <div id="details-columns"></div>
 
@@ -149,6 +155,8 @@ Si hay archivos seleccionados, se mantiene la selección. Esc cancela la acción
 [Nilesoft Shell](https://nilesoft.org/) es una extensión de Windows que permite personalizar el aspecto y los comandos de los menús contextuales. Si se utiliza, también puede gestionar los menús de FileSpacer.
 
 FileSpacer compone el menú de la barra de título y después Nilesoft Shell aplica sus reglas, que tienen prioridad. La [referencia de configuración](nilesoft-shell.md) describe los ajustes visuales y el acceso a las acciones de FileSpacer.
+
+Si los menús tardan en abrirse, el ajuste `showdelay` de Nilesoft Shell permite eliminar ese retardo, para todas las aplicaciones o solo para FileSpacer ([configuración](nilesoft-shell.md#menu-opening-delay)).
 
 Se recomiendan [esquinas rectas](nilesoft-shell.md#recommended-menu-appearance) en los menús de la barra de título y de la barra de herramientas.
 

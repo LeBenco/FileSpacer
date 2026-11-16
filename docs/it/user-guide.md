@@ -65,11 +65,17 @@ Nei campi dell’indirizzo, della ricerca e di ridenominazione, Backspace e Ctrl
 <div id="disposizione-delle-icone"></div>
 <div id="icon-layout"></div>
 
-In **Visualizza → Disposizione**, scegliere una delle tre modalità: **Automatica** dispone le icone senza spazi vuoti; **Sulla griglia** consente di scegliere le posizioni sulla griglia lasciando eventuali spazi vuoti; **Libera** consente di scegliere le posizioni esatte. Le modalità si escludono a vicenda e sono disponibili con tutte le dimensioni delle icone e nella vista **Riquadri**. **Elenco**, **Dettagli** e **Contenuto** mantengono la disposizione ordinata nativa.
+In **Visualizza > Disposizione**, scegliere come disporre le icone:
 
-**Riallinea le icone** allinea una sola volta le posizioni attuali alla griglia di Windows, senza cambiare modalità né riempire gli spazi vuoti. In modalità **Libera**, tenere premuto **S** fino al rilascio del pulsante del mouse per allineare solo le icone trascinate; le altre restano al loro posto. Rilasciando **S** prima di terminare il trascinamento, il posizionamento resta libero.
+- **Automatica** dispone le icone senza spazi vuoti.
+- **Sulla griglia** consente di scegliere le posizioni sulla griglia, lasciando anche spazi vuoti.
+- **Libera** consente di posizionarle ovunque, come sul desktop di Windows.
 
-Un riquadro grigio mostra la destinazione dell’icona durante il trascinamento in modalità **Automatica** o **Sulla griglia**. In modalità **Libera**, il riquadro appare nella vista Icone mentre si tiene premuto **S**; rilasciando **S** scompare e premendolo di nuovo riappare. Il riquadro scompare al rilascio del pulsante del mouse o all’annullamento del trascinamento.
+Queste opzioni sono disponibili con tutte le dimensioni delle icone e nella vista **Riquadri**. **Elenco**, **Dettagli** e **Contenuto** mantengono la disposizione ordinata.
+
+**Riallinea le icone** allinea una sola volta la disposizione attuale alla griglia di Windows, senza cambiare modalità né riempire gli spazi vuoti.
+
+In modalità **Libera**, tenere premuto **S** durante il trascinamento e fino al rilascio del pulsante del mouse per allineare alla griglia solo le icone trascinate. Le altre restano al loro posto. Rilasciando **S** prima di deporle, il posizionamento resta libero. Nella vista Icone, un riquadro grigio indica la posizione di destinazione.
 
 <div id="details-columns"></div>
 
@@ -149,6 +155,8 @@ Se ci sono file selezionati, la selezione viene mantenuta. Esc annulla l’azion
 [Nilesoft Shell](https://nilesoft.org/) è un’estensione di Windows che permette di personalizzare l’aspetto e i comandi dei menu contestuali. Se utilizzata, può gestire anche i menu di FileSpacer.
 
 FileSpacer compone il menu della barra del titolo, poi Nilesoft Shell applica le sue regole, che hanno priorità. La [guida di configurazione](nilesoft-shell.md) descrive le impostazioni visive e l’accesso alle azioni di FileSpacer.
+
+Se i menu si aprono con un ritardo, l’impostazione `showdelay` di Nilesoft Shell permette di eliminarlo, per tutte le applicazioni o solo per FileSpacer ([configurazione](nilesoft-shell.md#menu-opening-delay)).
 
 Per i menu della barra del titolo e della barra degli strumenti sono consigliati [angoli retti](nilesoft-shell.md#recommended-menu-appearance).
 

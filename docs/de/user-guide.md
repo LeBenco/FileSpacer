@@ -64,11 +64,17 @@ In Adress-, Such- und Dateiumbenennungsfeldern behalten Rücktaste und Strg+Rüc
 <div id="symbolanordnung"></div>
 <div id="icon-layout"></div>
 
-Unter **Ansicht → Anordnung** stehen drei Modi zur Wahl: **Automatisch** ordnet Symbole lückenlos an; **Am Raster** erlaubt selbst gewählte Rasterpositionen mit Lücken; **Frei** erlaubt beliebige genaue Positionen. Die Modi schließen einander aus und sind für alle Symbolgrößen sowie in der Ansicht **Kacheln** verfügbar. **Liste**, **Details** und **Inhalt** behalten ihre native geordnete Anordnung.
+Unter **Ansicht > Anordnung** lässt sich festlegen, wie die Symbole angeordnet werden:
 
-**Symbole neu ausrichten** richtet die aktuellen Positionen einmal am Windows-Raster aus, ohne den Anordnungsmodus zu ändern oder Lücken zu schließen. Im Modus **Frei** **S** bis zum Loslassen der Maustaste gedrückt halten, um nur die gezogenen Symbole am Raster auszurichten; die anderen bleiben an ihrem Platz. Wird **S** vorher losgelassen, bleibt die Platzierung frei.
+- **Automatisch** ordnet die Symbole lückenlos an.
+- **Am Raster** erlaubt selbst gewählte Rasterpositionen mit Lücken.
+- **Frei** erlaubt beliebige Positionen, wie auf dem Windows-Desktop.
 
-Beim Ziehen in den Modi **Automatisch** und **Am Raster** zeigt ein grauer Rahmen die Zielposition des Symbols an. Im Modus **Frei** erscheint der Rahmen in der Symbolansicht, solange **S** gedrückt ist; Loslassen blendet ihn aus, erneutes Drücken blendet ihn wieder ein. Beim Loslassen der Maustaste oder Abbrechen des Ziehens verschwindet der Rahmen.
+Diese Möglichkeiten stehen für alle Symbolgrößen und in der Ansicht **Kacheln** zur Verfügung. **Liste**, **Details** und **Inhalt** behalten ihre geordnete Anordnung.
+
+**Symbole neu ausrichten** richtet die aktuelle Anordnung einmal am Windows-Raster aus, ohne den Anordnungsmodus zu ändern oder Lücken zu schließen.
+
+Halten Sie im Modus **Frei** beim Ziehen **S** bis zum Loslassen der Maustaste gedrückt, um nur die gezogenen Symbole am Raster auszurichten. Die anderen bleiben an ihrem Platz. Wird **S** vor dem Ablegen losgelassen, bleibt die Platzierung frei. In der Symbolansicht zeigt ein grauer Rahmen die Zielposition an.
 
 <div id="details-columns"></div>
 
@@ -148,6 +154,8 @@ Sind Dateien ausgewählt, bleibt die Auswahl erhalten. Esc bricht die Aktion ab.
 [Nilesoft Shell](https://nilesoft.org/) ist eine Windows-Erweiterung zum Anpassen von Aussehen und Befehlen der Kontextmenüs. Bei Verwendung kann sie auch die Menüs von FileSpacer verwalten.
 
 FileSpacer stellt das Titelleistenmenü zusammen. Danach wendet Nilesoft Shell seine Regeln an, die Vorrang haben. Die [Konfigurationsreferenz](nilesoft-shell.md) beschreibt die Darstellung und den Zugriff auf FileSpacer-Aktionen.
+
+Öffnen sich Menüs verzögert, lässt sich diese Verzögerung mit der Nilesoft-Shell-Einstellung `showdelay` global oder nur für FileSpacer aufheben ([Konfiguration](nilesoft-shell.md#menu-opening-delay)).
 
 Für die Menüs der Titelleiste und der Symbolleiste werden [Ecken ohne Abrundung](nilesoft-shell.md#recommended-menu-appearance) empfohlen.
 
