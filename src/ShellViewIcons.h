@@ -44,6 +44,10 @@ HRESULT prepareIconPositions(IFolderView *view, const std::vector<uint8_t> &byte
     const std::function<bool()> &current, PreparedIconPositions &prepared);
 HRESULT applyIconPositions(IFolderView *view, PreparedIconPositions &prepared,
     const std::function<bool()> &current);
+// Keep occupied grid cells and holes across zoom, using the actual native
+// spacing before and after the change. Coordinates remain exact in free mode.
+HRESULT restoreIconGridPositions(IFolderView *view, const std::vector<uint8_t> &bytes,
+    const POINT &previousSpacing, const std::function<bool()> &current);
 // Decode the entire blob before moving anything; preserve selection and focus.
 HRESULT restoreIconPositions(IFolderView *view, const std::vector<uint8_t> &bytes,
     const std::function<bool()> &current);

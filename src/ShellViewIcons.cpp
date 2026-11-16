@@ -376,6 +376,66 @@ HRESULT applyIconPositions(IFolderView *view, PreparedIconPositions &prepared,
     return FAILED(result) ? result : resumed;
 }
 
+HRESULT restoreIconGridPositions(IFolderView *view, const std::vector<uint8_t> &bytes,
+        const POINT &previousSpacing, const std::function<bool()> &current) {
+    if (!view) return E_POINTER;
+    if (!current()) return E_ABORT;
+    if (previousSpacing.x <= 0 || previousSpacing.y <= 0) return E_INVALIDARG;
+    PreparedIconPositions prepared;
+    prepared.view = view;
+    HRESULT result = decodePositions(bytes, prepared.positions);
+    if (FAILED(result) || prepared.positions.empty()) return result;
+    POINT spacing = {}, origin = {};
+    result = view->GetSpacing(&spacing);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || spacing.x <= 0 || spacing.y <= 0) return FAILED(result) ? result : E_FAIL;
+    result = view->GetItemPosition(prepared.positions.front().id, &origin);
+    if (!current()) return E_ABORT;
+    if (FAILED(result)) return result;
+    const POINT before = scaleDPI(prepared.positions.front().point);
+    const auto phase = [](LONG value, LONG pitch) {
+        const LONG remainder = value % pitch;
+        return remainder < 0 ? remainder + pitch : remainder;
+    };
+    const POINT oldOrigin = {phase(before.x, previousSpacing.x), phase(before.y, previousSpacing.y)};
+    origin = {phase(origin.x, spacing.x), phase(origin.y, spacing.y)};
+    prepared.items.reserve(prepared.positions.size());
+    prepared.points.reserve(prepared.positions.size());
+    for (const auto &position : prepared.positions) {
+        POINT point = scaleDPI(position.point);
+        const LONGLONG x = ((static_cast<LONGLONG>(point.x) - oldOrigin.x) / previousSpacing.x) * spacing.x + origin.x;
+        const LONGLONG y = ((static_cast<LONGLONG>(point.y) - oldOrigin.y) / previousSpacing.y) * spacing.y + origin.y;
+        if (x < LONG_MIN || x > LONG_MAX || y < LONG_MIN || y > LONG_MAX) return E_INVALIDARG;
+        POINT actual = {};
+        result = view->GetItemPosition(position.id, &actual);
+        if (!current()) return E_ABORT;
+        if (FAILED(result)) continue; // No longer displayed; do not move another item in its place.
+        if (actual.x == x && actual.y == y) continue;
+        prepared.items.push_back(position.id);
+        prepared.points.push_back({static_cast<LONG>(x), static_cast<LONG>(y)});
+    }
+    prepared.ready = true;
+    if (prepared.items.empty()) return S_OK;
+    CComQIPtr<IFolderView2> folder(view);
+    DWORD flags = 0;
+    if (!current()) return E_ABORT;
+    if (!folder) return E_NOINTERFACE;
+    result = folder->GetCurrentFolderFlags(&flags);
+    if (!current()) return E_ABORT;
+    if (FAILED(result)) return result;
+    // Do not let intermediate collisions push a later batch item into another
+    // cell. Restore the native setting even when positioning fails.
+    if (flags & FWF_SNAPTOGRID) result = folder->SetCurrentFolderFlags(FWF_SNAPTOGRID, 0);
+    if (!current()) return E_ABORT;
+    if (SUCCEEDED(result)) result = applyIconPositions(view, prepared, current);
+    if (!current()) return E_ABORT;
+    if (flags & FWF_SNAPTOGRID) {
+        const HRESULT restored = folder->SetCurrentFolderFlags(FWF_SNAPTOGRID, FWF_SNAPTOGRID);
+        if (FAILED(restored)) result = restored;
+    }
+    return result;
+}
+
 HRESULT restoreIconPositions(IFolderView *view, const std::vector<uint8_t> &bytes,
         const std::function<bool()> &current) {
     PreparedIconPositions prepared;
