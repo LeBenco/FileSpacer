@@ -184,10 +184,122 @@ struct PropertyValue {
     ~PropertyValue() { PropVariantClear(&value); }
 };
 
-class Folder : public IShellFolder2, public IPersistFolder2, public IMixedFolder, public IShellIcon, public IShellIconOverlay {
+// Decorate native folder targets without replacing the Shell view's OLE
+// registration. The policy is bound only for an internal spatial gesture.
+class IconDropTarget : public IDropTarget, public IObjectWithSite {
+    LONG references = 1;
+    CComPtr<IDropTarget> native;
+    CComPtr<IIconDropPolicySite> site;
+    CComPtr<IIconDropPolicy> policy;
+    CComPtr<IDataObject> data;
+    CComHeapPtr<ITEMID_CHILD> target;
+    bool entered = false;
+    HRESULT update(DWORD keys, POINTL point, DWORD *effect) {
+        if (!effect) return E_POINTER;
+        const HRESULT decision = policy ? policy->Placement(target, point, keys) : S_FALSE;
+        if (decision != S_FALSE) {
+            if (entered) { native->DragLeave(); entered = false; }
+            *effect = DROPEFFECT_NONE;
+            return S_OK;
+        }
+        if (!entered) {
+            const HRESULT result = native->DragEnter(data, keys, point, effect);
+            entered = SUCCEEDED(result);
+            return result;
+        }
+        return native->DragOver(keys, point, effect);
+    }
+public:
+    IconDropTarget(IDropTarget *value, IIconDropPolicySite *owner, PCUITEMID_CHILD id)
+        : native(value), site(owner) {
+        if (id) target.Attach(ILCloneChild(id));
+        ++objects;
+    }
+    ~IconDropTarget() { if (entered) native->DragLeave(); --objects; }
+    bool copied(PCUITEMID_CHILD id) const { return !id || target; }
+    STDMETHODIMP QueryInterface(REFIID iid, void **out) override {
+        if (!out) return E_POINTER;
+        *out = nullptr;
+        if (iid == IID_IUnknown || iid == IID_IDropTarget) *out = static_cast<IDropTarget *>(this);
+        else if (iid == IID_IObjectWithSite) {
+            CComQIPtr<IObjectWithSite> attached(native);
+            if (!attached) return E_NOINTERFACE;
+            *out = static_cast<IObjectWithSite *>(this);
+        } else return E_NOINTERFACE;
+        AddRef(); return S_OK;
+    }
+    STDMETHODIMP SetSite(IUnknown *value) override {
+        CComPtr<IDropTarget> keepAlive(this);
+        CComQIPtr<IObjectWithSite> attached(native);
+        return attached ? attached->SetSite(value) : E_NOINTERFACE;
+    }
+    STDMETHODIMP GetSite(REFIID iid, void **out) override {
+        if (!out) return E_POINTER;
+        *out = nullptr;
+        CComPtr<IDropTarget> keepAlive(this);
+        CComQIPtr<IObjectWithSite> attached(native);
+        return attached ? attached->GetSite(iid, out) : E_NOINTERFACE;
+    }
+    STDMETHODIMP_(ULONG) AddRef() override { return static_cast<ULONG>(InterlockedIncrement(&references)); }
+    STDMETHODIMP_(ULONG) Release() override {
+        const ULONG count = static_cast<ULONG>(InterlockedDecrement(&references));
+        if (!count) delete this;
+        return count;
+    }
+    STDMETHODIMP DragEnter(IDataObject *object, DWORD keys, POINTL point, DWORD *effect) override {
+        CComPtr<IDropTarget> keepAlive(this);
+        DragLeave();
+        data = object;
+        const HRESULT result = site->GetIconDropPolicy(&policy);
+        return FAILED(result) ? result : update(keys, point, effect);
+    }
+    STDMETHODIMP DragOver(DWORD keys, POINTL point, DWORD *effect) override {
+        CComPtr<IDropTarget> keepAlive(this);
+        return update(keys, point, effect);
+    }
+    STDMETHODIMP DragLeave() override {
+        CComPtr<IDropTarget> keepAlive(this);
+        const HRESULT result = entered ? native->DragLeave() : S_OK;
+        entered = false; data.Release(); policy.Release();
+        return result;
+    }
+    STDMETHODIMP Drop(IDataObject *object, DWORD keys, POINTL point, DWORD *effect) override {
+        CComPtr<IDropTarget> keepAlive(this);
+        if (!effect) return E_POINTER;
+        if (!policy) {
+            const HRESULT result = site->GetIconDropPolicy(&policy);
+            if (FAILED(result)) { *effect = DROPEFFECT_NONE; return result; }
+        }
+        const HRESULT decision = policy ? policy->Placement(target, point, keys) : S_FALSE;
+        if (decision != S_FALSE) { DragLeave(); *effect = DROPEFFECT_NONE; return DRAGDROP_S_CANCEL; }
+        HRESULT result = S_OK;
+        if (!entered) {
+            result = native->DragEnter(object, keys, point, effect);
+            entered = SUCCEEDED(result);
+            if (entered && !*effect) { DragLeave(); return DRAGDROP_S_CANCEL; }
+        }
+        if (SUCCEEDED(result)) result = native->Drop(object, keys, point, effect);
+        entered = false; data.Release(); policy.Release();
+        return result;
+    }
+};
+
+HRESULT decorateDropTarget(IIconDropPolicySite *site, PCUITEMID_CHILD id, void **out) {
+    CComPtr<IDropTarget> native;
+    native.Attach(static_cast<IDropTarget *>(*out)); *out = nullptr;
+    if (!native) return E_NOINTERFACE;
+    auto decorated = new(std::nothrow) IconDropTarget(native, site, id);
+    if (!decorated) return E_OUTOFMEMORY;
+    if (!decorated->copied(id)) { decorated->Release(); return E_OUTOFMEMORY; }
+    *out = static_cast<IDropTarget *>(decorated);
+    return S_OK;
+}
+
+class Folder : public IShellFolder2, public IPersistFolder2, public IMixedFolder, public IShellIcon, public IShellIconOverlay, public IIconDropPolicySite {
     LONG references = 1;
     CLSID clsid;
     CComPtr<IShellFolder2> source;
+    CComPtr<IIconDropPolicy> dropPolicy;
     CComPtr<IShellIcon> sourceIcons;
     CComPtr<IShellIconOverlay> sourceOverlays;
     CComHeapPtr<ITEMIDLIST_ABSOLUTE> nativeRoot, viewRoot;
@@ -211,7 +323,7 @@ class Folder : public IShellFolder2, public IPersistFolder2, public IMixedFolder
     static bool folderInterface(REFIID iid) {
         return iid == IID_IUnknown || iid == IID_IShellFolder || iid == IID_IShellFolder2
             || iid == IID_IPersist || iid == IID_IPersistFolder || iid == IID_IPersistFolder2
-            || iid == IID_IShellIcon || iid == IID_IShellIconOverlay || iid == __uuidof(IMixedFolder);
+            || iid == IID_IShellIcon || iid == IID_IShellIconOverlay || iid == __uuidof(IMixedFolder) || iid == __uuidof(IIconDropPolicySite);
     }
 public:
     explicit Folder(REFCLSID value) : clsid(value) { ++objects; }
@@ -230,11 +342,17 @@ public:
         else if (iid == IID_IShellIcon) *out = static_cast<IShellIcon *>(this);
         else if (iid == IID_IShellIconOverlay && sourceOverlays) *out = static_cast<IShellIconOverlay *>(this);
         else if (iid == __uuidof(IMixedFolder)) *out = static_cast<IMixedFolder *>(this);
+        else if (iid == __uuidof(IIconDropPolicySite)) *out = static_cast<IIconDropPolicySite *>(this);
         else return E_NOINTERFACE;
         AddRef(); return S_OK;
     }
     STDMETHODIMP_(ULONG) AddRef() override { return static_cast<ULONG>(InterlockedIncrement(&references)); }
     STDMETHODIMP_(ULONG) Release() override { const ULONG n = static_cast<ULONG>(InterlockedDecrement(&references)); if (!n) delete this; return n; }
+    STDMETHODIMP SetIconDropPolicy(IIconDropPolicy *policy) override { dropPolicy = policy; return S_OK; }
+    STDMETHODIMP GetIconDropPolicy(IIconDropPolicy **policy) override {
+        if (!policy) return E_POINTER;
+        return dropPolicy.CopyTo(policy);
+    }
     STDMETHODIMP GetClassID(CLSID *out) override { if (!out) return E_POINTER; *out = clsid; return S_OK; }
     STDMETHODIMP Initialize(PCIDLIST_ABSOLUTE id) override {
         if (!id) return E_POINTER;
@@ -339,8 +457,10 @@ public:
         }
         // Categories, background menu and drop target receive native identifiers:
         // the native folder's own objects serve unchanged.
-        if (iid == IID_ICategoryProvider || iid == IID_IContextMenu || iid == IID_IDropTarget)
-            return source->CreateViewObject(hwnd, iid, out);
+        if (iid == IID_ICategoryProvider || iid == IID_IContextMenu || iid == IID_IDropTarget) {
+            const HRESULT result = source->CreateViewObject(hwnd, iid, out);
+            return SUCCEEDED(result) && iid == IID_IDropTarget ? decorateDropTarget(this, nullptr, out) : result;
+        }
         return E_NOINTERFACE;
     }
     STDMETHODIMP GetAttributesOf(UINT count, PCUITEMID_CHILD_ARRAY ids, SFGAOF *attributes) override {
@@ -365,9 +485,11 @@ public:
             HRESULT hr = nativeAbsolute(ids[0], &absolute); if (FAILED(hr)) return hr;
             CComPtr<IShellFolder> parent; PCUITEMID_CHILD child = nullptr;
             hr = SHBindToParent(absolute, IID_PPV_ARGS(&parent), &child);
-            return SUCCEEDED(hr) ? parent->GetUIObjectOf(hwnd, 1, &child, iid, reserved, out) : hr;
+            if (SUCCEEDED(hr)) hr = parent->GetUIObjectOf(hwnd, 1, &child, iid, reserved, out);
+            return SUCCEEDED(hr) && iid == IID_IDropTarget ? decorateDropTarget(this, ids[0], out) : hr;
         }
-        return source->GetUIObjectOf(hwnd, count, ids, iid, reserved, out);
+        const HRESULT result = source->GetUIObjectOf(hwnd, count, ids, iid, reserved, out);
+        return SUCCEEDED(result) && iid == IID_IDropTarget && count == 1 ? decorateDropTarget(this, ids[0], out) : result;
     }
     STDMETHODIMP GetDisplayNameOf(PCUITEMID_CHILD id, SHGDNF flags, STRRET *out) override {
         if (!out) return E_POINTER;
