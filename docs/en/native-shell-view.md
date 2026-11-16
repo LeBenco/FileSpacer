@@ -38,6 +38,7 @@ after closing the menu because its full-width renderer requires a profile change
 | `ShellViewHost` | Browser lifetime, navigation, view access and public event observation. |
 | `ShellViewSettings` | Capture/apply mode, icon size, flags, columns, sorting and grouping. |
 | `ShellViewSelection` | Selection, focused item and one-shot reopen/scroll snapshot. |
+| `ShellViewOperations` | Opaque selection bindings, complete-set selection, grid alignment and public/private dispatch. |
 | `ShellViewIcons` | Native item identities, free icon positions and the batch redraw guard. |
 | `ShellViewFilter` | Name filtering through `IFolderFilter`. |
 | `FolderStateStore` | Independently present state parts, transactions, locking and retention. |
@@ -253,7 +254,18 @@ observation includes non-removing OLE peeks so releasing/repressing S updates th
 mark even with a stationary mouse; updates are posted and coalesced outside
 the hooks. Releasing the mouse, cancellation, closure and stale views remove it.
 
-`ShellViewSelection` starts with an immediately usable public clear path.
+`ShellViewOperations` is the operation boundary for optional private behavior.
+The application and `ShellViewSelection` ask for clear, complete-set selection or
+grid alignment without inspecting capability descriptors or selecting a backend.
+The adapter owns public fallback, qualified binding and native notification
+handling. Read-only drag rounding, capability-readiness notifications and the
+isolated worker entry also pass through this boundary. Only this adapter and
+`ShellSelectionDiscovery` include the private runtime header; image-specific
+layouts, instruction validation, CFG checks and cache schemas stay in
+`ShellSelectionRuntime.h` and discovery. Diagnostic capability observations stay
+available to qualification/tests, outside production operation dispatch.
+
+`ShellViewOperations` starts with an immediately usable public clear path.
 `ShellSelectionDiscovery` asynchronously reads the capability cache; it never
 waits for symbols or filesystem I/O on the UI thread. A qualified private path
 can be published once in the current process. Each operation retains its
