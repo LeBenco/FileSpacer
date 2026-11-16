@@ -42,6 +42,7 @@ function Start-PlacementDrag([string]$Name,$Target) {
     Use-UiView $window {param($view) $view.Select($Name)}
     $script:before=Read-PlacementState
     $start=Get-PlacementCursor $Name
+    $script:placementDelta=@(($Target.X-$start.X),($Target.Y-$start.Y))
     [FileSpacerRegression.AltDragInput]::Begin($window,$start,$false,$false)
     Wait-Ui {![FileSpacerRegression.AltDragInput]::Idle($window)} 'native item press captured before motion' 0 5
     for($step=1;$step-le6;++$step){
@@ -94,7 +95,7 @@ try {
         Check-PlacementFeedback {!(Get-DestinationHighlight)} 'S reserves the occupied folder image for placement'
         $mark=[FileSpacerViewMenuTests.GridKey]::Marker($body)
         $origin=[FileSpacerViewMenuTests.GridKey]::Origin($list);$client=[FileSpacerRegression.Native]::ClientBounds($list)
-        $expected=@($mark.Left-$client.Left+$origin[0],$mark.Top-$client.Top+$origin[1])
+        $expected=@(($mark.Left-$client.Left+$origin[0]),($mark.Top-$client.Top+$origin[1]))
         Complete-PlacementDrag
         [FileSpacerViewMenuTests.GridKey]::Hold($false)
         Wait-Ui {$points=Get-PlacementPoints (Read-PlacementState);($points['Move-a.txt']-join',')-ceq($expected-join',')} 'S drop matches its preview' 150
@@ -128,7 +129,10 @@ try {
         Check-PlacementFeedback {!(Get-DestinationHighlight)} 'label placement clears the folder drop highlight'
         Complete-PlacementDrag
         $after=Read-PlacementState
-        Assert-Ui ($after.Positions-ne$before.Positions) 'Dropping on the label did not reposition the icon.'
+        $oldPoint=(Get-PlacementPoints $before)['Move-a.txt']
+        $newPoint=(Get-PlacementPoints $after)['Move-a.txt']
+        $wanted=@(($oldPoint[0]+$placementDelta[0]),($oldPoint[1]+$placementDelta[1]))
+        Assert-Ui (($newPoint-join',')-ceq($wanted-join',')) ('Free placement did not preserve the cursor offset: actual='+($newPoint-join',')+' expected='+($wanted-join','))
         Assert-StationaryPositions $before $after 'Move-a.txt'
         Assert-Ui ((Test-Path (Join-Path $folder 'Move-a.txt'))-and!(Test-Path (Join-Path $folder 'Destination/Move-a.txt'))) 'A label placement transferred the file.'
         Write-Host ('Observed file and placement outcomes: '+$script:PlacementRoute)
