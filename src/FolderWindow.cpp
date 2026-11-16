@@ -1,7 +1,7 @@
 #include "FolderWindow.h"
 #include "ShellViewSettings.h"
 #include "ShellViewSelection.h"
-#include "ShellSelectionRuntime.h"
+#include "ShellViewOperations.h"
 #include "MixedFolder.h"
 #include "ShellViewIcons.h"
 #include "ShellViewFilter.h"
@@ -29,6 +29,7 @@
 #include <VersionHelpers.h>
 #include <cstring>
 #include <vector>
+#include <set>
 #include <algorithm>
 #include <memory>
 #include <atomic>
@@ -257,7 +258,7 @@ struct FolderWindow::IconSnap {
             if (!ListView_GetItemPosition(list, i, &point) || !current()) return false;
             initialPoints.push_back(point);
             if (ListView_GetItemState(list, i, LVIS_SELECTED) & LVIS_SELECTED) dragged.push_back(point);
-            else if (!selectionDetail::snapGridPoint(point, spacing, iconSize)
+            else if (!alignIconToGrid(point, spacing, iconSize)
                     || !stationary.emplace(point.x, point.y).second) return false;
         }
         destinations.reserve(dragged.size());
@@ -357,7 +358,7 @@ struct FolderWindow::IconSnap {
             const LONGLONG x = point.x + dx, y = point.y + dy;
             if (x < LONG_MIN || x > LONG_MAX || y < LONG_MIN || y > LONG_MAX) return false;
             point = {static_cast<LONG>(x), static_cast<LONG>(y)};
-            return selectionDetail::snapGridPoint(point, spacing, iconSize);
+            return alignIconToGrid(point, spacing, iconSize);
         };
         destinations.clear();
         for (POINT point : dragged) {
@@ -469,9 +470,6 @@ void FolderWindow::watchIconDrag(const MSG *message) {
 }
 
 void FolderWindow::realignIcons(bool selectedOnly) {
-#ifdef FILESPACER_DEBUG
-    const ULONGLONG snapStarted = GetTickCount64();
-#endif
     if (!selectedOnly && (viewMenuPreview || viewMenuRestore)) {
         iconRealignPending = true;
         return;
@@ -487,10 +485,7 @@ void FolderWindow::realignIcons(bool selectedOnly) {
         return isWindowOperational() && shellView == source && viewGeneration == generation;
     };
     CComQIPtr<IFolderView2> view(source);
-    DWORD flags = 0;
-    if (!view || !current() || !spatialView(view) || !current()
-            || FAILED(view->GetCurrentFolderFlags(&flags)) || !current()) return;
-    if (selectedOnly && (flags & FWF_SNAPTOGRID)) return;
+    if (!view || !current() || !spatialView(view) || !current()) return;
     ++navigationDepth;
     restoringState = true;
     struct Resume {
@@ -501,74 +496,9 @@ void FolderWindow::realignIcons(bool selectedOnly) {
             owner.resumeDeferredClose();
         }
     } resume{*this, current};
-    // A qualified calculation positions only selected IDs through the public
-    // API. Unknown geometry or collisions retain the whole-view native path.
-    if (selectedOnly) {
-        const HRESULT fast = selectionDetail::snapGridSelection(source, current);
-        if (!current()) return;
-        if (fast == S_OK) {
-            debugPrintf(L"GRID SNAP path=qualified elapsed_ms=%llu\n", GetTickCount64() - snapStarted);
-            viewStateDirty(FolderState::Icons);
-            SetTimer(hwnd, TIMER_SAVE_STATE, 250, nullptr);
-            return;
-        }
-    }
-    std::vector<PreparedIconPosition> stationary;
-    if (selectedOnly) {
-        int count = 0;
-        if (FAILED(view->ItemCount(SVGIO_SELECTION, &count)) || !current() || !count) return;
-        CComPtr<IEnumIDList> items;
-        if (FAILED(view->Items(SVGIO_ALLVIEW, IID_PPV_ARGS(&items))) || !current() || !items) return;
-        for (;;) {
-            PreparedIconPosition position;
-            const HRESULT next = items->Next(1, &position.id, nullptr);
-            if (!current() || next == S_FALSE) break;
-            if (next != S_OK || !position.id) return;
-            DWORD state = 0;
-            if (FAILED(view->GetSelectionState(position.id, &state)) || !current()) return;
-            if (state & SVSI_SELECT) continue;
-            if (FAILED(view->GetItemPosition(position.id, &position.point)) || !current()) return;
-            stationary.push_back(std::move(position));
-        }
-    }
-    if (!current()) return;
-    std::vector<PCUITEMID_CHILD> ids;
-    std::vector<POINT> points;
-    ids.reserve(stationary.size());
-    points.reserve(stationary.size());
-    // Suppress intermediate whole-view alignment for a selected-only snap.
-    // Always restore the native flag before saves or deferred closure resume.
-    const bool redraw = SUCCEEDED(view->SetRedraw(FALSE));
-    HRESULT result = current() ? S_OK : E_ABORT;
-    if (SUCCEEDED(result) && (flags & FWF_SNAPTOGRID))
-        result = view->SetCurrentFolderFlags(FWF_SNAPTOGRID, 0);
-    if (SUCCEEDED(result) && current())
-        result = view->SetCurrentFolderFlags(FWF_SNAPTOGRID, FWF_SNAPTOGRID);
-    if (current()) {
-        const HRESULT restored = view->SetCurrentFolderFlags(FWF_SNAPTOGRID, flags & FWF_SNAPTOGRID);
-        if (FAILED(restored)) result = restored;
-    }
-    if (current() && !(flags & FWF_SNAPTOGRID)) {
-        for (const auto &position : stationary) {
-            POINT actual = {};
-            const HRESULT read = view->GetItemPosition(position.id, &actual);
-            if (!current()) break;
-            if (FAILED(read)) { result = read; break; }
-            if (actual.x != position.point.x || actual.y != position.point.y) {
-                ids.push_back(position.id);
-                points.push_back(position.point);
-            }
-        }
-        if (current() && !ids.empty()) {
-            const HRESULT restored = view->SelectAndPositionItems(static_cast<UINT>(ids.size()),
-                ids.data(), points.data(), SVSI_POSITIONITEM | SVSI_NOSTATECHANGE);
-            if (FAILED(restored)) result = restored;
-        }
-    }
-    if (redraw && current()) checkHR(view->SetRedraw(TRUE));
-    if (!current()) return;
+    const HRESULT result = alignIconsToGrid(source, selectedOnly, current);
+    if (!current() || result == S_FALSE) return;
     if (!checkHR(result)) setStatusText(getErrorMessage(result).get());
-    if (selectedOnly) debugPrintf(L"GRID SNAP path=public elapsed_ms=%llu\n", GetTickCount64() - snapStarted);
     viewStateDirty(FolderState::Icons);
     SetTimer(hwnd, TIMER_SAVE_STATE, 250, nullptr);
 }
@@ -3344,7 +3274,7 @@ void FolderWindow::resumeDeferredClose() {
     else {
         if (selectionBindingPending) {
             selectionBindingPending = false;
-            checkLE(PostMessageW(hwnd, selectionDetail::readyMessage(), 0, 0));
+            checkLE(PostMessageW(hwnd, shellViewOperationsReadyMessage(), 0, 0));
         }
         if (viewProfilePending) requestViewProfile();
         replayProviderSync(); // Refused while this navigation was in progress.
@@ -3419,7 +3349,7 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         if (wParam == viewGeneration) synchronizeColumns();
         return 0;
     }
-    if (message >= 0xC000 && message == selectionDetail::readyMessage()) {
+    if (message >= 0xC000 && message == shellViewOperationsReadyMessage()) {
         if (!isWindowOperational()) return 0;
         if (navigationDepth) { selectionBindingPending = true; return 0; }
         if (viewReady && initialStateApplied && shellView) {
