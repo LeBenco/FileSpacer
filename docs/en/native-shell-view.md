@@ -85,13 +85,19 @@ controls to observe a gesture; that instrumentation is not an application depend
 
 ## Mouse gestures across Shell renderers
 
-The shared MSAA hit test recognizes both renderer families. Read-only text
-cells and passive List labels are resolved to their logical item; native
-editing controls, headers and scrollbars remain excluded from window gestures.
+Ungrouped classic ListViews use their synchronous public hit test before any
+accessibility RPC can dispatch queued input. Other renderers retain the shared
+MSAA hit test. Read-only text cells and passive List labels resolve to their
+logical item; native editing controls, headers and scrollbars remain excluded
+from window gestures.
 UI Automation locates test targets from a separate worker, not from the
 application's GUI thread.
 
-Classic controls supply `WM_LBUTTONDBLCLK`. A renderer without `CS_DBLCLKS`
+Classic controls supply `WM_LBUTTONDBLCLK`; the pointed native index is validated
+against the current view and selected through `IFolderView`, rather than resolved
+from the previous selection. `DragDetect` receives the actual input window;
+left-button movement still enters Windows' native caption-move loop.
+A renderer without `CS_DBLCLKS`
 recognizes double clicks itself, but a consumed first window-gesture press
 prevents that recognition. FileSpacer recognizes the second press using the
 Windows time and position limits, then requests native Properties through
@@ -233,14 +239,28 @@ The inspected `CLVView::SnapToGrid` and `_NearestSlot` functions are not callabl
 CFG targets on the tested Windows 10 and 11 builds. FileSpacer never calls these
 functions or creates executable copies. It validates read-only instruction witnesses for rounding and
 icon margins, uses current public view measurements, and positions selected IDs
-through `IFolderView::SelectAndPositionItems`. An initial read-only scan rejects
-colliding destination cells, since the global native command has an additional
-collision pass. Only ordinary, ungrouped Icon views without special work areas
-use this calculation. Missing or invalid data, unsupported layouts and
-collisions retain the native global alignment followed by restoration of
-unselected positions. Selection, focus and persistent arrangement flags are
-unchanged. Stress case `28-apercu-affichage/06-Grille.ps1` compares the two paths
-over 3,000 items and requires proof that the qualified calculation was used.
+through `IFolderView::SelectAndPositionItems`.
+
+`ShellIconGrid` prepares one operation for an Icon-view gesture and uses it for
+both prediction and placement. The qualified backend uses the validated native
+arithmetic. Without that capability, a hidden, single-item Windows ListView uses
+the actual view's image list, font, spacing, control module and DPI. The image
+list is shared with `LVS_SHAREIMAGELISTS` and retained through its public COM
+interface; the font is copied for the gesture's lifetime. No icon is rendered. Public
+`LVM_SETITEMPOSITION32`, `LVM_ARRANGE(LVA_SNAPTOGRID)` and `LVM_GETITEMPOSITION`
+provide native rounding on this one item. No folder-wide alignment, position
+snapshot or restoration is needed to prepare this fallback, and its work does
+not grow with the folder's item count. It is recreated per gesture, rather than
+keeping geometry across zoom or DPI changes.
+
+Only selected destinations are written. Free placement permits overlapping
+destinations; neither backend shifts other icons to resolve collisions.
+Selection, focus and persistent arrangement flags are unchanged. The separate
+`alignIconsToGrid` command retains the native global operation; its optional
+selected-only adapter rejects collisions that need the native collision pass.
+Stress case `28-apercu-affichage/06-Grille.ps1` compares the two gesture backends
+over 3,000 items and requires actual qualified dispatch when that capability is
+available, or public dispatch with a recorded discovery decision otherwise.
 
 The Placement submenu exposes mutually exclusive Automatic, On a grid and Free
 choices. One masked `IFolderView2::SetCurrentFolderFlags` call sets both native
@@ -280,9 +300,16 @@ requiring mouse motion. Ctrl/Alt gestures without S retain their native effects.
 The provider decorates native namespace drop targets with `IIconDropPolicy`, bound
 through a separate optional `IIconDropPolicySite` contract. Cached targets retrieve
 the current per-view policy at DragEnter. Native target handlers receive the same
-data, key state and `IObjectWithSite` context when a file drop is allowed. Placement targets leave the native
-handler and refuse the file transfer. The callback holds only a weak gesture
-reference, rejects stale generations and other threads, and is detached on stop.
+data, allowed-effect mask, key state and `IObjectWithSite` context. Negotiation
+stays live while placement is reserved: returning no effect during hover can
+leave the Shell's target cache rejected after S is released. The final Drop
+decision refuses a reserved placement, and the gesture ends the Shell drag as
+cancellation before applying icon coordinates. The callback keeps a weak gesture
+reference and a separate shared final decision. Mouse release freezes that
+decision before the completion message is posted; cancellation freezes a veto.
+A late native callback therefore does not depend on a finalized gesture or its
+window. Active callbacks reject stale generations and other threads, and the
+per-view policy is detached on stop.
 The original `IMixedFolder` contract remains unchanged for older provider DLLs.
 
 The input hook snapshots native pixel coordinates once after the drag threshold.
@@ -297,7 +324,10 @@ The S preview reuses the existing grid rounding and current public view spacing;
 it does not activate the global grid or reorganize stationary items. Free-preview
 collision rejection is removed. The input target supplies the native list without
 child discovery or subclassing. Native image rectangles are cached per gesture;
-viewport changes rebuild only the visible hit-test cache. Mouse motion does not
+viewport changes rebuild only the visible hit-test cache. Hover and release
+use this geometry rather than the last provider callback's target, so a cached
+background decision cannot override a later folder-image drop. Suppressed native
+drop highlighting is restored in place when S is released. Mouse motion does not
 enumerate the Shell folder or extract images. The icon-sized grey frame has an
 opaque outline and a light-grey interior at 50% opacity. Its layered surface is
 allocated lazily when shown, not on ordinary free drags. Native automatic/grid
