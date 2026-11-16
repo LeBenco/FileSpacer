@@ -21,7 +21,7 @@ namespace FileSpacerViewMenuTests {
         [FieldOffset(12)] public uint KeyFlags;
         [FieldOffset(20)] public uint MouseFlags;
     }
-    public sealed class Entry { public uint Command; public string Label; public Rect Bounds; public uint State; }
+    public sealed class Entry { public uint Command; public string Label; public Rect Bounds; public uint State, Type; }
     public sealed class Popup { public IntPtr Window; public Entry[] Entries; }
     public static class MenuUi {
         [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(Point point);
@@ -48,7 +48,7 @@ namespace FileSpacerViewMenuTests {
                 Thread.Sleep(80);
             }
         }
-        public static Popup Active(IntPtr owner,bool includeAll=false) {
+        public static Popup Active(IntPtr owner,bool includeAll=false,uint requiredCommand=0) {
             foreach(IntPtr window in Native.Top("#32768",null,Owner(owner))) {
                 if(!Native.IsWindowVisible(window))continue;
                 var bar=new MenuBarInfo{Size=(uint)Marshal.SizeOf(typeof(MenuBarInfo))};
@@ -71,10 +71,10 @@ namespace FileSpacerViewMenuTests {
                             if(!Native.IsWindowVisible(window)||GetMenuItemCount(bar.Menu)<0){vanished=true;break;}
                             throw new Win32Exception(error);
                         }
-                        entries.Add(new Entry{Command=info.Id,Label=Marshal.PtrToStringUni(text),Bounds=bounds,State=info.State});
+                        entries.Add(new Entry{Command=info.Id,Label=Marshal.PtrToStringUni(text),Bounds=bounds,State=info.State,Type=info.Type});
                     }finally{Marshal.FreeHGlobal(text);}
                 }
-                if(!vanished&&entries.Count>=6)return new Popup{Window=window,Entries=entries.ToArray()};
+                if(!vanished&&(requiredCommand==0?entries.Count>=6:entries.Exists(entry=>entry.Command==requiredCommand)))return new Popup{Window=window,Entries=entries.ToArray()};
             }
             return null;
         }
