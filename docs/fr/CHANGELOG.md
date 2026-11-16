@@ -12,10 +12,7 @@
 - Conserver la disposition native en lignes du mode Contenu, sans placement libre des icônes, réalignement ni Snap.
 - Ajouter les huit modes d’affichage de l’Explorateur de fichiers : Très grandes icônes, Grandes icônes, Icônes moyennes, Petites icônes, Liste, Détails, Mosaïques et Contenu, avec les raccourcis Ctrl+Maj+1 à 8.
 - Ajouter la commande **Réaligner les icônes** pour recaler ponctuellement la disposition actuelle, ainsi que **Snap** pendant un déplacement : maintenir **S** pour aligner uniquement les icônes déplacées sur la grille Windows sans déplacer les autres, avec un cadre de destination translucide de la taille de l’icône.
-- Corriger l’affichage des balises d’ancrage HTML dans l’historique des versions de l’installateur.
-- Mettre en forme l’historique des versions de l’installateur avec des titres de version, des listes à puces et des mises en évidence.
-- Ajouter l’allemand, l’italien, l’espagnol, le portugais (Portugal) et le grec à l’installateur et au programme de désinstallation.
-- Reconstruire une base de données des dossiers endommagée à partir de toutes les données encore lisibles, expliquer simplement les erreurs de stockage, afficher l’erreur de base de données une seule fois par interruption et ne jamais proposer de réinitialiser une base créée par une version plus récente.
+- Reconstruction de la base en cas de corruption.
 - Proposer « Ouvrir dans FileSpacer » dans les menus contextuels des dossiers de tous les programmes.
 - Corriger plusieurs problèmes d’affichage et de saisie : perte des positions libres en Petites icônes ou Mosaïques, pas de Ctrl+molette différents de ceux de l’Explorateur de fichiers, répétition de Retour arrière, valeurs numériques invalides dans les préférences, origine de l’animation d’ouverture selon la densité d’affichage et position de défilement à la réouverture sous Windows 11.
 - Conserver les proportions des colonnes de la vue Détails qui remplissent la fenêtre lors de la fermeture et de la réouverture d’un dossier.
@@ -66,7 +63,7 @@
 
 ## 1.3.2 — 2026-11-04
 
-- Ajouter le polonais, le néerlandais et l’ukrainien à l’application, à l’installateur, au site et aux documentations utilisateur et technique.
+- Ajouter le polonais, le néerlandais et l’ukrainien à l’application.
 
 <a id="131--2026-11-03"></a>
 
@@ -78,28 +75,24 @@
 
 ## 1.3.0 — 2026-11-02
 
-- Consigner le détail des opérations de l’installateur, les échecs de commandes et les détails complets des erreurs de nettoyage de la documentation dans des journaux de diagnostic conservés.
 - Corriger les accès concurrents à l’état des dossiers, préserver les modifications pendant une reprise différée et réduire les redessins des grands placements libres.
 - Corriger les mouvements de fenêtre et les menus contextuels parasites après l’interruption d’un geste.
 
 - Ajouter les aperçus PowerToys Peek facultatifs et laisser Grab And Move traiter les gestes de fenêtre en conflit.
 - Personnaliser le menu de barre de titre dans sept langues, avec glisser-déposer, réglages par défaut et apparence native ou Nilesoft Shell.
 - Ajouter les actions sur les dispositions enregistrées, l’ajustement au contenu, la fermeture des fenêtres descendantes ou des autres fenêtres, les groupes de dossiers nommés et des commandes Nilesoft stables.
-- Corriger la désinstallation pour qu’elle se poursuive si le nettoyage de l’aide échoue, ainsi que la détection de plusieurs processus Explorer dans une même session par les tests VM.
-- Corriger les jointures entre les faces vertes de l’icône et actualiser les guides multilingues et les démonstrations du menu.
+- Corriger les jointures entre les faces vertes de l’icône de l’application.
 
 <a id="123--2026-10-30"></a>
 
 ## 1.2.3 — 2026-10-30
 
-- Lisser le logo de la barre latérale de l’installateur et du désinstallateur avec une mise à l’échelle de haute qualité adaptée à sa taille d’affichage.
-- Conserver les guillemets des arguments transmis lors de l’élévation des droits, pour qu’une mise à jour pour tous les utilisateurs démarre son processus silencieux au lieu de rouvrir l’installateur.
-- Mettre à jour par défaut l’installation d’origine et restaurer les fenêtres avec l’exécutable exact indiqué par l’installateur, y compris lorsque les installations personnelle et pour tous les utilisateurs coexistent.
+- Restaurer les fenêtres de dossiers dans la même installation de FileSpacer après une mise à jour.
 - Corriger les identités, les surimpressions d’icônes et les notifications de dossiers du tri mixte. Conserver les positions libres des icônes et utiliser les vues natives si le fournisseur est indisponible ou incompatible.
 - Garantir une seule fenêtre Préférences entre processus et corriger la validation des raccourcis, les chemins Everything, les mnémoniques clavier et les traductions régionales.
 - Corriger la fermeture des dossiers, les clics d’activation et la restauration après un aperçu du menu Affichage.
-- Corriger les rafraîchissements des Jump Lists et les diagnostics de l’installeur. Conserver les fichiers d’aide utilisateur pendant les mises à niveau et la désinstallation.
-- Intégrer l’aide multilingue hors ligne par F1 et À propos, et actualiser les guides de configuration traduits et les références Nilesoft Shell.
+- Corriger l’actualisation des listes de raccourcis.
+- Ajouter une aide hors ligne multilingue accessible par F1 et À propos.
 
 <a id="122--2026-10-28"></a>
 
@@ -119,8 +112,6 @@
 
 - Ajouter un tri mixte facultatif des fichiers et dossiers du système de fichiers, sous Affichage → Fichiers, en conservant la vue Windows native et l’état enregistré des dossiers. L’option est désactivée par défaut.
 - Ajouter les traductions de l’interface en allemand, italien, espagnol, portugais (Portugal) et grec, en plus de l’anglais et du français.
-- Afficher le titre et le sous-titre de l’installeur avec du texte Windows plus grand, adapté au DPI et lissé avec ClearType.
-- Enrichir le guide en ligne avec des captures françaises et anglaises, des démonstrations des gestes de fenêtre et des comparaisons des menus Nilesoft Shell.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.10...v1.2.0)
 
@@ -128,16 +119,11 @@
 
 ## 1.1.10 — 2026-10-27
 
-- Demander la confirmation Windows uniquement pour une installation ou une désinstallation pour tous les utilisateurs, et appliquer les choix personnels d’intégration à l’utilisateur ayant démarré l’installation.
-- Afficher l’historique complet des versions dans un panneau défilant Nouveautés à côté des choix d’installation sur le premier écran.
-- Corriger la réinitialisation des choix de composants lors des mises à niveau. Restaurer les sélections enregistrées et conserver le gestionnaire de fichiers par défaut pendant les mises à niveau silencieuses.
-- Utiliser la même barre latérale FileSpacer, le grand logo et la palette gris clair et blanc sur tous les écrans de l’installeur et du désinstalleur. Donner à l’installeur une icône distincte composée des bitmaps natifs de l’application et d’un badge de flèche de téléchargement optimisé séparément à chaque taille, en conservant un fin liseré jaune à droite et en bas du dossier.
 - Corriger les plantages à l’arrêt dus à l’initialisation prématurée de données locales de thread sur des threads de travail tardifs du Shell.
-- Proposer Ouvrir dans l’Explorateur de fichiers Windows dans les menus contextuels de dossiers lorsque FileSpacer est le gestionnaire par défaut, et Ouvrir dans FileSpacer dans le cas contraire. Actualiser les menus lors du changement de gestionnaire, après l’installation et au démarrage.
-- Corriger l’ouverture des raccourcis de serveurs et partages réseau dans l’Explorateur de fichiers Windows lorsque FileSpacer est le gestionnaire par défaut. Mettre à jour le composant de menu contextuel des dossiers et sélectionner à nouveau FileSpacer par défaut pour activer l’intégration réseau.
+- Proposer Ouvrir dans l’Explorateur de fichiers Windows dans les menus contextuels de dossiers lorsque FileSpacer est le gestionnaire par défaut, et Ouvrir dans FileSpacer dans le cas contraire.
+- Corriger l’ouverture des raccourcis de serveurs et partages réseau dans l’Explorateur de fichiers Windows lorsque FileSpacer est le gestionnaire par défaut.
 - Agrandir l’icône de l’application de l’onglet À propos à 48 pixels à l’échelle 100 %, avec le texte à côté.
 - Garder les titres des fenêtres maximisées entièrement visibles et étendre la barre d’outils sur toute la largeur disponible.
-- Permettre l’exécution des tests de non-régression dans un client Hyper-V configuré, tout en compilant l’application et les outils de test sur l’hôte.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.9...v1.1.10)
 
@@ -153,13 +139,12 @@
 
 ## 1.1.8 — 2026-10-27
 
-- Remplacer l’icône de l’application et le logo du README par une projection de tesseract, avec un rapport de 11/20 entre les arêtes mauves et vertes du cube, en conservant des petites tailles optimisées.
+- Remplacer l’icône de l’application par une projection de tesseract, en conservant des petites tailles optimisées.
 - Clarifier les libellés français et anglais des paramètres et regrouper les options de verrouillage des fenêtres.
 - Ajouter une option pour masquer le badge de cadenas des fenêtres verrouillées sans modifier leur verrouillage d’état.
 - Utiliser les arrière-plans natifs du thème Windows dans les pages de paramètres et les contrôles de raccourcis.
 - Expliquer le placement des fenêtres et le regroupement dans la barre des tâches avec des infobulles Windows à côté des options.
 - Lier les paramètres à la fenêtre de dossier qui les a ouverts et abandonner les modifications en attente à sa fermeture. Les opérations de maintenance confirmées ferment les paramètres sans appliquer les modifications en attente.
-- Réorganiser le README autour de la navigation spatiale et des fonctionnalités, avec des références de recherche, un lien vers la dernière version, des guides de compilation et de Nilesoft Shell et une documentation utilisateur enrichie.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.7...v1.1.8)
 
@@ -168,7 +153,6 @@
 ## 1.1.7 — 2026-10-26
 
 - Minimiser le chevauchement des nouvelles fenêtres avec une géométrie exacte, en recherchant d’abord l’espace libre. Renommer l’option générale en « Minimiser le chevauchement des fenêtres ».
-- Proposer le choix facultatif du gestionnaire de fichiers par défaut dans l’installeur français et anglais, avec les instructions pour l’activer ou le rétablir plus tard dans les paramètres d’intégration de FileSpacer.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.6...v1.1.7)
 
@@ -189,9 +173,6 @@
 ## 1.1.5 — 2026-10-26
 
 - Corriger la création involontaire d’un raccourci lorsqu’un Alt + double-clic est suivi d’un déplacement de souris. Préserver les propriétés natives, la sélection et le focus sans rejouer un appui maintenu.
-- Corriger la couverture de non-régression du délai natif de double-clic et des cibles physiques de la souris. Comparer les propriétés, la sélection, le focus, l’ancre de sélection, la géométrie et le contenu des dossiers avec et sans gestes de fenêtre, y compris avec Ctrl/Maj.
-- Isoler l’exécutable réel de test Everything et son fichier INI de démarrage afin que le réglage administrateur installé de l’utilisateur ne puisse pas rediriger les recherches de test ni déclencher une élévation. Vérifier que les paramètres installés restent inchangés.
-- Maintenir le poste éveillé et suspendre temporairement l’économiseur d’écran pendant les tests d’interface, en restaurant leur état initial pendant le nettoyage, même après un échec.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.4...v1.1.5)
 
@@ -205,7 +186,6 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Afficher automatiquement Everything et les recherches récentes à l’activation du champ de recherche existant, sans bouton supplémentaire. Conserver la recherche native, le filtrage instantané et la réutilisation des requêtes locales.
 - Mémoriser par défaut cinq recherches récentes par dossier entre les sessions, avec une limite de zéro à vingt indépendante d’Everything. Préserver les données existantes et nettoyer l’historique selon la politique prudente de conservation de l’état des dossiers.
 - Afficher l’icône de l’exécutable Everything à la taille appropriée, avec extraction en arrière-plan et cache mémoire actualisé lorsque l’exécutable change.
-- Ajouter des tests de stockage isolé, de migration et d’intégration réelle Shell/Everything. Rendre le lecteur de tests du Shell robuste lorsque des filtres successifs modifient la vue.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
 
@@ -216,7 +196,6 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Ajouter un onglet Raccourcis aux paramètres pour configurer ou désactiver les gestes de déplacement et de redimensionnement avec les touches modificatrices et les boutons gauche, central ou droit, avec saisie directe et validation des conflits.
 - Laisser la gestion d’Alt + double-clic sur les propriétés à la vue native de l’Explorateur.
 - Restaurer les noms complets sur fond opaque pour un seul élément sélectionné en mode Icônes. Les sélections multiples conservent le rendu natif Windows. Le libellé de la préférence précise maintenant cette portée.
-- Ajouter des tests exhaustifs de configuration des raccourcis et de gestes réels de souris, avec les ressources de paramètres françaises et anglaises.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.1.2...v1.1.3)
 
@@ -227,7 +206,6 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Ajouter le verrouillage facultatif de la géométrie et de l’affichage enregistrés d’une fenêtre depuis son menu de titre. Les changements temporaires restent possibles et les positions individuelles des icônes continuent de s’enregistrer normalement.
 - Afficher un badge de cadenas Small & Flat sur les icônes de dossiers verrouillés, avec des ICO natifs multirésolutions, l’adaptation au DPI et les couleurs à contraste élevé.
 - Confirmer la désactivation globale du verrouillage, supprimer les verrouillages enregistrés des dossiers ouverts et fermés et reprendre l’enregistrement normal entre les processus.
-- Étendre les tests de non-régression aux transitions de verrouillage, aux échecs d’enregistrement, à la restauration du Shell et au rendu natif du badge.
 - Rouvrir un dossier fermé avec Ctrl+Maj+T ou les listes de raccourcis restaure en modes Détails et Liste la ligne qui se trouvait en haut à sa fermeture.
 - Les diagnostics de plantage continuent d’écrire un minidump et un rapport dans les données locales de l’application. L’attribution à l’ancien rendu des noms complets, le changement automatique de préférence et le redémarrage sont supprimés.
 
@@ -252,7 +230,6 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Ouvrir le Panneau de configuration dans sa propre fenêtre Windows en conservant le dossier source et sa sélection.
 - Supprimer la sélection automatique du dossier d’origine lors de la navigation vers un parent ou un ancêtre pour des raisons ergonomiques : une sélection ultérieure avec Ctrl ne doit pas ouvrir accidentellement les deux dossiers.
 - Accepter trois différences dans cette version : le rendu personnalisé des noms sélectionnés complets sur fond opaque, la conservation de la sélection à l’activation et la restauration exacte du défilement sont indisponibles. Désactiver les deux contrôles de paramètres inactifs tout en conservant leurs préférences enregistrées.
-- Simplifier les tests de non-régression autour de la configuration native de production du Shell. Retirer les comparaisons exploratoires de profils, les sondes d’intégration et les rapports réservés à la migration.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
 
@@ -264,7 +241,6 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Maintenir la vue Shell classique active indépendamment du réglage d’affichage du nom complet de l’élément sélectionné.
 - Appliquer le thème Nilesoft Shell au menu des modes d’affichage.
 - Éviter les longs délais d’arrêt dus aux caches passifs d’icônes du Shell, tout en conservant les références de durée de vie acquises par les commandes Shell explicitement invoquées.
-- Isoler l’hébergement de la vue Shell et étendre les tests des gestes Alt, de la réentrance des menus et de la durée de vie Shell/STA.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.7...v1.0.8)
 
@@ -275,7 +251,6 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Sélectionner le dossier enfant d’origine à l’ouverture d’un parent ou d’un ancêtre, en préservant la sélection des fenêtres déjà ouvertes.
 - Corriger le filtrage des noms de fichiers lors de l’application, de la modification et de l’effacement d’une requête.
 - Restaurer l’icône native Windows de l’Accès rapide et centrer les boutons Accès rapide et Configuration.
-- Supprimer les diagnostics temporaires et utiliser Benco dans les mentions du projet.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.6...v1.0.7)
 
@@ -293,8 +268,7 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 
 - Rechercher les mises à jour de façon asynchrone depuis À propos, avec un bouton d’installation et un texte d’état adaptés.
 - Télécharger les mises à jour dans une boîte de progression séparée et annulable, tout en gardant les fenêtres de dossiers utilisables.
-- Vérifier la taille et le SHA-256 de l’installeur avant de fermer proprement FileSpacer et de démarrer l’installation.
-- Publier les métadonnées de téléchargement de l’installeur avec chaque version.
+- Vérifier la taille et le SHA-256 de la mise à jour avant de fermer FileSpacer pour l’appliquer.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.4...v1.0.5)
 
@@ -316,7 +290,6 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 
 - Restaurer les vérifications manuelles et les vérifications hebdomadaires facultatives des mises à jour à partir des versions GitHub de FileSpacer, désactivées par défaut.
 
-- Publier le manifeste de mise à jour avec chaque installeur de version.
 
 - Conserver la gestion native du Shell pour Alt + double-clic et Alt + Entrée sur les dossiers.
 
@@ -329,9 +302,6 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Appliquer les thèmes Nilesoft Shell au menu des dossiers de la barre de titre indépendamment de la sélection, tout en conservant les commandes natives du Shell.
 - Permettre une personnalisation Nilesoft distincte pour les menus de la barre de titre et de la barre d’outils.
 - Centrer la flèche du menu déroulant de la barre de titre.
-- Documenter la configuration de Nilesoft Shell, l’application du thème et le filtrage des menus.
-- Mentionner Benco dans les copyrights.
-- Permettre au workflow de publication de remplacer l’installeur d’une version existante.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.1...v1.0.2)
 
@@ -340,15 +310,14 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 ## 1.0.1 — 2026-10-09
 
 - Activer les contrôles natifs de réduction et d’agrandissement, et corriger les boutons de titre des fenêtres maximisées.
-- Enregistrer et restaurer séparément l’état maximisé et la géométrie normale de la fenêtre, avec migration automatique de la base de données.
+- Enregistrer et restaurer séparément l’état maximisé et la géométrie normale de la fenêtre.
 - Utiliser les animations natives de la barre des tâches et les propriétés de relancement propres à chaque dossier.
 - Appliquer les préférences de regroupement dans la barre des tâches aux fenêtres nouvellement créées et clarifier ce comportement dans les paramètres.
 - Permettre la suppression des dossiers ouverts et effacer leur état enregistré.
 - Empêcher l’application et son assistant de récupération de verrouiller des dossiers par leur répertoire de travail.
-- Conserver les chemins absolus des dossiers et le mode de test de débogage lors de la récupération après plantage.
+- Conserver les chemins absolus des dossiers lors de la récupération après plantage.
 - Restaurer immédiatement les libellés normaux après désélection lorsque l’affichage du nom complet est activé.
 - Libérer les interfaces Shell en cache à la fermeture des fenêtres de dossiers et corriger la gestion des notifications du Shell.
-- Permettre la publication manuelle des versions et inclure le numéro de version dans les noms de fichiers des installeurs.
 
 [Toutes les modifications](https://github.com/LeBenco/FileSpacer/compare/v1.0.0...v1.0.1)
 
@@ -366,6 +335,5 @@ Cette version s’appuie sur la 1.1.3, qui propose déjà des gestes clavier/sou
 - Proposer les interfaces française et anglaise, avec l’anglais comme langue de repli.
 - Ajouter la récupération après plantage et les commandes de maintenance pour réinitialiser les préférences ou l’état enregistré des dossiers.
 - Retirer la navigation en colonnes Miller, l’éditeur de texte intégré, les fenêtres d’aperçu et la barre flottante.
-- Fournir des scripts de compilation MSVC/NMAKE, un installeur NSIS, des publications GitHub automatisées et la documentation du projet.
 
 [Historique de la version](https://github.com/LeBenco/FileSpacer/commits/v1.0.0)

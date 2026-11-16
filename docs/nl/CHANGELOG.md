@@ -12,10 +12,7 @@
 - De ingebouwde indeling in rijen behouden in de weergave Inhoud, zonder vrije pictogramplaatsing, opnieuw uitlijnen of Snap.
 - De acht weergaven van Bestandenverkenner toevoegen: Extra grote pictogrammen, Grote pictogrammen, Middelgrote pictogrammen, Kleine pictogrammen, Lijst, Details, Tegels en Inhoud, met de sneltoetsen Ctrl+Shift+1 tot 8.
 - De opdracht **Pictogrammen opnieuw uitlijnen** toevoegen om de huidige indeling eenmalig uit te lijnen, en **Snap** tijdens het slepen: houd **S** ingedrukt om alleen de gesleepte pictogrammen op het Windows-raster uit te lijnen zonder de andere te verplaatsen, met een halfdoorzichtig bestemmingskader ter grootte van het pictogram.
-- Voorkomen dat HTML-ankertags in het wijzigingsoverzicht van het installatieprogramma verschijnen.
-- Het wijzigingsoverzicht van het installatieprogramma opmaken met versiekoppen, opsommingen en nadruk.
-- Duits, Italiaans, Spaans, Portugees (Portugal) en Grieks toevoegen aan het installatie- en verwijderprogramma.
-- Een beschadigde database met maptoestanden herstellen uit alle nog leesbare gegevens, opslagfouten in eenvoudige woorden uitleggen, de databasefout slechts eenmaal per storing tonen en nooit aanbieden een database van een nieuwere versie opnieuw in te stellen.
+- De database opnieuw opbouwen bij beschadiging.
 - ‘Openen in FileSpacer’ aanbieden in de mapcontextmenu’s van alle programma’s.
 - Verschillende weergave- en invoerproblemen oplossen: verlies van vrije posities bij Kleine pictogrammen of Tegels, Ctrl+muiswiel-stappen die afwijken van Bestandenverkenner, automatisch herhaalde Backspace, ongeldige getallen in de voorkeuren, het beginpunt van de openingsanimatie bij verschillende DPI-waarden en de schuifpositie bij heropenen onder Windows 11.
 - De verhoudingen van venstervullende kolommen in de detailweergave behouden bij het sluiten en heropenen van een map.
@@ -66,7 +63,7 @@
 
 ## 1.3.2 — 2026-11-04
 
-- Pools, Nederlands en Oekraïens toegevoegd aan de toepassing, het installatieprogramma, de website en de gebruikers- en ontwikkelaarsdocumentatie.
+- Pools, Nederlands en Oekraïens aan de toepassing toevoegen.
 
 <a id="131--2026-11-03"></a>
 
@@ -78,28 +75,24 @@
 
 ## 1.3.0 — 2026-11-02
 
-- Gedetailleerde installatiebewerkingen, opdrachtfouten en volledige uitzonderingen bij documentatieopruiming vastgelegd in blijvende diagnostische logboeken.
 - Gelijktijdige mapstatustoegang hersteld, wijzigingen tijdens vertraagd herstel behouden en hertekenen bij grote vrije pictogramindelingen verminderd.
 - Onbedoelde vensterbewegingen en snelmenu’s na onderbroken venstergebaren verholpen.
 
 - Optionele PowerToys Peek-voorbeelden toegevoegd en conflicterende venstergebaren aan Grab And Move overgelaten.
 - Titelbalkmenu aanpasbaar gemaakt in zeven talen, met slepen, standaardwaarden en native of Nilesoft Shell-weergave.
 - Acties voor opgeslagen indelingen, aanpassen aan inhoud, onderliggende/andere vensters sluiten, benoemde mapgroepen en stabiele Nilesoft-opdrachten toegevoegd.
-- Help-opruimfouten die de-installatie blokkeerden en VM-tests die meerdere Verkenner-processen als aparte sessies zagen verholpen.
-- Naden tussen groene pictogramvlakken verholpen en meertalige handleidingen en menudemonstraties vernieuwd.
+- Naden tussen de groene vlakken van het toepassingspictogram herstellen.
 
 <a id="123--2026-10-30"></a>
 
 ## 1.2.3 — 2026-10-30
 
-- Zijbalklogo van installatie- en verwijderprogramma vloeiender gemaakt met hoogwaardige schaling naar de actuele schermgrootte.
-- Geciteerde verhogingsargumenten behouden zodat updates voor alle gebruikers de stille worker starten in plaats van het installatieprogramma opnieuw te openen.
-- Standaard de oorspronkelijke installatie bijgewerkt en vensters hersteld met exact het door setup gemelde programma, ook bij persoonlijke en algemene installaties naast elkaar.
+- Mapvensters na een update met dezelfde FileSpacer-installatie herstellen.
 - Identiteiten, overlays en mapmeldingen bij gemengd sorteren hersteld. Vrije pictogramposities behouden en native weergaven gebruikt bij ontbrekende of incompatibele provider.
 - Uniciteit van Instellingen tussen processen, sneltoetsvalidatie, Everything-paden, toegangstoetsen en regionale vertalingen hersteld.
 - Mapsluiting, activeringsklikken en herstel na menuvoorbeelden van Beeld verholpen.
-- Vernieuwen van Jump Lists en installatiediagnostiek hersteld. Eigen helpbestanden behouden bij upgrades en de-installatie.
-- Meertalige offlinehulp via F1 en Info meegeleverd en vertaalde installatiehandleidingen en Nilesoft-referenties vernieuwd.
+- Het vernieuwen van Jump Lists herstellen.
+- Meertalige offlinehulp toevoegen, bereikbaar via F1 en Info.
 
 <a id="122--2026-10-28"></a>
 
@@ -119,8 +112,6 @@
 
 - Optioneel gemengd sorteren van bestanden en bestandssysteemmappen toegevoegd onder Weergave → Bestanden, met behoud van native Windows-weergave en mapstatus. Standaard uitgeschakeld.
 - Duitse, Italiaanse, Spaanse, Portugese (Portugal) en Griekse interfaces toegevoegd naast Engels en Frans.
-- Installatietitel en -ondertitel als grotere DPI-bewuste Windows-tekst met ClearType weergegeven.
-- Onlinehandleiding uitgebreid met Engelse en Franse schermafbeeldingen, venstergebaren en Nilesoft-menuvergelijkingen.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.10...v1.2.0)
 
@@ -128,16 +119,11 @@
 
 ## 1.1.10 — 2026-10-27
 
-- Windows-bevestiging alleen bij installatie/verwijdering voor alle gebruikers gevraagd. Persoonlijke integratie toegepast op de gebruiker die setup startte.
-- Volledige versiegeschiedenis in een schuifbaar Nieuw-paneel naast de keuzes op het eerste installatiescherm getoond.
-- Reset van componentkeuzes bij upgrades verholpen. Opgeslagen keuzes hersteld en standaardbeheerder bij stille upgrades behouden.
-- Op elk installatie-/verwijderingsscherm dezelfde FileSpacer-zijbalk, groot logo en lichtgrijs-wit palet gebruikt. Een apart installatiepictogram combineert native bitmaps met een per formaat geoptimaliseerde downloadpijl en behoudt een dunne gele rand rechts en onder aan de map.
 - Afsluitcrashes door vroege initialisatie van threadlokale mapgegevens op late Shell-werkthreads verholpen.
-- Mapsnelmenu’s bieden openen in Windows Bestandenverkenner als FileSpacer de standaard is, anders in FileSpacer. Bijgewerkt na standaardwijziging, installatie en opstarten.
-- Netwerkserver-/sharesnelkoppelingen die ondanks standaard FileSpacer in Verkenner openden hersteld. Werk de mapsnelmenucomponent bij en kies FileSpacer opnieuw als standaard voor netwerkintegratie.
+- Mapsnelmenu’s bieden openen in Windows Bestandenverkenner als FileSpacer de standaard is, anders in FileSpacer.
+- Netwerkserver-/sharesnelkoppelingen die ondanks standaard FileSpacer in Verkenner openden hersteld.
 - Toepassingspictogram onder Info vergroot tot 48 pixels bij 100%, met tekst ernaast.
 - Titels van gemaximaliseerde vensters volledig zichtbaar gehouden en werkbalk over de beschikbare breedte uitgerekt.
-- Regressietests op een geconfigureerde Hyper-V-client mogelijk gemaakt, met compilatie van toepassing en helpers op de host.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.9...v1.1.10)
 
@@ -153,13 +139,12 @@
 
 ## 1.1.8 — 2026-10-27
 
-- Pictogram en README-logo vervangen door een geprojecteerde tesseract met paars-groene kubusrandverhouding 11/20, met behoud van kleine-formaatoptimalisaties.
+- Het toepassingspictogram vervangen door een geprojecteerd tesseractontwerp, met behoud van geoptimaliseerde kleine formaten.
 - Engelse en Franse instellingslabels verduidelijkt en vergrendelingsopties gegroepeerd.
 - Optie toegevoegd om het slotje te verbergen zonder de opgeslagen statusvergrendeling te wijzigen.
 - Native Windows-thema-achtergronden gebruikt op instellingenpagina’s en sneltoetsbesturingselementen.
 - Vensterplaatsing en taakbalkgroepering toegelicht met standaard Windows-knopinfo naast de opties.
 - Instellingen aan het aanroepende mapvenster gekoppeld. Sluiten verwerpt openstaande wijzigingen. Bevestigd mapstatusonderhoud sluit instellingen zonder die wijzigingen toe te passen.
-- README rond ruimtelijke navigatie en functies georganiseerd, met onderzoeksbronnen, nieuwste-releasekoppeling, aparte bouw-/Nilesoft-gidsen en uitgebreidere documentatie.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.7...v1.1.8)
 
@@ -168,7 +153,6 @@
 ## 1.1.7 — 2026-10-26
 
 - Overlap van nieuwe vensters met exacte geometrie en eerst vrije ruimte zoeken beperkt. Algemene optie hernoemd naar ‘Vensteroverlap minimaliseren’.
-- Optionele standaardbeheerderkeuze toegevoegd aan Engelse/Franse setup, met uitleg voor later inschakelen of terugdraaien onder Integratie.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.6...v1.1.7)
 
@@ -189,9 +173,6 @@
 ## 1.1.5 — 2026-10-26
 
 - Onbedoelde snelkoppeling na Alt + dubbelklik en muisbeweging verholpen. Native Eigenschappen, selectie en focus behouden zonder een ingedrukte knop opnieuw af te spelen.
-- Regressiedekking voor native dubbelkliktiming en fysieke muisdoelen gecorrigeerd. Eigenschappen, selectie, focus, anker, geometrie en inhoud vergeleken met gebaren uit/aan, inclusief Ctrl/Shift.
-- Echte Everything-testprogramma en bootstrap-INI geïsoleerd zodat de geïnstalleerde administratoroptie zoekopdrachten niet omleidt of verhoging start. Gecontroleerd dat geïnstalleerde instellingen ongewijzigd blijven.
-- Bureaublad wakker gehouden en schermbeveiliging tijdelijk opgeschort tijdens UI-tests, met herstel bij opruimen, ook na fouten.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.4...v1.1.5)
 
@@ -205,7 +186,6 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Everything en recente zoekopdrachten automatisch bij betreden van het bestaande zoekveld getoond, zonder extra knop. Native zoeken, direct filteren en lokale herhaling behouden.
 - Standaard vijf recente zoekopdrachten per map tussen sessies onthouden, instelbaar 0–20 los van Everything. Bestaande gegevens en voorzichtig bewaarbeleid voor geschiedenis behouden.
 - Everything-programmapictogram op passende grootte getoond, met extractie op de achtergrond en cachevernieuwing bij programmawijziging.
-- Geïsoleerde opslag-, migratie- en echte Shell/Everything-tests toegevoegd. De Shell-testlezer bestand gemaakt tegen opeenvolgende filterwijzigingen.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.3...v1.1.4)
 
@@ -216,7 +196,6 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Tab Sneltoetsen toegevoegd om gebaren in te stellen of uit te schakelen met wijzigingstoetsen en links/midden/rechts, directe invoervastlegging en conflictcontrole.
 - Afhandeling van Eigenschappen via Alt + dubbelklik aan de native Verkenner-weergave overgelaten.
 - Volledige labels op ondoorzichtige achtergrond voor één geselecteerd item in pictogramweergave hersteld. Meervoudige selectie blijft native. Voorkeur beschrijft dit bereik.
-- Uitgebreide sneltoetsconfiguratie- en echte muisgebarentests toegevoegd, met Franse en Engelse instellingenresources.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.1.2...v1.1.3)
 
@@ -227,7 +206,6 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Optionele vergrendeling van opgeslagen geometrie/weergave vanuit het titelmenu toegevoegd. Tijdelijke wijzigingen blijven mogelijk en pictogramposities worden normaal opgeslagen.
 - Small & Flat-slotje op vergrendelde mappen getoond met native ICO in meerdere resoluties, DPI-schaling en hoogcontrastkleuren.
 - Globaal uitschakelen van vergrendeling bevestigd, sloten voor open/gesloten mappen gewist en normale opslag tussen processen hervat.
-- Dekking voor vergrendelingsovergangen, opslagfouten, Shell-herstel en native slotweergave uitgebreid.
 - Opnieuw openen via Ctrl+Shift+T of Jump List schuift Details/Lijst terug naar de rij die bij sluiten bovenaan stond.
 - Crashdiagnostiek blijft lokaal minidump en rapport schrijven. Toeschrijving aan vroegere naamweergave, automatische voorkeurwijziging en herstart verwijderd.
 
@@ -252,7 +230,6 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Configuratiescherm in het eigen Windows-venster geopend met behoud van bronmap en selectie.
 - Automatische selectie van de bronmap bij omhoog navigeren verwijderd: volgende Ctrl-selecties mogen niet onbedoeld beide mappen openen.
 - Drie verschillen geaccepteerd: eigen volledige geselecteerde namen met ondoorzichtige achtergrond, selectiebehoud bij activering en exacte heropende schuifposities ontbreken. Twee inactieve opties uitgeschakeld met behoud van voorkeuren.
-- Regressiedekking op de native productieconfiguratie gericht. Verkennende profielvergelijkingen, inbeddingsproeven en migratierapportage verwijderd.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.8...v1.1.0)
 
@@ -264,7 +241,6 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Klassieke Shell-weergave ingeschakeld gehouden los van volledige naamweergave.
 - Nilesoft Shell-thema op het weergavemodusmenu toegepast.
 - Lange afsluitvertragingen door passieve Shell-pictogramcaches vermeden, met behoud van levensduurverwijzingen van expliciet gestarte opdrachten.
-- Shell-hosting geïsoleerd en tests voor Alt-gebaren, menuherintreding en Shell/STA-levensduur uitgebreid.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.7...v1.0.8)
 
@@ -275,7 +251,6 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Bron-submap geselecteerd bij openen van bovenliggende mappen, met selectiebehoud in reeds geopende vensters.
 - Naamfilter bij indienen, wijzigen of wissen van een zoekopdracht hersteld.
 - Native Snelle toegang-pictogram hersteld en toegang-/instellingenknoppen gecentreerd.
-- Tijdelijke diagnostiek verwijderd en Benco in vermeldingen gebruikt.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.6...v1.0.7)
 
@@ -293,8 +268,7 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 
 - Asynchroon controleren op updates onder Info toegevoegd, met aangepaste installatieknop en statustekst.
 - Updates in een apart annuleerbaar voortgangsvenster gedownload terwijl mapvensters bruikbaar blijven.
-- Installatiegrootte en SHA-256 gecontroleerd vóór ordelijk sluiten van FileSpacer en starten van setup.
-- Downloadmetadata van het installatieprogramma bij elke release gepubliceerd.
+- De grootte en SHA-256 van de update controleren voordat FileSpacer wordt gesloten om de update toe te passen.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.4...v1.0.5)
 
@@ -316,7 +290,6 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 
 - Handmatige en optionele wekelijkse updatecontroles via FileSpacer GitHub Releases hersteld, standaard uitgeschakeld.
 
-- Updatemanifest naast elk release-installatieprogramma gepubliceerd.
 
 - Native Shell-afhandeling van Alt + dubbelklik en Alt+Enter op mappen behouden.
 
@@ -329,9 +302,6 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Nilesoft-thema’s op titelbalkmapmenu toegepast onafhankelijk van selectie, met native Shell-opdrachten.
 - Aparte Nilesoft-aanpassing van titelbalk- en werkbalkmenu’s mogelijk gemaakt.
 - Uitklappijl van de titelbalk gecentreerd.
-- Nilesoft-configuratie, thema’s en menufiltering gedocumenteerd.
-- Benco in auteursrechtvermeldingen opgenomen.
-- Releaseworkflow toegestaan het installatieprogramma van een bestaande release te vervangen.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.1...v1.0.2)
 
@@ -340,15 +310,14 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 ## 1.0.1 — 2026-10-09
 
 - Native minimaliseren/maximaliseren ingeschakeld en titelknoppen in gemaximaliseerde vensters hersteld.
-- Gemaximaliseerde status los van normale geometrie opgeslagen en hersteld, met automatische databasemigratie.
+- De gemaximaliseerde toestand afzonderlijk van de normale venstergeometrie opslaan en herstellen.
 - Native taakbalkanimaties en herstarteigenschappen per map gebruikt.
 - Taakbalkgroepering op nieuwe vensters toegepast en dit in Instellingen verduidelijkt.
 - Verwijderen van geopende mappen en hun opgeslagen status mogelijk gemaakt.
 - Voorkomen dat toepassing en herstelhelper mappen via hun werkmap vergrendelen.
-- Absolute mappaden en Debug-testmodus tijdens crashherstel behouden.
+- Absolute mappaden behouden bij herstel na een crash.
 - Normale naamlabels direct na deselectie hersteld bij ingeschakelde volledige namen.
 - Gecachete Shell-interfaces bij mapsluiting vrijgegeven en meldingsafhandeling gecorrigeerd.
-- Handmatige releasepublicatie ondersteund en versie in installatienamen opgenomen.
 
 [Alle wijzigingen](https://github.com/LeBenco/FileSpacer/compare/v1.0.0...v1.0.1)
 
@@ -366,6 +335,5 @@ Deze versie bouwt voort op 1.1.3, dat al instelbare toetsenbord-/muisgebaren voo
 - Engelse en Franse interfaces geboden met Engels als terugvaltaal.
 - Crashherstel en onderhoudsopdrachten voor reset van voorkeuren of mapstatus toegevoegd.
 - Miller-kolommen, ingebouwde teksteditor, voorbeeldvensters en zwevende lade verwijderd.
-- MSVC/NMAKE-scripts, NSIS-installatieprogramma, automatische GitHub-releases en projectdocumentatie geleverd.
 
 [Releasegeschiedenis](https://github.com/LeBenco/FileSpacer/commits/v1.0.0)
