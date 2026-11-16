@@ -1,6 +1,5 @@
 #include "FolderStateStore.h"
 #include "ClosedWindows.h"
-#include <sqlite3.h>
 #include <cassert>
 #include <cstdio>
 #include <string>
@@ -25,17 +24,11 @@ int main(int argc, char **argv) {
     assert(argc == 2);
     const std::string path = argv[1];
     std::remove(path.c_str());
-    sqlite3 *db = nullptr;
-    assert(sqlite3_open(path.c_str(), &db) == SQLITE_OK);
-    assert(sqlite3_exec(db,
-        "CREATE TABLE folder_state(key TEXT PRIMARY KEY NOT NULL,x INTEGER,y INTEGER,width INTEGER,height INTEGER,"
-        "view BLOB,icons BLOB,last_success_at INTEGER NOT NULL DEFAULT 0,first_failed_at INTEGER,maximized INTEGER) WITHOUT ROWID;"
-        "INSERT INTO folder_state(key,x,y,width,height,maximized) VALUES('existing',12,34,600,400,1);"
-        "PRAGMA user_version=3;",nullptr,nullptr,nullptr)==SQLITE_OK);
-    sqlite3_close(db);
     {
         FolderStateStore store(path.c_str()); assert(store.ready());
-        FolderState state; assert(store.read("existing",&state));
+        FolderState state;state.x=12;state.y=34;state.width=600;state.height=400;state.maximized=true;
+        if (!store.save("existing",state,FolderState::Position|FolderState::Size|FolderState::Maximized)) return 1;
+        assert(store.read("existing",&state));
         assert(state.x==12 && state.y==34 && state.width==600 && state.maximized);
         ClosedWindow value;
         assert(store.lastClosedWindow(&value) && value.sequence==0);
@@ -101,6 +94,6 @@ int main(int argc, char **argv) {
         assert(a.fingerprint() != c.fingerprint() && a.fingerprint() != d.fingerprint() && a.fingerprint() != e.fingerprint());
         std::cout<<"PASS: empreinte des Jump Lists stable et sensible aux champs, à leur ordre et à leurs limites.\n";
     }
-    std::cout<<"PASS: migration préservant les états, historique UTF-8/binaire, ordre LIFO, retour après échec,"
-        " unicité, limite de 20, persistance, reset et consommation simultanée par deux connexions.\n";
+    std::cout<<"PASS: state preservation, UTF-8/binary history, LIFO order, return after failure,"
+        " uniqueness, limit of 20, persistence, reset and concurrent consumption by two connections.\n";
 }
