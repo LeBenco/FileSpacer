@@ -65,11 +65,11 @@ Nei campi dell’indirizzo, della ricerca e di ridenominazione, Backspace e Ctrl
 <div id="disposizione-delle-icone"></div>
 <div id="icon-layout"></div>
 
-FileSpacer permette di disporre gli elementi di una cartella in una griglia, come in Esplora file, oppure liberamente, come sul desktop di Windows. Il posizionamento libero è disponibile con qualsiasi dimensione delle icone e nella vista **Riquadri**. Le viste **Elenco**, **Dettagli** e **Contenuto** non consentono il posizionamento libero. Per scegliere le posizioni, disattivare **Disponi icone automaticamente**. Resta disponibile l’allineamento alla griglia. Il menu **Visualizza** di ogni finestra offre un accesso rapido alle impostazioni delle icone, comprese quelle specifiche di FileSpacer.
+In **Visualizza → Disposizione**, scegliere una delle tre modalità: **Automatica** dispone le icone senza spazi vuoti; **Sulla griglia** consente di scegliere le posizioni sulla griglia lasciando eventuali spazi vuoti; **Libera** consente di scegliere le posizioni esatte. Le modalità si escludono a vicenda e sono disponibili con tutte le dimensioni delle icone e nella vista **Riquadri**. **Elenco**, **Dettagli** e **Contenuto** mantengono la disposizione ordinata nativa.
 
-In **Visualizza**, **Mantieni le icone allineate** mantiene le icone sulla griglia di Windows anche durante gli spostamenti successivi. **Riallinea le icone** sistema le posizioni attuali senza modificare questa impostazione né riempire gli spazi vuoti. Per allineare solo le icone trascinate, tenere premuto **S** fino al rilascio del pulsante del mouse; le altre icone restano al loro posto. Rilasciando **S** prima di posarle, il posizionamento rimane libero.
+**Riallinea le icone** allinea una sola volta le posizioni attuali alla griglia di Windows, senza cambiare modalità né riempire gli spazi vuoti. In modalità **Libera**, tenere premuto **S** fino al rilascio del pulsante del mouse per allineare solo le icone trascinate; le altre restano al loro posto. Rilasciando **S** prima di terminare il trascinamento, il posizionamento resta libero.
 
-Nella vista a icone, un indicatore grigio mostra una posizione disponibile sulla griglia mentre si tiene premuto **S**. Rilasciando **S**, l’indicatore scompare; premendo di nuovo **S** durante lo stesso trascinamento, riappare.
+Un riquadro grigio mostra la destinazione dell’icona durante il trascinamento in modalità **Automatica** o **Sulla griglia**. In modalità **Libera**, il riquadro appare nella vista Icone mentre si tiene premuto **S**; rilasciando **S** scompare e premendolo di nuovo riappare. Il riquadro scompare al rilascio del pulsante del mouse o all’annullamento del trascinamento.
 
 <div id="details-columns"></div>
 

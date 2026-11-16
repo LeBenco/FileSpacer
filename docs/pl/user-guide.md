@@ -65,11 +65,11 @@ W polach adresu, wyszukiwania i zmiany nazwy Backspace oraz Ctrl+Backspace zacho
 <div id="układ-ikon"></div>
 <div id="icon-layout"></div>
 
-FileSpacer pozwala rozmieszczać elementy folderu w siatce, jak w Eksploratorze plików, lub dowolnie, jak na pulpicie systemu Windows. Dowolne rozmieszczanie jest dostępne przy każdym rozmiarze ikon oraz w widoku **Kafelki**. Widoki **Lista**, **Szczegóły** i **Zawartość** nie obsługują dowolnego rozmieszczania. Aby wybrać pozycje, wyłączyć opcję **Autorozmieszczanie ikon**. Wyrównywanie do siatki pozostaje dostępne. Menu **Widok** w każdym oknie zapewnia szybki dostęp do ustawień ikon, w tym opcji dostępnych w FileSpacer.
+W menu **Widok → Rozmieszczenie** można wybrać jeden z trzech trybów: **Automatyczne** układa ikony bez przerw; **Na siatce** pozwala wybierać pozycje na siatce i pozostawiać wolne miejsca; **Dowolne** pozwala wybierać dokładne pozycje. Tryby wzajemnie się wykluczają i są dostępne dla wszystkich rozmiarów ikon oraz w widoku **Kafelki**. Widoki **Lista**, **Szczegóły** i **Zawartość** zachowują natywny uporządkowany układ.
 
-W menu **Widok** opcja **Utrzymuj wyrównanie ikon** zachowuje wyrównanie do siatki Windows także podczas kolejnych przesunięć. Polecenie **Wyrównaj ikony ponownie** dopasowuje bieżące pozycje bez zmiany tego ustawienia i bez wypełniania pustych miejsc. Aby wyrównać tylko przeciągane ikony, przytrzymać **S** do zwolnienia przycisku myszy; pozostałe ikony pozostają na swoich miejscach. Zwolnienie **S** przed upuszczeniem zachowuje dowolne rozmieszczenie.
+**Wyrównaj ikony ponownie** jednorazowo dopasowuje bieżące pozycje do siatki Windows, bez zmiany trybu rozmieszczenia ani wypełniania wolnych miejsc. W trybie **Dowolne** należy przytrzymać **S** aż do zwolnienia przycisku myszy, aby wyrównać tylko przeciągane ikony; pozostałe nie zmieniają położenia. Wcześniejsze zwolnienie **S** zachowuje swobodne pozycjonowanie.
 
-W widoku ikon szary znacznik wskazuje wolne miejsce na siatce, gdy klawisz **S** jest przytrzymany. Zwolnienie **S** ukrywa znacznik; ponowne naciśnięcie podczas tego samego przeciągania wyświetla go z powrotem.
+Szara ramka pokazuje docelową pozycję ikony podczas przeciągania w trybach **Automatyczne** i **Na siatce**. W trybie **Dowolne** ramka pojawia się w widoku ikon podczas przytrzymywania **S**; zwolnienie klawisza ukrywa ją, a ponowne naciśnięcie przywraca. Zwolnienie przycisku myszy lub anulowanie przeciągania usuwa ramkę.
 
 <div id="details-columns"></div>
 

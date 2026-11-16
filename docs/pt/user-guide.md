@@ -65,11 +65,11 @@ Nos campos de endereço, pesquisa e mudança de nome, Retrocesso e Ctrl+Retroces
 <div id="disposição-dos-ícones"></div>
 <div id="icon-layout"></div>
 
-O FileSpacer permite dispor os elementos de uma pasta numa grelha, como no Explorador de Ficheiros, ou livremente, como no ambiente de trabalho do Windows. A disposição livre está disponível com qualquer tamanho de ícones e na vista **Mosaicos**. As vistas **Lista**, **Detalhes** e **Conteúdo** não permitem esta disposição livre. Para escolher as posições, desativar **Dispor ícones automaticamente**. O alinhamento pela grelha continua disponível. O menu **Ver** de cada janela dá acesso rápido às definições dos ícones, incluindo as opções próprias do FileSpacer.
+Em **Ver → Disposição**, escolher um dos três modos: **Automática** dispõe os ícones sem espaços vazios; **Na grelha** permite escolher posições na grelha e deixar espaços vazios; **Livre** permite escolher posições exatas. Os modos são mutuamente exclusivos e estão disponíveis em todos os tamanhos de ícones e na vista **Mosaicos**. **Lista**, **Detalhes** e **Conteúdo** mantêm a disposição nativa ordenada.
 
-No menu **Ver**, **Manter os ícones alinhados** mantém os ícones na grelha do Windows também nas deslocações seguintes. **Realinhar os ícones** ajusta as posições atuais sem alterar essa definição nem preencher os espaços vazios. Para alinhar apenas os ícones arrastados, manter **S** premido até soltar o botão do rato; os restantes ícones ficam no seu lugar. Soltar **S** antes de largar os ícones mantém a disposição livre.
+**Realinhar os ícones** ajusta as posições atuais à grelha do Windows uma única vez, sem mudar o modo de disposição nem preencher os espaços vazios. No modo **Livre**, manter **S** premida até soltar o botão do rato para alinhar apenas os ícones arrastados; os restantes ficam no mesmo lugar. Soltar **S** antes de terminar o arrasto mantém a disposição livre.
 
-Na vista de ícones, um marcador cinzento indica uma posição disponível na grelha enquanto **S** se mantém premido. Ao soltar **S**, o marcador desaparece; ao voltar a premir **S** durante o mesmo arrastamento, reaparece.
+Uma moldura cinzenta mostra o destino do ícone ao arrastar nos modos **Automática** e **Na grelha**. No modo **Livre**, a moldura aparece na vista de ícones enquanto **S** estiver premida; soltá-la oculta a moldura e voltar a premir **S** fá-la reaparecer. Soltar o botão do rato ou cancelar o arrasto remove a moldura.
 
 <div id="details-columns"></div>
 

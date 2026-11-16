@@ -65,11 +65,11 @@ In de velden voor adres, zoeken en bestandsnamen behouden Backspace en Ctrl+Back
 <div id="pictogramindeling"></div>
 <div id="icon-layout"></div>
 
-In FileSpacer kunnen de items in een map op een raster worden gerangschikt, zoals in Bestandenverkenner, of vrij worden geplaatst, zoals op het Windows-bureaublad. Vrije plaatsing is beschikbaar bij elke pictogramgrootte en in de weergave **Tegels**. De weergaven **Lijst**, **Details** en **Inhoud** ondersteunen geen vrije plaatsing. Daarvoor **Pictogrammen automatisch schikken** uitschakelen. Uitlijnen op het raster blijft mogelijk. Het menu **Beeld** in elk venster biedt snelle toegang tot de pictograminstellingen, inclusief de eigen opties van FileSpacer.
+Kies onder **Beeld → Plaatsing** een van drie modi: **Automatisch** zet pictogrammen zonder tussenruimten bij elkaar; **Op raster** laat u rasterposities kiezen en tussenruimten openlaten; **Vrij** laat u de exacte posities kiezen. De modi sluiten elkaar uit en zijn beschikbaar bij alle pictogramgroottes en in de weergave **Tegels**. **Lijst**, **Details** en **Inhoud** behouden hun ingebouwde geordende indeling.
 
-In **Beeld** houdt **Pictogrammen uitgelijnd houden** de pictogrammen ook bij volgende verplaatsingen op het Windows-raster. **Pictogrammen opnieuw uitlijnen** past de huidige posities aan zonder deze instelling te wijzigen of lege plekken op te vullen. Houd **S** ingedrukt totdat de muisknop wordt losgelaten om alleen de versleepte pictogrammen uit te lijnen; de andere pictogrammen blijven op hun plaats. Laat **S** vóór het neerzetten los om de vrije plaatsing te behouden.
+**Pictogrammen opnieuw uitlijnen** lijnt de huidige posities eenmalig uit op het Windows-raster, zonder de plaatsingsmodus te wijzigen of tussenruimten op te vullen. Houd in de modus **Vrij** **S** ingedrukt tot u de muisknop loslaat om alleen de gesleepte pictogrammen uit te lijnen; de andere blijven staan. Als u **S** eerder loslaat, blijft de plaatsing vrij.
 
-In de pictogramweergave geeft een grijze markering een beschikbare rasterpositie aan zolang **S** ingedrukt blijft. Laat **S** los om de markering te verbergen; druk tijdens dezelfde sleepbeweging opnieuw op **S** om deze weer te tonen.
+Een grijs kader toont de bestemming van het pictogram tijdens het slepen in de modi **Automatisch** en **Op raster**. In de modus **Vrij** verschijnt het kader in de pictogramweergave zolang **S** is ingedrukt; loslaten verbergt het en opnieuw indrukken brengt het terug. Het kader verdwijnt als u de muisknop loslaat of het slepen annuleert.
 
 <div id="details-columns"></div>
 

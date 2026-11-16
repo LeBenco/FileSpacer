@@ -57,11 +57,11 @@ In the address, search and file rename fields, Backspace and Ctrl+Backspace reta
 <div id="view-and-layout"></div>
 <div id="icon-layout"></div>
 
-FileSpacer lets you arrange a folder’s contents on a grid, as in File Explorer, or freely, as on the Windows desktop. Free placement is available at every icon size and in **Tiles** view. **List**, **Details** and **Content** views do not support free placement. To choose their positions, turn off **Auto arrange icons**. Alignment to the grid remains available. The **View** menu in each window gives quick access to icon settings, including those specific to FileSpacer.
+In **View → Placement**, choose one of three modes: **Automatic** keeps icons together without gaps; **On a grid** lets you choose their grid positions and leave gaps; **Free** lets you choose their exact positions. These modes are mutually exclusive and available at every icon size and in **Tiles** view. **List**, **Details** and **Content** keep their native ordered layout.
 
-In **View**, **Keep icons aligned** keeps icons on the Windows grid during future moves. **Realign icons** adjusts their current positions without changing that setting or filling the gaps. To align only the icons you are dragging, hold **S** until you release the mouse button; the other icons stay in place. Releasing **S** before the drop keeps free placement.
+**Realign icons** adjusts the current positions to the Windows grid once, without changing the placement mode or filling the gaps. In **Free** mode, hold **S** until you release the mouse button to align only the icons you are dragging; the other icons stay in place. Releasing **S** before the drop keeps free placement.
 
-In Icon view, a grey marker previews an available grid position while **S** is held. Release **S** to hide it; press **S** again during the same drag to bring it back.
+A grey frame previews the icon’s destination while dragging in **Automatic** or **On a grid** mode. In **Free** mode, the frame appears in Icon view while **S** is held; releasing **S** hides it and pressing **S** again brings it back. Releasing the mouse button or cancelling the drag removes the frame.
 
 <div id="details-columns"></div>
 

@@ -64,11 +64,11 @@ In Adress-, Such- und Dateiumbenennungsfeldern behalten Rücktaste und Strg+Rüc
 <div id="symbolanordnung"></div>
 <div id="icon-layout"></div>
 
-In FileSpacer lassen sich die Inhalte eines Ordners in einem Raster anordnen, wie im Datei-Explorer, oder frei platzieren, wie auf dem Windows-Desktop. Die freie Platzierung ist bei jeder Symbolgröße und in der Ansicht **Kacheln** möglich. Die Ansichten **Liste**, **Details** und **Inhalt** unterstützen keine freie Platzierung. Dazu **Symbole automatisch anordnen** ausschalten. Die Ausrichtung am Raster bleibt möglich. Das Menü **Ansicht** in jedem Fenster bietet schnellen Zugriff auf die Symboleinstellungen, einschließlich der zusätzlichen Optionen von FileSpacer.
+Unter **Ansicht → Anordnung** stehen drei Modi zur Wahl: **Automatisch** ordnet Symbole lückenlos an; **Am Raster** erlaubt selbst gewählte Rasterpositionen mit Lücken; **Frei** erlaubt beliebige genaue Positionen. Die Modi schließen einander aus und sind für alle Symbolgrößen sowie in der Ansicht **Kacheln** verfügbar. **Liste**, **Details** und **Inhalt** behalten ihre native geordnete Anordnung.
 
-Im Menü **Ansicht** hält **Symbole ausgerichtet halten** die Symbole auch bei künftigen Verschiebungen am Windows-Raster ausgerichtet. **Symbole neu ausrichten** richtet die aktuellen Positionen aus, ohne diese Einstellung zu ändern oder Lücken zu schließen. Um nur die gerade gezogenen Symbole auszurichten, **S** bis zum Loslassen der Maustaste gedrückt halten; die anderen Symbole bleiben an ihrem Platz. Wird **S** vor dem Ablegen losgelassen, bleibt die Platzierung frei.
+**Symbole neu ausrichten** richtet die aktuellen Positionen einmal am Windows-Raster aus, ohne den Anordnungsmodus zu ändern oder Lücken zu schließen. Im Modus **Frei** **S** bis zum Loslassen der Maustaste gedrückt halten, um nur die gezogenen Symbole am Raster auszurichten; die anderen bleiben an ihrem Platz. Wird **S** vorher losgelassen, bleibt die Platzierung frei.
 
-In der Symbolansicht zeigt eine graue Markierung eine freie Rasterposition an, solange **S** gedrückt gehalten wird. Beim Loslassen von **S** verschwindet sie; erneutes Drücken während desselben Ziehvorgangs blendet sie wieder ein.
+Beim Ziehen in den Modi **Automatisch** und **Am Raster** zeigt ein grauer Rahmen die Zielposition des Symbols an. Im Modus **Frei** erscheint der Rahmen in der Symbolansicht, solange **S** gedrückt ist; Loslassen blendet ihn aus, erneutes Drücken blendet ihn wieder ein. Beim Loslassen der Maustaste oder Abbrechen des Ziehens verschwindet der Rahmen.
 
 <div id="details-columns"></div>
 

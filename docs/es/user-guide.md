@@ -65,11 +65,11 @@ En los campos de dirección, búsqueda y cambio de nombre, Retroceso y Ctrl+Retr
 <div id="disposición-de-iconos"></div>
 <div id="icon-layout"></div>
 
-FileSpacer permite distribuir los elementos de una carpeta en una cuadrícula, como en el Explorador de archivos, o libremente, como en el escritorio de Windows. La colocación libre está disponible con cualquier tamaño de icono y en la vista **Mosaicos**. Las vistas **Lista**, **Detalles** y **Contenido** no permiten esta colocación libre. Para elegir sus posiciones, desactivar **Organizar iconos automáticamente**. La alineación con la cuadrícula sigue disponible. El menú **Vista** de cada ventana permite acceder rápidamente a los ajustes de los iconos, incluidas las opciones propias de FileSpacer.
+En **Vista → Colocación**, elegir uno de los tres modos: **Automática** agrupa los iconos sin huecos; **En cuadrícula** permite elegir sus posiciones en la cuadrícula y dejar huecos; **Libre** permite elegir sus posiciones exactas. Los modos son mutuamente excluyentes y están disponibles con todos los tamaños de iconos y en la vista **Mosaicos**. **Lista**, **Detalles** y **Contenido** conservan su disposición nativa ordenada.
 
-En **Vista**, **Mantener los iconos alineados** mantiene los iconos en la cuadrícula de Windows durante los siguientes movimientos. **Volver a alinear los iconos** ajusta sus posiciones actuales sin cambiar esa opción ni rellenar los huecos. Para alinear solo los iconos que se están arrastrando, mantener **S** pulsada hasta soltar el botón del ratón; los demás iconos permanecen en su sitio. Soltar **S** antes de la colocación conserva la posición libre.
+**Volver a alinear los iconos** ajusta sus posiciones actuales a la cuadrícula de Windows una sola vez, sin cambiar el modo de colocación ni rellenar los huecos. En modo **Libre**, mantener **S** hasta soltar el botón del ratón para alinear solo los iconos arrastrados; los demás permanecen en su sitio. Soltar **S** antes de terminar el arrastre mantiene la colocación libre.
 
-En la vista de iconos, una marca gris indica una posición disponible en la cuadrícula mientras se mantiene **S** pulsada. Al soltar **S**, la marca desaparece; al pulsarla de nuevo durante el mismo arrastre, vuelve a aparecer.
+Un marco gris muestra el destino del icono al arrastrar en modo **Automática** o **En cuadrícula**. En modo **Libre**, el marco aparece en la vista de iconos mientras se mantiene **S**; al soltarla se oculta y al pulsarla de nuevo reaparece. Soltar el botón del ratón o cancelar el arrastre elimina el marco.
 
 <div id="details-columns"></div>
 

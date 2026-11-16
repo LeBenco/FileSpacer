@@ -65,11 +65,11 @@ Dans l’adresse, la recherche et le renommage d’un fichier, Retour arrière e
 <div id="disposition-des-icônes"></div>
 <div id="icon-layout"></div>
 
-FileSpacer permet de disposer les éléments d’un dossier en grille, comme l’Explorateur de fichiers, mais aussi librement, comme sur le Bureau Windows. Le placement libre est disponible avec toutes les tailles d’icônes et en mode **Mosaïque**. Les modes **Liste**, **Détails** et **Contenu** ne permettent pas ce placement libre. Pour choisir leurs positions, désactiver **Réorganiser automatiquement les icônes**. L’alignement sur la grille reste disponible. Le menu **Affichage** de chaque fenêtre donne un accès rapide aux réglages des icônes, y compris ceux propres à FileSpacer.
+Dans **Affichage → Placement**, choisir l’un des trois modes : **Automatique** range les icônes à la suite, sans trous ; **Sur la grille** permet de choisir leurs emplacements sur la grille et de laisser des espaces vides ; **Libre** permet de choisir leurs positions exactes. Ces modes sont exclusifs et disponibles avec toutes les tailles d’icônes ainsi qu’en mode **Mosaïques**. Les vues **Liste**, **Détails** et **Contenu** conservent leur disposition native ordonnée.
 
-Dans **Affichage**, **Garder les icônes alignées** maintient les icônes sur la grille Windows lors des déplacements suivants. **Réaligner les icônes** recale leurs positions actuelles sans modifier ce réglage ni combler les espaces vides. Pour aligner uniquement les icônes déplacées, maintenir **S** jusqu’au relâchement du bouton de la souris ; les autres icônes restent en place. Relâcher **S** avant le dépôt conserve le placement libre.
+**Réaligner les icônes** recale ponctuellement les positions actuelles sur la grille Windows, sans changer le mode de placement ni combler les espaces vides. En mode **Libre**, maintenir **S** jusqu’au relâchement du bouton de la souris pour aligner uniquement les icônes déplacées ; les autres restent en place. Relâcher **S** avant le dépôt conserve le placement libre.
 
-En mode Icônes, un repère gris indique un emplacement disponible sur la grille pendant que **S** est maintenue. Relâcher **S** masque le repère ; appuyer à nouveau sur **S** pendant le même déplacement le fait réapparaître.
+Un cadre gris indique la destination de l’icône pendant un déplacement en mode **Automatique** ou **Sur la grille**. En placement **Libre**, le cadre apparaît en vue Icônes pendant que **S** est maintenue ; relâcher **S** le masque et appuyer à nouveau sur **S** le fait réapparaître. Relâcher le bouton de la souris ou annuler le déplacement fait disparaître le cadre.
 
 <div id="details-columns"></div>
 
