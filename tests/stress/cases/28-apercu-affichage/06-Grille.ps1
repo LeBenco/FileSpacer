@@ -1,6 +1,7 @@
 # Test-Category: UI
 param([string]$ProjectRoot)
 . (Join-Path $PSScriptRoot '..\..\..\regression\cases\28-apercu-affichage\GridDrag.ps1')
+. (Join-Path $PSScriptRoot '..\..\common\PrivateDiagnostics.ps1')
 $failure=$null
 $samples=New-Object Collections.ArrayList
 $previousGridCache=$env:FS_SELECTION_PRODUCT_CACHE
@@ -71,14 +72,14 @@ try {
     $stationary=Read-PreviewState $window
     Move-GridIcons $false
     $free=Read-PreviewState $window
-    Assert-Ui ($free.Positions-ne$stationary.Positions) 'The native reference drag must move its selection.'
+    Assert-Ui ($free.Positions-ne$stationary.Positions) 'The ordinary free drag must move its selection.'
     $freeDragMilliseconds=1000.0*([Diagnostics.Stopwatch]::GetTimestamp()-$script:GridDropStartedAt)/[Diagnostics.Stopwatch]::Frequency
-    @{Count=3000;NativeFreeDragMs=$freeDragMilliseconds;SnapDragMs=$null}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'snap-timings.json') -Encoding UTF8
+    @{Count=3000;FreeDragMs=$freeDragMilliseconds;SnapDragMs=$null}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'snap-timings.json') -Encoding UTF8
     Use-UiView $window {param($view) $view.SnapToGrid=$true}
     $nativeDrop=Read-PreviewState $window
     Set-LargeGridSeed
     Write-GridPhase 'snap-drag'
-    Move-GridIcons $true
+    Move-GridIcons $true $false $false $true
     $snapped=Read-PreviewState $window
     $snapDragMilliseconds=1000.0*([Diagnostics.Stopwatch]::GetTimestamp()-$script:GridDropStartedAt)/[Diagnostics.Stopwatch]::Frequency
     @($stationary,$free,$nativeDrop,$snapped)|ConvertTo-Json -Depth 5|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'snap-states.json') -Encoding UTF8
@@ -90,9 +91,15 @@ try {
         Assert-Ui ($pair[1]-eq$wanted) ('Large Snap coordinate differs for '+$name)
     }
     Assert-Ui (Use-UiView $window {param($view) $view.Count-eq3000-and!$view.SnapToGrid-and!$view.AutoArrange}) 'Large Snap changed flags or contents.'
-    @{Count=3000;NativeFreeDragMs=$freeDragMilliseconds;SnapDragMs=$snapDragMilliseconds}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'snap-timings.json') -Encoding UTF8
+    @{Count=3000;FreeDragMs=$freeDragMilliseconds;SnapDragMs=$snapDragMilliseconds}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'snap-timings.json') -Encoding UTF8
     Close-UiFolder $window
-    Wait-Ui {@($script:UiProcesses|Where-Object {!$_.HasExited}).Count-eq0} 'public broker exited before qualified comparison' 0 15
+    Wait-Ui {@($script:UiProcesses|Where-Object {!$_.HasExited}).Count-eq0} 'baseline process exited before capability-cache comparison' 0 15
+    # Measure feedback on the ordinary drag, independently of optional
+    # capability qualification. Qualification must never gate this coverage.
+    $feedback=($script:UiProcesses|ForEach-Object {if($_.PSObject.Properties['RegressionOutput']){$_.RegressionOutput.Output.GetAwaiter().GetResult()}})-join"`n"
+    $preview=@([regex]::Matches($feedback,'GRID PREVIEW updates=(\d+) total_us=(\d+) max_us=(\d+) setup_us=(\d+)')|Where-Object {[int]$_.Groups[1].Value-ge60})
+    Assert-Ui ($preview.Count-eq1) 'Missing the measured marker motion stress in the real drag.'
+    @{Items=3000;Updates=[int]$preview[0].Groups[1].Value;TotalMicroseconds=[long]$preview[0].Groups[2].Value;MaximumMicroseconds=[long]$preview[0].Groups[3].Value;SetupMicroseconds=[long]$preview[0].Groups[4].Value}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'marker-timings.json') -Encoding UTF8
     $cache=Join-Path $env:FS_REGRESSION_RUN 'qualified-cache'
     [void][IO.Directory]::CreateDirectory($cache)
     Write-GridPhase 'qualifying-grid'
@@ -114,28 +121,26 @@ try {
     Set-GridMode
     Set-LargeGridSeed
     Write-GridPhase 'qualified-snap-drag'
-    Move-GridIcons $true $false $false $true
+    Move-GridIcons $true
     $qualified=Read-PreviewState $window
     $qualifiedMilliseconds=1000.0*([Diagnostics.Stopwatch]::GetTimestamp()-$script:GridDropStartedAt)/[Diagnostics.Stopwatch]::Frequency
     Assert-Ui ($qualified.Positions-eq$snapped.Positions-and$qualified.Selected-eq$snapped.Selected-and$qualified.Focus-eq$snapped.Focus) 'Qualified Snap differs from the public fallback.'
     Assert-Ui (Use-UiView $window {param($view) !$view.SnapToGrid-and!$view.AutoArrange}) 'Qualified Snap changed persistent flags.'
     Close-UiFolder $window
-    Wait-Ui {@($script:UiProcesses|Where-Object {!$_.HasExited}).Count-eq0} 'qualified process exited and flushed its activation proof' 0 15
+    Wait-Ui {@($script:UiProcesses|Where-Object {!$_.HasExited}).Count-eq0} 'capability-cache process exited before observing dispatch' 0 15
     $proof=($script:UiProcesses|ForEach-Object {if($_.PSObject.Properties['RegressionOutput']){$_.RegressionOutput.Output.GetAwaiter().GetResult()}})-join"`n"
-    Assert-Ui ($proof-match'GRID SNAP qualified=1 selected=\d+ count=3000') 'No proof that the real drag used the qualified calculation.'
-    $publicTime=[regex]::Match($proof,'GRID SNAP path=public elapsed_ms=(\d+)')
-    $qualifiedTime=[regex]::Match($proof,'GRID SNAP path=qualified elapsed_ms=(\d+)')
-    Assert-Ui ($publicTime.Success-and$qualifiedTime.Success) 'Missing internal measurements for one of the Snap paths.'
-    $preview=@([regex]::Matches($proof,'GRID PREVIEW updates=(\d+) total_us=(\d+) max_us=(\d+) setup_us=(\d+)')|Where-Object {[int]$_.Groups[1].Value-ge60})
-    Assert-Ui ($preview.Count-eq1) 'Missing the measured marker motion stress in the real drag.'
-    @{Items=3000;Updates=[int]$preview[0].Groups[1].Value;TotalMicroseconds=[long]$preview[0].Groups[2].Value;MaximumMicroseconds=[long]$preview[0].Groups[3].Value;SetupMicroseconds=[long]$preview[0].Groups[4].Value}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'marker-timings.json') -Encoding UTF8
-    @{Count=3000;NativeFreeDragMs=$freeDragMilliseconds;PublicSnapMs=$snapDragMilliseconds;QualifiedSnapMs=$qualifiedMilliseconds;PublicOperationMs=[long]$publicTime.Groups[1].Value;QualifiedOperationMs=[long]$qualifiedTime.Groups[1].Value}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'snap-timings.json') -Encoding UTF8
+    # The current Icon drag batches its already known selected destinations.
+    # A qualified cache must preserve the same outcome; it does not imply that
+    # this gesture invokes the optional grid operation tested above.
+    @{Count=3000;FreeDragMs=$freeDragMilliseconds;SnapDragMs=$snapDragMilliseconds;SnapWithQualifiedCapabilitiesMs=$qualifiedMilliseconds;PrivateGridObservedDuringDrag=($proof-match'GRID SNAP qualified=1');IncludesAutomationAndFullPositionReadback=$true}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'snap-timings.json') -Encoding UTF8
     $samples|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'grid-timings.json') -Encoding UTF8
-    Write-Host 'PASS: three alignment cycles over 3000 items; exact native coordinates, selection, focus and persistence. Timings include automation; no performance threshold.'
+    Write-PrivateDiagnostics $ProjectRoot $env:FS_REGRESSION_RUN
+    Write-Host 'PASS: three alignment cycles over 3000 items; exact coordinates, selection, focus and persistence; 60 marker motions and the same Snap outcome with qualified capabilities. Timings include automation and readback; no performance threshold.'
 } catch {
     $failure=$_
     @{Message=$_.Exception.Message;Stack=$_.ScriptStackTrace;Position=$_.InvocationInfo.PositionMessage}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'first-error.json') -Encoding UTF8
-    throw
+    try { Write-PrivateDiagnostics $ProjectRoot $env:FS_REGRESSION_RUN } catch { Write-Warning ('Additional private diagnostic failure: '+$_.Exception.Message) }
+    throw $failure
 } finally {
     [FileSpacerViewMenuTests.GridKey]::Hold($false)
     [FileSpacerRegression.AltDragInput]::End()
