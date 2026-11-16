@@ -417,9 +417,9 @@ not a guaranteed Shell COM contract. No additional private Windows function,
 offset or executable patch is introduced. With changed folder contents, layout
 or DPI, restoration remains best effort rather than preserving a semantic item.
 
-Database schema 7 adds a nullable `scroll` column, preserving existing view and
-icon blobs. Closing updates an existing folder only; viewport saving ignores
-the layout lock because scrolling is navigation. Rekeying carries the snapshot;
+Database format 8 stores viewport snapshots in the nullable `scroll` column,
+separately from view and icon blobs. Closing updates an existing folder only;
+viewport saving ignores the layout lock because scrolling is navigation. Rekeying carries the snapshot;
 global reset, deletion, expiry and quota eviction discard it with the folder state.
 Tests `07-fenetres/08-DefilementPersistant` and the independent real-Shell
 `ScrollState` experiment cover this behavior and its incremental cost.
