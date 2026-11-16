@@ -57,7 +57,17 @@ In the address, search and file rename fields, Backspace and Ctrl+Backspace reta
 <div id="view-and-layout"></div>
 <div id="icon-layout"></div>
 
-FileSpacer lets you arrange a folder’s contents on a grid, as in File Explorer, or freely, as on the Windows desktop. Free placement is available at every icon size and in **Tiles** view. **List** and **Details** views do not support free placement. To choose their positions, turn off **Auto arrange icons**. Alignment to the grid remains available. The **View** menu in each window gives quick access to icon settings, including those specific to FileSpacer.
+In **View > Placement**, choose how icons are arranged:
+
+- **Automatic** keeps icons together without gaps.
+- **On a grid** lets you choose their positions on the grid and leave gaps.
+- **Free** lets you place them anywhere, as on the Windows desktop.
+
+These choices are available at every icon size and in **Tiles** view. **List**, **Details** and **Content** keep their ordered layout.
+
+**Realign icons** aligns the current layout to the Windows grid once, without changing the placement mode or filling the gaps.
+
+In **Free** mode, hold **S** while dragging and until you release the mouse button to align only the dragged icons to the grid. Other icons stay in place. Releasing **S** before the drop keeps free placement. In Icon view, a grey frame previews the destination.
 
 <div id="details-columns"></div>
 
@@ -132,6 +142,8 @@ If files are selected, the selection is preserved. Escape cancels the action. Cu
 [Nilesoft Shell](https://nilesoft.org/) is a Windows extension for customizing the appearance and commands of context menus. If used, it can also manage FileSpacer’s menus.
 
 FileSpacer builds the title-bar menu, then Nilesoft Shell applies its rules, which take priority. See the [configuration reference](nilesoft-shell.md) for visual settings and access to FileSpacer actions.
+
+If menus open with a delay, Nilesoft Shell’s `showdelay` setting can remove it, globally or only for FileSpacer ([configuration](nilesoft-shell.md#menu-opening-delay)).
 
 [Square corners](nilesoft-shell.md#recommended-menu-appearance) are recommended for title-bar and toolbar menus.
 

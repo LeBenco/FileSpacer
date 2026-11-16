@@ -65,7 +65,17 @@ W polach adresu, wyszukiwania i zmiany nazwy Backspace oraz Ctrl+Backspace zacho
 <div id="układ-ikon"></div>
 <div id="icon-layout"></div>
 
-FileSpacer pozwala rozmieszczać elementy folderu w siatce, jak w Eksploratorze plików, lub dowolnie, jak na pulpicie systemu Windows. Dowolne rozmieszczanie jest dostępne przy każdym rozmiarze ikon oraz w widoku **Kafelki**. Widoki **Lista** i **Szczegóły** nie obsługują dowolnego rozmieszczania. Aby wybrać pozycje, wyłączyć opcję **Autorozmieszczanie ikon**. Wyrównywanie do siatki pozostaje dostępne. Menu **Widok** w każdym oknie zapewnia szybki dostęp do ustawień ikon, w tym opcji dostępnych w FileSpacer.
+W menu **Widok > Rozmieszczenie** można wybrać sposób rozmieszczania ikon:
+
+- **Automatyczne** układa ikony bez przerw.
+- **Na siatce** pozwala wybierać pozycje na siatce i pozostawiać wolne miejsca.
+- **Dowolne** pozwala umieszczać ikony w dowolnym miejscu, jak na pulpicie Windows.
+
+Opcje te są dostępne dla wszystkich rozmiarów ikon oraz w widoku **Kafelki**. Widoki **Lista**, **Szczegóły** i **Zawartość** zachowują swój uporządkowany układ.
+
+**Wyrównaj ikony ponownie** jednorazowo dopasowuje bieżący układ do siatki Windows, bez zmiany trybu rozmieszczenia ani wypełniania wolnych miejsc.
+
+W trybie **Dowolne** należy przytrzymać **S** podczas przeciągania aż do zwolnienia przycisku myszy, aby wyrównać do siatki tylko przeciągane ikony. Pozostałe nie zmieniają położenia. Zwolnienie **S** przed upuszczeniem zachowuje swobodne pozycjonowanie. W widoku ikon szara ramka wskazuje docelową pozycję.
 
 <div id="details-columns"></div>
 
@@ -145,6 +155,8 @@ Jeśli zaznaczono pliki, zaznaczenie zostaje zachowane. Esc anuluje działanie. 
 [Nilesoft Shell](https://nilesoft.org/) to rozszerzenie systemu Windows do zmiany wyglądu i poleceń menu kontekstowych. Jeśli jest używane, może też obsługiwać menu FileSpacer.
 
 FileSpacer tworzy menu paska tytułu, a następnie Nilesoft Shell stosuje własne reguły, które mają pierwszeństwo. [Dokumentacja konfiguracji](nilesoft-shell.md) opisuje wygląd i dostęp do działań FileSpacer.
+
+Jeśli menu otwierają się z opóźnieniem, ustawienie `showdelay` w Nilesoft Shell pozwala je usunąć dla wszystkich aplikacji lub tylko dla FileSpacer ([konfiguracja](nilesoft-shell.md#menu-opening-delay)).
 
 Dla menu paska tytułu i paska narzędzi zalecane są [prostokątne narożniki](nilesoft-shell.md#recommended-menu-appearance).
 

@@ -64,7 +64,17 @@ In Adress-, Such- und Dateiumbenennungsfeldern behalten Rücktaste und Strg+Rüc
 <div id="symbolanordnung"></div>
 <div id="icon-layout"></div>
 
-In FileSpacer lassen sich die Inhalte eines Ordners in einem Raster anordnen, wie im Datei-Explorer, oder frei platzieren, wie auf dem Windows-Desktop. Die freie Platzierung ist bei jeder Symbolgröße und in der Ansicht **Kacheln** möglich. Die Ansichten **Liste** und **Details** unterstützen keine freie Platzierung. Dazu **Symbole automatisch anordnen** ausschalten. Die Ausrichtung am Raster bleibt möglich. Das Menü **Ansicht** in jedem Fenster bietet schnellen Zugriff auf die Symboleinstellungen, einschließlich der zusätzlichen Optionen von FileSpacer.
+Unter **Ansicht > Anordnung** lässt sich festlegen, wie die Symbole angeordnet werden:
+
+- **Automatisch** ordnet die Symbole lückenlos an.
+- **Am Raster** erlaubt selbst gewählte Rasterpositionen mit Lücken.
+- **Frei** erlaubt beliebige Positionen, wie auf dem Windows-Desktop.
+
+Diese Möglichkeiten stehen für alle Symbolgrößen und in der Ansicht **Kacheln** zur Verfügung. **Liste**, **Details** und **Inhalt** behalten ihre geordnete Anordnung.
+
+**Symbole neu ausrichten** richtet die aktuelle Anordnung einmal am Windows-Raster aus, ohne den Anordnungsmodus zu ändern oder Lücken zu schließen.
+
+Halten Sie im Modus **Frei** beim Ziehen **S** bis zum Loslassen der Maustaste gedrückt, um nur die gezogenen Symbole am Raster auszurichten. Die anderen bleiben an ihrem Platz. Wird **S** vor dem Ablegen losgelassen, bleibt die Platzierung frei. In der Symbolansicht zeigt ein grauer Rahmen die Zielposition an.
 
 <div id="details-columns"></div>
 
@@ -144,6 +154,8 @@ Sind Dateien ausgewählt, bleibt die Auswahl erhalten. Esc bricht die Aktion ab.
 [Nilesoft Shell](https://nilesoft.org/) ist eine Windows-Erweiterung zum Anpassen von Aussehen und Befehlen der Kontextmenüs. Bei Verwendung kann sie auch die Menüs von FileSpacer verwalten.
 
 FileSpacer stellt das Titelleistenmenü zusammen. Danach wendet Nilesoft Shell seine Regeln an, die Vorrang haben. Die [Konfigurationsreferenz](nilesoft-shell.md) beschreibt die Darstellung und den Zugriff auf FileSpacer-Aktionen.
+
+Öffnen sich Menüs verzögert, lässt sich diese Verzögerung mit der Nilesoft-Shell-Einstellung `showdelay` global oder nur für FileSpacer aufheben ([Konfiguration](nilesoft-shell.md#menu-opening-delay)).
 
 Für die Menüs der Titelleiste und der Symbolleiste werden [Ecken ohne Abrundung](nilesoft-shell.md#recommended-menu-appearance) empfohlen.
 

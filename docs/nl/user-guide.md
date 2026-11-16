@@ -65,7 +65,17 @@ In de velden voor adres, zoeken en bestandsnamen behouden Backspace en Ctrl+Back
 <div id="pictogramindeling"></div>
 <div id="icon-layout"></div>
 
-In FileSpacer kunnen de items in een map op een raster worden gerangschikt, zoals in Bestandenverkenner, of vrij worden geplaatst, zoals op het Windows-bureaublad. Vrije plaatsing is beschikbaar bij elke pictogramgrootte en in de weergave **Tegels**. De weergaven **Lijst** en **Details** ondersteunen geen vrije plaatsing. Daarvoor **Pictogrammen automatisch schikken** uitschakelen. Uitlijnen op het raster blijft mogelijk. Het menu **Beeld** in elk venster biedt snelle toegang tot de pictograminstellingen, inclusief de eigen opties van FileSpacer.
+Kies onder **Beeld > Plaatsing** hoe pictogrammen worden geplaatst:
+
+- **Automatisch** plaatst pictogrammen zonder tussenruimten bij elkaar.
+- **Op raster** laat u rasterposities kiezen en tussenruimten openlaten.
+- **Vrij** laat u pictogrammen overal plaatsen, zoals op het Windows-bureaublad.
+
+Deze opties zijn beschikbaar bij alle pictogramgroottes en in de weergave **Tegels**. **Lijst**, **Details** en **Inhoud** behouden hun geordende indeling.
+
+**Pictogrammen opnieuw uitlijnen** lijnt de huidige indeling eenmalig uit op het Windows-raster, zonder de plaatsingsmodus te wijzigen of tussenruimten op te vullen.
+
+Houd in de modus **Vrij** tijdens het slepen **S** ingedrukt totdat u de muisknop loslaat om alleen de gesleepte pictogrammen op het raster uit te lijnen. De andere blijven staan. Als u **S** vóór het neerzetten loslaat, blijft de plaatsing vrij. In de pictogramweergave toont een grijs kader de doelpositie.
 
 <div id="details-columns"></div>
 
@@ -145,6 +155,8 @@ Als er bestanden zijn geselecteerd, blijft de selectie behouden. Escape annuleer
 [Nilesoft Shell](https://nilesoft.org/) is een Windows-uitbreiding om het uiterlijk en de opdrachten van contextmenu’s aan te passen. Bij gebruik kan het ook de menu’s van FileSpacer beheren.
 
 FileSpacer stelt het titelbalkmenu samen. Daarna past Nilesoft Shell zijn regels toe, die voorrang hebben. De [configuratiereferentie](nilesoft-shell.md) beschrijft de vormgeving en toegang tot FileSpacer-acties.
+
+Als menu’s met vertraging openen, kan de Nilesoft Shell-instelling `showdelay` die vertraging opheffen, voor alle toepassingen of alleen voor FileSpacer ([configuratie](nilesoft-shell.md#menu-opening-delay)).
 
 [Rechte hoeken](nilesoft-shell.md#recommended-menu-appearance) worden aanbevolen voor menu’s van de titelbalk en werkbalk.
 

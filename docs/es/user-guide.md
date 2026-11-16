@@ -65,7 +65,17 @@ En los campos de dirección, búsqueda y cambio de nombre, Retroceso y Ctrl+Retr
 <div id="disposición-de-iconos"></div>
 <div id="icon-layout"></div>
 
-FileSpacer permite distribuir los elementos de una carpeta en una cuadrícula, como en el Explorador de archivos, o libremente, como en el escritorio de Windows. La colocación libre está disponible con cualquier tamaño de icono y en la vista **Mosaicos**. Las vistas **Lista** y **Detalles** no permiten esta colocación libre. Para elegir sus posiciones, desactivar **Organizar iconos automáticamente**. La alineación con la cuadrícula sigue disponible. El menú **Vista** de cada ventana permite acceder rápidamente a los ajustes de los iconos, incluidas las opciones propias de FileSpacer.
+En **Ver > Colocación**, elegir cómo se colocan los iconos:
+
+- **Automática** coloca los iconos seguidos, sin huecos.
+- **En cuadrícula** permite elegir sus posiciones en la cuadrícula y dejar huecos.
+- **Libre** permite colocarlos en cualquier posición, como en el escritorio de Windows.
+
+Estas opciones están disponibles con todos los tamaños de iconos y en la vista **Mosaicos**. **Lista**, **Detalles** y **Contenido** conservan su disposición ordenada.
+
+**Volver a alinear los iconos** ajusta la disposición actual a la cuadrícula de Windows una sola vez, sin cambiar el modo de colocación ni rellenar los huecos.
+
+En modo **Libre**, mantener **S** durante el arrastre y hasta soltar el botón del ratón para alinear en la cuadrícula solo los iconos arrastrados. Los demás permanecen en su sitio. Soltar **S** antes de colocarlos mantiene la colocación libre. En la vista de iconos, un marco gris indica la posición de destino.
 
 <div id="details-columns"></div>
 
@@ -145,6 +155,8 @@ Si hay archivos seleccionados, se mantiene la selección. Esc cancela la acción
 [Nilesoft Shell](https://nilesoft.org/) es una extensión de Windows que permite personalizar el aspecto y los comandos de los menús contextuales. Si se utiliza, también puede gestionar los menús de FileSpacer.
 
 FileSpacer compone el menú de la barra de título y después Nilesoft Shell aplica sus reglas, que tienen prioridad. La [referencia de configuración](nilesoft-shell.md) describe los ajustes visuales y el acceso a las acciones de FileSpacer.
+
+Si los menús tardan en abrirse, el ajuste `showdelay` de Nilesoft Shell permite eliminar ese retardo, para todas las aplicaciones o solo para FileSpacer ([configuración](nilesoft-shell.md#menu-opening-delay)).
 
 Se recomiendan [esquinas rectas](nilesoft-shell.md#recommended-menu-appearance) en los menús de la barra de título y de la barra de herramientas.
 

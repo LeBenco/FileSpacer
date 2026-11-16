@@ -65,7 +65,17 @@ Nei campi dell’indirizzo, della ricerca e di ridenominazione, Backspace e Ctrl
 <div id="disposizione-delle-icone"></div>
 <div id="icon-layout"></div>
 
-FileSpacer permette di disporre gli elementi di una cartella in una griglia, come in Esplora file, oppure liberamente, come sul desktop di Windows. Il posizionamento libero è disponibile con qualsiasi dimensione delle icone e nella vista **Riquadri**. Le viste **Elenco** e **Dettagli** non consentono il posizionamento libero. Per scegliere le posizioni, disattivare **Disponi icone automaticamente**. Resta disponibile l’allineamento alla griglia. Il menu **Visualizza** di ogni finestra offre un accesso rapido alle impostazioni delle icone, comprese quelle specifiche di FileSpacer.
+In **Visualizza > Disposizione**, scegliere come disporre le icone:
+
+- **Automatica** dispone le icone senza spazi vuoti.
+- **Sulla griglia** consente di scegliere le posizioni sulla griglia, lasciando anche spazi vuoti.
+- **Libera** consente di posizionarle ovunque, come sul desktop di Windows.
+
+Queste opzioni sono disponibili con tutte le dimensioni delle icone e nella vista **Riquadri**. **Elenco**, **Dettagli** e **Contenuto** mantengono la disposizione ordinata.
+
+**Riallinea le icone** allinea una sola volta la disposizione attuale alla griglia di Windows, senza cambiare modalità né riempire gli spazi vuoti.
+
+In modalità **Libera**, tenere premuto **S** durante il trascinamento e fino al rilascio del pulsante del mouse per allineare alla griglia solo le icone trascinate. Le altre restano al loro posto. Rilasciando **S** prima di deporle, il posizionamento resta libero. Nella vista Icone, un riquadro grigio indica la posizione di destinazione.
 
 <div id="details-columns"></div>
 
@@ -145,6 +155,8 @@ Se ci sono file selezionati, la selezione viene mantenuta. Esc annulla l’azion
 [Nilesoft Shell](https://nilesoft.org/) è un’estensione di Windows che permette di personalizzare l’aspetto e i comandi dei menu contestuali. Se utilizzata, può gestire anche i menu di FileSpacer.
 
 FileSpacer compone il menu della barra del titolo, poi Nilesoft Shell applica le sue regole, che hanno priorità. La [guida di configurazione](nilesoft-shell.md) descrive le impostazioni visive e l’accesso alle azioni di FileSpacer.
+
+Se i menu si aprono con un ritardo, l’impostazione `showdelay` di Nilesoft Shell permette di eliminarlo, per tutte le applicazioni o solo per FileSpacer ([configurazione](nilesoft-shell.md#menu-opening-delay)).
 
 Per i menu della barra del titolo e della barra degli strumenti sono consigliati [angoli retti](nilesoft-shell.md#recommended-menu-appearance).
 

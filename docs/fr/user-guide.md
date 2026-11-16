@@ -65,7 +65,17 @@ Dans l’adresse, la recherche et le renommage d’un fichier, Retour arrière e
 <div id="disposition-des-icônes"></div>
 <div id="icon-layout"></div>
 
-FileSpacer permet de disposer les éléments d’un dossier en grille, comme l’Explorateur de fichiers, mais aussi librement, comme sur le Bureau Windows. Le placement libre est disponible avec toutes les tailles d’icônes et en mode **Mosaïque**. Les modes **Liste** et **Détails** ne permettent pas ce placement libre. Pour choisir leurs positions, désactiver **Réorganiser automatiquement les icônes**. L’alignement sur la grille reste disponible. Le menu **Affichage** de chaque fenêtre donne un accès rapide aux réglages des icônes, y compris ceux propres à FileSpacer.
+Dans **Affichage > Placement**, choisir comment disposer les icônes :
+
+- **Automatique** range les icônes à la suite, sans espaces vides.
+- **Sur la grille** permet de choisir leurs emplacements sur la grille et de laisser des espaces vides.
+- **Libre** permet de les placer où on le souhaite, comme sur le Bureau Windows.
+
+Ces choix sont disponibles avec toutes les tailles d’icônes et en mode **Mosaïques**. Les vues **Liste**, **Détails** et **Contenu** gardent leur disposition ordonnée.
+
+**Réaligner les icônes** recale ponctuellement la disposition actuelle sur la grille Windows, sans changer le mode de placement ni combler les espaces vides.
+
+En mode **Libre**, maintenir **S** pendant le déplacement et jusqu’au relâchement du bouton de la souris pour aligner uniquement les icônes déplacées sur la grille. Les autres restent en place. Relâcher **S** avant le dépôt conserve le placement libre. En vue Icônes, un cadre gris indique la destination.
 
 <div id="details-columns"></div>
 
@@ -145,6 +155,8 @@ Si des fichiers sont sélectionnés, la sélection est conservée. Échap annule
 [Nilesoft Shell](https://nilesoft.org/) est une extension Windows qui permet de personnaliser l’apparence et les commandes des menus contextuels. Si elle est utilisée, elle peut également gérer les menus de FileSpacer.
 
 FileSpacer compose le menu de la barre de titre, puis Nilesoft Shell applique ses règles, qui ont priorité. Les réglages visuels et l’accès aux actions de FileSpacer sont décrits dans la [référence de configuration](nilesoft-shell.md).
+
+Si les menus s’ouvrent avec un délai, le réglage `showdelay` de Nilesoft Shell permet de le supprimer, globalement ou seulement dans FileSpacer ([configuration](nilesoft-shell.md#menu-opening-delay)).
 
 [Des coins carrés](nilesoft-shell.md#recommended-menu-appearance) sont recommandés pour les menus de la barre de titre et de la barre d’outils.
 
