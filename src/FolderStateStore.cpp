@@ -33,10 +33,8 @@ void appendInt(std::vector<uint8_t> &bytes, uint32_t value) {
 }
 std::vector<uint8_t> encodeView(const FolderViewSettings &view) {
     std::vector<uint8_t> bytes;
-    const bool columnFill = (view.present & FolderViewSettings::ColumnFill) != 0;
     const bool weights = (view.present & FolderViewSettings::ColumnWeights) != 0;
-    // Keep the earliest encoding able to hold what is present.
-    appendInt(bytes, weights ? 3 : columnFill ? 2 : 1);
+    appendInt(bytes, FOLDER_STATE_FORMAT_VERSION);
     appendInt(bytes, view.present);
     appendInt(bytes, static_cast<uint32_t>(view.mode));
     appendInt(bytes, static_cast<uint32_t>(view.iconSize));
@@ -53,9 +51,9 @@ std::vector<uint8_t> encodeView(const FolderViewSettings &view) {
     }
     bytes.insert(bytes.end(), view.groupBy.begin(), view.groupBy.end());
     appendInt(bytes, view.groupAscending ? 1 : 0);
-    if (columnFill || weights) appendInt(bytes, view.fillColumns ? 1 : 0);
+    appendInt(bytes, view.fillColumns ? 1 : 0);
+    appendInt(bytes, weights ? static_cast<uint32_t>(view.columnWeights.size()) : 0);
     if (weights) {
-        appendInt(bytes, static_cast<uint32_t>(view.columnWeights.size()));
         for (const auto &column : view.columnWeights) {
             bytes.insert(bytes.end(), column.key.begin(), column.key.end());
             appendInt(bytes, column.width);
@@ -81,8 +79,8 @@ bool decodeView(const uint8_t *bytes, size_t size, FolderViewSettings *out) {
     };
     FolderViewSettings view;
     uint32_t version, mode, iconSize, count;
-    if (!integer(&version) || version < 1 || version > 3 || !integer(&view.present)
-            || (view.present & ~(version == 1 ? 31u : version == 2 ? 63u : 127u)) || !integer(&mode) || !integer(&iconSize)
+    if (!integer(&version) || version != FOLDER_STATE_FORMAT_VERSION || !integer(&view.present)
+            || (view.present & ~127u) || !integer(&mode) || !integer(&iconSize)
             || !integer(&view.flags) || !integer(&count) || count > (size-offset)/24)
         return false;
     view.mode = static_cast<int32_t>(mode);
@@ -100,17 +98,13 @@ bool decodeView(const uint8_t *bytes, size_t size, FolderViewSettings *out) {
     uint32_t ascending;
     if (!key(&view.groupBy) || !integer(&ascending) || ascending > 1) return false;
     view.groupAscending = ascending != 0;
-    if (version >= 2) {
-        uint32_t fill;
-        if (!integer(&fill) || fill > 1) return false;
-        view.fillColumns = fill != 0;
-    }
-    if (version == 3) {
-        if (!integer(&count) || count > (size-offset)/24) return false;
-        view.columnWeights.resize(count);
-        for (auto &column : view.columnWeights)
-            if (!key(&column.key) || !integer(&column.width)) return false;
-    }
+    uint32_t fill;
+    if (!integer(&fill) || fill > 1) return false;
+    view.fillColumns = fill != 0;
+    if (!integer(&count) || count > (size-offset)/24) return false;
+    view.columnWeights.resize(count);
+    for (auto &column : view.columnWeights)
+        if (!key(&column.key) || !integer(&column.width)) return false;
     if (offset != size) return false;
     *out = std::move(view);
     return true;
@@ -317,10 +311,10 @@ FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitializat
     std::unique_ptr<sqlite3, decltype(closeOpening)> opening(db, closeOpening);
     if (!result(opened)) return;
     sqlite3_busy_timeout(db, static_cast<int>(lock.remaining())); // The lock could not set it before the open.
-    if (!execute("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;"
+    if (!execute("PRAGMA synchronous=FULL;"
             "PRAGMA wal_autocheckpoint=1000; PRAGMA journal_size_limit=8000000;"
             "BEGIN IMMEDIATE;")) return;
-    // Read the version after acquiring the write lock: another process may migrate first.
+    // Check the format under the write lock, before changing persistent state.
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db, "PRAGMA user_version", -1, &raw, nullptr))) {
         finishWrite(false);
@@ -334,57 +328,57 @@ FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitializat
     }
     int schema = sqlite3_column_int(version.get(), 0);
     version.reset();
-    if (schema != 0 && schema != 2 && schema != 3 && schema != 4 && schema != 5 && schema != 6 && schema != 7) {
-        // A later version wrote this database: it is intact and only this
-        // program is too old for it, so it is never offered for a reset.
-        if (schema > 7) newerSchema = true;
+    if (schema != 0 && schema != FOLDER_STATE_FORMAT_VERSION) {
+        // A later format is intact and must never be offered for a reset.
+        if (schema > FOLDER_STATE_FORMAT_VERSION) newerSchema = true;
         else unsupportedSchema = true;
-        lastError = "Unsupported FileSpacer database version " + std::to_string(schema)
-            + " (supported: 2 through 7)";
+        lastError = "Unsupported FileSpacer database format " + std::to_string(schema)
+            + " (expected: " + std::to_string(FOLDER_STATE_FORMAT_VERSION) + ")";
         finishWrite(false);
         return;
     }
-    // An up-to-date schema needs no DDL and no user_version write.
-    if (schema != 7 && !execute("CREATE TABLE IF NOT EXISTS folder_state("
-            "key TEXT PRIMARY KEY NOT NULL, x INTEGER, y INTEGER, width INTEGER, height INTEGER,"
-            "view BLOB, icons BLOB, last_success_at INTEGER NOT NULL DEFAULT 0,"
-            "first_failed_at INTEGER, maximized INTEGER, locked INTEGER NOT NULL DEFAULT 0, scroll BLOB) WITHOUT ROWID;"
-            "CREATE INDEX IF NOT EXISTS folder_state_age ON folder_state(last_success_at);"
-            "CREATE TABLE IF NOT EXISTS closed_windows("
-            "sequence INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL,"
-            "parsing_name TEXT NOT NULL, display_name TEXT NOT NULL, view_state BLOB);"
-            "CREATE TABLE IF NOT EXISTS search_history("
-            "sequence INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT NOT NULL, query TEXT NOT NULL,"
-            "UNIQUE(key,query));"
-            "CREATE TRIGGER IF NOT EXISTS delete_search_history AFTER DELETE ON folder_state "
-            "BEGIN DELETE FROM search_history WHERE key=old.key; END;"
-            "PRAGMA user_version=7;")) {
-        finishWrite(false);
-        return;
-    }
-    // Older schemas lack some columns. Each one is added only when it is
-    // missing, whatever the recorded version: a database that already has it
-    // (edited by another tool, or half migrated) still opens instead of failing.
-    if (schema >= 2 && schema <= 6) {
-        static const char *const columns[][2] = {{"maximized", "INTEGER"},
-            {"locked", "INTEGER NOT NULL DEFAULT 0"}, {"scroll", "BLOB"}};
-        for (const auto &column : columns) {
-            sqlite3_stmt *rawColumn = nullptr;
-            bool known = result(sqlite3_prepare_v2(db,
-                "SELECT 1 FROM pragma_table_info('folder_state') WHERE name=?1", -1, &rawColumn, nullptr));
-            Statement present(rawColumn, sqlite3_finalize);
-            int found = SQLITE_DONE;
-            if (known) known = result(sqlite3_bind_text(rawColumn, 1, column[0], -1, SQLITE_STATIC));
-            if (known) known = result(found = sqlite3_step(rawColumn));
-            present.reset();
-            if (!known || (found != SQLITE_ROW && !execute((std::string("ALTER TABLE folder_state ADD COLUMN ")
-                    + column[0] + " " + column[1] + ";").c_str()))) {
-                finishWrite(false);
-                return;
+    if (!schema) {
+        // Zero is accepted only for an empty database, never as an implicit
+        // import of unversioned tables or a partially initialized old format.
+        sqlite3_stmt *rawObjects = nullptr;
+        if (!result(sqlite3_prepare_v2(db,
+                "SELECT 1 FROM sqlite_schema WHERE name NOT GLOB 'sqlite_*' LIMIT 1",
+                -1, &rawObjects, nullptr))) {
+            finishWrite(false);
+            return;
+        }
+        Statement objects(rawObjects, sqlite3_finalize);
+        const int found = sqlite3_step(objects.get());
+        objects.reset();
+        if (!result(found) || found != SQLITE_DONE) {
+            if (found == SQLITE_ROW) {
+                unsupportedSchema = true;
+                lastError = "Unversioned non-empty FileSpacer database";
             }
+            finishWrite(false);
+            return;
+        }
+        if (!execute("CREATE TABLE folder_state("
+                "key TEXT PRIMARY KEY NOT NULL, x INTEGER, y INTEGER, width INTEGER, height INTEGER,"
+                "view BLOB, icons BLOB, last_success_at INTEGER NOT NULL DEFAULT 0,"
+                "first_failed_at INTEGER, maximized INTEGER, locked INTEGER NOT NULL DEFAULT 0, scroll BLOB) WITHOUT ROWID;"
+                "CREATE INDEX folder_state_age ON folder_state(last_success_at);"
+                "CREATE TABLE closed_windows("
+                "sequence INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL,"
+                "parsing_name TEXT NOT NULL, display_name TEXT NOT NULL, view_state BLOB);"
+                "CREATE TABLE search_history("
+                "sequence INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT NOT NULL, query TEXT NOT NULL,"
+                "UNIQUE(key,query));"
+                "CREATE TRIGGER delete_search_history AFTER DELETE ON folder_state "
+                "BEGIN DELETE FROM search_history WHERE key=old.key; END;")
+                || !execute(("PRAGMA user_version=" + std::to_string(FOLDER_STATE_FORMAT_VERSION)).c_str())) {
+            finishWrite(false);
+            return;
         }
     }
-    if (finishWrite(true)) {
+    // Journal mode changes outside transactions. Rejected databases never
+    // reach this persistent setting; their original format stays untouched.
+    if (finishWrite(true) && execute("PRAGMA journal_mode=WAL")) {
         initialized = true; // Each operation sets its own busy timeout from its remaining budget.
         opening.release();
     }
@@ -533,6 +527,17 @@ FolderStateStore::Recovery FolderStateStore::recoverFrom(const char *utf8Source)
     sqlite3_db_config(rawSource, SQLITE_DBCONFIG_DEFENSIVE, 1, nullptr);
     sqlite3_db_config(rawSource, SQLITE_DBCONFIG_TRUSTED_SCHEMA, 0, nullptr);
     sqlite3_busy_timeout(rawSource, 0);
+    sqlite3_stmt *rawVersion = nullptr;
+    int versionCode = sqlite3_prepare_v2(rawSource, "PRAGMA user_version", -1, &rawVersion, nullptr);
+    const Statement version(rawVersion, sqlite3_finalize);
+    if (versionCode == SQLITE_OK) versionCode = sqlite3_step(version.get());
+    if (versionCode != SQLITE_ROW) {
+        if (versionCode == SQLITE_CORRUPT || versionCode == SQLITE_NOTADB) return Recovery::None;
+        lastErrorCode = versionCode;
+        lastError = sqlite3_errmsg(rawSource);
+        return Recovery::Failed;
+    }
+    if (sqlite3_column_int(version.get(), 0) != FOLDER_STATE_FORMAT_VERSION) return Recovery::None;
     Lock lock(*this);
     if (!lock || !execute("BEGIN IMMEDIATE")) return Recovery::Failed;
     // Expected shape of each column: 't' non-empty text, 'T' text, 'i' integer
@@ -569,7 +574,7 @@ FolderStateStore::Recovery FolderStateStore::recoverFrom(const char *utf8Source)
             break;
         }
         const Statement insert(raw, sqlite3_finalize);
-        // A former schema may lack recent columns, or the whole table.
+        // A damaged current-format source may lack columns or a whole table.
         std::string list;
         bool exists = false;
         for (size_t index = 0; index < count; ++index) {
