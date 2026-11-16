@@ -1,6 +1,6 @@
 # Test-Category: UI
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
-. (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
+. (Join-Path $PSScriptRoot '..\28-apercu-affichage\ViewMenu.ps1')
 Add-Type -Path (Join-Path $PSScriptRoot 'WheelInput.cs')
 $testFailure=$null
 function Scale([int]$Value) { return [int][Math]::Round($Value*$script:dpi/96.0,[MidpointRounding]::AwayFromZero) }
@@ -13,6 +13,26 @@ function Turn([int]$Delta,[uint32]$Mode,[int]$Size) {
 function Assert-Placement([string]$Step) {
     $now=Use-UiView $window {param($view) $view.Positions()}
     Assert-Ui ($now -eq $script:placed) "Free icon positions changed after $Step : $now"
+}
+function Grid-Cells {
+    Use-UiView $window {param($view)
+        $spacing=$view.Spacing;$cells=@{}
+        foreach($name in $view.Names()) {
+            $point=($view.Position($name)-split'=',2)[1]-split','
+            $cells[$name]=('{0},{1}'-f[Math]::Floor([int]$point[0]/$spacing.X),[Math]::Floor([int]$point[1]/$spacing.Y))
+        }
+        return $cells
+    }
+}
+function Assert-GridCells($Expected) {
+    $actual=Grid-Cells
+    foreach($name in $Expected.Keys) {Assert-Ui ($actual[$name]-eq$Expected[$name]) ('Zoom changed an occupied grid cell or a hole: '+$name)}
+}
+function Choose-Zoom([int]$Index,[int]$Size) {
+    $popup=Open-PreviewMenu $window
+    [FileSpacerViewMenuTests.MenuUi]::Choose($popup,$Index,$window)
+    Wait-PreviewMenuClosed $window
+    Wait-UiViewMode $window 1 (Scale $Size)
 }
 try {
     Initialize-Ui 'wheel-zoom'
@@ -47,5 +67,37 @@ try {
         Turn (-120) 3 (-1)
     } finally { [FileSpacerRegression.WheelInput]::Control($false) }
     Write-Host 'PASS: Ctrl+wheel follows the Explorer steps, one per notch, and keeps free icon positions.'
+    Choose-Zoom 2 48
+    Choose-Placement 'IDM_KEEP_ICONS_ALIGNED'
+    $cells=Grid-Cells
+    # The fixture includes displaced icons and holes, not just a packed row.
+    Assert-Ui (@($cells.Values|Where-Object {$_-notlike'*,0'}).Count-gt0) 'Grid fixture must occupy more than one row.'
+    $gridBeforePreview=Use-UiView $window {param($view) $view.Positions()}
+    $popup=Open-PreviewMenu $window
+    [FileSpacerViewMenuTests.MenuUi]::Hover($popup,0)
+    Wait-UiViewMode $window 1 (Scale 256)
+    Assert-GridCells $cells
+    [FileSpacerViewMenuTests.MenuUi]::Escape($window)
+    Wait-PreviewMenuClosed $window
+    Wait-UiViewMode $window 1 (Scale 48)
+    $gridAfterPreview=Use-UiView $window {param($view) $view.Positions()}
+    @{Before=$gridBeforePreview;After=$gridAfterPreview}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'grid-preview-cancel.json') -Encoding UTF8
+    Assert-Ui ($gridAfterPreview-eq$gridBeforePreview) 'Cancelling a grid preview changed icon coordinates.'
+    [FileSpacerRegression.WheelInput]::Control($true)
+    try {Turn 12000 1 (Scale 256)} finally {[FileSpacerRegression.WheelInput]::Control($false)}
+    Assert-GridCells $cells
+    Choose-Zoom 1 96
+    Assert-GridCells $cells
+    Choose-Zoom 0 256
+    Assert-GridCells $cells
+    $gridSpacing=Use-UiView $window {param($view) $view.Spacing}
+    $gridPositions=Use-UiView $window {param($view) $view.Positions()}
+    Choose-Placement 'IDM_FREE_PLACEMENT_ICONS'
+    Assert-Ui ((Use-UiView $window {param($view) $view.Positions()})-eq$gridPositions) 'Changing from grid to free placement replayed an older arrangement.'
+    Choose-Placement 'IDM_AUTO_ARRANGE_ICONS'
+    $autoSpacing=Use-UiView $window {param($view) $view.Spacing}
+    Assert-Ui ($gridSpacing.X-eq$autoSpacing.X-and$gridSpacing.Y-eq$autoSpacing.Y) 'Grid and automatic placement use different native spacing at the same zoom.'
+    Write-Host 'PASS: grid zoom preserves occupied cells and holes, uses automatic placement spacing, and enters free placement without a jump.'
+
 } catch { $testFailure=$_; throw }
 finally { Stop-Ui -Failure $testFailure }
