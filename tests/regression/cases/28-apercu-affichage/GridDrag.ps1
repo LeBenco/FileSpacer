@@ -17,7 +17,7 @@ function Set-GridMode {
     Use-UiView $window {param($view) $view.AutoArrange=$false}
     Wait-Ui {Use-UiView $window {param($view) $view.Mode-eq1-and!$view.AutoArrange}} 'stable native free icon view before seeding' 150
 }
-function Move-GridIcons([bool]$Snap,[bool]$ReleaseEarly=$false,[bool]$InspectMarker=$false,[bool]$PulseMarker=$false,[bool]$Cancel=$false) {
+function Move-GridIcons([bool]$Snap,[bool]$ReleaseEarly=$false,[bool]$InspectMarker=$false,[bool]$PulseMarker=$false,[bool]$Cancel=$false,[bool]$RepeatHeldS=$false) {
     Activate-Ui $window
     Use-UiView $window {param($view) $view.Reveal('item-0000')}
     $body=Use-UiView $window {param($view) $view.Window}
@@ -96,9 +96,11 @@ function Move-GridIcons([bool]$Snap,[bool]$ReleaseEarly=$false,[bool]$InspectMar
             [FileSpacerViewMenuTests.GridKey]::Hold($false)
             if($InspectMarker){Wait-Ui {![FileSpacerViewMenuTests.GridKey]::Marker($body).Visible} 'marker hidden before a free drop' 0 5}
         }
+        if($RepeatHeldS){[FileSpacerViewMenuTests.GridKey]::Repeat()}
         $script:GridDropStartedAt=[Diagnostics.Stopwatch]::GetTimestamp()
         [FileSpacerRegression.AltDragInput]::ReleasePrimary()
         Wait-Ui {[FileSpacerRegression.AltDragInput]::Idle($window)} 'native icon drop completed' 150
+        if($RepeatHeldS){[FileSpacerViewMenuTests.GridKey]::Repeat()}
         if($InspectMarker){Assert-Ui (![FileSpacerViewMenuTests.GridKey]::Marker($body).Visible) 'Snap marker survived mouse release.'}
     } finally {
         [FileSpacerViewMenuTests.GridKey]::Hold($false)
