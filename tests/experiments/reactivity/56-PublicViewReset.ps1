@@ -5,7 +5,7 @@ $ErrorActionPreference='Stop'
 if(Get-Process FileSpacer -ErrorAction SilentlyContinue){throw 'Close FileSpacer before building. No user process was stopped.'}
 . (Join-Path $ProjectRoot 'tests\regression\common\Native.ps1')
 . (Join-Path $PSScriptRoot 'Fixture.ps1')
-$exe=Build-NativeTest -Name PublicViewResetTests -CaseDirectory $PSScriptRoot -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','ShellViewSettings.cpp','MixedFolder.cpp','ShellViewHost.cpp','ShellViewIcons.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib','D3d11.lib','Dxgi.lib','Bcrypt.lib','Wtsapi32.lib','Dwmapi.lib')
+$exe=Build-NativeTest -Name PublicViewResetTests -CaseDirectory $PSScriptRoot -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','ShellViewOperations.cpp','ShellViewSettings.cpp','MixedFolder.cpp','ShellViewHost.cpp','ShellViewIcons.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib','D3d11.lib','Dxgi.lib','Bcrypt.lib','Wtsapi32.lib','Dwmapi.lib')
 $fixture=New-ReactivityFixture $ProjectRoot 5000
 try {
     $job=Start-RecordedProcess -Executable $exe -Arguments (Join-ProcessArguments @($RunDirectory,$fixture,$View,[string]$Repetitions)) -OutputPath (Join-Path $RunDirectory 'reset.log') -ErrorPath (Join-Path $RunDirectory 'reset.errors.log')

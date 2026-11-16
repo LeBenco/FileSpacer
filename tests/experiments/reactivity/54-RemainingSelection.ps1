@@ -9,7 +9,7 @@ if($MissingRange-and!$CacheDirectory){throw '-MissingRange requires a previously
 if($Case-eq'columns'-and!$MissingRange){throw 'The columns experiment requires -MissingRange to isolate its gain.'}
 . (Join-Path $ProjectRoot 'tests\regression\common\Native.ps1')
 . (Join-Path $PSScriptRoot 'Fixture.ps1')
-$exe=Build-NativeTest -Name RemainingSelectionTests -CaseDirectory $PSScriptRoot -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','MixedFolder.cpp','ShellViewHost.cpp','ShellViewIcons.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib','D3d11.lib','Dxgi.lib','Bcrypt.lib','Wtsapi32.lib','Dwmapi.lib','Dbghelp.lib','Psapi.lib')
+$exe=Build-NativeTest -Name RemainingSelectionTests -CaseDirectory $PSScriptRoot -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','ShellViewOperations.cpp','MixedFolder.cpp','ShellViewHost.cpp','ShellViewIcons.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib','D3d11.lib','Dxgi.lib','Bcrypt.lib','Wtsapi32.lib','Dwmapi.lib','Dbghelp.lib','Psapi.lib')
 $cache=Join-Path $RunDirectory 'cache';[void][IO.Directory]::CreateDirectory($cache)
 if($CacheDirectory) {
     $base=@(Get-ChildItem -LiteralPath $CacheDirectory -Filter '*.bin' -File)

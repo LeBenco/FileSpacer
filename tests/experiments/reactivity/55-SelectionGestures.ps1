@@ -19,7 +19,7 @@ public static class GestureComposition {
 }
 '@
 if(Get-Process FileSpacer -ErrorAction SilentlyContinue){throw 'Close FileSpacer before building the native helper.'}
-$counter=Build-NativeTest -Name RemainingSelectionTests -CaseDirectory (Join-Path $ProjectRoot 'tests\experiments\reactivity') -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','MixedFolder.cpp','ShellViewHost.cpp','ShellViewIcons.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib','D3d11.lib','Dxgi.lib','Bcrypt.lib','Wtsapi32.lib','Dwmapi.lib','Dbghelp.lib','Psapi.lib')
+$counter=Build-NativeTest -Name RemainingSelectionTests -CaseDirectory (Join-Path $ProjectRoot 'tests\experiments\reactivity') -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','ShellViewOperations.cpp','MixedFolder.cpp','ShellViewHost.cpp','ShellViewIcons.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib','D3d11.lib','Dxgi.lib','Bcrypt.lib','Wtsapi32.lib','Dwmapi.lib','Dbghelp.lib','Psapi.lib')
 $presentation=$env:FS_GESTURE_PRESENTATION-eq'1'
 $preseed=$env:FS_GESTURE_PRESEED-eq'1'
 if($preseed){Assert-Ui ($env:FS_GESTURE_VIEWS-and@($env:FS_GESTURE_VIEWS-split',').Count-eq1) 'Persisted-view preparation requires one view.'}

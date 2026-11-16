@@ -4,7 +4,7 @@ param([string]$ProjectRoot)
 $failure=$null
 $samples=New-Object Collections.ArrayList
 $previousGridCache=$env:FS_SELECTION_PRODUCT_CACHE
-$cacheTest=Build-NativeTest -Name SelectionCacheTests -CaseDirectory (Join-Path $PSScriptRoot '..\..\..\regression\cases\18-vue-shell-native') -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','MixedFolder.cpp','ShellViewHost.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib')
+$cacheTest=Build-NativeTest -Name SelectionCacheTests -CaseDirectory (Join-Path $PSScriptRoot '..\..\..\regression\cases\18-vue-shell-native') -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','ShellViewOperations.cpp','MixedFolder.cpp','ShellViewHost.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib')
 function Write-GridPhase([string]$Phase) {
     @{Phase=$Phase;Utc=[DateTime]::UtcNow.ToString('o')}|ConvertTo-Json -Compress|Add-Content (Join-Path $env:FS_REGRESSION_RUN 'phases.jsonl') -Encoding UTF8
 }

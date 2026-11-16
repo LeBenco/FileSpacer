@@ -3,7 +3,7 @@ param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')
 $ErrorActionPreference='Stop'
 if($env:COMPUTERNAME-ne'AGENTWIN10'){throw 'Manual package provisioning belongs to AgentWin10.'}
 . (Join-Path $PSScriptRoot '..\..\common\Native.ps1')
-$test=Build-NativeTest -Name SelectionClearTests -CaseDirectory $PSScriptRoot -Standard c++14 -ProductionSources @('MixedFolder.cpp','ShellViewHost.cpp','ShellViewSelection.cpp','ShellSelectionDiscovery.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib')
+$test=Build-NativeTest -Name SelectionClearTests -CaseDirectory $PSScriptRoot -Standard c++14 -ProductionSources @('MixedFolder.cpp','ShellViewHost.cpp','ShellViewSelection.cpp','ShellViewOperations.cpp','ShellSelectionDiscovery.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib')
 $payload=Join-Path $ProjectRoot ('build\manual-selection-clear-'+[guid]::NewGuid().ToString('N'))
 [void][IO.Directory]::CreateDirectory($payload)
 Copy-Item -LiteralPath $test -Destination (Join-Path $payload 'SelectionClearTests.exe')
