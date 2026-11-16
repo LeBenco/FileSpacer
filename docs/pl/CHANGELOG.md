@@ -6,7 +6,6 @@
 
 ## 1.5.0
 
-- Przejść na format 8 bazy danych stanu folderów. Starsze formaty wymagają potwierdzonego zresetowania z utworzeniem kopii zapasowej; zapisane układy i historie nie są przenoszone.
 - Budować menu Widok lokalnie, zachowując dostosowania Nilesoft, bez wczytywania całego menu kontekstowego folderu ani odtwarzania widoku przed otwarciem menu.
 - Zachować natywny układ w wierszach w widoku Zawartość, bez dowolnego rozmieszczania ikon, ponownego wyrównywania ani Snap.
 - Dodać osiem widoków Eksploratora plików: Bardzo duże ikony, Duże ikony, Średnie ikony, Małe ikony, Lista, Szczegóły, Kafelki i Zawartość, ze skrótami Ctrl+Shift+1–8.

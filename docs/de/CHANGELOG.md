@@ -6,7 +6,6 @@
 
 ## 1.5.0
 
-- Auf Format 8 für die Datenbank der Ordnerzustände umstellen. Ältere Formate erfordern ein bestätigtes Zurücksetzen mit Sicherung; gespeicherte Anordnungen und Verläufe werden nicht übernommen.
 - Das Menü Ansicht lokal aufbauen und die Nilesoft-Anpassung beibehalten, ohne das vollständige Ordner-Kontextmenü zu laden oder die Ansicht vor dem Öffnen des Menüs neu zu erstellen.
 - Die native Anordnung in Zeilen in der Ansicht Inhalt beibehalten, ohne freie Symbolplatzierung, Neuausrichtung oder Snap.
 - Die acht Ansichten des Datei-Explorers hinzufügen: Extra große Symbole, Große Symbole, Mittelgroße Symbole, Kleine Symbole, Liste, Details, Kacheln und Inhalt, mit den Tastenkombinationen Strg+Umschalt+1 bis 8.

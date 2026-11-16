@@ -6,7 +6,6 @@
 
 ## 1.5.0
 
-- Overstappen op formaat 8 voor de database met mapinstellingen. Oudere formaten vereisen een bevestigde reset met een back-up; opgeslagen indelingen en geschiedenissen worden niet overgenomen.
 - Het menu Beeld lokaal opbouwen met behoud van Nilesoft-aanpassingen, zonder het volledige mapcontextmenu te laden of de weergave opnieuw op te bouwen voordat het menu opent.
 - De ingebouwde indeling in rijen behouden in de weergave Inhoud, zonder vrije pictogramplaatsing, opnieuw uitlijnen of Snap.
 - De acht weergaven van Bestandenverkenner toevoegen: Extra grote pictogrammen, Grote pictogrammen, Middelgrote pictogrammen, Kleine pictogrammen, Lijst, Details, Tegels en Inhoud, met de sneltoetsen Ctrl+Shift+1 tot 8.

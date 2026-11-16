@@ -6,7 +6,6 @@
 
 ## 1.5.0
 
-- Switch to folder-state database format 8. Earlier formats require a confirmed reset with a backup; saved layouts and histories are not imported.
 - Build the View menu locally, retaining Nilesoft menu customization without loading the folder’s complete context menu or recreating its view before opening it.
 - Keep Content in its native ordered layout, without free icon placement, realignment or Snap.
 - Add File Explorer's eight view modes: Extra large icons, Large icons, Medium icons, Small icons, List, Details, Tiles and Content, with Ctrl+Shift+1 to 8 shortcuts.

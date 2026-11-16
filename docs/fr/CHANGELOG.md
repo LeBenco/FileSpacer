@@ -6,7 +6,6 @@
 
 ## 1.5.0
 
-- Passer au format 8 pour la base de données des dossiers. Les anciens formats nécessitent une réinitialisation confirmée avec sauvegarde ; les dispositions et historiques enregistrés ne sont pas repris.
 - Construire localement le menu Affichage en conservant la personnalisation Nilesoft, sans charger le menu contextuel complet du dossier ni recréer sa vue avant l’ouverture du menu.
 - Conserver la disposition native en lignes du mode Contenu, sans placement libre des icônes, réalignement ni Snap.
 - Ajouter les huit modes d’affichage de l’Explorateur de fichiers : Très grandes icônes, Grandes icônes, Icônes moyennes, Petites icônes, Liste, Détails, Mosaïques et Contenu, avec les raccourcis Ctrl+Maj+1 à 8.

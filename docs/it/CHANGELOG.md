@@ -6,7 +6,6 @@
 
 ## 1.5.0
 
-- Passare al formato 8 per il database dello stato delle cartelle. I formati precedenti richiedono una reimpostazione confermata con copia di backup; le disposizioni e le cronologie salvate non vengono importate.
 - Costruire localmente il menu Visualizza mantenendo le personalizzazioni Nilesoft, senza caricare l’intero menu contestuale della cartella né ricrearne la vista prima di aprire il menu.
 - Mantenere la disposizione nativa in righe della vista Contenuto, senza posizionamento libero delle icone, riallineamento o Snap.
 - Aggiungere le otto visualizzazioni di Esplora file: Icone molto grandi, Icone grandi, Icone medie, Icone piccole, Elenco, Dettagli, Riquadri e Contenuto, con le scorciatoie Ctrl+Maiusc+1–8.
