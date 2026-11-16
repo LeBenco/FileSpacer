@@ -103,18 +103,36 @@ try {
     $cache=Join-Path $env:FS_REGRESSION_RUN 'qualified-cache'
     [void][IO.Directory]::CreateDirectory($cache)
     Write-GridPhase 'qualifying-grid'
-    Invoke-TestProgram $cacheTest @('--build-cache',$cache)
-    Invoke-TestProgram $cacheTest @('--grid-supported',$cache)
+    $workerExit=Invoke-NativeProgram $cacheTest @('--build-cache',$cache) (Join-Path $env:FS_REGRESSION_RUN 'grid-discovery.stdout.log') (Join-Path $env:FS_REGRESSION_RUN 'grid-discovery.stderr.log')
+    $gridExit=Invoke-NativeProgram $cacheTest @('--grid-supported',$cache) (Join-Path $env:FS_REGRESSION_RUN 'grid-support.stdout.log') (Join-Path $env:FS_REGRESSION_RUN 'grid-support.stderr.log')
+    Assert-Ui ($workerExit-in@(0,50)) ('Grid discovery failed unexpectedly (exit '+$workerExit+').')
+    Assert-Ui ($gridExit-in@(0,1)) ('Grid capability observation failed (exit '+$gridExit+').')
+    $gridAvailable=$gridExit-eq0
+    # A support probe revalidates the descriptor against the loaded control.
+    # Record absence separately; exit 50 alone cannot identify its cause.
+    $capability="Kind`tName`tValue`tDetail`ncapability`tgrid`t$([int]$gridAvailable)`tWorker exit=$workerExit; support probe exit=$gridExit; see discovery decisions for refusals`n"
+    $capability|Set-Content (Join-Path $cache 'private-capabilities.tsv') -Encoding UTF8
+    if($gridAvailable) {
+        $gridDescriptor=@(Get-ChildItem -LiteralPath $cache -Filter '*.grid' -File)
+        Assert-Ui ($gridDescriptor.Count-eq1) 'Missing the descriptor accepted by the grid support probe.'
+        $identity=[IO.File]::ReadAllBytes($gridDescriptor[0].FullName)
+        Assert-Ui ($identity.Length-eq44-and[Text.Encoding]::ASCII.GetString($identity,0,8)-ceq'FSLVG001') 'Unexpected grid descriptor schema.'
+        $guidBytes=New-Object byte[] 16;[Array]::Copy($identity,8,$guidBytes,0,16)
+        @{PdbGuid=(New-Object Guid (,$guidBytes)).ToString();PdbAge=[BitConverter]::ToUInt32($identity,24);ImageSize=[BitConverter]::ToUInt32($identity,28);Sha256=(Get-FileHash -LiteralPath $gridDescriptor[0].FullName).Hash;Scope='Qualified descriptor identity revalidated against the loaded control by --grid-supported; not the System32 copy'}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'grid-image.json') -Encoding UTF8
+    }
+    Write-PrivateDiagnostics $ProjectRoot $env:FS_REGRESSION_RUN
     # A corrupt grid witness must disable only this optional calculation.
-    $bad=Join-Path $env:FS_REGRESSION_RUN 'invalid-grid-cache'
-    [void][IO.Directory]::CreateDirectory($bad)
-    Get-ChildItem -LiteralPath $cache -File|Where-Object {$_.Extension-in@('.bin','.range','.grid')}|Copy-Item -Destination $bad
-    $descriptor=@(Get-ChildItem -LiteralPath $bad -Filter '*.grid' -File)
-    Assert-Ui ($descriptor.Count-eq1) 'Missing qualified control descriptor.'
-    $bytes=[IO.File]::ReadAllBytes($descriptor[0].FullName);$bytes[32]=$bytes[32]-bxor1
-    [IO.File]::WriteAllBytes($descriptor[0].FullName,$bytes)
-    Invoke-TestProgram $cacheTest @('--grid-fallback',$bad)
-    Invoke-TestProgram $cacheTest @('--range-supported',$bad)
+    if($gridAvailable) {
+        $bad=Join-Path $env:FS_REGRESSION_RUN 'invalid-grid-cache'
+        [void][IO.Directory]::CreateDirectory($bad)
+        Get-ChildItem -LiteralPath $cache -File|Where-Object {$_.Extension-in@('.bin','.range','.grid')}|Copy-Item -Destination $bad
+        $descriptor=@(Get-ChildItem -LiteralPath $bad -Filter '*.grid' -File)
+        Assert-Ui ($descriptor.Count-eq1) 'Missing qualified control descriptor.'
+        $bytes=[IO.File]::ReadAllBytes($descriptor[0].FullName);$bytes[32]=$bytes[32]-bxor1
+        [IO.File]::WriteAllBytes($descriptor[0].FullName,$bytes)
+        Invoke-TestProgram $cacheTest @('--grid-fallback',$bad)
+        Invoke-TestProgram $cacheTest @('--range-supported',$bad)
+    }
     $env:FS_SELECTION_PRODUCT_CACHE=$cache
     $window=Open-UiFolder $folder 3000
     Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($window,[IntPtr]::Zero,40,40,850,600,0x14)) 'Cannot size qualified grid fixture.'
@@ -124,18 +142,26 @@ try {
     Move-GridIcons $true
     $qualified=Read-PreviewState $window
     $qualifiedMilliseconds=1000.0*([Diagnostics.Stopwatch]::GetTimestamp()-$script:GridDropStartedAt)/[Diagnostics.Stopwatch]::Frequency
-    Assert-Ui ($qualified.Positions-eq$snapped.Positions-and$qualified.Selected-eq$snapped.Selected-and$qualified.Focus-eq$snapped.Focus) 'Qualified Snap differs from the public fallback.'
-    Assert-Ui (Use-UiView $window {param($view) !$view.SnapToGrid-and!$view.AutoArrange}) 'Qualified Snap changed persistent flags.'
+    Assert-Ui ($qualified.Positions-eq$snapped.Positions-and$qualified.Selected-eq$snapped.Selected-and$qualified.Focus-eq$snapped.Focus) 'Cache-enabled Snap differs from the public baseline.'
+    Assert-Ui (Use-UiView $window {param($view) !$view.SnapToGrid-and!$view.AutoArrange}) 'Cache-enabled Snap changed persistent flags.'
     Close-UiFolder $window
     Wait-Ui {@($script:UiProcesses|Where-Object {!$_.HasExited}).Count-eq0} 'capability-cache process exited before observing dispatch' 0 15
     $proof=($script:UiProcesses|ForEach-Object {if($_.PSObject.Properties['RegressionOutput']){$_.RegressionOutput.Output.GetAwaiter().GetResult()}})-join"`n"
-    # The current Icon drag batches its already known selected destinations.
-    # A qualified cache must preserve the same outcome; it does not imply that
-    # this gesture invokes the optional grid operation tested above.
-    @{Count=3000;FreeDragMs=$freeDragMilliseconds;SnapDragMs=$snapDragMilliseconds;SnapWithQualifiedCapabilitiesMs=$qualifiedMilliseconds;PrivateGridObservedDuringDrag=($proof-match'GRID SNAP qualified=1');IncludesAutomationAndFullPositionReadback=$true}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'snap-timings.json') -Encoding UTF8
+    # Record actual dispatch before checking it. A supplied descriptor alone
+    # is not evidence that the drag used qualified or native public alignment.
+    $privateObserved=$proof-match'GRID SNAP qualified=1 selected=\d+ count=3000'
+    $publicObserved=$proof-match'GRID SNAP path=public elapsed_ms='
+    $dispatch=if($gridAvailable){if($privateObserved){'QUALIFIED_USED'}else{'AVAILABLE_BUT_NOT_USED'}}elseif($publicObserved){'UNAVAILABLE_PUBLIC_USED'}else{'UNAVAILABLE_WITHOUT_PUBLIC_PROOF'}
+    @{DiscoveryExitCode=$workerExit;SupportProbeExitCode=$gridExit;QualifiedGridAvailable=$gridAvailable;Dispatch=$dispatch;QualifiedGridAdapterObserved=$privateObserved;NativePublicGridObserved=$publicObserved;Interpretation='The grid adapter uses read-only private instruction witnesses qualified against a real native view; it does not call private arithmetic code. Availability and actual application dispatch are separate observations.'}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'grid-backend.json') -Encoding UTF8
+    @{Count=3000;FreeDragMs=$freeDragMilliseconds;SnapDragMs=$snapDragMilliseconds;SnapWithCapabilityCacheMs=$qualifiedMilliseconds;IncludesAutomationAndFullPositionReadback=$true}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'snap-timings.json') -Encoding UTF8
     $samples|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'grid-timings.json') -Encoding UTF8
+    # On this compatible, collision-free fixture the qualified cache must
+    # protect the native arithmetic contract. Current-build coordinate equality
+    # alone does not justify bypassing that image-specific validation.
+    if($gridAvailable){Assert-Ui $privateObserved 'A qualified grid adapter is available but the real Snap bypassed it.'}
+    else {Assert-Ui $publicObserved 'No qualified grid adapter is available and the real Snap has no native public fallback proof.'}
     Write-PrivateDiagnostics $ProjectRoot $env:FS_REGRESSION_RUN
-    Write-Host 'PASS: three alignment cycles over 3000 items; exact coordinates, selection, focus and persistence; 60 marker motions and the same Snap outcome with qualified capabilities. Timings include automation and readback; no performance threshold.'
+    Write-Host ('PASS: three alignment cycles over 3000 items; exact coordinates, selection, focus and persistence; 60 marker motions; grid dispatch='+$dispatch+'. Timings include automation and readback; no performance threshold.')
 } catch {
     $failure=$_
     @{Message=$_.Exception.Message;Stack=$_.ScriptStackTrace;Position=$_.InvocationInfo.PositionMessage}|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'first-error.json') -Encoding UTF8
