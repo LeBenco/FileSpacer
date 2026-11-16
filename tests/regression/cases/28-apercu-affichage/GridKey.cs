@@ -24,23 +24,30 @@ namespace FileSpacerViewMenuTests {
         [DllImport("user32.dll",SetLastError=true)] static extern IntPtr SendMessageTimeout(IntPtr window,uint message,UIntPtr first,IntPtr second,uint flags,uint timeout,out UIntPtr result);
         [DllImport("kernel32.dll",SetLastError=true)] static extern IntPtr OpenProcess(uint access,bool inherit,uint process);
         [DllImport("kernel32.dll",SetLastError=true)] static extern IntPtr VirtualAllocEx(IntPtr process,IntPtr address,UIntPtr size,uint type,uint protect);
+        [DllImport("kernel32.dll",SetLastError=true)] static extern bool WriteProcessMemory(IntPtr process,IntPtr address,byte[] buffer,UIntPtr size,out UIntPtr written);
         [DllImport("kernel32.dll",SetLastError=true)] static extern bool ReadProcessMemory(IntPtr process,IntPtr address,byte[] buffer,UIntPtr size,out UIntPtr read);
         [DllImport("kernel32.dll")] static extern bool VirtualFreeEx(IntPtr process,IntPtr address,UIntPtr size,uint type);
         [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr value);
-        public static int[] Origin(IntPtr list) {
+        public static int[] Origin(IntPtr list) { return Geometry(list,0x1029,0,new int[2]); }
+        public static int[] IconBounds(IntPtr list,int item) { return Geometry(list,0x100e,(uint)item,new int[]{1,0,0,0}); }
+        static int[] Geometry(IntPtr list,uint message,uint item,int[] fields) {
             uint pid; GetWindowThreadProcessId(list,out pid);
             IntPtr process=OpenProcess(0x38,false,pid);
             if(process==IntPtr.Zero) throw new Win32Exception();
             IntPtr remote=IntPtr.Zero;
             try {
-                remote=VirtualAllocEx(process,IntPtr.Zero,new UIntPtr(8),0x3000,4);
+                var bytes=new byte[fields.Length*4];
+                Buffer.BlockCopy(fields,0,bytes,0,bytes.Length);
+                var size=new UIntPtr((uint)bytes.Length);
+                remote=VirtualAllocEx(process,IntPtr.Zero,size,0x3000,4);
                 if(remote==IntPtr.Zero) throw new Win32Exception();
-                UIntPtr result,read;
-                if(SendMessageTimeout(list,0x1029,UIntPtr.Zero,remote,2,3000,out result)==IntPtr.Zero || result==UIntPtr.Zero)
-                    throw new InvalidOperationException("Native view origin unavailable.");
-                var bytes=new byte[8];
-                if(!ReadProcessMemory(process,remote,bytes,new UIntPtr(8),out read)||read.ToUInt64()!=8) throw new Win32Exception();
-                return new int[]{BitConverter.ToInt32(bytes,0),BitConverter.ToInt32(bytes,4)};
+                UIntPtr result,count;
+                if(!WriteProcessMemory(process,remote,bytes,size,out count)||count!=size) throw new Win32Exception();
+                if(SendMessageTimeout(list,message,new UIntPtr(item),remote,2,3000,out result)==IntPtr.Zero || result==UIntPtr.Zero)
+                    throw new InvalidOperationException("Native view geometry unavailable.");
+                if(!ReadProcessMemory(process,remote,bytes,size,out count)||count!=size) throw new Win32Exception();
+                Buffer.BlockCopy(bytes,0,fields,0,bytes.Length);
+                return fields;
             } finally {if(remote!=IntPtr.Zero) VirtualFreeEx(process,remote,UIntPtr.Zero,0x8000);CloseHandle(process);}
         }
         public static MarkerState Marker(IntPtr parent) {
