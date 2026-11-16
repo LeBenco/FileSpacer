@@ -110,8 +110,7 @@ try {
         [FileSpacerViewMenuTests.GridKey]::Hold($true)
         Wait-Ui {[FileSpacerViewMenuTests.GridKey]::Marker($body).Visible} 'S frame before returning to a native drop' 0 5
         [FileSpacerViewMenuTests.GridKey]::Hold($false)
-        $next=New-Object FileSpacerRegression.MousePoint;$next.X=$image.X+1;$next.Y=$image.Y
-        [FileSpacerRegression.AltDragInput]::Move($next)
+        # Releasing S must work without another mouse event.
         Wait-Ui {![FileSpacerViewMenuTests.GridKey]::Marker($body).Visible-and(Get-DestinationHighlight)} 'native folder highlight restored after releasing S' 150 5
         Complete-PlacementDrag
         $target=Join-Path $folder 'Destination/Move-b.txt'
