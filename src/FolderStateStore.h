@@ -8,6 +8,9 @@
 struct sqlite3;
 
 namespace filespacer {
+// Storage format, independent of the application release. Only this format
+// is opened or recovered; an empty database is initialized from scratch.
+constexpr int FOLDER_STATE_FORMAT_VERSION = 8;
 
 struct FolderViewSettings {
     enum Part : uint32_t { Mode = 1, Flags = 2, Columns = 4, Sort = 8, Group = 16, ColumnFill = 32, ColumnWeights = 64 };
@@ -58,7 +61,7 @@ struct ClosedWindow {
 
 // The main SQLite connection is UI-only; background readers open their own connection.
 // Short write transactions update only requested parts and enforce the used-page quota.
-// Writes, opening/migration and closing are serialized across processes by a
+// Writes, initialization and closing are serialized across processes by a
 // named mutex; reads rely on WAL alone (readers and writers never block each other).
 class FolderStateStore {
 public:
@@ -80,8 +83,9 @@ public:
     // What a rebuilt database kept of the one it replaces.
     enum class Recovery : uint8_t { Failed, None, Partial, Total };
     // Copies into this ready database every row of a former one that can still
-    // be read and has the shape this program writes. The former database is
-    // only read; unreadable rows are left out. Failed reports a technical error
+    // be read and has the shape this program writes, from the current format
+    // only. The former database is only read; unreadable rows are left out.
+    // Failed reports a technical error
     // opening the source or writing/verifying the destination, not an empty recovery.
     Recovery recoverFrom(const char *utf8Source);
 #ifdef _WIN32
