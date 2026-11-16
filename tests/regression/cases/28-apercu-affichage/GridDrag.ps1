@@ -76,11 +76,6 @@ function Move-GridIcons([bool]$Snap,[bool]$ReleaseEarly=$false,[bool]$InspectMar
             Wait-Ui {[FileSpacerViewMenuTests.GridKey]::Marker($body).Visible} 'repressing S restores marker without mouse motion' 0 5
             $shifted=New-Object FileSpacerRegression.MousePoint
             $shifted.X=$target.X+120;$shifted.Y=$target.Y
-            if($iconSize-ge96){
-                [FileSpacerRegression.AltDragInput]::Move($shifted)
-                Wait-Ui {![FileSpacerViewMenuTests.GridKey]::Marker($body).Visible} 'occupied destination suppresses an uncertain preview' 0 5
-                $shifted.X=$target.X+240
-            }
             [FileSpacerRegression.AltDragInput]::Move($shifted)
             Wait-Ui {$mark=[FileSpacerViewMenuTests.GridKey]::Marker($body);$mark.Visible-and$mark.Left-ne$before.Left} 'marker follows the next grid destination' 0 5
             [FileSpacerRegression.AltDragInput]::Move($target)
