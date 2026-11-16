@@ -696,11 +696,14 @@ void ItemWindow::recordFolderAccess(HRESULT result) {
 
 bool ItemWindow::updateStateLock() {
     bool locked = false;
-    auto store = folderStateStore();
     const bool wasLocked = stateLocked;
-    if (!store || !store->readLocked(stateKey, &locked)) {
-        stateStorageError();
-        return false;
+    // Disabled locking and expired identities have no lock state to read.
+    if (settings::getWindowStateLockEnabled() && !stateKey.empty()) {
+        auto store = folderStateStore();
+        if (!store || !store->readLocked(stateKey, &locked)) {
+            stateStorageError();
+            return false;
+        }
     }
     stateLocked = settings::getWindowStateLockEnabled() && locked;
     if (wasLocked && !stateLocked) viewStateDirty(FolderState::All);
@@ -749,9 +752,15 @@ void ItemWindow::toggleStateLock(bool replaceReference) {
 
 void ItemWindow::persistViewState() {
     if (stateKey.empty()) return; // No identity, or state expired after qualified access failures.
-    if (!loadFolderState() || !updateStateLock()) return; // Do not overwrite unreadable state.
-    const uint32_t captured = captureViewState(dirtyViewState);
+    if (!loadFolderState()) return; // Do not overwrite unreadable state.
+    uint32_t captured = captureViewState(dirtyViewState);
     if (!captured || stateKey.empty()) return; // Native capture can dispatch expiration.
+    // A no-op capture needs no SQLite lock-state read. Check the current lock
+    // before a real write; unlocking still captures the complete current state.
+    const bool wasLocked = stateLocked;
+    if (!updateStateLock()) return;
+    if (wasLocked && !stateLocked) captured |= captureViewState(dirtyViewState);
+    if (stateKey.empty()) return;
     auto store = folderStateStore();
     if (store && store->save(stateKey, savedState, captured)) {
         savedState.present |= captured;
