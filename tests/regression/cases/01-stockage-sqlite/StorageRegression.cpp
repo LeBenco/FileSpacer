@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <iterator>
 #include <chrono>
 #include <algorithm>
 #ifdef _WIN32
@@ -40,6 +42,11 @@ static void rawSQL(const std::string &path, const char *sql) {
     const int result = sqlite3_exec(db, sql, nullptr, nullptr, nullptr);
     sqlite3_close(db);
     require(result == SQLITE_OK, "raw SQL failed");
+}
+static std::string fileBytes(const std::string &path) {
+    std::ifstream file(path, std::ios::binary);
+    require(file.good(), "read fixture bytes");
+    return std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 }
 // A small history spans one interior page and several table leaves. Damage a
 // middle leaf of that tree, so recovery must use its descending scan too.
@@ -216,21 +223,21 @@ int main(int argc, char **argv) {
         {
             FolderStateStore store(path.c_str()); FolderState s;
             require(store.ready() && store.read("folder",&s) && s.present==FolderState::All && s.maximized,"reopen lost data");
-            require(!(s.view.present & FolderViewSettings::ColumnFill) && !s.view.fillColumns,"legacy view encoding gained a column option");
+            require(!(s.view.present & FolderViewSettings::ColumnFill) && !s.view.fillColumns,"absent column option became present");
             require(store.read("column-fill-on",&s) && (s.view.present & FolderViewSettings::ColumnFill)
                 && s.view.fillColumns && s.x==44,"enabled option lost after geometry update or reopen");
             require(store.read("column-fill-off",&s) && (s.view.present & FolderViewSettings::ColumnFill)
                 && !s.view.fillColumns,"disabled option lost after reopen");
             require(store.read("column-fill-locked",&s) && s.locked && s.view.fillColumns,"locked saved option changed");
-            require(!(s.view.present & FolderViewSettings::ColumnWeights) && s.view.columnWeights.empty(),"earlier view encoding gained column weights");
+            require(!(s.view.present & FolderViewSettings::ColumnWeights) && s.view.columnWeights.empty(),"absent column weights became present");
             require(store.read("column-weights",&s) && (s.view.present & FolderViewSettings::ColumnWeights) && s.view.fillColumns
                 && s.view.columnWeights.size()==1 && s.view.columnWeights[0].key==s.view.columns[0].key
                 && s.view.columnWeights[0].width==77 && s.view.columns[0].width==220,"column weights lost after reopen");
-            rawSQL(path,"UPDATE folder_state SET view=CAST(substr(view,1,length(view)-4)||x'02000000' AS BLOB) WHERE key='column-fill-off'");
+            rawSQL(path,"UPDATE folder_state SET view=CAST(substr(view,1,length(view)-8)||x'02000000'||substr(view,length(view)-3) AS BLOB) WHERE key='column-fill-off'");
             require(!store.read("column-fill-off",&s),"invalid column-option boolean accepted");
             require(store.remove("column-fill-on") && store.remove("column-fill-off") && store.remove("column-fill-locked")
                 && store.remove("column-weights"),"column option cleanup");
-            std::cout << "PASS: column option and weight versioning, per-folder choices, reopen, partial writes, lock and provisional merge.\n";
+            std::cout << "PASS: column option and weight encoding, per-folder choices, reopen, partial writes, lock and provisional merge.\n";
             std::cout << "PASS: data survives closing and reopening the database.\n";
             std::vector<uint8_t> scroll;
             std::vector<uint8_t> expected(48,0);expected.front()=1;expected.back()=6;
@@ -270,7 +277,7 @@ int main(int argc, char **argv) {
             "INSERT INTO closed_windows(key,parsing_name,display_name) VALUES('folder','folder','folder');PRAGMA user_version=99");
         {
             FolderStateStore store(path.c_str()); require(!store.ready(),"future schema accepted");
-            require(store.error().find("99")!=std::string::npos && store.error().find("7")!=std::string::npos
+            require(store.error().find("99")!=std::string::npos && store.error().find(std::to_string(FOLDER_STATE_FORMAT_VERSION))!=std::string::npos
                 && store.errorCode()==0,"newer schema diagnosis was lost");
             // A database of a later version is intact: it is never offered for a reset.
             require(store.createdByNewerVersion() && !store.canResetDamagedDatabase(),"newer schema offered for reset");
@@ -296,34 +303,59 @@ int main(int argc, char **argv) {
                 && fresh.lastClosedWindow(&closed) && !closed.sequence,
                 "deletion/recreation differs from clearAll for saved layouts and histories");
             std::cout << "PASS: deletion/recreation and clearAll both remove saved layouts, search and closed-window histories.\n";
-            // The backup still holds every row. Its view settings were made
-            // undecodable above: they alone are left out, so the recovery is partial.
             const size_t slash=path.find_last_of("\\/");
             const std::string saved=path+".schema-backup\\"+path.substr(slash==std::string::npos?0:slash+1);
-            require(fresh.recoverFrom(saved.c_str())==FolderStateStore::Recovery::Partial,"recovery verdict with one undecodable view");
-            const FolderState expected=fixture();
-            require(fresh.read("folder",&state) && (state.present&FolderState::Position) && state.x==expected.x
-                && state.y==expected.y && (state.present&FolderState::Icons) && state.icons==expected.icons
-                && !(state.present&FolderState::View),"recovered layout differs, or undecodable settings were kept");
-            require(fresh.readSearchHistory("folder",20,&history) && history.size()==1 && history[0]=="reset-history"
-                && fresh.lastClosedWindow(&closed) && closed.key=="folder","recovery lost search or closed-window history");
-            std::cout << "PASS: recovery keeps every readable row, leaves out undecodable settings alone, and reports it as partial.\n";
+            const auto backupBytes=fileBytes(saved);
+            require(fresh.recoverFrom(saved.c_str())==FolderStateStore::Recovery::None
+                && fresh.read("folder",&state) && !state.present
+                && fresh.readSearchHistory("folder",20,&history) && history.empty()
+                && fresh.lastClosedWindow(&closed) && !closed.sequence
+                && fileBytes(saved)==backupBytes,"old-format backup was imported or modified");
+            std::cout << "PASS: confirmed reset keeps the old-format backup without importing its rows.\n";
 #endif
         }
         erase(path);
-        // A former schema whose table already has a recent column: the
-        // migration adds only what is missing, and the database then stores states.
-        rawSQL(path,"CREATE TABLE folder_state(key TEXT PRIMARY KEY NOT NULL,x INTEGER,y INTEGER,width INTEGER,height INTEGER,"
-            "view BLOB,icons BLOB,last_success_at INTEGER NOT NULL DEFAULT 0,first_failed_at INTEGER,maximized INTEGER,"
-            "scroll BLOB) WITHOUT ROWID;"
-            "INSERT INTO folder_state(key,x,y,width,height) VALUES('edited',5,6,700,500);PRAGMA user_version=4;");
         {
-            FolderStateStore store(path.c_str());FolderState s;
-            require(store.ready(),store.error().c_str());
-            require(store.read("edited",&s) && s.x==5 && s.y==6 && !s.locked,"tolerant migration lost a layout");
-            require(store.save("later",fixture(),FolderState::All) && store.read("later",&s)
-                && s.x==fixture().x,"tolerantly migrated database does not store new states");
-            std::cout << "PASS: a schema that already has a recent column migrates and stores new states.\n";
+            FolderStateStore store(path.c_str());
+            require(store.ready() && store.save("older",fixture(),FolderState::All),"old-format fixture");
+        }
+        rawSQL(path,"PRAGMA journal_mode=DELETE;PRAGMA user_version=7");
+        {
+            const auto before=fileBytes(path);
+            FolderStateStore store(path.c_str());
+            require(!store.ready() && store.canResetDamagedDatabase() && !store.createdByNewerVersion(),
+                "previous format accepted or not diagnosed");
+            require(fileBytes(path)==before,"opening an older format changed its bytes");
+        }
+        rawSQL(path,"PRAGMA user_version=0");
+        {
+            const auto before=fileBytes(path);
+            FolderStateStore store(path.c_str());
+            require(!store.ready() && store.canResetDamagedDatabase(),"unversioned non-empty database accepted");
+            require(fileBytes(path)==before,"opening an unversioned database changed its bytes");
+        }
+        erase(path);
+        {
+            const std::string damaged=path+".current-recovery";erase(damaged);
+            {
+                FolderStateStore source(damaged.c_str());
+                ClosedWindow closed;closed.key="folder";closed.parsingName="folder";closed.displayName="folder";
+                require(source.ready() && source.save("folder",fixture(),FolderState::All)
+                    && source.saveSearchHistory("folder",{"reset-history"},20)
+                    && source.rememberClosedWindow(closed),"current-format recovery fixture");
+            }
+            rawSQL(damaged,"UPDATE folder_state SET view=x'00000000' WHERE key='folder'");
+            FolderStateStore target(path.c_str());FolderState state;ClosedWindow closed;std::vector<std::string> history;
+            require(target.ready() && target.recoverFrom(damaged.c_str())==FolderStateStore::Recovery::Partial,
+                "recovery verdict with one undecodable current-format view");
+            const FolderState expected=fixture();
+            require(target.read("folder",&state) && (state.present&FolderState::Position) && state.x==expected.x
+                && state.y==expected.y && (state.present&FolderState::Icons) && state.icons==expected.icons
+                && !(state.present&FolderState::View),"recovered layout differs, or undecodable settings were kept");
+            require(target.readSearchHistory("folder",20,&history) && history.size()==1 && history[0]=="reset-history"
+                && target.lastClosedWindow(&closed) && closed.key=="folder","recovery lost search or closed-window history");
+            erase(damaged);
+            std::cout << "PASS: current-format recovery keeps readable data and leaves out undecodable settings.\n";
         }
         erase(path);
         // A damaged page stops a scan: the rows on both sides of it are kept.
@@ -446,20 +478,6 @@ int main(int argc, char **argv) {
             erase(damaged); erase(path);
         }
         std::cout << "PASS: both histories keep their exact identities and recency across a damaged middle page.\n";
-        rawSQL(path,"CREATE TABLE folder_state(key TEXT PRIMARY KEY NOT NULL,x INTEGER,y INTEGER,width INTEGER,height INTEGER,"
-            "view BLOB,icons BLOB,last_success_at INTEGER NOT NULL DEFAULT 0,first_failed_at INTEGER,maximized INTEGER,locked INTEGER NOT NULL DEFAULT 0) WITHOUT ROWID;"
-            "INSERT INTO folder_state(key,x,y,width,height,maximized,locked) VALUES('legacy-six',12,34,600,400,1,1);PRAGMA user_version=6;");
-        {
-            FolderStateStore store(path.c_str());FolderState s;std::vector<uint8_t> scroll;
-            require(store.ready() && store.read("legacy-six",&s) && s.x==12 && s.y==34 && s.width==600
-                && s.height==400 && s.maximized && s.locked,"schema-six migration lost its layout");
-            require(store.readViewScroll("legacy-six",&scroll) && scroll.empty(),"legacy viewport was invented");
-            const std::vector<uint8_t> expected={9,8,7};
-            require(store.saveViewScroll("legacy-six",expected) && store.readViewScroll("legacy-six",&scroll)
-                && scroll==expected,"migrated viewport cannot be stored");
-            std::cout << "PASS: schema-six migration preserves existing state and enables viewport persistence.\n";
-        }
-        erase(path);
         {
             FILE *file=std::fopen(path.c_str(),"wb"); require(file!=nullptr,"create damaged fixture");
             std::fputs("not a database",file);std::fclose(file);
