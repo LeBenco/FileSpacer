@@ -13,8 +13,10 @@ BEGIN
   IDS_VIEW_DETAILS "&Detalles"
   IDS_VIEW_TILES "M&osaicos"
   IDS_VIEW_CONTENT "Co&ntenido"
-  IDS_AUTO_ARRANGE_ICONS "Organi&zar iconos automáticamente"
-  IDS_KEEP_ICONS_ALIGNED "Mantener los iconos alineados"
+  IDS_AUTO_ARRANGE_ICONS "&Automática"
+  IDS_KEEP_ICONS_ALIGNED "En &cuadrícula"
+  IDS_FREE_PLACEMENT_ICONS "&Libre"
+  IDS_ICON_PLACEMENT "&Colocación"
   IDS_REALIGN_ICONS "Volver a alinear los iconos"
   IDS_FILL_COLUMNS "Redimensionar columnas"
 END

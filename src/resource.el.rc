@@ -13,8 +13,10 @@ BEGIN
   IDS_VIEW_DETAILS "Λ&επτομέρειες"
   IDS_VIEW_TILES "Πλα&κίδια"
   IDS_VIEW_CONTENT "Πε&ριεχόμενο"
-  IDS_AUTO_ARRANGE_ICONS "&Αυτόματη τακτοποίηση εικονιδίων"
-  IDS_KEEP_ICONS_ALIGNED "Διατήρηση ευθυγράμμισης εικονιδίων"
+  IDS_AUTO_ARRANGE_ICONS "&Αυτόματη"
+  IDS_KEEP_ICONS_ALIGNED "Σε &πλέγμα"
+  IDS_FREE_PLACEMENT_ICONS "&Ελεύθερη"
+  IDS_ICON_PLACEMENT "&Τοποθέτηση"
   IDS_REALIGN_ICONS "Ευθυγράμμιση εικονιδίων"
   IDS_FILL_COLUMNS "Αλλαγή μεγέθους στηλών"
 END

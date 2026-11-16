@@ -13,8 +13,10 @@ BEGIN
   IDS_VIEW_DETAILS "&Szczegóły"
   IDS_VIEW_TILES "&Kafelki"
   IDS_VIEW_CONTENT "&Zawartość"
-  IDS_AUTO_ARRANGE_ICONS "Rozmieść ikony &automatycznie"
-  IDS_KEEP_ICONS_ALIGNED "Utrzymuj wyrównanie ikon"
+  IDS_AUTO_ARRANGE_ICONS "&Automatyczne"
+  IDS_KEEP_ICONS_ALIGNED "Na &siatce"
+  IDS_FREE_PLACEMENT_ICONS "&Dowolne"
+  IDS_ICON_PLACEMENT "&Rozmieszczenie"
   IDS_REALIGN_ICONS "Wyrównaj ikony ponownie"
   IDS_FILL_COLUMNS "Zmień rozmiar kolumn"
 END

@@ -13,8 +13,10 @@ BEGIN
   IDS_VIEW_DETAILS "&Таблиця"
   IDS_VIEW_TILES "П&литки"
   IDS_VIEW_CONTENT "&Вміст"
-  IDS_AUTO_ARRANGE_ICONS "&Упорядковувати піктограми автоматично"
-  IDS_KEEP_ICONS_ALIGNED "Зберігати вирівнювання піктограм"
+  IDS_AUTO_ARRANGE_ICONS "&Автоматичне"
+  IDS_KEEP_ICONS_ALIGNED "За &сіткою"
+  IDS_FREE_PLACEMENT_ICONS "&Довільне"
+  IDS_ICON_PLACEMENT "&Розташування"
   IDS_REALIGN_ICONS "Повторно вирівняти піктограми"
   IDS_FILL_COLUMNS "Змінювати розмір стовпців"
 END

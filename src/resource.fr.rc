@@ -13,8 +13,10 @@ BEGIN
   IDS_VIEW_DETAILS "&Détails"
   IDS_VIEW_TILES "Mosaïque&s"
   IDS_VIEW_CONTENT "Conten&u"
-  IDS_AUTO_ARRANGE_ICONS "Réorganiser &automatiquement les icônes"
-  IDS_KEEP_ICONS_ALIGNED "Garder les icônes alignées"
+  IDS_AUTO_ARRANGE_ICONS "&Automatique"
+  IDS_KEEP_ICONS_ALIGNED "Sur la &grille"
+  IDS_FREE_PLACEMENT_ICONS "&Libre"
+  IDS_ICON_PLACEMENT "P&lacement"
   IDS_REALIGN_ICONS "Réaligner les icônes"
   IDS_FILL_COLUMNS "Redimensionner les colonnes"
 END

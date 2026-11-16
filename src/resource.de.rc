@@ -13,8 +13,10 @@ BEGIN
   IDS_VIEW_DETAILS "&Details"
   IDS_VIEW_TILES "Ka&cheln"
   IDS_VIEW_CONTENT "In&halt"
-  IDS_AUTO_ARRANGE_ICONS "Symbole &automatisch anordnen"
-  IDS_KEEP_ICONS_ALIGNED "Symbole ausgerichtet halten"
+  IDS_AUTO_ARRANGE_ICONS "&Automatisch"
+  IDS_KEEP_ICONS_ALIGNED "Am &Raster"
+  IDS_FREE_PLACEMENT_ICONS "&Frei"
+  IDS_ICON_PLACEMENT "&Anordnung"
   IDS_REALIGN_ICONS "Symbole neu ausrichten"
   IDS_FILL_COLUMNS "Spaltenbreite anpassen"
 END
