@@ -403,8 +403,104 @@ HRESULT ShellSelectionClear::selectAll(IShellView *source, const std::function<b
 
 UINT shellViewOperationsReadyMessage() { return selectionDetail::readyMessage(); }
 int runShellViewOperationsWorker(const wchar_t *cacheRoot) { return selectionDetail::runWorker(cacheRoot); }
-bool alignIconToGrid(POINT &point, const POINT &spacing, int size) {
-    return selectionDetail::snapGridPoint(point, spacing, size);
+HRESULT ShellIconGrid::prepare(IShellView *source, HWND list, const std::function<bool()> &current) {
+#ifdef FILESPACER_DEBUG
+    const ULONGLONG began = GetTickCount64();
+#endif
+    ready = qualified = false;
+    control.reset();
+    font.reset(); imageList.Release();
+    folder = CComQIPtr<IFolderView2>(source);
+    if (!current()) return E_ABORT;
+    if (!folder) return E_NOINTERFACE;
+    FOLDERVIEWMODE mode = FVM_AUTO; DWORD flags = 0;
+    if (FAILED(folder->GetViewModeAndIconSize(&mode, &size)) || !current() || mode != FVM_ICON
+            || FAILED(folder->GetSpacing(&spacing)) || !current() || size <= 0 || spacing.x < size || spacing.y <= 0
+            || FAILED(folder->GetCurrentFolderFlags(&flags)) || !current()
+            || (flags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID | FWF_DESKTOP | FWF_NOSCROLL))) return S_FALSE;
+    qualified = selectionDetail::gridImage().supported && selectionDetail::gridImage().qualifies();
+    if (qualified) {
+        ready = true;
+        debugPrintf(L"GRID PREPARE path=qualified elapsed_ms=%llu\n", GetTickCount64() - began);
+        return S_OK;
+    }
+    // A one-item public ListView supplies native rounding without touching the
+    // actual folder. It shares the image list without owning or drawing it.
+    HWND body = nullptr; wchar_t name[32] = {};
+    if (FAILED(source->GetWindow(&body)) || !current() || !body || !IsChild(body, list)
+            || !GetClassNameW(list, name, _countof(name)) || lstrcmpW(name, WC_LISTVIEWW)) return S_FALSE;
+    const HIMAGELIST icons = ListView_GetImageList(list, LVSIL_NORMAL);
+    if (!current()) return E_ABORT;
+    int width = 0, height = 0;
+    if (!icons || !ImageList_GetIconSize(icons, &width, &height) || width != size || height != size
+            || spacing.x > MAXSHORT || spacing.y > MAXSHORT) return S_FALSE;
+    if (FAILED(HIMAGELIST_QueryInterface(icons, IID_PPV_ARGS(&imageList))) || !current()) return E_FAIL;
+    RECT bounds = {};
+    if (!GetWindowRect(list, &bounds) || !current()) return E_FAIL;
+    control.reset(CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, WC_LISTVIEWW, L"",
+        WS_POPUP | LVS_ICON | LVS_SHAREIMAGELISTS, bounds.left, bounds.top, spacing.x * 2, spacing.y * 2,
+        nullptr, nullptr, GetModuleHandleW(nullptr), nullptr));
+    if (!control || !current()) return E_FAIL;
+    if (GetClassLongPtrW(control.get(), GCLP_HMODULE) != GetClassLongPtrW(list, GCLP_HMODULE)
+            || GetDpiForWindow(control.get()) != GetDpiForWindow(list)) return S_FALSE;
+    const HFONT nativeFont = reinterpret_cast<HFONT>(SendMessageW(list, WM_GETFONT, 0, 0));
+    if (!current()) return E_ABORT;
+    LOGFONTW description = {};
+    if (!nativeFont || GetObjectW(nativeFont, sizeof(description), &description) != sizeof(description)) return S_FALSE;
+    font.reset(CreateFontIndirectW(&description));
+    if (!font) return E_FAIL;
+    SendMessageW(control.get(), WM_SETFONT, reinterpret_cast<WPARAM>(font.get()), FALSE);
+    ListView_SetImageList(control.get(), icons, LVSIL_NORMAL);
+    ListView_SetIconSpacing(control.get(), spacing.x, spacing.y);
+    LVITEMW item = {}; item.mask = LVIF_IMAGE; item.iImage = 0;
+    if (ListView_InsertItem(control.get(), &item) != 0 || !current()) return E_FAIL;
+
+    ready = true;
+    debugPrintf(L"GRID PREPARE path=public elapsed_ms=%llu\n", GetTickCount64() - began);
+    return S_OK;
+}
+
+bool ShellIconGrid::align(POINT &point) const {
+    if (!ready) return false;
+    if (qualified) return selectionDetail::snapGridPoint(point, spacing, size);
+    ListView_SetItemPosition32(control.get(), 0, point.x, point.y);
+    return ListView_Arrange(control.get(), LVA_SNAPTOGRID)
+        && ListView_GetItemPosition(control.get(), 0, &point);
+}
+
+HRESULT ShellIconGrid::apply(PreparedIconPositions &positions, const std::function<bool()> &current) const {
+#ifdef FILESPACER_DEBUG
+    const ULONGLONG began = GetTickCount64();
+#endif
+    if (!ready || positions.view != folder) return E_INVALIDARG;
+    if (!current()) return E_ABORT;
+    FOLDERVIEWMODE mode = FVM_AUTO; int actualSize = 0; POINT actualSpacing = {}; DWORD flags = 0;
+    if (FAILED(folder->GetViewModeAndIconSize(&mode, &actualSize)) || !current()
+            || FAILED(folder->GetSpacing(&actualSpacing)) || !current()
+            || FAILED(folder->GetCurrentFolderFlags(&flags)) || !current()
+            || mode != FVM_ICON || actualSize != size || actualSpacing.x != spacing.x || actualSpacing.y != spacing.y
+            || (flags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID))
+            || (qualified && !selectionDetail::gridImage().qualifies())) return E_ABORT;
+    for (auto &point : positions.points) {
+        if (!align(point)) return E_INVALIDARG;
+        if (!current()) return E_ABORT;
+    }
+    if (!positions.ready || positions.items.size() != positions.points.size()) return E_INVALIDARG;
+    positions.ready = false;
+    const HRESULT result = folder->SelectAndPositionItems(static_cast<UINT>(positions.items.size()),
+        positions.items.data(), positions.points.data(), SVSI_POSITIONITEM | SVSI_NOSTATECHANGE);
+    if (!current()) return E_ABORT;
+    if (SUCCEEDED(result)) {
+        if (qualified) {
+            selectionDetail::gridCalls().fetch_add(1, std::memory_order_relaxed);
+#ifdef FILESPACER_DEBUG
+            int count = 0;
+            if (SUCCEEDED(folder->ItemCount(SVGIO_ALLVIEW, &count)) && current())
+                debugPrintf(L"GRID SNAP qualified=1 selected=%zu count=%d\n", positions.items.size(), count);
+#endif
+        } else debugPrintf(L"GRID SNAP path=public elapsed_ms=%llu\n", GetTickCount64() - began);
+    }
+    return result;
 }
 
 HRESULT alignIconsToGrid(IShellView *source, bool selectedOnly,

@@ -1,9 +1,11 @@
 #pragma once
 #include <common.h>
+#include <atlbase.h>
 #include <shobjidl.h>
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <type_traits>
 
 namespace filespacer {
 // Item count from which the accelerated selection, clearing, capture and
@@ -53,6 +55,21 @@ int runShellViewOperationsWorker(const wchar_t *cacheRoot = nullptr);
 // native fallback have the same selection/focus/flag preservation contract.
 HRESULT alignIconsToGrid(IShellView *view, bool selectedOnly,
     const std::function<bool()> &current);
-// Read-only rounding shared by the drag prediction and grid operation.
-bool alignIconToGrid(POINT &point, const POINT &spacing, int size);
+struct PreparedIconPositions;
+// One gesture uses the same native grid for prediction and placement. Prepare
+// before entering the Shell drag loop; backend selection stays in this layer.
+class ShellIconGrid {
+public:
+    HRESULT prepare(IShellView *view, HWND iconControl, const std::function<bool()> &current);
+    bool align(POINT &point) const;
+    HRESULT apply(PreparedIconPositions &positions, const std::function<bool()> &current) const;
+private:
+    CComPtr<IFolderView2> folder;
+    CComPtr<IUnknown> imageList;
+    std::unique_ptr<std::remove_pointer<HFONT>::type, decltype(&DeleteObject)> font{nullptr, DeleteObject};
+    std::unique_ptr<std::remove_pointer<HWND>::type, decltype(&DestroyWindow)> control{nullptr, DestroyWindow};
+    POINT spacing = {};
+    int size = 0;
+    bool ready = false, qualified = false;
+};
 } // namespace filespacer
