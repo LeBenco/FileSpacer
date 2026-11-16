@@ -2,7 +2,7 @@
 #include "FolderWindow.h"
 #include "ShellUtils.h"
 #include "ShellViewSelection.h"
-#include "ShellSelectionRuntime.h"
+#include "ShellViewOperations.h"
 #include "CreateItemWindow.h"
 #include "ClosedWindows.h"
 #include "Settings.h"
@@ -201,13 +201,13 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         const std::wstring root = recoveryArgv[3];
         LocalFree(recoveryArgv);
         SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
-        return selectionDetail::runWorker(root.c_str());
+        return runShellViewOperationsWorker(root.c_str());
     }
 #endif
     if (recoveryArgc == 2 && lstrcmpiW(recoveryArgv[1], L"/selection-discovery") == 0) {
         LocalFree(recoveryArgv);
         SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
-        return selectionDetail::runWorker();
+        return runShellViewOperationsWorker();
     }
     if (recoveryArgc == 6 && lstrcmpiW(recoveryArgv[1], L"/render-title-menu") == 0) {
         const POINT origin = { _wtol(recoveryArgv[4]), _wtol(recoveryArgv[5]) };
