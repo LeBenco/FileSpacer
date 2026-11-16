@@ -1,6 +1,8 @@
 // API doubles for deterministic reentrancy tests. Production methods are included
 // verbatim by Prepare-Sources.ps1; this does not validate a real Shell extension.
 #include <cassert>
+#include <climits>
+#include <algorithm>
 #include <cstring>
 #include <cstdint>
 #include <cwchar>
@@ -12,6 +14,14 @@
 #include <vector>
 
 using HRESULT = int;
+using ULONG_PTR = std::uintptr_t;
+using DWORD = unsigned long;
+using FOLDERVIEWMODE = int;
+constexpr int FVM_AUTO=0;
+struct ViewMenuMode { int mode, size; };
+const ViewMenuMode VIEW_MENU_MODES[]={{1,48}};
+int scaleDPI(int value) { return value; }
+
 using UINT = unsigned;
 using WORD = unsigned short;
 using HWND = void *;
@@ -27,16 +37,18 @@ struct CMINVOKECOMMANDINFOEX {
 };
 constexpr HRESULT S_OK = 0, E_FAIL = -1;
 constexpr unsigned FVO_DEFAULT = 0;
-namespace selectionDetail { UINT readyMessage() { return 0xc001; } }
+UINT shellViewOperationsReadyMessage() { return 0xc001; }
 constexpr UINT CMF_CANRENAME = 1, CMF_EXTENDEDVERBS = 2, CMF_ITEMMENU = 4,
     CMF_NODEFAULT = 8, CMF_OPTIMIZEFORINVOKE = 16;
 constexpr UINT TPM_RIGHTBUTTON = 2, TPM_RETURNCMD = 256, MM_ADDSEPARATOR = 1;
 constexpr int SVGIO_SELECTION = 1, SVGIO_BACKGROUND = 0, VK_SHIFT = 16,
     CP_ACP = 0, SIGDN_DESKTOPABSOLUTEPARSING = 1;
 constexpr WORD IDM_SETTINGS = 20, IDM_TOGGLE_THUMBNAILS = 21, IDM_FILL_COLUMNS = 22;
-constexpr int IDS_GLOBAL_THUMBNAILS = 1, IDS_FILL_COLUMNS = 2;
+constexpr int IDS_GLOBAL_THUMBNAILS = 1, IDS_FILL_COLUMNS = 2, IDS_REALIGN_ICONS=3, IDS_VIEW_MODE_FIRST=4;
+constexpr UINT IDM_REALIGN_ICONS=23, IDM_VIEW_MODE_FIRST=300, MFT_RADIOCHECK=512, MF_SEPARATOR=2048, MF_BYPOSITION=1024, MFS_DISABLED=3, MFS_ENABLED=0, TPM_NOANIMATION=16384;
 constexpr int IDM_SHELL_FIRST = 100, IDM_SHELL_LAST = 200, IDR_ITEM_MENU = 1;
 #define SUCCEEDED(hr) ((hr) >= 0)
+#define FAILED(hr) ((hr) < 0)
 inline bool checkResult(HRESULT hr) { return SUCCEEDED(hr); }
 #define checkHR(hr) checkResult(hr)
 #define checkLE(expr) (expr)
@@ -54,7 +66,7 @@ namespace settings {
     bool getViewMenuPreviewEnabled() { return previewEnabled; }
     bool getDetailsColumnsEnabled() { return true; }
 }
-struct FolderState { enum { Icons = 8 }; };
+struct FolderState { enum { Icons = 8 }; unsigned present=0; std::vector<uint8_t> icons; };
 constexpr int WH_MSGFILTER = -1;
 HHOOK SetWindowsHookEx(int, HOOKPROC, void *, unsigned long) { assert(false); return nullptr; }
 bool UnhookWindowsHookEx(HHOOK) { assert(false); return false; }
@@ -146,19 +158,27 @@ UINT GetMenuItemID(HMENU menu, int index) {
     return menu->items[static_cast<std::size_t>(index)].wID;
 }
 bool GetMenuItemInfoW(HMENU menu, UINT index, bool byPosition, MENUITEMINFO *info) {
-    assert(menu && byPosition && info && info->fMask == MIIM_FTYPE);
+    assert(menu && byPosition && info && (info->fMask == MIIM_FTYPE || info->fMask == MIIM_ID));
     if (index >= menu->items.size()) return false;
-    info->fType = menu->items[index].fType;
+    info->fType = menu->items[index].fType; info->wID = menu->items[index].wID;
     return true;
 }
 bool InsertMenuItemW(HMENU menu, UINT index, bool byPosition, const MENUITEMINFO *info) {
-    assert(menu && byPosition && info && (info->wID == IDM_TOGGLE_THUMBNAILS || info->wID == IDM_FILL_COLUMNS));
+    assert(menu && byPosition && info && (info->wID == IDM_TOGGLE_THUMBNAILS || info->wID == IDM_FILL_COLUMNS || info->wID == IDM_REALIGN_ICONS || info->wID == IDM_VIEW_MODE_FIRST));
     if (index > menu->items.size()) return false;
     menu->items.insert(menu->items.begin() + index, *info);
     return true;
 }
 bool SetMenuItemInfo(HMENU, UINT, bool, MENUITEMINFO *) { return true; }
 HMENU CreatePopupMenu() { ++observation.menus; return new Menu; }
+bool AppendMenuW(HMENU menu, UINT flags, UINT id, const wchar_t *) {
+    MENUITEMINFO entry={sizeof(entry)}; entry.wID=id;entry.fType=flags;menu->items.push_back(entry);return true;
+}
+bool DeleteMenu(HMENU menu, UINT index, UINT) { menu->items.erase(menu->items.begin()+index);return true; }
+bool appendPlacementMenu(HMENU, FOLDERVIEWMODE, DWORD) { return true; }
+bool isViewMenuMode(UINT command) { return command == IDM_VIEW_MODE_FIRST; }
+bool isPlacementCommand(UINT) { return false; }
+void activateTitleMenuExtension(void **value) { *value=reinterpret_cast<void *>(1); }
 HMENU LoadMenu(void *, int) { return CreatePopupMenu(); }
 bool DestroyMenu(HMENU m) { assert(m); --observation.menus; delete m; return true; }
 void *GetModuleHandle(void *) { return nullptr; }
@@ -187,7 +207,16 @@ struct IShellItem : Ref {
         return S_OK;
     }
 };
-struct IFolderView2 : Ref {};
+struct IFolderView2 : Ref {
+    HRESULT GetViewModeAndIconSize(FOLDERVIEWMODE *mode,int *size) { *mode=1;*size=48;return S_OK; }
+    HRESULT GetCurrentFolderFlags(DWORD *flags) { *flags=0;return S_OK; }
+};
+template<class T> struct CComQIPtr : CComPtr<T> {
+    template<class U> explicit CComQIPtr(const CComPtr<U> &) { this->Attach(new T); }
+};
+bool spatialView(IFolderView2 *) { return false; }
+template<class Guard> HRESULT captureIconPositions(IFolderView2 *,Guard,bool,const std::vector<uint8_t> &,std::vector<uint8_t> &,bool) { assert(false);return E_FAIL; }
+HRESULT invokeDisplayCommand(IFolderView2 *,UINT) { assert(false);return E_FAIL; }
 struct IContextMenu : Ref {
     IFolderView2 *site = nullptr;
     IContextMenu() : Ref(Stage::MenuRelease) {}
@@ -310,8 +339,9 @@ struct ShellViewColumns {
 struct FolderWindow : ItemWindow {
     struct ViewMenuPreview {
         static ViewMenuPreview *active;
-        ViewMenuPreview(FolderWindow &, HMENU, IContextMenu *, IFolderView2 *) { assert(false); }
-        bool capture() { assert(false); return false; }
+        ViewMenuPreview(FolderWindow &, HMENU, IContextMenu *, IFolderView2 *) {}
+        bool hoverEnabled=false;
+        bool capture() { return false; }
         void finish(UINT) { assert(false); }
         static LRESULT filter(int, WPARAM, LPARAM) { assert(false); return 0; }
     };
@@ -324,10 +354,16 @@ struct FolderWindow : ItemWindow {
     bool provisionalInputBlocked = false, provisionalCaptureBusy = false, provisionalBaseline = false;
     bool captureProvisionalCurrent(bool, bool) { assert(false); return false; }
     enum { TIMER_SAVE_STATE = 2 };
-    // The View menu saves the icon positions before it opens: while the
-    // window is still operational, never after it closed.
+    // Keep storage doubles strict: merely opening a popup must not flush
+    // state, and no continuation may persist after closure.
     void viewStateDirty(unsigned parts) { assert(isWindowOperational() && parts == FolderState::Icons); }
     void persistViewState() { assert(isWindowOperational() && !observation.closed); ++observation.openingSaves; }
+    ULONG_PTR viewGeneration=1;
+    void *viewMenuExtension=nullptr;
+    FolderState saved;
+    std::wstring searchText;
+    FolderState &getSavedFolderState() { return saved; }
+    void realignIcons() { assert(false); }
     CComPtr<IShellView> shellView;
     ShellViewHost viewHost;
     FolderWindow() { shellView.Attach(new IShellView); }
@@ -361,7 +397,7 @@ struct FolderWindow : ItemWindow {
 };
 FolderWindow::ViewMenuPreview *FolderWindow::ViewMenuPreview::active = nullptr;
 bool PostMessageW(HWND window, UINT message, WPARAM, LPARAM) {
-    assert(window && !observation.closed && message == selectionDetail::readyMessage());
+    assert(window && !observation.closed && message == shellViewOperationsReadyMessage());
     ++observation.selectionReadyPosts;
     return true;
 }
@@ -437,13 +473,14 @@ int main() {
     observation = {};
     auto source = new FolderWindow;
     observation.source = source;
-    // Only the preview needs the classic view: with it the native profile
-    // defers the menu, and nothing is saved or shown before the profile changes.
+    // The reconstructed menu opens in the current profile without a storage
+    // flush or Shell-extension query. Preview behavior is covered on real views.
+    observation.command = 0;
     settings::previewEnabled = true;
     source->hybridViewEligible = true;
     source->openViewMenu({12, 34});
     settings::previewEnabled = false;
-    assert(source->viewMenuRequested && source->pendingViewMenuPoint.x == 12 && source->pendingViewMenuPoint.y == 34);
+    assert(!source->viewMenuRequested && source->viewMenuDepth == 0);
     assert(observation.profileRequests == 1 && observation.menus == 0 && observation.invoked == 0
         && observation.openingSaves == 0);
     source->selectionBindingPending = true;
@@ -452,5 +489,5 @@ int main() {
     assert(!source->selectionBindingPending && observation.selectionReadyPosts == 1);
     source->closeNow();
     assert(observation.objects == 0 && observation.menus == 0);
-    std::cout << "PASS: menu closure boundaries, deferred modern-profile menu and selection capability wakeup; references released.\n";
+    std::cout << "PASS: menu closure boundaries, immediate reconstructed menu without storage flush and selection capability wakeup; references released.\n";
 }
