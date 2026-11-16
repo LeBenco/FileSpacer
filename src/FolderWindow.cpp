@@ -74,6 +74,14 @@ static bool iconPlacementMode(UINT mode) {
     return mode == FVM_ICON || mode == FVM_SMALLICON || mode == FVM_TILE;
 }
 
+static bool gridPlacement(IFolderView *folderView) {
+    CComQIPtr<IFolderView2> view(folderView);
+    DWORD flags = 0; UINT mode = static_cast<UINT>(FVM_AUTO);
+    return view && SUCCEEDED(view->GetCurrentViewMode(&mode)) && iconPlacementMode(mode)
+        && SUCCEEDED(view->GetCurrentFolderFlags(&flags))
+        && (flags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID)) == FWF_SNAPTOGRID;
+}
+
 static bool appendPlacementMenu(HMENU parent, UINT mode, DWORD flags) {
     auto destroy = [](HMENU handle) { DestroyMenu(handle); };
     std::unique_ptr<std::remove_pointer<HMENU>::type, decltype(destroy)> menu(CreatePopupMenu(), destroy);
@@ -268,13 +276,19 @@ struct FolderWindow::IconSnap {
             auto session = active->owner.iconSnap;
             if (session && session->current()) {
                 const bool down = !(static_cast<ULONG_PTR>(state) & (ULONG_PTR(1) << 31));
-                if (key == VK_ESCAPE && down) {
+                if (key == VK_ESCAPE && down && !session->finished) {
                     session->snap = false;
                     session->finished = true;
                     PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0);
-                } else if (key == L'S' && !session->permanent() && down != session->heldS) {
+                } else if (key == L'S' && !session->permanent() && (!session->finished || session->heldS)) {
+                    const bool changed = down != session->heldS;
                     session->heldS = down;
-                    session->queueMarker();
+                    if (session->finished && !down)
+                        PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0);
+                    else if (changed) session->queueMarker();
+                    // Keep this press, including repeats after the drop, out of
+                    // the Shell's type-to-select until its matching release.
+                    return 1;
                 }
             }
         }
@@ -630,6 +644,7 @@ struct FolderWindow::ViewMenuPreview {
     UINT pendingCommand = 0; // Entry outside the modes, run after the preview is cancelled.
     UINT chosenCommand = 0; // Mode retained when the menu closed: 0 for the initial one.
     bool tracking = true, posted = false, busy = false, prepared = false, capturedIcons = false;
+    POINT initialSpacing = {};
     bool hoverEnabled = false;
     // The final apply() failed without any refill: no EnumDone replays it. The
     // session still withholds saving the preview, but its initial selection
@@ -744,6 +759,9 @@ struct FolderWindow::ViewMenuPreview {
         if (FAILED(result) || !current()) return false;
         captureViewScroll(source, valid, initial.scroll);
         if (!current()) return false;
+        if (gridPlacement(view) && current()) {
+            if (FAILED(view->GetSpacing(&initialSpacing)) || !current()) return false;
+        }
         if (owner.spatialView(view) && current()) {
             result = captureIconPositions(view, valid, owner.enumerationComplete,
                 owner.getSavedFolderState().icons, initial.icons, !owner.searchText.empty());
@@ -836,10 +854,13 @@ struct FolderWindow::ViewMenuPreview {
     }
 
     void restoreDetails() {
-        if (!prepared || !current() || (tracking && currentCommand)) return;
+        if (!prepared || !current() || (tracking && currentCommand && initialSpacing.x <= 0)) return;
         auto valid = [&]() { return current(); };
         ++owner.navigationDepth;
-        if (!currentCommand && !initial.icons.empty() && owner.spatialView(view) && current()) {
+        if (currentCommand && !initial.icons.empty() && initialSpacing.x > 0 && initialSpacing.y > 0
+                && gridPlacement(view) && current()) {
+            checkHR(restoreIconGridPositions(view, initial.icons, initialSpacing, valid));
+        } else if (!currentCommand && !initial.icons.empty() && owner.spatialView(view) && current()) {
             if (tracking) {
                 checkHR(preparePositionChunks());
                 if (!positionChunks.empty()) PostMessage(owner.hwnd, WM_NULL, 0, 0);
@@ -1038,6 +1059,11 @@ struct FolderWindow::ViewMenuPreview {
         if (capturedIcons && window.viewStateIsDirty(FolderState::Icons)) {
             window.persistViewState();
             if (!current()) return;
+        }
+        if (settled && chosenCommand && initialSpacing.x > 0 && gridPlacement(view) && current()) {
+            window.arrangementChanged(view); // The committed grid was already mapped above.
+            if (!current()) return;
+            window.viewStateDirty(FolderState::Icons);
         }
         window.viewMenuPreview.reset();
         if (settled && (chosenCommand || pendingChanged)) window.scheduleStateSave();
@@ -2158,11 +2184,17 @@ void FolderWindow::scheduleStateSave(bool icons) {
         if (!isWindowOperational() || generation != viewGeneration) return;
         const bool resized = arrangementChanged(view);
         if (!isWindowOperational() || generation != viewGeneration) return;
-        if (spatial && spatial == spatialLayout && resized && !viewStateIsDirty(FolderState::Icons)) {
-            // Another icon size inside the spatial modes: the Shell laid the
-            // icons out again. Whatever asked for it (wheel, shortcut or View
-            // menu), the positions saved before it are replayed. Moves not
-            // saved yet are never traded for older positions.
+        const bool grid = spatial && (resized || spatial != spatialLayout) && gridPlacement(view);
+        if (!isWindowOperational() || generation != viewGeneration) return;
+        if (grid && resized) {
+            // Reapply the Shell's grid for the current renderer and icon size.
+            // Old free coordinates must not override its new cell geometry.
+            iconRealignPending = true;
+            if (!viewMenuRestore && enumerationComplete) realignIcons();
+            if (!isWindowOperational() || generation != viewGeneration) return;
+        } else if (spatial && spatial == spatialLayout && resized && !viewStateIsDirty(FolderState::Icons)) {
+            // Only free placement retains exact coordinates across a resize.
+            // Never replace unsaved moves with older positions.
             restoreIconsPending = searchText.empty();
             restoreIconsUnpruned = restoreIconsPending;
             finishViewInitialization();
@@ -2172,7 +2204,7 @@ void FolderWindow::scheduleStateSave(bool icons) {
             spatialLayout = spatial;
             // Changing mode can discard the Shell's free positions even when
             // the provider stays the same. Restore once, before any capture.
-            if (spatial) {
+            if (spatial && !grid) {
                 restoreIconsPending = searchText.empty();
                 // No EnumDone establishes this observation's completeness: a
                 // saved position absent from the view is kept, never pruned.
@@ -2719,20 +2751,38 @@ void FolderWindow::changeViewMode(int amount, bool wheel) {
         return;
     }
     if (mode == target.mode && (target.size < 0 || size == target.size)) return;
+    POINT previousSpacing = {};
+    const bool wasGrid = gridPlacement(view);
+    if (!current()) return;
+    if (wasGrid && (FAILED(view->GetSpacing(&previousSpacing)) || !current())) return;
     viewStateDirty(FolderState::Icons);
     persistViewState();
     if (!current()) return;
+    restoringState = true; // Ignore notifications from an intermediate native layout.
     ++navigationDepth;
     const HRESULT result = view->SetViewModeAndIconSize(target.mode, target.size);
     resumeDeferredClose();
-    if (current() && checkHR(result)) {
-        // Some native mode changes discard free positions without changing
-        // the spatial flag. Replay the saved positions before another capture.
-        restoreIconsPending = searchText.empty();
-        restoreIconsUnpruned = restoreIconsPending;
-        finishViewInitialization();
+    if (!current()) return;
+    restoringState = false;
+    if (checkHR(result)) {
+        const bool grid = gridPlacement(view);
         if (!current()) return;
-        arrangementChanged(view); // Replayed just above: not once more by the save.
+        if (grid && wasGrid && enumerationComplete && searchText.empty()) {
+            restoringState = true;
+            checkHR(restoreIconGridPositions(view, getSavedFolderState().icons, previousSpacing, current));
+            if (!current()) return;
+            restoringState = false;
+            viewStateDirty(FolderState::Icons);
+        } else if (grid) iconRealignPending = true;
+        else {
+            // Some native mode changes discard free positions without changing
+            // the spatial flag. Replay them before another capture.
+            restoreIconsPending = searchText.empty();
+            restoreIconsUnpruned = restoreIconsPending;
+            finishViewInitialization();
+            if (!current()) return;
+        }
+        arrangementChanged(view); // The resize was handled above, not again by the save.
         if (!current()) return;
         scheduleStateSave();
         requestViewProfile();
@@ -3446,11 +3496,16 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             return 0;
         }
         if (session && session->serial == wParam && session->finished) {
-            session->stop();
-            iconSnap.reset();
-            if (session->current() && session->snap && !GetCapture())
+            session->hideMarker();
+            const bool snap = session->snap, dropped = session->dropped;
+            session->snap = session->dropped = false; // A later S release only ends interception.
+            if (!session->heldS || session->permanent()) {
+                session->stop();
+                iconSnap.reset();
+            }
+            if (session->current() && snap && !GetCapture())
                 realignIcons(true);
-            if (session->current() && session->dropped && session->moved && !GetCapture())
+            if (session->current() && dropped && session->moved && !GetCapture())
                 scheduleStateSave(true);
         }
         return 0;
