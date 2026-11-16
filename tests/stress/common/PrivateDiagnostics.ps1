@@ -10,16 +10,16 @@ function Write-PrivateDiagnostics([string]$ProjectRoot,[string]$RunDirectory) {
     foreach($file in @(Get-ChildItem -LiteralPath $RunDirectory -Recurse -File | Where-Object {$_.Name -match '\.(public|attempt)$'})) {
         $bytes=[IO.File]::ReadAllBytes($file.FullName)
         $prefix=[Text.Encoding]::ASCII.GetBytes('FSPUBLIC01');$offset=0
-        $kind='TransientDiscoveryFailure'
+        $kind=if($file.Extension-eq'.public'){'SavedPublicDecision'}else{'TransientDiscoveryFailure'}
         if($bytes.Length -ge $prefix.Length -and [Text.Encoding]::ASCII.GetString($bytes,0,$prefix.Length) -ceq 'FSPUBLIC01') {
-            $kind='StructuralIncompatibility';$offset=$prefix.Length
-            if($file.Name -match '\.range\.(public|attempt)$'){$offset+=24} # PDB GUID, age and image size precede the reason.
+            $offset=$prefix.Length
+            if($file.Name -match '\.(range|grid)\.(public|attempt)$'){$offset+=24} # PDB GUID, age and image size precede the reason.
         }
         $reason=if($offset -le $bytes.Length){[Text.Encoding]::UTF8.GetString($bytes,$offset,$bytes.Length-$offset).Trim()}else{'Truncated decision record'}
         $decisions+=[pscustomobject]@{File=$file.FullName.Substring($RunDirectory.Length+1);Kind=$kind;Reason=$reason;Sha256=(Get-FileHash -LiteralPath $file.FullName).Hash}
     }
     foreach($file in @(Get-ChildItem -LiteralPath $RunDirectory -Recurse -File -Filter '*.log')) {
-        foreach($line in @(Select-String -LiteralPath $file.FullName -Pattern '^(PRODUCT |RESOLVED |FALLBACK:|Optional native range|PASS: unsupported private|COVERAGE |VIEW |PARTIAL_ALL |SELECT_ALL )')) {
+        foreach($line in @(Select-String -LiteralPath $file.FullName -Pattern '^(PRODUCT |RESOLVED |FALLBACK:|Optional native range|PASS: unsupported private|COVERAGE |VIEW |PARTIAL_ALL |SELECT_ALL |GRID SNAP )')) {
             $observed+=[pscustomobject]@{File=$file.FullName.Substring($RunDirectory.Length+1);Line=$line.LineNumber;Text=$line.Line}
         }
         if($file.Name -match 'error' -and $file.Length){$errors+=[pscustomobject]@{File=$file.FullName.Substring($RunDirectory.Length+1);Text=[IO.File]::ReadAllText($file.FullName)}}
