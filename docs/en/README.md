@@ -75,6 +75,16 @@ composition and folder groups are in the Windows Registry under
 including network paths. Temporary update files and the session's folder list
 are under `%TEMP%\FileSpacerUpdate-{GUID}`.
 
+The database format is recorded in SQLite's `PRAGMA user_version`, independently
+of the application release number. Format 8 is the only accepted format; view
+blobs also use that format number and one fixed encoding. An empty database is
+initialized as format 8. Non-empty unversioned databases and older formats are
+refused without conversion. They can be explicitly reset after confirmation and
+a complete backup, without importing their layouts or histories. Newer formats
+are refused without offering a reset. Recovery salvages readable data only from
+a damaged format-8 database. There is no installer migration or downgrade path.
+General preferences and user files are unaffected by a folder-state reset.
+
 For the in-app reset, see [updates and troubleshooting](user-guide.md#updates-and-troubleshooting).
 For troubleshooting, `FileSpacer.exe /reset-options` resets general preferences.
 `FileSpacer.exe /reset-all` also clears folder state. Neither command deletes files.
