@@ -20,11 +20,14 @@ try {
     $description=@{}
     foreach($name in @('ProductionSources','Sqlite','Storage','Extract','Resources','CommonControls','ControlFlowGuard','DynamicLibrary','Libraries','Standard','Defines')){$description[$name]=''}
     $description.Standard='c++14'
+    . (Join-Path $sourceRoot 'tests\regression\common\Process.ps1')
+    $configuration=Get-TestConfiguration
+    $description.Configuration=$configuration
     $hash=(Get-FileHash -LiteralPath $artifact -Algorithm SHA256).Hash
-    @{Native=@(@{Name='Fixture';CaseDirectory='cases';Parameters=$description;Executable='fixture.exe';Sha256=$hash});Managed=@()} |
+    @{Configuration=$configuration;Native=@(@{Name='Fixture';CaseDirectory='cases';Parameters=$description;Executable='fixture.exe';Sha256=$hash});Managed=@()} |
         ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $prepared 'index.json') -Encoding UTF8
     . (Join-Path $sourceRoot 'tests\regression\common\Prepared.ps1')
-    $parameters=@{Name='Fixture';CaseDirectory=(Join-Path $fixture 'cases');Standard='c++14'}
+    $parameters=@{Name='Fixture';CaseDirectory=(Join-Path $fixture 'cases');Standard='c++14';Configuration=$configuration}
     $output=Join-Path $fixture 'output';[void][IO.Directory]::CreateDirectory($output)
     $result=Copy-PreparedNativeTest -Parameters $parameters -OutputDirectory $output
     if ([IO.File]::ReadAllText($result) -cne 'fixture bytes') { throw 'Prepared native artifact was not copied faithfully.' }
@@ -34,12 +37,19 @@ try {
     $parameters.ControlFlowGuard=$true
     Expect-PreparationError { Copy-PreparedNativeTest -Parameters $parameters -OutputDirectory $output } 'ControlFlowGuard'
     $parameters.Remove('ControlFlowGuard')
+    $parameters.Configuration=if($configuration-eq'Release'){'Debug'}else{'Release'}
+    Expect-PreparationError { Copy-PreparedNativeTest -Parameters $parameters -OutputDirectory $output } 'Configuration'
+    $parameters.Configuration=$configuration
     [IO.File]::WriteAllText($artifact,'changed bytes')
     Expect-PreparationError { Copy-PreparedNativeTest -Parameters $parameters -OutputDirectory $output } 'Prepared executable hash mismatch'
     $parameters.Name='Missing'
     Expect-PreparationError { Copy-PreparedNativeTest -Parameters $parameters -OutputDirectory $output } 'No unique prepared native test'
     Expect-PreparationError { Add-Type -TypeDefinition 'public class Unprepared {}' } 'No host-built helper'
-    Write-Host 'PASS: prepared artifact identity, build arguments and missing-helper failures.'
+    $index=Get-Content -LiteralPath (Join-Path $prepared 'index.json') -Raw|ConvertFrom-Json
+    $index.Configuration=if($configuration-eq'Release'){'Debug'}else{'Release'}
+    $index|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $prepared 'index.json') -Encoding UTF8
+    Expect-PreparationError { . (Join-Path $sourceRoot 'tests\regression\common\Prepared.ps1') } 'Prepared helper build configuration'
+    Write-Host 'PASS: prepared artifact identity, build arguments/configuration and missing-helper failures.'
 } finally {
     $env:FS_REGRESSION_PREPARED=$savedPrepared;$env:FS_REGRESSION_CASE=$savedCase
     $ProjectRoot=$sourceRoot
