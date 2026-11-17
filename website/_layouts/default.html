@@ -1,52 +1,48 @@
 ---
 layout: table_wrappers
 ---
-{% comment %}Just the Docs v0.12.0 default layout, MIT licensed. Localized skip link and versioned theme script. See UPSTREAM-LICENSE.txt.{% endcomment %}
-
+{% comment %}Adapted from Just the Docs v0.12.0, MIT licensed. See UPSTREAM-LICENSE.txt.{% endcomment %}
 <!DOCTYPE html>
-
-<html lang="{{ site.lang | default: 'en-US' }}">
+<html lang="{{ site.lang }}">
 {% capture document_head %}{% include head.html %}{% endcapture %}
 {% assign script_path = '/assets/js/just-the-docs.js' | relative_url %}
 {% assign asset_version = site.time | date: '%s' %}
 {% assign versioned_script_path = script_path | append: '?v=' | append: asset_version %}
 {{ document_head | replace: script_path, versioned_script_path }}
-<body>
+<body class="fs-site">
   <a class="skip-to-main" href="#main-content">{{ site.fs_ui.skip }}</a>
   {% include icons/icons.html %}
-  {% if page.nav_enabled == true %}
-    {% include components/sidebar.html %}
-  {% elsif layout.nav_enabled == true and page.nav_enabled == nil %}
-    {% include components/sidebar.html %}
-  {% elsif site.nav_enabled != false and layout.nav_enabled == nil and page.nav_enabled == nil %}
-    {% include components/sidebar.html %}
-  {% endif %}
-  <div class="main" id="top">
-    {% include components/header.html %}
-    <div class="main-content-wrap">
-      {% include components/breadcrumbs.html %}
+  <div id="top" class="fs-frame">
+    <div class="fs-top-bar">
+      <div class="fs-top-slot"></div>
+      {% include components/top_nav.html %}
+    </div>
+    <aside class="fs-sidebar">
+      <div class="fs-brand-row fs-menu-only">
+        <button id="menu-button" class="site-button btn-reset" aria-label="{{ site.fs_ui.navigation }}" aria-expanded="false"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use xlink:href="#svg-menu"></use></svg></button>
+      </div>
+      {% assign navigation = page.fs_section | prepend: 'sections/' | append: '.html' %}
+      {% include {{ navigation }} %}
+      <div class="fs-sidebar-footer">{% include nav_footer_custom.html %}</div>
+    </aside>
+    <header id="main-header" class="fs-tools">
+      <a href="index.html" class="fs-brand fs-tools-brand"><img src="assets/icons/FileSpacer-256.png" alt=""><span>FileSpacer</span></a>
+      <div class="fs-header-search">
+        <div class="fs-search" role="search">
+          <div class="fs-search-input-wrap">
+            <input type="text" id="search-input" class="fs-search-input" placeholder="{{ site.fs_ui.search }}" autocomplete="off">
+            <label for="search-input" class="fs-search-label"><span class="sr-only">{{ site.fs_ui.search }}</span><svg viewBox="0 0 24 24" aria-hidden="true"><use xlink:href="#svg-search"></use></svg></label>
+          </div>
+          <div id="search-results" class="fs-search-results"></div>
+        </div>
+      </div>
+    </header>
+    <div class="main-content-wrap fs-content-scroll">
       <div id="main-content" class="main-content">
-        <main>
-          {% if site.heading_anchors != false %}
-            {% include vendor/anchor_headings.html html=content beforeHeading="true" anchorBody="<svg viewBox=\"0 0 16 16\" aria-hidden=\"true\"><use xlink:href=\"#svg-link\"></use></svg>" anchorClass="anchor-heading" anchorAttrs="aria-labelledby=\"%html_id%\"" %}
-          {% else %}
-            {{ content }}
-          {% endif %}
-
-          {% if page.has_toc != false %}
-            {% include components/children_nav.html %}
-          {% endif %}
-        </main>
+        <main>{{ content }}</main>
         {% include components/footer.html %}
       </div>
     </div>
-    {% if site.search_enabled != false %}
-      {% include components/search_footer.html %}
-    {% endif %}
   </div>
-
-  {% if site.mermaid %}
-    {% include components/mermaid.html %}
-  {% endif %}
 </body>
 </html>
