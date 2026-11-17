@@ -21,12 +21,13 @@ $regression=& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $fixtureRu
 if($LASTEXITCODE-ne0-or@($regression).Count-ne1-or$regression.Test-notlike '*02-Sentinel*'){throw 'Default discovery included stress.'}
 $stress=& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $fixtureRunner -ProjectRoot $fixture -Suite Stress -ListOnly | ConvertFrom-Json
 if($LASTEXITCODE-ne0-or@($stress).Count-ne1-or$stress.Test-ne$case){throw 'Explicit stress discovery included regression.'}
+$configuration=if($env:FS_REGRESSION_CONFIGURATION){$env:FS_REGRESSION_CONFIGURATION}else{'Debug'}
 [void][IO.Directory]::CreateDirectory((Join-Path $fixture 'prepared'))
-@{Native=@();Managed=@()}|ConvertTo-Json|Set-Content (Join-Path $fixture 'prepared\index.json') -Encoding UTF8
-@{Suite='Stress';Cases=@($case);TimeoutSeconds=30}|ConvertTo-Json|Set-Content (Join-Path $fixture 'selection.json') -Encoding UTF8
+@{Configuration=$configuration;Native=@();Managed=@()}|ConvertTo-Json|Set-Content (Join-Path $fixture 'prepared\index.json') -Encoding UTF8
+@{Suite='Stress';Configuration=$configuration;Cases=@($case);TimeoutSeconds=30}|ConvertTo-Json|Set-Content (Join-Path $fixture 'selection.json') -Encoding UTF8
 $output=Join-Path $env:FS_REGRESSION_RUN 'suite-output'
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $fixture 'tests\regression\Run-Regression.ps1') -ProjectRoot $fixture -Prepared -RunDirectory $output *> (Join-Path $env:FS_REGRESSION_RUN 'suite-output.log')
 if($LASTEXITCODE-ne0){throw 'Prepared stress suite failed.'}
 $summary=Get-Content -Raw (Join-Path $output 'summary.json')|ConvertFrom-Json
-if($summary.Status-ne'PASS'-or$summary.Expected-ne1-or$summary.Passed-ne1){throw 'Prepared suite selected the wrong cases.'}
+if($summary.Status-ne'PASS'-or$summary.Expected-ne1-or$summary.Passed-ne1-or$summary.Configuration-ne$configuration){throw 'Prepared suite selected the wrong cases.'}
 Write-Host 'PASS: disjoint default/explicit suite discovery and real prepared stress execution without regression sentinel, compiler or UI.'
