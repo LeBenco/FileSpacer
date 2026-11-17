@@ -18,7 +18,10 @@ function Build-NativeTest {
         [ValidateSet('','Menu','Shell','Settings','View','Adapters','Geometry','LockBadge','Documentation','JumpLists','StorageRetry','ItemValidation')][string]$Extract='',
         [switch]$Resources, [switch]$CommonControls, [switch]$ControlFlowGuard, [switch]$DynamicLibrary, [string[]]$Libraries=@(),
         [ValidateSet('c++14','c++17')][string]$Standard='c++17', [string[]]$Defines=@(),
+        [ValidateSet('Debug','Release')][string]$Configuration=(Get-TestConfiguration),
         [string]$OutputDirectory='')
+    $PSBoundParameters['Configuration']=$Configuration
+    $runtime=if($Configuration-eq'Release'){'/MT'}else{'/MTd'}
     $output=Join-Path $RunDirectory $Name
     if ($OutputDirectory) { $output=[IO.Path]::GetFullPath($OutputDirectory) }
     [void][IO.Directory]::CreateDirectory($output)
@@ -31,9 +34,10 @@ function Build-NativeTest {
     $source=Join-Path $CaseDirectory ($Name+'.cpp')
     if ($Extract -in @('View','Adapters','Geometry')) { $source=Join-Path $output ($Name+'.cpp') }
     $exe=Join-Path $output ($Name+$(if($DynamicLibrary){'.dll'}else{'.exe'}))
-    $arguments=@('/nologo',('/std:'+$Standard),'/EHsc','/W4','/MTd','/Z7','/UNDEBUG','/utf-8','/D_CRT_SECURE_NO_WARNINGS',
+    $arguments=@('/nologo',('/std:'+$Standard),'/EHsc','/W4',$runtime,'/Z7','/UNDEBUG','/utf-8','/D_CRT_SECURE_NO_WARNINGS',
         ('/I'+(Join-Path $ProjectRoot 'src')), ('/I'+$CaseDirectory), ('/I'+$output),
         ('/Fo'+$output+'\\'), ('/Fe'+$exe))
+    if($Configuration-eq'Release'){$arguments+='/O2'}
     if ($Storage) { $arguments+='/DFILESPACER_STORAGE_TEST' }
     if ($ControlFlowGuard) { $arguments+='/guard:cf' }
     if ($DynamicLibrary) { $arguments+='/LD' }
@@ -41,7 +45,9 @@ function Build-NativeTest {
     if ($Sqlite) {
         $sqliteDirectory=Join-Path $ProjectRoot 'third_party\sqlite'
         $obj=Join-Path $output 'sqlite3.obj'
-        Invoke-Compiler @('/nologo','/TC','/W3','/MTd','/Z7','/D_CRT_SECURE_NO_WARNINGS','/DSQLITE_OMIT_LOAD_EXTENSION','/DSQLITE_DQS=0',('/Fo'+$obj),'/c',(Join-Path $sqliteDirectory 'sqlite3.c')) | Out-Host
+        $sqliteArguments=@('/nologo','/TC','/W3',$runtime,'/Z7','/D_CRT_SECURE_NO_WARNINGS','/DSQLITE_OMIT_LOAD_EXTENSION','/DSQLITE_DQS=0',('/Fo'+$obj),'/c',(Join-Path $sqliteDirectory 'sqlite3.c'))
+        if($Configuration-eq'Release'){$sqliteArguments+='/O2'}
+        Invoke-Compiler $sqliteArguments | Out-Host
         $arguments+=@(('/I'+$sqliteDirectory),$obj)
     }
     $arguments+=$source
