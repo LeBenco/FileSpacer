@@ -30,9 +30,7 @@ bool captureFolderGroup(std::vector<std::wstring> &paths) {
         wchar_t name[64] = {};
         if (!IsWindowVisible(window) || !GetClassNameW(window, name, _countof(name))
                 || lstrcmpW(name, L"FileSpacer Item Window") != 0) continue;
-#ifdef FILESPACER_DEBUG
         if ((GetPropW(window, L"FileSpacer.PlacementTest") != nullptr) != settings::testMode) continue;
-#endif
         CComQIPtr<IServiceProvider> provider(dispatch);
         CComPtr<IShellBrowser> shellBrowser;
         CComPtr<IShellView> shellView;

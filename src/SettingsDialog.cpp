@@ -206,9 +206,7 @@ void notifyWindowSettingsChanged() {
     if (ItemWindow::settingsChangedMessage) {
         auto notify = [](HWND window, LPARAM historyLimit) -> BOOL {
             LPARAM testNamespace = 0;
-#ifdef FILESPACER_DEBUG
             testNamespace = settings::testMode ? 1 : 0;
-#endif
             wchar_t className[64];
             if (GetClassName(window, className, _countof(className))
                     && lstrcmp(className, L"FileSpacer Item Window") == 0)

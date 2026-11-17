@@ -581,10 +581,8 @@ void ItemWindow::updateWindowPropStore(IPropertyStore *const propStore) {
     if (relaunch) {
         std::wstring command = quoteCommandArgument(executable.data()) + L" "
             + quoteCommandArgument(parsingName);
-#ifdef FILESPACER_DEBUG
         if (settings::testMode)
             command += L" /test";
-#endif
         propStoreWriteString(propStore, PKEY_AppUserModel_RelaunchCommand, command.c_str());
         // The Shell supplies this dynamic folder name; it is not a UI literal.
         propStoreWriteString(propStore, PKEY_AppUserModel_RelaunchDisplayNameResource, title);
@@ -877,9 +875,7 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
         persistViewState();
     if (settingsChangedMessage && message == settingsChangedMessage) {
         LPARAM testNamespace = 0;
-#ifdef FILESPACER_DEBUG
         testNamespace = settings::testMode ? 1 : 0;
-#endif
         if (lParam == testNamespace) {
             FolderOpeningAnimation::reloadSettings();
             if (FolderOpeningAnimation::isEnabled()) FolderOpeningAnimation::prepare();
@@ -894,9 +890,7 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
         if (ancestor != hwnd && isWindowOperational() && isFolder()
                 && GetClassNameW(ancestor, name, ARRAYSIZE(name))
                 && lstrcmpW(name, ITEM_WINDOW_CLASS) == 0) {
-#ifdef FILESPACER_DEBUG
             if ((GetPropW(ancestor, L"FileSpacer.PlacementTest") != nullptr) != settings::testMode) return 0;
-#endif
             const auto parents = getParentWindowProperties();
             if (isWindowOperational() && std::any_of(parents.begin(), parents.end(),
                     [ancestor](const std::wstring &property) { return GetPropW(ancestor, property.c_str()) != nullptr; }))
@@ -1563,9 +1557,7 @@ bool ItemWindow::onCommand(WORD command) {
                 if (target == request.source || !IsWindowVisible(target)
                         || !GetClassNameW(target, name, ARRAYSIZE(name))
                         || lstrcmpW(name, ITEM_WINDOW_CLASS) != 0) return TRUE;
-#ifdef FILESPACER_DEBUG
                 if ((GetPropW(target, L"FileSpacer.PlacementTest") != nullptr) != settings::testMode) return TRUE;
-#endif
                 PostMessageW(target, request.message, reinterpret_cast<WPARAM>(request.source), 0);
                 return TRUE;
             }, reinterpret_cast<LPARAM>(&close));
@@ -2731,9 +2723,7 @@ void ItemWindow::openCaptionMenu(POINT pos) {
         if (!GetClassName(window, windowClass, (int)ARRAYSIZE(windowClass))
                 || lstrcmp(windowClass, ITEM_WINDOW_CLASS) != 0)
             return TRUE;
-#ifdef FILESPACER_DEBUG
         if ((GetPropW(window, L"FileSpacer.PlacementTest") != nullptr) != settings::testMode) return TRUE;
-#endif
         const int length = GetWindowTextLength(window);
         if (!length)
             return TRUE;

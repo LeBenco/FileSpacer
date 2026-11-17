@@ -9,9 +9,7 @@ namespace filespacer {
 
 namespace settings {
 
-#ifdef FILESPACER_DEBUG
 extern bool testMode;
-#endif
 
 // http://smallvoid.com/article/winnt-shell-keyword.html
 const DWORD     DEFAULT_LAST_OPENED_VERSION = 0;

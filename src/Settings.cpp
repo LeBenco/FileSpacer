@@ -21,11 +21,7 @@ bool testMode = false;
 
 const wchar_t KEY_SETTINGS_NORMAL[]     = L"Software\\FileSpacer";
 const wchar_t KEY_SETTINGS_TEST[]       = L"Software\\FileSpacer\\Test";
-#ifdef FILESPACER_DEBUG
     #define KEY_SETTINGS (testMode ? KEY_SETTINGS_TEST : KEY_SETTINGS_NORMAL)
-#else
-    #define KEY_SETTINGS KEY_SETTINGS_NORMAL
-#endif
 
 const wchar_t KEY_DIRECTORY_VERB[]      = L"Directory\\shell\\filespacer";
 

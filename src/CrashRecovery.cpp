@@ -37,11 +37,7 @@ std::wstring dataDirectory() {
 HANDLE lockSettings(bool exclusive) {
     const auto directory = dataDirectory();
     if (directory.empty()) return nullptr;
-#ifdef FILESPACER_DEBUG
     const wchar_t *name = settings::testMode ? L"\\settings-test.lock" : L"\\settings.lock";
-#else
-    const wchar_t *name = L"\\settings.lock";
-#endif
     HANDLE file = CreateFileW((directory + name).c_str(), GENERIC_READ,
         exclusive ? 0 : FILE_SHARE_READ, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     return file == INVALID_HANDLE_VALUE ? nullptr : file;
@@ -90,9 +86,7 @@ void runHelper(HANDLE parent, HANDLE map, HANDLE event, HANDLE completed) {
     // (process teardown): report what the record holds, without a dump.
     const bool parentGone = wait == WAIT_OBJECT_0 + 1;
     if ((wait != WAIT_OBJECT_0 && !parentGone) || !data->busy) { UnmapViewOfFile(data); return; }
-#ifdef FILESPACER_DEBUG
     settings::testMode = !!data->test;
-#endif
     std::wstring report = L"FileSpacer crash diagnostics\r\n";
     wchar_t details[256];
     StringCchPrintfW(details, _countof(details),
@@ -137,9 +131,7 @@ void runHelper(HANDLE parent, HANDLE map, HANDLE event, HANDLE completed) {
 } // namespace
 
 bool handleCommandLine(int argc, wchar_t **argv, int *exitCode) {
-#ifdef FILESPACER_DEBUG
     for (int i = 1; i < argc; ++i) if (lstrcmpiW(argv[i], L"/test") == 0) settings::testMode = true;
-#endif
     if (argc == 6 && lstrcmpiW(argv[1], L"/recovery-helper") == 0) {
         HANDLE handles[4] = {};
         for (int i = 0; i < 4; ++i) {
@@ -226,9 +218,7 @@ bool start() {
     *crash = {};
     crash->magic = MAGIC; crash->process = GetCurrentProcessId();
     crash->imageBase = reinterpret_cast<DWORD64>(GetModuleHandleW(nullptr));
-#ifdef FILESPACER_DEBUG
     crash->test = settings::testMode;
-#endif
     std::vector<wchar_t> executable(32768), command(32768);
     if (!GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size()))) return false;
     if (FAILED(StringCchPrintfW(command.data(), command.size(), L"\"%s\" /recovery-helper %llX %llX %llX %llX",

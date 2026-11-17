@@ -280,9 +280,7 @@ bool placementRect(HWND window, RECT &rect) {
             || lstrcmpW(name, L"FileSpacer Item Window") != 0)
         return false;
     bool testWindow = false;
-#ifdef FILESPACER_DEBUG
     testWindow = settings::testMode;
-#endif
     if ((GetPropW(window, testProperty) != nullptr) != testWindow) return false;
     DWORD cloaked = 0;
     // A window cloaked by its own application is the destination of a folder
@@ -308,11 +306,7 @@ void cancelPlacementWithdrawal(HWND window) {
 }
 
 void initializeWindowPlacement(HWND window) {
-#ifdef FILESPACER_DEBUG
     if (settings::testMode) SetPropW(window, testProperty, reinterpret_cast<HANDLE>(1));
-#else
-    (void)window;
-#endif
 }
 
 void destroyWindowPlacement(HWND window) {

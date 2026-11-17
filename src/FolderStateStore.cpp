@@ -1251,9 +1251,7 @@ static HRESULT resolveFolderStatePath(std::wstring &path) {
     if (FAILED(found)) return found;
     std::wstring directory = std::wstring(local) + L"\\FileSpacer";
     path = directory + L"\\folder-state.sqlite3";
-#ifdef FILESPACER_DEBUG
     if (settings::testMode) path = directory + L"\\folder-state-test.sqlite3";
-#endif
     const int status = SHCreateDirectoryExW(nullptr, directory.c_str(), nullptr);
     return status == ERROR_SUCCESS || status == ERROR_ALREADY_EXISTS || status == ERROR_FILE_EXISTS
         ? S_OK : HRESULT_FROM_WIN32(status);

@@ -195,7 +195,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     int maintenanceExit = 0, recoveryArgc = 0;
     wchar_t **recoveryArgv = CommandLineToArgvW(GetCommandLineW(), &recoveryArgc);
     if (!recoveryArgv) return 1;
-#ifdef FILESPACER_DEBUG
     if (recoveryArgc == 4 && lstrcmpiW(recoveryArgv[1], L"/test") == 0
             && lstrcmpiW(recoveryArgv[2], L"/selection-discovery") == 0) {
         const std::wstring root = recoveryArgv[3];
@@ -203,7 +202,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
         return runShellViewOperationsWorker(root.c_str());
     }
-#endif
     if (recoveryArgc == 2 && lstrcmpiW(recoveryArgv[1], L"/selection-discovery") == 0) {
         LocalFree(recoveryArgv);
         SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
@@ -259,9 +257,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
             MB_OK | MB_ICONWARNING);
     }
 
-#ifdef FILESPACER_DEBUG
     if (!settings::testMode)
-#endif
     {
         const LSTATUS status = settings::synchronizeContextMenus().status();
         if (status != ERROR_SUCCESS) {
@@ -382,7 +378,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     // optional selection capabilities are resolved by a serving process only.
     // Windows created above bind when the capability is published.
     if (runServer) {
-#ifdef FILESPACER_DEBUG
         if (settings::testMode) {
             // UI experiments may opt into an isolated, already qualified cache.
             // Ordinary /test runs retain the deterministic public path.
@@ -391,7 +386,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
             initializeShellSelectionClear(cacheLength && cacheLength < _countof(cache) ? cache : L"", false);
         }
         else
-#endif
             // Without the download, only a decision already in the cache is used.
             initializeShellSelectionClear(nullptr, settings::getSelectionSymbolsDownload());
     }
@@ -509,11 +503,7 @@ LaunchType parseStartingFolder(int argc, wchar_t **argv, wstr_ptr *folder) {
         } else if (lstrcmpiW(arg, L"/reopen-last") == 0) {
             reopen = true;
         } else if (lstrcmpi(arg, L"/test") == 0) {
-#ifdef FILESPACER_DEBUG
             settings::testMode = true;
-#else
-            return LAUNCH_FAIL;
-#endif
         } else if (!path) {
             int argLen = lstrlen(arg);
             if (argLen > 0 && arg[argLen - 1] == '"')

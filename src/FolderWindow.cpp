@@ -783,9 +783,7 @@ HRESULT FolderWindow::browseToItem() {
     ++navigationDepth;
     debugPrintf(L"NATIVE HWND=%p BrowseToObject begin\n", hwnd);
     bool isolated = false;
-#ifdef FILESPACER_DEBUG
     isolated = settings::testMode;
-#endif
     const HRESULT result = viewHost.navigate(currentItem, settings::getMixedFolderSorting(), isolated);
     debugPrintf(L"NATIVE HWND=%p BrowseToObject returned: HRESULT=0x%08lX\n", hwnd, static_cast<unsigned long>(result));
     resumeDeferredClose();
@@ -938,9 +936,7 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         return result;
     }
     LPARAM testNamespace = 0;
-#ifdef FILESPACER_DEBUG
     testNamespace = settings::testMode ? 1 : 0;
-#endif
     if (settingsChangedMessage && message == settingsChangedMessage && lParam == testNamespace
             && wParam >= 1 && wParam <= settings::MAX_SEARCH_HISTORY_LIMIT + 1) {
         const size_t limit = static_cast<size_t>(wParam - 1);

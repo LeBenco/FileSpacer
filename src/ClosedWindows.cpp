@@ -88,9 +88,7 @@ FolderOpenResult reopenLastWindow(HWND owner) {
 
 namespace {
 const wchar_t *jumpListRegistryKey() {
-#ifdef FILESPACER_DEBUG
     if (settings::testMode) return L"Software\\FileSpacer\\Test\\JumpLists";
-#endif
     return L"Software\\FileSpacer\\JumpLists";
 }
 
@@ -102,9 +100,7 @@ bool openJumpListKey(const wchar_t *appID, CRegKey *key) {
 
 std::wstring folderArguments(const wchar_t *path) {
     std::wstring arguments = quoteCommandArgument(path);
-#ifdef FILESPACER_DEBUG
     if (settings::testMode) arguments += L" /test";
-#endif
     return arguments;
 }
 
@@ -360,9 +356,7 @@ bool buildJumpList(const wchar_t *appID, const wchar_t *executable, const wchar_
         }
         if (!reopenName) return checkHR(list->CommitList());
         std::wstring arguments = L"/reopen-last";
-#ifdef FILESPACER_DEBUG
         if (settings::testMode) arguments += L" /test";
-#endif
         CComPtr<IShellLinkW> task;
         CComPtr<IObjectCollection> tasks;
         if (!makeJumpListLink(executable, arguments.c_str(), reopenName,

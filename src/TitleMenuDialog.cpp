@@ -1005,14 +1005,12 @@ INT_PTR CALLBACK dialogProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
 } // namespace
 
 bool titleMenuExtensionEnabled() {
-#ifdef FILESPACER_DEBUG
     // Ordinary /test regressions use native menus. A dedicated interoperability
     // run can opt in without using the user's settings or folder-state database.
     if (settings::testMode) {
         wchar_t value[2] = {};
         return GetEnvironmentVariableW(L"FILESPACER_TEST_NILESOFT", value, _countof(value)) == 1 && value[0] == L'1';
     }
-#endif
     return true;
 }
 
