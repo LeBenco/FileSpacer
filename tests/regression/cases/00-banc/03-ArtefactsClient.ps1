@@ -18,7 +18,7 @@ try {
     # This is a copy/identity contract, never an executable integration test.
     [IO.File]::WriteAllText($artifact,'fixture bytes')
     $description=@{}
-    foreach($name in @('ProductionSources','Sqlite','Storage','Extract','Resources','CommonControls','ControlFlowGuard','Libraries','Standard','Defines')){$description[$name]=''}
+    foreach($name in @('ProductionSources','Sqlite','Storage','Extract','Resources','CommonControls','ControlFlowGuard','DynamicLibrary','Libraries','Standard','Defines')){$description[$name]=''}
     $description.Standard='c++14'
     $hash=(Get-FileHash -LiteralPath $artifact -Algorithm SHA256).Hash
     @{Native=@(@{Name='Fixture';CaseDirectory='cases';Parameters=$description;Executable='fixture.exe';Sha256=$hash});Managed=@()} |

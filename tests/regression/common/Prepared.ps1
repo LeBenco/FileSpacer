@@ -31,13 +31,13 @@ function Copy-PreparedNativeTest($Parameters,[string]$OutputDirectory) {
     $entries=@($global:FileSpacerPreparedManifest.Native | Where-Object { $_.Name -eq $Parameters.Name -and $_.CaseDirectory -eq $relative })
     if ($entries.Count -ne 1) { throw ('No unique prepared native test: '+$Parameters.Name) }
     $entry=$entries[0]
-    foreach($name in @('ProductionSources','Sqlite','Storage','Extract','Resources','CommonControls','ControlFlowGuard','Libraries','Standard','Defines')) {
+    foreach($name in @('ProductionSources','Sqlite','Storage','Extract','Resources','CommonControls','ControlFlowGuard','DynamicLibrary','Libraries','Standard','Defines')) {
         $actual=if($Parameters.ContainsKey($name)){@($Parameters[$name]) -join '|'}else{''}
         if ($actual -cne $entry.Parameters.$name) { throw ('Prepared native arguments differ: '+$Parameters.Name+' / '+$name) }
     }
     $source=Join-Path $env:FS_REGRESSION_PREPARED $entry.Executable
     if ((Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash -ne $entry.Sha256) { throw 'Prepared executable hash mismatch.' }
-    $target=Join-Path $OutputDirectory ($Parameters.Name+'.exe')
+    $target=Join-Path $OutputDirectory ($Parameters.Name+$(if($Parameters.ContainsKey('DynamicLibrary')-and$Parameters.DynamicLibrary){'.dll'}else{'.exe'}))
     Copy-Item -LiteralPath $source -Destination $target
     return $target
 }

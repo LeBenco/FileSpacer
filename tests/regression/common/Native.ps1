@@ -16,7 +16,7 @@ function Build-NativeTest {
         [Parameter(Mandatory=$true)][string]$CaseDirectory,
         [string[]]$ProductionSources=@(), [switch]$Sqlite, [switch]$Storage,
         [ValidateSet('','Menu','Shell','Settings','View','Adapters','Geometry','LockBadge','Documentation','JumpLists','StorageRetry','ItemValidation')][string]$Extract='',
-        [switch]$Resources, [switch]$CommonControls, [switch]$ControlFlowGuard, [string[]]$Libraries=@(),
+        [switch]$Resources, [switch]$CommonControls, [switch]$ControlFlowGuard, [switch]$DynamicLibrary, [string[]]$Libraries=@(),
         [ValidateSet('c++14','c++17')][string]$Standard='c++17', [string[]]$Defines=@(),
         [string]$OutputDirectory='')
     $output=Join-Path $RunDirectory $Name
@@ -30,12 +30,13 @@ function Build-NativeTest {
     }
     $source=Join-Path $CaseDirectory ($Name+'.cpp')
     if ($Extract -in @('View','Adapters','Geometry')) { $source=Join-Path $output ($Name+'.cpp') }
-    $exe=Join-Path $output ($Name+'.exe')
+    $exe=Join-Path $output ($Name+$(if($DynamicLibrary){'.dll'}else{'.exe'}))
     $arguments=@('/nologo',('/std:'+$Standard),'/EHsc','/W4','/MTd','/Z7','/UNDEBUG','/utf-8','/D_CRT_SECURE_NO_WARNINGS',
         ('/I'+(Join-Path $ProjectRoot 'src')), ('/I'+$CaseDirectory), ('/I'+$output),
         ('/Fo'+$output+'\\'), ('/Fe'+$exe))
     if ($Storage) { $arguments+='/DFILESPACER_STORAGE_TEST' }
     if ($ControlFlowGuard) { $arguments+='/guard:cf' }
+    if ($DynamicLibrary) { $arguments+='/LD' }
     foreach ($define in $Defines) { $arguments+=('/D'+$define) }
     if ($Sqlite) {
         $sqliteDirectory=Join-Path $ProjectRoot 'third_party\sqlite'
