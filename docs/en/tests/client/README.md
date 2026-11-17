@@ -11,6 +11,10 @@ tests.cmd -VM AgentWin10 -Category Internal -Pattern "26-*"
 tests.cmd -VM AgentWin10 -Category UI -Pattern "16-redimensionnement-alt\03-*"
 ```
 
+Add `-Configuration Release` to test the ordinary Release executable and DLL.
+The default is Debug. Both configurations use isolated test data; the package,
+controller manifest and native helpers must agree on the configuration.
+
 Without `-VM`, tests run locally. A VM name refers to an existing configured VM;
 the launcher never creates one or falls back to local UI execution.
 
