@@ -116,7 +116,7 @@ static HRESULT invokeDisplayCommand(IFolderView2 *view, UINT command) {
     if (!view) return E_NOINTERFACE;
     if (isViewMenuMode(command)) {
         const auto &mode = VIEW_MENU_MODES[command - IDM_VIEW_MODE_FIRST];
-        return view->SetViewModeAndIconSize(mode.mode, mode.size < 0 ? -1 : scaleDPI(mode.size));
+        return view->SetViewModeAndIconSize(mode.mode, mode.size);
     }
     if (!isPlacementCommand(command)) return E_INVALIDARG;
     FOLDERVIEWMODE mode = FVM_AUTO; int size = 0; DWORD flags = 0;
@@ -488,6 +488,13 @@ struct FolderWindow::IconSnap {
                 || ListView_IsGroupViewEnabled(list)) return false;
         ListView_GetNumberOfWorkAreas(list, &areas);
         if (areas || !current()) return false;
+        if (mode == FVM_ICON) {
+            const HIMAGELIST icons = ListView_GetImageList(list, LVSIL_NORMAL);
+            int width = 0, height = 0;
+            if (!icons || !ImageList_GetIconSize(icons, &width, &height) || !current()
+                    || width <= 0 || height != width || width > MAXSHORT / 3 || spacing.x < width) return false;
+            iconSize = width;
+        }
         if (!capturePoints()) return false;
         previewMode = mode;
         movingPositions.view = folder;
@@ -2981,8 +2988,8 @@ void FolderWindow::changeViewMode(int amount, bool wheel) {
     if (!current() || FAILED(queried) || !view) return;
     struct Mode { FOLDERVIEWMODE mode; int size; };
     const Mode modes[] = {
-        {FVM_ICON, scaleDPI(256)}, {FVM_ICON, scaleDPI(96)}, {FVM_ICON, scaleDPI(48)},
-        {FVM_SMALLICON, scaleDPI(16)}, {FVM_LIST, -1}, {FVM_DETAILS, -1}, {FVM_TILE, -1}, {FVM_CONTENT, -1}
+        {FVM_ICON, 256}, {FVM_ICON, 96}, {FVM_ICON, 48},
+        {FVM_SMALLICON, 16}, {FVM_LIST, -1}, {FVM_DETAILS, -1}, {FVM_TILE, -1}, {FVM_CONTENT, -1}
     };
     FOLDERVIEWMODE mode;
     int size;
@@ -3000,7 +3007,7 @@ void FolderWindow::changeViewMode(int amount, bool wheel) {
         // The first size past the one reached, walking the scale in the steps' direction.
         auto beyond = [&](const int *sizes, int count) {
             for (int i = 0; i < count; ++i) {
-                const int candidate = scaleDPI(sizes[larger ? i : count - 1 - i]);
+                const int candidate = sizes[larger ? i : count - 1 - i];
                 if (larger ? candidate > target.size : candidate < target.size) return candidate;
             }
             return 0;
@@ -3020,7 +3027,7 @@ void FolderWindow::changeViewMode(int amount, bool wheel) {
                     else target = {FVM_LIST, -1};
                 }
             } else if (from.mode == FVM_LIST) {
-                target = larger ? Mode{FVM_SMALLICON, scaleDPI(smallLarger[0])} : Mode{FVM_DETAILS, -1};
+                target = larger ? Mode{FVM_SMALLICON, smallLarger[0]} : Mode{FVM_DETAILS, -1};
             } else if (from.mode == FVM_TILE) {
                 target = larger ? Mode{FVM_DETAILS, -1} : Mode{FVM_CONTENT, -1};
             } else if (from.mode == FVM_CONTENT) {
@@ -4645,7 +4652,7 @@ void FolderWindow::openViewMenu(POINT point) {
         for (int i = 0; i < static_cast<int>(_countof(VIEW_MENU_MODES)); ++i) {
             const auto &choice = VIEW_MENU_MODES[i];
             if (choice.mode != mode) continue;
-            const int difference = choice.size < 0 ? 0 : std::abs(size - scaleDPI(choice.size));
+            const int difference = choice.size < 0 ? 0 : std::abs(size - choice.size);
             if (difference < distance) { checked = i; distance = difference; }
         }
         for (UINT i = 0; i < _countof(VIEW_MENU_MODES); ++i) {
