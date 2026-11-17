@@ -124,7 +124,7 @@ namespace FileSpacerRegression {
                 MousePoint actual;
                 if(!GetCursorPos(out actual)) throw new Win32Exception();
                 if(actual.X==point.X && actual.Y==point.Y) break;
-                if(deadline.ElapsedMilliseconds>=2000) throw new TimeoutException("Windows did not place the pointer at the requested physical coordinates.");
+                if(deadline.ElapsedMilliseconds>=2000) throw new TimeoutException("Windows did not place the pointer at the requested physical coordinates: requested=("+point.X+","+point.Y+"), actual=("+actual.X+","+actual.Y+").");
                 Thread.Sleep(10);
             }
         }
