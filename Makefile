@@ -49,6 +49,7 @@ OBJECTS = \
     $(OUTDIR)\ExecuteCommand.obj \
     $(OUTDIR)\Everything.obj \
     $(OUTDIR)\FolderWindow.obj \
+    $(OUTDIR)\FolderWindowIconSnap.obj \
     $(OUTDIR)\FolderOpeningAnimation.obj \
     $(OUTDIR)\FolderGroups.obj \
     $(OUTDIR)\FolderIdentity.obj \
