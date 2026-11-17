@@ -8,6 +8,11 @@ import {generate} from './generate.mjs';
 import lunr from 'lunr';
 
 const repository = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const documentFiles = ['index.html', 'user-guide.html', 'changelog.html', 'third-party-notices.html'];
+// Content and anchor invariants apply across the four generated documents.
+async function readDocuments(directory) {
+  return (await Promise.all(documentFiles.map(file => fs.readFile(path.join(directory, file), 'utf8')))).join('\n');
+}
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'filespacer-site-fixture-'));
   t.after(() => {
@@ -33,22 +38,28 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
   });
   const result = await generate(repository, output, {onWarning: () => {}});
   assert.equal(result.documents, 4);
-  const html = await fs.readFile(path.join(output, 'index.html'), 'utf8');
-  const nav = await fs.readFile(path.join(output, '_includes/components/site_nav.html'), 'utf8');
-  assert.match(html, /href="#user-guide--moving-and-resizing"/);
-  assert.match(html, /href="#user-guide--everything"/);
-  assert.match(html, /href="#user-guide--nilesoft-shell"/);
+  const overview = await fs.readFile(path.join(output, 'index.html'), 'utf8');
+  const guide = await fs.readFile(path.join(output, 'user-guide.html'), 'utf8');
+  assert.doesNotMatch(overview, /data-source="docs\/user-guide.md"/);
+  assert.doesNotMatch(guide, /data-source="README.md"/);
+  assert.match(overview, /<h1 id="overview">[^]*?FileSpacer — Spatial file manager for Windows<\/h1>/);
+  assert.match(guide, /<h1 id="user-guide">/);
+  const html = await readDocuments(path.join(output));
+  const nav = await fs.readFile(path.join(output, '_includes/sections/user-guide.html'), 'utf8');
+  assert.match(html, /href="user-guide.html#user-guide--moving-and-resizing"/);
+  assert.match(html, /href="user-guide.html#user-guide--everything"/);
+  assert.match(html, /href="user-guide.html#user-guide--nilesoft-shell"/);
   assert.match(html, /https:\/\/github\.com\/LeBenco\/FileSpacer\/blob\/main\/docs\/en\/build\.md/);
   assert.match(html, /https:\/\/github\.com\/LeBenco\/FileSpacer\/blob\/main\/docs\/en\/tests\/regression\/README\.md/);
   assert.doesNotMatch(html, /data-source="(?:docs\/(?:build|native-shell-view)|tests\/)/);
   assert.match(nav, /href="#user-guide--customization"/);
   assert.doesNotMatch(nav, /href="#(?:user-guide--(?:integration|windows-integration|everything|nilesoft-shell)|overview--copyright-and-license)"/);
   assert.match(html, /<div id="user-guide--everything"><\/div>/);
-  const windows = html.match(/<h3 id="user-guide--window-navigation-and-layout">[^]*?(?=<h3 |<\/section>)/)?.[0];
+  const windows = html.match(/<h2 id="user-guide--window-navigation-and-layout">[^]*?(?=<h2 |<\/section>)/)?.[0];
   assert.ok(windows, 'The user guide groups window navigation and locking');
   assert.match(windows, /<div id="user-guide--locking-a-saved-layout"><\/div>/);
   assert.match(html, /<div id="user-guide--moving-and-resizing"><\/div>/);
-  assert.match(html, /href="#user-guide--locking-a-saved-layout"/);
+  assert.match(html, /href="user-guide.html#user-guide--locking-a-saved-layout"/);
   assert.match(html, /assets\/content\/src\/res\/FileSpacer\.svg/);
   assert.doesNotMatch(nav, /href="#privacy-policy"/);
   assert.match(nav, /href="#user-guide--privacy"/);
@@ -61,6 +72,8 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
   const screenshots = [...html.matchAll(/<a class="screenshot-link"[^>]+><img\b[^>]+><\/a>/g)];
   assert.equal(screenshots.length, [...html.matchAll(/<img\b[^>]*src="[^"]+\.(?:png|gif)\?v=[a-f0-9]{12}"/g)].length);
   assert.ok(screenshots.length > 0);
+  assert.ok(screenshots.every(([link]) => link.includes('loading="lazy"')));
+  assert.ok(screenshots.every(([link]) => /<img[^>]*width="\d+"/.test(link) && /<img[^>]*height="\d+"/.test(link)));
   assert.ok(screenshots.every(([link]) => !link.includes('.svg')));
   assert.match(html, /screenshot-link" href="assets\/content\/docs\/images\/spatial-windows\.png\?v=[a-f0-9]{12}"/);
   await fs.access(path.join(output, 'assets/content/src/res/FileSpacer.svg'));
@@ -76,20 +89,20 @@ test('GitHub publication dates localize changelog headings and navigation withou
   const oldIds = new Map();
   const ids = html => [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
   for (const language of baseline.languages) {
-    oldIds.set(language.code, ids(await fs.readFile(path.join(output, language.source, 'index.html'), 'utf8')));
+    oldIds.set(language.code, ids(await readDocuments(path.join(output, language.source))));
   }
   const result = await generate(repository, output, {
     onWarning: () => {}, releaseDates: {'1.3.2': '2026-11-05T23:59:59Z'},
   });
   for (const language of result.languages) {
-    const html = await fs.readFile(path.join(output, language.source, 'index.html'), 'utf8');
-    const nav = await fs.readFile(path.join(output, language.source, '_includes/components/site_nav.html'), 'utf8');
+    const html = await readDocuments(path.join(output, language.source));
+    const nav = await fs.readFile(path.join(output, language.source, '_includes/sections/changelog.html'), 'utf8');
     assert.deepEqual(ids(html), oldIds.get(language.code), language.code);
     const date = new Intl.DateTimeFormat(language.code, {year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC'})
       .format(new Date('2026-11-05T23:59:59Z'));
-    assert.ok(html.includes(`1.3.2 — ${date}</h3>`), language.code);
+    assert.ok(html.includes(`1.3.2 — ${date}</h2>`), language.code);
     assert.ok(nav.includes(`1.3.2 — ${date}</a>`), language.code);
-    assert.match(html, /1\.3\.1<\/h3>/, 'A version not yet published on GitHub is shown without an invented date');
+    assert.match(html, /1\.3\.1<\/h2>/, 'A version not yet published on GitHub is shown without an invented date');
     if (language.code === 'fr-FR') assert.match(html, /Ajouter le polonais/);
     if (language.code === 'en-GB') assert.match(html, /Add Polish/);
   }
@@ -99,26 +112,27 @@ test('replacing an image changes both its thumbnail and popup URL while unchange
   const root = await fixture(t);
   const output = path.join(root, 'output');
   await generate(root, output);
-  const before = await fs.readFile(path.join(output, 'index.html'), 'utf8');
+  const before = await readDocuments(path.join(output));
   const imageUrl = (html, name) => html.match(new RegExp(`href="(assets/content/docs/images/${name}\\.png\\?v=[a-f0-9]{12})"`))[1];
   await fs.copyFile(path.join(root, 'docs/images/selected-name.png'), path.join(root, 'docs/images/spatial-windows.png'));
   await generate(root, output);
-  const after = await fs.readFile(path.join(output, 'index.html'), 'utf8');
+  const after = await readDocuments(path.join(output));
   const updated = imageUrl(after, 'spatial-windows');
   assert.notEqual(updated, imageUrl(before, 'spatial-windows'));
   assert.ok(after.includes(`src="${updated}"`));
   assert.equal(imageUrl(after, 'selected-name'), imageUrl(before, 'selected-name'));
 });
 
-test('the header adds no download button while preserving download links in Markdown', async t => {
+test('the horizontal menu links to GitHub while download links stay in Markdown', async t => {
   const root = await fixture(t);
   await fs.appendFile(path.join(root, 'README.md'), '\n[Download](https://github.com/LeBenco/FileSpacer/releases/latest)\n');
   await generate(root, path.join(root, 'output'));
   const config = await fs.readFile(path.join(root, 'output/_config.yml'), 'utf8');
-  const header = config.match(/^aux_links:\n([^]*?)(?=^[^\s])/m)[1];
-  assert.doesNotMatch(header, /releases\/latest|Download/);
-  assert.match(header, /https:\/\/github.com\/LeBenco\/FileSpacer/);
-  const html = await fs.readFile(path.join(root, 'output/index.html'), 'utf8');
+  assert.doesNotMatch(config, /^aux_links:/m);
+  const menu = await fs.readFile(path.join(root, 'output/_includes/components/top_nav.html'), 'utf8');
+  assert.doesNotMatch(menu, /releases\/latest|Download/);
+  assert.match(menu, /https:\/\/github.com\/LeBenco\/FileSpacer/);
+  const html = await readDocuments(path.join(root, 'output'));
   assert.match(html, /href="https:\/\/github.com\/LeBenco\/FileSpacer\/releases\/latest">Download<\/a>/);
 });
 
@@ -134,7 +148,7 @@ test('language directories use the root English README and require their own ima
   await fs.cp(path.join(repository, 'docs/fr'), path.join(root, 'docs/fr'), {recursive: true});
   const output = path.join(root, 'output');
   await generate(root, output, {onWarning: () => {}});
-  const english = await fs.readFile(path.join(output, 'index.html'), 'utf8');
+  const english = await readDocuments(path.join(output));
   assert.match(english, /Canonical root README/);
   assert.doesNotMatch(english, /Not the project overview/);
   const french = await fs.readFile(path.join(output, '_locales/fr-FR/index.html'), 'utf8');
@@ -157,7 +171,7 @@ test('repeated headings keep unique IDs and links to numbered occurrences', asyn
   await fs.appendFile(path.join(root, 'docs/user-guide.md'), '\n## Repeated topic\n\nFirst.\n\n## Repeated topic\n\nSecond.\n');
   await fs.appendFile(path.join(root, 'README.md'), '\n[Second topic](docs/user-guide.md#repeated-topic-1)\n');
   await generate(root, path.join(root, 'output'));
-  const html = await fs.readFile(path.join(root, 'output/index.html'), 'utf8');
+  const html = await readDocuments(path.join(root, 'output'));
   assert.match(html, /id="user-guide--repeated-topic"/);
   assert.match(html, /id="user-guide--repeated-topic-1"/);
   assert.match(html, /href="#user-guide--repeated-topic-1"/);
@@ -169,11 +183,11 @@ test('explicit HTML anchors and raw HTML links are resolved without cross-docume
   await fs.appendFile(path.join(root, 'docs/user-guide.md'), "\n<div id='custom-anchor'>Target</div>\n");
   const output = path.join(root, 'output');
   await generate(root, output);
-  const html = await fs.readFile(path.join(output, 'index.html'), 'utf8');
+  const html = await readDocuments(path.join(output));
   assert.match(html, /id="overview--custom-anchor"/);
   assert.match(html, /href="#overview--custom-anchor"/);
   assert.match(html, /id='user-guide--custom-anchor'/);
-  assert.match(html, /href="#user-guide--custom-anchor"/);
+  assert.match(html, /href="user-guide.html#user-guide--custom-anchor"/);
   assert.match(html, /data-id="not-an-anchor"/);
   await fs.appendFile(path.join(root, 'README.md'), '\n<a id="custom-anchor"></a>\n');
   await assert.rejects(generate(root, output), /Duplicate source anchor/);
@@ -185,14 +199,14 @@ test('explicit English heading anchors survive title edits without adding empty 
   await fs.appendFile(file, '\n<a id="stable-display-settings"></a>\n\n## Initial wording\n\n[Settings](#stable-display-settings)\n');
   const output = path.join(root, 'output');
   await generate(root, output);
-  const first = await fs.readFile(path.join(output, 'index.html'), 'utf8');
-  assert.match(first, /<h3 id="user-guide--stable-display-settings">/);
+  const first = await readDocuments(path.join(output));
+  assert.match(first, /<h2 id="user-guide--stable-display-settings">/);
   assert.match(first, /href="#user-guide--stable-display-settings"/);
   assert.doesNotMatch(first, /<p><a id="user-guide--stable-display-settings"><\/a><\/p>/);
   await fs.writeFile(file, (await fs.readFile(file, 'utf8')).replace('## Initial wording', '## Entirely different wording'));
   await generate(root, output);
-  const updated = await fs.readFile(path.join(output, 'index.html'), 'utf8');
-  assert.match(updated, /<h3 id="user-guide--stable-display-settings">/);
+  const updated = await readDocuments(path.join(output));
+  assert.match(updated, /<h2 id="user-guide--stable-display-settings">/);
   assert.ok(updated.includes('Entirely different wording'));
 });
 
@@ -232,7 +246,7 @@ test('technical references use an available translation and preserve its section
   await fs.writeFile(technical, '# Compilation\n\n<a id="releases"></a>\n\n## Publications\n');
   await generate(root, output);
   assert.ok((await fs.readFile(page, 'utf8')).includes('href="https://github.com/LeBenco/FileSpacer/blob/main/website/translations/fr-FR/docs/build.md#releases"'));
-  assert.ok((await fs.readFile(path.join(output, 'index.html'), 'utf8')).includes(`href="${canonical}"`));
+  assert.ok((await readDocuments(path.join(output))).includes(`href="${canonical}"`));
   await fs.unlink(technical);
   await generate(root, output);
   assert.ok((await fs.readFile(page, 'utf8')).includes(`href="${canonical}"`));
@@ -252,7 +266,7 @@ test('English text and structure updates retain translated text and historical s
   await fs.appendFile(path.join(root, 'README.md'), '\n## Newly published section\n\nNew English structure.\n');
   result = await generate(root, output, {onWarning: () => {}});
   assert.equal(result.warnings.length, 1);
-  assert.match(await fs.readFile(path.join(output, 'index.html'), 'utf8'), /New English structure/);
+  assert.match(await readDocuments(path.join(output)), /New English structure/);
   assert.equal(await fs.readFile(path.join(output, '_locales/fr-FR/index.html'), 'utf8'), translated);
 });
 
@@ -280,24 +294,45 @@ test('all available translations keep recorded section IDs, localized navigation
     .filter(name => /^resource\.[a-z]{2}\.rc$/.test(name))
     .map(name => name.split('.')[1]).sort();
   assert.deepEqual(result.languages.map(language => language.code.split('-')[0]).sort(), applicationLanguages);
-  const englishHtml = await fs.readFile(path.join(output, 'index.html'), 'utf8');
+  const englishHtml = await readDocuments(path.join(output));
   const englishIds = [...englishHtml.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
   for (const language of result.languages) {
     const directory = path.join(output, language.source);
-    const html = await fs.readFile(path.join(directory, 'index.html'), 'utf8');
-    const nav = await fs.readFile(path.join(directory, '_includes/components/site_nav.html'), 'utf8');
+    const html = await readDocuments(path.join(directory));
+    const nav = await fs.readFile(path.join(directory, '_includes/sections/user-guide.html'), 'utf8');
     const config = await fs.readFile(path.join(directory, '_config.yml'), 'utf8');
+    for (const document of documentFiles) {
+      const page = await fs.readFile(path.join(directory, document), 'utf8');
+      const alternates = JSON.parse(page.match(/^fs_alternates: (.+)$/m)[1]);
+      assert.equal(alternates.length, result.languages.length + 1);
+      assert.equal(new Set(alternates.map(item => item.lang)).size, alternates.length);
+      for (const target of result.languages) {
+        const suffix = target.path ? target.path + '/' : '';
+        const route = document === 'index.html' ? '' : document;
+        assert.ok(alternates.some(item => item.lang === target.code.split('-')[0]
+          && item.url === 'https://lebenco.github.io/FileSpacer/' + suffix + route));
+      }
+      assert.ok(alternates.some(item => item.lang === 'x-default'));
+      const id = page.match(/^fs_section: (.+)$/m)[1];
+      const sectionNav = await fs.readFile(path.join(directory, `_includes/sections/${id}.html`), 'utf8');
+      for (const [, href] of sectionNav.matchAll(/data-language-href="([^"]+)"/g)) {
+        assert.ok(document === 'index.html' ? href.endsWith('/') : href.endsWith('/' + document));
+      }
+    }
+    const topNav = await fs.readFile(path.join(directory, '_includes/components/top_nav.html'), 'utf8');
+    assert.equal((topNav.match(/data-section=/g) || []).length, 4);
+    assert.match(topNav, /<a href="https:\/\/github.com\/LeBenco\/FileSpacer">GitHub<\/a><\/nav>/);
     if (!language.path) assert.deepEqual([...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]), englishIds);
     else {
       const state = JSON.parse(await fs.readFile(path.join(repository, 'docs/' + language.path, 'source-state.json'), 'utf8'));
       for (const [, id, source, section] of html.matchAll(/<section aria-labelledby="([^"]+)" data-source="([^"]+)">([^]*?)<\/section>/g)) {
         const expected = state.sources[source].headings.map(([anchor], index) => index ? `${id}--${anchor}` : id);
-        assert.deepEqual([...section.matchAll(/<h[2-6] id="([^"]+)"/g)].map(match => match[1]), expected);
+        assert.deepEqual([...section.matchAll(/<h[1-6] id="([^"]+)"/g)].map(match => match[1]), expected);
       }
     }
     assert.equal((nav.match(/data-language-href=/g) || []).length, result.languages.length);
-    assert.ok(nav.indexOf('language-picker') < nav.indexOf('<ul class="nav-list">'));
-    assert.ok(nav.includes('hreflang="' + language.code + '"'));
+    assert.ok(nav.indexOf('language-picker') < nav.indexOf('<ul class="nav-list fs-section-links">'));
+    assert.ok(nav.includes('hreflang="' + language.code.split('-')[0] + '"'));
     assert.ok(config.includes('lang: ' + language.code));
     const ui = JSON.parse(config.match(/^fs_ui: (.+)$/m)[1]);
     assert.equal(ui.download, undefined);
@@ -313,6 +348,10 @@ test('all available translations keep recorded section IDs, localized navigation
   }
   const localizedImage = await fs.readFile(path.join(output, '_locales/fr-FR/assets/content/docs/images/spatial-windows.png'));
   assert.deepEqual(localizedImage, await fs.readFile(path.join(repository, 'docs/fr/images/spatial-windows.png')));
+  const sitemap = await fs.readFile(path.join(output, 'sitemap.xml'), 'utf8');
+  assert.equal((sitemap.match(/<url>/g) || []).length, result.languages.length * documentFiles.length);
+  assert.doesNotMatch(sitemap, /<loc>[^<]*#/);
+  assert.equal((sitemap.match(/<xhtml:link /g) || []).length, result.languages.length * documentFiles.length * (result.languages.length + 1));
 });
 
 test('a translation with a missing document is rejected rather than partially published', async t => {
