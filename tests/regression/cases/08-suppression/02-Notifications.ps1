@@ -273,7 +273,7 @@ finally {
 }
 
 foreach ($log in Get-ChildItem -LiteralPath $RunDirectory -Filter 'application-*.stdout.log') {
-    $output = Get-Content -LiteralPath $log.FullName -Raw
+    $output = [IO.File]::ReadAllText($log.FullName)
     if ($output.Contains('SHCreateItemFromParsingName(closedWindowPath(last).c_str()')) {
         throw 'An unavailable history entry still causes a Jump List resolution error.'
     }
