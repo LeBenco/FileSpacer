@@ -5,7 +5,7 @@
 
 <a id="filespacer"></a>
 
-# FileSpacer
+# FileSpacer — Räumlicher Dateimanager für Windows
 
 [![Herunterladen neueste Version](https://img.shields.io/badge/Herunterladen-neueste%20Version-blue)](https://github.com/LeBenco/FileSpacer/releases/latest) &emsp;
 [![Windows 10+](https://img.shields.io/badge/Windows%2010%2B-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTAgMGgxMXYxMUgwem0xMyAwaDExdjExSDEzem0tMTMgMTNoMTF2MTFIMHptMTMgMGgxMXYxMUgxM3oiLz48L3N2Zz4=)](#system--languages)

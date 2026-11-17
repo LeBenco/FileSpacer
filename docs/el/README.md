@@ -5,7 +5,7 @@
 
 <a id="filespacer"></a>
 
-# FileSpacer
+# FileSpacer — Χωρικός διαχειριστής αρχείων για τα Windows
 
 [![Λήψη τελευταία έκδοση](https://img.shields.io/badge/%CE%9B%CE%AE%CF%88%CE%B7-%CF%84%CE%B5%CE%BB%CE%B5%CF%85%CF%84%CE%B1%CE%AF%CE%B1%20%CE%AD%CE%BA%CE%B4%CE%BF%CF%83%CE%B7-blue)](https://github.com/LeBenco/FileSpacer/releases/latest) &emsp;
 [![Windows 10+](https://img.shields.io/badge/Windows%2010%2B-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTAgMGgxMXYxMUgwem0xMyAwaDExdjExSDEzem0tMTMgMTNoMTF2MTFIMHptMTMgMGgxMXYxMUgxM3oiLz48L3N2Zz4=)](#system--languages)

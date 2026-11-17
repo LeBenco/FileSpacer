@@ -4,7 +4,7 @@
 
 <a id="filespacer"></a>
 
-# FileSpacer
+# FileSpacer — Просторовий файловий менеджер для Windows
 
 [![Завантажити останню версію](https://img.shields.io/badge/%D0%97%D0%B0%D0%B2%D0%B0%D0%BD%D1%82%D0%B0%D0%B6%D0%B8%D1%82%D0%B8-%D0%BE%D1%81%D1%82%D0%B0%D0%BD%D0%BD%D1%8F%20%D0%B2%D0%B5%D1%80%D1%81%D1%96%D1%8F-blue)](https://github.com/LeBenco/FileSpacer/releases/latest) &emsp;
 [![Windows 10+](https://img.shields.io/badge/Windows%2010%2B-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTAgMGgxMXYxMUgwem0xMyAwaDExdjExSDEzem0tMTMgMTNoMTF2MTFIMHptMTMgMGgxMXYxMUgxM3oiLz48L3N2Zz4=)](#system--languages)
