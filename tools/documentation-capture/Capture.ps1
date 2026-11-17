@@ -14,6 +14,7 @@ Add-Type -Path ([IO.Path]::Combine($ProjectRoot,'build','documentation-capture',
 $source=Join-Path $ProjectRoot 'build\documentation-capture\reusable-source'
 . (Join-Path $source 'Capture.Core.ps1')
 . (Join-Path $source 'SceneActions.ps1')
+. (Join-Path $source 'StaticScenes.ps1')
 $plan=Get-Content -LiteralPath (Join-Path $ProjectRoot 'build\documentation-capture\reusable-plan.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 if($plan.Scenes-contains'details-columns'){
     Add-Type -Path (Join-Path $ProjectRoot 'tests\regression\cases\37-colonnes\ColumnsUi.cs') -ReferencedAssemblies @('Accessibility.dll',([FileSpacerRegression.Native].Assembly.Location))
@@ -27,7 +28,7 @@ Write-Host ('Windows display language: '+$windowsUiLanguage+'; PowerShell UI cul
 foreach($requestedLanguage in $plan.Languages) {
     if($requestedLanguage-ne$sessionLanguage){throw ('The signed-in Windows session uses '+$sessionLanguage+', but capture requests '+$requestedLanguage+'. Change the VM display language and sign in again before recording native Shell UI.')}
 }
-$animations=@($plan.Scenes|Where-Object {$_-ne'locked-title'}).Count-gt0
+$animations=@($plan.Scenes|Where-Object {$_-notin@('locked-title','static-views')}).Count-gt0
 if($animations) {
     $drive=New-Object IO.DriveInfo([IO.Path]::GetPathRoot($ProjectRoot))
     Assert-Ui ($drive.AvailableFreeSpace-ge4GB) 'Animation capture requires at least 4 GiB free on the guest drive for ScreenToGif frames and export.'
@@ -142,6 +143,7 @@ try {
                     'customize-title-menu' {Customize $window}
                     'locked-title' {LockedTitle $window}
                     'details-columns' {DetailsColumns $window $folder}
+                    'static-views' {Close-UiFolder $window;StaticViews}
                     default {throw ('Unknown documentation scene: '+$scene)}
                 }
             }
@@ -181,7 +183,7 @@ finally {
             }
         }catch{[void]$cleanupErrors.Add($_.Exception.Message)}
     }
-    @{Date=[DateTime]::UtcNow.ToString('o');WindowsUiLanguage=$windowsUiLanguage;WindowsUiOverride=$(if($displayOverride){$displayOverride.Name}else{$null});PowerShellUiCulture=[Globalization.CultureInfo]::CurrentUICulture.Name;SourceApplicationSha256=$plan.SourceApplication;Nilesoft=$false;WallpaperSha256=$plan.WallpaperSha256;Recorder='ScreenToGif 2.43.2';Captures=@($records);CleanupErrors=@($cleanupErrors)} |
+    @{Date=[DateTime]::UtcNow.ToString('o');WindowsUiLanguage=$windowsUiLanguage;WindowsUiOverride=$(if($displayOverride){$displayOverride.Name}else{$null});PowerShellUiCulture=[Globalization.CultureInfo]::CurrentUICulture.Name;DisplayBefore=@{Width=$originalMode.Width;Height=$originalMode.Height};CaptureResolution=@{Width=1600;Height=1200};SourceApplicationSha256=$plan.SourceApplication;Nilesoft=$false;WallpaperSha256=$plan.WallpaperSha256;Recorder='ScreenToGif 2.43.2';Captures=@($records);CleanupErrors=@($cleanupErrors)} |
       ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $env:FS_REGRESSION_RUN 'captures.json') -Encoding UTF8
     if($cleanupErrors.Count){if(!$captureFailure){throw ($cleanupErrors -join ' | ')};Write-Warning ($cleanupErrors -join ' | ')}
 }
