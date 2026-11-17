@@ -13,7 +13,7 @@ function Write-PrivateDiagnostics([string]$ProjectRoot,[string]$RunDirectory) {
         $kind=if($file.Extension-eq'.public'){'SavedPublicDecision'}else{'TransientDiscoveryFailure'}
         if($bytes.Length -ge $prefix.Length -and [Text.Encoding]::ASCII.GetString($bytes,0,$prefix.Length) -ceq 'FSPUBLIC01') {
             $offset=$prefix.Length
-            if($file.Name -match '\.(range|grid)\.(public|attempt)$'){$offset+=24} # PDB GUID, age and image size precede the reason.
+            if($file.Name -match '\.range\.(public|attempt)$'){$offset+=24} # PDB GUID, age and image size precede the reason.
         }
         $reason=if($offset -le $bytes.Length){[Text.Encoding]::UTF8.GetString($bytes,$offset,$bytes.Length-$offset).Trim()}else{'Truncated decision record'}
         $decisions+=[pscustomobject]@{File=$file.FullName.Substring($RunDirectory.Length+1);Kind=$kind;Reason=$reason;Sha256=(Get-FileHash -LiteralPath $file.FullName).Hash}
