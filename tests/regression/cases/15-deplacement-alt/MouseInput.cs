@@ -40,6 +40,7 @@ namespace FileSpacerRegression {
         static bool buttonHeld,altHeld,rightButton,middleButton,ctrlHeld,shiftHeld;
         static bool secondaryRightHeld;
         static DateTime lastRelease=DateTime.MinValue;
+        public static long LastReleaseTicks { get; private set; }
 
         static Input Key(ushort key,bool up) {
             var input=new Input(); input.Type=1; input.Data.Keyboard.Key=key;
@@ -150,7 +151,7 @@ namespace FileSpacerRegression {
             }
         }
         public static void ReleasePrimary() {
-            if(buttonHeld) { Trace(rightButton?"releasing right":"releasing left"); Send(Button(true)); buttonHeld=false; lastRelease=DateTime.UtcNow; }
+            if(buttonHeld) { Trace(rightButton?"releasing right":"releasing left"); LastReleaseTicks=Stopwatch.GetTimestamp(); Send(Button(true)); buttonHeld=false; lastRelease=DateTime.UtcNow; }
         }
         public static void End() {
             try { ReleasePrimary(); }
