@@ -9,7 +9,7 @@ $ErrorActionPreference='Stop'
 Set-StrictMode -Version 2
 $runId=[IO.Path]::GetFileName($RunDirectory)
 $taskName='FileSpacer-Smoke-'+$runId
-$guestRoot=$null;$taskRegistered=$false
+$guestRoot=$null;$taskRegistered=$false;$configuration='Debug'
 $report=[ordered]@{Status='BLOCKED';RunId=$runId;TaskStarted=$false;VMConnectAbsent=$true;ConsolePreparation=$null;TaskExitCode=$null;GuestResult=$null;Error=$null;CleanupErrors=@()}
 try {
     if(@(Get-Process vmconnect -ErrorAction SilentlyContinue).Count){throw 'Close VMConnect consoles, leaving the VM running and its desktop session signed in.'}
@@ -21,6 +21,8 @@ try {
     if($Regression){
         $inputDirectory=Join-Path $RunDirectory 'package'
         $selection=Get-Content -LiteralPath (Join-Path $inputDirectory 'selection.json') -Raw | ConvertFrom-Json
+        if (!$selection.PSObject.Properties['Configuration'] -or $selection.Configuration -notin @('Debug','Release')) { throw 'Invalid prepared build configuration.' }
+        $configuration=[string]$selection.Configuration
         if(@($selection.Cases).Count-lt1 -or @($selection.Cases).Count-gt200 -or $selection.TimeoutSeconds-lt30 -or $selection.TimeoutSeconds-gt3600){throw 'Invalid prepared test selection.'}
         $waitSeconds=120+@($selection.Cases).Count*([int]$selection.TimeoutSeconds+15)
     }else{
@@ -32,8 +34,8 @@ try {
     }
     $manifest=@{
         RunId=$runId;HostMachine=$env:COMPUTERNAME;GuestMachine=$Guest.Machine;GuestAccountSid=$Guest.AccountSid;GuestSessionId=$desktops[0].SessionId
-        BuildLocation='Host';Configuration='Debug'
-        ExecutableSha256=(Get-FileHash -LiteralPath (Join-Path $inputDirectory $(if($Regression){'build\debug\FileSpacer.exe'}else{'FileSpacer.exe'})) -Algorithm SHA256).Hash
+        BuildLocation='Host';Configuration=$configuration
+        ExecutableSha256=(Get-FileHash -LiteralPath (Join-Path $inputDirectory $(if($Regression){'build\'+$configuration.ToLowerInvariant()+'\FileSpacer.exe'}else{'FileSpacer.exe'})) -Algorithm SHA256).Hash
     }
     if(!$Regression){$manifest.HelperSha256=(Get-FileHash -LiteralPath (Join-Path $inputDirectory 'FileSpacerRegression.dll') -Algorithm SHA256).Hash}
     $manifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $inputDirectory 'manifest.json') -Encoding UTF8
