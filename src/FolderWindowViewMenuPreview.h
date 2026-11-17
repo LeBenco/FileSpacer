@@ -5,6 +5,9 @@
 #include "FolderWindow.h"
 
 namespace filespacer {
+// The menu owns this session while tracking. Once the menu closes, the window
+// retains it only while a refill observed by apply() is still running, to replay
+// the same restoration on that refill's EnumDone; saves are never held back.
 struct FolderWindow::ViewMenuPreview {
     struct Entry { UINT command; };
     static thread_local ViewMenuPreview *active;
