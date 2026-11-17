@@ -86,7 +86,9 @@ try {
     $manifest=Get-Content -LiteralPath (Join-Path $inputRoot 'manifest.json') -Raw | ConvertFrom-Json
     $report.RunId=$manifest.RunId;$report.ExecutableSha256=$manifest.ExecutableSha256
     if($env:COMPUTERNAME-eq$manifest.HostMachine -or $env:COMPUTERNAME-ne$manifest.GuestMachine){throw 'Expected the declared Hyper-V guest, never the host.'}
-    if($manifest.Configuration-ne'Debug' -or ![Environment]::UserInteractive -or $report.SessionId-ne$manifest.GuestSessionId){throw 'The declared interactive Debug test session is unavailable.'}
+    if($manifest.Configuration -notin @('Debug','Release') -or ![Environment]::UserInteractive -or $report.SessionId-ne$manifest.GuestSessionId){throw 'The declared interactive test session or build configuration is unavailable.'}
+    $report.Configuration=[string]$manifest.Configuration
+    $env:FS_REGRESSION_CONFIGURATION=$report.Configuration
     if([Security.Principal.WindowsIdentity]::GetCurrent().User.Value-ne$manifest.GuestAccountSid){throw 'Guest test account differs from the connected account.'}
     $testPrincipal=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
     $report.IsAdministrator=$testPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -139,7 +141,9 @@ try {
             if(!$file.StartsWith($inputRoot+'\',[StringComparison]::OrdinalIgnoreCase) -or (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash-ne$entry.Sha256){throw 'Prepared package hash or path mismatch.'}
         }
         $selection=Get-Content -LiteralPath (Join-Path $inputRoot 'selection.json') -Raw | ConvertFrom-Json
-        if($selection.BuildLocation-ne'Host' -or $selection.HostMachine-ne$manifest.HostMachine){throw 'Unexpected package build identity.'}
+        if($selection.BuildLocation-ne'Host' -or $selection.HostMachine-ne$manifest.HostMachine -or !$selection.PSObject.Properties['Configuration'] -or $selection.Configuration-ne$manifest.Configuration){throw 'Unexpected package build identity or configuration.'}
+        $application=Join-Path $inputRoot ('build\'+$report.Configuration.ToLowerInvariant()+'\FileSpacer.exe')
+        if((Get-FileHash -LiteralPath $application -Algorithm SHA256).Hash-ne$manifest.ExecutableSha256){throw 'Host-built application hash mismatch.'}
         $documentationCapture=@($selection.Cases).Count-eq1 -and $selection.Cases[0]-in@('99-documentation\01-Capture.ps1','99-documentation\03-ReclaimInputs.ps1')
         . (Join-Path $inputRoot 'tests\regression\common\Process.ps1')
         $arguments='-NoProfile -ExecutionPolicy Bypass -File "'+(Join-Path $inputRoot 'tests\regression\Run-Regression.ps1')+'" -ProjectRoot "'+$inputRoot+'" -Prepared -RunDirectory "'+(Join-Path $outputRoot 'regression')+'"'
