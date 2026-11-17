@@ -22,6 +22,20 @@ function Read-PreviewMode([IntPtr]$Window) {
 function Wait-PreviewMode([IntPtr]$Window,$Expected) {
     Wait-Ui {$now=Read-PreviewMode $Window; $now.Mode -eq $Expected.Mode -and $now.Size -eq $Expected.Size} 'native display mode and icon size' 150
 }
+function Get-PreviewRestoredPositions([IntPtr]$Window,[string]$Positions) {
+    $dpi=[FileSpacerRegression.Native]::GetDpiForWindow($Window)
+    Assert-Ui ($dpi-gt0) 'Cannot obtain the storage-coordinate DPI.'
+    # Icon positions are stored as integer 96-DPI coordinates, then scaled back.
+    $entries=@(foreach($entry in($Positions-split';')) {
+        $pair=$entry-split'=',2;$point=$pair[1]-split','
+        $values=@(foreach($value in $point) {
+            $logical=[Math]::Round([double]$value*96/$dpi,[MidpointRounding]::AwayFromZero)
+            [int][Math]::Round($logical*$dpi/96,[MidpointRounding]::AwayFromZero)
+        })
+        $pair[0]+'='+($values-join',')
+    })
+    return $entries-join';'
+}
 function Open-PreviewMenu([IntPtr]$Window) {
     Activate-Ui $Window
     return [FileSpacerViewMenuTests.MenuUi]::Open($Window,(Get-UiCommandToolbar $Window),(Get-UiId 'IDM_VIEW_MENU'))
