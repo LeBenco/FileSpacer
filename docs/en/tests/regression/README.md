@@ -228,6 +228,14 @@ within a prepared package, with the package's fixed compiler, references and
 options. Each case retains its own manifest entry and hash checks. Native helper
 argument combinations continue to be compiled once per package as before.
 
+`Build-NativeTest -DynamicLibrary` builds a DLL on the host and preserves the same
+argument and hash checks during guest copying. The deferred-drop activation case
+(`28/09`) uses a documented thread hook to trigger a real activation immediately
+before the accepted placement message is dispatched. It fixes an ordering also
+observed with release followed by Alt+Tab, keeping the regression deterministic.
+The earlier external-drop case (`28/08`) starts after placement has completed and
+checks subsequent transfers, so it covers a different lifetime boundary.
+
 Selection stress cases emit `private-diagnostics.json`, including:
 
 - separate clear, select-all and optional range capability observations;
