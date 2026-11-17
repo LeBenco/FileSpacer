@@ -75,6 +75,7 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
     std::vector<ExpectedIconPosition> expectedIcons;
     std::array<CComHeapPtr<ITEMID_CHILD>, 3> manualIconIds;
     const POINT manualPoints[3] = {{37, 53}, {219, 69}, {401, 211}};
+    POINT gridSpacing = {};
     size_t firstIconPointOffset = 0;
     HWND focusTarget = nullptr;
     unsigned selectionCase = 0, selectionChanges = 0, selectionBaseline = 0;
@@ -102,7 +103,7 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
         SelectionOptions, SelectionRestore, SelectionVerify, SelectionAfterUser,
         SelectionAfterRefresh, IconsConfigure, IconsSetup, IconsOptions,
         IconsRestore, IconsVerify, IconsRefresh, IconsEmptyOptions, IconsEmpty,
-        FilterApply, FilterVerify, LifetimeStart, LifetimeVerify };
+        FilterApply, FilterVerify, LifetimeStart, LifetimeVerify, GridConfigure, GridCapture, GridZoom };
     Phase phase = Phase::Configure;
     int failures = 0;
     RECT bounds() const { RECT r = {}; GetClientRect(window, &r); return r; }
@@ -1078,8 +1079,94 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
                 queue();
             } else {
                 log(L"LIFETIME: eight teardown/recreation cases passed; actual stale messages rejected=%u", staleNotifications);
-                stop(true);
+                phase = Phase::GridConfigure;
+                queue();
             }
+            return;
+        }
+        case Phase::GridConfigure: {
+            FolderViewSettings grid;
+            grid.present = FolderViewSettings::Mode | FolderViewSettings::Flags | FolderViewSettings::Group;
+            grid.mode = FVM_ICON; grid.iconSize = 48; grid.flags = FWF_SNAPTOGRID;
+            if (!checked(restoreOptions(folderView, grid), L"configure the saved-grid zoom fixture")
+                    || !afterPresentation(150)) return;
+            phase = Phase::GridCapture;
+            queue();
+            return;
+        }
+        case Phase::GridCapture: {
+            if (!presentationIsComplete() || !countIs(150)) return;
+            POINT first = {};
+            manualIconIds[0].Free();
+            if (!checked(folderView->GetSpacing(&gridSpacing), L"read the original native grid pitch")
+                    || !expect(gridSpacing.x > 0 && gridSpacing.y > 0, L"native grid pitch is positive")
+                    || !checked(folderView->Item(0, &manualIconIds[0]), L"retain the first visible grid identity")
+                    || !checked(folderView->GetItemPosition(manualIconIds[0], &first), L"read the original grid phase")) return;
+            first = {first.x % gridSpacing.x, first.y % gridSpacing.y};
+            if (!checked(folderView->SetCurrentFolderFlags(FWF_SNAPTOGRID, 0), L"disable collision handling while seeding holes")) return;
+            for (int i = 0; i < 150; ++i) {
+                CComHeapPtr<ITEMID_CHILD> id;
+                if (!checked(folderView->Item(i, &id), L"read an identity for the sparse grid")) return;
+                PCUITEMID_CHILD child = id;
+                POINT point = {first.x + (i % 12) * 2 * gridSpacing.x, first.y + (i / 12) * 2 * gridSpacing.y};
+                if (!checked(folderView->SelectAndPositionItems(1, &child, &point, SVSI_POSITIONITEM | SVSI_NOSTATECHANGE),
+                        L"seed distinct grid cells with holes")) return;
+            }
+            auto current = [&]() { return !closing && browser.isViewNotification(generation); };
+            if (!checked(folderView->SetCurrentFolderFlags(FWF_SNAPTOGRID, FWF_SNAPTOGRID), L"enable native grid placement")
+                    || !checked(captureIconPositions(folderView, current, true, {}, iconBlob), L"capture the complete sparse grid")
+                    || !decodeExpectedIcons()) return;
+            {
+                FolderStateStore store(database.c_str());
+                FolderState saved; saved.icons = iconBlob;
+                if (!expect(store.ready() && store.save("grid", saved, FolderState::Icons), L"save the sparse grid to isolated SQLite")) return;
+            }
+            FolderState saved;
+            if (!readStored("grid", saved) || !expect(saved.icons == iconBlob, L"reload the exact saved grid bytes")) return;
+            CComPtr<IShellFolder> parent;
+            CComPtr<IShellItem> removed;
+            CComHeapPtr<wchar_t> path;
+            if (!checked(folderView->GetFolder(IID_PPV_ARGS(&parent)), L"read the grid's native parent")
+                    || !checked(SHCreateItemWithParent(nullptr, parent, expectedIcons.front().id, IID_PPV_ARGS(&removed)), L"resolve the first saved identity")
+                    || !checked(removed->GetDisplayName(SIGDN_FILESYSPATH, &path), L"read the first saved item's actual path")
+                    || !expect(DeleteFileW(path) != FALSE, L"delete exactly the first saved item")) return;
+            phase = Phase::GridZoom;
+            if (!checked(view->Refresh(), L"refresh after deleting the saved grid anchor") || !afterPresentation(149)) return;
+            queue();
+            return;
+        }
+        case Phase::GridZoom: {
+            if (!presentationIsComplete() || !countIs(149)) return;
+            POINT missing = {};
+            if (!expect(FAILED(folderView->GetItemPosition(expectedIcons.front().id, &missing)), L"the first saved identity is no longer displayed")
+                    || !checked(folderView->SetViewModeAndIconSize(FVM_ICON, 96), L"change icon size after deleting the saved anchor")) return;
+            POINT pitch = {}, anchor = {};
+            CComHeapPtr<ITEMID_CHILD> currentFirst;
+            if (!checked(folderView->GetSpacing(&pitch), L"read the resized native grid pitch")
+                    || !expect(pitch.x > 0 && pitch.y > 0, L"resized grid pitch is positive")
+                    || !checked(folderView->Item(0, &currentFirst), L"read the current native grid anchor")
+                    || !checked(folderView->GetItemPosition(currentFirst, &anchor), L"observe the resized native grid phase")) return;
+            const POINT before = scaleDPI(expectedIcons[1].point);
+            const POINT oldOrigin = {before.x % gridSpacing.x, before.y % gridSpacing.y};
+            const POINT origin = {anchor.x % pitch.x, anchor.y % pitch.y};
+            log(L"GRID PHASE: oldPitch=(%ld,%ld) newPitch=(%ld,%ld) oldOrigin=(%ld,%ld) newOrigin=(%ld,%ld)",
+                gridSpacing.x, gridSpacing.y, pitch.x, pitch.y, oldOrigin.x, oldOrigin.y, origin.x, origin.y);
+            const HRESULT result = restoreIconGridPositions(folderView, iconBlob, gridSpacing,
+                [&]() { return !closing && browser.isViewNotification(generation); });
+            if (!checked(result, L"remap a saved grid whose first item disappeared")) return;
+            for (size_t i = 1; i < expectedIcons.size(); ++i) {
+                const POINT old = scaleDPI(expectedIcons[i].point);
+                const POINT expected = {(old.x - oldOrigin.x) / gridSpacing.x * pitch.x + origin.x,
+                    (old.y - oldOrigin.y) / gridSpacing.y * pitch.y + origin.y};
+                POINT actual = {};
+                if (!checked(folderView->GetItemPosition(expectedIcons[i].id, &actual), L"read a surviving item's remapped cell")) return;
+                if (actual.x != expected.x || actual.y != expected.y)
+                    log(L"GRID MISMATCH: index=%zu old=(%ld,%ld) expected=(%ld,%ld) actual=(%ld,%ld)",
+                        i, old.x, old.y, expected.x, expected.y, actual.x, actual.y);
+                if (!expect(actual.x == expected.x && actual.y == expected.y, L"zoom preserves every surviving occupied cell and hole")) return;
+            }
+            log(L"GRID ZOOM: all 149 surviving cells and holes preserved after the first saved item was deleted");
+            stop(true);
             return;
         }
         }
