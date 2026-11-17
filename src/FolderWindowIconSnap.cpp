@@ -314,9 +314,15 @@ struct FolderWindow::IconSnap {
         FOLDERVIEWMODE mode = FVM_AUTO; DWORD flags = 0; UINT areas = UINT_MAX;
         const auto style = GetWindowLongPtrW(list, GWL_STYLE);
         if (!folder || FAILED(folder->GetViewModeAndIconSize(&mode, &iconSize)) || !current()
-                || !iconPlacementMode(mode)
-                || FAILED(folder->GetSpacing(&spacing)) || !current()
-                || iconSize <= 0 || iconSize > MAXSHORT / 3 || spacing.x < iconSize || spacing.x > MAXSHORT / 3 || spacing.y <= 0
+                || !iconPlacementMode(mode)) return false;
+        if (mode == FVM_TILE) {
+            // GetSpacing reports icon spacing, not the current tile dimensions.
+            LVTILEVIEWINFO tiles = {sizeof(tiles)};
+            tiles.dwMask = LVTVIM_TILESIZE;
+            ListView_GetTileViewInfo(list, &tiles);
+            spacing = {tiles.sizeTile.cx, tiles.sizeTile.cy};
+        } else if (FAILED(folder->GetSpacing(&spacing))) return false;
+        if (!current() || iconSize <= 0 || iconSize > MAXSHORT / 3 || spacing.x < iconSize || spacing.x > MAXSHORT / 3 || spacing.y <= 0
                 || FAILED(folder->GetCurrentFolderFlags(&flags)) || !current()
                 || (flags & (FWF_DESKTOP | FWF_NOSCROLL))
                 || (flags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID)) != placementFlags
@@ -325,8 +331,8 @@ struct FolderWindow::IconSnap {
                 || ListView_IsGroupViewEnabled(list)) return false;
         ListView_GetNumberOfWorkAreas(list, &areas);
         if (areas || !current()) return false;
-        if (mode == FVM_ICON) {
-            const HIMAGELIST icons = ListView_GetImageList(list, LVSIL_NORMAL);
+        {
+            const HIMAGELIST icons = ListView_GetImageList(list, mode == FVM_SMALLICON ? LVSIL_SMALL : LVSIL_NORMAL);
             int width = 0, height = 0;
             if (!icons || !ImageList_GetIconSize(icons, &width, &height) || !current()
                     || width <= 0 || height != width || width > MAXSHORT / 3 || spacing.x < width) return false;
