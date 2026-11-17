@@ -141,30 +141,34 @@ export async function buildDocs(target = 'web', output = buildPath(target === 'w
   const available = spawnSync('ruby', ['-S', 'bundle', 'exec', 'jekyll', '--version'], {cwd: scripts, env: environment, stdio: 'pipe'});
   if (available.error || available.status !== 0) throw new Error('Generating documentation requires Ruby and bundle install in .github/scripts. Existing output was preserved.');
   await fs.rm(source, {recursive: true, force: true});
-  const generated = await generate(repository, source, {releaseDates});
-  if (generated.warnings.length && process.env.GITHUB_STEP_SUMMARY) {
-    const rows = generated.warnings.map(({language, source}) => `| ${language} | ${source} | Existing translation retained |`);
-    await fs.appendFile(process.env.GITHUB_STEP_SUMMARY,
-      '\n### Translation updates pending\n\nEnglish is up to date. Existing translations and their section links are retained.\n\n'
-      + '| Language | Document | Status |\n| --- | --- | --- |\n' + rows.join('\n') + '\n');
+  try {
+    const generated = await generate(repository, source, {releaseDates});
+    if (generated.warnings.length && process.env.GITHUB_STEP_SUMMARY) {
+      const rows = generated.warnings.map(({language, source}) => `| ${language} | ${source} | Existing translation retained |`);
+      await fs.appendFile(process.env.GITHUB_STEP_SUMMARY,
+        '\n### Translation updates pending\n\nEnglish is up to date. Existing translations and their section links are retained.\n\n'
+        + '| Language | Document | Status |\n| --- | --- | --- |\n' + rows.join('\n') + '\n');
+    }
+    await fs.rm(output, {recursive: true, force: true});
+    for (const language of generated.languages) {
+      const result = spawnSync('ruby', ['-S', 'bundle', 'exec', 'jekyll', 'build', '--trace', '--source', path.join(source, language.source), '--destination', path.join(output, language.path)], {
+        cwd: path.join(source, language.source), stdio: 'inherit', env: environment,
+      });
+      if (result.error || result.status !== 0) throw new Error(`Jekyll failed (${language.code}). Install Ruby and run bundle install in .github/scripts. ${result.error?.message || ''}`);
+    }
+    const languages = generated.languages.map(({code, path}) => ({code, path}));
+    if (target === 'offline') await makeOffline(output, languages, await fs.readFile(path.join(repository, 'website/_config.yml'), 'utf8'));
+    await fs.copyFile(path.join(repository, 'website/_layouts/UPSTREAM-LICENSE.txt'), path.join(output, 'JustTheDocs-LICENSE.txt'));
+    const hashes = {};
+    for (const file of await files(output)) hashes[file] = await digest(path.join(output, file));
+    const manifest = {target, sourceHash, languages, files: hashes};
+    await fs.writeFile(path.join(output, 'build-info.json'), JSON.stringify(manifest, null, 2) + '\n');
+    if (target === 'offline') await installerInclude(output, [...Object.keys(hashes), 'build-info.json']);
+    console.log(`Built documentation (${target}): ${languages.length} languages, ${Object.keys(hashes).length} files`);
+    return manifest;
+  } finally {
+    await fs.rm(source, {recursive: true, force: true});
   }
-  await fs.rm(output, {recursive: true, force: true});
-  for (const language of generated.languages) {
-    const result = spawnSync('ruby', ['-S', 'bundle', 'exec', 'jekyll', 'build', '--trace', '--source', path.join(source, language.source), '--destination', path.join(output, language.path)], {
-      cwd: path.join(source, language.source), stdio: 'inherit', env: environment,
-    });
-    if (result.error || result.status !== 0) throw new Error(`Jekyll failed (${language.code}). Install Ruby and run bundle install in .github/scripts. ${result.error?.message || ''}`);
-  }
-  const languages = generated.languages.map(({code, path}) => ({code, path}));
-  if (target === 'offline') await makeOffline(output, languages, await fs.readFile(path.join(repository, 'website/_config.yml'), 'utf8'));
-  await fs.copyFile(path.join(repository, 'website/_layouts/UPSTREAM-LICENSE.txt'), path.join(output, 'JustTheDocs-LICENSE.txt'));
-  const hashes = {};
-  for (const file of await files(output)) hashes[file] = await digest(path.join(output, file));
-  const manifest = {target, sourceHash, languages, files: hashes};
-  await fs.writeFile(path.join(output, 'build-info.json'), JSON.stringify(manifest, null, 2) + '\n');
-  if (target === 'offline') await installerInclude(output, [...Object.keys(hashes), 'build-info.json']);
-  console.log(`Built documentation (${target}): ${languages.length} languages, ${Object.keys(hashes).length} files`);
-  return manifest;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
