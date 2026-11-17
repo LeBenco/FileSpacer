@@ -98,13 +98,13 @@ switch ($Mode) {
         Save-Source 'GeometryTests.cpp' ($prefix+"`n"+($pieces -join "`n`n")+"`n"+$suffix)
     }
     'Menu' {
-        $item=Read-Source 'ItemWindow.cpp'; $folder=Read-Source 'FolderWindow.cpp'; $menus=Read-Source 'FolderWindowMenus.cpp'
+        $item=Read-Source 'ItemWindow.cpp'; $folder=Read-Source 'FolderWindow.cpp'; $menus=Read-Source 'FolderWindowMenus.cpp'; $viewMenu=Read-Source 'FolderWindowViewMenu.cpp'
         $pieces=@()
         foreach ($signature in @('void ItemWindow::trackContextMenu(POINT pos)', 'int ItemWindow::trackContextMenu(POINT pos, HMENU menu, HWND menuOwner)')) {
             $pieces+=Get-SourceBlock $item $signature
         }
         foreach ($signature in @('CComPtr<IContextMenu> FolderWindow::queryBackgroundMenu(HMENU *popupMenu)', 'void FolderWindow::newItem(const char *verb)', 'void FolderWindow::trackContextMenu(POINT pos)', 'void FolderWindow::openViewMenu(POINT point)', 'void FolderWindow::openBackgroundSubMenu(', 'HRESULT FolderWindow::invokeViewCommand(', 'void FolderWindow::resumeDeferredClose()')) {
-            $source=if($signature -match 'FolderWindow::(queryBackgroundMenu|newItem|trackContextMenu)\('){$menus}else{$folder}
+            $source=if($signature -match 'FolderWindow::(queryBackgroundMenu|newItem|trackContextMenu)\('){$menus}elseif($signature -match 'FolderWindow::(openViewMenu|openBackgroundSubMenu)\('){$viewMenu}else{$folder}
             $pieces+=Get-SourceBlock $source $signature
         }
         Save-Source 'ProductionMethods.inc' ($pieces -join "`n`n")
