@@ -51,13 +51,12 @@ private:
 UINT shellViewOperationsReadyMessage();
 int runShellViewOperationsWorker(const wchar_t *cacheRoot = nullptr);
 
-// Complete grid operation: an optional qualified calculation and the public
-// native fallback have the same selection/focus/flag preservation contract.
+// Native public grid alignment preserves selection, focus and placement flags.
 HRESULT alignIconsToGrid(IShellView *view, bool selectedOnly,
     const std::function<bool()> &current);
 struct PreparedIconPositions;
 // One gesture uses the same native grid for prediction and placement. Prepare
-// before entering the Shell drag loop; backend selection stays in this layer.
+// before entering the Shell drag loop; native grid resources stay in this layer.
 class ShellIconGrid {
 public:
     HRESULT prepare(IShellView *view, HWND iconControl, const std::function<bool()> &current);
@@ -70,6 +69,6 @@ private:
     std::unique_ptr<std::remove_pointer<HWND>::type, decltype(&DestroyWindow)> control{nullptr, DestroyWindow};
     POINT spacing = {};
     int size = 0;
-    bool ready = false, qualified = false;
+    bool ready = false;
 };
 } // namespace filespacer
