@@ -38,6 +38,7 @@ Een map of bovenliggende map openen sluit standaard het bronvenster. **Ctrl inge
 Het menu naast de titel wisselt tussen geopende mappen en sluit bovenliggende vensters. **Ctrl+Shift+T** opent de laatst gesloten map opnieuw met haar indeling en selectie. De Jump List op de taakbalk biedt ook recent gesloten mappen en mappen die in Snelle toegang zijn vastgemaakt.
 
 <div id="mapgroepen"></div>
+
 | Sneltoets | Actie |
 | --- | --- |
 | Ctrl+N | De in Instellingen gekozen startmap openen of het bestaande venster activeren; het bronvenster blijft open. |
@@ -59,6 +60,7 @@ In de velden voor adres, zoeken en bestandsnamen behouden Backspace en Ctrl+Back
 ## Weergave van de mapinhoud
 
 <div id="weergave-en-indeling"></div>
+
 **Ctrl+muiswiel** doorloopt de pictogramgroottes en weergaven. Het zoomgebaar van het touchpad gebruikt dezelfde actie als Windows het doorgeeft. **Ctrl+Shift+1 tot 8** kiest achtereenvolgens extra grote, grote, middelgrote en kleine pictogrammen, lijst, details, tegels en inhoud. De weergave wordt voor de map onthouden; de vergrendeling van de opgeslagen toestand blijft zoals gebruikelijk werken.
 
 <div id="view-and-layout"></div>

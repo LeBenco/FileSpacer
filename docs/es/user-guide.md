@@ -38,6 +38,7 @@ Abrir una carpeta o su carpeta superior cierra de forma predeterminada la ventan
 El menú junto al título permite cambiar entre carpetas abiertas y cerrar las ventanas de las carpetas superiores. **Ctrl+Mayús+T** vuelve a abrir la última carpeta cerrada con su disposición y selección. La lista de accesos directos de la barra de tareas también incluye carpetas cerradas recientemente y ancladas en Acceso rápido.
 
 <div id="grupos-de-carpetas"></div>
+
 | Atajo | Acción |
 | --- | --- |
 | Ctrl+N | Abrir la carpeta inicial elegida en Configuración o activar su ventana existente, manteniendo abierta la de origen. |
@@ -59,6 +60,7 @@ En los campos de dirección, búsqueda y cambio de nombre, Retroceso y Ctrl+Retr
 ## Visualización del contenido de las carpetas
 
 <div id="visualización-y-disposición"></div>
+
 **Ctrl+rueda del ratón** recorre los tamaños de icono y los modos de vista. El gesto de zoom del panel táctil usa la misma acción cuando Windows lo transmite. **Ctrl+Mayús+1 a 8** selecciona, en orden: iconos muy grandes, grandes, medianos y pequeños, lista, detalles, mosaicos y contenido. El modo se recuerda para la carpeta; el bloqueo del estado guardado mantiene su comportamiento habitual.
 
 <div id="view-and-layout"></div>

@@ -38,6 +38,7 @@ Ouvrir un dossier ou son parent ferme par défaut la fenêtre source. **Mainteni
 Le menu à côté du titre permet de passer entre les dossiers ouverts et de fermer les fenêtres parentes. **Ctrl+Maj+T** rouvre le dernier dossier fermé avec sa disposition et sa sélection. La liste de raccourcis de la barre des tâches retrouve aussi les dossiers fermés récemment et ceux épinglés dans l’Accès rapide.
 
 <div id="groupes-de-dossiers"></div>
+
 | Raccourci | Action |
 | --- | --- |
 | Ctrl+N | Ouvrir le dossier de démarrage choisi dans les paramètres, ou réactiver sa fenêtre, en conservant la fenêtre source. |
@@ -59,6 +60,7 @@ Dans l’adresse, la recherche et le renommage d’un fichier, Retour arrière e
 ## Affichage du contenu des dossiers
 
 <div id="affichage-et-disposition"></div>
+
 **Ctrl+molette** parcourt les tailles d’icônes et les modes d’affichage. Le geste de zoom du pavé tactile utilise la même action lorsqu’il est transmis par Windows. **Ctrl+Maj+1 à 8** choisit directement, dans l’ordre : très grandes icônes, grandes icônes, icônes moyennes, petites icônes, liste, détails, mosaïques et contenu. Le mode choisi est mémorisé pour le dossier ; le verrouillage de l’état enregistré conserve ses règles habituelles.
 
 <div id="view-and-layout"></div>
