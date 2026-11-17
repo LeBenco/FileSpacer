@@ -1,0 +1,35 @@
+{
+  "Title": "Bibliothèque du studio",
+  "Files": [
+    "Ordre du jour.txt",
+    "Budget.txt",
+    "Vérifications.txt",
+    "Contacts.txt",
+    "Notes de conception.txt",
+    "Retours.txt",
+    "Facture.txt",
+    "Plan de lancement.txt",
+    "Compte rendu.txt",
+    "Jalons.txt",
+    "Plan du projet.txt",
+    "À lire.txt",
+    "Notes de révision.txt",
+    "Calendrier.txt",
+    "Tâches.txt",
+    "Atelier.txt"
+  ],
+  "Folders": [
+    "Ressources",
+    "Concepts",
+    "Brouillons",
+    "Exports",
+    "Images",
+    "Maquettes",
+    "Prototypes",
+    "Références",
+    "Recherches",
+    "Sources",
+    "Modèles",
+    "Versions"
+  ]
+}
