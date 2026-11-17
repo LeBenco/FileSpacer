@@ -7,9 +7,6 @@ remote_theme: just-the-docs/just-the-docs@v0.12.0
 plugins:
   - jekyll-remote-theme
   - jekyll-include-cache
-aux_links:
-  FileSpacer on GitHub:
-    - https://github.com/LeBenco/FileSpacer
 heading_anchors: false
 enable_copy_code_button: true
 back_to_top: true
