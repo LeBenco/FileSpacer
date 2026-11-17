@@ -220,6 +220,9 @@ private:
     void toggleFillColumns();
     void realignIcons(bool selectedOnly = false);
     void watchIconDrag(const MSG *message);
+    LRESULT handleIconSnap(WPARAM wParam, LPARAM lParam);
+    void deactivateIconDrag();
+    bool hasPendingIconPlacement() const;
     struct IconSnap;
     std::shared_ptr<IconSnap> iconSnap;
     ULONG_PTR iconSnapSerial = 0;
