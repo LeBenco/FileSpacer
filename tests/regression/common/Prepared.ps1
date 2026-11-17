@@ -1,6 +1,8 @@
+. (Join-Path $PSScriptRoot 'Process.ps1')
 # Guest execution never invokes a compiler. Unknown or changed inputs fail closed.
 $env:FS_REGRESSION_PREPARED=Join-Path $ProjectRoot 'prepared'
 $global:FileSpacerPreparedManifest=Get-Content -LiteralPath (Join-Path $env:FS_REGRESSION_PREPARED 'index.json') -Raw | ConvertFrom-Json
+if (!$global:FileSpacerPreparedManifest.PSObject.Properties['Configuration'] -or $global:FileSpacerPreparedManifest.Configuration -ne (Get-TestConfiguration)) { throw 'Prepared helper build configuration differs from the test run.' }
 
 function Get-PreparedHash([string]$Text) {
     $sha=[Security.Cryptography.SHA256]::Create()
@@ -31,7 +33,7 @@ function Copy-PreparedNativeTest($Parameters,[string]$OutputDirectory) {
     $entries=@($global:FileSpacerPreparedManifest.Native | Where-Object { $_.Name -eq $Parameters.Name -and $_.CaseDirectory -eq $relative })
     if ($entries.Count -ne 1) { throw ('No unique prepared native test: '+$Parameters.Name) }
     $entry=$entries[0]
-    foreach($name in @('ProductionSources','Sqlite','Storage','Extract','Resources','CommonControls','ControlFlowGuard','DynamicLibrary','Libraries','Standard','Defines')) {
+    foreach($name in @('ProductionSources','Sqlite','Storage','Extract','Resources','CommonControls','ControlFlowGuard','DynamicLibrary','Libraries','Standard','Defines','Configuration')) {
         $actual=if($Parameters.ContainsKey($name)){@($Parameters[$name]) -join '|'}else{''}
         if ($actual -cne $entry.Parameters.$name) { throw ('Prepared native arguments differ: '+$Parameters.Name+' / '+$name) }
     }
