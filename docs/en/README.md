@@ -39,6 +39,13 @@ All application sources are under `src/`.
 
 The build, installer, regression harness and website have separate entry points:
 `Makefile` / `build.cmd`, `installer/`, `tests/`, and `website/` respectively.
+`FolderWindow` remains one class. Its member definitions are grouped into
+`FolderWindowIconSnap`, `FolderWindowInput`, `FolderWindowMenus`,
+`FolderWindowViewMenu`, `FolderWindowViewState` and `FolderWindowProvisional`.
+Lifecycle coordination and COM entry points stay in `FolderWindow.cpp`.
+`FolderWindowInternal.h` shares only the small cross-unit helpers; the private
+view-menu preview declaration lives in `FolderWindowViewMenuPreview.h`.
+
 New C++ translation units must be added to the relevant Makefile object list.
 Keep UI text in the language resource files and preserve their encodings.
 
@@ -76,14 +83,22 @@ including network paths. Temporary update files and the session's folder list
 are under `%TEMP%\FileSpacerUpdate-{GUID}`.
 
 The database format is recorded in SQLite's `PRAGMA user_version`, independently
-of the application release number. Format 8 is the only accepted format; view
-blobs also use that format number and one fixed encoding. An empty database is
-initialized as format 8. Non-empty unversioned databases and older formats are
-refused without conversion. They can be explicitly reset after confirmation and
-a complete backup, without importing their layouts or histories. Newer formats
-are refused without offering a reset. Recovery salvages readable data only from
-a damaged format-8 database. There is no installer migration or downgrade path.
-General preferences and user files are unaffected by a folder-state reset.
+of the application release number. Format 8 is written. View blobs have their
+own encoding version, currently 8; a database schema change does not implicitly
+change their encoding. Empty databases are initialized from scratch. Format-7
+databases are migrated at runtime inside the opening write transaction: legacy
+view encodings 1, 2 and 3 are decoded and rewritten, then `user_version` is
+updated. All other stored state, including opaque closed-window snapshots and
+raw icon sizes, is preserved. Any migration error rolls back the whole change.
+
+Non-empty unversioned databases and formats 6 and earlier are refused without
+conversion. Explicit rebuilding requires confirmation and a complete backup;
+the confirmation shows the backup path and explains possible data loss. Recovery
+salvages compatible readable data from formats 7 and 8 without changing the
+source backup. A bad view can be omitted while the rest of its folder state is
+kept. Newer formats are refused without offering a reset. There is no installer
+migration or downgrade path. General preferences and user files are unaffected
+by rebuilding folder state.
 
 For the in-app reset, see [updates and troubleshooting](user-guide.md#updates-and-troubleshooting).
 For troubleshooting, `FileSpacer.exe /reset-options` resets general preferences.
