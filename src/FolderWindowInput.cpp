@@ -558,6 +558,11 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
     return true;
 }
 
+// A click that activates this window (WM_ACTIVATE with WA_CLICKACTIVE) is
+// followed by its button-down message, posted to the clicked window only after
+// the activation. When that first message lands on the empty background of the
+// view, the application's own message loop drops it so the native view keeps
+// its selection. Item clicks, other buttons and Alt gestures are not affected.
 bool FolderWindow::cursorOverShellView() const {
     POINT cursor = {};
     HWND root = nullptr;
