@@ -3,7 +3,7 @@
 # Regression tests
 
 The reference launcher is `tests.cmd`, run from CMD at the repository root.
-It builds the Debug application with MSVC/NMAKE and selects independent cases
+It builds the selected application configuration (Debug by default) with MSVC/NMAKE and selects independent cases
 from this checkout. Application sources, binaries and test helpers must come
 from the same revision. See the [build guide](../../build.md) for dependencies.
 
@@ -35,9 +35,19 @@ Do not run a native test a second time when the selected suite already includes 
 | `-Pattern "group\case-pattern"` | PowerShell wildcard matched against the relative case path; default `*`. Combine with `-Category`. |
 | `-Scope Application\|All` | Both select the application suite; default `All`. |
 | `-Suite Regression\|Stress` | Select one disjoint catalogue; default `Regression`. |
-| `-TimeoutSeconds N` | Per-case deadline, 30–3600 seconds; default 300 for regressions and 900 for stress. A timeout is a failure. |
+| `-TimeoutSeconds N` | Per-case deadline, 30â€“3600 seconds; default 300 for regressions and 900 for stress. A timeout is a failure. |
 | `-RunDirectory "path"` | Store or copy reports to a new directory; existing reports are never overwritten. |
 | `-VM "name"` | Run selected cases in a configured Hyper-V client. |
+
+Use `-Configuration Release` to build and test the ordinary optimized application,
+with the same isolated `/test` registry, database and process namespaces. Debug
+is the default. The selected configuration is recorded in the prepared package
+and reports; a mismatched executable or native helper is rejected. Release does
+not enable Debug logging, so diagnostic-only observations are reported as such.
+
+```cmd
+tests.cmd -VM AgentWin11 -Configuration Release
+```
 
 To inspect the selection **without building or running tests**, call the
 PowerShell runner directly. `tests.cmd` performs a build before forwarding its
@@ -120,14 +130,14 @@ stable selectors; they need not be translated to use this English guide.
 | Area | Groups |
 | --- | --- |
 | Harness and prepared-artifact contracts | `00-banc` |
-| SQLite, retention, quota, saved view state and history | `01`–`02`, `06`–`09` |
-| Menu/lifetime, STA and dimension handling | `03`–`05` |
-| Update manifests and session restoration | `10`–`11` |
-| Spatial navigation, preferences and layouts | `12`–`14` |
-| Move/resize gestures, closing during interaction | `15`–`17`, `24-raccourcis` |
+| SQLite, retention, quota, saved view state and history | `01`â€“`02`, `06`â€“`09` |
+| Menu/lifetime, STA and dimension handling | `03`â€“`05` |
+| Update manifests and session restoration | `10`â€“`11` |
+| Spatial navigation, preferences and layouts | `12`â€“`14` |
+| Move/resize gestures, closing during interaction | `15`â€“`17`, `24-raccourcis` |
 | Native view persistence and Shell commands | `18-vue-shell-native`, `19-commandes-shell` |
 | Load, shell notifications and external Control Panel | `20-validation-elargie` |
-| Activation click, locked layout and selected-name rendering | `21`–`23` |
+| Activation click, locked layout and selected-name rendering | `21`â€“`23` |
 | Search/history and Everything | `25-recherche-integration` |
 | Window placement and transient View-menu previews | `26-placement-fenetres`, `28-apercu-affichage` |
 | Default-manager associations | `29-menu-gestionnaire` |
