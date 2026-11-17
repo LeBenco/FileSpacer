@@ -384,9 +384,7 @@ LSTATUS readRegistryString(HKEY key, const wchar_t *subkey, const wchar_t *value
 }
 
 std::wstring installedNilesoft() {
-#ifdef FILESPACER_DEBUG
     if (!titleMenuExtensionEnabled()) return L"";
-#endif
     std::wstring path;
     if (FAILED(findTitleMenuExtension(nullptr, &path))) return L"";
     return GetFileAttributesW(path.c_str()) != INVALID_FILE_ATTRIBUTES ? path : L"";
