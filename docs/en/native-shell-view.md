@@ -300,6 +300,13 @@ the gesture for icon placement even over a folder, permits overlap, and alone
 shows the destination frame. Releasing and repressing S updates the frame without
 requiring mouse motion. Ctrl/Alt gestures without S retain their native effects.
 
+The drop-target decorator exposes `IUnknown`, `IDropTarget` and the native
+`IObjectWithSite` contract when available. Debug builds log `DROP INTERFACE
+masked=<IID> target=item|background` if a requested interface is refused by the
+decorator but accepted by its native target. The observation does not relay an
+unknown interface or change COM identity; an empty trace describes the requests
+actually exercised, not every possible IID.
+
 The provider decorates native namespace drop targets with `IIconDropPolicy`, bound
 through a separate optional `IIconDropPolicySite` contract. Cached targets retrieve
 the current per-view policy at DragEnter. Native target handlers receive the same
