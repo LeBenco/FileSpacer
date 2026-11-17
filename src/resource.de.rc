@@ -116,7 +116,7 @@ STRINGTABLE {
     IDS_STORAGE_DATA_OPENED, "Datenordner im Windows-Explorer geöffnet."
     IDS_STORAGE_UNKNOWN_ERROR, "Keine weiteren Details verfügbar."
     IDS_STORAGE_RESET, "Datenbank zurücksetzen…"
-    IDS_STORAGE_RESET_CONFIRM, "Ordnerzustandsdatenbank neu aufbauen? FileSpacer sichert zuerst die Datenbank und ihre Journale, legt dann eine neue Datenbank an und übernimmt alle gespeicherten Anordnungen, die noch lesbar sind. Was nicht gelesen werden kann, geht verloren. Ihre Dateien und globalen Einstellungen bleiben erhalten. Scheitert die Sicherung oder sind die Dateien in Verwendung, wird nichts geändert."
+    IDS_STORAGE_RESET_CONFIRM, "Ordnerzustandsdatenbank neu aufbauen? FileSpacer sichert zuerst die Datenbank und ihre Journale hier:\n%1\n\nDie neue Datenbank übernimmt kompatible, noch lesbare Daten. Nicht wiederherstellbare Anordnungen, Ordnereinstellungen, Sperren und Verläufe gehen verloren, auch Daten in nicht unterstützten alten Formaten. Ihre Dateien und globalen Einstellungen bleiben erhalten. Scheitert die Sicherung oder sind die Dateien in Verwendung, wird nichts geändert."
     IDS_STORAGE_RESET_DONE, "Die Datenbank wurde zurückgesetzt. Öffnen oder speichern Sie einen Ordner, um fortzufahren.\n\nSicherung: %1!s!"
     IDS_STORAGE_RESET_FAILED, "Die Datenbank konnte nicht zurückgesetzt werden. Es wurde keine Löschung erzwungen.\n%1!s!"
     IDS_STORAGE_RESET_USE_BACKUP, "Einige Dateien der Datenbank wurden möglicherweise bereits entfernt. Stellen Sie sie aus der vollständigen Sicherung wieder her:\n%1!s!"

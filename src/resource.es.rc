@@ -116,7 +116,7 @@ STRINGTABLE {
     IDS_STORAGE_DATA_OPENED, "Carpeta de datos abierta en el Explorador de Windows."
     IDS_STORAGE_UNKNOWN_ERROR, "No hay detalles adicionales."
     IDS_STORAGE_RESET, "Restablecer base…"
-    IDS_STORAGE_RESET_CONFIRM, "¿Reconstruir la base de estados de carpetas? FileSpacer copiará primero la base y sus diarios, después creará una base nueva y copiará en ella todas las disposiciones guardadas que aún se puedan leer. Lo que no se pueda leer se perderá. Tus archivos y preferencias globales se conservarán. Si la copia falla o los archivos están en uso, no se cambiará nada."
+    IDS_STORAGE_RESET_CONFIRM, "¿Reconstruir la base de estados de carpetas? FileSpacer guardará primero la base y sus diarios aquí:\n%1\n\nLa nueva base conservará los datos compatibles que aún se puedan leer. Se perderán las disposiciones, los ajustes de carpetas, los bloqueos y los historiales que no se puedan recuperar, incluidos los datos de formatos antiguos no admitidos. Tus archivos y preferencias globales se conservarán. Si la copia falla o los archivos están en uso, no se cambiará nada."
     IDS_STORAGE_RESET_DONE, "La base se ha restablecido. Abre o guarda una carpeta para continuar.\n\nCopia de seguridad: %1!s!"
     IDS_STORAGE_RESET_FAILED, "No se pudo restablecer la base. No se intentó forzar la eliminación.\n%1!s!"
     IDS_STORAGE_RESET_USE_BACKUP, "Es posible que algunos archivos de la base de datos ya se hayan eliminado. Restáurelos desde la copia de seguridad completa:\n%1!s!"

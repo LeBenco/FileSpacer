@@ -116,7 +116,7 @@ STRINGTABLE {
     IDS_STORAGE_DATA_OPENED, "Data folder opened in Windows Explorer."
     IDS_STORAGE_UNKNOWN_ERROR, "No additional details are available."
     IDS_STORAGE_RESET, "Reset database…"
-    IDS_STORAGE_RESET_CONFIRM, "Rebuild the folder state database? FileSpacer will first back up the database and its journals, then create a new database and copy into it every saved layout that can still be read. What cannot be read will be lost. Your files and global preferences will be kept. If the backup fails or the files are in use, nothing will be changed."
+    IDS_STORAGE_RESET_CONFIRM, "Rebuild the folder state database? FileSpacer will first back up the database and its journals here:\n%1\n\nA new database will keep compatible data that can still be read. Saved layouts, folder settings, locks and histories that cannot be recovered will be lost, including data in unsupported old formats. Your files and global preferences will be kept. If the backup fails or the files are in use, nothing will be changed."
     IDS_STORAGE_RESET_DONE, "The database has been reset. Open or save a folder to resume normal operation.\n\nBackup: %1!s!"
     IDS_STORAGE_RESET_FAILED, "The database could not be reset. No forced deletion was attempted.\n%1!s!"
     IDS_STORAGE_RESET_USE_BACKUP, "Some database files may already have been removed. Restore them from the complete backup:\n%1!s!"

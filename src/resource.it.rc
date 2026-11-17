@@ -116,7 +116,7 @@ STRINGTABLE {
     IDS_STORAGE_DATA_OPENED, "Cartella dati aperta in Esplora file."
     IDS_STORAGE_UNKNOWN_ERROR, "Nessun altro dettaglio disponibile."
     IDS_STORAGE_RESET, "Reimposta database…"
-    IDS_STORAGE_RESET_CONFIRM, "Ricostruire il database degli stati delle cartelle? FileSpacer salverà prima database e journal, poi creerà un nuovo database e vi copierà tutte le disposizioni salvate ancora leggibili. Ciò che non può essere letto andrà perso. File e preferenze globali saranno conservati. Se il backup fallisce o i file sono in uso, non sarà modificato nulla."
+    IDS_STORAGE_RESET_CONFIRM, "Ricostruire il database degli stati delle cartelle? FileSpacer salverà prima il database e i journal qui:\n%1\n\nIl nuovo database conserverà i dati compatibili ancora leggibili. Disposizioni, impostazioni delle cartelle, blocchi e cronologie non recuperabili andranno persi, compresi i dati in vecchi formati non supportati. File e preferenze globali saranno conservati. Se il backup fallisce o i file sono in uso, non sarà modificato nulla."
     IDS_STORAGE_RESET_DONE, "Database reimpostato. Apri o salva una cartella per continuare.\n\nBackup: %1!s!"
     IDS_STORAGE_RESET_FAILED, "Impossibile reimpostare il database. Nessuna eliminazione forzata è stata tentata.\n%1!s!"
     IDS_STORAGE_RESET_USE_BACKUP, "Alcuni file del database potrebbero essere già stati rimossi. Ripristinarli dal backup completo:\n%1!s!"

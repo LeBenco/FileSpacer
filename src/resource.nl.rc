@@ -116,7 +116,7 @@ STRINGTABLE {
     IDS_STORAGE_DATA_OPENED, "Gegevensmap geopend in Windows Verkenner."
     IDS_STORAGE_UNKNOWN_ERROR, "Geen aanvullende details beschikbaar."
     IDS_STORAGE_RESET, "Database opnieuw instellen…"
-    IDS_STORAGE_RESET_CONFIRM, "Database met mapstatussen opnieuw opbouwen? FileSpacer maakt eerst een back-up van de database en journaalbestanden, maakt daarna een nieuwe database en kopieert alle opgeslagen indelingen die nog leesbaar zijn. Wat niet kan worden gelezen, gaat verloren. Uw bestanden en algemene voorkeuren blijven behouden. Als de back-up mislukt of de bestanden in gebruik zijn, wordt niets gewijzigd."
+    IDS_STORAGE_RESET_CONFIRM, "Database met mapstatussen opnieuw opbouwen? FileSpacer maakt eerst hier een back-up van de database en journaalbestanden:\n%1\n\nDe nieuwe database bewaart compatibele gegevens die nog leesbaar zijn. Indelingen, mapinstellingen, vergrendelingen en geschiedenissen die niet kunnen worden hersteld, gaan verloren, ook gegevens in oude, niet-ondersteunde formaten. Uw bestanden en algemene voorkeuren blijven behouden. Als de back-up mislukt of de bestanden in gebruik zijn, wordt niets gewijzigd."
     IDS_STORAGE_RESET_DONE, "Database opnieuw ingesteld. Open of bewaar een map om door te gaan.\n\nBack-up: %1!s!"
     IDS_STORAGE_RESET_FAILED, "De database kon niet opnieuw worden ingesteld. Verwijderen is niet geforceerd.\n%1!s!"
     IDS_STORAGE_RESET_USE_BACKUP, "Sommige databasebestanden zijn mogelijk al verwijderd. Herstel ze vanuit de volledige back-up:\n%1!s!"
