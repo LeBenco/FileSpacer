@@ -12,11 +12,22 @@ function Get-GeometryList {
 function Compare-FrameDrop($Variant) {
     $list=Get-GeometryList
     Use-UiView $window {param($view) $view.Select('item-0000');$view.Reveal('item-0000')}
-    $before=Read-PreviewState $window
+    # Reveal can still be scrolling when its COM call returns. Do not compute
+    # a press from an image rectangle that is moving underneath the pointer.
+    $source=@{Key=$null}
+    Wait-Ui {
+        $index=Use-UiView $window {param($view) $view.IndexOf('item-0000')}
+        $image=[FileSpacerViewMenuTests.GridKey]::IconBounds($list,$index)
+        $origin=[FileSpacerViewMenuTests.GridKey]::Origin($list)
+        $state=Read-PreviewState $window
+        $key=($image-join',')+';'+($origin-join',')
+        $ready=$state.Selected-eq'item-0000'-and$state.Focus-eq'item-0000'-and$key-eq$source.Key
+        $source.Key=$key;$source.Image=$image;$source.Origin=$origin;$source.State=$state
+        $ready
+    } 'stable native source image and selection after reveal' 150
+    $image=$source.Image;$before=$source.State
     $body=Use-UiView $window {param($view) $view.Window}
     $bounds=[FileSpacerRegression.Native]::ClientBounds($list)
-    $index=Use-UiView $window {param($view) $view.IndexOf('item-0000')}
-    $image=[FileSpacerViewMenuTests.GridKey]::IconBounds($list,$index)
     # A label's UIA point can sit below a very large image: that grab offset
     # would put the intended frame partly outside the viewport, where it is hidden.
     $start=New-Object FileSpacerRegression.MousePoint
@@ -41,9 +52,13 @@ function Compare-FrameDrop($Variant) {
             [FileSpacerRegression.AltDragInput]::Move($point)
         }
         if($Variant.Placement-eq'Free'){[FileSpacerViewMenuTests.GridKey]::Hold($true)}
-        @{Variant=$Variant;Client=([FileSpacerRegression.Native]::ClientBounds($list));Origin=([FileSpacerViewMenuTests.GridKey]::Origin($list));Icon=([FileSpacerViewMenuTests.GridKey]::IconBounds($list,0));Start=$start;Target=$target;Mode=(Read-PreviewMode $window);State=(Read-PreviewState $window)}|ConvertTo-Json -Depth 6|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'last-gesture.json') -Encoding UTF8
+        @{SourceImage=$image;SourceOrigin=$source.Origin;Variant=$Variant;Client=([FileSpacerRegression.Native]::ClientBounds($list));Origin=([FileSpacerViewMenuTests.GridKey]::Origin($list));Icon=([FileSpacerViewMenuTests.GridKey]::IconBounds($list,0));Start=$start;Target=$target;Mode=(Read-PreviewMode $window);State=(Read-PreviewState $window)}|ConvertTo-Json -Depth 6|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'last-gesture.json') -Encoding UTF8
         Wait-Ui {[FileSpacerViewMenuTests.GridKey]::Marker($body).Visible} 'prediction frame visible' 0 5
         $frame=[FileSpacerViewMenuTests.GridKey]::Marker($body)
+        if($Variant.Mode-eq2-or$Variant.Mode-eq6){
+            $physicalSize=[int][Math]::Round($Variant.Size*[FileSpacerRegression.Native]::GetDpiForWindow($window)/96.0,[MidpointRounding]::AwayFromZero)
+            Assert-Ui ($frame.Width-eq$physicalSize-and$frame.Height-eq$physicalSize) 'Frame does not match the DPI-scaled native small/tile image.'
+        }
         $originBefore=[FileSpacerViewMenuTests.GridKey]::Origin($list)
         $clientBefore=[FileSpacerRegression.Native]::ClientBounds($list)
         [FileSpacerRegression.AltDragInput]::ReleasePrimary()
@@ -90,10 +105,13 @@ try {
         Wait-PreviewMode $window @{Mode=$variant.Mode;Size=$variant.Size}
         # The user-facing command completes pending profile changes before seeding.
         Choose-Placement 'IDM_FREE_PLACEMENT_ICONS'
+        $seedImage=[FileSpacerViewMenuTests.GridKey]::IconBounds((Get-GeometryList),0)
         $seed=Use-UiView $window {param($view)
             $pitch=$view.Spacing;$names=@($view.Names()|Sort-Object)
+            # Tile GetSpacing can describe small icons; keep fixture rows disjoint.
+            $pitchY=[Math]::Max($pitch.Y,($seedImage[3]-$seedImage[1]))
             $points=@(for($i=0;$i-lt$names.Count;++$i){
-                $x=43+($i%3)*2*$pitch.X;$y=$(if($variant.Scrolled){1000}else{37})+[int][Math]::Floor($i/3)*2*$pitch.Y
+                $x=43+($i%3)*2*$pitch.X;$y=$(if($variant.Scrolled){1000}else{37})+[int][Math]::Floor($i/3)*2*$pitchY
                 $view.Position($names[$i],$x,$y);$names[$i]+'='+$x+','+$y
             })
             $view.Select('item-0000');$view.Reveal('item-0000')
