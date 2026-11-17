@@ -232,7 +232,17 @@ public:
             CComQIPtr<IObjectWithSite> attached(native);
             if (!attached) return E_NOINTERFACE;
             *out = static_cast<IObjectWithSite *>(this);
-        } else return E_NOINTERFACE;
+        } else {
+#ifdef FILESPACER_DEBUG
+            CComPtr<IUnknown> accepted;
+            if (SUCCEEDED(native->QueryInterface(iid, reinterpret_cast<void **>(&accepted))) && accepted) {
+                wchar_t name[40] = {};
+                if (StringFromGUID2(iid, name, _countof(name)))
+                    debugPrintf(L"DROP INTERFACE masked=%s target=%s\n", name, target ? L"item" : L"background");
+            }
+#endif
+            return E_NOINTERFACE;
+        }
         AddRef(); return S_OK;
     }
     STDMETHODIMP SetSite(IUnknown *value) override {
