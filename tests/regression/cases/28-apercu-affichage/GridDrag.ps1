@@ -21,12 +21,16 @@ function Move-GridIcons([bool]$Snap,[bool]$ReleaseEarly=$false,[bool]$InspectMar
     Activate-Ui $window
     Use-UiView $window {param($view) $view.Reveal('item-0000')}
     $body=Use-UiView $window {param($view) $view.Window}
-    $iconSize=(Read-PreviewMode $window).Size
+    $mode=Read-PreviewMode $window
+    $iconSize=$mode.Size
+    # Medium and Large use the nominal Shell size; the marker covers the physical image.
+    if($mode.Mode-eq1-and$iconSize-le96){$iconSize=[int][Math]::Round($iconSize*[FileSpacerRegression.Native]::GetDpiForWindow($window)/96.0,[MidpointRounding]::AwayFromZero)}
     # UIA's clickable point changes when the selected label expands. Use the
     # same native icon offset for the free and S-release comparison gestures.
     $list=@([FileSpacerRegression.Native]::Children($body,'SysListView32')|Where-Object {[FileSpacerRegression.Native]::IsWindowEnabled($_)})
     Assert-Ui ($list.Count-eq1) 'Expected one interactive native icon list.'
     $client=[FileSpacerRegression.Native]::ClientBounds($list[0])
+    $startOrigin=[FileSpacerViewMenuTests.GridKey]::Origin($list[0])
     $index=Use-UiView $window {param($view) $view.IndexOf('item-0000')}
     $icon=[FileSpacerViewMenuTests.GridKey]::IconBounds($list[0],$index)
     $start=New-Object FileSpacerRegression.MousePoint
@@ -90,6 +94,8 @@ function Move-GridIcons([bool]$Snap,[bool]$ReleaseEarly=$false,[bool]$InspectMar
             [FileSpacerRegression.AltDragInput]::Move($target)
             Wait-Ui {$mark=[FileSpacerViewMenuTests.GridKey]::Marker($body);$mark.Visible-and$mark.Left-eq$before.Left-and$mark.Top-eq$before.Top} 'marker returns to the original destination' 0 5
             $script:GridMarkerBeforeDrop=[FileSpacerViewMenuTests.GridKey]::Marker($body)
+            $script:GridMarkerClientBeforeDrop=[FileSpacerRegression.Native]::ClientBounds($list[0])
+            $script:GridMarkerOriginBeforeDrop=[FileSpacerViewMenuTests.GridKey]::Origin($list[0])
             $script:GridMarkerBeforeDrop|ConvertTo-Json|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'snap-marker.json') -Encoding UTF8
             $bitmap=New-Object Drawing.Bitmap ($bounds.Right-$bounds.Left),($bounds.Bottom-$bounds.Top)
             $graphics=[Drawing.Graphics]::FromImage($bitmap)
@@ -101,6 +107,9 @@ function Move-GridIcons([bool]$Snap,[bool]$ReleaseEarly=$false,[bool]$InspectMar
             if($InspectMarker){Wait-Ui {![FileSpacerViewMenuTests.GridKey]::Marker($body).Visible} 'marker hidden before a free drop' 0 5}
         }
         if($RepeatHeldS){[FileSpacerViewMenuTests.GridKey]::Repeat()}
+        $dropOrigin=[FileSpacerViewMenuTests.GridKey]::Origin($list[0])
+        $dropClient=[FileSpacerRegression.Native]::ClientBounds($list[0])
+        $script:GridRawDelta=@(($target.X-$start.X+$dropOrigin[0]-$startOrigin[0]+$client.Left-$dropClient.Left),($target.Y-$start.Y+$dropOrigin[1]-$startOrigin[1]+$client.Top-$dropClient.Top))
         $script:GridDropStartedAt=[Diagnostics.Stopwatch]::GetTimestamp()
         [FileSpacerRegression.AltDragInput]::ReleasePrimary()
         Wait-Ui {[FileSpacerRegression.AltDragInput]::Idle($window)} 'native icon drop completed' 150
