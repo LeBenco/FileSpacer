@@ -1,7 +1,7 @@
 ﻿# SPDX-License-Identifier: GPL-3.0-only; Copyright (C) 2026 Benco
 param([Parameter(Mandatory=$true)][string]$ProjectRoot,
       [string[]]$Languages=@(),
-      [ValidateSet('customize-title-menu','move-window','resize-window','locked-title','details-columns')][string[]]$Scenes=@('move-window','resize-window','customize-title-menu','locked-title'),
+      [ValidateSet('customize-title-menu','move-window','resize-window','locked-title','details-columns','static-views')][string[]]$Scenes=@('move-window','resize-window','customize-title-menu','locked-title'),
       [string]$VMName='AgentWin10',[int]$TimeoutSeconds=2400)
 $ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1') -ErrorAction Stop
@@ -13,7 +13,7 @@ $source=Join-Path $assets 'reusable-source'
 $supported=(Get-Content -LiteralPath (Join-Path $PSScriptRoot 'scenes.json') -Raw -Encoding UTF8 | ConvertFrom-Json).PSObject.Properties.Name
 foreach($language in $Languages){if($language-notin$supported){throw ('Unknown language: '+$language)}}
 if(@($Languages|Select-Object -Unique).Count-ne$Languages.Count){throw 'Duplicate capture language.'}
-foreach($name in @('Capture.ps1','Capture.Core.ps1','SceneActions.ps1','CaptureDesktop.cs','scenes.json','details-columns.json','wallpaper.jpg')) {
+foreach($name in @('Capture.ps1','Capture.Core.ps1','SceneActions.ps1','StaticScenes.ps1','CaptureDesktop.cs','scenes.json','static-scenes.json','document-scenes.json','mixed-sorting-fr.json','details-columns.json','wallpaper.jpg')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination (Join-Path $source $name) -Force
 }
 $wallpaperHash='8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714'
@@ -34,6 +34,11 @@ $case=Join-Path $package ('tests\regression\cases\'+$relative)
 Copy-Item -LiteralPath $selection[0].File.FullName -Destination $case
 $destination=Join-Path $package 'build\documentation-capture'
 [void][IO.Directory]::CreateDirectory($destination)
+if($Scenes-contains'static-views'){
+    foreach($name in @('nature-lake.jpg','nature-mountain.jpg')){
+        Copy-Item -LiteralPath (Join-Path $assets $name) -Destination (Join-Path $destination $name)
+    }
+}
 foreach($name in @('reusable-source','reusable-plan.json')) {
     $item=Get-Item -LiteralPath (Join-Path $assets $name)
     if($item.PSIsContainer) {
@@ -47,7 +52,7 @@ $binaries=Join-Path $destination ('reusable-binaries\'+$Languages[0])
 foreach($name in @('FileSpacer.exe','FileSpacerFolder.dll')) {
     Copy-Item -LiteralPath (Join-Path $assets ('reusable-binaries\'+$Languages[0]+'\'+$name)) -Destination $binaries
 }
-if(@($Scenes|Where-Object {$_-ne'locked-title'}).Count){
+if(@($Scenes|Where-Object {$_-notin@('locked-title','static-views')}).Count){
     $archive=Join-Path $ProjectRoot 'build\tools\ScreenToGif.zip'
     if((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash-ne'42A0B53D67ECAE22698B4881FFB2C9C7A9049663F5FBDD2EDB779E1971000664'){throw 'Use the validated ScreenToGif 2.43.2 portable archive.'}
     Copy-Item -LiteralPath $archive -Destination $destination
