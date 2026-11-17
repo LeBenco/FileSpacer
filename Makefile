@@ -52,6 +52,8 @@ OBJECTS = \
     $(OUTDIR)\FolderWindowIconSnap.obj \
     $(OUTDIR)\FolderWindowMenus.obj \
     $(OUTDIR)\FolderWindowViewMenu.obj \
+    $(OUTDIR)\FolderWindowViewState.obj \
+    $(OUTDIR)\FolderWindowProvisional.obj \
     $(OUTDIR)\FolderWindowInput.obj \
     $(OUTDIR)\FolderOpeningAnimation.obj \
     $(OUTDIR)\FolderGroups.obj \
