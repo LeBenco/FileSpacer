@@ -397,8 +397,14 @@ namespace FileSpacerRegression {
                 foreach(IntPtr child in children) if(child!=IntPtr.Zero) Marshal.FreeCoTaskMem(child);
             }
         }
-        // SVSI_ENSUREVISIBLE | SVSI_NOTAKEFOCUS: scroll to the item without selecting or focusing it.
-        public void Reveal(string name) { Native.Check(view.SelectItem(IndexOf(name),0x48u)); }
+        // Preserve the selected bit; SVSI_NOTAKEFOCUS is 0x40000000, not the selection-mark flag.
+        public void Reveal(string name) {
+            int index=IndexOf(name); IntPtr child; Native.Check(view.Item(index,out child));
+            try {
+                uint state; Native.Check(((FolderView2)view).GetSelectionState(child,out state));
+                Native.Check(view.SelectItem(index,0x40000008u|(state&1u)));
+            } finally { Marshal.FreeCoTaskMem(child); }
+        }
         public void Focus() { Native.Check(shellView.UIActivate(2)); }
         public void Dispose() {
             if(parent!=IntPtr.Zero) { Marshal.FreeCoTaskMem(parent); parent=IntPtr.Zero; }
