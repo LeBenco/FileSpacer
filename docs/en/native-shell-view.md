@@ -359,11 +359,13 @@ remains Icon view; Small icons and Tiles retain the existing native Snap fallbac
 A free-placement S press is consumed through its matching release, including
 repeats after the drop. Once positioning is attempted, the message hook and drop
 policy are detached and retained final decisions become neutral; only keyboard
-repeat suppression may remain. Deactivation explicitly stops the session, even
-if a callback still retains it, so releasing S in another process cannot leave a
-transfer veto or keyboard hook behind. Only `WH_KEYBOARD` changes the held-S
-state during a gesture; the message hook handles mouse motion, completion and
-cancellation.
+repeat suppression may remain. Deactivation stops the session unless an accepted
+placement is already queued after button release. That placement survives both
+deactivation and `WM_CANCELMODE`; deactivation immediately retires the keyboard
+hook and held-S state because the matching release can reach another process.
+The deferred handler applies the accepted coordinates and detaches the remaining
+policy and hooks. During an active gesture, only `WH_KEYBOARD` changes the held-S
+state; the message hook handles mouse motion, completion and cancellation.
 The later release only removes keyboard interception;
 it cannot apply the drop or schedule its save twice. Cancellation and closure
 remove the frame. Temporary drop-highlight changes never modify selection/focus.

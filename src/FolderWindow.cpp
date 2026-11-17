@@ -3432,8 +3432,15 @@ void FolderWindow::onActivate(WORD state, HWND prevWindow) {
     // click inside the view can be the activation click absorbed later.
     activationClickPending = state == WA_CLICKACTIVE && cursorOverShellView();
     if (state == WA_INACTIVE) {
-        auto gesture = std::move(iconSnap);
-        if (gesture) gesture->stop();
+        if (iconSnap && iconSnap->placement) {
+            // Preserve the accepted placement, as for WM_CANCELMODE. Its S
+            // release can now go to another window, so retire the key hook.
+            iconSnap->heldS = false;
+            iconSnap->keyboardHook.reset();
+        } else {
+            auto gesture = std::move(iconSnap);
+            if (gesture) gesture->stop();
+        }
         searchBox.hideDropdown();
         cancelAltGesture();
         viewStateDirty(FolderState::Icons);
