@@ -1,9 +1,13 @@
 #include <common.h>
 #include "WindowPlacement.h"
+#include "Settings.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
+
+// This isolated geometry executable does not link the application settings.
+namespace filespacer { namespace settings { bool testMode = true; } }
 
 using namespace filespacer;
 
