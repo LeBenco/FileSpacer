@@ -22,7 +22,16 @@ function Move-GridIcons([bool]$Snap,[bool]$ReleaseEarly=$false,[bool]$InspectMar
     Use-UiView $window {param($view) $view.Reveal('item-0000')}
     $body=Use-UiView $window {param($view) $view.Window}
     $iconSize=(Read-PreviewMode $window).Size
-    $start=[FileSpacerRegression.AltDragInput]::ItemPoint($body,'item-0000')
+    # UIA's clickable point changes when the selected label expands. Use the
+    # same native icon offset for the free and S-release comparison gestures.
+    $list=@([FileSpacerRegression.Native]::Children($body,'SysListView32')|Where-Object {[FileSpacerRegression.Native]::IsWindowEnabled($_)})
+    Assert-Ui ($list.Count-eq1) 'Expected one interactive native icon list.'
+    $client=[FileSpacerRegression.Native]::ClientBounds($list[0])
+    $index=Use-UiView $window {param($view) $view.IndexOf('item-0000')}
+    $icon=[FileSpacerViewMenuTests.GridKey]::IconBounds($list[0],$index)
+    $start=New-Object FileSpacerRegression.MousePoint
+    $start.X=$client.Left+[int](($icon[0]+$icon[2])/2)
+    $start.Y=$client.Top+[int](($icon[1]+$icon[3])/2)
     $bounds=[FileSpacerRegression.Native]::ClientBounds($body)
     $target=New-Object FileSpacerRegression.MousePoint
     $target.X=$bounds.Left+420;$target.Y=$bounds.Top+345
