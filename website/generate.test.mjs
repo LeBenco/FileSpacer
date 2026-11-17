@@ -301,6 +301,9 @@ test('all available translations keep recorded section IDs, localized navigation
     const html = await readDocuments(path.join(directory));
     const nav = await fs.readFile(path.join(directory, '_includes/sections/user-guide.html'), 'utf8');
     const config = await fs.readFile(path.join(directory, '_config.yml'), 'utf8');
+    const guide = await fs.readFile(path.join(directory, 'user-guide.html'), 'utf8');
+    assert.match(guide, /<table>\s*<thead>[^]*?<td>[^<]*\+N<\/td>/, language.code + ': shortcut table must render as HTML');
+    assert.doesNotMatch(guide, /\*\*(?:Ctrl|Strg)\+/, language.code + ': shortcut emphasis must render as HTML');
     for (const document of documentFiles) {
       const page = await fs.readFile(path.join(directory, document), 'utf8');
       const alternates = JSON.parse(page.match(/^fs_alternates: (.+)$/m)[1]);
