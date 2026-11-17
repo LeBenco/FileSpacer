@@ -243,7 +243,9 @@ through `IFolderView::SelectAndPositionItems`.
 
 `ShellIconGrid` prepares one operation for an Icon-view gesture and uses it for
 both prediction and placement. The qualified backend uses the validated native
-arithmetic. Without that capability, a hidden, single-item Windows ListView uses
+arithmetic at 96 DPI only: comparisons with real folder alignment on Windows 10
+and 11 found different points at 125% and 150%. At other scales, or without that
+capability, a hidden, single-item Windows ListView uses
 the actual view's image list, font, spacing, control module and DPI. The image
 list is shared with `LVS_SHAREIMAGELISTS` and retained through its public COM
 interface; the font is copied for the gesture's lifetime. No icon is rendered. Public
@@ -252,6 +254,14 @@ provide native rounding on this one item. No folder-wide alignment, position
 snapshot or restoration is needed to prepare this fallback, and its work does
 not grow with the folder's item count. It is recreated per gesture, rather than
 keeping geometry across zoom or DPI changes.
+
+View presets and wheel steps pass the same nominal icon sizes as Explorer to
+`SetViewModeAndIconSize`; Windows chooses the physical image dimensions. Those
+dimensions can differ from `GetViewModeAndIconSize`, including nonlinear size
+steps above 96 pixels. The public grid shares the actual square image list and
+checks that it fits the native pitch. Free-placement image hit targets and the
+Snap frame also use the actual image dimensions. Previously stored raw icon
+sizes remain unchanged until a new view or zoom choice replaces them.
 
 Only selected destinations are written. Free placement permits overlapping
 destinations; neither backend shifts other icons to resolve collisions.
@@ -278,7 +288,9 @@ remapping. It maps the saved cells to that geometry in one positioning batch,
 with Snap temporarily disabled so intermediate batch collisions cannot displace
 later items; the original flag is restored even if positioning fails. Both wheel
 changes and committed/hovered View modes use this operation. Free placement
-retains exact coordinates instead. Native size changes suppress state capture
+restores stored coordinates instead of remapping cells. Positions are normalized
+to integer 96-DPI units, so a restore at a fractional scale can round a physical
+pixel. Native size changes suppress state capture
 until the intermediate layout has finished; unchanged menu opening adds no
 spacing query or database access.
 
