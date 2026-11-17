@@ -259,14 +259,23 @@ struct FolderWindow::IconSnap {
         return owner.isWindowOperational() && owner.shellView == view
             && owner.viewGeneration == generation;
     }
+    void releaseDropPolicy(HRESULT outcome) {
+        if (dropResult) { *dropResult = outcome; dropResult.reset(); }
+        if (dropSite) { dropSite->SetIconDropPolicy(nullptr); dropSite.Release(); }
+    }
+    void finishDrop() {
+        // The native drag has ended and positioning has been attempted. No
+        // cached target may retain this gesture's transfer veto afterward.
+        if (hook) { UnhookWindowsHookEx(hook); hook = nullptr; }
+        releaseDropPolicy(S_FALSE);
+    }
     void stop() {
-        if (dropResult && *dropResult == E_PENDING) *dropResult = E_ABORT;
         finished = true;
         markerPending = false;
         if (active == this) active = nullptr;
         if (hook) { UnhookWindowsHookEx(hook); hook = nullptr; }
         keyboardHook.reset();
-        if (dropSite) { dropSite->SetIconDropPolicy(nullptr); dropSite.Release(); }
+        releaseDropPolicy(E_ABORT);
         if (marker && GetPropW(marker, L"FileSpacer.SnapMarker") == this) DestroyWindow(marker);
         marker = nullptr;
 #ifdef FILESPACER_DEBUG
@@ -435,6 +444,14 @@ struct FolderWindow::IconSnap {
         owner.resumeDeferredClose();
         return current() && checkHR(result);
     } catch (const std::bad_alloc &) { return false; }
+    bool snapKey(bool down) {
+        if (permanent() || (finished && !heldS)) return false;
+        const bool changed = down != heldS;
+        heldS = down;
+        if (finished && !down) PostMessageW(owner.hwnd, MSG_ICON_SNAP, serial, 0);
+        else if (changed) queueMarker();
+        return true;
+    }
     static LRESULT CALLBACK keys(int code, WPARAM key, LPARAM state) {
         if ((code == HC_ACTION || code == HC_NOREMOVE) && (key == L'S' || key == VK_ESCAPE) && active) {
             auto session = active->owner.iconSnap;
@@ -444,12 +461,7 @@ struct FolderWindow::IconSnap {
                     session->snap = false;
                     session->finished = true;
                     PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0);
-                } else if (key == L'S' && !session->permanent() && (!session->finished || session->heldS)) {
-                    const bool changed = down != session->heldS;
-                    session->heldS = down;
-                    if (session->finished && !down)
-                        PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0);
-                    else if (changed) session->queueMarker();
+                } else if (key == L'S' && session->snapKey(down)) {
                     // Keep this press, including repeats after the drop, out of
                     // the Shell's type-to-select until its matching release.
                     return 1;
@@ -731,14 +743,7 @@ struct FolderWindow::IconSnap {
                     if (session->moved && !session->pointsCaptured) {
                         try { session->capturePoints(); } catch (const std::bad_alloc &) { session->stop(); }
                     }
-                    if ((message->message == WM_KEYDOWN || message->message == WM_KEYUP)
-                            && message->wParam == L'S' && !session->permanent()) {
-                        session->heldS = message->message == WM_KEYDOWN;
-                        session->queueMarker();
-                        // S belongs to this gesture, not the view's type-to-select.
-                        message->message = WM_NULL;
-                        message->wParam = message->lParam = 0;
-                    } else if ((message->message == WM_KEYDOWN && message->wParam == VK_ESCAPE)
+                    if ((message->message == WM_KEYDOWN && message->wParam == VK_ESCAPE)
                             || message->message == WM_CANCELMODE) {
                         session->stop();
                     } else if (message->message == WM_LBUTTONUP) {
@@ -3420,6 +3425,8 @@ void FolderWindow::onActivate(WORD state, HWND prevWindow) {
     // click inside the view can be the activation click absorbed later.
     activationClickPending = state == WA_CLICKACTIVE && cursorOverShellView();
     if (state == WA_INACTIVE) {
+        auto gesture = std::move(iconSnap);
+        if (gesture) gesture->stop();
         searchBox.hideDropdown();
         cancelAltGesture();
         viewStateDirty(FolderState::Icons);
@@ -3785,6 +3792,7 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
                     realignIcons(true); // Existing native support for Small icons and Tiles.
             }
             session->snap = false;
+            session->finishDrop();
             if (!session->heldS || session->permanent()) {
                 session->stop();
                 if (iconSnap == session) iconSnap.reset();
