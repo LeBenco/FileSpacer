@@ -271,7 +271,10 @@ Grid zoom keeps occupied cells and holes rather than replaying the old pixel
 coordinates: large native size jumps can collapse rows and push collisions into
 long horizontal lines. `restoreIconGridPositions` reads public `GetSpacing`
 before and after the change and learns the current grid phase from a native item
-position. It maps the saved cells to that geometry in one positioning batch,
+position of the first item in the current view, independently of whether the
+first saved identity still exists. Other saved survivors can retain intermediate
+coordinates after a Windows 11 size change. An empty current view needs no
+remapping. It maps the saved cells to that geometry in one positioning batch,
 with Snap temporarily disabled so intermediate batch collisions cannot displace
 later items; the original flag is restored even if positioning fails. Both wheel
 changes and committed/hovered View modes use this operation. Free placement
