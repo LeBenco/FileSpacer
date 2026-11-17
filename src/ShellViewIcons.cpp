@@ -389,7 +389,17 @@ HRESULT restoreIconGridPositions(IFolderView *view, const std::vector<uint8_t> &
     result = view->GetSpacing(&spacing);
     if (!current()) return E_ABORT;
     if (FAILED(result) || spacing.x <= 0 || spacing.y <= 0) return FAILED(result) ? result : E_FAIL;
-    result = view->GetItemPosition(prepared.positions.front().id, &origin);
+    int count = 0;
+    result = view->ItemCount(SVGIO_ALLVIEW, &count);
+    if (!current()) return E_ABORT;
+    if (FAILED(result) || !count) return result;
+    // The first current item supplies the resized native phase. A surviving
+    // saved item may still have its intermediate pre-remap coordinates.
+    CComHeapPtr<ITEMID_CHILD> anchor;
+    result = view->Item(0, &anchor);
+    if (!current()) return E_ABORT;
+    if (FAILED(result)) return result;
+    result = view->GetItemPosition(anchor, &origin);
     if (!current()) return E_ABORT;
     if (FAILED(result)) return result;
     const POINT before = scaleDPI(prepared.positions.front().point);
