@@ -35,7 +35,7 @@ Do not run a native test a second time when the selected suite already includes 
 | `-Pattern "group\case-pattern"` | PowerShell wildcard matched against the relative case path; default `*`. Combine with `-Category`. |
 | `-Scope Application\|All` | Both select the application suite; default `All`. |
 | `-Suite Regression\|Stress` | Select one disjoint catalogue; default `Regression`. |
-| `-TimeoutSeconds N` | Per-case deadline, 30â€“3600 seconds; default 300 for regressions and 900 for stress. A timeout is a failure. |
+| `-TimeoutSeconds N` | Per-case deadline, 30–3600 seconds; default 300 for regressions and 900 for stress. A timeout is a failure. |
 | `-RunDirectory "path"` | Store or copy reports to a new directory; existing reports are never overwritten. |
 | `-VM "name"` | Run selected cases in a configured Hyper-V client. |
 
@@ -130,14 +130,14 @@ stable selectors; they need not be translated to use this English guide.
 | Area | Groups |
 | --- | --- |
 | Harness and prepared-artifact contracts | `00-banc` |
-| SQLite, retention, quota, saved view state and history | `01`â€“`02`, `06`â€“`09` |
-| Menu/lifetime, STA and dimension handling | `03`â€“`05` |
-| Update manifests and session restoration | `10`â€“`11` |
-| Spatial navigation, preferences and layouts | `12`â€“`14` |
-| Move/resize gestures, closing during interaction | `15`â€“`17`, `24-raccourcis` |
+| SQLite, retention, quota, saved view state and history | `01`–`02`, `06`–`09` |
+| Menu/lifetime, STA and dimension handling | `03`–`05` |
+| Update manifests and session restoration | `10`–`11` |
+| Spatial navigation, preferences and layouts | `12`–`14` |
+| Move/resize gestures, closing during interaction | `15`–`17`, `24-raccourcis` |
 | Native view persistence and Shell commands | `18-vue-shell-native`, `19-commandes-shell` |
 | Load, shell notifications and external Control Panel | `20-validation-elargie` |
-| Activation click, locked layout and selected-name rendering | `21`â€“`23` |
+| Activation click, locked layout and selected-name rendering | `21`–`23` |
 | Search/history and Everything | `25-recherche-integration` |
 | Window placement and transient View-menu previews | `26-placement-fenetres`, `28-apercu-affichage` |
 | Default-manager associations | `29-menu-gestionnaire` |
@@ -221,6 +221,12 @@ prepared selection, result entries and summary record `Suite`; a prepared worker
 uses that saved suite, never the other catalogue. No `All` suite combines them.
 Local stress reports live under `build/stress`; the existing VM transport keeps
 its `build/regression/vm-<id>` report location and records the suite in its package.
+
+`28-apercu-affichage/07-CadrePosition` compares the displayed frame with the
+actual native drop using six items, intermediate icon sizes, scroll origins and
+representative placement routes. It inherits the current display scale and does
+not change Windows display settings. Run it separately when investigating
+geometry, or include it in an explicitly requested stress campaign.
 
 Stress includes 5,000-item SQLite recovery, saved-layout redraw, load/restarts,
 View-menu cancellation, clear/select-all selection matrices, repeated concurrent
