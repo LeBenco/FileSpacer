@@ -10,7 +10,8 @@ namespace FileSpacerViewMenuTests {
     // thread would stop the target's previous IconSnap and hide this regression.
     public static class ExternalDragSource {
         [StructLayout(LayoutKind.Sequential)] struct Point { public int X,Y; }
-        [DllImport("user32.dll")] static extern bool GetCursorPos(out Point point);
+        [DllImport("user32.dll")] static extern bool GetPhysicalCursorPos(out Point point);
+        [DllImport("user32.dll",SetLastError=true)] static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context);
         [StructLayout(LayoutKind.Sequential)] struct Rect { public int Left,Top,Right,Bottom; }
         delegate bool EnumChild(IntPtr window,IntPtr data);
         [DllImport("user32.dll")] static extern bool EnumChildWindows(IntPtr parent,EnumChild callback,IntPtr data);
@@ -40,6 +41,9 @@ namespace FileSpacerViewMenuTests {
             return result;
         }
         public static void Run(string root) {
+            var previous=SetThreadDpiAwarenessContext(new IntPtr(-4));
+            if(previous==IntPtr.Zero)throw new System.ComponentModel.Win32Exception();
+            try {
             Application.EnableVisualStyles();
             using(var form=new Form()) {
                 form.Text="External drop source "+Path.GetFileName(root);
@@ -52,7 +56,7 @@ namespace FileSpacerViewMenuTests {
                     string file=Path.Combine(root,name);
                     button.GiveFeedback+=delegate(object sender,GiveFeedbackEventArgs e) {
                         Point point;
-                        if(GetCursorPos(out point)) File.WriteAllText(file+".hover",
+                        if(GetPhysicalCursorPos(out point)) File.WriteAllText(file+".hover",
                             String.Format("{0},{1},{2}",point.X,point.Y,(int)e.Effect));
                     };
                     button.MouseDown+=delegate(object sender,MouseEventArgs e) {
@@ -66,6 +70,7 @@ namespace FileSpacerViewMenuTests {
                 }
                 Application.Run(form);
             }
+            } finally {SetThreadDpiAwarenessContext(previous);}
         }
     }
 }
