@@ -43,6 +43,15 @@ static void rawSQL(const std::string &path, const char *sql) {
     sqlite3_close(db);
     require(result == SQLITE_OK, "raw SQL failed");
 }
+static int rawInteger(const std::string &path, const char *sql) {
+    sqlite3 *db = nullptr; sqlite3_stmt *row = nullptr;
+    require(sqlite3_open(path.c_str(), &db) == SQLITE_OK, "scalar open");
+    const bool ready = sqlite3_prepare_v2(db,sql,-1,&row,nullptr) == SQLITE_OK
+        && sqlite3_step(row) == SQLITE_ROW;
+    const int value = ready ? sqlite3_column_int(row,0) : 0;
+    sqlite3_finalize(row); sqlite3_close(db);
+    require(ready,"scalar query"); return value;
+}
 static std::string fileBytes(const std::string &path) {
     std::ifstream file(path, std::ios::binary);
     require(file.good(), "read fixture bytes");
@@ -319,7 +328,7 @@ int main(int argc, char **argv) {
             FolderStateStore store(path.c_str());
             require(store.ready() && store.save("older",fixture(),FolderState::All),"old-format fixture");
         }
-        rawSQL(path,"PRAGMA journal_mode=DELETE;PRAGMA user_version=7");
+        rawSQL(path,"PRAGMA journal_mode=DELETE;PRAGMA user_version=6");
         {
             const auto before=fileBytes(path);
             FolderStateStore store(path.c_str());
@@ -358,6 +367,90 @@ int main(int argc, char **argv) {
             std::cout << "PASS: current-format recovery keeps readable data and leaves out undecodable settings.\n";
         }
         erase(path);
+        // All published format-7 encodings migrate together; unrelated state is opaque.
+        {
+            FolderState expected=fixture(); expected.view.iconSize=72;
+            ClosedWindow closed; closed.key="v3";closed.parsingName="folder";closed.displayName="saved";
+            closed.viewState={1,2,3,8,9};
+            {
+                FolderStateStore source(path.c_str());
+                require(source.ready() && source.save("a-v1",expected,FolderState::All),"v1 migration fixture");
+                expected.view.present|=FolderViewSettings::ColumnFill;expected.view.fillColumns=true;
+                require(source.save("v2",expected,FolderState::All),"v2 migration fixture");
+                expected.view.present|=FolderViewSettings::ColumnWeights;
+                expected.view.columnWeights=expected.view.columns;
+                require(source.setLocked("v3",expected,FolderState::All,true)
+                    && source.save("v8",expected,FolderState::All)
+                    && source.save("null",expected,FolderState::Position)
+                    && source.saveSearchHistory("v3",{"keep-history"},20)
+                    && source.saveViewScroll("v3",{3,7,8})
+                    && source.rememberClosedWindow(closed),"mixed migration fixture");
+            }
+            rawSQL(path,"PRAGMA journal_mode=DELETE;"
+                "UPDATE folder_state SET view=CAST(x'01000000'||substr(view,5,length(view)-12) AS BLOB) WHERE key='a-v1';"
+                "UPDATE folder_state SET view=CAST(x'02000000'||substr(view,5,length(view)-8) AS BLOB) WHERE key='v2';"
+                "UPDATE folder_state SET view=CAST(x'03000000'||substr(view,5) AS BLOB) WHERE key='v3';"
+                "PRAGMA user_version=7");
+            {
+                FolderStateStore store(path.c_str());FolderState state;
+                require(store.ready(),store.error().c_str());
+                for(const char *key:{"a-v1","v2","v3","v8"}) {
+                    require(store.read(key,&state) && state.x==expected.x && state.y==expected.y
+                        && state.width==expected.width && state.height==expected.height && state.maximized
+                        && state.icons==expected.icons && state.view.iconSize==72 && state.view.columns.size()==1 && state.view.columns[0].key==expected.view.columns[0].key
+                        && state.view.columns[0].width==expected.view.columns[0].width,
+                        "migration changed geometry, icons, raw icon size or columns");
+                    require(state.view.fillColumns==(std::string(key)!="a-v1")
+                        && state.view.columnWeights.size()==(std::string(key)=="v3" || std::string(key)=="v8" ? 1u : 0u),
+                        "legacy fill or weights decoded incorrectly");
+                }
+                std::vector<std::string> history;std::vector<uint8_t> scroll;ClosedWindow restored;
+                require(store.read("v3",&state) && state.locked
+                    && store.readSearchHistory("v3",20,&history) && history==std::vector<std::string>{"keep-history"}
+                    && store.readViewScroll("v3",&scroll) && scroll==std::vector<uint8_t>({3,7,8})
+                    && store.lastClosedWindow(&restored) && restored.key==closed.key && restored.viewState==closed.viewState
+                    && store.read("null",&state) && !(state.present&FolderState::View),
+                    "migration lost lock, histories, viewport, opaque closed-window state or NULL view");
+            }
+            require(rawInteger(path,"PRAGMA user_version")==8
+                && rawInteger(path,"SELECT count(*) FROM folder_state WHERE hex(substr(view,1,4))='08000000'")==4,
+                "migration did not write the independent view encoding and schema");
+            rawSQL(path,"PRAGMA journal_mode=DELETE");
+            { FolderStateStore again(path.c_str());require(again.ready(),"reopen migrated database"); }
+            // WAL activation may change the header; compare the stable view bytes instead.
+            require(rawInteger(path,"SELECT count(*) FROM folder_state WHERE hex(substr(view,1,4))='08000000'")==4,
+                "migration was not idempotent");
+            erase(path);
+            {
+                FolderStateStore source(path.c_str());
+                require(source.save("a-valid",fixture(),FolderState::All)
+                    && source.save("z-bad",fixture(),FolderState::All)
+                    && source.saveSearchHistory("z-bad",{"keep-history"},20),"failed migration fixture");
+            }
+            rawSQL(path,"PRAGMA journal_mode=DELETE;"
+                "UPDATE folder_state SET view=CAST(x'01000000'||substr(view,5,length(view)-12) AS BLOB) WHERE key='a-valid';"
+                "UPDATE folder_state SET view=x'01000000' WHERE key='z-bad';PRAGMA user_version=7");
+            const auto before=fileBytes(path);
+            {
+                FolderStateStore rejected(path.c_str());
+                require(!rejected.ready() && rejected.canResetDamagedDatabase()
+                    && rejected.error().find("format 7")!=std::string::npos,"invalid legacy view accepted");
+            }
+            require(fileBytes(path)==before && rawInteger(path,"PRAGMA user_version")==7
+                && rawInteger(path,"SELECT count(*) FROM folder_state WHERE hex(substr(view,1,4))='01000000'")==2,
+                "failed migration partially changed the database");
+            const std::string targetPath=path+".legacy-recovery";erase(targetPath);
+            {
+                FolderStateStore target(targetPath.c_str());FolderState state;std::vector<std::string> history;
+                require(target.ready() && target.recoverFrom(path.c_str())==FolderStateStore::Recovery::Partial
+                    && target.read("a-valid",&state) && (state.present&FolderState::View)
+                    && target.read("z-bad",&state) && !(state.present&FolderState::View) && state.icons==fixture().icons
+                    && target.readSearchHistory("z-bad",20,&history) && history==std::vector<std::string>{"keep-history"}
+                    && fileBytes(path)==before,"legacy partial recovery lost data or modified its source");
+            }
+            erase(targetPath);erase(path);
+            std::cout << "PASS: format-7 migration preserves state, is atomic and supports read-only partial recovery.\n";
+        }
         // A damaged page stops a scan: the rows on both sides of it are kept.
         {
             const std::string damaged=path+".damaged";erase(damaged);
