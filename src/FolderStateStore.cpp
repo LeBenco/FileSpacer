@@ -26,6 +26,8 @@ namespace {
 using Statement = std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)>;
 // Single wait bound of one operation, shared by the mutex wait and SQLite's busy handler.
 constexpr unsigned OPERATION_WAIT_MS = 3000;
+// View encoding changes independently of the database schema.
+constexpr uint32_t VIEW_DATA_FORMAT_VERSION = 8;
 
 void appendInt(std::vector<uint8_t> &bytes, uint32_t value) {
     for (unsigned i = 0; i < 4; ++i)
@@ -34,7 +36,7 @@ void appendInt(std::vector<uint8_t> &bytes, uint32_t value) {
 std::vector<uint8_t> encodeView(const FolderViewSettings &view) {
     std::vector<uint8_t> bytes;
     const bool weights = (view.present & FolderViewSettings::ColumnWeights) != 0;
-    appendInt(bytes, FOLDER_STATE_FORMAT_VERSION);
+    appendInt(bytes, VIEW_DATA_FORMAT_VERSION);
     appendInt(bytes, view.present);
     appendInt(bytes, static_cast<uint32_t>(view.mode));
     appendInt(bytes, static_cast<uint32_t>(view.iconSize));
@@ -62,7 +64,7 @@ std::vector<uint8_t> encodeView(const FolderViewSettings &view) {
     return bytes;
 }
 
-bool decodeView(const uint8_t *bytes, size_t size, FolderViewSettings *out) {
+bool decodeView(const uint8_t *bytes, size_t size, FolderViewSettings *out, bool allowLegacy = false) {
     size_t offset = 0;
     auto integer = [&](uint32_t *value) {
         if (size - offset < 4) return false;
@@ -79,8 +81,10 @@ bool decodeView(const uint8_t *bytes, size_t size, FolderViewSettings *out) {
     };
     FolderViewSettings view;
     uint32_t version, mode, iconSize, count;
-    if (!integer(&version) || version != FOLDER_STATE_FORMAT_VERSION || !integer(&view.present)
-            || (view.present & ~127u) || !integer(&mode) || !integer(&iconSize)
+    if (!integer(&version) || (version != VIEW_DATA_FORMAT_VERSION
+            && !(allowLegacy && version >= 1 && version <= 3))) return false;
+    const uint32_t allowed = version == 1 ? 31u : version == 2 ? 63u : 127u;
+    if (!integer(&view.present) || (view.present & ~allowed) || !integer(&mode) || !integer(&iconSize)
             || !integer(&view.flags) || !integer(&count) || count > (size-offset)/24)
         return false;
     view.mode = static_cast<int32_t>(mode);
@@ -98,13 +102,17 @@ bool decodeView(const uint8_t *bytes, size_t size, FolderViewSettings *out) {
     uint32_t ascending;
     if (!key(&view.groupBy) || !integer(&ascending) || ascending > 1) return false;
     view.groupAscending = ascending != 0;
-    uint32_t fill;
-    if (!integer(&fill) || fill > 1) return false;
-    view.fillColumns = fill != 0;
-    if (!integer(&count) || count > (size-offset)/24) return false;
-    view.columnWeights.resize(count);
-    for (auto &column : view.columnWeights)
-        if (!key(&column.key) || !integer(&column.width)) return false;
+    if (version >= 2) {
+        uint32_t fill;
+        if (!integer(&fill) || fill > 1) return false;
+        view.fillColumns = fill != 0;
+    }
+    if (version >= 3) {
+        if (!integer(&count) || count > (size-offset)/24) return false;
+        view.columnWeights.resize(count);
+        for (auto &column : view.columnWeights)
+            if (!key(&column.key) || !integer(&column.width)) return false;
+    }
     if (offset != size) return false;
     *out = std::move(view);
     return true;
@@ -328,6 +336,14 @@ FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitializat
     }
     int schema = sqlite3_column_int(version.get(), 0);
     version.reset();
+    if (schema == 7) {
+        if (!migrateVersion7()
+                || !execute(("PRAGMA user_version=" + std::to_string(FOLDER_STATE_FORMAT_VERSION)).c_str())) {
+            finishWrite(false);
+            return;
+        }
+        schema = FOLDER_STATE_FORMAT_VERSION;
+    }
     if (schema != 0 && schema != FOLDER_STATE_FORMAT_VERSION) {
         // A later format is intact and must never be offered for a reset.
         if (schema > FOLDER_STATE_FORMAT_VERSION) newerSchema = true;
@@ -381,6 +397,49 @@ FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitializat
     if (finishWrite(true) && execute("PRAGMA journal_mode=WAL")) {
         initialized = true; // Each operation sets its own busy timeout from its remaining budget.
         opening.release();
+    }
+}
+bool FolderStateStore::migrateVersion7() {
+    // Finish each bounded read before updating this WITHOUT ROWID table.
+    // Only one decoded view is retained; all other state stays byte-for-byte.
+    sqlite3_stmt *raw = nullptr;
+    if (!result(sqlite3_prepare_v2(db,
+            "SELECT key,view FROM folder_state WHERE view IS NOT NULL ORDER BY key LIMIT 1",
+            -1, &raw, nullptr))) return false;
+    Statement first(raw, sqlite3_finalize);
+    if (!result(sqlite3_prepare_v2(db,
+            "SELECT key,view FROM folder_state WHERE view IS NOT NULL AND key>?1 ORDER BY key LIMIT 1",
+            -1, &raw, nullptr))) return false;
+    Statement next(raw, sqlite3_finalize);
+    if (!result(sqlite3_prepare_v2(db, "UPDATE folder_state SET view=?1 WHERE key=?2",
+            -1, &raw, nullptr))) return false;
+    Statement update(raw, sqlite3_finalize);
+    sqlite3_stmt *row = first.get();
+    std::string key;
+    for (;;) {
+        if (row == next.get() && (!result(sqlite3_reset(row))
+                || !result(sqlite3_bind_text(row, 1, key.data(), static_cast<int>(key.size()), SQLITE_TRANSIENT))))
+            return false;
+        const int step = sqlite3_step(row);
+        if (!result(step)) return false;
+        if (step == SQLITE_DONE) return true;
+        FolderViewSettings view;
+        if (sqlite3_column_type(row, 0) != SQLITE_TEXT || sqlite3_column_type(row, 1) != SQLITE_BLOB
+                || !decodeView(static_cast<const uint8_t *>(sqlite3_column_blob(row, 1)),
+                    static_cast<size_t>(sqlite3_column_bytes(row, 1)), &view, true)) {
+            unsupportedSchema = true;
+            lastError = "Invalid FileSpacer view data in database format 7";
+            return false;
+        }
+        key.assign(reinterpret_cast<const char *>(sqlite3_column_text(row, 0)),
+            static_cast<size_t>(sqlite3_column_bytes(row, 0)));
+        if (!result(sqlite3_reset(row))) return false;
+        const auto bytes = encodeView(view);
+        if (!result(sqlite3_reset(update.get()))
+                || !result(sqlite3_bind_blob(update.get(), 1, bytes.data(), static_cast<int>(bytes.size()), SQLITE_TRANSIENT))
+                || !result(sqlite3_bind_text(update.get(), 2, key.data(), static_cast<int>(key.size()), SQLITE_TRANSIENT))
+                || !result(sqlite3_step(update.get()))) return false;
+        row = next.get();
     }
 }
 FolderStateStore::~FolderStateStore() {
@@ -537,7 +596,8 @@ FolderStateStore::Recovery FolderStateStore::recoverFrom(const char *utf8Source)
         lastError = sqlite3_errmsg(rawSource);
         return Recovery::Failed;
     }
-    if (sqlite3_column_int(version.get(), 0) != FOLDER_STATE_FORMAT_VERSION) return Recovery::None;
+    const int schema = sqlite3_column_int(version.get(), 0);
+    if (schema != FOLDER_STATE_FORMAT_VERSION && schema != 7) return Recovery::None;
     Lock lock(*this);
     if (!lock || !execute("BEGIN IMMEDIATE")) return Recovery::Failed;
     // Expected shape of each column: 't' non-empty text, 'T' text, 'i' integer
@@ -619,9 +679,14 @@ FolderStateStore::Recovery FolderStateStore::recoverFrom(const char *utf8Source)
                     FolderViewSettings decoded;
                     const bool unreadable = valid && shape == 'v' && type == SQLITE_BLOB
                         && !decodeView(static_cast<const uint8_t *>(sqlite3_column_blob(raw, static_cast<int>(index))),
-                            static_cast<size_t>(sqlite3_column_bytes(raw, static_cast<int>(index))), &decoded);
+                            static_cast<size_t>(sqlite3_column_bytes(raw, static_cast<int>(index))), &decoded, schema == 7);
                     if (unreadable) complete = false;
-                    const int bound = !valid || unreadable ? SQLITE_OK : shape == 'I' && type == SQLITE_NULL
+                    const auto converted = valid && !unreadable && shape == 'v' && type == SQLITE_BLOB && schema == 7
+                        ? encodeView(decoded) : std::vector<uint8_t>();
+                    const int bound = !valid || unreadable ? SQLITE_OK : !converted.empty()
+                        ? sqlite3_bind_blob(insert.get(), static_cast<int>(index) + 1,
+                            converted.data(), static_cast<int>(converted.size()), SQLITE_TRANSIENT)
+                        : shape == 'I' && type == SQLITE_NULL
                         ? sqlite3_bind_int(insert.get(), static_cast<int>(index) + 1, 0)
                         : sqlite3_bind_value(insert.get(), static_cast<int>(index) + 1,
                             sqlite3_column_value(raw, static_cast<int>(index)));
@@ -1376,13 +1441,24 @@ void removeOlderBackups(const StorageErrorDialog &dialog, const std::wstring &ke
 HRESULT CALLBACK storageErrorCallback(HWND window, UINT notification, WPARAM button, LPARAM, LONG_PTR data) {
     auto &dialog = *reinterpret_cast<StorageErrorDialog *>(data);
     if (notification == TDN_BUTTON_CLICKED && button == IDC_STORAGE_RESET) {
+        GUID guid;
+        wchar_t id[40];
+        const bool named = SUCCEEDED(CoCreateGuid(&guid)) && StringFromGUID2(guid, id, ARRAYSIZE(id));
+        const std::wstring backup = named ? dialog.path + L".backup-" + id : std::wstring();
+        if (!named) {
+            const auto message = formatString(IDS_STORAGE_RESET_FAILED, getString(IDS_STORAGE_UNKNOWN_ERROR));
+            SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_FOOTER, reinterpret_cast<LPARAM>(message.get()));
+            return S_FALSE;
+        }
+        const auto prompt = formatString(IDS_STORAGE_RESET_CONFIRM, backup.c_str());
+        if (!prompt) return S_FALSE;
         int confirmed = IDNO;
         TASKDIALOGCONFIG confirmation = {sizeof(confirmation)};
         confirmation.hwndParent = window;
         confirmation.dwFlags = TDF_ALLOW_DIALOG_CANCELLATION;
         confirmation.pszWindowTitle = getString(IDS_CONFIRM_CAPTION);
         confirmation.pszMainInstruction = getString(IDS_STORAGE_RESET);
-        confirmation.pszContent = getString(IDS_STORAGE_RESET_CONFIRM);
+        confirmation.pszContent = prompt.get();
         confirmation.pszMainIcon = TD_WARNING_ICON;
         confirmation.dwCommonButtons = TDCBF_NO_BUTTON | TDCBF_YES_BUTTON;
         confirmation.nDefaultButton = IDNO;
@@ -1396,16 +1472,12 @@ HRESULT CALLBACK storageErrorCallback(HWND window, UINT notification, WPARAM but
             SendMessageW(window, TDM_ENABLE_BUTTON, IDC_STORAGE_RESET, FALSE);
             return S_FALSE;
         }
-        GUID guid;
-        wchar_t id[40];
-        const bool named = SUCCEEDED(CoCreateGuid(&guid)) && StringFromGUID2(guid, id, ARRAYSIZE(id));
-        const std::wstring backup = named ? dialog.path + L".backup-" + id : std::wstring();
         // Backup, rebuilding and recovery copy whole files on this thread.
         struct WaitCursor {
             HCURSOR previous = SetCursor(LoadCursorW(nullptr, IDC_WAIT));
             ~WaitCursor() { SetCursor(previous); }
         } waiting;
-        if (!named || dialog.path != attemptedPath || !failedStore || !failedStore->canResetDamagedDatabase()
+        if (dialog.path != attemptedPath || !failedStore || !failedStore->canResetDamagedDatabase()
                 || !failedStore->resetDamagedDatabase(toUtf8(dialog.path.c_str()).c_str(), backup.c_str())) {
             const std::wstring reason = failedStore ? storageErrorText(failedStore->error())
                 : std::wstring(getString(IDS_STORAGE_UNKNOWN_ERROR));
