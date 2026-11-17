@@ -725,7 +725,8 @@ inline HRESULT snapGridSelection(IShellView *source,const std::function<bool()> 
             ||FAILED(view->GetCurrentFolderFlags(&flags))||!current()
             ||(flags&(FWF_AUTOARRANGE|FWF_SNAPTOGRID|FWF_DESKTOP|FWF_NOSCROLL)))return S_FALSE;
     HWND body=nullptr;RangeBinding bound;
-    if(FAILED(source->GetWindow(&body))||!current()||!bound.bind(body)||!current())return S_FALSE;
+    if(FAILED(source->GetWindow(&body))||!current()||!bound.bind(body)||!current()
+            ||GetDpiForWindow(bound.window)!=USER_DEFAULT_SCREEN_DPI)return S_FALSE;
     const auto style=GetWindowLongPtrW(bound.window,GWL_STYLE);
     if((style&(LVS_TYPEMASK|LVS_AUTOARRANGE|LVS_NOSCROLL|LVS_ALIGNMASK))!=LVS_ICON
             ||(GetWindowLongPtrW(bound.window,GWL_EXSTYLE)&WS_EX_LAYOUTRTL)
