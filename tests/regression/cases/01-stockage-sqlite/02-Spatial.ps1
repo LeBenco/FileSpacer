@@ -3,7 +3,7 @@ param([string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '..\..\common\Process.ps1')
 . (Join-Path $PSScriptRoot '..\..\common\Native.ps1')
-$Executable = Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'
+$Executable = Get-TestBuildPath $ProjectRoot
 $Probe = Build-NativeTest -Name FolderIdentityProbe -CaseDirectory (Join-Path $PSScriptRoot '..\01-stockage-sqlite') -ProductionSources @('FolderIdentity.cpp')
 $ErrorActionPreference = 'Stop'
 $Executable = (Resolve-Path $Executable).Path

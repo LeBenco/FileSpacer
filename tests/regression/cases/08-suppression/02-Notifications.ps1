@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '..\..\common\Process.ps1')
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path
-$executable = Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'
+$executable = Get-TestBuildPath $ProjectRoot
 $temporaryBase = [IO.Path]::GetFullPath($env:TEMP)
 $temporaryRoot = [IO.Path]::GetFullPath((Join-Path $temporaryBase ('FS-delete-' + [Guid]::NewGuid().ToString('N'))))
 if ([IO.Path]::GetDirectoryName($temporaryRoot).TrimEnd('\') -ne $temporaryBase.TrimEnd('\')) {

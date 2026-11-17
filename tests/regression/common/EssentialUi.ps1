@@ -29,7 +29,7 @@ $script:UiSettings=[IntPtr]::Zero
 $script:UiRoot=$null
 $script:UiShell=$null; $script:UiShellWindows=$null
 $script:UiPreviousDpi=[IntPtr]::Zero
-$script:UiExecutable=Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'
+$script:UiExecutable=Get-TestBuildPath $ProjectRoot
 $script:UiSettingsKey='Software\FileSpacer\Test'
 
 function Assert-Ui($Condition,[string]$Message) { if (!$Condition) { throw $Message } }

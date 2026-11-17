@@ -2,7 +2,7 @@
 param([string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '..\..\common\Process.ps1')
-$Executable=Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'
+$Executable=Get-TestBuildPath $ProjectRoot
 $ErrorActionPreference = 'Stop'
 $Executable = (Resolve-Path -LiteralPath $Executable).Path
 

@@ -19,7 +19,7 @@ $junction=Join-Path $env:LOCALAPPDATA 'FileSpacer\TestShellView.{E129740C-52FD-4
 $junctionExisted=[IO.Directory]::Exists($junction)
 $failure=$null
 try {
-    $provider=if($ProviderOverride){$ProviderOverride}else{Join-Path $ProjectRoot 'build\debug\FileSpacerFolder.dll'}
+    $provider=if($ProviderOverride){$ProviderOverride}else{Get-TestBuildPath $ProjectRoot 'FileSpacerFolder.dll'}
     $mode=if($Legacy){'legacy'}else{'new'}
     Invoke-TestProgram $test @($provider,$folder,$mode)
 } catch {$failure=$_;throw} finally {

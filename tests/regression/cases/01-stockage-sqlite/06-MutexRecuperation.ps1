@@ -60,7 +60,7 @@ $processes=New-Object Collections.ArrayList
 try{
     $holder=Start-RecordedProcess -Executable $helper -Arguments ('--child "'+$database+'" "'+$prefix+'" hold') -OutputPath (Join-Path $RunDirectory 'holder.out') -ErrorPath (Join-Path $RunDirectory 'holder.err')
     Require ($ready.WaitOne(15000)) 'Controlled mutex holder did not become ready.'
-    $application=Start-TestApplication -Executable (Join-Path $ProjectRoot 'build\debug\FileSpacer.exe') -Arguments ('/test "'+$folder+'"') -OutputDirectory $RunDirectory
+    $application=Start-TestApplication -Executable (Get-TestBuildPath $ProjectRoot) -Arguments ('/test "'+$folder+'"') -OutputDirectory $RunDirectory
     [void]$processes.Add($application)
     $deadline=[DateTime]::UtcNow.AddSeconds(15)
     $errorObserved=$false
@@ -69,7 +69,7 @@ try{
         if($dialogs.Count){
             Require ($dialogs.Count -eq 1) 'Unexpected simultaneous product dialogs during blocked initialization.'
             @([MutexRecoveryNative]::Describe($application.Id))|ConvertTo-Json|Set-Content (Join-Path $RunDirectory 'dialog-during-identification.json') -Encoding UTF8
-            $messages=[MutexRecoveryNative]::Messages((Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'),278)
+            $messages=[MutexRecoveryNative]::Messages((Get-TestBuildPath $ProjectRoot),278)
             Require ($messages.Count -gt 0) 'Product storage-error string resources were not found.'
             if([StorageTaskDialog]::HasButton($dialogs[0],1650) -and [StorageTaskDialog]::HasButton($dialogs[0],1651) -and
                     [StorageTaskDialog]::HasButton($dialogs[0],1)){

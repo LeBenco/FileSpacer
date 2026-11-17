@@ -2,7 +2,7 @@
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
 $ErrorActionPreference='Stop'
 Add-Type -Path (Join-Path $ProjectRoot 'tools\documentation-capture\CaptureDesktop.cs') -ReferencedAssemblies System.Drawing,System.Windows.Forms
-$executable=Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'
+$executable=Get-TestBuildPath $ProjectRoot
 $header=Get-Content -LiteralPath (Join-Path $ProjectRoot 'src\resource.h') -Raw
 $unlockId=[int][regex]::Match($header,'(?m)^#define\s+IDS_UNLOCK_WINDOW_STATE\s+(\d+)').Groups[1].Value
 $ids=@('IDS_LOCK_WINDOW_STATE','IDS_UNLOCK_WINDOW_STATE','IDS_TITLE_MENU_RESTORE')|ForEach-Object {[int][regex]::Match($header,('(?m)^#define\s+'+$_+'\s+(\d+)')).Groups[1].Value}

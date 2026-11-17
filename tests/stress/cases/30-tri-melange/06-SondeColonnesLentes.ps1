@@ -15,11 +15,11 @@ Add-Type -Path (Join-Path $PSScriptRoot '..\..\..\regression\cases\30-tri-melang
 $variantRoot=Join-Path $ProjectRoot 'build\regression\slow-column-provider'
 if(!$env:FS_REGRESSION_PREPARED){[void](& (Join-Path $PSScriptRoot '..\..\..\regression\common\Prepare-SlowColumnMixedProvider.ps1') -ProjectRoot $ProjectRoot)}
 $providers=[ordered]@{
-    current=(Join-Path $ProjectRoot 'build\debug\FileSpacerFolder.dll')
+    current=(Get-TestBuildPath $ProjectRoot 'FileSpacerFolder.dll')
     counted=(Join-Path $variantRoot 'counted\FileSpacerFolder.dll')
     slow=(Join-Path $variantRoot 'slow\FileSpacerFolder.dll')
     all=(Join-Path $variantRoot 'all\FileSpacerFolder.dll')
-    native=(Join-Path $ProjectRoot 'build\debug\FileSpacerFolder.dll')
+    native=(Get-TestBuildPath $ProjectRoot 'FileSpacerFolder.dll')
 }
 foreach($entry in $providers.GetEnumerator()){Assert-Ui (Test-Path -LiteralPath $entry.Value -PathType Leaf) ('Host-prepared provider missing for run '+$entry.Key+': '+$entry.Value)}
 $providerClass=[guid]'E129740C-52FD-4C7B-98AA-9ED6EBF9A604'
@@ -144,7 +144,7 @@ try {
         # Keep executable + fixture paths short enough for Shell relaunch properties.
         $application=Join-Path $ProjectRoot ('build\ip-'+[guid]::NewGuid().ToString('N').Substring(0,8))
         [void][IO.Directory]::CreateDirectory($application)
-        Copy-Item -LiteralPath (Join-Path $ProjectRoot 'build\debug\FileSpacer.exe') -Destination (Join-Path $application 'FileSpacer.exe')
+        Copy-Item -LiteralPath (Get-TestBuildPath $ProjectRoot) -Destination (Join-Path $application 'FileSpacer.exe')
         $script:UiExecutable=Join-Path $application 'FileSpacer.exe'
         $provider=Join-Path $application 'FileSpacerFolder.dll'
         Copy-Item -LiteralPath $providers[$runName] -Destination $provider

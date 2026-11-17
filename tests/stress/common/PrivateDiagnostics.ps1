@@ -32,7 +32,7 @@ function Write-PrivateDiagnostics([string]$ProjectRoot,[string]$RunDirectory) {
     $unavailable=@($capabilities|Where-Object Value -ne '1')
     $status=if(!$capabilities.Count){'NOT_OBSERVED'}elseif($unavailable.Count){'PARTIAL'}else{'AVAILABLE'}
     [ordered]@{Status=$status;Windows=[Environment]::OSVersion.VersionString;Architecture=$env:PROCESSOR_ARCHITECTURE;
-        ExecutableSha256=(Get-FileHash -LiteralPath (Join-Path $ProjectRoot 'build\debug\FileSpacer.exe')).Hash;
+        ExecutableSha256=(Get-FileHash -LiteralPath (Get-TestBuildPath $ProjectRoot)).Hash;
         SystemModules=$modules;ProbeRecords=$records;DiscoveryDecisions=$decisions;ObservedDispatch=$observed;Errors=$errors;
         Interpretation='Availability is separate from functional PASS. Observations include deliberately degraded test arms identified by Source. An unresolved descriptor does not prove a function is absent from the DLL. Saved incompatibilities and transient discovery failures retain their original reason.'} |
         ConvertTo-Json -Depth 7 | Set-Content -LiteralPath (Join-Path $RunDirectory 'private-diagnostics.json') -Encoding UTF8
