@@ -9,7 +9,7 @@ struct sqlite3;
 
 namespace filespacer {
 // Storage format, independent of the application release. Only this format
-// is opened or recovered; an empty database is initialized from scratch.
+// is written; format 7 is migrated, and an empty database is initialized from scratch.
 constexpr int FOLDER_STATE_FORMAT_VERSION = 8;
 
 struct FolderViewSettings {
@@ -84,7 +84,7 @@ public:
     enum class Recovery : uint8_t { Failed, None, Partial, Total };
     // Copies into this ready database every row of a former one that can still
     // be read and has the shape this program writes, from the current format
-    // only. The former database is only read; unreadable rows are left out.
+    // or format 7. The former database is only read; unreadable rows are left out.
     // Failed reports a technical error
     // opening the source or writing/verifying the destination, not an empty recovery.
     Recovery recoverFrom(const char *utf8Source);
@@ -134,6 +134,7 @@ private:
     bool result(int code);
     bool beginRead(); // Reads take no mutex; they only get the operation deadline.
     bool enforceQuota();
+    bool migrateVersion7(); // Called only inside the initialization write transaction.
     bool finishWrite(bool success);
     sqlite3 *db = nullptr;
     bool initialized = false;
