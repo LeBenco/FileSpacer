@@ -1,0 +1,1512 @@
+{
+  "application": "FileSpacer",
+  "version": "1.4.2",
+  "captured": "2026-11-17",
+  "sourceRevision": "3a834ab4",
+  "applicationSha256": "3a137d04979cf9d94ce5e6df8f654166a2f3660c03f1b4893cfd23f1de7b75eb",
+  "providerSha256": "7d4756c1308f4e612fd3d307ed06f44f4ab8a4dbf3dbbe960357b4921a4549c3",
+  "environment": "AgentWin11Pro, Windows 11 Pro 10.0.26300; 1600x1200 physical pixels at 96 DPI.",
+  "wallpaper": {
+    "sha256": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714",
+    "fit": "DWPOS_FIT",
+    "retainedInVm": true
+  },
+  "method": "Real unchanged application executable, localized Windows sessions, direct screen pixels and ScreenToGif 2.43.2. No image retouching, composites, translated overlays, scaling or cuts in delivered files.",
+  "comparison": "The original fixtures and framing are retained. Native Windows 11 window borders, folder icons and list spacing differ. CSV extension visibility follows the new VM's file associations. Nilesoft comparisons use the installed 1.9.18 version with the Modern dark theme, original corners versus radius 0.",
+  "supersedes": "All previously tracked PNG/GIF documentation assets in the ten language directories. Historical provenance files remain as records of earlier captures.",
+  "scripts": {
+    "tools/documentation-capture/Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+    "tools/documentation-capture/Capture.ps1": "8e7cab961e4087e3af07237ae6604686ff1a0b818624ac9c54b53dddbe50fb88",
+    "tools/documentation-capture/CaptureDesktop.cs": "d017034167908626c4fa323c74b40f27c10bbed89a0f174355052209f85de921",
+    "tools/documentation-capture/details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+    "tools/documentation-capture/document-scenes.json": "bddcad044124e34d9070df4a254894a1de8d4d5395f81a23f3aee739438e40b2",
+    "tools/documentation-capture/Invoke-Capture.ps1": "446b16d1da7f844bba6b3e14c21f8746a363f2c2ea3749ee0722534b535ce131",
+    "tools/documentation-capture/mixed-sorting-fr.json": "493d36934cc4bbe991e254aaf9f6a4a0cdf967b230bf5ab0e4cb9ad55dbfb88a",
+    "tools/documentation-capture/Prepare-Binaries.ps1": "bb6695de3ccfc68931c0d1ac4cb880ae1aa5a17502d96aa145c0ceaad87fc12b",
+    "tools/documentation-capture/README.md": "9f73cab6641509afbf9751a73939c3d163c8aa7494eff1037cbf7d39431bfc8a",
+    "tools/documentation-capture/SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+    "tools/documentation-capture/scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33",
+    "tools/documentation-capture/static-scenes.json": "dd28504efc9fc52ac9692d44867a86cc3877661f778f6ffeb9f2202db9f1679a",
+    "tools/documentation-capture/StaticScenes.ps1": "ac13d89f07f0c810d2c62863f4a8bc77afd8e65b1f2972a2c4fc31a70e4f99db",
+    "tools/documentation-capture/wallpaper.jpg": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714"
+  },
+  "runs": [
+    {
+      "language": "de",
+      "requestedWindowsDisplayLanguage": "de-DE",
+      "windowsDisplayLanguage": "de-DE",
+      "run": "vm-aacdfd044c9240e48844eec38484f93e",
+      "stateRestored": true,
+      "productionUnchanged": true,
+      "inputRemoved": true,
+      "recorderCachesRemoved": true,
+      "resolutionBeforeCapture": {
+        "Height": 1200,
+        "Width": 1600
+      },
+      "nilesoftVersions": [
+        "1.9.18"
+      ]
+    },
+    {
+      "language": "el",
+      "requestedWindowsDisplayLanguage": "el-GR",
+      "windowsDisplayLanguage": "el",
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2",
+      "stateRestored": true,
+      "productionUnchanged": true,
+      "inputRemoved": true,
+      "recorderCachesRemoved": true,
+      "resolutionBeforeCapture": {
+        "Height": 1200,
+        "Width": 1600
+      },
+      "nilesoftVersions": [
+        "1.9.18"
+      ]
+    },
+    {
+      "language": "en",
+      "requestedWindowsDisplayLanguage": "en-GB",
+      "windowsDisplayLanguage": "en-GB",
+      "run": "vm-86874beabc724111a950c0c6a07e28df",
+      "stateRestored": true,
+      "productionUnchanged": true,
+      "inputRemoved": true,
+      "recorderCachesRemoved": true,
+      "resolutionBeforeCapture": {
+        "Height": 1200,
+        "Width": 1600
+      },
+      "nilesoftVersions": [
+        "1.9.18"
+      ]
+    },
+    {
+      "language": "es",
+      "requestedWindowsDisplayLanguage": "es-ES",
+      "windowsDisplayLanguage": "es-ES",
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0",
+      "stateRestored": true,
+      "productionUnchanged": true,
+      "inputRemoved": true,
+      "recorderCachesRemoved": true,
+      "resolutionBeforeCapture": {
+        "Height": 1200,
+        "Width": 1600
+      },
+      "nilesoftVersions": [
+        "1.9.18"
+      ]
+    },
+    {
+      "language": "fr",
+      "requestedWindowsDisplayLanguage": "fr-FR",
+      "windowsDisplayLanguage": "fr-FR",
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b",
+      "stateRestored": true,
+      "productionUnchanged": true,
+      "inputRemoved": true,
+      "recorderCachesRemoved": true,
+      "resolutionBeforeCapture": {
+        "Height": 1200,
+        "Width": 1600
+      },
+      "nilesoftVersions": [
+        "1.9.18"
+      ]
+    },
+    {
+      "language": "it",
+      "requestedWindowsDisplayLanguage": "it-IT",
+      "windowsDisplayLanguage": "it-IT",
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276",
+      "stateRestored": true,
+      "productionUnchanged": true,
+      "inputRemoved": true,
+      "recorderCachesRemoved": true,
+      "resolutionBeforeCapture": {
+        "Height": 1200,
+        "Width": 1600
+      },
+      "nilesoftVersions": [
+        "1.9.18"
+      ]
+    },
+    {
+      "language": "nl",
+      "requestedWindowsDisplayLanguage": "nl-NL",
+      "windowsDisplayLanguage": "nl-NL",
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666",
+      "stateRestored": true,
+      "productionUnchanged": true,
+      "inputRemoved": true,
+      "recorderCachesRemoved": true,
+      "resolutionBeforeCapture": {
+        "Height": 1200,
+        "Width": 1600
+      },
+      "nilesoftVersions": [
+        "1.9.18"
+      ]
+    },
+    {
+      "language": "pl",
+      "requestedWindowsDisplayLanguage": "pl-PL",
+      "windowsDisplayLanguage": "pl",
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde",
+      "stateRestored": true,
+      "productionUnchanged": true,
+      "inputRemoved": true,
+      "recorderCachesRemoved": true,
+      "resolutionBeforeCapture": {
+        "Height": 1200,
+        "Width": 1600
+      },
+      "nilesoftVersions": [
+        "1.9.18"
+      ]
+    },
+    {
+      "language": "pt",
+      "requestedWindowsDisplayLanguage": "pt-PT",
+      "windowsDisplayLanguage": "pt-PT",
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e",
+      "stateRestored": true,
+      "productionUnchanged": true,
+      "inputRemoved": true,
+      "recorderCachesRemoved": true,
+      "resolutionBeforeCapture": {
+        "Height": 1200,
+        "Width": 1600
+      },
+      "nilesoftVersions": [
+        "1.9.18"
+      ]
+    },
+    {
+      "language": "uk",
+      "requestedWindowsDisplayLanguage": "uk-UA",
+      "windowsDisplayLanguage": "uk",
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78",
+      "stateRestored": true,
+      "productionUnchanged": true,
+      "inputRemoved": true,
+      "recorderCachesRemoved": true,
+      "resolutionBeforeCapture": {
+        "Height": 1200,
+        "Width": 1600
+      },
+      "nilesoftVersions": [
+        "1.9.18"
+      ]
+    }
+  ],
+  "captures": [
+    {
+      "file": "docs/de/images/customize-title-menu.gif",
+      "sha256": "aa439bd72199656e1a59f3cc5838de0027afccae3871c316801900b5c620a27b",
+      "width": 990,
+      "height": 757,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e",
+      "frames": 227,
+      "durationMs": 23760
+    },
+    {
+      "file": "docs/de/images/customized-title-menu.png",
+      "sha256": "41406398356abaa36e546d6e1495f1ad0ce0603ed0c36c1b76d50af58eea77f4",
+      "width": 712,
+      "height": 433,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e"
+    },
+    {
+      "file": "docs/de/images/details-columns.gif",
+      "sha256": "71813cd235737f1a7f74ba9bbb03ec3a1cc434145605f1a4320263364957ee27",
+      "width": 1277,
+      "height": 541,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e",
+      "frames": 89,
+      "durationMs": 18030
+    },
+    {
+      "file": "docs/de/images/everything-search.png",
+      "sha256": "7cc4608f65bed74413a3bbc374573f45c5c956b90c9c97cbae8ce982e1c6f27c",
+      "width": 1455,
+      "height": 557,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e"
+    },
+    {
+      "file": "docs/de/images/locked-title.png",
+      "sha256": "d2c17d4daaf25b6ab765c70b69c1203123c5c7810211c7a85029c08f153ac080",
+      "width": 480,
+      "height": 220,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e"
+    },
+    {
+      "file": "docs/de/images/mixed-sorting.png",
+      "sha256": "0161a2b44a063aa25bdf20c50f28969d9c3df0f7be5ad1370ed9ccfa74001b99",
+      "width": 886,
+      "height": 543,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e"
+    },
+    {
+      "file": "docs/de/images/move-window.gif",
+      "sha256": "f56898739bf5302ce4f40d0efe59ad4f0f32dda10df6e45bdaa658ae4372eacc",
+      "width": 900,
+      "height": 600,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e",
+      "frames": 40,
+      "durationMs": 5950
+    },
+    {
+      "file": "docs/de/images/nilesoft-main-menu-adapted.png",
+      "sha256": "dc1024f0f88dfaf8a55f91136e8ed50534c141e997c8c3d7306b277d7ea8a7b6",
+      "width": 291,
+      "height": 368,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e"
+    },
+    {
+      "file": "docs/de/images/nilesoft-main-menu-default.png",
+      "sha256": "9c8d466aabeb969ccc3e82f9231ac951a1a3a3783512914f5032a450b4638f77",
+      "width": 291,
+      "height": 368,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e"
+    },
+    {
+      "file": "docs/de/images/nilesoft-navigation-adapted.png",
+      "sha256": "02154d03a3e933e06ef89badd6de5d607018eb27695905a1795600b3d4344648",
+      "width": 438,
+      "height": 186,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e"
+    },
+    {
+      "file": "docs/de/images/nilesoft-navigation-default.png",
+      "sha256": "8379fa7b5e0de33a8130b04d7b9ab4861ca7956766c72551b565b79741bba165",
+      "width": 438,
+      "height": 186,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e"
+    },
+    {
+      "file": "docs/de/images/overview.png",
+      "sha256": "d0216c2b19f180bdb773d2766a9b1006b6bc321a49f5261c023030c764eadc3c",
+      "width": 886,
+      "height": 543,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e"
+    },
+    {
+      "file": "docs/de/images/resize-window.gif",
+      "sha256": "0203a5a8540bd1dcd0183247ed7eba307dfae7341a46bd10d2c93f5a440ee266",
+      "width": 900,
+      "height": 600,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e",
+      "frames": 41,
+      "durationMs": 6030
+    },
+    {
+      "file": "docs/de/images/search.png",
+      "sha256": "888f7c1fdbeb0769a737674fea5cc930ff51a8c2aec654bd4f9a15f60c41101c",
+      "width": 886,
+      "height": 543,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e"
+    },
+    {
+      "file": "docs/de/images/selected-name.png",
+      "sha256": "8d2619a0f962eee5234507383a4cc7dbadd4f8e28b23425b15889524b8440815",
+      "width": 886,
+      "height": 543,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e"
+    },
+    {
+      "file": "docs/de/images/spatial-windows.png",
+      "sha256": "9402ef09c9825c34da1f989e735036314a7229021ea77f15831ff2a3c27448cb",
+      "width": 1410,
+      "height": 927,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e"
+    },
+    {
+      "file": "docs/de/images/window-menu.png",
+      "sha256": "78e9468ce7526b04fd1cad057c33fb961370e5f3483df903b16f137619931919",
+      "width": 886,
+      "height": 543,
+      "run": "vm-aacdfd044c9240e48844eec38484f93e"
+    },
+    {
+      "file": "docs/el/images/customize-title-menu.gif",
+      "sha256": "c05e063a178a2e51c7838f942b31fea2a10826ef98e43c48e4577ba758a6ee36",
+      "width": 983,
+      "height": 757,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2",
+      "frames": 230,
+      "durationMs": 23750
+    },
+    {
+      "file": "docs/el/images/customized-title-menu.png",
+      "sha256": "b17710294369000d66c6799183869b9120e196d594371ff47d761207d13647e7",
+      "width": 707,
+      "height": 433,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2"
+    },
+    {
+      "file": "docs/el/images/details-columns.gif",
+      "sha256": "2062dde8e48219ce61e7ffb9799fd267b8e10fd58dec1c9a12443c315dbc15c5",
+      "width": 1277,
+      "height": 541,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2",
+      "frames": 86,
+      "durationMs": 17950
+    },
+    {
+      "file": "docs/el/images/everything-search.png",
+      "sha256": "7547954d22a10c21a4696dd717d4d6faba30a14ed32920c0463d7619f37709dd",
+      "width": 1455,
+      "height": 557,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2"
+    },
+    {
+      "file": "docs/el/images/locked-title.png",
+      "sha256": "1e250c7f5d7bd42af10b665d480d29d8ba8a994efbb957f8be743cf0b6213243",
+      "width": 480,
+      "height": 220,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2"
+    },
+    {
+      "file": "docs/el/images/mixed-sorting.png",
+      "sha256": "cee4962239cd2f798f18d02ee7e3e095f7752d15a1638e0984b57cc45b6017c4",
+      "width": 886,
+      "height": 543,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2"
+    },
+    {
+      "file": "docs/el/images/move-window.gif",
+      "sha256": "25dd8e3741d3a70ae096dee14930dbb6119c7af3ed17927b4f5664627b6516b3",
+      "width": 900,
+      "height": 600,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2",
+      "frames": 40,
+      "durationMs": 6030
+    },
+    {
+      "file": "docs/el/images/nilesoft-main-menu-adapted.png",
+      "sha256": "b0cfae968c3eff6a04155081e0e4a9847be996de039e6c7e94716988133b5334",
+      "width": 265,
+      "height": 368,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2"
+    },
+    {
+      "file": "docs/el/images/nilesoft-main-menu-default.png",
+      "sha256": "b1569471d47b55b70efce638cd746b770b5e3e34b8f0701907eae34346f92fe8",
+      "width": 265,
+      "height": 368,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2"
+    },
+    {
+      "file": "docs/el/images/nilesoft-navigation-adapted.png",
+      "sha256": "2831346508083981efaa5809ada23cbe2e7edb0941e06b4131d36b899f372a98",
+      "width": 486,
+      "height": 186,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2"
+    },
+    {
+      "file": "docs/el/images/nilesoft-navigation-default.png",
+      "sha256": "7e23d4ced9365106f988d2be7508d682739ef0ad91c3ac6a2063a29c0a626fcd",
+      "width": 486,
+      "height": 186,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2"
+    },
+    {
+      "file": "docs/el/images/overview.png",
+      "sha256": "1d88c1fcd5c229e30eea627cafdf0e8d9ff496cb6206c34856e4181a2b092fcd",
+      "width": 886,
+      "height": 543,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2"
+    },
+    {
+      "file": "docs/el/images/resize-window.gif",
+      "sha256": "d1a94adb0ded73a1809cc3f097735d588183bb661cf09b8160ba9b1f9c94ee95",
+      "width": 900,
+      "height": 600,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2",
+      "frames": 41,
+      "durationMs": 6030
+    },
+    {
+      "file": "docs/el/images/search.png",
+      "sha256": "8405033f3e9c7eb083e4f9aa08679cced7abcc7ac07a64617c267adb2673b635",
+      "width": 886,
+      "height": 543,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2"
+    },
+    {
+      "file": "docs/el/images/selected-name.png",
+      "sha256": "01c9f187aec2361b894396c4c8bf0f83154a35d5f0a73da23085b34258959f5a",
+      "width": 886,
+      "height": 543,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2"
+    },
+    {
+      "file": "docs/el/images/spatial-windows.png",
+      "sha256": "78f9a3d01d29518baeb185239b68b31506f2db94df519c311f050701bfb00d4a",
+      "width": 1410,
+      "height": 927,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2"
+    },
+    {
+      "file": "docs/el/images/window-menu.png",
+      "sha256": "0fe465d3183a447bd4f8cdfec6cbda4dc09f47cf910c6d7108eb18ea9981d6c8",
+      "width": 886,
+      "height": 543,
+      "run": "vm-d02df057e3e8497286b142c10a2ddfd2"
+    },
+    {
+      "file": "docs/en/images/customize-title-menu.gif",
+      "sha256": "7ed81cd8af7aeb49fdb53c44583259666dd5306008b765c1eadb7ca14341c98d",
+      "width": 957,
+      "height": 757,
+      "run": "vm-86874beabc724111a950c0c6a07e28df",
+      "frames": 229,
+      "durationMs": 23670
+    },
+    {
+      "file": "docs/en/images/customized-title-menu.png",
+      "sha256": "61e78a747920f2b938c7fc218dec635b1226a38a5eccd9c1d0f05c1aad0e81cf",
+      "width": 706,
+      "height": 433,
+      "run": "vm-86874beabc724111a950c0c6a07e28df"
+    },
+    {
+      "file": "docs/en/images/details-columns.gif",
+      "sha256": "d821f37419557b2b4cf3c0d7458f7b3fbc34b856cbd78b3bd306012e7ef1cd74",
+      "width": 1268,
+      "height": 541,
+      "run": "vm-86874beabc724111a950c0c6a07e28df",
+      "frames": 89,
+      "durationMs": 19950
+    },
+    {
+      "file": "docs/en/images/display.png",
+      "sha256": "af0cbbc7becbe16637ccba14bf39e7e927ad4f75e76b6107ca50936091efd119",
+      "width": 472,
+      "height": 667,
+      "run": "vm-86874beabc724111a950c0c6a07e28df"
+    },
+    {
+      "file": "docs/en/images/everything-search.png",
+      "sha256": "7790babe0cee18279c2853f9955f3fb829f4183231027eece7927f844ca5a37c",
+      "width": 1455,
+      "height": 557,
+      "run": "vm-86874beabc724111a950c0c6a07e28df"
+    },
+    {
+      "file": "docs/en/images/locked-title.png",
+      "sha256": "faa56c7359e400da89fe2a3a90c34dfab46dc89f271496f1234cc764cc46613f",
+      "width": 480,
+      "height": 220,
+      "run": "vm-86874beabc724111a950c0c6a07e28df"
+    },
+    {
+      "file": "docs/en/images/mixed-sorting.png",
+      "sha256": "b2f49afec675d707059cde14c7b7d75ed4b4e9e1865bc82489bd7d036c32722b",
+      "width": 886,
+      "height": 543,
+      "run": "vm-86874beabc724111a950c0c6a07e28df"
+    },
+    {
+      "file": "docs/en/images/move-window.gif",
+      "sha256": "a2c372b3c119f05a48c95fbec9cfa41494dac79d0ca702f354acf2298d05e562",
+      "width": 900,
+      "height": 600,
+      "run": "vm-86874beabc724111a950c0c6a07e28df",
+      "frames": 40,
+      "durationMs": 6030
+    },
+    {
+      "file": "docs/en/images/nilesoft-main-menu-adapted.png",
+      "sha256": "71c8aff4ae5484f45003d0f1f03499ee32180e89be50eb05fc455f4e5365af0f",
+      "width": 254,
+      "height": 368,
+      "run": "vm-86874beabc724111a950c0c6a07e28df"
+    },
+    {
+      "file": "docs/en/images/nilesoft-main-menu-default.png",
+      "sha256": "5d87f9c3bbb96eba02c920020d667230e38e5bd098cb11fd5129d7fc67a4656e",
+      "width": 254,
+      "height": 368,
+      "run": "vm-86874beabc724111a950c0c6a07e28df"
+    },
+    {
+      "file": "docs/en/images/nilesoft-navigation-adapted.png",
+      "sha256": "bff49759546485f14b4085ae38832d96c080a8a37161d527777fed095f6889ff",
+      "width": 373,
+      "height": 186,
+      "run": "vm-86874beabc724111a950c0c6a07e28df"
+    },
+    {
+      "file": "docs/en/images/nilesoft-navigation-default.png",
+      "sha256": "948600021096ffe211cea191b652f820aad22da9a3d27d64f20d8649bda54b28",
+      "width": 373,
+      "height": 186,
+      "run": "vm-86874beabc724111a950c0c6a07e28df"
+    },
+    {
+      "file": "docs/en/images/overview.png",
+      "sha256": "f0666432c37b960b06f0bd4b1249d7f719674b183747a9ce28d6700c7b67c90d",
+      "width": 886,
+      "height": 543,
+      "run": "vm-86874beabc724111a950c0c6a07e28df"
+    },
+    {
+      "file": "docs/en/images/resize-window.gif",
+      "sha256": "b1251b2b657fab1148f0809bc1147dcdc6410ca98ef4f3332302934408330637",
+      "width": 900,
+      "height": 600,
+      "run": "vm-86874beabc724111a950c0c6a07e28df",
+      "frames": 42,
+      "durationMs": 6110
+    },
+    {
+      "file": "docs/en/images/search.png",
+      "sha256": "414d2d5e7392a64d48f788039a1d939389cba06d7d4cafeb1eb7ca2687be1d50",
+      "width": 886,
+      "height": 543,
+      "run": "vm-86874beabc724111a950c0c6a07e28df"
+    },
+    {
+      "file": "docs/en/images/selected-name.png",
+      "sha256": "0580c41e60c4dbf26b533b3274804da1a142e770f5f1983a0b4d875d204d68fb",
+      "width": 886,
+      "height": 543,
+      "run": "vm-86874beabc724111a950c0c6a07e28df"
+    },
+    {
+      "file": "docs/en/images/spatial-windows.png",
+      "sha256": "73bbf8eb827ab6ec9d03c5ad4f62a57ddecaf9e5e45812fce768e7858c8fd305",
+      "width": 1410,
+      "height": 927,
+      "run": "vm-86874beabc724111a950c0c6a07e28df"
+    },
+    {
+      "file": "docs/en/images/window-menu.png",
+      "sha256": "5761166c8a30f7f2e55391fe36a988c3547d8dc35b8677b52ce852c7855c8966",
+      "width": 886,
+      "height": 543,
+      "run": "vm-86874beabc724111a950c0c6a07e28df"
+    },
+    {
+      "file": "docs/es/images/customize-title-menu.gif",
+      "sha256": "19db58c37c1fe857110efcb5a46498916a10a13dea56ac9459fc59105ac179ac",
+      "width": 1007,
+      "height": 757,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0",
+      "frames": 230,
+      "durationMs": 23570
+    },
+    {
+      "file": "docs/es/images/customized-title-menu.png",
+      "sha256": "360afba5a9e391d2931b0f05cbdb6a32d0e7f85c1655c7b25a74103b742e9ab0",
+      "width": 706,
+      "height": 433,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0"
+    },
+    {
+      "file": "docs/es/images/details-columns.gif",
+      "sha256": "95b32f207314bb2c4a5b45a4c03698106d208fe708846b20a98844b6f02f938e",
+      "width": 1277,
+      "height": 541,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0",
+      "frames": 85,
+      "durationMs": 17790
+    },
+    {
+      "file": "docs/es/images/everything-search.png",
+      "sha256": "48324e5f1b6a83b126619dd7743318ce8f82f041ca77f84ae689f74d45d445e3",
+      "width": 1455,
+      "height": 557,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0"
+    },
+    {
+      "file": "docs/es/images/locked-title.png",
+      "sha256": "99938490e3702daacc87e758de244ac787c1c17582ced5f60eef7a62604566a9",
+      "width": 480,
+      "height": 220,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0"
+    },
+    {
+      "file": "docs/es/images/mixed-sorting.png",
+      "sha256": "88a689f3d379df38a32ae7b03ac18c48382c1d1deb4ed527d5a47d5df1eae70c",
+      "width": 886,
+      "height": 543,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0"
+    },
+    {
+      "file": "docs/es/images/move-window.gif",
+      "sha256": "732d344f6925217792ec68b4df1dc226c97ab98fe71effc9ef4cf80bc017296d",
+      "width": 900,
+      "height": 600,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0",
+      "frames": 40,
+      "durationMs": 5950
+    },
+    {
+      "file": "docs/es/images/nilesoft-main-menu-adapted.png",
+      "sha256": "3f7e131a4e2bad4dee9bd6111f574273c1055f8dda685a4d334701c7557054ee",
+      "width": 309,
+      "height": 368,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0"
+    },
+    {
+      "file": "docs/es/images/nilesoft-main-menu-default.png",
+      "sha256": "4b9cf1d3a24dd0792132389e9b217022cde04a16210569456f2eb33ca1abc7ae",
+      "width": 309,
+      "height": 368,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0"
+    },
+    {
+      "file": "docs/es/images/nilesoft-navigation-adapted.png",
+      "sha256": "21e2aa1c14bcbef185fdc5ca4762c2bb5a3025b1f433f16decd423ee38ee5d48",
+      "width": 474,
+      "height": 186,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0"
+    },
+    {
+      "file": "docs/es/images/nilesoft-navigation-default.png",
+      "sha256": "4470a47f6e5952100fe7d74ef44ec9c42b9be9e0bf287cd46d08a3426d4be7b6",
+      "width": 474,
+      "height": 186,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0"
+    },
+    {
+      "file": "docs/es/images/overview.png",
+      "sha256": "b820277eafdc54743c0f768abbb601ece06f29599d317a2993df5ec0d08c1a84",
+      "width": 886,
+      "height": 543,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0"
+    },
+    {
+      "file": "docs/es/images/resize-window.gif",
+      "sha256": "073b6c595d3f41f21eaaa2e103231cda630847be16ca70d844505fc63a7505bf",
+      "width": 900,
+      "height": 600,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0",
+      "frames": 39,
+      "durationMs": 5860
+    },
+    {
+      "file": "docs/es/images/search.png",
+      "sha256": "b3d2a4287a1dcec375040f2fbce78361d92c7cb725d9a83bed88b3187fa41ae8",
+      "width": 886,
+      "height": 543,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0"
+    },
+    {
+      "file": "docs/es/images/selected-name.png",
+      "sha256": "76b1f120b76d4c415cc27edc3f61940b74ddc6e8fa0abd57cd8dad8fc8e9cd6c",
+      "width": 886,
+      "height": 543,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0"
+    },
+    {
+      "file": "docs/es/images/spatial-windows.png",
+      "sha256": "eba8043e4d7be33c5c2f515774564008190afb784799e63b48831332ff762565",
+      "width": 1410,
+      "height": 927,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0"
+    },
+    {
+      "file": "docs/es/images/window-menu.png",
+      "sha256": "1bf71139c1693792b2c354c69d0358194b33befbecf76b5e7126772e51c9e684",
+      "width": 886,
+      "height": 543,
+      "run": "vm-09ff51f457824204b8f5231bfa08e4e0"
+    },
+    {
+      "file": "docs/fr/images/customize-title-menu.gif",
+      "sha256": "b57f0657cd126e373f779aa29dab9b52ce5d6a7d751e310d8d363036a0b58f18",
+      "width": 990,
+      "height": 757,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b",
+      "frames": 229,
+      "durationMs": 23500
+    },
+    {
+      "file": "docs/fr/images/customized-title-menu.png",
+      "sha256": "48c08812b8ff93ee8bd2a57d1cb1e32783367d3c1618a3e48be6fed634653a37",
+      "width": 706,
+      "height": 433,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b"
+    },
+    {
+      "file": "docs/fr/images/details-columns.gif",
+      "sha256": "a98b0eb72484b766c0643371b5297a4aa8f2fb96099e73f4bcce18e20010456e",
+      "width": 1277,
+      "height": 541,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b",
+      "frames": 88,
+      "durationMs": 17780
+    },
+    {
+      "file": "docs/fr/images/display.png",
+      "sha256": "99046e2b0b2081765e9929b8aae04ed30f8962cd59f9e29cae95b994e20b6739",
+      "width": 472,
+      "height": 667,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b"
+    },
+    {
+      "file": "docs/fr/images/everything-search.png",
+      "sha256": "102258478704abe1500a55f518f86534efd9126c2a3e94bc354eef1455f5dd79",
+      "width": 1455,
+      "height": 557,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b"
+    },
+    {
+      "file": "docs/fr/images/locked-title.png",
+      "sha256": "8a3d8cd296bfaf2e4233670bb3ea01dce7b227c91f98dc36b64e187101295e2b",
+      "width": 480,
+      "height": 220,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b"
+    },
+    {
+      "file": "docs/fr/images/mixed-sorting.png",
+      "sha256": "24d51e341136a4600c6751137ef56ea9c2e8e258261af6f645c3a33e6774b34d",
+      "width": 946,
+      "height": 553,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b"
+    },
+    {
+      "file": "docs/fr/images/move-window.gif",
+      "sha256": "33bf904e368d2c7400ab8fdc5184c2e8761826c7a292b4f8af634d7e4c07aae9",
+      "width": 900,
+      "height": 600,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b",
+      "frames": 39,
+      "durationMs": 5950
+    },
+    {
+      "file": "docs/fr/images/nilesoft-main-menu-adapted.png",
+      "sha256": "2eb7c25161c18b42dc547fdf7406bad703bb5e6adf7aa677d9270c4c0e09e6f3",
+      "width": 293,
+      "height": 368,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b"
+    },
+    {
+      "file": "docs/fr/images/nilesoft-main-menu-default.png",
+      "sha256": "a1ab9acfbc4d843227fb5c21a698cab5968c22f6acba56d8219354a4f1294aa1",
+      "width": 293,
+      "height": 368,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b"
+    },
+    {
+      "file": "docs/fr/images/nilesoft-navigation-adapted.png",
+      "sha256": "bf8bfdd71f7c85e6c84fd6725d86839f8ac000416250b562694a0882ec7435a2",
+      "width": 412,
+      "height": 186,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b"
+    },
+    {
+      "file": "docs/fr/images/nilesoft-navigation-default.png",
+      "sha256": "b2f037c5595a644c2cca0304214565347b46ba7f35def1ee265c39010ba6a59c",
+      "width": 412,
+      "height": 186,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b"
+    },
+    {
+      "file": "docs/fr/images/overview.png",
+      "sha256": "e994b56b6d6a3da8e00760f19f69f781966b2ab9c6b9c91ea5639b1357dc298b",
+      "width": 886,
+      "height": 543,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b"
+    },
+    {
+      "file": "docs/fr/images/resize-window.gif",
+      "sha256": "da5574e06110b19c847e8ae74510cb970270c0ae38b2a1e984ae2fe6aa6e405a",
+      "width": 900,
+      "height": 600,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b",
+      "frames": 39,
+      "durationMs": 5860
+    },
+    {
+      "file": "docs/fr/images/search.png",
+      "sha256": "8e61ffcd56b3e869dd3f29b46626025b4e33f32302dbbb11f498e1a856396fb4",
+      "width": 886,
+      "height": 543,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b"
+    },
+    {
+      "file": "docs/fr/images/selected-name.png",
+      "sha256": "4671df59e02e31faf757654dffa75c1f33c7ac1aae419aa7136109ec2a15acc5",
+      "width": 726,
+      "height": 453,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b"
+    },
+    {
+      "file": "docs/fr/images/spatial-windows.png",
+      "sha256": "5c5f785507d7f1eee057c681d49b50834c07474024e5eb6cd87a0ffbe8ebb475",
+      "width": 1410,
+      "height": 927,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b"
+    },
+    {
+      "file": "docs/fr/images/window-menu.png",
+      "sha256": "18617301c506b9163186c2ea59443bc616cd2008a8002f2a17af5e7644016b58",
+      "width": 886,
+      "height": 543,
+      "run": "vm-9ccc22a1a770485a9ea451083eccb75b"
+    },
+    {
+      "file": "docs/it/images/customize-title-menu.gif",
+      "sha256": "d3baf81d85b29306e02f20e4570a8f5df23b9913cb49f048335a689357d8a001",
+      "width": 996,
+      "height": 757,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276",
+      "frames": 233,
+      "durationMs": 23820
+    },
+    {
+      "file": "docs/it/images/customized-title-menu.png",
+      "sha256": "de35874832e22180d4bb069ed45475c55ec85af8c250bb9abecc3bd0de17833b",
+      "width": 706,
+      "height": 433,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276"
+    },
+    {
+      "file": "docs/it/images/details-columns.gif",
+      "sha256": "c596b5abe0894cc0e8f1675f6cd922aee44140919abf5e011ed2a3204f198b90",
+      "width": 1277,
+      "height": 541,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276",
+      "frames": 85,
+      "durationMs": 17970
+    },
+    {
+      "file": "docs/it/images/everything-search.png",
+      "sha256": "2589d812a5b0679e1efc9826b044b77129df85ac2d40ee0fd19fd5a3d60d197b",
+      "width": 1455,
+      "height": 557,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276"
+    },
+    {
+      "file": "docs/it/images/locked-title.png",
+      "sha256": "6cf84b8c5f940d374a70fc43645ae8185382ef233d1c1f6cff799d87584ee5bd",
+      "width": 480,
+      "height": 220,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276"
+    },
+    {
+      "file": "docs/it/images/mixed-sorting.png",
+      "sha256": "27db515f539f5b266fc9f95b15188ddb63c169f5345fa2c8a01f9af9653c2610",
+      "width": 886,
+      "height": 543,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276"
+    },
+    {
+      "file": "docs/it/images/move-window.gif",
+      "sha256": "6934f2facd47425ffa266addf4b584d52067dc53ff6101c84e20de453eb39bbe",
+      "width": 900,
+      "height": 600,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276",
+      "frames": 41,
+      "durationMs": 6030
+    },
+    {
+      "file": "docs/it/images/nilesoft-main-menu-adapted.png",
+      "sha256": "d6ff65666a053287eba5525a53a0e1dcd648fc6193cd003c99eca644c80b5b21",
+      "width": 298,
+      "height": 368,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276"
+    },
+    {
+      "file": "docs/it/images/nilesoft-main-menu-default.png",
+      "sha256": "3e24b030dddb3e1181ffb71f9af402580c2f39d4e4965712ecbfc1c581583bb7",
+      "width": 298,
+      "height": 368,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276"
+    },
+    {
+      "file": "docs/it/images/nilesoft-navigation-adapted.png",
+      "sha256": "515fa954bbf301be026079bd3f7a3664342102f69a782ae7a581ff8af2f87768",
+      "width": 474,
+      "height": 186,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276"
+    },
+    {
+      "file": "docs/it/images/nilesoft-navigation-default.png",
+      "sha256": "de126671c5429369058de68a6a339d318792bd31994c1824bcb7802b210bc238",
+      "width": 474,
+      "height": 186,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276"
+    },
+    {
+      "file": "docs/it/images/overview.png",
+      "sha256": "9f127d00cc867a7f8ee43848af435003b211cbc8658e08abd65fe62e7fcdf9ce",
+      "width": 886,
+      "height": 543,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276"
+    },
+    {
+      "file": "docs/it/images/resize-window.gif",
+      "sha256": "46bc89758b63c882568585cd939e068a926855e6bd8bf643a80cf619daf009cc",
+      "width": 900,
+      "height": 600,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276",
+      "frames": 43,
+      "durationMs": 6020
+    },
+    {
+      "file": "docs/it/images/search.png",
+      "sha256": "908fd3a5933c24e208c4d6db407c5f7fbf13158f71c4106ec2c85c940f73718b",
+      "width": 886,
+      "height": 543,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276"
+    },
+    {
+      "file": "docs/it/images/selected-name.png",
+      "sha256": "507dee0d5352e92bf931af42a39d8b0b0c814ec3062d9c6cf94b735a87c2aa6b",
+      "width": 886,
+      "height": 543,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276"
+    },
+    {
+      "file": "docs/it/images/spatial-windows.png",
+      "sha256": "d3b0fafe99defa01f634cf5b27a23a495c8e070d1cd7779b96ca037614c3f9e0",
+      "width": 1410,
+      "height": 927,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276"
+    },
+    {
+      "file": "docs/it/images/window-menu.png",
+      "sha256": "3effbc9031eba89c7903c5aba299908b5b8f35fb69e2ea393fadd9cbd1375baf",
+      "width": 886,
+      "height": 543,
+      "run": "vm-fb6535151e5e46e4bbc8cd4bee41b276"
+    },
+    {
+      "file": "docs/nl/images/customize-title-menu.gif",
+      "sha256": "f2492374533b1f2aae314100d69154db27f29b544b30274cf12c1f904da91712",
+      "width": 978,
+      "height": 757,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666",
+      "frames": 228,
+      "durationMs": 23590
+    },
+    {
+      "file": "docs/nl/images/customized-title-menu.png",
+      "sha256": "47b4f3c2af35db50192fd3a5b442a4a93428f3e85443cb0f4c8ec7c704ead9e4",
+      "width": 706,
+      "height": 433,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666"
+    },
+    {
+      "file": "docs/nl/images/details-columns.gif",
+      "sha256": "9fab94ebf7f5ff8e730a5be9190971ef1732fbc898706851ffad77d69406d309",
+      "width": 1277,
+      "height": 541,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666",
+      "frames": 89,
+      "durationMs": 18270
+    },
+    {
+      "file": "docs/nl/images/display.png",
+      "sha256": "889d6f3a5b9dda59a07d4e0078e362ababc43415b81d9694f026dfc68e16b043",
+      "width": 472,
+      "height": 667,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666"
+    },
+    {
+      "file": "docs/nl/images/everything-search.png",
+      "sha256": "ba0ba677bbd94edc54fd8d089a7df6e1b1af536b224656354b8a81be97471235",
+      "width": 1455,
+      "height": 557,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666"
+    },
+    {
+      "file": "docs/nl/images/locked-title.png",
+      "sha256": "d94f390ced0ce3232c1b4ab40d1dc72e8059913af099ad3ad5b640244c17d52f",
+      "width": 480,
+      "height": 220,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666"
+    },
+    {
+      "file": "docs/nl/images/mixed-sorting.png",
+      "sha256": "138aca7560731327413b4123dbb95c004abafdec477f2efb8eafc705e39218aa",
+      "width": 886,
+      "height": 543,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666"
+    },
+    {
+      "file": "docs/nl/images/move-window.gif",
+      "sha256": "2c53b91f5d11df18b5579b0235a38f6d091a001c03efd1dfec19d7550f0841df",
+      "width": 900,
+      "height": 600,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666",
+      "frames": 39,
+      "durationMs": 5950
+    },
+    {
+      "file": "docs/nl/images/nilesoft-main-menu-adapted.png",
+      "sha256": "4879b0cf6cb87f5b11ecde6b1f7d75b9e6a06fc8d333926f8127f6d3836ec72b",
+      "width": 276,
+      "height": 368,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666"
+    },
+    {
+      "file": "docs/nl/images/nilesoft-main-menu-default.png",
+      "sha256": "f230cda03e52a1e699ba3bc7fa026f2b513ab2cf14669db4f34ce63ef5346faa",
+      "width": 276,
+      "height": 368,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666"
+    },
+    {
+      "file": "docs/nl/images/nilesoft-navigation-adapted.png",
+      "sha256": "0cdfdc7ac631faae2c8b3006c11e06026bce8cc6fc901cbbd7eedb512cd69fc8",
+      "width": 425,
+      "height": 186,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666"
+    },
+    {
+      "file": "docs/nl/images/nilesoft-navigation-default.png",
+      "sha256": "624e9b492bbaa40c12ffa110112dca24ac83235a162fee449ebd0b99a85684e9",
+      "width": 425,
+      "height": 186,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666"
+    },
+    {
+      "file": "docs/nl/images/overview.png",
+      "sha256": "a857fd5b6897208a322cf5a6c740b3628fd9fe5aeb2ce44db32cae8938c47374",
+      "width": 886,
+      "height": 543,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666"
+    },
+    {
+      "file": "docs/nl/images/resize-window.gif",
+      "sha256": "4a78a0af9360132e30a0ff18c1987659091fabf5a47aea6bb886f8f28a1f99de",
+      "width": 900,
+      "height": 600,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666",
+      "frames": 40,
+      "durationMs": 5950
+    },
+    {
+      "file": "docs/nl/images/search.png",
+      "sha256": "79cf0e565489db2c996ee3f36372e23fc2a09f00a37f6d8d21c0c67114042960",
+      "width": 886,
+      "height": 543,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666"
+    },
+    {
+      "file": "docs/nl/images/selected-name.png",
+      "sha256": "1c7882d88f8865738693fa099bbf480cad3ee38346134381340e0c6683fa5d41",
+      "width": 886,
+      "height": 543,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666"
+    },
+    {
+      "file": "docs/nl/images/spatial-windows.png",
+      "sha256": "97ef38c4c321c5236c0ded949a512dce5d40e698ddb8b083b14ee52e1c01dedb",
+      "width": 1410,
+      "height": 927,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666"
+    },
+    {
+      "file": "docs/nl/images/window-menu.png",
+      "sha256": "9421c80bf9afb3a964948ba36f504374464feb4c0ed39b6393563848746a9341",
+      "width": 886,
+      "height": 543,
+      "run": "vm-5c4c3ce9d1234b7fbea8e44c7ca6f666"
+    },
+    {
+      "file": "docs/pl/images/customize-title-menu.gif",
+      "sha256": "6409e395334683ba13fe2fbfc22bc8878c504111aa40ace6ff148871d77089c4",
+      "width": 972,
+      "height": 757,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde",
+      "frames": 227,
+      "durationMs": 23340
+    },
+    {
+      "file": "docs/pl/images/customized-title-menu.png",
+      "sha256": "4ee1a6483236359c0b13d6105f289fa0c06d9a762a41bc79f7f9747b04ff248d",
+      "width": 706,
+      "height": 433,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde"
+    },
+    {
+      "file": "docs/pl/images/details-columns.gif",
+      "sha256": "b29f60a48d47ddd70fe0131afd1a39037d93e401f1b4874eb3b37e00b817bd3d",
+      "width": 1277,
+      "height": 541,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde",
+      "frames": 84,
+      "durationMs": 17890
+    },
+    {
+      "file": "docs/pl/images/display.png",
+      "sha256": "2d9e01aec20616093f098f1ab5f0894adefa301c96ab57d0ae7c6829723a4d0e",
+      "width": 472,
+      "height": 667,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde"
+    },
+    {
+      "file": "docs/pl/images/everything-search.png",
+      "sha256": "5855f875f97e6918477c41cc432c5f2e829b4cf90cbcf184ff05b4ef7a410acc",
+      "width": 1455,
+      "height": 557,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde"
+    },
+    {
+      "file": "docs/pl/images/locked-title.png",
+      "sha256": "b891d54a841ebad3ab72f9e7d04bc6f05af6e4032fca783f04423ac946778a79",
+      "width": 480,
+      "height": 220,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde"
+    },
+    {
+      "file": "docs/pl/images/mixed-sorting.png",
+      "sha256": "9490f872effd2bb1a3dcaac487efd7d033bfb0a4e4e5001b51c8e3648cd4badf",
+      "width": 886,
+      "height": 543,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde"
+    },
+    {
+      "file": "docs/pl/images/move-window.gif",
+      "sha256": "3b385cb28ea977e0be4540e3a53b6810eaa9b15f1643dc1ffac67320bcd6ac0f",
+      "width": 900,
+      "height": 600,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde",
+      "frames": 41,
+      "durationMs": 5950
+    },
+    {
+      "file": "docs/pl/images/nilesoft-main-menu-adapted.png",
+      "sha256": "9ec5d00cb5df86d816c0531b7bf8c82fbd6e552e967f8f01d4c5321af4a55460",
+      "width": 271,
+      "height": 368,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde"
+    },
+    {
+      "file": "docs/pl/images/nilesoft-main-menu-default.png",
+      "sha256": "3dbee184fe29bbb9f2b4478e67d2a93244b578849a8ba0cb89dbf3bd4832e8f8",
+      "width": 271,
+      "height": 368,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde"
+    },
+    {
+      "file": "docs/pl/images/nilesoft-navigation-adapted.png",
+      "sha256": "026bb1a44b4fbb1eb17baccceaed629ad2706dd84b9535d32f6927955e25cad5",
+      "width": 386,
+      "height": 186,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde"
+    },
+    {
+      "file": "docs/pl/images/nilesoft-navigation-default.png",
+      "sha256": "a64e89129ca7082ee647f5a1ee3b4bc1a43eb62c5850d102a90e2fa4770809dc",
+      "width": 386,
+      "height": 186,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde"
+    },
+    {
+      "file": "docs/pl/images/overview.png",
+      "sha256": "c34025361b13c19eb39d1aec66cb9c80c0a088242bbd967f6ae12b2b386ea7d1",
+      "width": 886,
+      "height": 543,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde"
+    },
+    {
+      "file": "docs/pl/images/resize-window.gif",
+      "sha256": "c342b4fb87e4f5ddfd11c9eac5130e688e4c5199a0168cb1ce725b2c2751f746",
+      "width": 900,
+      "height": 600,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde",
+      "frames": 40,
+      "durationMs": 6030
+    },
+    {
+      "file": "docs/pl/images/search.png",
+      "sha256": "e7513417aaa0464782176c4600e8d684ee0b78ee2c52d802512e4c48a7c630b1",
+      "width": 886,
+      "height": 543,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde"
+    },
+    {
+      "file": "docs/pl/images/selected-name.png",
+      "sha256": "2f5539b8552302cf7157b32211a2b29573183e2e95da284980d9fab90def331d",
+      "width": 886,
+      "height": 543,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde"
+    },
+    {
+      "file": "docs/pl/images/spatial-windows.png",
+      "sha256": "f62c01d20e5d79d74a803882ca5d702189ea3d3b6656455800d8101015c5e04e",
+      "width": 1410,
+      "height": 927,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde"
+    },
+    {
+      "file": "docs/pl/images/window-menu.png",
+      "sha256": "d7bba8c1aae8e56a32bcddd0e35ddfd4686d296565b8ed96ec37c5f9b0ab223c",
+      "width": 886,
+      "height": 543,
+      "run": "vm-e11ff671641b45019b8bb52e64ffdbde"
+    },
+    {
+      "file": "docs/pt/images/customize-title-menu.gif",
+      "sha256": "367172a78b1db706fe6af3ce7968ac26150535150cdcedee02c407458e2bf4e7",
+      "width": 987,
+      "height": 757,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e",
+      "frames": 230,
+      "durationMs": 23570
+    },
+    {
+      "file": "docs/pt/images/customized-title-menu.png",
+      "sha256": "ac419b6f2096a4b313e49c265576ba8eb50f8545c6a27a30524dffb426ea216c",
+      "width": 706,
+      "height": 433,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e"
+    },
+    {
+      "file": "docs/pt/images/details-columns.gif",
+      "sha256": "d548a0d15fb16dc2a21a753ed29e00e117698f03322da4110a51ee13397e9203",
+      "width": 1277,
+      "height": 541,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e",
+      "frames": 87,
+      "durationMs": 17940
+    },
+    {
+      "file": "docs/pt/images/everything-search.png",
+      "sha256": "8454ec7ff04f168190d49b749c83d33e70012a3e9744fb219d5548fd087b5b95",
+      "width": 1455,
+      "height": 557,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e"
+    },
+    {
+      "file": "docs/pt/images/locked-title.png",
+      "sha256": "6e3152cf3694faaef163b1fe8b93f11dfc25c46746264572e4904118f7c039b6",
+      "width": 480,
+      "height": 220,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e"
+    },
+    {
+      "file": "docs/pt/images/mixed-sorting.png",
+      "sha256": "8a943ca0413facef9d2eac6968d39c663e540199d4a2dac65a338e0c0abe007c",
+      "width": 886,
+      "height": 543,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e"
+    },
+    {
+      "file": "docs/pt/images/move-window.gif",
+      "sha256": "01ab7f7eb7ad4af05bb0961c755fa1e8c4c89a872e76d612dc055747bf901384",
+      "width": 900,
+      "height": 600,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e",
+      "frames": 40,
+      "durationMs": 6110
+    },
+    {
+      "file": "docs/pt/images/nilesoft-main-menu-adapted.png",
+      "sha256": "8c4c724760a5e32ceea076e926aa145750824c344d318724e0ce3a8fbec24a02",
+      "width": 287,
+      "height": 368,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e"
+    },
+    {
+      "file": "docs/pt/images/nilesoft-main-menu-default.png",
+      "sha256": "83669e859e1b79a3817cccae10be40fc52868fbd93d4ca27115704121cc0b05a",
+      "width": 287,
+      "height": 368,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e"
+    },
+    {
+      "file": "docs/pt/images/nilesoft-navigation-adapted.png",
+      "sha256": "6e4cc43ce8712323212228c7430e7b8e8e07b2ee27afa003aad3651fd877f569",
+      "width": 450,
+      "height": 186,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e"
+    },
+    {
+      "file": "docs/pt/images/nilesoft-navigation-default.png",
+      "sha256": "504af6e86d9376fe8616679a869d2902ebd6cd49c5186027af3bfd8ad8667244",
+      "width": 450,
+      "height": 186,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e"
+    },
+    {
+      "file": "docs/pt/images/overview.png",
+      "sha256": "89eec6f63cf4a0f635a604d856225e00add0fba126c4076607746844c57cc4b7",
+      "width": 886,
+      "height": 543,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e"
+    },
+    {
+      "file": "docs/pt/images/resize-window.gif",
+      "sha256": "d026a6d5547818616e33629034817bea6dcc622865c854b84c5488da7361f8b5",
+      "width": 900,
+      "height": 600,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e",
+      "frames": 39,
+      "durationMs": 5950
+    },
+    {
+      "file": "docs/pt/images/search.png",
+      "sha256": "30f245deaac0e67bb9167e44e1ff6377236cc70785593b171e394ed967538e6f",
+      "width": 886,
+      "height": 543,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e"
+    },
+    {
+      "file": "docs/pt/images/selected-name.png",
+      "sha256": "e152578fa95acbc06cc793f22c00391ded1f9006fffa0d56fb4f3f3f03841c97",
+      "width": 886,
+      "height": 543,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e"
+    },
+    {
+      "file": "docs/pt/images/spatial-windows.png",
+      "sha256": "f4e36d917e90e54c0867fd0586cd1c1568a636475d1523b2467cee66a2d0e97d",
+      "width": 1410,
+      "height": 927,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e"
+    },
+    {
+      "file": "docs/pt/images/window-menu.png",
+      "sha256": "cb3ca1c4e97c4fe4bce383670e9b5f7f5def29e004e5b565b63da0c34c4d03a2",
+      "width": 886,
+      "height": 543,
+      "run": "vm-21fa386e8c4c4edaa87d927592fd541e"
+    },
+    {
+      "file": "docs/uk/images/customize-title-menu.gif",
+      "sha256": "be5d61ca1d4e2869c5611642e47ef030de35172d1f4d0c5679d1a6cf272ddea5",
+      "width": 975,
+      "height": 757,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78",
+      "frames": 230,
+      "durationMs": 23560
+    },
+    {
+      "file": "docs/uk/images/customized-title-menu.png",
+      "sha256": "189a4b4cc00c77254cdfda56f92d46d5ad20f0a40f9ca6aa17999091d5cb4a3d",
+      "width": 706,
+      "height": 433,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78"
+    },
+    {
+      "file": "docs/uk/images/details-columns.gif",
+      "sha256": "13eb2a19246b55b3a7474ab021714d9975af1a27f76c043a0af0b69b65ba347f",
+      "width": 1277,
+      "height": 541,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78",
+      "frames": 86,
+      "durationMs": 17780
+    },
+    {
+      "file": "docs/uk/images/display.png",
+      "sha256": "814a913f98cd91276d5c6b1c4c1ca25d839db1781ab6f7508b70315fa01604e9",
+      "width": 472,
+      "height": 667,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78"
+    },
+    {
+      "file": "docs/uk/images/everything-search.png",
+      "sha256": "be526ada87269c044cf5ed3a253ed1b0fe2786fa2aa487eb4059f2713fad766d",
+      "width": 1455,
+      "height": 557,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78"
+    },
+    {
+      "file": "docs/uk/images/locked-title.png",
+      "sha256": "d09f3cf29d7f32a1de21db345b83148d10a417dd36784c3cf198f726a7eb39df",
+      "width": 480,
+      "height": 220,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78"
+    },
+    {
+      "file": "docs/uk/images/mixed-sorting.png",
+      "sha256": "8a016bbe8b51b1903d3c003189cf8a8fcee47005a7a0ac377dc1c4ddce34a898",
+      "width": 886,
+      "height": 543,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78"
+    },
+    {
+      "file": "docs/uk/images/move-window.gif",
+      "sha256": "8462d465fe0bb10561345f311ae98bc0d27092c42beae4ca960232a35d62ba6f",
+      "width": 900,
+      "height": 600,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78",
+      "frames": 39,
+      "durationMs": 5860
+    },
+    {
+      "file": "docs/uk/images/nilesoft-main-menu-adapted.png",
+      "sha256": "7f2ccc37fe3a695c9c36263992c5ae54a2b496292f0be3e40e010adf1abf73e3",
+      "width": 273,
+      "height": 368,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78"
+    },
+    {
+      "file": "docs/uk/images/nilesoft-main-menu-default.png",
+      "sha256": "1877b9092da3c1d3fb55db0271a80234ffde78bf94d19439f7fec170e5efb6a1",
+      "width": 273,
+      "height": 368,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78"
+    },
+    {
+      "file": "docs/uk/images/nilesoft-navigation-adapted.png",
+      "sha256": "c0577d359fc43eb08252d4d3d1faf43cf861209ad17ad670a971c493d856526b",
+      "width": 396,
+      "height": 186,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78"
+    },
+    {
+      "file": "docs/uk/images/nilesoft-navigation-default.png",
+      "sha256": "66f4c9f528a14851d080e5bd784296d1e45e239941a36780492c3416da0f1f88",
+      "width": 396,
+      "height": 186,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78"
+    },
+    {
+      "file": "docs/uk/images/overview.png",
+      "sha256": "deca10c2790fc4b3ae0724f926c55badab4d2d7203070cb11ddb55370cc0617b",
+      "width": 886,
+      "height": 543,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78"
+    },
+    {
+      "file": "docs/uk/images/resize-window.gif",
+      "sha256": "475adeca6f0efa6c80be0fc3c418dd93f9ce931cb98353df5f1dd9b1a9bb037a",
+      "width": 900,
+      "height": 600,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78",
+      "frames": 41,
+      "durationMs": 6110
+    },
+    {
+      "file": "docs/uk/images/search.png",
+      "sha256": "04b62539ae36a4b431186b4dec5852f4ae4f34ad35a2d3753d5acd046d731c71",
+      "width": 886,
+      "height": 543,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78"
+    },
+    {
+      "file": "docs/uk/images/selected-name.png",
+      "sha256": "456f6a7cffb884f7295245a432f75bb65525528bb3fe8ca9c91c206a41561e58",
+      "width": 886,
+      "height": 543,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78"
+    },
+    {
+      "file": "docs/uk/images/spatial-windows.png",
+      "sha256": "9725add47fb444786240ec5c3b956de1c89149b93837a14bc9c1b11d0a0a5579",
+      "width": 1410,
+      "height": 927,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78"
+    },
+    {
+      "file": "docs/uk/images/window-menu.png",
+      "sha256": "e4c6341b04206673d3f4c82d131d100f62f64ca811899ac317fe2f7823772464",
+      "width": 886,
+      "height": 543,
+      "run": "vm-5dc97f3edf1940c396160d3f124bad78"
+    }
+  ]
+}
