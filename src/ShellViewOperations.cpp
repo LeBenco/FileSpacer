@@ -407,7 +407,7 @@ HRESULT ShellIconGrid::prepare(IShellView *source, HWND list, const std::functio
 #ifdef FILESPACER_DEBUG
     const ULONGLONG began = GetTickCount64();
 #endif
-    ready = qualified = false;
+    ready = false;
     control.reset();
     font.reset(); imageList.Release();
     folder = CComQIPtr<IFolderView2>(source);
@@ -418,13 +418,6 @@ HRESULT ShellIconGrid::prepare(IShellView *source, HWND list, const std::functio
             || FAILED(folder->GetSpacing(&spacing)) || !current() || size <= 0 || spacing.x < size || spacing.y <= 0
             || FAILED(folder->GetCurrentFolderFlags(&flags)) || !current()
             || (flags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID | FWF_DESKTOP | FWF_NOSCROLL))) return S_FALSE;
-    qualified = GetDpiForWindow(list) == USER_DEFAULT_SCREEN_DPI
-        && selectionDetail::gridImage().supported && selectionDetail::gridImage().qualifies();
-    if (qualified) {
-        ready = true;
-        debugPrintf(L"GRID PREPARE path=qualified elapsed_ms=%llu\n", GetTickCount64() - began);
-        return S_OK;
-    }
     // A one-item public ListView supplies native rounding without touching the
     // actual folder. It shares the image list without owning or drawing it.
     HWND body = nullptr; wchar_t name[32] = {};
@@ -463,7 +456,6 @@ HRESULT ShellIconGrid::prepare(IShellView *source, HWND list, const std::functio
 
 bool ShellIconGrid::align(POINT &point) const {
     if (!ready) return false;
-    if (qualified) return selectionDetail::snapGridPoint(point, spacing, size);
     ListView_SetItemPosition32(control.get(), 0, point.x, point.y);
     return ListView_Arrange(control.get(), LVA_SNAPTOGRID)
         && ListView_GetItemPosition(control.get(), 0, &point);
@@ -480,8 +472,7 @@ HRESULT ShellIconGrid::apply(PreparedIconPositions &positions, const std::functi
             || FAILED(folder->GetSpacing(&actualSpacing)) || !current()
             || FAILED(folder->GetCurrentFolderFlags(&flags)) || !current()
             || mode != FVM_ICON || actualSize != size || actualSpacing.x != spacing.x || actualSpacing.y != spacing.y
-            || (flags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID))
-            || (qualified && !selectionDetail::gridImage().qualifies())) return E_ABORT;
+            || (flags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID))) return E_ABORT;
     for (auto &point : positions.points) {
         if (!align(point)) return E_INVALIDARG;
         if (!current()) return E_ABORT;
@@ -491,16 +482,9 @@ HRESULT ShellIconGrid::apply(PreparedIconPositions &positions, const std::functi
     const HRESULT result = folder->SelectAndPositionItems(static_cast<UINT>(positions.items.size()),
         positions.items.data(), positions.points.data(), SVSI_POSITIONITEM | SVSI_NOSTATECHANGE);
     if (!current()) return E_ABORT;
-    if (SUCCEEDED(result)) {
-        if (qualified) {
-            selectionDetail::gridCalls().fetch_add(1, std::memory_order_relaxed);
 #ifdef FILESPACER_DEBUG
-            int count = 0;
-            if (SUCCEEDED(folder->ItemCount(SVGIO_ALLVIEW, &count)) && current())
-                debugPrintf(L"GRID SNAP qualified=1 selected=%zu count=%d\n", positions.items.size(), count);
+    if (SUCCEEDED(result)) debugPrintf(L"GRID SNAP path=public elapsed_ms=%llu\n", GetTickCount64() - began);
 #endif
-        } else debugPrintf(L"GRID SNAP path=public elapsed_ms=%llu\n", GetTickCount64() - began);
-    }
     return result;
 }
 
@@ -520,14 +504,6 @@ HRESULT alignIconsToGrid(IShellView *source, bool selectedOnly,
     if (!current()) return E_ABORT;
     if (FAILED(queried)) return queried;
     if (selectedOnly && (flags & FWF_SNAPTOGRID)) return S_FALSE;
-    if (selectedOnly) {
-        const HRESULT result = selectionDetail::snapGridSelection(source, current);
-        if (!current()) return E_ABORT;
-        if (result == S_OK) {
-            debugPrintf(L"GRID SNAP path=qualified elapsed_ms=%llu\n", GetTickCount64() - snapStarted);
-            return S_OK;
-        }
-    }
     std::vector<PreparedIconPosition> stationary;
     if (selectedOnly) {
         int count = 0;
