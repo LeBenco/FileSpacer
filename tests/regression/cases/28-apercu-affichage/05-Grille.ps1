@@ -39,10 +39,10 @@ function Assert-GridPrediction([int]$Size) {
     $body=Use-UiView $window {param($view) $view.Window}
     $list=@([FileSpacerRegression.Native]::Children($body,'SysListView32')|Where-Object {[FileSpacerRegression.Native]::IsWindowEnabled($_)})
     Assert-Ui ($list.Count-eq1) 'Expected one interactive Shell list.'
-    $client=[FileSpacerRegression.Native]::ClientBounds($list[0])
+    $client=$script:GridMarkerClientBeforeDrop
     $spacing=[FileSpacerRegression.Native]::Message($list[0],0x1033,0,0)-band0xffff
     $mark=$script:GridMarkerBeforeDrop
-    $origin=[FileSpacerViewMenuTests.GridKey]::Origin($list[0])
+    $origin=$script:GridMarkerOriginBeforeDrop
     $predictedX=$mark.Left-$client.Left+$origin[0]
     $predictedY=$mark.Top-$client.Top+$origin[1]
     $point=@((Read-GridState).Positions-split';'|Where-Object {$_-like'item-0000=*'})[0]-split'=',2
@@ -66,6 +66,9 @@ function Move-PlacementFrame([string]$Anchor) {
         }
         Wait-Ui {[FileSpacerViewMenuTests.GridKey]::Marker($body).Visible} 'permanent placement frame appears without S' 0 5
         $frame=[FileSpacerViewMenuTests.GridKey]::Marker($body)
+        $list=@([FileSpacerRegression.Native]::Children($body,'SysListView32')|Where-Object {[FileSpacerRegression.Native]::IsWindowEnabled($_)})[0]
+        $clientBefore=[FileSpacerRegression.Native]::ClientBounds($list)
+        $originBefore=[FileSpacerViewMenuTests.GridKey]::Origin($list)
         [FileSpacerViewMenuTests.GridKey]::Hold($true)
         [FileSpacerViewMenuTests.GridKey]::Hold($false)
         Assert-Ui ([FileSpacerViewMenuTests.GridKey]::Marker($body).Visible) 'Releasing S disabled a permanent placement frame.'
@@ -78,7 +81,8 @@ function Move-PlacementFrame([string]$Anchor) {
         $item=Use-UiView $window {param($view) $view.IndexOf($Anchor)}
         Assert-Ui ($item-ge0) 'Dragged anchor is absent after drop.'
         $icon=[FileSpacerViewMenuTests.GridKey]::IconBounds($list,$item)
-        Assert-Ui ($frame.Left-eq$client.Left+$icon[0]-and$frame.Top-eq$client.Top+$icon[1]) ('Placement frame differs from actual icon destination: '+($frame|ConvertTo-Json -Compress)+' actual='+($icon-join','))
+        $originAfter=[FileSpacerViewMenuTests.GridKey]::Origin($list)
+        Assert-Ui ($frame.Left-$clientBefore.Left+$originBefore[0]-eq$icon[0]+$originAfter[0]-and$frame.Top-$clientBefore.Top+$originBefore[1]-eq$icon[1]+$originAfter[1]) ('Placement frame differs from actual icon destination: '+($frame|ConvertTo-Json -Compress)+' actual='+($icon-join','))
         return $frame
     } finally {[FileSpacerViewMenuTests.GridKey]::Hold($false);[FileSpacerRegression.AltDragInput]::End()}
 }
@@ -101,14 +105,16 @@ try {
     Wait-Ui { (Read-GridState).Positions-eq$native.Positions } 'one-shot positions equal the native grid' 150
     $aligned=Read-GridState
     Assert-Ui (!$aligned.Grid-and!$aligned.Auto-and$aligned.Selected-eq$initial.Selected-and$aligned.Focus-eq$initial.Focus) 'One-shot alignment changed flags, selection or focus.'
+    $restoredPositions=Get-PreviewRestoredPositions $window $native.Positions
     Close-UiFolder $window
     $window=Open-UiFolder $folder 6
-    Wait-Ui { (Read-GridState).Positions-eq$native.Positions } 'one-shot grid positions survive reopening' 150
+    Wait-Ui { (Read-GridState).Positions-eq$restoredPositions } 'one-shot grid positions survive reopening through integer DPI storage' 150
     Assert-Ui (!(Read-GridState).Grid) 'One-shot alignment became a persistent grid setting.'
     Write-Host 'PASS: one-shot native grid, unchanged selection/focus/flags, persisted coordinates.'
     $initial=Set-GridSeed
     Move-GridIcons $false
     $free=Read-GridState
+    $freeDelta=$script:GridRawDelta
     Assert-Ui ($free.Positions-ne$initial.Positions) 'Native drag did not move the intended selection.'
     Use-UiView $window {param($view) $view.SnapToGrid=$true}
     $nativeDrop=Read-GridState
@@ -128,7 +134,15 @@ try {
     }
     $null=Set-GridSeed
     Move-GridIcons $true $true $true
-    Wait-Ui { (Read-GridState).Positions-eq$free.Positions } 'releasing S before the drop retains native free placement' 150
+    # Native scrolling may differ between the reference and S-release gestures.
+    # Apply their exact document-coordinate delta difference to the native result.
+    $expectedFree=@(foreach($entry in($free.Positions-split';')) {
+        $pair=$entry-split'=',2;$point=$pair[1]-split','
+        if($pair[0]-in($free.Selected-split';')){
+            $pair[0]+'='+([int]$point[0]+$script:GridRawDelta[0]-$freeDelta[0])+','+([int]$point[1]+$script:GridRawDelta[1]-$freeDelta[1])
+        }else{$entry}
+    })-join';'
+    Wait-Ui { (Read-GridState).Positions-eq$expectedFree } 'releasing S before the drop retains native free placement at the actual scroll origin' 150
     Write-Host 'PASS: real Shell drag with S uses the native grid; releasing S leaves free placement.'
     # A second size covers zoom-dependent marker geometry, using the actual
     # mode command rather than changing the Shell behind the product.
