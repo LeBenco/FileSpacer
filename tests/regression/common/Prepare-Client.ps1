@@ -170,6 +170,9 @@ function New-ClientPackage {
             # The mnemonic check reads the ten resource scripts of each kind.
             foreach($script in @(Get-ChildItem -LiteralPath (Join-Path $ProjectRoot 'src') -File | Where-Object { $_.Name -match '^(dialog|resource)\.[a-z]{2}\.rc$' })) { Copy-PackageFile $script.FullName }
         }
+        if ($entry.Relative -like '28-apercu-affichage\09-*') {
+            Copy-PackageFile (Join-Path $ProjectRoot 'src\FolderWindow.h')
+        }
         if ($entry.Relative -like '30-tri-melange\06-*') {
             # Probe variants of the current provider, compiled on the host from patched copies.
             foreach($variant in @(& (Join-Path $PSScriptRoot 'Prepare-SlowColumnMixedProvider.ps1') -ProjectRoot $ProjectRoot)) { Copy-PackageFile $variant }
@@ -212,13 +215,13 @@ function New-ClientPackage {
                     $exe=& { . (Join-Path $regression 'common\Native.ps1'); Build-NativeTest @nativeParameters }
                 } finally { $env:FS_REGRESSION_RUN=$previousRun }
                 $description=@{}
-                foreach($name in @('ProductionSources','Sqlite','Storage','Extract','Resources','CommonControls','ControlFlowGuard','Libraries','Standard','Defines')) { $description[$name]=if($parameters.ContainsKey($name)){@($parameters[$name]) -join '|'}else{''} }
+                foreach($name in @('ProductionSources','Sqlite','Storage','Extract','Resources','CommonControls','ControlFlowGuard','DynamicLibrary','Libraries','Standard','Defines')) { $description[$name]=if($parameters.ContainsKey($name)){@($parameters[$name]) -join '|'}else{''} }
                 [void]$native.Add(@{Name=$parameters.Name;CaseDirectory=$parameters.CaseDirectory.Substring($ProjectRoot.Length+1);Parameters=$description;Executable=('native-'+$native.Count+'\'+[IO.Path]::GetFileName($exe));Sha256=(Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash})
-                # Only the executable is needed by the client; compiler output
+                # Only the native binary is needed by the client; compiler output
                 # remains with host preparation logs, outside the transferred package.
                 $compilerOutput=Join-Path (Split-Path $Destination -Parent) ('native-build-'+($native.Count-1))
                 [void][IO.Directory]::CreateDirectory($compilerOutput)
-                Get-ChildItem -LiteralPath $nativeOutput -File | Where-Object { $_.Extension -ne '.exe' } | Move-Item -Destination $compilerOutput
+                Get-ChildItem -LiteralPath $nativeOutput -File | Where-Object { $_.FullName -ne $exe } | Move-Item -Destination $compilerOutput
             }
         }
         Build-ManagedBundle $entry.Relative $dependencies
