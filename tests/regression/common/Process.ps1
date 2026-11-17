@@ -1,5 +1,15 @@
 ﻿# Use Process.Start on the actual Process instance so its exit code is retained.
 # Stdout and stderr are drained concurrently to avoid blocking a noisy child.
+function Get-TestConfiguration {
+    $configuration=$env:FS_REGRESSION_CONFIGURATION
+    if (!$configuration) { return 'Debug' }
+    if ($configuration -notin @('Debug','Release')) { throw 'Invalid test build configuration.' }
+    return $configuration
+}
+function Get-TestBuildPath([string]$ProjectRoot,[string]$FileName='FileSpacer.exe') {
+    return Join-Path $ProjectRoot ('build\'+(Get-TestConfiguration).ToLowerInvariant()+'\'+$FileName)
+}
+
 function Join-ProcessArguments([string[]]$Arguments) {
     # Quote for the Windows command-line parser, without invoking a shell.
     return (@($Arguments | ForEach-Object {
