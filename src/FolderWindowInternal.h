@@ -9,5 +9,6 @@ inline bool iconPlacementMode(UINT mode) {
     return mode == FVM_ICON || mode == FVM_SMALLICON || mode == FVM_TILE;
 }
 
+bool gridPlacement(IFolderView *folderView);
 LONG gestureRoleAt(POINT point, int *itemIndex = nullptr);
 } // namespace filespacer
