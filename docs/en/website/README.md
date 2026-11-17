@@ -2,8 +2,13 @@
 
 # Website generation
 
-The public site concatenates `README.md`, the user guide, the changelog and
-third-party notices. Privacy and local-data maintenance have separate sections
+The public site generates a separate page for `README.md`, the user guide, the
+changelog and third-party notices. A horizontal menu links these documents and
+GitHub. Each page's sidebar shows its subsections directly, below the language
+selector. The white header contains the application icon and name on the left
+and search on the right. The same CSS lets the horizontal menu use the empty
+space to its left when necessary, preserving sidebar alignment when it fits.
+Privacy and local-data maintenance have separate sections
 in the user guide. The short standalone privacy policy remains on GitHub; its
 former site anchors still reach the relevant guide sections.
 The original English documents remain
@@ -47,7 +52,7 @@ uses this asset in every language.
 Heading order and hierarchy must match English. The generator normalizes levels,
 uses explicit English heading anchors shared by every source language and rewrites
 internal links. Translated titles do not determine the canonical IDs. Changing
-language appends the current fragment to the other language’s URL, without a
+language keeps the current document and appends its fragment to the other language’s URL, without a
 translation map. Localized assets have identical filenames and relative URLs
 within each generated language directory. Missing
 documents, headings or localized PNG/GIF captures fail the build. The neutral
@@ -61,7 +66,7 @@ theme script so browsers receive search changes after deployment. Retain its
 MIT notice and review it when updating the theme. The repository README has no
 language selector or language links.
 
-The header only links to the repository. Download links and badges come from
+Download links and badges come from
 the Markdown sources; the generator does not add a second download button or
 derive one from the changelog.
 
@@ -72,6 +77,14 @@ dialogs are unavailable. The theme has no built-in lightbox; no additional
 library or CDN is used. SVG logos are not treated as screenshots.
 Screenshot URLs include a content hash, so replacing an image under the same
 filename refreshes cached thumbnails and popup images automatically.
+Screenshots use lazy loading so content further down does not load immediately.
+
+Every page has its own title, description, canonical URL and reciprocal
+`hreflang` links to the equivalent documents, including an English `x-default`.
+The root `sitemap.xml` lists all generated pages and their language variants.
+Both use the discovered language directories. Existing single-page bookmarks
+are redirected to the matching document while retaining their fragment.
+Temporary Jekyll source directories are removed after a build, including failures.
 
 The theme's `lunr/custom-index.js` hook uses Unicode word trimming for translated
 sites and omits English stemming and stop words. Lunr's default ASCII trimmer
