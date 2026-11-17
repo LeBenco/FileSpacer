@@ -23,6 +23,8 @@
 
 namespace filespacer {
 
+// Observe only a left-button gesture that began on an icon. The thread hook
+// also sees the messages consumed by the Shell's nested drag/drop loop.
 struct FolderWindow::IconSnap {
     static thread_local IconSnap *active;
     FolderWindow &owner;
