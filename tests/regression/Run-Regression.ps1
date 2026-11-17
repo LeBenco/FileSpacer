@@ -3,6 +3,8 @@ param(
     [ValidateSet('All','Internal','UI')][string]$Category='All',
     [ValidateSet('All','Application')][string]$Scope='All',
     [ValidateSet('Regression','Stress')][string]$Suite='Regression',
+    [ValidateSet('Debug','Release')][string]$Configuration='Debug',
+    [switch]$BuildApplication,
     [string]$Pattern='*',
     [ValidateRange(30,3600)][int]$TimeoutSeconds=300,
     [string]$RunDirectory='',
@@ -24,6 +26,12 @@ if ($Prepared -and $preparedSelection.PSObject.Properties['Suite']) {
     if ($PSBoundParameters.ContainsKey('Suite') -and $Suite -ne $preparedSelection.Suite) { throw 'Prepared suite differs from the requested suite.' }
     $Suite=[string]$preparedSelection.Suite
     if ($Suite -notin @('Regression','Stress')) { throw 'Invalid prepared suite.' }
+}
+if ($Prepared) {
+    if ($BuildApplication) { throw 'A prepared guest run cannot compile the application.' }
+    if (!$preparedSelection.PSObject.Properties['Configuration'] -or $preparedSelection.Configuration -notin @('Debug','Release')) { throw 'Invalid prepared build configuration.' }
+    if ($PSBoundParameters.ContainsKey('Configuration') -and $Configuration -ne $preparedSelection.Configuration) { throw 'Prepared build configuration differs from the request.' }
+    $Configuration=[string]$preparedSelection.Configuration
 }
 $caseRoot=if($Suite -eq 'Stress'){Join-Path $ProjectRoot 'tests\stress\cases'}else{Join-Path $PSScriptRoot 'cases'}
 if($Suite -eq 'Stress' -and !$PSBoundParameters.ContainsKey('TimeoutSeconds')){$TimeoutSeconds=900}
@@ -49,10 +57,15 @@ if ($ListOnly) {
 if ($env:OS -ne 'Windows_NT' -or ![Environment]::Is64BitProcess) { throw 'Windows x64 is required.' }
 if ($Prepared -and $selected.Count -ne @($preparedSelection.Cases).Count) { throw 'Prepared selection differs from the selected guest cases.' }
 if ($Prepared) { $TimeoutSeconds=[int]$preparedSelection.TimeoutSeconds }
+$env:FS_REGRESSION_CONFIGURATION=$Configuration
+if ($BuildApplication) {
+    & (Join-Path $ProjectRoot 'build.cmd') ($Configuration.ToLowerInvariant())
+    if ($LASTEXITCODE -ne 0) { throw ('Application build failed: '+$Configuration) }
+}
 if ($VM) {
     if ($Prepared) { throw 'A prepared guest run cannot dispatch another VM.' }
     . (Join-Path $PSScriptRoot 'common\Prepare-Client.ps1')
-    Invoke-ClientRegression -VM $VM -Selected $selected -TimeoutSeconds $TimeoutSeconds -RunDirectory $RunDirectory -Suite $Suite
+    Invoke-ClientRegression -VM $VM -Selected $selected -TimeoutSeconds $TimeoutSeconds -RunDirectory $RunDirectory -Suite $Suite -Configuration $Configuration
     exit $LASTEXITCODE
 }
 if ($Prepared) { . (Join-Path $PSScriptRoot 'common\Prepared.ps1') }
@@ -60,7 +73,7 @@ elseif (!(Get-Command cl.exe -ErrorAction SilentlyContinue)) { throw 'Run tests.
 $ui=@($selected | Where-Object { $_.Category -eq 'UI' }).Count -gt 0
 if ($ui -and ![Environment]::UserInteractive) { throw 'UI tests require an interactive Windows desktop.' }
 if ($ui -and @(Get-Process -Name FileSpacer -ErrorAction SilentlyContinue).Count) { throw 'Close existing FileSpacer processes before running UI tests.' }
-if ($ui -and !(Test-Path -LiteralPath (Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'))) { throw 'Build the Debug application with build.cmd debug.' }
+if ($ui -and !(Test-Path -LiteralPath (Get-TestBuildPath $ProjectRoot))) { throw ('Build the '+$Configuration+' application with build.cmd '+$Configuration.ToLowerInvariant()+'.') }
 
 if ($RunDirectory) {
     $run=[IO.Path]::GetFullPath($RunDirectory)
@@ -74,7 +87,7 @@ if ($CI) {
     $package=Join-Path $run 'package'
     [void][IO.Directory]::CreateDirectory($package)
     [void](Start-Transcript -LiteralPath (Join-Path $run 'preparation.log'))
-    try { New-ClientPackage -Selected $selected -Destination $package -TimeoutSeconds $TimeoutSeconds -Suite $Suite }
+    try { New-ClientPackage -Selected $selected -Destination $package -TimeoutSeconds $TimeoutSeconds -Suite $Suite -Configuration $Configuration }
     finally { [void](Stop-Transcript) }
     & (Join-Path $PSScriptRoot 'common\Invoke-CIClient.ps1') -Package $package -RunDirectory $run
     exit $LASTEXITCODE
@@ -122,9 +135,9 @@ function Initialize-TestPreferences {
     } finally { $key.Dispose() }
 }
 function Stop-TestApplication {
-    # Preflight requires no existing FileSpacer. Clean up only the exact Debug
+    # Preflight requires no existing FileSpacer. Clean up only the exact selected
     # executable under test, including its crash-recovery helper processes.
-    $image=Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'
+    $image=Get-TestBuildPath $ProjectRoot
     # A helper waits on its parent's exit handle. The main process can have
     # exited successfully before Windows schedules that helper's final exit.
     $deadline=[DateTime]::UtcNow.AddSeconds(5)
@@ -242,7 +255,7 @@ try {
                 } catch { Write-Warning ('Cannot collect tracked application diagnostics: '+$_.Exception.Message) }
             }
             try {
-                $image=Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'
+                $image=Get-TestBuildPath $ProjectRoot
                 $remaining=@(Get-Process -Name FileSpacer -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $image })
                 if($remaining.Count){throw 'Application processes remain before SQLite export.'}
                 Copy-TestDatabaseSnapshot $database (Join-Path $testRun 'application-state')
@@ -265,7 +278,7 @@ try {
         if ($detail) { Write-Warning "$relative : $detail" }
         if($timedOut){throw "$relative : timed out; descendants were preserved, so subsequent tests cannot be isolated."}
         if ($entry.Category -eq 'UI') {
-            $image=Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'
+            $image=Get-TestBuildPath $ProjectRoot
             $remaining=@(Get-Process -Name FileSpacer -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $image })
             if ($remaining.Count) {
                 throw "$relative : cannot isolate the next test; $($remaining.Count) FileSpacer process(es) still running."
@@ -277,7 +290,7 @@ finally {
     Remove-Item Env:\FS_REGRESSION_RUN -ErrorAction SilentlyContinue
     if ($ui) {
         try { Stop-TestApplication } catch { if (!$fatal) { $fatal=$_.Exception.Message } }
-        $image=Join-Path $ProjectRoot 'build\debug\FileSpacer.exe'
+        $image=Get-TestBuildPath $ProjectRoot
         $canRestore=-not @(Get-Process -Name FileSpacer -ErrorAction SilentlyContinue | Where-Object {$_.Path-eq$image}).Count
         if(!$canRestore){
             $restoreError="FileSpacer remains running. Test registry/database restoration deferred; preserved backup: $backup"
@@ -320,6 +333,7 @@ finally {
 }
 $summary=Get-RegressionSummary @($results.ToArray()) $selected.Count $fatal
 $summary|Add-Member -NotePropertyName Suite -NotePropertyValue $Suite
+$summary|Add-Member -NotePropertyName Configuration -NotePropertyValue $Configuration
 ConvertTo-Json -InputObject $results -Depth 5 | Set-Content -LiteralPath (Join-Path $run 'results.json') -Encoding UTF8
 $summary | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $run 'summary.json') -Encoding UTF8
 Show-RegressionSummary @($results.ToArray()) $summary $run
