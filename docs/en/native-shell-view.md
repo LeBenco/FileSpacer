@@ -228,32 +228,21 @@ contains a scroll offset.
 
 ## Optional selection capabilities
 
-Snap has a separate, optional grid-arithmetic capability. Discovery matches
-Microsoft symbols and the loaded control image, then qualifies the calculation
-on invisible real Shell views before publishing a `-g1.grid` sidecar. Its schema,
-publication, retry record and unsupported decision are independent of the
-existing selection and range descriptors. A new compiler form requires a new
-qualification; a change to accepted forms must bump the grid cache revision.
+Snap uses public Windows APIs for both prediction and placement. The optional
+private grid arithmetic was retired after Release measurements showed no useful
+benefit over the public path; slow bulk placement on Windows 10 occurred in both
+paths. Commit `640f2d6e` is the last complete implementation of that capability.
+The separate optional selection and range capabilities are unchanged.
 
-The inspected `CLVView::SnapToGrid` and `_NearestSlot` functions are not callable
-CFG targets on the tested Windows 10 and 11 builds. FileSpacer never calls these
-functions or creates executable copies. It validates read-only instruction witnesses for rounding and
-icon margins, uses current public view measurements, and positions selected IDs
-through `IFolderView::SelectAndPositionItems`.
-
-`ShellIconGrid` prepares one operation for an Icon-view gesture and uses it for
-both prediction and placement. The qualified backend uses the validated native
-arithmetic at 96 DPI only: comparisons with real folder alignment on Windows 10
-and 11 found different points at 125% and 150%. At other scales, or without that
-capability, a hidden, single-item Windows ListView uses
-the actual view's image list, font, spacing, control module and DPI. The image
-list is shared with `LVS_SHAREIMAGELISTS` and retained through its public COM
-interface; the font is copied for the gesture's lifetime. No icon is rendered. Public
-`LVM_SETITEMPOSITION32`, `LVM_ARRANGE(LVA_SNAPTOGRID)` and `LVM_GETITEMPOSITION`
-provide native rounding on this one item. No folder-wide alignment, position
-snapshot or restoration is needed to prepare this fallback, and its work does
-not grow with the folder's item count. It is recreated per gesture, rather than
-keeping geometry across zoom or DPI changes.
+`ShellIconGrid` prepares one operation per Icon-view gesture. A hidden,
+single-item Windows ListView uses the actual view's image list, font, spacing,
+control module and DPI. The image list is shared with `LVS_SHAREIMAGELISTS` and
+retained through its public COM interface; the font is copied for the gesture's
+lifetime. No icon is rendered. Public `LVM_SETITEMPOSITION32`,
+`LVM_ARRANGE(LVA_SNAPTOGRID)` and `LVM_GETITEMPOSITION` provide native rounding on
+this one item. No folder-wide alignment, position snapshot or restoration is
+needed to prepare it, and preparation does not grow with the folder's item
+count. Geometry is recreated per gesture to reflect zoom and DPI changes.
 
 View presets and wheel steps pass the same nominal icon sizes as Explorer to
 `SetViewModeAndIconSize`; Windows chooses the physical image dimensions. Those
@@ -264,13 +253,13 @@ Snap frame also use the actual image dimensions. Previously stored raw icon
 sizes remain unchanged until a new view or zoom choice replaces them.
 
 Only selected destinations are written. Free placement permits overlapping
-destinations; neither backend shifts other icons to resolve collisions.
-Selection, focus and persistent arrangement flags are unchanged. The separate
-`alignIconsToGrid` command retains the native global operation; its optional
-selected-only adapter rejects collisions that need the native collision pass.
-Stress case `28-apercu-affichage/06-Grille.ps1` compares the two gesture backends
-over 3,000 items and requires actual qualified dispatch when that capability is
-available, or public dispatch with a recorded discovery decision otherwise.
+destinations; other icons are never shifted to resolve collisions. Selection,
+focus and persistent arrangement flags are unchanged. The separate
+`alignIconsToGrid` command retains the native global operation; its selected-only
+form restores stationary positions after that operation. Stress case
+`28-apercu-affichage/06-Grille.ps1` checks real public-grid dispatch and compares
+final coordinates with native folder alignment over 3,000 items, including
+selection, focus, persistence and 60 acknowledged marker motions.
 
 The Placement submenu exposes mutually exclusive Automatic, On a grid and Free
 choices. One masked `IFolderView2::SetCurrentFolderFlags` call sets both native
