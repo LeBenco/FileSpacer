@@ -335,7 +335,14 @@ previews retain their own insertion/collision checks. Free S-preview eligibility
 remains Icon view; Small icons and Tiles retain the existing native Snap fallback.
 
 A free-placement S press is consumed through its matching release, including
-repeats after the drop. The later release only removes keyboard interception;
+repeats after the drop. Once positioning is attempted, the message hook and drop
+policy are detached and retained final decisions become neutral; only keyboard
+repeat suppression may remain. Deactivation explicitly stops the session, even
+if a callback still retains it, so releasing S in another process cannot leave a
+transfer veto or keyboard hook behind. Only `WH_KEYBOARD` changes the held-S
+state during a gesture; the message hook handles mouse motion, completion and
+cancellation.
+The later release only removes keyboard interception;
 it cannot apply the drop or schedule its save twice. Cancellation and closure
 remove the frame. Temporary drop-highlight changes never modify selection/focus.
 
