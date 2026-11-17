@@ -418,7 +418,8 @@ HRESULT ShellIconGrid::prepare(IShellView *source, HWND list, const std::functio
             || FAILED(folder->GetSpacing(&spacing)) || !current() || size <= 0 || spacing.x < size || spacing.y <= 0
             || FAILED(folder->GetCurrentFolderFlags(&flags)) || !current()
             || (flags & (FWF_AUTOARRANGE | FWF_SNAPTOGRID | FWF_DESKTOP | FWF_NOSCROLL))) return S_FALSE;
-    qualified = selectionDetail::gridImage().supported && selectionDetail::gridImage().qualifies();
+    qualified = GetDpiForWindow(list) == USER_DEFAULT_SCREEN_DPI
+        && selectionDetail::gridImage().supported && selectionDetail::gridImage().qualifies();
     if (qualified) {
         ready = true;
         debugPrintf(L"GRID PREPARE path=qualified elapsed_ms=%llu\n", GetTickCount64() - began);
@@ -432,7 +433,7 @@ HRESULT ShellIconGrid::prepare(IShellView *source, HWND list, const std::functio
     const HIMAGELIST icons = ListView_GetImageList(list, LVSIL_NORMAL);
     if (!current()) return E_ABORT;
     int width = 0, height = 0;
-    if (!icons || !ImageList_GetIconSize(icons, &width, &height) || width != size || height != size
+    if (!icons || !ImageList_GetIconSize(icons, &width, &height) || width <= 0 || height != width || width > spacing.x
             || spacing.x > MAXSHORT || spacing.y > MAXSHORT) return S_FALSE;
     if (FAILED(HIMAGELIST_QueryInterface(icons, IID_PPV_ARGS(&imageList))) || !current()) return E_FAIL;
     RECT bounds = {};
