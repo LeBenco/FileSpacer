@@ -23,15 +23,20 @@ Online changelog dates come from `published_at` in the GitHub Releases JSON API,
 matched by release version. The existing Markdown files supply the translated
 notes. `Intl.DateTimeFormat` uses each site's locale for numeric day, month and
 four-digit year formatting, keeping the UTC publication day. Source dates are
-not parsed or used as a fallback. Versions not yet published on GitHub appear
-without a date. Existing heading IDs remain unchanged, including their original
+not parsed or used as a fallback. The public changelog includes only versions
+present in GitHub's published stable releases, with their notes and navigation
+entries filtered together in every language. Never add an `Unreleased` section
+or planned features: changelog sections must name numbered released versions.
+The generator rejects non-versioned sections, including in offline builds.
+Existing heading IDs remain unchanged, including their original
 date suffixes, so published bookmarks still work.
 The generator fetches all release pages during a web build, and incorporates
 the publication metadata into the build fingerprint. API failures stop the build
 before replacing the existing output. Reading the finished site needs no API
 request. CI uses its automatic GitHub token; local builds can use `GH_TOKEN` or
 `GITHUB_TOKEN`, or access the public API without authentication. Offline help
-keeps its local changelog, so an installer can be built before its release exists.
+keeps its local numbered changelog, so an installer can include its own release
+notes before the corresponding GitHub release exists.
 The Nilesoft configuration reference has a translated file for each language;
 its GitHub links follow the selected language. Polish, Dutch and Ukrainian also
 provide translated developer guides; their references use the selected language.
