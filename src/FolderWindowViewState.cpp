@@ -44,7 +44,7 @@ bool FolderWindow::spatialView(IFolderView *const folderView) const {
     UINT viewMode;
     return folderView->GetAutoArrange() == S_FALSE
         && checkHR(folderView->GetCurrentViewMode(&viewMode))
-        && viewMode != FVM_DETAILS && viewMode != FVM_LIST && viewMode != FVM_CONTENT;
+        && viewMode != FVM_DETAILS && viewMode != FVM_LIST && viewMode != FVM_TILE && viewMode != FVM_CONTENT;
 }
 
 void FolderWindow::replayProviderSync() {
@@ -140,7 +140,8 @@ void FolderWindow::scheduleStateSave(bool icons) {
 }
 
 FOLDERVIEWOPTIONS FolderWindow::profileForMode(UINT mode) const {
-    return hybridViewEligible && (mode == FVM_LIST || mode == FVM_CONTENT || (mode == FVM_DETAILS && !columnFillActive()))
+    return hybridViewEligible && (mode == FVM_LIST || mode == FVM_TILE || mode == FVM_CONTENT
+            || (mode == FVM_DETAILS && !columnFillActive()))
         ? FVO_DEFAULT : static_cast<FOLDERVIEWOPTIONS>(FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING);
 }
 
