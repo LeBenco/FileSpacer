@@ -8,7 +8,12 @@ layout: table_wrappers
 {% assign script_path = '/assets/js/just-the-docs.js' | relative_url %}
 {% assign asset_version = site.time | date: '%s' %}
 {% assign versioned_script_path = script_path | append: '?v=' | append: asset_version %}
-{{ document_head | replace: script_path, versioned_script_path }}
+{% assign lunr_path = '/assets/js/vendor/lunr.min.js' | relative_url %}
+{% assign lunr_tag = '<script src="' | append: lunr_path | append: '">' %}
+{% assign deferred_lunr_tag = '<script defer src="' | append: lunr_path | append: '">' %}
+{% assign theme_tag = '<script src="' | append: script_path | append: '">' %}
+{% assign deferred_theme_tag = '<script defer src="' | append: versioned_script_path | append: '">' %}
+{{ document_head | replace: lunr_tag, deferred_lunr_tag | replace: theme_tag, deferred_theme_tag }}
 <body class="fs-site">
   <a class="skip-to-main" href="#main-content">{{ site.fs_ui.skip }}</a>
   {% include icons/icons.html %}
@@ -23,7 +28,6 @@ layout: table_wrappers
       </div>
       {% assign navigation = page.fs_section | prepend: 'sections/' | append: '.html' %}
       {% include {{ navigation }} %}
-      <div class="fs-sidebar-footer">{% include nav_footer_custom.html %}</div>
     </aside>
     <header id="main-header" class="fs-tools">
       <a href="index.html" class="fs-brand fs-tools-brand"><img src="assets/icons/FileSpacer-256.png" alt=""><span>FileSpacer</span></a>
