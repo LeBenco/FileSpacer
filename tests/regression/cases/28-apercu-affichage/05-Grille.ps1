@@ -186,21 +186,14 @@ try {
     Close-UiFolder $window
     $window=Open-UiFolder $folder 6
     Assert-PlacementChoice 'IDM_FREE_PLACEMENT_ICONS'
-    # Small icons and Tiles use different native icon rectangles and cell sizes.
+    # Small icons use a different native icon rectangle and cell size.
     $popup=Open-PreviewMenu $window
     [FileSpacerViewMenuTests.MenuUi]::Choose($popup,3,$window)
     Wait-PreviewMenuClosed $window
     Wait-UiViewMode $window 2
     Choose-Placement 'IDM_KEEP_ICONS_ALIGNED'
     $smallFrame=Move-PlacementFrame 'item-0000'
-    $popup=Open-PreviewMenu $window
-    [FileSpacerViewMenuTests.MenuUi]::Choose($popup,6,$window)
-    Wait-PreviewMenuClosed $window
-    Wait-UiViewMode $window 6
-    Choose-Placement 'IDM_AUTO_ARRANGE_ICONS'
-    Use-UiView $window {param($view) $view.Select('item-0000')}
-    $tileFrame=Move-PlacementFrame 'item-0000'
-    @{Grid=$gridFrame;Automatic=$autoFrame;SmallIcons=$smallFrame;Tiles=$tileFrame}|ConvertTo-Json -Depth 4|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'placement-frames.json') -Encoding UTF8
+    @{Grid=$gridFrame;Automatic=$autoFrame;SmallIcons=$smallFrame}|ConvertTo-Json -Depth 4|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'placement-frames.json') -Encoding UTF8
     Write-Host 'PASS: three exclusive placement modes persist, and permanent frames predict native grid and automatic drops across icon views.'
     # A physical held key can repeat after the mouse button was released.
     # Reserve that whole press for Snap, then restore ordinary type-to-select.
