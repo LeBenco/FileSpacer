@@ -3,7 +3,7 @@
 Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1') -ErrorAction Stop
 . (Join-Path $PSScriptRoot 'Process.ps1')
 function Invoke-ClientRegression {
-    param([string]$VM,$Selected,[int]$TimeoutSeconds,[string]$RunDirectory,[ValidateSet('Regression','Stress')][string]$Suite='Regression',[ValidateSet('Debug','Release')][string]$Configuration=(Get-TestConfiguration))
+    param([string]$VM,$Selected,[int]$TimeoutSeconds,[string]$RunDirectory,[ValidateSet('Regression','Stress')][string]$Suite='Regression',[ValidateSet('Debug','Release')][string]$Configuration=(Get-TestConfiguration),[ValidateSet(0,100,125,150)][int]$DisplayScale=0)
     if ($VM -match '[\\/:*?"<>|]' -or $VM -in @('.','..')) { throw 'Invalid VM profile name.' }
     $configFile=Join-Path $env:ProgramData ('FileSpacerTests\'+$VM+'\runner.json')
     if (!(Test-Path -LiteralPath $configFile)) { throw ('VM is not configured for unattended tests: '+$VM) }
@@ -31,7 +31,7 @@ function Invoke-ClientRegression {
     $package=Join-Path $run 'package'
     [void][IO.Directory]::CreateDirectory($package)
     [void](Start-Transcript -LiteralPath (Join-Path $run 'preparation.log'))
-    try { New-ClientPackage -Selected $Selected -Destination $package -TimeoutSeconds $TimeoutSeconds -Suite $Suite -Configuration $Configuration }
+    try { New-ClientPackage -Selected $Selected -Destination $package -TimeoutSeconds $TimeoutSeconds -Suite $Suite -Configuration $Configuration -DisplayScale $DisplayScale }
     finally { [void](Stop-Transcript) }
     try {
         & (Join-Path $ProjectRoot 'tests\client\Invoke-HyperVRunner.ps1') -ProjectRoot $ProjectRoot -VMName $VM -RegressionRunId $runId
@@ -45,7 +45,7 @@ function Invoke-ClientRegression {
 }
 
 function New-ClientPackage {
-    param($Selected,[string]$Destination,[int]$TimeoutSeconds,[ValidateSet('Regression','Stress')][string]$Suite='Regression',[ValidateSet('Debug','Release')][string]$Configuration=(Get-TestConfiguration))
+    param($Selected,[string]$Destination,[int]$TimeoutSeconds,[ValidateSet('Regression','Stress')][string]$Suite='Regression',[ValidateSet('Debug','Release')][string]$Configuration=(Get-TestConfiguration),[ValidateSet(0,100,125,150)][int]$DisplayScale=0)
     $previousConfiguration=$env:FS_REGRESSION_CONFIGURATION
     $env:FS_REGRESSION_CONFIGURATION=$Configuration
     try {
@@ -156,6 +156,11 @@ function New-ClientPackage {
     foreach($relative in @('src\resource.h','src\dialog.h',('build\'+$Configuration.ToLowerInvariant()+'\FileSpacer.exe'),('build\'+$Configuration.ToLowerInvariant()+'\FileSpacerFolder.dll'))) { Copy-PackageFile (Join-Path $ProjectRoot $relative) }
     $runnerFiles=@{(Join-Path $regression 'common\DesktopActivity.cs')=$true}
     Copy-PackageFile (Join-Path $regression 'common\DesktopActivity.cs')
+    if($DisplayScale){
+        $displaySource=Join-Path $regression 'common\DesktopDisplay.cs'
+        $runnerFiles[$displaySource]=$true
+        Copy-PackageFile $displaySource
+    }
     Build-ManagedBundle 'runner' $runnerFiles
     foreach($entry in $Selected) {
         Write-Host ('PREPARE '+$entry.Relative)
@@ -231,7 +236,7 @@ function New-ClientPackage {
         Build-ManagedBundle $entry.Relative $dependencies
     }
     @{Configuration=$Configuration;Native=@($native);Managed=@($managed)} | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $prepared 'index.json') -Encoding UTF8
-    @{Suite=$Suite;Cases=@($Selected | ForEach-Object {$_.Relative});TimeoutSeconds=$TimeoutSeconds;BuildLocation='Host';HostMachine=$env:COMPUTERNAME;Configuration=$Configuration} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $Destination 'selection.json') -Encoding UTF8
+    @{DisplayScale=$DisplayScale;Suite=$Suite;Cases=@($Selected | ForEach-Object {$_.Relative});TimeoutSeconds=$TimeoutSeconds;BuildLocation='Host';HostMachine=$env:COMPUTERNAME;Configuration=$Configuration} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $Destination 'selection.json') -Encoding UTF8
     $files=@(Get-ChildItem -LiteralPath $Destination -Recurse -File | ForEach-Object { @{Path=$_.FullName.Substring($Destination.Length+1);Sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash} })
     ConvertTo-Json -InputObject $files -Depth 3 | Set-Content -LiteralPath (Join-Path $Destination 'files.json') -Encoding UTF8
     } finally { $env:FS_REGRESSION_CONFIGURATION=$previousConfiguration }
