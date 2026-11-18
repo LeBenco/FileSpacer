@@ -38,6 +38,7 @@ Do not run a native test a second time when the selected suite already includes 
 | `-TimeoutSeconds N` | Per-case deadline, 30–3600 seconds; default 300 for regressions and 900 for stress. A timeout is a failure. |
 | `-RunDirectory "path"` | Store or copy reports to a new directory; existing reports are never overwritten. |
 | `-VM "name"` | Run selected cases in a configured Hyper-V client. |
+| `-DisplayScale 100\|125\|150` | Apply and verify the actual primary-display scale for a UI selection, then restore the original scale and resolution, including after failure. Default `0` keeps the current display unchanged. |
 
 Use `-Configuration Release` to build and test the ordinary optimized application,
 with the same isolated `/test` registry, database and process namespaces. Debug
@@ -96,8 +97,12 @@ packaging still uses the selected revision. Changed inputs or missing, evicted o
 evidence require a new execution. GitHub's cache branch/ref visibility rules apply.
 
 In **Actions > Test FileSpacer regressions > Run workflow**, choose `ref`
-(branch, tag or commit), `category` and `pattern`. `All` / `*` runs the complete
-application suite. The workflow must exist on the default branch for manual
+(branch, tag or commit), `category`, `pattern`, `suite` and `display_scale`.
+The default `Regression` / `All` / `*` runs the complete regression suite;
+`Stress` selects the separate specialized catalogue explicitly. Scale `0` keeps
+the current display; `100`, `125` or `150` requests a real scale change. For the
+placement-frame check, select `Stress`, pattern
+`28-apercu-affichage\07-*` and scale `150`. The workflow must exist on the default branch for manual
 dispatch. The selected revision must contain the workflow and runner it needs;
 tests are not taken from a different checkout.
 
@@ -108,6 +113,17 @@ run as the same interactive user with a limited, medium-integrity token;
 preparation and worker checks verify access to `Shell.Windows()` and the actual
 token. COM registration is per user. This environment does not replace tests
 on Windows 10 or on another required display/provider configuration.
+
+Explicit display scaling uses the same prepared helper in local, Hyper-V and CI
+runs. It changes scaling through Windows Settings UI Automation and verifies the
+actual DPI with a per-monitor-aware native window; it does not simulate DPI or
+write undocumented scaling settings. Above 100%, it temporarily requests a
+1600×1200 desktop. `display-state.json` records the initial, applied and restored
+values. An unavailable scale selector, remote-session restriction, unsupported
+resolution or failed restoration fails the campaign before it can be reported
+as successful. Hyper-V scale changes require a basic console session, not an
+enhanced RDP session. The workflow fingerprints the selected catalogue and scale
+separately, so a 100% result cannot validate 150%.
 
 The workflow publishes no installer or offline help. The [release
 workflow](../../../../.github/workflows/release.yml) reuses it as its first job, within
