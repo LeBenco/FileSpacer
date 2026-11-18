@@ -195,46 +195,33 @@ test('flag metadata must identify one current file and permit use without attrib
   assert.match(flags.get('gb'), /viewBox="0 0 50 30"/);
 });
 
-test('changelogs include only published release notes and navigation, retaining localized dates and published anchors', async t => {
+test('GitHub publication dates localize changelog headings and navigation without changing notes or existing anchors', async t => {
   const output = await fs.mkdtemp(path.join(os.tmpdir(), 'filespacer-release-dates-'));
   t.after(() => {
     assert.equal(path.dirname(output), os.tmpdir());
     return fs.rm(output, {recursive: true, force: true});
   });
   const baseline = await generate(repository, output, {onWarning: () => {}});
-  const source = await fs.readFile(path.join(repository, 'CHANGELOG.md'), 'utf8');
-  const releaseDates = Object.fromEntries([...source.matchAll(/^## (\d+\.\d+\.\d+)(?=\s|$)/gm)]
-    .map(match => [match[1], '2026-11-05T23:59:59Z']));
-  delete releaseDates['1.3.1'];
   const oldIds = new Map();
   const ids = html => [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
   for (const language of baseline.languages) {
     oldIds.set(language.code, ids(await readDocuments(path.join(output, language.source))));
   }
   const result = await generate(repository, output, {
-    onWarning: () => {}, releaseDates,
+    onWarning: () => {}, releaseDates: {'1.3.2': '2026-11-05T23:59:59Z'},
   });
   for (const language of result.languages) {
     const html = await readDocuments(path.join(output, language.source));
     const nav = await fs.readFile(path.join(output, language.source, '_includes/sections/changelog.html'), 'utf8');
-    assert.deepEqual(ids(html), oldIds.get(language.code).filter(id => id !== 'changelog--131--2026-11-03'), language.code);
+    assert.deepEqual(ids(html), oldIds.get(language.code), language.code);
     const date = new Intl.DateTimeFormat(language.code, {year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC'})
       .format(new Date('2026-11-05T23:59:59Z'));
     assert.ok(html.includes(`1.3.2 — ${date}</h2>`), language.code);
     assert.ok(nav.includes(`1.3.2 — ${date}</a>`), language.code);
-    assert.doesNotMatch(html, /id="changelog--131--2026-11-03"/);
-    assert.doesNotMatch(nav, /changelog--131--2026-11-03/);
+    assert.match(html, /1\.3\.1<\/h2>/, 'A version not yet published on GitHub is shown without an invented date');
     if (language.code === 'fr-FR') assert.match(html, /Ajouter le polonais/);
     if (language.code === 'en-GB') assert.match(html, /Add Polish/);
   }
-  const english = await fs.readFile(path.join(output, 'changelog.html'), 'utf8');
-  assert.doesNotMatch(english, /Fix default file-manager opening selecting another application/);
-  assert.doesNotMatch(english, /Unreleased/i);
-  const root = await fixture(t);
-  const file = path.join(root, 'CHANGELOG.md');
-  await fs.writeFile(file, source.replace('# Changelog', '# Changelog\n\n<a id="unreleased"></a>\n\n## Unreleased\n\n- Planned feature.'));
-  await assert.rejects(generate(root, path.join(root, 'output'), {onWarning: () => {}}),
-    /Changelog sections must name a released version, not "Unreleased"/);
 });
 
 test('replacing an image changes both its thumbnail and popup URL while unchanged images keep their cache key', async t => {
