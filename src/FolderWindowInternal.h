@@ -7,7 +7,7 @@
 namespace filespacer {
 static constexpr int BOTTOM_STATUS_HEIGHT_DIP = 23;
 inline bool iconPlacementMode(UINT mode) {
-    return mode == FVM_ICON || mode == FVM_SMALLICON || mode == FVM_TILE;
+    return mode == FVM_ICON || mode == FVM_SMALLICON;
 }
 
 bool gridPlacement(IFolderView *folderView);
