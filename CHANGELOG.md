@@ -2,10 +2,6 @@
 
 # Changelog
 
-<a id="unreleased"></a>
-
-## Unreleased
-
 <a id="142--2026-11-12"></a>
 
 ## 1.4.2 — 2026-11-12
