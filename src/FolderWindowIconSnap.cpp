@@ -315,13 +315,7 @@ struct FolderWindow::IconSnap {
         const auto style = GetWindowLongPtrW(list, GWL_STYLE);
         if (!folder || FAILED(folder->GetViewModeAndIconSize(&mode, &iconSize)) || !current()
                 || !iconPlacementMode(mode)) return false;
-        if (mode == FVM_TILE) {
-            // GetSpacing reports icon spacing, not the current tile dimensions.
-            LVTILEVIEWINFO tiles = {sizeof(tiles)};
-            tiles.dwMask = LVTVIM_TILESIZE;
-            ListView_GetTileViewInfo(list, &tiles);
-            spacing = {tiles.sizeTile.cx, tiles.sizeTile.cy};
-        } else if (FAILED(folder->GetSpacing(&spacing))) return false;
+        if (FAILED(folder->GetSpacing(&spacing))) return false;
         if (!current() || iconSize <= 0 || iconSize > MAXSHORT / 3 || spacing.x < iconSize || spacing.x > MAXSHORT / 3 || spacing.y <= 0
                 || FAILED(folder->GetCurrentFolderFlags(&flags)) || !current()
                 || (flags & (FWF_DESKTOP | FWF_NOSCROLL))
@@ -728,7 +722,7 @@ LRESULT FolderWindow::handleIconSnap(WPARAM wParam, LPARAM lParam) {
             session->placement = session->dropped = false;
             if (session->current() && place && !GetCapture()) {
                 if (session->applyPlacement() && session->snap && session->previewMode != FVM_ICON)
-                    realignIcons(true); // Existing native support for Small icons and Tiles.
+                    realignIcons(true); // Existing native support for Small icons.
             }
             session->snap = false;
             session->finishDrop();
