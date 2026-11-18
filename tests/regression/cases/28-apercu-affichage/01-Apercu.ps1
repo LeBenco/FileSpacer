@@ -40,12 +40,13 @@ try {
     Reset-PreviewMode $window
     $state=Set-PreviewState $window
     $state|ConvertTo-Json -Depth 4|Set-Content -LiteralPath (Join-Path $env:FS_REGRESSION_RUN 'before-owner-close.json') -Encoding UTF8
+    $restoredPositions=Get-PreviewRestoredPositions $window $state.Positions
     $popup=Open-PreviewMenu $window
     [FileSpacerViewMenuTests.MenuUi]::Hover($popup,0);Wait-PreviewMode $window $modes[0]
     Close-UiFolder $window
     $window=Open-UiFolder $folder 300
     Wait-PreviewMode $window $initial
     Read-PreviewState $window|ConvertTo-Json -Depth 4|Set-Content -LiteralPath (Join-Path $env:FS_REGRESSION_RUN 'after-owner-reopen.json') -Encoding UTF8
-    Wait-Ui {(Read-PreviewState $window).Positions -eq $state.Positions} 'original persisted icon positions after owner close' 250
+    Wait-Ui {(Read-PreviewState $window).Positions -eq $restoredPositions} 'original persisted icon positions after owner close through integer DPI storage' 250
     Write-Host 'PASS: closing the owner during a preview preserves the original persisted presentation.'
 }catch{$failure=$_;throw}finally{Stop-Ui -Failure $failure}
