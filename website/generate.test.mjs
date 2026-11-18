@@ -5,11 +5,15 @@ import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
-import {generate} from './generate.mjs';
+import {generate as generateSite} from './generate.mjs';
 import lunr from 'lunr';
 
 const repository = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const documentFiles = ['index.html', 'user-guide.html', 'changelog.html', 'third-party-notices.html'];
+const flagSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 3"><path d="M0 0h4v3H0z"/></svg>';
+const generate = (root, output, options) => generateSite(root, output, {
+  flagRequest: async () => new Response(flagSvg), ...options,
+});
 // Content and anchor invariants apply across the four generated documents.
 async function readDocuments(directory) {
   return (await Promise.all(documentFiles.map(file => fs.readFile(path.join(directory, file), 'utf8')))).join('\n');
@@ -101,6 +105,39 @@ test('optimized animations replace GIFs only while their source hash matches', a
   await fs.unlink(path.join(root, gif.replace('.gif', '.webp')));
   await generate(root, output);
   assert.match(await guide(), /screenshot-link" href="assets\/content\/docs\/images\/move-window\.gif\?v=/);
+});
+
+test('flags are downloaded once per discovered country and included locally in every language', async t => {
+  const output = await fs.mkdtemp(path.join(os.tmpdir(), 'filespacer-flags-'));
+  t.after(() => fs.rm(output, {recursive: true, force: true}));
+  const requested = [];
+  const result = await generate(repository, output, {onWarning: () => {}, flagRequest: async url => {
+    requested.push(url);
+    return new Response(flagSvg);
+  }});
+  const countries = [...new Set(result.languages.map(language => new Intl.Locale(language.code).region.toLowerCase()))];
+  assert.deepEqual(requested.sort(), countries.map(country => `https://flagcdn.com/${country}.svg`).sort());
+  for (const language of result.languages) {
+    const directory = path.join(output, language.source);
+    const nav = await fs.readFile(path.join(directory, '_includes/sections/user-guide.html'), 'utf8');
+    for (const country of countries) {
+      assert.equal(await fs.readFile(path.join(directory, `assets/flags/${country}.svg`), 'utf8'), flagSvg);
+      assert.ok(nav.includes(`src="assets/flags/${country}.svg"`));
+    }
+    assert.doesNotMatch(nav, /https:\/\/flagcdn/);
+    assert.equal((nav.match(/loading="lazy"/g) || []).length, result.languages.length);
+    await assert.rejects(fs.access(path.join(directory, 'assets/language-flags.woff2')), {code: 'ENOENT'});
+  }
+});
+
+test('unavailable or invalid flag downloads fail instead of publishing missing images', async t => {
+  const root = await fixture(t);
+  await assert.rejects(generate(root, path.join(root, 'output'), {
+    flagRequest: async () => new Response('', {status: 503}),
+  }), /Flag download failed \(503\): https:\/\/flagcdn.com\/gb.svg/);
+  await assert.rejects(generate(root, path.join(root, 'output'), {
+    flagRequest: async () => new Response('<html>Error</html>'),
+  }), /Invalid flag SVG: https:\/\/flagcdn.com\/gb.svg/);
 });
 
 test('GitHub publication dates localize changelog headings and navigation without changing notes or existing anchors', async t => {
