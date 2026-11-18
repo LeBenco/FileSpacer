@@ -309,6 +309,7 @@ export async function generate(repository = path.dirname(template), destination 
       if (/\.svg$/i.test(media)) {
         const svg = optimize(bytes.toString('utf8'), {multipass: true, plugins: [
           {name: 'preset-default', params: {overrides: {removeComments: false}}},
+          {name: 'addAttributesToSVGElement', params: {attributes: [{'shape-rendering': 'geometricPrecision'}]}},
         ]}).data;
         await fs.writeFile(path.join(output, mediaTarget), svg);
       } else await fs.copyFile(path.join(repository, media), path.join(output, mediaTarget));
