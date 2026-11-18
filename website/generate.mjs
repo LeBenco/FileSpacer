@@ -3,7 +3,9 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {Marked} from 'marked';
+import {optimize} from 'svgo';
 import {fetchReleaseDates, releaseHeading} from './releases.mjs';
+import {downloadFlags} from './flags.mjs';
 
 const template = path.dirname(fileURLToPath(import.meta.url));
 const navigationDepth = 2; // Maximum menu levels, counting each document as level 1.
@@ -126,16 +128,7 @@ export async function generate(repository = path.dirname(template), destination 
   for (const locale of options.recordTranslations || []) {
     if (!languages.some(language => language.code === locale && language !== languages[0])) throw new Error(`Unknown translation locale: ${locale}`);
   }
-  // Public-domain Flagpedia artwork: download once per country at build time.
-  // The finished website and offline help never contact the CDN.
-  const flags = new Map(await Promise.all([...new Set(languages.map(language => language.flag))].map(async country => {
-    const url = `https://flagcdn.com/${country}.svg`;
-    const response = await (options.flagRequest || fetch)(url, {signal: AbortSignal.timeout(20000)});
-    if (!response.ok) throw new Error(`Flag download failed (${response.status}): ${url}`);
-    const svg = await response.text();
-    if (!/^\s*<svg\b[^]*<\/svg>\s*$/.test(svg)) throw new Error(`Invalid flag SVG: ${url}`);
-    return [country, svg];
-  })));
+  const flags = await downloadFlags(languages.map(language => language.flag), options.flagRequest);
   const parser = new Marked({gfm: true});
   const canonical = new Map();
   const results = [];
@@ -313,7 +306,12 @@ export async function generate(repository = path.dirname(template), destination 
       const media = useWebp ? variant : source;
       const mediaTarget = useWebp ? target.replace(/\.gif$/i, '.webp') : target;
       await fs.mkdir(path.dirname(path.join(output, mediaTarget)), {recursive: true});
-      await fs.copyFile(path.join(repository, media), path.join(output, mediaTarget));
+      if (/\.svg$/i.test(media)) {
+        const svg = optimize(bytes.toString('utf8'), {multipass: true, plugins: [
+          {name: 'preset-default', params: {overrides: {removeComments: false}}},
+        ]}).data;
+        await fs.writeFile(path.join(output, mediaTarget), svg);
+      } else await fs.copyFile(path.join(repository, media), path.join(output, mediaTarget));
       if (/\.(png|gif)$/i.test(target)) {
         const version = createHash('sha256').update(useWebp ? await fs.readFile(path.join(repository, media)) : bytes).digest('hex').slice(0, 12);
         const [width, height] = /\.png$/i.test(target)
