@@ -5,6 +5,7 @@ param(
     [ValidateSet('Regression','Stress')][string]$Suite='Regression',
     [ValidateSet('Debug','Release')][string]$Configuration='Debug',
     [switch]$BuildApplication,
+    [ValidateSet(0,100,125,150)][int]$DisplayScale=0,
     [string]$Pattern='*',
     [ValidateRange(30,3600)][int]$TimeoutSeconds=300,
     [string]$RunDirectory='',
@@ -28,6 +29,12 @@ if ($Prepared -and $preparedSelection.PSObject.Properties['Suite']) {
     if ($Suite -notin @('Regression','Stress')) { throw 'Invalid prepared suite.' }
 }
 if ($Prepared) {
+    if($preparedSelection.PSObject.Properties['DisplayScale']){
+        $preparedScale=[int]$preparedSelection.DisplayScale
+        if($preparedScale -notin @(0,100,125,150)){throw 'Invalid prepared display scale.'}
+        if($PSBoundParameters.ContainsKey('DisplayScale') -and $DisplayScale-ne$preparedScale){throw 'Prepared display scale differs from the request.'}
+        $DisplayScale=$preparedScale
+    }
     if ($BuildApplication) { throw 'A prepared guest run cannot compile the application.' }
     if (!$preparedSelection.PSObject.Properties['Configuration'] -or $preparedSelection.Configuration -notin @('Debug','Release')) { throw 'Invalid prepared build configuration.' }
     if ($PSBoundParameters.ContainsKey('Configuration') -and $Configuration -ne $preparedSelection.Configuration) { throw 'Prepared build configuration differs from the request.' }
@@ -50,6 +57,7 @@ foreach ($test in $tests) {
     }
 }
 if (!$selected.Count) { throw 'No tests matched the requested category/pattern.' }
+if($DisplayScale -and !@($selected|Where-Object Category -eq 'UI').Count){throw 'An explicit display scale requires a UI selection.'}
 if ($ListOnly) {
     ConvertTo-Json -InputObject @($selected | ForEach-Object { [pscustomobject]@{Test=$_.Relative;Category=$_.Category;Scope=$_.Scope} })
     exit 0
@@ -65,7 +73,7 @@ if ($BuildApplication) {
 if ($VM) {
     if ($Prepared) { throw 'A prepared guest run cannot dispatch another VM.' }
     . (Join-Path $PSScriptRoot 'common\Prepare-Client.ps1')
-    Invoke-ClientRegression -VM $VM -Selected $selected -TimeoutSeconds $TimeoutSeconds -RunDirectory $RunDirectory -Suite $Suite -Configuration $Configuration
+    Invoke-ClientRegression -VM $VM -Selected $selected -TimeoutSeconds $TimeoutSeconds -RunDirectory $RunDirectory -Suite $Suite -Configuration $Configuration -DisplayScale $DisplayScale
     exit $LASTEXITCODE
 }
 if ($Prepared) { . (Join-Path $PSScriptRoot 'common\Prepared.ps1') }
@@ -87,7 +95,7 @@ if ($CI) {
     $package=Join-Path $run 'package'
     [void][IO.Directory]::CreateDirectory($package)
     [void](Start-Transcript -LiteralPath (Join-Path $run 'preparation.log'))
-    try { New-ClientPackage -Selected $selected -Destination $package -TimeoutSeconds $TimeoutSeconds -Suite $Suite -Configuration $Configuration }
+    try { New-ClientPackage -Selected $selected -Destination $package -TimeoutSeconds $TimeoutSeconds -Suite $Suite -Configuration $Configuration -DisplayScale $DisplayScale }
     finally { [void](Stop-Transcript) }
     & (Join-Path $PSScriptRoot 'common\Invoke-CIClient.ps1') -Package $package -RunDirectory $run
     exit $LASTEXITCODE
@@ -100,6 +108,7 @@ $registryPrepared=$false; $dbPrepared=$false; $dbComplete=$false; $fatal=$null
 $savedRegistry=$null; $movedFiles=New-Object Collections.Generic.List[string]
 $originalFiles=@{}
 $desktopActivity=$null
+$displaySession=$null;$displayResolution=$null;$displayRecord=$null
 
 function Read-RegistryTree([Microsoft.Win32.RegistryKey]$Key) {
     $values=@(); $children=@()
@@ -182,6 +191,24 @@ try {
         $desktopActivity=New-Object FileSpacerRegression.DesktopActivity
         @{OriginalScreenSaverActive=$desktopActivity.OriginalScreenSaverActive; Suspended=$true} |
             ConvertTo-Json | Set-Content -LiteralPath (Join-Path $run 'desktop-activity.json') -Encoding UTF8
+        if($DisplayScale){
+            Add-Type -AssemblyName UIAutomationClient
+            Add-Type -AssemblyName UIAutomationTypes
+            Add-Type -AssemblyName WindowsBase
+            Add-Type -Path (Join-Path $PSScriptRoot 'common\DesktopDisplay.cs') -ReferencedAssemblies @([System.Windows.Automation.AutomationElement].Assembly.Location,[System.Windows.Automation.ControlType].Assembly.Location,[System.Windows.Rect].Assembly.Location)
+            $originalSize=[FileSpacerRegression.Resolution]::ReadSize()
+            $displayRecord=[ordered]@{RequestedPercent=$DisplayScale;OriginalDpi=[FileSpacerRegression.DisplayState]::ReadMonitorDpi();OriginalSize=$originalSize;ActualDpi=$null;RestoredDpi=$null;RestoredSize=$null;SettingsControls=@();Error=$null}
+            if($DisplayScale-gt100){$displayResolution=New-Object FileSpacerRegression.Resolution 1600,1200}
+            if([FileSpacerRegression.DisplayState]::ReadMonitorDpi()-ne$DisplayScale*96/100){
+                $displaySession=New-Object FileSpacerRegression.DisplayScale $true
+                if($displaySession.OriginalPercent*96/100-ne$displayRecord.OriginalDpi){throw 'Settings scale disagrees with actual initial DPI.'}
+                $displaySession.Set($DisplayScale)
+                $displaySession.Hide()
+            }
+            $displayRecord.ActualDpi=[FileSpacerRegression.DisplayState]::ReadMonitorDpi()
+            if($displayRecord.ActualDpi-ne$DisplayScale*96/100){throw 'Actual display DPI differs from the requested scale.'}
+            $displayRecord|ConvertTo-Json|Set-Content (Join-Path $run 'display-state.json') -Encoding UTF8
+        }
         [void][IO.Directory]::CreateDirectory($backup)
         $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($testKey)
         if ($key) {
@@ -318,6 +345,24 @@ finally {
                 }
             } catch { $fatal="Restore test registry: $($_.Exception.Message)"; Write-Warning $fatal }
         }
+        if($displayRecord){
+            $displayRecord.Error=$fatal
+            if(!$displayRecord.ActualDpi){$displayRecord.SettingsControls=[FileSpacerRegression.DisplayScale]::LastSettingsControls}
+            try {
+                try {if($displaySession){$displaySession.Dispose()}}
+                finally {if($displayResolution){$displayResolution.Dispose()}}
+                $displayRecord.RestoredDpi=[FileSpacerRegression.DisplayState]::ReadMonitorDpi()
+                $displayRecord.RestoredSize=[FileSpacerRegression.Resolution]::ReadSize()
+                if($displayRecord.RestoredDpi-ne$displayRecord.OriginalDpi -or
+                        $displayRecord.RestoredSize[0]-ne$displayRecord.OriginalSize[0] -or
+                        $displayRecord.RestoredSize[1]-ne$displayRecord.OriginalSize[1]){throw 'Actual display restoration verification failed.'}
+            } catch {
+                $restoreError='Restore display: '+$_.Exception.Message
+                if($fatal){$fatal+='; '+$restoreError}else{$fatal=$restoreError}
+                $displayRecord.Error=$fatal
+            }
+            $displayRecord|ConvertTo-Json|Set-Content (Join-Path $run 'display-state.json') -Encoding UTF8
+        }
         if ($desktopActivity) {
             try {
                 $desktopActivity.Dispose()
@@ -334,6 +379,7 @@ finally {
 $summary=Get-RegressionSummary @($results.ToArray()) $selected.Count $fatal
 $summary|Add-Member -NotePropertyName Suite -NotePropertyValue $Suite
 $summary|Add-Member -NotePropertyName Configuration -NotePropertyValue $Configuration
+if($displayRecord){$summary|Add-Member -NotePropertyName DisplayScale -NotePropertyValue ([pscustomobject]$displayRecord)}
 ConvertTo-Json -InputObject $results -Depth 5 | Set-Content -LiteralPath (Join-Path $run 'results.json') -Encoding UTF8
 $summary | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $run 'summary.json') -Encoding UTF8
 Show-RegressionSummary @($results.ToArray()) $summary $run
