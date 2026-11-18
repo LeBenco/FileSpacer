@@ -75,7 +75,7 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
     std::vector<ExpectedIconPosition> expectedIcons;
     std::array<CComHeapPtr<ITEMID_CHILD>, 3> manualIconIds;
     const POINT manualPoints[3] = {{37, 53}, {219, 69}, {401, 211}};
-    POINT gridSpacing = {};
+    POINT gridSpacing = {}, gridPhase = {};
     size_t firstIconPointOffset = 0;
     HWND focusTarget = nullptr;
     unsigned selectionCase = 0, selectionChanges = 0, selectionBaseline = 0;
@@ -1102,20 +1102,26 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
                     || !expect(gridSpacing.x > 0 && gridSpacing.y > 0, L"native grid pitch is positive")
                     || !checked(folderView->Item(0, &manualIconIds[0]), L"retain the first visible grid identity")
                     || !checked(folderView->GetItemPosition(manualIconIds[0], &first), L"read the original grid phase")) return;
-            first = {first.x % gridSpacing.x, first.y % gridSpacing.y};
+            gridPhase = first = {first.x % gridSpacing.x, first.y % gridSpacing.y};
             if (!checked(folderView->SetCurrentFolderFlags(FWF_SNAPTOGRID, 0), L"disable collision handling while seeding holes")) return;
             for (int i = 0; i < 150; ++i) {
                 CComHeapPtr<ITEMID_CHILD> id;
                 if (!checked(folderView->Item(i, &id), L"read an identity for the sparse grid")) return;
                 PCUITEMID_CHILD child = id;
-                POINT point = {first.x + (i % 12) * 2 * gridSpacing.x, first.y + (i / 12) * 2 * gridSpacing.y};
+                // Stored coordinates are integer 96-DPI units: scaled back above 100%,
+                // a point can return one pixel past its cell. Seed that rounding,
+                // including on the first saved item, which supplies the old phase.
+                POINT point = {first.x + (i % 12) * 2 * gridSpacing.x + (i % 3 == 0 ? 1 : 0),
+                    first.y + (i / 12) * 2 * gridSpacing.y + (i % 4 == 0 ? 1 : 0)};
                 if (!checked(folderView->SelectAndPositionItems(1, &child, &point, SVSI_POSITIONITEM | SVSI_NOSTATECHANGE),
                         L"seed distinct grid cells with holes")) return;
             }
             auto current = [&]() { return !closing && browser.isViewNotification(generation); };
-            if (!checked(folderView->SetCurrentFolderFlags(FWF_SNAPTOGRID, FWF_SNAPTOGRID), L"enable native grid placement")
-                    || !checked(captureIconPositions(folderView, current, true, {}, iconBlob), L"capture the complete sparse grid")
-                    || !decodeExpectedIcons()) return;
+            // Capture the rounded coordinates first; native grid placement then
+            // returns every item to its exact cell.
+            if (!checked(captureIconPositions(folderView, current, true, {}, iconBlob), L"capture the complete sparse grid")
+                    || !decodeExpectedIcons()
+                    || !checked(folderView->SetCurrentFolderFlags(FWF_SNAPTOGRID, FWF_SNAPTOGRID), L"enable native grid placement")) return;
             {
                 FolderStateStore store(database.c_str());
                 FolderState saved; saved.icons = iconBlob;
@@ -1146,18 +1152,19 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
                     || !expect(pitch.x > 0 && pitch.y > 0, L"resized grid pitch is positive")
                     || !checked(folderView->Item(0, &currentFirst), L"read the current native grid anchor")
                     || !checked(folderView->GetItemPosition(currentFirst, &anchor), L"observe the resized native grid phase")) return;
-            const POINT before = scaleDPI(expectedIcons[1].point);
-            const POINT oldOrigin = {before.x % gridSpacing.x, before.y % gridSpacing.y};
             const POINT origin = {anchor.x % pitch.x, anchor.y % pitch.y};
             log(L"GRID PHASE: oldPitch=(%ld,%ld) newPitch=(%ld,%ld) oldOrigin=(%ld,%ld) newOrigin=(%ld,%ld)",
-                gridSpacing.x, gridSpacing.y, pitch.x, pitch.y, oldOrigin.x, oldOrigin.y, origin.x, origin.y);
+                gridSpacing.x, gridSpacing.y, pitch.x, pitch.y, gridPhase.x, gridPhase.y, origin.x, origin.y);
             const HRESULT result = restoreIconGridPositions(folderView, iconBlob, gridSpacing,
                 [&]() { return !closing && browser.isViewNotification(generation); });
             if (!checked(result, L"remap a saved grid whose first item disappeared")) return;
             for (size_t i = 1; i < expectedIcons.size(); ++i) {
                 const POINT old = scaleDPI(expectedIcons[i].point);
-                const POINT expected = {(old.x - oldOrigin.x) / gridSpacing.x * pitch.x + origin.x,
-                    (old.y - oldOrigin.y) / gridSpacing.y * pitch.y + origin.y};
+                // The oracle is the seeded cell, not production's arithmetic: a pixel
+                // of stored rounding must not move an item into a neighbouring cell.
+                const POINT cell = {(old.x - gridPhase.x + gridSpacing.x / 2) / gridSpacing.x,
+                    (old.y - gridPhase.y + gridSpacing.y / 2) / gridSpacing.y};
+                const POINT expected = {cell.x * pitch.x + origin.x, cell.y * pitch.y + origin.y};
                 POINT actual = {};
                 if (!checked(folderView->GetItemPosition(expectedIcons[i].id, &actual), L"read a surviving item's remapped cell")) return;
                 if (actual.x != expected.x || actual.y != expected.y)
