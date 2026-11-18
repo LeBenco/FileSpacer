@@ -115,7 +115,8 @@ token. COM registration is per user. This environment does not replace tests
 on Windows 10 or on another required display/provider configuration.
 
 Explicit display scaling uses the same prepared helper in local, Hyper-V and CI
-runs. It changes scaling through Windows Settings UI Automation and verifies the
+runs. It opens Settings through the existing desktop Explorer and changes scaling
+through UI Automation, then verifies the
 actual DPI with a per-monitor-aware native window; it does not simulate DPI or
 write undocumented scaling settings. Above 100%, it temporarily requests a
 1600×1200 desktop. `display-state.json` records the initial, applied and restored
