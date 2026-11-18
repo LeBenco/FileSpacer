@@ -62,10 +62,27 @@ function Measure-ResizeGesture([IntPtr]$Window,$Process,[string]$Kind,[bool]$Def
     $cpu=Cpu $Process;$watch=[Diagnostics.Stopwatch]::StartNew();$worstReply=0.0
     [FileSpacerRegression.AltDragInput]::BeginConfigured($Window,$start,0,0)
     [FileSpacerRegression.AltDragInput]::VerifyHeld($false)
+    $entryMs=0.0
+    if($Kind-eq'window'){
+        # Match the native-border regressions: SendInput accepting the press
+        # does not mean Windows has finished entering its sizing loop.
+        $entry=[Diagnostics.Stopwatch]::StartNew()
+        Wait-Ui {[FileSpacerRegression.AltDragInput]::Moving($Window)-and[FileSpacerRegression.AltDragInput]::Captured($Window)} 'native sizing loop and capture before motion' 0 2
+        $entryMs=$entry.Elapsed.TotalMilliseconds
+    }
     foreach($step in 1..6){
         $delta=$step*$(if($Kind -eq 'column'){4}else{16})
         $point.X=$start.X+$delta;$point.Y=$start.Y+$(if($Kind -eq 'column'){0}else{$delta/2})
-        [FileSpacerRegression.AltDragInput]::Move($point)
+        try {[FileSpacerRegression.AltDragInput]::Move($point)} catch {
+            $motionFailure=$_
+            try {
+                Add-Type -AssemblyName System.Windows.Forms
+                @{Kind=$Kind;Step=$step;Requested=$point;Actual=[System.Windows.Forms.Cursor]::Position;
+                  Clip=[System.Windows.Forms.Cursor]::Clip;NativeState=[FileSpacerRegression.AltDragInput]::Describe($Window)}|
+                    ConvertTo-Json -Depth 4|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'pointer-failure.json') -Encoding UTF8
+            } catch {Write-Warning ('Additional pointer diagnostic failure: '+$_.Exception.Message)}
+            throw $motionFailure
+        }
         Start-Sleep -Milliseconds 16
         $reply=[Diagnostics.Stopwatch]::StartNew()
         [void][FileSpacerRegression.Native]::Message($Window,0,0,0)
@@ -89,6 +106,7 @@ function Measure-ResizeGesture([IntPtr]$Window,$Process,[string]$Kind,[bool]$Def
     }
     $cpu=Cpu $Process;$watch.Restart()
     [FileSpacerRegression.AltDragInput]::End()
+    if($Kind-eq'window'){Wait-Ui {[FileSpacerRegression.AltDragInput]::Idle($Window)} 'native sizing loop exited after release' 0 2}
     $after=Wait-Result $Window
     [FileSpacerColumnTests.ColumnsUi]::FlushPaint($Window)
     $releaseMs=$watch.Elapsed.TotalMilliseconds;$releaseCpu=(Cpu $Process)-$cpu
@@ -103,7 +121,7 @@ function Measure-ResizeGesture([IntPtr]$Window,$Process,[string]$Kind,[bool]$Def
         Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($Window,[IntPtr]::Zero,$bounds.Left,$bounds.Top,$bounds.Width,$bounds.Height,0x14)) 'Cannot restore stress geometry.'
     }
     [void](Wait-Columns $Window 100 30)
-    return [pscustomobject]@{Kind=$Kind;MotionMs=$motionMs;MotionCpuMs=$motionCpu;HeldMs=$heldMs;HeldCpuMs=$heldCpu;
+    return [pscustomobject]@{Kind=$Kind;NativeEntryMs=$entryMs;MotionMs=$motionMs;MotionCpuMs=$motionCpu;HeldMs=$heldMs;HeldCpuMs=$heldCpu;
         ReleaseMs=$releaseMs;ReleaseCpuMs=$releaseCpu;WorstReplyMs=$worstReply;TotalCpuMs=$motionCpu+$heldCpu+$releaseCpu}
 }
 try{
