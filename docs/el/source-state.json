@@ -201,7 +201,7 @@
       ]
     },
     "THIRD_PARTY_NOTICES.md": {
-      "sourceHash": "373eb0191f650df4038367988a283b6866ca9f5738076d0be0a81567240658ff",
+      "sourceHash": "6a00182d8e06ee3e4a7ca8f7a1e9405b92a16635846ea56449e9c9fc70d2397c",
       "headings": [
         [
           "third-party-notices",
@@ -217,6 +217,10 @@
         ],
         [
           "icons",
+          3
+        ],
+        [
+          "website",
           3
         ]
       ]
