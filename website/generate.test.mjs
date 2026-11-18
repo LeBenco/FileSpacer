@@ -6,13 +6,30 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {generate as generateSite} from './generate.mjs';
+import {downloadFlags} from './flags.mjs';
 import lunr from 'lunr';
 
 const repository = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const documentFiles = ['index.html', 'user-guide.html', 'changelog.html', 'third-party-notices.html'];
-const flagSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 3"><path d="M0 0h4v3H0z"/></svg>';
+const flagSvg = '<?xml version="1.0"?>\n<!-- Original artwork -->\n<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 30"><path d="M0 0h50v30H0z"/></svg>';
+async function flagRequest(value) {
+  const url = new URL(value);
+  if (url.hostname === 'query.wikidata.org') {
+    const codes = [...url.searchParams.get('query').matchAll(/"([A-Z]{2})"/g)].map(match => match[1]);
+    return Response.json({results: {bindings: codes.map(code => ({code: {value: code},
+      flag: {value: `http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_${code}.svg`}}))}});
+  }
+  if (url.hostname === 'commons.wikimedia.org') {
+    return Response.json({query: {pages: Object.fromEntries(url.searchParams.get('titles').split('|').map((title, index) => [index, {
+      title, imageinfo: [{url: `https://upload.wikimedia.org/wikipedia/commons/${title.slice(5).replaceAll(' ', '_')}`,
+        extmetadata: {LicenseShortName: {value: 'Public domain'}, AttributionRequired: {value: 'false'}}}],
+    }]))}});
+  }
+  assert.equal(url.hostname, 'upload.wikimedia.org');
+  return new Response(flagSvg);
+}
 const generate = (root, output, options) => generateSite(root, output, {
-  flagRequest: async () => new Response(flagSvg), ...options,
+  flagRequest, ...options,
 });
 // Content and anchor invariants apply across the four generated documents.
 async function readDocuments(directory) {
@@ -82,6 +99,9 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
   assert.ok(screenshots.every(([link]) => !link.includes('.svg')));
   assert.match(html, /screenshot-link" href="assets\/content\/docs\/images\/spatial-windows\.png\?v=[a-f0-9]{12}"/);
   await fs.access(path.join(output, 'assets/content/src/res/FileSpacer.svg'));
+  const icon = await fs.readFile(path.join(output, 'assets/content/src/res/FileSpacer.svg'), 'utf8');
+  assert.doesNotMatch(icon, /inkscape:|sodipodi:|<metadata\b/);
+  assert.match(icon, /SPDX-License-Identifier: GPL-3.0-only; Copyright/);
 });
 
 test('optimized animations replace GIFs only while their source hash matches', async t => {
@@ -113,18 +133,24 @@ test('flags are downloaded once per discovered country and included locally in e
   const requested = [];
   const result = await generate(repository, output, {onWarning: () => {}, flagRequest: async url => {
     requested.push(url);
-    return new Response(flagSvg);
+    return flagRequest(url);
   }});
   const countries = [...new Set(result.languages.map(language => new Intl.Locale(language.code).region.toLowerCase()))];
-  assert.deepEqual(requested.sort(), countries.map(country => `https://flagcdn.com/${country}.svg`).sort());
+  assert.equal(requested.filter(url => new URL(url).hostname === 'query.wikidata.org').length, 1);
+  assert.equal(requested.filter(url => new URL(url).hostname === 'commons.wikimedia.org').length, 1);
+  assert.deepEqual(requested.filter(url => new URL(url).hostname === 'upload.wikimedia.org').sort(),
+    countries.map(country => `https://upload.wikimedia.org/wikipedia/commons/Flag_of_${country.toUpperCase()}.svg`).sort());
   for (const language of result.languages) {
     const directory = path.join(output, language.source);
     const nav = await fs.readFile(path.join(directory, '_includes/sections/user-guide.html'), 'utf8');
     for (const country of countries) {
-      assert.equal(await fs.readFile(path.join(directory, `assets/flags/${country}.svg`), 'utf8'), flagSvg);
+      const svg = await fs.readFile(path.join(directory, `assets/flags/${country}.svg`), 'utf8');
+      assert.match(svg, /viewBox="0 0 50 30"/);
+      assert.doesNotMatch(svg, /<\?xml|<!DOCTYPE|Original artwork/);
+      assert.ok(svg.length < flagSvg.length);
       assert.ok(nav.includes(`src="assets/flags/${country}.svg"`));
     }
-    assert.doesNotMatch(nav, /https:\/\/flagcdn/);
+    assert.doesNotMatch(nav, /https:\/\/(?:flagcdn|[^/]*wikimedia|[^/]*wikidata)/);
     assert.equal((nav.match(/loading="lazy"/g) || []).length, result.languages.length);
     await assert.rejects(fs.access(path.join(directory, 'assets/language-flags.woff2')), {code: 'ENOENT'});
   }
@@ -134,10 +160,39 @@ test('unavailable or invalid flag downloads fail instead of publishing missing i
   const root = await fixture(t);
   await assert.rejects(generate(root, path.join(root, 'output'), {
     flagRequest: async () => new Response('', {status: 503}),
-  }), /Flag download failed \(503\): https:\/\/flagcdn.com\/gb.svg/);
+  }), /Flag download failed \(503\): https:\/\/query.wikidata.org\/sparql/);
   await assert.rejects(generate(root, path.join(root, 'output'), {
-    flagRequest: async () => new Response('<html>Error</html>'),
-  }), /Invalid flag SVG: https:\/\/flagcdn.com\/gb.svg/);
+    flagRequest: async url => new URL(url).hostname === 'upload.wikimedia.org'
+      ? new Response('<html>Error</html>') : flagRequest(url),
+  }), /Invalid flag SVG: https:\/\/upload.wikimedia.org\//);
+});
+
+test('flag metadata must identify one current file and permit use without attribution', async () => {
+  await assert.rejects(downloadFlags(['gb'], async () => Response.json({results: {bindings: []}})),
+    /Expected one current Wikimedia flag for gb/);
+  await assert.rejects(downloadFlags(['gb'], async url => {
+    const data = await (await flagRequest(url)).json();
+    data.results.bindings.push({code: {value: 'GB'}, flag: {value: 'http://commons.wikimedia.org/wiki/Special:FilePath/Other.svg'}});
+    return Response.json(data);
+  }), /Expected one current Wikimedia flag for gb/);
+  await assert.rejects(downloadFlags(['gb'], async url => {
+    if (new URL(url).hostname !== 'commons.wikimedia.org') return flagRequest(url);
+    const data = await (await flagRequest(url)).json();
+    data.query.pages[0].imageinfo[0].extmetadata = {
+      LicenseShortName: {value: 'CC BY-SA 4.0'}, AttributionRequired: {value: 'true'},
+    };
+    return Response.json(data);
+  }), /Flag requires a public-domain or CC0 source without required attribution/);
+  const flags = await downloadFlags(['gb', 'gb'], async url => {
+    if (new URL(url).hostname !== 'commons.wikimedia.org') return flagRequest(url);
+    const data = await (await flagRequest(url)).json(), page = data.query.pages[0];
+    data.query.redirects = [{from: page.title, to: 'File:Current flag.svg'}];
+    page.title = 'File:Current flag.svg';
+    page.imageinfo[0].extmetadata.LicenseShortName.value = 'CC0';
+    return Response.json(data);
+  });
+  assert.deepEqual([...flags.keys()], ['gb']);
+  assert.match(flags.get('gb'), /viewBox="0 0 50 30"/);
 });
 
 test('GitHub publication dates localize changelog headings and navigation without changing notes or existing anchors', async t => {
