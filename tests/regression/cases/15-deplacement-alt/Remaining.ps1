@@ -169,6 +169,11 @@ try {
     if($Case -eq 'Scrollbar') { $names=@(0..79 | ForEach-Object { 'Scroll{0:D3}' -f $_ }) }
     foreach($name in $names) { [void](New-Item -ItemType Directory -Path (Join-Path $folder $name)) }
     $itemCount=$names.Count; $expectedNames=(@($names | Sort-Object) -join ';')
+    if ($Case -eq 'DoubleAlt') {
+        # A pointer left over a future row can seed another tooltip at startup.
+        $screen=[FileSpacerRegression.Native]::WorkArea([IntPtr]::Zero)
+        [FileSpacerRegression.AltDragInput]::Move((Point-At ($screen.Right-1) ($screen.Bottom-1)))
+    }
     $window=Open-UiFolder $folder $itemCount
     [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($window,[ref]$script:targetProcessId)
     Assert-Ui ($script:targetProcessId -ne 0) 'Cannot identify the tested window process.'
@@ -254,6 +259,24 @@ try {
     $before=[FileSpacerRegression.Native]::Bounds($window); $state.Before=$before
     Write-Host ('VIEW: '+($state | ConvertTo-Json -Depth 6 -Compress))
     if($Case -eq 'QuickAccess') { $quickAccessWindowsBefore=@([FileSpacerRegression.Native]::Top('FileSpacer Item Window',[NullString]::Value,$script:targetProcessId) | ForEach-Object { $_.ToInt64() }) }
+    if ($Case -eq 'DoubleAlt' -and $list -ne [IntPtr]::Zero) {
+        # Exercise a natural hover before the unchanged click sequence. Windows
+        # may omit an infotip; record its actual presence rather than require it.
+        $extended=[FileSpacerRegression.Native]::Message($list,0x1037,0,0) # LVM_GETEXTENDEDLISTVIEWSTYLE
+        $tip=[IntPtr][FileSpacerRegression.Native]::Message($list,0x104e,0,0) # LVM_GETTOOLTIPS
+        $state.Evidence.NativeTooltip=@{Available=(($extended -band 0x400) -ne 0 -and $tip -ne [IntPtr]::Zero);Shown=$false}
+        if ($state.Evidence.NativeTooltip.Available) {
+            $hover=[FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,'AnchorA')
+            [FileSpacerRegression.AltDragInput]::Move($hover)
+            $until=[DateTime]::UtcNow.AddSeconds(5)
+            while (!($state.Evidence.NativeTooltip.Shown=[FileSpacerRegression.Native]::IsWindowVisible($tip)) -and [DateTime]::UtcNow -lt $until) { Start-Sleep -Milliseconds 50 }
+            if ($state.Evidence.NativeTooltip.Shown) {
+                $bounds=[FileSpacerRegression.Native]::Bounds($tip)
+                $state.Evidence.NativeTooltip.Bounds=$bounds
+                $state.Evidence.NativeTooltip.CoversTarget=($point.X -ge $bounds.Left -and $point.X -lt $bounds.Right -and $point.Y -ge $bounds.Top -and $point.Y -lt $bounds.Bottom)
+            }
+        }
+    }
     Save-AltWindowEvidence 'before-gesture'
     $phase='gesture'
     switch($Case) {
