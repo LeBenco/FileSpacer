@@ -174,3 +174,22 @@ Fixtures use fictional localized filenames. The regression harness isolates
 FileSpacer preferences and test state, restores them on exit, and preserves
 failure artifacts. Nilesoft Shell is enabled only for the named comparisons.
 Files are published to the documentation only after visual review.
+
+<a id="website-animation-compression"></a>
+
+## Website animation compression
+
+After replacing the reviewed GIFs, run from the repository root with Python
+and Pillow (with animated WebP support):
+
+```cmd
+python tools\documentation-capture\optimize-animations.py
+```
+
+The script writes smaller lossless `.webp` variants next to the GIFs and records
+their source hashes in `website/animations.json`. It verifies every decoded
+frame, frame duration and loop count before replacing a variant. Temporary
+encoding files are removed immediately, including on failure. Commit the WebP
+files and manifest together. The Markdown still uses GIFs, while website and
+offline builds select a variant only when its source hash matches. There is no
+encoder dependency when building or reading the site.
