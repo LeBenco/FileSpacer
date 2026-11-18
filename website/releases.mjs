@@ -30,10 +30,23 @@ export async function fetchReleaseDates(request = fetch, token = process.env.GH_
   return Object.fromEntries([...dates].sort(([a], [b]) => a.localeCompare(b, 'en')));
 }
 
+const releaseVersion = title => title.match(/^(\d+\.\d+\.\d+)(?=\s|$)/)?.[1];
+
+export function releasedChangelog(tokens, dates) {
+  let include = true;
+  return tokens.filter(token => {
+    if (token.type === 'heading' && token.depth === 2) {
+      const version = releaseVersion(token.text);
+      if (!version) throw new Error(`Changelog sections must name a released version, not "${token.text}".`);
+      include = dates === undefined || Object.hasOwn(dates, version);
+    }
+    return include;
+  });
+}
+
 export function releaseHeading(title, locale, dates) {
-  const version = title.match(/^(\d+\.\d+\.\d+)(?=\s|$)/)?.[1];
-  if (!version) return null;
-  if (!Object.hasOwn(dates, version)) return version;
+  const version = releaseVersion(title);
+  if (!version || !Object.hasOwn(dates, version)) return null;
   const date = new Intl.DateTimeFormat(locale, {
     year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC',
   }).format(new Date(dates[version]));
