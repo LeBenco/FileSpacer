@@ -17,5 +17,9 @@
   "license": "Veröffentlicht unter der",
   "enlargeImage": "Bildschirmaufnahme vergrößern",
   "closeImage": "Bild schließen",
-  "locale": "de-DE"
+  "locale": "de-DE",
+  "overviewDescription": "FileSpacer ist ein kostenloser, quelloffener Dateimanager für Windows, der sich Fenster und Symbolanordnungen merkt. Funktionen, Bildschirmfotos und Download.",
+  "guideDescription": "FileSpacer verwenden: Ordnerfenster, Symbolanordnung, Mausgesten, eigene Menüs und Integration mit Windows, Everything und Nilesoft Shell.",
+  "changelogDescription": "FileSpacer-Versionsverlauf: neue Funktionen und Änderungen nach Version.",
+  "noticesDescription": "Herkunft, Urheberrechte und Lizenzen der in FileSpacer verwendeten Drittanbieterkomponenten."
 }

@@ -17,5 +17,9 @@
   "license": "Verspreid onder de",
   "enlargeImage": "Schermafbeelding vergroten",
   "closeImage": "Afbeelding sluiten",
-  "locale": "nl-NL"
+  "locale": "nl-NL",
+  "overviewDescription": "FileSpacer is een gratis opensourcebestandsbeheerder voor Windows die vensters en pictogramposities onthoudt. Functies, schermafbeeldingen en downloads.",
+  "guideDescription": "FileSpacer gebruiken: mapvensters, pictogramindeling, muissneltoetsen, menu’s en integraties met Windows, Everything en Nilesoft Shell.",
+  "changelogDescription": "Versiegeschiedenis van FileSpacer: nieuwe functies en wijzigingen per versie.",
+  "noticesDescription": "Herkomst, auteursrechten en licenties van de onderdelen van derden die FileSpacer gebruikt."
 }

@@ -17,5 +17,9 @@
   "license": "Distribuito con licenza",
   "enlargeImage": "Ingrandisci schermata",
   "closeImage": "Chiudi immagine",
-  "locale": "it-IT"
+  "locale": "it-IT",
+  "overviewDescription": "FileSpacer è un file manager gratuito e open source per Windows che ricorda le finestre e la disposizione delle icone. Funzionalità, schermate e download.",
+  "guideDescription": "Come usare FileSpacer: finestre delle cartelle, disposizione delle icone, scorciatoie del mouse, menu e integrazioni con Windows, Everything e Nilesoft Shell.",
+  "changelogDescription": "Cronologia delle versioni di FileSpacer: novità e modifiche per ogni versione.",
+  "noticesDescription": "Origine, diritti d’autore e licenze dei componenti di terze parti utilizzati da FileSpacer."
 }

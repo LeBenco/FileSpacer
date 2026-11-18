@@ -17,5 +17,9 @@
   "license": "Udostępniane na licencji",
   "enlargeImage": "Powiększ zrzut ekranu",
   "closeImage": "Zamknij obraz",
-  "locale": "pl-PL"
+  "locale": "pl-PL",
+  "overviewDescription": "FileSpacer to bezpłatny menedżer plików o otwartym kodzie źródłowym dla Windows, który zapamiętuje okna i układ ikon. Funkcje, zrzuty ekranu i pobieranie.",
+  "guideDescription": "Korzystanie z FileSpacer: okna folderów, układ ikon, skróty myszy, menu oraz integracja z Windows, Everything i Nilesoft Shell.",
+  "changelogDescription": "Historia wersji FileSpacer: nowe funkcje i zmiany w poszczególnych wersjach.",
+  "noticesDescription": "Pochodzenie, prawa autorskie i licencje składników innych firm używanych przez FileSpacer."
 }

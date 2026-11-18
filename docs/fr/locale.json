@@ -17,5 +17,9 @@
   "license": "Distribué sous",
   "enlargeImage": "Agrandir la capture",
   "closeImage": "Fermer l’image",
-  "locale": "fr-FR"
+  "locale": "fr-FR",
+  "overviewDescription": "FileSpacer est un gestionnaire de fichiers Windows libre et gratuit qui mémorise les fenêtres et la disposition des icônes. Présentation, captures et téléchargement.",
+  "guideDescription": "Utiliser FileSpacer : fenêtres des dossiers, disposition des icônes, raccourcis souris, menus et intégrations avec Windows, Everything et Nilesoft Shell.",
+  "changelogDescription": "Historique des versions de FileSpacer : nouveautés et changements pour chaque version.",
+  "noticesDescription": "Origine, droits d’auteur et licences des composants tiers utilisés par FileSpacer."
 }

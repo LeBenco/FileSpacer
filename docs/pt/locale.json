@@ -17,5 +17,9 @@
   "license": "Distribuído ao abrigo da licença",
   "enlargeImage": "Ampliar captura",
   "closeImage": "Fechar imagem",
-  "locale": "pt-PT"
+  "locale": "pt-PT",
+  "overviewDescription": "O FileSpacer é um gestor de ficheiros gratuito e de código aberto para Windows que memoriza as janelas e a disposição dos ícones. Funcionalidades, capturas e transferência.",
+  "guideDescription": "Utilizar o FileSpacer: janelas de pastas, disposição dos ícones, atalhos do rato, menus e integração com Windows, Everything e Nilesoft Shell.",
+  "changelogDescription": "Histórico de versões do FileSpacer: novidades e alterações de cada versão.",
+  "noticesDescription": "Origem, direitos de autor e licenças dos componentes de terceiros utilizados pelo FileSpacer."
 }
