@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
 import {generate} from './generate.mjs';
 import lunr from 'lunr';
 
@@ -70,13 +71,36 @@ test('real documents keep guide nesting, local anchors, images and GitHub refere
     ['privacy-policy--windows-and-external-applications', 'privacy'],
   ]) assert.ok(html.includes(`id="${alias}" data-alias-for="user-guide--${target}"`));
   const screenshots = [...html.matchAll(/<a class="screenshot-link"[^>]+><img\b[^>]+><\/a>/g)];
-  assert.equal(screenshots.length, [...html.matchAll(/<img\b[^>]*src="[^"]+\.(?:png|gif)\?v=[a-f0-9]{12}"/g)].length);
+  assert.equal(screenshots.length, [...html.matchAll(/<img\b[^>]*src="[^"]+\.(?:png|gif|webp)\?v=[a-f0-9]{12}"/g)].length);
   assert.ok(screenshots.length > 0);
   assert.ok(screenshots.every(([link]) => link.includes('loading="lazy"')));
   assert.ok(screenshots.every(([link]) => /<img[^>]*width="\d+"/.test(link) && /<img[^>]*height="\d+"/.test(link)));
   assert.ok(screenshots.every(([link]) => !link.includes('.svg')));
   assert.match(html, /screenshot-link" href="assets\/content\/docs\/images\/spatial-windows\.png\?v=[a-f0-9]{12}"/);
   await fs.access(path.join(output, 'assets/content/src/res/FileSpacer.svg'));
+});
+
+test('optimized animations replace GIFs only while their source hash matches', async t => {
+  const root = await fixture(t);
+  const gif = 'docs/images/move-window.gif';
+  const original = await fs.readFile(path.join(root, gif));
+  const webp = await fs.readFile(path.join(root, gif.replace('.gif', '.webp')));
+  await fs.mkdir(path.join(root, 'website'), {recursive: true});
+  await fs.writeFile(path.join(root, 'website/animations.json'), JSON.stringify({
+    [gif]: createHash('sha256').update(original).digest('hex'),
+  }));
+  const output = path.join(root, 'output');
+  await generate(root, output);
+  const guide = () => fs.readFile(path.join(output, 'user-guide.html'), 'utf8');
+  assert.match(await guide(), /screenshot-link" href="assets\/content\/docs\/images\/move-window\.webp\?v=/);
+  assert.deepEqual(await fs.readFile(path.join(output, 'assets/content/docs/images/move-window.webp')), webp);
+  await fs.writeFile(path.join(root, gif), Buffer.concat([original, Buffer.from([0])]));
+  await generate(root, output);
+  assert.match(await guide(), /screenshot-link" href="assets\/content\/docs\/images\/move-window\.gif\?v=/);
+  await fs.writeFile(path.join(root, gif), original);
+  await fs.unlink(path.join(root, gif.replace('.gif', '.webp')));
+  await generate(root, output);
+  assert.match(await guide(), /screenshot-link" href="assets\/content\/docs\/images\/move-window\.gif\?v=/);
 });
 
 test('GitHub publication dates localize changelog headings and navigation without changing notes or existing anchors', async t => {
@@ -306,6 +330,12 @@ test('all available translations keep recorded section IDs, localized navigation
     assert.doesNotMatch(guide, /\*\*(?:Ctrl|Strg)\+/, language.code + ': shortcut emphasis must render as HTML');
     for (const document of documentFiles) {
       const page = await fs.readFile(path.join(directory, document), 'utf8');
+      const ui = language.path
+        ? JSON.parse(await fs.readFile(path.join(repository, 'docs', language.path, 'locale.json'), 'utf8'))
+        : JSON.parse(await fs.readFile(path.join(repository, 'website/locale.json'), 'utf8'));
+      const descriptionKey = {'index.html': 'overviewDescription', 'user-guide.html': 'guideDescription',
+        'changelog.html': 'changelogDescription', 'third-party-notices.html': 'noticesDescription'}[document];
+      assert.equal(JSON.parse(page.match(/^description: (.+)$/m)[1]), ui[descriptionKey]);
       const alternates = JSON.parse(page.match(/^fs_alternates: (.+)$/m)[1]);
       assert.equal(alternates.length, result.languages.length + 1);
       assert.equal(new Set(alternates.map(item => item.lang)).size, alternates.length);
