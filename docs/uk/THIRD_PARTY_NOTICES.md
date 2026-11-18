@@ -36,4 +36,5 @@ SQLite 3.53.4 статично скомпоновано з програмою. �
 - **Тема вебсайту**: [Just the Docs](https://just-the-docs.com/) ([MIT](../../website/_layouts/UPSTREAM-LICENSE.txt)).
 - **Генератор вебсайту**: [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
 - **Пошукова система**: [Lunr](https://lunrjs.com/) ([MIT](../../website/assets/licenses/Lunr-LICENSE.txt)).
-- **Прапори у виборі мови**: [Flagpedia](https://flagpedia.net/) / [Flagcdn](https://flagcdn.com/) ([суспільне надбання](https://flagpedia.net/about#license)).
+- **Прапори у виборі мови**: [Wikimedia Commons](https://commons.wikimedia.org/) / [Wikidata](https://www.wikidata.org/) ([суспільне надбання](https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain)).
+- **Оптимізація SVG**: [SVGO](https://svgo.dev/) ([MIT](https://github.com/svg/svgo/blob/main/LICENSE)).

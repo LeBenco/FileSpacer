@@ -36,4 +36,5 @@ SQLite 3.53.4 è collegato staticamente all’applicazione ed è di pubblico dom
 - **Tema del sito**: [Just the Docs](https://just-the-docs.com/) ([MIT](../../website/_layouts/UPSTREAM-LICENSE.txt)).
 - **Generatore del sito**: [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
 - **Motore di ricerca**: [Lunr](https://lunrjs.com/) ([MIT](../../website/assets/licenses/Lunr-LICENSE.txt)).
-- **Bandiere del selettore della lingua**: [Flagpedia](https://flagpedia.net/) / [Flagcdn](https://flagcdn.com/) ([pubblico dominio](https://flagpedia.net/about#license)).
+- **Bandiere del selettore della lingua**: [Wikimedia Commons](https://commons.wikimedia.org/) / [Wikidata](https://www.wikidata.org/) ([pubblico dominio](https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain)).
+- **Ottimizzazione SVG**: [SVGO](https://svgo.dev/) ([MIT](https://github.com/svg/svgo/blob/main/LICENSE)).

@@ -36,4 +36,5 @@ SQLite 3.53.4 wird statisch in die Anwendung eingebunden. Es ist gemeinfrei. Die
 - **Website-Design**: [Just the Docs](https://just-the-docs.com/) ([MIT](../../website/_layouts/UPSTREAM-LICENSE.txt)).
 - **Website-Generator**: [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
 - **Suchfunktion**: [Lunr](https://lunrjs.com/) ([MIT](../../website/assets/licenses/Lunr-LICENSE.txt)).
-- **Flaggen im Sprachmenü**: [Flagpedia](https://flagpedia.net/) / [Flagcdn](https://flagcdn.com/) ([gemeinfrei](https://flagpedia.net/about#license)).
+- **Flaggen im Sprachmenü**: [Wikimedia Commons](https://commons.wikimedia.org/) / [Wikidata](https://www.wikidata.org/) ([gemeinfrei](https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain)).
+- **SVG-Optimierung**: [SVGO](https://svgo.dev/) ([MIT](https://github.com/svg/svgo/blob/main/LICENSE)).

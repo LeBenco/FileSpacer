@@ -36,4 +36,5 @@ SQLite 3.53.4 jest połączony statycznie z aplikacją i należy do domeny publi
 - **Motyw witryny**: [Just the Docs](https://just-the-docs.com/) ([MIT](../../website/_layouts/UPSTREAM-LICENSE.txt)).
 - **Generator witryny**: [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
 - **Wyszukiwarka**: [Lunr](https://lunrjs.com/) ([MIT](../../website/assets/licenses/Lunr-LICENSE.txt)).
-- **Flagi w wyborze języka**: [Flagpedia](https://flagpedia.net/) / [Flagcdn](https://flagcdn.com/) ([domena publiczna](https://flagpedia.net/about#license)).
+- **Flagi w wyborze języka**: [Wikimedia Commons](https://commons.wikimedia.org/) / [Wikidata](https://www.wikidata.org/) ([domena publiczna](https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain)).
+- **Optymalizacja SVG**: [SVGO](https://svgo.dev/) ([MIT](https://github.com/svg/svgo/blob/main/LICENSE)).

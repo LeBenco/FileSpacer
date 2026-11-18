@@ -36,4 +36,5 @@ SQLite 3.53.4 is statisch in de toepassing gekoppeld en behoort tot het publieke
 - **Website-thema**: [Just the Docs](https://just-the-docs.com/) ([MIT](../../website/_layouts/UPSTREAM-LICENSE.txt)).
 - **Websitegenerator**: [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
 - **Zoekfunctie**: [Lunr](https://lunrjs.com/) ([MIT](../../website/assets/licenses/Lunr-LICENSE.txt)).
-- **Vlaggen in de taalkeuze**: [Flagpedia](https://flagpedia.net/) / [Flagcdn](https://flagcdn.com/) ([publiek domein](https://flagpedia.net/about#license)).
+- **Vlaggen in de taalkeuze**: [Wikimedia Commons](https://commons.wikimedia.org/) / [Wikidata](https://www.wikidata.org/) ([publiek domein](https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain)).
+- **SVG-optimalisatie**: [SVGO](https://svgo.dev/) ([MIT](https://github.com/svg/svgo/blob/main/LICENSE)).

@@ -36,4 +36,5 @@ SQLite 3.53.4 est lié statiquement à l’application. Il appartient au domaine
 - **Thème du site** : [Just the Docs](https://just-the-docs.com/) ([MIT](../../website/_layouts/UPSTREAM-LICENSE.txt)).
 - **Générateur du site** : [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
 - **Moteur de recherche** : [Lunr](https://lunrjs.com/) ([MIT](../../website/assets/licenses/Lunr-LICENSE.txt)).
-- **Drapeaux du sélecteur de langue** : [Flagpedia](https://flagpedia.net/) / [Flagcdn](https://flagcdn.com/) ([domaine public](https://flagpedia.net/about#license)).
+- **Drapeaux du sélecteur de langue** : [Wikimedia Commons](https://commons.wikimedia.org/) / [Wikidata](https://www.wikidata.org/) ([domaine public](https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain)).
+- **Optimisation des SVG** : [SVGO](https://svgo.dev/) ([MIT](https://github.com/svg/svgo/blob/main/LICENSE)).

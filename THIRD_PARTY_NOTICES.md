@@ -40,4 +40,5 @@ See <https://sqlite.org/copyright.html>.
 - **Website theme**: [Just the Docs](https://just-the-docs.com/) ([MIT](website/_layouts/UPSTREAM-LICENSE.txt)).
 - **Website generator**: [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
 - **Search engine**: [Lunr](https://lunrjs.com/) ([MIT](website/assets/licenses/Lunr-LICENSE.txt)).
-- **Language-selector flags**: [Flagpedia](https://flagpedia.net/) / [Flagcdn](https://flagcdn.com/) ([public domain](https://flagpedia.net/about#license)).
+- **Language-selector flags**: [Wikimedia Commons](https://commons.wikimedia.org/) / [Wikidata](https://www.wikidata.org/) ([public domain](https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain)).
+- **SVG optimization**: [SVGO](https://svgo.dev/) ([MIT](https://github.com/svg/svgo/blob/main/LICENSE)).

@@ -36,4 +36,5 @@
 - **Θέμα ιστοτόπου**: [Just the Docs](https://just-the-docs.com/) ([MIT](../../website/_layouts/UPSTREAM-LICENSE.txt)).
 - **Γεννήτρια ιστοτόπου**: [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
 - **Μηχανή αναζήτησης**: [Lunr](https://lunrjs.com/) ([MIT](../../website/assets/licenses/Lunr-LICENSE.txt)).
-- **Σημαίες επιλογέα γλώσσας**: [Flagpedia](https://flagpedia.net/) / [Flagcdn](https://flagcdn.com/) ([δημόσιος τομέας](https://flagpedia.net/about#license)).
+- **Σημαίες επιλογέα γλώσσας**: [Wikimedia Commons](https://commons.wikimedia.org/) / [Wikidata](https://www.wikidata.org/) ([δημόσιος τομέας](https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain)).
+- **Βελτιστοποίηση SVG**: [SVGO](https://svgo.dev/) ([MIT](https://github.com/svg/svgo/blob/main/LICENSE)).
