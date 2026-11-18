@@ -71,7 +71,7 @@ W menu **Widok > Rozmieszczenie** można wybrać sposób rozmieszczania ikon:
 - **Na siatce** pozwala wybierać pozycje na siatce i pozostawiać wolne miejsca.
 - **Dowolne** pozwala umieszczać ikony w dowolnym miejscu, jak na pulpicie Windows.
 
-Opcje te są dostępne dla wszystkich rozmiarów ikon oraz w widoku **Kafelki**. Widoki **Lista**, **Szczegóły** i **Zawartość** zachowują swój uporządkowany układ.
+Opcje te są dostępne dla wszystkich rozmiarów ikon. Widoki **Lista**, **Szczegóły** i **Zawartość** zachowują swój uporządkowany układ.
 
 **Wyrównaj ikony ponownie** jednorazowo dopasowuje bieżący układ do siatki Windows, bez zmiany trybu rozmieszczenia ani wypełniania wolnych miejsc.
 

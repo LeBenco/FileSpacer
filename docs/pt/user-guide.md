@@ -71,7 +71,7 @@ Em **Ver > Disposição**, escolher como dispor os ícones:
 - **Na grelha** permite escolher posições na grelha e deixar espaços vazios.
 - **Livre** permite colocá-los em qualquer posição, como no ambiente de trabalho do Windows.
 
-Estas opções estão disponíveis em todos os tamanhos de ícones e na vista **Mosaicos**. **Lista**, **Detalhes** e **Conteúdo** mantêm a disposição ordenada.
+Estas opções estão disponíveis em todos os tamanhos de ícones. **Lista**, **Detalhes** e **Conteúdo** mantêm a disposição ordenada.
 
 **Realinhar os ícones** ajusta a disposição atual à grelha do Windows uma única vez, sem mudar o modo de disposição nem preencher os espaços vazios.
 

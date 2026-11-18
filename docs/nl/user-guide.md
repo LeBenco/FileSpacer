@@ -71,7 +71,7 @@ Kies onder **Beeld > Plaatsing** hoe pictogrammen worden geplaatst:
 - **Op raster** laat u rasterposities kiezen en tussenruimten openlaten.
 - **Vrij** laat u pictogrammen overal plaatsen, zoals op het Windows-bureaublad.
 
-Deze opties zijn beschikbaar bij alle pictogramgroottes en in de weergave **Tegels**. **Lijst**, **Details** en **Inhoud** behouden hun geordende indeling.
+Deze opties zijn beschikbaar bij alle pictogramgroottes. **Lijst**, **Details** en **Inhoud** behouden hun geordende indeling.
 
 **Pictogrammen opnieuw uitlijnen** lijnt de huidige indeling eenmalig uit op het Windows-raster, zonder de plaatsingsmodus te wijzigen of tussenruimten op te vullen.
 

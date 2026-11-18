@@ -71,7 +71,7 @@ En **Ver > Colocación**, elegir cómo se colocan los iconos:
 - **En cuadrícula** permite elegir sus posiciones en la cuadrícula y dejar huecos.
 - **Libre** permite colocarlos en cualquier posición, como en el escritorio de Windows.
 
-Estas opciones están disponibles con todos los tamaños de iconos y en la vista **Mosaicos**. **Lista**, **Detalles** y **Contenido** conservan su disposición ordenada.
+Estas opciones están disponibles con todos los tamaños de iconos. **Lista**, **Detalles** y **Contenido** conservan su disposición ordenada.
 
 **Volver a alinear los iconos** ajusta la disposición actual a la cuadrícula de Windows una sola vez, sin cambiar el modo de colocación ni rellenar los huecos.
 

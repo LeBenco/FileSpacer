@@ -63,7 +63,7 @@ In **View > Placement**, choose how icons are arranged:
 - **On a grid** lets you choose their positions on the grid and leave gaps.
 - **Free** lets you place them anywhere, as on the Windows desktop.
 
-These choices are available at every icon size and in **Tiles** view. **List**, **Details** and **Content** keep their ordered layout.
+These choices are available at every icon size. **List**, **Details** and **Content** keep their ordered layout.
 
 **Realign icons** aligns the current layout to the Windows grid once, without changing the placement mode or filling the gaps.
 

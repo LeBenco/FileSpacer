@@ -71,7 +71,7 @@ Dans **Affichage > Placement**, choisir comment disposer les icônes :
 - **Sur la grille** permet de choisir leurs emplacements sur la grille et de laisser des espaces vides.
 - **Libre** permet de les placer où on le souhaite, comme sur le Bureau Windows.
 
-Ces choix sont disponibles avec toutes les tailles d’icônes et en mode **Mosaïques**. Les vues **Liste**, **Détails** et **Contenu** gardent leur disposition ordonnée.
+Ces choix sont disponibles avec toutes les tailles d’icônes. Les vues **Liste**, **Détails** et **Contenu** gardent leur disposition ordonnée.
 
 **Réaligner les icônes** recale ponctuellement la disposition actuelle sur la grille Windows, sans changer le mode de placement ni combler les espaces vides.
 

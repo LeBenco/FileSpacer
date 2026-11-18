@@ -70,7 +70,7 @@ Unter **Ansicht > Anordnung** lässt sich festlegen, wie die Symbole angeordnet 
 - **Am Raster** erlaubt selbst gewählte Rasterpositionen mit Lücken.
 - **Frei** erlaubt beliebige Positionen, wie auf dem Windows-Desktop.
 
-Diese Möglichkeiten stehen für alle Symbolgrößen und in der Ansicht **Kacheln** zur Verfügung. **Liste**, **Details** und **Inhalt** behalten ihre geordnete Anordnung.
+Diese Möglichkeiten stehen für alle Symbolgrößen zur Verfügung. **Liste**, **Details** und **Inhalt** behalten ihre geordnete Anordnung.
 
 **Symbole neu ausrichten** richtet die aktuelle Anordnung einmal am Windows-Raster aus, ohne den Anordnungsmodus zu ändern oder Lücken zu schließen.
 

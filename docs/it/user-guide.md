@@ -71,7 +71,7 @@ In **Visualizza > Disposizione**, scegliere come disporre le icone:
 - **Sulla griglia** consente di scegliere le posizioni sulla griglia, lasciando anche spazi vuoti.
 - **Libera** consente di posizionarle ovunque, come sul desktop di Windows.
 
-Queste opzioni sono disponibili con tutte le dimensioni delle icone e nella vista **Riquadri**. **Elenco**, **Dettagli** e **Contenuto** mantengono la disposizione ordinata.
+Queste opzioni sono disponibili con tutte le dimensioni delle icone. **Elenco**, **Dettagli** e **Contenuto** mantengono la disposizione ordinata.
 
 **Riallinea le icone** allinea una sola volta la disposizione attuale alla griglia di Windows, senza cambiare modalità né riempire gli spazi vuoti.
 
