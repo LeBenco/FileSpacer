@@ -78,9 +78,17 @@ library or CDN is used. SVG logos are not treated as screenshots.
 Screenshot URLs include a content hash, so replacing an image under the same
 filename refreshes cached thumbnails and popup images automatically.
 Screenshots use lazy loading so content further down does not load immediately.
+Animated WebP variants are used in both website and offline builds when
+`website/animations.json` matches the source GIF's SHA-256. GIFs remain the
+Markdown sources for GitHub. A changed GIF or missing variant falls back to
+the current GIF, so a new capture cannot display an outdated animation.
+Regenerate the lossless variants with the
+[capture optimization script](../../../tools/documentation-capture/README.md#website-animation-compression).
 
 Every page has its own title, description, canonical URL and reciprocal
 `hreflang` links to the equivalent documents, including an English `x-default`.
+The four page descriptions are maintained in each language's `locale.json`;
+they are not extracted from badges or individual changelog entries.
 The root `sitemap.xml` lists all generated pages and their language variants.
 Both use the discovered language directories. Existing single-page bookmarks
 are redirected to the matching document while retaining their fragment.
