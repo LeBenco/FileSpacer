@@ -97,6 +97,8 @@ export async function generate(repository = path.dirname(template), destination 
   const base = config.match(/^baseurl:\s*(.*)$/m)[1].trim().replace(/\/$/, '');
   const origin = config.match(/^url:\s*(.*)$/m)[1].trim().replace(/\/$/, '');
   const english = JSON.parse(await fs.readFile(path.join(template, 'locale.json'), 'utf8'));
+  const animationIndex = path.join(repository, 'website/animations.json');
+  const animations = await exists(animationIndex) ? JSON.parse(await fs.readFile(animationIndex, 'utf8')) : {};
   const languages = [describeLanguage(english.locale, english, repository, base, true)];
   languages[0].primary = true;
   languages[0].modern = await exists(path.join(repository, 'docs/en/user-guide.md'));
@@ -288,11 +290,18 @@ export async function generate(repository = path.dirname(template), destination 
     await fs.mkdir(path.join(output, '_includes/sections'), {recursive: true});
     for (const [source, target] of assets) {
       if (!await exists(path.join(repository, source))) throw new Error(`Missing localized media (${language.code}): ${source}`);
-      await fs.mkdir(path.dirname(path.join(output, target)), {recursive: true});
-      await fs.copyFile(path.join(repository, source), path.join(output, target));
+      const bytes = await fs.readFile(path.join(repository, source));
+      const sourceHash = createHash('sha256').update(bytes).digest('hex');
+      const variant = source.replace(/\.gif$/i, '.webp');
+      // A fresh capture must never display an older compressed animation.
+      const useWebp = /\.gif$/i.test(source) && animations[source] === sourceHash
+        && await exists(path.join(repository, variant));
+      const media = useWebp ? variant : source;
+      const mediaTarget = useWebp ? target.replace(/\.gif$/i, '.webp') : target;
+      await fs.mkdir(path.dirname(path.join(output, mediaTarget)), {recursive: true});
+      await fs.copyFile(path.join(repository, media), path.join(output, mediaTarget));
       if (/\.(png|gif)$/i.test(target)) {
-        const bytes = await fs.readFile(path.join(repository, source));
-        const version = createHash('sha256').update(bytes).digest('hex').slice(0, 12);
+        const version = createHash('sha256').update(useWebp ? await fs.readFile(path.join(repository, media)) : bytes).digest('hex').slice(0, 12);
         const [width, height] = /\.png$/i.test(target)
           ? [bytes.readUInt32BE(16), bytes.readUInt32BE(20)] : [bytes.readUInt16LE(6), bytes.readUInt16LE(8)];
         for (const [id, html] of rendered) {
@@ -304,14 +313,14 @@ export async function generate(repository = path.dirname(template), destination 
             if (!/\bheight=/.test(img)) img = img.replace('<img', `<img height="${Math.round(displayWidth * height / width)}"`);
             return img;
           });
-          rendered.set(id, sized.replaceAll(`="${target}"`, `="${target}?v=${version}"`));
+          rendered.set(id, sized.replaceAll(`="${target}"`, `="${mediaTarget}?v=${version}"`));
         }
       }
     }
     for (const doc of documents.values()) {
-      const paragraph = doc.tokens.find(token => token.type === 'paragraph' && plain(token.tokens).trim().length > 80);
-      const summary = paragraph ? plain(paragraph.tokens).replace(/\s+/g, ' ').trim() : `${language.ui[doc.id]} — FileSpacer. ${language.ui.description}.`;
-      const description = summary.length > 175 ? summary.slice(0, 175).replace(/\s+\S*$/, '') + '…' : summary;
+      const descriptionKey = {'overview': 'overviewDescription', 'user-guide': 'guideDescription',
+        'changelog': 'changelogDescription', 'third-party-notices': 'noticesDescription'}[doc.id];
+      const description = language.ui[descriptionKey];
       const alternates = languages.map(other => ({lang: new Intl.Locale(other.code).language, url: origin + pageUrl(other, doc.id)}));
       alternates.push({lang: 'x-default', url: origin + pageUrl(languages[0], doc.id)});
       const metadata = `---\nlayout: default\ntitle: ${JSON.stringify(doc.id === 'overview' ? 'FileSpacer' : language.ui[doc.id])}\ndescription: ${JSON.stringify(description)}\nfs_section: ${doc.id}\nfs_alternates: ${JSON.stringify(alternates)}\nhas_toc: false\n---\n`;
