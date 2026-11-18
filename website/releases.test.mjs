@@ -46,6 +46,6 @@ test('numeric dates use Intl locale conventions and the UTC publication day, reg
     assert.equal(releaseHeading('1.3.2 — an arbitrary original title', locale, dates), `1.3.2 — ${expected}`);
     assert.equal(releaseHeading('1.3.2', locale, dates), `1.3.2 — ${expected}`);
   }
-  assert.equal(releaseHeading('1.4.0 — 2026-12-01', 'fr-FR', dates), null);
+  assert.equal(releaseHeading('1.4.0 — 2026-12-01', 'fr-FR', dates), '1.4.0');
   assert.equal(releaseHeading('Unreleased', 'fr-FR', dates), null);
 });
