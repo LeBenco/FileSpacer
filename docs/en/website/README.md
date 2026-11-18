@@ -23,12 +23,9 @@ Online changelog dates come from `published_at` in the GitHub Releases JSON API,
 matched by release version. The existing Markdown files supply the translated
 notes. `Intl.DateTimeFormat` uses each site's locale for numeric day, month and
 four-digit year formatting, keeping the UTC publication day. Source dates are
-not parsed or used as a fallback. The public changelog includes only versions
-present in GitHub's published stable releases, with their notes and navigation
-entries filtered together in every language. Never add an `Unreleased` section
-or planned features: changelog sections must name numbered released versions.
-The generator rejects non-versioned sections, including in offline builds.
-Existing heading IDs remain unchanged, including their original
+not parsed or used as a fallback. Changelog content is maintained in the source
+documents. The generator formats known publication dates without filtering
+or rejecting sections. Existing heading IDs remain unchanged, including their original
 date suffixes, so published bookmarks still work.
 The generator fetches all release pages during a web build, and incorporates
 the publication metadata into the build fingerprint. API failures stop the build
