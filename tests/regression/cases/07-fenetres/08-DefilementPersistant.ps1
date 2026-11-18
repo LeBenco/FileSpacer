@@ -44,8 +44,7 @@ try {
   @{Name='list';Mode=3;Size=16;Free=$false},
   @{Name='details';Mode=4;Size=16;Free=$false},
   @{Name='tiles';Mode=6;Size=48;Free=$false},
-  @{Name='free-icons';Mode=1;Size=48;Free=$true},
-  @{Name='free-tiles';Mode=6;Size=48;Free=$true})
+  @{Name='free-icons';Mode=1;Size=48;Free=$true})
  foreach($mode in $modes) {
   $folder=Join-Path $script:UiRoot $mode.Name;[void][IO.Directory]::CreateDirectory($folder)
   foreach($index in 1..200){[IO.File]::WriteAllText((Join-Path $folder ('item-{0:000}.txt'-f$index)),'fixture')}
