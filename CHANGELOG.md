@@ -9,12 +9,12 @@
 - Keep free icon positions when switching to Content and back, including after reopening the folder.
 - Add three mutually exclusive icon placement modes: Automatic, On a grid and Free, with a destination preview while dragging in Automatic or On a grid.
 - Open the View menu faster while retaining Nilesoft menu customization.
-- Keep Content in its native ordered layout, without free icon placement, realignment or Snap.
+- Keep Tiles and Content in their native ordered layout, without free icon placement, realignment or Snap.
 - Add File Explorer's eight view modes: Extra large icons, Large icons, Medium icons, Small icons, List, Details, Tiles and Content, with Ctrl+Shift+1 to 8 shortcuts.
 - Add the **Realign icons** command to realign the current layout once, and **Snap** while dragging: hold **S** to align only the dragged icons to the Windows grid without moving the others, with an icon-sized translucent destination frame.
 - Rebuild the database in case of corruption.
 - Offer "Open in FileSpacer" in the folder context menus of every program.
-- Fix several view and input issues (free icon positions loss on Small icons/tiles, Ctrl+wheel steps unlike File Explorer, Backspace auto-repeat, invalid numeric preferences, opening animation origin for various DPI, scroll position on reopening under Windows 11).
+- Fix several view and input issues (free icon positions loss on Small icons, Ctrl+wheel steps unlike File Explorer, Backspace auto-repeat, invalid numeric preferences, opening animation origin for various DPI, scroll position on reopening under Windows 11).
 - Keep the proportions of Details columns that fill the window when a folder is closed and reopened.
 - Add an option to turn off the Microsoft symbol download that speeds up large folders, and show a notification when it happens.
 - Stop the daily retry of the large-folder speed-up preparation once it has failed the same way three times, and remove its data for replaced Windows versions.
