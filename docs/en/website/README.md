@@ -40,9 +40,17 @@ The generator discovers language directories containing `locale.json` and all
 four translated source files, the privacy policy and the localized Nilesoft
 reference. It creates the
 language selector above the sidebar navigation from those directories, using
-each language's own name and a Unicode
-flag. The bundled, OFL-licensed Noto Color Emoji flag font supplies flags on
-Windows as well; it requires no external font service.
+each language's own name and a local SVG flag. The country comes from the
+locale's region, with no separate list to maintain. Each full generation downloads
+the required SVGs once per country from `https://flagcdn.com/<country>.svg` and
+includes them under `assets/flags/` in every language build, including offline help.
+Flagpedia declares these images [public domain](https://flagpedia.net/about#license),
+with no required attribution. Visitors make no requests to the flag service.
+Flags in the closed language menu use lazy loading; the current flag has fixed
+dimensions and loads normally. Failed downloads or non-SVG responses stop
+generation before the previous finished output is replaced. Temporary sources
+are cleaned by the shared build wrapper. Reading the generated site needs no network
+access to Flagcdn, while a full rebuild does.
 
 `assets/favicon.ico` contains the application's original 16 × 16 icon frame,
 extracted from `src/res/FileSpacer.ico` without resampling. Keep it in sync
@@ -65,6 +73,15 @@ upstream layout override translates its skip link and versions the compiled
 theme script so browsers receive search changes after deployment. Retain its
 MIT notice and review it when updating the theme. The repository README has no
 language selector or language links.
+Lunr and the theme script use `defer` in their original dependency order, so their
+downloads do not block HTML parsing. Search, the mobile menu and offline search
+keep the same theme implementation.
+The Website section of third-party notices credits Just the Docs, Jekyll, Lunr
+and Flagpedia/Flagcdn in every language. The sidebar and mobile footer no longer
+repeat the theme credit. Keep the empty `nav_footer_custom.html` override to
+suppress the theme's default footer. The theme's full MIT notice remains in the
+source layout directory and the generated `JustTheDocs-LICENSE.txt`; Lunr's
+notice is bundled under `assets/licenses/`.
 
 Download links and badges come from
 the Markdown sources; the generator does not add a second download button or
