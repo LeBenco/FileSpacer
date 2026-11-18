@@ -34,12 +34,13 @@ try {
     $moved=$names[6]+'=420,360'
     Wait-Ui {(Read-PreviewState $window).Positions -like ('*'+$moved+'*')} 'moved icon placed after the preview' 250
     $expected=Read-PreviewState $window
+    $restoredPositions=Get-PreviewRestoredPositions $window $expected.Positions
     $expected|ConvertTo-Json -Depth 4|Set-Content -LiteralPath (Join-Path $env:FS_REGRESSION_RUN 'before-close.json') -Encoding UTF8
     Close-UiFolder $window
     $window=Open-UiFolder $folder 300
     Wait-PreviewMode $window $initial
     Wait-Ui {(Use-UiView $window {param($view) @($view.OrderedNames())[0]}) -ceq $last} 'name descending order restored after reopening' 250
     Read-PreviewState $window|ConvertTo-Json -Depth 4|Set-Content -LiteralPath (Join-Path $env:FS_REGRESSION_RUN 'after-reopen.json') -Encoding UTF8
-    Wait-Ui {(Read-PreviewState $window).Positions -eq $expected.Positions} 'icon positions restored, including the move made after the preview' 250
+    Wait-Ui {(Read-PreviewState $window).Positions -eq $restoredPositions} 'icon positions restored through integer DPI storage, including the move made after the preview' 250
     Write-Host 'PASS: the sort order and icon positions changed after the preview survive closing and reopening.'
 }catch{$failure=$_;throw}finally{Stop-Ui -Failure $failure}
