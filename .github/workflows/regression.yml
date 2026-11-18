@@ -1,5 +1,5 @@
 name: Test FileSpacer regressions
-run-name: Regression tests - ${{ inputs.ref }} - ${{ inputs.category }} - ${{ inputs.pattern }}
+run-name: Tests - ${{ inputs.ref }} - ${{ inputs.suite }} - scale ${{ inputs.display_scale }} - ${{ inputs.pattern }}
 
 on:
   workflow_dispatch:
@@ -24,6 +24,23 @@ on:
         default: '*'
         type: string
 
+      suite:
+        description: 'Catalogue; stress runs only when explicitly selected'
+        default: Regression
+        type: choice
+        options:
+          - Regression
+          - Stress
+      display_scale:
+        description: 'Actual display scale in percent; 0 keeps the current setting'
+        default: '0'
+        type: choice
+        options:
+          - '0'
+          - '100'
+          - '125'
+          - '150'
+
   workflow_call:
     outputs:
       tested_sha:
@@ -38,6 +55,12 @@ on:
         type: string
       pattern:
         default: '*'
+        type: string
+      suite:
+        default: Regression
+        type: string
+      display_scale:
+        default: '0'
         type: string
 
 permissions:
@@ -65,12 +88,22 @@ jobs:
           TEST_SCOPE: Application
           TEST_CATEGORY: ${{ inputs.category }}
           TEST_PATTERN: ${{ inputs.pattern }}
+          TEST_SUITE: ${{ inputs.suite }}
+          TEST_DISPLAY_SCALE: ${{ inputs.display_scale }}
         run: |
-          $cases = & ./tests/regression/Run-Regression.ps1 -ListOnly -Scope $env:TEST_SCOPE -Category $env:TEST_CATEGORY -Pattern $env:TEST_PATTERN | ConvertFrom-Json
+          $parameters = @{ListOnly=$true;Scope=$env:TEST_SCOPE;Category=$env:TEST_CATEGORY;Pattern=$env:TEST_PATTERN}
+          if ($env:TEST_SUITE -ne 'Regression') { $parameters.Suite = $env:TEST_SUITE }
+          if ([int]$env:TEST_DISPLAY_SCALE -ne 0) { $parameters.DisplayScale = [int]$env:TEST_DISPLAY_SCALE }
+          if ($env:TEST_SUITE -ne 'Regression' -and
+              (!(Test-Path .github/scripts/regression-cache.mjs) -or
+               (Get-Content .github/scripts/regression-cache.mjs -Raw) -notmatch 'TEST_SUITE')) {
+            throw 'This revision predates explicit CI stress selection. Select a revision containing that support.'
+          }
+          $cases = & ./tests/regression/Run-Regression.ps1 @parameters | ConvertFrom-Json
           if ($LASTEXITCODE -ne 0 -or !$cases) { throw 'Case selection failed.' }
           "sha=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
           "ui=$((@($cases | Where-Object Category -eq 'UI').Count -gt 0).ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
-          "Selected $(@($cases).Count) cases, scope=$env:TEST_SCOPE, category=$env:TEST_CATEGORY, pattern=$env:TEST_PATTERN" >> $env:GITHUB_STEP_SUMMARY
+          "Selected $(@($cases).Count) cases, suite=$env:TEST_SUITE, scale=$env:TEST_DISPLAY_SCALE, scope=$env:TEST_SCOPE, category=$env:TEST_CATEGORY, pattern=$env:TEST_PATTERN" >> $env:GITHUB_STEP_SUMMARY
 
       # Older selected revisions without this helper retain the full execution.
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
@@ -83,6 +116,8 @@ jobs:
         env:
           TEST_CATEGORY: ${{ inputs.category }}
           TEST_PATTERN: ${{ inputs.pattern }}
+          TEST_SUITE: ${{ inputs.suite }}
+          TEST_DISPLAY_SCALE: ${{ inputs.display_scale }}
         run: |
           node --test .github/scripts/regression-cache.test.mjs
           node .github/scripts/regression-cache.mjs fingerprint
@@ -113,6 +148,8 @@ jobs:
       TEST_UI: ${{ needs.selection.outputs.ui }}
       TEST_CATEGORY: ${{ inputs.category }}
       TEST_PATTERN: ${{ inputs.pattern }}
+      TEST_SUITE: ${{ inputs.suite }}
+      TEST_DISPLAY_SCALE: ${{ inputs.display_scale }}
       # Keep Windows PowerShell 5.1 modules when the parent uses PowerShell 7.
       PSModulePath: C:\Windows\System32\WindowsPowerShell\v1.0\Modules
     steps:
@@ -136,6 +173,8 @@ jobs:
             Scope = $env:TEST_SCOPE
             Category = $env:TEST_CATEGORY
             Pattern = $env:TEST_PATTERN
+            Suite = $env:TEST_SUITE
+            RequestedDisplayScale = $env:TEST_DISPLAY_SCALE
             OS = (Get-CimInstance Win32_OperatingSystem).Caption
             ImageVersion = $env:ImageVersion
             PowerShell = $PSVersionTable.PSVersion.ToString()
@@ -220,9 +259,9 @@ jobs:
         run: |
           call "%VS_INSTALL%\VC\Auxiliary\Build\vcvars64.bat"
           if errorlevel 1 exit /b 1
-          rem Regression catalogue only; stress is launched separately outside CI.
+          rem Stress is a separate catalogue, selected explicitly by workflow input.
           rem Cold private-symbol qualification can still take several minutes.
-          powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '.\tests\regression\Run-Regression.ps1' -CI -Scope $env:TEST_SCOPE -Category $env:TEST_CATEGORY -Pattern $env:TEST_PATTERN -TimeoutSeconds 900 -RunDirectory $env:TEST_DIRECTORY"
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$parameters=@{CI=$true;Scope=$env:TEST_SCOPE;Category=$env:TEST_CATEGORY;Pattern=$env:TEST_PATTERN;TimeoutSeconds=900;RunDirectory=$env:TEST_DIRECTORY}; if($env:TEST_SUITE -ne 'Regression'){$parameters.Suite=$env:TEST_SUITE}; if([int]$env:TEST_DISPLAY_SCALE -ne 0){$parameters.DisplayScale=[int]$env:TEST_DISPLAY_SCALE}; & '.\tests\regression\Run-Regression.ps1' @parameters"
           exit /b %errorlevel%
 
       - name: Report the result
