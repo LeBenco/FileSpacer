@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {Marked} from 'marked';
 import {optimize} from 'svgo';
-import {fetchReleaseDates, releaseHeading} from './releases.mjs';
+import {fetchReleaseDates, releaseHeading, releasedChangelog} from './releases.mjs';
 import {downloadFlags} from './flags.mjs';
 
 const template = path.dirname(fileURLToPath(import.meta.url));
@@ -148,12 +148,17 @@ export async function generate(repository = path.dirname(template), destination 
       ? JSON.parse(await fs.readFile(stateFile, 'utf8')).sources : {};
     for (const [source, id] of sources) {
       const content = await fs.readFile(path.join(language.root, sourceFile(language, source)), 'utf8');
-      const tokens = prepareHeadingAnchors(parser.lexer(content));
+      const prepared = prepareHeadingAnchors(parser.lexer(content));
+      const tokens = source === 'CHANGELOG.md' ? releasedChangelog(prepared, options.releaseDates) : prepared;
       const sourceHash = createHash('sha256').update(content.replaceAll('\r\n', '\n')).digest('hex');
       const baseline = state[source];
-      const reference = baseline ? baseline.headings.map(([anchor, depth], index) => ({
+      let reference = baseline ? baseline.headings.map(([anchor, depth], index) => ({
         anchor, depth, id: index === 0 ? id : `${id}--${anchor}`,
       })) : canonical.get(source)?.headings;
+      if (reference && source === 'CHANGELOG.md' && options.releaseDates) {
+        const published = new Set(canonical.get(source).headings.map(heading => heading.anchor));
+        reference = reference.filter(heading => published.has(heading.anchor));
+      }
       if (baseline && baseline.sourceHash !== canonical.get(source).sourceHash) {
         const message = `${language.code}/${source}: English has changed since this translation was synchronized; retaining the existing translation and section links.`;
         warnings.push({language: language.code, source, message});
