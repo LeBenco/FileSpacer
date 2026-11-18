@@ -34,7 +34,6 @@ body.fs-site { margin: 0; background: transparent; }
 .fs-search-label svg { width: 1rem; height: 1rem; }
 .fs-search-results { display: none; position: absolute; top: calc(100% + .4rem); left: 0; z-index: 30; width: 32rem; max-width: calc(100vw - 5rem); max-height: min(26rem, calc(100dvh - 20rem)); overflow-y: auto; background: #fff; border: 1px solid var(--fs-line); border-radius: .5rem; box-shadow: 0 6px 24px #27262b26; }
 .search-active .fs-search-results { display: block; }
-.fs-sidebar-footer { margin-top: auto; padding: 2rem 1.5rem 0; font-size: .7rem; line-height: 1.5; color: #706c78; }
 .fs-tools { grid-column: 2; display: flex; align-items: center; justify-content: flex-end; gap: 1rem; padding: .65rem 1.5rem; border-bottom: 1px solid var(--fs-line); }
 .fs-tools-brand { width: auto; margin-right: auto; gap: .65rem; }
 .fs-tools-brand img { margin-left: 0; }
@@ -60,7 +59,6 @@ body.fs-site { margin: 0; background: transparent; }
   .fs-sidebar .language-picker { margin: 0 1.25rem .75rem; }
   .fs-sidebar #site-nav { margin-top: .8rem; }
   .fs-sidebar #site-nav:not(.nav-open) { display: none; }
-  .fs-sidebar-footer { display: none; }
   .fs-tools { flex-wrap: wrap; padding: .65rem 1.25rem; }
   .fs-header-search { flex: 1 1 14rem; }
   .fs-content-scroll { overflow: visible; padding: 1rem 1.25rem 2rem; }
