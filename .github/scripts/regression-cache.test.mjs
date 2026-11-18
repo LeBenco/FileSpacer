@@ -31,6 +31,12 @@ test('application code, resources, dependencies, build inputs and the test harne
 test('different selections cannot reuse a partial test result', () => {
   assert.notEqual(fingerprint(base, 'All', '*'), fingerprint(base, 'Internal', '*'));
   assert.notEqual(fingerprint(base, 'All', '*'), fingerprint(base, 'All', '31-*'));
+  assert.notEqual(fingerprint(base), fingerprint(base, 'All', '*', 'Stress'));
+  assert.notEqual(fingerprint(base), fingerprint(base, 'All', '*', 'Regression', '150'));
+  assert.notEqual(fingerprint(base, 'All', '*', 'Regression', '100'), fingerprint(base, 'All', '*', 'Regression', '150'));
+  const stressInput = entry('tests/stress/cases/28-apercu-affichage/07-CadrePosition.ps1');
+  assert.equal(fingerprint(base + stressInput), fingerprint(base));
+  assert.notEqual(fingerprint(base + stressInput, 'All', '*', 'Stress'), fingerprint(base, 'All', '*', 'Stress'));
   assert.equal(fingerprint(base), fingerprint(base.split('\0').filter(Boolean).reverse().join('\0') + '\0'));
   assert.throws(() => fingerprint(entry('README.md')), /No application sources/);
 });
