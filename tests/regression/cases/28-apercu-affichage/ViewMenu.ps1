@@ -84,10 +84,23 @@ function Set-PreviewState([IntPtr]$Window) {
     return Read-PreviewState $Window
 }
 function Assert-PreviewState([IntPtr]$Window,$Expected) {
-    Wait-Ui {
-        $actual=Read-PreviewState $Window
-        $actual.Selected -eq $Expected.Selected -and $actual.Focus -eq $Expected.Focus -and $actual.Positions -eq $Expected.Positions
-    } 'original selection, focus and every icon position' 250
+    $observed=@{Actual=$null}
+    # Preview reconstruction uses the same integer 96-DPI coordinates as reopening.
+    $restoredPositions=Get-PreviewRestoredPositions $Window $Expected.Positions
+    try {
+        Wait-Ui {
+            $observed.Actual=Read-PreviewState $Window
+            $actual=$observed.Actual
+            $actual.Selected -eq $Expected.Selected -and $actual.Focus -eq $Expected.Focus -and $actual.Positions -eq $restoredPositions
+        } 'original selection, focus and every icon position' 250
+    } catch {
+        $failure=$_
+        try {
+            @{Expected=$Expected;ExpectedRestoredPositions=$restoredPositions;Actual=$observed.Actual;Dpi=[FileSpacerRegression.Native]::GetDpiForWindow($Window)}|
+                ConvertTo-Json -Depth 4|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'preview-state-error.json') -Encoding UTF8
+        } catch {Write-Warning ('Preview-state diagnostics unavailable: '+$_.Exception.Message)}
+        throw $failure
+    }
 }
 function Assert-PreviewDisabled([IntPtr]$Window,$Expected) {
     $popup=Open-PreviewMenu $Window
