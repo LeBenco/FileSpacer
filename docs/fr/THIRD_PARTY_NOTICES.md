@@ -28,3 +28,12 @@ SQLite 3.53.4 est lié statiquement à l’application. Il appartient au domaine
 - **Icônes Remonter et Actualiser** : [Lucide](https://lucide.dev/) (versions adaptées, [ISC et MIT](../../licenses/Lucide-LICENSE.txt), mentions aussi fournies dans `Lucide-LICENSE.txt`).
 - **Icône Remonter** : [Feather](https://feathericons.com/) (à l’origine de la version Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Icônes cadenas fermé et ouvert** : [Small & Flat de paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), cadenas ouvert dérivé du cadenas fermé).
+
+<a id="website"></a>
+
+## Site web
+
+- **Thème du site** : [Just the Docs](https://just-the-docs.com/) ([MIT](../../website/_layouts/UPSTREAM-LICENSE.txt)).
+- **Générateur du site** : [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
+- **Moteur de recherche** : [Lunr](https://lunrjs.com/) ([MIT](../../website/assets/licenses/Lunr-LICENSE.txt)).
+- **Drapeaux du sélecteur de langue** : [Flagpedia](https://flagpedia.net/) / [Flagcdn](https://flagcdn.com/) ([domaine public](https://flagpedia.net/about#license)).

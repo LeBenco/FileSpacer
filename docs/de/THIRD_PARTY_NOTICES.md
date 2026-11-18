@@ -28,3 +28,12 @@ SQLite 3.53.4 wird statisch in die Anwendung eingebunden. Es ist gemeinfrei. Die
 - **Symbole „Nach oben“ und „Aktualisieren“**: [Lucide](https://lucide.dev/) (angepasste Versionen, [ISC und MIT](../../licenses/Lucide-LICENSE.txt), Lizenztexte auch enthalten in `Lucide-LICENSE.txt`).
 - **Symbol „Nach oben“**: [Feather](https://feathericons.com/) (Ursprung der Lucide-Version, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Symbole für geschlossenes und offenes Schloss**: [Small & Flat von paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), offenes Schloss vom geschlossenen abgeleitet).
+
+<a id="website"></a>
+
+## Website
+
+- **Website-Design**: [Just the Docs](https://just-the-docs.com/) ([MIT](../../website/_layouts/UPSTREAM-LICENSE.txt)).
+- **Website-Generator**: [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
+- **Suchfunktion**: [Lunr](https://lunrjs.com/) ([MIT](../../website/assets/licenses/Lunr-LICENSE.txt)).
+- **Flaggen im Sprachmenü**: [Flagpedia](https://flagpedia.net/) / [Flagcdn](https://flagcdn.com/) ([gemeinfrei](https://flagpedia.net/about#license)).

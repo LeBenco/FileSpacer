@@ -28,3 +28,12 @@ SQLite 3.53.4 статично скомпоновано з програмою. �
 - **Піктограми «Вгору» та «Оновити»**: [Lucide](https://lucide.dev/) (адаптовані версії, [ISC і MIT](../../licenses/Lucide-LICENSE.txt), тексти ліцензій також постачаються у файлі `Lucide-LICENSE.txt`).
 - **Піктограма «Вгору»**: [Feather](https://feathericons.com/) (першоджерело версії Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Піктограми закритого й відкритого замка**: [Small & Flat від paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), відкритий замок створено на основі закритого).
+
+<a id="website"></a>
+
+## Вебсайт
+
+- **Тема вебсайту**: [Just the Docs](https://just-the-docs.com/) ([MIT](../../website/_layouts/UPSTREAM-LICENSE.txt)).
+- **Генератор вебсайту**: [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
+- **Пошукова система**: [Lunr](https://lunrjs.com/) ([MIT](../../website/assets/licenses/Lunr-LICENSE.txt)).
+- **Прапори у виборі мови**: [Flagpedia](https://flagpedia.net/) / [Flagcdn](https://flagcdn.com/) ([суспільне надбання](https://flagpedia.net/about#license)).
