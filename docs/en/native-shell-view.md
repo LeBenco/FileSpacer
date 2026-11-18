@@ -13,9 +13,9 @@ see [Working on FileSpacer](README.md).
 `ShellViewHost` embeds `CLSID_ExplorerBrowser`. Windows owns enumeration,
 rendering, icons, view modes and file operations. `FolderWindow` owns spatial
 navigation policy and coordinates persistence. Eligible filesystem folders use
-`FVO_DEFAULT` for List and Content, and for Details without automatic column
+`FVO_DEFAULT` for List, Tiles and Content, and for Details without automatic column
 filling. Spatial presentations and Details with column filling use
-`FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING`. Content never enables spatial
+`FVO_CUSTOMPOSITION | FVO_CUSTOMORDERING`. Tiles and Content never enable spatial
 placement, one-shot realignment or S-drag Snap. Virtual
 folders can choose their initial presentation. `EBO_NOPERSISTVIEWSTATE`
 keeps per-folder persistence under FileSpacer's control.
@@ -263,7 +263,7 @@ selection, focus, persistence and 60 acknowledged marker motions.
 
 The Placement submenu exposes mutually exclusive Automatic, On a grid and Free
 choices. One masked `IFolderView2::SetCurrentFolderFlags` call sets both native
-arrangement flags together. List, Details and Content do not enable this submenu.
+arrangement flags together. List, Details, Tiles and Content do not enable this submenu.
 Realignment remains a separate one-shot operation.
 
 Grid zoom keeps occupied cells and holes rather than replaying the old pixel
@@ -291,7 +291,7 @@ The icon rectangle offset comes from the native view. No insertion hit-test,
 private function or Shell item enumeration is added on mouse movement. A stale
 layout or missing native insertion mark suppresses the frame. Native insertion
 feedback and drag/drop behavior are preserved. Grid placement rounds the drag
-delta using the current grid spacing and phase. Small icons and Tiles also use
+delta using the current grid spacing and phase. Small icons also use
 this permanent-placement preview; free S-drag prediction remains Icon-view only.
 
 Free-placement drag/drop distinguishes the native image rectangle from the
@@ -343,7 +343,7 @@ enumerate the Shell folder or extract images. The icon-sized grey frame has an
 opaque outline and a light-grey interior at 50% opacity. Its layered surface is
 allocated lazily when shown, not on ordinary free drags. Native automatic/grid
 previews retain their own insertion/collision checks. Free S-preview eligibility
-remains Icon view; Small icons and Tiles retain the existing native Snap fallback.
+remains Icon view; Small icons retain the existing native Snap fallback.
 
 A free-placement S press is consumed through its matching release, including
 repeats after the drop. Once positioning is attempted, the message hook and drop
