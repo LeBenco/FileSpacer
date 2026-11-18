@@ -7,8 +7,8 @@ import {pathToFileURL} from 'node:url';
 export const evidencePath = 'build/ci/regression-pass.json';
 
 export function applicationInput(file, suite = 'Regression') {
-  if (file.startsWith('tests/stress/')) return suite === 'Stress';
-  if (file === 'stress-tests.cmd') return suite === 'Stress';
+  if (file.startsWith('tests/stress/')) return suite.toLowerCase() === 'stress';
+  if (file === 'stress-tests.cmd') return suite.toLowerCase() === 'stress';
   return /^(src|third_party|tests)\//.test(file)
     || ['.gitattributes', 'Makefile', 'build.cmd', 'tests.cmd', 'generate-icon.py', 'installer/installer.mak',
       '.github/workflows/regression.yml'].includes(file)
@@ -16,6 +16,8 @@ export function applicationInput(file, suite = 'Regression') {
 }
 
 export function fingerprint(tree, category = 'All', pattern = '*', suite = 'Regression', displayScale = '0') {
+  suite = {regression: 'Regression', stress: 'Stress'}[suite.toLowerCase()];
+  if (!suite) throw new Error('Unknown test suite.');
   const entries = tree.split('\0').filter(Boolean).filter(entry => {
     const separator = entry.indexOf('\t');
     if (separator < 0) throw new Error('Invalid Git tree entry.');
