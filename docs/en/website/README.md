@@ -41,16 +41,24 @@ four translated source files, the privacy policy and the localized Nilesoft
 reference. It creates the
 language selector above the sidebar navigation from those directories, using
 each language's own name and a local SVG flag. The country comes from the
-locale's region, with no separate list to maintain. Each full generation downloads
-the required SVGs once per country from `https://flagcdn.com/<country>.svg` and
-includes them under `assets/flags/` in every language build, including offline help.
-Flagpedia declares these images [public domain](https://flagpedia.net/about#license),
-with no required attribution. Visitors make no requests to the flag service.
-Flags in the closed language menu use lazy loading; the current flag has fixed
-dimensions and loads normally. Failed downloads or non-SVG responses stop
+locale's region, with no separate list to maintain. Each full generation queries
+Wikidata for the current preferred flag image of each country (ISO code `P297`,
+flag image `P41`), excluding dissolved countries. Missing or ambiguous results
+stop generation instead of selecting an arbitrary variant.
+The Commons API supplies the original SVG URL and license metadata. Only
+public-domain or CC0 files explicitly requiring no attribution are accepted.
+The SVGs are downloaded once per country, optimized with SVGO using its default
+preset and multiple passes, and included under `assets/flags/` in every language build,
+including offline help. No country-specific file names or corrections are kept. Proportions are preserved.
+Local SVG illustrations, including the header icon, are optimized when copied
+into the generated site. Editor metadata is removed; source artwork stays editable
+and its copyright/license comments are retained in the generated illustration.
+Flags in the closed language menu use lazy loading; the current flag has a fixed
+layout box and loads normally. Visitors make no requests to Wikimedia.
+Failed metadata requests, incompatible licenses or invalid SVG responses stop
 generation before the previous finished output is replaced. Temporary sources
-are cleaned by the shared build wrapper. Reading the generated site needs no network
-access to Flagcdn, while a full rebuild does.
+are cleaned by the shared build wrapper. A full rebuild needs network access
+to Wikidata and Wikimedia Commons; reading the generated site does not.
 
 `assets/favicon.ico` contains the application's original 16 × 16 icon frame,
 extracted from `src/res/FileSpacer.ico` without resampling. Keep it in sync
@@ -76,8 +84,8 @@ language selector or language links.
 Lunr and the theme script use `defer` in their original dependency order, so their
 downloads do not block HTML parsing. Search, the mobile menu and offline search
 keep the same theme implementation.
-The Website section of third-party notices credits Just the Docs, Jekyll, Lunr
-and Flagpedia/Flagcdn in every language. The sidebar and mobile footer no longer
+The Website section of third-party notices credits Just the Docs, Jekyll, Lunr,
+Wikimedia Commons/Wikidata and SVGO in every language. The sidebar and mobile footer no longer
 repeat the theme credit. Keep the empty `nav_footer_custom.html` override to
 suppress the theme's default footer. The theme's full MIT notice remains in the
 source layout directory and the generated `JustTheDocs-LICENSE.txt`; Lunr's
