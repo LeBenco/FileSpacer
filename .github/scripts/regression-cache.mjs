@@ -6,22 +6,23 @@ import {pathToFileURL} from 'node:url';
 
 export const evidencePath = 'build/ci/regression-pass.json';
 
-export function applicationInput(file) {
-  if (file.startsWith('tests/stress/')) return false;
+export function applicationInput(file, suite = 'Regression') {
+  if (file.startsWith('tests/stress/')) return suite === 'Stress';
+  if (file === 'stress-tests.cmd') return suite === 'Stress';
   return /^(src|third_party|tests)\//.test(file)
     || ['.gitattributes', 'Makefile', 'build.cmd', 'tests.cmd', 'generate-icon.py', 'installer/installer.mak',
       '.github/workflows/regression.yml'].includes(file)
     || file.startsWith('.github/scripts/regression-cache');
 }
 
-export function fingerprint(tree, category = 'All', pattern = '*') {
+export function fingerprint(tree, category = 'All', pattern = '*', suite = 'Regression', displayScale = '0') {
   const entries = tree.split('\0').filter(Boolean).filter(entry => {
     const separator = entry.indexOf('\t');
     if (separator < 0) throw new Error('Invalid Git tree entry.');
-    return applicationInput(entry.slice(separator + 1));
+    return applicationInput(entry.slice(separator + 1), suite);
   }).sort();
   if (!entries.some(entry => entry.includes('\tsrc/'))) throw new Error('No application sources in the selected revision.');
-  return createHash('sha256').update(JSON.stringify({version: 1, runner: 'windows-2022', scope: 'Application', category, pattern, entries})).digest('hex');
+  return createHash('sha256').update(JSON.stringify({version: 1, runner: 'windows-2022', scope: 'Application', category, pattern, suite, displayScale, entries})).digest('hex');
 }
 
 export function cacheKey(hash) {
@@ -43,7 +44,7 @@ async function output(name, value) {
 async function main() {
   if (process.argv[2] === 'fingerprint') {
     const tree = execFileSync('git', ['ls-tree', '-rz', '--full-tree', 'HEAD'], {encoding: 'utf8'});
-    const hash = fingerprint(tree, process.env.TEST_CATEGORY, process.env.TEST_PATTERN);
+    const hash = fingerprint(tree, process.env.TEST_CATEGORY, process.env.TEST_PATTERN, process.env.TEST_SUITE, process.env.TEST_DISPLAY_SCALE);
     await output('fingerprint', hash);
     await output('key', cacheKey(hash));
     console.log(`Application/test inputs: ${hash}`);
