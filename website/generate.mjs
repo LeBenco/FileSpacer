@@ -286,6 +286,7 @@ export async function generate(repository = path.dirname(template), destination 
     localizedConfig += `\nlang: ${language.code}\nfs_ui: ${JSON.stringify(language.ui)}\n`;
     await fs.writeFile(path.join(output, '_config.yml'), localizedConfig);
     const topLinks = [...documents.values()].map(doc => `<a href="${pageFile(doc.id)}" data-section="${doc.id}"{% if page.fs_section == '${doc.id}' %} aria-current="page"{% endif %}>${escape(language.ui[doc.id])}</a>`).join('');
+    await fs.mkdir(path.join(output, '_includes/components'), {recursive: true});
     await fs.writeFile(path.join(output, '_includes/components/top_nav.html'), `<nav class="fs-top-nav" aria-label="${escape(language.ui.navigation)}">${topLinks}<a href="https://github.com/LeBenco/FileSpacer">GitHub</a></nav>\n`);
     await fs.mkdir(path.join(output, '_includes/sections'), {recursive: true});
     for (const [source, target] of assets) {
