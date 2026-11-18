@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only; Copyright (C) 2026 Benco
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -15,6 +15,27 @@ namespace FileSpacerRegression {
   [DllImport("user32.dll")] static extern uint GetDpiForWindow(IntPtr window);
   [DllImport("user32.dll")] static extern bool PostMessage(IntPtr window,uint message,IntPtr first,IntPtr second);
   static readonly PropertyCondition combos=new PropertyCondition(AutomationElement.ControlTypeProperty,ControlType.ComboBox);
+  static void OpenSettings() {
+   // Delegate through the desktop's Shell object, rather than the restricted worker token.
+   // https://learn.microsoft.com/windows/win32/shell/samples-execinexplorer
+   object shell=null,windows=null,browser=null,document=null,application=null;
+   try {
+    shell=Activator.CreateInstance(Type.GetTypeFromProgID("Shell.Application",true));
+    windows=shell.GetType().InvokeMember("Windows",BindingFlags.InvokeMethod,null,shell,null);
+    object[] arguments={null,null,8,0,1}; // SWC_DESKTOP, SWFO_NEEDDISPATCH (exdisp.h).
+    var refs=new ParameterModifier(5);refs[0]=true;refs[1]=true;refs[3]=true;
+    browser=windows.GetType().InvokeMember("FindWindowSW",BindingFlags.InvokeMethod,null,windows,
+     arguments,new[]{refs},System.Globalization.CultureInfo.InvariantCulture,null);
+    if(browser==null)throw new InvalidOperationException("The desktop Shell browser is unavailable.");
+    document=browser.GetType().InvokeMember("Document",BindingFlags.GetProperty,null,browser,null);
+    application=document.GetType().InvokeMember("Application",BindingFlags.GetProperty,null,document,null);
+    application.GetType().InvokeMember("ShellExecute",BindingFlags.InvokeMethod,null,application,
+     new object[]{"ms-settings:display",null,null,"open",1});
+   } finally {
+    foreach(object item in new[]{application,document,browser,windows,shell})
+     if(item!=null&&Marshal.IsComObject(item))Marshal.ReleaseComObject(item);
+   }
+  }
   static string Selected(AutomationElement element) {
    object p;if(element.TryGetCurrentPattern(SelectionPattern.Pattern,out p)){var selected=((SelectionPattern)p).Current.GetSelection();if(selected.Length==1)return selected[0].Current.Name;}
    if(element.TryGetCurrentPattern(ValuePattern.Pattern,out p))return ((ValuePattern)p).Current.Value;return "";
@@ -45,7 +66,7 @@ namespace FileSpacerRegression {
   public DisplayScale(bool useOpenedTestSettings) {
    combo=FindCombo();
    if(combo!=null&&!useOpenedTestSettings)throw new InvalidOperationException("Preserve already open scaling settings.");
-   if(combo==null)Process.Start(new ProcessStartInfo("ms-settings:display"){UseShellExecute=true});
+   if(combo==null)OpenSettings();
    var until=DateTime.UtcNow.AddSeconds(20);
    while(DateTime.UtcNow<until && (combo=FindCombo())==null){var settings=SettingsWindow();object p;if(settings!=null&&settings.TryGetCurrentPattern(WindowPattern.Pattern,out p)){((WindowPattern)p).SetWindowVisualState(WindowVisualState.Maximized);window=new IntPtr(settings.Current.NativeWindowHandle);}Thread.Sleep(100);}
    if(combo==null){CaptureUnavailableControls();if(window!=IntPtr.Zero)PostMessage(window,0x10,IntPtr.Zero,IntPtr.Zero);throw new InvalidOperationException("Display scale combo unavailable.");}
