@@ -75,14 +75,15 @@ function navigation(headings, ui) {
 }
 
 function languagePicker(current, languages, id) {
-  const options = languages.map(language => `<a href="${escape(pageUrl(language, id))}" data-language-href="${escape(pageUrl(language, id))}" hreflang="${new Intl.Locale(language.code).language}" lang="${language.code}"${language.code === current.code ? ' aria-current="true"' : ''}><span class="language-flag" aria-hidden="true">${language.flag}</span>${escape(language.name)}${language.code === current.code ? '<span class="selected-mark" aria-hidden="true">✓</span>' : ''}</a>`).join('');
-  return `<details class="language-picker"><summary aria-label="${escape(current.ui.language + ' : ' + current.name)}"><span class="language-flag" aria-hidden="true">${current.flag}</span><span>${escape(current.name)}</span><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></summary><div class="language-options">${options}</div></details>`;
+  const flag = (language, lazy = false) => `<img class="language-flag" src="assets/flags/${language.flag}.svg" alt="" width="20" height="15"${lazy ? ' loading="lazy"' : ''}>`;
+  const options = languages.map(language => `<a href="${escape(pageUrl(language, id))}" data-language-href="${escape(pageUrl(language, id))}" hreflang="${new Intl.Locale(language.code).language}" lang="${language.code}"${language.code === current.code ? ' aria-current="true"' : ''}>${flag(language, true)}${escape(language.name)}${language.code === current.code ? '<span class="selected-mark" aria-hidden="true">✓</span>' : ''}</a>`).join('');
+  return `<details class="language-picker"><summary aria-label="${escape(current.ui.language + ' : ' + current.name)}">${flag(current)}<span>${escape(current.name)}</span><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></summary><div class="language-options">${options}</div></details>`;
 }
 
 function describeLanguage(code, ui, root, base, primary = false) {
   const locale = new Intl.Locale(code);
   if (!locale.region || !/^[a-z]{2}-[A-Z]{2}$/.test(code)) throw new Error(`Use a language-region locale directory: ${code}`);
-  const flag = [...locale.region].map(letter => String.fromCodePoint(0x1f1e6 + letter.charCodeAt(0) - 65)).join('');
+  const flag = locale.region.toLowerCase();
   return {code, ui, root, flag, name: ui.name, path: primary ? '' : locale.language, source: primary ? '.' : `_locales/${code}`, url: base + (primary ? '/' : `/${locale.language}/`)};
 }
 
@@ -125,6 +126,16 @@ export async function generate(repository = path.dirname(template), destination 
   for (const locale of options.recordTranslations || []) {
     if (!languages.some(language => language.code === locale && language !== languages[0])) throw new Error(`Unknown translation locale: ${locale}`);
   }
+  // Public-domain Flagpedia artwork: download once per country at build time.
+  // The finished website and offline help never contact the CDN.
+  const flags = new Map(await Promise.all([...new Set(languages.map(language => language.flag))].map(async country => {
+    const url = `https://flagcdn.com/${country}.svg`;
+    const response = await (options.flagRequest || fetch)(url, {signal: AbortSignal.timeout(20000)});
+    if (!response.ok) throw new Error(`Flag download failed (${response.status}): ${url}`);
+    const svg = await response.text();
+    if (!/^\s*<svg\b[^]*<\/svg>\s*$/.test(svg)) throw new Error(`Invalid flag SVG: ${url}`);
+    return [country, svg];
+  })));
   const parser = new Marked({gfm: true});
   const canonical = new Map();
   const results = [];
@@ -280,6 +291,8 @@ export async function generate(repository = path.dirname(template), destination 
     await fs.cp(path.join(template, '_includes'), path.join(output, '_includes'), {recursive: true});
     await fs.cp(path.join(template, '_layouts'), path.join(output, '_layouts'), {recursive: true});
     await fs.cp(path.join(template, 'assets'), path.join(output, 'assets'), {recursive: true});
+    await fs.mkdir(path.join(output, 'assets/flags'), {recursive: true});
+    for (const [country, svg] of flags) await fs.writeFile(path.join(output, `assets/flags/${country}.svg`), svg);
     let localizedConfig = config.replace(/^baseurl:.*$/m, 'baseurl: ' + language.url.replace(/\/$/, ''))
       .replace(/^description:.*$/m, 'description: ' + JSON.stringify(language.ui.description))
       .replace(/^back_to_top_text:.*$/m, 'back_to_top_text: ' + JSON.stringify(language.ui.back));
