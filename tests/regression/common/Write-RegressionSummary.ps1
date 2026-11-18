@@ -21,6 +21,11 @@ $summaryPath=Join-Path $RunDirectory 'output\summary.json'
 $success=$false
 if(Test-Path $summaryPath){
     $summary=Get-Content $summaryPath -Raw|ConvertFrom-Json
+    if($summary.PSObject.Properties['DisplayScale']){
+        $display=$summary.DisplayScale
+        $diagnostics.Add(('Display: requested={0}%; actual DPI={1}; restored DPI={2}; initial DPI={3}' -f $display.RequestedPercent,$display.ActualDpi,$display.RestoredDpi,$display.OriginalDpi))
+        if($display.Error){$diagnostics.Add('Display error: '+(Format-Cell $display.Error))}
+    }
     $results=Get-Content (Join-Path $RunDirectory 'output\results.json') -Raw|ConvertFrom-Json
     $results=@($results)
     $failed=@($results|Where-Object Status -ne 'PASS')
