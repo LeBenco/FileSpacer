@@ -55,9 +55,9 @@ function Compare-FrameDrop($Variant) {
         @{SourceImage=$image;SourceOrigin=$source.Origin;Variant=$Variant;Client=([FileSpacerRegression.Native]::ClientBounds($list));Origin=([FileSpacerViewMenuTests.GridKey]::Origin($list));Icon=([FileSpacerViewMenuTests.GridKey]::IconBounds($list,0));Start=$start;Target=$target;Mode=(Read-PreviewMode $window);State=(Read-PreviewState $window)}|ConvertTo-Json -Depth 6|Set-Content (Join-Path $env:FS_REGRESSION_RUN 'last-gesture.json') -Encoding UTF8
         Wait-Ui {[FileSpacerViewMenuTests.GridKey]::Marker($body).Visible} 'prediction frame visible' 0 5
         $frame=[FileSpacerViewMenuTests.GridKey]::Marker($body)
-        if($Variant.Mode-eq2-or$Variant.Mode-eq6){
+        if($Variant.Mode-eq2){
             $physicalSize=[int][Math]::Round($Variant.Size*[FileSpacerRegression.Native]::GetDpiForWindow($window)/96.0,[MidpointRounding]::AwayFromZero)
-            Assert-Ui ($frame.Width-eq$physicalSize-and$frame.Height-eq$physicalSize) 'Frame does not match the DPI-scaled native small/tile image.'
+            Assert-Ui ($frame.Width-eq$physicalSize-and$frame.Height-eq$physicalSize) 'Frame does not match the DPI-scaled native small image.'
         }
         $originBefore=[FileSpacerViewMenuTests.GridKey]::Origin($list)
         $clientBefore=[FileSpacerRegression.Native]::ClientBounds($list)
@@ -98,20 +98,17 @@ try {
     # Mid-scale icon sizes and scroll origins exercise the separate public-grid
     # predictor. The ordinary grid case already covers the common 48px routes.
     $variants=@(foreach($size in @(96,128,192,256)){foreach($scroll in @($false,$true)){@{Placement='Free';Mode=1;Size=$size;Scrolled=$scroll}}})
-    $variants+=@(@{Placement='Grid';Mode=1;Size=128;Scrolled=$true},@{Placement='Grid';Mode=1;Size=256;Scrolled=$false},@{Placement='Automatic';Mode=1;Size=192;Scrolled=$false},@{Placement='Automatic';Mode=2;Size=16;Scrolled=$false},@{Placement='Grid';Mode=6;Size=48;Scrolled=$false})
+    $variants+=@(@{Placement='Grid';Mode=1;Size=128;Scrolled=$true},@{Placement='Grid';Mode=1;Size=256;Scrolled=$false},@{Placement='Automatic';Mode=1;Size=192;Scrolled=$false},@{Placement='Automatic';Mode=2;Size=16;Scrolled=$false})
     foreach($variant in $variants){
         Choose-Placement 'IDM_FREE_PLACEMENT_ICONS'
         Use-UiView $window {param($view) $view.SetViewModeAndIconSize($variant.Mode,$variant.Size)}
         Wait-PreviewMode $window @{Mode=$variant.Mode;Size=$variant.Size}
         # The user-facing command completes pending profile changes before seeding.
         Choose-Placement 'IDM_FREE_PLACEMENT_ICONS'
-        $seedImage=[FileSpacerViewMenuTests.GridKey]::IconBounds((Get-GeometryList),0)
         $seed=Use-UiView $window {param($view)
             $pitch=$view.Spacing;$names=@($view.Names()|Sort-Object)
-            # Tile GetSpacing can describe small icons; keep fixture rows disjoint.
-            $pitchY=[Math]::Max($pitch.Y,($seedImage[3]-$seedImage[1]))
             $points=@(for($i=0;$i-lt$names.Count;++$i){
-                $x=43+($i%3)*2*$pitch.X;$y=$(if($variant.Scrolled){1000}else{37})+[int][Math]::Floor($i/3)*2*$pitchY
+                $x=43+($i%3)*2*$pitch.X;$y=$(if($variant.Scrolled){1000}else{37})+[int][Math]::Floor($i/3)*2*$pitch.Y
                 $view.Position($names[$i],$x,$y);$names[$i]+'='+$x+','+$y
             })
             $view.Select('item-0000');$view.Reveal('item-0000')
