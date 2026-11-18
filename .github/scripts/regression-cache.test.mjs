@@ -37,6 +37,8 @@ test('different selections cannot reuse a partial test result', () => {
   const stressInput = entry('tests/stress/cases/28-apercu-affichage/07-CadrePosition.ps1');
   assert.equal(fingerprint(base + stressInput), fingerprint(base));
   assert.notEqual(fingerprint(base + stressInput, 'All', '*', 'Stress'), fingerprint(base, 'All', '*', 'Stress'));
+  assert.equal(fingerprint(base + stressInput, 'All', '*', 'stress'), fingerprint(base + stressInput, 'All', '*', 'Stress'));
+  assert.throws(() => fingerprint(base, 'All', '*', 'unknown'), /Unknown test suite/);
   assert.equal(fingerprint(base), fingerprint(base.split('\0').filter(Boolean).reverse().join('\0') + '\0'));
   assert.throws(() => fingerprint(entry('README.md')), /No application sources/);
 });
