@@ -54,6 +54,19 @@ static void viewGestureTargetAt(POINT point, ViewGestureTarget &target) {
     }
 }
 
+// A consumed press never reaches the tooltip's native subclass. Relay it
+// to the tooltip before resolving the underlying item, as a native press does.
+static void relayViewTooltipPress(MSG message) {
+    wchar_t type[32] = {};
+    if (!GetClassNameW(message.hwnd, type, _countof(type)) || lstrcmpW(type, WC_LISTVIEWW) != 0) return;
+    const HWND tooltip = ListView_GetToolTips(message.hwnd);
+    if (!tooltip || !IsWindowVisible(tooltip)) return;
+    if (message.message == WM_LBUTTONDBLCLK) message.message = WM_LBUTTONDOWN;
+    else if (message.message == WM_RBUTTONDBLCLK) message.message = WM_RBUTTONDOWN;
+    else if (message.message == WM_MBUTTONDBLCLK) message.message = WM_MBUTTONDOWN;
+    SendMessageW(tooltip, TTM_RELAYEVENT, 0, reinterpret_cast<LPARAM>(&message));
+}
+
 LONG gestureRoleAt(POINT point, int *itemIndex) {
     if (itemIndex) *itemIndex = -1;
     const HWND input = WindowFromPoint(point);
@@ -369,6 +382,8 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
             // under the first press is neither queried nor selected through MSAA.
             const HWND hitWindow = WindowFromPoint(click.pt);
             if (hitWindow != root && !IsChild(root, hitWindow)) return false;
+            relayViewTooltipPress(*msg);
+            if (!isWindowOperational() || shellView != view || viewGeneration != generation) return true;
             // Classic views expose a synchronous public hit-test. Resolve the
             // actual item before entering the accessibility proxy, which may
             // dispatch pending native input while its RPC is in progress.
@@ -528,6 +543,8 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
     const POINT point = msg->pt;
     const HWND hitWindow = WindowFromPoint(point);
     if (hitWindow != root && !IsChild(root, hitWindow)) return false;
+    relayViewTooltipPress(*msg);
+    if (!current()) return true;
     const LONG role = gestureRoleAt(point);
     debugPrintf(L"ALT HWND=%p message=0x%04X role=%ld\n", owner, msg->message, role);
     if (!current()) return true;
