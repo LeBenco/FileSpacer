@@ -316,7 +316,10 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
 
 bool FolderWindow::handleResizeMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     const bool wasActive = resizeGesture.isActive();
+    // Read before the gesture ends: releasing its capture reenters this function.
+    const MSG press = backgroundPress;
     const bool handled = resizeGesture.handleMessage(message, wParam, lParam);
+    if (!resizeGesture.isActive()) backgroundPress = {};
     if (resizeGesture.takeCompleted()) {
         deferredGestureClick = {};
         finishColumnResize();
@@ -324,6 +327,19 @@ bool FolderWindow::handleResizeMessage(UINT message, WPARAM wParam, LPARAM lPara
     } else if (wasActive && !resizeGesture.isActive() && resizingColumns) {
         // A click or cancellation without movement still ends layout deferral.
         finishColumnResize();
+    }
+    // A background press released without a drag is the Shell's own click:
+    // return both messages to the view, which clears the selection and opens
+    // its menu as it does for any right click.
+    if (message == WM_RBUTTONUP && resizeGesture.takeClicked() && press.hwnd
+            && isWindowOperational() && IsWindow(press.hwnd)) {
+        const DWORD position = GetMessagePos();
+        POINT point = {GET_X_LPARAM(position), GET_Y_LPARAM(position)};
+        if (ScreenToClient(press.hwnd, &point)
+                && PostMessageW(press.hwnd, press.message, press.wParam, press.lParam)) {
+            returnedPress = press.hwnd;
+            checkLE(PostMessageW(press.hwnd, WM_RBUTTONUP, wParam, MAKELPARAM(point.x, point.y)));
+        }
     }
     return handled;
 }
@@ -341,6 +357,12 @@ void FolderWindow::cancelAltGesture() {
 
 bool FolderWindow::handleAltMouseMessage(MSG *msg) {
     if (handleResizeMessage(msg->message, msg->wParam, msg->lParam)) return true;
+    if (returnedPress && (msg->message == WM_RBUTTONDOWN || msg->message == WM_RBUTTONDBLCLK)) {
+        // The press this window returned to the view is not a new gesture.
+        const bool returned = msg->hwnd == returnedPress;
+        returnedPress = nullptr;
+        if (returned) return false;
+    }
     // Auto-repeat (bit 30 of lParam: key already down) is not a new Alt press.
     if (msg->message == WM_SYSKEYDOWN && msg->wParam == VK_MENU && !(msg->lParam & (1 << 30)))
         suppressAltUp = false;
@@ -521,8 +543,8 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
         : msg->message == WM_MBUTTONDOWN || msg->message == WM_MBUTTONDBLCLK ? GestureButton::Middle : GestureButton::Right;
     const unsigned modifiers = currentGestureModifiers();
     const WindowShortcuts bindings = settings::getWindowShortcuts();
-    const bool moving = settings::windowShortcutApplies(bindings.move, button, modifiers, hwnd);
-    if (!moving && !settings::windowShortcutApplies(bindings.resize, button, modifiers, hwnd)) return false;
+    const bool moving = matchesShortcut(bindings.move, button, modifiers);
+    if (!moving && !matchesShortcut(bindings.resize, button, modifiers)) return false;
     const HWND owner = hwnd;
     const CComPtr<IShellView> view = shellView;
     const ULONG_PTR generation = viewGeneration;
@@ -551,6 +573,8 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
     // Unknown roles, headers, scrollbars, rename edits and embedded buttons keep
     // their native input. Only list contents participate in FileSpacer gestures.
     if (role != ROLE_SYSTEM_LIST && role != ROLE_SYSTEM_LISTITEM) return false;
+    const bool background = backgroundShortcut(moving ? bindings.move : bindings.resize);
+    if (role == ROLE_SYSTEM_LISTITEM && background) return false;
     SetForegroundWindow(owner);
     if (!current()) return true;
     if (button == GestureButton::Left) {
@@ -559,6 +583,7 @@ bool FolderWindow::handleAltMouseMessage(MSG *msg) {
     }
     if (!moving || button != GestureButton::Left) {
         const bool begun = resizeGesture.begin(owner, owner, point, button, moving);
+        if (begun && background) backgroundPress = *msg;
         if (begun && !moving) {
             resizingColumns = true;
             resizeDeferred = settings::getDetailsColumnsDeferred();
