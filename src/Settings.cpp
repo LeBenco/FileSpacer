@@ -354,7 +354,7 @@ bool powerToysOverridesWindowGestures(HWND window) {
     boolean active = 0;
     if (!general || FAILED(general->GetNamedObject(HStringReference(L"enabled").Get(), &enabled))
             || FAILED(enabled->GetNamedBoolean(HStringReference(L"GrabAndMove").Get(), &active)) || !active) return false;
-    // Saved activation is preventive, even while PowerToys is stopped.
+    // The notice reports the saved activation, even while PowerToys is stopped.
     // Missing/unreadable module settings cannot establish an exclusion.
     const auto module = readPowerToysJson(directory + L"GrabAndMove\\settings.json");
     CComPtr<JsonObject> properties;
@@ -369,11 +369,6 @@ bool powerToysOverridesWindowGestures(HWND window) {
     // it is not a global exemption for a background FileSpacer window.
     return !powerToysExcludes(properties, L"excluded_apps_for_modifier",
         process == GetCurrentProcessId() ? executable : powerToysProcessPath(process), powerToysWindowTitle(foreground));
-}
-
-bool windowShortcutApplies(const WindowShortcut &binding, GestureButton button, unsigned modifiers, HWND window) {
-    // No JSON I/O for mouse events that do not match a configured gesture.
-    return matchesShortcut(binding, button, modifiers) && !powerToysOverridesWindowGestures(window);
 }
 
 WindowShortcuts getWindowShortcuts() {
