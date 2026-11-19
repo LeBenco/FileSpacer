@@ -75,6 +75,8 @@ static BOOL CALLBACK findFolderWindow(HWND window, LPARAM data) {
     wchar_t className[64] = {};
     if (GetClassNameW(window, className, ARRAYSIZE(className))
             && lstrcmpW(className, L"FileSpacer Item Window") == 0
+            // A /test process and an ordinary one never find each other's windows.
+            && (GetPropW(window, L"FileSpacer.PlacementTest") != nullptr) == settings::testMode
             && GetPropW(window, search.property.c_str())) {
         search.window = window;
         SetLastError(ERROR_SUCCESS);

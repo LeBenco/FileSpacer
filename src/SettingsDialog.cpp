@@ -106,8 +106,11 @@ static void resetAllFolderState() {
         std::vector<HWND> windows;
         auto collect = [](HWND window, LPARAM data) -> BOOL {
             wchar_t className[64];
+            // The reset empties one state database: only the windows of that
+            // space (ordinary or /test) are closed.
             if (GetClassName(window, className, _countof(className))
-                    && lstrcmp(className, L"FileSpacer Item Window") == 0)
+                    && lstrcmp(className, L"FileSpacer Item Window") == 0
+                    && (GetPropW(window, L"FileSpacer.PlacementTest") != nullptr) == settings::testMode)
                 reinterpret_cast<std::vector<HWND> *>(data)->push_back(window);
             return TRUE;
         };
