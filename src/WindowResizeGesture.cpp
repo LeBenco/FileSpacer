@@ -50,6 +50,7 @@ bool WindowResizeGesture::begin(HWND target, HWND control, POINT point, GestureB
     limits = tracking;
     cursor = resizeCursor;
     dragging = false;
+    clicked = false;
     button = trigger;
     move = moving;
     absorbedButtons = 0;
@@ -160,6 +161,12 @@ bool WindowResizeGesture::takeCompleted() {
     return result;
 }
 
+bool WindowResizeGesture::takeClicked() {
+    const bool result = clicked;
+    clicked = false;
+    return result;
+}
+
 bool WindowResizeGesture::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     // Alt belongs to the completed gesture too: releasing it must not activate
     // the menu after the right button has already been released.
@@ -206,7 +213,11 @@ bool WindowResizeGesture::handleMessage(UINT message, WPARAM wParam, LPARAM lPar
                 && !(wParam & gestureButtonMask(button)))) { cancel(); return true; }
         POINT point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
         if (ClientToScreen(source, &point)) update(point);
-        if (message == gestureButtonUp(button)) finish(false, false);
+        if (message == gestureButtonUp(button)) {
+            // Recorded first: releasing the capture below dispatches messages.
+            clicked = source && !dragging;
+            finish(false, false);
+        }
         return true;
     }
     // Reserve the whole gesture; no partial click or wheel reaches the view.

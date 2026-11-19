@@ -233,6 +233,8 @@ private:
     bool handleResizeMessage(UINT message, WPARAM wParam, LPARAM lParam);
     void cancelAltGesture();
     WindowResizeGesture resizeGesture;
+    MSG backgroundPress = {}; // Right press without Alt consumed on the view background.
+    HWND returnedPress = nullptr; // Target of that press once returned to the view.
     MSG deferredGestureClick = {};
     ULONG_PTR deferredGestureGeneration = 0;
     bool suppressAltUp = false;

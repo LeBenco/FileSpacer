@@ -16,6 +16,7 @@ public:
     void cancel();
     void stop(); // Teardown commits the current size without resizing a dying window.
     bool takeCompleted();
+    bool takeClicked(); // The trigger was released without a drag.
 
 private:
     void update(POINT point);
@@ -31,6 +32,7 @@ private:
     HCURSOR previousCursor = nullptr;
     bool dragging = false;
     bool completed = false;
+    bool clicked = false;
     GestureButton button = GestureButton::Right;
     bool move = false;
     HWND finishingSource = nullptr;
