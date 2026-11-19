@@ -12,12 +12,14 @@ Standaard verplaatst Alt + slepen met links en wijzigt Alt + slepen met rechts h
 
 | Wijzigingstoetsen | Links | Midden | Rechts |
 | --- | --- | --- | --- |
-| Geen, Ctrl, Shift, Ctrl + Shift | Gereserveerd | Toegestaan | Gereserveerd |
+| Geen, Ctrl, Shift, Ctrl + Shift | Gereserveerd | Toegestaan | Alleen achtergrond |
 | Alt, Ctrl + Alt, Alt + Shift, Ctrl + Alt + Shift | Toegestaan | Toegestaan | Toegestaan |
+
+Zonder Alt start een toewijzing met de rechterknop alleen op de achtergrond van de weergave; slepen vervangt daar de native selectie door slepen met rechts. Loslaten zonder slepen gaat als klik terug naar de weergave: de Shell heft zelf de selectie op en opent het achtergrondmenu. Op een item blijft het indrukken native: contextmenu en slepen met rechts. De instellingenpagina vermeldt dit wanneer zo’n toewijzing wordt gekozen.
 
 Vergelijk wijzigingstoetsen exact bij het indrukken van de muisknop. Loslaten tijdens het gebaar verandert de actie niet. AltGr is de door Windows gemelde combinatie Ctrl + Alt; midden betekent het wiel indrukken, niet scrollen.
 
-Gebaren werken op achtergrond en items zonder selectie te veranderen. Editors, naamwijzigingsvelden, kopteksten, schuifbalken, werkbalken en menu’s behouden native invoer. Escape, verlies van muisvastlegging en annulering breken het gebaar af. Verplaatsen met links gebruikt de Windows-verplaatslus; ander verplaatsen en alle formaatwijzigingen gebruiken de gedeelde vastleggingsengine met native limieten en geometrieopslag.
+Andere gebaren werken op achtergrond en items zonder selectie te veranderen. Editors, naamwijzigingsvelden, kopteksten, schuifbalken, werkbalken en menu’s behouden native invoer. Escape, verlies van muisvastlegging en annulering breken het gebaar af. Verplaatsen met links gebruikt de Windows-verplaatslus; ander verplaatsen en alle formaatwijzigingen gebruiken de gedeelde vastleggingsengine met native limieten en geometrieopslag.
 
 Dubbelklikken en Eigenschappen blijven van de Shell. Heeft een gebaar de eerste klik van een latere native dubbelklik verbruikt, lever die uitgestelde klik dan eerst aan de weergave. Vervang de selectie of Eigenschappen van Verkenner niet door handmatige aanroepen.
 
@@ -27,7 +29,7 @@ Dubbelklikken en Eigenschappen blijven van de Shell. Heeft een gebaar de eerste 
 
 De instellingenpagina bewaart concepten tot Toepassen/OK en weigert gereserveerde of conflicterende toewijzingen. Standaardwaarden per actie wijzigen één concept; Herstellen herstelt het laatst toegepaste paar. Beide worden atomair vastgelegd als de versiegebonden DWORD `WindowShortcuts`. Ongeldige opgeslagen gegevens vallen terug op standaardwaarden. Vensters lezen het huidige paar bij aanvang van een gebaar, ook tussen processen.
 
-`settings::windowShortcutApplies()` controleert PowerToys Grab And Move pas nadat invoer met een ingestelde toewijzing overeenkomt. Als de opgeslagen configuratie het voor dat doelvenster inschakelt, onderdrukt FileSpacer zijn gebaren zonder de sneltoetsen te verwijderen. PowerToys hoeft niet actief te zijn. Onderscheid doeluitsluitingen en wijzigingstoetsuitsluitingen van het voorgrondvenster; zie `powerToysOverridesWindowGestures()` in `Settings.cpp`.
+FileSpacer onderbreekt zijn eigen gebaren nooit voor PowerToys Grab And Move. Dat hulpmiddel onderschept zijn combinaties van wijzigingstoets en muisknop in een low-level hook voordat de toepassing ze ontvangt: met dezelfde toewijzing handelt het alleen, met verschillende toewijzingen blijven beide actief. De pagina Sneltoetsen toont alleen een melding zolang de opgeslagen PowerToys-instellingen Grab And Move inschakelen en FileSpacer niet uitsluiten (`powerToysOverridesWindowGestures()` in `Settings.cpp`); die instellingen worden gelezen bij het tonen of activeren van de pagina, nooit bij muisinvoer. Grab And Move negeert geïnjecteerde invoer; geautomatiseerde tests kunnen het dus niet aansturen.
 
 <a id="tests"></a>
 
