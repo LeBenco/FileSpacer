@@ -1447,7 +1447,8 @@ HRESULT CALLBACK storageErrorCallback(HWND window, UINT notification, WPARAM but
         const std::wstring backup = named ? dialog.path + L".backup-" + id : std::wstring();
         if (!named) {
             const auto message = formatString(IDS_STORAGE_RESET_FAILED, getString(IDS_STORAGE_UNKNOWN_ERROR));
-            SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_FOOTER, reinterpret_cast<LPARAM>(message.get()));
+            dialog.footer = message ? message.get() : L"";
+            SendMessageW(window, TDM_SET_ELEMENT_TEXT, TDE_FOOTER, reinterpret_cast<LPARAM>(dialog.footer.c_str()));
             return S_FALSE;
         }
         const auto prompt = formatString(IDS_STORAGE_RESET_CONFIRM, backup.c_str());
