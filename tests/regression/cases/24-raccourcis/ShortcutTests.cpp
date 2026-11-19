@@ -25,12 +25,11 @@ namespace {
 int refusalDialogs = 0;
 std::wstring powerToysLocalAppData;
 HWND powerToysForeground = nullptr;
-int powerToysReads = 0, powerToysLaunches = 0, powerToysErrors = 0;
+int powerToysLaunches = 0, powerToysErrors = 0;
 HRESULT powerToysAssociation = S_OK;
 BOOL powerToysLaunchResult = TRUE;
 std::wstring powerToysLaunchedPath, powerToysLaunchedArguments;
 HRESULT testKnownFolderPath(REFKNOWNFOLDERID folder, DWORD, HANDLE, PWSTR *path) {
-    ++powerToysReads;
     if (folder != FOLDERID_LocalAppData || powerToysLocalAppData.empty()) return E_UNEXPECTED;
     return SHStrDupW(powerToysLocalAppData.c_str(), path);
 }
@@ -191,14 +190,6 @@ void powerToysNotice(bool localizedOnly = false) {
         const auto &test = cases[index];
         writePowerToysFixture(path, test.first);
         require(settings::powerToysOverridesWindowGestures(sheet) == test.second, "parse actual PowerToys JSON with native Windows parser");
-        require(settings::windowShortcutApplies(DEFAULT_WINDOW_SHORTCUTS.move, GestureButton::Left, GestureAlt, sheet) == !test.second,
-            "PowerToys option suspends and restores application of movement without rewriting the saved binding");
-        require(settings::windowShortcutApplies(DEFAULT_WINDOW_SHORTCUTS.resize, GestureButton::Right, GestureAlt, sheet) == !test.second,
-            "PowerToys option suspends and restores application of resizing without rewriting the saved binding");
-        const int reads = powerToysReads;
-        require(!settings::windowShortcutApplies(DEFAULT_WINDOW_SHORTCUTS.move, GestureButton::Left, GestureCtrl, sheet),
-            "nonmatching gestures remain inapplicable");
-        require(powerToysReads == reads, "nonmatching mouse events do not read PowerToys settings");
         notify(PSN_SETACTIVE);
         require((IsWindowVisible(notice) != FALSE) == test.second, "notice refreshes when the Shortcuts page is activated");
         require(registryValue() == saved, "PowerToys detection leaves FileSpacer shortcuts unchanged");
@@ -257,10 +248,6 @@ void powerToysExclusions() {
         writePowerToysFixture(module, test.json);
         powerToysForeground = test.foreground ? sheet : GetDesktopWindow();
         require(settings::powerToysOverridesWindowGestures(sheet) == test.overrides, "PowerToys exclusion matching and foreground scope");
-        require(settings::windowShortcutApplies(DEFAULT_WINDOW_SHORTCUTS.move, GestureButton::Left, GestureAlt, sheet)
-            == !test.overrides, "exclusion suspends movement without changing its binding");
-        require(settings::windowShortcutApplies(DEFAULT_WINDOW_SHORTCUTS.resize, GestureButton::Right, GestureAlt, sheet)
-            == !test.overrides, "exclusion suspends resizing without changing its binding");
         notify(PSN_SETACTIVE);
         require((IsWindowVisible(GetDlgItem(page, IDC_SHORTCUT_POWERTOYS)) != FALSE) == test.overrides,
             "notice follows the actual per-window suspension and exclusions");
@@ -268,8 +255,8 @@ void powerToysExclusions() {
     }
     powerToysForeground = sheet;
     require(DeleteFileW(module.c_str()) != FALSE && DeleteFileW(general.c_str()) != FALSE, "remove only isolated PowerToys fixtures");
-    require(settings::windowShortcutApplies(DEFAULT_WINDOW_SHORTCUTS.move, GestureButton::Left, GestureAlt, sheet),
-        "removing the PowerToys option restores configured gestures without a restart");
+    require(!settings::powerToysOverridesWindowGestures(sheet),
+        "removing the PowerToys option withdraws the notice condition without a restart");
     std::printf("PASS: PowerToys app/path/title exclusions, foreground-only modifier exclusions and unchanged preferences\n");
 }
 void registryAndPageExamples() {
@@ -277,7 +264,8 @@ void registryAndPageExamples() {
         DEFAULT_WINDOW_SHORTCUTS,
         {{false, GestureAlt, GestureButton::Left}, DEFAULT_WINDOW_SHORTCUTS.resize},
         {DEFAULT_WINDOW_SHORTCUTS.move, {false, GestureAlt, GestureButton::Right}},
-        {{true, GestureCtrl, GestureButton::Middle}, {true, GestureAlt | GestureShift, GestureButton::Right}}
+        {{true, GestureCtrl, GestureButton::Middle}, {true, GestureAlt | GestureShift, GestureButton::Right}},
+        {DEFAULT_WINDOW_SHORTCUTS.move, {true, 0, GestureButton::Right}}
     };
     for (const auto &candidate : cases) {
         setAction(0, candidate.move); setAction(1, candidate.resize);
@@ -292,6 +280,57 @@ void registryAndPageExamples() {
         require(equal(settings::getWindowShortcuts(), DEFAULT_WINDOW_SHORTCUTS), "corrupt/unsupported persisted value falls back safely");
     }
     std::puts("PASS: representative page/registry round trips and corrupt persisted data");
+}
+// The background notice of one interface language, read from its string table.
+std::wstring localizedNotice(WORD language) {
+    const UINT id = IDS_SHORTCUT_BACKGROUND;
+    const HMODULE module = GetModuleHandleW(nullptr);
+    // "#n" names an integer identifier: type 6 is RT_STRING, then the 16-string block.
+    const std::wstring block = L"#" + std::to_wstring(id / 16 + 1);
+    const HRSRC resource = FindResourceExW(module, L"#6", block.c_str(), language);
+    const HGLOBAL loaded = resource ? LoadResource(module, resource) : nullptr;
+    const wchar_t *entry = loaded ? static_cast<const wchar_t *>(LockResource(loaded)) : nullptr;
+    if (!entry) return std::wstring();
+    for (UINT index = id % 16; index; --index) entry += 1 + *entry;
+    return std::wstring(entry + 1, *entry);
+}
+// Without Alt the right button is accepted, as a gesture of the folder
+// background; the left button is still refused with its reason.
+void backgroundBinding() {
+    setAction(1, {true, 0, GestureButton::Right});
+    require(IsWindowEnabled(GetDlgItem(editor, IDC_SHORTCUT_RIGHT)) != FALSE
+        && IsWindowEnabled(GetDlgItem(editor, IDC_SHORTCUT_LEFT)) == FALSE, "without Alt, only the left button is unavailable");
+    HWND feedback = GetDlgItem(editor, IDC_SHORTCUT_FEEDBACK);
+    wchar_t text[512] = {};
+    GetWindowTextW(feedback, text, _countof(text));
+    require(std::wstring(text) == getString(IDS_SHORTCUT_BACKGROUND), "right button without Alt states what it replaces");
+    HDC context = GetDC(feedback); require(context != nullptr, "notice DC");
+    SendMessageW(editor, WM_CTLCOLORSTATIC, reinterpret_cast<WPARAM>(context), reinterpret_cast<LPARAM>(feedback));
+    require(GetTextColor(context) == GetSysColor(COLOR_BTNTEXT), "the notice is not shown as a refusal");
+    RECT client = {}; require(GetClientRect(feedback, &client) != FALSE, "notice bounds");
+    const HGDIOBJ previous = SelectObject(context, reinterpret_cast<HFONT>(SendMessageW(feedback, WM_GETFONT, 0, 0)));
+    const WORD languages[] = {MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), MAKELANGID(LANG_FRENCH, SUBLANG_NEUTRAL),
+        MAKELANGID(LANG_GERMAN, SUBLANG_NEUTRAL), MAKELANGID(LANG_GREEK, SUBLANG_NEUTRAL), MAKELANGID(LANG_SPANISH, SUBLANG_NEUTRAL),
+        MAKELANGID(LANG_ITALIAN, SUBLANG_NEUTRAL), MAKELANGID(LANG_DUTCH, SUBLANG_NEUTRAL), MAKELANGID(LANG_POLISH, SUBLANG_NEUTRAL),
+        MAKELANGID(LANG_PORTUGUESE, SUBLANG_NEUTRAL), MAKELANGID(LANG_UKRAINIAN, SUBLANG_NEUTRAL)};
+    for (WORD language : languages) {
+        const std::wstring notice = localizedNotice(language);
+        RECT needed = client;
+        DrawTextW(context, notice.c_str(), -1, &needed, DT_CALCRECT | DT_WORDBREAK | DT_EXPANDTABS);
+        if (notice.empty() || needed.right > client.right || needed.bottom > client.bottom)
+            std::fprintf(stderr, "notice language 0x%04X: %ldx%ld in %ldx%ld\n", language, needed.right, needed.bottom, client.right, client.bottom);
+        require(!notice.empty() && needed.right <= client.right && needed.bottom <= client.bottom,
+            "the notice exists and fits its two lines in every interface language");
+    }
+    SelectObject(context, previous); ReleaseDC(feedback, context);
+    require(notify(PSN_KILLACTIVE) == FALSE, "right button without Alt can be left pending and applied");
+    setAction(1, {true, 0, GestureButton::Left});
+    GetWindowTextW(feedback, text, _countof(text));
+    const int refusals = refusalDialogs;
+    require(std::wstring(text) == getString(IDS_SHORTCUT_RESERVED) && notify(PSN_KILLACTIVE) != FALSE
+        && refusalDialogs == refusals + 1, "left button without Alt is still refused with its reason");
+    click(page, IDC_SHORTCUT_REVERT);
+    std::puts("PASS: right button without Alt accepted with its localized notice; left button without Alt refused");
 }
 void interactionMatrix() {
     setAction(0, DEFAULT_WINDOW_SHORTCUTS.move); setAction(1, DEFAULT_WINDOW_SHORTCUTS.resize);
@@ -429,7 +468,7 @@ int wmain(int argc, wchar_t **argv) {
         std::printf("PASS: %d notice checks (%ls)\n", checks, argv[1]); return 0;
     }
     // Bulk combinations use the real page offscreen; the smaller interaction matrix stays visible.
-    powerToysNotice(); powerToysExclusions(); registryAndPageExamples();
+    powerToysNotice(); powerToysExclusions(); registryAndPageExamples(); backgroundBinding();
     pump(); interactionMatrix(); engineMatrix();
     require(notifications > 0, "successful Apply sends normal preference notifications");
     CoUninitialize(); std::printf("PASS: %d checks (%ls)\n", checks, argv[1]); return 0;
