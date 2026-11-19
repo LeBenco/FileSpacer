@@ -13,8 +13,6 @@
 #include <commctrl.h>
 #include <atomic>
 #include <utility>
-#include <set>
-#include <vector>
 
 // Optional private ABI, discovered and qualified in an isolated process on the
 // current machine. No version/RVA catalogue or private ClearSelection call,
