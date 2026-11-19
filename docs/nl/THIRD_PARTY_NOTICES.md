@@ -28,3 +28,13 @@ SQLite 3.53.4 is statisch in de toepassing gekoppeld en behoort tot het publieke
 - **Pictogrammen Omhoog en Vernieuwen**: [Lucide](https://lucide.dev/) (aangepaste versies, [ISC en MIT](../../licenses/Lucide-LICENSE.txt), licentieteksten ook meegeleverd als `Lucide-LICENSE.txt`).
 - **Pictogram Omhoog**: [Feather](https://feathericons.com/) (oorsprong van de Lucide-versie, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Pictogrammen voor een gesloten en open hangslot**: [Small & Flat van paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), het open hangslot is afgeleid van het gesloten hangslot).
+
+<a id="website"></a>
+
+## Website
+
+- **Website-thema**: [Just the Docs](https://just-the-docs.com/) ([MIT](../../website/_layouts/UPSTREAM-LICENSE.txt)).
+- **Websitegenerator**: [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
+- **Zoekfunctie**: [Lunr](https://lunrjs.com/) ([MIT](../../website/assets/licenses/Lunr-LICENSE.txt)).
+- **Vlaggen in de taalkeuze**: [Wikimedia Commons](https://commons.wikimedia.org/) / [Wikidata](https://www.wikidata.org/) ([publiek domein](https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain)).
+- **SVG-optimalisatie**: [SVGO](https://svgo.dev/) ([MIT](https://github.com/svg/svgo/blob/main/LICENSE)).

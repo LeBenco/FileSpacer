@@ -38,6 +38,7 @@ Otwarcie folderu lub folderu nadrzędnego domyślnie zamyka okno źródłowe. **
 Menu obok tytułu pozwala przełączać otwarte foldery i zamykać okna nadrzędne. **Ctrl+Shift+T** otwiera ostatnio zamknięty folder z jego układem i zaznaczeniem. Lista szybkiego dostępu na pasku zadań zawiera też ostatnio zamknięte foldery i foldery przypięte do Szybkiego dostępu.
 
 <div id="grupy-folderów"></div>
+
 | Skrót | Działanie |
 | --- | --- |
 | Ctrl+N | Otworzyć folder początkowy wybrany w ustawieniach lub uaktywnić jego istniejące okno, pozostawiając okno źródłowe otwarte. |
@@ -59,6 +60,7 @@ W polach adresu, wyszukiwania i zmiany nazwy Backspace oraz Ctrl+Backspace zacho
 ## Wyświetlanie zawartości folderów
 
 <div id="widok-i-układ"></div>
+
 **Ctrl+kółko myszy** przełącza rozmiary ikon i tryby widoku. Gest powiększania na płytce dotykowej wykonuje tę samą czynność, jeśli Windows go przekazuje. **Ctrl+Shift+1–8** wybiera kolejno bardzo duże, duże, średnie i małe ikony, listę, szczegóły, kafelki oraz zawartość. Wybrany tryb jest zapamiętywany dla folderu; blokada zapisanego stanu działa jak dotychczas.
 
 <div id="view-and-layout"></div>

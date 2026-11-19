@@ -4,14 +4,14 @@
 
 <a id="filespacer"></a>
 
-# FileSpacer
+# FileSpacer — Просторовий файловий менеджер для Windows
 
 [![Завантажити останню версію](https://img.shields.io/badge/%D0%97%D0%B0%D0%B2%D0%B0%D0%BD%D1%82%D0%B0%D0%B6%D0%B8%D1%82%D0%B8-%D0%BE%D1%81%D1%82%D0%B0%D0%BD%D0%BD%D1%8F%20%D0%B2%D0%B5%D1%80%D1%81%D1%96%D1%8F-blue)](https://github.com/LeBenco/FileSpacer/releases/latest) &emsp;
 [![Windows 10+](https://img.shields.io/badge/Windows%2010%2B-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTAgMGgxMXYxMUgwem0xMyAwaDExdjExSDEzem0tMTMgMTNoMTF2MTFIMHptMTMgMGgxMXYxMUgxM3oiLz48L3N2Zz4=)](#system--languages)
 [![Телеметрія: відсутня](https://img.shields.io/badge/%D1%82%D0%B5%D0%BB%D0%B5%D0%BC%D0%B5%D1%82%D1%80%D1%96%D1%8F-%D0%B2%D1%96%D0%B4%D1%81%D1%83%D1%82%D0%BD%D1%8F-2ea44f)](#privacy)
 [![Ліцензія: GPL v3](https://img.shields.io/badge/%D0%9B%D1%96%D1%86%D0%B5%D0%BD%D0%B7%D1%96%D1%8F-GPLv3-blue.svg)](#license-and-credits)
 
-FileSpacer — файловий менеджер для Windows на основі [просторової парадигми](https://en.wikipedia.org/wiki/Spatial_file_manager): кожна папка має одне вікно, що запам’ятовує положення, розмір і настройки подання. Це створює [сталі візуальні орієнтири](https://www.csse.canterbury.ac.nz/~andy/papers/transforms.pdf), завдяки яким [просторова пам’ять](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/01/p153-robertson.pdf) допомагає впізнавати знайомі папки з першого погляду. У навігаційному файловому менеджері те саме вікно послідовно показує різні папки: лише положення й розмір не визначають поточну папку, тому потрібно дивитися на вміст. Зберігаючи окремі орієнтири для кожної папки, просторова модель може зменшити когнітивне навантаження під час пошуку шляху серед файлів. Вкладки несумісні з просторовою моделлю й ніколи не будуть додані.
+FileSpacer — файловий менеджер для Windows на основі [просторової парадигми](https://en.wikipedia.org/wiki/Spatial_file_manager): кожна папка має одне вікно, що запам’ятовує положення, розмір, настройки подання й розташування піктограм. Це створює [сталі візуальні орієнтири](https://www.csse.canterbury.ac.nz/~andy/papers/transforms.pdf), завдяки яким [просторова пам’ять](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/01/p153-robertson.pdf) допомагає впізнавати знайомі папки з першого погляду. У навігаційному файловому менеджері те саме вікно послідовно показує різні папки: лише положення й розмір не визначають поточну папку, тому потрібно дивитися на вміст. Зберігаючи окремі орієнтири для кожної папки, просторова модель може зменшити когнітивне навантаження під час пошуку шляху серед файлів. Вкладки несумісні з просторовою моделлю й ніколи не будуть додані.
 
 <img src="images/spatial-windows.png" alt="Три вікна папок без перекриття з різними розмірами, поданнями й масштабами піктограм, зокрема з вільним розташуванням." width="560">
 
@@ -23,7 +23,7 @@ FileSpacer надає перевагу легкості й простоті. Щ�
 
 **Встановлення:**
 
-- **Встановлення вручну:** завантажте й запустіть <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.4.1/FileSpacer-1.4.1-install.exe" id="last-release-url">інсталятор останньої версії</a>.
+- **Встановлення вручну:** завантажте й запустіть <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.4.2/FileSpacer-1.4.2-install.exe" id="last-release-url">інсталятор останньої версії</a>.
 - **WinGet:** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (термінал із правами адміністратора): `choco install filespacer -y`
 

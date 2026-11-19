@@ -28,3 +28,13 @@
 - **Εικονίδια «Επάνω» και «Ανανέωση»**: [Lucide](https://lucide.dev/) (προσαρμοσμένες εκδόσεις, [ISC και MIT](../../licenses/Lucide-LICENSE.txt), οι όροι παρέχονται επίσης στο `Lucide-LICENSE.txt`).
 - **Εικονίδιο «Επάνω»**: [Feather](https://feathericons.com/) (αρχική πηγή της έκδοσης Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Εικονίδια κλειστού και ανοιχτού λουκέτου**: [Small & Flat του paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), το ανοιχτό λουκέτο προέρχεται από το κλειστό).
+
+<a id="website"></a>
+
+## Ιστότοπος
+
+- **Θέμα ιστοτόπου**: [Just the Docs](https://just-the-docs.com/) ([MIT](../../website/_layouts/UPSTREAM-LICENSE.txt)).
+- **Γεννήτρια ιστοτόπου**: [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
+- **Μηχανή αναζήτησης**: [Lunr](https://lunrjs.com/) ([MIT](../../website/assets/licenses/Lunr-LICENSE.txt)).
+- **Σημαίες επιλογέα γλώσσας**: [Wikimedia Commons](https://commons.wikimedia.org/) / [Wikidata](https://www.wikidata.org/) ([δημόσιος τομέας](https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain)).
+- **Βελτιστοποίηση SVG**: [SVGO](https://svgo.dev/) ([MIT](https://github.com/svg/svgo/blob/main/LICENSE)).

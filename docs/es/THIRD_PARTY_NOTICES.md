@@ -28,3 +28,13 @@ SQLite 3.53.4 está enlazado estáticamente con la aplicación y es de dominio p
 - **Iconos Subir y Actualizar**: [Lucide](https://lucide.dev/) (versiones adaptadas, [ISC y MIT](../../licenses/Lucide-LICENSE.txt), avisos incluidos también en `Lucide-LICENSE.txt`).
 - **Icono Subir**: [Feather](https://feathericons.com/) (origen de la versión de Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Iconos de candado cerrado y abierto**: [Small & Flat de paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), candado abierto derivado del cerrado).
+
+<a id="website"></a>
+
+## Sitio web
+
+- **Tema del sitio**: [Just the Docs](https://just-the-docs.com/) ([MIT](../../website/_layouts/UPSTREAM-LICENSE.txt)).
+- **Generador del sitio**: [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
+- **Motor de búsqueda**: [Lunr](https://lunrjs.com/) ([MIT](../../website/assets/licenses/Lunr-LICENSE.txt)).
+- **Banderas del selector de idioma**: [Wikimedia Commons](https://commons.wikimedia.org/) / [Wikidata](https://www.wikidata.org/) ([dominio público](https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain)).
+- **Optimización de SVG**: [SVGO](https://svgo.dev/) ([MIT](https://github.com/svg/svgo/blob/main/LICENSE)).

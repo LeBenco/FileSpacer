@@ -14,8 +14,11 @@
   "repository": "FileSpacer on GitHub",
   "back": "Back to top",
   "skip": "Skip to main content",
-  "attribution": "This site uses <a href=\"https://github.com/just-the-docs/just-the-docs\">Just the Docs</a>, a documentation theme for Jekyll.",
   "license": "Distributed under the",
   "enlargeImage": "Enlarge screenshot",
-  "closeImage": "Close image"
+  "closeImage": "Close image",
+  "overviewDescription": "FileSpacer is a free, open-source Windows file manager that remembers each folder’s window and icon layout. Features, screenshots and downloads.",
+  "guideDescription": "Learn how to use FileSpacer: folder windows, icon layouts, mouse shortcuts, custom menus and integrations with Windows, Everything and Nilesoft Shell.",
+  "changelogDescription": "FileSpacer release notes: new features and changes by version.",
+  "noticesDescription": "Origins, copyright and licences of the third-party components used by FileSpacer."
 }

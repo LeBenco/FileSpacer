@@ -5,14 +5,14 @@
 
 <a id="filespacer"></a>
 
-# FileSpacer
+# FileSpacer — Gestionnaire de fichiers spatial pour Windows
 
 [![Télécharger dernière version](https://img.shields.io/badge/T%C3%A9l%C3%A9charger-derni%C3%A8re%20version-blue)](https://github.com/LeBenco/FileSpacer/releases/latest) &emsp;
 [![Windows 10+](https://img.shields.io/badge/Windows%2010%2B-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTAgMGgxMXYxMUgwem0xMyAwaDExdjExSDEzem0tMTMgMTNoMTF2MTFIMHptMTMgMGgxMXYxMUgxM3oiLz48L3N2Zz4=)](#system--languages)
 [![télémétrie: aucune](https://img.shields.io/badge/t%C3%A9l%C3%A9m%C3%A9trie-aucune-2ea44f)](#privacy)
 [![Licence: GPL v3](https://img.shields.io/badge/Licence-GPLv3-blue.svg)](#license-and-credits)
 
-FileSpacer est un gestionnaire de fichiers pour Windows fondé sur le [paradigme spatial](https://en.wikipedia.org/wiki/Spatial_file_manager) : chaque dossier possède une seule fenêtre, qui mémorise sa position, sa taille et ses réglages d’affichage. Cela crée des [repères visuels stables](https://www.csse.canterbury.ac.nz/~andy/papers/transforms.pdf) et permet à la [mémoire spatiale](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/01/p153-robertson.pdf) d’aider à reconnaître les dossiers familiers d’un coup d’œil. Dans un gestionnaire de fichiers par navigation, une même fenêtre affiche successivement différents dossiers : sa position et ses dimensions ne suffisent donc pas à identifier le dossier ouvert. Il faut regarder son contenu pour savoir où l’on se trouve. En conservant des repères distincts pour chaque dossier, l’approche spatiale peut alléger l’effort nécessaire pour se retrouver parmi ses fichiers. Les onglets sont incompatibles avec le modèle spatial et ne seront jamais ajoutés.
+FileSpacer est un gestionnaire de fichiers pour Windows fondé sur le [paradigme spatial](https://en.wikipedia.org/wiki/Spatial_file_manager) : chaque dossier possède une seule fenêtre, qui mémorise sa position, sa taille, ses réglages d’affichage et la disposition des icônes. Cela crée des [repères visuels stables](https://www.csse.canterbury.ac.nz/~andy/papers/transforms.pdf) et permet à la [mémoire spatiale](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/01/p153-robertson.pdf) d’aider à reconnaître les dossiers familiers d’un coup d’œil. Dans un gestionnaire de fichiers par navigation, une même fenêtre affiche successivement différents dossiers : sa position et ses dimensions ne suffisent donc pas à identifier le dossier ouvert. Il faut regarder son contenu pour savoir où l’on se trouve. En conservant des repères distincts pour chaque dossier, l’approche spatiale peut alléger l’effort nécessaire pour se retrouver parmi ses fichiers. Les onglets sont incompatibles avec le modèle spatial et ne seront jamais ajoutés.
 
 <img src="images/spatial-windows.png" alt="Trois fenêtres de dossiers sans chevauchement, de tailles, modes d’affichage et niveaux de zoom différents, dont une disposition libre des icônes." width="560">
 
@@ -24,7 +24,7 @@ FileSpacer privilégie une expérience légère et épurée. Pour limiter l’ac
 
 **Installation :**
 
-- **Installation manuelle :** télécharger et exécuter <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.4.1/FileSpacer-1.4.1-install.exe" id="last-release-url">l’installateur de la dernière version</a>.
+- **Installation manuelle :** télécharger et exécuter <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.4.2/FileSpacer-1.4.2-install.exe" id="last-release-url">l’installateur de la dernière version</a>.
 - **WinGet :** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (terminal administrateur) : `choco install filespacer -y`
 

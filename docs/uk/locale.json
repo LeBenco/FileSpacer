@@ -13,9 +13,12 @@
   "repository": "FileSpacer на GitHub",
   "back": "На початок",
   "skip": "Перейти до основного вмісту",
-  "attribution": "Цей сайт використовує <a href=\"https://github.com/just-the-docs/just-the-docs\">Just the Docs</a>, тему документації для Jekyll.",
   "license": "Поширюється за ліцензією",
   "enlargeImage": "Збільшити знімок екрана",
   "closeImage": "Закрити зображення",
-  "locale": "uk-UA"
+  "locale": "uk-UA",
+  "overviewDescription": "FileSpacer — безкоштовний файловий менеджер із відкритим кодом для Windows, який запам’ятовує вікна й розташування піктограм. Можливості, знімки екрана та завантаження.",
+  "guideDescription": "Використання FileSpacer: вікна папок, розташування піктограм, сполучення миші, меню та інтеграція з Windows, Everything і Nilesoft Shell.",
+  "changelogDescription": "Історія версій FileSpacer: нові можливості та зміни в кожній версії.",
+  "noticesDescription": "Походження, авторські права та ліцензії сторонніх компонентів, які використовує FileSpacer."
 }

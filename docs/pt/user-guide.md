@@ -38,6 +38,7 @@ Abrir uma pasta ou a pasta superior fecha a janela de origem por predefinição.
 O menu junto ao título permite alternar entre pastas abertas e fechar as janelas das pastas superiores. **Ctrl+Shift+T** reabre a última pasta fechada com a sua disposição e seleção. A lista de atalhos da barra de tarefas também inclui pastas fechadas recentemente e afixadas no Acesso rápido.
 
 <div id="grupos-de-pastas"></div>
+
 | Atalho | Ação |
 | --- | --- |
 | Ctrl+N | Abrir a pasta inicial escolhida nas definições ou ativar a sua janela existente, mantendo aberta a janela de origem. |
@@ -59,6 +60,7 @@ Nos campos de endereço, pesquisa e mudança de nome, Retrocesso e Ctrl+Retroces
 ## Apresentação do conteúdo das pastas
 
 <div id="apresentação-e-disposição"></div>
+
 **Ctrl+roda do rato** percorre os tamanhos dos ícones e os modos de vista. O gesto de zoom do painel tátil usa a mesma ação quando o Windows o encaminha. **Ctrl+Shift+1 a 8** seleciona, por ordem, ícones extra grandes, grandes, médios e pequenos, lista, detalhes, mosaicos e conteúdo. O modo é memorizado para a pasta; o bloqueio do estado guardado mantém o comportamento habitual.
 
 <div id="view-and-layout"></div>

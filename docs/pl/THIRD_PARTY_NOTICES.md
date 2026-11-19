@@ -28,3 +28,13 @@ SQLite 3.53.4 jest połączony statycznie z aplikacją i należy do domeny publi
 - **Ikony „W górę” i „Odśwież”**: [Lucide](https://lucide.dev/) (wersje zmodyfikowane, [ISC i MIT](../../licenses/Lucide-LICENSE.txt), treść licencji dostępna również w `Lucide-LICENSE.txt`).
 - **Ikona „W górę”**: [Feather](https://feathericons.com/) (pierwowzór wersji Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Ikony zamkniętej i otwartej kłódki**: [Small & Flat autorstwa paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), otwarta kłódka jest pochodną zamkniętej).
+
+<a id="website"></a>
+
+## Witryna internetowa
+
+- **Motyw witryny**: [Just the Docs](https://just-the-docs.com/) ([MIT](../../website/_layouts/UPSTREAM-LICENSE.txt)).
+- **Generator witryny**: [Jekyll](https://jekyllrb.com/) ([MIT](https://github.com/jekyll/jekyll/blob/master/LICENSE)).
+- **Wyszukiwarka**: [Lunr](https://lunrjs.com/) ([MIT](../../website/assets/licenses/Lunr-LICENSE.txt)).
+- **Flagi w wyborze języka**: [Wikimedia Commons](https://commons.wikimedia.org/) / [Wikidata](https://www.wikidata.org/) ([domena publiczna](https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain)).
+- **Optymalizacja SVG**: [SVGO](https://svgo.dev/) ([MIT](https://github.com/svg/svgo/blob/main/LICENSE)).

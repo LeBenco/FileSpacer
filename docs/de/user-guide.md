@@ -37,6 +37,7 @@ Beim Öffnen eines Ordners oder seines übergeordneten Ordners wird das Ausgangs
 Das Menü neben dem Titel wechselt zwischen geöffneten Ordnern und schließt übergeordnete Fenster. **Strg+Umschalt+T** öffnet den zuletzt geschlossenen Ordner mit seiner Anordnung und Auswahl erneut. Die Sprungliste der Taskleiste bietet auch zuletzt geschlossene und im Schnellzugriff angeheftete Ordner.
 
 <div id="ordnergruppen"></div>
+
 | Tastenkombination | Aktion |
 | --- | --- |
 | Strg+N | Den in den Einstellungen gewählten Startordner öffnen oder sein vorhandenes Fenster aktivieren; das Ausgangsfenster bleibt offen. |
@@ -58,6 +59,7 @@ In Adress-, Such- und Dateiumbenennungsfeldern behalten Rücktaste und Strg+Rüc
 ## Anzeige der Ordnerinhalte
 
 <div id="ansicht-und-anordnung"></div>
+
 **Strg+Mausrad** wechselt zwischen Symbolgrößen und Ansichten. Die Zoomgeste des Touchpads verwendet dieselbe Aktion, wenn Windows sie weiterleitet. **Strg+Umschalt+1 bis 8** wählt nacheinander extra große, große, mittelgroße und kleine Symbole, Liste, Details, Kacheln und Inhalt. Der Modus wird für den Ordner gespeichert; die Zustandssperre verhält sich unverändert.
 
 <div id="view-and-layout"></div>

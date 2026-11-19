@@ -38,6 +38,7 @@ Aprire una cartella o la cartella superiore chiude per impostazione predefinita 
 Il menu accanto al titolo permette di passare tra le cartelle aperte e chiudere le finestre delle cartelle superiori. **Ctrl+Maiusc+T** riapre l’ultima cartella chiusa con la sua disposizione e selezione. La Jump List della barra delle applicazioni include anche le cartelle chiuse di recente e quelle aggiunte ad Accesso rapido.
 
 <div id="gruppi-di-cartelle"></div>
+
 | Scelta rapida | Azione |
 | --- | --- |
 | Ctrl+N | Aprire la cartella iniziale scelta nelle impostazioni o attivare la sua finestra esistente, lasciando aperta quella di origine. |
@@ -59,6 +60,7 @@ Nei campi dell’indirizzo, della ricerca e di ridenominazione, Backspace e Ctrl
 ## Visualizzazione del contenuto delle cartelle
 
 <div id="visualizzazione-e-disposizione"></div>
+
 **Ctrl+rotellina del mouse** passa tra dimensioni delle icone e modalità di visualizzazione. Il gesto di zoom del touchpad usa la stessa azione quando Windows lo inoltra. **Ctrl+Maiusc+1–8** seleziona nell’ordine icone molto grandi, grandi, medie e piccole, elenco, dettagli, riquadri e contenuto. La modalità viene ricordata per la cartella; il blocco dello stato salvato conserva il suo normale comportamento.
 
 <div id="view-and-layout"></div>

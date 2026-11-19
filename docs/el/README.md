@@ -5,14 +5,14 @@
 
 <a id="filespacer"></a>
 
-# FileSpacer
+# FileSpacer — Χωρικός διαχειριστής αρχείων για τα Windows
 
 [![Λήψη τελευταία έκδοση](https://img.shields.io/badge/%CE%9B%CE%AE%CF%88%CE%B7-%CF%84%CE%B5%CE%BB%CE%B5%CF%85%CF%84%CE%B1%CE%AF%CE%B1%20%CE%AD%CE%BA%CE%B4%CE%BF%CF%83%CE%B7-blue)](https://github.com/LeBenco/FileSpacer/releases/latest) &emsp;
 [![Windows 10+](https://img.shields.io/badge/Windows%2010%2B-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTAgMGgxMXYxMUgwem0xMyAwaDExdjExSDEzem0tMTMgMTNoMTF2MTFIMHptMTMgMGgxMXYxMUgxM3oiLz48L3N2Zz4=)](#system--languages)
 [![τηλεμετρία: καμία](https://img.shields.io/badge/%CF%84%CE%B7%CE%BB%CE%B5%CE%BC%CE%B5%CF%84%CF%81%CE%AF%CE%B1-%CE%BA%CE%B1%CE%BC%CE%AF%CE%B1-2ea44f)](#privacy)
 [![Άδεια: GPL v3](https://img.shields.io/badge/%CE%86%CE%B4%CE%B5%CE%B9%CE%B1-GPLv3-blue.svg)](#license-and-credits)
 
-Το FileSpacer είναι ένας διαχειριστής αρχείων για τα Windows που βασίζεται στο [χωρικό μοντέλο](https://en.wikipedia.org/wiki/Spatial_file_manager): κάθε φάκελος έχει ένα μοναδικό παράθυρο που θυμάται τη θέση, το μέγεθος και τις ρυθμίσεις προβολής του. Έτσι δημιουργούνται [σταθερά οπτικά σημεία αναφοράς](https://www.csse.canterbury.ac.nz/~andy/papers/transforms.pdf), ώστε η [χωρική μνήμη](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/01/p153-robertson.pdf) να σας βοηθά να αναγνωρίζετε γνώριμους φακέλους με μια ματιά. Σε έναν διαχειριστή αρχείων που βασίζεται στην πλοήγηση, το ίδιο παράθυρο εμφανίζει διαδοχικά διαφορετικούς φακέλους: η θέση και οι διαστάσεις του δεν αρκούν για να προσδιορίσετε τον ανοιχτό φάκελο, οπότε πρέπει να κοιτάξετε το περιεχόμενό του για να προσανατολιστείτε. Διατηρώντας ξεχωριστά σημεία αναφοράς για κάθε φάκελο, η χωρική προσέγγιση μπορεί να μειώσει τη νοητική προσπάθεια που χρειάζεται για να βρείτε τον δρόμο σας ανάμεσα στα αρχεία σας. Οι καρτέλες δεν είναι συμβατές με το χωρικό μοντέλο και δεν θα προστεθούν ποτέ.
+Το FileSpacer είναι ένας διαχειριστής αρχείων για τα Windows που βασίζεται στο [χωρικό μοντέλο](https://en.wikipedia.org/wiki/Spatial_file_manager): κάθε φάκελος έχει ένα μοναδικό παράθυρο που θυμάται τη θέση και το μέγεθός του, τις ρυθμίσεις προβολής και τις θέσεις των εικονιδίων. Έτσι δημιουργούνται [σταθερά οπτικά σημεία αναφοράς](https://www.csse.canterbury.ac.nz/~andy/papers/transforms.pdf), ώστε η [χωρική μνήμη](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/01/p153-robertson.pdf) να σας βοηθά να αναγνωρίζετε γνώριμους φακέλους με μια ματιά. Σε έναν διαχειριστή αρχείων που βασίζεται στην πλοήγηση, το ίδιο παράθυρο εμφανίζει διαδοχικά διαφορετικούς φακέλους: η θέση και οι διαστάσεις του δεν αρκούν για να προσδιορίσετε τον ανοιχτό φάκελο, οπότε πρέπει να κοιτάξετε το περιεχόμενό του για να προσανατολιστείτε. Διατηρώντας ξεχωριστά σημεία αναφοράς για κάθε φάκελο, η χωρική προσέγγιση μπορεί να μειώσει τη νοητική προσπάθεια που χρειάζεται για να βρείτε τον δρόμο σας ανάμεσα στα αρχεία σας. Οι καρτέλες δεν είναι συμβατές με το χωρικό μοντέλο και δεν θα προστεθούν ποτέ.
 
 <img src="images/spatial-windows.png" alt="Τρία παράθυρα φακέλων χωρίς επικάλυψη, με διαφορετικό μέγεθος, προβολή και μεγέθυνση, με ένα σε ελεύθερη διάταξη εικονιδίων." width="560">
 
@@ -24,7 +24,7 @@
 
 **Εγκατάσταση:**
 
-- **Χειροκίνητη εγκατάσταση:** λήψη και εκτέλεση του <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.4.1/FileSpacer-1.4.1-install.exe" id="last-release-url">προγράμματος εγκατάστασης της τελευταίας έκδοσης</a>.
+- **Χειροκίνητη εγκατάσταση:** λήψη και εκτέλεση του <a href="https://github.com/LeBenco/FileSpacer/releases/download/v1.4.2/FileSpacer-1.4.2-install.exe" id="last-release-url">προγράμματος εγκατάστασης της τελευταίας έκδοσης</a>.
 - **WinGet:** `winget install --id Benco.FileSpacer --exact`
 - **Chocolatey** (τερματικό με δικαιώματα διαχειριστή): `choco install filespacer -y`
 

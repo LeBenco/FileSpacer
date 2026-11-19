@@ -1,0 +1,12 @@
+{
+  "en": ["Contract.txt", "Invoices.csv", "Meeting minutes.md", "Inventory.csv", "Contacts.txt", "Draft.md", "Budget.csv", "Mountain lake.jpg", "Alpine valley.jpg"],
+  "fr": ["Contrat.txt", "Factures.csv", "Compte rendu.md", "Inventaire.csv", "Coordonnées.txt", "Brouillon.md", "Budget.csv", "Lac de montagne.jpg", "Vallée alpine.jpg"],
+  "de": ["Vertrag.txt", "Rechnungen.csv", "Besprechungsprotokoll.md", "Bestandsliste.csv", "Kontakte.txt", "Textentwurf.md", "Budget.csv", "Bergsee.jpg", "Alpental.jpg"],
+  "it": ["Contratto.txt", "Fatture.csv", "Verbale della riunione.md", "Inventario.csv", "Contatti.txt", "Bozza di testo.md", "Bilancio.csv", "Lago di montagna.jpg", "Valle alpina.jpg"],
+  "es": ["Contrato.txt", "Facturas.csv", "Acta de reunión.md", "Inventario.csv", "Contactos.txt", "Borrador de texto.md", "Presupuesto.csv", "Lago de montaña.jpg", "Valle alpino.jpg"],
+  "pt": ["Contrato.txt", "Faturas.csv", "Ata da reunião.md", "Inventário.csv", "Contactos.txt", "Rascunho.md", "Orçamento.csv", "Lago de montanha.jpg", "Vale alpino.jpg"],
+  "el": ["Σύμβαση.txt", "Τιμολόγια.csv", "Πρακτικά συνάντησης.md", "Απογραφή.csv", "Επαφές.txt", "Πρόχειρο κείμενο.md", "Προϋπολογισμός.csv", "Ορεινή λίμνη.jpg", "Αλπική κοιλάδα.jpg"],
+  "pl": ["Umowa.txt", "Faktury.csv", "Protokół spotkania.md", "Inwentarz.csv", "Kontakty.txt", "Szkic tekstu.md", "Budżet.csv", "Górskie jezioro.jpg", "Alpejska dolina.jpg"],
+  "nl": ["Contract.txt", "Facturen.csv", "Vergaderverslag.md", "Inventaris.csv", "Contacten.txt", "Tekstconcept.md", "Begroting.csv", "Bergmeer.jpg", "Alpendal.jpg"],
+  "uk": ["Договір.txt", "Рахунки.csv", "Протокол зустрічі.md", "Інвентаризація.csv", "Контакти.txt", "Чернетка тексту.md", "Бюджет.csv", "Гірське озеро.jpg", "Альпійська долина.jpg"]
+}

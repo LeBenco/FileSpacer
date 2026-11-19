@@ -2,7 +2,7 @@
 
 # Documentation capture
 
-These scripts record the actual FileSpacer UI in the dedicated `AgentWin10` VM,
+These scripts record the actual FileSpacer UI in a dedicated Hyper-V test VM,
 using the existing regression-package transport and ScreenToGif 2.43.2. They do
 not assemble frames, edit out pauses or composite application windows.
 
@@ -31,6 +31,15 @@ From the checkout containing these scripts, first capture one language:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\documentation-capture\Invoke-Capture.ps1 -ProjectRoot C:\Users\Benco\Documents\FileSpacer -Languages fr
 ```
 
+Pass `-VMName AgentWin11Pro` to use the configured Windows 11 Pro runner.
+The storyboards use a real 1600 × 1200 desktop at 96 DPI and the approved
+wallpaper below. Prepare the VM with that same wallpaper and resolution first
+if these should remain its normal settings after capture.
+The desktop helper's `SetMode(mode, true)` stores the supported mode in the
+current user's profile. Ordinary captures keep using temporary changes and
+restore their original mode. Reports record both the original resolution and
+the capture resolution.
+
 Run one language at a time, in a Windows session using that display language.
 `-Languages` is required and accepts exactly one language per invocation.
 Application resources alone do not translate native Shell menus or column
@@ -56,6 +65,19 @@ Each `captures/<language>/` directory uses the same neutral filenames as
 Use `-Scenes details-columns` with a build that includes full-width Details
 columns to record only that feature. The fixture in `details-columns.json`
 adds localized medium and long filenames to the same fictional folder.
+
+`-Scenes static-views` reproduces the three-window overview, full-name selection,
+mixed sorting, search, Everything and Nilesoft comparisons, plus the existing
+full-window and settings captures. It uses `static-scenes.json` and
+`document-scenes.json` for the original localized fictional names. The original
+nature photographs must be available as `build/documentation-capture/nature-lake.jpg`
+and `nature-mountain.jpg` in the source checkout. Their sources are
+[Mountain lake](https://images.unsplash.com/photo-1470770841072-f978cf4d019e)
+and [Alpine valley](https://images.unsplash.com/photo-1464822759023-fed622ff2c3b),
+under the same Unsplash license as the wallpaper. Everything with its language
+pack and Nilesoft Shell must be installed in the guest. The comparisons use an
+isolated copy of Nilesoft and restore its per-user registration afterward.
+Neither the installed configuration nor the production application state is changed.
 
 ScreenToGif's existing portable archive must be present at
 `build/tools/ScreenToGif.zip` in the source checkout. Its SHA-256 must be
@@ -150,5 +172,24 @@ area belongs to the desktop. It restores those windows, the previous wallpaper
 and the display mode afterward.
 Fixtures use fictional localized filenames. The regression harness isolates
 FileSpacer preferences and test state, restores them on exit, and preserves
-failure artifacts. Nilesoft Shell is disabled for these recordings. Files are
-published to the documentation only after visual review.
+failure artifacts. Nilesoft Shell is enabled only for the named comparisons.
+Files are published to the documentation only after visual review.
+
+<a id="website-animation-compression"></a>
+
+## Website animation compression
+
+After replacing the reviewed GIFs, run from the repository root with Python
+and Pillow (with animated WebP support):
+
+```cmd
+python tools\documentation-capture\optimize-animations.py
+```
+
+The script writes smaller lossless `.webp` variants next to the GIFs and records
+their source hashes in `website/animations.json`. It verifies every decoded
+frame, frame duration and loop count before replacing a variant. Temporary
+encoding files are removed immediately, including on failure. Commit the WebP
+files and manifest together. The Markdown still uses GIFs, while website and
+offline builds select a variant only when its source hash matches. There is no
+encoder dependency when building or reading the site.

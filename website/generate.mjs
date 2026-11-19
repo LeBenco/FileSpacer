@@ -3,7 +3,9 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {Marked} from 'marked';
+import {optimize} from 'svgo';
 import {fetchReleaseDates, releaseHeading} from './releases.mjs';
+import {downloadFlags} from './flags.mjs';
 
 const template = path.dirname(fileURLToPath(import.meta.url));
 const navigationDepth = 2; // Maximum menu levels, counting each document as level 1.
@@ -29,6 +31,10 @@ const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '
 const text = value => value.replace(/<[^>]*>/g, '').replace(/[*`_~]/g, '');
 export const headingSlug = value => text(value).toLowerCase().replace(/[^\p{L}\p{M}\p{N}_\-\s]/gu, '').replace(/\s/g, '-');
 const json = value => JSON.stringify(value, null, 2) + '\n';
+const pageFile = id => id === 'overview' ? 'index.html' : id + '.html';
+const pageUrl = (language, id) => language.url + (id === 'overview' ? '' : pageFile(id));
+const plain = tokens => (tokens || []).map(token => token.tokens ? plain(token.tokens)
+  : token.type === 'html' ? token.text.replace(/<[^>]*>/g, '') : token.text || '').join('');
 
 // A standalone source anchor immediately before a heading names that heading
 // in Markdown and on the site. Consume the marker so it adds no empty paragraph.
@@ -67,18 +73,19 @@ function navigation(headings, ui) {
     const children = node.children.length ? `<ul class="nav-list">${node.children.map(item).join('')}</ul>` : '';
     return `<li class="nav-list-item">${expand}<a href="#${escape(node.id)}" class="nav-list-link">${escape(node.title)}</a>${children}</li>`;
   }
-  return item(root);
+  return root.children.map(item).join('');
 }
 
-function languagePicker(current, languages) {
-  const options = languages.map(language => `<a href="${escape(language.url)}" data-language-href="${escape(language.url)}" hreflang="${language.code}" lang="${language.code}"${language.code === current.code ? ' aria-current="true"' : ''}><span class="language-flag" aria-hidden="true">${language.flag}</span>${escape(language.name)}${language.code === current.code ? '<span class="selected-mark" aria-hidden="true">✓</span>' : ''}</a>`).join('');
-  return `<details class="language-picker"><summary aria-label="${escape(current.ui.language + ' : ' + current.name)}"><span class="language-flag" aria-hidden="true">${current.flag}</span><span>${escape(current.name)}</span><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></summary><div class="language-options">${options}</div></details>`;
+function languagePicker(current, languages, id) {
+  const flag = (language, lazy = false) => `<img class="language-flag" src="assets/flags/${language.flag}.svg" alt="" width="20" height="15"${lazy ? ' loading="lazy"' : ''}>`;
+  const options = languages.map(language => `<a href="${escape(pageUrl(language, id))}" data-language-href="${escape(pageUrl(language, id))}" hreflang="${new Intl.Locale(language.code).language}" lang="${language.code}"${language.code === current.code ? ' aria-current="true"' : ''}>${flag(language, true)}${escape(language.name)}${language.code === current.code ? '<span class="selected-mark" aria-hidden="true">✓</span>' : ''}</a>`).join('');
+  return `<details class="language-picker"><summary aria-label="${escape(current.ui.language + ' : ' + current.name)}">${flag(current)}<span>${escape(current.name)}</span><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></summary><div class="language-options">${options}</div></details>`;
 }
 
 function describeLanguage(code, ui, root, base, primary = false) {
   const locale = new Intl.Locale(code);
   if (!locale.region || !/^[a-z]{2}-[A-Z]{2}$/.test(code)) throw new Error(`Use a language-region locale directory: ${code}`);
-  const flag = [...locale.region].map(letter => String.fromCodePoint(0x1f1e6 + letter.charCodeAt(0) - 65)).join('');
+  const flag = locale.region.toLowerCase();
   return {code, ui, root, flag, name: ui.name, path: primary ? '' : locale.language, source: primary ? '.' : `_locales/${code}`, url: base + (primary ? '/' : `/${locale.language}/`)};
 }
 
@@ -91,7 +98,10 @@ function sourceFile(language, source) {
 export async function generate(repository = path.dirname(template), destination = path.join(repository, 'build/site-source'), options = {}) {
   const config = (await fs.readFile(path.join(template, '_config.yml'), 'utf8')).replaceAll('\r\n', '\n');
   const base = config.match(/^baseurl:\s*(.*)$/m)[1].trim().replace(/\/$/, '');
+  const origin = config.match(/^url:\s*(.*)$/m)[1].trim().replace(/\/$/, '');
   const english = JSON.parse(await fs.readFile(path.join(template, 'locale.json'), 'utf8'));
+  const animationIndex = path.join(repository, 'website/animations.json');
+  const animations = await exists(animationIndex) ? JSON.parse(await fs.readFile(animationIndex, 'utf8')) : {};
   const languages = [describeLanguage(english.locale, english, repository, base, true)];
   languages[0].primary = true;
   languages[0].modern = await exists(path.join(repository, 'docs/en/user-guide.md'));
@@ -118,6 +128,7 @@ export async function generate(repository = path.dirname(template), destination 
   for (const locale of options.recordTranslations || []) {
     if (!languages.some(language => language.code === locale && language !== languages[0])) throw new Error(`Unknown translation locale: ${locale}`);
   }
+  const flags = await downloadFlags(languages.map(language => language.flag), options.flagRequest);
   const parser = new Marked({gfm: true});
   const canonical = new Map();
   const results = [];
@@ -164,10 +175,9 @@ export async function generate(repository = path.dirname(template), destination 
         token.siteId = token.docAnchor ? (first ? id : `${id}--${anchor}`)
           : target?.id || (first ? id : `${id}--${originalId}`);
         token.siteDepth = Math.min(6, token.depth + 1);
-        token.siteTitle = first ? language.ui[id] : null;
-        if (source === 'CHANGELOG.md' && token.depth === 2) {
-          const title = releaseHeading(text(token.text), language.code, options.releaseDates || {});
-          if (options.releaseDates) token.siteTitle = title;
+        token.siteTitle = first ? (id === 'overview' ? plain(token.tokens) : language.ui[id]) : null;
+        if (source === 'CHANGELOG.md' && token.depth === 2 && options.releaseDates) {
+          token.siteTitle = releaseHeading(text(token.text), language.code, options.releaseDates);
         }
         anchors.set(originalId, token.siteId);
         anchors.set(anchor, token.siteId);
@@ -194,6 +204,9 @@ export async function generate(repository = path.dirname(template), destination 
       sourceHash: doc.sourceHash, headings: doc.headings.map(heading => [heading.anchor, heading.depth]),
     }]))}]);
     const assets = new Map();
+    function documentLink(source, doc, anchor) {
+      return (documents.get(source) === doc ? '' : pageFile(doc.id)) + '#' + anchor;
+    }
     function resolve(source, href, image = false) {
       if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(href)) return href;
       const at = href.indexOf('#');
@@ -212,12 +225,12 @@ export async function generate(repository = path.dirname(template), destination 
           return output;
         }
         const entry = [...documents].find(([logical]) => path.posix.join(relativeRoot, sourceFile(language, logical)) === actualTarget);
-        if (!entry && !fragment && actualTarget === path.posix.join(relativeRoot, sourceFile(language, 'docs/privacy-policy.md'))) return '#user-guide--privacy';
+        if (!entry && !fragment && actualTarget === path.posix.join(relativeRoot, sourceFile(language, 'docs/privacy-policy.md'))) return documentLink(source, documents.get('docs/user-guide.md'), 'user-guide--privacy');
         if (!entry) return 'https://github.com/LeBenco/FileSpacer/blob/main/' + actualTarget.split('/').map(encodeURIComponent).join('/') + (fragment ? '#' + encodeURIComponent(fragment) : '');
         const doc = entry[1];
         const anchor = fragment ? doc.anchors.get(fragment) : doc.id;
         if (!anchor) throw new Error(`Missing heading in ${language.code}/${source}: ${href}`);
-        return '#' + anchor;
+        return documentLink(source, doc, anchor);
       }
       const target = file ? path.posix.normalize(path.posix.join(path.posix.dirname(source), file)) : source;
       if (target.startsWith('../') || path.posix.isAbsolute(target)) throw new Error(`Path outside repository: ${href}`);
@@ -229,16 +242,16 @@ export async function generate(repository = path.dirname(template), destination 
       }
       const doc = documents.get(target);
       if (!doc) {
-        if (target === 'docs/privacy-policy.md' && !fragment) return '#user-guide--privacy';
+        if (target === 'docs/privacy-policy.md' && !fragment) return documentLink(source, documents.get('docs/user-guide.md'), 'user-guide--privacy');
         const reference = language !== languages[0] && language.references.has(target)
           ? `website/translations/${language.code}/${target}` : target;
         return 'https://github.com/LeBenco/FileSpacer/blob/main/' + reference.split('/').map(encodeURIComponent).join('/') + (fragment ? '#' + encodeURIComponent(fragment) : '');
       }
       const anchor = fragment ? doc.anchors.get(fragment) : doc.id;
       if (!anchor) throw new Error(`Missing heading in ${language.code}/${source}: ${href}`);
-      return '#' + anchor;
+      return documentLink(source, doc, anchor);
     }
-    const rendered = [];
+    const rendered = new Map();
     for (const doc of documents.values()) {
       parser.walkTokens(doc.tokens, token => {
         if (token.type === 'link' || token.type === 'image') token.href = resolve(doc.source, token.href, token.type === 'image');
@@ -250,44 +263,87 @@ export async function generate(repository = path.dirname(template), destination 
         heading(token) {
           const title = token.siteTitle ? escape(token.siteTitle) : this.parser.parseInline(token.tokens);
           const aliases = (privacyAliases[token.siteId] || []).map(id => `<span id="${id}" data-alias-for="${token.siteId}" aria-hidden="true"></span>`).join('');
-          return `${aliases}<h${token.siteDepth} id="${escape(token.siteId)}"><a href="#${escape(token.siteId)}" class="anchor-heading" aria-labelledby="${escape(token.siteId)}"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a>${title}</h${token.siteDepth}>\n`;
+          const depth = token.siteDepth - 1;
+          return `${aliases}<h${depth} id="${escape(token.siteId)}"><a href="#${escape(token.siteId)}" class="anchor-heading" aria-labelledby="${escape(token.siteId)}"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a>${title}</h${depth}>\n`;
         },
       }});
-      rendered.push(`<section aria-labelledby="${doc.id}" data-source="${doc.source}">\n${renderer.parser(doc.tokens)}</section>`);
+      const html = `<section aria-labelledby="${doc.id}" data-source="${doc.source}">\n${renderer.parser(doc.tokens)}</section>`.replace(/<img\b[^>]*>/g, img => {
+        const src = img.match(/\bsrc="([^"]+)"/)?.[1];
+        if (!src || !/\.(png|gif)$/i.test(src)) return img;
+        const alt = img.match(/\balt="([^"]*)"/)?.[1] || '';
+        const thumbnail = /\bloading=/.test(img) ? img : img.replace('<img', '<img loading="lazy"');
+        return `<a class="screenshot-link" href="${src}" aria-label="${escape(language.ui.enlargeImage)}: ${alt}">${thumbnail}</a>`;
+      });
+      const ids = [...html.matchAll(/\sid\s*=\s*(["'])([^"']+)\1/g)].map(match => match[2]);
+      const missing = [...html.matchAll(/<a\b[^>]*\shref\s*=\s*(["'])#([^"']+)\1/g)].filter(match => !ids.includes(decodeURIComponent(match[2])));
+      if (new Set(ids).size !== ids.length || missing.length) throw new Error('Duplicate heading IDs or broken internal links');
+      rendered.set(doc.id, html);
     }
-    let html = `<h1 class="fs-9">FileSpacer</h1>\n${rendered.join('\n<hr>\n')}`.replace(/<img\b[^>]*>/g, img => {
-      const src = img.match(/\bsrc="([^"]+)"/)?.[1];
-      if (!src || !/\.(png|gif)$/i.test(src)) return img;
-      const alt = img.match(/\balt="([^"]*)"/)?.[1] || '';
-      return `<a class="screenshot-link" href="${src}" aria-label="${escape(language.ui.enlargeImage)}: ${alt}">${img}</a>`;
-    });
-    const ids = [...html.matchAll(/\sid\s*=\s*(["'])([^"']+)\1/g)].map(match => match[2]);
-    const missing = [...html.matchAll(/<a\b[^>]*\shref\s*=\s*(["'])#([^"']+)\1/g)].filter(match => !ids.includes(decodeURIComponent(match[2])));
-    if (new Set(ids).size !== ids.length || missing.length) throw new Error('Duplicate heading IDs or broken internal links');
     const output = path.join(destination, language.source);
     await fs.mkdir(output, {recursive: true});
     await fs.cp(path.join(template, '_includes'), path.join(output, '_includes'), {recursive: true});
     await fs.cp(path.join(template, '_layouts'), path.join(output, '_layouts'), {recursive: true});
     await fs.cp(path.join(template, 'assets'), path.join(output, 'assets'), {recursive: true});
+    await fs.mkdir(path.join(output, 'assets/flags'), {recursive: true});
+    for (const [country, svg] of flags) await fs.writeFile(path.join(output, `assets/flags/${country}.svg`), svg);
     let localizedConfig = config.replace(/^baseurl:.*$/m, 'baseurl: ' + language.url.replace(/\/$/, ''))
       .replace(/^description:.*$/m, 'description: ' + JSON.stringify(language.ui.description))
-      .replace(/^back_to_top_text:.*$/m, 'back_to_top_text: ' + JSON.stringify(language.ui.back))
-      .replace(/^aux_links:\n[\s\S]*?(?=^[^\s])/m, `aux_links:\n  ${JSON.stringify(language.ui.repository)}:\n    - https://github.com/LeBenco/FileSpacer\n`);
+      .replace(/^back_to_top_text:.*$/m, 'back_to_top_text: ' + JSON.stringify(language.ui.back));
     localizedConfig += `\nlang: ${language.code}\nfs_ui: ${JSON.stringify(language.ui)}\n`;
     await fs.writeFile(path.join(output, '_config.yml'), localizedConfig);
-    await fs.writeFile(path.join(output, '_includes/components/site_nav.html'), `<nav aria-label="${escape(language.ui.navigation)}" id="site-nav" class="site-nav">${languagePicker(language, languages)}<ul class="nav-list">${[...documents.values()].map(doc => navigation(doc.headings, language.ui)).join('')}</ul></nav>\n`);
+    const topLinks = [...documents.values()].map(doc => `<a href="${pageFile(doc.id)}" data-section="${doc.id}"{% if page.fs_section == '${doc.id}' %} aria-current="page"{% endif %}>${escape(language.ui[doc.id])}</a>`).join('');
+    await fs.mkdir(path.join(output, '_includes/components'), {recursive: true});
+    await fs.writeFile(path.join(output, '_includes/components/top_nav.html'), `<nav class="fs-top-nav" aria-label="${escape(language.ui.navigation)}">${topLinks}<a href="https://github.com/LeBenco/FileSpacer">GitHub</a></nav>\n`);
+    await fs.mkdir(path.join(output, '_includes/sections'), {recursive: true});
     for (const [source, target] of assets) {
       if (!await exists(path.join(repository, source))) throw new Error(`Missing localized media (${language.code}): ${source}`);
-      await fs.mkdir(path.dirname(path.join(output, target)), {recursive: true});
-      await fs.copyFile(path.join(repository, source), path.join(output, target));
+      const bytes = await fs.readFile(path.join(repository, source));
+      const sourceHash = createHash('sha256').update(bytes).digest('hex');
+      const variant = source.replace(/\.gif$/i, '.webp');
+      // A fresh capture must never display an older compressed animation.
+      const useWebp = /\.gif$/i.test(source) && animations[source] === sourceHash
+        && await exists(path.join(repository, variant));
+      const media = useWebp ? variant : source;
+      const mediaTarget = useWebp ? target.replace(/\.gif$/i, '.webp') : target;
+      await fs.mkdir(path.dirname(path.join(output, mediaTarget)), {recursive: true});
+      if (/\.svg$/i.test(media)) {
+        const svg = optimize(bytes.toString('utf8'), {multipass: true, plugins: [
+          {name: 'preset-default', params: {overrides: {removeComments: false}}},
+          {name: 'addAttributesToSVGElement', params: {attributes: [{'shape-rendering': 'geometricPrecision'}]}},
+        ]}).data;
+        await fs.writeFile(path.join(output, mediaTarget), svg);
+      } else await fs.copyFile(path.join(repository, media), path.join(output, mediaTarget));
       if (/\.(png|gif)$/i.test(target)) {
-        const version = createHash('sha256').update(await fs.readFile(path.join(repository, source))).digest('hex').slice(0, 12);
-        html = html.replaceAll(`="${target}"`, `="${target}?v=${version}"`);
+        const version = createHash('sha256').update(useWebp ? await fs.readFile(path.join(repository, media)) : bytes).digest('hex').slice(0, 12);
+        const [width, height] = /\.png$/i.test(target)
+          ? [bytes.readUInt32BE(16), bytes.readUInt32BE(20)] : [bytes.readUInt16LE(6), bytes.readUInt16LE(8)];
+        for (const [id, html] of rendered) {
+          // Reserve the thumbnail's aspect ratio before lazy images load.
+          const sized = html.replace(/<img\b[^>]*>/g, img => {
+            if (!img.includes(`src="${target}"`)) return img;
+            const displayWidth = Number(img.match(/\bwidth="(\d+)"/)?.[1]) || width;
+            if (!/\bwidth=/.test(img)) img = img.replace('<img', `<img width="${displayWidth}"`);
+            if (!/\bheight=/.test(img)) img = img.replace('<img', `<img height="${Math.round(displayWidth * height / width)}"`);
+            return img;
+          });
+          rendered.set(id, sized.replaceAll(`="${target}"`, `="${mediaTarget}?v=${version}"`));
+        }
       }
     }
-    await fs.writeFile(path.join(output, 'index.html'), `---\nlayout: default\ntitle: FileSpacer\nhas_toc: false\n---\n${html}`);
-    results.push({code: language.code, path: language.path, source: language.source, documents: documents.size, headings: ids.length, images: assets.size});
+    for (const doc of documents.values()) {
+      const descriptionKey = {'overview': 'overviewDescription', 'user-guide': 'guideDescription',
+        'changelog': 'changelogDescription', 'third-party-notices': 'noticesDescription'}[doc.id];
+      const description = language.ui[descriptionKey];
+      const alternates = languages.map(other => ({lang: new Intl.Locale(other.code).language, url: origin + pageUrl(other, doc.id)}));
+      alternates.push({lang: 'x-default', url: origin + pageUrl(languages[0], doc.id)});
+      const metadata = `---\nlayout: default\ntitle: ${JSON.stringify(doc.id === 'overview' ? 'FileSpacer' : language.ui[doc.id])}\ndescription: ${JSON.stringify(description)}\nfs_section: ${doc.id}\nfs_alternates: ${JSON.stringify(alternates)}\nhas_toc: false\n---\n`;
+      await fs.writeFile(path.join(output, pageFile(doc.id)), metadata + rendered.get(doc.id));
+      await fs.writeFile(path.join(output, `_includes/sections/${doc.id}.html`), `${languagePicker(language, languages, doc.id)}<h2 class="fs-section-title fs-4">${escape(language.ui[doc.id])}</h2><nav aria-label="${escape(language.ui.submenu)}" id="site-nav"><ul class="nav-list fs-section-links">${navigation(doc.headings, language.ui)}</ul></nav>\n`);
+    }
+    results.push({code: language.code, path: language.path, source: language.source, documents: documents.size, headings: [...documents.values()].reduce((sum, doc) => sum + doc.headings.length, 0), images: assets.size});
   }
+  const sitemap = languages.flatMap(language => sources.map(([, id]) => `<url><loc>${escape(origin + pageUrl(language, id))}</loc>${languages.map(other => `<xhtml:link rel="alternate" hreflang="${new Intl.Locale(other.code).language}" href="${escape(origin + pageUrl(other, id))}"/>`).join('')}<xhtml:link rel="alternate" hreflang="x-default" href="${escape(origin + pageUrl(languages[0], id))}"/></url>`));
+  await fs.writeFile(path.join(destination, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' + sitemap.join('\n') + '\n</urlset>\n');
   await fs.writeFile(path.join(destination, 'locales.json'), json(results));
   for (const [file, snapshot] of snapshots) {
     const previous = await fs.readFile(file, 'utf8').catch(error => { if (error.code === 'ENOENT') return ''; throw error; });

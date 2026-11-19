@@ -2,7 +2,7 @@
   "version": 1,
   "sources": {
     "README.md": {
-      "sourceHash": "09b66ee58524fd171b5c4b4ef77cf162126b2dc10b43b390a4b4da016633a7e4",
+      "sourceHash": "bb1b318b90a8e9a9404cf9ab9b16f78b8163249719dd80d98acdd1b32b767bf6",
       "headings": [
         [
           "filespacer",
@@ -209,7 +209,7 @@
       ]
     },
     "THIRD_PARTY_NOTICES.md": {
-      "sourceHash": "373eb0191f650df4038367988a283b6866ca9f5738076d0be0a81567240658ff",
+      "sourceHash": "ce917a90fa4e1877f390a5bc941c3604288bb096a7fa761f7d078a40350730bd",
       "headings": [
         [
           "third-party-notices",
@@ -225,6 +225,10 @@
         ],
         [
           "icons",
+          3
+        ],
+        [
+          "website",
           3
         ]
       ]

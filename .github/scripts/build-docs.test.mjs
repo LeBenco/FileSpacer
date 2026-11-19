@@ -33,6 +33,8 @@ test('offline links preserve language, section and resources at any install path
   const convert = (url, file = 'fr/index.html') => localUrl(url, file, '/FileSpacer', 'https://lebenco.github.io');
   assert.equal(convert('/FileSpacer/fr/'), 'index.html');
   assert.equal(convert('/FileSpacer/'), '../index.html');
+  assert.equal(convert('/FileSpacer/fr/user-guide.html#user-guide--privacy'), 'user-guide.html#user-guide--privacy');
+  assert.equal(convert('/FileSpacer/de/changelog.html#changelog--140'), '../de/changelog.html#changelog--140');
   assert.equal(convert('/FileSpacer/de/#user-guide'), '../de/index.html#user-guide');
   assert.equal(convert('https://lebenco.github.io/FileSpacer/fr/#user-guide'), 'index.html#user-guide');
   assert.equal(convert('/FileSpacer/fr/assets/framing.css?v=1'), 'assets/framing.css?v=1');
@@ -40,6 +42,30 @@ test('offline links preserve language, section and resources at any install path
   assert.equal(convert('#user-guide'), '#user-guide');
   assert.equal(convert('https://github.com/LeBenco/FileSpacer'), 'https://github.com/LeBenco/FileSpacer');
   assert.equal(convert('/FileSpacer-other/'), '/FileSpacer-other/');
+});
+
+test('historical single-page help links reach their document online and offline', async () => {
+  const script = await fs.readFile(new URL('../../website/assets/toc.js', import.meta.url), 'utf8');
+  for (const [hash, section] of [['#user-guide', 'user-guide'], ['#user-guide--privacy', 'user-guide'], ['#privacy-policy--update-checks', 'user-guide'], ['#changelog--140', 'changelog']]) {
+    for (const prefix of ['https://example.test/FileSpacer/fr/', 'file:///C:/Example/help/fr/']) {
+      let redirected;
+      const callbacks = {};
+      const context = {
+        location: {hash, replace: url => { redirected = url; }},
+        document: {
+          getElementById: () => null,
+          querySelectorAll: selector => selector === '[data-section]' ? [{
+            dataset: {section}, href: prefix + section + '.html', hasAttribute: () => false,
+          }] : [],
+          addEventListener: (event, callback) => { callbacks[event] = callback; },
+        },
+        window: {addEventListener: () => {}},
+      };
+      vm.runInNewContext(script, context);
+      callbacks.DOMContentLoaded();
+      assert.equal(redirected, prefix + section + '.html' + hash);
+    }
+  }
 });
 
 test('offline search retains the theme indexer and loads data without HTTP', () => {

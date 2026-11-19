@@ -6,3 +6,6 @@
 <meta name="fs-close-image" content="{{ site.fs_ui.closeImage | escape }}">
 <link rel="stylesheet" href="{{ '/assets/media.css' | relative_url }}?v={{ site.time | date: '%s' }}">
 <script src="{{ '/assets/media.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
+{% for alternate in page.fs_alternates %}
+<link rel="alternate" hreflang="{{ alternate.lang }}" href="{{ alternate.url | escape }}">
+{% endfor %}

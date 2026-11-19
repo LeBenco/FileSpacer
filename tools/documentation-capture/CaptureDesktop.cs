@@ -173,7 +173,11 @@ public static class CaptureDesktop {
         return modes.ToArray();
     }
     public static void SetMode(DisplayMode mode) {
-        int result=ChangeDisplaySettings(ref mode,0);
+        SetMode(mode,false);
+    }
+    public static void SetMode(DisplayMode mode,bool persist) {
+        const uint updateRegistry=1; // CDS_UPDATEREGISTRY: current user's profile.
+        int result=ChangeDisplaySettings(ref mode,persist?updateRegistry:0);
         if(result!=0) throw new InvalidOperationException("ChangeDisplaySettings failed: "+result);
     }
     [ComImport, Guid("B92B56A9-8B55-4E14-9A89-0199BBB6F93B"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

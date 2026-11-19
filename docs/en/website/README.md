@@ -2,8 +2,13 @@
 
 # Website generation
 
-The public site concatenates `README.md`, the user guide, the changelog and
-third-party notices. Privacy and local-data maintenance have separate sections
+The public site generates a separate page for `README.md`, the user guide, the
+changelog and third-party notices. A horizontal menu links these documents and
+GitHub. Each page's sidebar shows its subsections directly, below the language
+selector. The white header contains the application icon and name on the left
+and search on the right. The same CSS lets the horizontal menu use the empty
+space to its left when necessary, preserving sidebar alignment when it fits.
+Privacy and local-data maintenance have separate sections
 in the user guide. The short standalone privacy policy remains on GitHub; its
 former site anchors still reach the relevant guide sections.
 The original English documents remain
@@ -18,15 +23,17 @@ Online changelog dates come from `published_at` in the GitHub Releases JSON API,
 matched by release version. The existing Markdown files supply the translated
 notes. `Intl.DateTimeFormat` uses each site's locale for numeric day, month and
 four-digit year formatting, keeping the UTC publication day. Source dates are
-not parsed or used as a fallback. Versions not yet published on GitHub appear
-without a date. Existing heading IDs remain unchanged, including their original
+not parsed or used as a fallback. Changelog content is maintained in the source
+documents. The generator formats known publication dates without filtering
+or rejecting sections. Existing heading IDs remain unchanged, including their original
 date suffixes, so published bookmarks still work.
 The generator fetches all release pages during a web build, and incorporates
 the publication metadata into the build fingerprint. API failures stop the build
 before replacing the existing output. Reading the finished site needs no API
 request. CI uses its automatic GitHub token; local builds can use `GH_TOKEN` or
 `GITHUB_TOKEN`, or access the public API without authentication. Offline help
-keeps its local changelog, so an installer can be built before its release exists.
+keeps its local numbered changelog, so an installer can include its own release
+notes before the corresponding GitHub release exists.
 The Nilesoft configuration reference has a translated file for each language;
 its GitHub links follow the selected language. Polish, Dutch and Ukrainian also
 provide translated developer guides; their references use the selected language.
@@ -35,9 +42,25 @@ The generator discovers language directories containing `locale.json` and all
 four translated source files, the privacy policy and the localized Nilesoft
 reference. It creates the
 language selector above the sidebar navigation from those directories, using
-each language's own name and a Unicode
-flag. The bundled, OFL-licensed Noto Color Emoji flag font supplies flags on
-Windows as well; it requires no external font service.
+each language's own name and a local SVG flag. The country comes from the
+locale's region, with no separate list to maintain. Each full generation queries
+Wikidata for the current preferred flag image of each country (ISO code `P297`,
+flag image `P41`), excluding dissolved countries. Missing or ambiguous results
+stop generation instead of selecting an arbitrary variant.
+The Commons API supplies the original SVG URL and license metadata. Only
+public-domain or CC0 files explicitly requiring no attribution are accepted.
+The SVGs are downloaded once per country, optimized with SVGO using its default
+preset and multiple passes, and included under `assets/flags/` in every language build,
+including offline help. No country-specific file names or corrections are kept. Proportions are preserved.
+Local SVG illustrations, including the header icon, are optimized when copied
+into the generated site. Editor metadata is removed; source artwork stays editable
+and its copyright/license comments are retained in the generated illustration.
+Flags in the closed language menu use lazy loading; the current flag has a fixed
+layout box and loads normally. Visitors make no requests to Wikimedia.
+Failed metadata requests, incompatible licenses or invalid SVG responses stop
+generation before the previous finished output is replaced. Temporary sources
+are cleaned by the shared build wrapper. A full rebuild needs network access
+to Wikidata and Wikimedia Commons; reading the generated site does not.
 
 `assets/favicon.ico` contains the application's original 16 × 16 icon frame,
 extracted from `src/res/FileSpacer.ico` without resampling. Keep it in sync
@@ -47,7 +70,7 @@ uses this asset in every language.
 Heading order and hierarchy must match English. The generator normalizes levels,
 uses explicit English heading anchors shared by every source language and rewrites
 internal links. Translated titles do not determine the canonical IDs. Changing
-language appends the current fragment to the other language’s URL, without a
+language keeps the current document and appends its fragment to the other language’s URL, without a
 translation map. Localized assets have identical filenames and relative URLs
 within each generated language directory. Missing
 documents, headings or localized PNG/GIF captures fail the build. The neutral
@@ -60,8 +83,17 @@ upstream layout override translates its skip link and versions the compiled
 theme script so browsers receive search changes after deployment. Retain its
 MIT notice and review it when updating the theme. The repository README has no
 language selector or language links.
+Lunr and the theme script use `defer` in their original dependency order, so their
+downloads do not block HTML parsing. Search, the mobile menu and offline search
+keep the same theme implementation.
+The Website section of third-party notices credits Just the Docs, Jekyll, Lunr,
+Wikimedia Commons/Wikidata and SVGO in every language. The sidebar and mobile footer no longer
+repeat the theme credit. Keep the empty `nav_footer_custom.html` override to
+suppress the theme's default footer. The theme's full MIT notice remains in the
+source layout directory and the generated `JustTheDocs-LICENSE.txt`; Lunr's
+notice is bundled under `assets/licenses/`.
 
-The header only links to the repository. Download links and badges come from
+Download links and badges come from
 the Markdown sources; the generator does not add a second download button or
 derive one from the changelog.
 
@@ -72,6 +104,22 @@ dialogs are unavailable. The theme has no built-in lightbox; no additional
 library or CDN is used. SVG logos are not treated as screenshots.
 Screenshot URLs include a content hash, so replacing an image under the same
 filename refreshes cached thumbnails and popup images automatically.
+Screenshots use lazy loading so content further down does not load immediately.
+Animated WebP variants are used in both website and offline builds when
+`website/animations.json` matches the source GIF's SHA-256. GIFs remain the
+Markdown sources for GitHub. A changed GIF or missing variant falls back to
+the current GIF, so a new capture cannot display an outdated animation.
+Regenerate the lossless variants with the
+[capture optimization script](../../../tools/documentation-capture/README.md#website-animation-compression).
+
+Every page has its own title, description, canonical URL and reciprocal
+`hreflang` links to the equivalent documents, including an English `x-default`.
+The four page descriptions are maintained in each language's `locale.json`;
+they are not extracted from badges or individual changelog entries.
+The root `sitemap.xml` lists all generated pages and their language variants.
+Both use the discovered language directories. Existing single-page bookmarks
+are redirected to the matching document while retaining their fragment.
+Temporary Jekyll source directories are removed after a build, including failures.
 
 The theme's `lunr/custom-index.js` hook uses Unicode word trimming for translated
 sites and omits English stemming and stop words. Lunr's default ASCII trimmer
