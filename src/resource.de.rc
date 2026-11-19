@@ -222,7 +222,8 @@ BEGIN
   IDS_SHORTCUT_RECORD "Tasten und Maustaste direkt eingeben..."
   IDS_SHORTCUT_STOP_RECORD "Direkte Eingabe ausblenden"
   IDS_SHORTCUT_LEFT_HINT "Für die Auswahl reserviert"
-  IDS_SHORTCUT_RIGHT_HINT "Für Menüs und Auswahl reserviert"
+  IDS_SHORTCUT_RIGHT_HINT "Nur auf dem Ordnerhintergrund"
+  IDS_SHORTCUT_BACKGROUND "Wirkt nur vom Ordnerhintergrund aus. Ein Rechtsklick ohne Ziehen öffnet weiterhin das Menü."
   IDS_SHORTCUT_SAVE_FAILED "Die Tastenkombinationen konnten nicht gespeichert werden. Die bisherigen Einstellungen bleiben aktiv."
   IDS_SHORTCUT_APPLY_REFUSED "Die Tastenkombination für „%1!s!“ kann nicht übernommen werden."
   IDS_SEARCH_EVERYTHING "Mit Everything suchen"
@@ -270,5 +271,5 @@ END
 STRINGTABLE
 BEGIN
   IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Die Einstellungen von Grab And Move konnten nicht geöffnet werden. Öffnen Sie PowerToys und wählen Sie Grab And Move."
-  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move ist in den PowerToys-Einstellungen aktiviert. Solange diese Option aktiviert ist, werden die folgenden FileSpacer-Gesten nicht angewendet. Um sie weiter zu verwenden, fügen Sie FileSpacer zur <a>Ausschlussliste von Grab And Move</a> hinzu."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move ist in den PowerToys-Einstellungen aktiviert. Bei gleichen Tastenkombinationen hat es Vorrang vor den folgenden FileSpacer-Gesten. Um sie weiter zu verwenden, fügen Sie FileSpacer zur <a>Ausschlussliste von Grab And Move</a> hinzu."
 END

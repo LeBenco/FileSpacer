@@ -222,7 +222,8 @@ BEGIN
   IDS_SHORTCUT_RECORD "Безпосередньо введіть клавіші й кнопку миші..."
   IDS_SHORTCUT_STOP_RECORD "Приховати безпосереднє введення"
   IDS_SHORTCUT_LEFT_HINT "Зарезервовано для вибору"
-  IDS_SHORTCUT_RIGHT_HINT "Зарезервовано для меню та вибору"
+  IDS_SHORTCUT_RIGHT_HINT "Лише на тлі папки"
+  IDS_SHORTCUT_BACKGROUND "Діє лише з тла папки. Клацання правою кнопкою без перетягування й далі відкриває меню."
   IDS_SHORTCUT_SAVE_FAILED "Не вдалося зберегти сполучення. Попередні настройки залишаються чинними."
   IDS_SHORTCUT_APPLY_REFUSED "Не вдалося застосувати сполучення для дії «%1!s!»."
   IDS_SEARCH_EVERYTHING "Пошук в Everything"
@@ -274,5 +275,5 @@ END
 STRINGTABLE
 BEGIN
   IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Не вдалося відкрити настройки Grab And Move. Відкрийте PowerToys і виберіть Grab And Move."
-  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move увімкнено в настройках PowerToys. Доки цей параметр увімкнено, наведені нижче сполучення FileSpacer не діють. Щоб і далі ними користуватися, додайте FileSpacer до <a>списку виключень Grab And Move</a>."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move увімкнено в настройках PowerToys. За однакових сполучень він має пріоритет над наведеними нижче сполученнями FileSpacer. Щоб і далі ними користуватися, додайте FileSpacer до <a>списку виключень Grab And Move</a>."
 END

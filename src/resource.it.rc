@@ -222,7 +222,8 @@ BEGIN
   IDS_SHORTCUT_RECORD "Premi direttamente i tasti e il pulsante del mouse..."
   IDS_SHORTCUT_STOP_RECORD "Nascondi acquisizione diretta"
   IDS_SHORTCUT_LEFT_HINT "Riservato alla selezione"
-  IDS_SHORTCUT_RIGHT_HINT "Riservato ai menu e alla selezione"
+  IDS_SHORTCUT_RIGHT_HINT "Solo sullo sfondo della cartella"
+  IDS_SHORTCUT_BACKGROUND "Agisce solo dallo sfondo della cartella. Un clic destro senza trascinare apre ancora il menu."
   IDS_SHORTCUT_SAVE_FAILED "Impossibile salvare le scelte rapide. Le impostazioni precedenti restano attive."
   IDS_SHORTCUT_APPLY_REFUSED "La scelta rapida per “%1!s!” non può essere applicata."
   IDS_SEARCH_EVERYTHING "Cerca in Everything"
@@ -270,5 +271,5 @@ END
 STRINGTABLE
 BEGIN
   IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Impossibile aprire le impostazioni di Grab And Move. Aprire PowerToys e selezionare Grab And Move."
-  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move è attivo nelle impostazioni di PowerToys. Finché questa opzione è attiva, le scorciatoie di FileSpacer qui sotto non vengono applicate. Per continuare a usarle, aggiungere FileSpacer alla <a>lista di esclusione di Grab And Move</a>."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move è attivo nelle impostazioni di PowerToys. Con le stesse scorciatoie, ha la priorità sulle scorciatoie di FileSpacer qui sotto. Per continuare a usarle, aggiungere FileSpacer alla <a>lista di esclusione di Grab And Move</a>."
 END

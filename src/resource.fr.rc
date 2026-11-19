@@ -221,7 +221,8 @@ BEGIN
   IDS_SHORTCUT_RECORD "Saisir les touches et le bouton directement..."
   IDS_SHORTCUT_STOP_RECORD "Masquer la saisie directe"
   IDS_SHORTCUT_LEFT_HINT "Réservé à la sélection"
-  IDS_SHORTCUT_RIGHT_HINT "Réservé aux menus et à la sélection"
+  IDS_SHORTCUT_RIGHT_HINT "Fond du dossier uniquement"
+  IDS_SHORTCUT_BACKGROUND "Agit seulement depuis le fond du dossier. Un clic droit sans glisser ouvre toujours le menu."
   IDS_SHORTCUT_SAVE_FAILED "Les raccourcis n’ont pas pu être enregistrés. Les réglages précédents restent actifs."
   IDS_SHORTCUT_APPLY_REFUSED "Le raccourci « %1!s! » ne peut pas être appliqué."
   IDS_SEARCH_EVERYTHING "Rechercher dans Everything"
@@ -273,5 +274,5 @@ END
 STRINGTABLE
 BEGIN
   IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Impossible d’ouvrir la configuration de Grab And Move. Ouvrez PowerToys, puis sélectionnez Grab And Move."
-  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move est activé dans les réglages de PowerToys. Tant que cette option est activée, les raccourcis de FileSpacer ci-dessous ne s’appliquent pas. Vous pouvez continuer d’utiliser les raccourcis de FileSpacer en l’ajoutant à la <a>liste d’exclusion de Grab And Move</a>."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move est activé dans les réglages de PowerToys. Avec les mêmes raccourcis, il a la priorité sur les raccourcis de FileSpacer ci-dessous. Vous pouvez continuer d’utiliser les raccourcis de FileSpacer en l’ajoutant à la <a>liste d’exclusion de Grab And Move</a>."
 END

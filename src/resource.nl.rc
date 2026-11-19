@@ -222,7 +222,8 @@ BEGIN
   IDS_SHORTCUT_RECORD "Toetsen en muisknop rechtstreeks invoeren..."
   IDS_SHORTCUT_STOP_RECORD "Rechtstreekse invoer verbergen"
   IDS_SHORTCUT_LEFT_HINT "Gereserveerd voor selectie"
-  IDS_SHORTCUT_RIGHT_HINT "Gereserveerd voor menu’s en selectie"
+  IDS_SHORTCUT_RIGHT_HINT "Alleen op de mapachtergrond"
+  IDS_SHORTCUT_BACKGROUND "Werkt alleen vanaf de mapachtergrond. Rechtsklikken zonder slepen opent nog steeds het menu."
   IDS_SHORTCUT_SAVE_FAILED "De sneltoetsen konden niet worden opgeslagen. De vorige instellingen blijven actief."
   IDS_SHORTCUT_APPLY_REFUSED "De sneltoets voor ‘%1!s!’ kan niet worden toegepast."
   IDS_SEARCH_EVERYTHING "Zoeken in Everything"
@@ -274,5 +275,5 @@ END
 STRINGTABLE
 BEGIN
   IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Kan de instellingen van Grab And Move niet openen. Open PowerToys en selecteer Grab And Move."
-  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move is ingeschakeld in de PowerToys-instellingen. Zolang deze optie is ingeschakeld, gelden de onderstaande FileSpacer-sneltoetsen niet. U kunt ze blijven gebruiken door FileSpacer toe te voegen aan de <a>uitsluitingslijst van Grab And Move</a>."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move is ingeschakeld in de PowerToys-instellingen. Met dezelfde sneltoetsen heeft het voorrang op de onderstaande FileSpacer-sneltoetsen. U kunt ze blijven gebruiken door FileSpacer toe te voegen aan de <a>uitsluitingslijst van Grab And Move</a>."
 END

@@ -222,7 +222,8 @@ BEGIN
   IDS_SHORTCUT_RECORD "Enter keys and mouse button directly..."
   IDS_SHORTCUT_STOP_RECORD "Hide direct input"
   IDS_SHORTCUT_LEFT_HINT "Reserved for selection"
-  IDS_SHORTCUT_RIGHT_HINT "Reserved for menus and selection"
+  IDS_SHORTCUT_RIGHT_HINT "Folder background only"
+  IDS_SHORTCUT_BACKGROUND "Works from the folder background only. A right-click without dragging still opens the menu."
   IDS_SHORTCUT_SAVE_FAILED "The shortcuts could not be saved. The previous settings remain active."
   IDS_SHORTCUT_APPLY_REFUSED "The shortcut for “%1!s!” cannot be applied."
   IDS_SEARCH_EVERYTHING "Search in Everything"
@@ -274,5 +275,5 @@ END
 STRINGTABLE
 BEGIN
   IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Unable to open Grab And Move settings. Open PowerToys, then select Grab And Move."
-  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move is enabled in PowerToys settings. While this option is enabled, the FileSpacer shortcuts below do not apply. You can keep using FileSpacer shortcuts by adding FileSpacer to the <a>Grab And Move exclusion list</a>."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move is enabled in PowerToys settings. With the same shortcuts, it takes priority over the FileSpacer shortcuts below. You can keep using FileSpacer shortcuts by adding FileSpacer to the <a>Grab And Move exclusion list</a>."
 END

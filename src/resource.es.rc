@@ -222,7 +222,8 @@ BEGIN
   IDS_SHORTCUT_RECORD "Pulsa directamente las teclas y el botón del ratón..."
   IDS_SHORTCUT_STOP_RECORD "Ocultar captura directa"
   IDS_SHORTCUT_LEFT_HINT "Reservado para selección"
-  IDS_SHORTCUT_RIGHT_HINT "Reservado para menús y selección"
+  IDS_SHORTCUT_RIGHT_HINT "Solo en el fondo de la carpeta"
+  IDS_SHORTCUT_BACKGROUND "Solo actúa desde el fondo de la carpeta. Un clic derecho sin arrastrar sigue abriendo el menú."
   IDS_SHORTCUT_SAVE_FAILED "No se han podido guardar los métodos abreviados. La configuración anterior sigue activa."
   IDS_SHORTCUT_APPLY_REFUSED "El método abreviado para «%1!s!» no se puede aplicar."
   IDS_SEARCH_EVERYTHING "Buscar en Everything"
@@ -270,5 +271,5 @@ END
 STRINGTABLE
 BEGIN
   IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "No se pueden abrir los ajustes de Grab And Move. Abra PowerToys y seleccione Grab And Move."
-  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move está activado en los ajustes de PowerToys. Mientras esta opción esté activada, los atajos de FileSpacer de abajo no se aplican. Puede seguir usándolos añadiendo FileSpacer a la <a>lista de exclusión de Grab And Move</a>."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move está activado en los ajustes de PowerToys. Con los mismos atajos, tiene prioridad sobre los atajos de FileSpacer de abajo. Puede seguir usándolos añadiendo FileSpacer a la <a>lista de exclusión de Grab And Move</a>."
 END

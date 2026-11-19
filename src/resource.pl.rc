@@ -222,7 +222,8 @@ BEGIN
   IDS_SHORTCUT_RECORD "Wprowadź klawisze i przycisk myszy bezpośrednio..."
   IDS_SHORTCUT_STOP_RECORD "Ukryj bezpośrednie wprowadzanie"
   IDS_SHORTCUT_LEFT_HINT "Zarezerwowany dla zaznaczania"
-  IDS_SHORTCUT_RIGHT_HINT "Zarezerwowany dla menu i zaznaczania"
+  IDS_SHORTCUT_RIGHT_HINT "Tylko na tle folderu"
+  IDS_SHORTCUT_BACKGROUND "Działa tylko z tła folderu. Kliknięcie prawym przyciskiem bez przeciągania nadal otwiera menu."
   IDS_SHORTCUT_SAVE_FAILED "Nie można zapisać skrótów. Poprzednie ustawienia pozostają aktywne."
   IDS_SHORTCUT_APPLY_REFUSED "Nie można zastosować skrótu dla „%1!s!”."
   IDS_SEARCH_EVERYTHING "Wyszukaj w Everything"
@@ -274,5 +275,5 @@ END
 STRINGTABLE
 BEGIN
   IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Nie można otworzyć ustawień Grab And Move. Otwórz PowerToys i wybierz Grab And Move."
-  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move jest włączony w ustawieniach PowerToys. Dopóki ta opcja jest włączona, poniższe skróty FileSpacer nie działają. Aby nadal ich używać, dodaj FileSpacer do <a>listy wykluczeń Grab And Move</a>."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Grab And Move jest włączony w ustawieniach PowerToys. Przy tych samych skrótach ma pierwszeństwo przed poniższymi skrótami FileSpacer. Aby nadal ich używać, dodaj FileSpacer do <a>listy wykluczeń Grab And Move</a>."
 END

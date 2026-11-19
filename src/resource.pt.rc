@@ -222,7 +222,8 @@ BEGIN
   IDS_SHORTCUT_RECORD "Introduza diretamente as teclas e o botão do rato..."
   IDS_SHORTCUT_STOP_RECORD "Ocultar introdução direta"
   IDS_SHORTCUT_LEFT_HINT "Reservado para seleção"
-  IDS_SHORTCUT_RIGHT_HINT "Reservado para menus e seleção"
+  IDS_SHORTCUT_RIGHT_HINT "Apenas no fundo da pasta"
+  IDS_SHORTCUT_BACKGROUND "Só atua a partir do fundo da pasta. Um clique com o botão direito sem arrastar continua a abrir o menu."
   IDS_SHORTCUT_SAVE_FAILED "Não foi possível guardar os atalhos. As definições anteriores mantêm-se ativas."
   IDS_SHORTCUT_APPLY_REFUSED "O atalho para «%1!s!» não pode ser aplicado."
   IDS_SEARCH_EVERYTHING "Pesquisar no Everything"
@@ -270,5 +271,5 @@ END
 STRINGTABLE
 BEGIN
   IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Não foi possível abrir as definições do Grab And Move. Abra o PowerToys e selecione Grab And Move."
-  IDS_SHORTCUT_POWERTOYS_NOTICE "O Grab And Move está ativado nas definições do PowerToys. Enquanto esta opção estiver ativada, os atalhos do FileSpacer abaixo não são aplicados. Pode continuar a usá-los adicionando o FileSpacer à <a>lista de exclusão do Grab And Move</a>."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "O Grab And Move está ativado nas definições do PowerToys. Com os mesmos atalhos, tem prioridade sobre os atalhos do FileSpacer abaixo. Pode continuar a usá-los adicionando o FileSpacer à <a>lista de exclusão do Grab And Move</a>."
 END

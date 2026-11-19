@@ -222,7 +222,8 @@ BEGIN
   IDS_SHORTCUT_RECORD "Πατήστε απευθείας τα πλήκτρα και το κουμπί ποντικιού..."
   IDS_SHORTCUT_STOP_RECORD "Απόκρυψη άμεσης εισαγωγής"
   IDS_SHORTCUT_LEFT_HINT "Δεσμευμένο για επιλογή"
-  IDS_SHORTCUT_RIGHT_HINT "Δεσμευμένο για μενού και επιλογή"
+  IDS_SHORTCUT_RIGHT_HINT "Μόνο στο φόντο του φακέλου"
+  IDS_SHORTCUT_BACKGROUND "Λειτουργεί μόνο από το φόντο του φακέλου. Το δεξί κλικ χωρίς σύρσιμο εξακολουθεί να ανοίγει το μενού."
   IDS_SHORTCUT_SAVE_FAILED "Δεν ήταν δυνατή η αποθήκευση των συντομεύσεων. Οι προηγούμενες ρυθμίσεις παραμένουν ενεργές."
   IDS_SHORTCUT_APPLY_REFUSED "Η συντόμευση για «%1!s!» δεν μπορεί να εφαρμοστεί."
   IDS_SEARCH_EVERYTHING "Αναζήτηση στο Everything"
@@ -270,5 +271,5 @@ END
 STRINGTABLE
 BEGIN
   IDS_SHORTCUT_POWERTOYS_OPEN_ERROR "Δεν είναι δυνατό το άνοιγμα των ρυθμίσεων του Grab And Move. Ανοίξτε το PowerToys και επιλέξτε Grab And Move."
-  IDS_SHORTCUT_POWERTOYS_NOTICE "Το Grab And Move είναι ενεργοποιημένο στις ρυθμίσεις του PowerToys. Όσο αυτή η επιλογή είναι ενεργή, οι παρακάτω συντομεύσεις του FileSpacer δεν εφαρμόζονται. Μπορείτε να τις χρησιμοποιείτε προσθέτοντας το FileSpacer στη <a>λίστα εξαιρέσεων του Grab And Move</a>."
+  IDS_SHORTCUT_POWERTOYS_NOTICE "Το Grab And Move είναι ενεργοποιημένο στις ρυθμίσεις του PowerToys. Με τις ίδιες συντομεύσεις, έχει προτεραιότητα έναντι των παρακάτω συντομεύσεων του FileSpacer. Μπορείτε να τις χρησιμοποιείτε προσθέτοντας το FileSpacer στη <a>λίστα εξαιρέσεων του Grab And Move</a>."
 END
