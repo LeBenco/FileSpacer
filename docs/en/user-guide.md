@@ -122,7 +122,7 @@ Entries managed by Nilesoft Shell are changed in its configuration because its r
 
 ![Resizing a window with Alt and a right-button drag.](images/resize-window.gif)
 
-If files are selected, the selection is preserved. Escape cancels the action. Customize shortcuts under **Settings > Shortcuts**. The left and right buttons require Alt. The middle button can be used alone.
+If files are selected, the selection is preserved. Escape cancels the action. Customize shortcuts under **Settings > Shortcuts**. The left button requires Alt. Used alone, the right button acts only when dragged from the folder background; a right-click without dragging still opens the menu. The middle button can be used alone.
 
 <a id="integration"></a>
 
@@ -167,7 +167,7 @@ If menus open with a delay, Nilesoft Shell’s `showdelay` setting can remove it
 
 <div id="powertoys-grab-and-move"></div>
 
-**Grab And Move** moves and resizes windows from their contents. When enabled, FileSpacer’s equivalent gestures are suspended even if PowerToys is closed. To keep them available, exclude `FileSpacer.exe` in Grab And Move or turn off that tool.
+**Grab And Move** moves and resizes windows from their contents. With the same shortcuts, it takes priority over FileSpacer’s equivalent gestures. To keep them available, exclude `FileSpacer.exe` in Grab And Move or turn off that tool.
 
 <a id="updates-and-troubleshooting"></a>
 

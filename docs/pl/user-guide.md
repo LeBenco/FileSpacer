@@ -134,7 +134,7 @@ Można skonfigurować **gesty myszy do przenoszenia i zmiany rozmiaru okna** bez
 
 ![Zmiana rozmiaru okna z Alt i przeciągnięciem prawym przyciskiem.](images/resize-window.gif)
 
-Jeśli zaznaczono pliki, zaznaczenie zostaje zachowane. Esc anuluje działanie. Skróty ustawia się w **Ustawienia > Skróty**. Lewy i prawy przycisk wymagają Alt. Środkowego można używać samodzielnie.
+Jeśli zaznaczono pliki, zaznaczenie zostaje zachowane. Esc anuluje działanie. Skróty ustawia się w **Ustawienia > Skróty**. Lewy przycisk wymaga Alt. Używany samodzielnie prawy przycisk działa tylko przy przeciąganiu z tła folderu; kliknięcie prawym przyciskiem bez przeciągania nadal otwiera menu. Środkowego można używać samodzielnie.
 
 <a id="integration"></a>
 
@@ -180,7 +180,7 @@ Dla menu paska tytułu i paska narzędzi zalecane są [prostokątne narożniki](
 
 <div id="powertoys-grab-and-move"></div>
 
-**Grab And Move** przenosi okna i zmienia ich rozmiar z obszaru zawartości. Po jego włączeniu odpowiednie gesty FileSpacer są wstrzymywane, nawet gdy PowerToys jest zamknięty. Aby je zachować, wykluczyć `FileSpacer.exe` w Grab And Move lub wyłączyć narzędzie.
+**Grab And Move** przenosi okna i zmienia ich rozmiar z obszaru zawartości. Przy tych samych skrótach ma pierwszeństwo przed odpowiednimi gestami FileSpacer. Aby je zachować, wykluczyć `FileSpacer.exe` w Grab And Move lub wyłączyć narzędzie.
 
 <a id="updates-and-troubleshooting"></a>
 

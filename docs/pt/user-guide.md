@@ -134,7 +134,7 @@ As entradas geridas pelo Nilesoft Shell alteram-se na sua configuração, pois a
 
 ![Redimensionar uma janela com Alt e o botão direito.](images/resize-window.gif)
 
-Se houver ficheiros selecionados, a seleção é mantida. Esc cancela a ação. Os atalhos personalizam-se em **Definições > Atalhos**. Os botões esquerdo e direito exigem Alt. O botão central pode ser utilizado sozinho.
+Se houver ficheiros selecionados, a seleção é mantida. Esc cancela a ação. Os atalhos personalizam-se em **Definições > Atalhos**. O botão esquerdo exige Alt. Utilizado sozinho, o botão direito só atua ao arrastar a partir do fundo da pasta; um clique com o botão direito sem arrastar continua a abrir o menu. O botão central pode ser utilizado sozinho.
 
 <a id="integration"></a>
 
@@ -180,7 +180,7 @@ O **Peek** apresenta uma pré-visualização dos ficheiros. No FileSpacer, **Pr�
 
 <div id="powertoys-grab-and-move"></div>
 
-O **Grab And Move** permite mover e redimensionar janelas a partir do conteúdo. Quando está ativo, os gestos equivalentes do FileSpacer são suspensos, mesmo que o PowerToys esteja fechado. Para os manter, excluir `FileSpacer.exe` no Grab And Move ou desativar a ferramenta.
+O **Grab And Move** permite mover e redimensionar janelas a partir do conteúdo. Com os mesmos atalhos, tem prioridade sobre os gestos equivalentes do FileSpacer. Para os manter, excluir `FileSpacer.exe` no Grab And Move ou desativar a ferramenta.
 
 <a id="updates-and-troubleshooting"></a>
 

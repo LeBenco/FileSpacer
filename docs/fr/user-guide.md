@@ -134,7 +134,7 @@ On peut définir des **raccourcis souris pour déplacer ou redimensionner une fe
 
 ![Redimensionner une fenêtre avec Alt et un glisser du bouton droit.](images/resize-window.gif)
 
-Si des fichiers sont sélectionnés, la sélection est conservée. Échap annule l’action. Les raccourcis se personnalisent dans **Paramètres > Raccourcis**. Les boutons gauche et droit nécessitent Alt, le bouton central peut s’utiliser seul.
+Si des fichiers sont sélectionnés, la sélection est conservée. Échap annule l’action. Les raccourcis se personnalisent dans **Paramètres > Raccourcis**. Le bouton gauche nécessite Alt. Le bouton droit utilisé seul n’agit qu’en glissant depuis le fond du dossier ; un clic droit sans glisser ouvre toujours le menu. Le bouton central peut s’utiliser seul.
 
 <a id="integration"></a>
 
@@ -180,7 +180,7 @@ Si les menus s’ouvrent avec un délai, le réglage `showdelay` de Nilesoft She
 
 <div id="powertoys-grab-and-move"></div>
 
-**Grab And Move** permet de déplacer et redimensionner les fenêtres depuis leur contenu. Lorsqu’il est activé, les gestes équivalents de FileSpacer sont suspendus, même si PowerToys est fermé. Pour les conserver, exclure `FileSpacer.exe` dans Grab And Move ou désactiver cet outil.
+**Grab And Move** permet de déplacer et redimensionner les fenêtres depuis leur contenu. Avec les mêmes raccourcis, il a la priorité sur les gestes équivalents de FileSpacer. Pour les conserver, exclure `FileSpacer.exe` dans Grab And Move ou désactiver cet outil.
 
 <a id="updates-and-troubleshooting"></a>
 

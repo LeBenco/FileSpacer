@@ -134,7 +134,7 @@ Se pueden configurar **gestos del ratón para mover o cambiar el tamaño de una 
 
 ![Cambiar el tamaño de una ventana con Alt y el botón derecho.](images/resize-window.gif)
 
-Si hay archivos seleccionados, se mantiene la selección. Esc cancela la acción. Los atajos se personalizan en **Configuración > Métodos abreviados**. Los botones izquierdo y derecho requieren Alt. El central se puede usar solo.
+Si hay archivos seleccionados, se mantiene la selección. Esc cancela la acción. Los atajos se personalizan en **Configuración > Métodos abreviados**. El botón izquierdo requiere Alt. Usado solo, el botón derecho únicamente actúa al arrastrar desde el fondo de la carpeta; un clic derecho sin arrastrar sigue abriendo el menú. El central se puede usar solo.
 
 <a id="integration"></a>
 
@@ -180,7 +180,7 @@ Se recomiendan [esquinas rectas](nilesoft-shell.md#recommended-menu-appearance) 
 
 <div id="powertoys-grab-and-move"></div>
 
-**Grab And Move** permite mover y cambiar el tamaño de las ventanas desde su contenido. Cuando está activado, los gestos equivalentes de FileSpacer se suspenden aunque PowerToys esté cerrado. Para conservarlos, excluir `FileSpacer.exe` en Grab And Move o desactivar la herramienta.
+**Grab And Move** permite mover y cambiar el tamaño de las ventanas desde su contenido. Con los mismos atajos, tiene prioridad sobre los gestos equivalentes de FileSpacer. Para conservarlos, excluir `FileSpacer.exe` en Grab And Move o desactivar la herramienta.
 
 <a id="updates-and-troubleshooting"></a>
 

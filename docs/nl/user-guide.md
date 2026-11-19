@@ -134,7 +134,7 @@ Items die Nilesoft Shell beheert, worden in zijn configuratie aangepast omdat zi
 
 ![Het vensterformaat wijzigen met Alt en slepen met de rechtermuisknop.](images/resize-window.gif)
 
-Als er bestanden zijn geselecteerd, blijft de selectie behouden. Escape annuleert de actie. Aanpassen kan onder **Instellingen > Sneltoetsen**. De linker- en rechtermuisknop vereisen Alt. De middelste knop werkt ook zonder Alt.
+Als er bestanden zijn geselecteerd, blijft de selectie behouden. Escape annuleert de actie. Aanpassen kan onder **Instellingen > Sneltoetsen**. De linkermuisknop vereist Alt. Los gebruikt werkt de rechtermuisknop alleen bij slepen vanaf de mapachtergrond; rechtsklikken zonder slepen opent nog steeds het menu. De middelste knop werkt ook zonder Alt.
 
 <a id="integration"></a>
 
@@ -180,7 +180,7 @@ Als menu’s met vertraging openen, kan de Nilesoft Shell-instelling `showdelay`
 
 <div id="powertoys-grab-and-move"></div>
 
-**Grab And Move** verplaatst vensters en wijzigt hun formaat vanuit de inhoud. Als het is ingeschakeld, zijn de overeenkomstige FileSpacer-gebaren onderbroken, ook als PowerToys gesloten is. Om ze te behouden, `FileSpacer.exe` uitsluiten in Grab And Move of het hulpmiddel uitschakelen.
+**Grab And Move** verplaatst vensters en wijzigt hun formaat vanuit de inhoud. Met dezelfde sneltoetsen heeft het voorrang op de overeenkomstige FileSpacer-gebaren. Om ze te behouden, `FileSpacer.exe` uitsluiten in Grab And Move of het hulpmiddel uitschakelen.
 
 <a id="updates-and-troubleshooting"></a>
 

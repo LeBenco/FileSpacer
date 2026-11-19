@@ -134,7 +134,7 @@ Si possono definire **gesti del mouse per spostare o ridimensionare una finestra
 
 ![Ridimensionamento con Alt e il pulsante destro.](images/resize-window.gif)
 
-Se ci sono file selezionati, la selezione viene mantenuta. Esc annulla l’azione. Le scorciatoie si personalizzano in **Impostazioni > Scelte rapide**. I pulsanti sinistro e destro richiedono Alt. Il pulsante centrale si può usare da solo.
+Se ci sono file selezionati, la selezione viene mantenuta. Esc annulla l’azione. Le scorciatoie si personalizzano in **Impostazioni > Scelte rapide**. Il pulsante sinistro richiede Alt. Usato da solo, il pulsante destro agisce soltanto trascinando dallo sfondo della cartella; un clic destro senza trascinare apre ancora il menu. Il pulsante centrale si può usare da solo.
 
 <a id="integration"></a>
 
@@ -180,7 +180,7 @@ Per i menu della barra del titolo e della barra degli strumenti sono consigliati
 
 <div id="powertoys-grab-and-move"></div>
 
-**Grab And Move** permette di spostare e ridimensionare le finestre dal loro contenuto. Quando è attivo, i gesti equivalenti di FileSpacer vengono sospesi anche se PowerToys è chiuso. Per mantenerli, escludere `FileSpacer.exe` in Grab And Move o disattivare lo strumento.
+**Grab And Move** permette di spostare e ridimensionare le finestre dal loro contenuto. Con le stesse scorciatoie, ha la priorità sui gesti equivalenti di FileSpacer. Per mantenerli, escludere `FileSpacer.exe` in Grab And Move o disattivare lo strumento.
 
 <a id="updates-and-troubleshooting"></a>
 

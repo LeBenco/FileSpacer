@@ -133,7 +133,7 @@ Von Nilesoft Shell verwaltete Einträge werden in dessen Konfiguration geändert
 
 ![Fenstergröße mit Alt und der rechten Maustaste ändern.](images/resize-window.gif)
 
-Sind Dateien ausgewählt, bleibt die Auswahl erhalten. Esc bricht die Aktion ab. Die Belegung lässt sich unter **Einstellungen > Tastenkombinationen** anpassen. Linke und rechte Maustaste erfordern Alt. Die mittlere kann allein verwendet werden.
+Sind Dateien ausgewählt, bleibt die Auswahl erhalten. Esc bricht die Aktion ab. Die Belegung lässt sich unter **Einstellungen > Tastenkombinationen** anpassen. Die linke Maustaste erfordert Alt. Allein verwendet wirkt die rechte Maustaste nur beim Ziehen vom Ordnerhintergrund aus; ein Rechtsklick ohne Ziehen öffnet weiterhin das Menü. Die mittlere kann allein verwendet werden.
 
 <a id="integration"></a>
 
@@ -179,7 +179,7 @@ Für die Menüs der Titelleiste und der Symbolleiste werden [Ecken ohne Abrundun
 
 <div id="powertoys-grab-and-move"></div>
 
-**Grab And Move** verschiebt Fenster und ändert ihre Größe direkt aus dem Fensterinhalt. Ist es aktiviert, werden die entsprechenden FileSpacer-Gesten ausgesetzt, auch wenn PowerToys geschlossen ist. Für FileSpacer-Gesten `FileSpacer.exe` in Grab And Move ausschließen oder das Werkzeug abschalten.
+**Grab And Move** verschiebt Fenster und ändert ihre Größe direkt aus dem Fensterinhalt. Bei gleichen Tastenkombinationen hat es Vorrang vor den entsprechenden FileSpacer-Gesten. Für FileSpacer-Gesten `FileSpacer.exe` in Grab And Move ausschließen oder das Werkzeug abschalten.
 
 <a id="updates-and-troubleshooting"></a>
 
