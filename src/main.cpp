@@ -195,6 +195,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     int maintenanceExit = 0, recoveryArgc = 0;
     wchar_t **recoveryArgv = CommandLineToArgvW(GetCommandLineW(), &recoveryArgc);
     if (!recoveryArgv) return 1;
+#ifdef FILESPACER_DEBUG
+    // Debug builds only: the discovery worker of a cache root chosen by the
+    // caller, for the experiments that set FS_SELECTION_PRODUCT_CACHE.
     if (recoveryArgc == 4 && lstrcmpiW(recoveryArgv[1], L"/test") == 0
             && lstrcmpiW(recoveryArgv[2], L"/selection-discovery") == 0) {
         const std::wstring root = recoveryArgv[3];
@@ -202,6 +205,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
         return runShellViewOperationsWorker(root.c_str());
     }
+#endif
     if (recoveryArgc == 2 && lstrcmpiW(recoveryArgv[1], L"/selection-discovery") == 0) {
         LocalFree(recoveryArgv);
         SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
@@ -358,7 +362,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     FolderWindow::init();
 
     // https://docs.microsoft.com/en-us/windows/win32/shell/appids
-    checkHR(SetCurrentProcessExplicitAppUserModelID(APP_ID));
+    checkHR(SetCurrentProcessExplicitAppUserModelID(appID()));
 
     debugPrintf(L"%s\n", GetCommandLine());
     LaunchType type;
@@ -379,11 +383,16 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     // Windows created above bind when the capability is published.
     if (runServer) {
         if (settings::testMode) {
-            // UI experiments may opt into an isolated, already qualified cache.
-            // Ordinary /test runs retain the deterministic public path.
+            // /test runs retain the deterministic public path.
+            const wchar_t *root = L"";
+#ifdef FILESPACER_DEBUG
+            // Debug builds only: UI experiments may opt into an isolated,
+            // already qualified cache.
             wchar_t cache[MAX_PATH] = {};
             const DWORD cacheLength = GetEnvironmentVariableW(L"FS_SELECTION_PRODUCT_CACHE", cache, _countof(cache));
-            initializeShellSelectionClear(cacheLength && cacheLength < _countof(cache) ? cache : L"", false);
+            if (cacheLength && cacheLength < _countof(cache)) root = cache;
+#endif
+            initializeShellSelectionClear(root, false);
         }
         else
             // Without the download, only a decision already in the cache is used.
@@ -394,7 +403,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     HRESULT regHR = E_FAIL;
     DWORD regCookie = 0;
     // https://devblogs.microsoft.com/oldnewthing/20100503-00/?p=14183
-    if (runServer) {
+    // The Shell verbs belong to the installed application: a /test process
+    // does not serve them.
+    if (runServer && !settings::testMode) {
         regHR = CoRegisterClassObject(CLSID_FSExecute, &executeFactory,
             CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE, &regCookie);
         checkHR(regHR);
