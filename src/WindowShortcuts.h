@@ -22,8 +22,14 @@ constexpr WindowShortcuts DEFAULT_WINDOW_SHORTCUTS = {
 inline bool sameShortcut(const WindowShortcut &a, const WindowShortcut &b) {
     return a.enabled == b.enabled && a.modifiers == b.modifiers && a.button == b.button;
 }
+// Without Alt, the left button belongs to selection.
 inline bool reservedShortcut(const WindowShortcut &binding) {
-    return binding.button != GestureButton::Middle && !(binding.modifiers & GestureAlt);
+    return binding.button == GestureButton::Left && !(binding.modifiers & GestureAlt);
+}
+// Without Alt, the right button starts a gesture on the view background only:
+// items keep their native menu and drag.
+inline bool backgroundShortcut(const WindowShortcut &binding) {
+    return binding.button == GestureButton::Right && !(binding.modifiers & GestureAlt);
 }
 inline bool validShortcut(const WindowShortcut &binding) {
     return binding.modifiers <= 7 && static_cast<unsigned>(binding.button) <= 2
