@@ -566,6 +566,21 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
         result = restoreIconPositions(folderView, iconBlob, []() { return false; });
         if (!expect(result == E_ABORT, L"cancelled icon restoration does not move any icon")
                 || !iconsAre() || !selectionIs()) return false;
+        // A position saved while the view had not placed the item, as stored now
+        // and as an earlier version stored it at 125%, never moves the icon.
+        std::vector<uint8_t> unplacedBlob(iconBlob.begin(),
+            iconBlob.begin() + static_cast<std::ptrdiff_t>(firstIconPointOffset + sizeof(POINT)));
+        const int dpi = systemDPI;
+        const LONG unplacedValues[] = {LONG_MAX, 0x66666666};
+        for (const LONG value : unplacedValues) {
+            const POINT saved = {value, value};
+            std::memcpy(unplacedBlob.data() + firstIconPointOffset, &saved, sizeof(saved));
+            if (value != LONG_MAX) systemDPI = 120;
+            result = restoreIconPositions(folderView, unplacedBlob, current);
+            systemDPI = dpi;
+            if (!expect(result == S_OK, L"a saved unplaced position is accepted without being applied")
+                    || !iconsAre() || !selectionIs()) return false;
+        }
         std::vector<uint8_t> cancelled = {1};
         result = captureIconPositions(folderView, []() { return false; }, true, {}, cancelled);
         return expect(result == E_ABORT && cancelled.empty(), L"cancelled capture cannot expose a partial icon blob")
