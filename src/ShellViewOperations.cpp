@@ -558,7 +558,9 @@ HRESULT alignIconsToGrid(IShellView *source, bool selectedOnly,
     }
     if (redraw && current()) checkHR(view->SetRedraw(TRUE));
     if (!current()) return E_ABORT;
-    if (selectedOnly) debugPrintf(L"GRID SNAP path=public elapsed_ms=%llu\n", GetTickCount64() - snapStarted);
+#ifdef FILESPACER_DEBUG
+    if (selectedOnly) debugPrintf(L"GRID ALIGN path=native selected elapsed_ms=%llu\n", GetTickCount64() - snapStarted);
+#endif
     return result;
 }
 } // namespace filespacer
