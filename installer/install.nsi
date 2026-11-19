@@ -1466,6 +1466,12 @@ exe_removed:
         DeleteRegKey HKCU "Software\Classes\CLSID\{4FDD0CE1-6FD0-441C-AD2D-6DD056610DE3}"
         RMDir "$LOCALAPPDATA\FileSpacer\ShellView.{4FDD0CE1-6FD0-441C-AD2D-6DD056610DE3}"
     ${EndIf}
+    ; The /test mode of the installed program registers its own class and junction.
+    ReadRegStr $0 HKCU "Software\Classes\CLSID\{E129740C-52FD-4C7B-98AA-9ED6EBF9A604}\InprocServer32" ""
+    ${If} $0 == "$INSTDIR\FileSpacerFolder.dll"
+        DeleteRegKey HKCU "Software\Classes\CLSID\{E129740C-52FD-4C7B-98AA-9ED6EBF9A604}"
+        RMDir "$LOCALAPPDATA\FileSpacer\TestShellView.{E129740C-52FD-4C7B-98AA-9ED6EBF9A604}"
+    ${EndIf}
     ; The per-machine registration written by DllRegisterServer for all users.
     ${If} $installMode == "AllUsers"
         ReadRegStr $0 HKLM "Software\Classes\CLSID\{4FDD0CE1-6FD0-441C-AD2D-6DD056610DE3}\InprocServer32" ""
