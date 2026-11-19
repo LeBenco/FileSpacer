@@ -10,6 +10,8 @@
 #pragma comment(lib, "Advapi32.lib")
 
 namespace filespacer {
+// main.h derives the AppUserModelID from the mode; the fixture plays a /test process.
+namespace settings { bool testMode = true; }
 namespace {
 std::string database;
 std::wstring registry;

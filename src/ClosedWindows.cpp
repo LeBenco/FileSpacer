@@ -465,7 +465,7 @@ void updateReopenJumpLists() {
                 }
             }
             CRegKey application;
-            if (!openJumpListKey(APP_ID, &application)) return;
+            if (!openJumpListKey(appID(), &application)) return;
             application.Close();
             CRegKey known;
             if (!checkHR(HRESULT_FROM_WIN32(known.Open(HKEY_CURRENT_USER,
