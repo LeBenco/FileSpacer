@@ -231,11 +231,18 @@ struct FolderWindow::IconSnap {
         const bool force = finished ? snap : heldS;
         if (!force && ((keys & MK_CONTROL) || GetKeyState(VK_MENU) < 0)) return S_FALSE;
         if (!prepared) previewReady = preparePreview();
-        if (!previewReady || !current()) return E_ABORT;
+        if (!current()) return E_ABORT;
+        // A view the preview cannot describe takes no placement: the drop
+        // stays the Shell's.
+        if (!previewReady) return S_FALSE;
         const bool place = force || !overImage(cursor);
         if (place) clearDropHighlight();
         return place ? S_OK : S_FALSE;
     } catch (const std::bad_alloc &) { return E_OUTOFMEMORY; }
+    bool previewUsable() try {
+        if (!prepared) previewReady = preparePreview();
+        return previewReady;
+    } catch (const std::bad_alloc &) { return false; }
     bool applyPlacement() try {
         if (!prepared) previewReady = preparePreview();
         if (!previewReady || !current() || ListView_GetItemCount(list) != itemCount) return false;
@@ -591,12 +598,26 @@ struct FolderWindow::IconSnap {
         previewReady = false; hideMarker();
     }
     static LRESULT CALLBACK messages(int code, WPARAM removed, LPARAM data) {
+        const auto message = reinterpret_cast<MSG *>(data);
+        // Another button pressed during the gesture cancels the native drag:
+        // end the gesture as Escape does, whether or not the press is removed.
+        if (code == HC_ACTION && active) {
+            const UINT pressed = message->message;
+            auto session = active->owner.iconSnap;
+            if (session && session->current() && !session->finished
+                    && (pressed == WM_RBUTTONDOWN || pressed == WM_MBUTTONDOWN || pressed == WM_XBUTTONDOWN)) {
+                CComPtr<ItemWindow> keepAlive(&session->owner);
+                session->hideMarker();
+                session->snap = false;
+                session->finished = true;
+                if (!checkLE(PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0))) session->stop();
+            }
+        }
         // A bit test: the native drag loop also removes messages with PM_NOYIELD.
         if (code == HC_ACTION && (removed & PM_REMOVE) && active) {
             auto session = active->owner.iconSnap;
             if (session) {
                 CComPtr<ItemWindow> keepAlive(&session->owner);
-                auto message = reinterpret_cast<MSG *>(data);
                 if (!session->current()) {
                     session->stop();
                 } else if (!session->finished) {
@@ -617,8 +638,11 @@ struct FolderWindow::IconSnap {
                         session->drop = message->pt;
                         const HWND target = WindowFromPoint(session->drop);
                         const bool inside = target == session->body || IsChild(session->body, target);
-                        session->snap = session->moved && session->heldS && !session->permanent();
-                        session->placement = session->moved && session->list && session->pointsCaptured && !session->permanent() && inside
+                        // A view the preview cannot describe (grouped, right to left)
+                        // takes no placement: the release stays the Shell's own drop.
+                        const bool usable = session->moved && session->list && !session->permanent() && session->previewUsable();
+                        session->snap = usable && session->heldS;
+                        session->placement = usable && session->pointsCaptured && inside
                             && (session->snap || (GetKeyState(VK_CONTROL) >= 0 && GetKeyState(VK_MENU) >= 0
                                 && !session->overImage(session->drop)));
                         if (session->dropResult) *session->dropResult = session->placement || session->snap ? S_OK : S_FALSE;
@@ -770,7 +794,12 @@ void FolderWindow::deactivateIconDrag() {
             iconSnap->keyboardHook.reset();
         } else {
             auto gesture = std::move(iconSnap);
-            if (gesture) gesture->stop();
+            if (gesture) {
+                // The gesture ends without a decision: a target the drag has
+                // already entered must not keep a veto, the drop is the Shell's.
+                gesture->releaseDropPolicy(S_FALSE);
+                gesture->stop();
+            }
         }
 }
 
