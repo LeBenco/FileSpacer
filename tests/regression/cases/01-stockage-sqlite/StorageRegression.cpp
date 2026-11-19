@@ -243,7 +243,7 @@ int main(int argc, char **argv) {
                 && s.view.columnWeights.size()==1 && s.view.columnWeights[0].key==s.view.columns[0].key
                 && s.view.columnWeights[0].width==77 && s.view.columns[0].width==220,"column weights lost after reopen");
             rawSQL(path,"UPDATE folder_state SET view=CAST(substr(view,1,length(view)-8)||x'02000000'||substr(view,length(view)-3) AS BLOB) WHERE key='column-fill-off'");
-            require(!store.read("column-fill-off",&s),"invalid column-option boolean accepted");
+            require(store.read("column-fill-off",&s) && !(s.present&FolderState::View),"invalid column-option boolean accepted");
             require(store.remove("column-fill-on") && store.remove("column-fill-off") && store.remove("column-fill-locked")
                 && store.remove("column-weights"),"column option cleanup");
             std::cout << "PASS: column option and weight encoding, per-folder choices, reopen, partial writes, lock and provisional merge.\n";
@@ -277,10 +277,19 @@ int main(int argc, char **argv) {
             require(store.save("folder",fixture(),FolderState::All),"restore malformed-blob fixture");
             std::cout << "PASS: independent viewport persistence, locking, rekey, no resurrection, rollback and reset.\n";
         }
+        // In the current format, a legacy view encoding is still read, and a view
+        // no encoding can read hides nothing but itself.
+        rawSQL(path,"UPDATE folder_state SET view=CAST(x'01000000'||substr(view,5,length(view)-12) AS BLOB) WHERE key='folder'");
+        {
+            FolderStateStore store(path.c_str());FolderState s;
+            require(store.read("folder",&s) && (s.present&FolderState::View) && s.view.mode==fixture().view.mode
+                && s.view.iconSize==fixture().view.iconSize,"legacy view encoding refused in the current format");
+        }
         rawSQL(path,"UPDATE folder_state SET view=x'00000000' WHERE key='folder'");
         {
             FolderStateStore store(path.c_str());FolderState s;
-            require(!store.read("folder",&s) && !store.error().empty(),"malformed blob silently accepted");
+            require(store.read("folder",&s) && !(s.present&FolderState::View) && s.x==fixture().x
+                && s.width==fixture().width && s.icons==fixture().icons,"an unreadable view hid the rest of the folder state");
         }
         rawSQL(path,"INSERT INTO search_history(key,query) VALUES('folder','reset-history');"
             "INSERT INTO closed_windows(key,parsing_name,display_name) VALUES('folder','folder','folder');PRAGMA user_version=99");
@@ -431,14 +440,6 @@ int main(int argc, char **argv) {
                 "UPDATE folder_state SET view=CAST(x'01000000'||substr(view,5,length(view)-12) AS BLOB) WHERE key='a-valid';"
                 "UPDATE folder_state SET view=x'01000000' WHERE key='z-bad';PRAGMA user_version=7");
             const auto before=fileBytes(path);
-            {
-                FolderStateStore rejected(path.c_str());
-                require(!rejected.ready() && rejected.canResetDamagedDatabase()
-                    && rejected.error().find("format 7")!=std::string::npos,"invalid legacy view accepted");
-            }
-            require(fileBytes(path)==before && rawInteger(path,"PRAGMA user_version")==7
-                && rawInteger(path,"SELECT count(*) FROM folder_state WHERE hex(substr(view,1,4))='01000000'")==2,
-                "failed migration partially changed the database");
             const std::string targetPath=path+".legacy-recovery";erase(targetPath);
             {
                 FolderStateStore target(targetPath.c_str());FolderState state;std::vector<std::string> history;
@@ -448,8 +449,24 @@ int main(int argc, char **argv) {
                     && target.readSearchHistory("z-bad",20,&history) && history==std::vector<std::string>{"keep-history"}
                     && fileBytes(path)==before,"legacy partial recovery lost data or modified its source");
             }
-            erase(targetPath);erase(path);
-            std::cout << "PASS: format-7 migration preserves state, is atomic and supports read-only partial recovery.\n";
+            erase(targetPath);
+            // Opening migrates every readable view and leaves out the unreadable one
+            // alone: that folder keeps its geometry, icons and history.
+            {
+                FolderStateStore migrated(path.c_str());FolderState state;std::vector<std::string> history;
+                require(migrated.ready(),migrated.error().c_str());
+                require(migrated.read("a-valid",&state) && (state.present&FolderState::View)
+                    && migrated.read("z-bad",&state) && !(state.present&FolderState::View)
+                    && state.x==fixture().x && state.width==fixture().width && state.icons==fixture().icons
+                    && migrated.readSearchHistory("z-bad",20,&history) && history==std::vector<std::string>{"keep-history"},
+                    "migration lost more than the unreadable view");
+            }
+            require(rawInteger(path,"PRAGMA user_version")==8
+                && rawInteger(path,"SELECT count(*) FROM folder_state WHERE view IS NULL")==1
+                && rawInteger(path,"SELECT count(*) FROM folder_state WHERE hex(substr(view,1,4))='08000000'")==1,
+                "migration did not isolate the unreadable view");
+            erase(path);
+            std::cout << "PASS: format-7 migration preserves state, leaves out only an unreadable view and supports read-only partial recovery.\n";
         }
         // A damaged page stops a scan: the rows on both sides of it are kept.
         {
@@ -640,7 +657,7 @@ int main(int argc, char **argv) {
 #endif
         }
         erase(path);
-        std::cout << "PASS: damaged database, malformed view data, future schema are rejected.\n";
+        std::cout << "PASS: damaged database and future schema are rejected; a malformed view is read as absent.\n";
         return 0;
     } catch(const std::exception &e) { std::cerr << "FAIL: " << e.what() << '\n'; return 1; }
 }

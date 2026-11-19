@@ -26,7 +26,9 @@ namespace {
 using Statement = std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)>;
 // Single wait bound of one operation, shared by the mutex wait and SQLite's busy handler.
 constexpr unsigned OPERATION_WAIT_MS = 3000;
-// View encoding changes independently of the database schema.
+// View encoding is numbered apart from the database schema. A new encoding
+// still needs a new database format: read() takes an encoding it does not
+// know as absent settings, which the next save replaces.
 constexpr uint32_t VIEW_DATA_FORMAT_VERSION = 8;
 
 void appendInt(std::vector<uint8_t> &bytes, uint32_t value) {
@@ -64,7 +66,7 @@ std::vector<uint8_t> encodeView(const FolderViewSettings &view) {
     return bytes;
 }
 
-bool decodeView(const uint8_t *bytes, size_t size, FolderViewSettings *out, bool allowLegacy = false) {
+bool decodeView(const uint8_t *bytes, size_t size, FolderViewSettings *out) {
     size_t offset = 0;
     auto integer = [&](uint32_t *value) {
         if (size - offset < 4) return false;
@@ -81,8 +83,10 @@ bool decodeView(const uint8_t *bytes, size_t size, FolderViewSettings *out, bool
     };
     FolderViewSettings view;
     uint32_t version, mode, iconSize, count;
+    // Encodings 1 to 3 stay readable: a 1.4.2 process left running keeps
+    // writing them after another process has migrated the database.
     if (!integer(&version) || (version != VIEW_DATA_FORMAT_VERSION
-            && !(allowLegacy && version >= 1 && version <= 3))) return false;
+            && (version < 1 || version > 3))) return false;
     const uint32_t allowed = version == 1 ? 31u : version == 2 ? 63u : 127u;
     if (!integer(&view.present) || (view.present & ~allowed) || !integer(&mode) || !integer(&iconSize)
             || !integer(&view.flags) || !integer(&count) || count > (size-offset)/24)
@@ -404,11 +408,11 @@ bool FolderStateStore::migrateVersion7() {
     // Only one decoded view is retained; all other state stays byte-for-byte.
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db,
-            "SELECT key,view FROM folder_state WHERE view IS NOT NULL ORDER BY key LIMIT 1",
+            "SELECT key,view FROM folder_state WHERE view IS NOT NULL AND typeof(key)='text' ORDER BY key LIMIT 1",
             -1, &raw, nullptr))) return false;
     Statement first(raw, sqlite3_finalize);
     if (!result(sqlite3_prepare_v2(db,
-            "SELECT key,view FROM folder_state WHERE view IS NOT NULL AND key>?1 ORDER BY key LIMIT 1",
+            "SELECT key,view FROM folder_state WHERE view IS NOT NULL AND typeof(key)='text' AND key>?1 ORDER BY key LIMIT 1",
             -1, &raw, nullptr))) return false;
     Statement next(raw, sqlite3_finalize);
     if (!result(sqlite3_prepare_v2(db, "UPDATE folder_state SET view=?1 WHERE key=?2",
@@ -423,20 +427,21 @@ bool FolderStateStore::migrateVersion7() {
         const int step = sqlite3_step(row);
         if (!result(step)) return false;
         if (step == SQLITE_DONE) return true;
+        // Settings that read() would refuse are left out, as the rebuild does:
+        // the rest of the row and every other folder keep their state. Rows
+        // without a text key are never read and stay as they are.
         FolderViewSettings view;
-        if (sqlite3_column_type(row, 0) != SQLITE_TEXT || sqlite3_column_type(row, 1) != SQLITE_BLOB
-                || !decodeView(static_cast<const uint8_t *>(sqlite3_column_blob(row, 1)),
-                    static_cast<size_t>(sqlite3_column_bytes(row, 1)), &view, true)) {
-            unsupportedSchema = true;
-            lastError = "Invalid FileSpacer view data in database format 7";
-            return false;
-        }
+        const bool readable = sqlite3_column_type(row, 1) == SQLITE_BLOB
+            && decodeView(static_cast<const uint8_t *>(sqlite3_column_blob(row, 1)),
+                static_cast<size_t>(sqlite3_column_bytes(row, 1)), &view);
         key.assign(reinterpret_cast<const char *>(sqlite3_column_text(row, 0)),
             static_cast<size_t>(sqlite3_column_bytes(row, 0)));
         if (!result(sqlite3_reset(row))) return false;
-        const auto bytes = encodeView(view);
+        const auto bytes = readable ? encodeView(view) : std::vector<uint8_t>();
         if (!result(sqlite3_reset(update.get()))
-                || !result(sqlite3_bind_blob(update.get(), 1, bytes.data(), static_cast<int>(bytes.size()), SQLITE_TRANSIENT))
+                || !result(readable
+                    ? sqlite3_bind_blob(update.get(), 1, bytes.data(), static_cast<int>(bytes.size()), SQLITE_TRANSIENT)
+                    : sqlite3_bind_null(update.get(), 1))
                 || !result(sqlite3_bind_text(update.get(), 2, key.data(), static_cast<int>(key.size()), SQLITE_TRANSIENT))
                 || !result(sqlite3_step(update.get()))) return false;
         row = next.get();
@@ -679,7 +684,7 @@ FolderStateStore::Recovery FolderStateStore::recoverFrom(const char *utf8Source)
                     FolderViewSettings decoded;
                     const bool unreadable = valid && shape == 'v' && type == SQLITE_BLOB
                         && !decodeView(static_cast<const uint8_t *>(sqlite3_column_blob(raw, static_cast<int>(index))),
-                            static_cast<size_t>(sqlite3_column_bytes(raw, static_cast<int>(index))), &decoded, schema == 7);
+                            static_cast<size_t>(sqlite3_column_bytes(raw, static_cast<int>(index))), &decoded);
                     if (unreadable) complete = false;
                     const auto converted = valid && !unreadable && shape == 'v' && type == SQLITE_BLOB && schema == 7
                         ? encodeView(decoded) : std::vector<uint8_t>();
@@ -757,14 +762,12 @@ bool FolderStateStore::read(const std::string &key, FolderState *state) {
             value.width = sqlite3_column_int(raw, 2); value.height = sqlite3_column_int(raw, 3);
             if (value.width > 0 && value.height > 0) value.present |= FolderState::Size;
         }
-        if (sqlite3_column_type(raw, 4) != SQLITE_NULL) {
-            if (!decodeView(static_cast<const uint8_t *>(sqlite3_column_blob(raw, 4)),
-                    static_cast<size_t>(sqlite3_column_bytes(raw, 4)), &value.view)) {
-                lastError = "Invalid FileSpacer view data";
-                return false;
-            }
+        // Settings no known encoding can read are absent, as the migration
+        // leaves them out: the rest of the folder's state is still read.
+        if (sqlite3_column_type(raw, 4) != SQLITE_NULL
+                && decodeView(static_cast<const uint8_t *>(sqlite3_column_blob(raw, 4)),
+                    static_cast<size_t>(sqlite3_column_bytes(raw, 4)), &value.view))
             value.present |= FolderState::View;
-        }
         if (sqlite3_column_type(raw, 5) != SQLITE_NULL) {
             const auto bytes = static_cast<const uint8_t *>(sqlite3_column_blob(raw, 5));
             const int size = sqlite3_column_bytes(raw, 5);

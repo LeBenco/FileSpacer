@@ -85,11 +85,16 @@ are under `%TEMP%\FileSpacerUpdate-{GUID}`.
 The database format is recorded in SQLite's `PRAGMA user_version`, independently
 of the application release number. Format 8 is written. View blobs have their
 own encoding version, currently 8; a database schema change does not implicitly
-change their encoding. Empty databases are initialized from scratch. Format-7
+change their encoding, but a new encoding requires a new database format. In
+format 8, encodings 1, 2 and 3 remain readable, and a view that no encoding can
+read counts as absent while the rest of that folder's state is read. Empty
+databases are initialized from scratch. Format-7
 databases are migrated at runtime inside the opening write transaction: legacy
 view encodings 1, 2 and 3 are decoded and rewritten, then `user_version` is
 updated. All other stored state, including opaque closed-window snapshots and
-raw icon sizes, is preserved. Any migration error rolls back the whole change.
+raw icon sizes, is preserved. A view that none of these encodings can read is
+left out and the rest of that folder's state is kept. Any migration error rolls
+back the whole change.
 
 Non-empty unversioned databases and formats 6 and earlier are refused without
 conversion. Explicit rebuilding requires confirmation and a complete backup;
