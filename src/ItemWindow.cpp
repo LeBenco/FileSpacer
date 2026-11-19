@@ -423,7 +423,7 @@ const wchar_t * ItemWindow::className() const {
 }
 
 const wchar_t * ItemWindow::appUserModelID() const {
-    return taskbarAppID.empty() ? APP_ID : taskbarAppID.c_str();
+    return taskbarAppID.empty() ? appID() : taskbarAppID.c_str();
 }
 
 bool ItemWindow::isFolder() const {
@@ -476,7 +476,7 @@ std::wstring folderTaskbarID(const wchar_t *parsingName) {
     if (!success)
         return {};
     const wchar_t hex[] = L"0123456789ABCDEF";
-    std::wstring id = std::wstring(APP_ID) + L".Folder";
+    std::wstring id = std::wstring(appID()) + L".Folder";
     for (unsigned char byte : digest) {
         id += hex[byte >> 4];
         id += hex[byte & 15];
@@ -592,12 +592,12 @@ void ItemWindow::updateWindowPropStore(IPropertyStore *const propStore) {
         checkHR(propStore->SetValue(PKEY_AppUserModel_RelaunchDisplayNameResource, empty));
         checkHR(propStore->SetValue(PKEY_AppUserModel_RelaunchIconResource, empty));
         if (grouped)
-            id = APP_ID;
+            id = appID();
         else if (id.empty())
-            id = std::wstring(APP_ID) + L".Window"
+            id = std::wstring(appID()) + L".Window"
                 + std::to_wstring(reinterpret_cast<UINT_PTR>(hwnd));
     }
-    if (id != taskbarAppID && id != APP_ID)
+    if (id != taskbarAppID && id != appID())
         scheduleReopenJumpList(id, stateKey);
     taskbarAppID = id;
     // Setting ID last tells the taskbar to refresh all relaunch information.
@@ -919,10 +919,13 @@ LRESULT ItemWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
 
     switch (message) {
         case WM_NCCREATE:
-            // Publish identity before Shell/COM initialization can dispatch another open.
-            if (!SetPropW(hwnd, identityProperty.c_str(), reinterpret_cast<HANDLE>(1)))
-                return FALSE;
+            // Publish identity before Shell/COM initialization can dispatch another open,
+            // and the /test marker before it: a lookup by identity reads both.
             initializeWindowPlacement(hwnd);
+            if (!SetPropW(hwnd, identityProperty.c_str(), reinterpret_cast<HANDLE>(1))) {
+                destroyWindowPlacement(hwnd);
+                return FALSE;
+            }
             AddRef(); // keep the object alive from the first native window message
             lockProcess();
             windowLifetime = true;
@@ -2968,6 +2971,7 @@ void ItemWindow::executeCaptionCommand(WORD command) {
             if (window != parents.currentWindow
                     && GetClassNameW(window, windowClass, ARRAYSIZE(windowClass))
                     && lstrcmpW(windowClass, ITEM_WINDOW_CLASS) == 0
+                    && (GetPropW(window, L"FileSpacer.PlacementTest") != nullptr) == settings::testMode
                     && std::any_of(parents.properties.begin(), parents.properties.end(),
                         [&](const std::wstring &property) {
                             return GetPropW(window, property.c_str()) != nullptr;
