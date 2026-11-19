@@ -133,7 +133,7 @@ public:
             EnableWindow(child(IDC_SHORTCUT_CTRL + i), value.enabled);
             CheckDlgButton(editor, IDC_SHORTCUT_LEFT + i,
                 static_cast<unsigned>(value.button) == static_cast<unsigned>(i) ? BST_CHECKED : BST_UNCHECKED);
-            EnableWindow(child(IDC_SHORTCUT_LEFT + i), value.enabled && (i == 1 || (value.modifiers & GestureAlt)));
+            EnableWindow(child(IDC_SHORTCUT_LEFT + i), value.enabled && (i != 0 || (value.modifiers & GestureAlt)));
         }
         SetDlgItemTextW(editor, IDC_SHORTCUT_LEFT_HINT, value.modifiers & GestureAlt ? L"" : getString(IDS_SHORTCUT_LEFT_HINT));
         SetDlgItemTextW(editor, IDC_SHORTCUT_RIGHT_HINT, value.modifiers & GestureAlt ? L"" : getString(IDS_SHORTCUT_RIGHT_HINT));
@@ -142,7 +142,8 @@ public:
         warning = reserved || conflict;
         const auto conflictText = formatString(IDS_SHORTCUT_CONFLICT, getString(nameIds[1 - selected]));
         SetDlgItemTextW(editor, IDC_SHORTCUT_FEEDBACK, reserved ? getString(IDS_SHORTCUT_RESERVED)
-            : conflict ? conflictText.get() : getString(IDS_SHORTCUT_GENERAL));
+            : conflict ? conflictText.get()
+            : value.enabled && backgroundShortcut(value) ? getString(IDS_SHORTCUT_BACKGROUND) : getString(IDS_SHORTCUT_GENERAL));
         InvalidateRect(child(IDC_SHORTCUT_FEEDBACK), nullptr, TRUE);
         ShowWindow(child(IDC_SHORTCUT_EXCHANGE), conflict && !reserved && !reservedShortcut(previous(selected)) ? SW_SHOWNA : SW_HIDE);
         EnableWindow(child(IDC_SHORTCUT_RECORD), value.enabled);
