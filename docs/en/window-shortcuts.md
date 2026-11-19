@@ -31,6 +31,9 @@ does not change its action. AltGr is the Ctrl + Alt combination reported by
 Windows; middle means pressing the wheel, not scrolling it.
 
 Other gestures act on the view background and items without changing selection.
+Before the pressed item is resolved, a press on a classic list is relayed to its
+visible native tooltip with `TTM_RELAYEVENT`, as a native press would be: a
+tooltip left open would otherwise cover the item of a following click.
 Editors, rename controls, headers, scrollbars, toolbars and menus retain native
 input. Escape, capture loss and cancellation abort a captured gesture. Left
 movement uses the Windows move loop; other movement and all resizing use the

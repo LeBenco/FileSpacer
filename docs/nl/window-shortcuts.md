@@ -19,7 +19,7 @@ Zonder Alt start een toewijzing met de rechterknop alleen op de achtergrond van 
 
 Vergelijk wijzigingstoetsen exact bij het indrukken van de muisknop. Loslaten tijdens het gebaar verandert de actie niet. AltGr is de door Windows gemelde combinatie Ctrl + Alt; midden betekent het wiel indrukken, niet scrollen.
 
-Andere gebaren werken op achtergrond en items zonder selectie te veranderen. Editors, naamwijzigingsvelden, kopteksten, schuifbalken, werkbalken en menu’s behouden native invoer. Escape, verlies van muisvastlegging en annulering breken het gebaar af. Verplaatsen met links gebruikt de Windows-verplaatslus; ander verplaatsen en alle formaatwijzigingen gebruiken de gedeelde vastleggingsengine met native limieten en geometrieopslag.
+Andere gebaren werken op achtergrond en items zonder selectie te veranderen. Voordat het aangeklikte item wordt bepaald, wordt een druk op een klassieke lijst met `TTM_RELAYEVENT` doorgegeven aan de zichtbare native tooltip, zoals bij een native druk: een open gebleven tooltip zou anders het item van een volgende klik bedekken. Editors, naamwijzigingsvelden, kopteksten, schuifbalken, werkbalken en menu’s behouden native invoer. Escape, verlies van muisvastlegging en annulering breken het gebaar af. Verplaatsen met links gebruikt de Windows-verplaatslus; ander verplaatsen en alle formaatwijzigingen gebruiken de gedeelde vastleggingsengine met native limieten en geometrieopslag.
 
 Dubbelklikken en Eigenschappen blijven van de Shell. Heeft een gebaar de eerste klik van een latere native dubbelklik verbruikt, lever die uitgestelde klik dan eerst aan de weergave. Vervang de selectie of Eigenschappen van Verkenner niet door handmatige aanroepen.
 

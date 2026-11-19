@@ -19,7 +19,7 @@ Bez Alt przypisanie z prawym przyciskiem zaczyna się tylko na tle widoku; przec
 
 Dopasuj modyfikatory dokładnie w chwili naciśnięcia przycisku. Zwolnienie modyfikatora podczas gestu nie zmienia działania. AltGr to zgłaszane przez Windows Ctrl + Alt; środkowy oznacza naciśnięcie kółka, nie przewijanie.
 
-Pozostałe gesty działają na tle widoku i elementach bez zmiany zaznaczenia. Edytory, pola zmiany nazwy, nagłówki, paski przewijania, narzędzi i menu zachowują natywne wejście. Escape, utrata przechwycenia i anulowanie przerywają gest. Przenoszenie lewym przyciskiem używa pętli przenoszenia Windows; pozostałe przenoszenie i cała zmiana rozmiaru — wspólnego silnika przechwycenia z natywnymi limitami i zapisem geometrii.
+Pozostałe gesty działają na tle widoku i elementach bez zmiany zaznaczenia. Zanim zostanie ustalony naciśnięty element, naciśnięcie na klasycznej liście jest przekazywane do jej widocznej natywnej etykietki przez `TTM_RELAYEVENT`, tak jak przy natywnym naciśnięciu: pozostawiona etykietka zasłaniałaby element następnego kliknięcia. Edytory, pola zmiany nazwy, nagłówki, paski przewijania, narzędzi i menu zachowują natywne wejście. Escape, utrata przechwycenia i anulowanie przerywają gest. Przenoszenie lewym przyciskiem używa pętli przenoszenia Windows; pozostałe przenoszenie i cała zmiana rozmiaru — wspólnego silnika przechwycenia z natywnymi limitami i zapisem geometrii.
 
 Dwukrotne kliknięcie i Właściwości nadal należą do powłoki. Jeśli gest zużył pierwszy klik późniejszego natywnego dwukrotnego kliknięcia, dostarcz opóźniony klik do widoku przed dwukrotnym kliknięciem. Nie zastępuj zaznaczania ani Właściwości Eksploratora ręcznym wywołaniem.
 
