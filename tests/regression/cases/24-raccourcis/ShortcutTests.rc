@@ -15,3 +15,6 @@
 #include "dialog.it.rc"
 #include "resource.pt.rc"
 #include "dialog.pt.rc"
+#include "resource.nl.rc"
+#include "resource.pl.rc"
+#include "resource.uk.rc"
