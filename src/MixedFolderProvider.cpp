@@ -269,8 +269,11 @@ public:
         if (!effect) return E_POINTER;
         allowedEffects = *effect;
         data = object;
-        const HRESULT result = site->GetIconDropPolicy(&policy);
-        return FAILED(result) ? result : update(keys, point, effect);
+        HRESULT result = site->GetIconDropPolicy(&policy);
+        if (SUCCEEDED(result)) result = update(keys, point, effect);
+        // A refused entry receives no DragLeave: release what it retained.
+        if (FAILED(result)) DragLeave();
+        return result;
     }
     STDMETHODIMP DragOver(DWORD keys, POINTL point, DWORD *effect) override {
         CComPtr<IDropTarget> keepAlive(this);
@@ -284,10 +287,11 @@ public:
     }
     STDMETHODIMP Drop(IDataObject *object, DWORD keys, POINTL point, DWORD *effect) override {
         CComPtr<IDropTarget> keepAlive(this);
-        if (!effect) return E_POINTER;
+        // No DragLeave follows a Drop: every exit leaves the native target.
+        if (!effect) { DragLeave(); return E_POINTER; }
         if (!policy) {
             const HRESULT result = site->GetIconDropPolicy(&policy);
-            if (FAILED(result)) { *effect = DROPEFFECT_NONE; return result; }
+            if (FAILED(result)) { DragLeave(); *effect = DROPEFFECT_NONE; return result; }
         }
         const HRESULT decision = policy ? policy->Placement(target, point, keys) : S_FALSE;
         if (decision != S_FALSE) { DragLeave(); *effect = DROPEFFECT_NONE; return DRAGDROP_S_CANCEL; }
