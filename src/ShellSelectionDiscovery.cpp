@@ -797,8 +797,7 @@ DWORD resolveCapability(ResolveContext *context,bool &downloaded) {
         Handle child(nullptr,&closeHandle);
         if(stopping())throw std::runtime_error("Process is exiting");
         if(!producerActive(context->root)) {
-            const std::wstring controlFinal=rangeFinal;
-            const std::wstring attempt=published&&!controlFinal.empty()?controlFinal+L".attempt":context->root+L"\\"+id.cacheKey+L".attempt";
+            const std::wstring attempt=published&&!rangeFinal.empty()?rangeFinal+L".attempt":context->root+L"\\"+id.cacheKey+L".attempt";
             if(recentAttempt(attempt)&&(!published||savedRangePublic(attempt)))throw std::runtime_error("Transient failure backoff");
             if(updateInstalling())throw std::runtime_error("Update installation running");
             child=startWorker(*context);
@@ -913,7 +912,7 @@ void removeOrphans(const std::wstring &root) {
 void removeOtherIdentities(const std::wstring &root,const std::wstring &cacheKey) {
     forEachEntry(root,L"*",[&](const std::wstring &path,bool folder){
         if(folder||path.compare(root.size()+1,cacheKey.size(),cacheKey)==0)return;
-        for(const wchar_t *suffix:{L".bin",L".public",L".attempt",L".range"}) {
+        for(const wchar_t *suffix:{L".bin",L".public",L".attempt",L".range",L".grid"}) {
             const size_t length=wcslen(suffix);
             if(path.size()>root.size()+1+length&&_wcsicmp(path.c_str()+path.size()-length,suffix)==0) {
                 DeleteFileW(path.c_str());return;
@@ -1082,9 +1081,8 @@ int runWorker(const wchar_t *cacheRoot) {
         const RangeImage previousRange=rangeFinal.empty()?RangeImage{}:RangeImage::discover(rangeFinal);
         const bool rangeDone=previousRange.supported||rangeFinal.empty()||savedRangePublic(rangeFinal+L".public");
         if(previous.supported&&rangeDone)return 0;
-        const std::wstring controlFinal=rangeFinal;
-        if(previous.supported){rangePhase=true;negative=controlFinal+L".public";}
-        attempt=previous.supported&&!controlFinal.empty()?controlFinal+L".attempt":root+L"\\"+id.cacheKey+L".attempt";
+        if(previous.supported){rangePhase=true;negative=rangeFinal+L".public";}
+        attempt=previous.supported&&!rangeFinal.empty()?rangeFinal+L".attempt":root+L"\\"+id.cacheKey+L".attempt";
         if(!cacheRoot&&recentAttempt(attempt)&&(!rangePhase||savedRangePublic(attempt)))return ERROR_RETRY;
         last=previousAttempt(attempt,rangePhase);
         supported(last.repeated<REPEATED_FAILURE_LIMIT,"Discovery repeatedly did not finish");
