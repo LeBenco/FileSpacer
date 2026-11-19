@@ -44,9 +44,9 @@ struct FolderWindow::IconSnap {
     struct ImageTarget { RECT bounds, itemBounds; int index; };
     std::map<std::pair<LONG,LONG>, ImageTarget> images;
     std::vector<bool> movingItems;
-    bool pointsCaptured = false;
+    bool pointsCaptured = false, pointsFailed = false;
     FOLDERVIEWMODE previewMode = FVM_AUTO;
-    HHOOK hook = nullptr;
+    std::unique_ptr<std::remove_pointer<HHOOK>::type, decltype(&UnhookWindowsHookEx)> hook{nullptr, UnhookWindowsHookEx};
     std::unique_ptr<std::remove_pointer<HHOOK>::type, decltype(&UnhookWindowsHookEx)> keyboardHook{nullptr, UnhookWindowsHookEx};
     bool markerPending = false;
     HWND list = nullptr, marker = nullptr;
@@ -103,17 +103,20 @@ struct FolderWindow::IconSnap {
     void finishDrop() {
         // The native drag has ended and positioning has been attempted. No
         // cached target may retain this gesture's transfer veto afterward.
-        if (hook) { UnhookWindowsHookEx(hook); hook = nullptr; }
+        hook.reset();
         releaseDropPolicy(S_FALSE);
     }
     void stop() {
         finished = true;
         markerPending = false;
         if (active == this) active = nullptr;
-        if (hook) { UnhookWindowsHookEx(hook); hook = nullptr; }
+        hook.reset();
         keyboardHook.reset();
         releaseDropPolicy(E_ABORT);
-        if (marker && GetPropW(marker, L"FileSpacer.SnapMarker") == this) DestroyWindow(marker);
+        if (marker && GetPropW(marker, L"FileSpacer.SnapMarker") == this) {
+            RemovePropW(marker, L"FileSpacer.SnapMarker");
+            DestroyWindow(marker);
+        }
         marker = nullptr;
 #ifdef FILESPACER_DEBUG
         if (previewUpdates) {
@@ -164,7 +167,7 @@ struct FolderWindow::IconSnap {
     };
     bool capturePoints() {
         if (pointsCaptured) return current() && ListView_GetItemCount(list) == itemCount;
-        if (!list || !current()) return false;
+        if (pointsFailed || !list || !current()) return false;
         itemCount = ListView_GetItemCount(list);
         if (anchor < 0 || anchor >= itemCount) return false;
         initialPoints.clear(); movingItems.clear();
@@ -177,6 +180,9 @@ struct FolderWindow::IconSnap {
         }
         focusIndex = ListView_GetNextItem(list, -1, LVNI_FOCUSED);
         pointsCaptured = movingItems[anchor];
+        // An anchor that is not selected stays so for this gesture: do not
+        // read every item again on each mouse message.
+        pointsFailed = !pointsCaptured;
         return pointsCaptured;
     }
     void clearDropHighlight() {
@@ -248,9 +254,22 @@ struct FolderWindow::IconSnap {
         auto valid = [&]() { return current(); };
         ++owner.navigationDepth;
         owner.restoringState = true;
+        // Also on an allocation failure: the window must not stay closed to
+        // captures, nor keep its deferred close pending.
+        struct Resume {
+            IconSnap &session;
+            bool done = false;
+            void finish() {
+                if (done) return;
+                done = true;
+                if (session.current()) session.owner.restoringState = false;
+                session.owner.resumeDeferredClose();
+            }
+            ~Resume() { finish(); }
+        } resume{*this};
         HRESULT result = snap && previewMode == FVM_ICON ? grid.apply(movingPositions, valid)
             : applyIconPositions(movingPositions.view, movingPositions, valid);
-        if (!current()) { owner.resumeDeferredClose(); return false; }
+        if (!current()) return false;
         CComQIPtr<IFolderView2> folder(view);
         if (SUCCEEDED(result) && current() && folder) {
             int selectedCount = 0;
@@ -277,16 +296,17 @@ struct FolderWindow::IconSnap {
                     result = view->SelectItem(originalFocus, (state & SVSI_SELECT) | SVSI_FOCUSED | SVSI_NOTAKEFOCUS);
             }
         }
-        if (current()) owner.restoringState = false;
-        owner.resumeDeferredClose();
+        resume.finish();
         return current() && checkHR(result);
     } catch (const std::bad_alloc &) { return false; }
     bool snapKey(bool down) {
         if (permanent() || (finished && !heldS)) return false;
         const bool changed = down != heldS;
         heldS = down;
-        if (finished && !down) PostMessageW(owner.hwnd, MSG_ICON_SNAP, serial, 0);
-        else if (changed) queueMarker();
+        if (finished && !down) {
+            // Without its completion message nothing would end this session.
+            if (!checkLE(PostMessageW(owner.hwnd, MSG_ICON_SNAP, serial, 0))) stop();
+        } else if (changed) queueMarker();
         return true;
     }
     static LRESULT CALLBACK keys(int code, WPARAM key, LPARAM state) {
@@ -297,7 +317,7 @@ struct FolderWindow::IconSnap {
                 if (key == VK_ESCAPE && down && !session->finished) {
                     session->snap = false;
                     session->finished = true;
-                    PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0);
+                    if (!checkLE(PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0))) session->stop();
                 } else if (key == L'S' && session->snapKey(down)) {
                     // Keep this press, including repeats after the drop, out of
                     // the Shell's type-to-select until its matching release.
@@ -571,7 +591,8 @@ struct FolderWindow::IconSnap {
         previewReady = false; hideMarker();
     }
     static LRESULT CALLBACK messages(int code, WPARAM removed, LPARAM data) {
-        if (code == HC_ACTION && removed == PM_REMOVE && active) {
+        // A bit test: the native drag loop also removes messages with PM_NOYIELD.
+        if (code == HC_ACTION && (removed & PM_REMOVE) && active) {
             auto session = active->owner.iconSnap;
             if (session) {
                 CComPtr<ItemWindow> keepAlive(&session->owner);
@@ -587,10 +608,9 @@ struct FolderWindow::IconSnap {
                     if (session->moved && !session->pointsCaptured) {
                         try { session->capturePoints(); } catch (const std::bad_alloc &) { session->stop(); }
                     }
-                    if ((message->message == WM_KEYDOWN && message->wParam == VK_ESCAPE)
-                            || message->message == WM_CANCELMODE) {
-                        session->stop();
-                    } else if (message->message == WM_LBUTTONUP) {
+                    // Escape belongs to the keyboard hook alone; WM_CANCELMODE is
+                    // sent, never queued, and handled by the window procedure.
+                    if (message->message == WM_LBUTTONUP) {
                         session->hideMarker();
                         session->finished = true;
                         session->dropped = true;
@@ -614,8 +634,9 @@ struct FolderWindow::IconSnap {
                         }
                         // The native drop completes before the ordinary message
                         // loop handles this; never reposition inside the hook.
-                        if (session->current())
-                            PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0);
+                        if (session->current()
+                                && !checkLE(PostMessageW(session->owner.hwnd, MSG_ICON_SNAP, session->serial, 0)))
+                            session->stop();
                     } else if (message->message == WM_MOUSEMOVE) {
                         session->queueMarker();
                     }
@@ -661,8 +682,8 @@ void FolderWindow::watchIconDrag(const MSG *message) {
         if (!session->current()) return;
         checkHR(result); // Keep the drop veto even if grid preparation fails.
     }
-    session->hook = SetWindowsHookExW(WH_GETMESSAGE, IconSnap::messages, nullptr, GetCurrentThreadId());
-    session->keyboardHook.reset(SetWindowsHookExW(WH_KEYBOARD, IconSnap::keys, nullptr, GetCurrentThreadId()));
+    session->hook.reset(checkLE(SetWindowsHookExW(WH_GETMESSAGE, IconSnap::messages, nullptr, GetCurrentThreadId())));
+    session->keyboardHook.reset(checkLE(SetWindowsHookExW(WH_KEYBOARD, IconSnap::keys, nullptr, GetCurrentThreadId())));
     if (!session->hook || !session->keyboardHook) return;
     iconSnap = session;
     IconSnap::active = session.get();
@@ -720,7 +741,12 @@ LRESULT FolderWindow::handleIconSnap(WPARAM wParam, LPARAM lParam) {
             session->hideMarker();
             const bool place = session->placement, dropped = session->dropped;
             session->placement = session->dropped = false;
-            if (session->current() && place && !GetCapture()) {
+            // The same conditions as the press: a state that arose during the
+            // drag abandons the placement, as a taken capture does.
+            if (session->current() && place && !GetCapture()
+                    && viewReady && initialStateApplied && enumerationComplete && !restoringState
+                    && !provisionalInputBlocked && !provisionalCaptureBusy && !viewMenuPreview && !viewMenuRestore
+                    && searchText.empty()) {
                 if (session->applyPlacement() && session->snap && session->previewMode != FVM_ICON)
                     realignIcons(true); // Existing native support for Small icons.
             }
