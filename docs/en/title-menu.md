@@ -86,7 +86,7 @@ for menu scoping and visual settings.
 
 ## Tests
 
-Group `33-menu-titre` exercises native composition and actions in Debug `/test`
+Group `33-menu-titre` exercises native composition and actions in `/test`
 mode, with isolated preferences, groups and folder state. This mode excludes
 Nilesoft from the menu/editor. An explicit interoperability test can opt in with
 `FILESPACER_TEST_NILESOFT=1` in its own process environment; Release ignores it.

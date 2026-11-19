@@ -50,7 +50,7 @@ is involved.
 ## Startup, settings and installer boundary
 
 Normal startup synchronizes existing registrations and migrates the old
-`filespacer` default to `open`; portable startup installs nothing. Debug `/test` skips production synchronization. Integration settings
+`filespacer` default to `open`; portable startup installs nothing. `/test` skips production synchronization. Integration settings
 synchronize after association changes and retain separate errors for each class.
 Missing installed network verbs require an installation update, not a claim
 that setting the default succeeded fully.

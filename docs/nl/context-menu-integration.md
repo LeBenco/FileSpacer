@@ -22,7 +22,7 @@ Het afzonderlijke verb `filespacer.explorer` start `"%SystemRoot%\explorer.exe" 
 
 ## Grenzen van opstarten, instellingen en installatieprogramma
 
-Normaal opstarten synchroniseert bestaande registraties; draagbaar opstarten installeert niets. Debug `/test` slaat productiesynchronisatie over. Integratie-instellingen synchroniseren na koppelingswijzigingen en bewaren fouten per klasse. Ontbrekende geïnstalleerde netwerkverbs vereisen een installatie-update; meld dan geen volledig geslaagde standaardwijziging.
+Normaal opstarten synchroniseert bestaande registraties; draagbaar opstarten installeert niets. `/test` slaat productiesynchronisatie over. Integratie-instellingen synchroniseren na koppelingswijzigingen en bewaren fouten per klasse. Ontbrekende geïnstalleerde netwerkverbs vereisen een installatie-update; meld dan geen volledig geslaagde standaardwijziging.
 
 Het installatieprogramma roept `/sync-context-menus` aan zonder een map te openen of crashherstel te starten en controleert de afsluitcode. Componentverwijdering/de-installatie verwijdert gebruikersoverschrijvingen via het opschonen van gebruikershives. Opstarten noch synchronisatie wijzigt stilzwijgend de gekozen standaardbeheerder.
 

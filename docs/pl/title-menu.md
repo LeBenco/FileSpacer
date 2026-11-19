@@ -56,6 +56,6 @@ Właściciel menu przekazuje polecenie do rzeczywistego okna folderu; kontrole c
 
 ## Testy
 
-Grupa `33-menu-titre` sprawdza natywny skład i działania w Debug `/test`, z izolowanymi ustawieniami, grupami i stanem. Ten tryb wyklucza Nilesoft z menu/edytora. Jawny test współdziałania może go włączyć przez `FILESPACER_TEST_NILESOFT=1` we własnym środowisku procesu; Release to ignoruje. Testy natywne nie walidują renderowania Nilesoft.
+Grupa `33-menu-titre` sprawdza natywny skład i działania w `/test`, z izolowanymi ustawieniami, grupami i stanem. Ten tryb wyklucza Nilesoft z menu/edytora. Jawny test współdziałania może go włączyć przez `FILESPACER_TEST_NILESOFT=1` we własnym środowisku procesu; Release to ignoruje. Testy natywne nie walidują renderowania Nilesoft.
 
 Testy współdziałania używają istniejącej instalacji Nilesoft i odrębnej konfiguracji testowej. Zachowaj i przywróć dokładny stan rejestru i konfiguracji, także po przekroczeniu czasu. Żaden plik binarny Nilesoft nie jest rozpowszechniany z FileSpacer ani zwykłymi testami. Nie kopiuj zainstalowanych DLL do publikowanych artefaktów; zachowaj właściwe informacje licencyjne i dystrybucyjne osobnych zależności.

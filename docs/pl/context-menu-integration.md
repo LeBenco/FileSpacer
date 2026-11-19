@@ -22,7 +22,7 @@ Osobny czasownik `filespacer.explorer` wywołuje `"%SystemRoot%\explorer.exe" "%
 
 ## Granice uruchamiania, ustawień i instalatora
 
-Zwykłe uruchomienie synchronizuje istniejące rejestracje; uruchomienie przenośne nic nie instaluje. Debug `/test` pomija synchronizację produkcyjną. Ustawienia integracji synchronizują po zmianach skojarzeń i zachowują osobne błędy klas. Brak zainstalowanych czasowników sieciowych wymaga aktualizacji instalacji, a nie ogłoszenia pełnego powodzenia ustawienia domyślnego.
+Zwykłe uruchomienie synchronizuje istniejące rejestracje; uruchomienie przenośne nic nie instaluje. `/test` pomija synchronizację produkcyjną. Ustawienia integracji synchronizują po zmianach skojarzeń i zachowują osobne błędy klas. Brak zainstalowanych czasowników sieciowych wymaga aktualizacji instalacji, a nie ogłoszenia pełnego powodzenia ustawienia domyślnego.
 
 Instalator wywołuje `/sync-context-menus` bez otwierania folderu i diagnostyki awarii, sprawdzając kod wyjścia. Usunięcie składnika/deinstalacja usuwa nadpisania FileSpacer w gałęziach użytkowników. Ani uruchomienie, ani synchronizacja nie zmieniają po cichu wyboru domyślnego menedżera.
 

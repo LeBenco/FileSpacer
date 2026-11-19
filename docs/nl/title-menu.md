@@ -56,6 +56,6 @@ De menu-eigenaar stuurt de opdracht door naar het echte mapvenster; levensduur-,
 
 ## Tests
 
-Groep `33-menu-titre` test native samenstelling en acties in Debug `/test` met geïsoleerde voorkeuren, groepen en mapstatus. Dit sluit Nilesoft uit van menu/editor. Een expliciete interoperabiliteitstest kan `FILESPACER_TEST_NILESOFT=1` in de eigen procesomgeving gebruiken; Release negeert dit. Native tests valideren Nilesoft-weergave niet.
+Groep `33-menu-titre` test native samenstelling en acties in `/test` met geïsoleerde voorkeuren, groepen en mapstatus. Dit sluit Nilesoft uit van menu/editor. Een expliciete interoperabiliteitstest kan `FILESPACER_TEST_NILESOFT=1` in de eigen procesomgeving gebruiken; Release negeert dit. Native tests valideren Nilesoft-weergave niet.
 
 Interoperabiliteitstests gebruiken een bestaande Nilesoft-installatie en aparte testconfiguratie. Bewaar en herstel de exacte geïnstalleerde register-/configuratiestatus, ook na time-outs. Geen Nilesoft-binary wordt met FileSpacer of gewone tests verspreid. Kopieer geen geïnstalleerde DLL’s naar gepubliceerde testartefacten; behoud toepasselijke licentie-/distributievermeldingen voor apart geleverde afhankelijkheden.
