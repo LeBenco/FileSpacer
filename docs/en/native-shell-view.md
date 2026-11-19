@@ -63,7 +63,8 @@ that fall back to native behavior when a prerequisite is missing:
   Discovery is limited to a single `WC_LISTVIEW` child of the
   `IShellView::GetWindow` window, on the same thread and in the same process.
   The view and the control must be visible, with no earlier guard installed;
-  otherwise the batch runs under `SetRedraw` alone. The guard never changes
+  otherwise the batch runs without the guard and without suspending redraw.
+  The guard never changes
   the control's state: `SetRedraw(FALSE)` removes `WS_VISIBLE` (the documented
   `WM_SETREDRAW` effect), `SetRedraw(TRUE)` restores it, and only then does the
   guard request the withheld repaint on the public view window
