@@ -8,6 +8,7 @@
 #include <map>
 #include <set>
 #include <memory>
+#include <algorithm>
 #include <commctrl.h>
 
 #pragma comment(lib, "Comctl32.lib")
@@ -36,6 +37,18 @@ HRESULT decodePositions(const std::vector<uint8_t> &bytes, std::vector<IconPosit
         result = IStream_Read(stream, &position.point, sizeof(position.point));
         if (FAILED(result)) return result;
     }
+}
+
+// The Shell reports LONG_MAX for the coordinates of an item it has not laid
+// out yet, as it does beyond the visible area of a large folder once automatic
+// arrangement is turned off. That is no distance: it is stored as is, never
+// scaled, and such an item is left where the view puts it. Scaled, the value
+// overflowed above 100% and came back as (-1, -1).
+bool unplaced(const POINT &point) { return point.x == LONG_MAX || point.y == LONG_MAX; }
+// Also the value an earlier version stored at the current scale.
+bool savedUnplaced(const POINT &stored) {
+    const LONG scaled = invScaleDPI(LONG_MAX);
+    return unplaced(stored) || stored.x == scaled || stored.y == scaled;
 }
 
 // The ListView postpones layout work while redraw is disabled:
@@ -289,7 +302,7 @@ HRESULT captureIconPositions(IFolderView *view, const std::function<bool()> &cur
             result = view->GetItemPosition(id, &position);
             if (!current()) return E_ABORT;
             if (FAILED(result)) return result;
-            position = invScaleDPI(position);
+            position = unplaced(position) ? POINT{LONG_MAX, LONG_MAX} : invScaleDPI(position);
             result = IStream_WritePidl(stream, id);
             if (SUCCEEDED(result)) result = IStream_Write(stream, &position, sizeof(position));
             if (FAILED(result)) return result;
@@ -335,6 +348,7 @@ HRESULT prepareIconPositions(IFolderView *view, const std::vector<uint8_t> &byte
     candidate.items.reserve(candidate.positions.size());
     candidate.points.reserve(candidate.positions.size());
     for (const auto &position : candidate.positions) {
+        if (savedUnplaced(position.point)) continue;
         const POINT point = scaleDPI(position.point);
         POINT actual = {};
         result = view->GetItemPosition(position.id, &actual);
@@ -385,6 +399,11 @@ HRESULT restoreIconGridPositions(IFolderView *view, const std::vector<uint8_t> &
     prepared.view = view;
     HRESULT result = decodePositions(bytes, prepared.positions);
     if (FAILED(result) || prepared.positions.empty()) return result;
+    // A saved grid holding an unplaced item is incomplete: keeping the cells of
+    // the others would collide with those the view lays out itself. The
+    // resized native layout stands.
+    if (std::any_of(prepared.positions.begin(), prepared.positions.end(),
+            [](const IconPosition &position) { return savedUnplaced(position.point); })) return S_OK;
     POINT spacing = {}, origin = {};
     result = view->GetSpacing(&spacing);
     if (!current()) return E_ABORT;

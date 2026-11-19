@@ -20,6 +20,8 @@ HRESULT mergeIconChanges(const std::vector<uint8_t> &reference,
     bool complete, std::vector<uint8_t> &bytes, IShellFolder *identityFolder,
     const std::function<bool()> &valid);
 // Existing format: Shell-serialized child PIDL followed by a 96-DPI POINT.
+// LONG_MAX coordinates mark an item the view had not placed: never scaled,
+// and not applied on restoration.
 // A filtered view returns S_FALSE with empty output; callers must not save it.
 // Caller must exclude auto-arranged views from persistent captures.
 // Incomplete enumeration preserves previously saved items not yet visible.
