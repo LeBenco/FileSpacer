@@ -1,4 +1,5 @@
 ﻿# Test-Category: Internal
+# Test-Scope: Tools
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
 $ErrorActionPreference='Stop'
 Add-Type -Path (Join-Path $ProjectRoot 'tools\documentation-capture\CaptureDesktop.cs') -ReferencedAssemblies System.Drawing,System.Windows.Forms

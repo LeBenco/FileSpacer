@@ -1,4 +1,5 @@
 # Test-Category: Internal
+# Test-Scope: Tools
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
 $ErrorActionPreference='Stop'
 $tokens=$null;$errors=$null
