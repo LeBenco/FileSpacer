@@ -154,7 +154,7 @@ struct FolderWindow::IconSnap {
             if (!count) delete this;
             return count;
         }
-        STDMETHODIMP Placement(PCUITEMID_CHILD target, POINTL point, DWORD keys) override {
+        STDMETHODIMP Placement(POINTL point, DWORD keys) override {
             if (thread != GetCurrentThreadId()) return E_ABORT;
             if (*result != E_PENDING) {
                 return *result;
@@ -162,7 +162,7 @@ struct FolderWindow::IconSnap {
             auto session = gesture.lock();
             if (!session) return E_ABORT;
             CComPtr<ItemWindow> keepAlive(&session->owner);
-            return session->placementForTarget(target, {point.x, point.y}, keys);
+            return session->placementForTarget({point.x, point.y}, keys);
         }
     };
     bool capturePoints() {
@@ -225,7 +225,7 @@ struct FolderWindow::IconSnap {
         }
         return std::any_of(dropTargets.begin(), dropTargets.end(), [&](const RECT &rectangle) { return PtInRect(&rectangle, point) != FALSE; });
     }
-    HRESULT placementForTarget(PCUITEMID_CHILD, POINT cursor, DWORD keys) try {
+    HRESULT placementForTarget(POINT cursor, DWORD keys) try {
         if (!current() || (finished && !dropped)) return E_ABORT;
         if (permanent()) return S_FALSE;
         const bool force = finished ? snap : heldS;
@@ -540,10 +540,8 @@ struct FolderWindow::IconSnap {
             if (permanent()) {
                 // The existing grid supplies its phase in every icon-based view.
                 // Round the drag delta, keeping each icon's original grid slot.
-                const LONGLONG gridX = dx + (dx < 0 ? -(spacing.x / 2) : spacing.x / 2);
-                const LONGLONG gridY = dy + (dy < 0 ? -(spacing.y / 2) : spacing.y / 2);
-                const LONGLONG alignedX = point.x + gridX - gridX % spacing.x;
-                const LONGLONG alignedY = point.y + gridY - gridY % spacing.y;
+                const LONGLONG alignedX = point.x + nearestGridStep(dx, spacing.x);
+                const LONGLONG alignedY = point.y + nearestGridStep(dy, spacing.y);
                 if (alignedX < LONG_MIN || alignedX > LONG_MAX || alignedY < LONG_MIN || alignedY > LONG_MAX) return false;
                 point = {static_cast<LONG>(alignedX), static_cast<LONG>(alignedY)};
                 return true;
