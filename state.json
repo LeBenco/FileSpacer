@@ -2,13 +2,7 @@
   "version": 1,
   "channel": "chocolatey",
   "initialized": true,
-  "accepted": "v1.4.2",
-  "active": [
-    {
-      "tag": "v1.5.0",
-      "phase": "submitted",
-      "runId": "44809077942"
-    }
-  ],
+  "accepted": "v1.5.0",
+  "active": [],
   "pending": null
 }
