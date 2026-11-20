@@ -57,7 +57,8 @@ that fall back to native behavior when a prerequisite is missing:
   `NM_CUSTOMDRAW` notifications and documented ListView state. It discovers no
   child control and sends nothing to one.
 - Icon redraw guard (`IconRedrawGuard` in `ShellViewIcons.cpp`): around one
-  `SelectAndPositionItems` batch of saved free positions, it withholds the
+  `SelectAndPositionItems` batch of free positions, restored from the saved
+  state or written by a drop, with or without Snap, it withholds the
   Shell's internal `WM_SETREDRAW(TRUE)` resumes so that
   `IFolderView2::SetRedraw(FALSE)` stays effective for the whole batch.
   Discovery is limited to a single `WC_LISTVIEW` child of the
