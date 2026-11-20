@@ -267,20 +267,6 @@ namespace FileSpacerRegression {
                 return Clickable(viewWindow,found[0]);
             });
         }
-        public static MousePoint CellPoint(IntPtr viewWindow,string name) {
-            return ReadView(viewWindow,delegate(AutomationElement root) {
-                var rows=Visible(root,ControlType.ListItem,name);
-                if(rows.Count!=1) throw new InvalidOperationException("Expected one visible row named "+name+".");
-                var cells=new List<AutomationElement>();
-                foreach(AutomationElement cell in rows[0].FindAll(TreeScope.Children,new OrCondition(
-                        new PropertyCondition(AutomationElement.ControlTypeProperty,ControlType.Edit),
-                        new PropertyCondition(AutomationElement.ControlTypeProperty,ControlType.Text))))
-                    if(!cell.Current.IsOffscreen && !cell.Current.BoundingRectangle.IsEmpty) cells.Add(cell);
-                cells.Sort(delegate(AutomationElement a,AutomationElement b) { return a.Current.BoundingRectangle.Left.CompareTo(b.Current.BoundingRectangle.Left); });
-                if(cells.Count<2) throw new InvalidOperationException("Details row exposes no visible second cell.");
-                return Clickable(viewWindow,cells[1]);
-            });
-        }
         public static string DescribeView(IntPtr viewWindow) {
             return ReadView(viewWindow,delegate(AutomationElement root) {
                 var lines=new List<string>();
@@ -291,18 +277,6 @@ namespace FileSpacerRegression {
                     if(lines.Count>=100) break;
                 }
                 return String.Join(Environment.NewLine,lines.ToArray());
-            });
-        }
-        public static MousePoint HeaderPoint(IntPtr viewWindow) {
-            return ReadView(viewWindow,delegate(AutomationElement root) {
-                var found=Visible(root,ControlType.HeaderItem,null);
-                if(found.Count==0) {
-                    // Modern Shell headers expose their columns as split buttons.
-                    foreach(var header in Visible(root,ControlType.Header,null))
-                        found.AddRange(Visible(header,ControlType.SplitButton,null));
-                }
-                if(found.Count==0) throw new InvalidOperationException("Details view exposes no visible column header.");
-                return Clickable(viewWindow,found[0]);
             });
         }
         public static bool RenameVisible(IntPtr viewWindow) {

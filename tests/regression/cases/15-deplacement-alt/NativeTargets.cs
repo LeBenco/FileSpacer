@@ -101,33 +101,6 @@ namespace FileSpacerRegression {
             if(!ScreenToClient(list,ref point)) throw new Win32Exception();
             using(var q=new Query(list)) { byte[] hit; if(Hit(list,q,point,false,out hit)!=-1) throw new InvalidOperationException("Background point overlaps an item."); }
         }
-        public static Point Toolbar(IntPtr toolbar,int command) {
-            using(var q=new Query(toolbar)) {
-                q.Write(new byte[24]);
-                if(SendMessage(toolbar,0x433,new IntPtr(command),q.Address)==IntPtr.Zero) throw new InvalidOperationException("Toolbar command has no rectangle: "+command);
-                return ToScreen(toolbar,Center(q.Read()));
-            }
-        }
-        public static Point Control(IntPtr window,int left,int top,int right,int bottom) {
-            if(right<=left||bottom<=top) throw new InvalidOperationException("Control has no client area.");
-            return Exposed(window,new Point { X=left+(right-left)/2,Y=top+(bottom-top)/2 });
-        }
-        public static Point Caption(IntPtr window) {
-            Rect rect; if(!GetWindowRect(window,out rect)) throw new Win32Exception();
-            int dpi=Math.Max(1,(int)GetDpiForWindow(window)),step=Math.Max(1,4*dpi/96);
-            // Same read-only checks as Native.ActivateByCaptionClick, without
-            // sending a click. This point must be outside every child/menu.
-            for(int y=rect.Top+step;y<Math.Min(rect.Bottom,rect.Top+48*dpi/96);y+=step) {
-                foreach(int numerator in new int[]{4,2,6,1,3,5,7}) {
-                    var point=new Point {X=rect.Left+(rect.Right-rect.Left)*numerator/8,Y=y};
-                    if(WindowFromPoint(point)!=window) continue;
-                    int packed=unchecked((point.X&0xffff)|((point.Y&0xffff)<<16));
-                    if(SendMessage(window,0x84,IntPtr.Zero,new IntPtr(packed)).ToInt64()!=2) continue; // WM_NCHITTEST == HTCAPTION
-                    return Exposed(window,point);
-                }
-            }
-            throw new InvalidOperationException("No exposed caption point is available to avoid menu commands.");
-        }
         static GuiInfo GuiState(uint thread) {
             var info=new GuiInfo(); info.Size=(uint)Marshal.SizeOf(typeof(GuiInfo));
             if(thread==0||!GetGUIThreadInfo(thread,ref info)) throw new Win32Exception();
