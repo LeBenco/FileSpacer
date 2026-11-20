@@ -4,7 +4,7 @@ param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')
     [string]$SymbolCache='', [switch]$RequireRange)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot '..\..\common\Native.ps1')
-$exe=Build-NativeTest -Name SelectionCacheTests -CaseDirectory $PSScriptRoot -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','ShellViewOperations.cpp','MixedFolder.cpp','ShellViewHost.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib')
+$exe=Build-NativeTest -Name SelectionCacheTests -CaseDirectory $PSScriptRoot -Standard c++14 -CommonControls -ControlFlowGuard -ProductionSources @('ShellSelectionDiscovery.cpp','ShellViewSelection.cpp','ShellViewOperations.cpp','ShellViewIcons.cpp','MixedFolder.cpp','ShellViewHost.cpp','DPI.cpp') -Libraries @('Ole32.lib','OleAut32.lib','Shell32.lib','Shlwapi.lib','Uuid.lib','Comctl32.lib','Gdi32.lib','Advapi32.lib','Uiautomationcore.lib')
 $cache=Join-Path $RunDirectory 'range-cache';[void][IO.Directory]::CreateDirectory($cache)
 if($SymbolCache){Copy-Item -LiteralPath $SymbolCache -Destination (Join-Path $cache 'symbols') -Recurse}
 function Check-Range([string]$Name,[string[]]$Arguments) {
