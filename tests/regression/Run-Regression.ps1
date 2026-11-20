@@ -1,7 +1,7 @@
 param(
     [string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
     [ValidateSet('All','Internal','UI')][string]$Category='All',
-    [ValidateSet('All','Application')][string]$Scope='All',
+    [ValidateSet('All','Application','Tools')][string]$Scope='All',
     [ValidateSet('Regression','Stress')][string]$Suite='Regression',
     [ValidateSet('Debug','Release')][string]$Configuration='Debug',
     [switch]$BuildApplication,
@@ -51,7 +51,11 @@ foreach ($test in $tests) {
     $first=Get-Content -LiteralPath $test.FullName -TotalCount 1
     if ($first -notmatch '^# Test-Category: (Internal|UI)$') { throw "Missing test category: $relative" }
     $kind=$Matches[1]
+    # The application is the default scope. A case of a development tool declares its own
+    # on its second line, and is left out of the runs limited to the application.
     $testScope='Application'
+    $second=@(Get-Content -LiteralPath $test.FullName -TotalCount 2)
+    if ($second.Count -eq 2 -and $second[1] -match '^# Test-Scope: (Tools)$') { $testScope=$Matches[1] }
     if (($Scope -eq 'All' -or $Scope -eq $testScope) -and ($Category -eq 'All' -or $Category -eq $kind)) {
         $selected+=@{ File=$test; Relative=$relative; Category=$kind; Scope=$testScope }
     }
