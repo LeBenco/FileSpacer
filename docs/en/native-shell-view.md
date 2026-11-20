@@ -233,7 +233,7 @@ contains a scroll offset.
 Snap uses public Windows APIs for both prediction and placement. The optional
 private grid arithmetic was retired after Release measurements showed no useful
 benefit over the public path; slow bulk placement on Windows 10 occurred in both
-paths. Commit `640f2d6e` is the last complete implementation of that capability.
+paths. Commit `d93f4dee` is the last complete implementation of that capability.
 The separate optional selection and range capabilities are unchanged.
 
 `ShellIconGrid` prepares one operation per Icon-view gesture. A hidden,
