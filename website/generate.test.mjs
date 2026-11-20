@@ -6,7 +6,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {generate as generateSite} from './generate.mjs';
-import {downloadFlags} from './flags.mjs';
+import {cachedFlags, downloadFlags} from './flags.mjs';
 import lunr from 'lunr';
 
 const repository = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -165,6 +165,27 @@ test('unavailable or invalid flag downloads fail instead of publishing missing i
     flagRequest: async url => new URL(url).hostname === 'upload.wikimedia.org'
       ? new Response('<html>Error</html>') : flagRequest(url),
   }), /Invalid flag SVG: https:\/\/upload.wikimedia.org\//);
+});
+
+test('a kept flag download serves the builds made while the flag services do not answer, never an invalid answer', async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'filespacer-flag-cache-'));
+  t.after(() => fs.rm(directory, {recursive: true, force: true}));
+  const unavailable = async () => new Response('', {status: 503});
+  const warnings = [];
+  const warn = message => warnings.push(message);
+  await assert.rejects(cachedFlags(['gb', 'fr'], directory, unavailable, warn), /Flag download failed \(503\)/);
+  const downloaded = await cachedFlags(['gb', 'fr'], directory, flagRequest, warn);
+  assert.deepEqual([...downloaded.keys()], ['gb', 'fr']);
+  assert.equal(warnings.length, 0);
+  assert.deepEqual(await cachedFlags(['gb', 'fr'], directory, unavailable, warn), downloaded);
+  assert.deepEqual(await cachedFlags(['fr'], directory, async () => { throw new Error('offline'); }, warn),
+    new Map([['fr', downloaded.get('fr')]]));
+  assert.equal(warnings.length, 2);
+  assert.match(warnings[0], /using the last downloaded flags/);
+  await assert.rejects(cachedFlags(['gb', 'de'], directory, unavailable, warn), /Flag download failed \(503\)/);
+  await assert.rejects(cachedFlags(['gb'], directory, async () => Response.json({results: {bindings: []}}), warn),
+    /Expected one current Wikimedia flag for gb/);
+  assert.equal(warnings.length, 2);
 });
 
 test('flag metadata must identify one current file and permit use without attribution', async () => {

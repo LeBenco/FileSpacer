@@ -1,4 +1,9 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import {optimize} from 'svgo';
+
+// A request the flag services did not answer, as opposed to an answer that fails validation.
+class FlagRequestError extends Error {}
 
 // Download flag artwork at build time; generated pages use local optimized files only.
 export async function downloadFlags(countries, request = fetch) {
@@ -6,11 +11,16 @@ export async function downloadFlags(countries, request = fetch) {
   if (!codes.length) return new Map();
   if (codes.some(code => !/^[a-z]{2}$/.test(code))) throw new Error('Invalid flag country code');
   async function get(url) {
-    const response = await request(url, {
-      headers: {'User-Agent': 'FileSpacer-Documentation/1.0 (https://github.com/LeBenco/FileSpacer)'},
-      signal: AbortSignal.timeout(20000),
-    });
-    if (!response.ok) throw new Error(`Flag download failed (${response.status}): ${url}`);
+    let response;
+    try {
+      response = await request(url, {
+        headers: {'User-Agent': 'FileSpacer-Documentation/1.0 (https://github.com/LeBenco/FileSpacer)'},
+        signal: AbortSignal.timeout(20000),
+      });
+    } catch (error) {
+      throw new FlagRequestError(`Flag download failed (${error.message}): ${url}`, {cause: error});
+    }
+    if (!response.ok) throw new FlagRequestError(`Flag download failed (${response.status}): ${url}`);
     return response;
   }
   async function json(url) {
@@ -76,4 +86,31 @@ SELECT DISTINCT ?code ?flag WHERE {
     }
     return [code, optimize(svg, {multipass: true}).data];
   })));
+}
+
+function notice(message) {
+  console.warn(process.env.GITHUB_ACTIONS ? `::warning::${message}` : `WARNING: ${message}`);
+}
+
+// Keep the last successful download beside the build, for the builds made while
+// the flag services do not answer. Only an unanswered request falls back: an
+// answer that fails validation is never replaced by an older copy.
+export async function cachedFlags(countries, directory, request = fetch, warn = notice) {
+  const file = code => path.join(directory, `${code}.svg`);
+  try {
+    const flags = await downloadFlags(countries, request);
+    await fs.mkdir(directory, {recursive: true});
+    for (const [code, svg] of flags) await fs.writeFile(file(code), svg);
+    return flags;
+  } catch (error) {
+    if (!(error instanceof FlagRequestError)) throw error;
+    let kept;
+    try {
+      kept = await Promise.all([...new Set(countries)].map(async code => [code, await fs.readFile(file(code), 'utf8')]));
+    } catch {
+      throw error;
+    }
+    warn(`Flag services unavailable, using the last downloaded flags. ${error.message}`);
+    return new Map(kept);
+  }
 }

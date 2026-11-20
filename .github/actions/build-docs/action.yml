@@ -23,8 +23,28 @@ runs:
       run: npm test --prefix website
     - shell: bash
       run: node website/check-links.mjs
+    - name: Restore the last downloaded language flags
+      id: flag-cache
+      uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5, Node.js 24
+      with:
+        path: build/flag-cache
+        key: language-flags-
+        restore-keys: language-flags-
     - shell: bash
       env:
         DOCS_TARGET: ${{ inputs.target }}
         GH_TOKEN: ${{ github.token }}
       run: node .github/scripts/build-docs.mjs --target "$DOCS_TARGET"
+    - name: Identify the downloaded language flags
+      id: flags
+      shell: bash
+      run: |
+        if compgen -G 'build/flag-cache/*.svg' > /dev/null; then
+          echo "key=language-flags-$(LC_ALL=C sha256sum build/flag-cache/*.svg | sha256sum | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+        fi
+    - name: Keep the language flags for builds made while their source is unavailable
+      if: steps.flags.outputs.key != '' && steps.flags.outputs.key != steps.flag-cache.outputs.cache-matched-key
+      uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5, Node.js 24
+      with:
+        path: build/flag-cache
+        key: ${{ steps.flags.outputs.key }}

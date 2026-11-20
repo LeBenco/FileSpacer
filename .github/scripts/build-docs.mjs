@@ -142,7 +142,7 @@ export async function buildDocs(target = 'web', output = buildPath(target === 'w
   if (available.error || available.status !== 0) throw new Error('Generating documentation requires Ruby and bundle install in .github/scripts. Existing output was preserved.');
   await fs.rm(source, {recursive: true, force: true});
   try {
-    const generated = await generate(repository, source, {releaseDates});
+    const generated = await generate(repository, source, {releaseDates, flagCache: buildPath('build/flag-cache')});
     if (generated.warnings.length && process.env.GITHUB_STEP_SUMMARY) {
       const rows = generated.warnings.map(({language, source}) => `| ${language} | ${source} | Existing translation retained |`);
       await fs.appendFile(process.env.GITHUB_STEP_SUMMARY,

@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 import {Marked} from 'marked';
 import {optimize} from 'svgo';
 import {fetchReleaseDates, releaseHeading} from './releases.mjs';
-import {downloadFlags} from './flags.mjs';
+import {cachedFlags, downloadFlags} from './flags.mjs';
 
 const template = path.dirname(fileURLToPath(import.meta.url));
 const navigationDepth = 2; // Maximum menu levels, counting each document as level 1.
@@ -128,7 +128,10 @@ export async function generate(repository = path.dirname(template), destination 
   for (const locale of options.recordTranslations || []) {
     if (!languages.some(language => language.code === locale && language !== languages[0])) throw new Error(`Unknown translation locale: ${locale}`);
   }
-  const flags = await downloadFlags(languages.map(language => language.flag), options.flagRequest);
+  // A caller that keeps the last download lets a build proceed while the flag services are down.
+  const flags = options.flagCache
+    ? await cachedFlags(languages.map(language => language.flag), options.flagCache, options.flagRequest)
+    : await downloadFlags(languages.map(language => language.flag), options.flagRequest);
   const parser = new Marked({gfm: true});
   const canonical = new Map();
   const results = [];
