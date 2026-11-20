@@ -430,16 +430,14 @@ HRESULT restoreIconGridPositions(IFolderView *view, const std::vector<uint8_t> &
     origin = {phase(origin.x, spacing.x), phase(origin.y, spacing.y)};
     // Stored coordinates are integer 96-DPI units: scaled back above 100%, a
     // point can return one pixel away from its cell. Take the nearest cell.
-    const auto cell = [](LONGLONG offset, LONG pitch) {
-        const LONGLONG centered = offset + pitch / 2;
-        return centered >= 0 ? centered / pitch : -((pitch - 1 - centered) / pitch);
-    };
     prepared.items.reserve(prepared.positions.size());
     prepared.points.reserve(prepared.positions.size());
     for (const auto &position : prepared.positions) {
         POINT point = scaleDPI(position.point);
-        const LONGLONG x = cell(static_cast<LONGLONG>(point.x) - oldOrigin.x, previousSpacing.x) * spacing.x + origin.x;
-        const LONGLONG y = cell(static_cast<LONGLONG>(point.y) - oldOrigin.y, previousSpacing.y) * spacing.y + origin.y;
+        const LONGLONG x = nearestGridStep(static_cast<LONGLONG>(point.x) - oldOrigin.x, previousSpacing.x)
+            / previousSpacing.x * spacing.x + origin.x;
+        const LONGLONG y = nearestGridStep(static_cast<LONGLONG>(point.y) - oldOrigin.y, previousSpacing.y)
+            / previousSpacing.y * spacing.y + origin.y;
         if (x < LONG_MIN || x > LONG_MAX || y < LONG_MIN || y > LONG_MAX) return E_INVALIDARG;
         POINT actual = {};
         result = view->GetItemPosition(position.id, &actual);

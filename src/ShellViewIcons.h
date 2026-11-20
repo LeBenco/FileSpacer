@@ -46,6 +46,11 @@ HRESULT prepareIconPositions(IFolderView *view, const std::vector<uint8_t> &byte
     const std::function<bool()> &current, PreparedIconPositions &prepared);
 HRESULT applyIconPositions(IFolderView *view, PreparedIconPositions &prepared,
     const std::function<bool()> &current);
+// Nearest multiple of a positive grid pitch; an exact half rounds away from zero.
+inline LONGLONG nearestGridStep(LONGLONG distance, LONG pitch) {
+    const LONGLONG centered = distance + (distance < 0 ? -(pitch / 2) : pitch / 2);
+    return centered - centered % pitch;
+}
 // Keep occupied grid cells and holes across zoom, using the actual native
 // spacing before and after the change. Coordinates remain exact in free mode.
 HRESULT restoreIconGridPositions(IFolderView *view, const std::vector<uint8_t> &bytes,
