@@ -23,7 +23,7 @@ Voer nieuwe en betrokken tests uit tijdens ontwikkeling. `tests.cmd` zonder filt
 | --- | --- |
 | `-Category Internal\|UI\|All` | Filter op gedeclareerde categorie; standaard `All`. |
 | `-Pattern "group\case-pattern"` | PowerShell-jokerteken voor relatief pad; standaard `*`. Combineer met `-Category`. |
-| `-Scope Application\|All` | Beide kiezen de toepassingssuite; standaard `All`. |
+| `-Scope Application\|Tools\|All` | `Application` kiest de cases van de toepassing, `Tools` die van de ontwikkelhulpmiddelen; standaard `All`. |
 | `-TimeoutSeconds N` | Deadline per test 30–3600 seconden; standaard 300. Time-out is falen. |
 | `-RunDirectory "path"` | Rapporten opslaan/kopiëren naar nieuwe map; nooit overschrijven. |
 | `-VM "name"` | Gekozen tests in geconfigureerde Hyper-V-client. |
@@ -75,17 +75,17 @@ Mappen onder `cases/` groeperen gedrag. Namen en paden zijn stabiele selectoren;
 | --- | --- |
 | Harnas en voorbereide artefacten | `00-banc` |
 | SQLite, bewaring, quota, weergave en geschiedenis | `01`–`02`, `06`–`09` |
-| Menu/levensduur, STA en afmetingen | `03`–`05` |
+| Menu/levensduur en STA | `03`–`04` |
 | Updatemanifesten en sessieherstel | `10`–`11` |
-| Ruimtelijke navigatie, voorkeuren en indelingen | `12`–`14` |
+| Ruimtelijke navigatie en voorkeuren | `12`–`13` |
 | Gebaren en sluiten tijdens interactie | `15`–`17`, `24-raccourcis` |
 | Native opslag en Shell-opdrachten | `18-vue-shell-native`, `19-commandes-shell` |
-| Belasting, meldingen en Configuratiescherm | `20-validation-elargie` |
+| Virtuele mappen | `20-validation-elargie` |
 | Activering, vergrendeling en namen | `21`–`23` |
 | Zoeken, geschiedenis en Everything | `25-recherche-integration` |
 | Plaatsing en Beeld-voorbeelden | `26-placement-fenetres`, `28-apercu-affichage` |
 | Standaardbeheerkoppelingen | `29-menu-gestionnaire` |
-| Lokale hulp en taalkeuze | `30-documentation`, `31-langues` |
+| Lokale hulp, taalkeuze en het documentatie-opnamehulpmiddel (bereik `Tools`) | `30-documentation`, `31-langues` |
 | Gemengd sorteren en identiteiten | `30-tri-melange` |
 | Titelmenu en Peek | `33-menu-titre`, `35-apercu-peek` |
 

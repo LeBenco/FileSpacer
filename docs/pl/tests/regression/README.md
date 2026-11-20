@@ -23,7 +23,7 @@ Podczas pracy uruchamiaj nowe i odpowiednie przypadki. `tests.cmd` bez filtrów 
 | --- | --- |
 | `-Category Internal\|UI\|All` | Filtr kategorii zadeklarowanej w przypadku; domyślnie `All`. |
 | `-Pattern "group\case-pattern"` | Wzorzec PowerShell dla względnej ścieżki; domyślnie `*`. Łączy się z `-Category`. |
-| `-Scope Application\|All` | Obie wartości wybierają zestaw aplikacji; domyślnie `All`. |
+| `-Scope Application\|Tools\|All` | `Application` wybiera przypadki aplikacji, `Tools` przypadki narzędzi deweloperskich; domyślnie `All`. |
 | `-TimeoutSeconds N` | Limit przypadku 30–3600 s, domyślnie 300. Przekroczenie jest błędem. |
 | `-RunDirectory "path"` | Zapis/kopia raportów do nowego katalogu; brak nadpisywania. |
 | `-VM "name"` | Wybrane przypadki w skonfigurowanym Hyper-V. |
@@ -75,17 +75,17 @@ Katalogi `cases/` grupują zachowania. Nazwy i ścieżki są stabilnymi selektor
 | --- | --- |
 | Stend i przygotowane artefakty | `00-banc` |
 | SQLite, retencja, limit, widok i historia | `01`–`02`, `06`–`09` |
-| Menu, czas życia, STA i wymiary | `03`–`05` |
+| Menu, czas życia i STA | `03`–`04` |
 | Manifesty i sesje aktualizacji | `10`–`11` |
-| Nawigacja przestrzenna, ustawienia i układ | `12`–`14` |
+| Nawigacja przestrzenna i ustawienia | `12`–`13` |
 | Gesty, zamykanie podczas interakcji | `15`–`17`, `24-raccourcis` |
 | Zapis widoku i polecenia powłoki | `18-vue-shell-native`, `19-commandes-shell` |
-| Obciążenie, powiadomienia i Panel sterowania | `20-validation-elargie` |
+| Foldery wirtualne | `20-validation-elargie` |
 | Aktywacja, blokady i etykiety | `21`–`23` |
 | Wyszukiwanie, historia i Everything | `25-recherche-integration` |
 | Rozmieszczanie i podgląd Widok | `26-placement-fenetres`, `28-apercu-affichage` |
 | Skojarzenia domyślnego menedżera | `29-menu-gestionnaire` |
-| Pomoc lokalna i wybór języka | `30-documentation`, `31-langues` |
+| Pomoc lokalna, wybór języka i narzędzie do przechwytywania dokumentacji (zakres `Tools`) | `30-documentation`, `31-langues` |
 | Sortowanie mieszane i tożsamości | `30-tri-melange` |
 | Menu tytułu i Peek | `33-menu-titre`, `35-apercu-peek` |
 
