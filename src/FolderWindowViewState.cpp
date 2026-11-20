@@ -528,15 +528,10 @@ void FolderWindow::changeViewMode(int amount, bool wheel) {
     CComPtr<IFolderView2> view;
     const HRESULT queried = viewHost.currentView(IID_PPV_ARGS(&view));
     if (!current() || FAILED(queried) || !view) return;
-    struct Mode { FOLDERVIEWMODE mode; int size; };
-    const Mode modes[] = {
-        {FVM_ICON, 256}, {FVM_ICON, 96}, {FVM_ICON, 48},
-        {FVM_SMALLICON, 16}, {FVM_LIST, -1}, {FVM_DETAILS, -1}, {FVM_TILE, -1}, {FVM_CONTENT, -1}
-    };
     FOLDERVIEWMODE mode;
     int size;
     if (!checkHR(view->GetViewModeAndIconSize(&mode, &size)) || !current()) return;
-    Mode target = {mode, size};
+    ViewPreset target = {mode, size};
     if (wheel) {
         // The steps of Explorer's own Ctrl+wheel, measured at 96 DPI on Windows 10
         // and 11: Content, Tiles, Details, List, the small icons, then the icons.
@@ -555,7 +550,7 @@ void FolderWindow::changeViewMode(int amount, bool wheel) {
             return 0;
         };
         for (int remaining = larger ? amount : -amount; remaining > 0; --remaining) {
-            const Mode from = target;
+            const ViewPreset from = target;
             if (from.mode == FVM_ICON || from.mode == FVM_SMALLICON) {
                 const int icon = larger || from.mode == FVM_ICON ? beyond(icons, _countof(icons)) : 0;
                 if (larger) {
@@ -569,19 +564,19 @@ void FolderWindow::changeViewMode(int amount, bool wheel) {
                     else target = {FVM_LIST, -1};
                 }
             } else if (from.mode == FVM_LIST) {
-                target = larger ? Mode{FVM_SMALLICON, smallLarger[0]} : Mode{FVM_DETAILS, -1};
+                target = larger ? ViewPreset{FVM_SMALLICON, smallLarger[0]} : ViewPreset{FVM_DETAILS, -1};
             } else if (from.mode == FVM_TILE) {
-                target = larger ? Mode{FVM_DETAILS, -1} : Mode{FVM_CONTENT, -1};
+                target = larger ? ViewPreset{FVM_DETAILS, -1} : ViewPreset{FVM_CONTENT, -1};
             } else if (from.mode == FVM_CONTENT) {
                 if (larger) target = {FVM_TILE, -1};
             } else {
                 // Details, and the modes of other providers, which start from Details.
-                target = larger ? Mode{FVM_LIST, -1} : Mode{FVM_TILE, -1};
+                target = larger ? ViewPreset{FVM_LIST, -1} : ViewPreset{FVM_TILE, -1};
             }
             if (target.mode == from.mode && target.size == from.size) break; // An end of the scale.
         }
-    } else if (amount >= 0 && amount < static_cast<int>(_countof(modes))) {
-        target = modes[amount];
+    } else if (amount >= 0 && amount < static_cast<int>(_countof(VIEW_PRESETS))) {
+        target = VIEW_PRESETS[amount];
     } else {
         return;
     }

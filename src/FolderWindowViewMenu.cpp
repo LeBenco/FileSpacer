@@ -25,12 +25,6 @@
 
 namespace filespacer {
 
-struct ViewMenuMode { FOLDERVIEWMODE mode; int size; };
-static const ViewMenuMode VIEW_MENU_MODES[] = {
-    {FVM_ICON, 256}, {FVM_ICON, 96}, {FVM_ICON, 48}, {FVM_SMALLICON, 16},
-    {FVM_LIST, -1}, {FVM_DETAILS, -1}, {FVM_TILE, -1}, {FVM_CONTENT, -1}
-};
-
 static bool isViewMenuMode(UINT command) {
     return command >= IDM_VIEW_MODE_FIRST && command <= IDM_VIEW_MODE_LAST;
 }
@@ -74,7 +68,7 @@ static bool appendPlacementMenu(HMENU parent, UINT mode, DWORD flags) {
 static HRESULT invokeDisplayCommand(IFolderView2 *view, UINT command) {
     if (!view) return E_NOINTERFACE;
     if (isViewMenuMode(command)) {
-        const auto &mode = VIEW_MENU_MODES[command - IDM_VIEW_MODE_FIRST];
+        const auto &mode = VIEW_PRESETS[command - IDM_VIEW_MODE_FIRST];
         return view->SetViewModeAndIconSize(mode.mode, mode.size);
     }
     if (!isPlacementCommand(command)) return E_INVALIDARG;
@@ -559,13 +553,13 @@ void FolderWindow::openViewMenu(POINT point) {
         std::unique_ptr<std::remove_pointer<HMENU>::type, decltype(destroy)> menu(CreatePopupMenu(), destroy);
         if (!menu) return;
         int checked = -1, distance = INT_MAX;
-        for (int i = 0; i < static_cast<int>(_countof(VIEW_MENU_MODES)); ++i) {
-            const auto &choice = VIEW_MENU_MODES[i];
+        for (int i = 0; i < static_cast<int>(_countof(VIEW_PRESETS)); ++i) {
+            const auto &choice = VIEW_PRESETS[i];
             if (choice.mode != mode) continue;
             const int difference = choice.size < 0 ? 0 : std::abs(size - choice.size);
             if (difference < distance) { checked = i; distance = difference; }
         }
-        for (UINT i = 0; i < _countof(VIEW_MENU_MODES); ++i) {
+        for (UINT i = 0; i < _countof(VIEW_PRESETS); ++i) {
             MENUITEMINFOW entry = {sizeof(entry)};
             entry.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE | MIIM_FTYPE;
             entry.wID = IDM_VIEW_MODE_FIRST + i;

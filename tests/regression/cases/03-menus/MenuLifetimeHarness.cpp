@@ -18,8 +18,8 @@ using ULONG_PTR = std::uintptr_t;
 using DWORD = unsigned long;
 using FOLDERVIEWMODE = int;
 constexpr int FVM_AUTO=0;
-struct ViewMenuMode { int mode, size; };
-const ViewMenuMode VIEW_MENU_MODES[]={{1,48}};
+struct ViewPreset { int mode, size; };
+const ViewPreset VIEW_PRESETS[]={{1,48}};
 int scaleDPI(int value) { return value; }
 
 using UINT = unsigned;
