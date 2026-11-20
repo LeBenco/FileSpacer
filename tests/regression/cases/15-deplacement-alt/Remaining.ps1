@@ -169,11 +169,6 @@ try {
     if($Case -eq 'Scrollbar') { $names=@(0..79 | ForEach-Object { 'Scroll{0:D3}' -f $_ }) }
     foreach($name in $names) { [void](New-Item -ItemType Directory -Path (Join-Path $folder $name)) }
     $itemCount=$names.Count; $expectedNames=(@($names | Sort-Object) -join ';')
-    if ($Case -eq 'DoubleAlt') {
-        # A pointer left over a future row can seed another tooltip at startup. Place it directly: no window of this process is in the foreground yet, and injected motion is then not applied on the CI runner.
-        $screen=[FileSpacerRegression.Native]::WorkArea([IntPtr]::Zero)
-        Assert-Ui ([FileSpacerRegression.Native]::SetCursorPos(($screen.Right-1),($screen.Bottom-1))) 'Cannot park the pointer before opening the window.'
-    }
     $window=Open-UiFolder $folder $itemCount
     [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($window,[ref]$script:targetProcessId)
     Assert-Ui ($script:targetProcessId -ne 0) 'Cannot identify the tested window process.'
@@ -266,6 +261,12 @@ try {
         $tip=[IntPtr][FileSpacerRegression.Native]::Message($list,0x104e,0,0) # LVM_GETTOOLTIPS
         $state.Evidence.NativeTooltip=@{Available=(($extended -band 0x400) -ne 0 -and $tip -ne [IntPtr]::Zero);Shown=$false}
         if ($state.Evidence.NativeTooltip.Available) {
+            # A pointer left over a row since startup can have seeded another tooltip. Move it
+            # away and wait for that tooltip to close. The tested window has the foreground
+            # here: before it opens, the CI runner applies no pointer placement from this process.
+            $screen=[FileSpacerRegression.Native]::WorkArea($window)
+            [FileSpacerRegression.AltDragInput]::Move((Point-At ($screen.Right-1) ($screen.Bottom-1)))
+            Wait-Ui { ![FileSpacerRegression.Native]::IsWindowVisible($tip) } 'no tooltip left from startup before the natural hover' 0 10
             $hover=[FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,'AnchorA')
             [FileSpacerRegression.AltDragInput]::Move($hover)
             $until=[DateTime]::UtcNow.AddSeconds(5)
