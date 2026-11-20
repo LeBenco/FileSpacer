@@ -9,12 +9,12 @@
 - Preservar as posições livres dos ícones ao passar pela vista Conteúdo e regressar, mesmo depois de voltar a abrir a pasta.
 - Adicionar três modos de disposição de ícones mutuamente exclusivos: Automática, Na grelha e Livre, com uma pré-visualização do destino ao arrastar nos modos Automática e Na grelha.
 - Abrir mais rapidamente o menu Ver, mantendo a personalização do Nilesoft.
-- Manter a disposição nativa em linhas da vista Conteúdo, sem disposição livre dos ícones, realinhamento ou Snap.
+- Manter a disposição nativa em linhas das vistas Mosaicos e Conteúdo, sem disposição livre dos ícones, realinhamento ou Snap.
 - Adicionar as oito vistas do Explorador de Ficheiros: Ícones extra grandes, Ícones grandes, Ícones médios, Ícones pequenos, Lista, Detalhes, Mosaicos e Conteúdo, com os atalhos Ctrl+Shift+1 a 8.
 - Adicionar o comando **Realinhar os ícones** para reajustar uma vez a disposição atual e **Snap** durante o arrasto: manter **S** premido para alinhar apenas os ícones arrastados à grelha do Windows, sem mover os restantes, com uma moldura de destino semitransparente do tamanho do ícone.
 - Reconstruir a base de dados se estiver danificada.
 - Disponibilizar «Abrir no FileSpacer» nos menus de contexto das pastas de todos os programas.
-- Corrigir vários problemas de apresentação e introdução de dados: perda das posições livres em Ícones pequenos ou Mosaicos, passos de Ctrl+roda diferentes dos do Explorador de Ficheiros, repetição automática de Backspace, valores numéricos inválidos nas preferências, origem da animação de abertura para diferentes valores de PPP e posição de deslocamento ao reabrir no Windows 11.
+- Corrigir vários problemas de apresentação e introdução de dados: perda das posições livres em Ícones pequenos, passos de Ctrl+roda diferentes dos do Explorador de Ficheiros, repetição automática de Backspace, valores numéricos inválidos nas preferências, origem da animação de abertura para diferentes valores de PPP, posição de deslocamento ao reabrir no Windows 11 e bloqueio prolongado com ícones dispersos ao reabrir uma pasta grande com uma escala de ecrã superior a 100 %.
 - Manter as proporções das colunas da vista Detalhes que preenchem a janela ao fechar e reabrir uma pasta.
 - Adicionar uma opção para desativar a transferência de símbolos da Microsoft que acelera as pastas grandes e apresentar uma notificação quando ocorrer.
 - Parar as tentativas diárias de preparação da aceleração de pastas grandes após três falhas iguais e remover os dados relativos às versões do Windows substituídas.

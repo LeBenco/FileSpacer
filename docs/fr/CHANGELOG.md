@@ -9,12 +9,12 @@
 - Conserver les positions libres des icônes lors d’un passage par la vue Contenu, y compris après réouverture du dossier.
 - Proposer trois modes de placement exclusifs : Automatique, Sur la grille et Libre, avec un aperçu de la destination pendant les déplacements en mode Automatique ou Sur la grille.
 - Ouvrir plus rapidement le menu Affichage en conservant la personnalisation Nilesoft.
-- Conserver la disposition native en lignes du mode Contenu, sans placement libre des icônes, réalignement ni Snap.
+- Conserver la disposition native en lignes des modes Mosaïques et Contenu, sans placement libre des icônes, réalignement ni Snap.
 - Ajouter les huit modes d’affichage de l’Explorateur de fichiers : Très grandes icônes, Grandes icônes, Icônes moyennes, Petites icônes, Liste, Détails, Mosaïques et Contenu, avec les raccourcis Ctrl+Maj+1 à 8.
 - Ajouter la commande **Réaligner les icônes** pour recaler ponctuellement la disposition actuelle, ainsi que **Snap** pendant un déplacement : maintenir **S** pour aligner uniquement les icônes déplacées sur la grille Windows sans déplacer les autres, avec un cadre de destination translucide de la taille de l’icône.
 - Reconstruction de la base en cas de corruption.
 - Proposer « Ouvrir dans FileSpacer » dans les menus contextuels des dossiers de tous les programmes.
-- Corriger plusieurs problèmes d’affichage et de saisie : perte des positions libres en Petites icônes ou Mosaïques, pas de Ctrl+molette différents de ceux de l’Explorateur de fichiers, répétition de Retour arrière, valeurs numériques invalides dans les préférences, origine de l’animation d’ouverture selon la densité d’affichage et position de défilement à la réouverture sous Windows 11.
+- Corriger plusieurs problèmes d’affichage et de saisie : perte des positions libres en Petites icônes, pas de Ctrl+molette différents de ceux de l’Explorateur de fichiers, répétition de Retour arrière, valeurs numériques invalides dans les préférences, origine de l’animation d’ouverture selon la densité d’affichage, position de défilement à la réouverture sous Windows 11, ainsi que long blocage et icônes éparpillées à la réouverture d’un grand dossier avec une échelle d’affichage supérieure à 100 %.
 - Conserver les proportions des colonnes de la vue Détails qui remplissent la fenêtre lors de la fermeture et de la réouverture d’un dossier.
 - Ajouter une option pour désactiver le téléchargement des symboles Microsoft qui accélère les dossiers volumineux et afficher une notification lors de ce téléchargement.
 - Arrêter les nouvelles tentatives quotidiennes de préparation de l’accélération des dossiers volumineux après trois échecs identiques et supprimer ses données pour les versions de Windows remplacées.

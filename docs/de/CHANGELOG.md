@@ -9,12 +9,12 @@
 - Freie Symbolpositionen beim Wechsel zu Inhalt und zurück beibehalten, auch nach erneutem Öffnen des Ordners.
 - Drei sich gegenseitig ausschließende Modi für die Symbolanordnung hinzufügen: Automatisch, Am Raster und Frei, mit einer Vorschau der Zielposition beim Ziehen in den Modi Automatisch und Am Raster.
 - Das Menü Ansicht schneller öffnen und dabei die Nilesoft-Anpassung beibehalten.
-- Die native Anordnung in Zeilen in der Ansicht Inhalt beibehalten, ohne freie Symbolplatzierung, Neuausrichtung oder Snap.
+- Die native Anordnung in Zeilen in den Ansichten Kacheln und Inhalt beibehalten, ohne freie Symbolplatzierung, Neuausrichtung oder Snap.
 - Die acht Ansichten des Datei-Explorers hinzufügen: Extra große Symbole, Große Symbole, Mittelgroße Symbole, Kleine Symbole, Liste, Details, Kacheln und Inhalt, mit den Tastenkombinationen Strg+Umschalt+1 bis 8.
 - Den Befehl **Symbole neu ausrichten** zum einmaligen Ausrichten der aktuellen Anordnung sowie **Snap** beim Ziehen hinzufügen: **S** gedrückt halten, um nur die gezogenen Symbole am Windows-Raster auszurichten, ohne die anderen zu verschieben. Ein durchscheinender Rahmen in Symbolgröße zeigt das Ziel an.
 - Datenbank bei Beschädigung neu aufbauen.
 - „In FileSpacer öffnen“ in den Ordner-Kontextmenüs aller Programme anbieten.
-- Mehrere Anzeige- und Eingabeprobleme beheben: Verlust frei gesetzter Positionen bei kleinen Symbolen oder Kacheln, vom Datei-Explorer abweichende Strg+Mausrad-Schritte, automatische Wiederholung der Rücktaste, ungültige Zahlenwerte in den Einstellungen, Ausgangspunkt der Öffnungsanimation bei unterschiedlichen DPI-Werten und Bildlaufposition beim erneuten Öffnen unter Windows 11.
+- Mehrere Anzeige- und Eingabeprobleme beheben: Verlust frei gesetzter Positionen bei kleinen Symbolen, vom Datei-Explorer abweichende Strg+Mausrad-Schritte, automatische Wiederholung der Rücktaste, ungültige Zahlenwerte in den Einstellungen, Ausgangspunkt der Öffnungsanimation bei unterschiedlichen DPI-Werten, Bildlaufposition beim erneuten Öffnen unter Windows 11 sowie langes Einfrieren und verstreute Symbole beim erneuten Öffnen eines großen Ordners bei einer Anzeigeskalierung über 100 %.
 - Die Proportionen fensterfüllender Spalten in der Detailansicht beim Schließen und erneuten Öffnen eines Ordners beibehalten.
 - Eine Option zum Abschalten des Downloads von Microsoft-Symbolen zur Beschleunigung großer Ordner hinzufügen und beim Download eine Benachrichtigung anzeigen.
 - Die täglichen Versuche zur Vorbereitung der Beschleunigung großer Ordner nach drei gleichen Fehlern beenden und die Daten für ersetzte Windows-Versionen entfernen.

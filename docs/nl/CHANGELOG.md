@@ -9,12 +9,12 @@
 - Vrije pictogramposities behouden bij het wisselen naar Inhoud en terug, ook na het opnieuw openen van de map.
 - Drie elkaar uitsluitende modi voor pictogramplaatsing toevoegen: Automatisch, Op raster en Vrij, met een voorbeeld van de bestemming tijdens het slepen in de modi Automatisch en Op raster.
 - Het menu Beeld sneller openen met behoud van Nilesoft-aanpassingen.
-- De ingebouwde indeling in rijen behouden in de weergave Inhoud, zonder vrije pictogramplaatsing, opnieuw uitlijnen of Snap.
+- De ingebouwde indeling in rijen behouden in de weergaven Tegels en Inhoud, zonder vrije pictogramplaatsing, opnieuw uitlijnen of Snap.
 - De acht weergaven van Bestandenverkenner toevoegen: Extra grote pictogrammen, Grote pictogrammen, Middelgrote pictogrammen, Kleine pictogrammen, Lijst, Details, Tegels en Inhoud, met de sneltoetsen Ctrl+Shift+1 tot 8.
 - De opdracht **Pictogrammen opnieuw uitlijnen** toevoegen om de huidige indeling eenmalig uit te lijnen, en **Snap** tijdens het slepen: houd **S** ingedrukt om alleen de gesleepte pictogrammen op het Windows-raster uit te lijnen zonder de andere te verplaatsen, met een halfdoorzichtig bestemmingskader ter grootte van het pictogram.
 - De database opnieuw opbouwen bij beschadiging.
 - ‘Openen in FileSpacer’ aanbieden in de mapcontextmenu’s van alle programma’s.
-- Verschillende weergave- en invoerproblemen oplossen: verlies van vrije posities bij Kleine pictogrammen of Tegels, Ctrl+muiswiel-stappen die afwijken van Bestandenverkenner, automatisch herhaalde Backspace, ongeldige getallen in de voorkeuren, het beginpunt van de openingsanimatie bij verschillende DPI-waarden en de schuifpositie bij heropenen onder Windows 11.
+- Verschillende weergave- en invoerproblemen oplossen: verlies van vrije posities bij Kleine pictogrammen, Ctrl+muiswiel-stappen die afwijken van Bestandenverkenner, automatisch herhaalde Backspace, ongeldige getallen in de voorkeuren, het beginpunt van de openingsanimatie bij verschillende DPI-waarden, de schuifpositie bij heropenen onder Windows 11 en langdurig vastlopen met verspreide pictogrammen bij het heropenen van een grote map bij een beeldschermschaal boven 100%.
 - De verhoudingen van venstervullende kolommen in de detailweergave behouden bij het sluiten en heropenen van een map.
 - Een optie toevoegen om de download van Microsoft-symbolen voor het versnellen van grote mappen uit te schakelen en een melding tonen wanneer deze plaatsvindt.
 - De dagelijkse pogingen om de versnelling van grote mappen voor te bereiden stoppen na drie identieke fouten en de bijbehorende gegevens voor vervangen Windows-versies verwijderen.

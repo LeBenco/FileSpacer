@@ -9,12 +9,12 @@
 - Zachować dowolne pozycje ikon przy przejściu do widoku Zawartość i z powrotem, również po ponownym otwarciu folderu.
 - Dodać trzy wzajemnie wykluczające się tryby rozmieszczenia ikon: Automatyczne, Na siatce i Dowolne, z podglądem miejsca docelowego podczas przeciągania w trybach Automatyczne i Na siatce.
 - Szybciej otwierać menu Widok z zachowaniem dostosowań Nilesoft.
-- Zachować natywny układ w wierszach w widoku Zawartość, bez dowolnego rozmieszczania ikon, ponownego wyrównywania ani Snap.
+- Zachować natywny układ w wierszach w widokach Kafelki i Zawartość, bez dowolnego rozmieszczania ikon, ponownego wyrównywania ani Snap.
 - Dodać osiem widoków Eksploratora plików: Bardzo duże ikony, Duże ikony, Średnie ikony, Małe ikony, Lista, Szczegóły, Kafelki i Zawartość, ze skrótami Ctrl+Shift+1–8.
 - Dodać polecenie **Wyrównaj ikony ponownie**, które jednorazowo wyrównuje bieżący układ, oraz **Snap** podczas przeciągania: przytrzymanie **S** wyrównuje do siatki Windows tylko przeciągane ikony, bez przesuwania pozostałych, z półprzezroczystą ramką miejsca docelowego o rozmiarze ikony.
 - Odbudować bazę danych w razie uszkodzenia.
 - Udostępnić polecenie „Otwórz w FileSpacer” w menu kontekstowych folderów we wszystkich programach.
-- Naprawić problemy z widokiem i wprowadzaniem danych: utratę dowolnych pozycji w widokach Małe ikony i Kafelki, kroki Ctrl+kółko inne niż w Eksploratorze plików, automatyczne powtarzanie Backspace, nieprawidłowe wartości liczbowe w ustawieniach, punkt początkowy animacji otwierania przy różnych DPI i pozycję przewijania po ponownym otwarciu w Windows 11.
+- Naprawić problemy z widokiem i wprowadzaniem danych: utratę dowolnych pozycji w widoku Małe ikony, kroki Ctrl+kółko inne niż w Eksploratorze plików, automatyczne powtarzanie Backspace, nieprawidłowe wartości liczbowe w ustawieniach, punkt początkowy animacji otwierania przy różnych DPI, pozycję przewijania po ponownym otwarciu w Windows 11 oraz długie zawieszenie i rozrzucone ikony po ponownym otwarciu dużego folderu przy skali ekranu powyżej 100%.
 - Zachowywać proporcje kolumn widoku Szczegóły wypełniających okno po zamknięciu i ponownym otwarciu folderu.
 - Dodać opcję wyłączenia pobierania symboli Microsoft przyspieszających duże foldery i wyświetlać powiadomienie o ich pobieraniu.
 - Zakończyć codzienne próby przygotowania przyspieszenia dużych folderów po trzech takich samych błędach i usuwać jego dane dla zastąpionych wersji Windows.

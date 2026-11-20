@@ -9,12 +9,12 @@
 - Conservar las posiciones libres de los iconos al pasar por la vista Contenido, incluso después de volver a abrir la carpeta.
 - Añadir tres modos de colocación de iconos mutuamente excluyentes: Automática, En cuadrícula y Libre, con una vista previa del destino al arrastrar en los modos Automática y En cuadrícula.
 - Abrir más rápido el menú Vista conservando la personalización de Nilesoft.
-- Mantener la distribución nativa en filas de la vista Contenido, sin colocación libre de iconos, realineación ni Snap.
+- Mantener la distribución nativa en filas de las vistas Mosaicos y Contenido, sin colocación libre de iconos, realineación ni Snap.
 - Añadir las ocho vistas del Explorador de archivos: Iconos muy grandes, Iconos grandes, Iconos medianos, Iconos pequeños, Lista, Detalles, Mosaicos y Contenido, con los atajos Ctrl+Mayús+1 a 8.
 - Añadir el comando **Volver a alinear los iconos** para reajustar una vez la distribución actual y **Snap** durante el arrastre: mantener pulsada **S** para alinear con la cuadrícula de Windows solo los iconos arrastrados, sin mover los demás, con un marco de destino semitransparente del tamaño del icono.
 - Reconstruir la base de datos si está dañada.
 - Ofrecer «Abrir en FileSpacer» en los menús contextuales de carpetas de todos los programas.
-- Corregir varios problemas de visualización y entrada: pérdida de posiciones libres en Iconos pequeños o Mosaicos, pasos de Ctrl+rueda distintos a los del Explorador de archivos, repetición automática de Retroceso, valores numéricos no válidos en las preferencias, origen de la animación de apertura con distintos valores de PPP y posición de desplazamiento al reabrir en Windows 11.
+- Corregir varios problemas de visualización y entrada: pérdida de posiciones libres en Iconos pequeños, pasos de Ctrl+rueda distintos a los del Explorador de archivos, repetición automática de Retroceso, valores numéricos no válidos en las preferencias, origen de la animación de apertura con distintos valores de PPP, posición de desplazamiento al reabrir en Windows 11 y bloqueo prolongado con iconos dispersos al reabrir una carpeta grande con una escala de pantalla superior al 100 %.
 - Conservar las proporciones de las columnas que llenan la ventana en la vista Detalles al cerrar y volver a abrir una carpeta.
 - Añadir una opción para desactivar la descarga de símbolos de Microsoft que acelera las carpetas grandes y mostrar una notificación cuando se realice.
 - Detener los reintentos diarios de preparación de la aceleración de carpetas grandes tras tres errores iguales y eliminar sus datos para las versiones de Windows sustituidas.

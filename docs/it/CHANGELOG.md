@@ -9,12 +9,12 @@
 - Conservare le posizioni libere delle icone passando alla vista Contenuto e tornando indietro, anche dopo aver riaperto la cartella.
 - Aggiungere tre modalità di disposizione delle icone mutuamente esclusive: Automatica, Sulla griglia e Libera, con un’anteprima della destinazione durante il trascinamento in modalità Automatica o Sulla griglia.
 - Aprire più rapidamente il menu Visualizza mantenendo le personalizzazioni Nilesoft.
-- Mantenere la disposizione nativa in righe della vista Contenuto, senza posizionamento libero delle icone, riallineamento o Snap.
+- Mantenere la disposizione nativa in righe delle viste Riquadri e Contenuto, senza posizionamento libero delle icone, riallineamento o Snap.
 - Aggiungere le otto visualizzazioni di Esplora file: Icone molto grandi, Icone grandi, Icone medie, Icone piccole, Elenco, Dettagli, Riquadri e Contenuto, con le scorciatoie Ctrl+Maiusc+1–8.
 - Aggiungere il comando **Riallinea le icone** per riallineare una sola volta la disposizione attuale e **Snap** durante il trascinamento: tenere premuto **S** per allineare alla griglia di Windows solo le icone trascinate, senza spostare le altre, con un riquadro di destinazione semitrasparente delle dimensioni dell’icona.
 - Ricostruire il database in caso di danneggiamento.
 - Offrire «Apri in FileSpacer» nei menu contestuali delle cartelle di tutti i programmi.
-- Correggere vari problemi di visualizzazione e immissione: perdita delle posizioni libere nelle viste Icone piccole e Riquadri, passi di Ctrl+rotellina diversi da Esplora file, ripetizione automatica di Backspace, valori numerici non validi nelle preferenze, origine dell’animazione di apertura con diversi valori DPI e posizione di scorrimento alla riapertura in Windows 11.
+- Correggere vari problemi di visualizzazione e immissione: perdita delle posizioni libere nella vista Icone piccole, passi di Ctrl+rotellina diversi da Esplora file, ripetizione automatica di Backspace, valori numerici non validi nelle preferenze, origine dell’animazione di apertura con diversi valori DPI, posizione di scorrimento alla riapertura in Windows 11 e blocco prolungato con icone sparse alla riapertura di una cartella grande con una scala dello schermo superiore al 100%.
 - Mantenere le proporzioni delle colonne che riempiono la finestra nella visualizzazione Dettagli quando si chiude e si riapre una cartella.
 - Aggiungere un’opzione per disattivare il download dei simboli Microsoft che velocizza le cartelle di grandi dimensioni e mostrare una notifica quando avviene.
 - Interrompere i tentativi giornalieri di preparazione dell’accelerazione delle cartelle di grandi dimensioni dopo tre errori identici e rimuovere i dati relativi alle versioni di Windows sostituite.
