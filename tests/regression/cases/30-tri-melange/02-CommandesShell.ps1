@@ -10,7 +10,6 @@ $scenarios=@(
     '..\19-commandes-shell\01-CreationRenommageSuppression.ps1',
     '..\19-commandes-shell\02-CopierCouperColler.ps1',
     '..\19-commandes-shell\03-GlisserDeposer.ps1',
-    '..\19-commandes-shell\04-MenusContextuels.ps1',
     '..\19-commandes-shell\05-RenommageDossierOuvert.ps1',
     '..\12-navigation-spatiale\01-Navigation.ps1'
 )
