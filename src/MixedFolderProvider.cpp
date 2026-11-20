@@ -192,12 +192,12 @@ class IconDropTarget : public IDropTarget, public IObjectWithSite {
     CComPtr<IIconDropPolicySite> site;
     CComPtr<IIconDropPolicy> policy;
     CComPtr<IDataObject> data;
-    CComHeapPtr<ITEMID_CHILD> target;
+    const bool item; // An item's target or the background's, for the Debug trace.
     bool entered = false;
     DWORD allowedEffects = DROPEFFECT_NONE;
     HRESULT update(DWORD keys, POINTL point, DWORD *effect) {
         if (!effect) return E_POINTER;
-        const HRESULT decision = policy ? policy->Placement(target, point, keys) : S_FALSE;
+        const HRESULT decision = policy ? policy->Placement(point, keys) : S_FALSE;
         if (FAILED(decision)) {
             if (entered) { native->DragLeave(); entered = false; }
             *effect = DROPEFFECT_NONE;
@@ -217,13 +217,11 @@ class IconDropTarget : public IDropTarget, public IObjectWithSite {
         return native->DragOver(keys, point, effect);
     }
 public:
-    IconDropTarget(IDropTarget *value, IIconDropPolicySite *owner, PCUITEMID_CHILD id)
-        : native(value), site(owner) {
-        if (id) target.Attach(ILCloneChild(id));
+    IconDropTarget(IDropTarget *value, IIconDropPolicySite *owner, bool forItem)
+        : native(value), site(owner), item(forItem) {
         ++objects;
     }
     ~IconDropTarget() { if (entered) native->DragLeave(); --objects; }
-    bool copied(PCUITEMID_CHILD id) const { return !id || target; }
     STDMETHODIMP QueryInterface(REFIID iid, void **out) override {
         if (!out) return E_POINTER;
         *out = nullptr;
@@ -238,7 +236,7 @@ public:
             if (SUCCEEDED(native->QueryInterface(iid, reinterpret_cast<void **>(&accepted))) && accepted) {
                 wchar_t name[40] = {};
                 if (StringFromGUID2(iid, name, _countof(name)))
-                    debugPrintf(L"DROP INTERFACE masked=%s target=%s\n", name, target ? L"item" : L"background");
+                    debugPrintf(L"DROP INTERFACE masked=%s target=%s\n", name, item ? L"item" : L"background");
             }
 #endif
             return E_NOINTERFACE;
@@ -293,7 +291,7 @@ public:
             const HRESULT result = site->GetIconDropPolicy(&policy);
             if (FAILED(result)) { DragLeave(); *effect = DROPEFFECT_NONE; return result; }
         }
-        const HRESULT decision = policy ? policy->Placement(target, point, keys) : S_FALSE;
+        const HRESULT decision = policy ? policy->Placement(point, keys) : S_FALSE;
         if (decision != S_FALSE) { DragLeave(); *effect = DROPEFFECT_NONE; return DRAGDROP_S_CANCEL; }
         HRESULT result = S_OK;
         if (!entered) {
@@ -315,9 +313,8 @@ HRESULT decorateDropTarget(IIconDropPolicySite *site, PCUITEMID_CHILD id, void *
     CComPtr<IDropTarget> native;
     native.Attach(static_cast<IDropTarget *>(*out)); *out = nullptr;
     if (!native) return E_NOINTERFACE;
-    auto decorated = new(std::nothrow) IconDropTarget(native, site, id);
+    auto decorated = new(std::nothrow) IconDropTarget(native, site, id != nullptr);
     if (!decorated) return E_OUTOFMEMORY;
-    if (!decorated->copied(id)) { decorated->Release(); return E_OUTOFMEMORY; }
     *out = static_cast<IDropTarget *>(decorated);
     return S_OK;
 }

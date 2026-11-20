@@ -17,7 +17,7 @@ MIDL_INTERFACE("91D72DCF-DE04-4CED-995C-A4870EB11D32") IMixedFolder : public IUn
 // Per-view, in-process policy. S_OK reserves an internal icon placement;
 // S_FALSE delegates the file operation to the native folder drop target.
 MIDL_INTERFACE("F9A9CA46-4665-4D2C-B63D-C702DE888047") IIconDropPolicy : public IUnknown {
-    virtual HRESULT STDMETHODCALLTYPE Placement(PCUITEMID_CHILD target, POINTL cursor, DWORD keys) = 0;
+    virtual HRESULT STDMETHODCALLTYPE Placement(POINTL cursor, DWORD keys) = 0;
 };
 MIDL_INTERFACE("879ECF31-94B1-42F1-893F-441D9ACBA91C") IIconDropPolicySite : public IUnknown {
     virtual HRESULT STDMETHODCALLTYPE SetIconDropPolicy(IIconDropPolicy *policy) = 0;
