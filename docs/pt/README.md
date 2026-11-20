@@ -20,7 +20,7 @@ O FileSpacer privilegia uma experiência leve e descomplicada. Para limitar a ac
 
 <a id="system--languages"></a>**Sistema e idiomas:** Windows 10 ou posterior, x64. Disponível em dez idiomas: inglês, francês, alemão, italiano, espanhol, português (Portugal), grego, polaco, neerlandês e ucraniano.
 
-<a id="privacy"></a>**Privacidade:** **Sem telemetria, monitorização de utilização ou publicidade.** As verificações de atualizações contactam o GitHub. As semanais são opcionais e estão desativadas por predefinição. A transferência e a instalação exigem confirmação. [Privacidade](user-guide.md#privacy).
+<a id="privacy"></a>**Privacidade:** **Sem telemetria, monitorização de utilização ou publicidade.** As verificações de atualizações contactam o GitHub. As semanais são opcionais e estão desativadas por predefinição. A transferência e a instalação exigem confirmação. Os ficheiros de símbolos que aceleram a gestão de pastas grandes são transferidos da Microsoft; isto é opcional e está ativado por predefinição. [Privacidade](user-guide.md#privacy).
 
 **Instalação:**
 

@@ -19,7 +19,7 @@ FileSpacer kiest voor een lichte, overzichtelijke ervaring. Om de opeenstapeling
 
 <a id="system--languages"></a>**Systeem en talen:** Windows 10 of nieuwer, x64. Tien talen: Engels, Frans, Duits, Italiaans, Spaans, Portugees (Portugal), Grieks, Pools, Nederlands en Oekraïens.
 
-<a id="privacy"></a>**Privacy:** **Geen telemetrie, gebruiksregistratie of reclame**. Updatecontroles maken contact met GitHub. Wekelijkse controles zijn optioneel en staan standaard uit. Downloaden en installeren vereisen bevestiging. [Privacybeleid](user-guide.md#privacy).
+<a id="privacy"></a>**Privacy:** **Geen telemetrie, gebruiksregistratie of reclame**. Updatecontroles maken contact met GitHub. Wekelijkse controles zijn optioneel en staan standaard uit. Downloaden en installeren vereisen bevestiging. Symboolbestanden die grote mappen sneller laten verwerken worden van Microsoft gedownload; dit is optioneel en staat standaard aan. [Privacybeleid](user-guide.md#privacy).
 
 **Installatie:**
 
