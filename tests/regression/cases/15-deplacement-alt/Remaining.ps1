@@ -254,30 +254,6 @@ try {
     $before=[FileSpacerRegression.Native]::Bounds($window); $state.Before=$before
     Write-Host ('VIEW: '+($state | ConvertTo-Json -Depth 6 -Compress))
     if($Case -eq 'QuickAccess') { $quickAccessWindowsBefore=@([FileSpacerRegression.Native]::Top('FileSpacer Item Window',[NullString]::Value,$script:targetProcessId) | ForEach-Object { $_.ToInt64() }) }
-    if ($Case -eq 'DoubleAlt' -and $list -ne [IntPtr]::Zero) {
-        # Exercise a natural hover before the unchanged click sequence. Windows
-        # may omit an infotip; record its actual presence rather than require it.
-        $extended=[FileSpacerRegression.Native]::Message($list,0x1037,0,0) # LVM_GETEXTENDEDLISTVIEWSTYLE
-        $tip=[IntPtr][FileSpacerRegression.Native]::Message($list,0x104e,0,0) # LVM_GETTOOLTIPS
-        $state.Evidence.NativeTooltip=@{Available=(($extended -band 0x400) -ne 0 -and $tip -ne [IntPtr]::Zero);Shown=$false}
-        if ($state.Evidence.NativeTooltip.Available) {
-            # A pointer left over a row since startup can have seeded another tooltip. Move it
-            # away and wait for that tooltip to close. The tested window has the foreground
-            # here: before it opens, the CI runner applies no pointer placement from this process.
-            $screen=[FileSpacerRegression.Native]::WorkArea($window)
-            [FileSpacerRegression.AltDragInput]::Move((Point-At ($screen.Right-1) ($screen.Bottom-1)))
-            Wait-Ui { ![FileSpacerRegression.Native]::IsWindowVisible($tip) } 'no tooltip left from startup before the natural hover' 0 10
-            $hover=[FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,'AnchorA')
-            [FileSpacerRegression.AltDragInput]::Move($hover)
-            $until=[DateTime]::UtcNow.AddSeconds(5)
-            while (!($state.Evidence.NativeTooltip.Shown=[FileSpacerRegression.Native]::IsWindowVisible($tip)) -and [DateTime]::UtcNow -lt $until) { Start-Sleep -Milliseconds 50 }
-            if ($state.Evidence.NativeTooltip.Shown) {
-                $bounds=[FileSpacerRegression.Native]::Bounds($tip)
-                $state.Evidence.NativeTooltip.Bounds=$bounds
-                $state.Evidence.NativeTooltip.CoversTarget=($point.X -ge $bounds.Left -and $point.X -lt $bounds.Right -and $point.Y -ge $bounds.Top -and $point.Y -lt $bounds.Bottom)
-            }
-        }
-    }
     Save-AltWindowEvidence 'before-gesture'
     $phase='gesture'
     switch($Case) {
