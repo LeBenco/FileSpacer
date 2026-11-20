@@ -3,6 +3,12 @@
   "channel": "chocolatey",
   "initialized": true,
   "accepted": "v1.4.2",
-  "active": [],
-  "pending": "v1.5.0"
+  "active": [
+    {
+      "tag": "v1.5.0",
+      "phase": "uncertain",
+      "runId": "44809077942"
+    }
+  ],
+  "pending": null
 }
