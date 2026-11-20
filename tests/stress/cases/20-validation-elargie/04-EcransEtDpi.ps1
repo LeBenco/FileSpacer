@@ -1,6 +1,6 @@
 # Test-Category: UI
 param([string]$ProjectRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path)
-. (Join-Path $PSScriptRoot '..\..\common\ShellIntegration.ps1')
+. (Join-Path $PSScriptRoot '..\..\..\regression\common\ShellIntegration.ps1')
 $testFailure=$null;$observations=@()
 try {
     Initialize-Ui 'shell-monitors-dpi'
