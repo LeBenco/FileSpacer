@@ -457,7 +457,7 @@ instructions, ownership and CFG targets are checked and cached separately;
 absence retains the existing manager capability or the public path. Case
 `06-SelectionRange.ps1` covers qualification, cache faults and late publication.
 
-Cases `05-SelectionAll.ps1` and `06-SelectionAllVisible.ps1` exercise the production
+Case `05-SelectionAll.ps1` and its presented stress variant `06-SelectionAllVisible.ps1` exercise the production
 adapter from empty and partial selections in nine configurations, plus a forced
 public selection fallback. They verify identities, retained snapshots, selection
 data objects, sorting, focus and subsequent operations. Case 06 uses visible
