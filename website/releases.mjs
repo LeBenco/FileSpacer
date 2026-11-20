@@ -32,7 +32,7 @@ export async function fetchReleaseDates(request = fetch, token = process.env.GH_
 
 export function releaseHeading(title, locale, dates) {
   const version = title.match(/^(\d+\.\d+\.\d+)(?=\s|$)/)?.[1];
-  if (!version) throw new Error(`Changelog sections must start with a release version: ${title}`);
+  if (!version) return null;
   if (!Object.hasOwn(dates, version)) return version;
   const date = new Intl.DateTimeFormat(locale, {
     year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC',
