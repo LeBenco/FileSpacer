@@ -170,9 +170,9 @@ try {
     foreach($name in $names) { [void](New-Item -ItemType Directory -Path (Join-Path $folder $name)) }
     $itemCount=$names.Count; $expectedNames=(@($names | Sort-Object) -join ';')
     if ($Case -eq 'DoubleAlt') {
-        # A pointer left over a future row can seed another tooltip at startup.
+        # A pointer left over a future row can seed another tooltip at startup. Place it directly: no window of this process is in the foreground yet, and injected motion is then not applied on the CI runner.
         $screen=[FileSpacerRegression.Native]::WorkArea([IntPtr]::Zero)
-        [FileSpacerRegression.AltDragInput]::Move((Point-At ($screen.Right-1) ($screen.Bottom-1)))
+        Assert-Ui ([FileSpacerRegression.Native]::SetCursorPos(($screen.Right-1),($screen.Bottom-1))) 'Cannot park the pointer before opening the window.'
     }
     $window=Open-UiFolder $folder $itemCount
     [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($window,[ref]$script:targetProcessId)
