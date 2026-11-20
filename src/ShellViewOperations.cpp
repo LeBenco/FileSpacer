@@ -478,9 +478,8 @@ HRESULT ShellIconGrid::apply(PreparedIconPositions &positions, const std::functi
         if (!current()) return E_ABORT;
     }
     if (!positions.ready || positions.items.size() != positions.points.size()) return E_INVALIDARG;
-    positions.ready = false;
-    const HRESULT result = folder->SelectAndPositionItems(static_cast<UINT>(positions.items.size()),
-        positions.items.data(), positions.points.data(), SVSI_POSITIONITEM | SVSI_NOSTATECHANGE);
+    // The aligned batch is written like a free placement, under its redraw guard.
+    const HRESULT result = applyIconPositions(positions.view, positions, current);
     if (!current()) return E_ABORT;
 #ifdef FILESPACER_DEBUG
     if (SUCCEEDED(result)) debugPrintf(L"GRID SNAP path=public elapsed_ms=%llu\n", GetTickCount64() - began);
