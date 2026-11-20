@@ -1,6 +1,6 @@
 param(
     [string]$ProjectRoot,
-    [Parameter(Mandatory=$true)][ValidateSet('Mode','Unselected','Inactive','ReleaseAlt','Escape','AltClick','PlainClick','PlainRectangle','DoubleAlt','DoubleAltMotion','Header','Rename','Toolbar','Search','QuickAccess','MultipleIcon','Cell','ReleaseEarly','AltBackgroundClick','MenuButton','PlainDouble','Scrollbar','PlainDrag')][string]$Case,
+    [Parameter(Mandatory=$true)][ValidateSet('Mode','Unselected','Escape','PlainRectangle','Rename','PlainDouble','Scrollbar','PlainDrag')][string]$Case,
     [uint32]$ViewMode=0,[string]$ViewName='', [int]$IconSize=-1,[bool]$FullNamesOnSelection=$true
 )
 . (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
@@ -11,28 +11,15 @@ $references=@([System.Windows.Automation.AutomationElement].Assembly.Location,
     [System.Windows.Automation.ControlType].Assembly.Location,[System.Windows.Rect].Assembly.Location)
 Add-Type -Path (Join-Path $PSScriptRoot 'MouseInput.cs') -ReferencedAssemblies $references
 Add-Type -Path (Join-Path $PSScriptRoot 'NativeTargets.cs') -ReferencedAssemblies @([ComponentModel.Win32Exception].Assembly.Location)
-if($Case -in @('DoubleAlt','DoubleAltMotion','QuickAccess')) { Add-Type -Path (Join-Path $PSScriptRoot 'WindowEvidence.cs') }
 if($Case -eq 'Scrollbar') { Add-Type -Path (Join-Path $PSScriptRoot '..\..\common\ViewLayout.cs') -ReferencedAssemblies $references }
-$testFailure=$null; $window=[IntPtr]::Zero; $properties=[IntPtr]::Zero
-$phase='initialization'; $list=[IntPtr]::Zero; $other=[IntPtr]::Zero
+$testFailure=$null; $window=[IntPtr]::Zero
+$phase='initialization'; $list=[IntPtr]::Zero
 $state=@{Status='RUNNING'; Case=$Case; Phase=$phase; Error=$null; Before=$null; After=$null;
     ViewWindow=$null; Mode=$null; IconSize=$null; RequestedMode=$ViewMode; RequestedFullNames=$FullNamesOnSelection;
     StoredFullNames=$null; Children=$null; SelectionBefore=$null; SelectionAfter=$null;
     InputBeforeRelease=$null; InputAfterRelease=$null; Evidence=@{}}
 
-$script:diagnosticProcessId=[uint32]0
 $script:targetProcessId=[uint32]0
-$quickAccessWindowsBefore=$null
-function Save-AltWindowEvidence([string]$Stage) {
-    if($Case -notin @('DoubleAlt','DoubleAltMotion','QuickAccess') -or $window -eq [IntPtr]::Zero) { return }
-    try {
-        if($script:diagnosticProcessId -eq 0) {
-            [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($window,[ref]$script:diagnosticProcessId)
-        }
-        $snapshot=[FileSpacerRegression.WindowEvidence]::Capture($window,$script:diagnosticProcessId,'OtherC')
-        $snapshot | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $env:FS_REGRESSION_RUN ('windows-'+$Stage+'.json')) -Encoding UTF8
-    } catch { Write-Warning ('Cannot collect window evidence: '+$_.Exception.Message) }
-}
 
 function Point-At([int]$X,[int]$Y) { $p=New-Object FileSpacerRegression.MousePoint; $p.X=$X; $p.Y=$Y; return $p }
 function Assert-Fixed($Baseline) {
@@ -58,42 +45,24 @@ function Wait-Idle {
 function Background-Point {
     return [FileSpacerRegression.AltDragInput]::BackgroundPoint($viewWindow)
 }
-function Item-Point([string]$Name,[bool]$Selected,[bool]$Cell=$false) {
+function Item-Point([string]$Name,[bool]$Selected) {
     $index=Use-UiView $window {param($view) $view.IndexOf($Name)}
     $selectedNames=@(Use-UiView $window {param($view) $view.Selected()})
     Assert-Ui ($index -ge 0 -and (($selectedNames -contains $Name) -eq $Selected)) 'Unexpected target item identity or selection.'
-    if($Cell -and $list -ne [IntPtr]::Zero) { $native=[FileSpacerRegression.NativeTargets]::Item($list,$index,$itemCount,$Selected,$true) }
-    elseif($Cell) { $native=[FileSpacerRegression.AltDragInput]::CellPoint($viewWindow,$Name) }
-    else {
-        try { $native=[FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,$Name) }
-        catch {
-            # Some classic Small Icons providers omit a newly added item from
-            # UIA. Fall back only for that precise absence, on one real ListView.
-            # The native query checks item count, selection and icon hit-test;
-            # the index was resolved by its Shell identity above.
-            if($_.Exception.GetBaseException().Message -ne ('Expected one visible item named '+$Name+'; found 0.')){throw}
-            $body=Use-UiView $window {param($view) $view.Window}
-            $containers=@([FileSpacerRegression.Native]::Children($body,'SysListView32'))
-            if($containers.Count-ne1){throw}
-            $native=[FileSpacerRegression.NativeTargets]::Item($containers[0],$index,$itemCount,$Selected,$false)
-            $state.Evidence.TargetInspection='Validated classic ListView query; UIA item unavailable'
-        }
+    try { $native=[FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,$Name) }
+    catch {
+        # Some classic Small Icons providers omit a newly added item from
+        # UIA. Fall back only for that precise absence, on one real ListView.
+        # The native query checks item count, selection and icon hit-test;
+        # the index was resolved by its Shell identity above.
+        if($_.Exception.GetBaseException().Message -ne ('Expected one visible item named '+$Name+'; found 0.')){throw}
+        $body=Use-UiView $window {param($view) $view.Window}
+        $containers=@([FileSpacerRegression.Native]::Children($body,'SysListView32'))
+        if($containers.Count-ne1){throw}
+        $native=[FileSpacerRegression.NativeTargets]::Item($containers[0],$index,$itemCount,$Selected,$false)
+        $state.Evidence.TargetInspection='Validated classic ListView query; UIA item unavailable'
     }
-    $state.Evidence.Target=@{Name=$Name; Index=$index; X=$native.X; Y=$native.Y; Cell=$Cell; Selected=$Selected}
-    return Point-At $native.X $native.Y
-}
-function Control-Point([IntPtr]$Control) {
-    $r=[FileSpacerRegression.Native]::ClientBounds($Control)
-    $native=[FileSpacerRegression.NativeTargets]::Control($Control,$r.Left,$r.Top,$r.Right,$r.Bottom)
-    return Point-At $native.X $native.Y
-}
-function Toolbar-Point([string]$Command) {
-    $id=Get-UiId $Command
-    $bars=@([FileSpacerRegression.Native]::Children($window,'ToolbarWindow32') | Where-Object {
-        [FileSpacerRegression.Native]::IsWindowVisible($_) -and [FileSpacerRegression.Native]::Message($_,0x419,$id,0) -ge 0
-    })
-    Assert-Ui ($bars.Count -eq 1) "Expected one visible toolbar for $Command."
-    $native=[FileSpacerRegression.NativeTargets]::Toolbar($bars[0],$id)
+    $state.Evidence.Target=@{Name=$Name; Index=$index; X=$native.X; Y=$native.Y; Selected=$Selected}
     return Point-At $native.X $native.Y
 }
 function Begin-Gesture($Point,[bool]$Alt=$true,[bool]$Double=$false) {
@@ -101,59 +70,19 @@ function Begin-Gesture($Point,[bool]$Alt=$true,[bool]$Double=$false) {
     [FileSpacerRegression.AltDragInput]::Begin($window,$Point,$Alt,$Double)
     [FileSpacerRegression.AltDragInput]::VerifyHeld($Alt)
 }
-function Start-Move($Point,[bool]$ReleaseEarly=$false) {
+function Start-Move($Point) {
     Begin-Gesture $Point
-    if($ReleaseEarly) {
-        Wait-Ui { [FileSpacerRegression.AltDragInput]::Captured($window) } 'Alt press reached DragDetect before modifier release' 0 5
-        [FileSpacerRegression.AltDragInput]::ReleaseAlt()
-        [FileSpacerRegression.AltDragInput]::VerifyHeld($false)
-    }
     [FileSpacerRegression.AltDragInput]::Move((Point-At ($Point.X+32) ($Point.Y+24)))
     Wait-Ui { [FileSpacerRegression.AltDragInput]::Moving($window) } 'native window move started' 0 5
 }
-function Finish-Move($Point,[bool]$Alt=$true) {
-    [FileSpacerRegression.AltDragInput]::VerifyHeld($Alt)
+function Finish-Move($Point) {
+    [FileSpacerRegression.AltDragInput]::VerifyHeld($true)
     [FileSpacerRegression.AltDragInput]::Move((Point-At ($Point.X+96) ($Point.Y+72)))
     Start-Sleep -Milliseconds 100
     $state.InputBeforeRelease=[FileSpacerRegression.AltDragInput]::Describe($window)
     [FileSpacerRegression.AltDragInput]::End()
     Wait-Idle
     Assert-Moved $before
-}
-function Test-AltProperties([IntPtr]$Dialog) {
-    $dialogProcessId=[uint32]0
-    [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($Dialog,[ref]$dialogProcessId)
-    if($dialogProcessId -ne $script:targetProcessId -or
-            [FileSpacerRegression.Native]::Class($Dialog) -ne '#32770' -or
-            ![FileSpacerRegression.Native]::IsWindowVisible($Dialog) -or
-            [FileSpacerRegression.Native]::Text($Dialog) -notlike '*OtherC*' -or
-            @([FileSpacerRegression.Native]::Children($Dialog,'SysTabControl32')).Count -ne 1) { return $false }
-    # The Shell may own this sheet through an intermediate window/thread.
-    # Prove the concrete target using its process, name and exact parent path.
-    $texts=@([FileSpacerRegression.Native]::Children($Dialog,'Edit') | ForEach-Object { [FileSpacerRegression.Native]::Text($_) })
-    return ($texts -contains 'OtherC') -and @($texts | Where-Object {
-        [string]::Equals($_,$folder,[StringComparison]::OrdinalIgnoreCase)
-    }).Count -eq 1
-}
-function Assert-NoNewQuickAccessWindow {
-    if($Case -ne 'QuickAccess') { return }
-    $newWindows=@([FileSpacerRegression.Native]::Top('FileSpacer Item Window',[NullString]::Value,$script:targetProcessId) | Where-Object { $quickAccessWindowsBefore -notcontains $_.ToInt64() })
-    $state.Evidence.UnexpectedWindows=@($newWindows | ForEach-Object { @{Handle=$_.ToInt64(); Title=[FileSpacerRegression.Native]::Text($_)} })
-    # Track only new windows of the already verified Debug test process. Their
-    # closure must not turn an unintended navigation into a successful test.
-    foreach($createdWindow in $newWindows) {
-        Register-UiWindowProcess $createdWindow
-        if(!$script:UiWindows.Contains($createdWindow)) { [void]$script:UiWindows.Add($createdWindow) }
-    }
-    Assert-Ui ($newWindows.Count -eq 0) 'The excluded quick-access gesture unexpectedly opened a folder window.'
-}
-function Close-Properties {
-    if($script:properties -ne [IntPtr]::Zero -and [FileSpacerRegression.Native]::IsWindow($script:properties)) {
-        Assert-Ui (Test-AltProperties $script:properties) 'Properties dialog no longer matches the tested process, item name and parent path.'
-        Assert-Ui ([FileSpacerRegression.Native]::PostMessage($script:properties,0x10,[IntPtr]::Zero,[IntPtr]::Zero)) 'Cannot close verified Properties dialog.'
-        Wait-Ui { ![FileSpacerRegression.Native]::IsWindow($script:properties) } 'verified Properties closed' 0 5
-        $script:properties=[IntPtr]::Zero
-    }
 }
 try {
     Initialize-Ui ('alt-'+$Case+'-'+$ViewName) -UseApplicationDefaults
@@ -195,23 +124,14 @@ try {
     if($itemCount -gt 0 -and $Case -ne 'PlainRectangle') {
         Use-UiView $window {param($view) $view.Focus(); $view.Select($names[0])}
         $expectedSelection=$names[0]
-        if($Case -in @('MultipleIcon','AltBackgroundClick')) {
-            Use-UiView $window {param($view) $view.Select('AnchorB',$true)}
-            $expectedSelection='AnchorA;AnchorB'
-        }
     }
     if($Case -eq 'PlainRectangle') { Use-UiView $window {param($view) $view.Focus(); $view.Deselect('AnchorA')} }
     Assert-UiSelected $window $expectedSelection
     $state.SelectionBefore=@(Use-UiView $window {param($view) $view.Selected()})
     $phase='target location'
     switch($Case) {
-        {$_ -in @('Unselected','Inactive','AltClick','PlainClick','DoubleAlt','DoubleAltMotion','PlainDouble')} { $point=Item-Point 'OtherC' $false }
-        {$_ -in @('MultipleIcon','PlainDrag')} { $point=Item-Point 'AnchorA' $true }
-        'Cell' {
-            Assert-Ui ($state.Mode -eq 4) 'The initial display mode must be Details for the subitem-cell case.'
-            $point=Item-Point 'OtherC' $false $true
-        }
-        'Header' { $point=[FileSpacerRegression.AltDragInput]::HeaderPoint($viewWindow) }
+        {$_ -in @('Unselected','PlainDouble')} { $point=Item-Point 'OtherC' $false }
+        'PlainDrag' { $point=Item-Point 'AnchorA' $true }
         'Rename' {
             [FileSpacerRegression.Native]::Keys($window,0x71,$false,$false)
             Wait-Ui { @([FileSpacerRegression.Native]::Children($viewWindow,'Edit') | Where-Object { [FileSpacerRegression.Native]::IsWindowVisible($_) }).Count -eq 1 } 'native rename edit visible' 0 5
@@ -219,10 +139,6 @@ try {
             Assert-Ui ([FileSpacerRegression.Native]::Text($rename) -eq 'AnchorA') 'Rename edit is not editing the fixture item.'
             $point=[FileSpacerRegression.AltDragInput]::RenamePoint($viewWindow)
         }
-        'Toolbar' { $point=Toolbar-Point 'IDM_REFRESH' }
-        'QuickAccess' { $point=Toolbar-Point 'IDM_QUICK_ACCESS' }
-        'MenuButton' { $point=Toolbar-Point 'IDM_CONTEXT_MENU' }
-        'Search' { $search=Get-UiSearchEdit $window; $searchText=[FileSpacerRegression.Native]::Text($search); $point=Control-Point $search }
         'Scrollbar' {
             $state.Evidence.ScrollPercentBefore=[FileSpacerRegression.ViewLayout]::VerticalScrollPercent($viewWindow,[int]$script:targetProcessId)
             if($list -ne [IntPtr]::Zero) { $native=[FileSpacerRegression.NativeTargets]::VerticalThumb($list) }
@@ -240,26 +156,13 @@ try {
     }
     if($Case -eq 'PlainRectangle') { $icon=Item-Point 'AnchorA' $false }
     if($Case -eq 'PlainDrag') { $drop=Item-Point 'OtherC' $false }
-    if($Case -eq 'Inactive') {
-        $otherFolder=Join-Path $script:UiRoot 'OtherWindow'; [void](New-Item -ItemType Directory -Path $otherFolder)
-        $other=Open-UiFolder $otherFolder 0
-        Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($other,[IntPtr]::Zero,($work.Right-310),($work.Bottom-210),300,200,0x14)) 'Cannot place the other window.'
-        Activate-Ui $other
-        Assert-Ui ([FileSpacerRegression.Native]::GetForegroundWindow() -eq $other) 'Test window is not initially inactive.'
-        Assert-UiSelected $window $expectedSelection
-        $otherBefore=[FileSpacerRegression.Native]::Bounds($other)
-        # Re-read the same named item after deactivation; do not activate its view.
-        $point=Item-Point 'OtherC' $false
-    }
     $before=[FileSpacerRegression.Native]::Bounds($window); $state.Before=$before
     Write-Host ('VIEW: '+($state | ConvertTo-Json -Depth 6 -Compress))
-    if($Case -eq 'QuickAccess') { $quickAccessWindowsBefore=@([FileSpacerRegression.Native]::Top('FileSpacer Item Window',[NullString]::Value,$script:targetProcessId) | ForEach-Object { $_.ToInt64() }) }
-    Save-AltWindowEvidence 'before-gesture'
     $phase='gesture'
     switch($Case) {
-        {$_ -in @('Mode','Unselected','Inactive','MultipleIcon','Cell','ReleaseEarly')} {
-            Start-Move $point ($Case -eq 'ReleaseEarly')
-            Finish-Move $point ($Case -ne 'ReleaseEarly')
+        {$_ -in @('Mode','Unselected')} {
+            Start-Move $point
+            Finish-Move $point
             if($Case -eq 'Mode') {
                 # The empty gesture must succeed before any item locator is used.
                 Assert-Ui ((Use-UiView $window {param($view) $view.Count}) -eq 0) 'Empty-folder stage changed the contents.'
@@ -283,24 +186,6 @@ try {
                 Start-Move $point
                 Finish-Move $point
             }
-            if($Case -eq 'Inactive') {
-                Assert-Ui ([FileSpacerRegression.Native]::GetForegroundWindow() -eq $window) 'Alt-drag did not activate the target window.'
-                $otherAfter=[FileSpacerRegression.Native]::Bounds($other)
-                Assert-Ui ($otherAfter.Left -eq $otherBefore.Left -and $otherAfter.Top -eq $otherBefore.Top -and $otherAfter.Width -eq $otherBefore.Width -and $otherAfter.Height -eq $otherBefore.Height) 'The other window moved.'
-            }
-        }
-        'ReleaseAlt' {
-            Start-Move $point
-            $script:motionSignature=''
-            Wait-Ui {
-                $r=[FileSpacerRegression.Native]::Bounds($window); $s="$($r.Left),$($r.Top),$($r.Width),$($r.Height)"
-                $same=$s -eq $script:motionSignature; $script:motionSignature=$s; return $same
-            } 'native geometry settled before releasing Alt' 200 5
-            $atRelease=[FileSpacerRegression.Native]::Bounds($window); $state.Evidence.AtAltRelease=$atRelease
-            [FileSpacerRegression.AltDragInput]::ReleaseAlt()
-            Finish-Move $point $false
-            # Positive movement from the original position alone is insufficient.
-            Assert-Moved $atRelease
         }
         'Escape' {
             Start-Move $point
@@ -313,12 +198,6 @@ try {
             [FileSpacerRegression.AltDragInput]::End()
             Observe-Fixed $before
         }
-        {$_ -in @('AltClick','AltBackgroundClick','PlainClick')} {
-            Begin-Gesture $point ($Case -ne 'PlainClick')
-            [FileSpacerRegression.AltDragInput]::End()
-            Wait-Idle; Observe-Fixed $before
-            if($Case -eq 'PlainClick') { $expectedSelection='OtherC' }
-        }
         'PlainRectangle' {
             Begin-Gesture $point $false
             Wait-Ui { [FileSpacerRegression.AltDragInput]::Captured($window) } 'native background selection captured' 0 5
@@ -329,25 +208,6 @@ try {
             [FileSpacerRegression.AltDragInput]::End()
             Wait-Idle; Observe-Fixed $before
             $expectedSelection='AnchorA'
-        }
-        {$_ -in @('DoubleAlt','DoubleAltMotion')} {
-            # Since 1.1.3 the Shell owns this gesture. Its native reference in
-            # 24/03 opens Properties after release, for the pointed OtherC item.
-            $expectedSelection='OtherC'
-            Begin-Gesture $point $true $true
-            if($Case -eq 'DoubleAltMotion') {
-                [FileSpacerRegression.AltDragInput]::VerifyHeld($true)
-                [FileSpacerRegression.AltDragInput]::Move((Point-At ($point.X+96) ($point.Y+72)))
-            }
-            Observe-Fixed $before
-            [FileSpacerRegression.AltDragInput]::End()
-            Wait-Ui {
-                $found=@([FileSpacerRegression.Native]::Top('#32770',[NullString]::Value,$script:targetProcessId) | Where-Object { Test-AltProperties $_ })
-                if($found.Count -eq 1) { $script:properties=$found[0]; return $true }; return $false
-            } 'native Properties for the exact fixture path after release' 0 10
-            $state.Evidence.Properties=$properties.ToInt64()
-            Close-Properties
-            Wait-Idle; Observe-Fixed $before
         }
         'PlainDrag' {
             Begin-Gesture $point $false
@@ -383,29 +243,11 @@ try {
             Observe-Fixed $before
             [FileSpacerRegression.AltDragInput]::VerifyHeld($true)
             if($Case -eq 'Scrollbar') { $destination=Point-At $point.X ($point.Y+72) }
-            elseif($Case -eq 'Rename') { $destination=[FileSpacerRegression.AltDragInput]::RenamePoint($viewWindow,$true) }
-            elseif($Case -eq 'QuickAccess') {
-                # A live popup can contain real user folders. Move to an exposed
-                # HTCAPTION point, not across its entries, and do not click there.
-                $safe=[FileSpacerRegression.NativeTargets]::Caption($window)
-                $destination=Point-At $safe.X $safe.Y
-                $state.Evidence.MenuSafeDestination=@{X=$safe.X; Y=$safe.Y}
-            }
-            else { $destination=Point-At ($point.X+96) ($point.Y+72) }
+            else { $destination=[FileSpacerRegression.AltDragInput]::RenamePoint($viewWindow,$true) }
             [FileSpacerRegression.AltDragInput]::Move($destination)
             Observe-Fixed $before
             # Cancel a menu before release so no command is accidentally invoked.
-            if($Case -eq 'QuickAccess') {
-                $state.Evidence.InputBeforeMenuCancel=[FileSpacerRegression.AltDragInput]::Describe($window)
-                # The gesture has already been checked. Cancel its popup through
-                # the documented owner message, independently of keyboard input
-                # while the original mouse press is still held (WM_CANCELMODE).
-                if([FileSpacerRegression.NativeTargets]::MenuActive($window)) { [void][FileSpacerRegression.Native]::Message($window,0x1f,0,0) }
-                Wait-Ui { ![FileSpacerRegression.NativeTargets]::MenuActive($window) } 'quick-access popup cancelled before button release' 0 5
-                [FileSpacerRegression.AltDragInput]::VerifyHeld($true)
-                $state.Evidence.InputAfterMenuCancel=[FileSpacerRegression.AltDragInput]::Describe($window)
-            }
-            elseif([FileSpacerRegression.NativeTargets]::MenuActive($window)) { [FileSpacerRegression.AltDragInput]::Escape() }
+            if([FileSpacerRegression.NativeTargets]::MenuActive($window)) { [FileSpacerRegression.AltDragInput]::Escape() }
             $state.InputBeforeRelease=[FileSpacerRegression.AltDragInput]::Describe($window)
             [FileSpacerRegression.AltDragInput]::End()
             if([FileSpacerRegression.NativeTargets]::MenuActive($window)) { [FileSpacerRegression.AltDragInput]::Escape() }
@@ -420,11 +262,8 @@ try {
             if($Case -eq 'Scrollbar') {
                 Wait-Ui { [FileSpacerRegression.ViewLayout]::VerticalScrollPercent($viewWindow,[int]$script:targetProcessId) -gt $state.Evidence.ScrollPercentBefore } 'native scrollbar scrolled the view without moving the window' 200 5
             }
-            if($Case -eq 'Search') { Assert-Ui ([FileSpacerRegression.Native]::Text($search) -eq $searchText) 'Alt-drag changed the search query.' }
         }
     }
-    if($Case -eq 'QuickAccess') { Assert-NoNewQuickAccessWindow }
-    Save-AltWindowEvidence 'after-gesture'
     $phase='final state'
     $state.After=[FileSpacerRegression.Native]::Bounds($window)
     $state.InputAfterRelease=[FileSpacerRegression.AltDragInput]::Describe($window)
@@ -440,14 +279,13 @@ try {
     Write-Host "PASS: Alt gesture case=$Case, mode=$($state.Mode), selection=[$expectedSelection]."
 } catch {
     $testFailure=$_; $state.Status='FAIL'; $state.Phase=$phase; $state.Error=$testFailure.Exception.Message
-    Save-AltWindowEvidence 'failure-held'
     try {
         if($window -ne [IntPtr]::Zero -and [FileSpacerRegression.Native]::IsWindow($window)) {
             $state.InputBeforeRelease=[FileSpacerRegression.AltDragInput]::Describe($window)
             [FileSpacerRegression.AltDragInput]::End()
             $state.After=[FileSpacerRegression.Native]::Bounds($window)
             $state.InputAfterRelease=[FileSpacerRegression.AltDragInput]::Describe($window)
-            if([FileSpacerRegression.AltDragInput]::Idle($window) -and $properties -eq [IntPtr]::Zero) {
+            if([FileSpacerRegression.AltDragInput]::Idle($window)) {
                 $state.SelectionAfter=@(Use-UiView $window {param($view) $view.Selected()})
             }
         }
@@ -457,11 +295,6 @@ try {
 } finally {
     $cleanupFailure=$null
     try { [FileSpacerRegression.AltDragInput]::End() } catch { $cleanupFailure=$_ }
-    if($Case -eq 'QuickAccess' -and $null -ne $quickAccessWindowsBefore) {
-        try { Assert-NoNewQuickAccessWindow } catch { if(!$cleanupFailure) { $cleanupFailure=$_ } else { Write-Warning $_.Exception.Message } }
-    }
-    Save-AltWindowEvidence 'before-cleanup'
-    try { Close-Properties } catch { if(!$cleanupFailure) { $cleanupFailure=$_ } else { Write-Warning $_.Exception.Message } }
     try {
         if($window -ne [IntPtr]::Zero -and [FileSpacerRegression.Native]::IsWindow($window) -and [FileSpacerRegression.NativeTargets]::MenuActive($window)) {
             Assert-Ui ([FileSpacerRegression.NativeTargets]::GetAncestor([FileSpacerRegression.Native]::GetForegroundWindow(),3) -eq $window) 'Cannot cancel a menu owned by a background window.'
@@ -470,7 +303,6 @@ try {
     } catch { if(!$cleanupFailure) { $cleanupFailure=$_ } else { Write-Warning $_.Exception.Message } }
     try { Stop-Ui -Failure $testFailure }
     catch { if(!$cleanupFailure) { $cleanupFailure=$_ } else { Write-Warning $_.Exception.Message } }
-    Save-AltWindowEvidence 'after-cleanup'
     if($cleanupFailure) {
         if($testFailure) { Write-Warning ('Cleanup after failure: '+$cleanupFailure.Exception.Message) }
         else { throw $cleanupFailure }

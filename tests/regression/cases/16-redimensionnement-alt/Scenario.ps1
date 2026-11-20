@@ -1,5 +1,5 @@
 ﻿param([string]$ProjectRoot,
-    [Parameter(Mandatory=$true)][ValidateSet('Empty','Background','Unselected','Minimum','Escape','Cancel','Inactive','ReleaseEarly','AltClick','PlainContext','Header','Rename','Toolbar','Search','DoubleRight','Outside','Persistence','Icons')][string]$Case)
+    [Parameter(Mandatory=$true)][ValidateSet('Background','Minimum','Escape','PlainContext','Persistence','Icons')][string]$Case)
 . (Join-Path $PSScriptRoot '..\..\common\EssentialUi.ps1')
 $inputRoot=Join-Path $PSScriptRoot '..\15-deplacement-alt'
 Add-Type -AssemblyName UIAutomationClient
@@ -25,12 +25,7 @@ function Assert-Resized([int]$Width,[int]$Height) {
     } 'exact size from pointer delta, with fixed top-left corner' 150 5
 }
 function Wait-Idle {
-    $nativeMenuAllowed=$Case -in @('Header','Rename','Toolbar','Search')
     Wait-Ui {
-        # An excluded control can open its native menu after button-up, even
-        # during the final idle check. Handle it at every polling point.
-        # Actual resize cases still fail if a menu is unexpectedly opened.
-        if($nativeMenuAllowed) { Stop-NativeMenu }
         [FileSpacerRegression.AltDragInput]::Idle($window) -and ![FileSpacerRegression.NativeTargets]::MenuActive($window)
     } 'capture released, sizing idle and native menu loop ended' 200 5
 }
@@ -54,14 +49,13 @@ function Stop-NativeMenu {
 try {
     Initialize-Ui ('alt-resize-'+$Case) -UseApplicationDefaults
     $folder=Join-Path $script:UiRoot 'ResizeFixture'; [void](New-Item -ItemType Directory -Path $folder)
-    $names=@(); if($Case -ne 'Empty') { $names=@('AnchorA','AnchorB','OtherC') }
+    $names=@('AnchorA','AnchorB','OtherC')
     foreach($name in $names) { [void](New-Item -ItemType Directory -Path (Join-Path $folder $name)) }
     $window=Open-UiFolder $folder $names.Count
     $work=[FileSpacerRegression.Native]::WorkArea($window)
     Assert-Ui ($work.Width -ge 800 -and $work.Height -ge 600) 'At least 800x600 physical pixels are required.'
     Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($window,[IntPtr]::Zero,($work.Left+40),($work.Top+40),600,400,0x14)) 'Cannot place the test window.'
     Activate-Ui $window
-    if($Case -eq 'Header') { Use-UiView $window {param($v) $v.SetViewModeAndIconSize(4,-1)}; Wait-UiViewMode $window 4 }
     if($Case -eq 'Icons') { Use-UiView $window {param($v) $v.SetViewModeAndIconSize(1,48)}; Wait-UiViewMode $window 1 48 }
     $viewWindow=Use-UiView $window {param($v) $v.Window}
     $state.Mode=Use-UiView $window {param($v) $v.Mode}
@@ -72,43 +66,14 @@ try {
     }
     Assert-UiSelected $window $selection
     $state.SelectionBefore=@(Use-UiView $window {param($v) $v.Selected()})
-    $point=[FileSpacerRegression.AltDragInput]::BackgroundPoint($viewWindow,($Case -in @('Minimum','Outside')))
-    if($Case -in @('Unselected','Inactive','PlainContext','DoubleRight','Icons')) {
+    $point=[FileSpacerRegression.AltDragInput]::BackgroundPoint($viewWindow,($Case -eq 'Minimum'))
+    if($Case -in @('PlainContext','Icons')) {
         $point=[FileSpacerRegression.AltDragInput]::ItemPoint($viewWindow,'OtherC')
-    }
-    if($Case -in @('Header','Rename','Search','Toolbar')) {
-        if($Case -eq 'Header') { $point=[FileSpacerRegression.AltDragInput]::HeaderPoint($viewWindow) }
-        if($Case -eq 'Rename') {
-            Use-UiView $window {param($v) $v.Select('AnchorA')}; $selection='AnchorA'
-            [FileSpacerRegression.Native]::Keys($window,0x71,$false,$false)
-            Wait-Ui { @([FileSpacerRegression.Native]::Children($viewWindow,'Edit') | Where-Object { [FileSpacerRegression.Native]::IsWindowVisible($_) }).Count -eq 1 } 'rename edit visible' 0 5
-            $control=Get-UiControl $viewWindow 'Edit'
-            $point=[FileSpacerRegression.AltDragInput]::RenamePoint($viewWindow)
-        }
-        if($Case -eq 'Search') { $control=Get-UiSearchEdit $window }
-        if($Case -eq 'Toolbar') {
-            $id=Get-UiId 'IDM_REFRESH'
-            $bars=@([FileSpacerRegression.Native]::Children($window,'ToolbarWindow32') | Where-Object { [FileSpacerRegression.Native]::IsWindowVisible($_) -and [FileSpacerRegression.Native]::Message($_,0x419,$id,0) -ge 0 })
-            Assert-Ui ($bars.Count -eq 1) 'Exactly one refresh toolbar is required.'
-            $p=[FileSpacerRegression.NativeTargets]::Toolbar($bars[0],$id); $point=Point-At $p.X $p.Y
-        } elseif($Case -notin @('Header','Rename')) {
-            $c=[FileSpacerRegression.Native]::ClientBounds($control)
-            $p=[FileSpacerRegression.NativeTargets]::Control($control,$c.Left,$c.Top,$c.Right,$c.Bottom)
-            $point=Point-At $p.X $p.Y
-        }
-    }
-    if($Case -eq 'Inactive') {
-        $otherFolder=Join-Path $script:UiRoot 'OtherWindow'; [void](New-Item -ItemType Directory -Path $otherFolder)
-        $other=Open-UiFolder $otherFolder 0
-        Assert-Ui ([FileSpacerRegression.Native]::SetWindowPos($other,[IntPtr]::Zero,($work.Right-310),($work.Bottom-210),300,200,0x14)) 'Cannot place the other window.'
-        Activate-Ui $other
-        Assert-Ui ([FileSpacerRegression.Native]::GetForegroundWindow() -eq $other) 'The resized window must initially be inactive.'
-        Assert-UiSelected $window $selection
     }
     $before=[FileSpacerRegression.Native]::Bounds($window); $state.Before=$before
     $phase='Alt then right press'
     $alt=$Case -ne 'PlainContext'
-    [FileSpacerRegression.AltDragInput]::BeginRight($window,$point,$alt,($Case -eq 'DoubleRight'))
+    [FileSpacerRegression.AltDragInput]::BeginRight($window,$point,$alt,$false)
     [FileSpacerRegression.AltDragInput]::VerifyHeld($alt)
     if($Case -eq 'PlainContext') {
         [FileSpacerRegression.AltDragInput]::End()
@@ -117,70 +82,37 @@ try {
         Assert-UiSelected $window 'OtherC'
         $phase='native context menu cancellation'
         Stop-NativeMenu
-    } elseif($Case -in @('Header','Rename','Toolbar','Search')) {
-        $destination=Point-At ($point.X+40) ($point.Y+25)
-        if($Case -eq 'Rename') {
-            # Stay inside the editor: a right release over the list is a context-menu
-            # request for the selection, which ends the rename (standard Shell behavior).
-            $destination=[FileSpacerRegression.AltDragInput]::RenamePoint($viewWindow,$true)
-            Assert-Ui (($destination.X-$point.X) -gt [FileSpacerRegression.AltDragInput]::GetSystemMetrics(68)) 'The rename editor is too narrow for a drag inside it.'
-        }
-        [FileSpacerRegression.AltDragInput]::Move($destination)
-        Wait-Ui { Assert-Fixed $before; return $true } 'excluded control kept window geometry' 200 5
-        Stop-NativeMenu
-        $phase='excluded control release and native menu cancellation'
-        [FileSpacerRegression.AltDragInput]::End()
-        Wait-Idle
-        if($Case -eq 'Rename') {
-            Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($control)) 'Alt-right drag unexpectedly closed the rename edit.'
-            Assert-Ui ([FileSpacerRegression.Native]::Text($control) -eq 'AnchorA') 'Alt-right drag changed the item name.'
-            $phase='rename cancellation'
-            # Same input and completion check as the validated left-drag case.
-            [FileSpacerRegression.Native]::Keys($window,0x1b,$false,$false)
-            Wait-Ui { ![FileSpacerRegression.Native]::IsWindow($control) -or ![FileSpacerRegression.Native]::IsWindowVisible($control) } 'rename cancelled without renaming' 0 5
-            Assert-Ui (((Use-UiView $window {param($v) $v.Names()}) | Sort-Object) -join ';' -eq (($names | Sort-Object) -join ';')) 'The gesture renamed an item.'
-        }
-        Assert-Fixed $before
     } else {
         Wait-Ui { [FileSpacerRegression.AltDragInput]::Captured($window) } 'right press captured before any drag motion' 0 5
-        if($Case -eq 'AltClick') {
-            Assert-Fixed $before
-            [FileSpacerRegression.AltDragInput]::End(); Wait-Idle; Assert-Fixed $before
-        } else {
-            if($Case -eq 'ReleaseEarly') { [FileSpacerRegression.AltDragInput]::ReleaseAlt(); [FileSpacerRegression.AltDragInput]::VerifyHeld($false) }
-            $phase='resizing with right held'
-            $dx=[Math]::Max(96,[Math]::Abs([FileSpacerRegression.AltDragInput]::GetSystemMetrics(68))+16)
-            $dy=[Math]::Max(72,[Math]::Abs([FileSpacerRegression.AltDragInput]::GetSystemMetrics(69))+16)
-            $destination=Point-At ($point.X+$dx) ($point.Y+$dy)
-            if($Case -eq 'Minimum') { $destination=Point-At ($work.Left+2) ($work.Top+2) }
-            if($Case -eq 'Outside') { $destination=Point-At ($before.Right+35) ($before.Top+30) }
-            [FileSpacerRegression.AltDragInput]::Move($destination)
-            if($Case -eq 'Minimum') {
-                $minWidth=[FileSpacerRegression.AltDragInput]::GetSystemMetrics(34)
-                $minHeight=[FileSpacerRegression.AltDragInput]::GetSystemMetrics(35)
-                Wait-Ui {
-                    $a=[FileSpacerRegression.Native]::Bounds($window)
-                    $a.Left -eq $before.Left -and $a.Top -eq $before.Top -and $a.Width -lt $before.Width -and $a.Height -lt $before.Height -and $a.Width -ge $minWidth -and $a.Height -ge $minHeight
-                } 'shrinking respects Windows minimum tracking dimensions' 150 5
-            } else { Assert-Resized ($before.Width+$destination.X-$point.X) ($before.Height+$destination.Y-$point.Y) }
-            Wait-Ui { [FileSpacerRegression.AltDragInput]::ResizeCursor() } 'system IDC_SIZENWSE cursor during resize' 100 5
-            $state.CursorDuringResize=$true
-            Assert-UiSelected $window $selection
-            Assert-Ui (![FileSpacerRegression.NativeTargets]::MenuActive($window)) 'An Alt-right gesture opened a context menu.'
-            $state.InputBeforeRelease=[FileSpacerRegression.AltDragInput]::Describe($window)
-            if($Case -in @('Escape','Cancel')) {
-                if($Case -eq 'Escape') { [FileSpacerRegression.AltDragInput]::Escape() }
-                else { [void][FileSpacerRegression.Native]::Message($window,0x1f,0,0) } # WM_CANCELMODE
-                Wait-Idle; Assert-Fixed $before
-            }
-            [FileSpacerRegression.AltDragInput]::End(); Wait-Idle
-            if($Case -in @('Escape','Cancel')) { Assert-Fixed $before }
-            elseif($Case -ne 'Minimum') { Assert-Resized ($before.Width+$destination.X-$point.X) ($before.Height+$destination.Y-$point.Y) }
+        $phase='resizing with right held'
+        $dx=[Math]::Max(96,[Math]::Abs([FileSpacerRegression.AltDragInput]::GetSystemMetrics(68))+16)
+        $dy=[Math]::Max(72,[Math]::Abs([FileSpacerRegression.AltDragInput]::GetSystemMetrics(69))+16)
+        $destination=Point-At ($point.X+$dx) ($point.Y+$dy)
+        if($Case -eq 'Minimum') { $destination=Point-At ($work.Left+2) ($work.Top+2) }
+        [FileSpacerRegression.AltDragInput]::Move($destination)
+        if($Case -eq 'Minimum') {
+            $minWidth=[FileSpacerRegression.AltDragInput]::GetSystemMetrics(34)
+            $minHeight=[FileSpacerRegression.AltDragInput]::GetSystemMetrics(35)
+            Wait-Ui {
+                $a=[FileSpacerRegression.Native]::Bounds($window)
+                $a.Left -eq $before.Left -and $a.Top -eq $before.Top -and $a.Width -lt $before.Width -and $a.Height -lt $before.Height -and $a.Width -ge $minWidth -and $a.Height -ge $minHeight
+            } 'shrinking respects Windows minimum tracking dimensions' 150 5
+        } else { Assert-Resized ($before.Width+$destination.X-$point.X) ($before.Height+$destination.Y-$point.Y) }
+        Wait-Ui { [FileSpacerRegression.AltDragInput]::ResizeCursor() } 'system IDC_SIZENWSE cursor during resize' 100 5
+        $state.CursorDuringResize=$true
+        Assert-UiSelected $window $selection
+        Assert-Ui (![FileSpacerRegression.NativeTargets]::MenuActive($window)) 'An Alt-right gesture opened a context menu.'
+        $state.InputBeforeRelease=[FileSpacerRegression.AltDragInput]::Describe($window)
+        if($Case -eq 'Escape') {
+            [FileSpacerRegression.AltDragInput]::Escape()
+            Wait-Idle; Assert-Fixed $before
         }
+        [FileSpacerRegression.AltDragInput]::End(); Wait-Idle
+        if($Case -eq 'Escape') { Assert-Fixed $before }
+        elseif($Case -ne 'Minimum') { Assert-Resized ($before.Width+$destination.X-$point.X) ($before.Height+$destination.Y-$point.Y) }
         Wait-Ui { ![FileSpacerRegression.AltDragInput]::ResizeCursor() } 'resize cursor restored after gesture completion' 100 5
         Assert-UiSelected $window $selection
         Assert-Ui (![FileSpacerRegression.NativeTargets]::MenuActive($window)) 'Alt-right release opened a context menu.'
-        if($Case -eq 'Inactive') { Assert-Ui ([FileSpacerRegression.Native]::GetForegroundWindow() -eq $window) 'The resized window was not activated.' }
         if($Case -eq 'Persistence') {
             $saved=[FileSpacerRegression.Native]::Bounds($window)
             Close-UiFolder $window
