@@ -33,7 +33,7 @@ Do not run a native test a second time when the selected suite already includes 
 | --- | --- |
 | `-Category Internal\|UI\|All` | Filter by the category declared in each case; default `All`. |
 | `-Pattern "group\case-pattern"` | PowerShell wildcard matched against the relative case path; default `*`. Combine with `-Category`. |
-| `-Scope Application\|All` | Both select the application suite; default `All`. |
+| `-Scope Application\|Tools\|All` | `Application` selects the cases of the application and `Tools` those of the development tools; default `All`. |
 | `-Suite Regression\|Stress` | Select one disjoint catalogue; default `Regression`. |
 | `-TimeoutSeconds N` | Per-case deadline, 30–3600 seconds; default 300 for regressions and 900 for stress. A timeout is a failure. |
 | `-RunDirectory "path"` | Store or copy reports to a new directory; existing reports are never overwritten. |
@@ -148,17 +148,17 @@ stable selectors; they need not be translated to use this English guide.
 | --- | --- |
 | Harness and prepared-artifact contracts | `00-banc` |
 | SQLite, retention, quota, saved view state and history | `01`–`02`, `06`–`09` |
-| Menu/lifetime, STA and dimension handling | `03`–`05` |
+| Menu/lifetime and STA | `03`–`04` |
 | Update manifests and session restoration | `10`–`11` |
-| Spatial navigation, preferences and layouts | `12`–`14` |
+| Spatial navigation and preferences | `12`–`13` |
 | Move/resize gestures, closing during interaction | `15`–`17`, `24-raccourcis` |
 | Native view persistence and Shell commands | `18-vue-shell-native`, `19-commandes-shell` |
-| Load, shell notifications and external Control Panel | `20-validation-elargie` |
+| Virtual folders | `20-validation-elargie` |
 | Activation click, locked layout and selected-name rendering | `21`–`23` |
 | Search/history and Everything | `25-recherche-integration` |
 | Window placement and transient View-menu previews | `26-placement-fenetres`, `28-apercu-affichage` |
 | Default-manager associations | `29-menu-gestionnaire` |
-| Local help and resource-language selection | `30-documentation`, `31-langues` |
+| Local help, resource-language selection and the documentation capture tool (`Tools` scope) | `30-documentation`, `31-langues` |
 | Mixed sorting and provider identities | `30-tri-melange` |
 | Title menu and Peek integration | `33-menu-titre`, `35-apercu-peek` |
 
@@ -200,6 +200,24 @@ text, accessibility, layout, mnemonic collisions or resource selection vary by
 language. In particular, shortcut and context-menu logic is no longer repeated
 in English and French, and PowerToys exclusions are not repeated per translation.
 
+The catalogue was reduced again on that basis from 185 to 114 cases. It now keeps
+the cases that check a non-trivial behavior of the application with a real risk
+of regression: stored state and recovery, spatial identity and navigation, view
+and icon persistence, Shell commands, the gesture matrix reduced to its
+representatives, locking, placement, the View-menu preview and Snap, mixed
+sorting, columns, search and updates. Cosmetic and layout checks, cases written
+for one minor defect, preference plumbing, per-view and per-zone variants of the
+Alt gestures beyond one representative, and checks of Shell guarantees were
+retired without a replacement. This is a loss of obligations, accepted for the
+cost and fragility of those cases.
+
+A case declares a scope other than the application with `# Test-Scope: Tools` on
+its second line. The release and CI runs select `-Scope Application`, so the two
+contracts of the documentation capture tool (`30-documentation/02` and `03`) no
+longer gate a release of the application. Run them with
+`tests.cmd -Pattern "30-documentation\*"` when changing that tool or before a
+capture campaign; an unfiltered local or VM run still includes them.
+
 The following reductions retain the original search obligations:
 
 | Retained case | Replaced case / check | Relation and preserved boundary |
@@ -209,10 +227,10 @@ The following reductions retain the original search obligations:
 | Exact-identity assertions in both retained cases | Count-only search assertions and their unused helper | One-way implication from identities to counts; equivalence only between exact identities and the conjunction of those same identities with their implied count. |
 
 No equivalence between independent cases is assumed. Keep ordinary reopening
-(`07/08`) separate from the closed-window-history command (`07/05`), hidden
-selection views (`18/05`) separate from presented views (`18/06-SelectionAllVisible`),
-and filtered persistence (`13/06`) separate from successive filters (`13/05`).
-Those pairs observe different entry points, rendering or saved-state boundaries.
+(`07/08`) separate from the closed-window-history command (`07/05`), and
+filtered persistence (`13/06`) separate from successive filters (`13/05`).
+Those pairs observe different entry points or saved-state boundaries. Presented
+selection views now run only in the stress suite (`18/06-SelectionAllVisible`).
 Likewise, mixed-provider wrappers share scenario code with filesystem tests but
 exercise a different provider; they are not redundant executions.
 
@@ -239,6 +257,10 @@ uses that saved suite, never the other catalogue. No `All` suite combines them.
 Local stress reports live under `build/stress`; the existing VM transport keeps
 its `build/regression/vm-<id>` report location and records the suite in its package.
 
+`20-validation-elargie/04-EcransEtDpi` moves a window over every available monitor
+work area. It certifies nothing on a single display, which is all the VMs and the
+CI runner offer, so it is kept here for a machine with several monitors.
+
 `28-apercu-affichage/07-CadrePosition` compares the displayed frame with the
 actual native drop using six items, intermediate icon sizes, scroll origins and
 representative placement routes. It inherits the current display scale and does
@@ -262,12 +284,7 @@ options. Each case retains its own manifest entry and hash checks. Native helper
 argument combinations continue to be compiled once per package as before.
 
 `Build-NativeTest -DynamicLibrary` builds a DLL on the host and preserves the same
-argument and hash checks during guest copying. The deferred-drop activation case
-(`28/09`) uses a documented thread hook to trigger a real activation immediately
-before the accepted placement message is dispatched. It fixes an ordering also
-observed with release followed by Alt+Tab, keeping the regression deterministic.
-The earlier external-drop case (`28/08`) starts after placement has completed and
-checks subsequent transfers, so it covers a different lifetime boundary.
+argument and hash checks during guest copying.
 
 Selection stress cases emit `private-diagnostics.json`, including:
 
