@@ -24,6 +24,12 @@ namespace FileSpacerViewMenuTests {
     public sealed class Entry { public uint Command; public string Label; public Rect Bounds; public uint State, Type; }
     public sealed class Popup { public IntPtr Window; public Entry[] Entries; }
     public static class MenuUi {
+        [StructLayout(LayoutKind.Sequential)] struct GuiThreadInfo {
+            public uint Size,Flags;
+            public IntPtr Active,Focus,Capture,MenuOwner,MoveSize,Caret;
+            public Rect CaretBounds;
+        }
+        [DllImport("user32.dll",SetLastError=true)] static extern bool GetGUIThreadInfo(uint thread,ref GuiThreadInfo info);
         [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(Point point);
         [DllImport("user32.dll",SetLastError=true)] static extern bool GetMenuBarInfo(IntPtr window,int obj,int item,ref MenuBarInfo info);
         [DllImport("user32.dll")] static extern int GetMenuItemCount(IntPtr menu);
@@ -31,6 +37,13 @@ namespace FileSpacerViewMenuTests {
         [DllImport("user32.dll",SetLastError=true)] static extern bool GetMenuItemRect(IntPtr window,IntPtr menu,uint index,out Rect rect);
         [DllImport("user32.dll",SetLastError=true)] static extern uint SendInput(uint count,Input[] input,int size);
         static uint Owner(IntPtr window) {uint id;Native.GetWindowThreadProcessId(window,out id);return id;}
+        public static string OwnerParentClass(IntPtr window) {
+            uint process;uint thread=Native.GetWindowThreadProcessId(window,out process);
+            var info=new GuiThreadInfo{Size=(uint)Marshal.SizeOf(typeof(GuiThreadInfo))};
+            if(thread==0||!GetGUIThreadInfo(thread,ref info))throw new Win32Exception();
+            if(info.MenuOwner==IntPtr.Zero||Owner(info.MenuOwner)!=process)throw new InvalidOperationException("Menu owner is outside the test process");
+            return Native.Class(Native.GetParent(info.MenuOwner));
+        }
         public static void Move(int x,int y) {if(!Native.SetCursorPos(x,y))throw new Win32Exception();}
         public static void Click(int x,int y,IntPtr owner) {
             if(Owner(WindowFromPoint(new Point{X=x,Y=y}))!=Owner(owner))throw new InvalidOperationException("Input target belongs to another process");
@@ -43,8 +56,9 @@ namespace FileSpacerViewMenuTests {
         }
         public static void Key(IntPtr owner,ushort key,int count) {
             if(Native.GetForegroundWindow()!=owner)throw new InvalidOperationException("Key target is not foreground");
+            uint flags=key>=0x21&&key<=0x28?1u:0u; // Navigation keys are extended keys.
             for(int i=0;i<count;++i) {
-                if(SendInput(2,new Input[]{new Input{Type=1,VirtualKey=key},new Input{Type=1,VirtualKey=key,KeyFlags=2}},40)!=2)throw new Win32Exception();
+                if(SendInput(2,new Input[]{new Input{Type=1,VirtualKey=key,KeyFlags=flags},new Input{Type=1,VirtualKey=key,KeyFlags=flags|2u}},40)!=2)throw new Win32Exception();
                 Thread.Sleep(80);
             }
         }
