@@ -21,7 +21,7 @@ namespace FileSpacerViewMenuTests {
         [FieldOffset(12)] public uint KeyFlags;
         [FieldOffset(20)] public uint MouseFlags;
     }
-    public sealed class Entry { public uint Command; public string Label; public Rect Bounds; public uint State, Type; }
+    public sealed class Entry { public uint Command; public string Label; public Rect Bounds; public uint State, Type; public bool SeparatorBefore; }
     public sealed class Popup { public IntPtr Window; public Entry[] Entries; }
     public static class MenuUi {
         [StructLayout(LayoutKind.Sequential)] struct GuiThreadInfo {
@@ -37,13 +37,15 @@ namespace FileSpacerViewMenuTests {
         [DllImport("user32.dll",SetLastError=true)] static extern bool GetMenuItemRect(IntPtr window,IntPtr menu,uint index,out Rect rect);
         [DllImport("user32.dll",SetLastError=true)] static extern uint SendInput(uint count,Input[] input,int size);
         static uint Owner(IntPtr window) {uint id;Native.GetWindowThreadProcessId(window,out id);return id;}
-        public static string OwnerParentClass(IntPtr window) {
+        static IntPtr OwnerParent(IntPtr window) {
             uint process;uint thread=Native.GetWindowThreadProcessId(window,out process);
             var info=new GuiThreadInfo{Size=(uint)Marshal.SizeOf(typeof(GuiThreadInfo))};
             if(thread==0||!GetGUIThreadInfo(thread,ref info))throw new Win32Exception();
             if(info.MenuOwner==IntPtr.Zero||Owner(info.MenuOwner)!=process)throw new InvalidOperationException("Menu owner is outside the test process");
-            return Native.Class(Native.GetParent(info.MenuOwner));
+            return Native.GetParent(info.MenuOwner);
         }
+        public static string OwnerParentClass(IntPtr window) {return Native.Class(OwnerParent(window));}
+        public static string OwnerParentTitle(IntPtr window) {return Native.Text(OwnerParent(window));}
         public static void Move(int x,int y) {if(!Native.SetCursorPos(x,y))throw new Win32Exception();}
         public static void Click(int x,int y,IntPtr owner) {
             if(Owner(WindowFromPoint(new Point{X=x,Y=y}))!=Owner(owner))throw new InvalidOperationException("Input target belongs to another process");
@@ -67,7 +69,7 @@ namespace FileSpacerViewMenuTests {
                 if(!Native.IsWindowVisible(window))continue;
                 var bar=new MenuBarInfo{Size=(uint)Marshal.SizeOf(typeof(MenuBarInfo))};
                 if(!GetMenuBarInfo(window,-4,0,ref bar)||bar.Menu==IntPtr.Zero)continue;
-                var entries=new List<Entry>();bool vanished=false;
+                var entries=new List<Entry>();bool vanished=false,separatorBefore=false;
                 int count=GetMenuItemCount(bar.Menu);
                 for(uint i=0;i<count;++i) {
                     IntPtr text=Marshal.AllocHGlobal(1024);
@@ -78,21 +80,22 @@ namespace FileSpacerViewMenuTests {
                             if(!Native.IsWindowVisible(window)||GetMenuItemCount(bar.Menu)<0){vanished=true;break;}
                             throw new Win32Exception(error);
                         }
-                        if((info.Type&0x800)!=0){if(includeAll)continue;break;}
+                        if((info.Type&0x800)!=0){separatorBefore=true;if(includeAll)continue;break;}
                         Rect bounds;
                         if(!GetMenuItemRect(window,bar.Menu,i,out bounds)) {
                             int error=Marshal.GetLastWin32Error();
                             if(!Native.IsWindowVisible(window)||GetMenuItemCount(bar.Menu)<0){vanished=true;break;}
                             throw new Win32Exception(error);
                         }
-                        entries.Add(new Entry{Command=info.Id,Label=Marshal.PtrToStringUni(text),Bounds=bounds,State=info.State,Type=info.Type});
+                        entries.Add(new Entry{Command=info.Id,Label=Marshal.PtrToStringUni(text),Bounds=bounds,State=info.State,Type=info.Type,SeparatorBefore=separatorBefore});
+                        separatorBefore=false;
                     }finally{Marshal.FreeHGlobal(text);}
                 }
                 if(!vanished&&(requiredCommand==0?entries.Count>=6:entries.Exists(entry=>entry.Command==requiredCommand)))return new Popup{Window=window,Entries=entries.ToArray()};
             }
             return null;
         }
-        public static Popup Open(IntPtr window,IntPtr toolbar,int command) {
+        public static Popup Open(IntPtr window,IntPtr toolbar,int command,uint requiredCommand=0) {
             Rect previous=new Rect(),button=new Rect();double stable=-1;
             var watch=Stopwatch.StartNew();
             while(watch.ElapsedMilliseconds<10000) {
@@ -108,7 +111,7 @@ namespace FileSpacerViewMenuTests {
             if(stable<0||watch.Elapsed.TotalMilliseconds-stable<100)throw new InvalidOperationException("Toolbar geometry or exposure did not stabilize");
             Click(button.Right-4,(button.Top+button.Bottom)/2,window);
             watch.Restart();
-            while(watch.ElapsedMilliseconds<15000){var popup=Active(window);if(popup!=null)return popup;Thread.Sleep(10);}
+            while(watch.ElapsedMilliseconds<15000){var popup=Active(window,requiredCommand!=0,requiredCommand);if(popup!=null)return popup;Thread.Sleep(10);}
             throw new TimeoutException("The native View menu did not open");
         }
         public static void Hover(Popup popup,int index) {var r=popup.Entries[index].Bounds;Move((r.Left+r.Right)/2,(r.Top+r.Bottom)/2);}

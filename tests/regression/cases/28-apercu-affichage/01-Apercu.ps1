@@ -10,9 +10,18 @@ try {
     $modes=Get-PreviewModes $window
     Assert-Ui ($null -eq (Get-UiPreference 'ViewMenuPreviewEnabled')) 'Default-on test requires an absent stored value.'
     $initial=Read-PreviewMode $window
+    [void][FileSpacerViewMenuTests.MenuUi]::Open($window,(Get-UiCommandToolbar $window),(Get-UiId 'IDM_CONTEXT_MENU'),(Get-UiId 'IDM_SETTINGS'))
+    Assert-Ui ([FileSpacerViewMenuTests.MenuUi]::OwnerParentClass($window) -eq 'FileSpacer Toolbar Host') 'Application menu must keep the toolbar theme scope.'
+    Assert-Ui ([FileSpacerViewMenuTests.MenuUi]::OwnerParentTitle($window) -eq '') 'Application menu must not acquire the View-only marker.'
+    [FileSpacerViewMenuTests.MenuUi]::Escape($window)
+    Wait-PreviewMenuClosed $window
     $popup=Open-PreviewMenu $window
     $ownerClass=[FileSpacerViewMenuTests.MenuUi]::OwnerParentClass($window)
     Assert-Ui ($ownerClass -eq 'FileSpacer Toolbar Host') 'View menu must share the toolbar theme scope.'
+    Assert-Ui ([FileSpacerViewMenuTests.MenuUi]::OwnerParentTitle($window) -eq 'FileSpacer View Menu') 'View menu must expose its own stable marker.'
+    $allEntries=[FileSpacerViewMenuTests.MenuUi]::Active($window,$true,(Get-UiId 'IDM_TOGGLE_THUMBNAILS'))
+    $thumbnails=@($allEntries.Entries|Where-Object {$_.Command -eq (Get-UiId 'IDM_TOGGLE_THUMBNAILS')})
+    Assert-Ui ($thumbnails.Count -eq 1 -and $thumbnails[0].SeparatorBefore) 'Thumbnails must be separated from the view modes above.'
     [FileSpacerViewMenuTests.MenuUi]::Key($window,0x28,1) # Down highlights the first mode.
     Wait-PreviewMode $window $modes[0]
     [FileSpacerViewMenuTests.MenuUi]::Key($window,0x0D,1)
