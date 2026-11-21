@@ -196,11 +196,13 @@ FolderOpenResult openFolderWindow(IShellItem *item, HMONITOR monitor, int showCm
     if (reopening) window->setReopenState(*reopening);
     if (!replacingIdentity || GetWindowLongPtrW(replacingWindow, GWLP_USERDATA) != replacingIdentity)
         replacingWindow = nullptr;
-    // Withdraw once before placement. Failure restores only this source's
-    // contribution; success leaves it withdrawn until its deferred destruction.
-    PlacementWithdrawal withdrawal(settings::getSmartWindowPlacement() ? replacingWindow : nullptr);
+    // A folder without a remembered position is placed around its source, even
+    // when this opening closes the source: the source still counts here.
     if (!window->create(window->requestedRect(monitor, replacingWindow), showCmd, openingOrigin))
         return FolderOpenResult::Failed;
+    // Withdraw once the window is placed. Failure restores only this source's
+    // contribution; success leaves it withdrawn until its deferred destruction.
+    PlacementWithdrawal withdrawal(settings::getSmartWindowPlacement() ? replacingWindow : nullptr);
     if (isProcessQuitRequested()) {
         HWND created = nullptr;
         if (SUCCEEDED(window->GetWindow(&created)) && created)
