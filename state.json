@@ -3,13 +3,6 @@
   "channel": "winget",
   "initialized": true,
   "accepted": null,
-  "active": [
-    {
-      "tag": "v1.3.2",
-      "pr": 470943,
-      "phase": "submitted",
-      "status": "pending"
-    }
-  ],
+  "active": [],
   "pending": "v1.5.2"
 }
