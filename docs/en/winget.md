@@ -32,8 +32,8 @@ that explicit request selects WinGet even if the tag originally selected none.
    would not itself trigger another workflow's `release` event.
 
 The release's ordinary `GITHUB_TOKEN` remains sufficient for publishing
-FileSpacer itself. The additional PAT is used only by WingetCreate to submit
-to the external community repository. No manual first-package creation is
+FileSpacer itself. The additional PAT submits to the external community repository
+and closes superseded FileSpacer PRs there. No manual first-package creation is
 needed: generated manifests support both the first submission and new versions.
 
 <a id="each-release"></a>
@@ -54,7 +54,6 @@ This small artifact records the published tag and channel list, also
 for releases started manually with a tag input. It then:
 
 1. Retains the latest requested stable `vX.Y.Z` release in the WinGet queue.
-   Any older active submission blocks new versions until its PR is merged.
    A newer request replaces the pending release, while delayed older requests
    cannot roll it back. Already accepted versions are skipped. All existing open
    FileSpacer PRs are imported, including submissions predating this coordinator.
@@ -66,7 +65,11 @@ for releases started manually with a tag input. It then:
    current-user `/CurrentUser` and machine `/AllUsers` installations, silent
    `/S` execution, and NSIS's final `/D=<INSTALLPATH>` directory argument.
 4. Installs .NET 9 and downloads WingetCreate 1.12.13.0, checks its pinned SHA-256
-   and Microsoft Authenticode signature, then validates and submits manifests using
+   and Microsoft Authenticode signature, then closes all older unmerged FileSpacer
+   PRs before reserving and sending the new submission. Each closure is verified
+   and saved separately, so a failed or interrupted closure prevents submission
+   and can be reconciled on the next run. Versions merged meanwhile remain accepted.
+   It then validates and submits manifests using
    `wingetcreate submit`. The PAT is supplied through the documented
    `WINGET_CREATE_GITHUB_TOKEN` environment variable.
 
@@ -74,9 +77,11 @@ The installer retains its existing component defaults and saved upgrade choices.
 The WinGet manifest does not request a change of default file manager.
 WinGet submission does not mean immediate catalog availability: Microsoft's
 automated checks and review must accept the PR. Monitor the PR link in the
-job log and respond to review requests if necessary. An hourly check submits the
-latest pending release after acceptance. Closing a PR without merging it keeps
-the queue blocked. See the [shared queue and recovery procedure](build.md#releases).
+job log and respond to review requests if necessary. An hourly check can resume
+a pending replacement; it does not close or recreate a PR for the same version.
+Older PRs already closed without merging are retired when a newer release is sent.
+An uncertain upload without a known PR still blocks automatic submission.
+See the [shared queue and recovery procedure](build.md#releases).
 
 If submission fails, the GitHub release and its successful workflow result are
 preserved; only the distribution workflow reports failure. Fix the cause, then
