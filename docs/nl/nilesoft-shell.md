@@ -27,7 +27,7 @@ import 'imports/theme.nss'
 
 Thema-eigenschappen kunnen processpecifieke expressies gebruiken: `dark = if(process.name == 'FileSpacer', true, sys.dark)` in `theme { ... }` kiest bijvoorbeeld de donkere modus voor FileSpacer en elders de systeemvoorkeur.
 
-Bij gebruik van FileSpacer in plaats van Bestandenverkenner gelden themawijzigingen direct voor nieuw geopende menu’s na afmelden en opnieuw registreren van Nilesoft Shell, zonder Verkenner te herstarten.
+Na het opslaan van een NSS-bestand dwingt **Ctrl + rechtsklik** op het bureaublad of de taakbalk Nilesoft om de configuratie in Verkenner opnieuw te laden, zonder Verkenner te herstarten of de registratie van de uitbreiding op te heffen. Nilesoft laadt ook opnieuw als het bij het openen van een menu een ingedrukte linkermuisknop detecteert; een FileSpacer-knop kan wijzigingen daardoor direct toepassen. Dit hangt af van het openingsgebaar, niet van een sneller herlaadmechanisme in FileSpacer.
 
 <a id="menu-opening-delay"></a>
 
@@ -45,6 +45,8 @@ Declareer deze variabelen vóór de imports die ze gebruiken:
 $filespacer = (process.name == 'FileSpacer')
 $filespacer_title = (filespacer && window.parent.name == 'FileSpacer Item Window')
 $filespacer_toolbar = (filespacer && window.parent.name == 'FileSpacer Toolbar Host')
+$filespacer_view = (filespacer_toolbar && window.parent.title == 'FileSpacer View Menu')
+$filespacer_more = (filespacer_toolbar && !filespacer_view)
 $filespacer_context = (filespacer && !filespacer_title && !filespacer_toolbar)
 ```
 
@@ -54,10 +56,18 @@ Gebruik de bijbehorende eigenschappen `where` en `type` in uw regels:
 | --- | --- | --- |
 | Titelbalkmenu | `filespacer_title` | `'*'` |
 | Werkbalk **…** en **Beeld** | `filespacer_toolbar` | `'*'` |
+| Alleen **Beeld** | `filespacer_view` | `'*'` |
+| Alleen werkbalk **…** | `filespacer_more` | `'*'` |
 | Geselecteerde bestanden of mappen | `filespacer_context` | `'file\|dir'` |
 | Mapachtergrond | `filespacer_context` | `'back'` |
 
 Gebruik `mode='multiple'` voor regels die bij elke selectiestatus beschikbaar moeten blijven. `process.name` laat `.exe` weg. `window.parent.name` identificeert een vensterklasse.
+
+`filespacer_toolbar` omvat nog steeds beide werkbalkmenu’s. Gebruik `filespacer_view` alleen voor Beeld of `filespacer_more` alleen voor **…**. De interne markering `window.parent.title` is stabiel en wordt niet vertaald. Om Terminal buiten Beeld te behouden, voegt u `!filespacer_view &&` toe aan de bestaande `where`-voorwaarde en zet u de oorspronkelijke voorwaarde tussen haakjes:
+
+```nss
+where=(!filespacer_view && (sel.count || wnd.is_taskbar || wnd.is_edit))
+```
 
 <a id="target-an-existing-menu-entry"></a>
 

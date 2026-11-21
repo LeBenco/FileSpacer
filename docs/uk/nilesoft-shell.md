@@ -27,7 +27,7 @@ import 'imports/theme.nss'
 
 Властивості теми можуть використовувати вирази для окремих процесів: наприклад, `dark = if(process.name == 'FileSpacer', true, sys.dark)` у `theme { ... }` вибирає темний режим для FileSpacer і системну настройку для інших програм.
 
-Коли використовується FileSpacer замість Файлового провідника, зміни теми діють для нових меню після скасування реєстрації й повторної реєстрації Nilesoft Shell без перезапуску Провідника.
+Після збереження файлу NSS **Ctrl + клацання правою кнопкою** на робочому столі або панелі завдань змушує Nilesoft перечитати конфігурацію у Провіднику без його перезапуску чи скасування реєстрації розширення. Nilesoft також перечитує її, коли виявляє натиснуту ліву кнопку під час відкриття меню; тому кнопка FileSpacer може застосувати зміни відразу. Це залежить від жесту відкриття, а не від швидшого механізму оновлення у FileSpacer.
 
 <a id="menu-opening-delay"></a>
 
@@ -45,6 +45,8 @@ import 'imports/theme.nss'
 $filespacer = (process.name == 'FileSpacer')
 $filespacer_title = (filespacer && window.parent.name == 'FileSpacer Item Window')
 $filespacer_toolbar = (filespacer && window.parent.name == 'FileSpacer Toolbar Host')
+$filespacer_view = (filespacer_toolbar && window.parent.title == 'FileSpacer View Menu')
+$filespacer_more = (filespacer_toolbar && !filespacer_view)
 $filespacer_context = (filespacer && !filespacer_title && !filespacer_toolbar)
 ```
 
@@ -54,10 +56,18 @@ $filespacer_context = (filespacer && !filespacer_title && !filespacer_toolbar)
 | --- | --- | --- |
 | Розкривне меню заголовка | `filespacer_title` | `'*'` |
 | Панель інструментів **…** і **Подання** | `filespacer_toolbar` | `'*'` |
+| Лише **Подання** | `filespacer_view` | `'*'` |
+| Лише **…** на панелі інструментів | `filespacer_more` | `'*'` |
 | Вибрані файли або папки | `filespacer_context` | `'file\|dir'` |
 | Тло папки | `filespacer_context` | `'back'` |
 
 Використовуйте `mode='multiple'` для правил, доступних незалежно від вибору. `process.name` не містить `.exe`. `window.parent.name` визначає клас вікна.
+
+`filespacer_toolbar` і надалі охоплює обидва меню панелі інструментів. Використовуйте `filespacer_view` лише для Подання або `filespacer_more` лише для **…**. Внутрішній маркер `window.parent.title` є сталим і не перекладається. Щоб залишити Terminal поза Поданням, додайте `!filespacer_view &&` до наявної умови `where`, узявши початкову умову в дужки:
+
+```nss
+where=(!filespacer_view && (sel.count || wnd.is_taskbar || wnd.is_edit))
+```
 
 <a id="target-an-existing-menu-entry"></a>
 

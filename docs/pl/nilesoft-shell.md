@@ -27,7 +27,7 @@ import 'imports/theme.nss'
 
 Właściwości motywu mogą też używać wyrażeń zależnych od procesu: np. `dark = if(process.name == 'FileSpacer', true, sys.dark)` w `theme { ... }` wybiera ciemny tryb dla FileSpacer, a ustawienie systemowe gdzie indziej.
 
-Przy używaniu FileSpacer zamiast Eksploratora plików zmiany motywu działają w nowo otwieranych menu po wyrejestrowaniu i ponownym zarejestrowaniu Nilesoft Shell, bez restartu Eksploratora.
+Po zapisaniu pliku NSS **Ctrl + kliknięcie prawym przyciskiem** na pulpicie lub pasku zadań wymusza ponowne wczytanie konfiguracji Nilesoft w Eksploratorze, bez jego restartowania ani wyrejestrowywania rozszerzenia. Nilesoft wczytuje ją również, gdy wykryje wciśnięty lewy przycisk podczas otwierania menu; przycisk FileSpacer może więc od razu zastosować zmiany. Zależy to od gestu otwierania, a nie od szybszego mechanizmu odświeżania w FileSpacer.
 
 <a id="menu-opening-delay"></a>
 
@@ -45,6 +45,8 @@ Zadeklaruj zmienne przed importami, które ich używają:
 $filespacer = (process.name == 'FileSpacer')
 $filespacer_title = (filespacer && window.parent.name == 'FileSpacer Item Window')
 $filespacer_toolbar = (filespacer && window.parent.name == 'FileSpacer Toolbar Host')
+$filespacer_view = (filespacer_toolbar && window.parent.title == 'FileSpacer View Menu')
+$filespacer_more = (filespacer_toolbar && !filespacer_view)
 $filespacer_context = (filespacer && !filespacer_title && !filespacer_toolbar)
 ```
 
@@ -54,10 +56,18 @@ Użyj odpowiednich właściwości `where` i `type` w regułach:
 | --- | --- | --- |
 | Menu paska tytułu | `filespacer_title` | `'*'` |
 | Pasek narzędzi **…** i **Widok** | `filespacer_toolbar` | `'*'` |
+| Tylko **Widok** | `filespacer_view` | `'*'` |
+| Tylko **…** na pasku narzędzi | `filespacer_more` | `'*'` |
 | Zaznaczone pliki lub foldery | `filespacer_context` | `'file\|dir'` |
 | Tło folderu | `filespacer_context` | `'back'` |
 
 Użyj `mode='multiple'` dla reguł dostępnych niezależnie od zaznaczenia. `process.name` pomija `.exe`. `window.parent.name` identyfikuje klasę okna.
+
+`filespacer_toolbar` nadal obejmuje oba menu paska narzędzi. Użyj `filespacer_view` tylko dla Widoku albo `filespacer_more` tylko dla **…**. Wewnętrzny znacznik `window.parent.title` jest stały i nie jest tłumaczony. Aby zachować Terminal poza Widokiem, dodaj `!filespacer_view &&` do istniejącego warunku `where`, ujmując dotychczasowy warunek w nawiasy:
+
+```nss
+where=(!filespacer_view && (sel.count || wnd.is_taskbar || wnd.is_edit))
+```
 
 <a id="target-an-existing-menu-entry"></a>
 

@@ -27,7 +27,7 @@ import 'imports/theme.nss'
 
 Theme properties can also use process-specific expressions: for example, `dark = if(process.name == 'FileSpacer', true, sys.dark)` inside `theme { ... }` selects dark mode for FileSpacer and the system preference elsewhere.
 
-When using FileSpacer instead of File Explorer, theme changes apply directly to newly opened menus after unregistering and registering Nilesoft Shell again, without restarting Explorer.
+After saving an NSS file, **Ctrl + right-click** on the desktop or taskbar forces Nilesoft to reload its configuration in Explorer, without restarting Explorer or unregistering the extension. Nilesoft also reloads when it detects a left button held during menu opening; opening a FileSpacer button can therefore apply edits immediately. This depends on the opening gesture, not on a faster reload mechanism in FileSpacer.
 
 <a id="menu-opening-delay"></a>
 
@@ -45,6 +45,8 @@ Declare these variables before the imports that use them:
 $filespacer = (process.name == 'FileSpacer')
 $filespacer_title = (filespacer && window.parent.name == 'FileSpacer Item Window')
 $filespacer_toolbar = (filespacer && window.parent.name == 'FileSpacer Toolbar Host')
+$filespacer_view = (filespacer_toolbar && window.parent.title == 'FileSpacer View Menu')
+$filespacer_more = (filespacer_toolbar && !filespacer_view)
 $filespacer_context = (filespacer && !filespacer_title && !filespacer_toolbar)
 ```
 
@@ -54,10 +56,18 @@ Use the corresponding `where` and `type` properties on your rules:
 | ------------------------- | -------------------- | ------------- |
 | Title-bar drop-down       | `filespacer_title`   | `'*'`         |
 | Toolbar **…** and **View** | `filespacer_toolbar` | `'*'` |
+| View only | `filespacer_view` | `'*'` |
+| Toolbar **…** only | `filespacer_more` | `'*'` |
 | Selected files or folders | `filespacer_context` | `'file\|dir'` |
 | Folder background         | `filespacer_context` | `'back'`      |
 
 Use `mode='multiple'` for rules that should remain available across selection states. `process.name` omits `.exe`. `window.parent.name` identifies a window class.
+
+`filespacer_toolbar` still covers both toolbar menus. Use `filespacer_view` for View alone or `filespacer_more` for **…** alone. The internal marker `window.parent.title` is stable and is not translated. To keep Terminal outside View, add `!filespacer_view &&` to its existing `where` condition, enclosing that condition in parentheses:
+
+```nss
+where=(!filespacer_view && (sel.count || wnd.is_taskbar || wnd.is_edit))
+```
 
 <a id="target-an-existing-menu-entry"></a>
 

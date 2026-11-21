@@ -27,7 +27,7 @@ import 'imports/theme.nss'
 
 Anche le proprietà del tema possono usare espressioni specifiche per il processo. Ad esempio, `dark = if(process.name == 'FileSpacer', true, sys.dark)` all’interno di `theme { ... }` sceglie la modalità scura per FileSpacer e la preferenza di sistema altrove.
 
-Con FileSpacer, le modifiche al tema si applicano ai nuovi menu dopo aver annullato e ripetuto la registrazione di Nilesoft Shell, senza riavviare Esplora file.
+Dopo aver salvato un file NSS, **Ctrl + clic destro** sul desktop o sulla barra delle applicazioni forza Nilesoft a ricaricare la configurazione in Esplora file, senza riavviarlo né annullare la registrazione dell’estensione. Nilesoft ricarica anche quando rileva il pulsante sinistro premuto all’apertura di un menu; un pulsante di FileSpacer può quindi applicare subito le modifiche. Questo dipende dal gesto di apertura, non da un meccanismo di ricaricamento più rapido in FileSpacer.
 
 <a id="menu-opening-delay"></a>
 
@@ -45,6 +45,8 @@ Dichiara queste variabili prima delle importazioni che le utilizzano:
 $filespacer = (process.name == 'FileSpacer')
 $filespacer_title = (filespacer && window.parent.name == 'FileSpacer Item Window')
 $filespacer_toolbar = (filespacer && window.parent.name == 'FileSpacer Toolbar Host')
+$filespacer_view = (filespacer_toolbar && window.parent.title == 'FileSpacer View Menu')
+$filespacer_more = (filespacer_toolbar && !filespacer_view)
 $filespacer_context = (filespacer && !filespacer_title && !filespacer_toolbar)
 ```
 
@@ -54,10 +56,18 @@ Usa nelle regole le proprietà `where` e `type` corrispondenti:
 | --- | --- | --- |
 | Menu a discesa della barra del titolo | `filespacer_title` | `'*'` |
 | Barra degli strumenti **…** e **Visualizza** | `filespacer_toolbar` | `'*'` |
+| Solo **Visualizza** | `filespacer_view` | `'*'` |
+| Solo **…** della barra degli strumenti | `filespacer_more` | `'*'` |
 | File o cartelle selezionati | `filespacer_context` | `'file\|dir'` |
 | Sfondo della cartella | `filespacer_context` | `'back'` |
 
 Usa `mode='multiple'` per le regole che devono rimanere disponibili indipendentemente dallo stato della selezione. `process.name` non comprende `.exe`. `window.parent.name` identifica una classe di finestra.
+
+`filespacer_toolbar` comprende ancora entrambi i menu della barra degli strumenti. Usa `filespacer_view` solo per Visualizza o `filespacer_more` solo per **…**. Il marcatore interno `window.parent.title` è stabile e non viene tradotto. Per mantenere Terminal fuori da Visualizza, aggiungi `!filespacer_view &&` alla condizione `where` esistente, racchiudendo la condizione originale tra parentesi:
+
+```nss
+where=(!filespacer_view && (sel.count || wnd.is_taskbar || wnd.is_edit))
+```
 
 <a id="target-an-existing-menu-entry"></a>
 

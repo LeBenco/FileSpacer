@@ -27,7 +27,7 @@ import 'imports/theme.nss'
 
 Οι ιδιότητες του θέματος μπορούν επίσης να χρησιμοποιούν εκφράσεις ανά διεργασία. Για παράδειγμα, το `dark = if(process.name == 'FileSpacer', true, sys.dark)` μέσα στο `theme { ... }` επιλέγει σκοτεινή λειτουργία για το FileSpacer και την προτίμηση του συστήματος στις άλλες εφαρμογές.
 
-Στο FileSpacer, οι αλλαγές του θέματος ισχύουν για τα νέα μενού αφού καταργήσετε την καταχώριση του Nilesoft Shell και το καταχωρίσετε ξανά, χωρίς επανεκκίνηση της Εξερεύνησης αρχείων.
+Μετά την αποθήκευση ενός αρχείου NSS, το **Ctrl + δεξί κλικ** στην επιφάνεια εργασίας ή στη γραμμή εργασιών αναγκάζει το Nilesoft να φορτώσει ξανά τη ρύθμισή του στον Explorer, χωρίς επανεκκίνηση του Explorer ή κατάργηση εγγραφής της επέκτασης. Το Nilesoft φορτώνει επίσης ξανά όταν εντοπίζει πατημένο το αριστερό κουμπί κατά το άνοιγμα μενού· ένα κουμπί του FileSpacer μπορεί επομένως να εφαρμόσει αμέσως τις αλλαγές. Αυτό εξαρτάται από τη χειρονομία ανοίγματος και όχι από ταχύτερο μηχανισμό επαναφόρτωσης στο FileSpacer.
 
 <a id="menu-opening-delay"></a>
 
@@ -45,6 +45,8 @@ import 'imports/theme.nss'
 $filespacer = (process.name == 'FileSpacer')
 $filespacer_title = (filespacer && window.parent.name == 'FileSpacer Item Window')
 $filespacer_toolbar = (filespacer && window.parent.name == 'FileSpacer Toolbar Host')
+$filespacer_view = (filespacer_toolbar && window.parent.title == 'FileSpacer View Menu')
+$filespacer_more = (filespacer_toolbar && !filespacer_view)
 $filespacer_context = (filespacer && !filespacer_title && !filespacer_toolbar)
 ```
 
@@ -54,10 +56,18 @@ $filespacer_context = (filespacer && !filespacer_title && !filespacer_toolbar)
 | --- | --- | --- |
 | Αναπτυσσόμενο μενού της γραμμής τίτλου | `filespacer_title` | `'*'` |
 | Γραμμή εργαλείων **…** και **Προβολή** | `filespacer_toolbar` | `'*'` |
+| Μόνο **Προβολή** | `filespacer_view` | `'*'` |
+| Μόνο **…** της γραμμής εργαλείων | `filespacer_more` | `'*'` |
 | Επιλεγμένα αρχεία ή φάκελοι | `filespacer_context` | `'file\|dir'` |
 | Φόντο φακέλου | `filespacer_context` | `'back'` |
 
 Χρησιμοποιήστε `mode='multiple'` για κανόνες που πρέπει να παραμένουν διαθέσιμοι ανεξάρτητα από την κατάσταση επιλογής. Το `process.name` δεν περιλαμβάνει το `.exe`. Το `window.parent.name` προσδιορίζει μια κλάση παραθύρου.
+
+Το `filespacer_toolbar` εξακολουθεί να καλύπτει και τα δύο μενού της γραμμής εργαλείων. Χρησιμοποιήστε το `filespacer_view` μόνο για την Προβολή ή το `filespacer_more` μόνο για το **…**. Ο εσωτερικός δείκτης `window.parent.title` είναι σταθερός και δεν μεταφράζεται. Για να διατηρήσετε το Terminal εκτός Προβολής, προσθέστε `!filespacer_view &&` στην υπάρχουσα συνθήκη `where`, βάζοντας τη συνθήκη σε παρενθέσεις:
+
+```nss
+where=(!filespacer_view && (sel.count || wnd.is_taskbar || wnd.is_edit))
+```
 
 <a id="target-an-existing-menu-entry"></a>
 

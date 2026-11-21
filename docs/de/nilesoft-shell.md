@@ -27,7 +27,7 @@ import 'imports/theme.nss'
 
 Theme-Eigenschaften können auch prozessabhängige Ausdrücke verwenden. Beispielsweise wählt `dark = if(process.name == 'FileSpacer', true, sys.dark)` innerhalb von `theme { ... }` für FileSpacer den dunklen Modus und andernorts die Systemeinstellung.
 
-Bei FileSpacer gelten Theme-Änderungen nach dem Aufheben und erneuten Einrichten der Registrierung von Nilesoft Shell für neu geöffnete Menüs. Ein Neustart des Explorers ist nicht erforderlich.
+Nach dem Speichern einer NSS-Datei erzwingt **Strg + Rechtsklick** auf Desktop oder Taskleiste das Neuladen der Nilesoft-Konfiguration im Explorer, ohne Explorer neu zu starten oder die Erweiterung abzumelden. Nilesoft lädt auch neu, wenn beim Öffnen eines Menüs die linke Maustaste gedrückt ist; eine FileSpacer-Schaltfläche kann Änderungen daher sofort übernehmen. Das hängt von der Öffnungsgeste ab, nicht von einem schnelleren Neulademechanismus in FileSpacer.
 
 <a id="menu-opening-delay"></a>
 
@@ -45,6 +45,8 @@ Deklarieren Sie diese Variablen vor den Imports, die sie verwenden:
 $filespacer = (process.name == 'FileSpacer')
 $filespacer_title = (filespacer && window.parent.name == 'FileSpacer Item Window')
 $filespacer_toolbar = (filespacer && window.parent.name == 'FileSpacer Toolbar Host')
+$filespacer_view = (filespacer_toolbar && window.parent.title == 'FileSpacer View Menu')
+$filespacer_more = (filespacer_toolbar && !filespacer_view)
 $filespacer_context = (filespacer && !filespacer_title && !filespacer_toolbar)
 ```
 
@@ -54,10 +56,18 @@ Verwenden Sie in den Regeln die passenden Eigenschaften `where` und `type`:
 | --- | --- | --- |
 | Dropdownmenü der Titelleiste | `filespacer_title` | `'*'` |
 | Symbolleiste **…** und **Ansicht** | `filespacer_toolbar` | `'*'` |
+| Nur **Ansicht** | `filespacer_view` | `'*'` |
+| Nur Symbolleiste **…** | `filespacer_more` | `'*'` |
 | Ausgewählte Dateien oder Ordner | `filespacer_context` | `'file\|dir'` |
 | Ordnerhintergrund | `filespacer_context` | `'back'` |
 
 Verwenden Sie `mode='multiple'` für Regeln, die unabhängig vom Auswahlzustand verfügbar bleiben sollen. `process.name` enthält kein `.exe`. `window.parent.name` bezeichnet eine Fensterklasse.
+
+`filespacer_toolbar` umfasst weiterhin beide Symbolleistenmenüs. Verwenden Sie `filespacer_view` nur für Ansicht oder `filespacer_more` nur für **…**. Die interne Kennung `window.parent.title` ist stabil und wird nicht übersetzt. Damit Terminal außerhalb von Ansicht verfügbar bleibt, ergänzen Sie die bestehende `where`-Bedingung um `!filespacer_view &&` und setzen Sie die bisherige Bedingung in Klammern:
+
+```nss
+where=(!filespacer_view && (sel.count || wnd.is_taskbar || wnd.is_edit))
+```
 
 <a id="target-an-existing-menu-entry"></a>
 
