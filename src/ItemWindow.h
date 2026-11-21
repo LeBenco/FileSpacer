@@ -245,7 +245,7 @@ private:
     CComHeapPtr<ITEMIDLIST> notifyItemID;
 
     bool firstActivate = false, closing = false;
-    bool taskbarGrouped = false; // Fixed for this HWND; changes apply to new windows.
+    bool taskbarGrouped = false; // Refreshed when settings are applied.
     bool taskbarPinningSet = false;
 
     SRWLOCK iconLock = SRWLOCK_INIT;
