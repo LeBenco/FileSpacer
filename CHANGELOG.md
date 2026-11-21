@@ -2,6 +2,12 @@
 
 # Changelog
 
+<a id="152"></a>
+
+## 1.5.2
+
+- Fix the placement of a never-visited folder, which ignored the window it was opened from when opening the folder closed that window.
+
 <a id="151"></a>
 
 ## 1.5.1
