@@ -239,7 +239,7 @@ BEGIN
   IDS_SEARCH_HISTORY_INVALID "Geben Sie einen Wert zwischen 0 und 20 für den Suchverlauf ein."
   IDS_OPENING_ANIMATION_DURATION_INVALID "Geben Sie 0 oder eine ganze Zahl von 50 bis 999 Millisekunden ein."
   IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer platziert neue Fenster so, dass sie andere Ordnerfenster möglichst wenig überlappen.\n\nDas gilt für Ordner ohne gespeicherte Fensterposition oder wenn eine gespeicherte Position nach einem Wechsel der Bildschirmanordnung nicht mehr erreichbar ist. Eine weiterhin nutzbare gespeicherte Position hat Vorrang."
-  IDS_GROUP_FOLDER_WINDOWS_HELP "Neue Ordnerfenster können entsprechend Ihren Windows-Einstellungen unter einer gemeinsamen Schaltfläche in der Taskleiste gruppiert werden.\n\nIst diese Option deaktiviert, können Ordner einzeln an die Taskleiste angeheftet werden.\n\nDie Änderung gilt nur für danach geöffnete Fenster. Bereits geöffnete Fenster behalten ihre aktuelle Gruppierung."
+  IDS_GROUP_FOLDER_WINDOWS_HELP "Ordnerfenster können entsprechend Ihren Windows-Einstellungen unter einer gemeinsamen Schaltfläche in der Taskleiste gruppiert werden.\n\nIst diese Option aktiviert, kann FileSpacer selbst an die Taskleiste angeheftet werden. Ist sie deaktiviert, können Ordner einzeln angeheftet werden.\n\nÄnderungen gelten sofort für alle geöffneten Ordnerfenster."
   IDS_EVERYTHING_EXECUTABLE "Ausführbare Everything-Datei (*.exe)"
 END
 

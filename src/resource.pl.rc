@@ -239,7 +239,7 @@ BEGIN
   IDS_SEARCH_HISTORY_INVALID "Wprowadź limit historii wyszukiwania od 0 do 20."
   IDS_OPENING_ANIMATION_DURATION_INVALID "Wprowadź 0 lub całkowitą liczbę milisekund od 50 do 999."
   IDS_SMART_WINDOW_PLACEMENT_HELP "FileSpacer umieszcza nowe okna tak, aby ograniczyć nakładanie się okien folderów.\n\nDotyczy folderów bez zapisanego położenia okna lub z położeniem niedostępnym po zmianie ekranu. Nadal dostępne zapisane położenie ma pierwszeństwo."
-  IDS_GROUP_FOLDER_WINDOWS_HELP "Nowe okna folderów można grupować pod jednym przyciskiem paska zadań, zgodnie z ustawieniami paska zadań Windows.\n\nGdy opcja jest wyłączona, foldery można przypinać oddzielnie do paska zadań.\n\nUstawienie dotyczy okien otwartych po zmianie. Już otwarte okna zachowują bieżące grupowanie."
+  IDS_GROUP_FOLDER_WINDOWS_HELP "Okna folderów można grupować pod jednym przyciskiem paska zadań, zgodnie z ustawieniami Windows.\n\nGdy opcja jest włączona, można przypiąć samą aplikację FileSpacer do paska zadań. Gdy jest wyłączona, foldery można przypinać oddzielnie.\n\nZmiany są stosowane natychmiast do wszystkich otwartych okien folderów."
   IDS_EVERYTHING_EXECUTABLE "Plik wykonywalny Everything (*.exe)"
 END
 
