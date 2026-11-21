@@ -10,6 +10,16 @@ try {
     $modes=Get-PreviewModes $window
     Assert-Ui ($null -eq (Get-UiPreference 'ViewMenuPreviewEnabled')) 'Default-on test requires an absent stored value.'
     $initial=Read-PreviewMode $window
+    $popup=Open-PreviewMenu $window
+    $ownerClass=[FileSpacerViewMenuTests.MenuUi]::OwnerParentClass($window)
+    Assert-Ui ($ownerClass -eq 'FileSpacer Toolbar Host') 'View menu must share the toolbar theme scope.'
+    [FileSpacerViewMenuTests.MenuUi]::Key($window,0x28,1) # Down highlights the first mode.
+    Wait-PreviewMode $window $modes[0]
+    [FileSpacerViewMenuTests.MenuUi]::Key($window,0x0D,1)
+    Wait-PreviewMenuClosed $window
+    Wait-PreviewMode $window $modes[0]
+    Reset-PreviewMode $window
+    Write-Host 'PASS: View uses the toolbar theme scope; keyboard highlighting previews and Enter commits the mode.'
     $state=Set-PreviewState $window
     $state|ConvertTo-Json -Depth 4|Set-Content -LiteralPath (Join-Path $env:FS_REGRESSION_RUN 'initial-state.json') -Encoding UTF8
     foreach($finish in @('escape','outside')) {
