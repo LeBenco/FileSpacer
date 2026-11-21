@@ -5,12 +5,6 @@
   "accepted": null,
   "active": [
     {
-      "tag": "v1.4.1",
-      "pr": 476223,
-      "phase": "submitted",
-      "status": "pending"
-    },
-    {
       "tag": "v1.4.0",
       "pr": 475624,
       "phase": "submitted",
