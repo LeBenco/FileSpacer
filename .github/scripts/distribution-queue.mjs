@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only; Copyright (C) 2026 Benco
 import fs from 'node:fs/promises';
-import {execFile} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 import {repository, githubApi, releaseVersion, publishedRelease} from './release-assets.mjs';
 
@@ -101,45 +100,39 @@ export async function openWingetSubmissions(api) {
   }
 }
 
-function runChocolatey(command, args, options) {
-  // Keep Node's network/timer loop running while Chocolatey performs its queries.
-  // Blocking it through the migration scan leaves GitHub keep-alive sockets
-  // stale when the final state update starts.
-  return new Promise(resolve => {
-    execFile(command, args, options, (error, stdout, stderr) => resolve({
-      status: error ? (Number.isInteger(error.code) ? error.code : null) : 0,
-      error: error && !Number.isInteger(error.code) ? error : null, stdout, stderr
-    }));
-  });
-}
-
-export async function chocolateySearch(version, approvedOnly, run = runChocolatey) {
+// The feed entry of the exact version states its moderation status. An exact
+// version search with --approved-only also returned versions still in
+// moderation, which recorded them as accepted minutes after their upload.
+export async function chocolateyStatus(version, request = fetch) {
   releaseVersion(`v${version}`);
-  const args = ['search', 'filespacer', '--exact', `--version=${version}`,
-    '--source=https://community.chocolatey.org/api/v2/', '--limit-output', '--no-progress', '--ignore-http-cache'];
-  if (approvedOnly) args.push('--approved-only');
-  const result = await run('choco.exe', args, {encoding: 'utf8', timeout: 90000, windowsHide: true});
-  // Enhanced exit codes may report 2 for an empty search. Any other error,
-  // warning or unexpected output is inconclusive, never proof of absence.
-  if (result.error || ![0, 2].includes(result.status) || result.stderr?.trim()) {
-    throw new Error(`Chocolatey status lookup failed (${result.status ?? result.error?.code}).`);
+  const url = `https://community.chocolatey.org/api/v2/Packages(Id='filespacer',Version='${version}')`;
+  let response;
+  try {
+    response = await request(url, {headers: {Accept: 'application/atom+xml'}, signal: AbortSignal.timeout(90000)});
+  } catch (error) {
+    throw new Error(`Chocolatey status lookup failed (${error.cause?.code ?? error.name}).`);
   }
-  const lines = (result.stdout || '').trim().split(/\r?\n/).filter(Boolean);
-  if (lines.some(line => line.toLowerCase() !== `filespacer|${version}`) || (result.status === 2 && lines.length)) {
-    throw new Error('Unexpected Chocolatey search output; refusing to infer package status.');
+  if (response.status === 404) return 'missing';
+  if (!response.ok) throw new Error(`Chocolatey status lookup failed (${response.status}).`);
+  const entry = await response.text();
+  const field = name => entry.match(new RegExp(`<d:${name}(?: [^>]*)?>([^<]*)</d:${name}>`))?.[1];
+  // Any other answer, status or combination is inconclusive, never proof of
+  // acceptance or absence.
+  if (!/<title type="text">filespacer<\/title>/i.test(entry) || field('Version') !== version) {
+    throw new Error('Unexpected Chocolatey feed entry; refusing to infer package status.');
   }
-  return lines.length > 0;
+  const status = field('PackageStatus'), approved = field('IsApproved');
+  if (status === 'Approved' && approved === 'true') return 'accepted';
+  if (status === 'Submitted' && approved === 'false') return 'pending';
+  throw new Error(`Unexpected Chocolatey package status (${status}, approved: ${approved}); refusing to infer acceptance.`);
 }
 
-export function channelRemote(channel, api, search = chocolateySearch) {
+export function channelRemote(channel, api, moderation = chocolateyStatus) {
   emptyState(channel);
   return {
     async inspect(entry) {
       const version = releaseVersion(entry.tag);
-      if (channel === 'chocolatey') {
-        if (await search(version, true)) return {status: 'accepted'};
-        return {status: await search(version, false) ? 'pending' : 'missing'};
-      }
+      if (channel === 'chocolatey') return {status: await moderation(version)};
       if (entry.pr) {
         const pr = await api(`${wingetRepo}/pulls/${entry.pr}`);
         if (pr.merged_at) return {status: 'accepted'};
@@ -153,8 +146,8 @@ export function channelRemote(channel, api, search = chocolateySearch) {
     async discover(initial) {
       if (channel === 'winget') return {active: await openWingetSubmissions(api), accepted: []};
       if (!initial) return {active: [], accepted: []};
-      // Migration: exact-version lookups also find unlisted moderation entries.
-      // Do not assume that an empty ordinary Chocolatey search means no uploads.
+      // Migration: the entry of an exact version also exists while it is
+      // unlisted in moderation, which an ordinary Chocolatey search omits.
       const found = {active: [], accepted: []};
       for (let page = 1; ; page++) {
         const releases = await api(`repos/${repository}/releases?per_page=100&page=${page}`);

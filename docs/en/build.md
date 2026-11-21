@@ -205,9 +205,9 @@ writes. Native per-channel concurrency serializes short runs with `queue: max`;
 the latest pending VERSION is maintained in state, not by leaving a runner waiting
 for moderation. Channel failures do not cancel the other channel or the release.
 
-Migration imports all open `Benco.FileSpacer` PRs. For Chocolatey, it checks each
-published stable GitHub release using exact-version Chocolatey CLI searches,
-including unapproved uploads. Any imported submissions must all be accepted
+Migration imports all open `Benco.FileSpacer` PRs. For Chocolatey, it reads the
+community feed entry of each published stable GitHub release, which also exists
+for unapproved uploads. Any imported submissions must all be accepted
 before a new version is sent. After migration, submit through the coordinator so
 its state also tracks Chocolatey uploads; unrelated manual Chocolatey uploads
 outside this workflow are not automatically discovered.

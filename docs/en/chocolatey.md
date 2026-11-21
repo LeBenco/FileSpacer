@@ -38,10 +38,10 @@ SHA-256 with the update manifest and GitHub asset digest when available.
 
 The shared coordinator retains only the latest requested version while any older
 submission awaits approval. A new request replaces the pending version, without
-changing the upload already being moderated. An hourly check uses official
-Chocolatey CLI exact-version searches with `--approved-only` to detect acceptance
+changing the upload already being moderated. An hourly check reads the moderation
+status in the community feed entry of the exact version to detect acceptance
 and submit the retained release. Merely finding the package is not approval.
-On first use, exact-version lookups of published stable GitHub releases import
+On first use, the feed entries of published stable GitHub releases import
 existing uploads under moderation. Later submissions should all use the coordinator.
 The [shared queue and recovery procedure](build.md#releases) describes persistent
 state, migration, retries and schedule limitations.
