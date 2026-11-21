@@ -76,11 +76,15 @@
       ]
     },
     "CHANGELOG.md": {
-      "sourceHash": "f430313b4db0b702e2caae1bde8e1ecb98f427b690bd6673d3546b7feb58e955",
+      "sourceHash": "4b083dfb988cdf5855423971da81c29b9518cf387aea4de689b6d8c91a697e83",
       "headings": [
         [
           "changelog",
           2
+        ],
+        [
+          "153",
+          3
         ],
         [
           "152",
