@@ -145,7 +145,7 @@ FileSpacer builds the title-bar menu, then Nilesoft Shell applies its rules, whi
 
 If menus open with a delay, Nilesoft Shell’s `showdelay` setting can remove it, globally or only for FileSpacer ([configuration](nilesoft-shell.md#menu-opening-delay)).
 
-[Square corners](nilesoft-shell.md#recommended-menu-appearance) are recommended for title-bar and toolbar menus.
+[Square corners](nilesoft-shell.md#recommended-menu-appearance) are recommended for the title-bar drop-down, **…** and **View** menus.
 
 **Navigation menu**
 

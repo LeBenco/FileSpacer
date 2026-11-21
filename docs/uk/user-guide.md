@@ -160,7 +160,7 @@ FileSpacer формує меню рядка заголовка, а потім Ni
 
 Якщо меню відкриваються із затримкою, параметр `showdelay` у Nilesoft Shell дозволяє прибрати її для всіх програм або лише для FileSpacer ([налаштування](nilesoft-shell.md#menu-opening-delay)).
 
-Для меню рядка заголовка й панелі інструментів рекомендовано [прямі кути](nilesoft-shell.md#recommended-menu-appearance).
+Для трьох меню — розкривного меню заголовка, **…** і **Подання** — рекомендовано [прямі кути](nilesoft-shell.md#recommended-menu-appearance).
 
 **Меню навігації**
 

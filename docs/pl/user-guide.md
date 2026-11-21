@@ -160,7 +160,7 @@ FileSpacer tworzy menu paska tytułu, a następnie Nilesoft Shell stosuje własn
 
 Jeśli menu otwierają się z opóźnieniem, ustawienie `showdelay` w Nilesoft Shell pozwala je usunąć dla wszystkich aplikacji lub tylko dla FileSpacer ([konfiguracja](nilesoft-shell.md#menu-opening-delay)).
 
-Dla menu paska tytułu i paska narzędzi zalecane są [prostokątne narożniki](nilesoft-shell.md#recommended-menu-appearance).
+Dla menu paska tytułu oraz menu **…** i **Widok** zalecane są [prostokątne narożniki](nilesoft-shell.md#recommended-menu-appearance).
 
 **Menu nawigacji**
 

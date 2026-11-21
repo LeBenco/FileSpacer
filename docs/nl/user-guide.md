@@ -160,7 +160,7 @@ FileSpacer stelt het titelbalkmenu samen. Daarna past Nilesoft Shell zijn regels
 
 Als menu’s met vertraging openen, kan de Nilesoft Shell-instelling `showdelay` die vertraging opheffen, voor alle toepassingen of alleen voor FileSpacer ([configuratie](nilesoft-shell.md#menu-opening-delay)).
 
-[Rechte hoeken](nilesoft-shell.md#recommended-menu-appearance) worden aanbevolen voor menu’s van de titelbalk en werkbalk.
+[Rechte hoeken](nilesoft-shell.md#recommended-menu-appearance) worden aanbevolen voor het titelbalkmenu en de menu’s **…** en **Beeld**.
 
 **Navigatiemenu**
 

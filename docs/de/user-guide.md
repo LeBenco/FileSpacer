@@ -159,7 +159,7 @@ FileSpacer stellt das Titelleistenmenü zusammen. Danach wendet Nilesoft Shell s
 
 Öffnen sich Menüs verzögert, lässt sich diese Verzögerung mit der Nilesoft-Shell-Einstellung `showdelay` global oder nur für FileSpacer aufheben ([Konfiguration](nilesoft-shell.md#menu-opening-delay)).
 
-Für die Menüs der Titelleiste und der Symbolleiste werden [Ecken ohne Abrundung](nilesoft-shell.md#recommended-menu-appearance) empfohlen.
+Für das Dropdownmenü der Titelleiste sowie **…** und **Ansicht** werden [Ecken ohne Abrundung](nilesoft-shell.md#recommended-menu-appearance) empfohlen.
 
 **Navigationsmenü**
 

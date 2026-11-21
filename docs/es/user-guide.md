@@ -160,7 +160,7 @@ FileSpacer compone el menú de la barra de título y después Nilesoft Shell apl
 
 Si los menús tardan en abrirse, el ajuste `showdelay` de Nilesoft Shell permite eliminar ese retardo, para todas las aplicaciones o solo para FileSpacer ([configuración](nilesoft-shell.md#menu-opening-delay)).
 
-Se recomiendan [esquinas rectas](nilesoft-shell.md#recommended-menu-appearance) en los menús de la barra de título y de la barra de herramientas.
+Se recomiendan [esquinas rectas](nilesoft-shell.md#recommended-menu-appearance) en los tres menús: el desplegable de la barra de título, **…** y **Vista**.
 
 **Menú de navegación**
 

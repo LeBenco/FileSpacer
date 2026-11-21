@@ -160,7 +160,7 @@ FileSpacer compose le menu de la barre de titre, puis Nilesoft Shell applique se
 
 Si les menus s’ouvrent avec un délai, le réglage `showdelay` de Nilesoft Shell permet de le supprimer, globalement ou seulement dans FileSpacer ([configuration](nilesoft-shell.md#menu-opening-delay)).
 
-[Des coins carrés](nilesoft-shell.md#recommended-menu-appearance) sont recommandés pour les menus de la barre de titre et de la barre d’outils.
+[Des coins carrés](nilesoft-shell.md#recommended-menu-appearance) sont recommandés pour les trois menus : le menu déroulant de la barre de titre, **…** et **Affichage**.
 
 **Menu de navigation**
 
