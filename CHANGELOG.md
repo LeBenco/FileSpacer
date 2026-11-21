@@ -7,6 +7,7 @@
 ## 1.5.2
 
 - Fix the placement of a never-visited folder, which ignored the window it was opened from when opening the folder closed that window.
+- Show the FileSpacer icon for grouped taskbar windows, allow pinning the application, and apply grouping changes immediately to open folder windows.
 
 <a id="151"></a>
 
