@@ -190,10 +190,13 @@ then submits it for community moderation. See [Chocolatey distribution](chocolat
 for setup, validation, and manual retries.
 
 The common coordinator runs after successful publication and checks both queues
-hourly, at minute 17. Each channel has one latest pending release and its own
-acceptance barrier. If X awaits acceptance, Y is retained; if Z is requested
-before X is accepted, Z replaces Y. Once X is accepted, only the retained version
-is submitted. Older or replayed requests cannot replace a newer pending version.
+hourly, at minute 17. Each channel has one latest pending release.
+For WinGet, a newer release closes all older unmerged FileSpacer PRs after its
+installer is prepared and before its own submission is reserved. Closure must
+succeed before submission; repeated checks do not recreate the current PR.
+Chocolatey retains its acceptance barrier: if X awaits acceptance, Y is retained;
+if Z is requested before X is accepted, Z replaces Y. Once X is accepted, only the
+retained version is submitted. Older or replayed requests cannot replace a newer pending version.
 Only releases selected for that channel, or explicitly requested manually, enter
 its queue. A GitHub-only release never replaces a queued catalog release.
 
@@ -207,15 +210,18 @@ for moderation. Channel failures do not cancel the other channel or the release.
 
 Migration imports all open `Benco.FileSpacer` PRs. For Chocolatey, it reads the
 community feed entry of each published stable GitHub release, which also exists
-for unapproved uploads. Any imported submissions must all be accepted
-before a new version is sent. After migration, submit through the coordinator so
+for unapproved uploads. Imported older WinGet PRs are closed when a newer release
+is submitted; imported Chocolatey submissions must all be accepted first.
+After migration, submit through the coordinator so
 its state also tracks Chocolatey uploads; unrelated manual Chocolatey uploads
 outside this workflow are not automatically discovered.
 
-WinGet unblocks after the tracked PR is merged (catalog propagation can take
-longer). Chocolatey unblocks only when the official CLI reports that exact
-version as approved. Network failures, closed unmerged PRs and uncertain uploads
-keep the barrier closed. A reservation is saved before each external upload, so
+WinGet records merged PRs as accepted (catalog propagation can take longer) and
+retires older closed PRs when submitting a newer release. Its submission PAT also
+authorizes closing the older PRs; a denied or unconfirmed closure stops the new
+submission. Chocolatey unblocks only when the community feed reports that exact
+version as approved. Network failures and uncertain uploads keep the barrier closed.
+A reservation is saved before each external upload, so
 cancellation or a lost response cannot cause an automatic duplicate. The Actions
 summary shows accepted, active and pending versions, with PR links when available.
 
