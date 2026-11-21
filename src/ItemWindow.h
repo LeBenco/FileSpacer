@@ -143,6 +143,7 @@ protected:
     virtual void trackContextMenu(POINT pos);
 
     HWND getToolbarMenuOwner() const;
+    HWND getViewMenuOwner() const { return viewMenuOwner; }
 	int trackContextMenu(POINT pos, HMENU menu, HWND owner = nullptr);
 
     void openChild(IShellItem *childItem, bool closeSource, const RECT *openingOrigin = nullptr);
@@ -237,6 +238,7 @@ private:
     ProxyIcon proxyIcon;
     HWND toolbarRebar = nullptr, toolbarHost = nullptr;
     HWND toolbarMenuOwner = nullptr;
+    HWND viewMenuOwner = nullptr;
     HWND parentToolbar = nullptr, cmdToolbar = nullptr;
     HWND quickAccessToolbar = nullptr;
     long shellWindowCookie = 0;

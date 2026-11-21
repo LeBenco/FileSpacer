@@ -1300,11 +1300,21 @@ void ItemWindow::onCreate() {
         // Its direct parent exposes "FileSpacer Toolbar Host" to NSS rules.
         toolbarMenuOwner = checkLE(CreateWindowEx(0, L"STATIC", nullptr, WS_CHILD,
             0, 0, 0, 0, toolbarHost, nullptr, instance, nullptr));
-        if (toolbarMenuOwner && !checkLE(SetWindowSubclass(toolbarMenuOwner,
-                toolbarMenuOwnerProc, 0, reinterpret_cast<DWORD_PTR>(hwnd)))) {
-            DestroyWindow(toolbarMenuOwner);
-            toolbarMenuOwner = nullptr;
+        // Keep the toolbar theme scope, with a stable title for View-only rules.
+        HWND viewMenuHost = checkLE(CreateWindowExW(0, TOOLBAR_HOST_CLASS,
+            L"FileSpacer View Menu", WS_CHILD, 0, 0, 0, 0,
+            toolbarHost, nullptr, instance, hwnd));
+        if (viewMenuHost)
+            viewMenuOwner = checkLE(CreateWindowExW(0, L"STATIC", nullptr, WS_CHILD,
+                0, 0, 0, 0, viewMenuHost, nullptr, instance, nullptr));
+        for (HWND *owner : {&toolbarMenuOwner, &viewMenuOwner}) {
+            if (*owner && !checkLE(SetWindowSubclass(*owner,
+                    toolbarMenuOwnerProc, 0, reinterpret_cast<DWORD_PTR>(hwnd)))) {
+                DestroyWindow(*owner);
+                *owner = nullptr;
+            }
         }
+        if (viewMenuHost && !viewMenuOwner) DestroyWindow(viewMenuHost);
 
         REBARBANDINFO band = {sizeof(band)};
         band.fMask = RBBIM_STYLE | RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_SIZE;
