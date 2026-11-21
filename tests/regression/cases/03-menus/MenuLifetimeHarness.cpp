@@ -164,7 +164,7 @@ bool GetMenuItemInfoW(HMENU menu, UINT index, bool byPosition, MENUITEMINFO *inf
     return true;
 }
 bool InsertMenuItemW(HMENU menu, UINT index, bool byPosition, const MENUITEMINFO *info) {
-    assert(menu && byPosition && info && (info->wID == IDM_TOGGLE_THUMBNAILS || info->wID == IDM_FILL_COLUMNS || info->wID == IDM_REALIGN_ICONS || info->wID == IDM_VIEW_MODE_FIRST));
+    assert(menu && byPosition && info && ((info->fType & MFT_SEPARATOR) || info->wID == IDM_TOGGLE_THUMBNAILS || info->wID == IDM_FILL_COLUMNS || info->wID == IDM_REALIGN_ICONS || info->wID == IDM_VIEW_MODE_FIRST));
     if (index > menu->items.size()) return false;
     menu->items.insert(menu->items.begin() + index, *info);
     return true;
@@ -193,8 +193,10 @@ int WideCharToMultiByte(int, int, const wchar_t *p, int, char *out, int count, v
 int TrackPopupMenuEx(HMENU m, UINT, int, int, HWND owner, void *) {
     assert(m && owner && !observation.closed);
     for (std::size_t i = 0; i < m->items.size(); ++i) {
-        if (m->items[i].wID == IDM_TOGGLE_THUMBNAILS)
+        if (m->items[i].wID == IDM_TOGGLE_THUMBNAILS) {
+            assert(i > 0 && (m->items[i - 1].fType & MFT_SEPARATOR));
             assert(i + 1 < m->items.size() && (m->items[i + 1].fType & MFT_SEPARATOR));
+        }
     }
     boundary(Stage::Popup);
     return observation.command;
@@ -303,6 +305,7 @@ struct ItemWindow : Ref {
     ItemWindow() { item.Attach(new IShellItem); }
     ~ItemWindow() override { observation.destroyed = true; }
     HWND getToolbarMenuOwner() const { return nullptr; }
+    HWND getViewMenuOwner() const { return nullptr; }
     bool isWindowOperational() const { return hwnd != nullptr && !closing; }
     virtual void closeNow() { closing = true; hwnd = nullptr; observation.closed = true; Release(); }
     virtual void trackContextMenu(POINT);
