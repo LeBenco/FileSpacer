@@ -674,6 +674,13 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
             break;
         }
     }
+    if (thumbnailPosition > 0) {
+        MENUITEMINFOW separator = {sizeof(separator)};
+        separator.fMask = MIIM_FTYPE;
+        separator.fType = MFT_SEPARATOR;
+        if (checkLE(InsertMenuItemW(subMenu, thumbnailPosition, TRUE, &separator)))
+            ++thumbnailPosition;
+    }
     SHELLSTATE thumbnailState = {};
     SHGetSetSettings(&thumbnailState, SSF_ICONSONLY, FALSE);
     MENUITEMINFO thumbnailItem = {sizeof(thumbnailItem)};
@@ -715,8 +722,9 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
         }
     }
     const UINT trackingFlags = TPM_RETURNCMD | TPM_RIGHTBUTTON | (contextMenu ? 0u : TPM_NOANIMATION);
-    // Expose the same toolbar scope as the application menu to theme rules.
-    HWND menuOwner = getToolbarMenuOwner();
+    // Keep the toolbar theme scope while exposing a separate View-menu title.
+    HWND menuOwner = getViewMenuOwner();
+    if (!menuOwner) menuOwner = getToolbarMenuOwner();
     if (!menuOwner) menuOwner = hwnd;
     const int cmd = isWindowOperational() ? TrackPopupMenuEx(subMenu, trackingFlags,
         point.x, point.y, menuOwner, nullptr) : 0;
