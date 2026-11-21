@@ -10,21 +10,21 @@ export async function downloadFlags(countries, request = fetch) {
   const codes = [...new Set(countries)];
   if (!codes.length) return new Map();
   if (codes.some(code => !/^[a-z]{2}$/.test(code))) throw new Error('Invalid flag country code');
-  async function get(url) {
+  async function text(url) {
     let response;
     try {
       response = await request(url, {
         headers: {'User-Agent': 'FileSpacer-Documentation/1.0 (https://github.com/LeBenco/FileSpacer)'},
         signal: AbortSignal.timeout(20000),
       });
+      if (response.ok) return await response.text();
     } catch (error) {
       throw new FlagRequestError(`Flag download failed (${error.message}): ${url}`, {cause: error});
     }
-    if (!response.ok) throw new FlagRequestError(`Flag download failed (${response.status}): ${url}`);
-    return response;
+    throw new FlagRequestError(`Flag download failed (${response.status}): ${url}`);
   }
   async function json(url) {
-    const data = await (await get(url)).json();
+    const data = JSON.parse(await text(url));
     if (data.error) throw new Error(`Flag metadata error: ${data.error.info || data.error.code}`);
     return data;
   }
@@ -78,14 +78,19 @@ SELECT DISTINCT ?code ?flag WHERE {
       images.set(title, url.href);
     }
   }
-  return new Map(await Promise.all(codes.map(async code => {
+  const results = await Promise.allSettled(codes.map(async code => {
     const url = images.get(titles.get(code));
-    const svg = await (await get(url)).text();
+    const svg = await text(url);
     if (!/^\s*(?:<\?xml[^]*?\?>\s*)?(?:<!--[^]*?-->\s*|<!DOCTYPE svg[^>]*>\s*)*<svg\b[^]*<\/svg>\s*$/.test(svg)) {
       throw new Error(`Invalid flag SVG: ${url}`);
     }
     return [code, optimize(svg, {multipass: true}).data];
-  })));
+  }));
+  // A parallel request failure must not hide a response that fails validation.
+  const failures = results.filter(result => result.status === 'rejected');
+  const failure = failures.find(result => !(result.reason instanceof FlagRequestError)) || failures[0];
+  if (failure) throw failure.reason;
+  return new Map(results.map(result => result.value));
 }
 
 function notice(message) {
