@@ -8,7 +8,6 @@
 
 - Fix the placement of a never-visited folder, which ignored the window it was opened from when opening the folder closed that window.
 - Fix taskbar grouping: use the FileSpacer icon for grouped windows, allow pinning the application, and apply grouping changes immediately to open folder windows.
-- Fix clipped shortcut hints by sizing generated labels to their text and moving the controls below them.
 
 <a id="151"></a>
 
