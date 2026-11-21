@@ -16,6 +16,29 @@ try {
     Wait-UiViewMode $window 4
     $initial=Wait-Columns $window
     Write-Host ('INITIAL '+($initial.Widths -join ',')+' available='+$initial.Available)
+    Set-UiPreference 'ViewMenuPreviewEnabled' 1
+    $initialMode=Read-PreviewMode $window
+    $popup=Open-PreviewMenu $window
+    foreach($index in 0..7) {
+        [FileSpacerViewMenuTests.MenuUi]::Hover($popup,$index)
+        # Content is committed after the menu closes; hovering it returns to Details.
+        $mode=@{0=1;1=1;2=1;3=2;4=3;5=4;6=6;7=4}[$index]
+        $size=@{0=256;1=96;2=48}[$index]
+        Wait-Ui {$now=Read-PreviewMode $window; $now.Mode -eq $mode -and ($null -eq $size -or $now.Size -eq $size)} 'the hovered view is previewed' 150
+    }
+    [FileSpacerViewMenuTests.MenuUi]::Leave($popup,$window)
+    Wait-PreviewMode $window $initialMode
+    $returned=Read-Columns $window
+    Write-Host ('RETURNED WHILE OPEN '+($returned.Widths -join ',')+' available='+$returned.Available)
+    [FileSpacerViewMenuTests.MenuUi]::Outside($window)
+    Wait-PreviewMenuClosed $window
+    $cancelled=Wait-Columns $window
+    Write-Host ('AFTER CANCEL '+($cancelled.Widths -join ',')+' available='+$cancelled.Available)
+    @{Initial=$initial;Returned=$returned;Cancelled=$cancelled}|ConvertTo-Json -Depth 6|
+        Set-Content -LiteralPath (Join-Path $env:FS_REGRESSION_RUN 'preview-columns.json') -Encoding UTF8
+    Assert-Ui (($returned.Widths -join ',') -eq ($initial.Widths -join ',')) 'Leaving the preview changed the original Details column widths.'
+    Assert-Ui (($cancelled.Widths -join ',') -eq ($initial.Widths -join ',')) 'Closing the preview changed the original Details column widths.'
+    Set-UiPreference 'ViewMenuPreviewEnabled' 0
     $windowBounds=[FileSpacerRegression.Native]::Bounds($window)
     [void][FileSpacerRegression.Native]::Message($window,0x231,0,0)
     Resize-ColumnsWindow $window ($windowBounds.Width+160)
