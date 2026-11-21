@@ -8,6 +8,7 @@
 
 - Fix the placement of a never-visited folder, which ignored the window it was opened from when opening the folder closed that window.
 - Fix taskbar grouping: use the FileSpacer icon for grouped windows, allow pinning the application, and apply grouping changes immediately to open folder windows.
+- Fix misplaced icons when reopening a large folder whose layout was saved by an older version at a different display scale.
 
 <a id="151"></a>
 
