@@ -566,20 +566,47 @@ class StateProbe : public IServiceProvider, public IExplorerBrowserEvents, publi
         result = restoreIconPositions(folderView, iconBlob, []() { return false; });
         if (!expect(result == E_ABORT, L"cancelled icon restoration does not move any icon")
                 || !iconsAre() || !selectionIs()) return false;
-        // A position saved while the view had not placed the item, as stored now
-        // and as an earlier version stored it at 125%, never moves the icon.
+        // Raw and legacy unplaced positions never move an icon, including when
+        // the current DPI differs from the scale used by an earlier version.
         std::vector<uint8_t> unplacedBlob(iconBlob.begin(),
             iconBlob.begin() + static_cast<std::ptrdiff_t>(firstIconPointOffset + sizeof(POINT)));
         const int dpi = systemDPI;
-        const LONG unplacedValues[] = {LONG_MAX, 0x66666666};
-        for (const LONG value : unplacedValues) {
-            const POINT saved = {value, value};
-            std::memcpy(unplacedBlob.data() + firstIconPointOffset, &saved, sizeof(saved));
-            if (value != LONG_MAX) systemDPI = 120;
-            result = restoreIconPositions(folderView, unplacedBlob, current);
+        const struct { POINT saved; int currentDPI; } unplacedCases[] = {
+            {{LONG_MAX, LONG_MAX}, dpi},
+            {{0x66666666, 0x66666666}, 120}, // Same 125% scale.
+            {{0x66666666, 53}, 144}, // 125% to 150%, only x unplaced.
+            {{37, MulDiv(LONG_MAX, 96, 144)}, 120}, // 150% to 125%, only y unplaced.
+            {{MulDiv(LONG_MAX, 96, 132), MulDiv(LONG_MAX, 96, 132)}, 96}, // Custom scale.
+            {{MulDiv(LONG_MAX, 96, 480), MulDiv(LONG_MAX, 96, 480)}, 96}, // 500% to 100%.
+        };
+        for (const auto &test : unplacedCases) {
+            std::memcpy(unplacedBlob.data() + firstIconPointOffset, &test.saved, sizeof(test.saved));
+            PreparedIconPositions prepared;
+            systemDPI = test.currentDPI;
+            result = prepareIconPositions(folderView, unplacedBlob, current, prepared);
             systemDPI = dpi;
-            if (!expect(result == S_OK, L"a saved unplaced position is accepted without being applied")
+            if (!expect(result == S_OK && prepared.items.empty() && prepared.points.empty(),
+                    L"an unplaced position stays out of the batch after a DPI change")) return false;
+            systemDPI = test.currentDPI;
+            result = restoreIconPositions(folderView, unplacedBlob, current);
+            const HRESULT gridResult = restoreIconGridPositions(folderView, unplacedBlob, {93, 75}, current);
+            systemDPI = dpi;
+            if (!expect(result == S_OK && gridResult == S_OK,
+                    L"free and grid restoration leave an unplaced position to the native view")
                     || !iconsAre() || !selectionIs()) return false;
+        }
+        // Large coordinates are not a sentinel merely because they are large;
+        // even the immediate neighbours of an old sentinel remain positions.
+        const POINT placedCases[] = {{37, -53}, {100000000, 100000000}, {0x66666665, 0x66666667}};
+        for (const POINT saved : placedCases) {
+            std::memcpy(unplacedBlob.data() + firstIconPointOffset, &saved, sizeof(saved));
+            PreparedIconPositions prepared;
+            systemDPI = 96;
+            result = prepareIconPositions(folderView, unplacedBlob, current, prepared);
+            systemDPI = dpi;
+            if (!expect(result == S_OK && prepared.points.size() == 1
+                    && prepared.points[0].x == saved.x && prepared.points[0].y == saved.y,
+                    L"ordinary coordinates and neighbours of a legacy sentinel remain in the batch")) return false;
         }
         std::vector<uint8_t> cancelled = {1};
         result = captureIconPositions(folderView, []() { return false; }, true, {}, cancelled);
