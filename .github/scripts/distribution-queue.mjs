@@ -127,9 +127,23 @@ export async function chocolateyStatus(version, request = fetch) {
   throw new Error(`Unexpected Chocolatey package status (${status}, approved: ${approved}); refusing to infer acceptance.`);
 }
 
-export function channelRemote(channel, api, moderation = chocolateyStatus) {
+export function channelRemote(channel, api, moderation = chocolateyStatus, submissionApi = api) {
   emptyState(channel);
   return {
+    async cancel(entry) {
+      if (channel !== 'winget' || !entry.pr) throw new Error('Expected a tracked WinGet PR.');
+      const endpoint = `${wingetRepo}/pulls/${entry.pr}`;
+      let pr = await api(endpoint);
+      const version = pr.title?.match(/\bversion\s+(\d+\.\d+\.\d+)(?=\s|$)/i)?.[1];
+      if (!packagePattern.test(pr.title) || `v${version}` !== entry.tag) {
+        throw new Error('WinGet PR identity changed; refusing to close it.');
+      }
+      if (pr.merged_at) return 'accepted';
+      if (pr.state === 'open') pr = await submissionApi(endpoint, {method: 'PATCH', body: {state: 'closed'}});
+      if (pr.merged_at) return 'accepted';
+      if (pr.state !== 'closed') throw new Error('WinGet PR closure was not confirmed.');
+      return 'cancelled';
+    },
     async inspect(entry) {
       const version = releaseVersion(entry.tag);
       if (channel === 'chocolatey') return {status: await moderation(version)};
@@ -194,6 +208,8 @@ export async function plan(state, store, remote, requested = '', retry = false) 
       || state.active.some(entry => !newer(state.pending, entry.tag)))) state.pending = null;
   await store.save(state);
   if (state.active.length) {
+    if (state.channel === 'winget' && state.pending && state.active.every(entry =>
+      newer(state.pending, entry.tag) && entry.pr && ['pending', 'rejected'].includes(entry.status))) return state.pending;
     if (retry && state.active.length === 1 && state.active[0].tag === requested
         && ['missing', 'rejected'].includes(statuses[0])) return requested;
     return '';
@@ -212,11 +228,33 @@ export async function plan(state, store, remote, requested = '', retry = false) 
 export async function begin(state, store, remote, tag, retry = false, runId = '') {
   releaseVersion(tag);
   const retrying = retry && state.active.length === 1 && state.active[0].tag === tag;
-  if ((!retrying && (state.active.length || state.pending !== tag)) || !state.initialized) {
+  if ((!retrying && ((state.channel !== 'winget' && state.active.length) || state.pending !== tag)) || !state.initialized) {
     throw new Error('Submission no longer owns the queue.');
   }
   const found = await remote.discover(false);
-  if (found.active.length) throw new Error('Another submission is awaiting acceptance.');
+  if (state.channel === 'winget' && !retrying) {
+    for (const entry of found.active) {
+      const existing = state.active.find(item => item.tag === entry.tag && (!item.pr || item.pr === entry.pr));
+      if (existing) Object.assign(existing, entry);
+      else state.active.push(entry);
+    }
+    // Check the whole set before closing anything. Unknown uploads and same/newer
+    // PRs must never be discarded to make a stale candidate eligible.
+    if (state.active.some(entry => !entry.pr || !newer(tag, entry.tag))) {
+      throw new Error('Another submission is awaiting acceptance or its outcome is uncertain.');
+    }
+    await store.save(state);
+    for (const entry of [...state.active]) {
+      const result = await remote.cancel(entry);
+      if (result === 'accepted') accept(state, entry.tag);
+      else if (result !== 'cancelled') throw new Error('WinGet PR closure was not confirmed.');
+      state.active = state.active.filter(item => item !== entry);
+      // A failed close or lost response is reconciled on the next run. Never
+      // reserve/send the new PR until every older PR is confirmed closed/merged.
+      await store.save(state);
+      console.log(`Superseded ${entry.tag}: https://github.com/microsoft/winget-pkgs/pull/${entry.pr} (${result}).`);
+    }
+  } else if (found.active.length) throw new Error('Another submission is awaiting acceptance.');
   const status = await remote.inspect(retrying ? state.active[0] : {tag});
   if (status.status !== 'missing' && !(retrying && status.status === 'rejected')) {
     throw new Error('Remote status changed; run the coordinator again before submitting.');
@@ -243,7 +281,9 @@ export async function submitted(state, store, tag, log = '') {
 export function summary(state, tag = '') {
   const active = state.active.map(entry => `${entry.tag} (${entry.phase}${entry.status ? `, ${entry.status}` : ''}${entry.pr ? `, https://github.com/microsoft/winget-pkgs/pull/${entry.pr}` : ''})`).join(', ') || 'none';
   return `### ${state.channel}\n\nAccepted: ${state.accepted || 'none'}\n\nAwaiting acceptance: ${active}\n\nLatest pending release: ${state.pending || 'none'}\n\n`
-    + (tag ? `Selected for submission: ${tag}.\n` : 'Unaccepted, closed or uncertain submissions keep the queue blocked.\n');
+    + (tag ? `Selected for submission: ${tag}.\n` : state.channel === 'winget'
+      ? 'A newer release supersedes older PRs; unknown upload outcomes require investigation.\n'
+      : 'Unaccepted, closed or uncertain submissions keep the queue blocked.\n');
 }
 
 async function main() {
@@ -265,13 +305,14 @@ async function main() {
   let selected = '';
   if (mode === 'plan') {
     selected = await plan(state, store, channelRemote(channel, api), tag, process.env.RETRY_SUBMISSION === 'true');
-    if (state.active.some(entry => ['missing', 'rejected'].includes(entry.status))) {
+    if (!selected && state.active.some(entry => ['missing', 'rejected'].includes(entry.status))) {
       console.log('::warning::Distribution remains blocked: investigate the missing or closed submission before explicitly retrying its tag.');
     }
     await fs.appendFile(process.env.GITHUB_OUTPUT, `tag=${selected}\nsubmit=${!!selected}\n`);
     if (selected) await fs.appendFile(process.env.GITHUB_ENV, `RELEASE_TAG=${selected}\n`);
   } else if (mode === 'begin') {
-    await begin(state, store, channelRemote(channel, api), tag, process.env.RETRY_SUBMISSION === 'true', process.env.GITHUB_RUN_ID);
+    await begin(state, store, channelRemote(channel, api, chocolateyStatus,
+      githubApi(process.env.WINGET_CREATE_GITHUB_TOKEN)), tag, process.env.RETRY_SUBMISSION === 'true', process.env.GITHUB_RUN_ID);
   } else if (mode === 'submitted') {
     await submitted(state, store, tag, process.argv[3] ? await fs.readFile(process.argv[3], 'utf8') : '');
   } else if (mode !== 'report') throw new Error('Expected plan, begin, submitted or report.');
