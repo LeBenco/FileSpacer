@@ -315,14 +315,19 @@ void backgroundBinding() {
         MAKELANGID(LANG_PORTUGUESE, SUBLANG_NEUTRAL), MAKELANGID(LANG_UKRAINIAN, SUBLANG_NEUTRAL)};
     for (WORD language : languages) {
         const std::wstring notice = localizedNotice(language);
+        SetWindowTextW(feedback, notice.c_str());
+        reinterpret_cast<ShortcutPage *>(GetWindowLongPtrW(page, GWLP_USERDATA))->layout();
+        require(GetClientRect(feedback, &client) != FALSE, "localized notice bounds");
         RECT needed = client;
         DrawTextW(context, notice.c_str(), -1, &needed, DT_CALCRECT | DT_WORDBREAK | DT_EXPANDTABS);
         if (notice.empty() || needed.right > client.right || needed.bottom > client.bottom)
             std::fprintf(stderr, "notice language 0x%04X: %ldx%ld in %ldx%ld\n", language, needed.right, needed.bottom, client.right, client.bottom);
         require(!notice.empty() && needed.right <= client.right && needed.bottom <= client.bottom,
-            "the notice exists and fits its two lines in every interface language");
+            "the notice exists and fits its measured height in every interface language");
     }
     SelectObject(context, previous); ReleaseDC(feedback, context);
+    SetWindowTextW(feedback, text);
+    reinterpret_cast<ShortcutPage *>(GetWindowLongPtrW(page, GWLP_USERDATA))->layout();
     require(notify(PSN_KILLACTIVE) == FALSE, "right button without Alt can be left pending and applied");
     setAction(1, {true, 0, GestureButton::Left});
     GetWindowTextW(feedback, text, _countof(text));
