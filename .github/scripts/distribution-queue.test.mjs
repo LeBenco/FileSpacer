@@ -31,37 +31,39 @@ function fixture(channel) {
 }
 
 for (const channel of ['winget', 'chocolatey']) {
-  test(`${channel}: X accepted -> submit Y; hold Z until Y is accepted`, async () => {
-    const f = fixture(channel);
-    assert.equal(await f.select(X), X);
-    await f.send(X);
-    assert.equal(await f.select(Y), '');
-    assert.equal((await f.store.load()).pending, Y);
-    f.versions.set(X, 'accepted');
-    assert.equal(await f.select(), Y);
-    await f.send(Y);
-    assert.equal(await f.select(Z), '');
-    assert.equal((await f.store.load()).pending, Z);
-    f.versions.set(Y, 'accepted');
-    assert.equal(await f.select(), Z);
-  });
+  if (channel === 'chocolatey') {
+    test(`${channel}: X accepted -> submit Y; hold Z until Y is accepted`, async () => {
+      const f = fixture(channel);
+      assert.equal(await f.select(X), X);
+      await f.send(X);
+      assert.equal(await f.select(Y), '');
+      assert.equal((await f.store.load()).pending, Y);
+      f.versions.set(X, 'accepted');
+      assert.equal(await f.select(), Y);
+      await f.send(Y);
+      assert.equal(await f.select(Z), '');
+      assert.equal((await f.store.load()).pending, Z);
+      f.versions.set(Y, 'accepted');
+      assert.equal(await f.select(), Z);
+    });
 
-  test(`${channel}: Z replaces pending Y; only Z is selected after X acceptance`, async () => {
-    const f = fixture(channel);
-    await f.select(X); await f.send(X);
-    assert.equal(await f.select(Y), '');
-    assert.equal(await f.select(Z), '');
-    // A delayed/replayed workflow for Y must not roll the queue back.
-    assert.equal(await f.select(Y), '');
-    assert.equal((await f.store.load()).pending, Z);
-    f.versions.set(X, 'accepted');
-    assert.equal(await f.select(), Z);
-    await f.send(Z);
-    f.versions.set(Z, 'accepted');
-    assert.equal(await f.select(Y), '');
-    assert.equal((await f.store.load()).accepted, Z);
-    assert.equal((await f.store.load()).pending, null);
-  });
+    test(`${channel}: Z replaces pending Y; only Z is selected after X acceptance`, async () => {
+      const f = fixture(channel);
+      await f.select(X); await f.send(X);
+      assert.equal(await f.select(Y), '');
+      assert.equal(await f.select(Z), '');
+      // A delayed/replayed workflow for Y must not roll the queue back.
+      assert.equal(await f.select(Y), '');
+      assert.equal((await f.store.load()).pending, Z);
+      f.versions.set(X, 'accepted');
+      assert.equal(await f.select(), Z);
+      await f.send(Z);
+      f.versions.set(Z, 'accepted');
+      assert.equal(await f.select(Y), '');
+      assert.equal((await f.store.load()).accepted, Z);
+      assert.equal((await f.store.load()).pending, null);
+    });
+  }
 
   test(`${channel}: persist the latest request even when the status service fails`, async () => {
     const f = fixture(channel);
@@ -89,7 +91,7 @@ for (const channel of ['winget', 'chocolatey']) {
     assert.equal(await f.select(), Z);
   });
 
-  test(`${channel}: preparation failures keep the candidate; rejection blocks newer releases`, async () => {
+  test(`${channel}: preparation failures keep the candidate; unresolved submissions require recovery`, async () => {
     const f = fixture(channel);
     assert.equal(await f.select(X), X);
     assert.equal(await f.select(), X); // No reservation or upload took place.
@@ -102,21 +104,35 @@ for (const channel of ['winget', 'chocolatey']) {
   });
 }
 
-test('channels are independent and multiple legacy submissions must ALL be accepted', async () => {
+test('WinGet supersedes all legacy PRs before reserving the latest release; Chocolatey stays independent', async () => {
   const w = fixture('winget'), c = fixture('chocolatey');
-  await w.store.save({...emptyState('winget'), active: [{tag: X, phase: 'submitted'}, {tag: Y, phase: 'submitted'}]});
-  w.versions.set(X, 'pending'); w.versions.set(Y, 'accepted');
-  assert.equal(await w.select(Z), '');
+  await w.store.save({...emptyState('winget'), active: [{tag: X, pr: 1, phase: 'submitted'}, {tag: Y, pr: 2, phase: 'submitted'}]});
+  w.versions.set(X, 'pending'); w.versions.set(Y, 'pending');
+  const closed = [];
+  w.remote.cancel = async entry => {
+    assert.equal((await w.store.load()).pending, Z);
+    assert.ok((await w.store.load()).active.every(item => item.tag !== Z), 'do not reserve before closure');
+    closed.push(entry.pr); w.versions.set(entry.tag, 'rejected'); return 'cancelled';
+  };
+  assert.equal(await w.select(Z), Z);
+  assert.deepEqual(closed, [], 'preparation must precede closure');
   assert.equal(await c.select(Z), Z);
-  w.versions.set(X, 'accepted');
-  assert.equal(await w.select(), Z);
+  await begin(await w.store.load(), w.store, w.remote, Z);
+  assert.deepEqual(closed, [1, 2]);
+  assert.deepEqual((await w.store.load()).active, [{tag: Z, phase: 'uncertain'}]);
+  assert.equal((await w.store.load()).accepted, null, 'closing is not acceptance');
+  w.versions.set(Z, 'pending');
+  await submitted(await w.store.load(), w.store, Z, 'https://github.com/microsoft/winget-pkgs/pull/3');
+  assert.equal(await w.select(), '', 'hourly checks must not recreate the current PR');
+  assert.equal(await w.select(Y), '', 'a delayed release must not close a newer PR');
+  assert.deepEqual(closed, [1, 2]);
 });
 
 test('a legacy/external submission is adopted and a lost successful response is reconciled', async () => {
   const f = fixture('winget');
   f.remote.discover = async () => ({active: [{tag: X, pr: 12, phase: 'submitted'}], accepted: []});
   f.versions.set(X, 'pending');
-  assert.equal(await f.select(Z), '');
+  assert.equal(await f.select(Z), Z);
   assert.equal((await f.store.load()).active[0].pr, 12);
   f.remote.discover = async () => ({active: [], accepted: []});
   f.versions.set(X, 'accepted');
@@ -127,6 +143,45 @@ test('a legacy/external submission is adopted and a lost successful response is 
   assert.equal(await f.select(), '');
   f.versions.set(Z, 'accepted');
   assert.equal(await f.select(), '');
+});
+
+test('WinGet resumes partial closure and a lost close response without sending a duplicate', async () => {
+  const f = fixture('winget');
+  await f.store.save({...emptyState('winget'), initialized: true,
+    active: [{tag: X, pr: 1, phase: 'submitted'}, {tag: Y, pr: 2, phase: 'submitted'}]});
+  f.versions.set(X, 'pending'); f.versions.set(Y, 'pending');
+  await f.select(Z);
+  const closed = [];
+  f.remote.cancel = async entry => {
+    closed.push(entry.pr);
+    f.versions.set(entry.tag, 'rejected');
+    if (entry.pr === 2) throw new Error('lost close response');
+    return 'cancelled';
+  };
+  await assert.rejects(begin(await f.store.load(), f.store, f.remote, Z), /lost close response/);
+  assert.deepEqual((await f.store.load()).active.map(entry => entry.pr), [2]);
+  assert.equal((await f.store.load()).pending, Z);
+  assert.equal(await f.select(), Z);
+  f.remote.cancel = async entry => {
+    assert.equal(entry.pr, 2); assert.equal(f.versions.get(Y), 'rejected'); return 'cancelled';
+  };
+  await begin(await f.store.load(), f.store, f.remote, Z);
+  assert.deepEqual((await f.store.load()).active, [{tag: Z, phase: 'uncertain'}]);
+  assert.deepEqual(closed, [1, 2]);
+});
+
+test('WinGet closure refusal preserves the PR and pending release; a concurrent merge is accepted', async () => {
+  const f = fixture('winget');
+  await f.store.save({...emptyState('winget'), initialized: true, active: [{tag: X, pr: 1, phase: 'submitted'}]});
+  f.versions.set(X, 'pending');
+  await f.select(Y);
+  f.remote.cancel = async () => { throw new Error('HTTP 403'); };
+  await assert.rejects(begin(await f.store.load(), f.store, f.remote, Y), /403/);
+  assert.equal((await f.store.load()).active[0].pr, 1);
+  assert.equal((await f.store.load()).pending, Y);
+  f.remote.cancel = async () => 'accepted';
+  await begin(await f.store.load(), f.store, f.remote, Y);
+  assert.equal((await f.store.load()).accepted, X);
 });
 
 test('begin rechecks remote state and refuses another PR, a duplicate or a stale candidate', async () => {
@@ -222,6 +277,31 @@ test('WinGet acceptance requires fusion; a closed PR is not acceptance', async (
   }
   const remote = channelRemote('winget', async endpoint => { assert.ok(endpoint.endsWith('/1.2.3')); return null; });
   assert.equal((await remote.inspect({tag: X})).status, 'missing');
+});
+
+test('WinGet closes only the expected package/version with the submission credential and verifies the response', async () => {
+  const expected = {title: 'New version: Benco.FileSpacer version 1.2.3', state: 'open', merged_at: null};
+  let pr = expected, response = {...expected, state: 'closed'}, writes = 0;
+  const remote = channelRemote('winget', async endpoint => {
+    assert.equal(endpoint, 'repos/microsoft/winget-pkgs/pulls/123'); return pr;
+  }, undefined, async (endpoint, options) => {
+    assert.equal(endpoint, 'repos/microsoft/winget-pkgs/pulls/123');
+    assert.deepEqual(options, {method: 'PATCH', body: {state: 'closed'}});
+    writes++; return response;
+  });
+  assert.equal(await remote.cancel({tag: X, pr: 123}), 'cancelled');
+  pr = {...expected, state: 'closed'};
+  assert.equal(await remote.cancel({tag: X, pr: 123}), 'cancelled');
+  pr = {...pr, merged_at: '2026-11-21'};
+  assert.equal(await remote.cancel({tag: X, pr: 123}), 'accepted');
+  assert.equal(writes, 1);
+  for (const title of ['New version: LeBenco.FileSpacer version 1.2.3', 'New version: Benco.FileSpacer version 1.2.4']) {
+    pr = {...expected, title};
+    await assert.rejects(remote.cancel({tag: X, pr: 123}), /identity changed/);
+  }
+  assert.equal(writes, 1);
+  pr = expected; response = expected;
+  await assert.rejects(remote.cancel({tag: X, pr: 123}), /not confirmed/);
 });
 
 test('successful submission retains the PR reference and ambiguous output keeps the persisted reservation', async () => {
