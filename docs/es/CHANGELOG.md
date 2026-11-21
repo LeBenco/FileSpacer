@@ -2,6 +2,12 @@
 
 # Historial de versiones
 
+<a id="151"></a>
+
+## 1.5.1
+
+- Corregir el comando **Cerrar todas las ventanas** del botón de la barra de tareas, que solo cerraba algunas de las ventanas de carpetas.
+
 <a id="150"></a>
 
 ## 1.5.0

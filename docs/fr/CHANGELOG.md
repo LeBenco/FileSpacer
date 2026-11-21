@@ -2,6 +2,12 @@
 
 # Historique des versions
 
+<a id="151"></a>
+
+## 1.5.1
+
+- Corriger la commande **Fermer toutes les fenêtres** du bouton de la barre des tâches, qui ne fermait qu’une partie des fenêtres de dossiers.
+
 <a id="150"></a>
 
 ## 1.5.0

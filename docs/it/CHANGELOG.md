@@ -2,6 +2,12 @@
 
 # Cronologia delle versioni
 
+<a id="151"></a>
+
+## 1.5.1
+
+- Correggere il comando **Chiudi tutte le finestre** del pulsante sulla barra delle applicazioni, che chiudeva solo alcune delle finestre delle cartelle.
+
 <a id="150"></a>
 
 ## 1.5.0

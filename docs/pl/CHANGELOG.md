@@ -2,6 +2,12 @@
 
 # Historia zmian
 
+<a id="151"></a>
+
+## 1.5.1
+
+- Naprawić polecenie **Zamknij wszystkie okna** przycisku na pasku zadań, które zamykało tylko część okien folderów.
+
 <a id="150"></a>
 
 ## 1.5.0

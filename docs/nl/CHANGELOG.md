@@ -2,6 +2,12 @@
 
 # Wijzigingsgeschiedenis
 
+<a id="151"></a>
+
+## 1.5.1
+
+- De opdracht **Alle vensters sluiten** van de taakbalkknop corrigeren, die slechts een deel van de mapvensters sloot.
+
 <a id="150"></a>
 
 ## 1.5.0

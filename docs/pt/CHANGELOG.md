@@ -2,6 +2,12 @@
 
 # Histórico de versões
 
+<a id="151"></a>
+
+## 1.5.1
+
+- Corrigir o comando **Fechar todas as janelas** do botão da barra de tarefas, que fechava apenas algumas das janelas de pastas.
+
 <a id="150"></a>
 
 ## 1.5.0

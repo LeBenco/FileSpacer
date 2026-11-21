@@ -2,6 +2,12 @@
 
 # Versionsverlauf
 
+<a id="151"></a>
+
+## 1.5.1
+
+- Den Befehl **Alle Fenster schließen** der Taskleistenschaltfläche korrigieren, der nur einen Teil der Ordnerfenster schloss.
+
 <a id="150"></a>
 
 ## 1.5.0
