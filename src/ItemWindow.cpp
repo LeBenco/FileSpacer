@@ -1772,6 +1772,7 @@ void ItemWindow::updateTaskbar() {
 }
 
 void ItemWindow::onSettingsChanged() {
+    taskbarGrouped = settings::getGroupFolderWindows();
     updateStateLock();
     updateTaskbar();
     bool toolbarEnabled = settings::getToolbarEnabled();
