@@ -680,8 +680,11 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
         }
     }
     const UINT trackingFlags = TPM_RETURNCMD | TPM_RIGHTBUTTON | (contextMenu ? 0u : TPM_NOANIMATION);
+    // Expose the same toolbar scope as the application menu to theme rules.
+    HWND menuOwner = getToolbarMenuOwner();
+    if (!menuOwner) menuOwner = hwnd;
     const int cmd = isWindowOperational() ? TrackPopupMenuEx(subMenu, trackingFlags,
-        point.x, point.y, hwnd, nullptr) : 0;
+        point.x, point.y, menuOwner, nullptr) : 0;
     if (hook) {
         UnhookWindowsHookEx(hook);
         ViewMenuPreview::active = previous;
