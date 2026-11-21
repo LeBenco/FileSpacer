@@ -53,7 +53,7 @@ $filespacer_context = (filespacer && !filespacer_title && !filespacer_toolbar)
 | Меню | `where` | `type` |
 | --- | --- | --- |
 | Розкривне меню заголовка | `filespacer_title` | `'*'` |
-| Панель інструментів **…** | `filespacer_toolbar` | `'*'` |
+| Панель інструментів **…** і **Подання** | `filespacer_toolbar` | `'*'` |
 | Вибрані файли або папки | `filespacer_context` | `'file\|dir'` |
 | Тло папки | `filespacer_context` | `'back'` |
 
@@ -76,7 +76,7 @@ modify(type='*' mode='multiple' where=filespacer_title
 
 ## Рекомендований вигляд меню
 
-Для меню заголовка й панелі інструментів рекомендовано прямі кути, що відповідають кнопкам FileSpacer. Використовуючи наведені змінні, додайте цю настройку до наявного блоку `theme { ... }`:
+Для трьох меню — розкривного меню заголовка, **…** і **Подання** — рекомендовано прямі кути, що відповідають кнопкам FileSpacer. Додайте цю настройку до наявного блоку `theme { ... }`:
 
 ```nss
 border.radius = if(

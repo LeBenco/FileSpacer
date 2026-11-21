@@ -53,7 +53,7 @@ Usa las propiedades `where` y `type` correspondientes en tus reglas:
 | Menú | `where` | `type` |
 | --- | --- | --- |
 | Menú desplegable de la barra de título | `filespacer_title` | `'*'` |
-| Barra de herramientas **…** | `filespacer_toolbar` | `'*'` |
+| Barra de herramientas **…** y **Vista** | `filespacer_toolbar` | `'*'` |
 | Archivos o carpetas seleccionados | `filespacer_context` | `'file\|dir'` |
 | Fondo de la carpeta | `filespacer_context` | `'back'` |
 
@@ -76,7 +76,7 @@ Consulta la [referencia de configuración de Nilesoft](https://nilesoft.org/docs
 
 ## Aspecto recomendado de los menús
 
-Se recomiendan esquinas rectas para los menús de la barra de título y de la barra de herramientas, a juego con los botones de FileSpacer. Añade este ajuste al bloque `theme { ... }` existente:
+Se recomiendan esquinas rectas para los tres menús: el desplegable de la barra de título, **…** y **Vista**, a juego con los botones de FileSpacer. Añade este ajuste al bloque `theme { ... }` existente:
 
 ```nss
 border.radius = if(

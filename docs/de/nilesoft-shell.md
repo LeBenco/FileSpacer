@@ -53,7 +53,7 @@ Verwenden Sie in den Regeln die passenden Eigenschaften `where` und `type`:
 | Menü | `where` | `type` |
 | --- | --- | --- |
 | Dropdownmenü der Titelleiste | `filespacer_title` | `'*'` |
-| Symbolleiste **…** | `filespacer_toolbar` | `'*'` |
+| Symbolleiste **…** und **Ansicht** | `filespacer_toolbar` | `'*'` |
 | Ausgewählte Dateien oder Ordner | `filespacer_context` | `'file\|dir'` |
 | Ordnerhintergrund | `filespacer_context` | `'back'` |
 
@@ -76,7 +76,7 @@ Siehe die [Konfigurationsreferenz von Nilesoft](https://nilesoft.org/docs/config
 
 ## Empfohlene Menüdarstellung
 
-Für die Menüs der Titelleiste und der Symbolleiste empfehlen sich rechtwinklige Ecken, passend zu den Schaltflächen von FileSpacer. Ergänzen Sie Ihren bestehenden Block `theme { ... }` um diese Einstellung:
+Für die drei Menüs – das Dropdownmenü der Titelleiste, **…** und **Ansicht** – empfehlen sich rechtwinklige Ecken, passend zu den Schaltflächen von FileSpacer. Ergänzen Sie Ihren bestehenden Block `theme { ... }` um diese Einstellung:
 
 ```nss
 border.radius = if(

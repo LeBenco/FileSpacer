@@ -53,7 +53,7 @@ Gebruik de bijbehorende eigenschappen `where` en `type` in uw regels:
 | Menu | `where` | `type` |
 | --- | --- | --- |
 | Titelbalkmenu | `filespacer_title` | `'*'` |
-| Werkbalk **…** | `filespacer_toolbar` | `'*'` |
+| Werkbalk **…** en **Beeld** | `filespacer_toolbar` | `'*'` |
 | Geselecteerde bestanden of mappen | `filespacer_context` | `'file\|dir'` |
 | Mapachtergrond | `filespacer_context` | `'back'` |
 
@@ -76,7 +76,7 @@ Zie de [configuratiereferentie](https://nilesoft.org/docs/configuration/) van Ni
 
 ## Aanbevolen menu-uiterlijk
 
-Rechte hoeken worden aanbevolen voor titelbalk- en werkbalkmenu’s om bij de FileSpacer-knoppen te passen. Voeg met bovenstaande variabelen deze instelling toe aan uw bestaande `theme { ... }`-blok:
+Rechte hoeken worden aanbevolen voor de drie menu’s: het titelbalkmenu, **…** en **Beeld**, passend bij de FileSpacer-knoppen. Voeg deze instelling toe aan uw bestaande `theme { ... }`-blok:
 
 ```nss
 border.radius = if(

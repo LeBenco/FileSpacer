@@ -53,7 +53,7 @@ Use the corresponding `where` and `type` properties on your rules:
 | Menu                      | `where`              | `type`        |
 | ------------------------- | -------------------- | ------------- |
 | Title-bar drop-down       | `filespacer_title`   | `'*'`         |
-| Toolbar **…**             | `filespacer_toolbar` | `'*'`         |
+| Toolbar **…** and **View** | `filespacer_toolbar` | `'*'` |
 | Selected files or folders | `filespacer_context` | `'file\|dir'` |
 | Folder background         | `filespacer_context` | `'back'`      |
 
@@ -76,7 +76,7 @@ See the Nilesoft [configuration reference](https://nilesoft.org/docs/configurati
 
 ## Recommended menu appearance
 
-Square corners are recommended for the title-bar and toolbar menus to match FileSpacer's buttons. Using the variables above, add this setting to your existing `theme { ... }` block:
+Square corners are recommended for the three menus: the title-bar drop-down, **…** and **View**, to match FileSpacer’s buttons. Add this setting to your existing `theme { ... }` block:
 
 ```nss
 border.radius = if(

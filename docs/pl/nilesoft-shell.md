@@ -53,7 +53,7 @@ Użyj odpowiednich właściwości `where` i `type` w regułach:
 | Menu | `where` | `type` |
 | --- | --- | --- |
 | Menu paska tytułu | `filespacer_title` | `'*'` |
-| Pasek narzędzi **…** | `filespacer_toolbar` | `'*'` |
+| Pasek narzędzi **…** i **Widok** | `filespacer_toolbar` | `'*'` |
 | Zaznaczone pliki lub foldery | `filespacer_context` | `'file\|dir'` |
 | Tło folderu | `filespacer_context` | `'back'` |
 
@@ -76,7 +76,7 @@ Zobacz [opis konfiguracji](https://nilesoft.org/docs/configuration/) Nilesoft.
 
 ## Zalecany wygląd menu
 
-Prostokątne narożniki menu tytułu i paska narzędzi pasują do przycisków FileSpacer. Korzystając z powyższych zmiennych, dodaj to ustawienie do istniejącego bloku `theme { ... }`:
+Dla trzech menu: menu paska tytułu, **…** i **Widok**, zalecane są prostokątne narożniki, pasujące do przycisków FileSpacer. Dodaj to ustawienie do istniejącego bloku `theme { ... }`:
 
 ```nss
 border.radius = if(

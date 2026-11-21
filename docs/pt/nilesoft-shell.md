@@ -53,7 +53,7 @@ Utilize as propriedades `where` e `type` correspondentes nas regras:
 | Menu | `where` | `type` |
 | --- | --- | --- |
 | Menu pendente da barra de título | `filespacer_title` | `'*'` |
-| Barra de ferramentas **…** | `filespacer_toolbar` | `'*'` |
+| Barra de ferramentas **…** e **Ver** | `filespacer_toolbar` | `'*'` |
 | Ficheiros ou pastas selecionados | `filespacer_context` | `'file\|dir'` |
 | Fundo da pasta | `filespacer_context` | `'back'` |
 
@@ -76,7 +76,7 @@ Consulte a [referência de configuração do Nilesoft](https://nilesoft.org/docs
 
 ## Aspeto recomendado dos menus
 
-Recomendam-se cantos retos nos menus da barra de título e da barra de ferramentas, a condizer com os botões do FileSpacer. Acrescente esta definição ao bloco `theme { ... }` existente:
+Recomendam-se cantos retos nos três menus: o menu pendente da barra de título, **…** e **Ver**, a condizer com os botões do FileSpacer. Acrescente esta definição ao bloco `theme { ... }` existente:
 
 ```nss
 border.radius = if(

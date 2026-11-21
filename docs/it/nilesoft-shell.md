@@ -53,7 +53,7 @@ Usa nelle regole le proprietà `where` e `type` corrispondenti:
 | Menu | `where` | `type` |
 | --- | --- | --- |
 | Menu a discesa della barra del titolo | `filespacer_title` | `'*'` |
-| Barra degli strumenti **…** | `filespacer_toolbar` | `'*'` |
+| Barra degli strumenti **…** e **Visualizza** | `filespacer_toolbar` | `'*'` |
 | File o cartelle selezionati | `filespacer_context` | `'file\|dir'` |
 | Sfondo della cartella | `filespacer_context` | `'back'` |
 
@@ -76,7 +76,7 @@ Consulta la [documentazione della configurazione di Nilesoft](https://nilesoft.o
 
 ## Aspetto consigliato per i menu
 
-Per i menu della barra del titolo e della barra degli strumenti sono consigliati angoli squadrati, coerenti con i pulsanti di FileSpacer. Aggiungi questa impostazione al blocco `theme { ... }` esistente:
+Per i tre menu, quello a discesa della barra del titolo, **…** e **Visualizza**, sono consigliati angoli squadrati, coerenti con i pulsanti di FileSpacer. Aggiungi questa impostazione al blocco `theme { ... }` esistente:
 
 ```nss
 border.radius = if(

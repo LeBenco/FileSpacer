@@ -53,7 +53,7 @@ Utiliser les propriétés `where` et `type` correspondantes dans les règles :
 | Menu | `where` | `type` |
 | --- | --- | --- |
 | Menu déroulant de la barre de titre | `filespacer_title` | `'*'` |
-| Barre d’outils **…** | `filespacer_toolbar` | `'*'` |
+| Barre d’outils **…** et **Affichage** | `filespacer_toolbar` | `'*'` |
 | Fichiers ou dossiers sélectionnés | `filespacer_context` | `'file\|dir'` |
 | Arrière-plan du dossier | `filespacer_context` | `'back'` |
 
@@ -76,7 +76,7 @@ Consulter la [référence de configuration de Nilesoft](https://nilesoft.org/doc
 
 ## Apparence recommandée des menus
 
-Les coins carrés sont recommandés pour les menus de la barre de titre et de la barre d’outils, afin de les assortir aux boutons de FileSpacer. Ajouter ce réglage au bloc `theme { ... }` existant :
+Les coins carrés sont recommandés pour les trois menus : le menu déroulant de la barre de titre, **…** et **Affichage**, afin de les assortir aux boutons de FileSpacer. Ajouter ce réglage au bloc `theme { ... }` existant :
 
 ```nss
 border.radius = if(
