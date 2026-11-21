@@ -6,8 +6,9 @@
   "active": [
     {
       "tag": "v1.5.2",
-      "phase": "uncertain",
-      "runId": "44958070687"
+      "phase": "submitted",
+      "runId": "44958070687",
+      "pr": 486101
     }
   ],
   "pending": null
