@@ -554,6 +554,7 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 const bool lockClickEnabled = !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_LOCK_CLICK_ENABLED);
                 const bool openingEnabled = !!IsDlgButtonChecked(hwnd, IDC_OPENING_ANIMATION_ENABLED);
                 bool windowSettingsChanged = historyChanged
+                    || groupFolderWindows != settings::getGroupFolderWindows()
                     || openingEnabled != settings::getOpeningAnimationEnabled()
                     || duration != settings::getOpeningAnimationDuration()
                     || liveNameSearch != settings::getLiveNameSearch()
