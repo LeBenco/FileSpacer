@@ -2,6 +2,12 @@
 
 # Versionsverlauf
 
+<a id="153"></a>
+
+## 1.5.3
+
+- Nilesoft-Shell-Regeln können das Menü Ansicht unabhängig vom Anwendungsmenü der Symbolleiste ansprechen.
+
 <a id="152"></a>
 
 ## 1.5.2

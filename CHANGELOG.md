@@ -2,6 +2,12 @@
 
 # Changelog
 
+<a id="153"></a>
+
+## 1.5.3
+
+- Allow Nilesoft Shell rules to target the View menu separately from the toolbar application menu.
+
 <a id="152"></a>
 
 ## 1.5.2

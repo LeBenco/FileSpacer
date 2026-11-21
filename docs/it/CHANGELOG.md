@@ -2,6 +2,12 @@
 
 # Cronologia delle versioni
 
+<a id="153"></a>
+
+## 1.5.3
+
+- Consentire alle regole di Nilesoft Shell di agire sul menu Visualizza separatamente dal menu dell’applicazione nella barra degli strumenti.
+
 <a id="152"></a>
 
 ## 1.5.2

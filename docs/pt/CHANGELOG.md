@@ -2,6 +2,12 @@
 
 # Histórico de versões
 
+<a id="153"></a>
+
+## 1.5.3
+
+- Permitir que as regras do Nilesoft Shell se apliquem ao menu Ver separadamente do menu da aplicação na barra de ferramentas.
+
 <a id="152"></a>
 
 ## 1.5.2

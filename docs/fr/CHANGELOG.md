@@ -2,6 +2,12 @@
 
 # Historique des versions
 
+<a id="153"></a>
+
+## 1.5.3
+
+- Permettre aux règles Nilesoft Shell de cibler le menu Affichage séparément du menu de l’application dans la barre d’outils.
+
 <a id="152"></a>
 
 ## 1.5.2

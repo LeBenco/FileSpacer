@@ -2,6 +2,12 @@
 
 # Historia zmian
 
+<a id="153"></a>
+
+## 1.5.3
+
+- Umożliwić regułom Nilesoft Shell oddzielne kierowanie do menu Widok i menu aplikacji na pasku narzędzi.
+
 <a id="152"></a>
 
 ## 1.5.2

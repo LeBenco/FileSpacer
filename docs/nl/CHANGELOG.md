@@ -2,6 +2,12 @@
 
 # Wijzigingsgeschiedenis
 
+<a id="153"></a>
+
+## 1.5.3
+
+- Nilesoft Shell-regels kunnen het menu Beeld afzonderlijk van het toepassingsmenu op de werkbalk aanspreken.
+
 <a id="152"></a>
 
 ## 1.5.2
