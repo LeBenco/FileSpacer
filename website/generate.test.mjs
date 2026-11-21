@@ -188,6 +188,38 @@ test('a kept flag download serves the builds made while the flag services do not
   assert.equal(warnings.length, 2);
 });
 
+test('an interrupted flag response body uses the cache, but invalid JSON still fails', async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'filespacer-flag-cache-'));
+  t.after(() => fs.rm(directory, {recursive: true, force: true}));
+  const downloaded = await cachedFlags(['gb'], directory, flagRequest);
+  for (const host of ['query.wikidata.org', 'upload.wikimedia.org']) {
+    const warnings = [];
+    const flags = await cachedFlags(['gb'], directory, async url => {
+      if (new URL(url).hostname !== host) return flagRequest(url);
+      return new Response(new ReadableStream({
+        start(controller) { controller.error(new TypeError('connection interrupted')); },
+      }));
+    }, message => warnings.push(message));
+    assert.deepEqual(flags, downloaded);
+    assert.equal(warnings.length, 1);
+  }
+  await assert.rejects(cachedFlags(['gb'], directory, async () => new Response('{invalid JSON}')), SyntaxError);
+});
+
+test('an invalid parallel flag response prevents fallback after another request fails', async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'filespacer-flag-cache-'));
+  t.after(() => fs.rm(directory, {recursive: true, force: true}));
+  await cachedFlags(['gb', 'fr'], directory, flagRequest);
+  const warnings = [];
+  await assert.rejects(cachedFlags(['gb', 'fr'], directory, async url => {
+    if (new URL(url).hostname !== 'upload.wikimedia.org') return flagRequest(url);
+    if (url.includes('Flag_of_GB.svg')) throw new Error('offline');
+    await new Promise(resolve => setImmediate(resolve));
+    return new Response('<html>invalid flag</html>');
+  }, message => warnings.push(message)), /Invalid flag SVG/);
+  assert.equal(warnings.length, 0);
+});
+
 test('flag metadata must identify one current file and permit use without attribution', async () => {
   await assert.rejects(downloadFlags(['gb'], async () => Response.json({results: {bindings: []}})),
     /Expected one current Wikimedia flag for gb/);
