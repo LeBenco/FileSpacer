@@ -38,7 +38,7 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
-      - name: Reconcile moderation and retain the latest pending release
+      - name: Reconcile submissions and select the latest release
         id: queue
         shell: cmd
         env:
@@ -66,7 +66,7 @@ jobs:
           name: winget-${{ env.RELEASE_TAG }}
           path: build/winget
           if-no-files-found: error
-      - name: Validate and submit to the WinGet community repository
+      - name: Supersede older PRs and submit to the WinGet community repository
         id: submit
         if: steps.queue.outputs.submit == 'true' && (steps.prepare.outputs.submit == 'true')
         shell: pwsh
