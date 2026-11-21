@@ -177,6 +177,25 @@ bool FolderWindow::ViewMenuPreview::prepare() {
         if (!current() || owner.deferredCloseMessage) return false;
         initial.view = captureOptions(view, {});
         if (!current() || !(initial.view.present & FolderViewSettings::Mode)) return false;
+        if (initial.view.mode == FVM_DETAILS) {
+            CComQIPtr<IColumnManager> manager(view);
+            UINT count = 0;
+            if (manager && current() && SUCCEEDED(manager->GetColumnCount(CM_ENUM_VISIBLE, &count)) && current() && count) {
+                std::vector<PROPERTYKEY> keys(count);
+                bool complete = SUCCEEDED(manager->GetColumns(CM_ENUM_VISIBLE, keys.data(), count));
+                if (!current()) return false;
+                initialColumnWidths.clear();
+                for (const auto &key : keys) {
+                    if (!complete) break;
+                    CM_COLUMNINFO info = {sizeof(info), CM_MASK_WIDTH};
+                    complete = SUCCEEDED(manager->GetColumnInfo(key, &info));
+                    if (!current()) return false;
+                    if (complete) initialColumnWidths.emplace_back(key, info.uWidth);
+                }
+                if (!complete) initialColumnWidths.clear();
+            }
+            if (!current()) return false;
+        }
         if (owner.columnFillSet) {
             initial.view.present |= FolderViewSettings::ColumnFill;
             initial.view.fillColumns = owner.fillColumns;
@@ -294,6 +313,22 @@ void FolderWindow::ViewMenuPreview::restoreDetails() {
         if (!prepared || !current() || (tracking && currentCommand && initialSpacing.x <= 0)) return;
         auto valid = [&]() { return current(); };
         ++owner.navigationDepth;
+        if (!currentCommand && !initialColumnWidths.empty()) {
+            CComQIPtr<IColumnManager> manager(view);
+            // The Shell can change Details widths while previewing another mode.
+            // Restore exact pixels while the fill remains suspended by the menu,
+            // shrinking before growing to avoid transient horizontal overflow.
+            if (manager && current()) for (int pass = 0; pass < 2; ++pass) {
+                for (const auto &column : initialColumnWidths) {
+                    if (!current()) break;
+                    CM_COLUMNINFO info = {sizeof(info), CM_MASK_WIDTH};
+                    if (!checkHR(manager->GetColumnInfo(column.first, &info)) || !current()) break;
+                    if (info.uWidth == column.second || (column.second < info.uWidth) != (pass == 0)) continue;
+                    info.uWidth = column.second;
+                    checkHR(manager->SetColumnInfo(column.first, &info));
+                }
+            }
+        }
         if (currentCommand && !initial.icons.empty() && initialSpacing.x > 0 && initialSpacing.y > 0
                 && gridPlacement(view) && current()) {
             checkHR(restoreIconGridPositions(view, initial.icons, initialSpacing, valid));

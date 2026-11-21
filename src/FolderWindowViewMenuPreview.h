@@ -3,6 +3,7 @@
 #pragma once
 #include <common.h>
 #include "FolderWindow.h"
+#include <utility>
 
 namespace filespacer {
 // The menu owns this session while tracking. Once the menu closes, the window
@@ -20,6 +21,7 @@ struct FolderWindow::ViewMenuPreview {
     const ULONG_PTR generation;
     const ULONG_PTR serial;
     ShellViewState initial;
+    std::vector<std::pair<PROPERTYKEY, UINT>> initialColumnWidths; // Exact pixels, without storage-DPI rounding.
     std::vector<Entry> entries;
     UINT initialCommand = 0, currentCommand = 0, wantedCommand = 0;
     UINT pendingCommand = 0; // Entry outside the modes, run after the preview is cancelled.
