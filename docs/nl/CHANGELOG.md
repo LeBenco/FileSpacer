@@ -2,6 +2,14 @@
 
 # Wijzigingsgeschiedenis
 
+<a id="152"></a>
+
+## 1.5.2
+
+- De plaatsing van een nooit eerder bezochte map herstellen: het venster van waaruit de map werd geopend, werd genegeerd als dat venster bij het openen werd gesloten.
+- De groepering op de taakbalk herstellen: het FileSpacer-pictogram voor gegroepeerde vensters gebruiken, het vastmaken van de toepassing mogelijk maken en wijzigingen in de groepering direct op geopende mapvensters toepassen.
+- Verkeerd geplaatste pictogrammen herstellen bij het opnieuw openen van een grote map waarvan de indeling met een oudere versie bij een andere beeldschermschaal was opgeslagen.
+
 <a id="151"></a>
 
 ## 1.5.1

@@ -2,6 +2,14 @@
 
 # Versionsverlauf
 
+<a id="152"></a>
+
+## 1.5.2
+
+- Die Platzierung eines noch nie besuchten Ordners korrigieren: Wenn sein Öffnen das Ursprungsfenster schloss, wurde dieses bei der Platzierung nicht berücksichtigt.
+- Die Gruppierung in der Taskleiste korrigieren: das FileSpacer-Symbol für gruppierte Fenster verwenden, das Anheften der Anwendung ermöglichen und Änderungen der Gruppierung sofort auf geöffnete Ordnerfenster anwenden.
+- Falsch platzierte Symbole beim erneuten Öffnen eines großen Ordners korrigieren, dessen Anordnung mit einer älteren Version bei einer anderen Anzeigeskalierung gespeichert wurde.
+
 <a id="151"></a>
 
 ## 1.5.1

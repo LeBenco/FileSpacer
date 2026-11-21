@@ -2,6 +2,14 @@
 
 # Historique des versions
 
+<a id="152"></a>
+
+## 1.5.2
+
+- Corriger le placement d’un dossier jamais visité, qui ignorait la fenêtre d’origine lorsque son ouverture fermait cette fenêtre.
+- Corriger le regroupement dans la barre des tâches : afficher l’icône FileSpacer pour les fenêtres regroupées, permettre d’épingler l’application et appliquer immédiatement les changements de regroupement aux fenêtres de dossiers ouvertes.
+- Corriger les icônes mal placées à la réouverture d’un grand dossier dont la disposition avait été enregistrée par une ancienne version avec une autre échelle d’affichage.
+
 <a id="151"></a>
 
 ## 1.5.1

@@ -2,6 +2,14 @@
 
 # Cronologia delle versioni
 
+<a id="152"></a>
+
+## 1.5.2
+
+- Correggere il posizionamento di una cartella mai visitata, che ignorava la finestra di origine quando l’apertura della cartella la chiudeva.
+- Correggere il raggruppamento nella barra delle applicazioni: usare l’icona di FileSpacer per le finestre raggruppate, consentire di aggiungere l’applicazione alla barra e applicare subito le modifiche al raggruppamento alle finestre delle cartelle aperte.
+- Correggere le icone posizionate in modo errato alla riapertura di una cartella grande la cui disposizione era stata salvata con una versione precedente e una diversa scala dello schermo.
+
 <a id="151"></a>
 
 ## 1.5.1

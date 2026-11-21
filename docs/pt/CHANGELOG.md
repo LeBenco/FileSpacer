@@ -2,6 +2,14 @@
 
 # Histórico de versões
 
+<a id="152"></a>
+
+## 1.5.2
+
+- Corrigir a posição de uma pasta nunca visitada, que ignorava a janela de origem quando a abertura da pasta fechava essa janela.
+- Corrigir o agrupamento na barra de tarefas: usar o ícone do FileSpacer nas janelas agrupadas, permitir afixar a aplicação e aplicar imediatamente as alterações ao agrupamento nas janelas de pastas abertas.
+- Corrigir os ícones mal posicionados ao reabrir uma pasta grande cuja disposição tinha sido guardada por uma versão anterior com outra escala do ecrã.
+
 <a id="151"></a>
 
 ## 1.5.1

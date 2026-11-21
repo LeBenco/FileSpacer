@@ -2,6 +2,14 @@
 
 # Historial de versiones
 
+<a id="152"></a>
+
+## 1.5.2
+
+- Corregir la posición de una carpeta nunca visitada, que no tenía en cuenta la ventana de origen cuando abrirla cerraba dicha ventana.
+- Corregir la agrupación en la barra de tareas: usar el icono de FileSpacer para las ventanas agrupadas, permitir anclar la aplicación y aplicar de inmediato los cambios de agrupación a las ventanas de carpetas abiertas.
+- Corregir los iconos mal colocados al volver a abrir una carpeta grande cuya distribución se había guardado con una versión anterior y otra escala de pantalla.
+
 <a id="151"></a>
 
 ## 1.5.1

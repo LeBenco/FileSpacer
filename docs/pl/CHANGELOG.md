@@ -2,6 +2,14 @@
 
 # Historia zmian
 
+<a id="152"></a>
+
+## 1.5.2
+
+- Poprawić położenie nigdy wcześniej nieodwiedzonego folderu: gdy jego otwarcie zamykało okno źródłowe, okno to było pomijane przy ustalaniu położenia.
+- Poprawić grupowanie na pasku zadań: używać ikony FileSpacer dla zgrupowanych okien, umożliwić przypięcie aplikacji i stosować zmiany grupowania od razu do otwartych okien folderów.
+- Poprawić nieprawidłowe położenie ikon po ponownym otwarciu dużego folderu, którego układ zapisano w starszej wersji przy innej skali wyświetlania.
+
 <a id="151"></a>
 
 ## 1.5.1
