@@ -3,6 +3,12 @@
   "channel": "winget",
   "initialized": true,
   "accepted": null,
-  "active": [],
-  "pending": "v1.5.2"
+  "active": [
+    {
+      "tag": "v1.5.2",
+      "phase": "uncertain",
+      "runId": "44958070687"
+    }
+  ],
+  "pending": null
 }
