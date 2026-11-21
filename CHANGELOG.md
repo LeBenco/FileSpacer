@@ -2,6 +2,12 @@
 
 # Changelog
 
+<a id="151"></a>
+
+## 1.5.1
+
+- Fix **Close all windows** on the taskbar button closing only some of the folder windows.
+
 <a id="150"></a>
 
 ## 1.5.0
