@@ -45,10 +45,19 @@ HRESULT decodePositions(const std::vector<uint8_t> &bytes, std::vector<IconPosit
 // scaled, and such an item is left where the view puts it. Scaled, the value
 // overflowed above 100% and came back as (-1, -1).
 bool unplaced(const POINT &point) { return point.x == LONG_MAX || point.y == LONG_MAX; }
-// Also the value an earlier version stored at the current scale.
+// Earlier versions scaled the sentinel before saving, without recording the DPI.
+// Recognize their exact values over Windows' 100%-500% custom scaling range,
+// independently of the current DPI. Nearby large coordinates remain positions.
 bool savedUnplaced(const POINT &stored) {
-    const LONG scaled = invScaleDPI(LONG_MAX);
-    return unplaced(stored) || stored.x == scaled || stored.y == scaled;
+    const auto legacy = [](LONG value) {
+        constexpr LONGLONG numerator = static_cast<LONGLONG>(LONG_MAX) * USER_DEFAULT_SCREEN_DPI;
+        constexpr int maximumDPI = USER_DEFAULT_SCREEN_DPI * SCALE_500_PERCENT / SCALE_100_PERCENT;
+        if (value < (numerator + maximumDPI / 2) / maximumDPI) return false;
+        const int dpi = static_cast<int>((numerator + value / 2) / value);
+        return dpi >= USER_DEFAULT_SCREEN_DPI && dpi <= maximumDPI
+            && MulDiv(LONG_MAX, USER_DEFAULT_SCREEN_DPI, dpi) == value;
+    };
+    return unplaced(stored) || legacy(stored.x) || legacy(stored.y);
 }
 
 // The ListView postpones layout work while redraw is disabled:
