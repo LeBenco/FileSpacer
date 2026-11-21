@@ -76,7 +76,32 @@ public:
         SetWindowPos(window, nullptr, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
             SWP_NOZORDER | SWP_NOACTIVATE);
     }
+    int textHeight(HWND label, int width, int minimum) const {
+        const int length = GetWindowTextLengthW(label);
+        std::wstring text(static_cast<size_t>(length) + 1, L'\0');
+        GetWindowTextW(label, &text[0], static_cast<int>(text.size()));
+        auto releaseDC = [label](HDC context) { ReleaseDC(label, context); };
+        std::unique_ptr<std::remove_pointer<HDC>::type, decltype(releaseDC)> context(GetDC(label), releaseDC);
+        if (!context) return minimum;
+        const HGDIOBJ previous = SelectObject(context.get(), reinterpret_cast<HFONT>(SendMessageW(label, WM_GETFONT, 0, 0)));
+        RECT extent = units(0, 0, width, 0);
+        const int height = DrawTextW(context.get(), text.c_str(), -1, &extent, DT_CALCRECT | DT_WORDBREAK | DT_EXPANDTABS);
+        SelectObject(context.get(), previous);
+        // Round up to dialog units so mapping back cannot clip the last line.
+        const int unitHeight = units(0, 0, 0, 8).bottom;
+        const int measured = unitHeight > 0 ? (height * 8 + unitHeight - 1) / unitHeight : minimum;
+        return measured > minimum ? measured : minimum;
+    }
     void layout() {
+        const bool swap = selected >= 0 && conflictingShortcuts(pending)
+            && !reservedShortcut(binding(selected)) && !reservedShortcut(previous(selected));
+        const int leftHeight = textHeight(child(IDC_SHORTCUT_LEFT_HINT), 86, 14);
+        const int rightHeight = textHeight(child(IDC_SHORTCUT_RIGHT_HINT), 86, 14);
+        const int hintHeight = leftHeight > rightHeight ? leftHeight : rightHeight;
+        const int hintExtra = hintHeight - 14;
+        const int feedbackWidth = swap ? 205 : 270;
+        const int feedbackHeight = textHeight(child(IDC_SHORTCUT_FEEDBACK), feedbackWidth, 17);
+        const int extra = hintExtra + feedbackHeight - 17;
         int y = powerToysActive ? 84 : 24;
         for (int i = 0; i < 2; ++i) {
             const int top = y;
@@ -84,17 +109,20 @@ public:
             place(GetDlgItem(page, headerIds[i]), 30, y + 1, 262, 20);
             y += 22;
             if (selected == i) {
-                const int height = recording ? 180 : 142;
+                const int height = (recording ? 180 : 142) + extra;
                 place(editor, 15, y, 270, height);
                 y += height;
             }
             frames[i] = units(7, top, 286, y - top + 1);
             y += 4;
         }
-        place(child(IDC_SHORTCUT_DEFAULT), 0, recording ? 163 : 125, 100, 14);
-        const bool swap = selected >= 0 && conflictingShortcuts(pending)
-            && !reservedShortcut(binding(selected)) && !reservedShortcut(previous(selected));
-        place(child(IDC_SHORTCUT_FEEDBACK), 0, 87, swap ? 205 : 270, 17);
+        place(child(IDC_SHORTCUT_LEFT_HINT), 0, 70, 86, hintHeight);
+        place(child(IDC_SHORTCUT_RIGHT_HINT), 180, 70, 86, hintHeight);
+        place(child(IDC_SHORTCUT_FEEDBACK), 0, 87 + hintExtra, feedbackWidth, feedbackHeight);
+        place(child(IDC_SHORTCUT_RECORD), 0, 106 + extra, 210, 14);
+        place(child(IDC_SHORTCUT_CAPTURE), 0, 126 + extra, 270, 22);
+        place(child(IDC_SHORTCUT_CAPTURE_HINT), 0, 151 + extra, 270, 9);
+        place(child(IDC_SHORTCUT_DEFAULT), 0, (recording ? 163 : 125) + extra, 100, 14);
         InvalidateRect(page, nullptr, TRUE);
     }
     std::wstring describe(const WindowShortcut &value) const {
