@@ -22,6 +22,7 @@
 #include <string>
 #include <cwchar>
 #include <new>
+#include <vector>
 #include <cstdlib>
 
 #pragma comment(lib, "Dwmapi.lib")
@@ -78,8 +79,67 @@ bool isProcessIdle() {
     return idle;
 }
 
+// Close requests taken out of the queue during an outgoing COM call, oldest
+// first. Main STA only.
+std::vector<MSG> heldCloseRequests;
+
+// While a window of this thread waits for an outgoing COM call, as every folder
+// window does when it is destroyed, COM discards the close requests queued for
+// the other windows: "Close all windows" of a taskbar group closed only some of
+// them. MessagePending is where the application decides about a pending
+// message: hold these requests for the message loop.
+class CloseRequestFilter : public IMessageFilter {
+public:
+    // Lives on main's stack for as long as it is registered.
+    STDMETHODIMP_(ULONG) AddRef() override { return 2; }
+    STDMETHODIMP_(ULONG) Release() override { return 1; }
+    STDMETHODIMP QueryInterface(REFIID id, void **obj) override {
+        static const QITAB interfaces[] = {
+            QITABENT(CloseRequestFilter, IMessageFilter),
+            {},
+        };
+        return QISearch(this, interfaces, id, obj);
+    }
+
+    // Incoming calls are accepted and a rejected outgoing call is not retried.
+    STDMETHODIMP_(DWORD) HandleInComingCall(DWORD, HTASK, DWORD, LPINTERFACEINFO) override {
+        return SERVERCALL_ISHANDLED;
+    }
+    STDMETHODIMP_(DWORD) RetryRejectedCall(HTASK, DWORD, DWORD) override {
+        return static_cast<DWORD>(-1);
+    }
+
+    STDMETHODIMP_(DWORD) MessagePending(HTASK, DWORD, DWORD) override {
+        try {
+            MSG msg;
+            while (PeekMessage(&msg, nullptr, WM_SYSCOMMAND, WM_SYSCOMMAND,
+                        PM_NOREMOVE | PM_NOYIELD)
+                    && (msg.wParam & 0xFFF0u) == SC_CLOSE) {
+                // Reserve first: a removed request must never be dropped.
+                heldCloseRequests.reserve(heldCloseRequests.size() + 1);
+                if (!PeekMessage(&msg, nullptr, WM_SYSCOMMAND, WM_SYSCOMMAND,
+                        PM_REMOVE | PM_NOYIELD))
+                    break;
+                heldCloseRequests.push_back(msg);
+            }
+        } catch (const std::bad_alloc &) {
+            // Left in the queue for COM's default handling.
+            return PENDINGMSG_WAITDEFPROCESS;
+        }
+        return PENDINGMSG_WAITDEFPROCESS;
+    }
+};
+
 bool getProcessMessage(MSG &msg, int &exitCode) {
     for (;;) {
+        // Dispatched from the message loop only, never inside the call that
+        // was pending when they arrived.
+        while (!heldCloseRequests.empty()) {
+            msg = heldCloseRequests.front();
+            heldCloseRequests.erase(heldCloseRequests.begin());
+            if (IsWindow(msg.hwnd))
+                return true;
+        }
         // Dispatch STA calls while Shell work outlives the application windows.
         DWORD wait = MsgWaitForMultipleObjectsEx(1, &processIdleEvent, INFINITE,
             QS_ALLINPUT, MWMO_INPUTAVAILABLE);
@@ -419,6 +479,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
 
     autoUpdateCheck();
 
+    CloseRequestFilter closeRequestFilter;
+    checkHR(CoRegisterMessageFilter(&closeRequestFilter, nullptr));
+
     MSG msg = {};
     int exitCode = 0;
     while (runServer || !isProcessIdle()) {
@@ -468,6 +531,8 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
         }
 #endif
     }
+
+    checkHR(CoRegisterMessageFilter(nullptr, nullptr));
 
     if (SUCCEEDED(regHR))
         checkHR(CoRevokeClassObject(regCookie));
