@@ -142,8 +142,9 @@ try {
     $child=Track-UiFolder $childPath
     Wait-Ui { ![FileSpacerRegression.Native]::IsWindow($parent) } 'automatic source closure'
     $childRect=[FileSpacerRegression.Native]::Bounds($child)
-    Assert-Ui ($childRect.Left -eq $sourceRect.Left -and $childRect.Top -eq $sourceRect.Top) 'Replacement placement counted the closing source.'
-    Write-Host 'PASS: spatial replacement reuses the normal position of the maximized withdrawn source.'
+    Assert-Ui ((Overlap-Area $childRect $sourceRect) -eq 0) 'First spatial placement overlaps the closing source despite free space.'
+    Assert-Ui ((Overlap-Area $childRect ([FileSpacerRegression.Native]::Bounds($other))) -eq 0) 'First spatial placement overlaps another window despite free space.'
+    Write-Host 'PASS: first spatial placement avoids the maximized source normal geometry and another window before automatic source closure.'
 
     Close-UiFolder $child
     Set-PlacementRect $other $childRect.Left $childRect.Top
