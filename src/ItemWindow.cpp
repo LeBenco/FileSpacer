@@ -557,11 +557,15 @@ void ItemWindow::updateWindowPropStore(IPropertyStore *const propStore) {
     std::wstring resource = taskbarIconResource;
     ReleaseSRWLockShared(&iconLock);
     bool relaunch = false;
-    if (!grouped && checkHR(item->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &parsingName))) {
+    DWORD length = checkLE(GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size())));
+    const bool executableFound = length > 0 && length < executable.size();
+    if (grouped) {
+        id = appID();
+        relaunch = executableFound;
+        resource = std::wstring(executable.data()) + L",-" + std::to_wstring(IDR_APP_ICON);
+    } else if (checkHR(item->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &parsingName))) {
         id = folderTaskbarID(parsingName);
-        DWORD length = checkLE(GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size())));
-        relaunch = !id.empty()
-            && length > 0 && length < executable.size();
+        relaunch = !id.empty() && executableFound;
         // The folder icon arrives asynchronously. Use the executable's icon
         // until then so pinning policy is valid before this window is shown.
         if (relaunch && resource.empty())
@@ -569,7 +573,7 @@ void ItemWindow::updateWindowPropStore(IPropertyStore *const propStore) {
     }
 
     // Windows fixes PreventPinning before this HWND's first explicit ID.
-    // A common application group cannot represent separately pinned folders.
+    // Grouped windows pin the application; separate windows pin their folder.
     if (!taskbarPinningSet) {
         PROPVARIANT preventPinning = {VT_BOOL};
         preventPinning.boolVal = relaunch ? VARIANT_FALSE : VARIANT_TRUE;
@@ -579,13 +583,17 @@ void ItemWindow::updateWindowPropStore(IPropertyStore *const propStore) {
     }
     PROPVARIANT empty = {VT_EMPTY};
     if (relaunch) {
-        std::wstring command = quoteCommandArgument(executable.data()) + L" "
-            + quoteCommandArgument(parsingName);
+        std::wstring command = quoteCommandArgument(executable.data());
+        if (!grouped)
+            command += L" " + quoteCommandArgument(parsingName);
         if (settings::testMode)
             command += L" /test";
         propStoreWriteString(propStore, PKEY_AppUserModel_RelaunchCommand, command.c_str());
-        // The Shell supplies this dynamic folder name; it is not a UI literal.
-        propStoreWriteString(propStore, PKEY_AppUserModel_RelaunchDisplayNameResource, title);
+        // The group names the application; a separate window names its folder.
+        const std::wstring applicationName = L"@" + std::wstring(executable.data())
+            + L",-" + std::to_wstring(IDS_APP_NAME);
+        propStoreWriteString(propStore, PKEY_AppUserModel_RelaunchDisplayNameResource,
+            grouped ? applicationName.c_str() : title);
         propStoreWriteString(propStore, PKEY_AppUserModel_RelaunchIconResource, resource.c_str());
     } else {
         checkHR(propStore->SetValue(PKEY_AppUserModel_RelaunchCommand, empty));
