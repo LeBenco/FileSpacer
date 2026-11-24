@@ -28,6 +28,7 @@ IDR_ITEM_MENU   MENU {
 }
 
 STRINGTABLE {
+    IDS_FOLDER_OPTIONS_SCOPE, "Tutaj wyświetlane są tylko opcje systemu Windows, które wpływają na działanie FileSpacer."
     IDS_GLOBAL_THUMBNAILS, "Miniatury"
     IDS_DOCUMENTATION_ERROR, "Nie można otworzyć dokumentacji lokalnej:\n%1\n\n%2"
     IDS_CAPTION_COPY_PATH, "Kopiuj ścieżkę"
