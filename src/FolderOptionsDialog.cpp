@@ -28,10 +28,13 @@ constexpr UINT VIEW_PAGE = 29960;
 constexpr UINT SEARCH_PAGE = 29961;
 const wchar_t PAGE_LAYOUT[] = L"FileSpacer.FolderOptions.Layout";
 const wchar_t ADVANCED_FILTER[] = L"FileSpacer.FolderOptions.Advanced";
+const wchar_t PAGE_WIDTH[] = L"FileSpacer.FolderOptions.Width";
 HWND optionsSheet = nullptr;
 DWORD explorerProcess = 0;
 std::vector<HWND> previousSheets;
 bool optionsClosed = false;
+LONG extraWidth = 0;
+LONG targetPageWidth = 0;
 
 bool hasClass(HWND window, const wchar_t *expected) {
     wchar_t name[64] = {};
@@ -287,14 +290,84 @@ void hideSection(HWND page, int firstID, int secondID, bool includeTop) {
     RedrawWindow(page, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW);
 }
 
+enum class WidthChange { Stretch, Shift };
+
+void adjustChildWidth(HWND child, LONG delta, WidthChange change) {
+    RECT bounds = {};
+    if (!GetWindowRect(child, &bounds)) return;
+    POINT origin = {bounds.left, bounds.top};
+    if (!ScreenToClient(GetParent(child), &origin)) return;
+    SetWindowPos(child, nullptr, origin.x + (change == WidthChange::Shift ? delta : 0), origin.y,
+        bounds.right - bounds.left + (change == WidthChange::Stretch ? delta : 0), bounds.bottom - bounds.top,
+        SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOCOPYBITS);
+}
+
+void widenPage(HWND page, bool general) {
+    if (!extraWidth) return;
+    // A page can be created lazily or sized again by the property sheet on
+    // activation. Match the page width, and extend its child layout just once.
+    RECT bounds = {};
+    const bool resized = GetWindowRect(page, &bounds) && bounds.right - bounds.left != targetPageWidth;
+    if (resized)
+        adjustChildWidth(page, targetPageWidth - (bounds.right - bounds.left), WidthChange::Stretch);
+    if (GetPropW(page, PAGE_WIDTH)) {
+        if (resized) RedrawWindow(page, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+        return;
+    }
+    for (HWND child = GetWindow(page, GW_CHILD); child; child = GetWindow(child, GW_HWNDNEXT)) {
+        const int id = GetDlgCtrlID(child);
+        if (id == (general ? 30107 : 30121) && hasClass(child, WC_BUTTONW))
+            adjustChildWidth(child, extraWidth, WidthChange::Shift);
+        else if ((!general && id == 30120 && hasClass(child, WC_TREEVIEWW))
+                || (general && hasClass(child, WC_BUTTONW)
+                    && (static_cast<DWORD>(GetWindowLongPtrW(child, GWL_STYLE)) & BS_TYPEMASK) == BS_GROUPBOX))
+            adjustChildWidth(child, extraWidth, WidthChange::Stretch);
+    }
+    SetPropW(page, PAGE_WIDTH, page);
+    RedrawWindow(page, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+}
+
+void fitAdvancedTree(HWND page, HWND tree) {
+    if (extraWidth || !IsWindowVisible(tree) || GetPropW(tree, ADVANCED_FILTER) != tree) return;
+    SCROLLINFO scroll = {sizeof(scroll), SIF_RANGE | SIF_PAGE};
+    RECT client = {}, sheet = {}, pageBounds = {}, tabBounds = {};
+    const HWND tabs = PropSheet_GetTabControl(optionsSheet);
+    if (!hasClass(tabs, WC_TABCONTROLW) || !GetScrollInfo(tree, SB_HORZ, &scroll)
+            || !GetClientRect(tree, &client) || scroll.nMin != 0 || !scroll.nPage
+            || scroll.nPage != static_cast<UINT>(client.right) || scroll.nMax < client.right
+            || !GetWindowRect(optionsSheet, &sheet) || !GetWindowRect(page, &pageBounds)
+            || !GetWindowRect(tabs, &tabBounds)) return;
+    MONITORINFO monitor = {sizeof(monitor)};
+    if (!GetMonitorInfoW(MonitorFromWindow(optionsSheet, MONITOR_DEFAULTTONEAREST), &monitor)) return;
+    const LONG width = sheet.right - sheet.left;
+    const LONG extra = (std::min)(scroll.nMax - client.right + 1,
+        monitor.rcWork.right - monitor.rcWork.left - width);
+    if (extra <= 0) return;
+    const LONG left = (std::max)(monitor.rcWork.left, (std::min)(sheet.left, monitor.rcWork.right - width - extra));
+    if (!SetWindowPos(optionsSheet, nullptr, left, sheet.top, width + extra, sheet.bottom - sheet.top,
+            SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOCOPYBITS)) return;
+    extraWidth = extra;
+    targetPageWidth = pageBounds.right - pageBounds.left + extra;
+    adjustChildWidth(tabs, extra, WidthChange::Stretch);
+    for (HWND child = GetWindow(optionsSheet, GW_CHILD); child; child = GetWindow(child, GW_HWNDNEXT)) {
+        RECT button = {};
+        if (hasClass(child, WC_BUTTONW) && GetWindowRect(child, &button) && button.top >= tabBounds.bottom)
+            adjustChildWidth(child, extra, WidthChange::Shift);
+    }
+}
+
 void adaptPage(HWND page) {
     if (GetParent(page) != optionsSheet) return;
-    if (GetDlgItem(page, 30100) && GetDlgItem(page, 30101))
-        hideSection(page, 30100, 30101, true);
-    else if (hasClass(GetDlgItem(page, 30120), WC_TREEVIEWW)) {
+    const bool general = GetDlgItem(page, 30100) && GetDlgItem(page, 30101);
+    if (general) hideSection(page, 30100, 30101, true);
+    else {
+        const HWND tree = GetDlgItem(page, 30120);
+        if (!hasClass(tree, WC_TREEVIEWW)) return;
         hideSection(page, 30122, 30123, false);
-        filterAdvancedOptions(GetDlgItem(page, 30120));
+        filterAdvancedOptions(tree);
+        fitAdvancedTree(page, tree);
     }
+    if (GetPropW(page, PAGE_LAYOUT)) widenPage(page, general);
 }
 
 bool isGeneralPage(UINT_PTR id) {
@@ -338,8 +411,16 @@ void adaptSheet(HWND window) {
     // These messages carry integer indices/handles only, never cross-process
     // pointers. Out-of-context WinEvents run here, outside the sheet's handlers.
     removeSearchPage(window);
+    const LONG previousWidth = extraWidth;
     for (HWND page = GetWindow(window, GW_CHILD); page; page = GetWindow(page, GW_HWNDNEXT))
         if (hasClass(page, L"#32770")) adaptPage(page);
+    if (extraWidth != previousWidth) {
+        // General may already have been visited in this pass before View told
+        // us how wide the sheet needs to be.
+        for (HWND page = GetWindow(window, GW_CHILD); page; page = GetWindow(page, GW_HWNDNEXT))
+            if (GetPropW(page, PAGE_LAYOUT)) widenPage(page, GetDlgItem(page, 30100) != nullptr);
+        RedrawWindow(window, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW);
+    }
     SetPropW(window, L"FileSpacer.FolderOptions", window);
 }
 
