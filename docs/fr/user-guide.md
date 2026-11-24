@@ -59,6 +59,8 @@ Dans l’adresse, la recherche et le renommage d’un fichier, Retour arrière e
 
 ## Affichage du contenu des dossiers
 
+FileSpacer étend la personnalisation Windows des icônes de dossiers aux partages réseau. Dans la vue d’un serveur, comme `\\serveur`, chaque partage affiche l’icône déclarée par `IconResource` ou par `IconFile` et `IconIndex` dans son fichier `desktop.ini`. Voir [la documentation Microsoft sur la personnalisation des icônes de dossiers](https://learn.microsoft.com/fr-fr/windows/win32/shell/how-to-customize-folders-with-desktop-ini).
+
 <div id="affichage-et-disposition"></div>
 
 **Ctrl+molette** parcourt les tailles d’icônes et les modes d’affichage. Le geste de zoom du pavé tactile utilise la même action lorsqu’il est transmis par Windows. **Ctrl+Maj+1 à 8** choisit directement, dans l’ordre : très grandes icônes, grandes icônes, icônes moyennes, petites icônes, liste, détails, mosaïques et contenu. Le mode choisi est mémorisé pour le dossier ; le verrouillage de l’état enregistré conserve ses règles habituelles.

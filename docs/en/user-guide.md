@@ -52,6 +52,8 @@ In the address, search and file rename fields, Backspace and Ctrl+Backspace reta
 
 ## Folder contents and display
 
+FileSpacer extends standard Windows folder icons to network shares. In a server view such as `\\server`, a share uses the icon specified by `IconResource` or `IconFile` and `IconIndex` in its `desktop.ini` file. See [Microsoft’s guide to customizing folder icons](https://learn.microsoft.com/en-us/windows/win32/shell/how-to-customize-folders-with-desktop-ini).
+
 **Ctrl+mouse wheel** steps through icon sizes and view modes. The touchpad zoom gesture uses the same action when forwarded by Windows. **Ctrl+Shift+1 to 8** selects, in order: extra large icons, large icons, medium icons, small icons, list, details, tiles and content. The chosen mode is remembered for the folder; the saved-state lock keeps its usual behavior.
 
 <div id="view-and-layout"></div>

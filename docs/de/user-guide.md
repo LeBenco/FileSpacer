@@ -58,6 +58,8 @@ In Adress-, Such- und Dateiumbenennungsfeldern behalten Rücktaste und Strg+Rüc
 
 ## Anzeige der Ordnerinhalte
 
+FileSpacer erweitert die Windows-Anpassung von Ordnersymbolen auf Netzwerkfreigaben. In einer Serveransicht wie `\\Server` erhält eine Freigabe das Symbol, das in ihrer Datei `desktop.ini` mit `IconResource` oder mit `IconFile` und `IconIndex` angegeben ist. Siehe [Microsoft-Dokumentation zur Anpassung von Ordnersymbolen](https://learn.microsoft.com/en-us/windows/win32/shell/how-to-customize-folders-with-desktop-ini).
+
 <div id="ansicht-und-anordnung"></div>
 
 **Strg+Mausrad** wechselt zwischen Symbolgrößen und Ansichten. Die Zoomgeste des Touchpads verwendet dieselbe Aktion, wenn Windows sie weiterleitet. **Strg+Umschalt+1 bis 8** wählt nacheinander extra große, große, mittelgroße und kleine Symbole, Liste, Details, Kacheln und Inhalt. Der Modus wird für den Ordner gespeichert; die Zustandssperre verhält sich unverändert.

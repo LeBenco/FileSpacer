@@ -59,6 +59,8 @@ In de velden voor adres, zoeken en bestandsnamen behouden Backspace en Ctrl+Back
 
 ## Weergave van de mapinhoud
 
+FileSpacer breidt de aanpassing van Windows-mappictogrammen uit naar netwerkmappen. In een serverweergave zoals `\\server` gebruikt een gedeelde map het pictogram dat in `desktop.ini` is opgegeven met `IconResource` of met `IconFile` en `IconIndex`. Zie [de Microsoft-documentatie over het aanpassen van mappictogrammen](https://learn.microsoft.com/en-us/windows/win32/shell/how-to-customize-folders-with-desktop-ini).
+
 <div id="weergave-en-indeling"></div>
 
 **Ctrl+muiswiel** doorloopt de pictogramgroottes en weergaven. Het zoomgebaar van het touchpad gebruikt dezelfde actie als Windows het doorgeeft. **Ctrl+Shift+1 tot 8** kiest achtereenvolgens extra grote, grote, middelgrote en kleine pictogrammen, lijst, details, tegels en inhoud. De weergave wordt voor de map onthouden; de vergrendeling van de opgeslagen toestand blijft zoals gebruikelijk werken.

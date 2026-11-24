@@ -59,6 +59,8 @@ En los campos de dirección, búsqueda y cambio de nombre, Retroceso y Ctrl+Retr
 
 ## Visualización del contenido de las carpetas
 
+FileSpacer extiende la personalización de iconos de carpetas de Windows a los recursos compartidos de red. En la vista de un servidor como `\\servidor`, cada recurso muestra el icono indicado en su archivo `desktop.ini` mediante `IconResource` o mediante `IconFile` e `IconIndex`. Consulta [la documentación de Microsoft sobre la personalización de iconos de carpetas](https://learn.microsoft.com/en-us/windows/win32/shell/how-to-customize-folders-with-desktop-ini).
+
 <div id="visualización-y-disposición"></div>
 
 **Ctrl+rueda del ratón** recorre los tamaños de icono y los modos de vista. El gesto de zoom del panel táctil usa la misma acción cuando Windows lo transmite. **Ctrl+Mayús+1 a 8** selecciona, en orden: iconos muy grandes, grandes, medianos y pequeños, lista, detalles, mosaicos y contenido. El modo se recuerda para la carpeta; el bloqueo del estado guardado mantiene su comportamiento habitual.

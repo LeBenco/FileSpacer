@@ -59,6 +59,8 @@ W polach adresu, wyszukiwania i zmiany nazwy Backspace oraz Ctrl+Backspace zacho
 
 ## Wyświetlanie zawartości folderów
 
+FileSpacer rozszerza mechanizm dostosowywania ikon folderów systemu Windows na udziały sieciowe. W widoku serwera, na przykład `\\serwer`, udział ma ikonę określoną w pliku `desktop.ini` za pomocą `IconResource` lub pary `IconFile` i `IconIndex`. Zobacz [dokumentację Microsoft dotyczącą dostosowywania ikon folderów](https://learn.microsoft.com/en-us/windows/win32/shell/how-to-customize-folders-with-desktop-ini).
+
 <div id="widok-i-układ"></div>
 
 **Ctrl+kółko myszy** przełącza rozmiary ikon i tryby widoku. Gest powiększania na płytce dotykowej wykonuje tę samą czynność, jeśli Windows go przekazuje. **Ctrl+Shift+1–8** wybiera kolejno bardzo duże, duże, średnie i małe ikony, listę, szczegóły, kafelki oraz zawartość. Wybrany tryb jest zapamiętywany dla folderu; blokada zapisanego stanu działa jak dotychczas.

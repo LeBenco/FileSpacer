@@ -59,6 +59,8 @@ Nei campi dell’indirizzo, della ricerca e di ridenominazione, Backspace e Ctrl
 
 ## Visualizzazione del contenuto delle cartelle
 
+FileSpacer estende la personalizzazione delle icone delle cartelle di Windows alle condivisioni di rete. Nella vista di un server come `\\server`, ogni condivisione mostra l’icona specificata nel suo file `desktop.ini` con `IconResource` oppure con `IconFile` e `IconIndex`. Vedi [la documentazione Microsoft sulla personalizzazione delle icone delle cartelle](https://learn.microsoft.com/en-us/windows/win32/shell/how-to-customize-folders-with-desktop-ini).
+
 <div id="visualizzazione-e-disposizione"></div>
 
 **Ctrl+rotellina del mouse** passa tra dimensioni delle icone e modalità di visualizzazione. Il gesto di zoom del touchpad usa la stessa azione quando Windows lo inoltra. **Ctrl+Maiusc+1–8** seleziona nell’ordine icone molto grandi, grandi, medie e piccole, elenco, dettagli, riquadri e contenuto. La modalità viene ricordata per la cartella; il blocco dello stato salvato conserva il suo normale comportamento.

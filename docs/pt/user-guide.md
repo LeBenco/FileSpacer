@@ -59,6 +59,8 @@ Nos campos de endereço, pesquisa e mudança de nome, Retrocesso e Ctrl+Retroces
 
 ## Apresentação do conteúdo das pastas
 
+O FileSpacer estende a personalização de ícones de pastas do Windows às partilhas de rede. Na vista de um servidor como `\\servidor`, cada partilha apresenta o ícone indicado no seu ficheiro `desktop.ini` por `IconResource` ou por `IconFile` e `IconIndex`. Consulte [a documentação da Microsoft sobre a personalização de ícones de pastas](https://learn.microsoft.com/en-us/windows/win32/shell/how-to-customize-folders-with-desktop-ini).
+
 <div id="apresentação-e-disposição"></div>
 
 **Ctrl+roda do rato** percorre os tamanhos dos ícones e os modos de vista. O gesto de zoom do painel tátil usa a mesma ação quando o Windows o encaminha. **Ctrl+Shift+1 a 8** seleciona, por ordem, ícones extra grandes, grandes, médios e pequenos, lista, detalhes, mosaicos e conteúdo. O modo é memorizado para a pasta; o bloqueio do estado guardado mantém o comportamento habitual.
