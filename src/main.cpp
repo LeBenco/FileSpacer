@@ -8,6 +8,7 @@
 #include "Settings.h"
 #include "CrashRecovery.h"
 #include "SettingsDialog.h"
+#include "FolderOptionsDialog.h"
 #include "Update.h"
 #include "UpdateInstaller.h"
 #include "UpdateSession.h"
@@ -255,6 +256,10 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     int maintenanceExit = 0, recoveryArgc = 0;
     wchar_t **recoveryArgv = CommandLineToArgvW(GetCommandLineW(), &recoveryArgc);
     if (!recoveryArgv) return 1;
+    if (recoveryArgc == 2 && lstrcmpiW(recoveryArgv[1], L"/folder-options") == 0) {
+        LocalFree(static_cast<HLOCAL>(recoveryArgv));
+        return runFolderOptionsDialog();
+    }
 #ifdef FILESPACER_DEBUG
     // Debug builds only: the discovery worker of a cache root chosen by the
     // caller, for the experiments that set FS_SELECTION_PRODUCT_CACHE.
