@@ -16,6 +16,7 @@
 #define IDM_NEW_FOLDER      1007
 #define IDM_RENAME_PROXY    1008
 #define IDM_SETTINGS        1009
+#define IDM_FOLDER_OPTIONS  1023
 #define IDM_PARENT_MENU     1010
 #define IDM_VIEW_MENU       1012
 #define IDM_DELETE_PROXY    1016

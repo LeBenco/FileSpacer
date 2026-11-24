@@ -24,6 +24,7 @@ END
 IDR_ITEM_MENU   MENU {
     MENUITEM    "Documentazione\tF1", IDM_HELP
     MENUITEM    "Impostazioni di FileSpacer\tCtrl+,", IDM_SETTINGS
+    MENUITEM    "Opzioni cartella...", IDM_FOLDER_OPTIONS
 }
 
 STRINGTABLE {
