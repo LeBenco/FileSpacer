@@ -361,6 +361,9 @@ struct ShareIconLocation {
                 || !(attributes & (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_SYSTEM))) return;
         wchar_t ini[MAX_PATH], resource[MAX_PATH], expanded[MAX_PATH], absolute[MAX_PATH];
         if (!PathCombineW(ini, folder, L"desktop.ini")) return;
+        const DWORD iniAttributes = GetFileAttributesW(ini);
+        if (iniAttributes == INVALID_FILE_ATTRIBUTES || (iniAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                || !(iniAttributes & FILE_ATTRIBUTE_HIDDEN) || !(iniAttributes & FILE_ATTRIBUTE_SYSTEM)) return;
         // SHGetSetFolderCustomSettings can retain a stale Shell customization.
         // Profile APIs read the current INI; the Shell parses the resource pair.
         DWORD count = GetPrivateProfileStringW(L".ShellClassInfo", L"IconResource", L"",
