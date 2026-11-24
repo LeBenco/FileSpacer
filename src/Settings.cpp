@@ -450,7 +450,10 @@ bool supportsDefaultBrowser() {
 namespace {
 const wchar_t MENU_STATE_ID[] = L"{B6AE98A3-F59D-4F07-B5E8-CAD54DC5516C}";
 const wchar_t KEY_OPEN_BACKUP[] = L"Software\\Classes\\FileSpacer.OpenVerbBackup";
-const wchar_t *const BROWSER_TYPES[] = {L"Directory", L"CompressedFolder", L"Drive", L"NetServer", L"NetShare"};
+const wchar_t COMPUTER_FOLDER_TYPE[] = L"CLSID\\{20D04FE0-3AEA-1069-A2D8-08002B30309D}";
+const wchar_t *const BROWSER_TYPES[] = {
+    L"Directory", L"CompressedFolder", L"Drive", L"NetServer", L"NetShare", COMPUTER_FOLDER_TYPE,
+};
 
 struct RegistryValue {
     bool present = false;
@@ -665,7 +668,10 @@ LSTATUS setDefaultType(const wchar_t *type, bool enable, bool &changed) {
             : ERROR_SUCCESS;
     }
     const std::wstring shell = std::wstring(L"Software\\Classes\\") + type + L"\\shell";
-    const std::wstring installed = std::wstring(type) + L"\\shell\\filespacer\\command";
+    // This PC is a virtual folder. Reuse the installed folder delegate and
+    // set only its own Open verb, without registering a machine-wide verb.
+    const wchar_t *installedType = lstrcmpW(type, COMPUTER_FOLDER_TYPE) == 0 ? L"Directory" : type;
+    const std::wstring installed = std::wstring(installedType) + L"\\shell\\filespacer\\command";
     std::wstring command, delegate;
     LSTATUS status = menuString(installed, nullptr, command);
     if (status == ERROR_SUCCESS) status = menuString(installed, L"DelegateExecute", delegate);
@@ -829,13 +835,14 @@ DefaultBrowserResult synchronizeContextMenus() {
     }
     if (installed) {
         const LSTATUS registered = registerMenuState();
-        if (registered != ERROR_SUCCESS) return {registered, registered, registered, registered, registered};
+        if (registered != ERROR_SUCCESS) return {registered, registered, registered, registered, registered, registered};
     }
     result.directory = synchronizeType(BROWSER_TYPES[0], changed);
     result.compressedFolder = synchronizeType(BROWSER_TYPES[1], changed);
     result.drive = synchronizeType(BROWSER_TYPES[2], changed);
     result.networkServer = synchronizeType(BROWSER_TYPES[3], changed);
     result.networkShare = synchronizeType(BROWSER_TYPES[4], changed);
+    result.computerFolder = synchronizeType(COMPUTER_FOLDER_TYPE, changed);
     if (changed) SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     return result;
 }
@@ -848,12 +855,14 @@ DefaultBrowserResult setDefaultBrowser(bool value) {
     result.drive = setDefaultType(BROWSER_TYPES[2], value, changed);
     result.networkServer = setDefaultType(BROWSER_TYPES[3], value, changed);
     result.networkShare = setDefaultType(BROWSER_TYPES[4], value, changed);
+    result.computerFolder = setDefaultType(COMPUTER_FOLDER_TYPE, value, changed);
     const DefaultBrowserResult menus = synchronizeContextMenus();
     if (result.directory == ERROR_SUCCESS) result.directory = menus.directory;
     if (result.compressedFolder == ERROR_SUCCESS) result.compressedFolder = menus.compressedFolder;
     if (result.drive == ERROR_SUCCESS) result.drive = menus.drive;
     if (result.networkServer == ERROR_SUCCESS) result.networkServer = menus.networkServer;
     if (result.networkShare == ERROR_SUCCESS) result.networkShare = menus.networkShare;
+    if (result.computerFolder == ERROR_SUCCESS) result.computerFolder = menus.computerFolder;
     SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     return result;
 }

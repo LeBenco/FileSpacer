@@ -139,6 +139,7 @@ STRINGTABLE {
     IDS_BROWSER_DRIVE, "Dyski"
     IDS_BROWSER_NETWORK_SERVER, "Serwery sieciowe"
     IDS_BROWSER_NETWORK_SHARE, "Udziały sieciowe"
+    IDS_BROWSER_COMPUTER_FOLDER, "Ten komputer"
     IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (błąd %2!lu!)"
     IDS_BROWSER_ASSOCIATIONS_FAILED, "Nie można zmienić następujących skojarzeń:\n\n%1\n\nUdane zmiany zostały zachowane."
     IDS_BROWSER_SET,        "FileSpacer ustawiono jako domyślnego menedżera plików. Możesz cofnąć tę zmianę w ustawieniach FileSpacer."

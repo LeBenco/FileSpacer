@@ -16,6 +16,12 @@ space- or comma-separated ordered list: use its first verb rather than comparing
 the whole string. A server root such as `\\server` is `NetServer`, not
 `Directory`; omitting network classes leaves those targets with another manager.
 
+The desktop icon for **This PC** has its own Shell class. When choosing FileSpacer
+as the default, reuse the installed folder command for that class's `open` verb
+and include it in the same restoration journal. The `Folder` class and other
+virtual folders keep their own defaults. If FileSpacer was already the default,
+apply the setting again to include **This PC**.
+
 `setDefaultBrowser()` redirects each class's canonical `open` command to
 FileSpacer and selects `open` as the default verb. The label remains **Open**.
 Only the current user's overrides are written. The original values, types and

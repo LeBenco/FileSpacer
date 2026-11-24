@@ -139,6 +139,7 @@ STRINGTABLE {
     IDS_BROWSER_DRIVE, "Unidades"
     IDS_BROWSER_NETWORK_SERVER, "Servidores de rede"
     IDS_BROWSER_NETWORK_SHARE, "Partilhas de rede"
+    IDS_BROWSER_COMPUTER_FOLDER, "Este PC"
     IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (erro %2!lu!)"
     IDS_BROWSER_ASSOCIATIONS_FAILED, "Não foi possível alterar as seguintes associações:\n\n%1\n\nAs alterações efetuadas com êxito foram mantidas."
     IDS_BROWSER_SET,        "O FileSpacer foi definido como gestor de ficheiros predefinido. Pode reverter esta alteração nas definições do FileSpacer."

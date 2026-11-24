@@ -822,9 +822,9 @@ void changeDefaultBrowser(HWND owner, bool value) {
     }
     const settings::DefaultBrowserResult result = settings::setDefaultBrowser(value);
     const LSTATUS statuses[] = {result.directory, result.compressedFolder, result.drive,
-        result.networkServer, result.networkShare};
+        result.networkServer, result.networkShare, result.computerFolder};
     const UINT labels[] = {IDS_BROWSER_DIRECTORY, IDS_BROWSER_COMPRESSED_FOLDER, IDS_BROWSER_DRIVE,
-        IDS_BROWSER_NETWORK_SERVER, IDS_BROWSER_NETWORK_SHARE};
+        IDS_BROWSER_NETWORK_SERVER, IDS_BROWSER_NETWORK_SHARE, IDS_BROWSER_COMPUTER_FOLDER};
     std::wstring failures;
     for (int index = 0; index < _countof(statuses); ++index) {
         if (statuses[index] == ERROR_SUCCESS)
