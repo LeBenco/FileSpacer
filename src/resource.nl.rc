@@ -23,8 +23,8 @@ END
 
 IDR_ITEM_MENU   MENU {
     MENUITEM    "Documentatie\tF1", IDM_HELP
-    MENUITEM    "FileSpacer-instellingen\tCtrl+,", IDM_SETTINGS
     MENUITEM    "Mapopties...", IDM_FOLDER_OPTIONS
+    MENUITEM    "FileSpacer-instellingen\tCtrl+,", IDM_SETTINGS
 }
 
 STRINGTABLE {
