@@ -5,10 +5,12 @@
 #include <shellapi.h>
 #include <shlobj.h>
 #include <objbase.h>
+#include <dwmapi.h>
 #include <algorithm>
 #include <climits>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace filespacer {
 namespace {
@@ -22,6 +24,8 @@ constexpr UINT SEARCH_PAGE = 29961;
 const wchar_t PAGE_LAYOUT[] = L"FileSpacer.FolderOptions.Layout";
 HWND optionsSheet = nullptr;
 DWORD explorerProcess = 0;
+std::vector<HWND> previousSheets;
+bool optionsClosed = false;
 
 bool hasClass(HWND window, const wchar_t *expected) {
     wchar_t name[64] = {};
@@ -113,7 +117,11 @@ void removeSearchPage(HWND sheet) {
 bool isOptionsSheet(HWND window) {
     DWORD process = 0;
     GetWindowThreadProcessId(window, &process);
-    if (process != explorerProcess || !hasClass(window, L"#32770")) return false;
+    if (process != explorerProcess || !IsWindowVisible(window) || IsIconic(window)
+            || !hasClass(window, L"#32770")) return false;
+    DWORD cloaked = 0;
+    if (SUCCEEDED(DwmGetWindowAttribute(window, DWMWA_CLOAKED, &cloaked, sizeof(cloaked)))
+            && cloaked) return false;
     HWND tabs = PropSheet_GetTabControl(window);
     if (!hasClass(tabs, WC_TABCONTROLW)) return false;
     const int count = TabCtrl_GetItemCount(tabs);
@@ -124,6 +132,10 @@ bool isOptionsSheet(HWND window) {
 
 void adaptSheet(HWND window) {
     if (!isOptionsSheet(window) || (optionsSheet && optionsSheet != window)) return;
+    // A previous sheet may coexist with the one opened by this request. Reuse
+    // it only when Windows activates it; never take the first enumerated match.
+    if (!optionsSheet && window != GetAncestor(GetForegroundWindow(), GA_ROOT)
+            && std::find(previousSheets.begin(), previousSheets.end(), window) != previousSheets.end()) return;
     optionsSheet = window;
     // These messages carry integer indices/handles only, never cross-process
     // pointers. Out-of-context WinEvents run here, outside the sheet's handlers.
@@ -135,9 +147,16 @@ void adaptSheet(HWND window) {
 
 void CALLBACK optionsEvent(HWINEVENTHOOK, DWORD event, HWND window, LONG object,
         LONG child, DWORD, DWORD) {
+    if (optionsClosed) return;
+    if (event == EVENT_SYSTEM_FOREGROUND) {
+        adaptSheet(GetAncestor(window, GA_ROOT));
+        return;
+    }
     if (!window || object != OBJID_WINDOW || child != CHILDID_SELF) return;
-    if (event == EVENT_OBJECT_DESTROY) {
-        if (window == optionsSheet) {
+    if (event == EVENT_OBJECT_DESTROY || event == EVENT_OBJECT_HIDE) {
+        if (window == optionsSheet
+                && (event == EVENT_OBJECT_DESTROY || !IsWindowVisible(window))) {
+            optionsClosed = true;
             optionsSheet = nullptr;
             PostQuitMessage(0);
         }
@@ -147,13 +166,20 @@ void CALLBACK optionsEvent(HWINEVENTHOOK, DWORD event, HWND window, LONG object,
 }
 
 void findOptionsSheet() {
-    EnumWindows([](HWND window, LPARAM) -> BOOL {
-        if (isOptionsSheet(window)) {
-            adaptSheet(window);
-            return FALSE;
+    if (optionsSheet || optionsClosed) return;
+    adaptSheet(GetAncestor(GetForegroundWindow(), GA_ROOT));
+    if (optionsSheet) return;
+    struct Candidate { HWND window = nullptr; bool ambiguous = false; } candidate;
+    EnumWindows([](HWND window, LPARAM data) -> BOOL {
+        auto &found = *reinterpret_cast<Candidate *>(data);
+        if (isOptionsSheet(window)
+                && std::find(previousSheets.begin(), previousSheets.end(), window) == previousSheets.end()) {
+            if (found.window) { found.ambiguous = true; return FALSE; }
+            found.window = window;
         }
         return TRUE;
-    }, 0);
+    }, reinterpret_cast<LPARAM>(&candidate));
+    if (candidate.window && !candidate.ambiguous) adaptSheet(candidate.window);
 }
 
 int showError(DWORD error) {
@@ -194,12 +220,20 @@ int runFolderOptionsDialog() {
 
     GetWindowThreadProcessId(GetShellWindow(), &explorerProcess);
     if (!explorerProcess) return showError(ERROR_NOT_FOUND);
+    EnumWindows([](HWND window, LPARAM) -> BOOL {
+        if (isOptionsSheet(window)) previousSheets.push_back(window);
+        return TRUE;
+    }, 0);
     // The Shell hosts its global Folder Options sheet in Explorer. This public
     // accessibility hook observes that process without loading any code into it.
     std::unique_ptr<std::remove_pointer<HWINEVENTHOOK>::type, decltype(&UnhookWinEvent)> hook(
-        SetWinEventHook(EVENT_OBJECT_DESTROY, EVENT_OBJECT_SHOW, nullptr, optionsEvent,
+        SetWinEventHook(EVENT_OBJECT_DESTROY, EVENT_OBJECT_HIDE, nullptr, optionsEvent,
             explorerProcess, 0, WINEVENT_OUTOFCONTEXT), UnhookWinEvent);
     if (!hook) return showError(GetLastError());
+    std::unique_ptr<std::remove_pointer<HWINEVENTHOOK>::type, decltype(&UnhookWinEvent)> foregroundHook(
+        SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, nullptr, optionsEvent,
+            explorerProcess, 0, WINEVENT_OUTOFCONTEXT), UnhookWinEvent);
+    if (!foregroundHook) return showError(GetLastError());
 
     wchar_t systemDirectory[MAX_PATH] = {};
     const UINT length = GetSystemDirectoryW(systemDirectory, ARRAYSIZE(systemDirectory));
@@ -220,6 +254,7 @@ int runFolderOptionsDialog() {
     const ULONGLONG deadline = GetTickCount64() + 10000;
     bool launcherExited = !launcher;
     for (;;) {
+        if (optionsClosed) return 0;
         if (optionsSheet && !IsWindow(optionsSheet)) return 0;
         const ULONGLONG now = GetTickCount64();
         if (!optionsSheet && now >= deadline) return showError(ERROR_TIMEOUT);
