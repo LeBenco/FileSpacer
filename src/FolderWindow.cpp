@@ -1075,8 +1075,10 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         }
         case WM_SETTINGCHANGE:
             // ShlObj_core.h documents "ShellState" for Shell option changes.
-            if (shellView && lParam
-                    && lstrcmpi(reinterpret_cast<LPCWSTR>(lParam), L"ShellState") == 0) {
+            // Explorer's Folder Options also broadcasts a generic notification
+            // (both parameters zero) after persisting its changes.
+            if (shellView && ((!lParam && !wParam) || (lParam
+                    && lstrcmpi(reinterpret_cast<LPCWSTR>(lParam), L"ShellState") == 0))) {
                 // Same sequence as an explicit refresh: the free positions are
                 // persisted before the refill and restored after it.
                 CComPtr<ItemWindow> keepAlive(this);
