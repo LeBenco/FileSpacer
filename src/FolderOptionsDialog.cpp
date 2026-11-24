@@ -212,13 +212,29 @@ void hideSection(HWND page, int firstID, int secondID, bool includeTop) {
         }
     }
     if (!group) return;
-    if (includeTop && !hasClass(GetDlgItem(page, 30108), WC_COMBOBOXW)) return;
+    RECT comboRect = {};
+    if (includeTop) {
+        const HWND combo = GetDlgItem(page, 30108);
+        if (!hasClass(combo, WC_COMBOBOXW) || !GetWindowRect(combo, &comboRect)) return;
+    }
+    HWND notice = nullptr;
+    bool ambiguousNotice = false;
     LONG hiddenTop = LONG_MAX, visibleTop = LONG_MAX;
     for (HWND child = GetWindow(page, GW_CHILD); child; child = GetWindow(child, GW_HWNDNEXT)) {
         RECT bounds = {};
         if (!GetWindowRect(child, &bounds)) continue;
         if (contains(groupRect, bounds) || (includeTop && bounds.bottom <= groupRect.bottom)) {
             hiddenTop = (std::min)(hiddenTop, bounds.top);
+            // Reuse the displaced opening-location label or the View page's
+            // description. Both are native text controls owned by Explorer.
+            if (hasClass(child, WC_STATICW)
+                    && (GetWindowLongPtrW(child, GWL_STYLE) & SS_TYPEMASK) == SS_LEFT
+                    && (includeTop ? bounds.right <= comboRect.left && bounds.top < comboRect.bottom
+                                      && bounds.bottom > comboRect.top
+                                   : GetDlgCtrlID(child) == 30127)) {
+                ambiguousNotice = notice != nullptr;
+                notice = child;
+            }
             ShowWindow(child, SW_HIDE);
         } else if (static_cast<DWORD>(GetWindowLongPtrW(child, GWL_STYLE)) & WS_VISIBLE) {
             visibleTop = (std::min)(visibleTop, bounds.top);
@@ -226,22 +242,46 @@ void hideSection(HWND page, int firstID, int secondID, bool includeTop) {
     }
     if (hiddenTop == LONG_MAX || visibleTop == LONG_MAX || visibleTop <= hiddenTop) return;
     const LONG shift = visibleTop - hiddenTop;
-    // Keep Restore Defaults at the bottom on both pages. The tree gains all
-    // reclaimed height, while General's remaining groups move toward the top.
     const int defaultsID = includeTop ? 30107 : 30121;
+    const HWND defaults = GetDlgItem(page, defaultsID);
+    RECT defaultsRect = {}, pageRect = {}, noticeRect = {};
+    LONG viewReserve = 0;
+    if (notice && !ambiguousNotice && hasClass(defaults, WC_BUTTONW)
+            && GetWindowRect(defaults, &defaultsRect) && GetClientRect(page, &pageRect)) {
+        POINT bottom = {0, pageRect.bottom};
+        if (ClientToScreen(page, &bottom)) {
+            const LONG buttonHeight = defaultsRect.bottom - defaultsRect.top;
+            const LONG margin = buttonHeight / 3;
+            noticeRect = {groupRect.left, bottom.y - margin - 2 * buttonHeight,
+                groupRect.right, bottom.y - margin};
+            if (includeTop && defaultsRect.bottom - shift + margin > noticeRect.top)
+                notice = nullptr;
+            else if (!includeTop)
+                viewReserve = (std::max)(0L, defaultsRect.bottom + margin - noticeRect.top);
+        } else notice = nullptr;
+    } else notice = nullptr;
     for (HWND child = GetWindow(page, GW_CHILD); child; child = GetWindow(child, GW_HWNDNEXT)) {
-        if (GetDlgCtrlID(child) == defaultsID
-                || !(static_cast<DWORD>(GetWindowLongPtrW(child, GWL_STYLE)) & WS_VISIBLE)) continue;
+        if (!(static_cast<DWORD>(GetWindowLongPtrW(child, GWL_STYLE)) & WS_VISIBLE)) continue;
         RECT bounds = {};
         if (!GetWindowRect(child, &bounds)) continue;
         POINT origin = {bounds.left, bounds.top};
         if (!ScreenToClient(page, &origin)) continue;
-        const int addedHeight = !includeTop && GetDlgCtrlID(child) == 30120 ? shift : 0;
-        SetWindowPos(child, nullptr, origin.x, origin.y - shift,
+        const LONG offset = !includeTop && child == defaults ? viewReserve : shift;
+        const LONG addedHeight = !includeTop && GetDlgCtrlID(child) == 30120 ? shift - viewReserve : 0;
+        SetWindowPos(child, nullptr, origin.x, origin.y - offset,
             bounds.right - bounds.left, bounds.bottom - bounds.top + addedHeight,
             SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOCOPYBITS);
     }
     SetPropW(page, PAGE_LAYOUT, page); // Tab switches must not shift the layout again.
+    if (notice) {
+        POINT origin = {noticeRect.left, noticeRect.top};
+        const auto text = getString(IDS_FOLDER_OPTIONS_SCOPE);
+        if (text && ScreenToClient(page, &origin)
+                && SendMessageW(notice, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(text)))
+            SetWindowPos(notice, nullptr, origin.x, origin.y,
+                noticeRect.right - noticeRect.left, noticeRect.bottom - noticeRect.top,
+                SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW | SWP_NOREDRAW | SWP_NOCOPYBITS);
+    }
     // Overlapping sibling group boxes must not copy old pixels over the labels.
     // Repaint the complete page only after every control is at its final position.
     RedrawWindow(page, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW);
