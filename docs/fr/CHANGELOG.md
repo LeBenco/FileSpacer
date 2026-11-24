@@ -2,11 +2,12 @@
 
 # Historique des versions
 
-<a id="153"></a>
+<a id="160"></a>
 
-## 1.5.3
+## 1.6.0
 
 - Permettre aux règles Nilesoft Shell de cibler le menu Affichage séparément du menu de l’application dans la barre d’outils.
+- Ouvrir les Options des dossiers de Windows depuis le menu de la barre d’outils, afficher les réglages utiles à FileSpacer et actualiser les fenêtres de dossiers ouvertes à l’application des changements.
 - Prendre en charge les icônes personnalisées des partages réseau au format standard Windows `desktop.ini`.
 
 <a id="152"></a>

@@ -2,11 +2,12 @@
 
 # Cronologia delle versioni
 
-<a id="153"></a>
+<a id="160"></a>
 
-## 1.5.3
+## 1.6.0
 
 - Consentire alle regole di Nilesoft Shell di agire sul menu Visualizza separatamente dal menu dell’applicazione nella barra degli strumenti.
+- Aprire le Opzioni cartella di Windows dal menu della barra degli strumenti, filtrare le opzioni pertinenti a FileSpacer e aggiornare le finestre delle cartelle aperte quando si applicano le modifiche.
 - Supportare le icone personalizzate delle condivisioni di rete tramite il formato standard `desktop.ini` di Windows.
 
 <a id="152"></a>

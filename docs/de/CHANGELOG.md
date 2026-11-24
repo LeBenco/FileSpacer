@@ -2,11 +2,12 @@
 
 # Versionsverlauf
 
-<a id="153"></a>
+<a id="160"></a>
 
-## 1.5.3
+## 1.6.0
 
 - Nilesoft-Shell-Regeln können das Menü Ansicht unabhängig vom Anwendungsmenü der Symbolleiste ansprechen.
+- Die Windows-Ordneroptionen über das Symbolleistenmenü öffnen, die Optionen auf die für FileSpacer relevanten Einstellungen beschränken und offene Ordnerfenster nach dem Anwenden aktualisieren.
 - Benutzerdefinierte Symbole für Netzwerkfreigaben im Windows-Standardformat `desktop.ini` unterstützen.
 
 <a id="152"></a>

@@ -2,11 +2,12 @@
 
 # Wijzigingsgeschiedenis
 
-<a id="153"></a>
+<a id="160"></a>
 
-## 1.5.3
+## 1.6.0
 
 - Nilesoft Shell-regels kunnen het menu Beeld afzonderlijk van het toepassingsmenu op de werkbalk aanspreken.
+- Windows-mapopties openen vanuit het werkbalkmenu, de opties filteren op relevantie voor FileSpacer en geopende mapvensters vernieuwen wanneer wijzigingen worden toegepast.
 - Aangepaste pictogrammen voor gedeelde netwerkmappen ondersteunen via de standaard Windows-indeling `desktop.ini`.
 
 <a id="152"></a>

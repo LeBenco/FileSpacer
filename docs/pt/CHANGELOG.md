@@ -2,11 +2,12 @@
 
 # Histórico de versões
 
-<a id="153"></a>
+<a id="160"></a>
 
-## 1.5.3
+## 1.6.0
 
 - Permitir que as regras do Nilesoft Shell se apliquem ao menu Ver separadamente do menu da aplicação na barra de ferramentas.
+- Abrir as Opções de Pastas do Windows a partir do menu da barra de ferramentas, mostrar apenas as opções relevantes para o FileSpacer e atualizar as janelas de pastas abertas ao aplicar as alterações.
 - Suportar ícones personalizados para partilhas de rede através do formato padrão `desktop.ini` do Windows.
 
 <a id="152"></a>

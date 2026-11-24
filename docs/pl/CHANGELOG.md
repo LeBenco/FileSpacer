@@ -2,11 +2,12 @@
 
 # Historia zmian
 
-<a id="153"></a>
+<a id="160"></a>
 
-## 1.5.3
+## 1.6.0
 
 - Umożliwić regułom Nilesoft Shell oddzielne kierowanie do menu Widok i menu aplikacji na pasku narzędzi.
+- Otwieranie Opcji folderów systemu Windows z menu paska narzędzi, wyświetlanie ustawień istotnych dla FileSpacer i odświeżanie otwartych okien folderów po zastosowaniu zmian.
 - Obsługa niestandardowych ikon udziałów sieciowych za pomocą standardowego pliku `desktop.ini` systemu Windows.
 
 <a id="152"></a>

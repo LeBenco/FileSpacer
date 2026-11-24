@@ -2,11 +2,12 @@
 
 # Historial de versiones
 
-<a id="153"></a>
+<a id="160"></a>
 
-## 1.5.3
+## 1.6.0
 
 - Permitir que las reglas de Nilesoft Shell se apliquen al menú Vista por separado del menú de la aplicación en la barra de herramientas.
+- Abrir las Opciones de carpeta de Windows desde el menú de la barra de herramientas, mostrar solo las opciones pertinentes para FileSpacer y actualizar las ventanas de carpetas abiertas al aplicar los cambios.
 - Admitir iconos personalizados para recursos compartidos de red mediante el formato estándar `desktop.ini` de Windows.
 
 <a id="152"></a>
