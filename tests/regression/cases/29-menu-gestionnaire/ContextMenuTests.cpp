@@ -13,6 +13,7 @@
 using namespace filespacer;
 
 namespace {
+const wchar_t THIS_PC_SHELL[] = L"CLSID\\{20D04FE0-3AEA-1069-A2D8-08002B30309D}\\shell";
 int checks = 0;
 void require(bool value, const char *message) {
     ++checks;
@@ -143,15 +144,15 @@ void fixtures() {
     }
 }
 
-void checkServerDefault(IShellItem *server, bool fileSpacerDefault) {
+void checkTargetDefault(IShellItem *item, bool fileSpacerDefault) {
     CComPtr<IQueryAssociations> associations;
-    require(SUCCEEDED(server->BindToHandler(nullptr, BHID_AssociationArray, IID_PPV_ARGS(&associations))),
-        "query actual server target associations");
+    require(SUCCEEDED(item->BindToHandler(nullptr, BHID_AssociationArray, IID_PPV_ARGS(&associations))),
+        "query actual target associations");
     wchar_t command[2048] = {}; DWORD size = _countof(command);
     require(SUCCEEDED(associations->GetString(0, ASSOCSTR_COMMAND, nullptr, command, &size)),
-        "read actual server default command");
+        "read actual default command");
     require(lstrcmpW(command, fileSpacerDefault ? L"original command" : L"native Explorer command") == 0,
-        "server shortcut target follows the selected file manager");
+        "target follows the selected file manager");
 }
 
 void checkDefaultOpening() {
@@ -236,7 +237,9 @@ int wmain(int argc, wchar_t **argv) {
         require(imageLength && imageLength < _countof(image), "shortcut fixture executable path");
         checkHostFilter(image);
         shortcutPath = std::wstring(image) + L".lnk";
-        CComPtr<IShellItem> server, shortcut, shortcutTarget;
+        CComPtr<IShellItem> server, shortcut, shortcutTarget, computer;
+        require(SUCCEEDED(SHGetKnownFolderItem(FOLDERID_ComputerFolder, KF_FLAG_DEFAULT, nullptr, IID_PPV_ARGS(&computer))),
+            "resolve real This PC item");
         require(SUCCEEDED(SHCreateItemFromParsingName(L"\\\\localhost", nullptr, IID_PPV_ARGS(&server))),
             "parse a real server root without enumerating shares");
         CComHeapPtr<ITEMIDLIST> serverID;
@@ -261,6 +264,8 @@ int wmain(int argc, wchar_t **argv) {
         put(HKEY_CLASSES_ROOT, L"Directory\\shell\\filespacer", nullptr, L"Open in FileSpacer");
         require(!settings::supportsDefaultBrowser(), "old installation needs the network verbs before claiming the default");
         fixtures();
+        const std::wstring manage = std::wstring(THIS_PC_SHELL) + L"\\Manage\\command";
+        put(HKEY_CLASSES_ROOT, manage, nullptr, L"native management command");
         require(settings::supportsDefaultBrowser(), "complete installation supports default file manager selection");
         for (int pass = 0; pass < 4; ++pass) {
             const bool explorer = (pass % 2) == 0;
@@ -268,7 +273,12 @@ int wmain(int argc, wchar_t **argv) {
             checkMenu(L"Directory", explorer); checkMenu(L"Directory", explorer, true);
             checkMenu(L"CompressedFolder", explorer); checkMenu(L"Drive", explorer);
             checkMenu(L"NetServer", explorer); checkMenu(L"NetShare", explorer);
-            checkServerDefault(shortcutTarget, explorer);
+            checkTargetDefault(shortcutTarget, explorer);
+            checkTargetDefault(computer, explorer);
+            require(read(HKEY_CLASSES_ROOT, manage) == L"native management command",
+                "This PC preserves its independent Manage command");
+            require(read(HKEY_CLASSES_ROOT, L"Folder\\shell\\open\\command") == L"native Explorer command",
+                "This PC activation leaves other virtual folders alone");
             require(read(HKEY_CLASSES_ROOT, L"Directory\\shell\\open\\command")
                 == (explorer ? L"original command" : L"native Explorer command"),
                 "switching the default changes and restores the base open command");
