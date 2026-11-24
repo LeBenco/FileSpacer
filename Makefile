@@ -48,6 +48,7 @@ OBJECTS = \
     $(OUTDIR)\DPI.obj \
     $(OUTDIR)\ExecuteCommand.obj \
     $(OUTDIR)\Everything.obj \
+    $(OUTDIR)\FolderOptionsDialog.obj \
     $(OUTDIR)\FolderWindow.obj \
     $(OUTDIR)\FolderWindowIconSnap.obj \
     $(OUTDIR)\FolderWindowMenus.obj \
