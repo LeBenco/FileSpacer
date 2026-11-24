@@ -83,10 +83,12 @@ void hideSection(HWND page, int firstID, int secondID, bool includeTop) {
         const int addedHeight = !includeTop && GetDlgCtrlID(child) == 30120 ? shift : 0;
         SetWindowPos(child, nullptr, origin.x, origin.y - shift,
             bounds.right - bounds.left, bounds.bottom - bounds.top + addedHeight,
-            SWP_NOACTIVATE | SWP_NOZORDER);
+            SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOCOPYBITS);
     }
     SetPropW(page, PAGE_LAYOUT, page); // Tab switches must not shift the layout again.
-
+    // Overlapping sibling group boxes must not copy old pixels over the labels.
+    // Repaint the complete page only after every control is at its final position.
+    RedrawWindow(page, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW);
 }
 
 void adaptPage(HWND page) {
