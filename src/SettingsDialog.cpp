@@ -970,12 +970,6 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             return FALSE;
         }
         case WM_COMMAND:
-            if (LOWORD(wParam) == IDC_EXPLORER_SETTINGS && HIWORD(wParam) == BN_CLICKED) {
-                // https://docs.microsoft.com/en-us/windows/win32/shell/executing-control-panel-items#folder-options
-                ShellExecute(nullptr, L"open",
-                    L"rundll32.exe", L"shell32.dll,Options_RunDLL 7", nullptr, SW_SHOWNORMAL);
-                return TRUE;
-            }
             if (LOWORD(wParam) == IDC_EVERYTHING_DETECT && HIWORD(wParam) == BN_CLICKED) {
                 const auto path = findEverything();
                 if (path.empty()) MessageBoxW(GetParent(hwnd), getString(IDS_EVERYTHING_NOT_FOUND),
