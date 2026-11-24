@@ -10,7 +10,9 @@
 #include <cstring>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace filespacer {
@@ -22,6 +24,10 @@ const wchar_t MENU_STATE_ID[] = L"{B6AE98A3-F59D-4F07-B5E8-CAD54DC5516C}";
 const GUID itemSignature = {0x3e07595c,0x9b09,0x45ba,{0xb8,0xe3,0x20,0x68,0x9d,0x72,0x91,0x2a}};
 HINSTANCE moduleInstance = nullptr;
 std::atomic<long> objects{0}, serverLocks{0};
+// FileSpacer has one view thread. The factory is called there, whereas the
+// Shell may recreate a Folder on an icon worker; its construction thread is
+// therefore not a reliable way to recognize the application's UI thread.
+std::atomic<DWORD> viewThread{0};
 // Per process and per class (shipped, test): the effective registration has
 // been checked, and written when needed, by CreateMixedFolderItem.
 std::atomic<bool> registrationVerified[2]{};
@@ -319,6 +325,152 @@ HRESULT decorateDropTarget(IIconDropPolicySite *site, PCUITEMID_CHILD id, void *
     return S_OK;
 }
 
+// Only background callers acquire a slot. Bound simultaneous customization
+// reads across views, including slow or unavailable shares.
+class ShareIconReadSlot {
+    HANDLE semaphore = nullptr; // Borrowed; this object owns one acquired slot.
+public:
+    ShareIconReadSlot() {
+        static const std::unique_ptr<void, decltype(&CloseHandle)> slots(
+            CreateSemaphoreW(nullptr, 4, 4, nullptr), &CloseHandle);
+        if (slots && WaitForSingleObject(slots.get(), INFINITE) == WAIT_OBJECT_0)
+            semaphore = slots.get();
+    }
+    ~ShareIconReadSlot() { if (semaphore) ReleaseSemaphore(semaphore, 1, nullptr); }
+    explicit operator bool() const { return semaphore != nullptr; }
+    ShareIconReadSlot(const ShareIconReadSlot &) = delete;
+    ShareIconReadSlot &operator=(const ShareIconReadSlot &) = delete;
+};
+
+// Shared only by icon extractors from one enumeration. No COM interface or
+// window is retained by the background work. A refresh creates new entries;
+// old requests can finish safely without publishing into the new enumeration.
+struct ShareIconLocation {
+    std::mutex mutex;
+    bool loaded = false;
+    std::wstring file;
+    int index = 0;
+
+    void load(const wchar_t *folder) {
+        if (loaded) return;
+        loaded = true; // Cache failures too, until the next enumeration.
+        ShareIconReadSlot slot;
+        if (!slot) return;
+        const DWORD attributes = GetFileAttributesW(folder);
+        if (attributes == INVALID_FILE_ATTRIBUTES || !(attributes & FILE_ATTRIBUTE_DIRECTORY)
+                || !(attributes & (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_SYSTEM))) return;
+        wchar_t ini[MAX_PATH], resource[MAX_PATH], expanded[MAX_PATH], absolute[MAX_PATH];
+        if (!PathCombineW(ini, folder, L"desktop.ini")) return;
+        const DWORD iniAttributes = GetFileAttributesW(ini);
+        if (iniAttributes == INVALID_FILE_ATTRIBUTES || (iniAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                || !(iniAttributes & FILE_ATTRIBUTE_HIDDEN) || !(iniAttributes & FILE_ATTRIBUTE_SYSTEM)) return;
+        // SHGetSetFolderCustomSettings can retain a stale Shell customization.
+        // Profile APIs read the current INI; the Shell parses the resource pair.
+        DWORD count = GetPrivateProfileStringW(L".ShellClassInfo", L"IconResource", L"",
+            resource, ARRAYSIZE(resource), ini);
+        if (count >= ARRAYSIZE(resource) - 1) return;
+        int resourceIndex = 0;
+        if (count) resourceIndex = PathParseIconLocationW(resource);
+        else {
+            count = GetPrivateProfileStringW(L".ShellClassInfo", L"IconFile", L"",
+                resource, ARRAYSIZE(resource), ini);
+            if (!count || count >= ARRAYSIZE(resource) - 1) return;
+            resourceIndex = static_cast<int>(GetPrivateProfileIntW(L".ShellClassInfo", L"IconIndex", 0, ini));
+        }
+        const DWORD length = ExpandEnvironmentStringsW(resource, expanded, ARRAYSIZE(expanded));
+        if (!length || length > ARRAYSIZE(expanded)) return;
+        if (PathIsRelativeW(expanded)) {
+            if (!PathCombineW(absolute, folder, expanded)) return;
+        } else if (FAILED(StringCchCopyW(absolute, ARRAYSIZE(absolute), expanded))) return;
+        const DWORD iconAttributes = GetFileAttributesW(absolute);
+        if (iconAttributes == INVALID_FILE_ATTRIBUTES || (iconAttributes & FILE_ATTRIBUTE_DIRECTORY)) return;
+        file = absolute;
+        index = resourceIndex;
+    }
+};
+
+class ShareIcon : public IExtractIconW {
+    LONG references = 1;
+    CComPtr<IUnknown> marshaler;
+    CComHeapPtr<ITEMIDLIST_ABSOLUTE> native;
+    std::wstring folder;
+    std::shared_ptr<ShareIconLocation> location;
+    DWORD ownerThread;
+
+    HRESULT nativeExtractor(IExtractIconW **out) const {
+        CComPtr<IShellFolder> parent;
+        PCUITEMID_CHILD child = nullptr;
+        HRESULT hr = SHBindToParent(native, IID_PPV_ARGS(&parent), &child);
+        return SUCCEEDED(hr) ? parent->GetUIObjectOf(nullptr, 1, &child, IID_IExtractIconW,
+            nullptr, reinterpret_cast<void **>(out)) : hr;
+    }
+public:
+    ShareIcon(PCIDLIST_ABSOLUTE id, const wchar_t *path,
+            std::shared_ptr<ShareIconLocation> cached, DWORD thread)
+        : folder(path), location(std::move(cached)), ownerThread(thread) {
+        native.Attach(ILCloneFull(id));
+        CoCreateFreeThreadedMarshaler(static_cast<IExtractIconW *>(this), &marshaler);
+        ++objects;
+    }
+    ~ShareIcon() { --objects; }
+    bool valid() const { return native != nullptr && marshaler != nullptr; }
+    STDMETHODIMP QueryInterface(REFIID iid, void **out) override {
+        if (!out) return E_POINTER;
+        *out = nullptr;
+        if (iid == IID_IMarshal && marshaler) return marshaler->QueryInterface(iid, out);
+        if (iid == IID_IUnknown || iid == IID_IExtractIconW) *out = static_cast<IExtractIconW *>(this);
+        else return E_NOINTERFACE;
+        AddRef(); return S_OK;
+    }
+    STDMETHODIMP_(ULONG) AddRef() override { return static_cast<ULONG>(InterlockedIncrement(&references)); }
+    STDMETHODIMP_(ULONG) Release() override {
+        const ULONG remaining = static_cast<ULONG>(InterlockedDecrement(&references));
+        if (!remaining) delete this;
+        return remaining;
+    }
+    STDMETHODIMP GetIconLocation(UINT flags, LPWSTR file, UINT count, int *index, UINT *outFlags) override {
+        if (!file || !count || !index || !outFlags) return E_POINTER;
+        file[0] = 0; *index = 0; *outFlags = 0;
+        // E_PENDING is the public Shell protocol for free-threaded extraction.
+        // Even a synchronous caller on the view thread must never start SMB I/O.
+        if (flags & GIL_DEFAULTICON) return S_FALSE;
+        if (flags & GIL_ASYNC) return E_PENDING;
+        if (!ownerThread || GetCurrentThreadId() == ownerThread) return S_FALSE;
+        try {
+            std::lock_guard<std::mutex> lock(location->mutex);
+            location->load(folder.c_str());
+            if (!location->file.empty()) {
+                const HRESULT hr = StringCchCopyW(file, count, location->file.c_str());
+                if (SUCCEEDED(hr)) *index = location->index;
+                return hr;
+            }
+        } catch (const std::bad_alloc &) { return E_OUTOFMEMORY; }
+        CComPtr<IExtractIconW> fallback;
+        const HRESULT hr = nativeExtractor(&fallback);
+        return SUCCEEDED(hr) ? fallback->GetIconLocation(flags, file, count, index, outFlags) : S_FALSE;
+    }
+    STDMETHODIMP Extract(LPCWSTR file, UINT index, HICON *large, HICON *smallIcon, UINT size) override {
+        if (large) *large = nullptr;
+        if (smallIcon) *smallIcon = nullptr;
+        if (!ownerThread || GetCurrentThreadId() == ownerThread) return S_FALSE;
+        ShareIconReadSlot slot;
+        if (!slot) return S_FALSE;
+        // The Shell owns the returned HICONs. Its public resource extractor
+        // also supports negative resource IDs and all requested icon sizes.
+        const HRESULT hr = SHDefExtractIconW(file, static_cast<int>(index), 0, large, smallIcon, size);
+        if (hr == S_OK) return hr;
+        CComPtr<IExtractIconW> fallback;
+        if (FAILED(nativeExtractor(&fallback))) return S_FALSE;
+        wchar_t nativeFile[MAX_PATH]; int nativeIndex = 0; UINT nativeFlags = 0;
+        if (fallback->GetIconLocation(0, nativeFile, ARRAYSIZE(nativeFile), &nativeIndex, &nativeFlags) != S_OK)
+            return S_FALSE;
+        return (nativeFlags & GIL_NOTFILENAME)
+            ? fallback->Extract(nativeFile, static_cast<UINT>(nativeIndex), large, smallIcon, size)
+            : SHDefExtractIconW(nativeFile, nativeIndex, 0, large, smallIcon, size);
+    }
+
+};
+
 class Folder : public IShellFolder2, public IPersistFolder2, public IMixedFolder, public IShellIcon, public IShellIconOverlay, public IIconDropPolicySite {
     LONG references = 1;
     CLSID clsid;
@@ -327,6 +479,8 @@ class Folder : public IShellFolder2, public IPersistFolder2, public IMixedFolder
     CComPtr<IShellIcon> sourceIcons;
     CComPtr<IShellIconOverlay> sourceOverlays;
     CComHeapPtr<ITEMIDLIST_ABSOLUTE> nativeRoot, viewRoot;
+    bool server = false;
+    std::unordered_map<std::wstring, std::shared_ptr<ShareIconLocation>> shareIcons;
     // Root (no source): our own first identifier, then native identifiers.
     // Wrapped folder: native identifiers relative to the native root.
     HRESULT nativeAbsolute(PCUIDLIST_RELATIVE id, PIDLIST_ABSOLUTE *out) {
@@ -356,7 +510,12 @@ public:
         nativeRoot.Attach(ILCloneFull(native)); viewRoot.Attach(ILCloneFull(shown));
         if (!nativeRoot || !viewRoot) return E_OUTOFMEMORY;
         const HRESULT hr = SHBindToObject(nullptr, nativeRoot, context, IID_PPV_ARGS(&source));
-        if (SUCCEEDED(hr)) { source->QueryInterface(IID_PPV_ARGS(&sourceIcons)); source->QueryInterface(IID_PPV_ARGS(&sourceOverlays)); }
+        if (SUCCEEDED(hr)) {
+            source->QueryInterface(IID_PPV_ARGS(&sourceIcons)); source->QueryInterface(IID_PPV_ARGS(&sourceOverlays));
+            CComHeapPtr<wchar_t> name;
+            server = SUCCEEDED(SHGetNameFromIDList(nativeRoot, SIGDN_DESKTOPABSOLUTEPARSING, &name))
+                && PathIsUNCServerW(name);
+        }
         return hr;
     }
     STDMETHODIMP QueryInterface(REFIID iid, void **out) override {
@@ -399,6 +558,7 @@ public:
     STDMETHODIMP GetIconOf(PCUITEMID_CHILD child, UINT flags, int *index) override {
         if (!child || !index) return E_POINTER;
         *index = -1;
+        if (server) return S_FALSE; // Ask IExtractIconW instead of the generic share image.
         return sourceIcons ? sourceIcons->GetIconOf(child, flags, index) : S_FALSE;
     }
     // The Shell asks the folder for overlays before drawing each icon; without
@@ -423,6 +583,7 @@ public:
     }
     STDMETHODIMP EnumObjects(HWND hwnd, SHCONTF flags, IEnumIDList **out) override {
         if (!out) return E_POINTER; *out = nullptr;
+        shareIcons.clear();
         return source ? source->EnumObjects(hwnd, flags, out) : S_FALSE;
     }
     STDMETHODIMP BindToObject(PCUIDLIST_RELATIVE id, IBindCtx *context, REFIID iid, void **out) override {
@@ -448,7 +609,7 @@ public:
         const ULONG_PTR rule = static_cast<ULONG_PTR>(flags);
         // Identity comparisons and multi-level identifiers keep the native order;
         // a column comparison of two children is the value comparison, folders included.
-        if ((rule & static_cast<ULONG_PTR>(SHCIDS_CANONICALONLY | SHCIDS_ALLFIELDS))
+        if (server || (rule & static_cast<ULONG_PTR>(SHCIDS_CANONICALONLY | SHCIDS_ALLFIELDS))
                 || !ILIsChild(left) || !ILIsChild(right))
             return source->CompareIDs(flags, left, right);
         SHCOLUMNID key = {};
@@ -503,6 +664,23 @@ public:
     STDMETHODIMP GetUIObjectOf(HWND hwnd, UINT count, PCUITEMID_CHILD_ARRAY ids, REFIID iid, UINT *reserved, void **out) override {
         if (!out) return E_POINTER; *out = nullptr;
         if (count && !ids) return E_POINTER;
+        if (server && count == 1 && iid == IID_IExtractIconW) {
+            CComHeapPtr<ITEMIDLIST_ABSOLUTE> absolute;
+            CComHeapPtr<wchar_t> path;
+            HRESULT hr = nativeAbsolute(ids[0], &absolute);
+            if (SUCCEEDED(hr)) hr = SHGetNameFromIDList(absolute, SIGDN_FILESYSPATH, &path);
+            if (SUCCEEDED(hr) && PathIsUNCServerShareW(path)) {
+                try {
+                    auto &cached = shareIcons[std::wstring(path)];
+                    if (!cached) cached = std::make_shared<ShareIconLocation>();
+                    auto *icon = new(std::nothrow) ShareIcon(absolute, path, cached, viewThread.load());
+                    if (!icon) return E_OUTOFMEMORY;
+                    hr = icon->valid() ? icon->QueryInterface(iid, out) : E_OUTOFMEMORY;
+                    icon->Release();
+                    return hr;
+                } catch (const std::bad_alloc &) { return E_OUTOFMEMORY; }
+            }
+        }
         if (!source) {
             if (count != 1 || !ids) return E_NOINTERFACE;
             CComHeapPtr<ITEMIDLIST_ABSOLUTE> absolute;
@@ -534,7 +712,7 @@ public:
     STDMETHODIMP GetDefaultColumnState(UINT column, SHCOLSTATEF *out) override {
         if (!source) return E_NOTIMPL;
         const HRESULT hr = source->GetDefaultColumnState(column, out);
-        if (SUCCEEDED(hr)) {
+        if (SUCCEEDED(hr) && !server) {
             // Folders and files are interleaved on every column. The folder's
             // own CompareIDs serves the columns carried by the item identifiers;
             // a slow column (handler-served values such as Dimensions) keeps
@@ -699,6 +877,8 @@ extern "C" HRESULT WINAPI DllInstall(BOOL install, PCWSTR commandLine) {
 
 extern "C" HRESULT WINAPI CreateMixedFolderItem(BOOL isolated, IShellItem *item, IShellItem **out) {
     if (!item || !out) return E_POINTER; *out = nullptr;
+    DWORD unset = 0;
+    viewThread.compare_exchange_strong(unset, GetCurrentThreadId());
     const CLSID &clsid = isolated ? testProviderClass : providerClass;
     wchar_t id[40], path[MAX_PATH], parsing[MAX_PATH];
     if (!StringFromGUID2(clsid, id, ARRAYSIZE(id))) return E_FAIL;

@@ -533,6 +533,17 @@ void FolderWindow::ViewMenuPreview::finish(UINT command) {
         }
         window.viewMenuPreview.reset();
         if (settled && (chosenCommand || pendingChanged)) window.scheduleStateSave();
+        if (pendingChanged && isPlacementCommand(command) && current() && window.enumerationComplete) {
+            // Returning to free placement replays positions in scheduleStateSave.
+            // Restore the captured selection after that layout work, without
+            // replaying the old placement or presentation settings.
+            auto selection = initial.selection;
+            auto valid = [&]() { return current(); };
+            ++window.navigationDepth;
+            checkHR(restoreReopenSelection(source, selection, valid, &window.selectionClear));
+            window.resumeDeferredClose();
+            if (!current()) return;
+        }
         // A preference changed while the menu was open: synchronized now that
         // it is closed, unless a refill still running replays it on completion.
         if (!window.viewMenuRestore) {

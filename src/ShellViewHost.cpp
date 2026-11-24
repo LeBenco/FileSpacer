@@ -285,17 +285,20 @@ HRESULT ShellViewHost::navigate(IShellItem *item, bool mixFolders, bool isolated
     mixedSorting = mixFolders;
     CComPtr<IShellItem> target = item;
     bool custom = false;
+    CComHeapPtr<wchar_t> parsingName;
+    const bool server = SUCCEEDED(item->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &parsingName))
+        && PathIsUNCServerW(parsingName);
 #ifdef FILESPACER_DEBUG
     if (mixFolders && (processElevated() || mixedProviderDisabled.load()))
         reportNativeFallback(processElevated(), isolated);
 #endif
-    if (mixFolders && !processElevated() && !mixedProviderDisabled.load()) {
+    if ((mixFolders || server) && !processElevated() && !mixedProviderDisabled.load()) {
         SFGAOF attributes = 0;
         const SFGAOF required = SFGAO_FOLDER | SFGAO_FILESYSTEM;
         HRESULT hr = item->GetAttributes(required | SFGAO_STREAM, &attributes);
         if (FAILED(hr)) return hr;
         // Virtual providers and archives retain their own native view contract.
-        if ((attributes & required) == required && !(attributes & SFGAO_STREAM)) {
+        if (server || ((attributes & required) == required && !(attributes & SFGAO_STREAM))) {
             // The Desktop (empty PIDL) merges virtual entries into its filesystem
             // folder; only the native view keeps their exclusions (ShouldShow).
             CComHeapPtr<ITEMIDLIST_ABSOLUTE> id;
