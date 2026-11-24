@@ -6,6 +6,9 @@
 #include <shlobj.h>
 #include <objbase.h>
 #include <dwmapi.h>
+#include <atlbase.h>
+#include <oleacc.h>
+#include <shlwapi.h>
 #include <algorithm>
 #include <climits>
 #include <memory>
@@ -17,11 +20,14 @@ namespace {
 // Experimental adaptation of the Windows Folder Options dialog. These resource
 // and control IDs belong to shell32, not to a documented Windows UI contract.
 // Check classes and containment before hiding anything; unknown layouts retain
-// the unmodified native UI. No registry setting is read or written here.
+// the unmodified native UI. Only the machine's option definitions are read;
+// user settings are neither read nor written by this adapter.
 constexpr UINT GENERAL_PAGE = 29959;
+constexpr UINT GENERAL_PAGE_NEW = 29968;
 constexpr UINT VIEW_PAGE = 29960;
 constexpr UINT SEARCH_PAGE = 29961;
 const wchar_t PAGE_LAYOUT[] = L"FileSpacer.FolderOptions.Layout";
+const wchar_t ADVANCED_FILTER[] = L"FileSpacer.FolderOptions.Advanced";
 HWND optionsSheet = nullptr;
 DWORD explorerProcess = 0;
 std::vector<HWND> previousSheets;
@@ -36,6 +42,152 @@ bool hasClass(HWND window, const wchar_t *expected) {
 bool contains(const RECT &outer, const RECT &inner) {
     return inner.left >= outer.left && inner.right <= outer.right
         && inner.top >= outer.top && inner.bottom <= outer.bottom;
+}
+
+std::wstring optionText(HKEY key, const wchar_t *value) {
+    wchar_t text[2048] = {};
+    DWORD size = sizeof(text);
+    if (RegGetValueW(key, nullptr, value, RRF_RT_REG_SZ, nullptr, text, &size) != ERROR_SUCCESS)
+        return {};
+    return text;
+}
+
+// A group may be removed only when all its immediate options belong to the
+// same setting family. Moving a navigation option into a larger group in a
+// future Windows version must not hide that larger group.
+bool isAdvancedGroup(HKEY key, bool navigation) {
+    DWORD count = 0;
+    bool hasNavigationSetting = false;
+    for (DWORD index = 0;; ++index) {
+        wchar_t name[256] = {};
+        DWORD length = ARRAYSIZE(name);
+        const LSTATUS result = RegEnumKeyExW(key, index, name, &length, nullptr, nullptr, nullptr, nullptr);
+        if (result == ERROR_NO_MORE_ITEMS) return count >= 2 && (!navigation || hasNavigationSetting);
+        if (result != ERROR_SUCCESS) return false;
+        CRegKey child;
+        if (child.Open(key, name, KEY_READ) != ERROR_SUCCESS) return false;
+        const auto type = optionText(child, L"Type");
+        if (navigation && type == L"checkbox") {
+            // Windows 11 routes the Network and This PC options through
+            // handlers instead of a direct registry destination.
+            const auto handler = optionText(child, L"CLSID");
+            if (lstrcmpiW(handler.c_str(), L"{726bd46b-a435-43e0-a054-1a11ad3af044}") == 0
+                    || lstrcmpiW(handler.c_str(), L"{ecf2dcaa-e718-4e0c-b5eb-3be48efc4d5a}") == 0) {
+                ++count;
+                continue;
+            }
+        }
+        const auto path = optionText(child, L"RegPath"), value = optionText(child, L"ValueName");
+        DWORD root = 0, size = sizeof(root);
+        if (RegGetValueW(child, nullptr, L"HKeyRoot", RRF_RT_REG_DWORD, nullptr, &root, &size)
+                != ERROR_SUCCESS || root != 0x80000001u) return false;
+        const bool advanced = lstrcmpiW(path.c_str(),
+            L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced") == 0;
+        if (!navigation) {
+            if (!advanced || lstrcmpiW(value.c_str(), L"TypeAhead") != 0
+                    || type != L"radio") return false;
+        } else if (type != L"checkbox"
+                || !((advanced && _wcsnicmp(value.c_str(), L"NavPane", 7) == 0)
+                    || (lstrcmpiW(path.c_str(), L"Software\\Classes\\CLSID\\{031E4825-7B94-4dc3-B131-E946B44C8DD5}") == 0
+                        && lstrcmpiW(value.c_str(), L"System.IsPinnedToNameSpaceTree") == 0))) return false;
+        if (navigation && advanced && lstrcmpiW(value.c_str(), L"NavPaneExpandToCurrentFolder") == 0)
+            hasNavigationSetting = true;
+        ++count;
+    }
+}
+
+// Match the setting's destination, not a translated label, a resource number,
+// or the definition's subkey name. The definition schema is still a Shell
+// implementation detail; an unknown destination remains in the native tree.
+void findAdvancedLabels(HKEY key, std::vector<std::wstring> &labels, unsigned depth = 0) {
+    if (depth > 8) return;
+    const auto type = optionText(key, L"Type");
+    const auto path = optionText(key, L"RegPath");
+    const auto value = optionText(key, L"ValueName");
+    wchar_t text[2048] = {};
+    const auto source = optionText(key, L"Text");
+    const bool hasLabel = !source.empty()
+        && SUCCEEDED(SHLoadIndirectString(source.c_str(), text, ARRAYSIZE(text), nullptr));
+    DWORD root = 0, size = sizeof(root);
+    bool remove = hasLabel && type == L"group"
+        && (isAdvancedGroup(key, false) || isAdvancedGroup(key, true));
+    if (hasLabel && type == L"checkbox" && RegGetValueW(key, nullptr, L"HKeyRoot", RRF_RT_REG_DWORD,
+            nullptr, &root, &size) == ERROR_SUCCESS && root == 0x80000001u) {
+        const bool advanced = lstrcmpiW(path.c_str(),
+            L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced") == 0;
+        remove = (advanced && (lstrcmpiW(value.c_str(), L"ShowStatusBar") == 0
+            || lstrcmpiW(value.c_str(), L"ShowPreviewHandlers") == 0
+            || lstrcmpiW(value.c_str(), L"SeparateProcess") == 0
+            || lstrcmpiW(value.c_str(), L"AlwaysShowMenus") == 0
+            || lstrcmpiW(value.c_str(), L"AutoCheckSelect") == 0
+            || lstrcmpiW(value.c_str(), L"IconsOnly") == 0
+            || lstrcmpiW(value.c_str(), L"ShowSyncProviderNotifications") == 0
+            || lstrcmpiW(value.c_str(), L"PersistBrowsers") == 0))
+            || (lstrcmpiW(path.c_str(), L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\CabinetState") == 0
+                && lstrcmpiW(value.c_str(), L"FullPath") == 0);
+    }
+    if (remove && *text && std::find(labels.begin(), labels.end(), text) == labels.end())
+        labels.emplace_back(text);
+    for (DWORD index = 0;; ++index) {
+        wchar_t name[256] = {};
+        DWORD length = ARRAYSIZE(name);
+        const LSTATUS result = RegEnumKeyExW(key, index, name, &length, nullptr, nullptr, nullptr, nullptr);
+        if (result == ERROR_NO_MORE_ITEMS) break;
+        if (result != ERROR_SUCCESS) return;
+        CRegKey child;
+        if (child.Open(key, name, KEY_READ) == ERROR_SUCCESS)
+            findAdvancedLabels(child, labels, depth + 1);
+    }
+}
+
+struct AdvancedItem { HTREEITEM item; std::wstring label; };
+
+bool readAdvancedItems(HWND tree, IAccessible *accessible, HTREEITEM item,
+        std::vector<AdvancedItem> &items, unsigned depth = 0) {
+    if (depth > 8) return false;
+    for (; item; item = TreeView_GetNextSibling(tree, item)) {
+        if (items.size() >= 512 || optionsClosed || !IsWindow(tree)) return false;
+        const UINT id = TreeView_MapHTREEITEMToAccID(tree, item);
+        CComBSTR name;
+        if (!id || FAILED(accessible->get_accName(CComVariant(static_cast<LONG>(id)), &name))
+                || !name) return false;
+        items.push_back({item, std::wstring(name, name.Length())});
+        if (!readAdvancedItems(tree, accessible, TreeView_GetChild(tree, item), items, depth + 1))
+            return false;
+    }
+    return true;
+}
+
+void filterAdvancedOptions(HWND tree) {
+    if (GetPropW(tree, ADVANCED_FILTER)) return;
+    CRegKey definitions;
+    if (definitions.Open(HKEY_LOCAL_MACHINE,
+            L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", KEY_READ) != ERROR_SUCCESS) return;
+    std::vector<std::wstring> labels;
+    findAdvancedLabels(definitions, labels);
+    if (labels.empty() || !TreeView_GetRoot(tree)) return;
+    // COM can pump WinEvents. Mark this tree before crossing that boundary.
+    if (!SetPropW(tree, ADVANCED_FILTER, optionsSheet)) return;
+    CComPtr<IAccessible> accessible;
+    std::vector<AdvancedItem> items;
+    if (FAILED(AccessibleObjectFromWindow(tree, static_cast<DWORD>(OBJID_CLIENT), IID_PPV_ARGS(&accessible)))
+            || !accessible || !readAdvancedItems(tree, accessible, TreeView_GetRoot(tree), items)) {
+        RemovePropW(tree, ADVANCED_FILTER);
+        return;
+    }
+    // Accessibility exposes the Windows label, but no setting/action ID. Use
+    // the labels resolved above only when each identifies exactly one row.
+    // Public tree messages carry handles/integers, never remote pointers or
+    // private Shell data. Deleting a group also removes all of its children.
+    for (const auto &label : labels) {
+        HTREEITEM match = nullptr;
+        size_t count = 0;
+        for (const auto &item : items) if (item.label == label) { match = item.item; ++count; }
+        if (count == 1 && !optionsClosed && GetAncestor(tree, GA_ROOT) == optionsSheet)
+            TreeView_DeleteItem(tree, match);
+    }
+    if (!optionsClosed && GetAncestor(tree, GA_ROOT) == optionsSheet)
+        SetPropW(tree, ADVANCED_FILTER, tree);
 }
 
 // Group boxes and their contents are siblings, not parent and children.
@@ -99,8 +251,14 @@ void adaptPage(HWND page) {
     if (GetParent(page) != optionsSheet) return;
     if (GetDlgItem(page, 30100) && GetDlgItem(page, 30101))
         hideSection(page, 30100, 30101, true);
-    else if (hasClass(GetDlgItem(page, 30120), WC_TREEVIEWW))
+    else if (hasClass(GetDlgItem(page, 30120), WC_TREEVIEWW)) {
         hideSection(page, 30122, 30123, false);
+        filterAdvancedOptions(GetDlgItem(page, 30120));
+    }
+}
+
+bool isGeneralPage(UINT_PTR id) {
+    return id == GENERAL_PAGE || id == GENERAL_PAGE_NEW;
 }
 
 void removeSearchPage(HWND sheet) {
@@ -108,7 +266,7 @@ void removeSearchPage(HWND sheet) {
     if (!hasClass(tabs, WC_TABCONTROLW)) return;
     const int count = TabCtrl_GetItemCount(tabs);
     // Do not assume the third tab is Search: verify all three resource IDs.
-    if (count == 3 && PropSheet_IndexToId(sheet, 0) == GENERAL_PAGE
+    if (count == 3 && isGeneralPage(PropSheet_IndexToId(sheet, 0))
             && PropSheet_IndexToId(sheet, 1) == VIEW_PAGE
             && PropSheet_IndexToId(sheet, 2) == SEARCH_PAGE)
         PropSheet_RemovePage(sheet, 2, nullptr);
@@ -126,7 +284,7 @@ bool isOptionsSheet(HWND window) {
     if (!hasClass(tabs, WC_TABCONTROLW)) return false;
     const int count = TabCtrl_GetItemCount(tabs);
     return (count == 2 || count == 3)
-        && PropSheet_IndexToId(window, 0) == GENERAL_PAGE
+        && isGeneralPage(PropSheet_IndexToId(window, 0))
         && PropSheet_IndexToId(window, 1) == VIEW_PAGE;
 }
 
