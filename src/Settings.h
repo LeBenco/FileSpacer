@@ -143,9 +143,10 @@ struct DefaultBrowserResult {
     LSTATUS drive;
     LSTATUS networkServer;
     LSTATUS networkShare;
+    LSTATUS computerFolder;
     LSTATUS status() const {
         return directory ? directory : compressedFolder ? compressedFolder : drive ? drive
-            : networkServer ? networkServer : networkShare;
+            : networkServer ? networkServer : networkShare ? networkShare : computerFolder;
     }
 };
 DefaultBrowserResult setDefaultBrowser(bool value);

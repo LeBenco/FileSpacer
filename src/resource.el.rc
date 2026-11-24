@@ -139,6 +139,7 @@ STRINGTABLE {
     IDS_BROWSER_DRIVE, "Μονάδες δίσκου"
     IDS_BROWSER_NETWORK_SERVER, "Διακομιστές δικτύου"
     IDS_BROWSER_NETWORK_SHARE, "Κοινόχρηστοι πόροι δικτύου"
+    IDS_BROWSER_COMPUTER_FOLDER, "Αυτός ο υπολογιστής"
     IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (σφάλμα %2!lu!)"
     IDS_BROWSER_ASSOCIATIONS_FAILED, "Δεν ήταν δυνατή η αλλαγή των ακόλουθων συσχετίσεων:\n\n%1\n\nΟι επιτυχημένες αλλαγές διατηρήθηκαν."
     IDS_BROWSER_SET,        "Το FileSpacer ορίστηκε ως προεπιλεγμένη εφαρμογή διαχείρισης αρχείων. Μπορείτε να αναιρέσετε την αλλαγή στις ρυθμίσεις του FileSpacer."

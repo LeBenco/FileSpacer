@@ -139,6 +139,7 @@ STRINGTABLE {
     IDS_BROWSER_DRIVE, "Lecteurs"
     IDS_BROWSER_NETWORK_SERVER, "Serveurs réseau"
     IDS_BROWSER_NETWORK_SHARE, "Partages réseau"
+    IDS_BROWSER_COMPUTER_FOLDER, "Ce PC"
     IDS_BROWSER_ASSOCIATION_ERROR, "%1 : %3 (erreur %2!lu!)"
     IDS_BROWSER_ASSOCIATIONS_FAILED, "Les associations suivantes n’ont pas pu être modifiées :\n\n%1\n\nToute modification réussie a été conservée."
     IDS_BROWSER_SET,        "FileSpacer est désormais votre explorateur de fichiers par défaut. Vous pouvez annuler ce changement dans les paramètres de FileSpacer."

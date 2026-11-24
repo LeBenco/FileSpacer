@@ -139,6 +139,7 @@ STRINGTABLE {
     IDS_BROWSER_DRIVE, "Drives"
     IDS_BROWSER_NETWORK_SERVER, "Network servers"
     IDS_BROWSER_NETWORK_SHARE, "Network shares"
+    IDS_BROWSER_COMPUTER_FOLDER, "This PC"
     IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (error %2!lu!)"
     IDS_BROWSER_ASSOCIATIONS_FAILED, "The following associations could not be changed:\n\n%1\n\nAny successful changes have been kept."
     IDS_BROWSER_SET,        "FileSpacer has been set as your default browser. You can revert this change in FileSpacer settings."

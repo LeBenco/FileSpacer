@@ -139,6 +139,7 @@ STRINGTABLE {
     IDS_BROWSER_DRIVE, "Laufwerke"
     IDS_BROWSER_NETWORK_SERVER, "Netzwerkserver"
     IDS_BROWSER_NETWORK_SHARE, "Netzwerkfreigaben"
+    IDS_BROWSER_COMPUTER_FOLDER, "Dieser PC"
     IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (Fehler %2!lu!)"
     IDS_BROWSER_ASSOCIATIONS_FAILED, "Die folgenden Zuordnungen konnten nicht geändert werden:\n\n%1\n\nErfolgreiche Änderungen bleiben erhalten."
     IDS_BROWSER_SET,        "FileSpacer wurde als Standard-Dateibrowser festgelegt. Sie können dies in den FileSpacer-Einstellungen rückgängig machen."

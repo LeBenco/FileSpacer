@@ -139,6 +139,7 @@ STRINGTABLE {
     IDS_BROWSER_DRIVE, "Диски"
     IDS_BROWSER_NETWORK_SERVER, "Мережеві сервери"
     IDS_BROWSER_NETWORK_SHARE, "Мережеві спільні ресурси"
+    IDS_BROWSER_COMPUTER_FOLDER, "Цей ПК"
     IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (помилка %2!lu!)"
     IDS_BROWSER_ASSOCIATIONS_FAILED, "Не вдалося змінити такі зіставлення:\n\n%1\n\nУспішні зміни збережено."
     IDS_BROWSER_SET,        "FileSpacer встановлено як файловий менеджер за замовчуванням. Цю зміну можна скасувати в настройках FileSpacer."

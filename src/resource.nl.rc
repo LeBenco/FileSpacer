@@ -139,6 +139,7 @@ STRINGTABLE {
     IDS_BROWSER_DRIVE, "Stations"
     IDS_BROWSER_NETWORK_SERVER, "Netwerkservers"
     IDS_BROWSER_NETWORK_SHARE, "Netwerkshares"
+    IDS_BROWSER_COMPUTER_FOLDER, "Deze pc"
     IDS_BROWSER_ASSOCIATION_ERROR, "%1: %3 (fout %2!lu!)"
     IDS_BROWSER_ASSOCIATIONS_FAILED, "De volgende koppelingen konden niet worden gewijzigd:\n\n%1\n\nGeslaagde wijzigingen zijn behouden."
     IDS_BROWSER_SET,        "FileSpacer is ingesteld als standaardbestandsbeheerder. U kunt dit ongedaan maken in de instellingen van FileSpacer."
