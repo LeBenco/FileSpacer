@@ -106,7 +106,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "", IDC_FOLDER_WINDOW_HEIGHT, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 251, 305, 35, 14
 }
 
-IDD_SETTINGS_BROWSER DIALOGEX DISCARDABLE 0, 0, 300, 348
+IDD_SETTINGS_BROWSER DIALOGEX DISCARDABLE 0, 0, 300, 308
 STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
 CAPTION "Intégration"
 FONT 8, "MS Shell Dlg", 400, 0, 0
@@ -124,14 +124,11 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   PUSHBUTTON "&Parcourir...", IDC_EVERYTHING_BROWSE, 111, 166, 90, 14
   LTEXT "Portée", -1, 14, 188, 70, 9
   COMBOBOX IDC_EVERYTHING_SCOPE, 88, 185, 198, 60, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
-  CONTROL "Options de l’Explorateur de fichiers", -1, "Button", BS_GROUPBOX, 7, 213, 286, 35
-  CONTROL "Certaines options de l’Explorateur de fichiers s’appliquent aussi aux fenêtres de dossiers de FileSpacer.", -1, "Static", WS_GROUP, 14, 224, 210, 16
-  CONTROL "&Options...", IDC_EXPLORER_SETTINGS, "Button", WS_TABSTOP, 231, 224, 55, 14
-  GROUPBOX "PowerToys Peek", -1, 7, 253, 286, 51
-  CONTROL "&Aperçu avec Espace", IDC_PEEK_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 265, 272, 12
-  CONTROL "(Peek doit aussi être activé dans <a>PowerToys</a>)", IDC_PEEK_SETTINGS, "SysLink", WS_TABSTOP, 26, 281, 260, 20
-  GROUPBOX "Gros dossiers", -1, 7, 309, 286, 34
-  CONTROL "Télécharger les &symboles Microsoft pour accélérer la gestion des gros dossiers", IDC_SELECTION_SYMBOLS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 320, 272, 18
+  GROUPBOX "PowerToys Peek", -1, 7, 213, 286, 51
+  CONTROL "&Aperçu avec Espace", IDC_PEEK_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 225, 272, 12
+  CONTROL "(Peek doit aussi être activé dans <a>PowerToys</a>)", IDC_PEEK_SETTINGS, "SysLink", WS_TABSTOP, 26, 241, 260, 20
+  GROUPBOX "Gros dossiers", -1, 7, 269, 286, 34
+  CONTROL "Télécharger les &symboles Microsoft pour accélérer la gestion des gros dossiers", IDC_SELECTION_SYMBOLS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 280, 272, 18
 }
 
 IDD_SETTINGS_ABOUT DIALOGEX DISCARDABLE 0, 0, 300, 277

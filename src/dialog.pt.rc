@@ -108,7 +108,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "", IDC_FOLDER_WINDOW_HEIGHT, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 251, 305, 35, 14
 }
 
-IDD_SETTINGS_BROWSER DIALOGEX DISCARDABLE 0, 0, 300, 348
+IDD_SETTINGS_BROWSER DIALOGEX DISCARDABLE 0, 0, 300, 308
 STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
 CAPTION "Integração"
 FONT 8, "MS Shell Dlg", 400, 0, 0
@@ -126,14 +126,11 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   PUSHBUTTON "&Procurar...", IDC_EVERYTHING_BROWSE, 111, 166, 90, 14
   LTEXT "Âmbito da pesquisa", -1, 14, 188, 70, 9
   COMBOBOX IDC_EVERYTHING_SCOPE, 88, 185, 198, 60, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
-  CONTROL "Opções do Explorador de Ficheiros", -1, "Button", BS_GROUPBOX, 7, 213, 286, 35
-  CONTROL "Algumas opções do Explorador de Ficheiros também afetam o FileSpacer.", -1, "Static", WS_GROUP, 14, 224, 210, 16
-  CONTROL "&Opções...", IDC_EXPLORER_SETTINGS, "Button", WS_TABSTOP, 231, 224, 55, 14
-  GROUPBOX "PowerToys Peek", -1, 7, 253, 286, 51
-  CONTROL "Pré-&visualização com Espaço", IDC_PEEK_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 265, 272, 12
-  CONTROL "(O Peek também tem de estar ativo no <a>PowerToys</a>)", IDC_PEEK_SETTINGS, "SysLink", WS_TABSTOP, 26, 281, 260, 20
-  GROUPBOX "Pastas grandes", -1, 7, 309, 286, 34
-  CONTROL "Transferir símbolos da &Microsoft para acelerar a gestão de pastas grandes", IDC_SELECTION_SYMBOLS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 320, 272, 18
+  GROUPBOX "PowerToys Peek", -1, 7, 213, 286, 51
+  CONTROL "Pré-&visualização com Espaço", IDC_PEEK_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 225, 272, 12
+  CONTROL "(O Peek também tem de estar ativo no <a>PowerToys</a>)", IDC_PEEK_SETTINGS, "SysLink", WS_TABSTOP, 26, 241, 260, 20
+  GROUPBOX "Pastas grandes", -1, 7, 269, 286, 34
+  CONTROL "Transferir símbolos da &Microsoft para acelerar a gestão de pastas grandes", IDC_SELECTION_SYMBOLS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 280, 272, 18
 }
 
 IDD_SETTINGS_ABOUT DIALOGEX DISCARDABLE 0, 0, 300, 277
