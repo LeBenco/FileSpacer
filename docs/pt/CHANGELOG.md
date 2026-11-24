@@ -7,6 +7,7 @@
 ## 1.5.3
 
 - Permitir que as regras do Nilesoft Shell se apliquem ao menu Ver separadamente do menu da aplicação na barra de ferramentas.
+- Suportar ícones personalizados para partilhas de rede através do formato padrão `desktop.ini` do Windows.
 
 <a id="152"></a>
 

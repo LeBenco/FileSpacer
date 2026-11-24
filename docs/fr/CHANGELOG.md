@@ -7,6 +7,7 @@
 ## 1.5.3
 
 - Permettre aux règles Nilesoft Shell de cibler le menu Affichage séparément du menu de l’application dans la barre d’outils.
+- Prendre en charge les icônes personnalisées des partages réseau au format standard Windows `desktop.ini`.
 
 <a id="152"></a>
 

@@ -7,6 +7,7 @@
 ## 1.5.3
 
 - Consentire alle regole di Nilesoft Shell di agire sul menu Visualizza separatamente dal menu dell’applicazione nella barra degli strumenti.
+- Supportare le icone personalizzate delle condivisioni di rete tramite il formato standard `desktop.ini` di Windows.
 
 <a id="152"></a>
 

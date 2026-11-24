@@ -7,6 +7,7 @@
 ## 1.5.3
 
 - Nilesoft Shell-regels kunnen het menu Beeld afzonderlijk van het toepassingsmenu op de werkbalk aanspreken.
+- Aangepaste pictogrammen voor gedeelde netwerkmappen ondersteunen via de standaard Windows-indeling `desktop.ini`.
 
 <a id="152"></a>
 

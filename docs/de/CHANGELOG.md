@@ -7,6 +7,7 @@
 ## 1.5.3
 
 - Nilesoft-Shell-Regeln können das Menü Ansicht unabhängig vom Anwendungsmenü der Symbolleiste ansprechen.
+- Benutzerdefinierte Symbole für Netzwerkfreigaben im Windows-Standardformat `desktop.ini` unterstützen.
 
 <a id="152"></a>
 

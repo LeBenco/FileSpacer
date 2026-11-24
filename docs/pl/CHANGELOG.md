@@ -7,6 +7,7 @@
 ## 1.5.3
 
 - Umożliwić regułom Nilesoft Shell oddzielne kierowanie do menu Widok i menu aplikacji na pasku narzędzi.
+- Obsługa niestandardowych ikon udziałów sieciowych za pomocą standardowego pliku `desktop.ini` systemu Windows.
 
 <a id="152"></a>
 
