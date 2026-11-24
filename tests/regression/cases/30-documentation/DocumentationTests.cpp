@@ -107,7 +107,9 @@ int wmain(int argc, wchar_t **argv) {
         HGLOBAL data = LoadResource(nullptr, resource);
         HMENU menu = LoadMenuIndirectW(static_cast<const MENUTEMPLATEW *>(LockResource(data)));
         require(menu != nullptr, "translated application menu");
-        require(GetMenuItemID(menu, 0) == IDM_HELP && GetMenuItemID(menu, 1) == IDM_SETTINGS, "documentation immediately precedes settings");
+        require(GetMenuItemCount(menu) == 3 && GetMenuItemID(menu, 0) == IDM_HELP
+            && GetMenuItemID(menu, 1) == IDM_FOLDER_OPTIONS && GetMenuItemID(menu, 2) == IDM_SETTINGS,
+            "application menu shows documentation, folder options and FileSpacer settings in order");
         require(DestroyMenu(menu) != FALSE, "release test menu");
     }
     HACCEL shortcuts = LoadAcceleratorsW(nullptr, MAKEINTRESOURCEW(IDR_ITEM_ACCEL));
