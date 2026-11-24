@@ -7,6 +7,7 @@
 ## 1.5.3
 
 - Allow Nilesoft Shell rules to target the View menu separately from the toolbar application menu.
+- Open Windows Folder Options from the toolbar menu with options filtered for FileSpacer, and refresh open folder windows when changes are applied.
 
 <a id="152"></a>
 
