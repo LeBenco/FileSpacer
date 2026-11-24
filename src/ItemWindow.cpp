@@ -13,6 +13,7 @@
 #include "ShellUtils.h"
 #include "Settings.h"
 #include "SettingsDialog.h"
+#include "FolderOptionsDialog.h"
 #include "WindowPlacement.h"
 #include "DPI.h"
 #include "UIStrings.h"
@@ -1607,6 +1608,9 @@ bool ItemWindow::onCommand(WORD command) {
             openDocumentation(hwnd);
             return true;
         }
+        case IDM_FOLDER_OPTIONS:
+            openFolderOptionsDialog(hwnd);
+            return true;
         case IDM_SETTINGS: {
             // Maintenance can close this window during the modal dialog.
             CComPtr<ItemWindow> keepAlive(this);
