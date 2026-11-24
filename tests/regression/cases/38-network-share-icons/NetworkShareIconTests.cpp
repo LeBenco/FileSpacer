@@ -2,6 +2,7 @@
 // Exercise the production extractor without a machine-specific SMB server or
 // registration. The local fixture uses the same Shell customization contract.
 #include "MixedFolderProvider.cpp"
+#include <shellapi.h>
 #include <cstdio>
 #include <future>
 #include <stdexcept>
@@ -33,6 +34,19 @@ void run(const wchar_t *directory, const wchar_t *icon) {
     filespacer::ShareIconLocation legacy;
     legacy.load(folder.c_str());
     require(legacy.file == resource && legacy.index == 0, "IconFile/IconIndex was not resolved by the Shell");
+
+    const std::wstring ini = folder + L"\\desktop.ini";
+    for (DWORD attributes : {FILE_ATTRIBUTE_NORMAL, FILE_ATTRIBUTE_HIDDEN, FILE_ATTRIBUTE_SYSTEM}) {
+        require(SetFileAttributesW(ini.c_str(), attributes) != FALSE, "INI attribute change failed");
+        filespacer::ShareIconLocation unmarked;
+        unmarked.load(folder.c_str());
+        require(unmarked.file.empty(), "desktop.ini must have both hidden and system attributes");
+    }
+    require(SetFileAttributesW(ini.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM) != FALSE,
+        "INI attribute restoration failed");
+    filespacer::ShareIconLocation marked;
+    marked.load(folder.c_str());
+    require(marked.file == resource, "Restoring desktop.ini attributes did not enable customization");
 
     writeSettings(folder, L"[.ShellClassInfo]\r\nIconResource=%SystemRoot%\\System32\\shell32.dll,-4\r\n");
     legacy.load(folder.c_str());
@@ -90,6 +104,32 @@ void run(const wchar_t *directory, const wchar_t *icon) {
     });
     require(worker.get(), "Shell worker did not extract the customized icon");
     require(cached->loaded, "The worker did not populate the shared cache");
+    SHSTOCKICONINFO stock = {sizeof(stock)};
+    require(SUCCEEDED(SHGetStockIconInfo(SIID_FOLDER, SHGSI_ICONLOCATION, &stock)), "Stock icon resource unavailable");
+    for (bool resourceSyntax : {false, true}) {
+        const std::wstring setting = std::wstring(L"[.ShellClassInfo]\r\n")
+            + (resourceSyntax ? L"IconResource=" : L"IconFile=") + stock.szPath
+            + (resourceSyntax ? L"," : L"\r\nIconIndex=") + std::to_wstring(stock.iIcon) + L"\r\n";
+        writeSettings(folder, setting.c_str());
+        CComPtr<IExtractIconW> indexed;
+        indexed.Attach(new filespacer::ShareIcon(id, folder.c_str(),
+            std::make_shared<filespacer::ShareIconLocation>(), GetCurrentThreadId()));
+        auto indexedWorker = std::async(std::launch::async, [&] {
+            require(SUCCEEDED(CoInitializeEx(nullptr, COINIT_MULTITHREADED)), "Indexed worker COM initialization failed");
+            wchar_t file[MAX_PATH]; int iconIndex = 0; UINT iconFlags = 0;
+            const HRESULT located = indexed->GetIconLocation(GIL_FORSHELL, file, ARRAYSIZE(file), &iconIndex, &iconFlags);
+            HICON image = nullptr;
+            const bool ok = located == S_OK && _wcsicmp(file, stock.szPath) == 0 && iconIndex == stock.iIcon
+                && indexed->Extract(file, static_cast<UINT>(iconIndex), &image, nullptr, 48) == S_OK && image;
+            if (image) DestroyIcon(image);
+            CoUninitialize();
+            return ok;
+        });
+        require(indexedWorker.get(), resourceSyntax ? "IconResource extraction failed" : "IconFile/IconIndex extraction failed");
+        std::printf("PASS: %s extracted the Shell resource at index %d.\n",
+            resourceSyntax ? "IconResource" : "IconFile/IconIndex", stock.iIcon);
+    }
+    writeSettings(folder, L"[.ShellClassInfo]\r\nIconResource=custom.exe,0\r\n");
     CComPtr<IStream> stream;
     require(SUCCEEDED(CoMarshalInterThreadInterfaceInStream(IID_IExtractIconW, extractor, &stream)),
         "Icon extractor cannot be marshaled to a Shell worker");
