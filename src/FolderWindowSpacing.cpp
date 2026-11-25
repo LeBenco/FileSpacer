@@ -184,22 +184,23 @@ void FolderWindow::readSpacingSlider(bool commit, bool frame) {
     }
     if (!spacingEdited || (!commit && spacingDeferred)) return;
     const int ratio = MulDiv(position, 1000, spacingStandardGap);
-    if (!commit && !frame && ratio != spacingPreview) {
-        // One pending frame always reads the most recent thumb position.
-        if (!spacingFramePending) spacingFramePending = SetTimer(spacingPopup, 1, 32, nullptr) != 0;
-        if (spacingFramePending) return;
-    }
+    if (!commit && !frame && spacingFramePending) return;
     if (spacingFramePending) {
         KillTimer(spacingPopup, 1);
         spacingFramePending = false;
     }
     if (ratio != spacingPreview) {
+        const HWND popup = spacingPopup;
         const int previous = spacingPreview;
         spacingPreview = ratio;
         if (!updateExplorerIconSpacing()) {
             spacingPreview = previous;
             return;
         }
+        // Show the first change immediately. During a continuous drag, sample
+        // the latest value once per interval and stop when the thumb is idle.
+        if (!commit && popup && spacingPopup == popup)
+            spacingFramePending = SetTimer(popup, 1, 16, nullptr) != 0;
     }
     if (commit && spacingPopup && getSavedFolderState().view.iconGap[spacingAxis] != ratio) {
         getSavedFolderState().view.iconGap[spacingAxis] = ratio;
