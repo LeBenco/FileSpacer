@@ -692,6 +692,9 @@ ExplorerIconSpacingResult useExplorerIconSpacing(IShellView *source, const std::
         ListView_SetIconSpacing(list, original.x, original.y);
         return Result::Unchanged;
     }
+    // The list can retain pixels clipped to its old cells until an item is
+    // repainted. Include the entire client in the next native paint.
+    InvalidateRect(list, nullptr, TRUE);
     debugPrintf(L"EXPLORER GRID size=%d dpi=%d width=%ld pitch=%ld,%ld previous=%ld,%ld\n",
         size, dpi, bounds.right, applied.x, applied.y, previous.x, previous.y);
     return Result::Applied;
