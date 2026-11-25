@@ -91,6 +91,42 @@ bool FolderWindow::arrangementChanged(IFolderView *const folderView) {
     return changed;
 }
 
+void FolderWindow::queueExplorerIconSpacing() {
+    if (!explorerIconSpacingQueued && isWindowOperational() && viewReady && initialStateApplied)
+        explorerIconSpacingQueued = PostMessageW(hwnd, MSG_EXPLORER_ICON_SPACING, viewGeneration, 0) != FALSE;
+}
+
+void FolderWindow::updateExplorerIconSpacing() {
+    if (!isWindowOperational() || !viewReady || !initialStateApplied || restoringState || viewMenuPreview
+            || viewMenuRestore || hasPendingIconPlacement()) return;
+    CComPtr<IShellView> source = shellView;
+    const ULONG_PTR generation = viewGeneration, enumeration = viewHost.enumerationSerial();
+    const auto sameSource = [&] {
+        return isWindowOperational() && shellView == source && viewGeneration == generation;
+    };
+    const auto current = [&] { return sameSource() && viewHost.enumerationSerial() == enumeration; };
+    CComQIPtr<IFolderView> view(source);
+    if (!view || !current()) return;
+    restoringState = true;
+    POINT previous = {};
+    std::vector<uint8_t> positions;
+    const auto result = useExplorerIconSpacing(source, current, [&](POINT spacing) {
+        if (!gridPlacement(view)) return current();
+        if (!current() || !enumerationComplete || !searchText.empty()) return false;
+        previous = spacing;
+        return captureIconPositions(view, current, true, {}, positions) == S_OK;
+    });
+    const bool changed = result == ExplorerIconSpacingResult::Applied;
+    if (changed && current() && !positions.empty()) {
+        if (checkHR(restoreIconGridPositions(view, positions, previous, current)) && current())
+            viewStateDirty(FolderState::Icons);
+    }
+    if (sameSource()) {
+        restoringState = false;
+        if (changed && current() && !positions.empty()) scheduleStateSave();
+    }
+}
+
 void FolderWindow::scheduleStateSave(bool icons) {
     if (restoringState || !viewReady || viewMenuPreview) return;
     if (iconRealignPending && !viewMenuRestore && enumerationComplete) realignIcons();
@@ -104,6 +140,13 @@ void FolderWindow::scheduleStateSave(bool icons) {
         if (!isWindowOperational() || generation != viewGeneration) return;
         const bool resized = arrangementChanged(view);
         if (!isWindowOperational() || generation != viewGeneration) return;
+        if (resized) {
+            restoringState = true;
+            const auto current = [&] { return isWindowOperational() && generation == viewGeneration; };
+            useExplorerIconSpacing(shellView, current);
+            if (!current()) return;
+            restoringState = false;
+        }
         const bool grid = spatial && (resized || spatial != spatialLayout) && gridPlacement(view);
         if (!isWindowOperational() || generation != viewGeneration) return;
         if (grid && resized) {
@@ -593,6 +636,8 @@ void FolderWindow::changeViewMode(int amount, bool wheel) {
     const HRESULT result = view->SetViewModeAndIconSize(target.mode, target.size);
     resumeDeferredClose();
     if (!current()) return;
+    if (SUCCEEDED(result)) useExplorerIconSpacing(shellView, current);
+    if (!current()) return;
     restoringState = false;
     if (checkHR(result)) {
         const bool grid = gridPlacement(view);
@@ -657,6 +702,7 @@ void FolderWindow::restoreReferenceLayout() {
             ShowWindow(hwnd, SW_MAXIMIZE);
         if (!current()) return;
         if (reference.present & FolderState::View) checkHR(restoreOptions(view, reference.view));
+        if (current()) useExplorerIconSpacing(source, current);
     };
     apply();
     restoringState = false;
