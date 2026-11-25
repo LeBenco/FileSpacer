@@ -160,17 +160,21 @@ void FolderWindow::runSpacingCommand(UINT command, POINT anchor) {
     const auto generation = viewGeneration;
     auto &spacing = getSavedFolderState().view.iconSpacing;
     const auto previous = spacing;
-    spacing.ratios[axis] = 1000;
+    auto ratios = previous.ratios;
+    if (command == IDM_RESET_BOTH_GAPS) ratios = {1000, 1000};
+    else ratios[axis] = 1000;
+    if (ratios == previous.ratios) return;
+    spacing.ratios = ratios;
     if (!updateExplorerIconSpacing()) {
-        if (generation == viewGeneration && spacing.generation == previous.generation) spacing.ratios[axis] = previous.ratios[axis];
+        if (generation == viewGeneration && spacing.generation == previous.generation && spacing.ratios == ratios)
+            spacing.ratios = previous.ratios;
         return;
     }
     viewStateDirty(FolderState::View);
     SetTimer(hwnd, TIMER_SAVE_STATE, 250, nullptr);
 }
 
-// Menu windows are owned by USER32. Match the actual menus, including the
-// submenu, before changing their compositor visibility.
+// Only cloak the native window that owns this specific View menu.
 static HWND popupForMenu(HMENU menu) {
     RECT item = {};
     if (!GetMenuItemRect(nullptr, menu, 0, &item)) return nullptr;
@@ -179,34 +183,25 @@ static HWND popupForMenu(HMENU menu) {
     return window && GetMenuBarInfo(window, OBJID_CLIENT, 0, &bar) && bar.hMenu == menu ? window : nullptr;
 }
 
-bool FolderWindow::ViewMenuPreview::cloakSpacingMenus(bool hide) {
-    if (menusCloaked == hide) return true;
+void FolderWindow::ViewMenuPreview::cloakSpacingMenu(bool hide) {
+    if (menuCloaked == hide) return;
     const BOOL cloak = hide;
-    if (hide) {
-        if (FAILED(DwmSetWindowAttribute(spacingWindows[0], DWMWA_CLOAK, &cloak, sizeof(cloak)))) return false;
-        if (FAILED(DwmSetWindowAttribute(spacingWindows[1], DWMWA_CLOAK, &cloak, sizeof(cloak)))) {
-            const BOOL undo = FALSE;
-            DwmSetWindowAttribute(spacingWindows[0], DWMWA_CLOAK, &undo, sizeof(undo));
-            return false;
-        }
-    } else {
-        for (HWND window : spacingWindows)
-            if (IsWindow(window)) DwmSetWindowAttribute(window, DWMWA_CLOAK, &cloak, sizeof(cloak));
-    }
-    menusCloaked = hide;
-    return true;
+    if (SUCCEEDED(DwmSetWindowAttribute(spacingMenuWindow, DWMWA_CLOAK, &cloak, sizeof(cloak))))
+        menuCloaked = hide;
 }
 
 void FolderWindow::ViewMenuPreview::commitSpacing() {
     owner.readSpacingSlider(true);
     if (!current() || !owner.spacingTrack) return;
     const int axis = owner.spacingAxis;
-    EnableMenuItem(spacingMenu, axis ? IDM_RESET_VERTICAL_GAP : IDM_RESET_HORIZONTAL_GAP,
-        owner.getSavedFolderState().view.iconSpacing.ratios[axis] == 1000 ? MF_GRAYED : MF_ENABLED);
+    const auto &ratios = owner.getSavedFolderState().view.iconSpacing.ratios;
+    EnableMenuItem(spacingResetMenu, axis ? IDM_RESET_VERTICAL_GAP : IDM_RESET_HORIZONTAL_GAP,
+        ratios[axis] == 1000 ? MF_GRAYED : MF_ENABLED);
+    EnableMenuItem(spacingResetMenu, IDM_RESET_BOTH_GAPS, ratios[0] == 1000 && ratios[1] == 1000 ? MF_GRAYED : MF_ENABLED);
 }
 
 void FolderWindow::ViewMenuPreview::stopSpacingEdit() {
-    cloakSpacingMenus(false);
+    cloakSpacingMenu(false);
     draggingSpacing = false;
     if (!editingSpacing) return;
     owner.readSpacingSlider(true);
@@ -228,7 +223,7 @@ void FolderWindow::ViewMenuPreview::moveSpacingThumb(POINT point, bool commit) {
     const LONG offset = (owner.spacingAxis ? point.y : point.x) - start - thumbOffset;
     const int position = MulDiv((std::max)(0L, (std::min)(offset, end - start)), 3000 / spacingStep, end - start);
     if (position != SendMessageW(track, TBM_GETPOS, 0, 0)) {
-        if (!commit) cloakSpacingMenus(true);
+        if (!commit) cloakSpacingMenu(true);
         SendMessageW(track, TBM_SETPOS, TRUE, position);
     }
     if (commit) commitSpacing();
@@ -247,7 +242,7 @@ bool FolderWindow::ViewMenuPreview::handleSpacingInput(const MSG &message) {
             moveSpacingThumb(point, type == WM_LBUTTONUP);
             if (type == WM_LBUTTONUP) {
                 draggingSpacing = false;
-                cloakSpacingMenus(false);
+                cloakSpacingMenu(false);
             }
             return true;
         }
@@ -282,13 +277,19 @@ bool FolderWindow::ViewMenuPreview::handleSpacingInput(const MSG &message) {
         }
     }
     if (type == WM_MOUSEMOVE) {
-        if (editingSpacing && MenuItemFromPoint(nullptr, menu, point) >= 0) stopSpacingEdit();
+        if (editingSpacing) {
+            const int row = MenuItemFromPoint(nullptr, menu, point);
+            if (row >= 0) {
+                const UINT id = GetMenuItemID(menu, row);
+                if (id != IDM_ICON_GAP_HORIZONTAL && id != IDM_ICON_GAP_VERTICAL) stopSpacingEdit();
+            }
+        }
         return false;
     }
     if (key && message.wParam != VK_RETURN) return false;
-    int position = key ? GetMenuItemCount(spacingMenu) - 1 : MenuItemFromPoint(nullptr, spacingMenu, point);
-    if (key) while (position >= 0 && !(GetMenuState(spacingMenu, position, MF_BYPOSITION) & MF_HILITE)) --position;
-    const UINT command = position >= 0 ? GetMenuItemID(spacingMenu, position) : 0;
+    int position = key ? GetMenuItemCount(menu) - 1 : MenuItemFromPoint(nullptr, menu, point);
+    if (key) while (position >= 0 && !(GetMenuState(menu, position, MF_BYPOSITION) & MF_HILITE)) --position;
+    const UINT command = position >= 0 ? GetMenuItemID(menu, position) : 0;
     const bool axisItem = command == IDM_ICON_GAP_HORIZONTAL || command == IDM_ICON_GAP_VERTICAL;
     if (type == WM_LBUTTONDOWN) {
         pressedSpacingCommand = axisItem ? command : 0;
@@ -298,11 +299,10 @@ bool FolderWindow::ViewMenuPreview::handleSpacingInput(const MSG &message) {
     if (!axisItem) return false;
     // Select the axis without yielding the native menu's mouse capture.
     stopSpacingEdit();
-    spacingWindows[0] = popupForMenu(menu);
-    spacingWindows[1] = popupForMenu(spacingMenu);
-    RECT entryBounds = {}, sub = {};
-    if (!spacingWindows[0] || !spacingWindows[1] || !GetWindowRect(spacingWindows[1], &sub)
-            || !GetMenuItemRect(nullptr, spacingMenu, position, &entryBounds)) return false;
+    spacingMenuWindow = popupForMenu(menu);
+    RECT entryBounds = {}, menuBounds = {};
+    if (!spacingMenuWindow || !GetWindowRect(spacingMenuWindow, &menuBounds)
+            || !GetMenuItemRect(nullptr, menu, position, &entryBounds)) return false;
     wantedCommand = 0;
     apply(0);
     finishPositions();
@@ -314,8 +314,8 @@ bool FolderWindow::ViewMenuPreview::handleSpacingInput(const MSG &message) {
     const int axis = command == IDM_ICON_GAP_VERTICAL;
     MONITORINFO monitor = {sizeof(monitor)};
     const int width = pixels(owner.hwnd, axis ? 40 : 230);
-    if (!GetMonitorInfoW(MonitorFromRect(&sub, MONITOR_DEFAULTTONEAREST), &monitor)) return true;
-    const int x = sub.right + width <= monitor.rcWork.right ? sub.right : sub.left - width;
+    if (!GetMonitorInfoW(MonitorFromRect(&menuBounds, MONITOR_DEFAULTTONEAREST), &monitor)) return true;
+    const int x = menuBounds.right + width <= monitor.rcWork.right ? menuBounds.right : menuBounds.left - width;
     editingSpacing = true;
     owner.openSpacingSlider(axis, {x, entryBounds.top}, true);
     editingSpacing = owner.spacingTrack != nullptr;
