@@ -243,6 +243,8 @@ bool FolderWindow::recoverProvisionalView() {
             if (!current()) return false;
             const HRESULT restored = restoreOptions(view, recoveredState->view);
             if (!current()) return false;
+            if (SUCCEEDED(restored)) useExplorerIconSpacing(source, current);
+            if (!current()) return false;
             viewOptionsEnumerationBaseline = viewHost.enumerationSerial();
             const HRESULT recounted = view->ItemCount(SVGIO_ALLVIEW, &after);
             if (!current()) return false;
@@ -586,8 +588,19 @@ void FolderWindow::finishViewInitialization() {
         restoringState = false;
     }
     const bool initial = !initialStateApplied;
-    initialStateApplied = true;
     if (initial) {
+        restoringState = true;
+        const auto spacing = useExplorerIconSpacing(view, current);
+        if (!current()) return;
+        restoringState = false;
+        // A freshly navigated reference can complete after this callback.
+        // Give it one dispatch before replaying positions into a live grid.
+        if (spacing == ExplorerIconSpacingResult::Pending && !initialIconSpacingDeferred) {
+            initialIconSpacingDeferred = true;
+            if (PostMessageW(hwnd, MSG_FINISH_VIEW_INITIALIZATION, generation, 0)) return;
+        }
+        initialStateApplied = true;
+        queueExplorerIconSpacing();
         selectionClear.bind(view, current);
         if (!current()) return;
         CComQIPtr<IFolderView> folderView(view);
