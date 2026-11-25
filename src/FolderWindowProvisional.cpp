@@ -243,7 +243,7 @@ bool FolderWindow::recoverProvisionalView() {
             if (!current()) return false;
             const HRESULT restored = restoreOptions(view, recoveredState->view);
             if (!current()) return false;
-            if (SUCCEEDED(restored)) useExplorerIconSpacing(source, current);
+            if (SUCCEEDED(restored)) applyIconSpacing(source, current);
             if (!current()) return false;
             viewOptionsEnumerationBaseline = viewHost.enumerationSerial();
             const HRESULT recounted = view->ItemCount(SVGIO_ALLVIEW, &after);
@@ -590,7 +590,7 @@ void FolderWindow::finishViewInitialization() {
     const bool initial = !initialStateApplied;
     if (initial) {
         restoringState = true;
-        const auto spacing = useExplorerIconSpacing(view, current);
+        const auto spacing = applyIconSpacing(view, current);
         if (!current()) return;
         restoringState = false;
         // A freshly navigated reference can complete after this callback.
