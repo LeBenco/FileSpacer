@@ -4,6 +4,11 @@
 #include "Settings.h"
 #include "UIStrings.h"
 #include <commctrl.h>
+#include <objidl.h>
+#pragma warning(push)
+#pragma warning(disable: 4458) // Shadowed members in Windows SDK GDI+ headers.
+#include <gdiplus.h>
+#pragma warning(pop)
 
 namespace filespacer {
 namespace {
@@ -101,30 +106,40 @@ LRESULT drawSpacingTrack(const NMCUSTOMDRAW &draw, bool vertical) {
     return CDRF_SKIPDEFAULT;
 }
 
+void drawSpacingGlyph(const DRAWITEMSTRUCT &item, bool vertical) {
+    // Adapted from Remix Icon 4.6.0 expand-width-line (Apache-2.0). The end bars
+    // are taller for legibility. Rotate the same outline for the vertical button.
+    static const Gdiplus::PointF arrow[] = {
+        {9.45f, 7.05f}, {4.5f, 12.f}, {9.45f, 16.95f}, {10.86f, 15.53f}, {8.33f, 13.f},
+        {15.67f, 13.f}, {13.14f, 15.53f}, {14.55f, 16.95f}, {19.5f, 12.f}, {14.55f, 7.05f},
+        {13.14f, 8.46f}, {15.67f, 11.f}, {8.33f, 11.f}, {10.86f, 8.46f}
+    };
+    const RECT &rect = item.rcItem;
+    const int inset = pixels(item.hwndItem, 2);
+    const int size = (std::min<int>)(pixels(item.hwndItem, 20),
+        (std::min)(rect.right - rect.left, rect.bottom - rect.top) - 2 * inset);
+    if (size <= 0) return;
+    const float scale = static_cast<float>(size) / 20.f;
+    const float down = (item.itemState & ODS_SELECTED) ? 1.f : 0.f;
+    const COLORREF color = GetSysColor((item.itemState & ODS_DISABLED) ? COLOR_GRAYTEXT : COLOR_BTNTEXT);
+    Gdiplus::SolidBrush brush(Gdiplus::Color(255, GetRValue(color), GetGValue(color), GetBValue(color)));
+    Gdiplus::Graphics graphics(item.hDC);
+    graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+    graphics.TranslateTransform(static_cast<float>(rect.left + rect.right) / 2.f + down,
+        static_cast<float>(rect.top + rect.bottom) / 2.f + down);
+    if (vertical) graphics.RotateTransform(90.f);
+    graphics.ScaleTransform(scale, scale);
+    graphics.TranslateTransform(-12.f, -12.f);
+    graphics.FillRectangle(&brush, 2, 3, 2, 18);
+    graphics.FillRectangle(&brush, 20, 3, 2, 18);
+    graphics.FillPolygon(&brush, arrow, ARRAYSIZE(arrow));
+}
+
 void drawSpacingButton(const DRAWITEMSTRUCT &item, bool vertical) {
     RECT rect = item.rcItem;
     const bool down = (item.itemState & ODS_SELECTED) != 0;
     DrawFrameControl(item.hDC, &rect, DFC_BUTTON, DFCS_BUTTONPUSH | (down ? DFCS_PUSHED : DFCS_FLAT));
-    const int x = (rect.left + rect.right) / 2 + down, y = (rect.top + rect.bottom) / 2 + down;
-    const int tip = pixels(item.hwndItem, 5), bar = pixels(item.hwndItem, 8), wing = pixels(item.hwndItem, 3);
-    const auto point = [&](int along, int across) -> POINT {
-        return {x + (vertical ? across : along), y + (vertical ? along : across)};
-    };
-    const auto line = [&](int a, int b, int c, int d) {
-        const POINT path[] = {point(a,b), point(c,d)};
-        Polyline(item.hDC, path, 2);
-    };
-    const HGDIOBJ old = SelectObject(item.hDC, GetStockObject(DC_PEN));
-    const COLORREF color = SetDCPenColor(item.hDC,
-        GetSysColor((item.itemState & ODS_DISABLED) ? COLOR_GRAYTEXT : COLOR_BTNTEXT));
-    line(-tip, 0, tip, 0);
-    for (int sign : {-1, 1}) {
-        line(sign * bar, -wing, sign * bar, wing + 1);
-        line(sign * (tip-wing), -wing, sign * tip, 0);
-        line(sign * tip, 0, sign * (tip-wing), wing);
-    }
-    SetDCPenColor(item.hDC, color);
-    SelectObject(item.hDC, old);
+    drawSpacingGlyph(item, vertical);
     if (item.itemState & ODS_FOCUS) {
         InflateRect(&rect, -2, -2);
         DrawFocusRect(item.hDC, &rect);
@@ -224,7 +239,7 @@ void FolderWindow::openSpacingSlider(int axis) {
     const int y = anchor.top >= monitor.rcWork.top + height ? anchor.top - height :
         std::min<int>(anchor.bottom, monitor.rcWork.bottom - height);
     const auto sliderName = getString(axis ? IDS_ICON_GAP_VERTICAL : IDS_ICON_GAP_HORIZONTAL);
-    spacingPopup = CreateWindowExW(WS_EX_TOOLWINDOW, WC_STATICW, sliderName, WS_POPUP | WS_CLIPCHILDREN,
+    spacingPopup = CreateWindowExW(WS_EX_TOOLWINDOW, WC_STATICW, sliderName, WS_POPUP | WS_BORDER | WS_CLIPCHILDREN,
         x, y, width, height, hwnd, nullptr, GetModuleHandleW(nullptr), nullptr);
     if (!spacingPopup) return;
     if (!SetWindowSubclass(spacingPopup, spacingPopupProc, 1, reinterpret_cast<DWORD_PTR>(this))) {
@@ -246,7 +261,7 @@ void FolderWindow::openSpacingSlider(int axis) {
     SendMessageW(spacingTrack, TBM_SETPOS, TRUE, spacingStepForRatio(spacingPreview));
     RECT thumb = {};
     SendMessageW(spacingTrack, TBM_GETTHUMBRECT, 0, reinterpret_cast<LPARAM>(&thumb));
-    const int cross = axis ? (width - thumb.left - thumb.right) / 2 : (height - thumb.top - thumb.bottom) / 2;
+    const int cross = axis ? (client.right - thumb.left - thumb.right) / 2 : (client.bottom - thumb.top - thumb.bottom) / 2;
     SetWindowPos(spacingTrack, nullptr, axis ? cross : pad, axis ? pad : cross, 0, 0,
         SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
     SendMessageW(spacingPopup, WM_CHANGEUISTATE, MAKEWPARAM(UIS_INITIALIZE, 0), 0);
