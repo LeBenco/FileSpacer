@@ -19,7 +19,7 @@ FileSpacer lässt sich bei der Installation oder unter **Einstellungen > Integra
 <div id="fenster-verwalten"></div>
 <div id="managing-windows"></div>
 
-**Jeder Ordner hat sein eigenes Fenster.** Ist er bereits geöffnet, holt FileSpacer dieses Fenster in den Vordergrund. Position, Größe, Ansicht, Symbolanordnung und Scrollposition bleiben auch nach dem Verschieben oder Umbenennen des Ordners erhalten. Fenster ohne gespeicherte Position werden so platziert, dass sie sich möglichst wenig überlappen (Option unter **Einstellungen > Allgemein**).
+**Jeder Ordner hat sein eigenes Fenster.** Ist er bereits geöffnet, holt FileSpacer dieses Fenster in den Vordergrund. Position, Größe, Ansicht, Symbolanordnung und Scrollposition bleiben auch nach dem Verschieben oder Umbenennen des Ordners erhalten. Fenster ohne gespeicherte Position werden so platziert, dass sie sich möglichst wenig überlappen (Option unter **Einstellungen > Fenster**).
 
 <div id="gespeicherten-fensterzustand-sperren"></div>
 <div id="locking-a-saved-layout"></div>
@@ -28,11 +28,11 @@ FileSpacer lässt sich bei der Installation oder unter **Einstellungen > Integra
 
 **Fensterzustand entsperren** behält die aktuelle Anordnung bei und ermöglicht wieder das Speichern von Änderungen.
 
-Die Sperrfunktion wird unter **Einstellungen > Allgemein** aktiviert. Dort lassen sich auch die Anzeige des Schlosses links in der Titelleiste anpassen und das Sperren oder Entsperren des Fensterzustands per Klick auf das Symbol aktivieren. Der Befehl lässt sich auch [zum Titelleistenmenü hinzufügen](#customize-the-title-bar-menu). Das Abschalten der Funktion entfernt alle Sperren und blendet das Symbol aus.
+Die Sperrfunktion wird unter **Einstellungen > Fenster** aktiviert. Dort lassen sich auch die Anzeige des Schlosses links in der Titelleiste anpassen und das Sperren oder Entsperren des Fensterzustands per Klick auf das Symbol aktivieren. Der Befehl lässt sich auch [zum Titelleistenmenü hinzufügen](#customize-the-title-bar-menu). Das Abschalten der Funktion entfernt alle Sperren und blendet das Symbol aus.
 
 <img src="images/locked-title.png" alt="Nahaufnahme des Ordnertitels mit Schlosssymbol." width="280">
 
-Beim Öffnen eines Ordners oder seines übergeordneten Ordners wird das Ausgangsfenster standardmäßig geschlossen. **Strg beim Öffnen gedrückt halten** bewirkt das Gegenteil, unabhängig von der Art des Öffnens. Das Verhalten lässt sich unter **Einstellungen > Allgemein** ändern. Beim Öffnen mehrerer ausgewählter Ordner bleibt das Ausgangsfenster offen.
+Beim Öffnen eines Ordners oder seines übergeordneten Ordners wird das Ausgangsfenster standardmäßig geschlossen. **Strg beim Öffnen gedrückt halten** bewirkt das Gegenteil, unabhängig von der Art des Öffnens. Das Verhalten lässt sich unter **Einstellungen > Fenster** ändern. Beim Öffnen mehrerer ausgewählter Ordner bleibt das Ausgangsfenster offen.
 
 Das Menü neben dem Titel wechselt zwischen geöffneten Ordnern und schließt übergeordnete Fenster. **Strg+Umschalt+T** öffnet den zuletzt geschlossenen Ordner mit seiner Anordnung und Auswahl erneut. Die Sprungliste der Taskleiste bietet auch zuletzt geschlossene und im Schnellzugriff angeheftete Ordner.
 
@@ -80,9 +80,11 @@ Diese Möglichkeiten stehen für alle Symbolgrößen zur Verfügung. **Liste**, 
 
 Halten Sie im Modus **Frei** beim Ziehen **S** bis zum Loslassen der Maustaste gedrückt, um nur die gezogenen Symbole am Raster auszurichten. Die anderen bleiben an ihrem Platz. Wird **S** vor dem Ablegen losgelassen, bleibt die Platzierung frei. In der Symbolansicht zeigt ein grauer Rahmen die Zielposition an.
 
+Mit den beiden Schaltflächen rechts in der Statusleiste lässt sich der horizontale und vertikale Symbolabstand des Ordners einstellen. Ein Rechtsklick auf eine Schaltfläche setzt die jeweilige Achse auf 100 % zurück. Unter **Einstellungen > Dateien** legen Sie fest, ob sich die Symbole beim Ziehen oder erst beim Loslassen verschieben. Mit der Schaltfläche zum Zurücksetzen stellen Sie beide Achsen für alle Ordner wieder her, sobald Sie **Übernehmen** oder **OK** wählen.
+
 <div id="details-columns"></div>
 
-In der Ansicht **Details** können die Spalten automatisch die gesamte Fensterbreite ausfüllen. Die Funktion wird unter **Einstellungen > Anzeige** allgemein zugelassen und lässt sich für jeden Ordner im Menü **Ansicht** ein- oder ausschalten.
+In der Ansicht **Details** können die Spalten automatisch die gesamte Fensterbreite ausfüllen. Die Funktion wird unter **Einstellungen > Dateien** allgemein zugelassen und lässt sich für jeden Ordner im Menü **Ansicht** ein- oder ausschalten.
 
 ![Detailspalten auf Fensterbreite verteilen und anschließend die Spalte Name verbreitern.](images/details-columns.gif)
 
@@ -91,7 +93,7 @@ Eine **fortlaufende Aktualisierung** ist ebenfalls in den Einstellungen möglich
 <div id="ansichtsoptionen"></div>
 <div id="view-options"></div>
 
-Standardmäßig stehen Ordner vor Dateien, wie im Datei-Explorer. **Ordner und Dateien beim Sortieren mischen** unter **Einstellungen > Anzeige** sortiert beide gemeinsam, wie unter [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) und [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Das gilt für Details, Liste und automatisch angeordnete Symbole. Virtuelle Ordner und Archive behalten die Windows-Sortierung.
+Standardmäßig stehen Ordner vor Dateien, wie im Datei-Explorer. **Ordner und Dateien beim Sortieren mischen** unter **Einstellungen > Dateien** sortiert beide gemeinsam, wie unter [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) und [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Das gilt für Details, Liste und automatisch angeordnete Symbole. Virtuelle Ordner und Archive behalten die Windows-Sortierung.
 
 ![Ordner und Dateien in einer gemeinsamen alphabetischen Reihenfolge.](images/mixed-sorting.png)
 
@@ -102,7 +104,7 @@ In denselben Einstellungen macht **Vollständigen Namen einer ausgewählten Date
 <div id="auswahl-und-aktivierung"></div>
 <div id="selection-and-activation"></div>
 
-Ein Klick auf den Hintergrund eines inaktiven Fensters hebt dessen Auswahl standardmäßig auf, wie im Datei-Explorer. **Auswahl beim Klicken auf inaktives Fenster beibehalten** unter **Einstellungen > Allgemein** aktiviert es ohne Verlust der Auswahl.
+Ein Klick auf den Hintergrund eines inaktiven Fensters hebt dessen Auswahl standardmäßig auf, wie im Datei-Explorer. **Auswahl beim Klicken auf inaktives Fenster beibehalten** unter **Einstellungen > Fenster** aktiviert es ohne Verlust der Auswahl.
 
 <a id="customization"></a>
 
@@ -115,7 +117,7 @@ Ein Klick auf den Hintergrund eines inaktiven Fensters hebt dessen Auswahl stand
 <div id="titelleistenmenü-anpassen"></div>
 <div id="customize-the-title-bar-menu"></div>
 
-Das **Titelleistenmenü** lässt sich unter **Einstellungen > Anzeige > Oberflächenelemente** anpassen. Befehle werden durch Ziehen und Ablegen hinzugefügt und umgeordnet. Zum Entfernen einen Eintrag aus dem Menü herausziehen.
+Das **Titelleistenmenü** lässt sich unter **Einstellungen > Oberfläche > Oberflächenelemente** anpassen. Befehle werden durch Ziehen und Ablegen hinzugefügt und umgeordnet. Zum Entfernen einen Eintrag aus dem Menü herausziehen.
 
 ![Eine Aktion zum Titelleistenmenü hinzufügen und eine andere entfernen.](images/customize-title-menu.gif)
 
@@ -209,7 +211,7 @@ FileSpacer enthält weder Telemetrie noch Nutzungsverfolgung oder Werbung. Abstu
 
 Updates kontaktieren GitHub. Dabei werden IP-Adresse und Anwendungsversion übermittelt, aber keine Dateipfade oder Ordnerzustände.
 
-Um den Umgang mit großen Ordnern (ab etwa tausend Elementen) zu beschleunigen, lädt FileSpacer Symboldateien von Microsoft herunter. Dabei werden IP-Adresse und Version der betreffenden Windows-Komponenten übermittelt, aber keine Dateipfade oder Ordnerzustände. Eine Benachrichtigung meldet jeden Download; er lässt sich unter **Einstellungen > Integration** deaktivieren.
+Um den Umgang mit großen Ordnern (ab etwa tausend Elementen) zu beschleunigen, lädt FileSpacer Symboldateien von Microsoft herunter. Dabei werden IP-Adresse und Version der betreffenden Windows-Komponenten übermittelt, aber keine Dateipfade oder Ordnerzustände. Eine Benachrichtigung meldet jeden Download; er lässt sich unter **Einstellungen > Dateien** deaktivieren.
 
 Anmeldedaten für Netzlaufwerke werden direkt von Windows verwaltet. FileSpacer liest oder speichert sie nicht.
 

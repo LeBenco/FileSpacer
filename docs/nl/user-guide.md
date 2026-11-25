@@ -20,7 +20,7 @@ FileSpacer kan tijdens de installatie of onder **Instellingen > Integratie** met
 <div id="vensters-beheren"></div>
 <div id="managing-windows"></div>
 
-**Elke map heeft een eigen venster.** Is de map al open, dan brengt FileSpacer dat venster naar de voorgrond. Positie, afmetingen, weergave, pictogramindeling en schuifpositie worden onthouden, ook na verplaatsen of hernoemen van de map. Vensters zonder opgeslagen positie worden zo geplaatst dat ze zo min mogelijk overlappen (optie onder **Instellingen > Algemeen**).
+**Elke map heeft een eigen venster.** Is de map al open, dan brengt FileSpacer dat venster naar de voorgrond. Positie, afmetingen, weergave, pictogramindeling en schuifpositie worden onthouden, ook na verplaatsen of hernoemen van de map. Vensters zonder opgeslagen positie worden zo geplaatst dat ze zo min mogelijk overlappen (optie onder **Instellingen > Vensters**).
 
 <div id="een-opgeslagen-indeling-vergrendelen"></div>
 <div id="locking-a-saved-layout"></div>
@@ -29,11 +29,11 @@ FileSpacer kan tijdens de installatie of onder **Instellingen > Integratie** met
 
 **Vensterstatus ontgrendelen** behoudt de huidige indeling en maakt het weer mogelijk wijzigingen op te slaan.
 
-Vergrendeling wordt ingeschakeld onder **Instellingen > Algemeen**. Daar kan ook de weergave van het slot links in de titelbalk worden aangepast en klikken op het pictogram worden ingeschakeld om de vensterstatus te vergrendelen of ontgrendelen. De opdracht kan ook [aan het titelbalkmenu worden toegevoegd](#customize-the-title-bar-menu). Uitschakelen wist alle vergrendelingen en verbergt het pictogram.
+Vergrendeling wordt ingeschakeld onder **Instellingen > Vensters**. Daar kan ook de weergave van het slot links in de titelbalk worden aangepast en klikken op het pictogram worden ingeschakeld om de vensterstatus te vergrendelen of ontgrendelen. De opdracht kan ook [aan het titelbalkmenu worden toegevoegd](#customize-the-title-bar-menu). Uitschakelen wist alle vergrendelingen en verbergt het pictogram.
 
 <img src="images/locked-title.png" alt="Detail van de maptitel met het slotje." width="280">
 
-Een map of bovenliggende map openen sluit standaard het bronvenster. **Ctrl ingedrukt houden bij het openen** doet het omgekeerde, ongeacht de manier van openen. Dit gedrag is instelbaar onder **Instellingen > Algemeen**. Meerdere geselecteerde mappen openen houdt het bronvenster open.
+Een map of bovenliggende map openen sluit standaard het bronvenster. **Ctrl ingedrukt houden bij het openen** doet het omgekeerde, ongeacht de manier van openen. Dit gedrag is instelbaar onder **Instellingen > Vensters**. Meerdere geselecteerde mappen openen houdt het bronvenster open.
 
 Het menu naast de titel wisselt tussen geopende mappen en sluit bovenliggende vensters. **Ctrl+Shift+T** opent de laatst gesloten map opnieuw met haar indeling en selectie. De Jump List op de taakbalk biedt ook recent gesloten mappen en mappen die in Snelle toegang zijn vastgemaakt.
 
@@ -81,9 +81,11 @@ Deze opties zijn beschikbaar bij alle pictogramgroottes. **Lijst**, **Details** 
 
 Houd in de modus **Vrij** tijdens het slepen **S** ingedrukt totdat u de muisknop loslaat om alleen de gesleepte pictogrammen op het raster uit te lijnen. De andere blijven staan. Als u **S** vóór het neerzetten loslaat, blijft de plaatsing vrij. In de pictogramweergave toont een grijs kader de doelpositie.
 
+Met de twee knoppen rechts op de statusbalk stel je de horizontale en verticale pictogramafstand voor de huidige map in. Klik met de rechtermuisknop op een knop om die as terug te zetten naar 100%. Kies in **Instellingen > Bestanden** of de pictogrammen bij het slepen of pas bij het loslaten verschuiven. Met de herstelknop op die pagina zet je beide assen voor alle mappen terug zodra je **Toepassen** of **OK** kiest.
+
 <div id="details-columns"></div>
 
-In de weergave **Details** kunnen de kolommen automatisch de volledige vensterbreedte vullen. Sta dit toe onder **Instellingen > Weergave** en schakel het daarna voor elke map afzonderlijk in of uit via het menu **Beeld**.
+In de weergave **Details** kunnen de kolommen automatisch de volledige vensterbreedte vullen. Sta dit toe onder **Instellingen > Bestanden** en schakel het daarna voor elke map afzonderlijk in of uit via het menu **Beeld**.
 
 ![Detailskolommen over de volledige vensterbreedte en daarna de kolom Naam breder maken.](images/details-columns.gif)
 
@@ -92,7 +94,7 @@ In de weergave **Details** kunnen de kolommen automatisch de volledige vensterbr
 <div id="weergaveopties"></div>
 <div id="view-options"></div>
 
-Standaard staan mappen vóór bestanden, zoals in Bestandenverkenner. **Mappen en bestanden samen sorteren** onder **Instellingen > Weergave** sorteert ze samen, zoals op [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) en [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Dit geldt voor Details, Lijst en automatisch gerangschikte pictogrammen. Virtuele mappen en archieven behouden de Windows-volgorde.
+Standaard staan mappen vóór bestanden, zoals in Bestandenverkenner. **Mappen en bestanden samen sorteren** onder **Instellingen > Bestanden** sorteert ze samen, zoals op [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) en [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Dit geldt voor Details, Lijst en automatisch gerangschikte pictogrammen. Virtuele mappen en archieven behouden de Windows-volgorde.
 
 ![Bestanden en mappen in dezelfde alfabetische volgorde.](images/mixed-sorting.png)
 
@@ -103,7 +105,7 @@ In dezelfde instellingen maakt **Volledige naam van geselecteerd bestand tonen**
 <div id="selectie-en-activering"></div>
 <div id="selection-and-activation"></div>
 
-Klikken op de achtergrond van een inactief venster wist standaard de selectie, zoals in Bestandenverkenner. **Selectie behouden bij klikken op een inactief venster** onder **Instellingen > Algemeen** activeert het venster zonder de selectie te verliezen.
+Klikken op de achtergrond van een inactief venster wist standaard de selectie, zoals in Bestandenverkenner. **Selectie behouden bij klikken op een inactief venster** onder **Instellingen > Vensters** activeert het venster zonder de selectie te verliezen.
 
 <a id="customization"></a>
 
@@ -116,7 +118,7 @@ Klikken op de achtergrond van een inactief venster wist standaard de selectie, z
 <div id="het-titelbalkmenu-aanpassen"></div>
 <div id="customize-the-title-bar-menu"></div>
 
-Het **titelbalkmenu** is aanpasbaar onder **Instellingen > Weergave > Interface-elementen**. Opdrachten kunnen door slepen worden toegevoegd en verplaatst. Een item uit het menu slepen verwijdert het.
+Het **titelbalkmenu** is aanpasbaar onder **Instellingen > Interface > Interface-elementen**. Opdrachten kunnen door slepen worden toegevoegd en verplaatst. Een item uit het menu slepen verwijdert het.
 
 ![Een actie aan het titelbalkmenu toevoegen en een andere verwijderen.](images/customize-title-menu.gif)
 
@@ -210,7 +212,7 @@ FileSpacer bevat geen telemetrie, gebruiksregistratie of advertenties. Crashrapp
 
 Updates maken verbinding met GitHub, dat het IP-adres en de toepassingsversie ontvangt, maar geen bestandspaden of mapstatus.
 
-Om grote mappen (vanaf ongeveer duizend items) sneller te verwerken downloadt FileSpacer symboolbestanden van Microsoft, dat het IP-adres en de versie van de betrokken Windows-onderdelen ontvangt, maar geen bestandspaden of mapstatus. Een melding meldt elke download; die kan worden uitgeschakeld onder **Instellingen > Integratie**.
+Om grote mappen (vanaf ongeveer duizend items) sneller te verwerken downloadt FileSpacer symboolbestanden van Microsoft, dat het IP-adres en de versie van de betrokken Windows-onderdelen ontvangt, maar geen bestandspaden of mapstatus. Een melding meldt elke download; die kan worden uitgeschakeld onder **Instellingen > Bestanden**.
 
 Windows beheert de aanmeldgegevens voor netwerkstations rechtstreeks. FileSpacer leest of bewaart deze niet.
 

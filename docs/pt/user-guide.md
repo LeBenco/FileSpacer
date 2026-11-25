@@ -20,7 +20,7 @@ O FileSpacer pode ser definido como gestor de ficheiros predefinido durante a in
 <div id="gestão-das-janelas"></div>
 <div id="managing-windows"></div>
 
-**Cada pasta tem a sua própria janela.** Se já estiver aberta, o FileSpacer traz a janela para primeiro plano. A posição, o tamanho, a apresentação, a disposição dos ícones e a posição de deslocamento são memorizados, mesmo depois de mover ou mudar o nome da pasta. As janelas sem posição guardada são colocadas de forma a limitar a sobreposição (opção em **Definições > Geral**).
+**Cada pasta tem a sua própria janela.** Se já estiver aberta, o FileSpacer traz a janela para primeiro plano. A posição, o tamanho, a apresentação, a disposição dos ícones e a posição de deslocamento são memorizados, mesmo depois de mover ou mudar o nome da pasta. As janelas sem posição guardada são colocadas de forma a limitar a sobreposição (opção em **Definições > Janelas**).
 
 <div id="bloqueio-do-estado-guardado"></div>
 <div id="locking-a-saved-layout"></div>
@@ -29,11 +29,11 @@ O FileSpacer pode ser definido como gestor de ficheiros predefinido durante a in
 
 **Desbloquear o estado da janela** mantém a disposição atual e permite voltar a guardar as alterações.
 
-O bloqueio ativa-se em **Definições > Geral**. Também é possível personalizar a apresentação do cadeado à esquerda da barra de título e ativar o clique nesse ícone para bloquear ou desbloquear o estado da janela. Também é possível [adicionar este comando ao menu da barra de título](#customize-the-title-bar-menu). Desativar a função elimina todos os bloqueios e oculta o ícone.
+O bloqueio ativa-se em **Definições > Janelas**. Também é possível personalizar a apresentação do cadeado à esquerda da barra de título e ativar o clique nesse ícone para bloquear ou desbloquear o estado da janela. Também é possível [adicionar este comando ao menu da barra de título](#customize-the-title-bar-menu). Desativar a função elimina todos os bloqueios e oculta o ícone.
 
 <img src="images/locked-title.png" alt="Pormenor do título da pasta com o indicador de cadeado." width="280">
 
-Abrir uma pasta ou a pasta superior fecha a janela de origem por predefinição. **Manter Ctrl premido durante a abertura** faz o contrário, seja qual for a forma de abrir. Este comportamento configura-se em **Definições > Geral**. Abrir várias pastas selecionadas mantém a janela de origem aberta.
+Abrir uma pasta ou a pasta superior fecha a janela de origem por predefinição. **Manter Ctrl premido durante a abertura** faz o contrário, seja qual for a forma de abrir. Este comportamento configura-se em **Definições > Janelas**. Abrir várias pastas selecionadas mantém a janela de origem aberta.
 
 O menu junto ao título permite alternar entre pastas abertas e fechar as janelas das pastas superiores. **Ctrl+Shift+T** reabre a última pasta fechada com a sua disposição e seleção. A lista de atalhos da barra de tarefas também inclui pastas fechadas recentemente e afixadas no Acesso rápido.
 
@@ -81,9 +81,11 @@ Estas opções estão disponíveis em todos os tamanhos de ícones. **Lista**, *
 
 No modo **Livre**, manter **S** premida durante o arrasto e até soltar o botão do rato para alinhar na grelha apenas os ícones arrastados. Os restantes ficam no mesmo lugar. Soltar **S** antes de largar os ícones mantém a disposição livre. Na vista de ícones, uma moldura cinzenta indica a posição de destino.
 
+Os dois botões à direita na barra de estado ajustam o espaçamento horizontal e vertical dos ícones da pasta. Clique com o botão direito num deles para repor esse eixo a 100%. Em **Definições > Ficheiros**, escolha se os ícones se deslocam ao arrastar o controlo ou ao soltá-lo. O botão de reposição nessa página repõe ambos os eixos em todas as pastas quando selecionar **Aplicar** ou **OK**.
+
 <div id="details-columns"></div>
 
-Na vista **Detalhes**, as colunas podem ajustar-se automaticamente a toda a largura da janela. A função é permitida em **Definições > Apresentação** e ativada ou desativada para cada pasta no respetivo menu **Ver**.
+Na vista **Detalhes**, as colunas podem ajustar-se automaticamente a toda a largura da janela. A função é permitida em **Definições > Ficheiros** e ativada ou desativada para cada pasta no respetivo menu **Ver**.
 
 ![Colunas da vista Detalhes a ocupar toda a largura e alargamento manual da coluna Nome.](images/details-columns.gif)
 
@@ -92,7 +94,7 @@ A **atualização contínua**, também disponível nas definições, pode tornar
 <div id="opções-de-apresentação"></div>
 <div id="view-options"></div>
 
-Por predefinição, as pastas são agrupadas antes dos ficheiros, como no Explorador de Ficheiros. **Misturar pastas e ficheiros na ordenação**, em **Definições > Apresentação**, ordena ambos em conjunto, como no [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) e no [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). A opção aplica-se a Detalhes, Lista e ícones organizados automaticamente. As pastas virtuais e os arquivos mantêm a ordenação do Windows.
+Por predefinição, as pastas são agrupadas antes dos ficheiros, como no Explorador de Ficheiros. **Misturar pastas e ficheiros na ordenação**, em **Definições > Ficheiros**, ordena ambos em conjunto, como no [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) e no [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). A opção aplica-se a Detalhes, Lista e ícones organizados automaticamente. As pastas virtuais e os arquivos mantêm a ordenação do Windows.
 
 ![Pastas e ficheiros na mesma ordem alfabética.](images/mixed-sorting.png)
 
@@ -103,7 +105,7 @@ Nas mesmas definições, **Mostrar o nome completo do ficheiro selecionado** per
 <div id="seleção-e-ativação"></div>
 <div id="selection-and-activation"></div>
 
-Por predefinição, clicar no fundo de uma janela inativa limpa a seleção, como no Explorador de Ficheiros. **Manter a seleção ao clicar numa janela inativa**, em **Definições > Geral**, permite ativá-la sem perder a seleção.
+Por predefinição, clicar no fundo de uma janela inativa limpa a seleção, como no Explorador de Ficheiros. **Manter a seleção ao clicar numa janela inativa**, em **Definições > Janelas**, permite ativá-la sem perder a seleção.
 
 <a id="customization"></a>
 
@@ -116,7 +118,7 @@ Por predefinição, clicar no fundo de uma janela inativa limpa a seleção, com
 <div id="personalizar-o-menu-da-barra-de-título"></div>
 <div id="customize-the-title-bar-menu"></div>
 
-O **menu da barra de título** personaliza-se em **Definições > Apresentação > Elementos da interface**. Os comandos são adicionados e reordenados por arrastar e largar. Para remover uma entrada, arrastá-la para fora do menu.
+O **menu da barra de título** personaliza-se em **Definições > Interface > Elementos da interface**. Os comandos são adicionados e reordenados por arrastar e largar. Para remover uma entrada, arrastá-la para fora do menu.
 
 ![Adicionar uma ação ao menu da barra de título e remover outra.](images/customize-title-menu.gif)
 
@@ -210,7 +212,7 @@ O FileSpacer não inclui telemetria, acompanhamento da utilização nem publicid
 
 As atualizações contactam o GitHub, que recebe o endereço IP e a versão da aplicação, mas nenhum caminho de ficheiro ou estado de pasta.
 
-Para acelerar a gestão de pastas grandes (a partir de mil elementos), o FileSpacer transfere ficheiros de símbolos da Microsoft, que recebe o endereço IP e a versão dos componentes do Windows em causa, mas nenhum caminho de ficheiro ou estado de pasta. Uma notificação assinala cada transferência, que pode ser desativada em **Definições > Integração**.
+Para acelerar a gestão de pastas grandes (a partir de mil elementos), o FileSpacer transfere ficheiros de símbolos da Microsoft, que recebe o endereço IP e a versão dos componentes do Windows em causa, mas nenhum caminho de ficheiro ou estado de pasta. Uma notificação assinala cada transferência, que pode ser desativada em **Definições > Ficheiros**.
 
 As credenciais das unidades de rede são geridas diretamente pelo Windows. O FileSpacer não as lê nem guarda.
 

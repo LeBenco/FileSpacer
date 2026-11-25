@@ -16,7 +16,7 @@ FileSpacer can be set as the default file manager during installation, or under 
 <div id="window-placement"></div>
 <div id="managing-windows"></div>
 
-**Each folder has its own window.** If it is already open, FileSpacer brings that window forward. Position, size, view settings, icon layout and scroll position are remembered, even after moving or renaming the folder. Windows without a saved position are placed to limit overlap (option under **Settings > General**).
+**Each folder has its own window.** If it is already open, FileSpacer brings that window forward. Position, size, view settings, icon layout and scroll position are remembered, even after moving or renaming the folder. Windows without a saved position are placed to limit overlap (option under **Settings > Windows**).
 
 <div id="locking-a-saved-layout"></div>
 
@@ -24,11 +24,11 @@ FileSpacer can be set as the default file manager during installation, or under 
 
 **Unlock window state** keeps the current layout and allows changes to be saved again.
 
-Enable locking under **Settings > General**. The same settings let you customize the padlock on the left of the title bar and enable clicking it to lock or unlock the window state. The command can also be [added to the title-bar menu](#customize-the-title-bar-menu). Turning off the feature removes all locks and hides the padlock.
+Enable locking under **Settings > Windows**. The same settings let you customize the padlock on the left of the title bar and enable clicking it to lock or unlock the window state. The command can also be [added to the title-bar menu](#customize-the-title-bar-menu). Turning off the feature removes all locks and hides the padlock.
 
 <img src="images/locked-title.png" alt="Close-up of the folder title and its padlock badge." width="280">
 
-Opening a folder or its parent closes the source window by default. **Holding Ctrl while opening** does the opposite, however the folder is opened. This behavior can be changed under **Settings > General**. Opening several selected folders keeps the source window open.
+Opening a folder or its parent closes the source window by default. **Holding Ctrl while opening** does the opposite, however the folder is opened. This behavior can be changed under **Settings > Windows**. Opening several selected folders keeps the source window open.
 
 The menu beside the title switches between open folders and closes parent windows. **Ctrl+Shift+T** reopens the last closed folder with its layout and selection. The taskbar Jump List also provides recently closed folders and folders pinned in Quick access.
 
@@ -71,9 +71,11 @@ These choices are available at every icon size. **List**, **Details** and **Cont
 
 In **Free** mode, hold **S** while dragging and until you release the mouse button to align only the dragged icons to the grid. Other icons stay in place. Releasing **S** before the drop keeps free placement. In Icon view, a grey frame previews the destination.
 
+The two buttons on the right of the status bar adjust horizontal and vertical icon spacing for the current folder. Right-click either button to reset that axis to 100%. In **Settings > Files**, choose whether icons move while you drag the slider or when you release it. The reset button on that page restores both axes for all folders when you choose **Apply** or **OK**.
+
 <div id="details-columns"></div>
 
-In **Details** view, columns can automatically fill the entire window width. Allow this under **Settings > Display**, then enable or disable it for each folder from its **View** menu.
+In **Details** view, columns can automatically fill the entire window width. Allow this under **Settings > Files**, then enable or disable it for each folder from its **View** menu.
 
 ![Filling the window with Details columns, then widening the Name column.](images/details-columns.gif)
 
@@ -81,7 +83,7 @@ In **Details** view, columns can automatically fill the entire window width. All
 
 <div id="view-options"></div>
 
-By default, folders are grouped before files, as in File Explorer. **Mix folders and files when sorting** under **Settings > Display** sorts them together, as on [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) and [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). This applies to Details, List and automatically arranged Icons views. Virtual folders and archives keep Windows’ ordering.
+By default, folders are grouped before files, as in File Explorer. **Mix folders and files when sorting** under **Settings > Files** sorts them together, as on [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) and [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). This applies to Details, List and automatically arranged Icons views. Virtual folders and archives keep Windows’ ordering.
 
 ![Files and folders sharing the same alphabetical order.](images/mixed-sorting.png)
 
@@ -91,7 +93,7 @@ In the same settings, **Show the full name of a selected file** makes the entire
 
 <div id="selection-and-activation"></div>
 
-By default, clicking the background of an inactive window clears its selection, as in File Explorer. **Keep the current selection when clicking an inactive window** under **Settings > General** activates it without losing the selection.
+By default, clicking the background of an inactive window clears its selection, as in File Explorer. **Keep the current selection when clicking an inactive window** under **Settings > Windows** activates it without losing the selection.
 
 <a id="customization"></a>
 
@@ -103,7 +105,7 @@ By default, clicking the background of an inactive window clears its selection, 
 
 <div id="customize-the-title-bar-menu"></div>
 
-Customize the **title-bar menu** under **Settings > Display > Interface elements**. Drag and drop commands to add or reorder them. Drag an entry out of the menu to remove it.
+Customize the **title-bar menu** under **Settings > Interface > Interface elements**. Drag and drop commands to add or reorder them. Drag an entry out of the menu to remove it.
 
 ![Adding an action to the title-bar menu and removing another.](images/customize-title-menu.gif)
 
@@ -193,7 +195,7 @@ FileSpacer has no telemetry, usage tracking or advertising. Crash reports are ne
 
 Updates contact GitHub, which receives the IP address and application version, but no file paths or folder state.
 
-To speed up the handling of large folders (a thousand items or more), FileSpacer downloads symbol files from Microsoft, which receives the IP address and the version of the Windows components concerned, but no file paths or folder state. A notification reports each download, which can be turned off under **Settings > Integration**.
+To speed up the handling of large folders (a thousand items or more), FileSpacer downloads symbol files from Microsoft, which receives the IP address and the version of the Windows components concerned, but no file paths or folder state. A notification reports each download, which can be turned off under **Settings > Files**.
 
 Network-drive credentials are handled directly by Windows. FileSpacer neither reads nor stores them.
 

@@ -20,7 +20,7 @@ FileSpacer można ustawić jako domyślny menedżer plików podczas instalacji l
 <div id="zarządzanie-oknami"></div>
 <div id="managing-windows"></div>
 
-**Każdy folder ma własne okno.** Jeśli jest już otwarty, FileSpacer przenosi jego okno na pierwszy plan. Położenie, rozmiar, widok, układ ikon i pozycja przewijania są zapamiętywane nawet po przeniesieniu folderu lub zmianie jego nazwy. Okna bez zapisanego położenia są rozmieszczane tak, aby ograniczyć nakładanie się (opcja w **Ustawienia > Ogólne**).
+**Każdy folder ma własne okno.** Jeśli jest już otwarty, FileSpacer przenosi jego okno na pierwszy plan. Położenie, rozmiar, widok, układ ikon i pozycja przewijania są zapamiętywane nawet po przeniesieniu folderu lub zmianie jego nazwy. Okna bez zapisanego położenia są rozmieszczane tak, aby ograniczyć nakładanie się (opcja w **Ustawienia > Okna**).
 
 <div id="blokowanie-zapisanego-układu"></div>
 <div id="locking-a-saved-layout"></div>
@@ -29,11 +29,11 @@ FileSpacer można ustawić jako domyślny menedżer plików podczas instalacji l
 
 **Odblokuj stan okna** zachowuje bieżący układ i ponownie umożliwia zapisywanie zmian.
 
-Blokowanie włącza się w **Ustawienia > Ogólne**. Można tam również dostosować wyświetlanie kłódki po lewej stronie paska tytułu i włączyć blokowanie lub odblokowywanie stanu okna kliknięciem tej ikony. Polecenie można też [dodać do menu paska tytułu](#customize-the-title-bar-menu). Wyłączenie funkcji usuwa wszystkie blokady i ukrywa ikonę.
+Blokowanie włącza się w **Ustawienia > Okna**. Można tam również dostosować wyświetlanie kłódki po lewej stronie paska tytułu i włączyć blokowanie lub odblokowywanie stanu okna kliknięciem tej ikony. Polecenie można też [dodać do menu paska tytułu](#customize-the-title-bar-menu). Wyłączenie funkcji usuwa wszystkie blokady i ukrywa ikonę.
 
 <img src="images/locked-title.png" alt="Zbliżenie tytułu folderu z oznaczeniem kłódki." width="280">
 
-Otwarcie folderu lub folderu nadrzędnego domyślnie zamyka okno źródłowe. **Przytrzymanie Ctrl podczas otwierania** działa odwrotnie, niezależnie od sposobu otwierania. Zachowanie można ustawić w **Ustawienia > Ogólne**. Otwarcie kilku zaznaczonych folderów pozostawia okno źródłowe otwarte.
+Otwarcie folderu lub folderu nadrzędnego domyślnie zamyka okno źródłowe. **Przytrzymanie Ctrl podczas otwierania** działa odwrotnie, niezależnie od sposobu otwierania. Zachowanie można ustawić w **Ustawienia > Okna**. Otwarcie kilku zaznaczonych folderów pozostawia okno źródłowe otwarte.
 
 Menu obok tytułu pozwala przełączać otwarte foldery i zamykać okna nadrzędne. **Ctrl+Shift+T** otwiera ostatnio zamknięty folder z jego układem i zaznaczeniem. Lista szybkiego dostępu na pasku zadań zawiera też ostatnio zamknięte foldery i foldery przypięte do Szybkiego dostępu.
 
@@ -81,9 +81,11 @@ Opcje te są dostępne dla wszystkich rozmiarów ikon. Widoki **Lista**, **Szcze
 
 W trybie **Dowolne** należy przytrzymać **S** podczas przeciągania aż do zwolnienia przycisku myszy, aby wyrównać do siatki tylko przeciągane ikony. Pozostałe nie zmieniają położenia. Zwolnienie **S** przed upuszczeniem zachowuje swobodne pozycjonowanie. W widoku ikon szara ramka wskazuje docelową pozycję.
 
+Dwa przyciski po prawej stronie paska stanu regulują poziome i pionowe odstępy między ikonami w bieżącym folderze. Kliknij przycisk prawym przyciskiem myszy, aby przywrócić 100% dla danej osi. W **Ustawienia > Pliki** możesz wybrać, czy ikony mają się przesuwać podczas przeciągania suwaka, czy po jego zwolnieniu. Przycisk przywracania na tej stronie przywraca odstępy na obu osiach we wszystkich folderach po wybraniu **Zastosuj** lub **OK**.
+
 <div id="details-columns"></div>
 
-W widoku **Szczegóły** kolumny mogą automatycznie wypełniać całą szerokość okna. Można na to zezwolić w **Ustawienia > Wyświetlanie**, a następnie włączać lub wyłączać tę opcję osobno dla każdego folderu w menu **Widok**.
+W widoku **Szczegóły** kolumny mogą automatycznie wypełniać całą szerokość okna. Można na to zezwolić w **Ustawienia > Pliki**, a następnie włączać lub wyłączać tę opcję osobno dla każdego folderu w menu **Widok**.
 
 ![Wypełnienie szerokości okna kolumnami widoku Szczegóły, a następnie poszerzenie kolumny Nazwa.](images/details-columns.gif)
 
@@ -92,7 +94,7 @@ W widoku **Szczegóły** kolumny mogą automatycznie wypełniać całą szeroko�
 <div id="opcje-widoku"></div>
 <div id="view-options"></div>
 
-Domyślnie foldery są zgrupowane przed plikami, jak w Eksploratorze plików. **Sortuj foldery i pliki razem** w **Ustawienia > Wyświetlanie** sortuje je razem, jak w [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) i [Linuksie](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Dotyczy to widoków Szczegóły, Lista i automatycznie rozmieszczanych ikon. Foldery wirtualne i archiwa zachowują kolejność systemu Windows.
+Domyślnie foldery są zgrupowane przed plikami, jak w Eksploratorze plików. **Sortuj foldery i pliki razem** w **Ustawienia > Pliki** sortuje je razem, jak w [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) i [Linuksie](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Dotyczy to widoków Szczegóły, Lista i automatycznie rozmieszczanych ikon. Foldery wirtualne i archiwa zachowują kolejność systemu Windows.
 
 ![Pliki i foldery we wspólnej kolejności alfabetycznej.](images/mixed-sorting.png)
 
@@ -103,7 +105,7 @@ W tych samych ustawieniach **Pokaż pełną nazwę zaznaczonego pliku** pozwala 
 <div id="zaznaczenie-i-aktywacja"></div>
 <div id="selection-and-activation"></div>
 
-Domyślnie kliknięcie tła nieaktywnego okna usuwa jego zaznaczenie, jak w Eksploratorze plików. **Zachowaj zaznaczenie po kliknięciu nieaktywnego okna** w **Ustawienia > Ogólne** pozwala je aktywować bez utraty zaznaczenia.
+Domyślnie kliknięcie tła nieaktywnego okna usuwa jego zaznaczenie, jak w Eksploratorze plików. **Zachowaj zaznaczenie po kliknięciu nieaktywnego okna** w **Ustawienia > Okna** pozwala je aktywować bez utraty zaznaczenia.
 
 <a id="customization"></a>
 
@@ -116,7 +118,7 @@ Domyślnie kliknięcie tła nieaktywnego okna usuwa jego zaznaczenie, jak w Eksp
 <div id="dostosowanie-menu-paska-tytułu"></div>
 <div id="customize-the-title-bar-menu"></div>
 
-**Menu paska tytułu** można dostosować w **Ustawienia > Wyświetlanie > Elementy interfejsu**. Polecenia dodaje się i przestawia przez przeciąganie. Przeciągnięcie wpisu poza menu usuwa go.
+**Menu paska tytułu** można dostosować w **Ustawienia > Interfejs > Elementy interfejsu**. Polecenia dodaje się i przestawia przez przeciąganie. Przeciągnięcie wpisu poza menu usuwa go.
 
 ![Dodawanie działania do menu paska tytułu i usuwanie innego.](images/customize-title-menu.gif)
 
@@ -210,7 +212,7 @@ FileSpacer nie zawiera telemetrii, śledzenia użycia ani reklam. Raporty awarii
 
 Aktualizacje łączą się z GitHubem, który otrzymuje adres IP i wersję aplikacji, ale nie ścieżki plików ani stan folderów.
 
-Aby przyspieszyć obsługę dużych folderów (od około tysiąca elementów), FileSpacer pobiera pliki symboli od Microsoftu, który otrzymuje adres IP i wersję odpowiednich składników systemu Windows, ale nie ścieżki plików ani stan folderów. O każdym pobraniu informuje powiadomienie; pobieranie można wyłączyć w **Ustawienia > Integracja**.
+Aby przyspieszyć obsługę dużych folderów (od około tysiąca elementów), FileSpacer pobiera pliki symboli od Microsoftu, który otrzymuje adres IP i wersję odpowiednich składników systemu Windows, ale nie ścieżki plików ani stan folderów. O każdym pobraniu informuje powiadomienie; pobieranie można wyłączyć w **Ustawienia > Pliki**.
 
 Poświadczeniami dysków sieciowych zarządza bezpośrednio Windows. FileSpacer ich nie odczytuje ani nie zapisuje.
 

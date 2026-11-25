@@ -20,7 +20,7 @@ FileSpacer si può impostare come gestore di file predefinito durante l’instal
 <div id="gestione-delle-finestre"></div>
 <div id="managing-windows"></div>
 
-**Ogni cartella ha la propria finestra.** Se è già aperta, FileSpacer la porta in primo piano. Posizione, dimensioni, visualizzazione, disposizione delle icone e posizione di scorrimento vengono memorizzate anche dopo lo spostamento o la ridenominazione della cartella. Le finestre senza posizione salvata vengono collocate limitando la sovrapposizione (opzione in **Impostazioni > Generale**).
+**Ogni cartella ha la propria finestra.** Se è già aperta, FileSpacer la porta in primo piano. Posizione, dimensioni, visualizzazione, disposizione delle icone e posizione di scorrimento vengono memorizzate anche dopo lo spostamento o la ridenominazione della cartella. Le finestre senza posizione salvata vengono collocate limitando la sovrapposizione (opzione in **Impostazioni > Finestre**).
 
 <div id="blocco-dello-stato-salvato"></div>
 <div id="locking-a-saved-layout"></div>
@@ -29,11 +29,11 @@ FileSpacer si può impostare come gestore di file predefinito durante l’instal
 
 **Sblocca lo stato della finestra** conserva la disposizione attuale e permette di tornare a salvare le modifiche.
 
-Il blocco si attiva in **Impostazioni > Generale**. Qui si può anche personalizzare l’aspetto del lucchetto a sinistra della barra del titolo e abilitarne il clic per bloccare o sbloccare lo stato della finestra. Il comando si può anche [aggiungere al menu della barra del titolo](#customize-the-title-bar-menu). Disattivare la funzione elimina tutti i blocchi e nasconde l’icona.
+Il blocco si attiva in **Impostazioni > Finestre**. Qui si può anche personalizzare l’aspetto del lucchetto a sinistra della barra del titolo e abilitarne il clic per bloccare o sbloccare lo stato della finestra. Il comando si può anche [aggiungere al menu della barra del titolo](#customize-the-title-bar-menu). Disattivare la funzione elimina tutti i blocchi e nasconde l’icona.
 
 <img src="images/locked-title.png" alt="Dettaglio del titolo della cartella con il lucchetto." width="280">
 
-Aprire una cartella o la cartella superiore chiude per impostazione predefinita la finestra di origine. **Tenere premuto Ctrl durante l’apertura** fa il contrario, qualunque sia il modo di aprire. Il comportamento si imposta in **Impostazioni > Generale**. L’apertura di più cartelle selezionate mantiene aperta la finestra di origine.
+Aprire una cartella o la cartella superiore chiude per impostazione predefinita la finestra di origine. **Tenere premuto Ctrl durante l’apertura** fa il contrario, qualunque sia il modo di aprire. Il comportamento si imposta in **Impostazioni > Finestre**. L’apertura di più cartelle selezionate mantiene aperta la finestra di origine.
 
 Il menu accanto al titolo permette di passare tra le cartelle aperte e chiudere le finestre delle cartelle superiori. **Ctrl+Maiusc+T** riapre l’ultima cartella chiusa con la sua disposizione e selezione. La Jump List della barra delle applicazioni include anche le cartelle chiuse di recente e quelle aggiunte ad Accesso rapido.
 
@@ -81,9 +81,11 @@ Queste opzioni sono disponibili con tutte le dimensioni delle icone. **Elenco**,
 
 In modalità **Libera**, tenere premuto **S** durante il trascinamento e fino al rilascio del pulsante del mouse per allineare alla griglia solo le icone trascinate. Le altre restano al loro posto. Rilasciando **S** prima di deporle, il posizionamento resta libero. Nella vista Icone, un riquadro grigio indica la posizione di destinazione.
 
+I due pulsanti a destra nella barra di stato regolano la spaziatura orizzontale e verticale delle icone della cartella. Fai clic con il pulsante destro su uno dei due per riportare il relativo asse al 100%. In **Impostazioni > File** puoi scegliere se spostare le icone durante il trascinamento del cursore o al rilascio. Il pulsante di ripristino nella stessa pagina ripristina entrambi gli assi per tutte le cartelle quando scegli **Applica** o **OK**.
+
 <div id="details-columns"></div>
 
-Nella visualizzazione **Dettagli**, le colonne possono occupare automaticamente tutta la larghezza della finestra. La funzione si abilita in **Impostazioni > Visualizzazione** e si attiva o disattiva per ogni cartella dal relativo menu **Visualizza**.
+Nella visualizzazione **Dettagli**, le colonne possono occupare automaticamente tutta la larghezza della finestra. La funzione si abilita in **Impostazioni > File** e si attiva o disattiva per ogni cartella dal relativo menu **Visualizza**.
 
 ![Colonne della visualizzazione Dettagli estese a tutta la finestra, poi allargamento della colonna Nome.](images/details-columns.gif)
 
@@ -92,7 +94,7 @@ L’**aggiornamento continuo**, disponibile nelle stesse impostazioni, può rend
 <div id="opzioni-di-visualizzazione"></div>
 <div id="view-options"></div>
 
-Per impostazione predefinita, le cartelle sono raggruppate prima dei file, come in Esplora file. **Mescola cartelle e file nell’ordinamento**, in **Impostazioni > Visualizzazione**, li ordina insieme, come in [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) e [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). L’opzione riguarda Dettagli, Elenco e Icone disposte automaticamente. Cartelle virtuali e archivi mantengono l’ordine di Windows.
+Per impostazione predefinita, le cartelle sono raggruppate prima dei file, come in Esplora file. **Mescola cartelle e file nell’ordinamento**, in **Impostazioni > File**, li ordina insieme, come in [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) e [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). L’opzione riguarda Dettagli, Elenco e Icone disposte automaticamente. Cartelle virtuali e archivi mantengono l’ordine di Windows.
 
 ![Cartelle e file nello stesso ordine alfabetico.](images/mixed-sorting.png)
 
@@ -103,7 +105,7 @@ Nelle stesse impostazioni, **Mostra il nome completo di un file selezionato** pe
 <div id="selezione-e-attivazione"></div>
 <div id="selection-and-activation"></div>
 
-Per impostazione predefinita, un clic sullo sfondo di una finestra inattiva ne cancella la selezione, come in Esplora file. **Mantieni la selezione facendo clic su una finestra inattiva**, in **Impostazioni > Generale**, permette di attivarla senza perdere la selezione.
+Per impostazione predefinita, un clic sullo sfondo di una finestra inattiva ne cancella la selezione, come in Esplora file. **Mantieni la selezione facendo clic su una finestra inattiva**, in **Impostazioni > Finestre**, permette di attivarla senza perdere la selezione.
 
 <a id="customization"></a>
 
@@ -116,7 +118,7 @@ Per impostazione predefinita, un clic sullo sfondo di una finestra inattiva ne c
 <div id="personalizzare-il-menu-della-barra-del-titolo"></div>
 <div id="customize-the-title-bar-menu"></div>
 
-Il **menu della barra del titolo** si personalizza in **Impostazioni > Visualizzazione > Elementi dell’interfaccia**. I comandi si aggiungono e riordinano trascinandoli. Per rimuovere una voce, trascinarla fuori dal menu.
+Il **menu della barra del titolo** si personalizza in **Impostazioni > Interfaccia > Elementi dell’interfaccia**. I comandi si aggiungono e riordinano trascinandoli. Per rimuovere una voce, trascinarla fuori dal menu.
 
 ![Aggiunta di un’azione al menu della barra del titolo e rimozione di un’altra.](images/customize-title-menu.gif)
 
@@ -210,7 +212,7 @@ FileSpacer non include telemetria, monitoraggio dell’uso o pubblicità. Nessun
 
 Gli aggiornamenti contattano GitHub, che riceve l’indirizzo IP e la versione dell’applicazione, ma nessun percorso di file o stato delle cartelle.
 
-Per velocizzare la gestione delle cartelle grandi (da un migliaio di elementi), FileSpacer scarica file di simboli da Microsoft, che riceve l’indirizzo IP e la versione dei componenti di Windows interessati, ma nessun percorso di file o stato delle cartelle. Una notifica segnala ogni scaricamento, che si può disattivare in **Impostazioni > Integrazione**.
+Per velocizzare la gestione delle cartelle grandi (da un migliaio di elementi), FileSpacer scarica file di simboli da Microsoft, che riceve l’indirizzo IP e la versione dei componenti di Windows interessati, ma nessun percorso di file o stato delle cartelle. Una notifica segnala ogni scaricamento, che si può disattivare in **Impostazioni > File**.
 
 Le credenziali delle unità di rete sono gestite direttamente da Windows. FileSpacer non le legge né le salva.
 

@@ -20,7 +20,7 @@ FileSpacer se puede definir como gestor de archivos predeterminado durante la in
 <div id="gestión-de-ventanas"></div>
 <div id="managing-windows"></div>
 
-**Cada carpeta tiene su propia ventana.** Si ya está abierta, FileSpacer la trae al primer plano. La posición, el tamaño, la vista, la disposición de los iconos y la posición de desplazamiento se conservan incluso al mover o cambiar de nombre la carpeta. Las ventanas sin una posición guardada se colocan limitando la superposición (opción en **Configuración > General**).
+**Cada carpeta tiene su propia ventana.** Si ya está abierta, FileSpacer la trae al primer plano. La posición, el tamaño, la vista, la disposición de los iconos y la posición de desplazamiento se conservan incluso al mover o cambiar de nombre la carpeta. Las ventanas sin una posición guardada se colocan limitando la superposición (opción en **Configuración > Ventanas**).
 
 <div id="bloqueo-del-estado-guardado"></div>
 <div id="locking-a-saved-layout"></div>
@@ -29,11 +29,11 @@ FileSpacer se puede definir como gestor de archivos predeterminado durante la in
 
 **Desbloquear el estado de la ventana** conserva su disposición actual y permite volver a guardar los cambios.
 
-El bloqueo se activa en **Configuración > General**. Allí también se puede personalizar la visualización del candado situado a la izquierda de la barra de título y activar el clic en ese icono para bloquear o desbloquear el estado de la ventana. El comando también se puede [añadir al menú de la barra de título](#customize-the-title-bar-menu). Desactivar la función elimina todos los bloqueos y oculta el candado.
+El bloqueo se activa en **Configuración > Ventanas**. Allí también se puede personalizar la visualización del candado situado a la izquierda de la barra de título y activar el clic en ese icono para bloquear o desbloquear el estado de la ventana. El comando también se puede [añadir al menú de la barra de título](#customize-the-title-bar-menu). Desactivar la función elimina todos los bloqueos y oculta el candado.
 
 <img src="images/locked-title.png" alt="Detalle del título de una carpeta con el distintivo de candado." width="280">
 
-Abrir una carpeta o su carpeta superior cierra de forma predeterminada la ventana de origen. **Mantener pulsada Ctrl al abrirla** hace lo contrario, sea cual sea la forma de abrirla. Este comportamiento se configura en **Configuración > General**. Abrir varias carpetas seleccionadas mantiene abierta la ventana de origen.
+Abrir una carpeta o su carpeta superior cierra de forma predeterminada la ventana de origen. **Mantener pulsada Ctrl al abrirla** hace lo contrario, sea cual sea la forma de abrirla. Este comportamiento se configura en **Configuración > Ventanas**. Abrir varias carpetas seleccionadas mantiene abierta la ventana de origen.
 
 El menú junto al título permite cambiar entre carpetas abiertas y cerrar las ventanas de las carpetas superiores. **Ctrl+Mayús+T** vuelve a abrir la última carpeta cerrada con su disposición y selección. La lista de accesos directos de la barra de tareas también incluye carpetas cerradas recientemente y ancladas en Acceso rápido.
 
@@ -81,9 +81,11 @@ Estas opciones están disponibles con todos los tamaños de iconos. **Lista**, *
 
 En modo **Libre**, mantener **S** durante el arrastre y hasta soltar el botón del ratón para alinear en la cuadrícula solo los iconos arrastrados. Los demás permanecen en su sitio. Soltar **S** antes de colocarlos mantiene la colocación libre. En la vista de iconos, un marco gris indica la posición de destino.
 
+Los dos botones de la derecha de la barra de estado ajustan el espaciado horizontal y vertical de los iconos de la carpeta. Haga clic con el botón derecho en uno de ellos para restablecer ese eje al 100 %. En **Configuración > Archivos** puede elegir si los iconos se mueven al arrastrar el control o al soltarlo. El botón de restablecimiento de esa página restaura ambos ejes en todas las carpetas al pulsar **Aplicar** o **Aceptar**.
+
 <div id="details-columns"></div>
 
-En la vista **Detalles**, las columnas pueden ajustarse automáticamente a todo el ancho de la ventana. La función se habilita en **Configuración > Visualización** y se activa o desactiva para cada carpeta desde su menú **Ver**.
+En la vista **Detalles**, las columnas pueden ajustarse automáticamente a todo el ancho de la ventana. La función se habilita en **Configuración > Archivos** y se activa o desactiva para cada carpeta desde su menú **Ver**.
 
 ![Columnas de la vista Detalles que ocupan todo el ancho y ampliación manual de la columna Nombre.](images/details-columns.gif)
 
@@ -92,7 +94,7 @@ La **actualización continua**, disponible también en la configuración, puede 
 <div id="opciones-de-visualización"></div>
 <div id="view-options"></div>
 
-De forma predeterminada, las carpetas se agrupan antes que los archivos, como en el Explorador de archivos. **Mezclar carpetas y archivos al ordenar**, en **Configuración > Visualización**, los ordena juntos, como en [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) y [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Se aplica a Detalles, Lista e Iconos organizados automáticamente. Las carpetas virtuales y los archivos comprimidos mantienen el orden de Windows.
+De forma predeterminada, las carpetas se agrupan antes que los archivos, como en el Explorador de archivos. **Mezclar carpetas y archivos al ordenar**, en **Configuración > Archivos**, los ordena juntos, como en [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) y [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). Se aplica a Detalles, Lista e Iconos organizados automáticamente. Las carpetas virtuales y los archivos comprimidos mantienen el orden de Windows.
 
 ![Carpetas y archivos en un mismo orden alfabético.](images/mixed-sorting.png)
 
@@ -103,7 +105,7 @@ En la misma configuración, **Mostrar el nombre completo del archivo seleccionad
 <div id="selección-y-activación"></div>
 <div id="selection-and-activation"></div>
 
-De forma predeterminada, hacer clic en el fondo de una ventana inactiva borra su selección, como en el Explorador de archivos. **Mantener la selección al hacer clic en una ventana inactiva**, en **Configuración > General**, permite activarla sin perder la selección.
+De forma predeterminada, hacer clic en el fondo de una ventana inactiva borra su selección, como en el Explorador de archivos. **Mantener la selección al hacer clic en una ventana inactiva**, en **Configuración > Ventanas**, permite activarla sin perder la selección.
 
 <a id="customization"></a>
 
@@ -116,7 +118,7 @@ De forma predeterminada, hacer clic en el fondo de una ventana inactiva borra su
 <div id="personalizar-el-menú-de-la-barra-de-título"></div>
 <div id="customize-the-title-bar-menu"></div>
 
-El **menú de la barra de título** se personaliza en **Configuración > Visualización > Elementos de la interfaz**. Los comandos se añaden y reorganizan arrastrándolos. Para quitar una entrada, arrastrarla fuera del menú.
+El **menú de la barra de título** se personaliza en **Configuración > Interfaz > Elementos de la interfaz**. Los comandos se añaden y reorganizan arrastrándolos. Para quitar una entrada, arrastrarla fuera del menú.
 
 ![Añadir una acción al menú de la barra de título y quitar otra.](images/customize-title-menu.gif)
 
@@ -210,7 +212,7 @@ FileSpacer no incluye telemetría, seguimiento de uso ni publicidad. Nunca se en
 
 Las actualizaciones contactan con GitHub, que recibe la dirección IP y la versión de la aplicación, pero no rutas de archivos ni estados de carpetas.
 
-Para acelerar el manejo de carpetas grandes (a partir de mil elementos), FileSpacer descarga archivos de símbolos de Microsoft, que recibe la dirección IP y la versión de los componentes de Windows correspondientes, pero no rutas de archivos ni estados de carpetas. Una notificación informa de cada descarga, que se puede desactivar en **Configuración > Integración**.
+Para acelerar el manejo de carpetas grandes (a partir de mil elementos), FileSpacer descarga archivos de símbolos de Microsoft, que recibe la dirección IP y la versión de los componentes de Windows correspondientes, pero no rutas de archivos ni estados de carpetas. Una notificación informa de cada descarga, que se puede desactivar en **Configuración > Archivos**.
 
 Windows gestiona directamente las credenciales de las unidades de red. FileSpacer no las lee ni las guarda.
 
