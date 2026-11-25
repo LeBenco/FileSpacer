@@ -2,7 +2,6 @@
 #include <common.h>
 #include "FolderWindow.h"
 #include "FolderWindowViewMenuPreview.h"
-#include <dwmapi.h>
 #include "Settings.h"
 #include "UIStrings.h"
 #include <commctrl.h>
@@ -174,22 +173,6 @@ void FolderWindow::runSpacingCommand(UINT command, POINT anchor) {
     SetTimer(hwnd, TIMER_SAVE_STATE, 250, nullptr);
 }
 
-// Only cloak the native window that owns this specific View menu.
-static HWND popupForMenu(HMENU menu) {
-    RECT item = {};
-    if (!GetMenuItemRect(nullptr, menu, 0, &item)) return nullptr;
-    const HWND window = WindowFromPoint({(item.left + item.right) / 2, (item.top + item.bottom) / 2});
-    MENUBARINFO bar = {sizeof(bar)};
-    return window && GetMenuBarInfo(window, OBJID_CLIENT, 0, &bar) && bar.hMenu == menu ? window : nullptr;
-}
-
-void FolderWindow::ViewMenuPreview::cloakSpacingMenu(bool hide) {
-    if (menuCloaked == hide) return;
-    const BOOL cloak = hide;
-    if (SUCCEEDED(DwmSetWindowAttribute(spacingMenuWindow, DWMWA_CLOAK, &cloak, sizeof(cloak))))
-        menuCloaked = hide;
-}
-
 void FolderWindow::ViewMenuPreview::commitSpacing() {
     owner.readSpacingSlider(true);
     if (!current() || !owner.spacingTrack) return;
@@ -201,7 +184,6 @@ void FolderWindow::ViewMenuPreview::commitSpacing() {
 }
 
 void FolderWindow::ViewMenuPreview::stopSpacingEdit() {
-    cloakSpacingMenu(false);
     draggingSpacing = false;
     if (!editingSpacing) return;
     owner.readSpacingSlider(true);
@@ -222,10 +204,8 @@ void FolderWindow::ViewMenuPreview::moveSpacingThumb(POINT point, bool commit) {
     if (end <= start) return;
     const LONG offset = (owner.spacingAxis ? point.y : point.x) - start - thumbOffset;
     const int position = MulDiv((std::max)(0L, (std::min)(offset, end - start)), 3000 / spacingStep, end - start);
-    if (position != SendMessageW(track, TBM_GETPOS, 0, 0)) {
-        if (!commit) cloakSpacingMenu(true);
+    if (position != SendMessageW(track, TBM_GETPOS, 0, 0))
         SendMessageW(track, TBM_SETPOS, TRUE, position);
-    }
     if (commit) commitSpacing();
     else owner.readSpacingSlider(false);
 }
@@ -240,10 +220,7 @@ bool FolderWindow::ViewMenuPreview::handleSpacingInput(const MSG &message) {
         const HWND track = owner.spacingTrack;
         if (draggingSpacing && (type == WM_MOUSEMOVE || type == WM_LBUTTONUP)) {
             moveSpacingThumb(point, type == WM_LBUTTONUP);
-            if (type == WM_LBUTTONUP) {
-                draggingSpacing = false;
-                cloakSpacingMenu(false);
-            }
+            if (type == WM_LBUTTONUP) draggingSpacing = false;
             return true;
         }
         if (key) {
@@ -276,16 +253,6 @@ bool FolderWindow::ViewMenuPreview::handleSpacingInput(const MSG &message) {
             return true;
         }
     }
-    if (type == WM_MOUSEMOVE) {
-        if (editingSpacing) {
-            const int row = MenuItemFromPoint(nullptr, menu, point);
-            if (row >= 0) {
-                const UINT id = GetMenuItemID(menu, row);
-                if (id != IDM_ICON_GAP_HORIZONTAL && id != IDM_ICON_GAP_VERTICAL) stopSpacingEdit();
-            }
-        }
-        return false;
-    }
     if (key && message.wParam != VK_RETURN) return false;
     int position = key ? GetMenuItemCount(menu) - 1 : MenuItemFromPoint(nullptr, menu, point);
     if (key) while (position >= 0 && !(GetMenuState(menu, position, MF_BYPOSITION) & MF_HILITE)) --position;
@@ -295,14 +262,17 @@ bool FolderWindow::ViewMenuPreview::handleSpacingInput(const MSG &message) {
         pressedSpacingCommand = axisItem ? command : 0;
         return axisItem;
     }
-    if (!key && (!pressedSpacingCommand || std::exchange(pressedSpacingCommand, 0u) != command)) return false;
-    if (!axisItem) return false;
-    // Select the axis without yielding the native menu's mouse capture.
+    const bool hovering = type == WM_MOUSEMOVE;
+    if (type == WM_LBUTTONUP && (!pressedSpacingCommand || std::exchange(pressedSpacingCommand, 0u) != command)) return false;
+    if (!axisItem) {
+        if (hovering && position >= 0 && editingSpacing) stopSpacingEdit();
+        return false;
+    }
+    const int axis = command == IDM_ICON_GAP_VERTICAL;
+    if (editingSpacing && owner.spacingTrack && owner.spacingAxis == axis) return !hovering;
+    RECT entryBounds = {};
+    if (!GetMenuItemRect(nullptr, menu, position, &entryBounds)) return false;
     stopSpacingEdit();
-    spacingMenuWindow = popupForMenu(menu);
-    RECT entryBounds = {}, menuBounds = {};
-    if (!spacingMenuWindow || !GetWindowRect(spacingMenuWindow, &menuBounds)
-            || !GetMenuItemRect(nullptr, menu, position, &entryBounds)) return false;
     wantedCommand = 0;
     apply(0);
     finishPositions();
@@ -311,15 +281,14 @@ bool FolderWindow::ViewMenuPreview::handleSpacingInput(const MSG &message) {
     prepared = capturedIcons = false;
     initial = {};
     initialSpacing = {};
-    const int axis = command == IDM_ICON_GAP_VERTICAL;
     MONITORINFO monitor = {sizeof(monitor)};
     const int width = pixels(owner.hwnd, axis ? 40 : 230);
-    if (!GetMonitorInfoW(MonitorFromRect(&menuBounds, MONITOR_DEFAULTTONEAREST), &monitor)) return true;
-    const int x = menuBounds.right + width <= monitor.rcWork.right ? menuBounds.right : menuBounds.left - width;
+    if (!GetMonitorInfoW(MonitorFromRect(&entryBounds, MONITOR_DEFAULTTONEAREST), &monitor)) return true;
+    const int x = entryBounds.right + width <= monitor.rcWork.right ? entryBounds.right : entryBounds.left - width;
     editingSpacing = true;
-    owner.openSpacingSlider(axis, {x, entryBounds.top}, true);
+    owner.openSpacingSlider(axis, {x, (entryBounds.top + entryBounds.bottom) / 2}, true);
     editingSpacing = owner.spacingTrack != nullptr;
-    return true;
+    return !hovering; // Let the native menu highlight the hovered row.
 }
 
 void FolderWindow::openSpacingSlider(int axis, POINT anchor, bool inMenu) {
@@ -361,7 +330,11 @@ void FolderWindow::openSpacingSlider(int axis, POINT anchor, bool inMenu) {
         SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
     SendMessageW(spacingPopup, WM_CHANGEUISTATE, MAKEWPARAM(UIS_INITIALIZE, 0), 0);
     if (inMenu) {
-        SetWindowPos(spacingPopup, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+        // A straight move from the menu row reaches the thumb on either axis.
+        POINT grip = {(thumb.left + thumb.right) / 2, (thumb.top + thumb.bottom) / 2};
+        ClientToScreen(spacingTrack, &grip);
+        const int top = std::max<int>(monitor.rcWork.top, std::min<int>(y + anchor.y - grip.y, monitor.rcWork.bottom - height));
+        SetWindowPos(spacingPopup, HWND_TOPMOST, x, top, 0, 0, SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOSIZE);
     } else {
         ShowWindow(spacingPopup, SW_SHOW);
         SetFocus(spacingTrack);
