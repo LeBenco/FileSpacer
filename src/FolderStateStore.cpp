@@ -127,8 +127,13 @@ FolderViewSettings FolderViewSettings::mergeChanges(const FolderViewSettings &ba
         const FolderViewSettings &current, const std::vector<Column> &initialWidths) const {
     FolderViewSettings merged = *this;
     auto observed = [&](uint32_t part) { return (baseline.present & current.present & part) != 0; };
-    for (size_t axis = 0; axis < merged.iconGap.size(); ++axis)
-        if (current.iconGap[axis] != baseline.iconGap[axis]) merged.iconGap[axis] = current.iconGap[axis];
+    if (current.iconSpacing.generation > merged.iconSpacing.generation) {
+        merged.iconSpacing = current.iconSpacing;
+    } else if (current.iconSpacing.generation == merged.iconSpacing.generation) {
+        for (size_t axis = 0; axis < merged.iconSpacing.ratios.size(); ++axis)
+            if (current.iconSpacing.ratios[axis] != baseline.iconSpacing.ratios[axis])
+                merged.iconSpacing.ratios[axis] = current.iconSpacing.ratios[axis];
+    }
     if (current.present & ColumnFill) {
         if (!(present & ColumnFill) || (observed(ColumnFill) && current.fillColumns != baseline.fillColumns))
             merged.fillColumns = current.fillColumns;
@@ -401,6 +406,8 @@ FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitializat
     // The optional table leaves the view encoding readable by format-8 clients.
     if (!execute("CREATE TABLE IF NOT EXISTS icon_spacing("
             "key TEXT PRIMARY KEY NOT NULL,horizontal INTEGER NOT NULL,vertical INTEGER NOT NULL) WITHOUT ROWID;"
+            "CREATE TABLE IF NOT EXISTS icon_spacing_generation(value INTEGER PRIMARY KEY);"
+            "INSERT INTO icon_spacing_generation SELECT 0 WHERE NOT EXISTS(SELECT 1 FROM icon_spacing_generation);"
             "CREATE TRIGGER IF NOT EXISTS delete_icon_spacing AFTER DELETE ON folder_state "
             "BEGIN DELETE FROM icon_spacing WHERE key=old.key; END;")) {
         finishWrite(false);
@@ -757,8 +764,8 @@ bool FolderStateStore::read(const std::string &key, FolderState *state) {
     if (!beginRead()) return false;
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db,
-            "SELECT x,y,width,height,view,icons,last_success_at,first_failed_at,maximized,locked,horizontal,vertical "
-            "FROM folder_state LEFT JOIN icon_spacing USING(key) WHERE key=?1", -1, &raw, nullptr)))
+            "SELECT x,y,width,height,view,icons,last_success_at,first_failed_at,maximized,locked,horizontal,vertical,value "
+            "FROM icon_spacing_generation LEFT JOIN folder_state ON key=?1 LEFT JOIN icon_spacing USING(key)", -1, &raw, nullptr)))
         return false;
     Statement statement(raw, sqlite3_finalize);
     if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))) return false;
@@ -787,10 +794,11 @@ bool FolderStateStore::read(const std::string &key, FolderState *state) {
                 && decodeView(static_cast<const uint8_t *>(sqlite3_column_blob(raw, 4)),
                     static_cast<size_t>(sqlite3_column_bytes(raw, 4)), &value.view))
             value.present |= FolderState::View;
+        value.view.iconSpacing.generation = sqlite3_column_int64(raw, 12);
         for (int axis = 0; axis < 2; ++axis) {
             const auto ratio = sqlite3_column_int64(raw, 10 + axis);
             if (sqlite3_column_type(raw, 10 + axis) == SQLITE_INTEGER && ratio >= 0 && ratio <= 3000)
-                value.view.iconGap[axis] = static_cast<int>(ratio);
+                value.view.iconSpacing.ratios[axis] = static_cast<int>(ratio);
         }
         if (sqlite3_column_type(raw, 5) != SQLITE_NULL) {
             const auto bytes = static_cast<const uint8_t *>(sqlite3_column_blob(raw, 5));
@@ -845,6 +853,23 @@ bool FolderStateStore::clearLocks() {
     Lock lock(*this);
     if (!lock) return false;
     return execute("UPDATE folder_state SET locked=0 WHERE locked!=0");
+}
+
+bool FolderStateStore::resetIconSpacing(int64_t &generation) {
+    if (!initialized) return false;
+    Lock lock(*this);
+    if (!lock || !execute("BEGIN IMMEDIATE")) return false;
+    if (!execute("DELETE FROM icon_spacing")) return finishWrite(false);
+    sqlite3_stmt *raw = nullptr;
+    if (!result(sqlite3_prepare_v2(db, "UPDATE icon_spacing_generation SET value=value+1 RETURNING value",
+            -1, &raw, nullptr))) return finishWrite(false);
+    Statement statement(raw, sqlite3_finalize);
+    const int first = sqlite3_step(raw);
+    if (!result(first) || first != SQLITE_ROW) return finishWrite(false);
+    const auto next = sqlite3_column_int64(raw, 0);
+    if (!finishWrite(result(sqlite3_step(raw)))) return false;
+    generation = next;
+    return true;
 }
 
 bool FolderStateStore::writeState(const std::string &key, const FolderState &state,
@@ -902,18 +927,19 @@ bool FolderStateStore::writeState(const std::string &key, const FolderState &sta
         if (!result(sqlite3_bind_int(raw, 12, lockChange))) return false;
         if (!result(sqlite3_step(raw))) return false;
         if (!(parts & FolderState::View)) return true;
-        const auto &gap = state.view.iconGap;
+        const auto &gap = state.view.iconSpacing.ratios;
         const char *spacingSql = gap[0] == 1000 && gap[1] == 1000
             ? "DELETE FROM icon_spacing WHERE key=?1 AND EXISTS("
-              "SELECT 1 FROM folder_state WHERE key=?1 AND (locked=0 OR ?4>=0))"
+              "SELECT 1 FROM folder_state,icon_spacing_generation WHERE key=?1 AND value=?5 AND (locked=0 OR ?4>=0))"
             : "INSERT INTO icon_spacing(key,horizontal,vertical) SELECT key,?2,?3 "
-              "FROM folder_state WHERE key=?1 AND (locked=0 OR ?4>=0) "
+              "FROM folder_state,icon_spacing_generation WHERE key=?1 AND value=?5 AND (locked=0 OR ?4>=0) "
               "ON CONFLICT(key) DO UPDATE SET horizontal=?2,vertical=?3 WHERE horizontal!=?2 OR vertical!=?3";
         if (!result(sqlite3_prepare_v2(db, spacingSql, -1, &raw, nullptr))) return false;
         Statement spacing(raw, sqlite3_finalize);
         return result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))
             && result(sqlite3_bind_int(raw, 2, gap[0])) && result(sqlite3_bind_int(raw, 3, gap[1]))
-            && result(sqlite3_bind_int(raw, 4, lockChange)) && result(sqlite3_step(raw));
+            && result(sqlite3_bind_int(raw, 4, lockChange))
+            && result(sqlite3_bind_int64(raw, 5, state.view.iconSpacing.generation)) && result(sqlite3_step(raw));
     }();
     return finishWrite(success);
 }
