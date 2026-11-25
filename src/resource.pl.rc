@@ -16,6 +16,8 @@ BEGIN
   IDS_AUTO_ARRANGE_ICONS "&Automatyczne"
   IDS_KEEP_ICONS_ALIGNED "Na &siatce"
   IDS_FREE_PLACEMENT_ICONS "&Dowolne"
+  IDS_ICON_GAP_HORIZONTAL "Poziomy odstęp między ikonami"
+  IDS_ICON_GAP_VERTICAL "Pionowy odstęp między ikonami"
   IDS_ICON_PLACEMENT "&Rozmieszczenie"
   IDS_REALIGN_ICONS "Wyrównaj ikony ponownie"
   IDS_FILL_COLUMNS "Zmień rozmiar kolumn"

@@ -16,6 +16,8 @@ BEGIN
   IDS_AUTO_ARRANGE_ICONS "&Automatisch"
   IDS_KEEP_ICONS_ALIGNED "Op &raster"
   IDS_FREE_PLACEMENT_ICONS "&Vrij"
+  IDS_ICON_GAP_HORIZONTAL "Horizontale pictogramafstand"
+  IDS_ICON_GAP_VERTICAL "Verticale pictogramafstand"
   IDS_ICON_PLACEMENT "&Plaatsing"
   IDS_REALIGN_ICONS "Pictogrammen opnieuw uitlijnen"
   IDS_FILL_COLUMNS "Kolommen aanpassen"

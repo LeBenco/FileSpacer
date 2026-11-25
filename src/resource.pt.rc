@@ -16,6 +16,8 @@ BEGIN
   IDS_AUTO_ARRANGE_ICONS "&Automática"
   IDS_KEEP_ICONS_ALIGNED "Na &grelha"
   IDS_FREE_PLACEMENT_ICONS "&Livre"
+  IDS_ICON_GAP_HORIZONTAL "Espaçamento horizontal dos ícones"
+  IDS_ICON_GAP_VERTICAL "Espaçamento vertical dos ícones"
   IDS_ICON_PLACEMENT "D&isposição"
   IDS_REALIGN_ICONS "Realinhar os ícones"
   IDS_FILL_COLUMNS "Redimensionar colunas"

@@ -16,6 +16,8 @@ BEGIN
   IDS_AUTO_ARRANGE_ICONS "&Αυτόματη"
   IDS_KEEP_ICONS_ALIGNED "Σε &πλέγμα"
   IDS_FREE_PLACEMENT_ICONS "&Ελεύθερη"
+  IDS_ICON_GAP_HORIZONTAL "Οριζόντια απόσταση εικονιδίων"
+  IDS_ICON_GAP_VERTICAL "Κατακόρυφη απόσταση εικονιδίων"
   IDS_ICON_PLACEMENT "&Τοποθέτηση"
   IDS_REALIGN_ICONS "Ευθυγράμμιση εικονιδίων"
   IDS_FILL_COLUMNS "Αλλαγή μεγέθους στηλών"

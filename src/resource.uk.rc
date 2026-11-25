@@ -16,6 +16,8 @@ BEGIN
   IDS_AUTO_ARRANGE_ICONS "&Автоматичне"
   IDS_KEEP_ICONS_ALIGNED "За &сіткою"
   IDS_FREE_PLACEMENT_ICONS "&Довільне"
+  IDS_ICON_GAP_HORIZONTAL "Горизонтальний інтервал між піктограмами"
+  IDS_ICON_GAP_VERTICAL "Вертикальний інтервал між піктограмами"
   IDS_ICON_PLACEMENT "&Розташування"
   IDS_REALIGN_ICONS "Повторно вирівняти піктограми"
   IDS_FILL_COLUMNS "Змінювати розмір стовпців"
