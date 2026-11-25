@@ -71,7 +71,7 @@ try {
     Assert-Ui (@(Captures).Count -eq 0) 'Peek ran while the FileSpacer option was disabled.'
 
     Write-Host 'STEP: native settings link and Cancel preserve pending activation'
-    $sheet=Show-UiSettings $window;$page=Set-UiPage 3
+    $sheet=Show-UiSettings $window;$page=Set-UiPage 4
     $check=[FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_PEEK_ENABLED'))
     $link=[FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_PEEK_SETTINGS'))
     Assert-Ui ([FileSpacerRegression.Native]::Message($check,0xf0,0,0) -eq 0) 'Peek should be disabled by default.'
@@ -84,7 +84,7 @@ try {
     Expect-Capture 1 @('--open-settings=Peek')
     Press-UiSettings 5
     Assert-Ui ($null -eq (Get-UiPreference 'PeekEnabled')) 'Cancel persisted the pending Peek option.'
-    [void](Show-UiSettings $window);$page=Set-UiPage 3
+    [void](Show-UiSettings $window);$page=Set-UiPage 4
     Set-UiCheck $page 'IDC_PEEK_ENABLED' $true
     Press-UiSettings 3
     Assert-Ui ((Get-UiPreference 'PeekEnabled') -eq 1) 'Peek option was not persisted.'
