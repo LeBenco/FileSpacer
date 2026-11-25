@@ -399,6 +399,26 @@ HRESULT applyIconPositions(IFolderView *view, PreparedIconPositions &prepared,
     return FAILED(result) ? result : resumed;
 }
 
+namespace {
+HRESULT applySavedIconPositions(IFolderView *view, PreparedIconPositions &prepared,
+        const std::function<bool()> &current) {
+    if (prepared.items.empty()) return S_OK;
+    CComQIPtr<IFolderView2> folder(view);
+    if (!current()) return E_ABORT;
+    DWORD flags = 0;
+    if (!folder || FAILED(folder->GetCurrentFolderFlags(&flags)) || !(flags & FWF_SNAPTOGRID))
+        return applyIconPositions(view, prepared, current);
+    if (!current()) return E_ABORT;
+    // Applying remembered positions one by one with Snap enabled lets
+    // transient collisions move a later item into another cell.
+    HRESULT result = folder->SetCurrentFolderFlags(FWF_SNAPTOGRID, 0);
+    if (SUCCEEDED(result) && current()) result = applyIconPositions(view, prepared, current);
+    const HRESULT restored = folder->SetCurrentFolderFlags(FWF_SNAPTOGRID, FWF_SNAPTOGRID);
+    if (!current()) return E_ABORT;
+    return FAILED(restored) ? restored : result;
+}
+}
+
 HRESULT restoreIconGridPositions(IFolderView *view, const std::vector<uint8_t> &bytes,
         const POINT &previousSpacing, const std::function<bool()> &current) {
     if (!view) return E_POINTER;
@@ -457,31 +477,13 @@ HRESULT restoreIconGridPositions(IFolderView *view, const std::vector<uint8_t> &
         prepared.points.push_back({static_cast<LONG>(x), static_cast<LONG>(y)});
     }
     prepared.ready = true;
-    if (prepared.items.empty()) return S_OK;
-    CComQIPtr<IFolderView2> folder(view);
-    DWORD flags = 0;
-    if (!current()) return E_ABORT;
-    if (!folder) return E_NOINTERFACE;
-    result = folder->GetCurrentFolderFlags(&flags);
-    if (!current()) return E_ABORT;
-    if (FAILED(result)) return result;
-    // Do not let intermediate collisions push a later batch item into another
-    // cell. Restore the native setting even when positioning fails.
-    if (flags & FWF_SNAPTOGRID) result = folder->SetCurrentFolderFlags(FWF_SNAPTOGRID, 0);
-    if (!current()) return E_ABORT;
-    if (SUCCEEDED(result)) result = applyIconPositions(view, prepared, current);
-    if (!current()) return E_ABORT;
-    if (flags & FWF_SNAPTOGRID) {
-        const HRESULT restored = folder->SetCurrentFolderFlags(FWF_SNAPTOGRID, FWF_SNAPTOGRID);
-        if (FAILED(restored)) result = restored;
-    }
-    return result;
+    return applySavedIconPositions(view, prepared, current);
 }
 
 HRESULT restoreIconPositions(IFolderView *view, const std::vector<uint8_t> &bytes,
         const std::function<bool()> &current) {
     PreparedIconPositions prepared;
     const HRESULT result = prepareIconPositions(view, bytes, current, prepared);
-    return FAILED(result) ? result : applyIconPositions(view, prepared, current);
+    return FAILED(result) ? result : applySavedIconPositions(view, prepared, current);
 }
 } // namespace filespacer
