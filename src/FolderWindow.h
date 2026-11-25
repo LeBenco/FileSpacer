@@ -226,12 +226,15 @@ private:
     ExplorerIconSpacingResult applyIconSpacing(IShellView *source, const std::function<bool()> &current,
         const std::function<bool(HWND, POINT)> &beforeChange = {});
     IconSpacingMetrics spacingMetrics;
+    bool customIconSpacing = true;
+    int64_t spacingResetGeneration = 0;
     HWND spacingButtons[2] = {}, spacingPopup = nullptr, spacingTrack = nullptr;
     int spacingAxis = 0, spacingPreview = 1000;
     bool spacingDeferred = false, spacingFramePending = false, spacingEdited = false;
     void createSpacingButtons();
     void layoutSpacingButtons();
     void openSpacingSlider(int axis);
+    void showSpacingResetMenu(int axis, POINT point);
     void closeSpacingSlider();
     void readSpacingSlider(bool commit, bool frame = false);
     static LRESULT CALLBACK spacingBarProc(HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR);
