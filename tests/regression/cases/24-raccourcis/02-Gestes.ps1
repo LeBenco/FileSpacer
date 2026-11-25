@@ -48,14 +48,14 @@ try {
     }
     # The complete application's modal property sheet hosts the same production page.
     $beforePreference=Get-UiPreference 'WindowShortcuts'
-    [void](Show-UiSettings $windows[0]); $page=Set-UiPage 2
+    [void](Show-UiSettings $windows[0]); $page=Set-UiPage 3
     Set-UiCheck $page 'IDC_SHORTCUT_ENABLE_MOVE' $true
     $editors=@([FileSpacerRegression.Native]::Children($page,'#32770'))
     Assert-Ui ($editors.Count -eq 1 -and ![FileSpacerRegression.Native]::IsWindowVisible($editors[0])) 'Header activation must leave the shared editor collapsed.'
     Assert-Ui ((Get-UiPreference 'WindowShortcuts') -eq $beforePreference) 'Header activation saved before Apply.'
     Press-UiSettings 5
     Assert-Ui ((Get-UiPreference 'WindowShortcuts') -eq $beforePreference) 'Cancel saved pending shortcuts.'
-    [void](Show-UiSettings $windows[0]); $page=Set-UiPage 2
+    [void](Show-UiSettings $windows[0]); $page=Set-UiPage 3
     Set-UiCheck $page 'IDC_SHORTCUT_ENABLE_MOVE' $true
     Set-UiCheck $page 'IDC_SHORTCUT_ENABLE_RESIZE' $true
     Press-UiSettings 4
