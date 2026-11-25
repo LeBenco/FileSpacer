@@ -10,11 +10,11 @@ try {
         foreach($name in @('keep.txt','other.txt')) { [IO.File]::WriteAllText((Join-Path $folder $name),'fixture') }
     }
     $first=Open-UiFolder $a 2;$second=Open-UiFolder $b 2
-    [void](Show-UiSettings $first);$page=Set-UiPage 3
+    [void](Show-UiSettings $first);$page=Set-UiPage 4
     Assert-Ui ([FileSpacerRegression.Native]::Message([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_EVERYTHING_SCOPE')),0x147,0,0) -eq 0) 'Default scope is not current folder.'
-    $page=Set-UiPage 0
+    $page=Set-UiPage 1
     $limitEdit=[FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_SEARCH_HISTORY_LIMIT'))
-    Assert-Ui ($limitEdit -ne [IntPtr]::Zero) 'History limit is missing from General settings.'
+    Assert-Ui ($limitEdit -ne [IntPtr]::Zero) 'History limit is missing from Interface settings.'
     Assert-Ui ([FileSpacerRegression.Native]::Text($limitEdit) -eq '5') 'Default history limit is not 5.'
     [FileSpacerRegression.Native]::SetText($limitEdit,'21');Press-UiSettings 4
     $ownerId=[uint32]0;[void][FileSpacerRegression.Native]::GetWindowThreadProcessId($first,[ref]$ownerId)
@@ -36,7 +36,7 @@ try {
     Close-UiFolder $first;$first=Open-UiFolder $a 2
     Assert-SearchMenu $first @('other','keep')
     # Real instant search keeps functioning without recording every changed text.
-    [void](Show-UiSettings $first);$page=Set-UiPage 0;Set-UiCheck $page 'IDC_LIVE_NAME_SEARCH' $true;Press-UiSettings 3
+    [void](Show-UiSettings $first);$page=Set-UiPage 1;Set-UiCheck $page 'IDC_LIVE_NAME_SEARCH' $true;Press-UiSettings 3
     [FileSpacerRegression.Native]::SetText((Get-UiSearchEdit $first),'keep');Assert-SearchNames $first @('keep.txt')
     [FileSpacerRegression.Native]::SetText((Get-UiSearchEdit $first),'other');Assert-SearchNames $first @('other.txt')
     Assert-SearchMenu $first @('other','keep')
