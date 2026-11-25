@@ -28,6 +28,7 @@ try {
         if (!$defer) {
             $menu=Open-PreviewMenu $window
             Assert-SpacingMenuState $window $true
+            Assert-SpacingResetState (Get-SpacingViewMenu $window) $false $false
             [FileSpacerViewMenuTests.MenuUi]::Hover($menu,5)
             Wait-UiViewMode $window 4
             Assert-SpacingMenuState $window $true
@@ -53,8 +54,8 @@ try {
         $firstMenu=$null
         foreach ($axis in @(0,1)) {
             $slider = Open-SpacingSlider $window $axis $firstMenu
-            if (!$axis) { $firstMenu=$slider.Menu; $firstRoot=$slider.Root }
-            Assert-Ui ($slider.Menu -eq $firstMenu -and $slider.Root -eq $firstRoot) 'same two menu windows across axes'
+            if (!$axis) { $firstMenu=$slider.Menu }
+            Assert-Ui ($slider.Menu -eq $firstMenu) 'same View menu window across axes'
             $track = $slider.Track
             $before = Read-Spacing $window
             if (!$axis) {$standard = $before}
@@ -100,7 +101,7 @@ try {
                     $expected = if ($defer) {$min} else {$old*$step/10}
                     return $step -in 14..16 -and [Math]::Abs($actual-$expected) -le 1+$rounding
                 } 'dragging to the middle selects a 10% step' 100
-                Assert-Ui ([FileSpacerViewMenuTests.MenuUi]::Cloaked($firstRoot) -and [FileSpacerViewMenuTests.MenuUi]::Cloaked($firstMenu)) 'both original menus hidden during the drag'
+                Assert-Ui ([FileSpacerViewMenuTests.MenuUi]::Cloaked($firstMenu)) 'original View menu hidden during the drag'
                 if ($axis) {$point.Y = $bounds.Bottom-2} else {$point.X = $bounds.Right-2}
                 [FileSpacerRegression.AltDragInput]::Move($point)
                 Wait-Ui { [FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $max } 'thumb reached maximum while held'
@@ -116,11 +117,9 @@ try {
                 if ($axis) {return [Math]::Abs($now.Y-3*$old) -le $rounding -and $now.X -eq $before.X}
                 return [Math]::Abs($now.X-3*$old) -le $rounding -and $now.Y -eq $before.Y
             } 'released thumb applies just the chosen axis'
-            Wait-Ui { ![FileSpacerViewMenuTests.MenuUi]::Cloaked($firstRoot) -and ![FileSpacerViewMenuTests.MenuUi]::Cloaked($firstMenu) } 'both original menus visible after release'
+            Wait-Ui { ![FileSpacerViewMenuTests.MenuUi]::Cloaked($firstMenu) } 'original View menu visible after release'
             Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($slider.Popup)) 'release keeps the slider open'
-            $resetId=if ($axis) { 'IDM_RESET_VERTICAL_GAP' } else { 'IDM_RESET_HORIZONTAL_GAP' }
-            $entry=Get-SpacingSubmenu $window
-            Assert-Ui (([FileSpacerViewMenuTests.MenuUi]::CommandState($entry.SubMenu,(Get-UiId $resetId)) -band 3) -eq 0) 'reset is available immediately after release'
+            Assert-SpacingResetState (Get-SpacingViewMenu $window) $true ([bool]$axis)
             $popupBounds = [FileSpacerRegression.Native]::Bounds($slider.Popup)
             [FileSpacerViewMenuTests.MenuUi]::Click($popupBounds.Left+2,$popupBounds.Top+2,$slider.Popup)
             Wait-Ui {
@@ -168,6 +167,27 @@ try {
         }
         Assert-Ui (((Read-OccupiedCells) -join ';') -eq $cells) 'snap preserves occupied cells and holes'
         Assert-Ui (Use-UiView $window {param($v) $v.SnapToGrid -and !$v.AutoArrange -and (@($v.Selected()) -join ';') -eq 'item-0001'}) 'snap and selection preserved'
+        if (!$defer) {
+            foreach ($axis in @(0,1)) {
+                $slider=Open-SpacingSlider $window $axis
+                [FileSpacerViewMenuTests.MenuUi]::Key($window,0x23,1)
+                Close-SpacingOutside $window $slider
+            }
+            $custom=Read-Spacing $window
+            Assert-Ui ($custom.X -gt $standard.X -and $custom.Y -gt $standard.Y) 'both axes customized before local resets'
+            $null=Choose-SpacingCommand $window (Get-UiId 'IDM_RESET_VERTICAL_GAP')
+            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $custom.X -and $s.Y -eq $standard.Y} 'vertical reset preserves horizontal spacing'
+            $slider=Open-SpacingSlider $window 1
+            Assert-SpacingResetState (Get-SpacingViewMenu $window) $true $false
+            [FileSpacerViewMenuTests.MenuUi]::Key($window,0x23,1)
+            Assert-SpacingResetState (Get-SpacingViewMenu $window) $true $true
+            $null=Choose-SpacingCommand $window (Get-UiId 'IDM_RESET_BOTH_GAPS') $slider.Menu
+            Wait-PreviewMenuClosed $window
+            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $standard.X -and $s.Y -eq $standard.Y} 'both axes restored from the same View menu'
+            Close-UiFolder $window
+            $window=Open-UiFolder $folder 6
+            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $standard.X -and $s.Y -eq $standard.Y} 'local reset persists after reopen'
+        }
         if ($defer) {
             $custom = Read-Spacing $window
             [void](Show-UiSettings $window); $page=Set-UiPage 2
