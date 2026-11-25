@@ -38,18 +38,23 @@ static HMENU appendSpacingMenu(HMENU parent, bool available, const std::array<in
     std::unique_ptr<std::remove_pointer_t<HMENU>, decltype(&DestroyMenu)> menu(CreatePopupMenu(), DestroyMenu);
     if (!menu) return nullptr;
     const UINT state = available ? MF_ENABLED : MF_GRAYED;
-    if (!AppendMenuW(menu.get(), state, IDM_ICON_GAP_HORIZONTAL, getString(IDS_ICON_GAP_HORIZONTAL))
-            || !AppendMenuW(menu.get(), state, IDM_ICON_GAP_VERTICAL, getString(IDS_ICON_GAP_VERTICAL))
-            || !AppendMenuW(menu.get(), MF_SEPARATOR, 0, nullptr)
-            || !AppendMenuW(menu.get(), ratios[0] == 1000 ? MF_GRAYED : state, IDM_RESET_HORIZONTAL_GAP, getString(IDS_RESET_HORIZONTAL_GAP))
-            || !AppendMenuW(menu.get(), ratios[1] == 1000 ? MF_GRAYED : state, IDM_RESET_VERTICAL_GAP, getString(IDS_RESET_VERTICAL_GAP)))
-        return nullptr;
+    if (!AppendMenuW(menu.get(), ratios[0] == 1000 ? MF_GRAYED : state, IDM_RESET_HORIZONTAL_GAP, getString(IDS_SPACING_AXIS_HORIZONTAL))
+            || !AppendMenuW(menu.get(), ratios[1] == 1000 ? MF_GRAYED : state, IDM_RESET_VERTICAL_GAP, getString(IDS_SPACING_AXIS_VERTICAL))
+            || !AppendMenuW(menu.get(), ratios[0] == 1000 && ratios[1] == 1000 ? MF_GRAYED : state,
+                IDM_RESET_BOTH_GAPS, getString(IDS_SPACING_AXES_BOTH))) return nullptr;
+    const int start = GetMenuItemCount(parent);
+    if (start < 0 || !AppendMenuW(parent, state, IDM_ICON_GAP_HORIZONTAL, getString(IDS_ICON_GAP_HORIZONTAL))) return nullptr;
     MENUITEMINFOW entry = {sizeof(entry)};
     entry.fMask = MIIM_ID | MIIM_STRING | MIIM_SUBMENU;
-    entry.wID = IDM_ICON_SPACING_MENU;
-    entry.dwTypeData = const_cast<wchar_t *>(getString(IDS_ICON_SPACING_MENU));
+    entry.wID = IDM_RESET_SPACING_MENU;
+    entry.dwTypeData = const_cast<wchar_t *>(getString(IDS_RESET_SPACING_MENU));
     entry.hSubMenu = menu.get();
-    if (!InsertMenuItemW(parent, GetMenuItemCount(parent), TRUE, &entry)) return nullptr;
+    if (!AppendMenuW(parent, state, IDM_ICON_GAP_VERTICAL, getString(IDS_ICON_GAP_VERTICAL))
+            || !InsertMenuItemW(parent, start + 2, TRUE, &entry)) {
+        DeleteMenu(parent, IDM_ICON_GAP_HORIZONTAL, MF_BYCOMMAND);
+        DeleteMenu(parent, IDM_ICON_GAP_VERTICAL, MF_BYCOMMAND);
+        return nullptr;
+    }
     return menu.release(); // The parent owns the submenu.
 }
 
@@ -297,7 +302,7 @@ bool FolderWindow::ViewMenuPreview::capture() {
 LRESULT CALLBACK FolderWindow::ViewMenuPreview::filter(int code, WPARAM wParam, LPARAM lParam) {
         if (code == MSGF_MENU && active) {
             const MSG &message = *reinterpret_cast<const MSG *>(lParam);
-            if (active->spacingMenu && active->handleSpacingInput(message)) return 1;
+            if (active->spacingResetMenu && active->handleSpacingInput(message)) return 1;
             if (message.message == WM_MOUSEMOVE || message.message == WM_NCMOUSEMOVE) {
                 POINT point = {};
                 if (GetCursorPos(&point)) active->pointAt(point);
@@ -741,8 +746,8 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     thumbnailItem.dwTypeData = const_cast<wchar_t *>(getString(IDS_GLOBAL_THUMBNAILS));
     thumbnailItem.fState = thumbnailState.fIconsOnly ? MFS_UNCHECKED : MFS_CHECKED;
     checkLE(InsertMenuItemW(subMenu, thumbnailPosition, TRUE, &thumbnailItem));
-    const HMENU spacingMenu = appendSpacingMenu(subMenu, spacingAvailable, getSavedFolderState().view.iconSpacing.ratios);
-    checkLE(spacingMenu);
+    const HMENU spacingResetMenu = appendSpacingMenu(subMenu, spacingAvailable, getSavedFolderState().view.iconSpacing.ratios);
+    checkLE(spacingResetMenu);
     MENUITEMINFOW realignItem = {sizeof(realignItem)};
     realignItem.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE;
     realignItem.wID = IDM_REALIGN_ICONS;
@@ -765,9 +770,9 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     if (folderView && viewReady && initialStateApplied && enumerationComplete && !restoringState) {
         preview = std::make_shared<ViewMenuPreview>(*this, subMenu, contextMenu, folderView);
         const bool modesCaptured = preview->capture();
-        if (modesCaptured || (spacingMenu && spacingAvailable && preview->current())) {
-            if (spacingAvailable) preview->spacingMenu = spacingMenu;
-            if (previewEnabled || preview->spacingMenu) {
+        if (modesCaptured || (spacingResetMenu && spacingAvailable && preview->current())) {
+            if (spacingAvailable) preview->spacingResetMenu = spacingResetMenu;
+            if (previewEnabled || preview->spacingResetMenu) {
                 hook = SetWindowsHookEx(WH_MSGFILTER, ViewMenuPreview::filter, nullptr, GetCurrentThreadId());
                 checkLE(hook);
             }
@@ -789,7 +794,7 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
         UnhookWindowsHookEx(hook);
         ViewMenuPreview::active = previous;
     }
-    if (cmd >= IDM_ICON_GAP_HORIZONTAL && cmd <= IDM_RESET_VERTICAL_GAP) {
+    if (cmd >= IDM_ICON_GAP_HORIZONTAL && cmd <= IDM_RESET_BOTH_GAPS) {
         if (preview && viewMenuPreview == preview) preview->finish(0);
         if (!spacingAvailable || !isWindowOperational() || viewGeneration != spacingGeneration) return;
         if (preview && viewMenuRestore == preview) {
