@@ -717,6 +717,7 @@ void FolderWindow::onSize(SIZE size) {
         CComQIPtr<IFolderView2> folderView(shellView);
         if (folderView)
             folderView->SetRedraw(true); // Windows 11 has so many cool bugs
+        if (!resizingColumns) queueExplorerIconSpacing();
     }
     if (columnLayout && (!resizingColumns || !resizeDeferred)) columnLayout->resize();
 }
@@ -900,6 +901,11 @@ HRESULT FolderWindow::invokeViewCommand(IContextMenu *menu, CMINVOKECOMMANDINFO 
 LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     CComPtr<ItemWindow> messageKeepAlive(this);
     if (message == MSG_ICON_SNAP) return handleIconSnap(wParam, lParam);
+    if (message == MSG_EXPLORER_ICON_SPACING) {
+        explorerIconSpacingQueued = false;
+        if (wParam == viewGeneration) updateExplorerIconSpacing();
+        return 0;
+    }
     if (message == WM_CANCELMODE && !hasPendingIconPlacement()) iconSnap.reset();
     if (message == WM_ENTERSIZEMOVE) {
         resizingColumns = true;
@@ -907,6 +913,7 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         if (columnLayout) columnLayout->suspend(ShellViewColumns::Hold::Resize, resizeDeferred);
     } else if (message == WM_EXITSIZEMOVE) {
         finishColumnResize();
+        queueExplorerIconSpacing();
     } else if (message == MSG_COLUMNS_CHANGED) {
         // Received, whatever follows: a refused pass must not mute later requests.
         if (columnLayout) columnLayout->acknowledge();
@@ -1696,6 +1703,7 @@ STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
     initialEnumerationReady = false;
     viewOptionsApplied = false;
     viewOptionsEnumerationBaseline = 0;
+    initialIconSpacingDeferred = false;
     initialStateApplied = false;
     restoreIconsPending = true;
     restoreIconsUnpruned = false;
