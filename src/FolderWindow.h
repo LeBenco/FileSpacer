@@ -226,8 +226,8 @@ private:
     ExplorerIconSpacingResult applyIconSpacing(IShellView *source, const std::function<bool()> &current,
         const std::function<bool(HWND, POINT)> &beforeChange = {});
     IconSpacingMetrics spacingMetrics;
-    HWND spacingButtons[2] = {}, spacingPopup = nullptr, spacingTrack = nullptr, spacingLabel = nullptr;
-    int spacingAxis = 0, spacingStandardGap = 0, spacingPreview = 1000, spacingDisplayed = -1;
+    HWND spacingButtons[2] = {}, spacingPopup = nullptr, spacingTrack = nullptr;
+    int spacingAxis = 0, spacingPreview = 1000;
     bool spacingDeferred = false, spacingFramePending = false, spacingEdited = false;
     void createSpacingButtons();
     void layoutSpacingButtons();
