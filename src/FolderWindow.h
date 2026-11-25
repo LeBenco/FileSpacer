@@ -4,6 +4,7 @@
 #include "ItemWindow.h"
 #include "SearchBox.h"
 #include "ShellViewHost.h"
+#include "ShellViewOperations.h"
 #include "ShellViewSelection.h"
 #include "WindowResizeGesture.h"
 #include <memory>
@@ -151,6 +152,7 @@ protected:
         TIMER_UPDATE_SELECTION = 1,
         TIMER_SAVE_STATE,
         TIMER_LOADING,
+        TIMER_SPACING_REFERENCE,
         TIMER_LAST
     };
     enum UserMessage {
@@ -220,10 +222,24 @@ private:
     void captureColumnWeights(FolderViewSettings &view) const;
     void toggleFillColumns();
     void realignIcons(bool selectedOnly = false);
-    void updateExplorerIconSpacing();
+    bool updateExplorerIconSpacing();
+    ExplorerIconSpacingResult applyIconSpacing(IShellView *source, const std::function<bool()> &current,
+        const std::function<bool(HWND, POINT)> &beforeChange = {});
+    IconSpacingMetrics spacingMetrics;
+    HWND spacingButtons[2] = {}, spacingPopup = nullptr, spacingTrack = nullptr, spacingLabel = nullptr;
+    int spacingAxis = 0, spacingStandardGap = 0, spacingPreview = 1000, spacingDisplayed = -1;
+    bool spacingDeferred = false, spacingFramePending = false, spacingEdited = false;
+    void createSpacingButtons();
+    void layoutSpacingButtons();
+    void openSpacingSlider(int axis);
+    void closeSpacingSlider();
+    void readSpacingSlider(bool commit, bool frame = false);
+    static LRESULT CALLBACK spacingBarProc(HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR);
+    static LRESULT CALLBACK spacingPopupProc(HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR);
     void queueExplorerIconSpacing();
     bool explorerIconSpacingQueued = false;
     bool initialIconSpacingDeferred = false;
+    unsigned spacingReferenceRetries = 0;
     void watchIconDrag(const MSG *message);
     LRESULT handleIconSnap(WPARAM wParam, LPARAM lParam);
     void deactivateIconDrag();
