@@ -34,7 +34,14 @@ try {
             $before = Read-Spacing $window
             $max = [FileSpacerRegression.Native]::Message($track,0x402,0,0)
             $start = [FileSpacerRegression.Native]::Message($track,0x400,0,0)
-            Assert-Ui ($start -gt 0 -and $max -eq 3*$start) "Windows pitch at the first third on axis $axis"
+            Assert-Ui ($start -eq 10 -and $max -eq 30) "31 positions in 10% steps, starting at 100% on axis $axis"
+            $forward = if ($axis) {0x28} else {0x27}
+            [FileSpacerViewMenuTests.MenuUi]::Key($slider.Popup,$forward,1)
+            Assert-Ui ([FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq 11) 'one arrow key selects 110%'
+            $stepped = Read-Spacing $window
+            $pitch = if ($axis) {$before.Y} else {$before.X}
+            $actual = if ($axis) {$stepped.Y} else {$stepped.X}
+            Assert-Ui ([Math]::Abs($actual - 1.1*$pitch) -le 1+$rounding) '110% is applied to the Windows pitch'
             Assert-Ui (([FileSpacerRegression.Native]::Children($slider.Popup,'Static')).Length -eq 0) 'standalone slider without a visible label'
             $bounds = [FileSpacerRegression.Native]::Bounds($track)
             Assert-Ui (($bounds.Width -gt $bounds.Height) -eq ($axis -eq 0)) 'track orientation'
@@ -58,6 +65,15 @@ try {
             try {
                 [FileSpacerRegression.AltDragInput]::Begin($slider.Popup,$point,$false,$false)
                 [FileSpacerRegression.AltDragInput]::VerifyHeld($false)
+                if ($axis) {$point.Y = ($bounds.Top+$bounds.Bottom)/2} else {$point.X = ($bounds.Left+$bounds.Right)/2}
+                [FileSpacerRegression.AltDragInput]::Move($point)
+                Wait-Ui {
+                    $step = [FileSpacerRegression.Native]::Message($track,0x400,0,0)
+                    $held = Read-Spacing $window
+                    $actual = if ($axis) {$held.Y} else {$held.X}
+                    $expected = if ($defer) {$min} else {$old*$step/10}
+                    return $step -in 14..16 -and [Math]::Abs($actual-$expected) -le 1+$rounding
+                } 'dragging to the middle selects a 10% step' 100
                 if ($axis) {$point.Y = $bounds.Bottom-2} else {$point.X = $bounds.Right-2}
                 [FileSpacerRegression.AltDragInput]::Move($point)
                 Wait-Ui { [FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $max } 'thumb reached maximum while held'
