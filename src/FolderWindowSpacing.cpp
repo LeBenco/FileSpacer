@@ -5,6 +5,7 @@
 #include "UIStrings.h"
 #include <commctrl.h>
 #include <objidl.h>
+#include <uxtheme.h>
 #pragma warning(push)
 #pragma warning(disable: 4458) // Shadowed members in Windows SDK GDI+ headers.
 #include <gdiplus.h>
@@ -106,19 +107,18 @@ LRESULT drawSpacingTrack(const NMCUSTOMDRAW &draw, bool vertical) {
     return CDRF_SKIPDEFAULT;
 }
 
-void drawSpacingGlyph(const DRAWITEMSTRUCT &item, bool vertical) {
-    const RECT &rect = item.rcItem;
-    const int inset = pixels(item.hwndItem, 2);
-    const int size = (std::min<int>)(pixels(item.hwndItem, 20),
+void drawSpacingGlyph(const NMCUSTOMDRAW &draw, bool vertical, COLORREF color) {
+    const RECT &rect = draw.rc;
+    const int inset = pixels(draw.hdr.hwndFrom, 2);
+    const int size = (std::min<int>)(pixels(draw.hdr.hwndFrom, 20),
         (std::min)(rect.right - rect.left, rect.bottom - rect.top) - 2 * inset);
     if (size <= 0) return;
     const float scale = static_cast<float>(size) / 20.f;
-    const float down = (item.itemState & ODS_SELECTED) ? 1.f : 0.f;
-    const COLORREF color = GetSysColor((item.itemState & ODS_DISABLED) ? COLOR_GRAYTEXT : COLOR_BTNTEXT);
+    const float down = (draw.uItemState & CDIS_SELECTED) ? 1.f : 0.f;
     Gdiplus::Pen pen(Gdiplus::Color(255, GetRValue(color), GetGValue(color), GetBValue(color)), 1.06f);
     pen.SetLineCap(Gdiplus::LineCapRound, Gdiplus::LineCapRound, Gdiplus::DashCapRound);
     pen.SetLineJoin(Gdiplus::LineJoinRound);
-    Gdiplus::Graphics graphics(item.hDC);
+    Gdiplus::Graphics graphics(draw.hdc);
     graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
     graphics.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf);
     graphics.TranslateTransform(static_cast<float>(rect.left + rect.right) / 2.f + down,
@@ -141,15 +141,23 @@ void drawSpacingGlyph(const DRAWITEMSTRUCT &item, bool vertical) {
     graphics.DrawLines(&pen, right, ARRAYSIZE(right));
 }
 
-void drawSpacingButton(const DRAWITEMSTRUCT &item, bool vertical) {
-    RECT rect = item.rcItem;
-    const bool down = (item.itemState & ODS_SELECTED) != 0;
-    DrawFrameControl(item.hDC, &rect, DFC_BUTTON, DFCS_BUTTONPUSH | (down ? DFCS_PUSHED : DFCS_FLAT));
-    drawSpacingGlyph(item, vertical);
-    if (item.itemState & ODS_FOCUS) {
+LRESULT drawSpacingButton(const NMCUSTOMDRAW &draw, bool vertical) {
+    if (draw.dwDrawStage != CDDS_PREPAINT) return CDRF_DODEFAULT;
+    const bool disabled = (draw.uItemState & CDIS_DISABLED) != 0;
+    const bool highlighted = !disabled && ((draw.uItemState & CDIS_HOT) || (draw.uItemState & CDIS_SELECTED));
+    if (highlighted)
+        FillRect(draw.hdc, &draw.rc, GetSysColorBrush(COLOR_HIGHLIGHT));
+    else if (FAILED(DrawThemeParentBackground(draw.hdr.hwndFrom, draw.hdc, &draw.rc)))
+        FillRect(draw.hdc, &draw.rc, GetSysColorBrush(COLOR_BTNFACE));
+    const int textColor = disabled ? COLOR_GRAYTEXT : highlighted ? COLOR_HIGHLIGHTTEXT : COLOR_BTNTEXT;
+    drawSpacingGlyph(draw, vertical, GetSysColor(textColor));
+    if ((draw.uItemState & CDIS_FOCUS) &&
+            !(static_cast<UINT>(SendMessageW(draw.hdr.hwndFrom, WM_QUERYUISTATE, 0, 0)) & UISF_HIDEFOCUS)) {
+        RECT rect = draw.rc;
         InflateRect(&rect, -2, -2);
-        DrawFocusRect(item.hDC, &rect);
+        DrawFocusRect(draw.hdc, &rect);
     }
+    return CDRF_SKIPDEFAULT;
 }
 }
 
@@ -185,7 +193,7 @@ void FolderWindow::createSpacingButtons() {
     for (int axis = 0; axis < 2; ++axis) {
         spacingButtons[axis] = CreateWindowExW(0, WC_BUTTONW,
             getString(axis ? IDS_ICON_GAP_VERTICAL : IDS_ICON_GAP_HORIZONTAL),
-            WS_CHILD | WS_TABSTOP | BS_OWNERDRAW, 0, 0, 0, 0, bottomStatusBar, nullptr, GetModuleHandleW(nullptr), nullptr);
+            WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON, 0, 0, 0, 0, bottomStatusBar, nullptr, GetModuleHandleW(nullptr), nullptr);
     }
 }
 
@@ -214,12 +222,11 @@ LRESULT CALLBACK FolderWindow::spacingBarProc(HWND window, UINT message, WPARAM 
             owner.openSpacingSlider(button == owner.spacingButtons[1]);
             return 0;
         }
-    } else if (message == WM_DRAWITEM && lParam) {
-        const auto &item = *reinterpret_cast<const DRAWITEMSTRUCT *>(lParam);
-        if (item.hwndItem == owner.spacingButtons[0] || item.hwndItem == owner.spacingButtons[1]) {
-            drawSpacingButton(item, item.hwndItem == owner.spacingButtons[1]);
-            return TRUE;
-        }
+    } else if (message == WM_NOTIFY && lParam) {
+        const auto *header = reinterpret_cast<const NMHDR *>(lParam);
+        if (header->code == NM_CUSTOMDRAW &&
+                (header->hwndFrom == owner.spacingButtons[0] || header->hwndFrom == owner.spacingButtons[1]))
+            return drawSpacingButton(*reinterpret_cast<const NMCUSTOMDRAW *>(header), header->hwndFrom == owner.spacingButtons[1]);
     } else if (message == WM_NCDESTROY) {
         RemoveWindowSubclass(window, spacingBarProc, id);
     }
