@@ -4,8 +4,6 @@
 #include "Settings.h"
 #include "UIStrings.h"
 #include <commctrl.h>
-#include <uxtheme.h>
-#include <vssym32.h>
 
 namespace filespacer {
 namespace {
@@ -17,22 +15,74 @@ int pixels(HWND window, int dip) {
     return MulDiv(dip, static_cast<int>(GetDpiForWindow(window)), USER_DEFAULT_SCREEN_DPI);
 }
 
+constexpr COLORREF transparentColor = RGB(1, 2, 3);
+
+void fillSpacingRect(HDC dc, const RECT &rect, COLORREF color) {
+    SetDCBrushColor(dc, color);
+    FillRect(dc, &rect, static_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+}
+
+void shadeSpacingRect(HDC dc, const RECT &rect, COLORREF color, bool vertical, bool highContrast) {
+    if (IsRectEmpty(&rect)) return;
+    if (!highContrast) {
+        const auto vertex = [color](LONG x, LONG y, bool light) {
+            const auto channel = [light](BYTE value) -> COLOR16 {
+                return static_cast<COLOR16>((light ? (value + 255) / 2 : value) * 257);
+            };
+            return TRIVERTEX{x, y, channel(GetRValue(color)), channel(GetGValue(color)), channel(GetBValue(color)), 0};
+        };
+        TRIVERTEX ends[] = {vertex(rect.left, rect.top, true), vertex(rect.right, rect.bottom, false)};
+        GRADIENT_RECT indices = {0, 1};
+        if (GdiGradientFill(dc, ends, 2, &indices, 1, vertical ? GRADIENT_FILL_RECT_V : GRADIENT_FILL_RECT_H)) return;
+    }
+    fillSpacingRect(dc, rect, color);
+}
+
 LRESULT drawSpacingTrack(const NMCUSTOMDRAW &draw, bool vertical) {
-    if (draw.dwDrawStage == CDDS_PREPAINT) return CDRF_NOTIFYITEMDRAW;
-    if (draw.dwDrawStage != CDDS_ITEMPREPAINT || draw.dwItemSpec != TBCD_THUMB) return CDRF_DODEFAULT;
+    if (draw.dwDrawStage != CDDS_PREPAINT) return CDRF_DODEFAULT;
+    const HWND track = draw.hdr.hwndFrom;
+    RECT client = {}, thumb = {}, channel = {};
+    GetClientRect(track, &client);
+    SendMessageW(track, TBM_GETTHUMBRECT, 0, reinterpret_cast<LPARAM>(&thumb));
+    SendMessageW(track, TBM_GETCHANNELRECT, 0, reinterpret_cast<LPARAM>(&channel));
+    fillSpacingRect(draw.hdc, client, transparentColor);
 
-    // Use the non-directional thumb from the trackbar theme; keep the native tick layout.
-    const bool disabled = (draw.uItemState & CDIS_DISABLED) != 0;
-    const bool pressed = (draw.uItemState & CDIS_SELECTED) != 0;
-    const int state = disabled ? TUS_DISABLED : pressed ? TUS_PRESSED :
-        (draw.uItemState & CDIS_HOT) ? TUS_HOT : (draw.uItemState & CDIS_FOCUS) ? TUS_FOCUSED : TUS_NORMAL;
-    const HTHEME theme = GetWindowTheme(draw.hdr.hwndFrom);
-    if (theme && SUCCEEDED(DrawThemeBackground(theme, draw.hdc, vertical ? TKP_THUMBVERT : TKP_THUMB,
-            state, &draw.rc, nullptr))) return CDRF_SKIPDEFAULT;
+    // Some common-controls versions return the vertical channel in horizontal coordinates.
+    const bool wide = channel.right - channel.left > channel.bottom - channel.top;
+    const LONG first = wide ? channel.left : channel.top, last = wide ? channel.right : channel.bottom;
+    const LONG center = vertical ? (thumb.left + thumb.right) / 2 : (thumb.top + thumb.bottom) / 2;
+    const LONG pos = vertical ? (thumb.top + thumb.bottom) / 2 : (thumb.left + thumb.right) / 2;
+    const auto axisRect = [vertical](LONG start, LONG nearSide, LONG end, LONG farSide) -> RECT {
+        return vertical ? RECT{nearSide, start, farSide, end} : RECT{start, nearSide, end, farSide};
+    };
+    HIGHCONTRASTW contrast = {sizeof(contrast)};
+    const bool highContrast = SystemParametersInfoW(SPI_GETHIGHCONTRAST, sizeof(contrast), &contrast, 0)
+        && (contrast.dwFlags & HCF_HIGHCONTRASTON);
+    const COLORREF accent = GetSysColor(COLOR_HIGHLIGHT);
+    const LONG half = pixels(track, 3);
+    RECT rail = axisRect(first, center - half, last, center + half);
+    fillSpacingRect(draw.hdc, rail, GetSysColor(highContrast ? COLOR_WINDOWTEXT : COLOR_3DSHADOW));
+    InflateRect(&rail, -1, -1);
+    fillSpacingRect(draw.hdc, rail, GetSysColor(COLOR_WINDOW));
+    if (vertical) rail.bottom = pos; else rail.right = pos;
+    shadeSpacingRect(draw.hdc, rail, accent, vertical, highContrast);
 
-    RECT rect = draw.rc;
-    DrawFrameControl(draw.hdc, &rect, DFC_BUTTON,
-        DFCS_BUTTONPUSH | (disabled ? DFCS_INACTIVE : 0) | (pressed ? DFCS_PUSHED : 0));
+    // Four major ticks at 0, 100, 200 and 300 percent. Keep them outside the thumb.
+    const LONG tickTop = (vertical ? thumb.right : thumb.bottom) + pixels(track, 2);
+    const LONG thumbRadius = (vertical ? thumb.bottom - thumb.top : thumb.right - thumb.left) / 2;
+    for (int tick = 0; tick <= 3; ++tick) {
+        const LONG at = first + thumbRadius + MulDiv(last - first - 2 * thumbRadius, tick, 3);
+        fillSpacingRect(draw.hdc, axisRect(at, tickTop, at + 1, tickTop + half), GetSysColor(COLOR_GRAYTEXT));
+    }
+
+    POINT mouse = {};
+    const bool hot = GetCursorPos(&mouse) && ScreenToClient(track, &mouse) && PtInRect(&thumb, mouse);
+    const auto cues = static_cast<UINT>(SendMessageW(track, WM_QUERYUISTATE, 0, 0));
+    const bool focused = GetFocus() == track && !(cues & UISF_HIDEFOCUS);
+    fillSpacingRect(draw.hdc, thumb, GetSysColor(focused || highContrast ? COLOR_WINDOWTEXT : COLOR_3DSHADOW));
+    InflateRect(&thumb, -1, -1);
+    shadeSpacingRect(draw.hdc, thumb, hot || GetCapture() == track ? GetSysColor(COLOR_HOTLIGHT) : accent,
+        !vertical, highContrast);
     return CDRF_SKIPDEFAULT;
 }
 
@@ -154,14 +204,16 @@ void FolderWindow::openSpacingSlider(int axis) {
     spacingEdited = false;
     spacingDeferred = settings::getIconSpacingDeferred();
     const int width = pixels(button, axis ? 40 : 230), height = pixels(button, axis ? 230 : 40);
-    const int x = std::max<int>(monitor.rcWork.left, std::min<int>(anchor.right - width, monitor.rcWork.right - width));
+    const int preferredX = axis ? (anchor.left + anchor.right - width) / 2 : anchor.right - width;
+    const int x = std::max<int>(monitor.rcWork.left, std::min<int>(preferredX, monitor.rcWork.right - width));
     const int y = anchor.top >= monitor.rcWork.top + height ? anchor.top - height :
         std::min<int>(anchor.bottom, monitor.rcWork.bottom - height);
     const auto sliderName = getString(axis ? IDS_ICON_GAP_VERTICAL : IDS_ICON_GAP_HORIZONTAL);
-    spacingPopup = CreateWindowExW(WS_EX_TOOLWINDOW, WC_STATICW, sliderName, WS_POPUP | WS_BORDER | SS_WHITERECT,
+    spacingPopup = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_LAYERED, WC_STATICW, sliderName, WS_POPUP | WS_CLIPCHILDREN,
         x, y, width, height, hwnd, nullptr, GetModuleHandleW(nullptr), nullptr);
     if (!spacingPopup) return;
-    if (!SetWindowSubclass(spacingPopup, spacingPopupProc, 1, reinterpret_cast<DWORD_PTR>(this))) {
+    if (!SetLayeredWindowAttributes(spacingPopup, transparentColor, 0, LWA_COLORKEY) ||
+            !SetWindowSubclass(spacingPopup, spacingPopupProc, 1, reinterpret_cast<DWORD_PTR>(this))) {
         closeSpacingSlider();
         return;
     }
@@ -176,6 +228,11 @@ void FolderWindow::openSpacingSlider(int axis) {
     SendMessageW(spacingTrack, TBM_SETTICFREQ, 1000 / spacingStep, 0);
     SendMessageW(spacingTrack, TBM_SETPAGESIZE, 0, 1);
     SendMessageW(spacingTrack, TBM_SETPOS, TRUE, spacingStepForRatio(spacingPreview));
+    RECT thumb = {};
+    SendMessageW(spacingTrack, TBM_GETTHUMBRECT, 0, reinterpret_cast<LPARAM>(&thumb));
+    const int cross = axis ? (width - thumb.left - thumb.right) / 2 : (height - thumb.top - thumb.bottom) / 2;
+    SetWindowPos(spacingTrack, nullptr, axis ? cross : pad, axis ? pad : cross, 0, 0,
+        SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
     ShowWindow(spacingPopup, SW_SHOW);
     SetFocus(spacingTrack);
 }
@@ -225,6 +282,13 @@ LRESULT CALLBACK FolderWindow::spacingPopupProc(HWND window, UINT message, WPARA
         UINT_PTR id, DWORD_PTR data) {
     auto &owner = *reinterpret_cast<FolderWindow *>(data);
     CComPtr<ItemWindow> keepAlive(&owner);
+    if (message == WM_PAINT) {
+        PAINTSTRUCT paint;
+        HDC dc = BeginPaint(window, &paint);
+        fillSpacingRect(dc, paint.rcPaint, transparentColor);
+        EndPaint(window, &paint);
+        return 0;
+    }
     if (message == WM_NOTIFY && lParam) {
         const auto header = reinterpret_cast<const NMHDR *>(lParam);
         if (header->code == NM_CUSTOMDRAW && header->hwndFrom == owner.spacingTrack)
@@ -240,6 +304,7 @@ LRESULT CALLBACK FolderWindow::spacingPopupProc(HWND window, UINT message, WPARA
         return 0;
     }
     if ((message == WM_HSCROLL || message == WM_VSCROLL) && reinterpret_cast<HWND>(lParam) == owner.spacingTrack) {
+        InvalidateRect(owner.spacingTrack, nullptr, FALSE);
         owner.readSpacingSlider(LOWORD(wParam) != TB_THUMBTRACK);
         return 0;
     }
