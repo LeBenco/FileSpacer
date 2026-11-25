@@ -34,7 +34,35 @@ static bool isPlacementCommand(UINT command) {
         || command == IDM_FREE_PLACEMENT_ICONS;
 }
 
+static HMENU appendSpacingMenu(HMENU parent, bool available, const std::array<int, 2> &ratios) {
+    std::unique_ptr<std::remove_pointer_t<HMENU>, decltype(&DestroyMenu)> menu(CreatePopupMenu(), DestroyMenu);
+    if (!menu) return nullptr;
+    const UINT state = available ? MF_ENABLED : MF_GRAYED;
+    if (!AppendMenuW(menu.get(), state, IDM_ICON_GAP_HORIZONTAL, getString(IDS_ICON_GAP_HORIZONTAL))
+            || !AppendMenuW(menu.get(), state, IDM_ICON_GAP_VERTICAL, getString(IDS_ICON_GAP_VERTICAL))
+            || !AppendMenuW(menu.get(), MF_SEPARATOR, 0, nullptr)
+            || !AppendMenuW(menu.get(), ratios[0] == 1000 ? MF_GRAYED : state, IDM_RESET_HORIZONTAL_GAP, getString(IDS_RESET_HORIZONTAL_GAP))
+            || !AppendMenuW(menu.get(), ratios[1] == 1000 ? MF_GRAYED : state, IDM_RESET_VERTICAL_GAP, getString(IDS_RESET_VERTICAL_GAP)))
+        return nullptr;
+    MENUITEMINFOW entry = {sizeof(entry)};
+    entry.fMask = MIIM_ID | MIIM_STRING | MIIM_SUBMENU;
+    entry.wID = IDM_ICON_SPACING_MENU;
+    entry.dwTypeData = const_cast<wchar_t *>(getString(IDS_ICON_SPACING_MENU));
+    entry.hSubMenu = menu.get();
+    if (!InsertMenuItemW(parent, GetMenuItemCount(parent), TRUE, &entry)) return nullptr;
+    return menu.release(); // The parent owns the submenu.
+}
 
+bool FolderWindow::canAdjustIconSpacing() const {
+    if (!customIconSpacing || !viewReady || !initialStateApplied || !enumerationComplete || provisionalBaseline || restoringState
+            || viewMenuPreview || viewMenuRestore || !isWindowOperational()
+            || spacingMetrics.standard.x <= 0 || spacingMetrics.standard.y <= 0) return false;
+    const ULONG_PTR generation = viewGeneration;
+    CComQIPtr<IFolderView> view(shellView);
+    UINT mode = 0;
+    return view && SUCCEEDED(view->GetCurrentViewMode(&mode)) && iconPlacementMode(mode)
+        && isWindowOperational() && generation == viewGeneration;
+}
 
 static bool appendPlacementMenu(HMENU parent, UINT mode, DWORD flags) {
     auto destroy = [](HMENU handle) { DestroyMenu(handle); };
@@ -269,6 +297,7 @@ bool FolderWindow::ViewMenuPreview::capture() {
 LRESULT CALLBACK FolderWindow::ViewMenuPreview::filter(int code, WPARAM wParam, LPARAM lParam) {
         if (code == MSGF_MENU && active) {
             const MSG &message = *reinterpret_cast<const MSG *>(lParam);
+            if (active->spacingMenu && active->handleSpacingInput(message)) return 1;
             if (message.message == WM_MOUSEMOVE || message.message == WM_NCMOUSEMOVE) {
                 POINT point = {};
                 if (GetCursorPos(&point)) active->pointAt(point);
@@ -278,7 +307,7 @@ LRESULT CALLBACK FolderWindow::ViewMenuPreview::filter(int code, WPARAM wParam, 
     }
 
 void FolderWindow::ViewMenuPreview::pointAt(POINT point) {
-        if (!hoverEnabled || !tracking || !current() || !displayedMenu) return;
+        if (!hoverEnabled || editingSpacing || !tracking || !current() || !displayedMenu) return;
         // Mouse messages also arrive while the cursor stands still (the view
         // changes under the menu, the menu loop idles). Only a displacement is
         // a hover; otherwise a keyboard highlight would be cancelled at once.
@@ -297,7 +326,7 @@ void FolderWindow::ViewMenuPreview::pointAt(POINT point) {
     }
 
 void FolderWindow::ViewMenuPreview::highlight(UINT command, HMENU popup) {
-        if (!hoverEnabled || !tracking || !current()) return;
+        if (!hoverEnabled || editingSpacing || !tracking || !current()) return;
         displayedMenu = popup;
         // Like pointAt: an entry outside the modes returns to the initial mode.
         UINT wanted = 0;
@@ -404,7 +433,7 @@ void FolderWindow::ViewMenuPreview::apply(UINT command) {
 
 void FolderWindow::ViewMenuPreview::update() {
         posted = false;
-        if (tracking) apply(wantedCommand);
+        if (tracking && !editingSpacing) apply(wantedCommand);
     }
 
 bool FolderWindow::ViewMenuPreview::isEntry(UINT command) const {
@@ -461,11 +490,16 @@ void FolderWindow::ViewMenuPreview::replay(ULONG_PTR enumeration) {
             window.resumeColumnSync();
             return;
         }
+        const UINT spacing = spacingCommand;
+        const POINT anchor = spacingAnchor;
+        const auto menuSerial = serial;
         if (window.enumerationComplete) window.viewMenuRestore.reset(); // Else another refill was observed.
         window.scheduleStateSave();
         if (!window.viewMenuRestore) {
             window.replayProviderSync();
             window.resumeColumnSync();
+            if (spacing && window.viewMenuPreviewSerial == menuSerial && GetForegroundWindow() == window.hwnd)
+                window.runSpacingCommand(spacing, anchor);
         }
     }
 
@@ -649,6 +683,9 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
         std::shared_ptr<ShellViewColumns> layout;
         ~ColumnsResume() { if (layout) layout->suspend(ShellViewColumns::Hold::Menu, false); }
     } columnsResume{columnLayout};
+    const ULONG_PTR spacingGeneration = viewGeneration;
+    // Freeze the menu state before any hover can change the Shell view or its metrics.
+    const bool spacingAvailable = canAdjustIconSpacing();
     viewMenuRestore.reset(); // A new menu supersedes a previous preview's pending replay.
     const bool previewEnabled = settings::getViewMenuPreviewEnabled();
     // Keep any pending layout in memory. Opening the popup never requires
@@ -704,6 +741,8 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     thumbnailItem.dwTypeData = const_cast<wchar_t *>(getString(IDS_GLOBAL_THUMBNAILS));
     thumbnailItem.fState = thumbnailState.fIconsOnly ? MFS_UNCHECKED : MFS_CHECKED;
     checkLE(InsertMenuItemW(subMenu, thumbnailPosition, TRUE, &thumbnailItem));
+    const HMENU spacingMenu = appendSpacingMenu(subMenu, spacingAvailable, getSavedFolderState().view.iconSpacing.ratios);
+    checkLE(spacingMenu);
     MENUITEMINFOW realignItem = {sizeof(realignItem)};
     realignItem.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE;
     realignItem.wID = IDM_REALIGN_ICONS;
@@ -725,12 +764,14 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     ViewMenuPreview *previous = ViewMenuPreview::active;
     if (folderView && viewReady && initialStateApplied && enumerationComplete && !restoringState) {
         preview = std::make_shared<ViewMenuPreview>(*this, subMenu, contextMenu, folderView);
-        if (preview->capture()) {
-            if (previewEnabled) {
+        const bool modesCaptured = preview->capture();
+        if (modesCaptured || (spacingMenu && spacingAvailable && preview->current())) {
+            if (spacingAvailable) preview->spacingMenu = spacingMenu;
+            if (previewEnabled || preview->spacingMenu) {
                 hook = SetWindowsHookEx(WH_MSGFILTER, ViewMenuPreview::filter, nullptr, GetCurrentThreadId());
                 checkLE(hook);
             }
-            preview->hoverEnabled = hook != nullptr;
+            preview->hoverEnabled = modesCaptured && previewEnabled && hook != nullptr;
             if (hook) ViewMenuPreview::active = preview.get();
             viewMenuPreview = preview;
             if (contextMenu) KillTimer(hwnd, TIMER_SAVE_STATE);
@@ -743,9 +784,21 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     if (!menuOwner) menuOwner = hwnd;
     const int cmd = isWindowOperational() ? TrackPopupMenuEx(subMenu, trackingFlags,
         point.x, point.y, menuOwner, nullptr) : 0;
+    if (preview) preview->stopSpacingEdit();
     if (hook) {
         UnhookWindowsHookEx(hook);
         ViewMenuPreview::active = previous;
+    }
+    if (cmd >= IDM_ICON_GAP_HORIZONTAL && cmd <= IDM_RESET_VERTICAL_GAP) {
+        if (preview && viewMenuPreview == preview) preview->finish(0);
+        if (!spacingAvailable || !isWindowOperational() || viewGeneration != spacingGeneration) return;
+        if (preview && viewMenuRestore == preview) {
+            preview->spacingCommand = cmd;
+            preview->spacingAnchor = point;
+        } else {
+            runSpacingCommand(cmd, point);
+        }
+        return;
     }
     if (preview && viewMenuPreview == preview) {
         preview->finish((cmd >= IDM_SHELL_FIRST && cmd <= IDM_SHELL_LAST) || isViewMenuMode(cmd)
