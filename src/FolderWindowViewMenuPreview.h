@@ -28,14 +28,12 @@ struct FolderWindow::ViewMenuPreview {
     UINT spacingCommand = 0; // Wait for a refill restoring the applied view before changing its spacing.
     POINT spacingAnchor = {};
     HMENU spacingResetMenu = nullptr;
-    HWND spacingMenuWindow = nullptr;
     UINT pressedSpacingCommand = 0;
-    bool editingSpacing = false, draggingSpacing = false, menuCloaked = false;
+    bool editingSpacing = false, draggingSpacing = false;
     int thumbOffset = 0;
     bool handleSpacingInput(const MSG &message);
     void commitSpacing();
     void stopSpacingEdit();
-    void cloakSpacingMenu(bool hide);
     void moveSpacingThumb(POINT point, bool commit);
     UINT chosenCommand = 0; // Mode retained when the menu closed: 0 for the initial one.
     bool tracking = true, posted = false, busy = false, prepared = false, capturedIcons = false;
