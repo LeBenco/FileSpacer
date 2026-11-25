@@ -71,7 +71,7 @@ These choices are available at every icon size. **List**, **Details** and **Cont
 
 In **Free** mode, hold **S** while dragging and until you release the mouse button to align only the dragged icons to the grid. Other icons stay in place. Releasing **S** before the drop keeps free placement. In Icon view, a grey frame previews the destination.
 
-The two buttons on the right of the status bar adjust horizontal and vertical icon spacing for the current folder. Right-click either button to reset that axis to 100%. In **Settings > Files**, choose whether icons move while you drag the slider or when you release it. The reset button on that page restores both axes for all folders when you choose **Apply** or **OK**.
+In **View > Icon spacing**, choose horizontal or vertical spacing for the current folder. The menu hides while you drag the slider. When you release it, the menu returns so you can adjust the other axis. The same submenu can reset each axis to 100%. In **Settings > Files**, choose whether icons move while you drag the slider or when you release it. The reset button on that page restores both axes for all folders when you choose **Apply** or **OK**.
 
 <div id="details-columns"></div>
 

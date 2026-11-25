@@ -81,7 +81,7 @@ Estas opções estão disponíveis em todos os tamanhos de ícones. **Lista**, *
 
 No modo **Livre**, manter **S** premida durante o arrasto e até soltar o botão do rato para alinhar na grelha apenas os ícones arrastados. Os restantes ficam no mesmo lugar. Soltar **S** antes de largar os ícones mantém a disposição livre. Na vista de ícones, uma moldura cinzenta indica a posição de destino.
 
-Os dois botões à direita na barra de estado ajustam o espaçamento horizontal e vertical dos ícones da pasta. Clique com o botão direito num deles para repor esse eixo a 100%. Em **Definições > Ficheiros**, escolha se os ícones se deslocam ao arrastar o controlo ou ao soltá-lo. O botão de reposição nessa página repõe ambos os eixos em todas as pastas quando selecionar **Aplicar** ou **OK**.
+Em **Ver > Espaçamento dos ícones**, ajuste o espaçamento horizontal ou vertical da pasta atual. O menu fica oculto enquanto arrasta o controlo e reaparece quando o solta, permitindo ajustar o outro eixo. O mesmo submenu permite repor cada eixo a 100%. Em **Definições > Ficheiros**, escolha se os ícones se deslocam ao arrastar o controlo ou ao soltá-lo. O botão de reposição nessa página repõe ambos os eixos em todas as pastas quando selecionar **Aplicar** ou **OK**.
 
 <div id="details-columns"></div>
 
