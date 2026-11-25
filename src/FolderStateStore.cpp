@@ -127,6 +127,8 @@ FolderViewSettings FolderViewSettings::mergeChanges(const FolderViewSettings &ba
         const FolderViewSettings &current, const std::vector<Column> &initialWidths) const {
     FolderViewSettings merged = *this;
     auto observed = [&](uint32_t part) { return (baseline.present & current.present & part) != 0; };
+    for (size_t axis = 0; axis < merged.iconGap.size(); ++axis)
+        if (current.iconGap[axis] != baseline.iconGap[axis]) merged.iconGap[axis] = current.iconGap[axis];
     if (current.present & ColumnFill) {
         if (!(present & ColumnFill) || (observed(ColumnFill) && current.fillColumns != baseline.fillColumns))
             merged.fillColumns = current.fillColumns;
@@ -396,6 +398,14 @@ FolderStateStore::FolderStateStore(const char *utf8Path, bool waitForInitializat
             return;
         }
     }
+    // The optional table leaves the view encoding readable by format-8 clients.
+    if (!execute("CREATE TABLE IF NOT EXISTS icon_spacing("
+            "key TEXT PRIMARY KEY NOT NULL,horizontal INTEGER NOT NULL,vertical INTEGER NOT NULL) WITHOUT ROWID;"
+            "CREATE TRIGGER IF NOT EXISTS delete_icon_spacing AFTER DELETE ON folder_state "
+            "BEGIN DELETE FROM icon_spacing WHERE key=old.key; END;")) {
+        finishWrite(false);
+        return;
+    }
     // Journal mode changes outside transactions. Rejected databases never
     // reach this persistent setting; their original format stays untouched.
     if (finishWrite(true) && execute("PRAGMA journal_mode=WAL")) {
@@ -608,7 +618,7 @@ FolderStateStore::Recovery FolderStateStore::recoverFrom(const char *utf8Source)
     // Expected shape of each column: 't' non-empty text, 'T' text, 'i' integer
     // or NULL, 'I' integer (0 when the former schema lacks it), 'b' blob or NULL,
     // 'v' view settings this program can decode (dropped alone otherwise),
-    // 's' an existing integer sequence, preserved even in the descending scan.
+    // 's' an existing integer sequence, 'g' an icon gap in thousandths.
     struct Table {
         const char *name, *order, *insert;
         const char *columns[12];
@@ -620,6 +630,11 @@ FolderStateStore::Recovery FolderStateStore::recoverFrom(const char *utf8Source)
             "first_failed_at,maximized,locked,scroll) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)",
             {"key", "x", "y", "width", "height", "view", "icons", "last_success_at",
                 "first_failed_at", "maximized", "locked", "scroll"}, "tiiiivbIiiIb"},
+        {"icon_spacing", "key",
+            "INSERT OR IGNORE INTO icon_spacing(key,horizontal,vertical) SELECT ?1,?2,?3 "
+            "WHERE ?2 BETWEEN 0 AND 3000 AND ?3 BETWEEN 0 AND 3000 "
+            "AND EXISTS(SELECT 1 FROM folder_state WHERE key=?1)",
+            {"key", "horizontal", "vertical"}, "tgg"},
         {"closed_windows", "sequence",
             "INSERT OR IGNORE INTO closed_windows(key,parsing_name,display_name,view_state,sequence) VALUES(?1,?2,?3,?4,?5)",
             {"key", "parsing_name", "display_name", "view_state", "sequence"}, "ttTbs"},
@@ -679,6 +694,10 @@ FolderStateStore::Recovery FolderStateStore::recoverFrom(const char *utf8Source)
                     else if (shape == 'T') valid = type == SQLITE_TEXT;
                     else if (shape == 'b' || shape == 'v') valid = type == SQLITE_BLOB || type == SQLITE_NULL;
                     else if (shape == 's') valid = type == SQLITE_INTEGER;
+                    else if (shape == 'g') {
+                        const auto gap = sqlite3_column_int64(raw, static_cast<int>(index));
+                        valid = type == SQLITE_INTEGER && gap >= 0 && gap <= 3000;
+                    }
                     else valid = type == SQLITE_INTEGER || type == SQLITE_NULL;
                     // Settings that read() would refuse are left out; the rest of the row is kept.
                     FolderViewSettings decoded;
@@ -738,8 +757,8 @@ bool FolderStateStore::read(const std::string &key, FolderState *state) {
     if (!beginRead()) return false;
     sqlite3_stmt *raw = nullptr;
     if (!result(sqlite3_prepare_v2(db,
-            "SELECT x,y,width,height,view,icons,last_success_at,first_failed_at,maximized,locked "
-            "FROM folder_state WHERE key=?1", -1, &raw, nullptr)))
+            "SELECT x,y,width,height,view,icons,last_success_at,first_failed_at,maximized,locked,horizontal,vertical "
+            "FROM folder_state LEFT JOIN icon_spacing USING(key) WHERE key=?1", -1, &raw, nullptr)))
         return false;
     Statement statement(raw, sqlite3_finalize);
     if (!result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))) return false;
@@ -768,6 +787,11 @@ bool FolderStateStore::read(const std::string &key, FolderState *state) {
                 && decodeView(static_cast<const uint8_t *>(sqlite3_column_blob(raw, 4)),
                     static_cast<size_t>(sqlite3_column_bytes(raw, 4)), &value.view))
             value.present |= FolderState::View;
+        for (int axis = 0; axis < 2; ++axis) {
+            const auto ratio = sqlite3_column_int64(raw, 10 + axis);
+            if (sqlite3_column_type(raw, 10 + axis) == SQLITE_INTEGER && ratio >= 0 && ratio <= 3000)
+                value.view.iconGap[axis] = static_cast<int>(ratio);
+        }
         if (sqlite3_column_type(raw, 5) != SQLITE_NULL) {
             const auto bytes = static_cast<const uint8_t *>(sqlite3_column_blob(raw, 5));
             const int size = sqlite3_column_bytes(raw, 5);
@@ -876,8 +900,20 @@ bool FolderStateStore::writeState(const std::string &key, const FolderState &sta
         if ((parts & FolderState::Maximized)
                 && !result(sqlite3_bind_int(raw, 11, state.maximized ? 1 : 0))) return false;
         if (!result(sqlite3_bind_int(raw, 12, lockChange))) return false;
-        // An existing row keeps its current access metadata, even if this snapshot is older.
-        return result(sqlite3_step(raw));
+        if (!result(sqlite3_step(raw))) return false;
+        if (!(parts & FolderState::View)) return true;
+        const auto &gap = state.view.iconGap;
+        const char *spacingSql = gap[0] == 1000 && gap[1] == 1000
+            ? "DELETE FROM icon_spacing WHERE key=?1 AND EXISTS("
+              "SELECT 1 FROM folder_state WHERE key=?1 AND (locked=0 OR ?4>=0))"
+            : "INSERT INTO icon_spacing(key,horizontal,vertical) SELECT key,?2,?3 "
+              "FROM folder_state WHERE key=?1 AND (locked=0 OR ?4>=0) "
+              "ON CONFLICT(key) DO UPDATE SET horizontal=?2,vertical=?3 WHERE horizontal!=?2 OR vertical!=?3";
+        if (!result(sqlite3_prepare_v2(db, spacingSql, -1, &raw, nullptr))) return false;
+        Statement spacing(raw, sqlite3_finalize);
+        return result(sqlite3_bind_text(raw, 1, key.c_str(), -1, SQLITE_TRANSIENT))
+            && result(sqlite3_bind_int(raw, 2, gap[0])) && result(sqlite3_bind_int(raw, 3, gap[1]))
+            && result(sqlite3_bind_int(raw, 4, lockChange)) && result(sqlite3_step(raw));
     }();
     return finishWrite(success);
 }
@@ -1184,7 +1220,9 @@ bool FolderStateStore::move(const std::string &oldKey, const std::string &newKey
             && result(sqlite3_step(raw));
     }
     // Move history before deleting the old state (whose trigger removes its history).
-    for (const char *sql : {"DELETE FROM search_history WHERE key=?2",
+    for (const char *sql : {"DELETE FROM icon_spacing WHERE key=?2 AND EXISTS(SELECT 1 FROM folder_state WHERE key=?1)",
+            "UPDATE icon_spacing SET key=?2 WHERE key=?1",
+            "DELETE FROM search_history WHERE key=?2",
             "UPDATE search_history SET key=?2 WHERE key=?1"}) {
         raw = nullptr;
         if (success) success = result(sqlite3_prepare_v2(db, sql, -1, &raw, nullptr));

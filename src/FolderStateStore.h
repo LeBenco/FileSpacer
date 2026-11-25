@@ -21,6 +21,8 @@ struct FolderViewSettings {
     uint32_t present = 0;
     int32_t mode = 0, iconSize = 0;
     uint32_t flags = 0;
+    // Per-folder space outside an icon cell, in thousandths of Explorer's gap.
+    std::array<int, 2> iconGap = {1000, 1000};
     std::vector<Column> columns;
     std::vector<SortColumn> sort;
     Key groupBy = {};
