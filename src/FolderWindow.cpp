@@ -151,7 +151,7 @@ void FolderWindow::onCreateContent() {
         GetModuleHandle(nullptr),
         nullptr));
 
-    createSpacingButtons();
+    customIconSpacing = settings::getIconSpacingEnabled();
     int bottomStatusHeight = 0;
 
     if (hasStatusText()) {
@@ -168,7 +168,6 @@ void FolderWindow::onCreateContent() {
             bottomStatusHeight,
             SWP_NOZORDER | SWP_NOACTIVATE);
 
-        layoutSpacingButtons();
         SendMessage(bottomStatusBar, SB_SETTEXTW, SBT_NOBORDERS, (LPARAM)L"");
     }
 
@@ -701,8 +700,6 @@ void FolderWindow::onSize(SIZE size) {
             size.cx,
             bottomStatusHeight,
             SWP_NOZORDER | SWP_NOACTIVATE);
-
-        layoutSpacingButtons();
     }
 
     if (viewHost) {
@@ -728,10 +725,9 @@ void FolderWindow::onSize(SIZE size) {
 void FolderWindow::onSettingsChanged() {
     CComPtr<ItemWindow> keepAlive(this);
     const bool enabled = settings::getIconSpacingEnabled();
-    if (!settings::getStatusTextEnabled() || !enabled) closeSpacingSlider();
+    if (!enabled) closeSpacingSlider();
     if (customIconSpacing != enabled) {
         customIconSpacing = enabled;
-        layoutSpacingButtons();
         queueExplorerIconSpacing();
     }
     if (spacingPopup) spacingDeferred = settings::getIconSpacingDeferred();
@@ -1724,7 +1720,6 @@ STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
     spacingMetrics = {};
     KillTimer(hwnd, TIMER_SPACING_REFERENCE);
     spacingReferenceRetries = 0;
-    layoutSpacingButtons();
     viewGeneration = 0;
     selectionClear.reset();
     provisionalViewWindow = nullptr; // The previous view's HWND may be reused.
