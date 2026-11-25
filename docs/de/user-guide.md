@@ -80,7 +80,7 @@ Diese Möglichkeiten stehen für alle Symbolgrößen zur Verfügung. **Liste**, 
 
 Halten Sie im Modus **Frei** beim Ziehen **S** bis zum Loslassen der Maustaste gedrückt, um nur die gezogenen Symbole am Raster auszurichten. Die anderen bleiben an ihrem Platz. Wird **S** vor dem Ablegen losgelassen, bleibt die Platzierung frei. In der Symbolansicht zeigt ein grauer Rahmen die Zielposition an.
 
-Unter **Ansicht** stellen Sie den horizontalen oder vertikalen Abstand für den aktuellen Ordner ein. Beim Ziehen des Reglers wird das Menü ausgeblendet. Sobald Sie loslassen, erscheint es wieder und Sie können die andere Achse einstellen. Unter **Symbolabstand zurücksetzen** können Sie eine Achse oder beide auf 100 % zurücksetzen. Unter **Einstellungen > Dateien** legen Sie fest, ob sich die Symbole beim Ziehen oder erst beim Loslassen verschieben. Mit der Schaltfläche zum Zurücksetzen stellen Sie beide Achsen für alle Ordner wieder her, sobald Sie **Übernehmen** oder **OK** wählen.
+Zeigen Sie unter **Ansicht** auf den horizontalen oder vertikalen Symbolabstand. Der Regler erscheint neben dem Eintrag und das Menü bleibt beim Ziehen sichtbar. Zeigen Sie auf den anderen Eintrag, um die Achse zu wechseln. Unter **Symbolabstand zurücksetzen** können Sie eine Achse oder beide auf 100 % zurücksetzen. Unter **Einstellungen > Dateien** legen Sie fest, ob sich die Symbole beim Ziehen oder erst beim Loslassen verschieben. Mit der Schaltfläche zum Zurücksetzen stellen Sie beide Achsen für alle Ordner wieder her, sobald Sie **Übernehmen** oder **OK** wählen.
 
 <div id="details-columns"></div>
 
