@@ -136,6 +136,17 @@ int main(int argc, char **argv) {
             FolderState s;
             require(store.read("missing", &s) && !s.present, "missing row must be empty");
             const auto original = fixture();
+            auto spaced = original;
+            spaced.view.iconGap = {0, 3000};
+            require(store.save("spaced",spaced,FolderState::View)
+                && store.setLocked("spaced",spaced,FolderState::View,true)
+                && store.save("spaced",original,FolderState::View)
+                && store.move("spaced","renamed") && store.read("renamed",&s)
+                && s.locked && s.view.iconGap == spaced.view.iconGap,
+                "a locked or renamed folder lost its icon spacing");
+            require(store.setLocked("renamed",original,FolderState::View,false)
+                && store.read("renamed",&s) && s.view.iconGap == original.view.iconGap
+                && store.remove("renamed"), "restoring standard icon spacing");
             require(store.save("folder", original, FolderState::All), "save full");
             require(store.read("folder", &s) && s.present==FolderState::All && s.x==-72000 && s.y==68000
                 && s.width==902 && s.maximized && s.view.mode==4 && s.view.columns[0].width==220
