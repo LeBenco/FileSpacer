@@ -22,7 +22,11 @@ struct FolderViewSettings {
     int32_t mode = 0, iconSize = 0;
     uint32_t flags = 0;
     // Per-axis scale: 0 touches adjacent cells, 1000 is Explorer's pitch, 3000 triples it.
-    std::array<int, 2> iconGap = {1000, 1000};
+    struct IconSpacing {
+        std::array<int, 2> ratios = {1000, 1000};
+        // A save from before a global reset must not bring its spacing back.
+        int64_t generation = 0;
+    } iconSpacing;
     std::vector<Column> columns;
     std::vector<SortColumn> sort;
     Key groupBy = {};
@@ -106,6 +110,7 @@ public:
     // Capture and change the lock in one transaction. Ordinary saves consult the stored lock.
     bool setLocked(const std::string &key, const FolderState &state, uint32_t parts, bool locked);
     bool clearLocks();
+    bool resetIconSpacing(int64_t &generation);
     // Failure never creates a row. expired is true only after a committed age-based deletion.
     // A success within SUCCESS_REFRESH_SECONDS of the stored one, with no failure to clear, changes nothing.
     bool recordAccess(const std::string &key, bool success, int64_t when, bool *expired = nullptr);
