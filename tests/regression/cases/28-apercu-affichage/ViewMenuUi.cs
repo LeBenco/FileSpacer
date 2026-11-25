@@ -21,7 +21,7 @@ namespace FileSpacerViewMenuTests {
         [FieldOffset(12)] public uint KeyFlags;
         [FieldOffset(20)] public uint MouseFlags;
     }
-    public sealed class Entry { public uint Command; public string Label; public Rect Bounds; public uint State, Type; public bool SeparatorBefore; }
+    public sealed class Entry { public uint Command; public IntPtr SubMenu; public string Label; public Rect Bounds; public uint State, Type; public bool SeparatorBefore; }
     public sealed class Popup { public IntPtr Window; public Entry[] Entries; }
     public static class MenuUi {
         [StructLayout(LayoutKind.Sequential)] struct GuiThreadInfo {
@@ -64,6 +64,17 @@ namespace FileSpacerViewMenuTests {
                 Thread.Sleep(80);
             }
         }
+        [DllImport("dwmapi.dll",PreserveSig=true)] static extern int DwmGetWindowAttribute(IntPtr window,int attribute,out uint value,int size);
+        public static bool Cloaked(IntPtr window) {
+            uint value;
+            Marshal.ThrowExceptionForHR(DwmGetWindowAttribute(window,14,out value,4));
+            return (value&1u)!=0;
+        }
+        public static uint CommandState(IntPtr menu,uint command) {
+            var item=new MenuItemInfo{Size=(uint)Marshal.SizeOf(typeof(MenuItemInfo)),Mask=1};
+            if (!GetMenuItemInfo(menu,command,false,ref item)) throw new Win32Exception();
+            return item.State;
+        }
         public static Popup Active(IntPtr owner,bool includeAll=false,uint requiredCommand=0) {
             foreach(IntPtr window in Native.Top("#32768",null,Owner(owner))) {
                 if(!Native.IsWindowVisible(window))continue;
@@ -87,7 +98,7 @@ namespace FileSpacerViewMenuTests {
                             if(!Native.IsWindowVisible(window)||GetMenuItemCount(bar.Menu)<0){vanished=true;break;}
                             throw new Win32Exception(error);
                         }
-                        entries.Add(new Entry{Command=info.Id,Label=Marshal.PtrToStringUni(text),Bounds=bounds,State=info.State,Type=info.Type,SeparatorBefore=separatorBefore});
+                        entries.Add(new Entry{Command=info.Id,SubMenu=info.SubMenu,Label=Marshal.PtrToStringUni(text),Bounds=bounds,State=info.State,Type=info.Type,SeparatorBefore=separatorBefore});
                         separatorBefore=false;
                     }finally{Marshal.FreeHGlobal(text);}
                 }
