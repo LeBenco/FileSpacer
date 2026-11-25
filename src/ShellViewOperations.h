@@ -51,6 +51,12 @@ private:
 UINT shellViewOperationsReadyMessage();
 int runShellViewOperationsWorker(const wchar_t *cacheRoot = nullptr);
 
+// Match the standard Shell icon view for this viewport and monitor.
+enum class ExplorerIconSpacingResult { Unchanged, Applied, Pending };
+ExplorerIconSpacingResult useExplorerIconSpacing(IShellView *view, const std::function<bool()> &current,
+    const std::function<bool(POINT)> &beforeChange = {});
+void stopExplorerIconSpacing();
+
 // Native public grid alignment preserves selection, focus and placement flags.
 HRESULT alignIconsToGrid(IShellView *view, bool selectedOnly,
     const std::function<bool()> &current);
