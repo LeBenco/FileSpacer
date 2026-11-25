@@ -107,13 +107,6 @@ LRESULT drawSpacingTrack(const NMCUSTOMDRAW &draw, bool vertical) {
 }
 
 void drawSpacingGlyph(const DRAWITEMSTRUCT &item, bool vertical) {
-    // Adapted from Remix Icon 4.6.0 expand-width-line (Apache-2.0). The end bars
-    // are taller for legibility. Rotate the same outline for the vertical button.
-    static const Gdiplus::PointF arrow[] = {
-        {9.45f, 7.05f}, {4.5f, 12.f}, {9.45f, 16.95f}, {10.86f, 15.53f}, {8.33f, 13.f},
-        {15.67f, 13.f}, {13.14f, 15.53f}, {14.55f, 16.95f}, {19.5f, 12.f}, {14.55f, 7.05f},
-        {13.14f, 8.46f}, {15.67f, 11.f}, {8.33f, 11.f}, {10.86f, 8.46f}
-    };
     const RECT &rect = item.rcItem;
     const int inset = pixels(item.hwndItem, 2);
     const int size = (std::min<int>)(pixels(item.hwndItem, 20),
@@ -122,17 +115,30 @@ void drawSpacingGlyph(const DRAWITEMSTRUCT &item, bool vertical) {
     const float scale = static_cast<float>(size) / 20.f;
     const float down = (item.itemState & ODS_SELECTED) ? 1.f : 0.f;
     const COLORREF color = GetSysColor((item.itemState & ODS_DISABLED) ? COLOR_GRAYTEXT : COLOR_BTNTEXT);
-    Gdiplus::SolidBrush brush(Gdiplus::Color(255, GetRValue(color), GetGValue(color), GetBValue(color)));
+    Gdiplus::Pen pen(Gdiplus::Color(255, GetRValue(color), GetGValue(color), GetBValue(color)), 1.06f);
+    pen.SetLineCap(Gdiplus::LineCapRound, Gdiplus::LineCapRound, Gdiplus::DashCapRound);
+    pen.SetLineJoin(Gdiplus::LineJoinRound);
     Gdiplus::Graphics graphics(item.hDC);
     graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+    graphics.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf);
     graphics.TranslateTransform(static_cast<float>(rect.left + rect.right) / 2.f + down,
         static_cast<float>(rect.top + rect.bottom) / 2.f + down);
     if (vertical) graphics.RotateTransform(90.f);
     graphics.ScaleTransform(scale, scale);
     graphics.TranslateTransform(-12.f, -12.f);
-    graphics.FillRectangle(&brush, 2, 3, 2, 18);
-    graphics.FillRectangle(&brush, 20, 3, 2, 18);
-    graphics.FillPolygon(&brush, arrow, ARRAYSIZE(arrow));
+    graphics.DrawLine(&pen, 2.6f, 4.f, 2.6f, 20.f);
+    graphics.DrawLine(&pen, 21.4f, 4.f, 21.4f, 20.f);
+
+    // Radix Icons "Width" (MIT), expressed as strokes on its original 15-unit grid.
+    // Both buttons use the same arrow and end bars, rotated together above.
+    graphics.TranslateTransform(2.6f, 2.7f);
+    graphics.ScaleTransform(1.25f, 1.25f);
+    pen.SetWidth(0.9f);
+    const Gdiplus::PointF left[] = {{4.5f, 5.f}, {2.f, 7.5f}, {4.5f, 10.f}};
+    const Gdiplus::PointF right[] = {{10.5f, 5.f}, {13.f, 7.5f}, {10.5f, 10.f}};
+    graphics.DrawLine(&pen, 2.f, 7.5f, 13.f, 7.5f);
+    graphics.DrawLines(&pen, left, ARRAYSIZE(left));
+    graphics.DrawLines(&pen, right, ARRAYSIZE(right));
 }
 
 void drawSpacingButton(const DRAWITEMSTRUCT &item, bool vertical) {
