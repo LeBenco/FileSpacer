@@ -80,6 +80,8 @@ void setViewMenuPreviewEnabled(bool value);
 bool getDetailsColumnsEnabled();
 void setDetailsColumnsEnabled(bool value);
 bool getDetailsColumnsDeferred();
+bool getIconSpacingDeferred();
+void setIconSpacingDeferred(bool value);
 void setDetailsColumnsDeferred(bool value);
 bool getGroupFolderWindows();
 void setGroupFolderWindows(bool value);
