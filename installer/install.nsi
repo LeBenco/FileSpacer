@@ -852,8 +852,8 @@ Section "FileSpacer" SecBase
     !insertmacro INSTALL_STEP "Extract file: $INSTDIR\Lucide-LICENSE.txt"
     File /oname=Lucide-LICENSE.txt "..\licenses\Lucide-LICENSE.txt"
     IfErrors files_failed
-    !insertmacro INSTALL_STEP "Extract file: $INSTDIR\RemixIcon-LICENSE.txt"
-    File /oname=RemixIcon-LICENSE.txt "..\licenses\RemixIcon-LICENSE.txt"
+    !insertmacro INSTALL_STEP "Extract file: $INSTDIR\RadixIcons-LICENSE.txt"
+    File /oname=RadixIcons-LICENSE.txt "..\licenses\RadixIcons-LICENSE.txt"
     IfErrors files_failed
     !insertmacro INSTALL_STEP "Extract file: $INSTDIR\SQLite-NOTICE.txt"
     File /oname=SQLite-NOTICE.txt "..\third_party\sqlite\README.txt"
@@ -1485,7 +1485,7 @@ exe_removed:
     Delete "$INSTDIR\LICENSE.txt"
     Delete "$INSTDIR\LockedList-LICENSE.txt"
     Delete "$INSTDIR\Lucide-LICENSE.txt"
-    Delete "$INSTDIR\RemixIcon-LICENSE.txt"
+    Delete "$INSTDIR\RadixIcons-LICENSE.txt"
     Delete "$INSTDIR\SQLite-NOTICE.txt"
     Delete "$INSTDIR\THIRD_PARTY_NOTICES.md"
     Delete "$INSTDIR\privacy-policy.md"
