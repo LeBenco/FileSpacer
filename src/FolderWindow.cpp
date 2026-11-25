@@ -151,6 +151,7 @@ void FolderWindow::onCreateContent() {
         GetModuleHandle(nullptr),
         nullptr));
 
+    createSpacingButtons();
     int bottomStatusHeight = 0;
 
     if (hasStatusText()) {
@@ -167,10 +168,7 @@ void FolderWindow::onCreateContent() {
             bottomStatusHeight,
             SWP_NOZORDER | SWP_NOACTIVATE);
 
-        // One borderless text part for now.
-        // Later we can reserve a right-hand part for the view buttons.
-        int parts[] = {-1};
-        SendMessage(bottomStatusBar, SB_SETPARTS, 1, (LPARAM)parts);
+        layoutSpacingButtons();
         SendMessage(bottomStatusBar, SB_SETTEXTW, SBT_NOBORDERS, (LPARAM)L"");
     }
 
@@ -331,6 +329,7 @@ int FolderWindow::getToolbarTooltip(WORD command) {
 
 
 void FolderWindow::onDestroy() {
+    closeSpacingSlider();
     iconSnap.reset();
     iconRealignPending = false;
     if (columnLayout) columnLayout->stop();
@@ -703,9 +702,7 @@ void FolderWindow::onSize(SIZE size) {
             bottomStatusHeight,
             SWP_NOZORDER | SWP_NOACTIVATE);
 
-        // Keep the single part stretched to the right edge.
-        int parts[] = {-1};
-        SendMessage(bottomStatusBar, SB_SETPARTS, 1, (LPARAM)parts);
+        layoutSpacingButtons();
     }
 
     if (viewHost) {
@@ -730,6 +727,7 @@ void FolderWindow::onSize(SIZE size) {
 
 void FolderWindow::onSettingsChanged() {
     CComPtr<ItemWindow> keepAlive(this);
+    if (!settings::getStatusTextEnabled()) closeSpacingSlider();
     if (bottomStatusBar)
         checkLE(SetWindowPos(bottomStatusBar, nullptr, 0, 0, 0, 0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
@@ -1130,6 +1128,11 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             requestViewProfile();
             break;
         case WM_TIMER:
+            if (wParam == TIMER_SPACING_REFERENCE) {
+                KillTimer(hwnd, TIMER_SPACING_REFERENCE);
+                queueExplorerIconSpacing();
+                return 0;
+            }
             if (wParam == TIMER_LOADING) {
                 loadingTick();
                 return 0;
@@ -1320,6 +1323,7 @@ void FolderWindow::onItemChanged() {
                 && checkHR(viewHost.currentView(IID_PPV_ARGS(&folderView)))) {
             auto state = std::make_unique<ShellViewState>();
             state->view = captureOptions(folderView, {});
+            state->view.iconGap = getSavedFolderState().view.iconGap;
             if (!current()) return;
             // The transient snapshot may hold a filtered subset: it is applied once
             // to the recreated view and never persisted as the folder's placement.
@@ -1696,6 +1700,11 @@ STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
     providerSyncPending = false;
     debugPrintf(L"NATIVE HWND=%p OnNavigationPending\n", hwnd);
     checkHR(viewHost.stopObserving());
+    closeSpacingSlider();
+    spacingMetrics = {};
+    KillTimer(hwnd, TIMER_SPACING_REFERENCE);
+    spacingReferenceRetries = 0;
+    layoutSpacingButtons();
     viewGeneration = 0;
     selectionClear.reset();
     provisionalViewWindow = nullptr; // The previous view's HWND may be reused.
