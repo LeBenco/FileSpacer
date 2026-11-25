@@ -10,11 +10,14 @@ try {
     $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($script:UiSettingsKey,$true)
     try { $key.DeleteValue('IconSpacingDeferred',$false) } finally { $key.Dispose() }
     foreach ($defer in @(0,1)) {
-        if ($defer) { Set-UiPreference 'IconSpacingDeferred' 1 }
         $folder = Join-Path $script:UiRoot "folder-$defer"
         [void][IO.Directory]::CreateDirectory($folder)
         foreach ($i in 0..5) { [void][IO.Directory]::CreateDirectory((Join-Path $folder ('item-{0:D4}' -f $i))) }
         $window = Open-UiFolder $folder 6
+        [void](Show-UiSettings $window)
+        $page=Set-UiPage 2
+        Set-UiCheck $page 'IDC_ICON_SPACING_DYNAMIC' (!$defer)
+        Press-UiSettings 3
         $dpi=[FileSpacerRegression.Native]::GetDpiForWindow($window)
         $rounding=if ($dpi -eq 96) {0} else {[int][Math]::Ceiling($dpi/192.0)}
         $menu=Open-PreviewMenu $window
@@ -32,6 +35,7 @@ try {
             $slider = Open-SpacingSlider $window $axis
             $track = $slider.Track
             $before = Read-Spacing $window
+            if (!$axis) {$standard = $before}
             $max = [FileSpacerRegression.Native]::Message($track,0x402,0,0)
             $start = [FileSpacerRegression.Native]::Message($track,0x400,0,0)
             Assert-Ui ($start -eq 10 -and $max -eq 30) "31 positions in 10% steps, starting at 100% on axis $axis"
@@ -137,6 +141,39 @@ try {
         }
         Assert-Ui (((Read-OccupiedCells) -join ';') -eq $cells) 'snap preserves occupied cells and holes'
         Assert-Ui (Use-UiView $window {param($v) $v.SnapToGrid -and !$v.AutoArrange -and (@($v.Selected()) -join ';') -eq 'item-0001'}) 'snap and selection preserved'
+        if ($defer) {
+            $custom = Read-Spacing $window
+            $bar=[FileSpacerRegression.Native]::Children($window,'msctls_statusbar32')[0]
+            $buttons=@([FileSpacerRegression.Native]::Children($bar,'Button') | Sort-Object { [FileSpacerRegression.Native]::Bounds($_).Left })
+            [void](Show-UiSettings $window); $page=Set-UiPage 2
+            Set-UiCheck $page 'IDC_ICON_SPACING_ENABLED' $false
+            Assert-Ui (![FileSpacerRegression.Native]::IsWindowEnabled([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_ICON_SPACING_DYNAMIC')))) 'live option follows master checkbox'
+            Press-UiSettings 3
+            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $standard.X -and $s.Y -eq $standard.Y -and ![FileSpacerRegression.Native]::IsWindowVisible($buttons[0])} 'disabled feature restores the standard grid'
+            [void](Show-UiSettings $window); $page=Set-UiPage 2
+            Set-UiCheck $page 'IDC_ICON_SPACING_ENABLED' $true
+            Press-UiSettings 3
+            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $custom.X -and $s.Y -eq $custom.Y -and [FileSpacerRegression.Native]::IsWindowVisible($buttons[1])} 're-enabling restores this folder spacing'
+            # Right-click the actual horizontal control and choose its single native menu entry.
+            $bounds=[FileSpacerRegression.Native]::Bounds($buttons[0])
+            $point=New-Object FileSpacerRegression.MousePoint
+            $point.X=($bounds.Left+$bounds.Right)/2; $point.Y=($bounds.Top+$bounds.Bottom)/2
+            [FileSpacerRegression.AltDragInput]::BeginRight($window,$point,$false,$false)
+            [FileSpacerRegression.AltDragInput]::End()
+            $popup=@{}
+            Wait-Ui {$popup.Menu=[FileSpacerViewMenuTests.MenuUi]::Active($window,$true,1); $null -ne $popup.Menu} 'axis reset menu'
+            [FileSpacerViewMenuTests.MenuUi]::Choose($popup.Menu,0,$window)
+            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $standard.X -and $s.Y -eq $custom.Y} 'local horizontal reset preserves vertical spacing'
+            foreach ($action in @(5,3)) {
+                [void](Show-UiSettings $window); $page=Set-UiPage 2
+                $reset=[FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_ICON_SPACING_RESET'))
+                [void][FileSpacerRegression.Native]::Message($reset,0xf5,0,0)
+                [void](Set-UiPage 1) # A pending reset follows Apply or Cancel from any tab.
+                Press-UiSettings $action
+                $expected=if ($action -eq 5) {$custom.Y} else {$standard.Y}
+                Wait-Ui {$s=Read-Spacing $window; $s.X -eq $standard.X -and $s.Y -eq $expected} "global reset, property sheet action $action"
+            }
+        }
         Close-UiFolder $window
     }
 } catch { $failure=$_; throw } finally { Stop-Ui $failure }
