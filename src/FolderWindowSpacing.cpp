@@ -4,6 +4,7 @@
 #include "Settings.h"
 #include "UIStrings.h"
 #include <commctrl.h>
+#include <windowsx.h>
 #include <objidl.h>
 #include <uxtheme.h>
 #pragma warning(push)
@@ -163,7 +164,9 @@ LRESULT drawSpacingButton(const NMCUSTOMDRAW &draw, bool vertical) {
 
 ExplorerIconSpacingResult FolderWindow::applyIconSpacing(IShellView *source, const std::function<bool()> &current,
         const std::function<bool(HWND, POINT)> &beforeChange) {
-    auto ratios = getSavedFolderState().view.iconGap;
+    auto &spacing = getSavedFolderState().view.iconSpacing;
+    if (spacing.generation < spacingResetGeneration) spacing = {{1000, 1000}, spacingResetGeneration};
+    auto ratios = customIconSpacing ? spacing.ratios : std::array<int, 2>{1000, 1000};
     if (spacingPopup) ratios[spacingAxis] = spacingPreview;
     const auto previous = spacingMetrics;
     auto next = previous;
@@ -188,12 +191,26 @@ ExplorerIconSpacingResult FolderWindow::applyIconSpacing(IShellView *source, con
 }
 
 void FolderWindow::createSpacingButtons() {
+    customIconSpacing = settings::getIconSpacingEnabled();
     if (!bottomStatusBar || !SetWindowSubclass(bottomStatusBar, spacingBarProc, 1, reinterpret_cast<DWORD_PTR>(this)))
         return;
+    const HINSTANCE instance = GetModuleHandleW(nullptr);
+    // The folder window owns this popup and destroys it together with its buttons.
+    const HWND tooltip = CreateWindowExW(WS_EX_TOPMOST | WS_EX_NOACTIVATE, TOOLTIPS_CLASSW, nullptr,
+        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP, 0, 0, 0, 0, hwnd, nullptr, instance, nullptr);
     for (int axis = 0; axis < 2; ++axis) {
         spacingButtons[axis] = CreateWindowExW(0, WC_BUTTONW,
             getString(axis ? IDS_ICON_GAP_VERTICAL : IDS_ICON_GAP_HORIZONTAL),
-            WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON, 0, 0, 0, 0, bottomStatusBar, nullptr, GetModuleHandleW(nullptr), nullptr);
+            WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON, 0, 0, 0, 0, bottomStatusBar, nullptr, instance, nullptr);
+        if (tooltip && spacingButtons[axis]) {
+            TOOLINFOW tool = {sizeof(tool)};
+            tool.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+            tool.hwnd = bottomStatusBar;
+            tool.uId = reinterpret_cast<UINT_PTR>(spacingButtons[axis]);
+            tool.hinst = instance;
+            tool.lpszText = MAKEINTRESOURCEW(axis ? IDS_VERTICAL_GAP_TIP : IDS_HORIZONTAL_GAP_TIP);
+            SendMessageW(tooltip, TTM_ADDTOOLW, 0, reinterpret_cast<LPARAM>(&tool));
+        }
     }
 }
 
@@ -201,7 +218,7 @@ void FolderWindow::layoutSpacingButtons() {
     if (!bottomStatusBar || !spacingButtons[0] || !spacingButtons[1]) return;
     RECT bounds = {};
     GetClientRect(bottomStatusBar, &bounds);
-    const bool available = spacingMetrics.standard.x > 0 && spacingMetrics.standard.y > 0;
+    const bool available = customIconSpacing && spacingMetrics.standard.x > 0 && spacingMetrics.standard.y > 0;
     const int width = pixels(bottomStatusBar, 28);
     const int parts[] = {available ? std::max<LONG>(0, bounds.right - 2 * width) : -1, -1};
     SendMessageW(bottomStatusBar, SB_SETPARTS, available ? 2 : 1, reinterpret_cast<LPARAM>(parts));
@@ -222,6 +239,13 @@ LRESULT CALLBACK FolderWindow::spacingBarProc(HWND window, UINT message, WPARAM 
             owner.openSpacingSlider(button == owner.spacingButtons[1]);
             return 0;
         }
+    } else if (message == WM_CONTEXTMENU) {
+        const HWND button = reinterpret_cast<HWND>(wParam);
+        if (button && (button == owner.spacingButtons[0] || button == owner.spacingButtons[1])) {
+            CComPtr<ItemWindow> keepAlive(&owner);
+            owner.showSpacingResetMenu(button == owner.spacingButtons[1], {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)});
+            return 0;
+        }
     } else if (message == WM_NOTIFY && lParam) {
         const auto *header = reinterpret_cast<const NMHDR *>(lParam);
         if (header->code == NM_CUSTOMDRAW &&
@@ -233,9 +257,45 @@ LRESULT CALLBACK FolderWindow::spacingBarProc(HWND window, UINT message, WPARAM 
     return DefSubclassProc(window, message, wParam, lParam);
 }
 
+void FolderWindow::showSpacingResetMenu(int axis, POINT point) {
+    const HWND button = spacingButtons[axis];
+    if (!customIconSpacing || !IsWindowVisible(button) || !IsWindowEnabled(button)) return;
+    if (point.x == -1 && point.y == -1) {
+        RECT rect = {};
+        if (!GetWindowRect(button, &rect)) return;
+        point = {rect.left, rect.bottom};
+    }
+    std::unique_ptr<std::remove_pointer<HMENU>::type, decltype(&DestroyMenu)> menu(CreatePopupMenu(), DestroyMenu);
+    const auto generation = viewGeneration;
+    const HWND popup = spacingAxis == axis ? spacingPopup : nullptr;
+    const int ratio = popup ? spacingPreview : getSavedFolderState().view.iconSpacing.ratios[axis];
+    const UINT state = ratio == 1000 ? MF_GRAYED : MF_ENABLED;
+    if (!menu || !AppendMenuW(menu.get(), MF_STRING | state, 1,
+            getString(axis ? IDS_RESET_VERTICAL_GAP : IDS_RESET_HORIZONTAL_GAP))) return;
+    if (TrackPopupMenuEx(menu.get(), TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON, point.x, point.y, popup ? popup : hwnd, nullptr) != 1
+            || !isWindowOperational() || generation != viewGeneration || !customIconSpacing) return;
+    if (popup) {
+        if (spacingPopup == popup && spacingTrack) {
+            SendMessageW(spacingTrack, TBM_SETPOS, TRUE, spacingStepForRatio(1000));
+            readSpacingSlider(true);
+        }
+        return;
+    }
+    closeSpacingSlider();
+    auto &spacing = getSavedFolderState().view.iconSpacing;
+    const auto previous = spacing;
+    spacing.ratios[axis] = 1000;
+    if (!updateExplorerIconSpacing()) {
+        if (generation == viewGeneration && spacing.generation == previous.generation) spacing.ratios[axis] = previous.ratios[axis];
+        return;
+    }
+    viewStateDirty(FolderState::View);
+    SetTimer(hwnd, TIMER_SAVE_STATE, 250, nullptr);
+}
+
 void FolderWindow::openSpacingSlider(int axis) {
     closeSpacingSlider();
-    if (!viewReady || !initialStateApplied || provisionalBaseline || !isWindowOperational()) return;
+    if (!customIconSpacing || !viewReady || !initialStateApplied || provisionalBaseline || !isWindowOperational()) return;
     if (spacingMetrics.standard.x <= 0 || spacingMetrics.standard.y <= 0) return;
     const HWND button = spacingButtons[axis];
     RECT anchor = {};
@@ -243,7 +303,7 @@ void FolderWindow::openSpacingSlider(int axis) {
     if (!GetWindowRect(button, &anchor) || !GetMonitorInfoW(MonitorFromWindow(button, MONITOR_DEFAULTTONEAREST),
             &monitor)) return;
     spacingAxis = axis;
-    spacingPreview = getSavedFolderState().view.iconGap[axis];
+    spacingPreview = getSavedFolderState().view.iconSpacing.ratios[axis];
     spacingEdited = false;
     spacingDeferred = settings::getIconSpacingDeferred();
     const int width = pixels(button, axis ? 40 : 230), height = pixels(button, axis ? 230 : 40);
@@ -314,8 +374,8 @@ void FolderWindow::readSpacingSlider(bool commit, bool frame) {
         if (!commit && popup && spacingPopup == popup)
             spacingFramePending = SetTimer(popup, 1, 16, nullptr) != 0;
     }
-    if (commit && spacingPopup && getSavedFolderState().view.iconGap[spacingAxis] != ratio) {
-        getSavedFolderState().view.iconGap[spacingAxis] = ratio;
+    if (commit && spacingPopup && getSavedFolderState().view.iconSpacing.ratios[spacingAxis] != ratio) {
+        getSavedFolderState().view.iconSpacing.ratios[spacingAxis] = ratio;
         viewStateDirty(FolderState::View);
         // The mode and icon size did not change. Running the mode-transition
         // handler here could replay an older arrangement over live positions.
@@ -329,6 +389,10 @@ LRESULT CALLBACK FolderWindow::spacingPopupProc(HWND window, UINT message, WPARA
     CComPtr<ItemWindow> keepAlive(&owner);
     // The default static control lets clicks pass through its blank margins.
     if (message == WM_NCHITTEST) return HTCLIENT;
+    if (message == WM_CONTEXTMENU && owner.spacingPopup == window) {
+        owner.showSpacingResetMenu(owner.spacingAxis, {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)});
+        return 0;
+    }
     if (message == WM_PAINT) {
         PAINTSTRUCT paint;
         HDC dc = BeginPaint(window, &paint);
