@@ -4,11 +4,36 @@
 #include "Settings.h"
 #include "UIStrings.h"
 #include <commctrl.h>
+#include <uxtheme.h>
+#include <vssym32.h>
 
 namespace filespacer {
 namespace {
+// Saved spacing uses thousandths of the Windows pitch. Each slider step is 10%.
+constexpr int spacingStep = 100;
+int spacingStepForRatio(int ratio) { return (ratio + spacingStep / 2) / spacingStep; }
+
 int pixels(HWND window, int dip) {
     return MulDiv(dip, static_cast<int>(GetDpiForWindow(window)), USER_DEFAULT_SCREEN_DPI);
+}
+
+LRESULT drawSpacingTrack(const NMCUSTOMDRAW &draw, bool vertical) {
+    if (draw.dwDrawStage == CDDS_PREPAINT) return CDRF_NOTIFYITEMDRAW;
+    if (draw.dwDrawStage != CDDS_ITEMPREPAINT || draw.dwItemSpec != TBCD_THUMB) return CDRF_DODEFAULT;
+
+    // Use the non-directional thumb from the trackbar theme; keep the native tick layout.
+    const bool disabled = (draw.uItemState & CDIS_DISABLED) != 0;
+    const bool pressed = (draw.uItemState & CDIS_SELECTED) != 0;
+    const int state = disabled ? TUS_DISABLED : pressed ? TUS_PRESSED :
+        (draw.uItemState & CDIS_HOT) ? TUS_HOT : (draw.uItemState & CDIS_FOCUS) ? TUS_FOCUSED : TUS_NORMAL;
+    const HTHEME theme = GetWindowTheme(draw.hdr.hwndFrom);
+    if (theme && SUCCEEDED(DrawThemeBackground(theme, draw.hdc, vertical ? TKP_THUMBVERT : TKP_THUMB,
+            state, &draw.rc, nullptr))) return CDRF_SKIPDEFAULT;
+
+    RECT rect = draw.rc;
+    DrawFrameControl(draw.hdc, &rect, DFC_BUTTON,
+        DFCS_BUTTONPUSH | (disabled ? DFCS_INACTIVE : 0) | (pressed ? DFCS_PUSHED : 0));
+    return CDRF_SKIPDEFAULT;
 }
 
 void drawSpacingButton(const DRAWITEMSTRUCT &item, bool vertical) {
@@ -147,11 +172,10 @@ void FolderWindow::openSpacingSlider(int axis) {
         (axis ? TBS_VERT : TBS_HORZ) | TBS_AUTOTICKS, pad, pad, client.right - 2 * pad,
         client.bottom - 2 * pad, spacingPopup, nullptr, GetModuleHandleW(nullptr), nullptr);
     if (!spacingTrack) { closeSpacingSlider(); return; }
-    SendMessageW(spacingTrack, TBM_SETRANGEMAX, FALSE, 3000);
-    SendMessageW(spacingTrack, TBM_SETTICFREQ, 1000, 0);
-    SendMessageW(spacingTrack, TBM_SETLINESIZE, 0, 10);
-    SendMessageW(spacingTrack, TBM_SETPAGESIZE, 0, 100);
-    SendMessageW(spacingTrack, TBM_SETPOS, TRUE, spacingPreview);
+    SendMessageW(spacingTrack, TBM_SETRANGEMAX, FALSE, 3000 / spacingStep);
+    SendMessageW(spacingTrack, TBM_SETTICFREQ, 1000 / spacingStep, 0);
+    SendMessageW(spacingTrack, TBM_SETPAGESIZE, 0, 1);
+    SendMessageW(spacingTrack, TBM_SETPOS, TRUE, spacingStepForRatio(spacingPreview));
     ShowWindow(spacingPopup, SW_SHOW);
     SetFocus(spacingTrack);
 }
@@ -165,8 +189,10 @@ void FolderWindow::closeSpacingSlider() {
 
 void FolderWindow::readSpacingSlider(bool commit, bool frame) {
     if (!spacingTrack || !isWindowOperational() || (!commit && spacingDeferred)) return;
-    const int ratio = static_cast<int>(SendMessageW(spacingTrack, TBM_GETPOS, 0, 0));
-    if (!spacingEdited && ratio == spacingPreview) return;
+    const int position = static_cast<int>(SendMessageW(spacingTrack, TBM_GETPOS, 0, 0));
+    // Merely opening and closing the popup must preserve older, finer settings.
+    if (!spacingEdited && position == spacingStepForRatio(spacingPreview)) return;
+    const int ratio = position * spacingStep;
     spacingEdited = true;
     if (!commit && !frame && spacingFramePending) return;
     if (spacingFramePending) {
@@ -199,6 +225,11 @@ LRESULT CALLBACK FolderWindow::spacingPopupProc(HWND window, UINT message, WPARA
         UINT_PTR id, DWORD_PTR data) {
     auto &owner = *reinterpret_cast<FolderWindow *>(data);
     CComPtr<ItemWindow> keepAlive(&owner);
+    if (message == WM_NOTIFY && lParam) {
+        const auto header = reinterpret_cast<const NMHDR *>(lParam);
+        if (header->code == NM_CUSTOMDRAW && header->hwndFrom == owner.spacingTrack)
+            return drawSpacingTrack(*reinterpret_cast<const NMCUSTOMDRAW *>(header), owner.spacingAxis != 0);
+    }
     if (message == WM_TIMER && wParam == 1 && window == owner.spacingPopup) {
         owner.readSpacingSlider(false, true);
         return 0;
