@@ -21,7 +21,7 @@ PROPERTYKEY propertyKey(const FolderViewSettings::Key &key) {
 }
 
 bool sameView(const FolderViewSettings &a, const FolderViewSettings &b) {
-    if (a.present != b.present || a.mode != b.mode || a.iconSize != b.iconSize
+    if (a.iconGap != b.iconGap || a.present != b.present || a.mode != b.mode || a.iconSize != b.iconSize
             || a.flags != b.flags || a.groupBy != b.groupBy
             || a.groupAscending != b.groupAscending
             || ((a.present & FolderViewSettings::ColumnFill) && a.fillColumns != b.fillColumns)
@@ -97,6 +97,7 @@ HRESULT restoreOptions(IFolderView2 *view, const FolderViewSettings &state) {
     FolderViewSettings metadata;
     metadata.present = state.present & (FolderViewSettings::ColumnFill | FolderViewSettings::ColumnWeights);
     metadata.fillColumns = state.fillColumns;
+    metadata.iconGap = state.iconGap;
     metadata.columnWeights = state.columnWeights;
     const FolderViewSettings actual = captureOptions(view, metadata);
     if (sameView(actual, state)) return S_OK;
