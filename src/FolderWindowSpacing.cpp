@@ -1,16 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only; Copyright (C) 2026 Benco
 #include <common.h>
 #include "FolderWindow.h"
+#include "FolderWindowViewMenuPreview.h"
+#include <dwmapi.h>
 #include "Settings.h"
 #include "UIStrings.h"
 #include <commctrl.h>
 #include <windowsx.h>
-#include <objidl.h>
-#include <uxtheme.h>
-#pragma warning(push)
-#pragma warning(disable: 4458) // Shadowed members in Windows SDK GDI+ headers.
-#include <gdiplus.h>
-#pragma warning(pop)
 
 namespace filespacer {
 namespace {
@@ -108,58 +104,6 @@ LRESULT drawSpacingTrack(const NMCUSTOMDRAW &draw, bool vertical) {
     return CDRF_SKIPDEFAULT;
 }
 
-void drawSpacingGlyph(const NMCUSTOMDRAW &draw, bool vertical, COLORREF color) {
-    const RECT &rect = draw.rc;
-    const int inset = pixels(draw.hdr.hwndFrom, 2);
-    const int size = (std::min<int>)(pixels(draw.hdr.hwndFrom, 20),
-        (std::min)(rect.right - rect.left, rect.bottom - rect.top) - 2 * inset);
-    if (size <= 0) return;
-    const float scale = static_cast<float>(size) / 20.f;
-    const float down = (draw.uItemState & CDIS_SELECTED) ? 1.f : 0.f;
-    Gdiplus::Pen pen(Gdiplus::Color(255, GetRValue(color), GetGValue(color), GetBValue(color)), 1.06f);
-    pen.SetLineCap(Gdiplus::LineCapRound, Gdiplus::LineCapRound, Gdiplus::DashCapRound);
-    pen.SetLineJoin(Gdiplus::LineJoinRound);
-    Gdiplus::Graphics graphics(draw.hdc);
-    graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
-    graphics.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf);
-    graphics.TranslateTransform(static_cast<float>(rect.left + rect.right) / 2.f + down,
-        static_cast<float>(rect.top + rect.bottom) / 2.f + down);
-    if (vertical) graphics.RotateTransform(90.f);
-    graphics.ScaleTransform(scale, scale);
-    graphics.TranslateTransform(-12.f, -12.f);
-    graphics.DrawLine(&pen, 2.6f, 4.f, 2.6f, 20.f);
-    graphics.DrawLine(&pen, 21.4f, 4.f, 21.4f, 20.f);
-
-    // Radix Icons "Width" (MIT), expressed as strokes on its original 15-unit grid.
-    // Both buttons use the same arrow and end bars, rotated together above.
-    graphics.TranslateTransform(2.6f, 2.7f);
-    graphics.ScaleTransform(1.25f, 1.25f);
-    pen.SetWidth(0.9f);
-    const Gdiplus::PointF left[] = {{4.5f, 5.f}, {2.f, 7.5f}, {4.5f, 10.f}};
-    const Gdiplus::PointF right[] = {{10.5f, 5.f}, {13.f, 7.5f}, {10.5f, 10.f}};
-    graphics.DrawLine(&pen, 2.f, 7.5f, 13.f, 7.5f);
-    graphics.DrawLines(&pen, left, ARRAYSIZE(left));
-    graphics.DrawLines(&pen, right, ARRAYSIZE(right));
-}
-
-LRESULT drawSpacingButton(const NMCUSTOMDRAW &draw, bool vertical) {
-    if (draw.dwDrawStage != CDDS_PREPAINT) return CDRF_DODEFAULT;
-    const bool disabled = (draw.uItemState & CDIS_DISABLED) != 0;
-    const bool highlighted = !disabled && ((draw.uItemState & CDIS_HOT) || (draw.uItemState & CDIS_SELECTED));
-    if (highlighted)
-        FillRect(draw.hdc, &draw.rc, GetSysColorBrush(COLOR_HIGHLIGHT));
-    else if (FAILED(DrawThemeParentBackground(draw.hdr.hwndFrom, draw.hdc, &draw.rc)))
-        FillRect(draw.hdc, &draw.rc, GetSysColorBrush(COLOR_BTNFACE));
-    const int textColor = disabled ? COLOR_GRAYTEXT : highlighted ? COLOR_HIGHLIGHTTEXT : COLOR_BTNTEXT;
-    drawSpacingGlyph(draw, vertical, GetSysColor(textColor));
-    if ((draw.uItemState & CDIS_FOCUS) &&
-            !(static_cast<UINT>(SendMessageW(draw.hdr.hwndFrom, WM_QUERYUISTATE, 0, 0)) & UISF_HIDEFOCUS)) {
-        RECT rect = draw.rc;
-        InflateRect(&rect, -2, -2);
-        DrawFocusRect(draw.hdc, &rect);
-    }
-    return CDRF_SKIPDEFAULT;
-}
 }
 
 ExplorerIconSpacingResult FolderWindow::applyIconSpacing(IShellView *source, const std::function<bool()> &current,
@@ -168,8 +112,7 @@ ExplorerIconSpacingResult FolderWindow::applyIconSpacing(IShellView *source, con
     if (spacing.generation < spacingResetGeneration) spacing = {{1000, 1000}, spacingResetGeneration};
     auto ratios = customIconSpacing ? spacing.ratios : std::array<int, 2>{1000, 1000};
     if (spacingPopup) ratios[spacingAxis] = spacingPreview;
-    const auto previous = spacingMetrics;
-    auto next = previous;
+    auto next = spacingMetrics;
     const auto result = useExplorerIconSpacing(source, ratios, next, current, beforeChange);
     if (current()) {
         spacingMetrics = next;
@@ -184,104 +127,37 @@ ExplorerIconSpacingResult FolderWindow::applyIconSpacing(IShellView *source, con
             KillTimer(hwnd, TIMER_SPACING_REFERENCE);
             spacingReferenceRetries = 0;
         }
-        if ((previous.standard.x > 0 && previous.standard.y > 0) != (next.standard.x > 0 && next.standard.y > 0))
-            layoutSpacingButtons();
     }
     return result;
 }
 
-void FolderWindow::createSpacingButtons() {
-    customIconSpacing = settings::getIconSpacingEnabled();
-    if (!bottomStatusBar || !SetWindowSubclass(bottomStatusBar, spacingBarProc, 1, reinterpret_cast<DWORD_PTR>(this)))
-        return;
-    const HINSTANCE instance = GetModuleHandleW(nullptr);
-    // The folder window owns this popup and destroys it together with its buttons.
-    const HWND tooltip = CreateWindowExW(WS_EX_TOPMOST | WS_EX_NOACTIVATE, TOOLTIPS_CLASSW, nullptr,
-        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP, 0, 0, 0, 0, hwnd, nullptr, instance, nullptr);
-    for (int axis = 0; axis < 2; ++axis) {
-        spacingButtons[axis] = CreateWindowExW(0, WC_BUTTONW,
-            getString(axis ? IDS_ICON_GAP_VERTICAL : IDS_ICON_GAP_HORIZONTAL),
-            WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON, 0, 0, 0, 0, bottomStatusBar, nullptr, instance, nullptr);
-        if (tooltip && spacingButtons[axis]) {
-            TOOLINFOW tool = {sizeof(tool)};
-            tool.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
-            tool.hwnd = bottomStatusBar;
-            tool.uId = reinterpret_cast<UINT_PTR>(spacingButtons[axis]);
-            tool.hinst = instance;
-            tool.lpszText = MAKEINTRESOURCEW(axis ? IDS_VERTICAL_GAP_TIP : IDS_HORIZONTAL_GAP_TIP);
-            SendMessageW(tooltip, TTM_ADDTOOLW, 0, reinterpret_cast<LPARAM>(&tool));
-        }
-    }
-}
-
-void FolderWindow::layoutSpacingButtons() {
-    if (!bottomStatusBar || !spacingButtons[0] || !spacingButtons[1]) return;
-    RECT bounds = {};
-    GetClientRect(bottomStatusBar, &bounds);
-    const bool available = customIconSpacing && spacingMetrics.standard.x > 0 && spacingMetrics.standard.y > 0;
-    const int width = pixels(bottomStatusBar, 28);
-    const int parts[] = {available ? std::max<LONG>(0, bounds.right - 2 * width) : -1, -1};
-    SendMessageW(bottomStatusBar, SB_SETPARTS, available ? 2 : 1, reinterpret_cast<LPARAM>(parts));
-    for (int axis = 0; axis < 2; ++axis) {
-        EnableWindow(spacingButtons[axis], available);
-        SetWindowPos(spacingButtons[axis], HWND_TOP, parts[0] + axis * width, 0, width, bounds.bottom,
-            SWP_NOACTIVATE | (available ? SWP_SHOWWINDOW : SWP_HIDEWINDOW));
-    }
-}
-
-LRESULT CALLBACK FolderWindow::spacingBarProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam,
-        UINT_PTR id, DWORD_PTR data) {
-    auto &owner = *reinterpret_cast<FolderWindow *>(data);
-    if (message == WM_COMMAND && HIWORD(wParam) == BN_CLICKED) {
-        const auto button = reinterpret_cast<HWND>(lParam);
-        if (button && (button == owner.spacingButtons[0] || button == owner.spacingButtons[1])) {
-            CComPtr<ItemWindow> keepAlive(&owner);
-            owner.openSpacingSlider(button == owner.spacingButtons[1]);
-            return 0;
-        }
-    } else if (message == WM_CONTEXTMENU) {
-        const HWND button = reinterpret_cast<HWND>(wParam);
-        if (button && (button == owner.spacingButtons[0] || button == owner.spacingButtons[1])) {
-            CComPtr<ItemWindow> keepAlive(&owner);
-            owner.showSpacingResetMenu(button == owner.spacingButtons[1], {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)});
-            return 0;
-        }
-    } else if (message == WM_NOTIFY && lParam) {
-        const auto *header = reinterpret_cast<const NMHDR *>(lParam);
-        if (header->code == NM_CUSTOMDRAW &&
-                (header->hwndFrom == owner.spacingButtons[0] || header->hwndFrom == owner.spacingButtons[1]))
-            return drawSpacingButton(*reinterpret_cast<const NMCUSTOMDRAW *>(header), header->hwndFrom == owner.spacingButtons[1]);
-    } else if (message == WM_NCDESTROY) {
-        RemoveWindowSubclass(window, spacingBarProc, id);
-    }
-    return DefSubclassProc(window, message, wParam, lParam);
-}
-
-void FolderWindow::showSpacingResetMenu(int axis, POINT point) {
-    const HWND button = spacingButtons[axis];
-    if (!customIconSpacing || !IsWindowVisible(button) || !IsWindowEnabled(button)) return;
+void FolderWindow::showSpacingResetMenu(POINT point) {
+    const HWND popup = spacingPopup;
+    if (!popup || !spacingTrack) return;
     if (point.x == -1 && point.y == -1) {
         RECT rect = {};
-        if (!GetWindowRect(button, &rect)) return;
+        if (!GetWindowRect(spacingTrack, &rect)) return;
         point = {rect.left, rect.bottom};
     }
     std::unique_ptr<std::remove_pointer<HMENU>::type, decltype(&DestroyMenu)> menu(CreatePopupMenu(), DestroyMenu);
-    const auto generation = viewGeneration;
-    const HWND popup = spacingAxis == axis ? spacingPopup : nullptr;
-    const int ratio = popup ? spacingPreview : getSavedFolderState().view.iconSpacing.ratios[axis];
-    const UINT state = ratio == 1000 ? MF_GRAYED : MF_ENABLED;
-    if (!menu || !AppendMenuW(menu.get(), MF_STRING | state, 1,
-            getString(axis ? IDS_RESET_VERTICAL_GAP : IDS_RESET_HORIZONTAL_GAP))) return;
-    if (TrackPopupMenuEx(menu.get(), TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON, point.x, point.y, popup ? popup : hwnd, nullptr) != 1
-            || !isWindowOperational() || generation != viewGeneration || !customIconSpacing) return;
-    if (popup) {
-        if (spacingPopup == popup && spacingTrack) {
-            SendMessageW(spacingTrack, TBM_SETPOS, TRUE, spacingStepForRatio(1000));
-            readSpacingSlider(true);
-        }
+    const UINT command = spacingAxis ? IDM_RESET_VERTICAL_GAP : IDM_RESET_HORIZONTAL_GAP;
+    if (!menu || !AppendMenuW(menu.get(), spacingPreview == 1000 ? MF_GRAYED : MF_ENABLED, command,
+            getString(spacingAxis ? IDS_RESET_VERTICAL_GAP : IDS_RESET_HORIZONTAL_GAP))) return;
+    if (static_cast<UINT>(TrackPopupMenuEx(menu.get(), TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON,
+            point.x, point.y, popup, nullptr)) == command && spacingPopup == popup && spacingTrack) {
+        SendMessageW(spacingTrack, TBM_SETPOS, TRUE, spacingStepForRatio(1000));
+        readSpacingSlider(true);
+    }
+}
+
+void FolderWindow::runSpacingCommand(UINT command, POINT anchor) {
+    if (!canAdjustIconSpacing()) return;
+    const int axis = command == IDM_ICON_GAP_VERTICAL || command == IDM_RESET_VERTICAL_GAP;
+    if (command == IDM_ICON_GAP_HORIZONTAL || command == IDM_ICON_GAP_VERTICAL) {
+        openSpacingSlider(axis, anchor);
         return;
     }
-    closeSpacingSlider();
+    const auto generation = viewGeneration;
     auto &spacing = getSavedFolderState().view.iconSpacing;
     const auto previous = spacing;
     spacing.ratios[axis] = 1000;
@@ -293,26 +169,172 @@ void FolderWindow::showSpacingResetMenu(int axis, POINT point) {
     SetTimer(hwnd, TIMER_SAVE_STATE, 250, nullptr);
 }
 
-void FolderWindow::openSpacingSlider(int axis) {
-    closeSpacingSlider();
-    if (!customIconSpacing || !viewReady || !initialStateApplied || provisionalBaseline || !isWindowOperational()) return;
-    if (spacingMetrics.standard.x <= 0 || spacingMetrics.standard.y <= 0) return;
-    const HWND button = spacingButtons[axis];
-    RECT anchor = {};
+// Menu windows are owned by USER32. Match the actual menus, including the
+// submenu, before changing their compositor visibility.
+static HWND popupForMenu(HMENU menu) {
+    RECT item = {};
+    if (!GetMenuItemRect(nullptr, menu, 0, &item)) return nullptr;
+    const HWND window = WindowFromPoint({(item.left + item.right) / 2, (item.top + item.bottom) / 2});
+    MENUBARINFO bar = {sizeof(bar)};
+    return window && GetMenuBarInfo(window, OBJID_CLIENT, 0, &bar) && bar.hMenu == menu ? window : nullptr;
+}
+
+bool FolderWindow::ViewMenuPreview::cloakSpacingMenus(bool hide) {
+    if (menusCloaked == hide) return true;
+    const BOOL cloak = hide;
+    if (hide) {
+        if (FAILED(DwmSetWindowAttribute(spacingWindows[0], DWMWA_CLOAK, &cloak, sizeof(cloak)))) return false;
+        if (FAILED(DwmSetWindowAttribute(spacingWindows[1], DWMWA_CLOAK, &cloak, sizeof(cloak)))) {
+            const BOOL undo = FALSE;
+            DwmSetWindowAttribute(spacingWindows[0], DWMWA_CLOAK, &undo, sizeof(undo));
+            return false;
+        }
+    } else {
+        for (HWND window : spacingWindows)
+            if (IsWindow(window)) DwmSetWindowAttribute(window, DWMWA_CLOAK, &cloak, sizeof(cloak));
+    }
+    menusCloaked = hide;
+    return true;
+}
+
+void FolderWindow::ViewMenuPreview::commitSpacing() {
+    owner.readSpacingSlider(true);
+    if (!current() || !owner.spacingTrack) return;
+    const int axis = owner.spacingAxis;
+    EnableMenuItem(spacingMenu, axis ? IDM_RESET_VERTICAL_GAP : IDM_RESET_HORIZONTAL_GAP,
+        owner.getSavedFolderState().view.iconSpacing.ratios[axis] == 1000 ? MF_GRAYED : MF_ENABLED);
+}
+
+void FolderWindow::ViewMenuPreview::stopSpacingEdit() {
+    cloakSpacingMenus(false);
+    draggingSpacing = false;
+    if (!editingSpacing) return;
+    owner.readSpacingSlider(true);
+    owner.closeSpacingSlider();
+    editingSpacing = false;
+}
+
+void FolderWindow::ViewMenuPreview::moveSpacingThumb(POINT point, bool commit) {
+    const HWND track = owner.spacingTrack;
+    RECT thumb = {}, channel = {};
+    if (!track || !ScreenToClient(track, &point)) return;
+    SendMessageW(track, TBM_GETCHANNELRECT, 0, reinterpret_cast<LPARAM>(&channel));
+    SendMessageW(track, TBM_GETTHUMBRECT, 0, reinterpret_cast<LPARAM>(&thumb));
+    const bool wide = channel.right - channel.left > channel.bottom - channel.top;
+    const LONG radius = (owner.spacingAxis ? thumb.bottom - thumb.top : thumb.right - thumb.left) / 2;
+    const LONG start = (wide ? channel.left : channel.top) + radius;
+    const LONG end = (wide ? channel.right : channel.bottom) - radius;
+    if (end <= start) return;
+    const LONG offset = (owner.spacingAxis ? point.y : point.x) - start - thumbOffset;
+    const int position = MulDiv((std::max)(0L, (std::min)(offset, end - start)), 3000 / spacingStep, end - start);
+    if (position != SendMessageW(track, TBM_GETPOS, 0, 0)) {
+        if (!commit) cloakSpacingMenus(true);
+        SendMessageW(track, TBM_SETPOS, TRUE, position);
+    }
+    if (commit) commitSpacing();
+    else owner.readSpacingSlider(false);
+}
+
+bool FolderWindow::ViewMenuPreview::handleSpacingInput(const MSG &message) {
+    if (!tracking || busy || !current()) return false;
+    const UINT type = message.message;
+    const POINT point = message.pt;
+    const bool key = type == WM_KEYDOWN;
+    if (type != WM_MOUSEMOVE && type != WM_LBUTTONDOWN && type != WM_LBUTTONUP && !key) return false;
+    if (editingSpacing && owner.spacingTrack) {
+        const HWND track = owner.spacingTrack;
+        if (draggingSpacing && (type == WM_MOUSEMOVE || type == WM_LBUTTONUP)) {
+            moveSpacingThumb(point, type == WM_LBUTTONUP);
+            if (type == WM_LBUTTONUP) {
+                draggingSpacing = false;
+                cloakSpacingMenus(false);
+            }
+            return true;
+        }
+        if (key) {
+            if (message.wParam == VK_ESCAPE) { stopSpacingEdit(); return true; }
+            int position = static_cast<int>(SendMessageW(track, TBM_GETPOS, 0, 0));
+            switch (message.wParam) {
+                case VK_HOME: position = 0; break;
+                case VK_END: position = 3000 / spacingStep; break;
+                case VK_UP: case VK_LEFT: case VK_PRIOR: --position; break;
+                case VK_DOWN: case VK_RIGHT: case VK_NEXT: ++position; break;
+                default: return false;
+            }
+            SendMessageW(track, TBM_SETPOS, TRUE, position);
+            commitSpacing();
+            return true;
+        }
+        RECT popup = {};
+        if (GetWindowRect(owner.spacingPopup, &popup) && PtInRect(&popup, point)) {
+            RECT bounds = {};
+            if (type == WM_LBUTTONDOWN && GetWindowRect(track, &bounds) && PtInRect(&bounds, point)) {
+                POINT local = point;
+                ScreenToClient(track, &local);
+                RECT thumb = {};
+                SendMessageW(track, TBM_GETTHUMBRECT, 0, reinterpret_cast<LPARAM>(&thumb));
+                thumbOffset = PtInRect(&thumb, local) ? (owner.spacingAxis ? local.y - (thumb.top + thumb.bottom) / 2
+                    : local.x - (thumb.left + thumb.right) / 2) : 0;
+                draggingSpacing = true;
+                moveSpacingThumb(point, false);
+            }
+            return true;
+        }
+    }
+    if (type == WM_MOUSEMOVE) {
+        if (editingSpacing && MenuItemFromPoint(nullptr, menu, point) >= 0) stopSpacingEdit();
+        return false;
+    }
+    if (key && message.wParam != VK_RETURN) return false;
+    int position = key ? GetMenuItemCount(spacingMenu) - 1 : MenuItemFromPoint(nullptr, spacingMenu, point);
+    if (key) while (position >= 0 && !(GetMenuState(spacingMenu, position, MF_BYPOSITION) & MF_HILITE)) --position;
+    const UINT command = position >= 0 ? GetMenuItemID(spacingMenu, position) : 0;
+    const bool axisItem = command == IDM_ICON_GAP_HORIZONTAL || command == IDM_ICON_GAP_VERTICAL;
+    if (type == WM_LBUTTONDOWN) {
+        pressedSpacingCommand = axisItem ? command : 0;
+        return axisItem;
+    }
+    if (!key && (!pressedSpacingCommand || std::exchange(pressedSpacingCommand, 0u) != command)) return false;
+    if (!axisItem) return false;
+    // Select the axis without yielding the native menu's mouse capture.
+    stopSpacingEdit();
+    spacingWindows[0] = popupForMenu(menu);
+    spacingWindows[1] = popupForMenu(spacingMenu);
+    RECT entryBounds = {}, sub = {};
+    if (!spacingWindows[0] || !spacingWindows[1] || !GetWindowRect(spacingWindows[1], &sub)
+            || !GetMenuItemRect(nullptr, spacingMenu, position, &entryBounds)) return false;
+    wantedCommand = 0;
+    apply(0);
+    finishPositions();
+    if (currentCommand || !current() || !owner.customIconSpacing) return true;
+    // Subsequent mode previews must capture the new spacing and positions.
+    prepared = capturedIcons = false;
+    initial = {};
+    initialSpacing = {};
+    const int axis = command == IDM_ICON_GAP_VERTICAL;
     MONITORINFO monitor = {sizeof(monitor)};
-    if (!GetWindowRect(button, &anchor) || !GetMonitorInfoW(MonitorFromWindow(button, MONITOR_DEFAULTTONEAREST),
-            &monitor)) return;
+    const int width = pixels(owner.hwnd, axis ? 40 : 230);
+    if (!GetMonitorInfoW(MonitorFromRect(&sub, MONITOR_DEFAULTTONEAREST), &monitor)) return true;
+    const int x = sub.right + width <= monitor.rcWork.right ? sub.right : sub.left - width;
+    editingSpacing = true;
+    owner.openSpacingSlider(axis, {x, entryBounds.top}, true);
+    editingSpacing = owner.spacingTrack != nullptr;
+    return true;
+}
+
+void FolderWindow::openSpacingSlider(int axis, POINT anchor, bool inMenu) {
+    closeSpacingSlider();
+    MONITORINFO monitor = {sizeof(monitor)};
+    if (!GetMonitorInfoW(MonitorFromPoint(anchor, MONITOR_DEFAULTTONEAREST), &monitor)) return;
     spacingAxis = axis;
     spacingPreview = getSavedFolderState().view.iconSpacing.ratios[axis];
     spacingEdited = false;
     spacingDeferred = settings::getIconSpacingDeferred();
-    const int width = pixels(button, axis ? 40 : 230), height = pixels(button, axis ? 230 : 40);
-    const int preferredX = axis ? (anchor.left + anchor.right - width) / 2 : anchor.right - width;
-    const int x = std::max<int>(monitor.rcWork.left, std::min<int>(preferredX, monitor.rcWork.right - width));
-    const int y = anchor.top >= monitor.rcWork.top + height ? anchor.top - height :
-        std::min<int>(anchor.bottom, monitor.rcWork.bottom - height);
+    const int width = pixels(hwnd, axis ? 40 : 230), height = pixels(hwnd, axis ? 230 : 40);
+    const int x = std::max<int>(monitor.rcWork.left, std::min<int>(anchor.x, monitor.rcWork.right - width));
+    const int y = std::max<int>(monitor.rcWork.top, std::min<int>(anchor.y, monitor.rcWork.bottom - height));
     const auto sliderName = getString(axis ? IDS_ICON_GAP_VERTICAL : IDS_ICON_GAP_HORIZONTAL);
-    spacingPopup = CreateWindowExW(WS_EX_TOOLWINDOW, WC_STATICW, sliderName, WS_POPUP | WS_BORDER | WS_CLIPCHILDREN,
+    spacingPopup = CreateWindowExW(WS_EX_TOOLWINDOW | (inMenu ? WS_EX_NOACTIVATE : 0), WC_STATICW, sliderName, WS_POPUP | WS_BORDER | WS_CLIPCHILDREN,
         x, y, width, height, hwnd, nullptr, GetModuleHandleW(nullptr), nullptr);
     if (!spacingPopup) return;
     if (!SetWindowSubclass(spacingPopup, spacingPopupProc, 1, reinterpret_cast<DWORD_PTR>(this))) {
@@ -321,13 +343,13 @@ void FolderWindow::openSpacingSlider(int axis) {
     }
     RECT client = {};
     GetClientRect(spacingPopup, &client);
-    const int pad = pixels(button, 4);
+    const int pad = pixels(hwnd, 4);
     spacingTrack = CreateWindowExW(0, TRACKBAR_CLASSW, sliderName, WS_CHILD | WS_VISIBLE | WS_TABSTOP |
         (axis ? TBS_VERT : TBS_HORZ) | TBS_BOTH | TBS_FIXEDLENGTH | TBS_AUTOTICKS,
         axis ? 0 : pad, axis ? pad : 0, axis ? client.right : client.right - 2 * pad,
         axis ? client.bottom - 2 * pad : client.bottom, spacingPopup, nullptr, GetModuleHandleW(nullptr), nullptr);
     if (!spacingTrack) { closeSpacingSlider(); return; }
-    SendMessageW(spacingTrack, TBM_SETTHUMBLENGTH, pixels(button, 22), 0);
+    SendMessageW(spacingTrack, TBM_SETTHUMBLENGTH, pixels(hwnd, 22), 0);
     SendMessageW(spacingTrack, TBM_SETRANGEMAX, FALSE, 3000 / spacingStep);
     SendMessageW(spacingTrack, TBM_SETTICFREQ, 500 / spacingStep, 0);
     SendMessageW(spacingTrack, TBM_SETPAGESIZE, 0, 1);
@@ -338,8 +360,12 @@ void FolderWindow::openSpacingSlider(int axis) {
     SetWindowPos(spacingTrack, nullptr, axis ? cross : pad, axis ? pad : cross, 0, 0,
         SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
     SendMessageW(spacingPopup, WM_CHANGEUISTATE, MAKEWPARAM(UIS_INITIALIZE, 0), 0);
-    ShowWindow(spacingPopup, SW_SHOW);
-    SetFocus(spacingTrack);
+    if (inMenu) {
+        SetWindowPos(spacingPopup, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+    } else {
+        ShowWindow(spacingPopup, SW_SHOW);
+        SetFocus(spacingTrack);
+    }
 }
 
 void FolderWindow::closeSpacingSlider() {
@@ -390,7 +416,7 @@ LRESULT CALLBACK FolderWindow::spacingPopupProc(HWND window, UINT message, WPARA
     // The default static control lets clicks pass through its blank margins.
     if (message == WM_NCHITTEST) return HTCLIENT;
     if (message == WM_CONTEXTMENU && owner.spacingPopup == window) {
-        owner.showSpacingResetMenu(owner.spacingAxis, {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)});
+        owner.showSpacingResetMenu({GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)});
         return 0;
     }
     if (message == WM_PAINT) {
