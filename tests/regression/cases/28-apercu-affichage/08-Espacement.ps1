@@ -5,11 +5,12 @@ param([string]$ProjectRoot)
 $failure = $null
 try {
     Initialize-Ui 'spacing-slider' -FixtureParent $RunDirectory
-    Set-UiPreference 'StatusTextEnabled' 1
+    Set-UiPreference 'StatusTextEnabled' 0
     Set-UiPreference 'LastOpenedVersion' 1
     $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($script:UiSettingsKey,$true)
     try { $key.DeleteValue('IconSpacingDeferred',$false) } finally { $key.Dispose() }
     foreach ($defer in @(0,1)) {
+        if ($defer) { Set-UiPreference 'ViewMenuPreviewEnabled' 0 }
         $folder = Join-Path $script:UiRoot "folder-$defer"
         [void][IO.Directory]::CreateDirectory($folder)
         foreach ($i in 0..5) { [void][IO.Directory]::CreateDirectory((Join-Path $folder ('item-{0:D4}' -f $i))) }
@@ -24,6 +25,24 @@ try {
         [FileSpacerViewMenuTests.MenuUi]::Choose($menu,2,$window)
         Wait-PreviewMenuClosed $window
         Wait-UiViewMode $window 1 48
+        if (!$defer) {
+            $menu=Open-PreviewMenu $window
+            Assert-SpacingMenuState $window $true
+            [FileSpacerViewMenuTests.MenuUi]::Hover($menu,5)
+            Wait-UiViewMode $window 4
+            Assert-SpacingMenuState $window $true
+            [FileSpacerViewMenuTests.MenuUi]::Choose($menu,5,$window)
+            Wait-PreviewMenuClosed $window
+            Wait-UiViewMode $window 4
+            $menu=Open-PreviewMenu $window
+            Assert-SpacingMenuState $window $false
+            [FileSpacerViewMenuTests.MenuUi]::Hover($menu,2)
+            Wait-UiViewMode $window 1 48
+            Assert-SpacingMenuState $window $false
+            [FileSpacerViewMenuTests.MenuUi]::Choose($menu,2,$window)
+            Wait-PreviewMenuClosed $window
+            Wait-UiViewMode $window 1 48
+        }
         Choose-Placement 'IDM_FREE_PLACEMENT_ICONS'
         Use-UiView $window {
             param($v)
@@ -31,8 +50,11 @@ try {
         }
         $seed='item-0000=97,83;item-0001=227,83;item-0002=357,83;item-0003=97,193;item-0004=227,193;item-0005=357,193'
         Wait-Ui {(Use-UiView $window {param($v) $v.Positions()}) -eq $seed} 'six free coordinates settled' 150
+        $firstMenu=$null
         foreach ($axis in @(0,1)) {
-            $slider = Open-SpacingSlider $window $axis
+            $slider = Open-SpacingSlider $window $axis $firstMenu
+            if (!$axis) { $firstMenu=$slider.Menu; $firstRoot=$slider.Root }
+            Assert-Ui ($slider.Menu -eq $firstMenu -and $slider.Root -eq $firstRoot) 'same two menu windows across axes'
             $track = $slider.Track
             $before = Read-Spacing $window
             if (!$axis) {$standard = $before}
@@ -40,7 +62,7 @@ try {
             $start = [FileSpacerRegression.Native]::Message($track,0x400,0,0)
             Assert-Ui ($start -eq 10 -and $max -eq 30) "31 positions in 10% steps, starting at 100% on axis $axis"
             $forward = if ($axis) {0x28} else {0x27}
-            [FileSpacerViewMenuTests.MenuUi]::Key($slider.Popup,$forward,1)
+            [FileSpacerViewMenuTests.MenuUi]::Key($window,$forward,1)
             Assert-Ui ([FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq 11) 'one arrow key selects 110%'
             $stepped = Read-Spacing $window
             $pitch = if ($axis) {$before.Y} else {$before.X}
@@ -49,19 +71,19 @@ try {
             Assert-Ui (([FileSpacerRegression.Native]::Children($slider.Popup,'Static')).Length -eq 0) 'standalone slider without a visible label'
             $bounds = [FileSpacerRegression.Native]::Bounds($track)
             Assert-Ui (($bounds.Width -gt $bounds.Height) -eq ($axis -eq 0)) 'track orientation'
-            [FileSpacerViewMenuTests.MenuUi]::Key($slider.Popup,0x24,1)
+            [FileSpacerViewMenuTests.MenuUi]::Key($window,0x24,1)
             $zero = Read-Spacing $window
             $old = if ($axis) {$before.Y} else {$before.X}
             $min = if ($axis) {$zero.Y} else {$zero.X}
             Assert-Ui ($min -ge 48*$dpi/96-$rounding -and $min -le $old+$rounding) "zero keeps an icon cell on axis $axis ($old, $min)"
-            [FileSpacerViewMenuTests.MenuUi]::Key($slider.Popup,0x22,10)
+            [FileSpacerViewMenuTests.MenuUi]::Key($window,0x22,10)
             $normal=Read-Spacing $window
             Assert-Ui ($normal.X -eq $before.X -and $normal.Y -eq $before.Y) '100% restores Windows pitch'
-            [FileSpacerViewMenuTests.MenuUi]::Key($slider.Popup,0x22,10)
+            [FileSpacerViewMenuTests.MenuUi]::Key($window,0x22,10)
             $twice=Read-Spacing $window
             $pitch=if ($axis) {$twice.Y} else {$twice.X}
             Assert-Ui ([Math]::Abs($pitch-2*$old) -le $rounding) "200% doubles Windows pitch on axis $axis"
-            [FileSpacerViewMenuTests.MenuUi]::Key($slider.Popup,0x24,1)
+            [FileSpacerViewMenuTests.MenuUi]::Key($window,0x24,1)
             $point = New-Object FileSpacerRegression.MousePoint
             $thumbOffset=[int][Math]::Round(10*$dpi/96.0)
             $point.X = $bounds.Left+$thumbOffset
@@ -78,6 +100,7 @@ try {
                     $expected = if ($defer) {$min} else {$old*$step/10}
                     return $step -in 14..16 -and [Math]::Abs($actual-$expected) -le 1+$rounding
                 } 'dragging to the middle selects a 10% step' 100
+                Assert-Ui ([FileSpacerViewMenuTests.MenuUi]::Cloaked($firstRoot) -and [FileSpacerViewMenuTests.MenuUi]::Cloaked($firstMenu)) 'both original menus hidden during the drag'
                 if ($axis) {$point.Y = $bounds.Bottom-2} else {$point.X = $bounds.Right-2}
                 [FileSpacerRegression.AltDragInput]::Move($point)
                 Wait-Ui { [FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $max } 'thumb reached maximum while held'
@@ -93,14 +116,18 @@ try {
                 if ($axis) {return [Math]::Abs($now.Y-3*$old) -le $rounding -and $now.X -eq $before.X}
                 return [Math]::Abs($now.X-3*$old) -le $rounding -and $now.Y -eq $before.Y
             } 'released thumb applies just the chosen axis'
+            Wait-Ui { ![FileSpacerViewMenuTests.MenuUi]::Cloaked($firstRoot) -and ![FileSpacerViewMenuTests.MenuUi]::Cloaked($firstMenu) } 'both original menus visible after release'
             Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($slider.Popup)) 'release keeps the slider open'
+            $resetId=if ($axis) { 'IDM_RESET_VERTICAL_GAP' } else { 'IDM_RESET_HORIZONTAL_GAP' }
+            $entry=Get-SpacingSubmenu $window
+            Assert-Ui (([FileSpacerViewMenuTests.MenuUi]::CommandState($entry.SubMenu,(Get-UiId $resetId)) -band 3) -eq 0) 'reset is available immediately after release'
             $popupBounds = [FileSpacerRegression.Native]::Bounds($slider.Popup)
             [FileSpacerViewMenuTests.MenuUi]::Click($popupBounds.Left+2,$popupBounds.Top+2,$slider.Popup)
             Wait-Ui {
                 [FileSpacerRegression.Native]::IsWindowVisible($slider.Popup) -and
                     [FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $max
             } 'the popup margin keeps the slider open at the current value' 100
-            Close-SpacingOutside $window $slider
+            if ($axis) { Close-SpacingOutside $window $slider }
         }
         $saved = Read-Spacing $window
         $actualPositions=Use-UiView $window {param($v) $v.Positions()}
@@ -136,33 +163,27 @@ try {
         Assert-Ui (($cells -split ';').Count -eq 6 -and $cells -match '=4,3') 'sparse fixture contains two skipped columns and rows'
         foreach ($axis in @(0,1)) {
             $slider=Open-SpacingSlider $window $axis
-            [FileSpacerViewMenuTests.MenuUi]::Key($slider.Popup,0x24,1)
+            [FileSpacerViewMenuTests.MenuUi]::Key($window,0x24,1)
             Close-SpacingOutside $window $slider
         }
         Assert-Ui (((Read-OccupiedCells) -join ';') -eq $cells) 'snap preserves occupied cells and holes'
         Assert-Ui (Use-UiView $window {param($v) $v.SnapToGrid -and !$v.AutoArrange -and (@($v.Selected()) -join ';') -eq 'item-0001'}) 'snap and selection preserved'
         if ($defer) {
             $custom = Read-Spacing $window
-            $bar=[FileSpacerRegression.Native]::Children($window,'msctls_statusbar32')[0]
-            $buttons=@([FileSpacerRegression.Native]::Children($bar,'Button') | Sort-Object { [FileSpacerRegression.Native]::Bounds($_).Left })
             [void](Show-UiSettings $window); $page=Set-UiPage 2
             Set-UiCheck $page 'IDC_ICON_SPACING_ENABLED' $false
             Assert-Ui (![FileSpacerRegression.Native]::IsWindowEnabled([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_ICON_SPACING_DYNAMIC')))) 'live option follows master checkbox'
             Press-UiSettings 3
-            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $standard.X -and $s.Y -eq $standard.Y -and ![FileSpacerRegression.Native]::IsWindowVisible($buttons[0])} 'disabled feature restores the standard grid'
+            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $standard.X -and $s.Y -eq $standard.Y} 'disabled feature restores the standard grid'
+            $null=Open-PreviewMenu $window
+            Assert-SpacingMenuState $window $false
+            [FileSpacerViewMenuTests.MenuUi]::Escape($window)
+            Wait-PreviewMenuClosed $window
             [void](Show-UiSettings $window); $page=Set-UiPage 2
             Set-UiCheck $page 'IDC_ICON_SPACING_ENABLED' $true
             Press-UiSettings 3
-            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $custom.X -and $s.Y -eq $custom.Y -and [FileSpacerRegression.Native]::IsWindowVisible($buttons[1])} 're-enabling restores this folder spacing'
-            # Right-click the actual horizontal control and choose its single native menu entry.
-            $bounds=[FileSpacerRegression.Native]::Bounds($buttons[0])
-            $point=New-Object FileSpacerRegression.MousePoint
-            $point.X=($bounds.Left+$bounds.Right)/2; $point.Y=($bounds.Top+$bounds.Bottom)/2
-            [FileSpacerRegression.AltDragInput]::BeginRight($window,$point,$false,$false)
-            [FileSpacerRegression.AltDragInput]::End()
-            $popup=@{}
-            Wait-Ui {$popup.Menu=[FileSpacerViewMenuTests.MenuUi]::Active($window,$true,1); $null -ne $popup.Menu} 'axis reset menu'
-            [FileSpacerViewMenuTests.MenuUi]::Choose($popup.Menu,0,$window)
+            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $custom.X -and $s.Y -eq $custom.Y} 're-enabling restores this folder spacing'
+            $null=Choose-SpacingCommand $window (Get-UiId 'IDM_RESET_HORIZONTAL_GAP')
             Wait-Ui {$s=Read-Spacing $window; $s.X -eq $standard.X -and $s.Y -eq $custom.Y} 'local horizontal reset preserves vertical spacing'
             foreach ($action in @(5,3)) {
                 [void](Show-UiSettings $window); $page=Set-UiPage 2
