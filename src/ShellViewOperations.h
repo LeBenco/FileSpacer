@@ -3,6 +3,7 @@
 #include <atlbase.h>
 #include <shobjidl.h>
 #include <cstdint>
+#include <array>
 #include <functional>
 #include <memory>
 #include <type_traits>
@@ -52,9 +53,16 @@ UINT shellViewOperationsReadyMessage();
 int runShellViewOperationsWorker(const wchar_t *cacheRoot = nullptr);
 
 // Match the standard Shell icon view for this viewport and monitor.
-enum class ExplorerIconSpacingResult { Unchanged, Applied, Pending };
-ExplorerIconSpacingResult useExplorerIconSpacing(IShellView *view, const std::function<bool()> &current,
-    const std::function<bool(POINT)> &beforeChange = {});
+enum class ExplorerIconSpacingResult { Unchanged, AlreadyApplied, Applied, Pending };
+struct IconSpacingMetrics {
+    POINT standard = {}, cell = {};
+    HWND smallList = nullptr;
+    POINT smallStandard = {}, smallApplied = {};
+    UINT smallDpi = 0;
+};
+ExplorerIconSpacingResult useExplorerIconSpacing(IShellView *view, const std::array<int, 2> &ratios,
+    IconSpacingMetrics &metrics, const std::function<bool()> &current,
+    const std::function<bool(HWND, POINT)> &beforeChange = {});
 void stopExplorerIconSpacing();
 
 // Native public grid alignment preserves selection, focus and placement flags.
