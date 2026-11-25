@@ -54,6 +54,7 @@ OBJECTS = \
     $(OUTDIR)\FolderWindowMenus.obj \
     $(OUTDIR)\FolderWindowViewMenu.obj \
     $(OUTDIR)\FolderWindowViewState.obj \
+    $(OUTDIR)\FolderWindowSpacing.obj \
     $(OUTDIR)\FolderWindowProvisional.obj \
     $(OUTDIR)\FolderWindowInput.obj \
     $(OUTDIR)\FolderOpeningAnimation.obj \
