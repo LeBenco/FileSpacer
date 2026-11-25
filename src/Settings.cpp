@@ -194,6 +194,11 @@ SETTINGS_BOOL_VALUE(ViewButtonEnabled, L"ViewButtonEnabled", DEFAULT_VIEW_BUTTON
 SETTINGS_BOOL_VALUE(ViewMenuPreviewEnabled, L"ViewMenuPreviewEnabled", DEFAULT_VIEW_MENU_PREVIEW_ENABLED)
 SETTINGS_BOOL_VALUE(DetailsColumnsEnabled, L"DetailsColumnsEnabled", true)
 SETTINGS_BOOL_VALUE(DetailsColumnsDeferred, L"DetailsColumnsDeferred", true)
+UINT iconSpacingResetMessage() {
+    static const UINT message = RegisterWindowMessageW(L"FileSpacer.ResetIconSpacing");
+    return message;
+}
+SETTINGS_BOOL_VALUE(IconSpacingEnabled, L"IconSpacingEnabled", true)
 SETTINGS_BOOL_VALUE(IconSpacingDeferred, L"IconSpacingDeferred", false)
 SETTINGS_BOOL_VALUE(GroupFolderWindows, L"GroupFolderWindows", DEFAULT_GROUP_FOLDER_WINDOWS)
 SETTINGS_BOOL_VALUE(KeepSourceWindowOpen, L"KeepSourceWindowOpen", DEFAULT_KEEP_SOURCE_WINDOW_OPEN)
