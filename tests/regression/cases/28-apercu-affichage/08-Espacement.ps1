@@ -7,8 +7,10 @@ try {
     Initialize-Ui 'spacing-slider' -FixtureParent $RunDirectory
     Set-UiPreference 'StatusTextEnabled' 1
     Set-UiPreference 'LastOpenedVersion' 1
+    $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($script:UiSettingsKey,$true)
+    try { $key.DeleteValue('IconSpacingDeferred',$false) } finally { $key.Dispose() }
     foreach ($defer in @(0,1)) {
-        Set-UiPreference 'IconSpacingDeferred' $defer
+        if ($defer) { Set-UiPreference 'IconSpacingDeferred' 1 }
         $folder = Join-Path $script:UiRoot "folder-$defer"
         [void][IO.Directory]::CreateDirectory($folder)
         foreach ($i in 0..5) { [void][IO.Directory]::CreateDirectory((Join-Path $folder ('item-{0:D4}' -f $i))) }
