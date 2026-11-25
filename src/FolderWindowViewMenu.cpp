@@ -176,7 +176,7 @@ bool FolderWindow::ViewMenuPreview::prepare() {
         // Persistence belongs to changes and closure, not menu preparation.
         if (!current() || owner.deferredCloseMessage) return false;
         initial.view = captureOptions(view, {});
-        initial.view.iconGap = owner.getSavedFolderState().view.iconGap;
+        initial.view.iconSpacing = owner.getSavedFolderState().view.iconSpacing;
         if (!current() || !(initial.view.present & FolderViewSettings::Mode)) return false;
         if (initial.view.mode == FVM_DETAILS) {
             CComQIPtr<IColumnManager> manager(view);
