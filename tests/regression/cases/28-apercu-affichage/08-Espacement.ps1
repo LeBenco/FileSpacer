@@ -56,6 +56,9 @@ try {
             $slider = Open-SpacingSlider $window $axis $firstMenu
             if (!$axis) { $firstMenu=$slider.Menu }
             Assert-Ui ($slider.Menu -eq $firstMenu) 'same View menu window across axes'
+            $menu=Get-SpacingViewMenu $window
+            $ink=Get-SpacingMenuInk $menu
+            Assert-Ui ($ink.Count -ge 25) 'visible View menu text before dragging'
             $track = $slider.Track
             $before = Read-Spacing $window
             if (!$axis) {$standard = $before}
@@ -101,7 +104,10 @@ try {
                     $expected = if ($defer) {$min} else {$old*$step/10}
                     return $step -in 14..16 -and [Math]::Abs($actual-$expected) -le 1+$rounding
                 } 'dragging to the middle selects a 10% step' 100
-                Assert-Ui ([FileSpacerViewMenuTests.MenuUi]::Cloaked($firstMenu)) 'original View menu hidden during the drag'
+                Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($firstMenu) -and ![FileSpacerViewMenuTests.MenuUi]::Cloaked($firstMenu)) 'original View menu visible during the drag'
+                $during=Get-SpacingMenuInk $menu
+                $during.IntersectWith($ink)
+                Assert-Ui ($during.Count -ge 0.8*$ink.Count) 'View menu text remains on screen while held'
                 if ($axis) {$point.Y = $bounds.Bottom-2} else {$point.X = $bounds.Right-2}
                 [FileSpacerRegression.AltDragInput]::Move($point)
                 Wait-Ui { [FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $max } 'thumb reached maximum while held'
