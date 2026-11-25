@@ -13,7 +13,7 @@ function Assert-ColumnMenu([IntPtr]$Window,[bool]$Present,[bool]$Checked=$false)
 }
 function Set-ColumnsGeneral([IntPtr]$Window,[bool]$Enabled) {
     [void](Show-UiSettings $Window)
-    $page=Set-UiPage 1
+    $page=Set-UiPage 2
     Set-UiCheck $page 'IDC_DETAILS_COLUMNS_ENABLED' $Enabled
     Press-UiSettings 3
     Wait-Ui { (Get-UiPreference 'DetailsColumnsEnabled') -eq [int]$Enabled } 'global columns preference stored'
@@ -40,7 +40,7 @@ try {
     Assert-ColumnMenu $window $false
     [void][FileSpacerRegression.Native]::PostMessage($window,0x111,[IntPtr](Get-UiId 'IDM_FILL_COLUMNS'),[IntPtr]::Zero)
     Wait-ModernColumns $window
-    [void](Show-UiSettings $window);$page=Set-UiPage 1
+    [void](Show-UiSettings $window);$page=Set-UiPage 2
     Set-UiCheck $page 'IDC_DETAILS_COLUMNS_ENABLED' $true
     Press-UiSettings 5
     Assert-Ui ((Get-UiPreference 'DetailsColumnsEnabled') -eq 0) 'Cancel saved the changed preference.'

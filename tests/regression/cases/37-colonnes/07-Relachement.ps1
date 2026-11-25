@@ -10,7 +10,7 @@ try {
     $window=Open-UiFolder $folder 100
     Use-UiView $window {param($view) $view.Mode=4};Wait-UiViewMode $window 4
     $before=Wait-Columns $window
-    [void](Show-UiSettings $window);$page=Set-UiPage 1
+    [void](Show-UiSettings $window);$page=Set-UiPage 2
     foreach($name in @('IDC_DETAILS_COLUMNS_ENABLED','IDC_DETAILS_COLUMNS_DEFERRED')) {
         $control=[FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId $name))
         Assert-Ui ([FileSpacerRegression.Native]::Message($control,0xf0,0,0) -eq 1) 'All column options must default on.'
