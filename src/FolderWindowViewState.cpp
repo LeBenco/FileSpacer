@@ -97,8 +97,8 @@ void FolderWindow::queueExplorerIconSpacing() {
 }
 
 bool FolderWindow::updateExplorerIconSpacing() {
-    if (!isWindowOperational() || !viewReady || !initialStateApplied || restoringState || viewMenuPreview
-            || viewMenuRestore || hasPendingIconPlacement()) return false;
+    if (!isWindowOperational() || !viewReady || !initialStateApplied || restoringState
+            || (viewMenuPreview && !viewMenuPreview->editingSpacing) || viewMenuRestore || hasPendingIconPlacement()) return false;
     CComPtr<IShellView> source = shellView;
     const ULONG_PTR generation = viewGeneration, enumeration = viewHost.enumerationSerial();
     const auto sameSource = [&] {
