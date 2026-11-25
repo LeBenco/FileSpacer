@@ -176,6 +176,7 @@ bool FolderWindow::ViewMenuPreview::prepare() {
         // Persistence belongs to changes and closure, not menu preparation.
         if (!current() || owner.deferredCloseMessage) return false;
         initial.view = captureOptions(view, {});
+        initial.view.iconGap = owner.getSavedFolderState().view.iconGap;
         if (!current() || !(initial.view.present & FolderViewSettings::Mode)) return false;
         if (initial.view.mode == FVM_DETAILS) {
             CComQIPtr<IColumnManager> manager(view);
@@ -378,7 +379,7 @@ void FolderWindow::ViewMenuPreview::apply(UINT command) {
         }
         if (SUCCEEDED(result)) {
             currentCommand = command;
-            if (current()) useExplorerIconSpacing(source, [&] { return current(); });
+            if (current()) owner.applyIconSpacing(source, [&] { return current(); });
         }
         if (current()) {
             const HRESULT recounted = view->ItemCount(SVGIO_ALLVIEW, &after);
