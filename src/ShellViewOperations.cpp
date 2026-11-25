@@ -665,13 +665,18 @@ ExplorerIconSpacingResult useExplorerIconSpacing(IShellView *source, const std::
 
     if (!explorerIconSpacing) explorerIconSpacing = std::make_unique<ExplorerIconSpacing>();
     bool pending = false;
-    const POINT pitch = explorerIconSpacing->measure(list, size, {bounds.right, bounds.bottom}, pending);
+    const POINT standardPitch = explorerIconSpacing->measure(list, size, {bounds.right, bounds.bottom}, pending);
     if (!current() || ListView_GetView(list) != LV_VIEW_ICON) return Result::Unchanged;
     if (pending) return Result::Pending;
+    constexpr LONG spacingMultiplier = 2;
+    if (standardPitch.x <= 0 || standardPitch.y <= 0
+            || standardPitch.x > MAXSHORT / spacingMultiplier || standardPitch.y > MAXSHORT / spacingMultiplier)
+        return Result::Unchanged;
+    const POINT pitch = {standardPitch.x * spacingMultiplier, standardPitch.y * spacingMultiplier};
     int imageWidth = 0, imageHeight = 0;
     const HIMAGELIST images = ListView_GetImageList(list, LVSIL_NORMAL);
     if (!images || !ImageList_GetIconSize(images, &imageWidth, &imageHeight)
-            || pitch.x < imageWidth || pitch.y < imageHeight || pitch.x > MAXSHORT || pitch.y > MAXSHORT)
+            || pitch.x < imageWidth || pitch.y < imageHeight)
         return Result::Unchanged;
     const POINT units = listSpacingUnits(list, pitch);
     if (units.x <= 0 || units.y <= 0) return Result::Unchanged;
