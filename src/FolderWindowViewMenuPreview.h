@@ -25,6 +25,18 @@ struct FolderWindow::ViewMenuPreview {
     std::vector<Entry> entries;
     UINT initialCommand = 0, currentCommand = 0, wantedCommand = 0;
     UINT pendingCommand = 0; // Entry outside the modes, run after the preview is cancelled.
+    UINT spacingCommand = 0; // Wait for a refill restoring the applied view before changing its spacing.
+    POINT spacingAnchor = {};
+    HMENU spacingMenu = nullptr;
+    HWND spacingWindows[2] = {};
+    UINT pressedSpacingCommand = 0;
+    bool editingSpacing = false, draggingSpacing = false, menusCloaked = false;
+    int thumbOffset = 0;
+    bool handleSpacingInput(const MSG &message);
+    void commitSpacing();
+    void stopSpacingEdit();
+    bool cloakSpacingMenus(bool hide);
+    void moveSpacingThumb(POINT point, bool commit);
     UINT chosenCommand = 0; // Mode retained when the menu closed: 0 for the initial one.
     bool tracking = true, posted = false, busy = false, prepared = false, capturedIcons = false;
     POINT initialSpacing = {};
