@@ -48,7 +48,13 @@ function Choose-SpacingCommand($Window,$Id,$ExistingMenu) {
 
 function Open-SpacingSlider([IntPtr]$Window,[int]$Axis,$ExistingMenu) {
     $id=if ($Axis) {'IDM_ICON_GAP_VERTICAL'} else {'IDM_ICON_GAP_HORIZONTAL'}
-    $popupName=Choose-SpacingCommand $Window (Get-UiId $id) $ExistingMenu
+    if (!$ExistingMenu) { $null=Open-PreviewMenu $Window }
+    $menu=Get-SpacingViewMenu $Window
+    if ($ExistingMenu) { Assert-Ui ($menu.Window -eq $ExistingMenu) 'same menu before hovering over the other axis' }
+    $row=[array]::IndexOf($menu.Entries.Command,[uint32](Get-UiId $id))
+    Assert-Ui ($row -ge 0 -and ($menu.Entries[$row].State -band 3) -eq 0) 'spacing entry enabled'
+    $popupName=$menu.Entries[$row].Label
+    [FileSpacerViewMenuTests.MenuUi]::Hover($menu,$row)
     $pidValue = [uint32]0
     [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($Window,[ref]$pidValue)
     $found = @{}
@@ -62,9 +68,14 @@ function Open-SpacingSlider([IntPtr]$Window,[int]$Axis,$ExistingMenu) {
             }
         }
         return $false
-    } 'native trackbar popup'
+    } 'hover alone opens the native trackbar'
+    $bounds=[FileSpacerRegression.Native]::Bounds($found.Popup)
+    $entry=$menu.Entries[$row].Bounds
+    $middle=[int](($entry.Top+$entry.Bottom)/2)
+    Assert-Ui (($bounds.Left -eq $entry.Right -or $bounds.Right -eq $entry.Left) -and
+        $bounds.Top -le $middle -and $bounds.Bottom -gt $middle) 'slider beside its own menu row'
     $root=Get-SpacingViewMenu $Window
-    Assert-Ui ($null -ne $root) 'opening a slider preserves the active View menu'
+    Assert-Ui ($root.Window -eq $menu.Window) 'opening a slider preserves the active View menu'
     $found.Menu=$root.Window
     return $found
 }
@@ -76,4 +87,25 @@ function Read-Spacing([IntPtr]$Window) {
 function Close-SpacingOutside([IntPtr]$Window,$Slider) {
     [FileSpacerViewMenuTests.MenuUi]::Outside($Window)
     Wait-Ui { ![FileSpacerRegression.Native]::IsWindow($Slider.Popup) } 'outside click dismisses the popup'
+}
+
+# Sample text edges on a different View row. HWND visibility alone cannot tell
+# whether the menu is actually drawn on the user's screen.
+function Get-SpacingMenuInk($Menu) {
+    $r=$Menu.Entries[0].Bounds
+    $bitmap=New-Object Drawing.Bitmap(($r.Right-$r.Left-8),($r.Bottom-$r.Top-4))
+    $graphics=[Drawing.Graphics]::FromImage($bitmap)
+    $ink=New-Object 'Collections.Generic.HashSet[int]'
+    try {
+        $graphics.CopyFromScreen($r.Left+4,$r.Top+2,0,0,$bitmap.Size)
+        for ($y=0;$y -lt $bitmap.Height;$y++) {
+            $previous=$bitmap.GetPixel(0,$y).G
+            for ($x=1;$x -lt $bitmap.Width;$x++) {
+                $value=$bitmap.GetPixel($x,$y).G
+                if ([Math]::Abs([int]$value-$previous) -gt 48) { [void]$ink.Add($y*$bitmap.Width+$x) }
+                $previous=$value
+            }
+        }
+    } finally { $graphics.Dispose(); $bitmap.Dispose() }
+    return ,$ink
 }
