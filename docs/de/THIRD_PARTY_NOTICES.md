@@ -28,6 +28,7 @@ SQLite 3.53.4 wird statisch in die Anwendung eingebunden. Es ist gemeinfrei. Die
 - **Symbole „Nach oben“ und „Aktualisieren“**: [Lucide](https://lucide.dev/) (angepasste Versionen, [ISC und MIT](../../licenses/Lucide-LICENSE.txt), Lizenztexte auch enthalten in `Lucide-LICENSE.txt`).
 - **Symbol „Nach oben“**: [Feather](https://feathericons.com/) (Ursprung der Lucide-Version, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Symbole für geschlossenes und offenes Schloss**: [Small & Flat von paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), offenes Schloss vom geschlossenen abgeleitet).
+- Die Schaltflächen für den Symbolabstand verwenden angepasste Symbole aus [Remix Icon 4.6.0](https://github.com/Remix-Design/RemixIcon/blob/v4.6.0/icons/Arrows/expand-width-line.svg) ([Apache 2.0](../../licenses/RemixIcon-LICENSE.txt)).
 
 <a id="website"></a>
 

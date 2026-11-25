@@ -28,6 +28,7 @@ SQLite 3.53.4 jest połączony statycznie z aplikacją i należy do domeny publi
 - **Ikony „W górę” i „Odśwież”**: [Lucide](https://lucide.dev/) (wersje zmodyfikowane, [ISC i MIT](../../licenses/Lucide-LICENSE.txt), treść licencji dostępna również w `Lucide-LICENSE.txt`).
 - **Ikona „W górę”**: [Feather](https://feathericons.com/) (pierwowzór wersji Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Ikony zamkniętej i otwartej kłódki**: [Small & Flat autorstwa paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), otwarta kłódka jest pochodną zamkniętej).
+- Przyciski odstępów między ikonami wykorzystują zmodyfikowane ikony z zestawu [Remix Icon 4.6.0](https://github.com/Remix-Design/RemixIcon/blob/v4.6.0/icons/Arrows/expand-width-line.svg) ([Apache 2.0](../../licenses/RemixIcon-LICENSE.txt)).
 
 <a id="website"></a>
 

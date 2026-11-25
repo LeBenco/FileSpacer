@@ -28,6 +28,7 @@ SQLite 3.53.4 est lié statiquement à l’application. Il appartient au domaine
 - **Icônes Remonter et Actualiser** : [Lucide](https://lucide.dev/) (versions adaptées, [ISC et MIT](../../licenses/Lucide-LICENSE.txt), mentions aussi fournies dans `Lucide-LICENSE.txt`).
 - **Icône Remonter** : [Feather](https://feathericons.com/) (à l’origine de la version Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Icônes cadenas fermé et ouvert** : [Small & Flat de paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), cadenas ouvert dérivé du cadenas fermé).
+- Les boutons d’espacement des icônes utilisent des dessins adaptés de [Remix Icon 4.6.0](https://github.com/Remix-Design/RemixIcon/blob/v4.6.0/icons/Arrows/expand-width-line.svg) ([Apache 2.0](../../licenses/RemixIcon-LICENSE.txt)).
 
 <a id="website"></a>
 

@@ -32,6 +32,7 @@ See <https://sqlite.org/copyright.html>.
 - **Up and Refresh icons**: [Lucide](https://lucide.dev/) (adapted versions, [ISC and MIT](licenses/Lucide-LICENSE.txt), notices also supplied as `Lucide-LICENSE.txt`).
 - **Up icon**: [Feather](https://feathericons.com/) (origin of the Lucide version, [MIT](licenses/Lucide-LICENSE.txt)).
 - **Closed and open padlock icons**: [Small & Flat by paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), open padlock derived from the closed one).
+- The icon spacing buttons use adapted artwork from [Remix Icon 4.6.0](https://github.com/Remix-Design/RemixIcon/blob/v4.6.0/icons/Arrows/expand-width-line.svg) ([Apache 2.0](licenses/RemixIcon-LICENSE.txt)).
 
 <a id="website"></a>
 

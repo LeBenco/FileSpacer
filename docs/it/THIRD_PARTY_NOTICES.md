@@ -28,6 +28,7 @@ SQLite 3.53.4 è collegato staticamente all’applicazione ed è di pubblico dom
 - **Icone Su e Aggiorna**: [Lucide](https://lucide.dev/) (versioni adattate, [ISC e MIT](../../licenses/Lucide-LICENSE.txt), avvisi forniti anche in `Lucide-LICENSE.txt`).
 - **Icona Su**: [Feather](https://feathericons.com/) (origine della versione Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Icone lucchetto chiuso e aperto**: [Small & Flat di paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), lucchetto aperto derivato da quello chiuso).
+- I pulsanti per la spaziatura delle icone usano disegni adattati da [Remix Icon 4.6.0](https://github.com/Remix-Design/RemixIcon/blob/v4.6.0/icons/Arrows/expand-width-line.svg) ([Apache 2.0](../../licenses/RemixIcon-LICENSE.txt)).
 
 <a id="website"></a>
 

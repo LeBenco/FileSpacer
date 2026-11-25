@@ -28,6 +28,7 @@
 - **Εικονίδια «Επάνω» και «Ανανέωση»**: [Lucide](https://lucide.dev/) (προσαρμοσμένες εκδόσεις, [ISC και MIT](../../licenses/Lucide-LICENSE.txt), οι όροι παρέχονται επίσης στο `Lucide-LICENSE.txt`).
 - **Εικονίδιο «Επάνω»**: [Feather](https://feathericons.com/) (αρχική πηγή της έκδοσης Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Εικονίδια κλειστού και ανοιχτού λουκέτου**: [Small & Flat του paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), το ανοιχτό λουκέτο προέρχεται από το κλειστό).
+- Τα κουμπιά ρύθμισης της απόστασης των εικονιδίων χρησιμοποιούν προσαρμοσμένα σχέδια από το [Remix Icon 4.6.0](https://github.com/Remix-Design/RemixIcon/blob/v4.6.0/icons/Arrows/expand-width-line.svg) ([Apache 2.0](../../licenses/RemixIcon-LICENSE.txt)).
 
 <a id="website"></a>
 

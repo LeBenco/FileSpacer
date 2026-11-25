@@ -28,6 +28,7 @@ SQLite 3.53.4 is statisch in de toepassing gekoppeld en behoort tot het publieke
 - **Pictogrammen Omhoog en Vernieuwen**: [Lucide](https://lucide.dev/) (aangepaste versies, [ISC en MIT](../../licenses/Lucide-LICENSE.txt), licentieteksten ook meegeleverd als `Lucide-LICENSE.txt`).
 - **Pictogram Omhoog**: [Feather](https://feathericons.com/) (oorsprong van de Lucide-versie, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Pictogrammen voor een gesloten en open hangslot**: [Small & Flat van paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), het open hangslot is afgeleid van het gesloten hangslot).
+- De knoppen voor pictogramafstand gebruiken aangepaste pictogrammen uit [Remix Icon 4.6.0](https://github.com/Remix-Design/RemixIcon/blob/v4.6.0/icons/Arrows/expand-width-line.svg) ([Apache 2.0](../../licenses/RemixIcon-LICENSE.txt)).
 
 <a id="website"></a>
 

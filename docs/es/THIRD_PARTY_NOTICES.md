@@ -28,6 +28,7 @@ SQLite 3.53.4 está enlazado estáticamente con la aplicación y es de dominio p
 - **Iconos Subir y Actualizar**: [Lucide](https://lucide.dev/) (versiones adaptadas, [ISC y MIT](../../licenses/Lucide-LICENSE.txt), avisos incluidos también en `Lucide-LICENSE.txt`).
 - **Icono Subir**: [Feather](https://feathericons.com/) (origen de la versión de Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Iconos de candado cerrado y abierto**: [Small & Flat de paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), candado abierto derivado del cerrado).
+- Los botones de espaciado de iconos utilizan diseños adaptados de [Remix Icon 4.6.0](https://github.com/Remix-Design/RemixIcon/blob/v4.6.0/icons/Arrows/expand-width-line.svg) ([Apache 2.0](../../licenses/RemixIcon-LICENSE.txt)).
 
 <a id="website"></a>
 
