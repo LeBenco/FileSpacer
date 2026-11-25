@@ -637,8 +637,12 @@ struct IconListSearch {
 };
 
 POINT scaledIconPitch(const IconSpacingMetrics &metrics, const std::array<int, 2> &ratios) {
-    return {metrics.cell.x + MulDiv(metrics.standard.x - metrics.cell.x, ratios[0], 1000),
-        metrics.cell.y + MulDiv(metrics.standard.y - metrics.cell.y, ratios[1], 1000)};
+    // Below the Windows tick, remove only the available padding. Above it,
+    // scale the whole native pitch so 200% and 300% double and triple it.
+    const auto pitch = [](LONG standard, LONG cell, int ratio) {
+        return ratio < 1000 ? cell + MulDiv(standard - cell, ratio, 1000) : MulDiv(standard, ratio, 1000);
+    };
+    return {pitch(metrics.standard.x, metrics.cell.x, ratios[0]), pitch(metrics.standard.y, metrics.cell.y, ratios[1])};
 }
 
 // The qualified small-icon control exposes its pitch through GetSpacing but
