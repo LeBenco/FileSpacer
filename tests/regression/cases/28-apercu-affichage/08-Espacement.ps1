@@ -90,6 +90,12 @@ try {
                 return [Math]::Abs($now.X-3*$old) -le $rounding -and $now.Y -eq $before.Y
             } 'released thumb applies just the chosen axis'
             Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($slider.Popup)) 'release keeps the slider open'
+            $popupBounds = [FileSpacerRegression.Native]::Bounds($slider.Popup)
+            [FileSpacerViewMenuTests.MenuUi]::Click($popupBounds.Left+2,$popupBounds.Top+2,$slider.Popup)
+            Wait-Ui {
+                [FileSpacerRegression.Native]::IsWindowVisible($slider.Popup) -and
+                    [FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $max
+            } 'the popup margin keeps the slider open at the current value' 100
             Close-SpacingOutside $window $slider
         }
         $saved = Read-Spacing $window
