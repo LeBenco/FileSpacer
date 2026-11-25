@@ -62,8 +62,7 @@ ExplorerIconSpacingResult FolderWindow::applyIconSpacing(IShellView *source, con
             KillTimer(hwnd, TIMER_SPACING_REFERENCE);
             spacingReferenceRetries = 0;
         }
-        if ((previous.standard.x > previous.cell.x) != (next.standard.x > next.cell.x)
-                || (previous.standard.y > previous.cell.y) != (next.standard.y > next.cell.y))
+        if ((previous.standard.x > 0 && previous.standard.y > 0) != (next.standard.x > 0 && next.standard.y > 0))
             layoutSpacingButtons();
     }
     return result;
@@ -88,9 +87,7 @@ void FolderWindow::layoutSpacingButtons() {
     const int parts[] = {available ? std::max<LONG>(0, bounds.right - 2 * width) : -1, -1};
     SendMessageW(bottomStatusBar, SB_SETPARTS, available ? 2 : 1, reinterpret_cast<LPARAM>(parts));
     for (int axis = 0; axis < 2; ++axis) {
-        const bool enabled = axis ? spacingMetrics.standard.y > spacingMetrics.cell.y
-            : spacingMetrics.standard.x > spacingMetrics.cell.x;
-        EnableWindow(spacingButtons[axis], enabled);
+        EnableWindow(spacingButtons[axis], available);
         SetWindowPos(spacingButtons[axis], HWND_TOP, parts[0] + axis * width, 0, width, bounds.bottom,
             SWP_NOACTIVATE | (available ? SWP_SHOWWINDOW : SWP_HIDEWINDOW));
     }
@@ -121,20 +118,17 @@ LRESULT CALLBACK FolderWindow::spacingBarProc(HWND window, UINT message, WPARAM 
 void FolderWindow::openSpacingSlider(int axis) {
     closeSpacingSlider();
     if (!viewReady || !initialStateApplied || provisionalBaseline || !isWindowOperational()) return;
-    const int gap = axis ? spacingMetrics.standard.y - spacingMetrics.cell.y
-        : spacingMetrics.standard.x - spacingMetrics.cell.x;
-    if (gap <= 0) return;
+    if (spacingMetrics.standard.x <= 0 || spacingMetrics.standard.y <= 0) return;
     const HWND button = spacingButtons[axis];
     RECT anchor = {};
     MONITORINFO monitor = {sizeof(monitor)};
     if (!GetWindowRect(button, &anchor) || !GetMonitorInfoW(MonitorFromWindow(button, MONITOR_DEFAULTTONEAREST),
             &monitor)) return;
     spacingAxis = axis;
-    spacingStandardGap = gap;
     spacingPreview = getSavedFolderState().view.iconGap[axis];
     spacingEdited = false;
     spacingDeferred = settings::getIconSpacingDeferred();
-    const int width = pixels(button, axis ? 68 : 230), height = pixels(button, axis ? 240 : 62);
+    const int width = pixels(button, axis ? 40 : 230), height = pixels(button, axis ? 230 : 40);
     const int x = std::max<int>(monitor.rcWork.left, std::min<int>(anchor.right - width, monitor.rcWork.right - width));
     const int y = anchor.top >= monitor.rcWork.top + height ? anchor.top - height :
         std::min<int>(anchor.bottom, monitor.rcWork.bottom - height);
@@ -148,42 +142,32 @@ void FolderWindow::openSpacingSlider(int axis) {
     }
     RECT client = {};
     GetClientRect(spacingPopup, &client);
-    const int pad = pixels(button, 4), labelHeight = pixels(button, 20);
+    const int pad = pixels(button, 4);
     spacingTrack = CreateWindowExW(0, TRACKBAR_CLASSW, sliderName, WS_CHILD | WS_VISIBLE | WS_TABSTOP |
         (axis ? TBS_VERT : TBS_HORZ) | TBS_AUTOTICKS, pad, pad, client.right - 2 * pad,
-        client.bottom - 2 * pad - labelHeight, spacingPopup, nullptr, GetModuleHandleW(nullptr), nullptr);
-    spacingLabel = CreateWindowExW(0, WC_STATICW, nullptr, WS_VISIBLE | WS_CHILD | SS_CENTER,
-        0, client.bottom - labelHeight, client.right, labelHeight, spacingPopup, nullptr, GetModuleHandleW(nullptr), nullptr);
-    if (!spacingLabel || !spacingTrack) { closeSpacingSlider(); return; }
-    SendMessageW(spacingLabel, WM_SETFONT, SendMessageW(bottomStatusBar, WM_GETFONT, 0, 0), FALSE);
-    SendMessageW(spacingTrack, TBM_SETRANGEMAX, FALSE, 3 * static_cast<LPARAM>(gap));
-    SendMessageW(spacingTrack, TBM_SETTICFREQ, gap, 0);
-    SendMessageW(spacingTrack, TBM_SETPAGESIZE, 0, (std::max)(1, gap / 4));
-    const int position = MulDiv(gap, spacingPreview, 1000);
-    spacingDisplayed = position;
-    SendMessageW(spacingTrack, TBM_SETPOS, TRUE, position);
-    SetWindowTextW(spacingLabel, format(L"%1!d! px", position).get());
+        client.bottom - 2 * pad, spacingPopup, nullptr, GetModuleHandleW(nullptr), nullptr);
+    if (!spacingTrack) { closeSpacingSlider(); return; }
+    SendMessageW(spacingTrack, TBM_SETRANGEMAX, FALSE, 3000);
+    SendMessageW(spacingTrack, TBM_SETTICFREQ, 1000, 0);
+    SendMessageW(spacingTrack, TBM_SETLINESIZE, 0, 10);
+    SendMessageW(spacingTrack, TBM_SETPAGESIZE, 0, 100);
+    SendMessageW(spacingTrack, TBM_SETPOS, TRUE, spacingPreview);
     ShowWindow(spacingPopup, SW_SHOW);
     SetFocus(spacingTrack);
 }
 
 void FolderWindow::closeSpacingSlider() {
     const HWND popup = spacingPopup;
-    spacingPopup = spacingTrack = spacingLabel = nullptr;
+    spacingPopup = spacingTrack = nullptr;
     spacingFramePending = false;
     if (popup) DestroyWindow(popup);
 }
 
 void FolderWindow::readSpacingSlider(bool commit, bool frame) {
-    if (!spacingTrack || !isWindowOperational()) return;
-    const int position = static_cast<int>(SendMessageW(spacingTrack, TBM_GETPOS, 0, 0));
-    if (spacingDisplayed != position) {
-        spacingDisplayed = position;
-        spacingEdited = true;
-        SetWindowTextW(spacingLabel, format(L"%1!d! px", position).get());
-    }
-    if (!spacingEdited || (!commit && spacingDeferred)) return;
-    const int ratio = MulDiv(position, 1000, spacingStandardGap);
+    if (!spacingTrack || !isWindowOperational() || (!commit && spacingDeferred)) return;
+    const int ratio = static_cast<int>(SendMessageW(spacingTrack, TBM_GETPOS, 0, 0));
+    if (!spacingEdited && ratio == spacingPreview) return;
+    spacingEdited = true;
     if (!commit && !frame && spacingFramePending) return;
     if (spacingFramePending) {
         KillTimer(spacingPopup, 1);
