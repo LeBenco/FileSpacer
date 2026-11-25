@@ -82,6 +82,15 @@ modify(type='*' mode='multiple' where=filespacer_title
 
 Zobacz [opis konfiguracji](https://nilesoft.org/docs/configuration/) Nilesoft.
 
+Polecenia odstępów mają stałe nazwy. Ich identyfikatory Win32 to 1146 (poziomo) i 1147 (pionowo). Aby nadać im różne ikony, użyj ich nazw w podmenu.
+
+```nss
+modify(type='*' mode='multiple' where=filespacer_view in='Odstępy między ikonami' find='Poziomy odstęp między ikonami'
+       image=image.svg('<svg viewBox="0 0 16 16"><path d="M2 3v10m12-10v10M4 8h8M6.5 5.5 4 8l2.5 2.5m3-5L12 8l-2.5 2.5" fill="none" stroke="@image.color1" stroke-linecap="round" stroke-linejoin="round"/></svg>'))
+modify(type='*' mode='multiple' where=filespacer_view in='Odstępy między ikonami' find='Pionowy odstęp między ikonami'
+       image=image.svg('<svg viewBox="0 0 16 16"><path d="M3 2h10M3 14h10M8 4v8m-2.5-5.5L8 4l2.5 2.5m-5 3L8 12l2.5-2.5" fill="none" stroke="@image.color1" stroke-linecap="round" stroke-linejoin="round"/></svg>'))
+```
+
 <a id="recommended-menu-appearance"></a>
 
 ## Zalecany wygląd menu

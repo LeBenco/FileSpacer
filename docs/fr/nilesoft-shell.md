@@ -82,6 +82,15 @@ modify(type='*' mode='multiple' where=filespacer_title
 
 Consulter la [référence de configuration de Nilesoft](https://nilesoft.org/docs/configuration/).
 
+Les deux réglages d’espacement du menu Affichage ont des libellés fixes. Leurs identifiants de commande Win32 sont 1146 pour l’horizontale et 1147 pour la verticale. Pour attribuer une icône à chaque réglage, ciblez son libellé dans le sous-menu d’espacement.
+
+```nss
+modify(type='*' mode='multiple' where=filespacer_view in='Espacement des icônes' find='Espacement horizontal des icônes'
+       image=image.svg('<svg viewBox="0 0 16 16"><path d="M2 3v10m12-10v10M4 8h8M6.5 5.5 4 8l2.5 2.5m3-5L12 8l-2.5 2.5" fill="none" stroke="@image.color1" stroke-linecap="round" stroke-linejoin="round"/></svg>'))
+modify(type='*' mode='multiple' where=filespacer_view in='Espacement des icônes' find='Espacement vertical des icônes'
+       image=image.svg('<svg viewBox="0 0 16 16"><path d="M3 2h10M3 14h10M8 4v8m-2.5-5.5L8 4l2.5 2.5m-5 3L8 12l2.5-2.5" fill="none" stroke="@image.color1" stroke-linecap="round" stroke-linejoin="round"/></svg>'))
+```
+
 <a id="recommended-menu-appearance"></a>
 
 ## Apparence recommandée des menus
