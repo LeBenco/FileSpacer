@@ -727,7 +727,14 @@ void FolderWindow::onSize(SIZE size) {
 
 void FolderWindow::onSettingsChanged() {
     CComPtr<ItemWindow> keepAlive(this);
-    if (!settings::getStatusTextEnabled()) closeSpacingSlider();
+    const bool enabled = settings::getIconSpacingEnabled();
+    if (!settings::getStatusTextEnabled() || !enabled) closeSpacingSlider();
+    if (customIconSpacing != enabled) {
+        customIconSpacing = enabled;
+        layoutSpacingButtons();
+        queueExplorerIconSpacing();
+    }
+    if (spacingPopup) spacingDeferred = settings::getIconSpacingDeferred();
     if (bottomStatusBar)
         checkLE(SetWindowPos(bottomStatusBar, nullptr, 0, 0, 0, 0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
@@ -928,6 +935,19 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             ++navigationDepth;
             selectionClear.bind(view, current);
             resumeDeferredClose();
+        }
+        return 0;
+    }
+    if (message >= 0xC000 && message == settings::iconSpacingResetMessage()) {
+        const auto generation = static_cast<int64_t>(wParam);
+        if (lParam == (settings::testMode ? 1 : 0) && generation > spacingResetGeneration) {
+            spacingResetGeneration = generation;
+            auto &spacing = getSavedFolderState().view.iconSpacing;
+            if (spacing.generation < generation) {
+                closeSpacingSlider();
+                spacing = {{1000, 1000}, generation};
+                queueExplorerIconSpacing();
+            }
         }
         return 0;
     }
@@ -1323,7 +1343,7 @@ void FolderWindow::onItemChanged() {
                 && checkHR(viewHost.currentView(IID_PPV_ARGS(&folderView)))) {
             auto state = std::make_unique<ShellViewState>();
             state->view = captureOptions(folderView, {});
-            state->view.iconGap = getSavedFolderState().view.iconGap;
+            state->view.iconSpacing = getSavedFolderState().view.iconSpacing;
             if (!current()) return;
             // The transient snapshot may hold a filtered subset: it is applied once
             // to the recreated view and never persisted as the folder's placement.
