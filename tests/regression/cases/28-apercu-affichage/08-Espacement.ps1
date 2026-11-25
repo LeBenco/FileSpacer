@@ -32,14 +32,23 @@ try {
             $before = Read-Spacing $window
             $max = [FileSpacerRegression.Native]::Message($track,0x402,0,0)
             $start = [FileSpacerRegression.Native]::Message($track,0x400,0,0)
-            Assert-Ui ($max -gt 0 -and $max -eq 3*$start) "standard gap and upper bound for axis $axis"
+            Assert-Ui ($start -gt 0 -and $max -eq 3*$start) "Windows pitch at the first third on axis $axis"
+            Assert-Ui (([FileSpacerRegression.Native]::Children($slider.Popup,'Static')).Length -eq 0) 'standalone slider without a visible label'
             $bounds = [FileSpacerRegression.Native]::Bounds($track)
             Assert-Ui (($bounds.Width -gt $bounds.Height) -eq ($axis -eq 0)) 'track orientation'
             [FileSpacerViewMenuTests.MenuUi]::Key($slider.Popup,0x24,1)
             $zero = Read-Spacing $window
             $old = if ($axis) {$before.Y} else {$before.X}
             $min = if ($axis) {$zero.Y} else {$zero.X}
-            Assert-Ui ([Math]::Abs($old-$min-$start) -le $rounding) "zero removes only the external gap on axis $axis ($old, $min, $start)"
+            Assert-Ui ($min -ge 48*$dpi/96-$rounding -and $min -le $old+$rounding) "zero keeps an icon cell on axis $axis ($old, $min)"
+            [FileSpacerViewMenuTests.MenuUi]::Key($slider.Popup,0x22,10)
+            $normal=Read-Spacing $window
+            Assert-Ui ($normal.X -eq $before.X -and $normal.Y -eq $before.Y) '100% restores Windows pitch'
+            [FileSpacerViewMenuTests.MenuUi]::Key($slider.Popup,0x22,10)
+            $twice=Read-Spacing $window
+            $pitch=if ($axis) {$twice.Y} else {$twice.X}
+            Assert-Ui ([Math]::Abs($pitch-2*$old) -le $rounding) "200% doubles Windows pitch on axis $axis"
+            [FileSpacerViewMenuTests.MenuUi]::Key($slider.Popup,0x24,1)
             $point = New-Object FileSpacerRegression.MousePoint
             $thumbOffset=[int][Math]::Round(10*$dpi/96.0)
             $point.X = $bounds.Left+$thumbOffset
@@ -53,13 +62,14 @@ try {
                 Wait-Ui {
                     $held = Read-Spacing $window
                     $actual = if ($axis) {$held.Y} else {$held.X}
-                    return [Math]::Abs($actual - ($min + (1-$defer)*$max)) -le $rounding
+                    $expected=if($defer){$min}else{3*$old}
+                    return [Math]::Abs($actual-$expected) -le $rounding
                 } 'live versus deferred geometry during actual mouse drag' 100
             } finally { [FileSpacerRegression.AltDragInput]::End() }
             Wait-Ui {
                 $now = Read-Spacing $window
-                if ($axis) {return [Math]::Abs($now.Y-$min-$max) -le $rounding -and $now.X -eq $before.X}
-                return [Math]::Abs($now.X-$min-$max) -le $rounding -and $now.Y -eq $before.Y
+                if ($axis) {return [Math]::Abs($now.Y-3*$old) -le $rounding -and $now.X -eq $before.X}
+                return [Math]::Abs($now.X-3*$old) -le $rounding -and $now.Y -eq $before.Y
             } 'released thumb applies just the chosen axis'
             Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($slider.Popup)) 'release keeps the slider open'
             Close-SpacingOutside $window $slider
