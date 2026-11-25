@@ -376,7 +376,10 @@ void FolderWindow::ViewMenuPreview::apply(UINT command) {
             result = restoreOptions(view, presentation);
             owner.resumeDeferredClose();
         }
-        if (SUCCEEDED(result)) currentCommand = command;
+        if (SUCCEEDED(result)) {
+            currentCommand = command;
+            if (current()) useExplorerIconSpacing(source, [&] { return current(); });
+        }
         if (current()) {
             const HRESULT recounted = view->ItemCount(SVGIO_ALLVIEW, &after);
             if (current()) {
