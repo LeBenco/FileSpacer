@@ -96,9 +96,9 @@ void FolderWindow::queueExplorerIconSpacing() {
         explorerIconSpacingQueued = PostMessageW(hwnd, MSG_EXPLORER_ICON_SPACING, viewGeneration, 0) != FALSE;
 }
 
-void FolderWindow::updateExplorerIconSpacing() {
+bool FolderWindow::updateExplorerIconSpacing() {
     if (!isWindowOperational() || !viewReady || !initialStateApplied || restoringState || viewMenuPreview
-            || viewMenuRestore || hasPendingIconPlacement()) return;
+            || viewMenuRestore || hasPendingIconPlacement()) return false;
     CComPtr<IShellView> source = shellView;
     const ULONG_PTR generation = viewGeneration, enumeration = viewHost.enumerationSerial();
     const auto sameSource = [&] {
@@ -106,13 +106,30 @@ void FolderWindow::updateExplorerIconSpacing() {
     };
     const auto current = [&] { return sameSource() && viewHost.enumerationSerial() == enumeration; };
     CComQIPtr<IFolderView> view(source);
-    if (!view || !current()) return;
+    if (!view || !current()) return false;
     restoringState = true;
     POINT previous = {};
     std::vector<uint8_t> positions;
-    const auto result = useExplorerIconSpacing(source, current, [&](POINT spacing) {
+    // Changing pitch or reinstating Snap can clear native selection. Indexes
+    // here live only across this synchronous change of the same enumeration.
+    HWND list = nullptr;
+    int count = 0, focused = -1;
+    bool allSelected = false;
+    std::vector<int> selectedIndexes;
+    const auto result = applyIconSpacing(source, current, [&](HWND control, POINT spacing) {
         if (!gridPlacement(view)) return current();
         if (!current() || !enumerationComplete || !searchText.empty()) return false;
+        if (spacingPopup) {
+            list = control;
+            count = ListView_GetItemCount(list);
+            focused = ListView_GetNextItem(list, -1, LVNI_FOCUSED);
+            allSelected = count && ListView_GetSelectedCount(list) == static_cast<UINT>(count);
+            if (!allSelected) {
+                for (int i = ListView_GetNextItem(list, -1, LVNI_SELECTED); i >= 0 && current();
+                        i = ListView_GetNextItem(list, i, LVNI_SELECTED))
+                    selectedIndexes.push_back(i);
+            }
+        }
         previous = spacing;
         return captureIconPositions(view, current, true, {}, positions) == S_OK;
     });
@@ -121,10 +138,30 @@ void FolderWindow::updateExplorerIconSpacing() {
         if (checkHR(restoreIconGridPositions(view, positions, previous, current)) && current())
             viewStateDirty(FolderState::Icons);
     }
+    if (changed && list && current() && ListView_GetItemCount(list) == count) {
+        if (allSelected) {
+            if (ListView_GetSelectedCount(list) != static_cast<UINT>(count))
+                ListView_SetItemState(list, -1, LVIS_SELECTED, LVIS_SELECTED);
+        } else {
+            for (int i = ListView_GetNextItem(list, -1, LVNI_SELECTED); i >= 0 && current();
+                    i = ListView_GetNextItem(list, i, LVNI_SELECTED)) {
+                if (!std::binary_search(selectedIndexes.begin(), selectedIndexes.end(), i))
+                    ListView_SetItemState(list, i, 0, LVIS_SELECTED);
+            }
+            for (const int i : selectedIndexes) {
+                if (!current()) break;
+                if (!ListView_GetItemState(list, i, LVIS_SELECTED))
+                    ListView_SetItemState(list, i, LVIS_SELECTED, LVIS_SELECTED);
+            }
+        }
+        if (current() && focused >= 0 && !ListView_GetItemState(list, focused, LVIS_FOCUSED))
+            ListView_SetItemState(list, focused, LVIS_FOCUSED, LVIS_FOCUSED);
+    }
     if (sameSource()) {
         restoringState = false;
         if (changed && current() && !positions.empty()) scheduleStateSave();
     }
+    return current() && (changed || result == ExplorerIconSpacingResult::AlreadyApplied);
 }
 
 void FolderWindow::scheduleStateSave(bool icons) {
@@ -143,7 +180,7 @@ void FolderWindow::scheduleStateSave(bool icons) {
         if (resized) {
             restoringState = true;
             const auto current = [&] { return isWindowOperational() && generation == viewGeneration; };
-            useExplorerIconSpacing(shellView, current);
+            applyIconSpacing(shellView, current);
             if (!current()) return;
             restoringState = false;
         }
@@ -636,7 +673,7 @@ void FolderWindow::changeViewMode(int amount, bool wheel) {
     const HRESULT result = view->SetViewModeAndIconSize(target.mode, target.size);
     resumeDeferredClose();
     if (!current()) return;
-    if (SUCCEEDED(result)) useExplorerIconSpacing(shellView, current);
+    if (SUCCEEDED(result)) applyIconSpacing(shellView, current);
     if (!current()) return;
     restoringState = false;
     if (checkHR(result)) {
@@ -702,7 +739,7 @@ void FolderWindow::restoreReferenceLayout() {
             ShowWindow(hwnd, SW_MAXIMIZE);
         if (!current()) return;
         if (reference.present & FolderState::View) checkHR(restoreOptions(view, reference.view));
-        if (current()) useExplorerIconSpacing(source, current);
+        if (current()) applyIconSpacing(source, current);
     };
     apply();
     restoringState = false;
