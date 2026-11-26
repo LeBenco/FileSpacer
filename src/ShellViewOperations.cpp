@@ -408,6 +408,15 @@ HRESULT ShellSelectionClear::selectAll(IShellView *source, const std::function<b
 UINT shellViewOperationsReadyMessage() { return selectionDetail::readyMessage(); }
 int runShellViewOperationsWorker(const wchar_t *cacheRoot) { return selectionDetail::runWorker(cacheRoot); }
 
+int IconSpacingMetrics::unitForRatio(int axis, int ratio) const {
+    const LONG native = axis ? standard.y : standard.x;
+    const LONG minimum = axis ? cell.y : cell.x;
+    // Up to 100%, interpolate the padding. Above 100%, scale the native pitch.
+    const LONG pitch = ratio < 1000 ? minimum + MulDiv(native - minimum, ratio, 1000)
+        : MulDiv(native, ratio, 1000);
+    return MulDiv(pitch, USER_DEFAULT_SCREEN_DPI, static_cast<int>(unitDpi));
+}
+
 namespace {
 POINT listIconSpacing(HWND list) {
     const DWORD packed = ListView_GetItemSpacing(list, FALSE);
@@ -636,15 +645,6 @@ struct IconListSearch {
     unsigned count = 0;
 };
 
-POINT scaledIconPitch(const IconSpacingMetrics &metrics, const std::array<int, 2> &ratios) {
-    // Below the Windows tick, remove only the available padding. Above it,
-    // scale the whole native pitch so 200% and 300% double and triple it.
-    const auto pitch = [](LONG standard, LONG cell, int ratio) {
-        return ratio < 1000 ? cell + MulDiv(standard - cell, ratio, 1000) : MulDiv(standard, ratio, 1000);
-    };
-    return {pitch(metrics.standard.x, metrics.cell.x, ratios[0]), pitch(metrics.standard.y, metrics.cell.y, ratios[1])};
-}
-
 // The qualified small-icon control exposes its pitch through GetSpacing but
 // has no public setter. Identify the loaded control before looking at its layout.
 const BYTE *smallSpacingReader(BYTE *module) {
@@ -710,7 +710,7 @@ ExplorerIconSpacingResult adjustSmallIconSpacing(HWND list, IFolderView2 *view, 
     }
     metrics.cell = {(std::min)(metrics.standard.x, std::max<LONG>(width, metrics.standard.x - 2 * edge)),
         (std::min)(metrics.standard.y, std::max<LONG>(height, text.tmHeight))};
-    const POINT pitch = scaledIconPitch(metrics, ratios);
+    const POINT pitch = {metrics.unitForRatio(0, ratios[0]), metrics.unitForRatio(1, ratios[1])};
     if (pitch.x == previous.x && pitch.y == previous.y) return Result::AlreadyApplied;
     if ((beforeChange && !beforeChange(list, previous)) || !current()) return Result::Unchanged;
     POINT *target = cells(previous);
@@ -754,6 +754,9 @@ ExplorerIconSpacingResult useExplorerIconSpacing(IShellView *source, const std::
     using Result = ExplorerIconSpacingResult;
     metrics.standard = {};
     metrics.cell = {};
+    // Small-icon spacing is written in pixels. The public setters for the
+    // regular icon view take DPI-scaled units instead.
+    metrics.unitDpi = USER_DEFAULT_SCREEN_DPI;
     CComQIPtr<IFolderView2> view(source);
     FOLDERVIEWMODE mode = FVM_AUTO;
     int size = 0;
@@ -791,14 +794,16 @@ ExplorerIconSpacingResult useExplorerIconSpacing(IShellView *source, const std::
     if (!images || !ImageList_GetIconSize(images, &imageWidth, &imageHeight)
             || standardPitch.x < imageWidth || standardPitch.y < imageHeight)
         return Result::Unchanged;
+    const UINT dpi = GetDpiForWindow(list);
+    if (!dpi) return Result::Unchanged;
+    metrics.unitDpi = dpi;
     metrics.standard = standardPitch;
     metrics.cell = {(std::min)(standardPitch.x, std::max<LONG>(cell.x, imageWidth)),
         (std::min)(standardPitch.y, std::max<LONG>(cell.y, imageHeight))};
-    const POINT pitch = scaledIconPitch(metrics, ratios);
-    const POINT units = listSpacingUnits(list, pitch);
+    const POINT units = {metrics.unitForRatio(0, ratios[0]), metrics.unitForRatio(1, ratios[1])};
     if (units.x <= 0 || units.y <= 0) return Result::Unchanged;
-    const int dpi = static_cast<int>(GetDpiForWindow(list));
-    const POINT expected = {MulDiv(units.x, dpi, USER_DEFAULT_SCREEN_DPI), MulDiv(units.y, dpi, USER_DEFAULT_SCREEN_DPI)};
+    const POINT expected = {MulDiv(units.x, static_cast<int>(dpi), USER_DEFAULT_SCREEN_DPI),
+        MulDiv(units.y, static_cast<int>(dpi), USER_DEFAULT_SCREEN_DPI)};
     if (expected.x == previous.x && expected.y == previous.y) return Result::AlreadyApplied;
     if ((beforeChange && !beforeChange(list, previous)) || !current()) return Result::Unchanged;
     ListView_SetIconSpacing(list, units.x, units.y);
@@ -812,7 +817,7 @@ ExplorerIconSpacingResult useExplorerIconSpacing(IShellView *source, const std::
     // The list can retain pixels clipped to its old cells until an item is
     // repainted. Include the entire client in the next native paint.
     InvalidateRect(list, nullptr, TRUE);
-    debugPrintf(L"EXPLORER GRID size=%d dpi=%d width=%ld pitch=%ld,%ld previous=%ld,%ld\n",
+    debugPrintf(L"EXPLORER GRID size=%d dpi=%u width=%ld pitch=%ld,%ld previous=%ld,%ld\n",
         size, dpi, bounds.right, applied.x, applied.y, previous.x, previous.y);
     return Result::Applied;
 }

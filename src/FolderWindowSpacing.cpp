@@ -11,6 +11,7 @@ namespace filespacer {
 namespace {
 // Saved spacing uses thousandths of the Windows pitch. Each slider step is 10%.
 constexpr int spacingStep = 100;
+constexpr int standardSpacingStep = 1000 / spacingStep;
 int spacingStepForRatio(int ratio) { return (ratio + spacingStep / 2) / spacingStep; }
 
 int pixels(HWND window, int dip) {
@@ -186,7 +187,8 @@ void FolderWindow::ViewMenuPreview::moveSpacingThumb(POINT point, bool commit) {
     const LONG end = (wide ? channel.right : channel.bottom) - radius;
     if (end <= start) return;
     const LONG offset = (owner.spacingAxis ? point.y : point.x) - start - thumbOffset;
-    const int position = MulDiv((std::max)(0L, (std::min)(offset, end - start)), 3000 / spacingStep, end - start);
+    const int step = MulDiv((std::max)(0L, (std::min)(offset, end - start)), lastSpacingSliderStep, end - start);
+    const int position = owner.spacingSliderStops[step];
     if (position != SendMessageW(track, TBM_GETPOS, 0, 0))
         SendMessageW(track, TBM_SETPOS, TRUE, position);
     if (commit) commitSpacing();
@@ -343,13 +345,23 @@ bool FolderWindow::ViewMenuPreview::handleSpacingInput(const MSG &message) {
         if ((!owner.spacingAxis && (message.wParam == VK_UP || message.wParam == VK_DOWN))
                 || (owner.spacingAxis && message.wParam == VK_LEFT)) return false;
         int position = static_cast<int>(SendMessageW(track, TBM_GETPOS, 0, 0));
+        int direction = 0;
         switch (message.wParam) {
             case VK_RETURN: return true; // Keep the active slider open.
-            case VK_HOME: position = 0; break;
-            case VK_END: position = 3000 / spacingStep; break;
-            case VK_UP: case VK_LEFT: case VK_PRIOR: --position; break;
-            case VK_DOWN: case VK_RIGHT: case VK_NEXT: ++position; break;
+            case VK_HOME: position = owner.spacingSliderStops.front(); break;
+            case VK_END: position = owner.spacingSliderStops.back(); break;
+            case VK_UP: case VK_LEFT: case VK_PRIOR: direction = -1; break;
+            case VK_DOWN: case VK_RIGHT: case VK_NEXT: direction = 1; break;
             default: return false;
+        }
+        if (direction) {
+            for (int step = position + direction; step >= 0 && step <= lastSpacingSliderStep; step += direction) {
+                const int next = owner.spacingSliderStops[step];
+                if (next != position) {
+                    position = next;
+                    break;
+                }
+            }
         }
         SendMessageW(track, TBM_SETPOS, TRUE, position);
         commitSpacing();
@@ -390,6 +402,17 @@ void FolderWindow::openSpacingSlider(int axis, const RECT &bounds, HWND menuWind
     spacingPreview = getSavedFolderState().view.iconSpacing.ratios[axis];
     spacingEdited = false;
     spacingDeferred = settings::getIconSpacingDeferred();
+    // Consecutive percentages can round to one native pitch. Keep one stop
+    // per pitch, including the exact Windows setting when it is in the group.
+    for (int first = 0; first <= lastSpacingSliderStep;) {
+        const int unit = spacingMetrics.unitForRatio(axis, first * spacingStep);
+        int last = first;
+        while (last < lastSpacingSliderStep && spacingMetrics.unitForRatio(axis, (last + 1) * spacingStep) == unit)
+            ++last;
+        const int stop = first <= standardSpacingStep && last >= standardSpacingStep ? standardSpacingStep : first;
+        std::fill(spacingSliderStops.begin() + first, spacingSliderStops.begin() + last + 1, stop);
+        first = last + 1;
+    }
     const auto sliderName = getString(axis ? IDS_ICON_GAP_VERTICAL : IDS_ICON_GAP_HORIZONTAL);
     spacingPopup = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, WC_STATICW, sliderName,
         WS_POPUP | WS_BORDER | WS_CLIPCHILDREN, bounds.left, bounds.top, bounds.right - bounds.left,
@@ -408,10 +431,10 @@ void FolderWindow::openSpacingSlider(int axis, const RECT &bounds, HWND menuWind
         axis ? client.bottom - 2 * pad : client.bottom, spacingPopup, nullptr, GetModuleHandleW(nullptr), nullptr);
     if (!spacingTrack) { closeSpacingSlider(); return; }
     SendMessageW(spacingTrack, TBM_SETTHUMBLENGTH, pixels(hwnd, 22), 0);
-    SendMessageW(spacingTrack, TBM_SETRANGEMAX, FALSE, 3000 / spacingStep);
+    SendMessageW(spacingTrack, TBM_SETRANGEMAX, FALSE, lastSpacingSliderStep);
     SendMessageW(spacingTrack, TBM_SETTICFREQ, 500 / spacingStep, 0);
     SendMessageW(spacingTrack, TBM_SETPAGESIZE, 0, 1);
-    SendMessageW(spacingTrack, TBM_SETPOS, TRUE, spacingStepForRatio(spacingPreview));
+    SendMessageW(spacingTrack, TBM_SETPOS, TRUE, spacingSliderStops[spacingStepForRatio(spacingPreview)]);
     RECT thumb = {};
     SendMessageW(spacingTrack, TBM_GETTHUMBRECT, 0, reinterpret_cast<LPARAM>(&thumb));
     const int cross = axis ? (client.right - thumb.left - thumb.right) / 2 : (client.bottom - thumb.top - thumb.bottom) / 2;
@@ -429,10 +452,13 @@ void FolderWindow::closeSpacingSlider() {
 }
 
 void FolderWindow::readSpacingSlider(bool commit, bool frame) {
-    if (!spacingTrack || !isWindowOperational() || (!commit && spacingDeferred)) return;
-    const int position = static_cast<int>(SendMessageW(spacingTrack, TBM_GETPOS, 0, 0));
+    if (!spacingTrack || !isWindowOperational()) return;
+    const int step = static_cast<int>(SendMessageW(spacingTrack, TBM_GETPOS, 0, 0));
+    const int position = spacingSliderStops[step];
+    if (position != step) SendMessageW(spacingTrack, TBM_SETPOS, TRUE, position);
+    if (!commit && spacingDeferred) return;
     // Merely opening and closing the popup must preserve older, finer settings.
-    if (!spacingEdited && position == spacingStepForRatio(spacingPreview)) return;
+    if (!spacingEdited && position == spacingSliderStops[spacingStepForRatio(spacingPreview)]) return;
     const int ratio = position * spacingStep;
     spacingEdited = true;
     if (!commit && !frame && spacingFramePending) return;
