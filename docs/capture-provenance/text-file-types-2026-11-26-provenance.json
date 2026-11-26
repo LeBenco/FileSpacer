@@ -1,0 +1,1122 @@
+{
+  "application": "FileSpacer",
+  "notepadResourceRegistration": {
+    "Before": [
+      "Microsoft.WindowsAppRuntime.2_2.7.0.0_x64__8wekyb3d8bbwe",
+      "Microsoft.VCLibs.140.00_14.0.33519.0_x64__8wekyb3d8bbwe",
+      "Microsoft.VCLibs.140.00.UWPDesktop_14.0.33728.0_x64__8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.language-fr_8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.scale-100_8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.scale-125_8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.scale-150_8wekyb3d8bbwe"
+    ],
+    "Bundle": "Microsoft.WindowsNotepad_11.2609.11.0_neutral_~_8wekyb3d8bbwe",
+    "After": [
+      "Microsoft.WindowsAppRuntime.2_2.7.0.0_x64__8wekyb3d8bbwe",
+      "Microsoft.VCLibs.140.00_14.0.33519.0_x64__8wekyb3d8bbwe",
+      "Microsoft.VCLibs.140.00.UWPDesktop_14.0.33728.0_x64__8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.language-de_8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.language-el_8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.language-es_8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.language-fr_8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.language-it_8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.language-nl_8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.language-pl_8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.language-pt_8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.language-uk_8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.scale-100_8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.scale-125_8wekyb3d8bbwe",
+      "Microsoft.WindowsNotepad_11.2609.11.0_neutral_split.scale-150_8wekyb3d8bbwe"
+    ]
+  },
+  "applicationVersion": "1.6.0",
+  "sourceRevision": "645a8242880b80901c476ad34aff73f414a839d6",
+  "captured": "2026-11-26",
+  "applicationSha256": "0baa9623210f06595702e3c70b3ab4b2fe9ae014081c781aaa283a394e65b285",
+  "providerSha256": "fa390792fb30c61baf4aed84bafa92e64042dd04a56507e3c50b4cf3bd3a6d27",
+  "environment": "AgentWin11Pro, Windows 11 Pro 10.0.26300; 1600x1200 desktop at 96 DPI.",
+  "unchangedFrench": {
+    "gifSha256": "1cd569d19638818a178315aa3b6094d283e53a61cc9c76bf4dca4b7cd6d432e0",
+    "webpSha256": "69501d7f26652090b0cecc149386ba406339e730a0d03bf4cd12221b05448788"
+  },
+  "scope": "The nine non-French details-columns.gif recordings and their lossless WebP variants. Other documentation images retain their existing capture provenance.",
+  "languagePreparation": "Windows UI override, culture and the first preferred language are aligned before a fresh sign-in. The actual Shell text-document type is recorded before filming. The original language list, keyboard inputs and automatic sign-in configuration are restored after the batch.",
+  "supersedes": "The nine non-French Details recordings in view-menu-spacing-2026-11-26-provenance.json. The French GIF and WebP remain unchanged.",
+  "method": "Unchanged application executable and provider DLL in fresh localized Windows sessions. ScreenToGif 2.43.2 records the actual desktop, continuous pointer motion and click highlights. No retouching, translated overlays, composites, cuts or scaling in the delivered recordings.",
+  "storyboard": "The folder starts in Details with column filling off. The actual View menu includes the new icon-spacing commands. The pointer pauses for one second over Resize columns before activation. After automatic filling, the Name divider is dragged to reveal the remaining long filenames. View-mode hover previews are disabled only in the isolated capture preferences to keep the demonstrated view unchanged while traversing the menu.",
+  "wallpaperSha256": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714",
+  "validation": "Native capture assertions and visual review of all nine languages. Every WebP frame, frame duration and loop count matches its GIF. This validates documentation captures, not the full application regression suite.",
+  "captures": [
+    {
+      "language": "de",
+      "runId": "vm-c73dc7eeb97f49b18d10f67a19a6da4f",
+      "capture": {
+        "WindowsUiLanguage": "de-DE",
+        "Captures": [
+          {
+            "TextDocumentType": "Textdokument",
+            "Scene": "FileTypeLanguage",
+            "Language": "de",
+            "PreferredLanguages": [
+              "de-DE"
+            ]
+          },
+          {
+            "LongNameTextWidths": [
+              572,
+              510
+            ],
+            "SourceExecutableSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+            "GlobalEnabled": 1,
+            "Files": [
+              "Studioprojekt — vollständige Anforderungen und ausführliche Anmerkungen zur Abschlusspräsentation.txt",
+              "Studioprojekt — vollständiger Zeitplan und ausführliche Hinweise zur Abschlusspräsentation.txt",
+              "Präsentationsentwurf zur Prüfung.txt",
+              "Referenzbilder und erste Skizzen.txt"
+            ],
+            "FilledWidths": [
+              277,
+              556,
+              139,
+              112
+            ],
+            "UpdateOnRelease": 1,
+            "Language": "de",
+            "BeforeWidths": [
+              200,
+              400,
+              100,
+              80
+            ],
+            "CommandId": 1131,
+            "AfterWidths": [
+              612,
+              221,
+              139,
+              112
+            ],
+            "Scene": "DetailsColumns",
+            "ContinuousPointer": true,
+            "OptionHoverPauseMilliseconds": 1000
+          },
+          {
+            "Nilesoft": false,
+            "CaptureArea": {
+              "Y": 196,
+              "Width": 1277,
+              "Height": 541,
+              "X": 323
+            },
+            "FinalPauseMilliseconds": 2000,
+            "StepPauseMilliseconds": 50,
+            "MotionSteps": 48,
+            "Recorder": "ScreenToGif 2.43.2",
+            "After": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Frames": 86,
+            "Before": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Language": "de",
+            "File": "details-columns.gif"
+          }
+        ],
+        "DisplayBefore": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "CaptureResolution": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "PowerShellUiCulture": "de-DE",
+        "SourceApplicationSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+        "WindowsUiOverride": "de-DE",
+        "WallpaperSha256": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714",
+        "Date": "2026-11-26T13:55:34.3268919Z",
+        "Nilesoft": false,
+        "Recorder": "ScreenToGif 2.43.2",
+        "CleanupErrors": []
+      },
+      "sceneScriptsSha256": {
+        "Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "Capture.ps1": "4d6a3ea29049136b306b2b0533ee2a0ad038fafd5a9e61f615af4d85f738f8a6",
+        "CaptureDesktop.cs": "d017034167908626c4fa323c74b40f27c10bbed89a0f174355052209f85de921",
+        "details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "document-scenes.json": "7e47a03ac4ab010e01c4073fedabac5583dc60c06adde26278e6241095550936",
+        "mixed-sorting-fr.json": "493d36934cc4bbe991e254aaf9f6a4a0cdf967b230bf5ab0e4cb9ad55dbfb88a",
+        "SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+        "scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33",
+        "static-scenes.json": "1d70afed2429890a24fdafcc9625388b9f38cc0121c0a8111228ec2af69b4226",
+        "StaticScenes.ps1": "f30377bf4160bf0b8c24796f0ac408fb88aecfd422d830c8b737a2e012b00f89",
+        "wallpaper.jpg": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714"
+      },
+      "viewModeHoverPreviews": false,
+      "gifSha256": "694034be7b37fbe21b85e0dade38f53b3b5ee0d12bfbc2f20fee8f4cd3ade248",
+      "webpSha256": "834632075ee3cc50a8b2d156c2e99340a05919ed6b92f7f1c5fc3813b78b80fb"
+    },
+    {
+      "language": "el",
+      "runId": "vm-da545e43b70a4dc0917da632b7bd8de4",
+      "capture": {
+        "WindowsUiLanguage": "el",
+        "Captures": [
+          {
+            "TextDocumentType": "Έγγραφο κειμένου",
+            "Scene": "FileTypeLanguage",
+            "Language": "el",
+            "PreferredLanguages": [
+              "el"
+            ]
+          },
+          {
+            "LongNameTextWidths": [
+              507,
+              545
+            ],
+            "SourceExecutableSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+            "GlobalEnabled": 1,
+            "Files": [
+              "Έργο στούντιο — πλήρεις προδιαγραφές και αναλυτικά σχόλια για την τελική παρουσίαση.txt",
+              "Έργο στούντιο — πλήρες χρονοδιάγραμμα και αναλυτικές σημειώσεις για την τελική παρουσίαση.txt",
+              "Προσχέδιο παρουσίασης για έλεγχο.txt",
+              "Εικόνες αναφοράς και πρώτα σχέδια.txt"
+            ],
+            "FilledWidths": [
+              275,
+              550,
+              144,
+              115
+            ],
+            "UpdateOnRelease": 1,
+            "Language": "el",
+            "BeforeWidths": [
+              192,
+              384,
+              100,
+              80
+            ],
+            "CommandId": 1131,
+            "AfterWidths": [
+              585,
+              240,
+              144,
+              115
+            ],
+            "Scene": "DetailsColumns",
+            "ContinuousPointer": true,
+            "OptionHoverPauseMilliseconds": 1000
+          },
+          {
+            "Nilesoft": false,
+            "CaptureArea": {
+              "Y": 196,
+              "Width": 1277,
+              "Height": 541,
+              "X": 323
+            },
+            "FinalPauseMilliseconds": 2000,
+            "StepPauseMilliseconds": 50,
+            "MotionSteps": 48,
+            "Recorder": "ScreenToGif 2.43.2",
+            "After": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Frames": 87,
+            "Before": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Language": "el",
+            "File": "details-columns.gif"
+          }
+        ],
+        "DisplayBefore": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "CaptureResolution": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "PowerShellUiCulture": "en-US",
+        "SourceApplicationSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+        "WindowsUiOverride": "el",
+        "WallpaperSha256": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714",
+        "Date": "2026-11-26T14:13:59.5838077Z",
+        "Nilesoft": false,
+        "Recorder": "ScreenToGif 2.43.2",
+        "CleanupErrors": []
+      },
+      "sceneScriptsSha256": {
+        "Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "Capture.ps1": "4d6a3ea29049136b306b2b0533ee2a0ad038fafd5a9e61f615af4d85f738f8a6",
+        "CaptureDesktop.cs": "d017034167908626c4fa323c74b40f27c10bbed89a0f174355052209f85de921",
+        "details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "document-scenes.json": "7e47a03ac4ab010e01c4073fedabac5583dc60c06adde26278e6241095550936",
+        "mixed-sorting-fr.json": "493d36934cc4bbe991e254aaf9f6a4a0cdf967b230bf5ab0e4cb9ad55dbfb88a",
+        "SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+        "scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33",
+        "static-scenes.json": "1d70afed2429890a24fdafcc9625388b9f38cc0121c0a8111228ec2af69b4226",
+        "StaticScenes.ps1": "f30377bf4160bf0b8c24796f0ac408fb88aecfd422d830c8b737a2e012b00f89",
+        "wallpaper.jpg": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714"
+      },
+      "viewModeHoverPreviews": false,
+      "gifSha256": "57678b234eb9c8d0f3a6c099167d446239aabce0860d7209e65f7b5beef37c67",
+      "webpSha256": "1c93d9c13d27eb972b49f9f6023479519a024032565f5f9e0007943889e1276e"
+    },
+    {
+      "language": "en",
+      "runId": "vm-0609189033d3464a939aa8007e9fae85",
+      "capture": {
+        "WindowsUiLanguage": "en-GB",
+        "Captures": [
+          {
+            "TextDocumentType": "Text Document",
+            "Scene": "FileTypeLanguage",
+            "Language": "en",
+            "PreferredLanguages": [
+              "en-GB"
+            ]
+          },
+          {
+            "LongNameTextWidths": [
+              501,
+              512
+            ],
+            "SourceExecutableSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+            "GlobalEnabled": 1,
+            "Files": [
+              "Studio project — complete specifications and detailed comments for the final presentation.txt",
+              "Studio project — complete schedule and detailed preparation notes for the final presentation.txt",
+              "Presentation draft for review.txt",
+              "Reference images and sketches.txt"
+            ],
+            "FilledWidths": [
+              271,
+              544,
+              149,
+              120
+            ],
+            "UpdateOnRelease": 1,
+            "Language": "en",
+            "BeforeWidths": [
+              182,
+              364,
+              100,
+              80
+            ],
+            "CommandId": 1131,
+            "AfterWidths": [
+              552,
+              263,
+              149,
+              120
+            ],
+            "Scene": "DetailsColumns",
+            "ContinuousPointer": true,
+            "OptionHoverPauseMilliseconds": 1000
+          },
+          {
+            "Nilesoft": false,
+            "CaptureArea": {
+              "Y": 196,
+              "Width": 1277,
+              "Height": 541,
+              "X": 323
+            },
+            "FinalPauseMilliseconds": 2000,
+            "StepPauseMilliseconds": 50,
+            "MotionSteps": 48,
+            "Recorder": "ScreenToGif 2.43.2",
+            "After": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Frames": 86,
+            "Before": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Language": "en",
+            "File": "details-columns.gif"
+          }
+        ],
+        "DisplayBefore": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "CaptureResolution": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "PowerShellUiCulture": "en-GB",
+        "SourceApplicationSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+        "WindowsUiOverride": "en-GB",
+        "WallpaperSha256": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714",
+        "Date": "2026-11-26T13:40:30.3785297Z",
+        "Nilesoft": false,
+        "Recorder": "ScreenToGif 2.43.2",
+        "CleanupErrors": []
+      },
+      "sceneScriptsSha256": {
+        "Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "Capture.ps1": "30d9045e1f82d40e5657130a8ec88dbe84ecdf78d1bdc238eb9362999a5f4407",
+        "CaptureDesktop.cs": "d017034167908626c4fa323c74b40f27c10bbed89a0f174355052209f85de921",
+        "details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "document-scenes.json": "7e47a03ac4ab010e01c4073fedabac5583dc60c06adde26278e6241095550936",
+        "mixed-sorting-fr.json": "493d36934cc4bbe991e254aaf9f6a4a0cdf967b230bf5ab0e4cb9ad55dbfb88a",
+        "SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+        "scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33",
+        "static-scenes.json": "1d70afed2429890a24fdafcc9625388b9f38cc0121c0a8111228ec2af69b4226",
+        "StaticScenes.ps1": "f30377bf4160bf0b8c24796f0ac408fb88aecfd422d830c8b737a2e012b00f89",
+        "wallpaper.jpg": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714"
+      },
+      "viewModeHoverPreviews": false,
+      "gifSha256": "7d008ce9997b25be7dea3a9295d8db2905eadf547792d9974f0c810cdf50cb05",
+      "webpSha256": "a95a268e2dbb60a7cf724993c6e1c2687749279e03917ecb5d9de381f155f2d5"
+    },
+    {
+      "language": "es",
+      "runId": "vm-7c2adba3cdfb47f29bd7966fbaf32793",
+      "capture": {
+        "WindowsUiLanguage": "es-ES",
+        "Captures": [
+          {
+            "TextDocumentType": "Documento de texto",
+            "Scene": "FileTypeLanguage",
+            "Language": "es",
+            "PreferredLanguages": [
+              "es-ES"
+            ]
+          },
+          {
+            "LongNameTextWidths": [
+              503,
+              513
+            ],
+            "SourceExecutableSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+            "GlobalEnabled": 1,
+            "Files": [
+              "Proyecto de estudio — especificaciones completas y comentarios para la presentación final.txt",
+              "Proyecto de estudio — calendario completo y notas de preparación para la presentación final.txt",
+              "Borrador de la presentación para revisar.txt",
+              "Imágenes de referencia y bocetos.txt"
+            ],
+            "FilledWidths": [
+              271,
+              544,
+              149,
+              120
+            ],
+            "UpdateOnRelease": 1,
+            "Language": "es",
+            "BeforeWidths": [
+              182,
+              364,
+              100,
+              80
+            ],
+            "CommandId": 1131,
+            "AfterWidths": [
+              553,
+              262,
+              149,
+              120
+            ],
+            "Scene": "DetailsColumns",
+            "ContinuousPointer": true,
+            "OptionHoverPauseMilliseconds": 1000
+          },
+          {
+            "Nilesoft": false,
+            "CaptureArea": {
+              "Y": 196,
+              "Width": 1277,
+              "Height": 541,
+              "X": 323
+            },
+            "FinalPauseMilliseconds": 2000,
+            "StepPauseMilliseconds": 50,
+            "MotionSteps": 48,
+            "Recorder": "ScreenToGif 2.43.2",
+            "After": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Frames": 89,
+            "Before": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Language": "es",
+            "File": "details-columns.gif"
+          }
+        ],
+        "DisplayBefore": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "CaptureResolution": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "PowerShellUiCulture": "es-ES",
+        "SourceApplicationSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+        "WindowsUiOverride": "es-ES",
+        "WallpaperSha256": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714",
+        "Date": "2026-11-26T14:04:45.7008552Z",
+        "Nilesoft": false,
+        "Recorder": "ScreenToGif 2.43.2",
+        "CleanupErrors": []
+      },
+      "sceneScriptsSha256": {
+        "Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "Capture.ps1": "4d6a3ea29049136b306b2b0533ee2a0ad038fafd5a9e61f615af4d85f738f8a6",
+        "CaptureDesktop.cs": "d017034167908626c4fa323c74b40f27c10bbed89a0f174355052209f85de921",
+        "details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "document-scenes.json": "7e47a03ac4ab010e01c4073fedabac5583dc60c06adde26278e6241095550936",
+        "mixed-sorting-fr.json": "493d36934cc4bbe991e254aaf9f6a4a0cdf967b230bf5ab0e4cb9ad55dbfb88a",
+        "SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+        "scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33",
+        "static-scenes.json": "1d70afed2429890a24fdafcc9625388b9f38cc0121c0a8111228ec2af69b4226",
+        "StaticScenes.ps1": "f30377bf4160bf0b8c24796f0ac408fb88aecfd422d830c8b737a2e012b00f89",
+        "wallpaper.jpg": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714"
+      },
+      "viewModeHoverPreviews": false,
+      "gifSha256": "2ef796a2b4012fca923dffadc7ef6639f0371aabc512214bf3515c7d30b3f4da",
+      "webpSha256": "08ca5048138943bed55c79f7b6bd91e330cf3add36329d4c057470818762cf5e"
+    },
+    {
+      "language": "it",
+      "runId": "vm-190fb66e1b16472f8d6ed434438f4392",
+      "capture": {
+        "WindowsUiLanguage": "it-IT",
+        "Captures": [
+          {
+            "TextDocumentType": "Documento di testo",
+            "Scene": "FileTypeLanguage",
+            "Language": "it",
+            "PreferredLanguages": [
+              "it-IT"
+            ]
+          },
+          {
+            "LongNameTextWidths": [
+              492,
+              520
+            ],
+            "SourceExecutableSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+            "GlobalEnabled": 1,
+            "Files": [
+              "Progetto studio — specifiche complete e commenti dettagliati per la presentazione finale.txt",
+              "Progetto studio — calendario completo e note dettagliate per preparare la presentazione finale.txt",
+              "Bozza della presentazione da rivedere.txt",
+              "Immagini di riferimento e schizzi.txt"
+            ],
+            "FilledWidths": [
+              272,
+              545,
+              148,
+              119
+            ],
+            "UpdateOnRelease": 1,
+            "Language": "it",
+            "BeforeWidths": [
+              184,
+              368,
+              100,
+              80
+            ],
+            "CommandId": 1131,
+            "AfterWidths": [
+              560,
+              257,
+              148,
+              119
+            ],
+            "Scene": "DetailsColumns",
+            "ContinuousPointer": true,
+            "OptionHoverPauseMilliseconds": 1000
+          },
+          {
+            "Nilesoft": false,
+            "CaptureArea": {
+              "Y": 196,
+              "Width": 1277,
+              "Height": 541,
+              "X": 323
+            },
+            "FinalPauseMilliseconds": 2000,
+            "StepPauseMilliseconds": 50,
+            "MotionSteps": 48,
+            "Recorder": "ScreenToGif 2.43.2",
+            "After": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Frames": 86,
+            "Before": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Language": "it",
+            "File": "details-columns.gif"
+          }
+        ],
+        "DisplayBefore": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "CaptureResolution": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "PowerShellUiCulture": "it-IT",
+        "SourceApplicationSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+        "WindowsUiOverride": "it-IT",
+        "WallpaperSha256": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714",
+        "Date": "2026-11-26T14:00:48.9942778Z",
+        "Nilesoft": false,
+        "Recorder": "ScreenToGif 2.43.2",
+        "CleanupErrors": []
+      },
+      "sceneScriptsSha256": {
+        "Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "Capture.ps1": "4d6a3ea29049136b306b2b0533ee2a0ad038fafd5a9e61f615af4d85f738f8a6",
+        "CaptureDesktop.cs": "d017034167908626c4fa323c74b40f27c10bbed89a0f174355052209f85de921",
+        "details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "document-scenes.json": "7e47a03ac4ab010e01c4073fedabac5583dc60c06adde26278e6241095550936",
+        "mixed-sorting-fr.json": "493d36934cc4bbe991e254aaf9f6a4a0cdf967b230bf5ab0e4cb9ad55dbfb88a",
+        "SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+        "scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33",
+        "static-scenes.json": "1d70afed2429890a24fdafcc9625388b9f38cc0121c0a8111228ec2af69b4226",
+        "StaticScenes.ps1": "f30377bf4160bf0b8c24796f0ac408fb88aecfd422d830c8b737a2e012b00f89",
+        "wallpaper.jpg": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714"
+      },
+      "viewModeHoverPreviews": false,
+      "gifSha256": "fc1959adfe80f6d4d036bf116f68cd9ee017201b7b6b3de6337027f4d8fbd79b",
+      "webpSha256": "317e26e68a75f9ab3f3f0337eb2ba6d0c252ad7c5a0a6469ff5fe3f400627b5d"
+    },
+    {
+      "language": "nl",
+      "runId": "vm-67119fd0b8034554bfc947c278f4c0ae",
+      "capture": {
+        "WindowsUiLanguage": "nl-NL",
+        "Captures": [
+          {
+            "TextDocumentType": "Tekstdocument",
+            "Scene": "FileTypeLanguage",
+            "Language": "nl",
+            "PreferredLanguages": [
+              "nl-NL"
+            ]
+          },
+          {
+            "LongNameTextWidths": [
+              507,
+              544
+            ],
+            "SourceExecutableSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+            "GlobalEnabled": 1,
+            "Files": [
+              "Studioproject — volledige specificaties en uitgebreide opmerkingen voor de eindpresentatie.txt",
+              "Studioproject — volledige planning en uitgebreide voorbereidende notities voor de eindpresentatie.txt",
+              "Conceptpresentatie ter beoordeling.txt",
+              "Referentiebeelden en eerste schetsen.txt"
+            ],
+            "FilledWidths": [
+              274,
+              550,
+              144,
+              116
+            ],
+            "UpdateOnRelease": 1,
+            "Language": "nl",
+            "BeforeWidths": [
+              191,
+              382,
+              100,
+              80
+            ],
+            "CommandId": 1131,
+            "AfterWidths": [
+              584,
+              240,
+              144,
+              116
+            ],
+            "Scene": "DetailsColumns",
+            "ContinuousPointer": true,
+            "OptionHoverPauseMilliseconds": 1000
+          },
+          {
+            "Nilesoft": false,
+            "CaptureArea": {
+              "Y": 196,
+              "Width": 1277,
+              "Height": 541,
+              "X": 323
+            },
+            "FinalPauseMilliseconds": 2000,
+            "StepPauseMilliseconds": 50,
+            "MotionSteps": 48,
+            "Recorder": "ScreenToGif 2.43.2",
+            "After": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Frames": 85,
+            "Before": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Language": "nl",
+            "File": "details-columns.gif"
+          }
+        ],
+        "DisplayBefore": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "CaptureResolution": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "PowerShellUiCulture": "nl-NL",
+        "SourceApplicationSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+        "WindowsUiOverride": "nl-NL",
+        "WallpaperSha256": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714",
+        "Date": "2026-11-26T14:21:13.2370658Z",
+        "Nilesoft": false,
+        "Recorder": "ScreenToGif 2.43.2",
+        "CleanupErrors": []
+      },
+      "sceneScriptsSha256": {
+        "Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "Capture.ps1": "4d6a3ea29049136b306b2b0533ee2a0ad038fafd5a9e61f615af4d85f738f8a6",
+        "CaptureDesktop.cs": "d017034167908626c4fa323c74b40f27c10bbed89a0f174355052209f85de921",
+        "details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "document-scenes.json": "7e47a03ac4ab010e01c4073fedabac5583dc60c06adde26278e6241095550936",
+        "mixed-sorting-fr.json": "493d36934cc4bbe991e254aaf9f6a4a0cdf967b230bf5ab0e4cb9ad55dbfb88a",
+        "SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+        "scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33",
+        "static-scenes.json": "1d70afed2429890a24fdafcc9625388b9f38cc0121c0a8111228ec2af69b4226",
+        "StaticScenes.ps1": "f30377bf4160bf0b8c24796f0ac408fb88aecfd422d830c8b737a2e012b00f89",
+        "wallpaper.jpg": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714"
+      },
+      "viewModeHoverPreviews": false,
+      "gifSha256": "84958091082456135911a8a4c51451841e795329572261f0d0865a3d8aa8beba",
+      "webpSha256": "896f5317f8562a18cecdd783f01c385e9243b43aebac2e8fc7380cad06813efd"
+    },
+    {
+      "language": "pl",
+      "runId": "vm-9eb6550efd8c4d20a88cdd65fa415ce0",
+      "capture": {
+        "WindowsUiLanguage": "pl",
+        "Captures": [
+          {
+            "TextDocumentType": "Dokument tekstowy",
+            "Scene": "FileTypeLanguage",
+            "Language": "pl",
+            "PreferredLanguages": [
+              "pl"
+            ]
+          },
+          {
+            "LongNameTextWidths": [
+              528,
+              549
+            ],
+            "SourceExecutableSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+            "GlobalEnabled": 1,
+            "Files": [
+              "Projekt studia — pełne wymagania i szczegółowe uwagi do przygotowania prezentacji końcowej.txt",
+              "Projekt studia — pełny harmonogram i szczegółowe notatki do przygotowania prezentacji końcowej.txt",
+              "Wstępna prezentacja do sprawdzenia.txt",
+              "Materiały referencyjne i szkice.txt"
+            ],
+            "FilledWidths": [
+              275,
+              551,
+              143,
+              115
+            ],
+            "UpdateOnRelease": 1,
+            "Language": "pl",
+            "BeforeWidths": [
+              193,
+              386,
+              100,
+              80
+            ],
+            "CommandId": 1131,
+            "AfterWidths": [
+              589,
+              237,
+              143,
+              115
+            ],
+            "Scene": "DetailsColumns",
+            "ContinuousPointer": true,
+            "OptionHoverPauseMilliseconds": 1000
+          },
+          {
+            "Nilesoft": false,
+            "CaptureArea": {
+              "Y": 196,
+              "Width": 1277,
+              "Height": 541,
+              "X": 323
+            },
+            "FinalPauseMilliseconds": 2000,
+            "StepPauseMilliseconds": 50,
+            "MotionSteps": 48,
+            "Recorder": "ScreenToGif 2.43.2",
+            "After": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Frames": 87,
+            "Before": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Language": "pl",
+            "File": "details-columns.gif"
+          }
+        ],
+        "DisplayBefore": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "CaptureResolution": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "PowerShellUiCulture": "pl-PL",
+        "SourceApplicationSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+        "WindowsUiOverride": "pl",
+        "WallpaperSha256": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714",
+        "Date": "2026-11-26T14:17:42.9089064Z",
+        "Nilesoft": false,
+        "Recorder": "ScreenToGif 2.43.2",
+        "CleanupErrors": []
+      },
+      "sceneScriptsSha256": {
+        "Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "Capture.ps1": "4d6a3ea29049136b306b2b0533ee2a0ad038fafd5a9e61f615af4d85f738f8a6",
+        "CaptureDesktop.cs": "d017034167908626c4fa323c74b40f27c10bbed89a0f174355052209f85de921",
+        "details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "document-scenes.json": "7e47a03ac4ab010e01c4073fedabac5583dc60c06adde26278e6241095550936",
+        "mixed-sorting-fr.json": "493d36934cc4bbe991e254aaf9f6a4a0cdf967b230bf5ab0e4cb9ad55dbfb88a",
+        "SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+        "scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33",
+        "static-scenes.json": "1d70afed2429890a24fdafcc9625388b9f38cc0121c0a8111228ec2af69b4226",
+        "StaticScenes.ps1": "f30377bf4160bf0b8c24796f0ac408fb88aecfd422d830c8b737a2e012b00f89",
+        "wallpaper.jpg": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714"
+      },
+      "viewModeHoverPreviews": false,
+      "gifSha256": "2c230c85f725cae7815b701abd0f0e8e441f5d1435ba59761cabacc06a6cf08d",
+      "webpSha256": "a3c0a3ac691bf868df9eb1c809d5304a5997ef8474f687c24a94c99a921144e8"
+    },
+    {
+      "language": "pt",
+      "runId": "vm-4ec2659371ea43a087eb5a31f9697ffe",
+      "capture": {
+        "WindowsUiLanguage": "pt-PT",
+        "Captures": [
+          {
+            "TextDocumentType": "Documento de Texto",
+            "Scene": "FileTypeLanguage",
+            "Language": "pt",
+            "PreferredLanguages": [
+              "pt-PT"
+            ]
+          },
+          {
+            "LongNameTextWidths": [
+              484,
+              500
+            ],
+            "SourceExecutableSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+            "GlobalEnabled": 1,
+            "Files": [
+              "Projeto do estúdio — especificações completas e comentários para a apresentação final.txt",
+              "Projeto do estúdio — calendário completo e notas de preparação para a apresentação final.txt",
+              "Rascunho da apresentação para revisão.txt",
+              "Imagens de referência e esboços.txt"
+            ],
+            "FilledWidths": [
+              270,
+              540,
+              152,
+              122
+            ],
+            "UpdateOnRelease": 1,
+            "Language": "pt",
+            "BeforeWidths": [
+              178,
+              356,
+              100,
+              80
+            ],
+            "CommandId": 1131,
+            "AfterWidths": [
+              540,
+              270,
+              152,
+              122
+            ],
+            "Scene": "DetailsColumns",
+            "ContinuousPointer": true,
+            "OptionHoverPauseMilliseconds": 1000
+          },
+          {
+            "Nilesoft": false,
+            "CaptureArea": {
+              "Y": 196,
+              "Width": 1277,
+              "Height": 541,
+              "X": 323
+            },
+            "FinalPauseMilliseconds": 2000,
+            "StepPauseMilliseconds": 50,
+            "MotionSteps": 48,
+            "Recorder": "ScreenToGif 2.43.2",
+            "After": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Frames": 89,
+            "Before": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Language": "pt",
+            "File": "details-columns.gif"
+          }
+        ],
+        "DisplayBefore": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "CaptureResolution": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "PowerShellUiCulture": "pt-PT",
+        "SourceApplicationSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+        "WindowsUiOverride": "pt-PT",
+        "WallpaperSha256": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714",
+        "Date": "2026-11-26T14:09:07.2131219Z",
+        "Nilesoft": false,
+        "Recorder": "ScreenToGif 2.43.2",
+        "CleanupErrors": []
+      },
+      "sceneScriptsSha256": {
+        "Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "Capture.ps1": "4d6a3ea29049136b306b2b0533ee2a0ad038fafd5a9e61f615af4d85f738f8a6",
+        "CaptureDesktop.cs": "d017034167908626c4fa323c74b40f27c10bbed89a0f174355052209f85de921",
+        "details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "document-scenes.json": "7e47a03ac4ab010e01c4073fedabac5583dc60c06adde26278e6241095550936",
+        "mixed-sorting-fr.json": "493d36934cc4bbe991e254aaf9f6a4a0cdf967b230bf5ab0e4cb9ad55dbfb88a",
+        "SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+        "scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33",
+        "static-scenes.json": "1d70afed2429890a24fdafcc9625388b9f38cc0121c0a8111228ec2af69b4226",
+        "StaticScenes.ps1": "f30377bf4160bf0b8c24796f0ac408fb88aecfd422d830c8b737a2e012b00f89",
+        "wallpaper.jpg": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714"
+      },
+      "viewModeHoverPreviews": false,
+      "gifSha256": "a9bcc356db3f0d26a4ed14f380c6e0faaa0e039da4cf728bd92906b3081cae68",
+      "webpSha256": "745393b9f0ccff286bd3a7f208b3345a837a40f4bf426d9a54e9487e63672739"
+    },
+    {
+      "language": "uk",
+      "runId": "vm-f9f5ce3ed3fe4dea8d9b6ffb3a4b4d20",
+      "capture": {
+        "WindowsUiLanguage": "uk",
+        "Captures": [
+          {
+            "TextDocumentType": "Текстовий документ",
+            "Scene": "FileTypeLanguage",
+            "Language": "uk",
+            "PreferredLanguages": [
+              "uk"
+            ]
+          },
+          {
+            "LongNameTextWidths": [
+              523,
+              516
+            ],
+            "SourceExecutableSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+            "GlobalEnabled": 1,
+            "Files": [
+              "Проєкт студії — повні вимоги та докладні коментарі для підготовки остаточної презентації.txt",
+              "Проєкт студії — повний розклад і докладні нотатки для підготовки остаточної презентації.txt",
+              "Чернетка презентації для перевірки.txt",
+              "Довідкові зображення та ескізи.txt"
+            ],
+            "FilledWidths": [
+              272,
+              546,
+              148,
+              118
+            ],
+            "UpdateOnRelease": 1,
+            "Language": "uk",
+            "BeforeWidths": [
+              185,
+              370,
+              100,
+              80
+            ],
+            "CommandId": 1131,
+            "AfterWidths": [
+              563,
+              255,
+              148,
+              118
+            ],
+            "Scene": "DetailsColumns",
+            "ContinuousPointer": true,
+            "OptionHoverPauseMilliseconds": 1000
+          },
+          {
+            "Nilesoft": false,
+            "CaptureArea": {
+              "Y": 196,
+              "Width": 1277,
+              "Height": 541,
+              "X": 323
+            },
+            "FinalPauseMilliseconds": 2000,
+            "StepPauseMilliseconds": 50,
+            "MotionSteps": 48,
+            "Recorder": "ScreenToGif 2.43.2",
+            "After": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Frames": 89,
+            "Before": {
+              "Left": 340,
+              "Top": 220,
+              "Right": 1440,
+              "Bottom": 720,
+              "Width": 1100,
+              "Height": 500
+            },
+            "Language": "uk",
+            "File": "details-columns.gif"
+          }
+        ],
+        "DisplayBefore": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "CaptureResolution": {
+          "Height": 1200,
+          "Width": 1600
+        },
+        "PowerShellUiCulture": "en-US",
+        "SourceApplicationSha256": "0BAA9623210F06595702E3C70B3AB4B2FE9AE014081C781AAA283A394E65B285",
+        "WindowsUiOverride": "uk",
+        "WallpaperSha256": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714",
+        "Date": "2026-11-26T14:25:20.3009150Z",
+        "Nilesoft": false,
+        "Recorder": "ScreenToGif 2.43.2",
+        "CleanupErrors": []
+      },
+      "sceneScriptsSha256": {
+        "Capture.Core.ps1": "8e102b1270de8d5714f953427c69867dfe6a01818b3373888aef2e65fad4e9d2",
+        "Capture.ps1": "4d6a3ea29049136b306b2b0533ee2a0ad038fafd5a9e61f615af4d85f738f8a6",
+        "CaptureDesktop.cs": "d017034167908626c4fa323c74b40f27c10bbed89a0f174355052209f85de921",
+        "details-columns.json": "f5214b5f63ca046fa30312887574fc6cbc853cad75bdde6e6018243e3f61abb3",
+        "document-scenes.json": "7e47a03ac4ab010e01c4073fedabac5583dc60c06adde26278e6241095550936",
+        "mixed-sorting-fr.json": "493d36934cc4bbe991e254aaf9f6a4a0cdf967b230bf5ab0e4cb9ad55dbfb88a",
+        "SceneActions.ps1": "6c86a7decfa5ac777d1d0d6ea24007fc64e2c75c9a54a2a75c82496f020d2de1",
+        "scenes.json": "932d3d130a16abecd473a4662534405ed2f2b441877f5a4f37c617681c233c33",
+        "static-scenes.json": "1d70afed2429890a24fdafcc9625388b9f38cc0121c0a8111228ec2af69b4226",
+        "StaticScenes.ps1": "f30377bf4160bf0b8c24796f0ac408fb88aecfd422d830c8b737a2e012b00f89",
+        "wallpaper.jpg": "8950e941ecb7805266b09cd472325fd5d849820ae34bec76f2161bfe5f76a714"
+      },
+      "viewModeHoverPreviews": false,
+      "gifSha256": "2a117c3f62296c818d89c9dc9791b2b2c494a40152aab904ad84ba7ff5160c24",
+      "webpSha256": "a468e11f25e0d7746f90fe98a3a9a36cbff53a83fe298134672cc1123e86d4cc"
+    }
+  ]
+}
