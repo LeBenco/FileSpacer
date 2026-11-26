@@ -553,6 +553,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int showCommand) {
     // Joined like the threads above: no resolution code may still run when
     // static objects are destroyed after this function returns.
     stopShellSelectionClear();
+    stopExplorerIconSpacing();
     uninitProcessLifetime();
 
     ItemWindow::uninit();

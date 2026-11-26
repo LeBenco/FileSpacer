@@ -32,6 +32,7 @@ See <https://sqlite.org/copyright.html>.
 - **Up and Refresh icons**: [Lucide](https://lucide.dev/) (adapted versions, [ISC and MIT](licenses/Lucide-LICENSE.txt), notices also supplied as `Lucide-LICENSE.txt`).
 - **Up icon**: [Feather](https://feathericons.com/) (origin of the Lucide version, [MIT](licenses/Lucide-LICENSE.txt)).
 - **Closed and open padlock icons**: [Small & Flat by paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), open padlock derived from the closed one).
+- The Nilesoft Shell examples for icon spacing use adapted artwork from [Radix Icons](https://github.com/radix-ui/icons/blob/main/packages/radix-icons/icons/width.svg) ([MIT](licenses/RadixIcons-LICENSE.txt)).
 
 <a id="website"></a>
 

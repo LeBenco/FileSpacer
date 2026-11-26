@@ -39,7 +39,7 @@
       ]
     },
     "docs/user-guide.md": {
-      "sourceHash": "f558535e7cb048884a27661dfc8ee497b5c928a50b1d9c32274888f6941bf006",
+      "sourceHash": "b57a7d3ed09c4b2184c9cda8189ad0b1d07d8c563572ccb87df44156133f9223",
       "headings": [
         [
           "using-filespacer",
@@ -221,7 +221,7 @@
       ]
     },
     "THIRD_PARTY_NOTICES.md": {
-      "sourceHash": "ce917a90fa4e1877f390a5bc941c3604288bb096a7fa761f7d078a40350730bd",
+      "sourceHash": "a81e72658450e1d0d6a99d5c0c0c394a010a6b6bb44d3dfbd80558dae3d945c5",
       "headings": [
         [
           "third-party-notices",

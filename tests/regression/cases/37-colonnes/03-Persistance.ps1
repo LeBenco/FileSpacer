@@ -7,13 +7,16 @@ function Assert-ColumnMenu([IntPtr]$Window,[bool]$Present,[bool]$Checked=$false)
     $popup=[FileSpacerViewMenuTests.MenuUi]::Active($Window,$true)
     $entriesFound=@($popup.Entries | Where-Object { $_.Command -eq (Get-UiId 'IDM_FILL_COLUMNS') })
     Assert-Ui (($entriesFound.Count -eq 1) -eq $Present) 'Column command visibility does not match the global preference.'
-    if($Present) { Assert-Ui ((($entriesFound[0].State -band 8) -ne 0) -eq $Checked) 'Column command has the wrong saved check state.' }
+    if($Present) {
+        Assert-Ui ((($entriesFound[0].State -band 8) -ne 0) -eq $Checked) 'Column command has the wrong saved check state.'
+        Assert-Ui $entriesFound[0].SeparatorBefore 'Column command is separated from the preceding entries.'
+    }
     [FileSpacerViewMenuTests.MenuUi]::Escape($Window)
     Wait-PreviewMenuClosed $Window
 }
 function Set-ColumnsGeneral([IntPtr]$Window,[bool]$Enabled) {
     [void](Show-UiSettings $Window)
-    $page=Set-UiPage 1
+    $page=Set-UiPage 2
     Set-UiCheck $page 'IDC_DETAILS_COLUMNS_ENABLED' $Enabled
     Press-UiSettings 3
     Wait-Ui { (Get-UiPreference 'DetailsColumnsEnabled') -eq [int]$Enabled } 'global columns preference stored'
@@ -40,7 +43,7 @@ try {
     Assert-ColumnMenu $window $false
     [void][FileSpacerRegression.Native]::PostMessage($window,0x111,[IntPtr](Get-UiId 'IDM_FILL_COLUMNS'),[IntPtr]::Zero)
     Wait-ModernColumns $window
-    [void](Show-UiSettings $window);$page=Set-UiPage 1
+    [void](Show-UiSettings $window);$page=Set-UiPage 2
     Set-UiCheck $page 'IDC_DETAILS_COLUMNS_ENABLED' $true
     Press-UiSettings 5
     Assert-Ui ((Get-UiPreference 'DetailsColumnsEnabled') -eq 0) 'Cancel saved the changed preference.'

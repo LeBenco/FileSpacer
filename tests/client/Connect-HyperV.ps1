@@ -19,7 +19,6 @@ if($RunSmoke -and !$RunRegression){
     foreach($relative in @('build\debug\FileSpacer.exe','build\client-smoke\FileSpacerRegression-HyperV.dll')){
         if(!(Test-Path -LiteralPath (Join-Path $projectRoot $relative))){throw 'Compile on the host first with prepare-client-hyperv.cmd.'}
     }
-    if(@(Get-Process vmconnect -ErrorAction SilentlyContinue).Count){throw 'Close VMConnect consoles while leaving AgentWin10 running and signed in.'}
 }
 if (!$ReportDirectory) {
     $prefix=if($RunSmoke){'hyperv-smoke-'}else{'hyperv-access-'}
@@ -45,7 +44,7 @@ if (!$principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
         if ($process.ExitCode -ne 0 -or $result.Status -ne $expected) {
             throw ('Hyper-V connection blocked: '+$result.Error)
         }
-        if($RunSmoke){Write-Host 'PASS: real guest Shell, Alt-right resize and normal exit with VMConnect absent.'}
+        if($RunSmoke){Write-Host 'PASS: real guest Shell, Alt-right resize and normal exit with no VMConnect console on the target.'}
         else{Write-Host 'CONNECTED: PowerShell Direct only. No UI test has been executed.'}
     } finally { $process.Dispose() }
     return
@@ -85,7 +84,7 @@ try {
     $report.Stage='Complete'
     if($RunSmoke -or $RunRegression){
         $report.Stage='Smoke'
-        $report.Smoke=& (Join-Path $PSScriptRoot 'Run-HyperVSmoke.ps1') -Session $session -Guest $report.Guest -RunDirectory $ReportDirectory -ProjectRoot $projectRoot -Regression:$RunRegression
+        $report.Smoke=& (Join-Path $PSScriptRoot 'Run-HyperVSmoke.ps1') -Session $session -VMName $vm.Name -VMId $vm.Id -Guest $report.Guest -RunDirectory $ReportDirectory -ProjectRoot $projectRoot -Regression:$RunRegression
         $report.Status=$report.Smoke.Status
         $report.TestsExecuted=$report.Smoke.TaskStarted
         $report.Error=$report.Smoke.Error

@@ -28,6 +28,7 @@ SQLite 3.53.4 est lié statiquement à l’application. Il appartient au domaine
 - **Icônes Remonter et Actualiser** : [Lucide](https://lucide.dev/) (versions adaptées, [ISC et MIT](../../licenses/Lucide-LICENSE.txt), mentions aussi fournies dans `Lucide-LICENSE.txt`).
 - **Icône Remonter** : [Feather](https://feathericons.com/) (à l’origine de la version Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Icônes cadenas fermé et ouvert** : [Small & Flat de paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), cadenas ouvert dérivé du cadenas fermé).
+- Les exemples Nilesoft Shell pour l’espacement des icônes utilisent des dessins adaptés de [Radix Icons](https://github.com/radix-ui/icons/blob/main/packages/radix-icons/icons/width.svg) ([MIT](../../licenses/RadixIcons-LICENSE.txt)).
 
 <a id="website"></a>
 

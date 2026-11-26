@@ -28,6 +28,7 @@
 - **Εικονίδια «Επάνω» και «Ανανέωση»**: [Lucide](https://lucide.dev/) (προσαρμοσμένες εκδόσεις, [ISC και MIT](../../licenses/Lucide-LICENSE.txt), οι όροι παρέχονται επίσης στο `Lucide-LICENSE.txt`).
 - **Εικονίδιο «Επάνω»**: [Feather](https://feathericons.com/) (αρχική πηγή της έκδοσης Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Εικονίδια κλειστού και ανοιχτού λουκέτου**: [Small & Flat του paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), το ανοιχτό λουκέτο προέρχεται από το κλειστό).
+- Τα παραδείγματα του Nilesoft Shell για την απόσταση των εικονιδίων χρησιμοποιούν προσαρμοσμένα σχέδια από το [Radix Icons](https://github.com/radix-ui/icons/blob/main/packages/radix-icons/icons/width.svg) ([MIT](../../licenses/RadixIcons-LICENSE.txt)).
 
 <a id="website"></a>
 

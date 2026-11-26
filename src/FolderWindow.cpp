@@ -151,6 +151,7 @@ void FolderWindow::onCreateContent() {
         GetModuleHandle(nullptr),
         nullptr));
 
+    customIconSpacing = settings::getIconSpacingEnabled();
     int bottomStatusHeight = 0;
 
     if (hasStatusText()) {
@@ -167,10 +168,6 @@ void FolderWindow::onCreateContent() {
             bottomStatusHeight,
             SWP_NOZORDER | SWP_NOACTIVATE);
 
-        // One borderless text part for now.
-        // Later we can reserve a right-hand part for the view buttons.
-        int parts[] = {-1};
-        SendMessage(bottomStatusBar, SB_SETPARTS, 1, (LPARAM)parts);
         SendMessage(bottomStatusBar, SB_SETTEXTW, SBT_NOBORDERS, (LPARAM)L"");
     }
 
@@ -331,6 +328,7 @@ int FolderWindow::getToolbarTooltip(WORD command) {
 
 
 void FolderWindow::onDestroy() {
+    closeSpacingSlider();
     iconSnap.reset();
     iconRealignPending = false;
     if (columnLayout) columnLayout->stop();
@@ -702,10 +700,6 @@ void FolderWindow::onSize(SIZE size) {
             size.cx,
             bottomStatusHeight,
             SWP_NOZORDER | SWP_NOACTIVATE);
-
-        // Keep the single part stretched to the right edge.
-        int parts[] = {-1};
-        SendMessage(bottomStatusBar, SB_SETPARTS, 1, (LPARAM)parts);
     }
 
     if (viewHost) {
@@ -717,6 +711,7 @@ void FolderWindow::onSize(SIZE size) {
         CComQIPtr<IFolderView2> folderView(shellView);
         if (folderView)
             folderView->SetRedraw(true); // Windows 11 has so many cool bugs
+        if (!resizingColumns) queueExplorerIconSpacing();
     }
     if (columnLayout && (!resizingColumns || !resizeDeferred)) columnLayout->resize();
 }
@@ -729,6 +724,13 @@ void FolderWindow::onSize(SIZE size) {
 
 void FolderWindow::onSettingsChanged() {
     CComPtr<ItemWindow> keepAlive(this);
+    const bool enabled = settings::getIconSpacingEnabled();
+    if (!enabled) closeSpacingSlider();
+    if (customIconSpacing != enabled) {
+        customIconSpacing = enabled;
+        queueExplorerIconSpacing();
+    }
+    if (spacingPopup) spacingDeferred = settings::getIconSpacingDeferred();
     if (bottomStatusBar)
         checkLE(SetWindowPos(bottomStatusBar, nullptr, 0, 0, 0, 0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
@@ -900,6 +902,11 @@ HRESULT FolderWindow::invokeViewCommand(IContextMenu *menu, CMINVOKECOMMANDINFO 
 LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     CComPtr<ItemWindow> messageKeepAlive(this);
     if (message == MSG_ICON_SNAP) return handleIconSnap(wParam, lParam);
+    if (message == MSG_EXPLORER_ICON_SPACING) {
+        explorerIconSpacingQueued = false;
+        if (wParam == viewGeneration) updateExplorerIconSpacing();
+        return 0;
+    }
     if (message == WM_CANCELMODE && !hasPendingIconPlacement()) iconSnap.reset();
     if (message == WM_ENTERSIZEMOVE) {
         resizingColumns = true;
@@ -907,6 +914,7 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         if (columnLayout) columnLayout->suspend(ShellViewColumns::Hold::Resize, resizeDeferred);
     } else if (message == WM_EXITSIZEMOVE) {
         finishColumnResize();
+        queueExplorerIconSpacing();
     } else if (message == MSG_COLUMNS_CHANGED) {
         // Received, whatever follows: a refused pass must not mute later requests.
         if (columnLayout) columnLayout->acknowledge();
@@ -923,6 +931,19 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             ++navigationDepth;
             selectionClear.bind(view, current);
             resumeDeferredClose();
+        }
+        return 0;
+    }
+    if (message >= 0xC000 && message == settings::iconSpacingResetMessage()) {
+        const auto generation = static_cast<int64_t>(wParam);
+        if (lParam == (settings::testMode ? 1 : 0) && generation > spacingResetGeneration) {
+            spacingResetGeneration = generation;
+            auto &spacing = getSavedFolderState().view.iconSpacing;
+            if (spacing.generation < generation) {
+                closeSpacingSlider();
+                spacing = {{1000, 1000}, generation};
+                queueExplorerIconSpacing();
+            }
         }
         return 0;
     }
@@ -970,14 +991,38 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
     }
 
     switch (message) {
+        case WM_MEASUREITEM: {
+            auto menuItem = reinterpret_cast<MEASUREITEMSTRUCT *>(lParam);
+            if (ViewMenuPreview::measureSpacingItem(hwnd, menuItem)) return TRUE;
+            break;
+        }
+        case WM_DRAWITEM: {
+            const auto menuItem = reinterpret_cast<const DRAWITEMSTRUCT *>(lParam);
+            if (menuItem && menuItem->CtlType == ODT_MENU && (menuItem->itemID == IDM_SPACING_SLIDER_HORIZONTAL
+                    || menuItem->itemID == IDM_SPACING_SLIDER_VERTICAL)) {
+                FillRect(menuItem->hDC, &menuItem->rcItem, GetSysColorBrush(COLOR_MENU));
+                return TRUE;
+            }
+            break;
+        }
         case WM_ENTERIDLE: {
             auto preview = viewMenuPreview;
             if (wParam == MSGF_MENU && preview) {
                 preview->update();
                 preview->advancePositions();
+                preview->spacingMenuShown(reinterpret_cast<HWND>(lParam));
                 return 0;
             }
             break;
+        }
+        case MSG_SPACING_AXIS_MENU: {
+            if (wParam != viewMenuPreviewSerial) return 0;
+            const auto request = pendingSpacingAxisMenu;
+            if (!isWindowOperational() || request.generation != viewGeneration || GetForegroundWindow() != hwnd)
+                return 0;
+            if (request.command) openSpacingAxisMenu(request.command, request.viewPoint, request.axisPoint);
+            else openViewMenu(request.viewPoint);
+            return 0;
         }
         case MSG_ENUM_READY:
         case MSG_ENUM_DONE:
@@ -1123,6 +1168,11 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             requestViewProfile();
             break;
         case WM_TIMER:
+            if (wParam == TIMER_SPACING_REFERENCE) {
+                KillTimer(hwnd, TIMER_SPACING_REFERENCE);
+                queueExplorerIconSpacing();
+                return 0;
+            }
             if (wParam == TIMER_LOADING) {
                 loadingTick();
                 return 0;
@@ -1313,6 +1363,7 @@ void FolderWindow::onItemChanged() {
                 && checkHR(viewHost.currentView(IID_PPV_ARGS(&folderView)))) {
             auto state = std::make_unique<ShellViewState>();
             state->view = captureOptions(folderView, {});
+            state->view.iconSpacing = getSavedFolderState().view.iconSpacing;
             if (!current()) return;
             // The transient snapshot may hold a filtered subset: it is applied once
             // to the recreated view and never persisted as the folder's placement.
@@ -1689,6 +1740,10 @@ STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
     providerSyncPending = false;
     debugPrintf(L"NATIVE HWND=%p OnNavigationPending\n", hwnd);
     checkHR(viewHost.stopObserving());
+    closeSpacingSlider();
+    spacingMetrics = {};
+    KillTimer(hwnd, TIMER_SPACING_REFERENCE);
+    spacingReferenceRetries = 0;
     viewGeneration = 0;
     selectionClear.reset();
     provisionalViewWindow = nullptr; // The previous view's HWND may be reused.
@@ -1696,6 +1751,7 @@ STDMETHODIMP FolderWindow::OnNavigationPending(PCIDLIST_ABSOLUTE) {
     initialEnumerationReady = false;
     viewOptionsApplied = false;
     viewOptionsEnumerationBaseline = 0;
+    initialIconSpacingDeferred = false;
     initialStateApplied = false;
     restoreIconsPending = true;
     restoreIconsUnpruned = false;

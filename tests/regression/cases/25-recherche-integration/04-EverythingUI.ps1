@@ -68,7 +68,7 @@ try {
     [void](New-Item -ItemType Directory -Path (Split-Path $absent -Parent))
     [IO.File]::WriteAllText($absent,'fixture')
     Expect-LaunchError $window $absent
-    [void](Show-UiSettings $window);$page=Set-UiPage 3
+    [void](Show-UiSettings $window);$page=Set-UiPage 4
     [void][FileSpacerRegression.Native]::Message([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_EVERYTHING_DETECT')),0xf5,0,0)
     $detected=[FileSpacerRegression.Native]::Text([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_EVERYTHING_PATH')))
     Assert-Ui ([IO.Path]::GetFullPath($detected) -eq [IO.Path]::GetFullPath($executable)) ('Automatic detection did not find installed Everything. Expected='+$executable+'; actual='+$detected)

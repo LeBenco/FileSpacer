@@ -4,6 +4,7 @@
 #include "ItemWindow.h"
 #include "SearchBox.h"
 #include "ShellViewHost.h"
+#include "ShellViewOperations.h"
 #include "ShellViewSelection.h"
 #include "WindowResizeGesture.h"
 #include <memory>
@@ -151,6 +152,7 @@ protected:
         TIMER_UPDATE_SELECTION = 1,
         TIMER_SAVE_STATE,
         TIMER_LOADING,
+        TIMER_SPACING_REFERENCE,
         TIMER_LAST
     };
     enum UserMessage {
@@ -168,7 +170,9 @@ protected:
         MSG_SYNCHRONIZE_VIEW_PROVIDER = WM_APP + 53,
         MSG_SYNCHRONIZE_VIEW_PROFILE = WM_APP + 54,
         MSG_COLUMNS_CHANGED = WM_APP + 56,
-        MSG_ICON_SNAP = WM_APP + 57
+        MSG_ICON_SNAP = WM_APP + 57,
+        MSG_EXPLORER_ICON_SPACING = WM_APP + 58,
+        MSG_SPACING_AXIS_MENU = WM_APP + 59
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
 
@@ -219,6 +223,28 @@ private:
     void captureColumnWeights(FolderViewSettings &view) const;
     void toggleFillColumns();
     void realignIcons(bool selectedOnly = false);
+    bool updateExplorerIconSpacing();
+    ExplorerIconSpacingResult applyIconSpacing(IShellView *source, const std::function<bool()> &current,
+        const std::function<bool(HWND, POINT)> &beforeChange = {});
+    IconSpacingMetrics spacingMetrics;
+    bool customIconSpacing = true;
+    int64_t spacingResetGeneration = 0;
+    HWND spacingPopup = nullptr, spacingTrack = nullptr;
+    int spacingAxis = 0, spacingPreview = 1000;
+    static constexpr int lastNominalSpacingStep = 30;
+    std::array<int, lastNominalSpacingStep + 1> spacingSliderRatios = {};
+    int lastSpacingSliderPosition = 0, initialSpacingSliderPosition = 0, standardSpacingSliderPosition = 0;
+    bool spacingDeferred = false, spacingFramePending = false, spacingEdited = false;
+    bool canAdjustIconSpacing() const;
+    void runSpacingCommand(UINT command);
+    void openSpacingSlider(int axis, const RECT &bounds, HWND menuWindow);
+    void closeSpacingSlider();
+    void readSpacingSlider(bool commit, bool frame = false);
+    static LRESULT CALLBACK spacingPopupProc(HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR);
+    void queueExplorerIconSpacing();
+    bool explorerIconSpacingQueued = false;
+    bool initialIconSpacingDeferred = false;
+    unsigned spacingReferenceRetries = 0;
     void watchIconDrag(const MSG *message);
     LRESULT handleIconSnap(WPARAM wParam, LPARAM lParam);
     void deactivateIconDrag();
@@ -374,6 +400,14 @@ private:
     int trackQuickAccessContextMenu(IShellItem *target, POINT point, CComPtr<IContextMenu> &handler);
     void openViewMenu(POINT point);
     void openBackgroundSubMenu(IContextMenu *contextMenu, HMENU subMenu, POINT point);
+    UINT trackViewMenuPopup(HMENU menu, POINT point, UINT flags, const std::shared_ptr<ViewMenuPreview> &preview);
+    void queueSpacingAxisMenu(UINT command, POINT viewPoint, POINT axisPoint);
+    void openSpacingAxisMenu(UINT command, POINT viewPoint, POINT axisPoint);
+    struct {
+        UINT command = 0;
+        POINT viewPoint = {}, axisPoint = {};
+        ULONG_PTR generation = 0;
+    } pendingSpacingAxisMenu;
 
 	HWND bottomStatusBar = nullptr;
 	

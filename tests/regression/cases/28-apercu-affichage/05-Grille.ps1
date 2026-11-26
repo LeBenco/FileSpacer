@@ -171,9 +171,11 @@ try {
     $null=Set-GridSeed
     Choose-Placement 'IDM_KEEP_ICONS_ALIGNED'
     $gridFrame=Move-PlacementFrame 'item-0000'
+    $rememberedGrid=Get-PreviewRestoredPositions $window (Read-GridState).Positions
     Close-UiFolder $window
     $window=Open-UiFolder $folder 6
     Assert-PlacementChoice 'IDM_KEEP_ICONS_ALIGNED'
+    Wait-Ui { (Read-GridState).Positions-eq$rememberedGrid } 'grid cells survive reopening through integer DPI storage' 150
     Choose-Placement 'IDM_AUTO_ARRANGE_ICONS'
     # Click the later selected icon: prediction must account for all selected
     # slots removed before the native insertion point and for the anchor offset.

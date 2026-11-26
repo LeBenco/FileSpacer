@@ -203,24 +203,25 @@ bool pathCBChanged(WPARAM wParam, LPARAM lParam) {
         || HIWORD(wParam) == CBN_SELCHANGE;
 }
 
+static void broadcastFolderSetting(UINT message, WPARAM value) {
+    if (!message) return;
+    struct Change { UINT message; WPARAM value; } setting = {message, value};
+    auto notify = [](HWND window, LPARAM data) -> BOOL {
+        const auto &change = *reinterpret_cast<const Change *>(data);
+        wchar_t className[64];
+        if (GetClassName(window, className, _countof(className))
+                && lstrcmp(className, L"FileSpacer Item Window") == 0)
+            checkLE(SendNotifyMessage(window, change.message, change.value, settings::testMode ? 1 : 0));
+        return TRUE;
+    };
+    checkLE(EnumWindows(notify, reinterpret_cast<LPARAM>(&setting)));
+}
+
 void notifyWindowSettingsChanged() {
     FolderOpeningAnimation::reloadSettings();
     if (FolderOpeningAnimation::isEnabled()) FolderOpeningAnimation::prepare();
-    if (ItemWindow::settingsChangedMessage) {
-        auto notify = [](HWND window, LPARAM historyLimit) -> BOOL {
-            LPARAM testNamespace = 0;
-            testNamespace = settings::testMode ? 1 : 0;
-            wchar_t className[64];
-            if (GetClassName(window, className, _countof(className))
-                    && lstrcmp(className, L"FileSpacer Item Window") == 0)
-                checkLE(SendNotifyMessage(window, ItemWindow::settingsChangedMessage,
-                    static_cast<WPARAM>(historyLimit), testNamespace));
-            return TRUE;
-        };
-        // Include the applied limit: another process can receive this after a
-        // later preference change, and must still discard a cleared/trimmed cache.
-        checkLE(EnumWindows(notify, settings::getSearchHistoryLimit() + 1));
-    }
+    // Carry the applied limit even if another settings change arrives first.
+    broadcastFolderSetting(ItemWindow::settingsChangedMessage, settings::getSearchHistoryLimit() + 1);
 }
 
 static bool searchHistoryLimit(HWND hwnd, DWORD *value);
@@ -232,6 +233,60 @@ static void rejectNumber(HWND page, HWND edit, const wchar_t *message) {
     TaskDialog(GetParent(page), GetModuleHandle(nullptr), MAKEINTRESOURCE(IDS_ERROR_CAPTION),
         nullptr, message, TDCBF_OK_BUTTON, TD_ERROR_ICON, nullptr);
     PostMessageW(page, WM_NEXTDLGCTL, reinterpret_cast<WPARAM>(edit), TRUE);
+}
+
+static void layoutSpinner(HWND page, int labelId, int valueId, int spinId, int unitId = 0) {
+    auto releaseDC = [page](HDC context) { ReleaseDC(page, context); };
+    std::unique_ptr<std::remove_pointer<HDC>::type, decltype(releaseDC)> context(GetDC(page), releaseDC);
+    if (!context) return;
+    const HFONT font = reinterpret_cast<HFONT>(SendMessageW(page, WM_GETFONT, 0, 0));
+    const HGDIOBJ previous = SelectObject(context.get(), font);
+    RECT gap = {0, 0, 4, 0};
+    checkLE(MapDialogRect(page, &gap));
+    auto controlRect = [page](int control) {
+        RECT rect = windowRect(GetDlgItem(page, control));
+        MapWindowPoints(nullptr, page, reinterpret_cast<POINT *>(&rect), 2);
+        return rect;
+    };
+    const HWND label = GetDlgItem(page, labelId);
+    const int length = GetWindowTextLengthW(label);
+    std::wstring text(static_cast<size_t>(length) + 1, L'\0');
+    GetWindowTextW(label, &text[0], length + 1);
+    RECT extent = {};
+    DrawTextW(context.get(), text.c_str(), length, &extent,
+        DT_CALCRECT | DT_SINGLELINE | DT_NOPREFIX);
+    const RECT labelBounds = controlRect(labelId);
+    const RECT valueBounds = controlRect(valueId);
+    const RECT spinBounds = controlRect(spinId);
+    // A long translation must not push the field out of the page: the
+    // label is cut short instead, with the margin it has on the left.
+    RECT client = {};
+    GetClientRect(page, &client);
+    int reserved = (std::max)(valueBounds.right, spinBounds.right) + labelBounds.left;
+    if (unitId) {
+        const RECT unitBounds = controlRect(unitId);
+        reserved += gap.right + unitBounds.right - unitBounds.left;
+    }
+    const int offset = (std::min)(
+        static_cast<int>(labelBounds.left + extent.right + gap.right - valueBounds.left),
+        static_cast<int>(client.right) - reserved);
+    const int labelWidth = (std::min)(static_cast<int>(extent.right),
+        static_cast<int>(valueBounds.left + offset - gap.right - labelBounds.left));
+    checkLE(SetWindowPos(label, nullptr, 0, 0, (std::max)(labelWidth, 0),
+        labelBounds.bottom - labelBounds.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE));
+    checkLE(SetWindowPos(GetDlgItem(page, valueId), nullptr,
+        valueBounds.left + offset, valueBounds.top, 0, 0,
+        SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE));
+    checkLE(SetWindowPos(GetDlgItem(page, spinId), nullptr,
+        spinBounds.left + offset, spinBounds.top, 0, 0,
+        SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE));
+    if (unitId) {
+        const RECT unitBounds = controlRect(unitId);
+        checkLE(SetWindowPos(GetDlgItem(page, unitId), nullptr,
+            (std::max)(valueBounds.right, spinBounds.right) + offset + gap.right,
+            unitBounds.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE));
+    }
+    SelectObject(context.get(), previous);
 }
 
 struct GeneralHelp {
@@ -278,6 +333,8 @@ struct GeneralHelp {
         return DefSubclassProc(window, message, wParam, lParam);
     }
     void layout(HWND page) {
+        layoutSpinner(page, IDC_OPENING_ANIMATION_DURATION_LABEL, IDC_OPENING_ANIMATION_DURATION,
+            IDC_OPENING_ANIMATION_SPIN, IDC_OPENING_ANIMATION_UNIT);
         auto releaseDC = [page](HDC context) { ReleaseDC(page, context); };
         std::unique_ptr<std::remove_pointer<HDC>::type, decltype(releaseDC)> context(GetDC(page), releaseDC);
         if (!context) return;
@@ -340,58 +397,6 @@ struct GeneralHelp {
                 bounds.left + labelWidth + scaleDPI(4) - padding,
                 bounds.top + (metrics.tmHeight - size) / 2, size, size, SWP_NOACTIVATE));
         }
-        // Position each spinner beside the actual localized label, using dialog spacing.
-        RECT gap = {0, 0, 4, 0};
-        checkLE(MapDialogRect(page, &gap));
-        const struct { int label, value, spin, unit; } fields[] = {
-            {IDC_OPENING_ANIMATION_DURATION_LABEL, IDC_OPENING_ANIMATION_DURATION,
-                IDC_OPENING_ANIMATION_SPIN, IDC_OPENING_ANIMATION_UNIT},
-            {IDC_SEARCH_HISTORY_LIMIT_LABEL, IDC_SEARCH_HISTORY_LIMIT, IDC_SEARCH_HISTORY_SPIN, 0}};
-        auto controlRect = [page](int control) {
-            RECT rect = windowRect(GetDlgItem(page, control));
-            MapWindowPoints(nullptr, page, reinterpret_cast<POINT *>(&rect), 2);
-            return rect;
-        };
-        for (const auto &field : fields) {
-            const HWND label = GetDlgItem(page, field.label);
-            const int length = GetWindowTextLengthW(label);
-            std::wstring text(static_cast<size_t>(length) + 1, L'\0');
-            GetWindowTextW(label, &text[0], length + 1);
-            RECT extent = {};
-            DrawTextW(context.get(), text.c_str(), length, &extent,
-                DT_CALCRECT | DT_SINGLELINE | DT_NOPREFIX);
-            const RECT labelBounds = controlRect(field.label);
-            const RECT valueBounds = controlRect(field.value);
-            const RECT spinBounds = controlRect(field.spin);
-            // A long translation must not push the field out of the page: the
-            // label is cut short instead, with the margin it has on the left.
-            RECT client = {};
-            GetClientRect(page, &client);
-            int reserved = (std::max)(valueBounds.right, spinBounds.right) + labelBounds.left;
-            if (field.unit) {
-                const RECT unitBounds = controlRect(field.unit);
-                reserved += gap.right + unitBounds.right - unitBounds.left;
-            }
-            const int offset = (std::min)(
-                static_cast<int>(labelBounds.left + extent.right + gap.right - valueBounds.left),
-                static_cast<int>(client.right) - reserved);
-            const int labelWidth = (std::min)(static_cast<int>(extent.right),
-                static_cast<int>(valueBounds.left + offset - gap.right - labelBounds.left));
-            checkLE(SetWindowPos(label, nullptr, 0, 0, (std::max)(labelWidth, 0),
-                labelBounds.bottom - labelBounds.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE));
-            checkLE(SetWindowPos(GetDlgItem(page, field.value), nullptr,
-                valueBounds.left + offset, valueBounds.top, 0, 0,
-                SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE));
-            checkLE(SetWindowPos(GetDlgItem(page, field.spin), nullptr,
-                spinBounds.left + offset, spinBounds.top, 0, 0,
-                SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE));
-            if (field.unit) {
-                const RECT unitBounds = controlRect(field.unit);
-                checkLE(SetWindowPos(GetDlgItem(page, field.unit), nullptr,
-                    (std::max)(valueBounds.right, spinBounds.right) + offset + gap.right,
-                    unitBounds.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE));
-            }
-        }
         SelectObject(context.get(), previous);
     }
     bool draw(const DRAWITEMSTRUCT &item) const {
@@ -426,6 +431,41 @@ struct GeneralHelp {
         if (tooltip) SendMessageW(tooltip.get(), TTM_POP, 0, 0);
     }
 };
+
+static SIZE minimumFolderWindowSize() {
+    // Preferences store the complete window size in pixels at 96 DPI.
+    return {GetSystemMetricsForDpi(SM_CXMINTRACK, USER_DEFAULT_SCREEN_DPI),
+        GetSystemMetricsForDpi(SM_CYMINTRACK, USER_DEFAULT_SCREEN_DPI)};
+}
+
+static bool readFolderWindowSize(HWND hwnd, SIZE &size) {
+    const SIZE minimum = minimumFolderWindowSize();
+    const int controls[] = {IDC_FOLDER_WINDOW_WIDTH, IDC_FOLDER_WINDOW_HEIGHT};
+    const LONG minima[] = {minimum.cx, minimum.cy};
+    LONG *values[] = {&size.cx, &size.cy};
+    const UINT errors[] = {IDS_FOLDER_WIDTH_INVALID, IDS_FOLDER_HEIGHT_INVALID};
+    for (int index = 0; index < 2; ++index) {
+        HWND edit = GetDlgItem(hwnd, controls[index]);
+        const int length = GetWindowTextLength(edit);
+        std::wstring text(static_cast<size_t>(length) + 1, L'\0');
+        text.resize(GetWindowText(edit, &text[0], length + 1));
+        BOOL translated = FALSE;
+        const LONG value = static_cast<int>(GetDlgItemInt(hwnd, controls[index], &translated, TRUE));
+        // ES_NUMBER allows non-digit paste; GetDlgItemInt accepts numeric prefixes.
+        if (translated && !text.empty()
+                && text.find_first_not_of(L"0123456789") == std::wstring::npos
+                && value > 0 && value >= minima[index]) {
+            *values[index] = value;
+            continue;
+        }
+        auto error = formatString(errors[index], minima[index]);
+        const SIZE previous = settings::getFolderWindowSize();
+        SetDlgItemInt(hwnd, controls[index], index == 0 ? previous.cx : previous.cy, TRUE);
+        rejectNumber(hwnd, edit, error.get());
+        return false;
+    }
+    return true;
+}
 
 INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     auto help = reinterpret_cast<GeneralHelp *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
@@ -470,13 +510,14 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     IDC_WINDOW_STATE_UNLOCK_BADGE_ENABLED, IDC_WINDOW_STATE_LOCK_CLICK_ENABLED})
                 EnableWindow(GetDlgItem(hwnd, control),
                     !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_LOCK_ENABLED));
-            CheckDlgButton(hwnd, IDC_LIVE_NAME_SEARCH,
-                settings::getLiveNameSearch() ? BST_CHECKED : BST_UNCHECKED);
-            SendDlgItemMessageW(hwnd, IDC_SEARCH_HISTORY_LIMIT, EM_SETLIMITTEXT, 2, 0);
-            SendDlgItemMessageW(hwnd, IDC_SEARCH_HISTORY_SPIN, UDM_SETRANGE32, 0,
-                static_cast<LPARAM>(settings::MAX_SEARCH_HISTORY_LIMIT));
-            SendDlgItemMessageW(hwnd, IDC_SEARCH_HISTORY_SPIN, UDM_SETPOS32, 0,
-                static_cast<LPARAM>(settings::getSearchHistoryLimit()));
+            const SIZE minimum = minimumFolderWindowSize();
+            auto widthLabel = formatString(IDS_FOLDER_WIDTH_LABEL, minimum.cx);
+            auto heightLabel = formatString(IDS_FOLDER_HEIGHT_LABEL, minimum.cy);
+            SetDlgItemText(hwnd, IDC_FOLDER_WINDOW_WIDTH_LABEL, widthLabel.get());
+            SetDlgItemText(hwnd, IDC_FOLDER_WINDOW_HEIGHT_LABEL, heightLabel.get());
+            SIZE size = settings::getFolderWindowSize();
+            SetDlgItemInt(hwnd, IDC_FOLDER_WINDOW_WIDTH, size.cx, TRUE);
+            SetDlgItemInt(hwnd, IDC_FOLDER_WINDOW_HEIGHT, size.cy, TRUE);
             return TRUE;
         }
         case WM_NOTIFY: {
@@ -492,14 +533,16 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             }
             if (notif->code == PSN_KILLACTIVE) {
                 if (help) help->hide();
-                DWORD limit = 0, duration = 0;
+                SIZE size = {};
+                DWORD duration = 0;
                 SetWindowLongPtr(hwnd, DWLP_MSGRESULT,
-                    !searchHistoryLimit(hwnd, &limit) || !openingAnimationDuration(hwnd, &duration));
+                    !readFolderWindowSize(hwnd, size) || !openingAnimationDuration(hwnd, &duration));
                 return TRUE;
             } else if (notif->code == PSN_APPLY) {
                 if (help) help->hide();
-                DWORD limit = 0, duration = 0;
-                if (!searchHistoryLimit(hwnd, &limit) || !openingAnimationDuration(hwnd, &duration)) {
+                SIZE size = {};
+                DWORD duration = 0;
+                if (!readFolderWindowSize(hwnd, size) || !openingAnimationDuration(hwnd, &duration)) {
                     SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
                     return TRUE;
                 }
@@ -527,37 +570,21 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     }
                     notifyWindowSettingsChanged();
                 }
-                const bool historyChanged = limit != settings::getSearchHistoryLimit();
-                LSTATUS registryError = ERROR_SUCCESS;
-                if (!settings::setSearchHistoryLimit(limit, &registryError)) {
-                    if (registryError != ERROR_SUCCESS) {
-                        // The preference itself could not be written: not a database error.
-                        const auto text = formatString(IDS_STORAGE_ACTION_ERROR,
-                            static_cast<DWORD>(registryError), getErrorMessage(static_cast<DWORD>(registryError)).get());
-                        MessageBoxW(GetParent(hwnd), text.get(), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
-                    } else {
-                        reportFolderStateError(GetParent(hwnd));
-                    }
-                    SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
-                    return TRUE;
-                }
+                settings::setFolderWindowSize(size);
                 int pathLength = GetWindowTextLength(GetDlgItem(hwnd, IDC_START_FOLDER_PATH));
                 std::vector<wchar_t> startingFolder(static_cast<size_t>(pathLength) + 1);
                 if (GetDlgItemText(hwnd, IDC_START_FOLDER_PATH,
                         startingFolder.data(), pathLength + 1))
                     settings::setStartingFolder(startingFolder.data());
                 bool groupFolderWindows = !!IsDlgButtonChecked(hwnd, IDC_GROUP_FOLDER_WINDOWS);
-                bool liveNameSearch = !!IsDlgButtonChecked(hwnd, IDC_LIVE_NAME_SEARCH);
                 const bool smartPlacement = !!IsDlgButtonChecked(hwnd, IDC_SMART_WINDOW_PLACEMENT);
                 const bool lockBadgeEnabled = !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_LOCK_BADGE_ENABLED);
                 const bool unlockBadgeEnabled = !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_UNLOCK_BADGE_ENABLED);
                 const bool lockClickEnabled = !!IsDlgButtonChecked(hwnd, IDC_WINDOW_STATE_LOCK_CLICK_ENABLED);
                 const bool openingEnabled = !!IsDlgButtonChecked(hwnd, IDC_OPENING_ANIMATION_ENABLED);
-                bool windowSettingsChanged = historyChanged
-                    || groupFolderWindows != settings::getGroupFolderWindows()
+                bool windowSettingsChanged = groupFolderWindows != settings::getGroupFolderWindows()
                     || openingEnabled != settings::getOpeningAnimationEnabled()
                     || duration != settings::getOpeningAnimationDuration()
-                    || liveNameSearch != settings::getLiveNameSearch()
                     || smartPlacement != settings::getSmartWindowPlacement()
                     || lockBadgeEnabled != settings::getWindowStateLockBadgeEnabled()
                     || unlockBadgeEnabled != settings::getWindowStateUnlockBadgeEnabled()
@@ -569,7 +596,6 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::setSmartWindowPlacement(smartPlacement);
                 settings::setKeepSelectionOnActivate(
                     !!IsDlgButtonChecked(hwnd, IDC_KEEP_SELECTION_ON_ACTIVATE));
-                settings::setLiveNameSearch(liveNameSearch);
                 settings::setWindowStateLockBadgeEnabled(lockBadgeEnabled);
                 settings::setWindowStateUnlockBadgeEnabled(unlockBadgeEnabled);
                 settings::setWindowStateLockClickEnabled(lockClickEnabled);
@@ -605,7 +631,6 @@ INT_PTR CALLBACK generalProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                     || LOWORD(wParam) == IDC_WINDOW_STATE_LOCK_BADGE_ENABLED && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_WINDOW_STATE_UNLOCK_BADGE_ENABLED && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_WINDOW_STATE_LOCK_CLICK_ENABLED && HIWORD(wParam) == BN_CLICKED
-                    || LOWORD(wParam) == IDC_LIVE_NAME_SEARCH && HIWORD(wParam) == BN_CLICKED
                     || LOWORD(wParam) == IDC_KEEP_SELECTION_ON_ACTIVATE && HIWORD(wParam) == BN_CLICKED) {
                 if (LOWORD(wParam) == IDC_OPENING_ANIMATION_ENABLED && HIWORD(wParam) == BN_CLICKED)
                     for (int control : {IDC_OPENING_ANIMATION_DURATION_LABEL, IDC_OPENING_ANIMATION_UNIT,
@@ -645,52 +670,17 @@ void enableToolbarOptions(HWND hwnd) {
         EnableWindow(GetDlgItem(hwnd, control), enabled);
 }
 
-static SIZE minimumFolderWindowSize() {
-    // Preferences store the complete window size in pixels at 96 DPI.
-    return {GetSystemMetricsForDpi(SM_CXMINTRACK, USER_DEFAULT_SCREEN_DPI),
-        GetSystemMetricsForDpi(SM_CYMINTRACK, USER_DEFAULT_SCREEN_DPI)};
-}
-
-static bool readFolderWindowSize(HWND hwnd, SIZE &size) {
-    const SIZE minimum = minimumFolderWindowSize();
-    const int controls[] = {IDC_FOLDER_WINDOW_WIDTH, IDC_FOLDER_WINDOW_HEIGHT};
-    const LONG minima[] = {minimum.cx, minimum.cy};
-    LONG *values[] = {&size.cx, &size.cy};
-    const UINT errors[] = {IDS_FOLDER_WIDTH_INVALID, IDS_FOLDER_HEIGHT_INVALID};
-    for (int index = 0; index < 2; ++index) {
-        HWND edit = GetDlgItem(hwnd, controls[index]);
-        const int length = GetWindowTextLength(edit);
-        std::wstring text(static_cast<size_t>(length) + 1, L'\0');
-        text.resize(GetWindowText(edit, &text[0], length + 1));
-        BOOL translated = FALSE;
-        const LONG value = static_cast<int>(GetDlgItemInt(hwnd, controls[index], &translated, TRUE));
-        // ES_NUMBER allows non-digit paste; GetDlgItemInt accepts numeric prefixes.
-        if (translated && !text.empty()
-                && text.find_first_not_of(L"0123456789") == std::wstring::npos
-                && value > 0 && value >= minima[index]) {
-            *values[index] = value;
-            continue;
-        }
-        auto error = formatString(errors[index], minima[index]);
-        const SIZE previous = settings::getFolderWindowSize();
-        SetDlgItemInt(hwnd, controls[index], index == 0 ? previous.cx : previous.cy, TRUE);
-        rejectNumber(hwnd, edit, error.get());
-        return false;
-    }
-    return true;
-}
-
 INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
         case WM_INITDIALOG: {
-            const SIZE minimum = minimumFolderWindowSize();
-            auto widthLabel = formatString(IDS_FOLDER_WIDTH_LABEL, minimum.cx);
-            auto heightLabel = formatString(IDS_FOLDER_HEIGHT_LABEL, minimum.cy);
-            SetDlgItemText(hwnd, IDC_FOLDER_WINDOW_WIDTH_LABEL, widthLabel.get());
-            SetDlgItemText(hwnd, IDC_FOLDER_WINDOW_HEIGHT_LABEL, heightLabel.get());
-            SIZE size = settings::getFolderWindowSize();
-            SetDlgItemInt(hwnd, IDC_FOLDER_WINDOW_WIDTH, size.cx, TRUE);
-            SetDlgItemInt(hwnd, IDC_FOLDER_WINDOW_HEIGHT, size.cy, TRUE);
+            CheckDlgButton(hwnd, IDC_LIVE_NAME_SEARCH,
+                settings::getLiveNameSearch() ? BST_CHECKED : BST_UNCHECKED);
+            SendDlgItemMessageW(hwnd, IDC_SEARCH_HISTORY_LIMIT, EM_SETLIMITTEXT, 2, 0);
+            SendDlgItemMessageW(hwnd, IDC_SEARCH_HISTORY_SPIN, UDM_SETRANGE32, 0,
+                static_cast<LPARAM>(settings::MAX_SEARCH_HISTORY_LIMIT));
+            SendDlgItemMessageW(hwnd, IDC_SEARCH_HISTORY_SPIN, UDM_SETPOS32, 0,
+                static_cast<LPARAM>(settings::getSearchHistoryLimit()));
+            layoutSpinner(hwnd, IDC_SEARCH_HISTORY_LIMIT_LABEL, IDC_SEARCH_HISTORY_LIMIT, IDC_SEARCH_HISTORY_SPIN);
             CheckDlgButton(hwnd, IDC_STATUS_TEXT_ENABLED,
                 settings::getStatusTextEnabled() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_TOOLBAR_ENABLED,
@@ -705,6 +695,98 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::getUpButtonEnabled() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_VIEW_BUTTON_ENABLED,
                 settings::getViewButtonEnabled() ? BST_CHECKED : BST_UNCHECKED);
+            enableToolbarOptions(hwnd);
+            return TRUE;
+        }
+        case WM_NOTIFY: {
+            NMHDR *notif = (NMHDR *)lParam;
+            if (notif->code == PSN_KILLACTIVE) {
+                DWORD limit = 0;
+                SetWindowLongPtr(hwnd, DWLP_MSGRESULT, !searchHistoryLimit(hwnd, &limit));
+                return TRUE;
+            } else if (notif->code == PSN_APPLY) {
+                DWORD limit = 0;
+                if (!searchHistoryLimit(hwnd, &limit)) {
+                    SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID);
+                    return TRUE;
+                }
+                const bool historyChanged = limit != settings::getSearchHistoryLimit();
+                LSTATUS registryError = ERROR_SUCCESS;
+                if (!settings::setSearchHistoryLimit(limit, &registryError)) {
+                    if (registryError != ERROR_SUCCESS) {
+                        // The preference itself could not be written: not a database error.
+                        const auto text = formatString(IDS_STORAGE_ACTION_ERROR,
+                            static_cast<DWORD>(registryError), getErrorMessage(static_cast<DWORD>(registryError)).get());
+                        MessageBoxW(GetParent(hwnd), text.get(), getString(IDS_ERROR_CAPTION), MB_OK | MB_ICONERROR);
+                    } else {
+                        reportFolderStateError(GetParent(hwnd));
+                    }
+                    SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID_NOCHANGEPAGE);
+                    return TRUE;
+                }
+                bool statusTextEnabled = !!IsDlgButtonChecked(hwnd, IDC_STATUS_TEXT_ENABLED);
+                bool toolbarEnabled = !!IsDlgButtonChecked(hwnd, IDC_TOOLBAR_ENABLED);
+                bool quickAccessEnabled = !!IsDlgButtonChecked(hwnd, IDC_QUICK_ACCESS_ENABLED);
+                bool pathBarEnabled = !!IsDlgButtonChecked(hwnd, IDC_PATH_BAR_ENABLED);
+                bool refreshButtonEnabled = !!IsDlgButtonChecked(hwnd, IDC_REFRESH_BUTTON_ENABLED);
+                bool upButtonEnabled = !!IsDlgButtonChecked(hwnd, IDC_UP_BUTTON_ENABLED);
+                bool viewButtonEnabled = !!IsDlgButtonChecked(hwnd, IDC_VIEW_BUTTON_ENABLED);
+                const bool liveNameSearch = !!IsDlgButtonChecked(hwnd, IDC_LIVE_NAME_SEARCH);
+                bool windowSettingsChanged = statusTextEnabled != settings::getStatusTextEnabled()
+                    || toolbarEnabled != settings::getToolbarEnabled()
+                    || quickAccessEnabled != settings::getQuickAccessEnabled()
+                    || pathBarEnabled != settings::getPathBarEnabled()
+                    || refreshButtonEnabled != settings::getRefreshButtonEnabled()
+                    || upButtonEnabled != settings::getUpButtonEnabled()
+                    || viewButtonEnabled != settings::getViewButtonEnabled()
+                    || liveNameSearch != settings::getLiveNameSearch() || historyChanged;
+                settings::setStatusTextEnabled(statusTextEnabled);
+                settings::setToolbarEnabled(toolbarEnabled);
+                settings::setQuickAccessEnabled(quickAccessEnabled);
+                settings::setPathBarEnabled(pathBarEnabled);
+                settings::setRefreshButtonEnabled(refreshButtonEnabled);
+                settings::setUpButtonEnabled(upButtonEnabled);
+                settings::setViewButtonEnabled(viewButtonEnabled);
+                settings::setLiveNameSearch(liveNameSearch);
+                if (windowSettingsChanged)
+                    notifyWindowSettingsChanged();
+                SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_NOERROR);
+                return TRUE;
+            }
+            return FALSE;
+        }
+        case WM_THEMECHANGED:
+            layoutSpinner(hwnd, IDC_SEARCH_HISTORY_LIMIT_LABEL, IDC_SEARCH_HISTORY_LIMIT, IDC_SEARCH_HISTORY_SPIN);
+            return FALSE;
+        case WM_COMMAND:
+            if (LOWORD(wParam) == IDC_TITLE_MENU_EDIT && HIWORD(wParam) == BN_CLICKED) {
+                openTitleMenuDialog(GetParent(hwnd));
+                return TRUE;
+            }
+            if (LOWORD(wParam) == IDC_TOOLBAR_ENABLED && HIWORD(wParam) == BN_CLICKED)
+                enableToolbarOptions(hwnd);
+            if ((LOWORD(wParam) == IDC_SEARCH_HISTORY_LIMIT && HIWORD(wParam) == EN_CHANGE)
+                    || (HIWORD(wParam) == BN_CLICKED && (
+                        LOWORD(wParam) == IDC_STATUS_TEXT_ENABLED
+                        || LOWORD(wParam) == IDC_TOOLBAR_ENABLED
+                        || LOWORD(wParam) == IDC_QUICK_ACCESS_ENABLED
+                        || LOWORD(wParam) == IDC_PATH_BAR_ENABLED
+                        || LOWORD(wParam) == IDC_REFRESH_BUTTON_ENABLED
+                        || LOWORD(wParam) == IDC_UP_BUTTON_ENABLED
+                        || LOWORD(wParam) == IDC_VIEW_BUTTON_ENABLED
+                        || LOWORD(wParam) == IDC_LIVE_NAME_SEARCH))) {
+                PropSheet_Changed(GetParent(hwnd), hwnd);
+                return TRUE;
+            }
+            return FALSE;
+        default:
+            return FALSE;
+    }
+}
+
+INT_PTR CALLBACK filesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    switch (message) {
+        case WM_INITDIALOG:
             CheckDlgButton(hwnd, IDC_MIXED_FOLDER_SORTING,
                 settings::getMixedFolderSorting() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_FULL_NAMES_ON_SELECTION,
@@ -717,99 +799,81 @@ INT_PTR CALLBACK displayProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::getDetailsColumnsDeferred() ? BST_CHECKED : BST_UNCHECKED);
             EnableWindow(GetDlgItem(hwnd, IDC_DETAILS_COLUMNS_DEFERRED),
                 IsDlgButtonChecked(hwnd, IDC_DETAILS_COLUMNS_ENABLED) == BST_CHECKED);
-            enableToolbarOptions(hwnd);
+            CheckDlgButton(hwnd, IDC_SELECTION_SYMBOLS,
+                settings::getSelectionSymbolsDownload() ? BST_CHECKED : BST_UNCHECKED);
+            CheckDlgButton(hwnd, IDC_ICON_SPACING_ENABLED, settings::getIconSpacingEnabled() ? BST_CHECKED : BST_UNCHECKED);
+            CheckDlgButton(hwnd, IDC_ICON_SPACING_DYNAMIC, settings::getIconSpacingDeferred() ? BST_UNCHECKED : BST_CHECKED);
+            EnableWindow(GetDlgItem(hwnd, IDC_ICON_SPACING_DYNAMIC), settings::getIconSpacingEnabled());
             return TRUE;
-        }
         case WM_NOTIFY: {
-            NMHDR *notif = (NMHDR *)lParam;
-            if (notif->code == PSN_KILLACTIVE) {
-                SIZE size = {};
-                SetWindowLongPtr(hwnd, DWLP_MSGRESULT, !readFolderWindowSize(hwnd, size));
-                return TRUE;
-            } else if (notif->code == PSN_APPLY) {
-                SIZE size = {};
-                if (!readFolderWindowSize(hwnd, size)) {
+            const auto *header = reinterpret_cast<const NMHDR *>(lParam);
+            if (header->code != PSN_APPLY) return FALSE;
+            int64_t generation = 0;
+            if (GetWindowLongPtrW(hwnd, DWLP_USER)) { // The user requested a reset on this page.
+                auto store = folderStateStore();
+                if (!store || !store->resetIconSpacing(generation)) {
+                    reportFolderStateError(GetParent(hwnd));
                     SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_INVALID);
                     return TRUE;
                 }
-                settings::setFolderWindowSize(size);
-                bool statusTextEnabled = !!IsDlgButtonChecked(hwnd, IDC_STATUS_TEXT_ENABLED);
-                bool toolbarEnabled = !!IsDlgButtonChecked(hwnd, IDC_TOOLBAR_ENABLED);
-                bool quickAccessEnabled = !!IsDlgButtonChecked(hwnd, IDC_QUICK_ACCESS_ENABLED);
-                bool pathBarEnabled = !!IsDlgButtonChecked(hwnd, IDC_PATH_BAR_ENABLED);
-                bool refreshButtonEnabled = !!IsDlgButtonChecked(hwnd, IDC_REFRESH_BUTTON_ENABLED);
-                bool upButtonEnabled = !!IsDlgButtonChecked(hwnd, IDC_UP_BUTTON_ENABLED);
-                bool viewButtonEnabled = !!IsDlgButtonChecked(hwnd, IDC_VIEW_BUTTON_ENABLED);
-                bool mixedFolderSorting = !!IsDlgButtonChecked(hwnd, IDC_MIXED_FOLDER_SORTING);
-                bool fullNamesOnSelection = !!IsDlgButtonChecked(hwnd, IDC_FULL_NAMES_ON_SELECTION);
-                bool viewMenuPreviewEnabled = !!IsDlgButtonChecked(hwnd, IDC_VIEW_MENU_PREVIEW_ENABLED);
-                bool detailsColumnsEnabled = !!IsDlgButtonChecked(hwnd, IDC_DETAILS_COLUMNS_ENABLED);
-                const bool detailsColumnsDeferred = !!IsDlgButtonChecked(hwnd, IDC_DETAILS_COLUMNS_DEFERRED);
-                bool windowSettingsChanged = statusTextEnabled != settings::getStatusTextEnabled()
-                    || toolbarEnabled != settings::getToolbarEnabled()
-                    || quickAccessEnabled != settings::getQuickAccessEnabled()
-                    || pathBarEnabled != settings::getPathBarEnabled()
-                    || refreshButtonEnabled != settings::getRefreshButtonEnabled()
-                    || upButtonEnabled != settings::getUpButtonEnabled()
-                    || viewButtonEnabled != settings::getViewButtonEnabled()
-                    || mixedFolderSorting != settings::getMixedFolderSorting()
-                    || fullNamesOnSelection != settings::getFullNamesOnSelection()
-                    || viewMenuPreviewEnabled != settings::getViewMenuPreviewEnabled()
-                    || detailsColumnsEnabled != settings::getDetailsColumnsEnabled()
-                    || detailsColumnsDeferred != settings::getDetailsColumnsDeferred();
-                settings::setStatusTextEnabled(statusTextEnabled);
-                settings::setToolbarEnabled(toolbarEnabled);
-                settings::setQuickAccessEnabled(quickAccessEnabled);
-                settings::setPathBarEnabled(pathBarEnabled);
-                settings::setRefreshButtonEnabled(refreshButtonEnabled);
-                settings::setUpButtonEnabled(upButtonEnabled);
-                settings::setViewButtonEnabled(viewButtonEnabled);
-                settings::setMixedFolderSorting(mixedFolderSorting);
-                // Applying the preference gives a provider disabled for the
-                // process another chance at the next navigation.
-                if (mixedFolderSorting) ShellViewHost::resetMixedProviderAvailability();
-                settings::setFullNamesOnSelection(fullNamesOnSelection);
-                settings::setViewMenuPreviewEnabled(viewMenuPreviewEnabled);
-                settings::setDetailsColumnsEnabled(detailsColumnsEnabled);
-                settings::setDetailsColumnsDeferred(detailsColumnsDeferred);
-                if (windowSettingsChanged)
-                    notifyWindowSettingsChanged();
-                SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_NOERROR);
-                return TRUE;
+                SetWindowLongPtrW(hwnd, DWLP_USER, FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_ICON_SPACING_RESET), TRUE);
             }
-            return FALSE;
+            bool mixedFolderSorting = !!IsDlgButtonChecked(hwnd, IDC_MIXED_FOLDER_SORTING);
+            bool fullNamesOnSelection = !!IsDlgButtonChecked(hwnd, IDC_FULL_NAMES_ON_SELECTION);
+            bool viewMenuPreviewEnabled = !!IsDlgButtonChecked(hwnd, IDC_VIEW_MENU_PREVIEW_ENABLED);
+            bool detailsColumnsEnabled = !!IsDlgButtonChecked(hwnd, IDC_DETAILS_COLUMNS_ENABLED);
+            const bool detailsColumnsDeferred = !!IsDlgButtonChecked(hwnd, IDC_DETAILS_COLUMNS_DEFERRED);
+            const bool enabled = IsDlgButtonChecked(hwnd, IDC_ICON_SPACING_ENABLED) == BST_CHECKED;
+            const bool deferred = IsDlgButtonChecked(hwnd, IDC_ICON_SPACING_DYNAMIC) != BST_CHECKED;
+            const bool symbols = IsDlgButtonChecked(hwnd, IDC_SELECTION_SYMBOLS) == BST_CHECKED;
+            const bool changed = enabled != settings::getIconSpacingEnabled() || deferred != settings::getIconSpacingDeferred()
+                || symbols != settings::getSelectionSymbolsDownload()
+                || mixedFolderSorting != settings::getMixedFolderSorting()
+                || fullNamesOnSelection != settings::getFullNamesOnSelection()
+                || viewMenuPreviewEnabled != settings::getViewMenuPreviewEnabled()
+                || detailsColumnsEnabled != settings::getDetailsColumnsEnabled()
+                || detailsColumnsDeferred != settings::getDetailsColumnsDeferred();
+            settings::setMixedFolderSorting(mixedFolderSorting);
+            // Applying the preference gives a provider disabled for the
+            // process another chance at the next navigation.
+            if (mixedFolderSorting) ShellViewHost::resetMixedProviderAvailability();
+            settings::setFullNamesOnSelection(fullNamesOnSelection);
+            settings::setViewMenuPreviewEnabled(viewMenuPreviewEnabled);
+            settings::setDetailsColumnsEnabled(detailsColumnsEnabled);
+            settings::setDetailsColumnsDeferred(detailsColumnsDeferred);
+            settings::setIconSpacingEnabled(enabled);
+            settings::setIconSpacingDeferred(deferred);
+            settings::setSelectionSymbolsDownload(symbols);
+            if (generation) broadcastFolderSetting(settings::iconSpacingResetMessage(), static_cast<WPARAM>(generation));
+            if (changed) notifyWindowSettingsChanged();
+            SetWindowLongPtr(hwnd, DWLP_MSGRESULT, PSNRET_NOERROR);
+            return TRUE;
         }
         case WM_COMMAND:
-            if (LOWORD(wParam) == IDC_TITLE_MENU_EDIT && HIWORD(wParam) == BN_CLICKED) {
-                openTitleMenuDialog(GetParent(hwnd));
-                return TRUE;
+            if (HIWORD(wParam) != BN_CLICKED) return FALSE;
+            switch (LOWORD(wParam)) {
+                case IDC_ICON_SPACING_RESET:
+                    SetWindowLongPtrW(hwnd, DWLP_USER, TRUE);
+                    EnableWindow(GetDlgItem(hwnd, IDC_ICON_SPACING_RESET), FALSE);
+                    break;
+                case IDC_ICON_SPACING_ENABLED:
+                    EnableWindow(GetDlgItem(hwnd, IDC_ICON_SPACING_DYNAMIC),
+                        IsDlgButtonChecked(hwnd, IDC_ICON_SPACING_ENABLED) == BST_CHECKED);
+                    break;
+                case IDC_DETAILS_COLUMNS_ENABLED:
+                    EnableWindow(GetDlgItem(hwnd, IDC_DETAILS_COLUMNS_DEFERRED),
+                        IsDlgButtonChecked(hwnd, IDC_DETAILS_COLUMNS_ENABLED) == BST_CHECKED);
+                    break;
+                case IDC_ICON_SPACING_DYNAMIC: case IDC_DETAILS_COLUMNS_DEFERRED:
+                case IDC_MIXED_FOLDER_SORTING: case IDC_FULL_NAMES_ON_SELECTION:
+                case IDC_VIEW_MENU_PREVIEW_ENABLED: case IDC_SELECTION_SYMBOLS:
+                    break;
+                default: return FALSE;
             }
-            if (LOWORD(wParam) == IDC_TOOLBAR_ENABLED && HIWORD(wParam) == BN_CLICKED)
-                enableToolbarOptions(hwnd);
-            if (LOWORD(wParam) == IDC_DETAILS_COLUMNS_ENABLED && HIWORD(wParam) == BN_CLICKED)
-                EnableWindow(GetDlgItem(hwnd, IDC_DETAILS_COLUMNS_DEFERRED),
-                    IsDlgButtonChecked(hwnd, IDC_DETAILS_COLUMNS_ENABLED) == BST_CHECKED);
-            if (((LOWORD(wParam) == IDC_FOLDER_WINDOW_WIDTH
-                        || LOWORD(wParam) == IDC_FOLDER_WINDOW_HEIGHT) && HIWORD(wParam) == EN_CHANGE)
-                    || (HIWORD(wParam) == BN_CLICKED && (
-                        LOWORD(wParam) == IDC_STATUS_TEXT_ENABLED
-                        || LOWORD(wParam) == IDC_TOOLBAR_ENABLED
-                        || LOWORD(wParam) == IDC_QUICK_ACCESS_ENABLED
-                        || LOWORD(wParam) == IDC_PATH_BAR_ENABLED
-                        || LOWORD(wParam) == IDC_REFRESH_BUTTON_ENABLED
-                        || LOWORD(wParam) == IDC_UP_BUTTON_ENABLED
-                        || LOWORD(wParam) == IDC_VIEW_BUTTON_ENABLED
-                        || LOWORD(wParam) == IDC_MIXED_FOLDER_SORTING
-                        || LOWORD(wParam) == IDC_FULL_NAMES_ON_SELECTION
-                        || LOWORD(wParam) == IDC_VIEW_MENU_PREVIEW_ENABLED
-                        || LOWORD(wParam) == IDC_DETAILS_COLUMNS_ENABLED
-                        || LOWORD(wParam) == IDC_DETAILS_COLUMNS_DEFERRED))) {
-                PropSheet_Changed(GetParent(hwnd), hwnd);
-                return TRUE;
-            }
-            return FALSE;
-        default:
-            return FALSE;
+            PropSheet_Changed(GetParent(hwnd), hwnd);
+            return TRUE;
+        default: return FALSE;
     }
 }
 
@@ -895,8 +959,6 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
     switch (message) {
         case WM_INITDIALOG:
             CheckDlgButton(hwnd, IDC_PEEK_ENABLED, settings::getPeekEnabled() ? BST_CHECKED : BST_UNCHECKED);
-            CheckDlgButton(hwnd, IDC_SELECTION_SYMBOLS,
-                settings::getSelectionSymbolsDownload() ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hwnd, IDC_EVERYTHING_ENABLED,
                 settings::getEverythingEnabled() ? BST_CHECKED : BST_UNCHECKED);
             SetDlgItemTextW(hwnd, IDC_EVERYTHING_PATH, settings::getEverythingPath().get());
@@ -952,7 +1014,6 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 settings::setEverythingPath(path.data());
                 settings::setEverythingEnabled(!!IsDlgButtonChecked(hwnd, IDC_EVERYTHING_ENABLED));
                 settings::setPeekEnabled(!!IsDlgButtonChecked(hwnd, IDC_PEEK_ENABLED));
-                settings::setSelectionSymbolsDownload(!!IsDlgButtonChecked(hwnd, IDC_SELECTION_SYMBOLS));
                 const LRESULT scope = SendDlgItemMessageW(hwnd, IDC_EVERYTHING_SCOPE, CB_GETCURSEL, 0, 0);
                 settings::setEverythingScope(scope == 1 ? settings::EverythingScope::Everywhere
                     : settings::EverythingScope::Folder);
@@ -994,7 +1055,6 @@ INT_PTR CALLBACK browserProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             }
             if ((LOWORD(wParam) == IDC_EVERYTHING_ENABLED && HIWORD(wParam) == BN_CLICKED)
                     || (LOWORD(wParam) == IDC_PEEK_ENABLED && HIWORD(wParam) == BN_CLICKED)
-                    || (LOWORD(wParam) == IDC_SELECTION_SYMBOLS && HIWORD(wParam) == BN_CLICKED)
                     || (LOWORD(wParam) == IDC_EVERYTHING_SCOPE && HIWORD(wParam) == CBN_SELCHANGE)
                     || (LOWORD(wParam) == IDC_EVERYTHING_PATH && HIWORD(wParam) == EN_CHANGE))
                 PropSheet_Changed(GetParent(hwnd), hwnd);
@@ -1219,6 +1279,11 @@ void openSettingsDialog(HWND owner, SettingsPage page) {
     pages[SETTINGS_DISPLAY].hInstance = hInstance;
     pages[SETTINGS_DISPLAY].pszTemplate = MAKEINTRESOURCE(IDD_SETTINGS_DISPLAY);
     pages[SETTINGS_DISPLAY].pfnDlgProc = displayProc;
+
+    pages[SETTINGS_FILES] = {sizeof(PROPSHEETPAGE)};
+    pages[SETTINGS_FILES].hInstance = hInstance;
+    pages[SETTINGS_FILES].pszTemplate = MAKEINTRESOURCE(IDD_SETTINGS_FILES);
+    pages[SETTINGS_FILES].pfnDlgProc = filesProc;
 
     pages[SETTINGS_SHORTCUTS] = {sizeof(PROPSHEETPAGE)};
     pages[SETTINGS_SHORTCUTS].hInstance = hInstance;

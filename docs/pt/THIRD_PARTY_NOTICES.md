@@ -28,6 +28,7 @@ O SQLite 3.53.4 está ligado estaticamente à aplicação e pertence ao domínio
 - **Ícones Subir e Atualizar**: [Lucide](https://lucide.dev/) (versões adaptadas, [ISC e MIT](../../licenses/Lucide-LICENSE.txt), avisos também incluídos em `Lucide-LICENSE.txt`).
 - **Ícone Subir**: [Feather](https://feathericons.com/) (origem da versão Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Ícones de cadeado fechado e aberto**: [Small & Flat de paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), cadeado aberto derivado do fechado).
+- Os exemplos de espaçamento dos ícones no Nilesoft Shell utilizam desenhos adaptados de [Radix Icons](https://github.com/radix-ui/icons/blob/main/packages/radix-icons/icons/width.svg) ([MIT](../../licenses/RadixIcons-LICENSE.txt)).
 
 <a id="website"></a>
 

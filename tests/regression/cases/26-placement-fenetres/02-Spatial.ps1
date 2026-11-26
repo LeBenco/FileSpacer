@@ -77,7 +77,7 @@ try {
     Set-UiCheck $general 'IDC_SMART_WINDOW_PLACEMENT' $true
     Press-UiSettings 4
     Wait-Ui { (Get-UiPreference 'SmartWindowPlacement') -eq 1 } 'placement reenabled by Apply'
-    $about=Set-UiPage 4
+    $about=Set-UiPage 5
     $maintenance=[FileSpacerRegression.Native]::GetDlgItem($about,(Get-UiId 'IDC_RESET_FOLDER_STATE'))
     Assert-Ui ($maintenance -ne [IntPtr]::Zero -and [FileSpacerRegression.Native]::IsWindowVisible($maintenance)) 'Maintenance is missing from About.'
     $button=[FileSpacerRegression.Native]::Bounds($maintenance); $client=[FileSpacerRegression.Native]::ClientBounds($about)

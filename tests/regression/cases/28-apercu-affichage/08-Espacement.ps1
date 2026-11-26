@@ -1,0 +1,282 @@
+# Test-Category: UI
+param([string]$ProjectRoot)
+. (Join-Path $PSScriptRoot 'SpacingSlider.ps1')
+
+$failure = $null
+try {
+    Initialize-Ui 'spacing-slider' -FixtureParent $RunDirectory
+    Set-UiPreference 'StatusTextEnabled' 0
+    Set-UiPreference 'LastOpenedVersion' 1
+    $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($script:UiSettingsKey,$true)
+    try { $key.DeleteValue('IconSpacingDeferred',$false) } finally { $key.Dispose() }
+    foreach ($defer in @(0,1)) {
+        if ($defer) { Set-UiPreference 'ViewMenuPreviewEnabled' 0 }
+        $folder = Join-Path $script:UiRoot "folder-$defer"
+        [void][IO.Directory]::CreateDirectory($folder)
+        foreach ($i in 0..5) { [void][IO.Directory]::CreateDirectory((Join-Path $folder ('item-{0:D4}' -f $i))) }
+        $window = Open-UiFolder $folder 6
+        [void](Show-UiSettings $window)
+        $page=Set-UiPage 2
+        Set-UiCheck $page 'IDC_ICON_SPACING_DYNAMIC' (!$defer)
+        Press-UiSettings 3
+        $dpi=[FileSpacerRegression.Native]::GetDpiForWindow($window)
+        $rounding=if ($dpi -eq 96) {0} else {[int][Math]::Ceiling($dpi/192.0)}
+        $menu=Open-PreviewMenu $window
+        [FileSpacerViewMenuTests.MenuUi]::Choose($menu,2,$window)
+        Wait-PreviewMenuClosed $window
+        Wait-UiViewMode $window 1 48
+        if (!$defer) {
+            $menu=Open-PreviewMenu $window
+            Assert-SpacingMenuState $window $true
+            [FileSpacerViewMenuTests.MenuUi]::Hover($menu,5)
+            Wait-UiViewMode $window 4
+            Assert-SpacingMenuState $window $true
+            [FileSpacerViewMenuTests.MenuUi]::Choose($menu,5,$window)
+            Wait-PreviewMenuClosed $window
+            Wait-UiViewMode $window 4
+            $menu=Open-PreviewMenu $window
+            Assert-SpacingMenuState $window $false
+            [FileSpacerViewMenuTests.MenuUi]::Hover($menu,2)
+            Wait-UiViewMode $window 1 48
+            Assert-SpacingMenuState $window $false
+            [FileSpacerViewMenuTests.MenuUi]::Choose($menu,2,$window)
+            Wait-PreviewMenuClosed $window
+            Wait-UiViewMode $window 1 48
+        }
+        Choose-Placement 'IDM_FREE_PLACEMENT_ICONS'
+        Use-UiView $window {
+            param($v)
+            foreach ($i in 0..5) { $v.Position(('item-{0:D4}' -f $i),97+($i%3)*130,83+([int][Math]::Floor($i/3))*110) }
+        }
+        $seed='item-0000=97,83;item-0001=227,83;item-0002=357,83;item-0003=97,193;item-0004=227,193;item-0005=357,193'
+        Wait-Ui {(Use-UiView $window {param($v) $v.Positions()}) -eq $seed} 'six free coordinates settled' 150
+        $menu=Open-PreviewMenu $window
+        foreach ($axis in @(0,1)) {
+            Assert-CombinedSpacingResetState (Get-SpacingViewMenu $window) ([bool]$axis)
+            if (!$defer -and !$axis) {
+                [FileSpacerViewMenuTests.MenuUi]::Hover($menu,5)
+                Wait-UiViewMode $window 4
+            }
+            $slider = Open-SpacingSlider $window $axis $menu.Window
+            Wait-UiViewMode $window 1 48
+            Assert-SpacingResetState $window $slider $false
+            $track = $slider.Track
+            $before = Read-Spacing $window
+            if (!$axis) {$standard = $before}
+            $max = [FileSpacerRegression.Native]::Message($track,0x402,0,0)
+            $start = [FileSpacerRegression.Native]::Message($track,0x400,0,0)
+            Assert-Ui ($max -in 20..30 -and $start -eq $max-20) "scale uses distinct pitches up to 300%, starting at 100% on axis $axis"
+            $forward = if ($axis) {0x28} else {0x27}
+            [FileSpacerViewMenuTests.MenuUi]::Key($window,$forward,1)
+            Assert-Ui ([FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $start+1) 'one arrow key selects 110%'
+            $stepped = Read-Spacing $window
+            $pitch = if ($axis) {$before.Y} else {$before.X}
+            $actual = if ($axis) {$stepped.Y} else {$stepped.X}
+            Assert-Ui (Test-SpacingPitch $pitch 11 $dpi $actual) '110% is applied to the Windows pitch'
+            Assert-Ui (([FileSpacerRegression.Native]::Children($slider.Popup,'Static')).Length -eq 0) 'standalone slider without a visible label'
+            $bounds = [FileSpacerRegression.Native]::Bounds($track)
+            $length=if ($axis) {$bounds.Height} else {$bounds.Width}
+            Assert-Ui ((($bounds.Width -gt $bounds.Height) -eq ($axis -eq 0)) -and $length -ge 200*$dpi/96) (
+                "track orientation and length on axis $axis ("+$bounds.Width+' x '+$bounds.Height+')')
+            [FileSpacerViewMenuTests.MenuUi]::Key($window,0x24,1)
+            $paint=@{}
+            Wait-Ui {
+                $paint.Ink=Get-SpacingMenuInk $slider.Child
+                $paint.Ink.Count -ge 25
+            } 'axis reset text is painted before dragging'
+            $ink=$paint.Ink
+            $zero = Read-Spacing $window
+            $old = if ($axis) {$before.Y} else {$before.X}
+            $min = if ($axis) {$zero.Y} else {$zero.X}
+            Assert-Ui ($min -ge 48*$dpi/96-$rounding -and $min -le $old+$rounding) "zero keeps an icon cell on axis $axis ($old, $min)"
+            if ($axis -and !$defer) {
+                # TBM_GETTIC and TBM_GETTICPOS omit the two endpoint marks.
+                Assert-Ui ([FileSpacerRegression.Native]::Message($track,0x410,0,0) -eq 7) 'seven visible graduations'
+                foreach ($mark in 0,1,0) {
+                    $tickPosition=[FileSpacerRegression.Native]::Message($track,0x403,$mark,0)
+                    $tickOffset=[FileSpacerRegression.Native]::Message($track,0x40f,$mark,0)
+                    Assert-Ui ($tickPosition -gt 0 -and $tickOffset -gt 0) 'interior graduation has a logical value and a screen position'
+                    [FileSpacerViewMenuTests.MenuUi]::Click([int](($bounds.Left+$bounds.Right)/2),($bounds.Top+$tickOffset),$slider.Popup)
+                    Wait-Ui { [FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $tickPosition } 'second and third visible graduations are reachable in both directions'
+                }
+                [FileSpacerViewMenuTests.MenuUi]::Key($window,0x24,1)
+                foreach ($expected in 1,2,1,0) {
+                    $current=[FileSpacerRegression.Native]::Message($track,0x400,0,0)
+                    $arrow=if ($expected -gt $current) {0x28} else {0x26}
+                    [FileSpacerViewMenuTests.MenuUi]::Key($window,$arrow,1)
+                    Assert-Ui ([FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $expected) (
+                        "arrow keys visit each slot in order ($current to $expected)")
+                }
+            }
+            $step=[FileSpacerRegression.Native]::Message($track,0x400,0,0)
+            $previous=$min
+            while ($step -lt $start) {
+                [FileSpacerViewMenuTests.MenuUi]::Key($window,0x22,1)
+                $next=[FileSpacerRegression.Native]::Message($track,0x400,0,0)
+                $spacing=Read-Spacing $window
+                $pitch=if ($axis) {$spacing.Y} else {$spacing.X}
+                Assert-Ui ($next -eq $step+1 -and $next -le $start -and $pitch -gt $previous) (
+                    "axis $axis moves to a distinct pitch below or at 100% ($step to $next, $previous to $pitch)")
+                $step=$next
+                $previous=$pitch
+            }
+            $normal=Read-Spacing $window
+            Assert-Ui ($normal.X -eq $before.X -and $normal.Y -eq $before.Y) '100% restores Windows pitch'
+            [FileSpacerViewMenuTests.MenuUi]::Key($window,0x22,10)
+            $twice=Read-Spacing $window
+            $pitch=if ($axis) {$twice.Y} else {$twice.X}
+            Assert-Ui (Test-SpacingPitch $old 20 $dpi $pitch) "200% doubles Windows pitch on axis $axis"
+            [FileSpacerViewMenuTests.MenuUi]::Key($window,0x24,1)
+            $floorStep=[FileSpacerRegression.Native]::Message($track,0x400,0,0)
+            $point = New-Object FileSpacerRegression.MousePoint
+            $thumbOffset=[int][Math]::Round(10*$dpi/96.0)
+            $point.X = $bounds.Left+$thumbOffset
+            $point.Y = $bounds.Top+$thumbOffset
+            try {
+                [FileSpacerRegression.AltDragInput]::Begin($slider.Popup,$point,$false,$false)
+                [FileSpacerRegression.AltDragInput]::VerifyHeld($false)
+                if ($axis -and !$defer) {
+                    $point.Y=$bounds.Top+[int]($bounds.Height*0.15)
+                    [FileSpacerRegression.AltDragInput]::Move($point)
+                    Start-Sleep -Milliseconds 80
+                    $step=[FileSpacerRegression.Native]::Message($track,0x400,0,0)
+                    $pitch=(Read-Spacing $window).Y
+                    Assert-Ui (($step -eq $floorStep -and $pitch -eq $min) -or ($step -gt $floorStep -and $pitch -gt $min)) (
+                        "the thumb changes only with the pitch near the minimum ($floorStep to $step, $min to $pitch)")
+                }
+                if ($axis) {$point.Y = ($bounds.Top+$bounds.Bottom)/2} else {$point.X = ($bounds.Left+$bounds.Right)/2}
+                [FileSpacerRegression.AltDragInput]::Move($point)
+                Wait-Ui {
+                    $step = [FileSpacerRegression.Native]::Message($track,0x400,0,0)
+                    $held = Read-Spacing $window
+                    $actual = if ($axis) {$held.Y} else {$held.X}
+                    if ($step -lt $start -or [Math]::Abs($step-$max/2.0) -gt 1.5) {return $false}
+                    if ($defer) {return $actual -eq $min}
+                    return Test-SpacingPitch $old (10+$step-$start) $dpi $actual
+                } 'dragging to the middle selects a 10% step' 100
+                Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($slider.Child.Window) -and ![FileSpacerViewMenuTests.MenuUi]::Cloaked($slider.Child.Window)) 'same axis menu visible during the drag'
+                $during=Get-SpacingMenuInk $slider.Child
+                $during.IntersectWith($ink)
+                Assert-Ui ($during.Count -ge 0.8*$ink.Count) 'axis reset text remains on screen while held'
+                if ($axis) {$point.Y = $bounds.Bottom-2} else {$point.X = $bounds.Right-2}
+                [FileSpacerRegression.AltDragInput]::Move($point)
+                Wait-Ui { [FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $max } 'thumb reached maximum while held'
+                Wait-Ui {
+                    $held = Read-Spacing $window
+                    $actual = if ($axis) {$held.Y} else {$held.X}
+                    if ($defer) {return $actual -eq $min}
+                    return Test-SpacingPitch $old 30 $dpi $actual
+                } 'live versus deferred geometry during actual mouse drag' 100
+            } finally { [FileSpacerRegression.AltDragInput]::End() }
+            Wait-Ui {
+                $now = Read-Spacing $window
+                if ($axis) {return (Test-SpacingPitch $old 30 $dpi $now.Y) -and $now.X -eq $before.X}
+                return (Test-SpacingPitch $old 30 $dpi $now.X) -and $now.Y -eq $before.Y
+            } 'released thumb applies just the chosen axis'
+            Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($slider.Child.Window) -and
+                ![FileSpacerViewMenuTests.MenuUi]::Cloaked($slider.Child.Window)) 'same axis menu visible after release'
+            Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($slider.Popup)) 'release keeps the slider open'
+            Assert-SpacingResetState $window $slider $true
+            $popupBounds = [FileSpacerRegression.Native]::Bounds($slider.Popup)
+            [FileSpacerViewMenuTests.MenuUi]::Click($popupBounds.Left+2,$popupBounds.Top+2,$slider.Popup)
+            Wait-Ui {
+                [FileSpacerRegression.Native]::IsWindowVisible($slider.Popup) -and
+                    [FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $max
+            } 'the popup margin keeps the slider open at the current value' 100
+            $menu=Close-SpacingOutside $window $slider -KeepViewMenu:(!$axis)
+        }
+        $saved = Read-Spacing $window
+        $actualPositions=Use-UiView $window {param($v) $v.Positions()}
+        Assert-Ui ($actualPositions -eq $seed) "spacing preserves free coordinates: $actualPositions"
+        Close-UiFolder $window
+        $window = Open-UiFolder $folder 6
+        Wait-Ui { $s=Read-Spacing $window; $s.X -eq $saved.X -and $s.Y -eq $saved.Y } 'per-folder spacing after reopen'
+        $restored=Get-PreviewRestoredPositions $window $seed
+        Assert-Ui ((Use-UiView $window {param($v) $v.Positions()}) -eq $restored) 'free coordinates after reopen'
+        Use-UiView $window {
+            param($v)
+            $pitch=$v.Spacing
+            for ($i=0;$i -lt 6;++$i) {
+                $v.Position(('item-{0:D4}' -f $i),($i%3)*2*$pitch.X,([int][Math]::Floor($i/3))*3*$pitch.Y)
+            }
+        }
+        Choose-Placement 'IDM_KEEP_ICONS_ALIGNED'
+        Use-UiView $window {param($v) $v.Select('item-0001')}
+        function Read-OccupiedCells {
+            Use-UiView $window {
+                param($v)
+                $pitch=$v.Spacing
+                $entries=@([regex]::Matches($v.Positions(),'([^;=]+)=(-?\d+),(-?\d+)') | Sort-Object {$_.Groups[1].Value})
+                $origin=$entries[0].Groups
+                foreach ($e in $entries) {
+                    $x=[Math]::Round(([int]$e.Groups[2].Value-[int]$origin[2].Value)/$pitch.X)
+                    $y=[Math]::Round(([int]$e.Groups[3].Value-[int]$origin[3].Value)/$pitch.Y)
+                    "$($e.Groups[1].Value)=$x,$y"
+                }
+            }
+        }
+        $cells=(Read-OccupiedCells) -join ';'
+        Assert-Ui (($cells -split ';').Count -eq 6 -and $cells -match '=4,3') 'sparse fixture contains two skipped columns and rows'
+        foreach ($axis in @(0,1)) {
+            $slider=Open-SpacingSlider $window $axis
+            [FileSpacerViewMenuTests.MenuUi]::Key($window,0x24,1)
+            Close-SpacingOutside $window $slider
+        }
+        Assert-Ui (((Read-OccupiedCells) -join ';') -eq $cells) 'snap preserves occupied cells and holes'
+        Assert-Ui (Use-UiView $window {param($v) $v.SnapToGrid -and !$v.AutoArrange -and (@($v.Selected()) -join ';') -eq 'item-0001'}) 'snap and selection preserved'
+        if (!$defer) {
+            foreach ($axis in @(0,1)) {
+                $slider=Open-SpacingSlider $window $axis
+                [FileSpacerViewMenuTests.MenuUi]::Key($window,0x23,1)
+                Close-SpacingOutside $window $slider
+            }
+            $custom=Read-Spacing $window
+            Assert-Ui ($custom.X -gt $standard.X -and $custom.Y -gt $standard.Y) 'both axes customized before local resets'
+            $null=Choose-SpacingCommand $window (Get-UiId 'IDM_RESET_VERTICAL_GAP')
+            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $custom.X -and $s.Y -eq $standard.Y} 'vertical reset preserves horizontal spacing'
+            $slider=Open-SpacingSlider $window 0
+            Assert-SpacingResetState $window $slider $true
+            $menu=Close-SpacingOutside $window $slider -KeepViewMenu
+            Assert-CombinedSpacingResetState $menu $true
+            $slider=Open-SpacingSlider $window 1 $menu.Window
+            Assert-SpacingResetState $window $slider $false
+            [FileSpacerViewMenuTests.MenuUi]::Key($window,0x23,1)
+            Assert-SpacingResetState $window $slider $true
+            $menu=Close-SpacingOutside $window $slider -KeepViewMenu
+            $null=Choose-SpacingCommand $window (Get-UiId 'IDM_RESET_BOTH_GAPS') $menu.Window
+            Wait-PreviewMenuClosed $window
+            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $standard.X -and $s.Y -eq $standard.Y} 'both axes restored from the same View menu'
+            Close-UiFolder $window
+            $window=Open-UiFolder $folder 6
+            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $standard.X -and $s.Y -eq $standard.Y} 'local reset persists after reopen'
+        }
+        if ($defer) {
+            $custom = Read-Spacing $window
+            [void](Show-UiSettings $window); $page=Set-UiPage 2
+            Set-UiCheck $page 'IDC_ICON_SPACING_ENABLED' $false
+            Assert-Ui (![FileSpacerRegression.Native]::IsWindowEnabled([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_ICON_SPACING_DYNAMIC')))) 'live option follows master checkbox'
+            Press-UiSettings 3
+            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $standard.X -and $s.Y -eq $standard.Y} 'disabled feature restores the standard grid'
+            $null=Open-PreviewMenu $window
+            Assert-SpacingMenuState $window $false
+            [FileSpacerViewMenuTests.MenuUi]::Escape($window)
+            Wait-PreviewMenuClosed $window
+            [void](Show-UiSettings $window); $page=Set-UiPage 2
+            Set-UiCheck $page 'IDC_ICON_SPACING_ENABLED' $true
+            Press-UiSettings 3
+            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $custom.X -and $s.Y -eq $custom.Y} 're-enabling restores this folder spacing'
+            $null=Choose-SpacingCommand $window (Get-UiId 'IDM_RESET_HORIZONTAL_GAP')
+            Wait-Ui {$s=Read-Spacing $window; $s.X -eq $standard.X -and $s.Y -eq $custom.Y} 'local horizontal reset preserves vertical spacing'
+            foreach ($action in @(5,3)) {
+                [void](Show-UiSettings $window); $page=Set-UiPage 2
+                $reset=[FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_ICON_SPACING_RESET'))
+                [void][FileSpacerRegression.Native]::Message($reset,0xf5,0,0)
+                [void](Set-UiPage 1) # A pending reset follows Apply or Cancel from any tab.
+                Press-UiSettings $action
+                $expected=if ($action -eq 5) {$custom.Y} else {$standard.Y}
+                Wait-Ui {$s=Read-Spacing $window; $s.X -eq $standard.X -and $s.Y -eq $expected} "global reset, property sheet action $action"
+            }
+        }
+        Close-UiFolder $window
+    }
+} catch { $failure=$_; throw } finally { Stop-Ui $failure }

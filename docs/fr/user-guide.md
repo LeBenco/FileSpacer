@@ -20,7 +20,7 @@ On peut définir FileSpacer comme gestionnaire de fichiers par défaut lors de l
 <div id="gestion-des-fenêtres"></div>
 <div id="managing-windows"></div>
 
-**Chaque dossier possède sa propre fenêtre.** S’il est déjà ouvert, FileSpacer ramène sa fenêtre au premier plan. Position, taille, affichage, disposition des icônes et position de défilement sont mémorisés, même après déplacement ou renommage du dossier. Les fenêtres sans position mémorisée sont placées en limitant le chevauchement (option dans **Paramètres > Général**).
+**Chaque dossier possède sa propre fenêtre.** S’il est déjà ouvert, FileSpacer ramène sa fenêtre au premier plan. Position, taille, affichage, disposition des icônes et position de défilement sont mémorisés, même après déplacement ou renommage du dossier. Les fenêtres sans position mémorisée sont placées en limitant le chevauchement (option dans **Paramètres > Fenêtres**).
 
 <div id="verrouillage-de-létat-enregistré"></div>
 <div id="locking-a-saved-layout"></div>
@@ -29,11 +29,11 @@ On peut définir FileSpacer comme gestionnaire de fichiers par défaut lors de l
 
 **Déverrouiller l’état de la fenêtre** conserve sa disposition actuelle et permet d’enregistrer à nouveau les changements.
 
-Le verrouillage s’active dans **Paramètres > Général**. On peut aussi y personnaliser l’affichage du cadenas à gauche de la barre de titre et activer le clic sur cette icône pour verrouiller ou déverrouiller l’état de la fenêtre. Cette commande peut aussi être [ajoutée au menu de la barre de titre](#customize-the-title-bar-menu). Désactiver la fonction supprime tous les verrouillages et masque le badge.
+Le verrouillage s’active dans **Paramètres > Fenêtres**. On peut aussi y personnaliser l’affichage du cadenas à gauche de la barre de titre et activer le clic sur cette icône pour verrouiller ou déverrouiller l’état de la fenêtre. Cette commande peut aussi être [ajoutée au menu de la barre de titre](#customize-the-title-bar-menu). Désactiver la fonction supprime tous les verrouillages et masque le badge.
 
 <img src="images/locked-title.png" alt="Gros plan du titre du dossier et de son badge de cadenas." width="280">
 
-Ouvrir un dossier ou son parent ferme par défaut la fenêtre source. **Maintenir Ctrl pendant l’ouverture** fait l’inverse, quelle que soit la manière d’ouvrir. Ce comportement se règle dans **Paramètres > Général**. L’ouverture de plusieurs dossiers sélectionnés garde la fenêtre source ouverte.
+Ouvrir un dossier ou son parent ferme par défaut la fenêtre source. **Maintenir Ctrl pendant l’ouverture** fait l’inverse, quelle que soit la manière d’ouvrir. Ce comportement se règle dans **Paramètres > Fenêtres**. L’ouverture de plusieurs dossiers sélectionnés garde la fenêtre source ouverte.
 
 Le menu à côté du titre permet de passer entre les dossiers ouverts et de fermer les fenêtres parentes. **Ctrl+Maj+T** rouvre le dernier dossier fermé avec sa disposition et sa sélection. La liste de raccourcis de la barre des tâches retrouve aussi les dossiers fermés récemment et ceux épinglés dans l’Accès rapide.
 
@@ -81,9 +81,15 @@ Ces choix sont disponibles avec toutes les tailles d’icônes. Les vues **Liste
 
 En mode **Libre**, maintenir **S** pendant le déplacement et jusqu’au relâchement du bouton de la souris pour aligner uniquement les icônes déplacées sur la grille. Les autres restent en place. Relâcher **S** avant le dépôt conserve le placement libre. En vue Icônes, un cadre gris indique la destination.
 
+Dans une vue à icônes, choisissez **Espacement horizontal des icônes** ou **Espacement vertical des icônes** dans le menu **Affichage** de la barre d’outils. Dans un dossier du système de fichiers, **Affichage** se ferme et le curseur s’ouvre dans un panneau centré sur le pointeur. Le panneau reste ouvert au relâchement. Cliquez dans la fenêtre du dossier, en dehors du panneau, pour rouvrir **Affichage** et choisir l’autre axe.
+
+Déplacez le curseur pour modifier l’espacement dans le dossier courant. Au minimum, l’espace libre entre les cellules d’icônes est supprimé. À 100 %, le pas de la grille est celui de Windows. À 300 %, ce pas est triplé. Chaque graduation correspond à un espacement que vous pouvez sélectionner. Choisissez **Rétablir à 100 %** sous le curseur pour rétablir un seul axe, ou **Rétablir les deux espacements à 100 %** dans **Affichage** pour les rétablir ensemble.
+
+Dans **Paramètres > Fichiers**, **Autoriser le réglage de l’espacement par dossier** active ces commandes. Vous pouvez choisir si les icônes se repositionnent pendant le déplacement du curseur ou au relâchement. **Réinitialiser l’espacement de tous les dossiers** rétablit les deux axes dans tous les dossiers après **Appliquer** ou **OK**.
+
 <div id="details-columns"></div>
 
-En mode **Détails**, les colonnes peuvent remplir automatiquement toute la largeur de la fenêtre. On peut l’autoriser dans **Paramètres > Affichage**, puis activer ou désactiver l’option pour chaque dossier dans son menu **Affichage**.
+En mode **Détails**, les colonnes peuvent remplir automatiquement toute la largeur de la fenêtre. On peut l’autoriser dans **Paramètres > Fichiers**, puis activer ou désactiver l’option pour chaque dossier dans son menu **Affichage**.
 
 ![Remplissage des colonnes en mode Détails, puis élargissement de la colonne Nom.](images/details-columns.gif)
 
@@ -92,7 +98,7 @@ L’**actualisation en continu**, également proposée dans les paramètres, peu
 <div id="options-daffichage"></div>
 <div id="view-options"></div>
 
-Par défaut, les dossiers sont regroupés avant les fichiers, comme dans l’Explorateur de fichiers. **Mélanger les dossiers et les fichiers dans le tri**, dans **Paramètres > Affichage**, les classe ensemble, comme sous [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) et [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). L’option concerne les modes Détails, Liste et Icônes réorganisées automatiquement. Les dossiers virtuels et les archives gardent l’ordre de Windows.
+Par défaut, les dossiers sont regroupés avant les fichiers, comme dans l’Explorateur de fichiers. **Mélanger les dossiers et les fichiers dans le tri**, dans **Paramètres > Fichiers**, les classe ensemble, comme sous [macOS](https://support.apple.com/en-au/guide/mac-help/mchlp1745/27/mac/27) et [Linux](https://www.gnu.org/s/coreutils/manual/html_node/Sorting-the-output.html). L’option concerne les modes Détails, Liste et Icônes réorganisées automatiquement. Les dossiers virtuels et les archives gardent l’ordre de Windows.
 
 ![Dossiers et fichiers mélangés dans le même ordre alphabétique.](images/mixed-sorting.png)
 
@@ -103,7 +109,7 @@ Dans les mêmes paramètres, **Afficher le nom complet d’un fichier sélection
 <div id="sélection-et-activation"></div>
 <div id="selection-and-activation"></div>
 
-Par défaut, cliquer sur l’arrière-plan d’une fenêtre inactive efface sa sélection, comme dans l’Explorateur de fichiers. **Conserver la sélection lors d’un clic sur une fenêtre inactive**, dans **Paramètres > Général**, permet de l’activer sans perdre la sélection.
+Par défaut, cliquer sur l’arrière-plan d’une fenêtre inactive efface sa sélection, comme dans l’Explorateur de fichiers. **Conserver la sélection lors d’un clic sur une fenêtre inactive**, dans **Paramètres > Fenêtres**, permet de l’activer sans perdre la sélection.
 
 <a id="customization"></a>
 
@@ -116,7 +122,7 @@ Par défaut, cliquer sur l’arrière-plan d’une fenêtre inactive efface sa s
 <div id="personnaliser-le-menu-de-la-barre-de-titre"></div>
 <div id="customize-the-title-bar-menu"></div>
 
-Le **menu de la barre de titre** se personnalise dans **Paramètres > Affichage > Éléments de l’interface**. Les commandes s’ajoutent et se réorganisent par glisser-déposer. Pour retirer une entrée, la faire glisser hors du menu.
+Le **menu de la barre de titre** se personnalise dans **Paramètres > Interface > Éléments de l’interface**. Les commandes s’ajoutent et se réorganisent par glisser-déposer. Pour retirer une entrée, la faire glisser hors du menu.
 
 ![Ajout d’une action au menu de barre de titre, puis retrait d’une autre.](images/customize-title-menu.gif)
 
@@ -210,7 +216,7 @@ FileSpacer ne contient ni télémétrie, ni suivi d’usage, ni publicité. Aucu
 
 Les mises à jour contactent GitHub, qui reçoit l’adresse IP et la version de l’application, mais aucun chemin de fichier ni état de dossier.
 
-Pour accélérer la gestion des gros dossiers (à partir du millier d’éléments), FileSpacer télécharge des fichiers de symboles auprès de Microsoft, qui reçoit l’adresse IP et la version des composants Windows concernés, mais aucun chemin de fichier ni état de dossier. Une notification signale chaque téléchargement, qui se désactive dans **Paramètres > Intégration**.
+Pour accélérer la gestion des gros dossiers (à partir du millier d’éléments), FileSpacer télécharge des fichiers de symboles auprès de Microsoft, qui reçoit l’adresse IP et la version des composants Windows concernés, mais aucun chemin de fichier ni état de dossier. Une notification signale chaque téléchargement, qui se désactive dans **Paramètres > Fichiers**.
 
 Les identifiants d’accès aux lecteurs réseau sont gérés directement par Windows. FileSpacer ne les lit ni ne les enregistre.
 

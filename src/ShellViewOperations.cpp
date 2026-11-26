@@ -3,8 +3,12 @@
 #include "ShellSelectionRuntime.h"
 #include "ShellViewIcons.h"
 #include <shlwapi.h>
+#include <oleacc.h>
+#include <array>
 #include <new>
 #include <utility>
+
+#pragma comment(lib, "Oleacc.lib")
 
 namespace filespacer {
 using NotifyFunction=HRESULT(STDMETHODCALLTYPE *)(IUnknown *,UINT,UINT);
@@ -403,6 +407,423 @@ HRESULT ShellSelectionClear::selectAll(IShellView *source, const std::function<b
 
 UINT shellViewOperationsReadyMessage() { return selectionDetail::readyMessage(); }
 int runShellViewOperationsWorker(const wchar_t *cacheRoot) { return selectionDetail::runWorker(cacheRoot); }
+
+int IconSpacingMetrics::unitForRatio(int axis, int ratio) const {
+    const LONG native = axis ? standard.y : standard.x;
+    const LONG minimum = axis ? cell.y : cell.x;
+    // Up to 100%, interpolate the padding. Above 100%, scale the native pitch.
+    const LONG pitch = ratio < 1000 ? minimum + MulDiv(native - minimum, ratio, 1000)
+        : MulDiv(native, ratio, 1000);
+    return MulDiv(pitch, USER_DEFAULT_SCREEN_DPI, static_cast<int>(unitDpi));
+}
+
+namespace {
+POINT listIconSpacing(HWND list) {
+    const DWORD packed = ListView_GetItemSpacing(list, FALSE);
+    return {LOWORD(packed), HIWORD(packed)};
+}
+
+POINT listSpacingUnits(HWND list, POINT pixels) {
+    // This message scales its input on per-monitor aware ListViews.
+    const int dpi = static_cast<int>(GetDpiForWindow(list));
+    if (!dpi) return {};
+    return {MulDiv(pixels.x, USER_DEFAULT_SCREEN_DPI, dpi), MulDiv(pixels.y, USER_DEFAULT_SCREEN_DPI, dpi)};
+}
+
+constexpr int referenceItems = 12;
+
+struct ReferenceLocations {
+    POINT cell = {};
+    std::array<POINT, referenceItems> points{};
+    std::array<bool, referenceItems> seen{};
+    unsigned count = 0;
+
+    void inspect(IAccessible *object, unsigned depth) {
+        if (depth == 6 || count == points.size()) return;
+        VARIANT children[64] = {};
+        long available = 0, fetched = 0;
+        if (FAILED(object->get_accChildCount(&available)) || available < 1 || available > _countof(children)
+                || FAILED(AccessibleChildren(object, 0, available, children, &fetched))) return;
+        for (long index = 0; index < fetched; ++index) {
+            VARIANT &child = children[index];
+            CComQIPtr<IAccessible> item;
+            if (child.vt == VT_DISPATCH) item = child.pdispVal;
+            if (item || child.vt == VT_I4) {
+                IAccessible *provider = item ? item.p : object;
+                CComVariant target(item ? CHILDID_SELF : child.lVal);
+                CComBSTR name;
+                const bool named = SUCCEEDED(provider->get_accName(target, &name)) && name
+                    && name.Length() == 2 && name[0] == L'F' && name[1] >= L'A' && name[1] < L'A' + referenceItems;
+                if (named) {
+                    const int slot = name[1] - L'A';
+                    POINT &point = points[slot];
+                    long width = 0, height = 0;
+                    if (!seen[slot] && SUCCEEDED(provider->accLocation(&point.x, &point.y, &width, &height, target))
+                            && width > 0 && height > 0) {
+                        seen[slot] = true;
+                        cell.x = (std::max)(cell.x, width);
+                        cell.y = (std::max)(cell.y, height);
+                        ++count;
+                    }
+                } else if (item) inspect(item, depth + 1);
+            }
+            VariantClear(&child);
+        }
+    }
+
+    POINT pitch() const {
+        POINT result = {};
+        for (int i = 0; i < referenceItems; ++i) {
+            if (!seen[i]) continue;
+            for (int j = i + 1; j < referenceItems; ++j) {
+                if (!seen[j]) continue;
+                const LONG x = std::abs(points[i].x - points[j].x);
+                const LONG y = std::abs(points[i].y - points[j].y);
+                if (!y && x && (!result.x || x < result.x)) result.x = x;
+                if (!x && y && (!result.y || y < result.y)) result.y = y;
+            }
+        }
+        return result;
+    }
+};
+
+BOOL CALLBACK readReferenceLocations(HWND window, LPARAM argument) {
+    wchar_t type[32] = {};
+    if (!GetClassNameW(window, type, _countof(type))
+            || (lstrcmpW(type, L"DirectUIHWND") && lstrcmpW(type, WC_LISTVIEWW))) return TRUE;
+    CComPtr<IAccessible> root;
+    if (SUCCEEDED(AccessibleObjectFromWindow(window, static_cast<DWORD>(OBJID_CLIENT), IID_PPV_ARGS(&root))) && root)
+        reinterpret_cast<ReferenceLocations *>(argument)->inspect(root, 0);
+    return TRUE;
+}
+
+// A local standard Shell view is a reference for every provider. Never
+// enumerate the actual folder twice or persist the reference's view options.
+class ExplorerIconSpacing {
+public:
+    ~ExplorerIconSpacing() {
+        closeBrowser();
+        if (!directory.empty()) {
+            for (int i = 0; i < referenceItems; ++i) changeChildDirectory(i, false);
+            RemoveDirectoryW(directory.c_str());
+        }
+    }
+
+    POINT measure(HWND list, int size, SIZE viewport, bool &pending, POINT &cell) {
+        const int dpi = static_cast<int>(GetDpiForWindow(list));
+        if (!dpi) return {};
+        if (busy) { pending = true; return {}; }
+        for (const auto &metric : measurements)
+            if (metric.dpi == dpi && metric.size == size && metric.viewport.cx == viewport.cx
+                    && metric.viewport.cy == viewport.cy) {
+                cell = metric.cell;
+                return metric.pitch;
+            }
+        busy = true;
+        struct BusyGuard { bool &busy; ~BusyGuard() { busy = false; } } guard{busy};
+        if (dpi != referenceDpi) closeBrowser();
+        if (!browser && !openBrowser(list, dpi)) return {};
+
+        CComPtr<IFolderView2> view;
+        int count = 0;
+        if (FAILED(browser->GetCurrentView(IID_PPV_ARGS(&view))) || !view
+                || FAILED(view->ItemCount(SVGIO_ALLVIEW, &count)) || count != referenceItems) {
+            pending = true;
+            return {};
+        }
+        FOLDERVIEWMODE mode = FVM_AUTO;
+        int currentSize = 0;
+        if (FAILED(view->GetViewModeAndIconSize(&mode, &currentSize))
+                || ((mode != FVM_ICON || size != currentSize) && FAILED(view->SetViewModeAndIconSize(FVM_ICON, size))))
+            return {};
+        CComQIPtr<IShellView> shell(view);
+        HWND body = nullptr;
+        if (!shell || FAILED(shell->GetWindow(&body)) || !body) return {};
+        POINT result = layout(body, viewport, cell);
+        if (!result.x || !result.y) {
+            // Very narrow and very wide viewports can have only one column
+            // or row. Measure the missing axis in a second native layout.
+            const SIZE alternateViewport = {MulDiv(result.x ? 384 : 1600, dpi, USER_DEFAULT_SCREEN_DPI),
+                MulDiv(658, dpi, USER_DEFAULT_SCREEN_DPI)};
+            POINT alternateCell = {};
+            const POINT alternate = layout(body, alternateViewport, alternateCell);
+            if (!cell.x || !cell.y) cell = alternateCell;
+            if (!result.x) result.x = alternate.x;
+            if (!result.y) result.y = alternate.y;
+        }
+        if (result.x && result.y) {
+            measurements[nextMeasurement] = {dpi, size, viewport, result, cell};
+            nextMeasurement = (nextMeasurement + 1) % measurements.size();
+        } else pending = true;
+        return result;
+    }
+
+private:
+    struct Measurement { int dpi = 0, size = 0; SIZE viewport = {}; POINT pitch = {}, cell = {}; };
+    std::array<Measurement, 16> measurements{};
+    size_t nextMeasurement = 0;
+    CComPtr<IExplorerBrowser> browser;
+    HWND frame = nullptr;
+    int referenceDpi = 0;
+    bool busy = false;
+    std::wstring directory;
+
+    bool changeChildDirectory(int index, bool create) const {
+        wchar_t path[MAX_PATH] = {};
+        const size_t length = directory.size();
+        if (length + 3 >= _countof(path)) return false;
+        std::wmemcpy(path, directory.c_str(), length);
+        path[length] = L'\\';
+        path[length + 1] = L'F';
+        path[length + 2] = static_cast<wchar_t>(L'A' + index);
+        return (create ? CreateDirectoryW(path, nullptr) : RemoveDirectoryW(path)) != FALSE;
+    }
+
+    bool makeFixture() {
+        if (!directory.empty()) return true;
+        wchar_t temporary[MAX_PATH] = {}, unique[39] = {};
+        const DWORD length = GetTempPathW(_countof(temporary), temporary);
+        GUID id = {};
+        if (!length || length >= _countof(temporary) || FAILED(CoCreateGuid(&id))
+                || !StringFromGUID2(id, unique, _countof(unique))) return false;
+        const std::wstring path = std::wstring(temporary) + L"FileSpacer-grid-" + unique;
+        if (!CreateDirectoryW(path.c_str(), nullptr)) return false;
+        directory = path;
+        for (int i = 0; i < referenceItems; ++i) {
+            if (changeChildDirectory(i, true)) continue;
+            while (i > 0) changeChildDirectory(--i, false);
+            RemoveDirectoryW(directory.c_str());
+            directory.clear();
+            return false;
+        }
+        return true;
+    }
+
+    bool openBrowser(HWND list, int dpi) {
+        if (!makeFixture()) return false;
+        MONITORINFO monitor = {sizeof(monitor)};
+        if (!GetMonitorInfoW(MonitorFromWindow(list, MONITOR_DEFAULTTONEAREST), &monitor)) return false;
+        frame = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, L"Static", nullptr, WS_POPUP,
+            monitor.rcMonitor.left, monitor.rcMonitor.top, 1, 1, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
+        RECT client = {0, 0, MulDiv(960, dpi, USER_DEFAULT_SCREEN_DPI), MulDiv(658, dpi, USER_DEFAULT_SCREEN_DPI)};
+        FOLDERSETTINGS settings = {FVM_ICON, FWF_AUTOARRANGE};
+        CComHeapPtr<ITEMIDLIST_ABSOLUTE> id;
+        if (frame && static_cast<int>(GetDpiForWindow(frame)) == dpi && SUCCEEDED(browser.CoCreateInstance(CLSID_ExplorerBrowser))
+                && SUCCEEDED(browser->SetOptions(EBO_NOPERSISTVIEWSTATE))
+                && SUCCEEDED(browser->Initialize(frame, &client, &settings))
+                && SUCCEEDED(SHParseDisplayName(directory.c_str(), nullptr, &id, 0, nullptr))
+                && SUCCEEDED(browser->BrowseToIDList(id, SBSP_ABSOLUTE))) {
+            referenceDpi = dpi;
+            return true;
+        }
+        closeBrowser();
+        return false;
+    }
+
+    void closeBrowser() {
+        if (browser) browser->Destroy();
+        browser.Release();
+        if (frame) DestroyWindow(frame);
+        frame = nullptr;
+        referenceDpi = 0;
+    }
+
+    POINT layout(HWND body, SIZE viewport, POINT &cell) {
+        RECT rect = {0, 0, viewport.cx, viewport.cy};
+        if (FAILED(browser->SetRect(nullptr, rect))) return {};
+        ReferenceLocations locations;
+        EnumChildWindows(body, readReferenceLocations, reinterpret_cast<LPARAM>(&locations));
+        cell = locations.cell;
+        return locations.pitch();
+    }
+};
+
+std::unique_ptr<ExplorerIconSpacing> explorerIconSpacing;
+
+struct IconListSearch {
+    HWND window = nullptr;
+    unsigned count = 0;
+};
+
+// The qualified small-icon control exposes its pitch through GetSpacing but
+// has no public setter. Identify the loaded control before looking at its layout.
+const BYTE *smallSpacingReader(BYTE *module) {
+    GUID id = {};
+    DWORD size = 0, age = 0;
+    if (!selectionDetail::imageIdentity(module, size, id, age) || age != 1) return nullptr;
+    constexpr GUID win10 = {0xe8a45b9a,0x1b9e,0xbd7a,{0x99,0x30,0xf5,0x9a,0xce,0x70,0x05,0x36}};
+    constexpr GUID win11 = {0x29586a2e,0x1b95,0xcc2c,{0x65,0xf4,0x49,0x6b,0x54,0x56,0x54,0xcc}};
+    const DWORD offset = id == win10 ? 0x61a70 : id == win11 ? 0xedf50 : 0;
+    return offset && offset < size ? module + offset : nullptr;
+}
+
+ExplorerIconSpacingResult adjustSmallIconSpacing(HWND list, IFolderView2 *view, DWORD flags, POINT previous,
+        const std::array<int, 2> &ratios, IconSpacingMetrics &metrics, const std::function<bool()> &current,
+        const std::function<bool(HWND, POINT)> &beforeChange) {
+    using Result = ExplorerIconSpacingResult;
+    if (ListView_GetView(list) != LV_VIEW_SMALLICON || !current()) return Result::Unchanged;
+    auto module = reinterpret_cast<BYTE *>(GetClassLongPtrW(list, GCLP_HMODULE));
+    const BYTE *reader = smallSpacingReader(module);
+    if (!reader) return Result::Unchanged;
+    constexpr IID iidListView = {0xe5b16af2,0x3990,0x4681,{0xa6,0x09,0x1f,0x06,0x0c,0xd1,0x42,0x69}};
+    CComPtr<IUnknown> control;
+    SendMessageW(list, LVM_FIRST + 189, reinterpret_cast<WPARAM>(&iidListView), reinterpret_cast<LPARAM>(&control));
+    if (!control || !current()) return Result::Unchanged;
+    auto object = reinterpret_cast<BYTE *>(control.p);
+    const BYTE **table = nullptr, *method = nullptr;
+    using selectionDetail::read;
+    if (!read(object, table) || !table || !read(static_cast<const void *>(table + 39), method)
+            || method != reader) return Result::Unchanged;
+    const auto cells = [&](POINT expected) -> POINT * {
+        BYTE *manager = nullptr, *state = nullptr;
+        if (!read(object + 0x260, manager) || !manager || !read(manager + 0x10, state) || !state) return nullptr;
+        auto pitch = reinterpret_cast<POINT *>(state + 0x3c);
+        POINT value = {};
+        return read(pitch, value) && value.x == expected.x && value.y == expected.y ? pitch : nullptr;
+    };
+    const UINT dpi = GetDpiForWindow(list);
+    if (!dpi || !cells(previous) || previous.x <= 0 || previous.y <= 0
+            || previous.x > MAXSHORT / 3 || previous.y > MAXSHORT / 3) return Result::Unchanged;
+    if (metrics.smallList != list || metrics.smallDpi != dpi || previous.x != metrics.smallApplied.x
+            || previous.y != metrics.smallApplied.y) metrics.smallStandard = previous;
+    metrics.smallList = list;
+    metrics.smallDpi = dpi;
+    metrics.smallApplied = previous;
+    metrics.standard = metrics.smallStandard;
+    // Keep the small image and its native single-line label allocation, taking
+    // only the outer edge padding off each side of the compact cell.
+    const int edge = GetSystemMetricsForDpi(SM_CXEDGE, dpi);
+    int width = 0, height = 0;
+    const HIMAGELIST images = ListView_GetImageList(list, LVSIL_SMALL);
+    if (!images || !ImageList_GetIconSize(images, &width, &height)) {
+        metrics.standard = {};
+        return Result::Unchanged;
+    }
+    const HFONT font = reinterpret_cast<HFONT>(SendMessageW(list, WM_GETFONT, 0, 0));
+    const HDC dc = GetDC(list);
+    TEXTMETRICW text = {};
+    if (dc) {
+        const HGDIOBJ old = font ? SelectObject(dc, font) : nullptr;
+        GetTextMetricsW(dc, &text);
+        if (old) SelectObject(dc, old);
+        ReleaseDC(list, dc);
+    }
+    metrics.cell = {(std::min)(metrics.standard.x, std::max<LONG>(width, metrics.standard.x - 2 * edge)),
+        (std::min)(metrics.standard.y, std::max<LONG>(height, text.tmHeight))};
+    const POINT pitch = {metrics.unitForRatio(0, ratios[0]), metrics.unitForRatio(1, ratios[1])};
+    if (pitch.x == previous.x && pitch.y == previous.y) return Result::AlreadyApplied;
+    if ((beforeChange && !beforeChange(list, previous)) || !current()) return Result::Unchanged;
+    POINT *target = cells(previous);
+    if (!target || !selectionDetail::writable(target, sizeof(*target))) return Result::Unchanged;
+    *target = pitch;
+    metrics.smallApplied = pitch;
+    if (flags & static_cast<DWORD>(FWF_AUTOARRANGE)) {
+        const HRESULT disabled = view->SetCurrentFolderFlags(FWF_AUTOARRANGE, 0);
+        if (!current()) return Result::Unchanged;
+        if (FAILED(disabled) || FAILED(view->SetCurrentFolderFlags(FWF_AUTOARRANGE, FWF_AUTOARRANGE))) {
+            if (current()) {
+                POINT *active = cells(pitch);
+                if (active && selectionDetail::writable(active, sizeof(*active))) *active = previous;
+                view->SetCurrentFolderFlags(FWF_AUTOARRANGE, FWF_AUTOARRANGE);
+                metrics.smallApplied = previous;
+            }
+            return Result::Unchanged;
+        }
+    } else if ((flags & static_cast<DWORD>(FWF_SNAPTOGRID)) && current()) {
+        ListView_Arrange(list, LVA_SNAPTOGRID);
+    }
+    if (current()) InvalidateRect(list, nullptr, TRUE);
+    return Result::Applied;
+}
+
+BOOL CALLBACK findIconList(HWND window, LPARAM data) {
+    wchar_t name[32] = {};
+    if (GetWindowThreadProcessId(window, nullptr) == GetCurrentThreadId()
+            && GetClassNameW(window, name, _countof(name)) && !lstrcmpW(name, WC_LISTVIEWW)) {
+        auto &search = *reinterpret_cast<IconListSearch *>(data);
+        search.window = window;
+        ++search.count;
+    }
+    return TRUE;
+}
+} // namespace
+
+ExplorerIconSpacingResult useExplorerIconSpacing(IShellView *source, const std::array<int, 2> &ratios,
+        IconSpacingMetrics &metrics, const std::function<bool()> &current,
+        const std::function<bool(HWND, POINT)> &beforeChange) {
+    using Result = ExplorerIconSpacingResult;
+    metrics.standard = {};
+    metrics.cell = {};
+    // Small-icon spacing is written in pixels. The public setters for the
+    // regular icon view take DPI-scaled units instead.
+    metrics.unitDpi = USER_DEFAULT_SCREEN_DPI;
+    CComQIPtr<IFolderView2> view(source);
+    FOLDERVIEWMODE mode = FVM_AUTO;
+    int size = 0;
+    DWORD flags = 0;
+    HWND body = nullptr;
+    if (!view || !current() || FAILED(view->GetViewModeAndIconSize(&mode, &size)) || !current()
+            || (mode != FVM_ICON && mode != FVM_SMALLICON) || size <= 0 || FAILED(view->GetCurrentFolderFlags(&flags)) || !current()
+            || (flags & (FWF_DESKTOP | FWF_NOSCROLL)) || FAILED(source->GetWindow(&body)) || !current()
+            || !body || GetWindowThreadProcessId(body, nullptr) != GetCurrentThreadId()) return Result::Unchanged;
+    IconListSearch search;
+    EnumChildWindows(body, findIconList, reinterpret_cast<LPARAM>(&search));
+    const HWND list = search.window;
+    RECT bounds = {};
+    if (search.count != 1 || (GetWindowLongPtrW(list, GWL_EXSTYLE) & WS_EX_LAYOUTRTL)
+            || ListView_IsGroupViewEnabled(list)
+            || !GetClientRect(body, &bounds) || bounds.right <= 0 || bounds.bottom <= 0 || !current()) return Result::Unchanged;
+    POINT native = {};
+    if (view->GetSpacing(&native) != S_OK || !current()) return Result::Unchanged;
+    if (mode == FVM_SMALLICON)
+        return adjustSmallIconSpacing(list, view, flags, native, ratios, metrics, current, beforeChange);
+    if (ListView_GetView(list) != LV_VIEW_ICON) return Result::Unchanged;
+    const POINT previous = listIconSpacing(list);
+    if (previous.x != native.x || previous.y != native.y || !previous.x || !previous.y) return Result::Unchanged;
+
+    if (!explorerIconSpacing) explorerIconSpacing = std::make_unique<ExplorerIconSpacing>();
+    bool pending = false;
+    POINT cell = {};
+    const POINT standardPitch = explorerIconSpacing->measure(list, size, {bounds.right, bounds.bottom}, pending, cell);
+    if (!current() || ListView_GetView(list) != LV_VIEW_ICON) return Result::Unchanged;
+    if (pending) return Result::Pending;
+    if (standardPitch.x <= 0 || standardPitch.y <= 0 || standardPitch.x > MAXSHORT / 3
+            || standardPitch.y > MAXSHORT / 3 || !cell.x || !cell.y) return Result::Unchanged;
+    int imageWidth = 0, imageHeight = 0;
+    const HIMAGELIST images = ListView_GetImageList(list, LVSIL_NORMAL);
+    if (!images || !ImageList_GetIconSize(images, &imageWidth, &imageHeight)
+            || standardPitch.x < imageWidth || standardPitch.y < imageHeight)
+        return Result::Unchanged;
+    const UINT dpi = GetDpiForWindow(list);
+    if (!dpi) return Result::Unchanged;
+    metrics.unitDpi = dpi;
+    metrics.standard = standardPitch;
+    metrics.cell = {(std::min)(standardPitch.x, std::max<LONG>(cell.x, imageWidth)),
+        (std::min)(standardPitch.y, std::max<LONG>(cell.y, imageHeight))};
+    const POINT units = {metrics.unitForRatio(0, ratios[0]), metrics.unitForRatio(1, ratios[1])};
+    if (units.x <= 0 || units.y <= 0) return Result::Unchanged;
+    const POINT expected = {MulDiv(units.x, static_cast<int>(dpi), USER_DEFAULT_SCREEN_DPI),
+        MulDiv(units.y, static_cast<int>(dpi), USER_DEFAULT_SCREEN_DPI)};
+    if (expected.x == previous.x && expected.y == previous.y) return Result::AlreadyApplied;
+    if ((beforeChange && !beforeChange(list, previous)) || !current()) return Result::Unchanged;
+    ListView_SetIconSpacing(list, units.x, units.y);
+    if (!current()) return Result::Unchanged;
+    const POINT applied = listIconSpacing(list);
+    if (applied.x != expected.x || applied.y != expected.y) {
+        const POINT original = listSpacingUnits(list, previous);
+        ListView_SetIconSpacing(list, original.x, original.y);
+        return Result::Unchanged;
+    }
+    // The list can retain pixels clipped to its old cells until an item is
+    // repainted. Include the entire client in the next native paint.
+    InvalidateRect(list, nullptr, TRUE);
+    debugPrintf(L"EXPLORER GRID size=%d dpi=%u width=%ld pitch=%ld,%ld previous=%ld,%ld\n",
+        size, dpi, bounds.right, applied.x, applied.y, previous.x, previous.y);
+    return Result::Applied;
+}
+
+void stopExplorerIconSpacing() { explorerIconSpacing.reset(); }
+
 HRESULT ShellIconGrid::prepare(IShellView *source, HWND list, const std::function<bool()> &current) {
 #ifdef FILESPACER_DEBUG
     const ULONGLONG began = GetTickCount64();
@@ -445,7 +866,10 @@ HRESULT ShellIconGrid::prepare(IShellView *source, HWND list, const std::functio
     if (!font) return E_FAIL;
     SendMessageW(control.get(), WM_SETFONT, reinterpret_cast<WPARAM>(font.get()), FALSE);
     ListView_SetImageList(control.get(), icons, LVSIL_NORMAL);
-    ListView_SetIconSpacing(control.get(), spacing.x, spacing.y);
+    const POINT units = listSpacingUnits(control.get(), spacing);
+    ListView_SetIconSpacing(control.get(), units.x, units.y);
+    const POINT applied = listIconSpacing(control.get());
+    if (applied.x != spacing.x || applied.y != spacing.y) return S_FALSE;
     LVITEMW item = {}; item.mask = LVIF_IMAGE; item.iImage = 0;
     if (ListView_InsertItem(control.get(), &item) != 0 || !current()) return E_FAIL;
 

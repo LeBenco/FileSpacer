@@ -79,7 +79,7 @@ try {
     Set-TestViewMode $window 4
     Use-UiView $window {param($view) $view.SortBy($false,$true);$view.Select($selectedName)}
     Wait-Order $window (Expected-Order $false $true $true)
-    [void](Show-UiSettings $window);$page=Set-UiPage 1
+    [void](Show-UiSettings $window);$page=Set-UiPage 2
     $control=[FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_MIXED_FOLDER_SORTING'))
     Assert-Ui ([FileSpacerRegression.Native]::IsWindowEnabled($control)) 'Mixed sorting preference unavailable.'
     Set-UiCheck $page 'IDC_MIXED_FOLDER_SORTING' $true
@@ -150,7 +150,7 @@ try {
     }
     Write-Host 'PASS: the mixed provider stays active in the free layout; Details/List/arranged Icons use mixed sorting; transitions retain all positions, multiselection and focus.'
     Use-UiView $window {param($view) $view.Select($selectedName)}
-    [void](Show-UiSettings $window);$page=Set-UiPage 1
+    [void](Show-UiSettings $window);$page=Set-UiPage 2
     Set-UiCheck $page 'IDC_MIXED_FOLDER_SORTING' $false;Press-UiSettings 4
     Wait-Provider $window $false
     Wait-Ui {(Use-UiView $window {param($view) $view.Positions()}) -ceq $positions} 'native icon positions retained while disabling mixed sorting' 150

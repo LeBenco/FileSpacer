@@ -735,6 +735,7 @@ void ItemWindow::toggleStateLock(bool replaceReference) {
     // A transition must capture the visible view, never fill failed getters from
     // an older snapshot. Require every previously supported view property.
     savedState.view = {};
+    savedState.view.iconSpacing = previous.view.iconSpacing;
     // Column proportions are application metadata, not a Shell getter. Keep
     // the known reference until an attached fill supplies newer weights (or
     // capture clears them because the fill is no longer enabled).

@@ -102,14 +102,25 @@ public:
         const int feedbackWidth = swap ? 205 : 270;
         const int feedbackHeight = textHeight(child(IDC_SHORTCUT_FEEDBACK), feedbackWidth, 17);
         const int extra = hintExtra + feedbackHeight - 17;
-        int y = powerToysActive ? 84 : 24;
+        int y = 24;
+        if (powerToysActive) {
+            HWND notice = GetDlgItem(page, IDC_SHORTCUT_POWERTOYS);
+            const RECT bounds = units(7, 23, 286, 56);
+            SIZE ideal = {};
+            const int base = units(0, 0, 0, 8).bottom;
+            const bool measured = SendMessageW(notice, LM_GETIDEALSIZE, bounds.right - bounds.left,
+                reinterpret_cast<LPARAM>(&ideal)) > 0;
+            const int height = measured && base > 0 ? (ideal.cy * 8 + base - 1) / base : 56;
+            place(notice, 7, 23, 286, height);
+            y = 23 + height + 5;
+        }
         for (int i = 0; i < 2; ++i) {
             const int top = y;
             place(GetDlgItem(page, enableIds[i]), 14, y + 5, 12, 12);
             place(GetDlgItem(page, headerIds[i]), 30, y + 1, 262, 20);
             y += 22;
             if (selected == i) {
-                const int height = (recording ? 180 : 142) + extra;
+                const int height = (recording ? 162 : 142) + extra;
                 place(editor, 15, y, 270, height);
                 y += height;
             }
@@ -119,10 +130,10 @@ public:
         place(child(IDC_SHORTCUT_LEFT_HINT), 0, 70, 86, hintHeight);
         place(child(IDC_SHORTCUT_RIGHT_HINT), 180, 70, 86, hintHeight);
         place(child(IDC_SHORTCUT_FEEDBACK), 0, 87 + hintExtra, feedbackWidth, feedbackHeight);
-        place(child(IDC_SHORTCUT_RECORD), 0, 106 + extra, 210, 14);
+        place(child(IDC_SHORTCUT_RECORD), 0, 106 + extra, recording ? 164 : 210, 14);
         place(child(IDC_SHORTCUT_CAPTURE), 0, 126 + extra, 270, 22);
         place(child(IDC_SHORTCUT_CAPTURE_HINT), 0, 151 + extra, 270, 9);
-        place(child(IDC_SHORTCUT_DEFAULT), 0, (recording ? 163 : 125) + extra, 100, 14);
+        place(child(IDC_SHORTCUT_DEFAULT), recording ? 170 : 0, (recording ? 106 : 125) + extra, 100, 14);
         InvalidateRect(page, nullptr, TRUE);
     }
     std::wstring describe(const WindowShortcut &value) const {

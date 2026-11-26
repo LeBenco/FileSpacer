@@ -28,6 +28,7 @@ SQLite 3.53.4 jest połączony statycznie z aplikacją i należy do domeny publi
 - **Ikony „W górę” i „Odśwież”**: [Lucide](https://lucide.dev/) (wersje zmodyfikowane, [ISC i MIT](../../licenses/Lucide-LICENSE.txt), treść licencji dostępna również w `Lucide-LICENSE.txt`).
 - **Ikona „W górę”**: [Feather](https://feathericons.com/) (pierwowzór wersji Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Ikony zamkniętej i otwartej kłódki**: [Small & Flat autorstwa paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), otwarta kłódka jest pochodną zamkniętej).
+- Przykłady konfiguracji odstępów między ikonami w Nilesoft Shell wykorzystują zmodyfikowane ikony z zestawu [Radix Icons](https://github.com/radix-ui/icons/blob/main/packages/radix-icons/icons/width.svg) ([MIT](../../licenses/RadixIcons-LICENSE.txt)).
 
 <a id="website"></a>
 

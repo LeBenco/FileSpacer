@@ -3,16 +3,38 @@ param(
     [Parameter(Mandatory=$true)]$Guest,
     [Parameter(Mandatory=$true)][string]$RunDirectory,
     [Parameter(Mandatory=$true)][string]$ProjectRoot,
+    [Parameter(Mandatory=$true)][string]$VMName,
+    [Parameter(Mandatory=$true)][guid]$VMId,
     [switch]$Regression
 )
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version 2
+function Test-ConflictingVMConnect([string]$CommandLine,[string]$Name,[guid]$Id) {
+    # VMConnect accepts a local server and a VM name, -G GUID, or both.
+    # A picker, inaccessible command line or unfamiliar syntax cannot establish isolation.
+    $grammar='^\s*(?:"[^"]*vmconnect(?:\.exe)?"|[^\s"]*vmconnect(?:\.exe)?)\s+(?:"(?<server>[^"]+)"|(?<server>[^\s"]+))(?:\s+(?:"(?<name>[^"]*)"|(?<name>[^/\s"-][^\s"]*)))?(?:\s+-G\s+"?(?<guid>\{?[0-9a-f-]{36}\}?)"?)?(?:\s+-C\s+(?:"\d+"|\d+))?\s*$'
+    if ($CommandLine -notmatch $grammar) { return $true }
+    $server=$Matches['server']; $vmArgument=$Matches['name']; $guidArgument=$Matches['guid']
+    if ($server -notin @('.','localhost','127.0.0.1','::1',$env:COMPUTERNAME)) { return $true }
+    if ($vmArgument -eq $Name) { return $true }
+    if ($guidArgument) {
+        $parsed=[guid]::Empty
+        return ![guid]::TryParse($guidArgument,[ref]$parsed) -or $parsed -eq $Id
+    }
+    return [string]::IsNullOrWhiteSpace($vmArgument)
+}
+function Find-ConflictingVMConnect {
+    foreach ($client in Get-CimInstance Win32_Process -Filter "Name='vmconnect.exe'" -Property ProcessId,CommandLine -ErrorAction Stop) {
+        $report.VMConnectAbsent=$false
+        if (Test-ConflictingVMConnect $client.CommandLine $VMName $VMId) { return $client.ProcessId }
+    }
+}
 $runId=[IO.Path]::GetFileName($RunDirectory)
 $taskName='FileSpacer-Smoke-'+$runId
 $guestRoot=$null;$taskRegistered=$false;$configuration='Debug'
-$report=[ordered]@{Status='BLOCKED';RunId=$runId;TaskStarted=$false;VMConnectAbsent=$true;ConsolePreparation=$null;TaskExitCode=$null;GuestResult=$null;Error=$null;CleanupErrors=@()}
+$report=[ordered]@{Status='BLOCKED';RunId=$runId;TaskStarted=$false;VMConnectAbsent=$true;TargetVMConnectAbsent=$true;TargetVM=$VMName;ConsolePreparation=$null;TaskExitCode=$null;GuestResult=$null;Error=$null;CleanupErrors=@()}
 try {
-    if(@(Get-Process vmconnect -ErrorAction SilentlyContinue).Count){throw 'Close VMConnect consoles, leaving the VM running and its desktop session signed in.'}
+    if(Find-ConflictingVMConnect){$report.TargetVMConnectAbsent=$false;throw "A VMConnect console targets $VMName or could not be identified. Close that console while keeping the guest signed in."}
     # The probe lists Explorer processes; several may belong to one desktop.
     $desktops=@($Guest.ExplorerSessions | Where-Object { $_.BelongsToConnectedAccount } | Sort-Object -Property SessionId -Unique)
     if($desktops.Count-ne1){throw 'Expected exactly one guest desktop for the connected account.'}
@@ -97,12 +119,12 @@ try {
         [void](Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Settings $settings)
     }
     $taskRegistered=$true
-    if(@(Get-Process vmconnect -ErrorAction SilentlyContinue).Count){throw 'A VMConnect console opened before the guest test; no gesture was started.'}
+    if(Find-ConflictingVMConnect){$report.TargetVMConnectAbsent=$false;throw "A VMConnect console might be connected to $VMName. No gesture was started."}
     Invoke-Command -Session $Session -ArgumentList $taskName -ScriptBlock {param($name) Start-ScheduledTask -TaskName $name}
     $report.TaskStarted=$true
     $deadline=[DateTime]::UtcNow.AddSeconds($waitSeconds)
     do {
-        if(@(Get-Process vmconnect -ErrorAction SilentlyContinue).Count){$report.VMConnectAbsent=$false}
+        if(Find-ConflictingVMConnect){$report.TargetVMConnectAbsent=$false}
         $completed=Invoke-Command -Session $Session -ArgumentList $guestRoot -ScriptBlock {param($root) Test-Path -LiteralPath (Join-Path $root 'output\result.json')}
         if($completed){break}
         if([DateTime]::UtcNow-ge$deadline){throw 'No guest result before its deadline. Preserve the guest run for diagnosis.'}
@@ -123,7 +145,7 @@ try {
     $report.Status=$report.GuestResult.Status
     $report.Error=$report.GuestResult.Error
     if($report.Status-eq'PASS' -and $report.TaskExitCode-ne0){$report.Status='FAIL';$report.Error='Guest worker returned a nonzero exit code after a PASS report.'}
-    if($report.Status-eq'PASS' -and !$report.VMConnectAbsent){$report.Status='REVIEW';$report.Error='A VMConnect console was present during the test; closed-console execution is not established.'}
+    if($report.Status-eq'PASS' -and !$report.TargetVMConnectAbsent){$report.Status='REVIEW';$report.Error='A VMConnect console may have targeted the test VM during execution.'}
 }catch{$report.Error=$_.Exception.Message}
 finally {
     if($guestRoot -and !(Test-Path -LiteralPath (Join-Path $RunDirectory 'output'))){

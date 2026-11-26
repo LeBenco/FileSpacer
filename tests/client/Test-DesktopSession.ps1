@@ -37,3 +37,28 @@ Check-Desktop @() $false
 Check-Desktop @($foreign) $false
 Check-Desktop @($owned,$other) $false
 Write-Host 'PASS: Explorer processes share a desktop by session; missing and multiple owned sessions remain blocked.'
+
+$function=$ast.Find({param($node)
+    $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Test-ConflictingVMConnect'
+},$true)
+if (!$function) { throw 'Missing VMConnect target check.' }
+. ([scriptblock]::Create($function.Extent.Text))
+$target=[guid]'00112233-4455-6677-8899-aabbccddeeff'
+$otherId=[guid]'ffeeddcc-bbaa-9988-7766-554433221100'
+$exe='"C:\Windows\System32\vmconnect.exe"'
+foreach ($test in @(
+    @{Arguments=($exe+' "'+$env:COMPUTERNAME+'" "AgentWin10" -G "'+$otherId+'" -C "0"'); Conflict=$false},
+    @{Arguments="vmconnect . -G {$otherId}"; Conflict=$false},
+    @{Arguments='vmconnect localhost AgentWin11'; Conflict=$false},
+    @{Arguments='vmconnect localhost "AgentWin11Pro"'; Conflict=$true},
+    @{Arguments="vmconnect . Renamed -G $target"; Conflict=$true},
+    @{Arguments='vmconnect remote AgentWin11'; Conflict=$true},
+    @{Arguments='vmconnect .'; Conflict=$true},
+    @{Arguments='vmconnect . AgentWin10 -unknown'; Conflict=$true},
+    @{Arguments=''; Conflict=$true}
+)) {
+    if ((Test-ConflictingVMConnect $test.Arguments 'AgentWin11Pro' $target) -ne $test.Conflict) {
+        throw ('Unexpected VMConnect classification: '+$test.Arguments)
+    }
+}
+Write-Host 'PASS: VMConnect target selection by guest name or ID, including the Hyper-V Manager command line.'

@@ -82,6 +82,15 @@ modify(type='*' mode='multiple' where=filespacer_title
 
 Consulta la [documentazione della configurazione di Nilesoft](https://nilesoft.org/docs/configuration/).
 
+Le due voci di spaziatura hanno etichette fisse. Gli identificatori Win32 sono 1146 (orizzontale) e 1147 (verticale). Per assegnare icone diverse, usa le etichette delle voci nel menu Visualizza.
+
+```nss
+modify(type='*' mode='multiple' where=filespacer_view find='Spaziatura orizzontale delle icone'
+       image=image.svg('<svg viewBox="0 0 16 16"><path d="M2 3v10m12-10v10M4 8h8M6.5 5.5 4 8l2.5 2.5m3-5L12 8l-2.5 2.5" fill="none" stroke="@image.color1" stroke-linecap="round" stroke-linejoin="round"/></svg>'))
+modify(type='*' mode='multiple' where=filespacer_view find='Spaziatura verticale delle icone'
+       image=image.svg('<svg viewBox="0 0 16 16"><path d="M3 2h10M3 14h10M8 4v8m-2.5-5.5L8 4l2.5 2.5m-5 3L8 12l2.5-2.5" fill="none" stroke="@image.color1" stroke-linecap="round" stroke-linejoin="round"/></svg>'))
+```
+
 <a id="recommended-menu-appearance"></a>
 
 ## Aspetto consigliato per i menu

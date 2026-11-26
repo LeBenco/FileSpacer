@@ -28,6 +28,7 @@ SQLite 3.53.4 статично скомпоновано з програмою. �
 - **Піктограми «Вгору» та «Оновити»**: [Lucide](https://lucide.dev/) (адаптовані версії, [ISC і MIT](../../licenses/Lucide-LICENSE.txt), тексти ліцензій також постачаються у файлі `Lucide-LICENSE.txt`).
 - **Піктограма «Вгору»**: [Feather](https://feathericons.com/) (першоджерело версії Lucide, [MIT](../../licenses/Lucide-LICENSE.txt)).
 - **Піктограми закритого й відкритого замка**: [Small & Flat від paomedia](https://github.com/paomedia/small-n-flat) ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), відкритий замок створено на основі закритого).
+- У прикладах Nilesoft Shell для інтервалів між піктограмами використано адаптовані зображення з набору [Radix Icons](https://github.com/radix-ui/icons/blob/main/packages/radix-icons/icons/width.svg) ([MIT](../../licenses/RadixIcons-LICENSE.txt)).
 
 <a id="website"></a>
 

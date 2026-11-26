@@ -102,6 +102,14 @@ bool FolderWindow::handleTopLevelMessage(MSG *msg) {
     CComPtr<ItemWindow> messageKeepAlive(this);
     if (!isWindowOperational())
         return false;
+    if (spacingPopup && (msg->hwnd == spacingPopup || IsChild(spacingPopup, msg->hwnd))) {
+        if (msg->message == WM_KEYDOWN && msg->wParam == VK_ESCAPE) {
+            readSpacingSlider(true);
+            closeSpacingSlider();
+            return true;
+        }
+        return false; // The trackbar owns its navigation keys and mouse capture.
+    }
     if (handleAltMouseMessage(msg))
         return true;
     if (!isWindowOperational())

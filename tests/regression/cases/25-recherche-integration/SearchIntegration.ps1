@@ -4,11 +4,11 @@ Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes
 Add-Type -Path (Join-Path $PSScriptRoot 'SearchMenus.cs') -ReferencedAssemblies UIAutomationClient,UIAutomationTypes
 
 function Set-SearchOptions([IntPtr]$Window,[bool]$Everything,[int]$Limit,[string]$Path='',[int]$Scope=0) {
-    [void](Show-UiSettings $Window); $page=Set-UiPage 0
+    [void](Show-UiSettings $Window); $page=Set-UiPage 1
     $limitEdit=[FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_SEARCH_HISTORY_LIMIT'))
-    Assert-Ui ($limitEdit -ne [IntPtr]::Zero) 'History limit is missing from General settings.'
+    Assert-Ui ($limitEdit -ne [IntPtr]::Zero) 'History limit is missing from Interface settings.'
     [FileSpacerRegression.Native]::SetText($limitEdit,[string]$Limit)
-    $page=Set-UiPage 3
+    $page=Set-UiPage 4
     Set-UiCheck $page 'IDC_EVERYTHING_ENABLED' $Everything
     [FileSpacerRegression.Native]::SetText([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_EVERYTHING_PATH')),$Path)
     [void][FileSpacerRegression.Native]::Message([FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_EVERYTHING_SCOPE')),0x14e,$Scope,0)
@@ -30,7 +30,7 @@ function Read-SearchDialogText([IntPtr]$Dialog,[string]$ExpectedPath) {
 }
 function Expect-EverythingPathRefused([IntPtr]$Window,[string]$Path) {
     $before=[string](Get-UiPreference 'EverythingPath')
-    $sheet=Show-UiSettings $Window; $page=Set-UiPage 3
+    $sheet=Show-UiSettings $Window; $page=Set-UiPage 4
     $edit=[FileSpacerRegression.Native]::GetDlgItem($page,(Get-UiId 'IDC_EVERYTHING_PATH'))
     Assert-Ui ($edit -ne [IntPtr]::Zero) 'Everything path field is missing from Integration settings.'
     [FileSpacerRegression.Native]::SetText($edit,$Path)

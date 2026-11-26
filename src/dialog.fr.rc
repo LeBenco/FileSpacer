@@ -4,7 +4,7 @@
 
 LANGUAGE LANG_FRENCH, SUBLANG_NEUTRAL
 
-IDD_SETTINGS_SHORTCUTS DIALOGEX 0, 0, 300, 335
+IDD_SETTINGS_SHORTCUTS DIALOGEX 0, 0, 300, 300
 STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED|WS_CLIPCHILDREN
 CAPTION "Raccourcis"
 FONT 8, "MS Shell Dlg", 400, 0, 0
@@ -15,7 +15,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "", IDC_SHORTCUT_MOVE, "Button", BS_OWNERDRAW|WS_TABSTOP, 30, 24, 262, 22
   CONTROL "", IDC_SHORTCUT_ENABLE_RESIZE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 55, 12, 12
   CONTROL "", IDC_SHORTCUT_RESIZE, "Button", BS_OWNERDRAW|WS_TABSTOP, 30, 50, 262, 22
-  PUSHBUTTON "Rétablir", IDC_SHORTCUT_REVERT, 238, 315, 55, 14
+  PUSHBUTTON "Rétablir", IDC_SHORTCUT_REVERT, 238, 280, 55, 14
 }
 
 IDD_SHORTCUT_EDITOR DIALOGEX 0, 0, 270, 180
@@ -43,42 +43,42 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   PUSHBUTTON "Réglage par défaut", IDC_SHORTCUT_DEFAULT, 0, 125, 100, 14
 }
 
-IDD_SETTINGS_GENERAL DIALOGEX DISCARDABLE 0, 0, 300, 313
+IDD_SETTINGS_GENERAL DIALOGEX DISCARDABLE 0, 0, 300, 300
 STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
-CAPTION "Général"
+CAPTION "Fenêtres"
 FONT 8, "MS Shell Dlg", 400, 0, 0
 {
   CONTROL "&Dossier de démarrage", -1, "Button", BS_GROUPBOX, 7, 7, 286, 30
   CONTROL "", IDC_START_FOLDER_PATH, "ComboBoxEx32", CBS_DROPDOWN|WS_TABSTOP|0x00000040, 14, 18, 210, 300
   CONTROL "&Parcourir...", IDC_START_FOLDER_BROWSE, "Button", WS_TABSTOP, 231, 18, 55, 14
-  CONTROL "Navigation dans les dossiers", -1, "Button", BS_GROUPBOX, 7, 41, 286, 91
-  CONTROL "&Ne pas fermer la fenêtre d’origine lors d’une ouverture", IDC_KEEP_SOURCE_WINDOW_OPEN, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 52, 272, 12
-  CONTROL "Ne pas perdre la sélection quand on &clique sur une fenêtre en arrière-plan", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 66, 272, 12
-  CONTROL "Placer les nouvelles fenêtres sur un &espace libre", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 80, 250, 12
-  CONTROL "Informations sur le placement des fenêtres", IDC_SMART_WINDOW_PLACEMENT_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 79, 12, 14
-  CONTROL "Ani&mer l’ouverture des dossiers", IDC_OPENING_ANIMATION_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 94, 272, 12
-  LTEXT "Durée", IDC_OPENING_ANIMATION_DURATION_LABEL, 26, 110, 22, 9
-  EDITTEXT IDC_OPENING_ANIMATION_DURATION, 52, 107, 32, 14, ES_NUMBER|ES_AUTOHSCROLL|WS_TABSTOP
-  CONTROL "", IDC_OPENING_ANIMATION_SPIN, "msctls_updown32", UDS_ALIGNRIGHT|UDS_AUTOBUDDY|UDS_SETBUDDYINT|UDS_ARROWKEYS|UDS_NOTHOUSANDS, 73, 107, 11, 14
-  LTEXT "ms", IDC_OPENING_ANIMATION_UNIT, 88, 110, 10, 9
-  CONTROL "Verrouillage des fenêtres", -1, "Button", BS_GROUPBOX, 7, 136, 286, 72
-  CONTROL "Activer le &verrouillage de l’état des fenêtres", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 147, 272, 12
-  CONTROL "Afficher un cadenas &ouvert dans la barre de titre", IDC_WINDOW_STATE_UNLOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 161, 260, 12
-  CONTROL "Afficher un verrou dans la &barre de titre pour les dossiers verrouillés", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 175, 260, 12
-  CONTROL "Changer le verrouillage par un clic sur l’&icône", IDC_WINDOW_STATE_LOCK_CLICK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 189, 260, 12
-  CONTROL "Champ de recherche", -1, "Button", BS_GROUPBOX, 7, 212, 286, 52
-  CONTROL "Filtrer pendant la &saisie", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 223, 272, 12
-  LTEXT "Recherches récentes par dossier (0 à 20 ; 0 désactive)", IDC_SEARCH_HISTORY_LIMIT_LABEL, 14, 239, 222, 16
-  EDITTEXT IDC_SEARCH_HISTORY_LIMIT, 246, 236, 28, 14, ES_NUMBER|WS_TABSTOP
-  CONTROL "", IDC_SEARCH_HISTORY_SPIN, "msctls_updown32", UDS_ALIGNRIGHT|UDS_AUTOBUDDY|UDS_SETBUDDYINT|UDS_ARROWKEYS|UDS_NOTHOUSANDS, 263, 236, 11, 14
-  CONTROL "Barre des tâches", -1, "Button", BS_GROUPBOX, 7, 268, 286, 30
-  CONTROL "Regrouper les fenêtres dans la barre des &tâches", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 279, 250, 12
-  CONTROL "Informations sur le regroupement des fenêtres", IDC_GROUP_FOLDER_WINDOWS_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 278, 12, 14
+  CONTROL "Navigation dans les dossiers", -1, "Button", BS_GROUPBOX, 7, 44, 286, 91
+  CONTROL "&Ne pas fermer la fenêtre d’origine lors d’une ouverture", IDC_KEEP_SOURCE_WINDOW_OPEN, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 55, 272, 12
+  CONTROL "Ne pas perdre la sélection quand on &clique sur une fenêtre en arrière-plan", IDC_KEEP_SELECTION_ON_ACTIVATE, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 69, 272, 12
+  CONTROL "Placer les nouvelles fenêtres sur un &espace libre", IDC_SMART_WINDOW_PLACEMENT, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 83, 250, 12
+  CONTROL "Informations sur le placement des fenêtres", IDC_SMART_WINDOW_PLACEMENT_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 82, 12, 14
+  CONTROL "Ani&mer l’ouverture des dossiers", IDC_OPENING_ANIMATION_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 97, 272, 12
+  LTEXT "Durée", IDC_OPENING_ANIMATION_DURATION_LABEL, 26, 113, 22, 9
+  EDITTEXT IDC_OPENING_ANIMATION_DURATION, 52, 110, 32, 14, ES_NUMBER|ES_AUTOHSCROLL|WS_TABSTOP
+  CONTROL "", IDC_OPENING_ANIMATION_SPIN, "msctls_updown32", UDS_ALIGNRIGHT|UDS_AUTOBUDDY|UDS_SETBUDDYINT|UDS_ARROWKEYS|UDS_NOTHOUSANDS, 73, 110, 11, 14
+  LTEXT "ms", IDC_OPENING_ANIMATION_UNIT, 88, 113, 10, 9
+  CONTROL "Taille des fenêtres par défaut", -1, "Button", BS_GROUPBOX, 7, 142, 286, 35
+  CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 159, 88, 8
+  CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 156, 35, 14
+  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT_LABEL, "Static", SS_RIGHT|WS_GROUP, 156, 159, 88, 8
+  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 251, 156, 35, 14
+  CONTROL "Verrouillage des fenêtres", -1, "Button", BS_GROUPBOX, 7, 184, 286, 72
+  CONTROL "Activer le &verrouillage de l’état des fenêtres", IDC_WINDOW_STATE_LOCK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 195, 272, 12
+  CONTROL "Afficher un cadenas &ouvert dans la barre de titre", IDC_WINDOW_STATE_UNLOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 209, 260, 12
+  CONTROL "Afficher un verrou dans la &barre de titre pour les dossiers verrouillés", IDC_WINDOW_STATE_LOCK_BADGE_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 223, 260, 12
+  CONTROL "Changer le verrouillage par un clic sur l’&icône", IDC_WINDOW_STATE_LOCK_CLICK_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 237, 260, 12
+  CONTROL "Barre des tâches", -1, "Button", BS_GROUPBOX, 7, 263, 286, 30
+  CONTROL "Regrouper les fenêtres dans la barre des &tâches", IDC_GROUP_FOLDER_WINDOWS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 274, 250, 12
+  CONTROL "Informations sur le regroupement des fenêtres", IDC_GROUP_FOLDER_WINDOWS_HELP, "Button", BS_OWNERDRAW|WS_TABSTOP, 274, 273, 12, 14
 }
 
-IDD_SETTINGS_DISPLAY DIALOGEX DISCARDABLE 0, 0, 300, 333
+IDD_SETTINGS_DISPLAY DIALOGEX DISCARDABLE 0, 0, 300, 228
 STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
-CAPTION "Affichage"
+CAPTION "Interface"
 FONT 8, "MS Shell Dlg", 400, 0, 0
 {
   CONTROL "Éléments de l’interface", -1, "Button", BS_GROUPBOX, 7, 7, 286, 71
@@ -92,21 +92,35 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Afficher le bouton Act&ualiser", IDC_REFRESH_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 127, 130, 14
   CONTROL "Afficher le bouton A&ffichage", IDC_VIEW_BUTTON_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 156, 127, 130, 14
   CONTROL "Les éléments ci-dessus sont visibles lorsque la barre d’outils est affichée.", -1, "Static", WS_GROUP, 14, 143, 272, 16
-  CONTROL "Fichiers", -1, "Button", BS_GROUPBOX, 7, 169, 286, 78
-  CONTROL "Affiche le &nom complet d’un fichier sélectionné (ne s’applique pas aux sélections multiples)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 181, 272, 18
-  CONTROL "Mélanger les &dossiers et les fichiers dans le tri", IDC_MIXED_FOLDER_SORTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 199, 272, 14
-  CONTROL "Autor&iser les colonnes Détails à remplir la largeur de la fenêtre", IDC_DETAILS_COLUMNS_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 213, 272, 14
-  CONTROL "Actualiser uniquement au relâchement du &bouton de la souris", IDC_DETAILS_COLUMNS_DEFERRED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 227, 260, 14
-  CONTROL "Menu Affichage", -1, "Button", BS_GROUPBOX, 7, 254, 286, 30
-  CONTROL "&Prévisualiser les modes d’affichage dans le menu Affichage", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 266, 272, 14
-  CONTROL "Taille des fenêtres par défaut", -1, "Button", BS_GROUPBOX, 7, 291, 286, 35
-  CONTROL "", IDC_FOLDER_WINDOW_WIDTH_LABEL, "Static", SS_RIGHT|WS_GROUP, 14, 308, 88, 8
-  CONTROL "", IDC_FOLDER_WINDOW_WIDTH, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 109, 305, 35, 14
-  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT_LABEL, "Static", SS_RIGHT|WS_GROUP, 156, 308, 88, 8
-  CONTROL "", IDC_FOLDER_WINDOW_HEIGHT, "Edit", ES_NUMBER|WS_BORDER|WS_TABSTOP, 251, 305, 35, 14
+  CONTROL "Champ de recherche", -1, "Button", BS_GROUPBOX, 7, 169, 286, 52
+  CONTROL "Filtrer pendant la &saisie", IDC_LIVE_NAME_SEARCH, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 180, 272, 12
+  LTEXT "Recherches récentes par dossier (0 à 20 ; 0 désactive)", IDC_SEARCH_HISTORY_LIMIT_LABEL, 14, 196, 222, 16
+  EDITTEXT IDC_SEARCH_HISTORY_LIMIT, 246, 193, 28, 14, ES_NUMBER|WS_TABSTOP
+  CONTROL "", IDC_SEARCH_HISTORY_SPIN, "msctls_updown32", UDS_ALIGNRIGHT|UDS_AUTOBUDDY|UDS_SETBUDDYINT|UDS_ARROWKEYS|UDS_NOTHOUSANDS, 263, 193, 11, 14
 }
 
-IDD_SETTINGS_BROWSER DIALOGEX DISCARDABLE 0, 0, 300, 308
+IDD_SETTINGS_FILES DIALOGEX DISCARDABLE 0, 0, 300, 261
+STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
+CAPTION "Fichiers"
+FONT 8, "MS Shell Dlg", 400, 0, 0
+{
+  GROUPBOX "Noms et tri", -1, 7, 7, 286, 48
+  CONTROL "Affiche le &nom complet d’un fichier sélectionné (ne s’applique pas aux sélections multiples)", IDC_FULL_NAMES_ON_SELECTION, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 19, 272, 18
+  CONTROL "Mélanger les &dossiers et les fichiers dans le tri", IDC_MIXED_FOLDER_SORTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 37, 272, 14
+  GROUPBOX "Espacement des icônes", -1, 7, 62, 286, 63
+  CONTROL "&Autoriser le réglage de l’espacement par dossier", IDC_ICON_SPACING_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 74, 272, 14
+  CONTROL "&Repositionner les icônes pendant le déplacement du curseur", IDC_ICON_SPACING_DYNAMIC, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 26, 88, 260, 14
+  PUSHBUTTON "R&éinitialiser l’espacement de tous les dossiers", IDC_ICON_SPACING_RESET, 26, 105, 260, 14
+  GROUPBOX "Colonnes en mode Détails", -1, 7, 132, 286, 44
+  CONTROL "Autor&iser les colonnes Détails à remplir la largeur de la fenêtre", IDC_DETAILS_COLUMNS_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 144, 272, 14
+  CONTROL "Actualiser uniquement au relâchement du &bouton de la souris", IDC_DETAILS_COLUMNS_DEFERRED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 26, 158, 260, 14
+  CONTROL "Menu Affichage", -1, "Button", BS_GROUPBOX, 7, 183, 286, 30
+  CONTROL "&Prévisualiser les modes d’affichage dans le menu Affichage", IDC_VIEW_MENU_PREVIEW_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 195, 272, 14
+  GROUPBOX "Sélections dans les gros dossiers", -1, 7, 220, 286, 34
+  CONTROL "Télécharger les &symboles Microsoft pour accélérer la gestion des gros dossiers", IDC_SELECTION_SYMBOLS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 231, 272, 18
+}
+
+IDD_SETTINGS_BROWSER DIALOGEX DISCARDABLE 0, 0, 300, 275
 STYLE DS_SHELLFONT|WS_CHILD|WS_CAPTION|WS_DISABLED
 CAPTION "Intégration"
 FONT 8, "MS Shell Dlg", 400, 0, 0
@@ -116,19 +130,17 @@ FONT 8, "MS Shell Dlg", 400, 0, 0
   CONTROL "Remplacer l'Explorateur de fichiers Windows comme programme par défaut pour ouvrir tous les dossiers.", -1, "Static", WS_GROUP, 42, 22, 244, 24
   CONTROL "&Définir comme explorateur par défaut", IDC_SET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 56, 272, 14
   CONTROL "&Rétablir l'Explorateur de fichiers Windows", IDC_RESET_DEFAULT_BROWSER, "Button", WS_TABSTOP, 14, 77, 272, 14
-  GROUPBOX "Everything (application externe)", -1, 7, 111, 286, 97
-  CONTROL "Ajouter la recherche &Everything dans le champ de recherche", IDC_EVERYTHING_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 123, 272, 12
-  LTEXT "Exécutable (vide = détection automatique)", -1, 14, 138, 272, 9
-  EDITTEXT IDC_EVERYTHING_PATH, 14, 149, 272, 14, ES_AUTOHSCROLL|WS_TABSTOP
-  PUSHBUTTON "Dé&tecter", IDC_EVERYTHING_DETECT, 14, 166, 90, 14
-  PUSHBUTTON "&Parcourir...", IDC_EVERYTHING_BROWSE, 111, 166, 90, 14
-  LTEXT "Portée", -1, 14, 188, 70, 9
-  COMBOBOX IDC_EVERYTHING_SCOPE, 88, 185, 198, 60, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
-  GROUPBOX "PowerToys Peek", -1, 7, 213, 286, 51
-  CONTROL "&Aperçu avec Espace", IDC_PEEK_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 225, 272, 12
-  CONTROL "(Peek doit aussi être activé dans <a>PowerToys</a>)", IDC_PEEK_SETTINGS, "SysLink", WS_TABSTOP, 26, 241, 260, 20
-  GROUPBOX "Gros dossiers", -1, 7, 269, 286, 34
-  CONTROL "Télécharger les &symboles Microsoft pour accélérer la gestion des gros dossiers", IDC_SELECTION_SYMBOLS, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 280, 272, 18
+  GROUPBOX "Everything (application externe)", -1, 7, 113, 286, 97
+  CONTROL "Ajouter la recherche &Everything dans le champ de recherche", IDC_EVERYTHING_ENABLED, "Button", BS_AUTOCHECKBOX|BS_MULTILINE|BS_TOP|WS_TABSTOP, 14, 125, 272, 12
+  LTEXT "Exécutable (vide = détection automatique)", -1, 14, 140, 272, 9
+  EDITTEXT IDC_EVERYTHING_PATH, 14, 151, 272, 14, ES_AUTOHSCROLL|WS_TABSTOP
+  PUSHBUTTON "Dé&tecter", IDC_EVERYTHING_DETECT, 14, 168, 90, 14
+  PUSHBUTTON "&Parcourir...", IDC_EVERYTHING_BROWSE, 111, 168, 90, 14
+  LTEXT "Portée", -1, 14, 190, 70, 9
+  COMBOBOX IDC_EVERYTHING_SCOPE, 88, 187, 198, 60, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+  GROUPBOX "PowerToys Peek", -1, 7, 217, 286, 51
+  CONTROL "&Aperçu avec Espace", IDC_PEEK_ENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP, 14, 229, 272, 12
+  CONTROL "(Peek doit aussi être activé dans <a>PowerToys</a>)", IDC_PEEK_SETTINGS, "SysLink", WS_TABSTOP, 26, 245, 260, 20
 }
 
 IDD_SETTINGS_ABOUT DIALOGEX DISCARDABLE 0, 0, 300, 277

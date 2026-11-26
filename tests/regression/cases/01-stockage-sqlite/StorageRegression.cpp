@@ -136,6 +136,33 @@ int main(int argc, char **argv) {
             FolderState s;
             require(store.read("missing", &s) && !s.present, "missing row must be empty");
             const auto original = fixture();
+            auto spaced = original;
+            spaced.view.iconSpacing.ratios = {0, 3000};
+            require(store.save("spaced",spaced,FolderState::View)
+                && store.setLocked("spaced",spaced,FolderState::View,true)
+                && store.save("spaced",original,FolderState::View)
+                && store.move("spaced","renamed") && store.read("renamed",&s)
+                && s.locked && s.view.iconSpacing.ratios == spaced.view.iconSpacing.ratios,
+                "a locked or renamed folder lost its icon spacing");
+            require(store.setLocked("renamed",original,FolderState::View,false)
+                && store.read("renamed",&s) && s.view.iconSpacing.ratios == original.view.iconSpacing.ratios
+                && store.remove("renamed"), "restoring standard icon spacing");
+            auto stale = spaced;
+            require(store.save("open", stale, FolderState::All)
+                && store.setLocked("closed", stale, FolderState::All, true), "seed spacing reset");
+            int64_t generation = 0;
+            require(store.resetIconSpacing(generation) && generation > 0, "reset every folder's spacing");
+            require(store.save("open", stale, FolderState::View) && store.read("open", &s)
+                && s.view.iconSpacing.ratios == original.view.iconSpacing.ratios && s.icons == original.icons
+                && s.view.iconSpacing.generation == generation, "a late view save restored old spacing");
+            require(store.read("closed", &s) && s.locked && s.width == original.width
+                && s.view.iconSpacing.ratios == original.view.iconSpacing.ratios, "reset altered a locked folder");
+            require(store.read("new-folder", &s) && !s.present && s.view.iconSpacing.generation == generation,
+                "a new folder missed the reset");
+            s.view.iconSpacing.ratios = {1500, 2000};
+            require(store.save("new-folder", s, FolderState::View) && store.read("new-folder", &s)
+                && s.view.iconSpacing.ratios[1] == 2000, "new adjustments after a reset");
+            require(store.remove("open") && store.remove("closed") && store.remove("new-folder"), "clean spacing fixtures");
             require(store.save("folder", original, FolderState::All), "save full");
             require(store.read("folder", &s) && s.present==FolderState::All && s.x==-72000 && s.y==68000
                 && s.width==902 && s.maximized && s.view.mode==4 && s.view.columns[0].width==220

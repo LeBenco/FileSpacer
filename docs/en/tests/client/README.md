@@ -23,8 +23,8 @@ the launcher never creates one or falls back to local UI execution.
 ## Prepare the client once
 
 Use a dedicated VM and a test account with a password. The VM must be running
-with that account's graphical session signed in and unlocked. Close VMConnect
-without signing out or shutting down the guest. Cases run under a limited token
+with that account's graphical session signed in and unlocked. Close VMConnect for the test VM without signing out or shutting down the guest.
+Consoles identified as belonging to other local VMs may stay open. A console with an unknown target blocks the run. Cases run under a limited token
 in that session. The controller can reconnect a disconnected session to the
 guest console; it cannot unlock Windows.
 
