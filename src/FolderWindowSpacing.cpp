@@ -279,6 +279,9 @@ bool FolderWindow::ViewMenuPreview::handleSpacingInput(const MSG &message) {
         if (type == WM_LBUTTONUP) draggingSpacing = false;
         return true;
     }
+    // Let the menu see the pointer enter the slider row and cancel a pending
+    // switch to a sibling crossed on the way to a flipped submenu.
+    if (type == WM_MOUSEMOVE) return false;
     if (key) {
         if (GetMenuState(renderedAxis, 1, MF_BYPOSITION) & MF_HILITE) return false;
         if ((!owner.spacingAxis && (message.wParam == VK_UP || message.wParam == VK_DOWN))
@@ -310,6 +313,17 @@ bool FolderWindow::ViewMenuPreview::handleSpacingInput(const MSG &message) {
             moveSpacingThumb(point, false);
         }
         return true;
+    }
+    // A click on the next axis while its submenu is opening can reselect
+    // the old axis. Leave the native hover transition in charge of those rows.
+    HWND hit = WindowFromPoint(point);
+    MENUBARINFO bar = {sizeof(bar)};
+    if (renderedRoot && hit && GetMenuBarInfo(hit, OBJID_CLIENT, 0, &bar) && bar.hMenu == renderedRoot) {
+        const int row = MenuItemFromPoint(nullptr, renderedRoot, point);
+        MENUITEMINFOW entry = {sizeof(entry)};
+        entry.fMask = MIIM_ID;
+        if (row >= 0 && GetMenuItemInfoW(renderedRoot, static_cast<UINT>(row), TRUE, &entry)
+                && (entry.wID == IDM_ICON_GAP_HORIZONTAL || entry.wID == IDM_ICON_GAP_VERTICAL)) return true;
     }
     return false;
 }
