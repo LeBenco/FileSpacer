@@ -53,7 +53,7 @@ try {
         Wait-Ui {(Use-UiView $window {param($v) $v.Positions()}) -eq $seed} 'six free coordinates settled' 150
         $firstMenu=$null
         foreach ($axis in @(0,1)) {
-            $slider = Open-SpacingSlider $window $axis $firstMenu
+            $slider = Open-SpacingSlider $window $axis $firstMenu -ClickParent:($defer -and !$axis)
             if (!$axis) { $firstMenu=$slider.Menu }
             Assert-Ui ($slider.Menu -eq $firstMenu) 'same View menu window across axes'
             $menu=Get-SpacingViewMenu $window
