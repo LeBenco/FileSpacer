@@ -79,6 +79,7 @@ try {
             foreach($setting in @('WindowStateUnlockBadgeEnabled','WindowStateLockClickEnabled','MixedFolderSorting','EverythingEnabled')){Set-UiPreference $setting 0}
             if($plan.Scenes-contains'details-columns'){
                 foreach($setting in @('DetailsColumnsEnabled','DetailsColumnsDeferred')){Set-UiPreference $setting 1}
+                Set-UiPreference 'ViewMenuPreviewEnabled' 0
             }
             $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\FileSpacer\Test',$true)
             try{$key.DeleteValue('TitleMenu',$false)}finally{$key.Dispose()}
