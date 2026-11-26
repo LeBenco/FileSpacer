@@ -81,7 +81,7 @@ Ces choix sont disponibles avec toutes les tailles d’icônes. Les vues **Liste
 
 En mode **Libre**, maintenir **S** pendant le déplacement et jusqu’au relâchement du bouton de la souris pour aligner uniquement les icônes déplacées sur la grille. Les autres restent en place. Relâcher **S** avant le dépôt conserve le placement libre. En vue Icônes, un cadre gris indique la destination.
 
-Dans **Affichage**, survolez l’espacement horizontal ou vertical pour faire apparaître le curseur à côté de la ligne. Le menu reste visible pendant le réglage. Survolez l’autre entrée pour changer d’axe. Dans **Rétablir l’espacement des icônes**, choisissez **Horizontal**, **Vertical** ou **Les deux axes** pour revenir à 100 %. Dans **Paramètres > Fichiers**, choisissez si les icônes se repositionnent pendant le déplacement du curseur ou au relâchement. Le bouton de réinitialisation de cette page rétablit les deux axes pour tous les dossiers après **Appliquer** ou **OK**.
+Dans **Affichage**, ouvrez le sous-menu de l’espacement horizontal ou vertical. Déplacez le curseur pour régler cet axe dans le dossier courant, ou choisissez la commande juste en dessous pour le rétablir à 100 %. Le menu Affichage reste ouvert pendant le réglage et vous pouvez passer directement à l’autre axe. Pour les réinitialiser ensemble, choisissez **Rétablir les deux espacements à 100 %** dans Affichage. Dans **Paramètres > Fichiers**, choisissez si les icônes se repositionnent pendant le déplacement du curseur ou au relâchement. Le bouton de réinitialisation de cette page rétablit les deux axes pour tous les dossiers après **Appliquer** ou **OK**.
 
 <div id="details-columns"></div>
 

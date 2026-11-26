@@ -81,7 +81,7 @@ Queste opzioni sono disponibili con tutte le dimensioni delle icone. **Elenco**,
 
 In modalità **Libera**, tenere premuto **S** durante il trascinamento e fino al rilascio del pulsante del mouse per allineare alla griglia solo le icone trascinate. Le altre restano al loro posto. Rilasciando **S** prima di deporle, il posizionamento resta libero. Nella vista Icone, un riquadro grigio indica la posizione di destinazione.
 
-In **Visualizza**, passa il puntatore sulla spaziatura orizzontale o verticale delle icone. Il cursore appare accanto alla voce e il menu rimane visibile durante il trascinamento. Passa il puntatore sull’altra voce per cambiare asse. Con **Ripristina la spaziatura delle icone** puoi riportare uno o entrambi gli assi al 100%. In **Impostazioni > File** puoi scegliere se spostare le icone durante il trascinamento del cursore o al rilascio. Il pulsante di ripristino nella stessa pagina ripristina entrambi gli assi per tutte le cartelle quando scegli **Applica** o **OK**.
+In **Visualizza**, apri il sottomenu della spaziatura orizzontale o verticale delle icone. Trascina il cursore per regolare la spaziatura nella cartella corrente. Il comando subito sotto ripristina il valore del relativo asse al 100%. Il menu resta aperto durante il trascinamento e puoi passare direttamente all’altro asse. In Visualizza puoi anche ripristinare entrambi gli assi insieme. In **Impostazioni > File** puoi scegliere se spostare le icone durante il trascinamento del cursore o al rilascio. Il pulsante di ripristino nella stessa pagina ripristina entrambi gli assi per tutte le cartelle quando scegli **Applica** o **OK**.
 
 <div id="details-columns"></div>
 

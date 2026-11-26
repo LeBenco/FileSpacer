@@ -81,7 +81,7 @@ Estas opciones están disponibles con todos los tamaños de iconos. **Lista**, *
 
 En modo **Libre**, mantener **S** durante el arrastre y hasta soltar el botón del ratón para alinear en la cuadrícula solo los iconos arrastrados. Los demás permanecen en su sitio. Soltar **S** antes de colocarlos mantiene la colocación libre. En la vista de iconos, un marco gris indica la posición de destino.
 
-En **Vista**, sitúa el puntero sobre el espaciado horizontal o vertical de los iconos. El control aparece junto a la opción y el menú permanece visible mientras lo arrastras. Sitúa el puntero sobre la otra opción para cambiar de eje. En **Restablecer el espaciado de los iconos** puedes devolver uno o ambos ejes al 100 %. En **Configuración > Archivos** puede elegir si los iconos se mueven al arrastrar el control o al soltarlo. El botón de restablecimiento de esa página restaura ambos ejes en todas las carpetas al pulsar **Aplicar** o **Aceptar**.
+En **Vista**, abra el submenú de espaciado horizontal o vertical de los iconos. Arrastre el control para ajustar ese eje en la carpeta actual. La opción situada justo debajo lo restablece al 100 %. El menú permanece abierto mientras arrastra el control y permite pasar directamente al otro eje. En Vista también puede restablecer ambos a la vez. En **Configuración > Archivos** puede elegir si los iconos se mueven al arrastrar el control o al soltarlo. El botón de restablecimiento de esa página restaura ambos ejes en todas las carpetas al pulsar **Aplicar** o **Aceptar**.
 
 <div id="details-columns"></div>
 

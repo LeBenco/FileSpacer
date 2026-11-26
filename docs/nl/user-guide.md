@@ -81,7 +81,7 @@ Deze opties zijn beschikbaar bij alle pictogramgroottes. **Lijst**, **Details** 
 
 Houd in de modus **Vrij** tijdens het slepen **S** ingedrukt totdat u de muisknop loslaat om alleen de gesleepte pictogrammen op het raster uit te lijnen. De andere blijven staan. Als u **S** vóór het neerzetten loslaat, blijft de plaatsing vrij. In de pictogramweergave toont een grijs kader de doelpositie.
 
-Wijs in **Beeld** de horizontale of verticale pictogramafstand aan. De schuifregelaar verschijnt naast de optie en het menu blijft tijdens het slepen zichtbaar. Wijs de andere optie aan om van as te wisselen. Met **Pictogramafstand herstellen** zet je één of beide assen terug naar 100%. Kies in **Instellingen > Bestanden** of de pictogrammen bij het slepen of pas bij het loslaten verschuiven. Met de herstelknop op die pagina zet je beide assen voor alle mappen terug zodra je **Toepassen** of **OK** kiest.
+Open in **Beeld** het submenu voor de horizontale of verticale pictogramafstand. Pas de afstand voor de huidige map aan met de schuifregelaar. Met de opdracht eronder zet je deze as terug naar 100%. Het menu blijft open tijdens het slepen, zodat je meteen naar de andere as kunt gaan. In Beeld kun je ook beide assen tegelijk herstellen. Kies in **Instellingen > Bestanden** of de pictogrammen bij het slepen of pas bij het loslaten verschuiven. Met de herstelknop op die pagina zet je beide assen voor alle mappen terug zodra je **Toepassen** of **OK** kiest.
 
 <div id="details-columns"></div>
 

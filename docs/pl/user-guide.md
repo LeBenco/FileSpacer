@@ -81,7 +81,7 @@ Opcje te są dostępne dla wszystkich rozmiarów ikon. Widoki **Lista**, **Szcze
 
 W trybie **Dowolne** należy przytrzymać **S** podczas przeciągania aż do zwolnienia przycisku myszy, aby wyrównać do siatki tylko przeciągane ikony. Pozostałe nie zmieniają położenia. Zwolnienie **S** przed upuszczeniem zachowuje swobodne pozycjonowanie. W widoku ikon szara ramka wskazuje docelową pozycję.
 
-W menu **Widok** wskaż poziomy lub pionowy odstęp między ikonami. Suwak pojawi się obok wskazanej pozycji, a menu pozostanie widoczne podczas przeciągania. Wskaż drugą pozycję, aby zmienić oś. W podmenu **Przywróć domyślne odstępy między ikonami** możesz przywrócić 100% dla jednej lub obu osi. W **Ustawienia > Pliki** możesz wybrać, czy ikony mają się przesuwać podczas przeciągania suwaka, czy po jego zwolnieniu. Przycisk przywracania na tej stronie przywraca odstępy na obu osiach we wszystkich folderach po wybraniu **Zastosuj** lub **OK**.
+W menu **Widok** otwórz podmenu poziomego lub pionowego odstępu między ikonami. Przeciągnij suwak, aby zmienić odstęp w bieżącym folderze. Polecenie tuż pod nim przywraca 100% dla tej osi. Podczas przeciągania menu pozostaje otwarte i można przejść od razu do drugiej osi. W menu Widok można też przywrócić oba odstępy jednocześnie. W **Ustawienia > Pliki** możesz wybrać, czy ikony mają się przesuwać podczas przeciągania suwaka, czy po jego zwolnieniu. Przycisk przywracania na tej stronie przywraca odstępy na obu osiach we wszystkich folderach po wybraniu **Zastosuj** lub **OK**.
 
 <div id="details-columns"></div>
 
