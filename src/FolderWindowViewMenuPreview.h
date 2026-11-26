@@ -26,10 +26,14 @@ struct FolderWindow::ViewMenuPreview {
     UINT initialCommand = 0, currentCommand = 0, wantedCommand = 0;
     UINT pendingCommand = 0; // Entry outside the modes, run after the preview is cancelled.
     UINT spacingCommand = 0; // Wait for a refill restoring the applied view before changing its spacing.
-    POINT spacingAnchor = {};
-    HMENU spacingResetMenu = nullptr;
-    UINT pressedSpacingCommand = 0;
-    bool editingSpacing = false, draggingSpacing = false;
+    HWND spacingMenuWindow = nullptr, spacingMeasureOwner = nullptr;
+    static bool measureSpacingItem(HWND window, MEASUREITEMSTRUCT *measure);
+    static LRESULT CALLBACK measureMenuProc(HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR);
+    void releaseSpacingMeasureOwner();
+    HMENU renderedRoot = nullptr, renderedAxis = nullptr;
+    bool spacingEnabled = false, editingSpacing = false, draggingSpacing = false;
+    static void CALLBACK spacingMenuEvent(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
+    void spacingMenuShown(HWND popup);
     int thumbOffset = 0;
     bool handleSpacingInput(const MSG &message);
     void commitSpacing();
