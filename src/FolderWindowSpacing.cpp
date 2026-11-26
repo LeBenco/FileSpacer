@@ -121,19 +121,20 @@ ExplorerIconSpacingResult FolderWindow::applyIconSpacing(IShellView *source, con
     const auto result = useExplorerIconSpacing(source, ratios, next, current, beforeChange);
     if (current()) {
         spacingMetrics = next;
-        if (result == ExplorerIconSpacingResult::Pending) {
-            // Reference enumeration can finish after the real folder, especially
-            // during a cold launch. Retry only a pending measurement, with backoff.
-            if (spacingReferenceRetries < 7) {
-                SetTimer(hwnd, TIMER_SPACING_REFERENCE, 32u << spacingReferenceRetries, nullptr);
-                ++spacingReferenceRetries;
-            }
-        } else if (spacingReferenceRetries) {
+        // Bound the startup wait to the first four delays (480 ms total).
+        // Pending means a retry is armed, so the caller can defer restoration.
+        const unsigned retryLimit = initialStateApplied ? 7 : 4;
+        if (result == ExplorerIconSpacingResult::Pending && spacingReferenceRetries < retryLimit
+                && checkLE(SetTimer(hwnd, TIMER_SPACING_REFERENCE, 32u << spacingReferenceRetries, nullptr))) {
+            ++spacingReferenceRetries;
+            return result;
+        }
+        if (spacingReferenceRetries) {
             KillTimer(hwnd, TIMER_SPACING_REFERENCE);
             spacingReferenceRetries = 0;
         }
     }
-    return result;
+    return result == ExplorerIconSpacingResult::Pending ? ExplorerIconSpacingResult::Unchanged : result;
 }
 
 void FolderWindow::runSpacingCommand(UINT command) {

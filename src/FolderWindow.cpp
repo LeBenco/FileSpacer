@@ -1170,7 +1170,8 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
         case WM_TIMER:
             if (wParam == TIMER_SPACING_REFERENCE) {
                 KillTimer(hwnd, TIMER_SPACING_REFERENCE);
-                queueExplorerIconSpacing();
+                if (initialStateApplied) queueExplorerIconSpacing();
+                else finishViewInitialization();
                 return 0;
             }
             if (wParam == TIMER_LOADING) {

@@ -593,14 +593,16 @@ void FolderWindow::finishViewInitialization() {
         const auto spacing = applyIconSpacing(view, current);
         if (!current()) return;
         restoringState = false;
-        // A freshly navigated reference can complete after this callback.
-        // Give it one dispatch before replaying positions into a live grid.
-        if (spacing == ExplorerIconSpacingResult::Pending && !initialIconSpacingDeferred) {
-            initialIconSpacingDeferred = true;
-            if (PostMessageW(hwnd, MSG_FINISH_VIEW_INITIALIZATION, generation, 0)) return;
+        if (spacing == ExplorerIconSpacingResult::Pending) {
+            // Restore positions and scroll only after the reference has set
+            // the pitch. A cold reference may need more than one dispatch.
+            if (!initialIconSpacingDeferred) {
+                initialIconSpacingDeferred = true;
+                checkLE(PostMessageW(hwnd, MSG_FINISH_VIEW_INITIALIZATION, generation, 0));
+            }
+            return; // The armed reference timer also resumes initialization.
         }
         initialStateApplied = true;
-        queueExplorerIconSpacing();
         selectionClear.bind(view, current);
         if (!current()) return;
         CComQIPtr<IFolderView> folderView(view);
