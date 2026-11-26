@@ -109,7 +109,9 @@ filling through the visible View menu, holding the pointer over the option for
 one second before clicking. It then pauses and drags the Name divider to
 show the complete names. At least two names remain more than 20% hidden between
 activation and the manual drag. The global permission and update-on-release
-option are enabled before recording. The window and measured View menu define
+option are enabled before recording. View-mode hover previews are disabled for
+this scene so moving through the menu does not temporarily change the view.
+The window and measured View menu define
 the capture area. Native column bounds and text measurements are recorded for
 review, along with the actual command and executable hash. Review the exported
 GIF to confirm the visible text, pauses and continuous pointer path.
