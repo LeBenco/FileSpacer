@@ -44,6 +44,18 @@ Run one language at a time, in a Windows session using that display language.
 `-Languages` is required and accepts exactly one language per invocation.
 Application resources alone do not translate native Shell menus or column
 headers. Change the VM's display language and sign in again between languages.
+Also place that language first in the Windows preferred-language list with
+`Set-WinUserLanguageList`. A display-language override alone does not change
+the language used by packaged applications such as Notepad for file-type names.
+Preserve and restore the original language list and its input-method properties
+when preparing a series of captures. The Details-column scene checks both lists
+and the actual text-document type before starting ScreenToGif.
+If Notepad still falls back to another language, verify that its language
+resource packages are registered for the capture account, not merely staged on
+disk. For an installed bundle whose resources are already present, register all
+resources with `Add-AppxPackage -Register -MainPackage $bundle.PackageFullName
+-InstallAllResources`, where `$bundle` is returned by
+`Get-AppxPackage -Name Microsoft.WindowsNotepad -PackageTypeFilter Bundle`.
 The scenario checks `Get-WinUILanguageOverride`, falling back to the current UI
 culture when no override is configured. The setting and PowerShell's own UI culture
 are recorded separately, since PowerShell can fall back to another language.
