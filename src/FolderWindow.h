@@ -232,9 +232,8 @@ private:
     int spacingAxis = 0, spacingPreview = 1000;
     bool spacingDeferred = false, spacingFramePending = false, spacingEdited = false;
     bool canAdjustIconSpacing() const;
-    void runSpacingCommand(UINT command, POINT anchor);
-    void openSpacingSlider(int axis, POINT anchor, bool inMenu = false);
-    void showSpacingResetMenu(POINT point);
+    void runSpacingCommand(UINT command);
+    void openSpacingSlider(int axis, const RECT &bounds, HWND menuWindow);
     void closeSpacingSlider();
     void readSpacingSlider(bool commit, bool frame = false);
     static LRESULT CALLBACK spacingPopupProc(HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR);
