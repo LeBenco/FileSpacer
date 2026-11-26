@@ -1,44 +1,40 @@
 . (Join-Path $PSScriptRoot 'GridDrag.ps1')
 
 function Get-SpacingViewMenu($Window) {
-    return [FileSpacerViewMenuTests.MenuUi]::Active($Window,$true,(Get-UiId 'IDM_RESET_SPACING_MENU'))
-}
-
-function Get-SpacingResetEntry($Menu) {
-    $entry=@($Menu.Entries | Where-Object Command -eq (Get-UiId 'IDM_RESET_SPACING_MENU'))
-    Assert-Ui ($entry.Count -eq 1 -and $entry[0].SubMenu -ne [IntPtr]::Zero) 'spacing reset submenu in View'
-    return $entry[0]
+    return [FileSpacerViewMenuTests.MenuUi]::Active($Window,$true,(Get-UiId 'IDM_RESET_BOTH_GAPS'))
 }
 
 function Assert-SpacingMenuState($Window,[bool]$Enabled) {
     $menu=Get-SpacingViewMenu $Window
     foreach ($id in @('IDM_ICON_GAP_HORIZONTAL','IDM_ICON_GAP_VERTICAL')) {
         $row=@($menu.Entries | Where-Object Command -eq (Get-UiId $id))
-        Assert-Ui ($row.Count -eq 1 -and $row[0].SubMenu -eq [IntPtr]::Zero) "$id directly in View"
+        Assert-Ui ($row.Count -eq 1 -and $row[0].SubMenu -ne [IntPtr]::Zero) "$id opens its own submenu"
         Assert-Ui ((($row[0].State -band 3) -eq 0) -eq $Enabled) "availability of $id in the applied view"
     }
 }
 
 function Assert-SpacingResetState($Menu,[bool]$Horizontal,[bool]$Vertical) {
-    $entry=Get-SpacingResetEntry $Menu
-    $expected=@{IDM_RESET_HORIZONTAL_GAP=$Horizontal; IDM_RESET_VERTICAL_GAP=$Vertical; IDM_RESET_BOTH_GAPS=($Horizontal -or $Vertical)}
-    foreach ($id in $expected.Keys) {
-        $state=[FileSpacerViewMenuTests.MenuUi]::CommandState($entry.SubMenu,(Get-UiId $id))
-        Assert-Ui ((($state -band 3) -eq 0) -eq $expected[$id]) "availability of $id in the reset submenu"
+    foreach ($axis in @('HORIZONTAL','VERTICAL')) {
+        $entry=$Menu.Entries | Where-Object Command -eq (Get-UiId "IDM_ICON_GAP_$axis")
+        $expected=if ($axis -eq 'HORIZONTAL') {$Horizontal} else {$Vertical}
+        $state=[FileSpacerViewMenuTests.MenuUi]::CommandState($entry.SubMenu,(Get-UiId "IDM_RESET_${axis}_GAP"))
+        Assert-Ui ((($state -band 3) -eq 0) -eq $expected) "availability of the $axis reset"
     }
+    $both=$Menu.Entries | Where-Object Command -eq (Get-UiId 'IDM_RESET_BOTH_GAPS')
+    Assert-Ui ((($both.State -band 3) -eq 0) -eq ($Horizontal -or $Vertical)) 'availability of the combined reset'
 }
 
 function Choose-SpacingCommand($Window,$Id,$ExistingMenu) {
     if (!$ExistingMenu) { $null=Open-PreviewMenu $Window }
     $menu=Get-SpacingViewMenu $Window
     if ($ExistingMenu) { Assert-Ui ($menu.Window -eq $ExistingMenu) 'original View menu still open' }
-    if ($Id -in @((Get-UiId 'IDM_RESET_HORIZONTAL_GAP'),(Get-UiId 'IDM_RESET_VERTICAL_GAP'),(Get-UiId 'IDM_RESET_BOTH_GAPS'))) {
-        $entry=Get-SpacingResetEntry $menu
-        [FileSpacerViewMenuTests.MenuUi]::Move(($entry.Bounds.Left+$entry.Bounds.Right)/2,($entry.Bounds.Top+$entry.Bounds.Bottom)/2)
+    if ($Id -ne (Get-UiId 'IDM_RESET_BOTH_GAPS')) {
+        $axis=if ($Id -eq (Get-UiId 'IDM_RESET_VERTICAL_GAP')) {'VERTICAL'} else {'HORIZONTAL'}
+        $entry=$menu.Entries | Where-Object Command -eq (Get-UiId "IDM_ICON_GAP_$axis")
+        [FileSpacerViewMenuTests.MenuUi]::Hover($menu,[array]::IndexOf($menu.Entries,$entry))
         $found=@{}
-        Wait-Ui {$found.Menu=[FileSpacerViewMenuTests.MenuUi]::Active($Window,$true,$Id); $null -ne $found.Menu} 'reset choices opened'
+        Wait-Ui {$found.Menu=[FileSpacerViewMenuTests.MenuUi]::Active($Window,$true,$Id); $null -ne $found.Menu} 'axis submenu opened'
         $menu=$found.Menu
-        Assert-Ui ($menu.Entries.Count -eq 3) 'three reset choices'
     }
     $i=[array]::IndexOf($menu.Entries.Command,[uint32]$Id)
     Assert-Ui ($i -ge 0 -and ($menu.Entries[$i].State -band 3) -eq 0 -and $menu.Entries[$i].Label) 'enabled named spacing command'
@@ -46,34 +42,40 @@ function Choose-SpacingCommand($Window,$Id,$ExistingMenu) {
     return $menu.Entries[$i].Label
 }
 
-function Open-SpacingSlider([IntPtr]$Window,[int]$Axis,$ExistingMenu) {
+function Open-SpacingSlider([IntPtr]$Window,[int]$Axis,$ExistingMenu,[switch]$ClickParent) {
     $id=if ($Axis) {'IDM_ICON_GAP_VERTICAL'} else {'IDM_ICON_GAP_HORIZONTAL'}
     if (!$ExistingMenu) { $null=Open-PreviewMenu $Window }
     $menu=Get-SpacingViewMenu $Window
     if ($ExistingMenu) { Assert-Ui ($menu.Window -eq $ExistingMenu) 'same menu before hovering over the other axis' }
     $row=[array]::IndexOf($menu.Entries.Command,[uint32](Get-UiId $id))
     Assert-Ui ($row -ge 0 -and ($menu.Entries[$row].State -band 3) -eq 0) 'spacing entry enabled'
-    $popupName=$menu.Entries[$row].Label
-    [FileSpacerViewMenuTests.MenuUi]::Hover($menu,$row)
+    $resetId=Get-UiId $(if ($Axis) {'IDM_RESET_VERTICAL_GAP'} else {'IDM_RESET_HORIZONTAL_GAP'})
+    if ($ClickParent) {[FileSpacerViewMenuTests.MenuUi]::Choose($menu,$row,$Window)}
+    else {[FileSpacerViewMenuTests.MenuUi]::Hover($menu,$row)}
     $pidValue = [uint32]0
     [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($Window,[ref]$pidValue)
     $found = @{}
     Wait-Ui {
-        foreach ($popup in [FileSpacerRegression.Native]::Top('Static',$popupName,$pidValue)) {
+        $found.Child=[FileSpacerViewMenuTests.MenuUi]::Active($Window,$true,$resetId)
+        if (!$found.Child) {return $false}
+        foreach ($popup in [FileSpacerRegression.Native]::Top('Static',[NullString]::Value,$pidValue)) {
             $tracks = [FileSpacerRegression.Native]::Children($popup,'msctls_trackbar32')
-            if ($tracks.Length -eq 1 -and [FileSpacerRegression.Native]::IsWindowVisible($popup)) {
+            if ($tracks.Length -eq 1 -and [FileSpacerRegression.Native]::IsWindowVisible($popup) -and
+                [Math]::Abs([FileSpacerRegression.Native]::Bounds($popup).Bottom - $found.Child.Entries[1].Bounds.Top) -le 2) {
                 $found.Popup = $popup
                 $found.Track = $tracks[0]
                 return $true
             }
         }
         return $false
-    } 'hover alone opens the native trackbar'
+    } 'axis submenu exposes its native trackbar'
     $bounds=[FileSpacerRegression.Native]::Bounds($found.Popup)
-    $entry=$menu.Entries[$row].Bounds
-    $middle=[int](($entry.Top+$entry.Bottom)/2)
-    Assert-Ui (($bounds.Left -eq $entry.Right -or $bounds.Right -eq $entry.Left) -and
-        $bounds.Top -le $middle -and $bounds.Bottom -gt $middle) 'slider beside its own menu row'
+    $slot=$found.Child.Entries[0].Bounds
+    Assert-Ui ($bounds.Top -eq $slot.Top -and $bounds.Bottom -eq $slot.Bottom -and
+        $bounds.Left -eq $slot.Left -and $bounds.Right -eq $slot.Right) 'the whole slider fits inside its menu row'
+    $reset=$found.Child.Entries[1]
+    Assert-Ui ($found.Child.Entries.Count -eq 2 -and $reset.Command -eq $resetId -and
+        $bounds.Left -eq $reset.Bounds.Left -and $bounds.Right -eq $reset.Bounds.Right) 'slider directly above the reset in the same column'
     $root=Get-SpacingViewMenu $Window
     Assert-Ui ($root.Window -eq $menu.Window) 'opening a slider preserves the active View menu'
     $found.Menu=$root.Window
