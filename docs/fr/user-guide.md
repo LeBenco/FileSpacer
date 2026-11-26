@@ -81,7 +81,11 @@ Ces choix sont disponibles avec toutes les tailles d’icônes. Les vues **Liste
 
 En mode **Libre**, maintenir **S** pendant le déplacement et jusqu’au relâchement du bouton de la souris pour aligner uniquement les icônes déplacées sur la grille. Les autres restent en place. Relâcher **S** avant le dépôt conserve le placement libre. En vue Icônes, un cadre gris indique la destination.
 
-Dans **Affichage**, ouvrez le sous-menu de l’espacement horizontal ou vertical. Déplacez le curseur pour régler cet axe dans le dossier courant, ou choisissez la commande juste en dessous pour le rétablir à 100 %. Le menu Affichage reste ouvert pendant le réglage et vous pouvez passer directement à l’autre axe. Pour les réinitialiser ensemble, choisissez **Rétablir les deux espacements à 100 %** dans Affichage. Dans **Paramètres > Fichiers**, choisissez si les icônes se repositionnent pendant le déplacement du curseur ou au relâchement. Le bouton de réinitialisation de cette page rétablit les deux axes pour tous les dossiers après **Appliquer** ou **OK**.
+Dans une vue à icônes, choisissez **Espacement horizontal des icônes** ou **Espacement vertical des icônes** dans le menu **Affichage** de la barre d’outils. Dans un dossier du système de fichiers, **Affichage** se ferme et le curseur s’ouvre dans un panneau centré sur le pointeur. Le panneau reste ouvert au relâchement. Cliquez dans la fenêtre du dossier, en dehors du panneau, pour rouvrir **Affichage** et choisir l’autre axe.
+
+Déplacez le curseur pour modifier l’espacement dans le dossier courant. Au minimum, l’espace libre entre les cellules d’icônes est supprimé. À 100 %, le pas de la grille est celui de Windows. À 300 %, ce pas est triplé. Chaque graduation correspond à un espacement que vous pouvez sélectionner. Choisissez **Rétablir à 100 %** sous le curseur pour rétablir un seul axe, ou **Rétablir les deux espacements à 100 %** dans **Affichage** pour les rétablir ensemble.
+
+Dans **Paramètres > Fichiers**, **Autoriser le réglage de l’espacement par dossier** active ces commandes. Vous pouvez choisir si les icônes se repositionnent pendant le déplacement du curseur ou au relâchement. **Réinitialiser l’espacement de tous les dossiers** rétablit les deux axes dans tous les dossiers après **Appliquer** ou **OK**.
 
 <div id="details-columns"></div>
 

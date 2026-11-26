@@ -81,7 +81,11 @@ Queste opzioni sono disponibili con tutte le dimensioni delle icone. **Elenco**,
 
 In modalità **Libera**, tenere premuto **S** durante il trascinamento e fino al rilascio del pulsante del mouse per allineare alla griglia solo le icone trascinate. Le altre restano al loro posto. Rilasciando **S** prima di deporle, il posizionamento resta libero. Nella vista Icone, un riquadro grigio indica la posizione di destinazione.
 
-In **Visualizza**, apri il sottomenu della spaziatura orizzontale o verticale delle icone. Trascina il cursore per regolare la spaziatura nella cartella corrente. Il comando subito sotto ripristina il valore del relativo asse al 100%. Il menu resta aperto durante il trascinamento e puoi passare direttamente all’altro asse. In Visualizza puoi anche ripristinare entrambi gli assi insieme. In **Impostazioni > File** puoi scegliere se spostare le icone durante il trascinamento del cursore o al rilascio. Il pulsante di ripristino nella stessa pagina ripristina entrambi gli assi per tutte le cartelle quando scegli **Applica** o **OK**.
+In una vista a icone, scegli **Spaziatura orizzontale delle icone** o **Spaziatura verticale delle icone** dal menu **Visualizza** della barra degli strumenti. Nelle cartelle del file system, **Visualizza** si chiude e il cursore si apre in un pannello centrato sul puntatore. Il pannello resta aperto quando rilasci il cursore. Fai clic nella finestra della cartella, fuori dal pannello, per riaprire **Visualizza** e scegliere l’altro asse.
+
+Trascina il cursore per cambiare la spaziatura nella cartella corrente. Al minimo si elimina lo spazio libero tra le celle delle icone. Il 100% corrisponde al passo della griglia di Windows e il 300% al suo triplo. Ogni tacca corrisponde a una spaziatura selezionabile. Usa **Ripristina al 100%** sotto il cursore per un asse, oppure **Ripristina entrambe le spaziature al 100%** in **Visualizza** per entrambi.
+
+In **Impostazioni > File**, **Consenti di regolare la spaziatura per cartella** attiva questi controlli. Puoi scegliere se riposizionare le icone durante il trascinamento del cursore o al rilascio. **Ripristina la spaziatura di tutte le cartelle** ripristina entrambi gli assi per tutte le cartelle quando scegli **Applica** o **OK**.
 
 <div id="details-columns"></div>
 

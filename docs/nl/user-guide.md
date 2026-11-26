@@ -81,7 +81,11 @@ Deze opties zijn beschikbaar bij alle pictogramgroottes. **Lijst**, **Details** 
 
 Houd in de modus **Vrij** tijdens het slepen **S** ingedrukt totdat u de muisknop loslaat om alleen de gesleepte pictogrammen op het raster uit te lijnen. De andere blijven staan. Als u **S** vóór het neerzetten loslaat, blijft de plaatsing vrij. In de pictogramweergave toont een grijs kader de doelpositie.
 
-Open in **Beeld** het submenu voor de horizontale of verticale pictogramafstand. Pas de afstand voor de huidige map aan met de schuifregelaar. Met de opdracht eronder zet je deze as terug naar 100%. Het menu blijft open tijdens het slepen, zodat je meteen naar de andere as kunt gaan. In Beeld kun je ook beide assen tegelijk herstellen. Kies in **Instellingen > Bestanden** of de pictogrammen bij het slepen of pas bij het loslaten verschuiven. Met de herstelknop op die pagina zet je beide assen voor alle mappen terug zodra je **Toepassen** of **OK** kiest.
+Kies in een pictogramweergave **Horizontale pictogramafstand** of **Verticale pictogramafstand** in het menu **Beeld** op de werkbalk. In mappen van het bestandssysteem sluit **Beeld** en verschijnt de schuifregelaar in een paneel dat op de muisaanwijzer is gecentreerd. Het paneel blijft open wanneer je de schuif loslaat. Klik in het mapvenster buiten het paneel om **Beeld** opnieuw te openen en de andere as te kiezen.
+
+Sleep de schuifregelaar om de afstand voor de huidige map te wijzigen. Op de minimumstand verdwijnt de vrije ruimte tussen de pictogramvakken. 100% komt overeen met de rasterafstand van Windows en 300% is driemaal die afstand. Elk streepje komt overeen met een afstand die je kunt kiezen. Met **Terugzetten op 100%** onder de schuifregelaar herstel je één as. Met **Beide afstanden terugzetten op 100%** in **Beeld** herstel je ze allebei.
+
+In **Instellingen > Bestanden** schakel je deze bediening in met **Afstand per map instellen**. Kies of de pictogrammen verschuiven tijdens het slepen of pas bij het loslaten. **Afstand voor alle mappen herstellen** zet beide assen voor alle mappen terug zodra je **Toepassen** of **OK** kiest.
 
 <div id="details-columns"></div>
 

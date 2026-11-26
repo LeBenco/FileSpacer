@@ -80,7 +80,11 @@ Diese Möglichkeiten stehen für alle Symbolgrößen zur Verfügung. **Liste**, 
 
 Halten Sie im Modus **Frei** beim Ziehen **S** bis zum Loslassen der Maustaste gedrückt, um nur die gezogenen Symbole am Raster auszurichten. Die anderen bleiben an ihrem Platz. Wird **S** vor dem Ablegen losgelassen, bleibt die Platzierung frei. In der Symbolansicht zeigt ein grauer Rahmen die Zielposition an.
 
-Öffnen Sie unter **Ansicht** das Untermenü für den horizontalen oder vertikalen Symbolabstand. Stellen Sie den Abstand für diesen Ordner mit dem Regler ein. Der Befehl direkt darunter setzt diese Achse auf 100 % zurück. Das Menü bleibt beim Ziehen geöffnet, sodass Sie direkt zur anderen Achse wechseln können. Beide Abstände lassen sich im Menü Ansicht gemeinsam zurücksetzen. Unter **Einstellungen > Dateien** legen Sie fest, ob sich die Symbole beim Ziehen oder erst beim Loslassen verschieben. Mit der Schaltfläche zum Zurücksetzen stellen Sie beide Achsen für alle Ordner wieder her, sobald Sie **Übernehmen** oder **OK** wählen.
+Wählen Sie in einer Symbolansicht im Menü **Ansicht** der Symbolleiste **Horizontaler Symbolabstand** oder **Vertikaler Symbolabstand**. In Ordnern des Dateisystems schließt sich **Ansicht** und der Regler erscheint in einem Bedienfeld, das auf den Mauszeiger zentriert ist. Das Bedienfeld bleibt beim Loslassen des Reglers geöffnet. Klicken Sie im Ordnerfenster außerhalb des Bedienfelds, um **Ansicht** wieder zu öffnen und die andere Achse zu wählen.
+
+Stellen Sie den Abstand für den aktuellen Ordner mit dem Regler ein. Beim Mindestwert entfällt der freie Raum zwischen den Symbolzellen. 100 % entsprechen dem Rasterabstand von Windows und 300 % dem Dreifachen. Jeder Teilstrich entspricht einem auswählbaren Abstand. Mit **Auf 100 % zurücksetzen** unter dem Regler setzen Sie eine Achse zurück. Im Menü **Ansicht** setzt **Beide Abstände auf 100 % zurücksetzen** beide Achsen zurück.
+
+Unter **Einstellungen > Dateien** aktivieren Sie die Regler mit **Symbolabstand pro Ordner anpassen**. Wählen Sie, ob sich die Symbole beim Ziehen oder erst beim Loslassen verschieben. **Abstände für alle Ordner zurücksetzen** setzt beide Achsen in allen Ordnern zurück, sobald Sie **Übernehmen** oder **OK** wählen.
 
 <div id="details-columns"></div>
 

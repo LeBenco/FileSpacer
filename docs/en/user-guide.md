@@ -71,7 +71,11 @@ These choices are available at every icon size. **List**, **Details** and **Cont
 
 In **Free** mode, hold **S** while dragging and until you release the mouse button to align only the dragged icons to the grid. Other icons stay in place. Releasing **S** before the drop keeps free placement. In Icon view, a grey frame previews the destination.
 
-In **View**, open the horizontal or vertical icon spacing submenu. Drag the slider to adjust that axis for the current folder, or choose the command below it to reset the axis to 100%. The View menu stays open as you drag, so you can switch directly to the other axis. To reset both, choose **Reset both axes to 100%** in View. In **Settings > Files**, choose whether icons move while you drag the slider or when you release it. The reset button on that page restores both axes for all folders when you choose **Apply** or **OK**.
+In an icon view, choose **Horizontal icon spacing** or **Vertical icon spacing** from the toolbar’s **View** menu. In file-system folders, **View** closes and the slider opens in a panel centered on the pointer. The panel stays open when you release the slider. Click in the folder window, outside the panel, to reopen **View** and select the other axis.
+
+Drag the slider to change the spacing for the current folder. The minimum removes the extra space between icon cells, 100% uses the Windows grid spacing and 300% triples it. Each graduation marks a selectable spacing. Choose **Reset to 100%** below the slider to restore one axis, or **Reset both axes to 100%** in **View** to restore both.
+
+In **Settings > Files**, **Allow custom spacing for each folder** enables these controls. Choose whether the icons move while you drag the slider or when you release it. **Reset spacing for all folders** restores both axes in all folders when you choose **Apply** or **OK**.
 
 <div id="details-columns"></div>
 

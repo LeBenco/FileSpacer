@@ -81,7 +81,11 @@ Opcje te są dostępne dla wszystkich rozmiarów ikon. Widoki **Lista**, **Szcze
 
 W trybie **Dowolne** należy przytrzymać **S** podczas przeciągania aż do zwolnienia przycisku myszy, aby wyrównać do siatki tylko przeciągane ikony. Pozostałe nie zmieniają położenia. Zwolnienie **S** przed upuszczeniem zachowuje swobodne pozycjonowanie. W widoku ikon szara ramka wskazuje docelową pozycję.
 
-W menu **Widok** otwórz podmenu poziomego lub pionowego odstępu między ikonami. Przeciągnij suwak, aby zmienić odstęp w bieżącym folderze. Polecenie tuż pod nim przywraca 100% dla tej osi. Podczas przeciągania menu pozostaje otwarte i można przejść od razu do drugiej osi. W menu Widok można też przywrócić oba odstępy jednocześnie. W **Ustawienia > Pliki** możesz wybrać, czy ikony mają się przesuwać podczas przeciągania suwaka, czy po jego zwolnieniu. Przycisk przywracania na tej stronie przywraca odstępy na obu osiach we wszystkich folderach po wybraniu **Zastosuj** lub **OK**.
+W widoku ikon wybierz **Poziomy odstęp między ikonami** lub **Pionowy odstęp między ikonami** z menu **Widok** na pasku narzędzi. W folderach systemu plików menu **Widok** zamyka się, a suwak pojawia się w panelu wyśrodkowanym względem wskaźnika. Panel pozostaje otwarty po zwolnieniu suwaka. Kliknij w oknie folderu poza panelem, aby ponownie otworzyć menu **Widok** i wybrać drugą oś.
+
+Przeciągnij suwak, aby zmienić odstęp w bieżącym folderze. Wartość minimalna usuwa wolne miejsce między polami ikon. 100% odpowiada rozstawowi siatki systemu Windows, a 300% oznacza jego trzykrotność. Każda kreska na skali oznacza odstęp, który można wybrać. Polecenie **Przywróć 100%** pod suwakiem przywraca odstęp dla jednej osi, a polecenie **Przywróć oba odstępy do 100%** w menu **Widok** przywraca oba odstępy.
+
+W **Ustawienia > Pliki** opcja **Zezwalaj na zmianę odstępów dla każdego folderu** włącza te elementy sterujące. Wybierz, czy ikony mają się przesuwać podczas przeciągania suwaka, czy po jego zwolnieniu. **Przywróć odstępy we wszystkich folderach** przywraca odstępy na obu osiach we wszystkich folderach po wybraniu **Zastosuj** lub **OK**.
 
 <div id="details-columns"></div>
 

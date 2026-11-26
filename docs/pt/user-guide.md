@@ -81,7 +81,11 @@ Estas opções estão disponíveis em todos os tamanhos de ícones. **Lista**, *
 
 No modo **Livre**, manter **S** premida durante o arrasto e até soltar o botão do rato para alinhar na grelha apenas os ícones arrastados. Os restantes ficam no mesmo lugar. Soltar **S** antes de largar os ícones mantém a disposição livre. Na vista de ícones, uma moldura cinzenta indica a posição de destino.
 
-Em **Ver**, abra o submenu do espaçamento horizontal ou vertical dos ícones. Arraste o controlo para ajustar esse eixo na pasta atual. A opção logo abaixo repõe o eixo a 100%. O menu permanece aberto durante o ajuste e permite passar diretamente para o outro eixo. Em Ver, também pode repor ambos os eixos de uma só vez. Em **Definições > Ficheiros**, escolha se os ícones se deslocam ao arrastar o controlo ou ao soltá-lo. O botão de reposição nessa página repõe ambos os eixos em todas as pastas quando selecionar **Aplicar** ou **OK**.
+Numa vista de ícones, escolha **Espaçamento horizontal dos ícones** ou **Espaçamento vertical dos ícones** no menu **Ver** da barra de ferramentas. Nas pastas do sistema de ficheiros, o menu **Ver** fecha e o controlo deslizante abre num painel centrado no ponteiro. O painel permanece aberto ao soltar o controlo. Clique na janela da pasta, fora do painel, para voltar a abrir **Ver** e escolher o outro eixo.
+
+Arraste o controlo para alterar o espaçamento na pasta atual. O mínimo elimina o espaço livre entre as células dos ícones. 100% corresponde ao espaçamento da grelha do Windows e 300% ao triplo. Cada marca corresponde a um espaçamento selecionável. Use **Repor a 100%** abaixo do controlo para repor um eixo, ou **Repor ambos os espaçamentos a 100%** em **Ver** para repor ambos.
+
+Em **Definições > Ficheiros**, **Permitir ajustar o espaçamento por pasta** ativa estes controlos. Escolha se os ícones se deslocam ao arrastar o controlo ou ao soltá-lo. **Repor o espaçamento de todas as pastas** repõe ambos os eixos em todas as pastas quando selecionar **Aplicar** ou **OK**.
 
 <div id="details-columns"></div>
 

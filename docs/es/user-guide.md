@@ -81,7 +81,11 @@ Estas opciones están disponibles con todos los tamaños de iconos. **Lista**, *
 
 En modo **Libre**, mantener **S** durante el arrastre y hasta soltar el botón del ratón para alinear en la cuadrícula solo los iconos arrastrados. Los demás permanecen en su sitio. Soltar **S** antes de colocarlos mantiene la colocación libre. En la vista de iconos, un marco gris indica la posición de destino.
 
-En **Vista**, abra el submenú de espaciado horizontal o vertical de los iconos. Arrastre el control para ajustar ese eje en la carpeta actual. La opción situada justo debajo lo restablece al 100 %. El menú permanece abierto mientras arrastra el control y permite pasar directamente al otro eje. En Vista también puede restablecer ambos a la vez. En **Configuración > Archivos** puede elegir si los iconos se mueven al arrastrar el control o al soltarlo. El botón de restablecimiento de esa página restaura ambos ejes en todas las carpetas al pulsar **Aplicar** o **Aceptar**.
+En una vista de iconos, elija **Espaciado horizontal de los iconos** o **Espaciado vertical de los iconos** en el menú **Vista** de la barra de herramientas. En las carpetas del sistema de archivos, el menú **Vista** se cierra y el control deslizante se abre en un panel centrado en el puntero. El panel sigue abierto al soltar el control. Haga clic en la ventana de la carpeta, fuera del panel, para volver a abrir **Vista** y elegir el otro eje.
+
+Arrastre el control para cambiar el espaciado de la carpeta actual. El mínimo elimina el espacio libre entre las celdas de los iconos. El 100 % corresponde al paso de la cuadrícula de Windows y el 300 % a su triple. Cada marca indica un espaciado que puede seleccionar. Use **Restablecer al 100 %**, debajo del control, para restablecer un eje, o **Restablecer ambos espaciados al 100 %** en **Vista** para restablecer ambos.
+
+En **Configuración > Archivos**, **Permitir ajustar el espaciado por carpeta** activa estos controles. Puede elegir si los iconos se mueven al arrastrar el control o al soltarlo. **Restablecer el espaciado de todas las carpetas** restaura ambos ejes en todas las carpetas al pulsar **Aplicar** o **Aceptar**.
 
 <div id="details-columns"></div>
 
