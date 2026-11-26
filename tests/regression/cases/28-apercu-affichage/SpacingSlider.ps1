@@ -82,6 +82,23 @@ function Open-SpacingSlider([IntPtr]$Window,[int]$Axis,$ExistingMenu,[switch]$Cl
     return $found
 }
 
+# GetSpacing returns the displayed pitch. When the DPI is fractional, multiple
+# integer Shell reference pitches can map to this same ListView spacing at 100%.
+# Project each possible reference through the requested step and the same DPI
+# rounding. Require an exactly representable result at both ends of the scale.
+function Test-SpacingPitch([int]$Standard,[int]$Step,[int]$Dpi,[int]$Actual) {
+    if ($Dpi -eq 96) {return $Actual -eq [Math]::Round($Standard*$Step/10.0,[MidpointRounding]::AwayFromZero)}
+    $margin=[int][Math]::Ceiling($Dpi/192.0)
+    foreach ($reference in (($Standard-$margin)..($Standard+$margin))) {
+        $units=[Math]::Round($reference*96.0/$Dpi,[MidpointRounding]::AwayFromZero)
+        if ([Math]::Round($units*$Dpi/96.0,[MidpointRounding]::AwayFromZero) -ne $Standard) {continue}
+        $scaled=[Math]::Round($reference*$Step/10.0,[MidpointRounding]::AwayFromZero)
+        $units=[Math]::Round($scaled*96.0/$Dpi,[MidpointRounding]::AwayFromZero)
+        if ([Math]::Round($units*$Dpi/96.0,[MidpointRounding]::AwayFromZero) -eq $Actual) {return $true}
+    }
+    return $false
+}
+
 function Read-Spacing([IntPtr]$Window) {
     return Use-UiView $Window {param($v) $v.Spacing}
 }

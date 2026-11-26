@@ -71,7 +71,7 @@ try {
             $stepped = Read-Spacing $window
             $pitch = if ($axis) {$before.Y} else {$before.X}
             $actual = if ($axis) {$stepped.Y} else {$stepped.X}
-            Assert-Ui ([Math]::Abs($actual - 1.1*$pitch) -le 1+$rounding) '110% is applied to the Windows pitch'
+            Assert-Ui (Test-SpacingPitch $pitch 11 $dpi $actual) '110% is applied to the Windows pitch'
             Assert-Ui (([FileSpacerRegression.Native]::Children($slider.Popup,'Static')).Length -eq 0) 'standalone slider without a visible label'
             $bounds = [FileSpacerRegression.Native]::Bounds($track)
             Assert-Ui (($bounds.Width -gt $bounds.Height) -eq ($axis -eq 0)) 'track orientation'
@@ -86,7 +86,7 @@ try {
             [FileSpacerViewMenuTests.MenuUi]::Key($window,0x22,10)
             $twice=Read-Spacing $window
             $pitch=if ($axis) {$twice.Y} else {$twice.X}
-            Assert-Ui ([Math]::Abs($pitch-2*$old) -le $rounding) "200% doubles Windows pitch on axis $axis"
+            Assert-Ui (Test-SpacingPitch $old 20 $dpi $pitch) "200% doubles Windows pitch on axis $axis"
             [FileSpacerViewMenuTests.MenuUi]::Key($window,0x24,1)
             $point = New-Object FileSpacerRegression.MousePoint
             $thumbOffset=[int][Math]::Round(10*$dpi/96.0)
@@ -101,8 +101,9 @@ try {
                     $step = [FileSpacerRegression.Native]::Message($track,0x400,0,0)
                     $held = Read-Spacing $window
                     $actual = if ($axis) {$held.Y} else {$held.X}
-                    $expected = if ($defer) {$min} else {$old*$step/10}
-                    return $step -in 14..16 -and [Math]::Abs($actual-$expected) -le 1+$rounding
+                    if ($step -notin 14..16) {return $false}
+                    if ($defer) {return $actual -eq $min}
+                    return Test-SpacingPitch $old $step $dpi $actual
                 } 'dragging to the middle selects a 10% step' 100
                 Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($firstMenu) -and ![FileSpacerViewMenuTests.MenuUi]::Cloaked($firstMenu)) 'original View menu visible during the drag'
                 $during=Get-SpacingMenuInk $menu
@@ -114,14 +115,14 @@ try {
                 Wait-Ui {
                     $held = Read-Spacing $window
                     $actual = if ($axis) {$held.Y} else {$held.X}
-                    $expected=if($defer){$min}else{3*$old}
-                    return [Math]::Abs($actual-$expected) -le $rounding
+                    if ($defer) {return $actual -eq $min}
+                    return Test-SpacingPitch $old 30 $dpi $actual
                 } 'live versus deferred geometry during actual mouse drag' 100
             } finally { [FileSpacerRegression.AltDragInput]::End() }
             Wait-Ui {
                 $now = Read-Spacing $window
-                if ($axis) {return [Math]::Abs($now.Y-3*$old) -le $rounding -and $now.X -eq $before.X}
-                return [Math]::Abs($now.X-3*$old) -le $rounding -and $now.Y -eq $before.Y
+                if ($axis) {return (Test-SpacingPitch $old 30 $dpi $now.Y) -and $now.X -eq $before.X}
+                return (Test-SpacingPitch $old 30 $dpi $now.X) -and $now.Y -eq $before.Y
             } 'released thumb applies just the chosen axis'
             Wait-Ui { ![FileSpacerViewMenuTests.MenuUi]::Cloaked($firstMenu) } 'original View menu visible after release'
             Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($slider.Popup)) 'release keeps the slider open'
