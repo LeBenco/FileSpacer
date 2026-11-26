@@ -7,7 +7,8 @@
     {
       "tag": "v1.5.2",
       "phase": "submitted",
-      "runId": "45713823559"
+      "runId": "45713823559",
+      "status": "pending"
     }
   ],
   "pending": null
