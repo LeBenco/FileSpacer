@@ -50,15 +50,16 @@ try {
         }
         $seed='item-0000=97,83;item-0001=227,83;item-0002=357,83;item-0003=97,193;item-0004=227,193;item-0005=357,193'
         Wait-Ui {(Use-UiView $window {param($v) $v.Positions()}) -eq $seed} 'six free coordinates settled' 150
-        $firstMenu=$null
+        $menu=Open-PreviewMenu $window
         foreach ($axis in @(0,1)) {
-            $slider = Open-SpacingSlider $window $axis $firstMenu -ClickParent:([bool]$defer)
-            if (!$axis) { $firstMenu=$slider.Menu }
-            Assert-Ui ($slider.Menu -eq $firstMenu) 'same View menu window across axes'
-            Assert-SpacingResetState $window $slider $false ([bool]$axis)
-            $menu=Get-SpacingViewMenu $window
-            $ink=Get-SpacingMenuInk $menu
-            Assert-Ui ($ink.Count -ge 25) 'visible View menu text before dragging'
+            Assert-CombinedSpacingResetState (Get-SpacingViewMenu $window) ([bool]$axis)
+            if (!$defer -and !$axis) {
+                [FileSpacerViewMenuTests.MenuUi]::Hover($menu,5)
+                Wait-UiViewMode $window 4
+            }
+            $slider = Open-SpacingSlider $window $axis $menu.Window
+            Wait-UiViewMode $window 1 48
+            Assert-SpacingResetState $window $slider $false
             $track = $slider.Track
             $before = Read-Spacing $window
             if (!$axis) {$standard = $before}
@@ -74,8 +75,16 @@ try {
             Assert-Ui (Test-SpacingPitch $pitch 11 $dpi $actual) '110% is applied to the Windows pitch'
             Assert-Ui (([FileSpacerRegression.Native]::Children($slider.Popup,'Static')).Length -eq 0) 'standalone slider without a visible label'
             $bounds = [FileSpacerRegression.Native]::Bounds($track)
-            Assert-Ui (($bounds.Width -gt $bounds.Height) -eq ($axis -eq 0)) 'track orientation'
+            $length=if ($axis) {$bounds.Height} else {$bounds.Width}
+            Assert-Ui ((($bounds.Width -gt $bounds.Height) -eq ($axis -eq 0)) -and $length -ge 200*$dpi/96) (
+                "track orientation and length on axis $axis ("+$bounds.Width+' x '+$bounds.Height+')')
             [FileSpacerViewMenuTests.MenuUi]::Key($window,0x24,1)
+            $paint=@{}
+            Wait-Ui {
+                $paint.Ink=Get-SpacingMenuInk $slider.Child
+                $paint.Ink.Count -ge 25
+            } 'axis reset text is painted before dragging'
+            $ink=$paint.Ink
             $zero = Read-Spacing $window
             $old = if ($axis) {$before.Y} else {$before.X}
             $min = if ($axis) {$zero.Y} else {$zero.X}
@@ -105,10 +114,10 @@ try {
                     if ($defer) {return $actual -eq $min}
                     return Test-SpacingPitch $old $step $dpi $actual
                 } 'dragging to the middle selects a 10% step' 100
-                Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($firstMenu) -and ![FileSpacerViewMenuTests.MenuUi]::Cloaked($firstMenu)) 'original View menu visible during the drag'
-                $during=Get-SpacingMenuInk $menu
+                Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($slider.Child.Window) -and ![FileSpacerViewMenuTests.MenuUi]::Cloaked($slider.Child.Window)) 'same axis menu visible during the drag'
+                $during=Get-SpacingMenuInk $slider.Child
                 $during.IntersectWith($ink)
-                Assert-Ui ($during.Count -ge 0.8*$ink.Count) 'View menu text remains on screen while held'
+                Assert-Ui ($during.Count -ge 0.8*$ink.Count) 'axis reset text remains on screen while held'
                 if ($axis) {$point.Y = $bounds.Bottom-2} else {$point.X = $bounds.Right-2}
                 [FileSpacerRegression.AltDragInput]::Move($point)
                 Wait-Ui { [FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $max } 'thumb reached maximum while held'
@@ -124,16 +133,17 @@ try {
                 if ($axis) {return (Test-SpacingPitch $old 30 $dpi $now.Y) -and $now.X -eq $before.X}
                 return (Test-SpacingPitch $old 30 $dpi $now.X) -and $now.Y -eq $before.Y
             } 'released thumb applies just the chosen axis'
-            Wait-Ui { ![FileSpacerViewMenuTests.MenuUi]::Cloaked($firstMenu) } 'original View menu visible after release'
+            Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($slider.Child.Window) -and
+                ![FileSpacerViewMenuTests.MenuUi]::Cloaked($slider.Child.Window)) 'same axis menu visible after release'
             Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($slider.Popup)) 'release keeps the slider open'
-            Assert-SpacingResetState $window $slider $true $true
+            Assert-SpacingResetState $window $slider $true
             $popupBounds = [FileSpacerRegression.Native]::Bounds($slider.Popup)
             [FileSpacerViewMenuTests.MenuUi]::Click($popupBounds.Left+2,$popupBounds.Top+2,$slider.Popup)
             Wait-Ui {
                 [FileSpacerRegression.Native]::IsWindowVisible($slider.Popup) -and
                     [FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $max
             } 'the popup margin keeps the slider open at the current value' 100
-            if ($axis) { Close-SpacingOutside $window $slider }
+            $menu=Close-SpacingOutside $window $slider -KeepViewMenu:(!$axis)
         }
         $saved = Read-Spacing $window
         $actualPositions=Use-UiView $window {param($v) $v.Positions()}
@@ -185,12 +195,15 @@ try {
             $null=Choose-SpacingCommand $window (Get-UiId 'IDM_RESET_VERTICAL_GAP')
             Wait-Ui {$s=Read-Spacing $window; $s.X -eq $custom.X -and $s.Y -eq $standard.Y} 'vertical reset preserves horizontal spacing'
             $slider=Open-SpacingSlider $window 0
-            Assert-SpacingResetState $window $slider $true $true
-            $slider=Open-SpacingSlider $window 1 $slider.Menu
-            Assert-SpacingResetState $window $slider $false $true
+            Assert-SpacingResetState $window $slider $true
+            $menu=Close-SpacingOutside $window $slider -KeepViewMenu
+            Assert-CombinedSpacingResetState $menu $true
+            $slider=Open-SpacingSlider $window 1 $menu.Window
+            Assert-SpacingResetState $window $slider $false
             [FileSpacerViewMenuTests.MenuUi]::Key($window,0x23,1)
-            Assert-SpacingResetState $window $slider $true $true
-            $null=Choose-SpacingCommand $window (Get-UiId 'IDM_RESET_BOTH_GAPS') $slider.Menu
+            Assert-SpacingResetState $window $slider $true
+            $menu=Close-SpacingOutside $window $slider -KeepViewMenu
+            $null=Choose-SpacingCommand $window (Get-UiId 'IDM_RESET_BOTH_GAPS') $menu.Window
             Wait-PreviewMenuClosed $window
             Wait-Ui {$s=Read-Spacing $window; $s.X -eq $standard.X -and $s.Y -eq $standard.Y} 'both axes restored from the same View menu'
             Close-UiFolder $window

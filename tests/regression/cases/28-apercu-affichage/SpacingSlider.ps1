@@ -8,20 +8,21 @@ function Assert-SpacingMenuState($Window,[bool]$Enabled) {
     $menu=Get-SpacingViewMenu $Window
     foreach ($id in @('IDM_ICON_GAP_HORIZONTAL','IDM_ICON_GAP_VERTICAL')) {
         $row=@($menu.Entries | Where-Object Command -eq (Get-UiId $id))
-        Assert-Ui ($row.Count -eq 1 -and $row[0].SubMenu -ne [IntPtr]::Zero) "$id opens its own submenu"
+        Assert-Ui ($row.Count -eq 1 -and $row[0].SubMenu -eq [IntPtr]::Zero) "$id opens an independent menu"
         Assert-Ui ((($row[0].State -band 3) -eq 0) -eq $Enabled) "availability of $id in the applied view"
     }
 }
 
-function Assert-SpacingResetState($Window,$Slider,[bool]$AxisEnabled,[bool]$BothEnabled) {
-    # A menu renderer may populate a submenu only when it is displayed.
+function Assert-SpacingResetState($Window,$Slider,[bool]$AxisEnabled) {
     $command=$Slider.Child.Entries[1].Command
     $child=[FileSpacerViewMenuTests.MenuUi]::Active($Window,$true,$command)
     Assert-Ui ($child -and $child.Window -eq $Slider.Child.Window) 'same axis submenu while checking its reset'
     Assert-Ui ((($child.Entries[1].State -band 3) -eq 0) -eq $AxisEnabled) 'availability of the displayed axis reset'
-    $Menu=Get-SpacingViewMenu $Window
+}
+
+function Assert-CombinedSpacingResetState($Menu,[bool]$Enabled) {
     $both=$Menu.Entries | Where-Object Command -eq (Get-UiId 'IDM_RESET_BOTH_GAPS')
-    Assert-Ui ($Menu.Window -eq $Slider.Menu -and $both -and ((($both.State -band 3) -eq 0) -eq $BothEnabled)) 'availability of the combined reset'
+    Assert-Ui ($both -and ((($both.State -band 3) -eq 0) -eq $Enabled)) 'availability of the combined reset'
 }
 
 function Choose-SpacingCommand($Window,$Id,$ExistingMenu) {
@@ -30,28 +31,29 @@ function Choose-SpacingCommand($Window,$Id,$ExistingMenu) {
     if ($ExistingMenu) { Assert-Ui ($menu.Window -eq $ExistingMenu) 'original View menu still open' }
     if ($Id -ne (Get-UiId 'IDM_RESET_BOTH_GAPS')) {
         $axis=if ($Id -eq (Get-UiId 'IDM_RESET_VERTICAL_GAP')) {'VERTICAL'} else {'HORIZONTAL'}
-        $entry=$menu.Entries | Where-Object Command -eq (Get-UiId "IDM_ICON_GAP_$axis")
-        [FileSpacerViewMenuTests.MenuUi]::Hover($menu,[array]::IndexOf($menu.Entries,$entry))
-        $found=@{}
-        Wait-Ui {$found.Menu=[FileSpacerViewMenuTests.MenuUi]::Active($Window,$true,$Id); $null -ne $found.Menu} 'axis submenu opened'
-        $menu=$found.Menu
+        $slider=Open-SpacingSlider $Window ([int]($axis -eq 'VERTICAL')) $menu.Window
+        $menu=$slider.Child
     }
     $i=[array]::IndexOf($menu.Entries.Command,[uint32]$Id)
     Assert-Ui ($i -ge 0 -and ($menu.Entries[$i].State -band 3) -eq 0 -and $menu.Entries[$i].Label) 'enabled named spacing command'
     [FileSpacerViewMenuTests.MenuUi]::Choose($menu,$i,$Window)
+    if ($Id -ne (Get-UiId 'IDM_RESET_BOTH_GAPS')) {
+        Wait-Ui { [FileSpacerRegression.Native]::Message($slider.Track,0x400,0,0) -eq 10 } 'reset applies 100% and keeps the axis open'
+        Close-SpacingOutside $Window $slider
+    }
     return $menu.Entries[$i].Label
 }
 
-function Open-SpacingSlider([IntPtr]$Window,[int]$Axis,$ExistingMenu,[switch]$ClickParent) {
+function Open-SpacingSlider([IntPtr]$Window,[int]$Axis,$ExistingMenu) {
     $id=if ($Axis) {'IDM_ICON_GAP_VERTICAL'} else {'IDM_ICON_GAP_HORIZONTAL'}
     if (!$ExistingMenu) { $null=Open-PreviewMenu $Window }
     $menu=Get-SpacingViewMenu $Window
-    if ($ExistingMenu) { Assert-Ui ($menu.Window -eq $ExistingMenu) 'same menu before hovering over the other axis' }
+    if ($ExistingMenu) { Assert-Ui ($menu.Window -eq $ExistingMenu) 'select an axis in the reopened View menu' }
     $row=[array]::IndexOf($menu.Entries.Command,[uint32](Get-UiId $id))
     Assert-Ui ($row -ge 0 -and ($menu.Entries[$row].State -band 3) -eq 0) 'spacing entry enabled'
     $resetId=Get-UiId $(if ($Axis) {'IDM_RESET_VERTICAL_GAP'} else {'IDM_RESET_HORIZONTAL_GAP'})
-    if ($ClickParent) {[FileSpacerViewMenuTests.MenuUi]::Choose($menu,$row,$Window)}
-    else {[FileSpacerViewMenuTests.MenuUi]::Hover($menu,$row)}
+    $viewBounds=[FileSpacerRegression.Native]::Bounds($menu.Window)
+    [FileSpacerViewMenuTests.MenuUi]::Choose($menu,$row,$Window)
     $pidValue = [uint32]0
     [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($Window,[ref]$pidValue)
     $found = @{}
@@ -76,9 +78,11 @@ function Open-SpacingSlider([IntPtr]$Window,[int]$Axis,$ExistingMenu,[switch]$Cl
     $reset=$found.Child.Entries[1]
     Assert-Ui ($found.Child.Entries.Count -eq 2 -and $reset.Command -eq $resetId -and
         $bounds.Left -eq $reset.Bounds.Left -and $bounds.Right -eq $reset.Bounds.Right) 'slider directly above the reset in the same column'
-    $root=Get-SpacingViewMenu $Window
-    Assert-Ui ($root.Window -eq $menu.Window) 'opening a slider preserves the active View menu'
-    $found.Menu=$root.Window
+    if ($env:FILESPACER_TEST_NILESOFT -eq '1') {
+        Assert-Ui (($reset.Type -band 0x100) -ne 0) 'Nilesoft draws the reset in the independent menu'
+    }
+    Assert-Ui (!(Get-SpacingViewMenu $Window)) 'the menu of the selected axis replaced View'
+    $found.ViewBounds=$viewBounds
     return $found
 }
 
@@ -103,15 +107,21 @@ function Read-Spacing([IntPtr]$Window) {
     return Use-UiView $Window {param($v) $v.Spacing}
 }
 
-function Close-SpacingOutside([IntPtr]$Window,$Slider) {
+function Close-SpacingOutside([IntPtr]$Window,$Slider,[switch]$KeepViewMenu) {
     [FileSpacerViewMenuTests.MenuUi]::Outside($Window)
     Wait-Ui { ![FileSpacerRegression.Native]::IsWindow($Slider.Popup) } 'outside click dismisses the popup'
+    $found=@{}
+    Wait-Ui { $found.Menu=Get-SpacingViewMenu $Window; $null -ne $found.Menu } 'outside click reopens View'
+    $bounds=[FileSpacerRegression.Native]::Bounds($found.Menu.Window)
+    Assert-Ui ($bounds.Left -eq $Slider.ViewBounds.Left -and $bounds.Top -eq $Slider.ViewBounds.Top) 'View reopened at its original anchor'
+    if ($KeepViewMenu) {return $found.Menu}
+    [FileSpacerViewMenuTests.MenuUi]::Escape($Window)
+    Wait-PreviewMenuClosed $Window
 }
 
-# Sample text edges on a different View row. HWND visibility alone cannot tell
-# whether the menu is actually drawn on the user's screen.
+# Sample the reset row throughout the gesture, in addition to the HWND checks.
 function Get-SpacingMenuInk($Menu) {
-    $r=$Menu.Entries[0].Bounds
+    $r=$Menu.Entries[1].Bounds
     $bitmap=New-Object Drawing.Bitmap(($r.Right-$r.Left-8),($r.Bottom-$r.Top-4))
     $graphics=[Drawing.Graphics]::FromImage($bitmap)
     $ink=New-Object 'Collections.Generic.HashSet[int]'
@@ -121,7 +131,8 @@ function Get-SpacingMenuInk($Menu) {
             $previous=$bitmap.GetPixel(0,$y).G
             for ($x=1;$x -lt $bitmap.Width;$x++) {
                 $value=$bitmap.GetPixel($x,$y).G
-                if ([Math]::Abs([int]$value-$previous) -gt 48) { [void]$ink.Add($y*$bitmap.Width+$x) }
+                # The themed reset text can be antialiased over a dark translucent background.
+                if ([Math]::Abs([int]$value-$previous) -gt 20) { [void]$ink.Add($y*$bitmap.Width+$x) }
                 $previous=$value
             }
         }
