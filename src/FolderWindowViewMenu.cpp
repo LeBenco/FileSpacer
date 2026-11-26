@@ -782,7 +782,13 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
         columnsItem.wID = IDM_FILL_COLUMNS;
         columnsItem.dwTypeData = const_cast<wchar_t *>(getString(IDS_FILL_COLUMNS));
         columnsItem.fState = fillColumns ? MFS_CHECKED : MFS_UNCHECKED;
-        checkLE(InsertMenuItemW(subMenu, GetMenuItemCount(subMenu), TRUE, &columnsItem));
+        const int position = GetMenuItemCount(subMenu);
+        if (checkLE(InsertMenuItemW(subMenu, position, TRUE, &columnsItem))) {
+            MENUITEMINFOW separator = {sizeof(separator)};
+            separator.fMask = MIIM_FTYPE;
+            separator.fType = MFT_SEPARATOR;
+            checkLE(InsertMenuItemW(subMenu, position, TRUE, &separator));
+        }
     }
     std::shared_ptr<ViewMenuPreview> preview;
     if (folderView && viewReady && initialStateApplied && enumerationComplete && !restoringState) {
