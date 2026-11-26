@@ -65,7 +65,7 @@ try {
             if (!$axis) {$standard = $before}
             $max = [FileSpacerRegression.Native]::Message($track,0x402,0,0)
             $start = [FileSpacerRegression.Native]::Message($track,0x400,0,0)
-            Assert-Ui ($start -eq 10 -and $max -eq 30) "31 positions in 10% steps, starting at 100% on axis $axis"
+            Assert-Ui ($start -eq 10 -and $max -eq 30) "scale in 10% increments up to 300%, starting at 100% on axis $axis"
             $forward = if ($axis) {0x28} else {0x27}
             [FileSpacerViewMenuTests.MenuUi]::Key($window,$forward,1)
             Assert-Ui ([FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq 11) 'one arrow key selects 110%'
@@ -89,7 +89,18 @@ try {
             $old = if ($axis) {$before.Y} else {$before.X}
             $min = if ($axis) {$zero.Y} else {$zero.X}
             Assert-Ui ($min -ge 48*$dpi/96-$rounding -and $min -le $old+$rounding) "zero keeps an icon cell on axis $axis ($old, $min)"
-            [FileSpacerViewMenuTests.MenuUi]::Key($window,0x22,10)
+            $step=[FileSpacerRegression.Native]::Message($track,0x400,0,0)
+            $previous=$min
+            while ($step -lt 10) {
+                [FileSpacerViewMenuTests.MenuUi]::Key($window,0x22,1)
+                $next=[FileSpacerRegression.Native]::Message($track,0x400,0,0)
+                $spacing=Read-Spacing $window
+                $pitch=if ($axis) {$spacing.Y} else {$spacing.X}
+                Assert-Ui ($next -gt $step -and $next -le 10 -and $pitch -gt $previous) (
+                    "axis $axis moves to a distinct pitch below or at 100% ($step to $next, $previous to $pitch)")
+                $step=$next
+                $previous=$pitch
+            }
             $normal=Read-Spacing $window
             Assert-Ui ($normal.X -eq $before.X -and $normal.Y -eq $before.Y) '100% restores Windows pitch'
             [FileSpacerViewMenuTests.MenuUi]::Key($window,0x22,10)
@@ -97,6 +108,7 @@ try {
             $pitch=if ($axis) {$twice.Y} else {$twice.X}
             Assert-Ui (Test-SpacingPitch $old 20 $dpi $pitch) "200% doubles Windows pitch on axis $axis"
             [FileSpacerViewMenuTests.MenuUi]::Key($window,0x24,1)
+            $floorStep=[FileSpacerRegression.Native]::Message($track,0x400,0,0)
             $point = New-Object FileSpacerRegression.MousePoint
             $thumbOffset=[int][Math]::Round(10*$dpi/96.0)
             $point.X = $bounds.Left+$thumbOffset
@@ -104,6 +116,15 @@ try {
             try {
                 [FileSpacerRegression.AltDragInput]::Begin($slider.Popup,$point,$false,$false)
                 [FileSpacerRegression.AltDragInput]::VerifyHeld($false)
+                if ($axis -and !$defer) {
+                    $point.Y=$bounds.Top+[int]($bounds.Height*0.15)
+                    [FileSpacerRegression.AltDragInput]::Move($point)
+                    Start-Sleep -Milliseconds 80
+                    $step=[FileSpacerRegression.Native]::Message($track,0x400,0,0)
+                    $pitch=(Read-Spacing $window).Y
+                    Assert-Ui (($step -eq $floorStep -and $pitch -eq $min) -or ($step -gt $floorStep -and $pitch -gt $min)) (
+                        "the thumb changes only with the pitch near the minimum ($floorStep to $step, $min to $pitch)")
+                }
                 if ($axis) {$point.Y = ($bounds.Top+$bounds.Bottom)/2} else {$point.X = ($bounds.Left+$bounds.Right)/2}
                 [FileSpacerRegression.AltDragInput]::Move($point)
                 Wait-Ui {
