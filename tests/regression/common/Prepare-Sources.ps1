@@ -103,8 +103,8 @@ switch ($Mode) {
         foreach ($signature in @('void ItemWindow::trackContextMenu(POINT pos)', 'int ItemWindow::trackContextMenu(POINT pos, HMENU menu, HWND menuOwner)')) {
             $pieces+=Get-SourceBlock $item $signature
         }
-        foreach ($signature in @('CComPtr<IContextMenu> FolderWindow::queryBackgroundMenu(HMENU *popupMenu)', 'void FolderWindow::newItem(const char *verb)', 'void FolderWindow::trackContextMenu(POINT pos)', 'void FolderWindow::openViewMenu(POINT point)', 'void FolderWindow::openBackgroundSubMenu(', 'HRESULT FolderWindow::invokeViewCommand(', 'void FolderWindow::resumeDeferredClose()')) {
-            $source=if($signature -match 'FolderWindow::(queryBackgroundMenu|newItem|trackContextMenu)\('){$menus}elseif($signature -match 'FolderWindow::(openViewMenu|openBackgroundSubMenu)\('){$viewMenu}else{$folder}
+        foreach ($signature in @('CComPtr<IContextMenu> FolderWindow::queryBackgroundMenu(HMENU *popupMenu)', 'void FolderWindow::newItem(const char *verb)', 'void FolderWindow::trackContextMenu(POINT pos)', 'void FolderWindow::openViewMenu(POINT point)', 'void FolderWindow::openBackgroundSubMenu(', 'UINT FolderWindow::trackViewMenuPopup(', 'HRESULT FolderWindow::invokeViewCommand(', 'void FolderWindow::resumeDeferredClose()')) {
+            $source=if($signature -match 'FolderWindow::(queryBackgroundMenu|newItem|trackContextMenu)\('){$menus}elseif($signature -match 'FolderWindow::(openViewMenu|openBackgroundSubMenu|trackViewMenuPopup)\('){$viewMenu}else{$folder}
             $pieces+=Get-SourceBlock $source $signature
         }
         Save-Source 'ProductionMethods.inc' ($pieces -join "`n`n")
