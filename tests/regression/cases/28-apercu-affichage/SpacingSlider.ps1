@@ -38,7 +38,8 @@ function Choose-SpacingCommand($Window,$Id,$ExistingMenu) {
     Assert-Ui ($i -ge 0 -and ($menu.Entries[$i].State -band 3) -eq 0 -and $menu.Entries[$i].Label) 'enabled named spacing command'
     [FileSpacerViewMenuTests.MenuUi]::Choose($menu,$i,$Window)
     if ($Id -ne (Get-UiId 'IDM_RESET_BOTH_GAPS')) {
-        Wait-Ui { [FileSpacerRegression.Native]::Message($slider.Track,0x400,0,0) -eq 10 } 'reset applies 100% and keeps the axis open'
+        $normalPosition=[FileSpacerRegression.Native]::Message($slider.Track,0x402,0,0)-20
+        Wait-Ui { [FileSpacerRegression.Native]::Message($slider.Track,0x400,0,0) -eq $normalPosition } 'reset applies 100% and keeps the axis open'
         Close-SpacingOutside $Window $slider
     }
     return $menu.Entries[$i].Label

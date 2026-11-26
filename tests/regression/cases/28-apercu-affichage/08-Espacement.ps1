@@ -65,10 +65,10 @@ try {
             if (!$axis) {$standard = $before}
             $max = [FileSpacerRegression.Native]::Message($track,0x402,0,0)
             $start = [FileSpacerRegression.Native]::Message($track,0x400,0,0)
-            Assert-Ui ($start -eq 10 -and $max -eq 30) "scale in 10% increments up to 300%, starting at 100% on axis $axis"
+            Assert-Ui ($max -in 20..30 -and $start -eq $max-20) "scale uses distinct pitches up to 300%, starting at 100% on axis $axis"
             $forward = if ($axis) {0x28} else {0x27}
             [FileSpacerViewMenuTests.MenuUi]::Key($window,$forward,1)
-            Assert-Ui ([FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq 11) 'one arrow key selects 110%'
+            Assert-Ui ([FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $start+1) 'one arrow key selects 110%'
             $stepped = Read-Spacing $window
             $pitch = if ($axis) {$before.Y} else {$before.X}
             $actual = if ($axis) {$stepped.Y} else {$stepped.X}
@@ -89,14 +89,33 @@ try {
             $old = if ($axis) {$before.Y} else {$before.X}
             $min = if ($axis) {$zero.Y} else {$zero.X}
             Assert-Ui ($min -ge 48*$dpi/96-$rounding -and $min -le $old+$rounding) "zero keeps an icon cell on axis $axis ($old, $min)"
+            if ($axis -and !$defer) {
+                # TBM_GETTIC and TBM_GETTICPOS omit the two endpoint marks.
+                Assert-Ui ([FileSpacerRegression.Native]::Message($track,0x410,0,0) -eq 7) 'seven visible graduations'
+                foreach ($mark in 0,1,0) {
+                    $tickPosition=[FileSpacerRegression.Native]::Message($track,0x403,$mark,0)
+                    $tickOffset=[FileSpacerRegression.Native]::Message($track,0x40f,$mark,0)
+                    Assert-Ui ($tickPosition -gt 0 -and $tickOffset -gt 0) 'interior graduation has a logical value and a screen position'
+                    [FileSpacerViewMenuTests.MenuUi]::Click([int](($bounds.Left+$bounds.Right)/2),($bounds.Top+$tickOffset),$slider.Popup)
+                    Wait-Ui { [FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $tickPosition } 'second and third visible graduations are reachable in both directions'
+                }
+                [FileSpacerViewMenuTests.MenuUi]::Key($window,0x24,1)
+                foreach ($expected in 1,2,1,0) {
+                    $current=[FileSpacerRegression.Native]::Message($track,0x400,0,0)
+                    $arrow=if ($expected -gt $current) {0x28} else {0x26}
+                    [FileSpacerViewMenuTests.MenuUi]::Key($window,$arrow,1)
+                    Assert-Ui ([FileSpacerRegression.Native]::Message($track,0x400,0,0) -eq $expected) (
+                        "arrow keys visit each slot in order ($current to $expected)")
+                }
+            }
             $step=[FileSpacerRegression.Native]::Message($track,0x400,0,0)
             $previous=$min
-            while ($step -lt 10) {
+            while ($step -lt $start) {
                 [FileSpacerViewMenuTests.MenuUi]::Key($window,0x22,1)
                 $next=[FileSpacerRegression.Native]::Message($track,0x400,0,0)
                 $spacing=Read-Spacing $window
                 $pitch=if ($axis) {$spacing.Y} else {$spacing.X}
-                Assert-Ui ($next -gt $step -and $next -le 10 -and $pitch -gt $previous) (
+                Assert-Ui ($next -eq $step+1 -and $next -le $start -and $pitch -gt $previous) (
                     "axis $axis moves to a distinct pitch below or at 100% ($step to $next, $previous to $pitch)")
                 $step=$next
                 $previous=$pitch
@@ -131,9 +150,9 @@ try {
                     $step = [FileSpacerRegression.Native]::Message($track,0x400,0,0)
                     $held = Read-Spacing $window
                     $actual = if ($axis) {$held.Y} else {$held.X}
-                    if ($step -notin 14..16) {return $false}
+                    if ($step -lt $start -or [Math]::Abs($step-$max/2.0) -gt 1.5) {return $false}
                     if ($defer) {return $actual -eq $min}
-                    return Test-SpacingPitch $old $step $dpi $actual
+                    return Test-SpacingPitch $old (10+$step-$start) $dpi $actual
                 } 'dragging to the middle selects a 10% step' 100
                 Assert-Ui ([FileSpacerRegression.Native]::IsWindowVisible($slider.Child.Window) -and ![FileSpacerViewMenuTests.MenuUi]::Cloaked($slider.Child.Window)) 'same axis menu visible during the drag'
                 $during=Get-SpacingMenuInk $slider.Child
