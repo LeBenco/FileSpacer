@@ -7,7 +7,10 @@ function Assert-ColumnMenu([IntPtr]$Window,[bool]$Present,[bool]$Checked=$false)
     $popup=[FileSpacerViewMenuTests.MenuUi]::Active($Window,$true)
     $entriesFound=@($popup.Entries | Where-Object { $_.Command -eq (Get-UiId 'IDM_FILL_COLUMNS') })
     Assert-Ui (($entriesFound.Count -eq 1) -eq $Present) 'Column command visibility does not match the global preference.'
-    if($Present) { Assert-Ui ((($entriesFound[0].State -band 8) -ne 0) -eq $Checked) 'Column command has the wrong saved check state.' }
+    if($Present) {
+        Assert-Ui ((($entriesFound[0].State -band 8) -ne 0) -eq $Checked) 'Column command has the wrong saved check state.'
+        Assert-Ui $entriesFound[0].SeparatorBefore 'Column command is separated from the preceding entries.'
+    }
     [FileSpacerViewMenuTests.MenuUi]::Escape($Window)
     Wait-PreviewMenuClosed $Window
 }
