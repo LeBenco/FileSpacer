@@ -521,7 +521,7 @@ void FolderWindow::ViewMenuPreview::replay(ULONG_PTR enumeration) {
             window.resumeColumnSync();
             if (spacing && window.viewMenuPreviewSerial == menuSerial && GetForegroundWindow() == window.hwnd) {
                 if (spacing == IDM_ICON_GAP_HORIZONTAL || spacing == IDM_ICON_GAP_VERTICAL)
-                    window.queueSpacingAxisMenu(spacing, viewMenuPoint, spacingAxisPoints[spacing == IDM_ICON_GAP_VERTICAL]);
+                    window.queueSpacingAxisMenu(spacing, viewMenuPoint, spacingAxisPoint);
                 else window.runSpacingCommand(spacing);
             }
         }
@@ -792,7 +792,6 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
             preview->spacingEnabled = spacingAvailable && spacingMenus;
             preview->hoverEnabled = modesCaptured && previewEnabled;
             preview->viewMenuPoint = point;
-            preview->spacingAxisPoints.fill(point);
             viewMenuPreview = preview;
             if (contextMenu) KillTimer(hwnd, TIMER_SAVE_STATE);
         }
@@ -800,10 +799,14 @@ void FolderWindow::openBackgroundSubMenu(IContextMenu *const contextMenu, HMENU 
     const UINT trackingFlags = TPM_RETURNCMD | TPM_RIGHTBUTTON | (contextMenu ? 0u : TPM_NOANIMATION);
     const int cmd = static_cast<int>(trackViewMenuPopup(subMenu, point, trackingFlags, preview));
     if (!contextMenu && (cmd == IDM_ICON_GAP_HORIZONTAL || cmd == IDM_ICON_GAP_VERTICAL)) {
+        POINT cursor = point;
+        GetCursorPos(&cursor);
         if (preview && viewMenuPreview == preview) preview->finish(0);
         if (!spacingAvailable || !preview || !isWindowOperational() || viewGeneration != spacingGeneration) return;
-        if (viewMenuRestore == preview) preview->spacingCommand = cmd;
-        else queueSpacingAxisMenu(cmd, point, preview->spacingAxisPoints[cmd == IDM_ICON_GAP_VERTICAL]);
+        if (viewMenuRestore == preview) {
+            preview->spacingCommand = cmd;
+            preview->spacingAxisPoint = cursor;
+        } else queueSpacingAxisMenu(cmd, point, cursor);
         return;
     }
     if (cmd >= IDM_RESET_HORIZONTAL_GAP && cmd <= IDM_RESET_BOTH_GAPS) {
@@ -919,7 +922,7 @@ void FolderWindow::openSpacingAxisMenu(UINT command, POINT viewPoint, POINT axis
     viewMenuPreview = preview;
     if (!viewMenuExtension) activateTitleMenuExtension(&viewMenuExtension);
     const UINT selection = preview->current() ? trackViewMenuPopup(menu.get(), axisPoint,
-        TPM_RETURNCMD | TPM_RIGHTBUTTON | TPM_NOANIMATION, preview) : 0;
+        TPM_RETURNCMD | TPM_RIGHTBUTTON | TPM_NOANIMATION | TPM_CENTERALIGN | TPM_VCENTERALIGN, preview) : 0;
     if (viewMenuPreview == preview) preview->finish(0);
     if (!preview->current()) return;
     if (selection == IDM_RESET_HORIZONTAL_GAP || selection == IDM_RESET_VERTICAL_GAP) runSpacingCommand(selection);

@@ -255,19 +255,7 @@ void FolderWindow::ViewMenuPreview::spacingMenuShown(HWND popup) {
         if (renderedRoot != bar.hMenu && GetMenuItemInfoW(bar.hMenu, IDM_RESET_BOTH_GAPS, FALSE, &reset)) {
             releaseSpacingMeasureOwner();
             renderedRoot = bar.hMenu;
-            if (!context && !standaloneSpacingAxis) {
-                RECT bounds = {};
-                if (GetWindowRect(popup, &bounds)) {
-                    for (int row = 0, count = GetMenuItemCount(bar.hMenu); row < count; ++row) {
-                        const UINT command = GetMenuItemID(bar.hMenu, row);
-                        RECT entry = {};
-                        if ((command == IDM_ICON_GAP_HORIZONTAL || command == IDM_ICON_GAP_VERTICAL)
-                                && GetMenuItemRect(popup, bar.hMenu, row, &entry))
-                            spacingAxisPoints[command == IDM_ICON_GAP_VERTICAL] = {bounds.right, entry.top};
-                    }
-                }
-                return;
-            }
+            if (!context && !standaloneSpacingAxis) return;
             // The renderer can provide its own owner for the modal menu. Keep its
             // measurements for every item except our two trackbars.
             GUITHREADINFO info = {sizeof(info)};

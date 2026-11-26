@@ -26,8 +26,7 @@ struct FolderWindow::ViewMenuPreview {
     UINT initialCommand = 0, currentCommand = 0, wantedCommand = 0;
     UINT pendingCommand = 0; // Entry outside the modes, run after the preview is cancelled.
     UINT spacingCommand = 0; // Wait for a refill restoring the applied view before changing its spacing.
-    POINT viewMenuPoint = {};
-    std::array<POINT, 2> spacingAxisPoints = {};
+    POINT viewMenuPoint = {}, spacingAxisPoint = {};
     bool standaloneSpacingAxis = false, pressingSpacingReset = false;
     bool pressingOutsideSpacing = false, reopenViewMenu = false;
     HWND spacingMenuWindow = nullptr, spacingMeasureOwner = nullptr;
