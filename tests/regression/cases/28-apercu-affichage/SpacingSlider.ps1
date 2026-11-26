@@ -13,15 +13,15 @@ function Assert-SpacingMenuState($Window,[bool]$Enabled) {
     }
 }
 
-function Assert-SpacingResetState($Menu,[bool]$Horizontal,[bool]$Vertical) {
-    foreach ($axis in @('HORIZONTAL','VERTICAL')) {
-        $entry=$Menu.Entries | Where-Object Command -eq (Get-UiId "IDM_ICON_GAP_$axis")
-        $expected=if ($axis -eq 'HORIZONTAL') {$Horizontal} else {$Vertical}
-        $state=[FileSpacerViewMenuTests.MenuUi]::CommandState($entry.SubMenu,(Get-UiId "IDM_RESET_${axis}_GAP"))
-        Assert-Ui ((($state -band 3) -eq 0) -eq $expected) "availability of the $axis reset"
-    }
+function Assert-SpacingResetState($Window,$Slider,[bool]$AxisEnabled,[bool]$BothEnabled) {
+    # A menu renderer may populate a submenu only when it is displayed.
+    $command=$Slider.Child.Entries[1].Command
+    $child=[FileSpacerViewMenuTests.MenuUi]::Active($Window,$true,$command)
+    Assert-Ui ($child -and $child.Window -eq $Slider.Child.Window) 'same axis submenu while checking its reset'
+    Assert-Ui ((($child.Entries[1].State -band 3) -eq 0) -eq $AxisEnabled) 'availability of the displayed axis reset'
+    $Menu=Get-SpacingViewMenu $Window
     $both=$Menu.Entries | Where-Object Command -eq (Get-UiId 'IDM_RESET_BOTH_GAPS')
-    Assert-Ui ((($both.State -band 3) -eq 0) -eq ($Horizontal -or $Vertical)) 'availability of the combined reset'
+    Assert-Ui ($Menu.Window -eq $Slider.Menu -and $both -and ((($both.State -band 3) -eq 0) -eq $BothEnabled)) 'availability of the combined reset'
 }
 
 function Choose-SpacingCommand($Window,$Id,$ExistingMenu) {
