@@ -53,6 +53,10 @@ function Open-SpacingSlider([IntPtr]$Window,[int]$Axis,$ExistingMenu) {
     Assert-Ui ($row -ge 0 -and ($menu.Entries[$row].State -band 3) -eq 0) 'spacing entry enabled'
     $resetId=Get-UiId $(if ($Axis) {'IDM_RESET_VERTICAL_GAP'} else {'IDM_RESET_HORIZONTAL_GAP'})
     $viewBounds=[FileSpacerRegression.Native]::Bounds($menu.Window)
+    $entry=$menu.Entries[$row].Bounds
+    $cursor=[Drawing.Point]::new([int][Math]::Truncate(($entry.Left+$entry.Right)/2),
+        [int][Math]::Truncate(($entry.Top+$entry.Bottom)/2))
+    $workArea=[FileSpacerRegression.Native]::WorkArea($menu.Window)
     [FileSpacerViewMenuTests.MenuUi]::Choose($menu,$row,$Window)
     $pidValue = [uint32]0
     [void][FileSpacerRegression.Native]::GetWindowThreadProcessId($Window,[ref]$pidValue)
@@ -71,6 +75,13 @@ function Open-SpacingSlider([IntPtr]$Window,[int]$Axis,$ExistingMenu) {
         }
         return $false
     } 'axis submenu exposes its native trackbar'
+    $axisBounds=[FileSpacerRegression.Native]::Bounds($found.Child.Window)
+    $left=[Math]::Max($workArea.Left,[Math]::Min($workArea.Right-$axisBounds.Width,$cursor.X-$axisBounds.Width/2))
+    $top=[Math]::Max($workArea.Top,[Math]::Min($workArea.Bottom-$axisBounds.Height,$cursor.Y-$axisBounds.Height/2))
+    $tolerance=[Math]::Ceiling(4*[FileSpacerRegression.Native]::GetDpiForWindow($Window)/96.0)
+    Assert-Ui ([Math]::Abs($axisBounds.Left-$left) -le $tolerance -and [Math]::Abs($axisBounds.Top-$top) -le $tolerance) (
+        "axis popup centered at $cursor within the work area; expected ($left, $top), got ("+
+        $axisBounds.Left+', '+$axisBounds.Top+')')
     $bounds=[FileSpacerRegression.Native]::Bounds($found.Popup)
     $slot=$found.Child.Entries[0].Bounds
     Assert-Ui ($bounds.Top -eq $slot.Top -and $bounds.Bottom -eq $slot.Bottom -and
