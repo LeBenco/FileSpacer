@@ -81,11 +81,9 @@ Queste opzioni sono disponibili con tutte le dimensioni delle icone. **Elenco**,
 
 In modalità **Libera**, tenere premuto **S** durante il trascinamento e fino al rilascio del pulsante del mouse per allineare alla griglia solo le icone trascinate. Le altre restano al loro posto. Rilasciando **S** prima di deporle, il posizionamento resta libero. Nella vista Icone, un riquadro grigio indica la posizione di destinazione.
 
-In una vista a icone, scegli **Spaziatura orizzontale delle icone** o **Spaziatura verticale delle icone** dal menu **Visualizza** della barra degli strumenti. Nelle cartelle del file system, **Visualizza** si chiude e il cursore si apre in un pannello centrato sul puntatore. Il pannello resta aperto quando rilasci il cursore. Fai clic nella finestra della cartella, fuori dal pannello, per riaprire **Visualizza** e scegliere l’altro asse.
+**Spaziatura orizzontale delle icone** e **Spaziatura verticale delle icone**, nel menu **Visualizza**, permettono di regolare la distanza tra le icone separatamente per ogni cartella. Sono disponibili per tutte le dimensioni delle icone, ma non nelle visualizzazioni **Elenco**, **Dettagli**, **Riquadri** e **Contenuto**. Si attivano in **Impostazioni > File**, con **Consenti di regolare la spaziatura per cartella**. In modalità **Libera**, le icone già posizionate mantengono la loro posizione.
 
-Trascina il cursore per cambiare la spaziatura nella cartella corrente. Al minimo si elimina lo spazio libero tra le celle delle icone. Il 100% corrisponde al passo della griglia di Windows e il 300% al suo triplo. Ogni tacca corrisponde a una spaziatura selezionabile. Usa **Ripristina al 100%** sotto il cursore per un asse, oppure **Ripristina entrambe le spaziature al 100%** in **Visualizza** per entrambi.
-
-In **Impostazioni > File**, **Consenti di regolare la spaziatura per cartella** attiva questi controlli. Puoi scegliere se riposizionare le icone durante il trascinamento del cursore o al rilascio. **Ripristina la spaziatura di tutte le cartelle** ripristina entrambi gli assi per tutte le cartelle quando scegli **Applica** o **OK**.
+Trascinare il cursore per regolare la spaziatura. Il **100%** corrisponde alla spaziatura abituale di Windows. Le impostazioni permettono anche di riposizionare le icone durante il trascinamento del cursore e di ripristinare la spaziatura di tutte le cartelle.
 
 <div id="details-columns"></div>
 

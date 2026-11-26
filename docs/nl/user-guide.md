@@ -81,11 +81,9 @@ Deze opties zijn beschikbaar bij alle pictogramgroottes. **Lijst**, **Details** 
 
 Houd in de modus **Vrij** tijdens het slepen **S** ingedrukt totdat u de muisknop loslaat om alleen de gesleepte pictogrammen op het raster uit te lijnen. De andere blijven staan. Als u **S** vóór het neerzetten loslaat, blijft de plaatsing vrij. In de pictogramweergave toont een grijs kader de doelpositie.
 
-Kies in een pictogramweergave **Horizontale pictogramafstand** of **Verticale pictogramafstand** in het menu **Beeld** op de werkbalk. In mappen van het bestandssysteem sluit **Beeld** en verschijnt de schuifregelaar in een paneel dat op de muisaanwijzer is gecentreerd. Het paneel blijft open wanneer je de schuif loslaat. Klik in het mapvenster buiten het paneel om **Beeld** opnieuw te openen en de andere as te kiezen.
+**Horizontale pictogramafstand** en **Verticale pictogramafstand** in **Beeld** stellen de afstand tussen pictogrammen in, afzonderlijk voor elke map. Dit werkt bij alle pictogramgroottes, maar niet in **Lijst**, **Details**, **Tegels** of **Inhoud**. Schakel de opdrachten in via **Instellingen > Bestanden**, met **Afstand per map instellen**. Bij **Vrij** blijven al geplaatste pictogrammen op hun plek.
 
-Sleep de schuifregelaar om de afstand voor de huidige map te wijzigen. Op de minimumstand verdwijnt de vrije ruimte tussen de pictogramvakken. 100% komt overeen met de rasterafstand van Windows en 300% is driemaal die afstand. Elk streepje komt overeen met een afstand die je kunt kiezen. Met **Terugzetten op 100%** onder de schuifregelaar herstel je één as. Met **Beide afstanden terugzetten op 100%** in **Beeld** herstel je ze allebei.
-
-In **Instellingen > Bestanden** schakel je deze bediening in met **Afstand per map instellen**. Kies of de pictogrammen verschuiven tijdens het slepen of pas bij het loslaten. **Afstand voor alle mappen herstellen** zet beide assen voor alle mappen terug zodra je **Toepassen** of **OK** kiest.
+Sleep de schuifregelaar om de afstand aan te passen. **100%** is de gebruikelijke Windows-afstand. In de instellingen kunnen de pictogrammen ook al tijdens het slepen worden verplaatst en kan de afstand voor alle mappen worden hersteld.
 
 <div id="details-columns"></div>
 

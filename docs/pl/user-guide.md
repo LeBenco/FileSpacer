@@ -81,11 +81,9 @@ Opcje te są dostępne dla wszystkich rozmiarów ikon. Widoki **Lista**, **Szcze
 
 W trybie **Dowolne** należy przytrzymać **S** podczas przeciągania aż do zwolnienia przycisku myszy, aby wyrównać do siatki tylko przeciągane ikony. Pozostałe nie zmieniają położenia. Zwolnienie **S** przed upuszczeniem zachowuje swobodne pozycjonowanie. W widoku ikon szara ramka wskazuje docelową pozycję.
 
-W widoku ikon wybierz **Poziomy odstęp między ikonami** lub **Pionowy odstęp między ikonami** z menu **Widok** na pasku narzędzi. W folderach systemu plików menu **Widok** zamyka się, a suwak pojawia się w panelu wyśrodkowanym względem wskaźnika. Panel pozostaje otwarty po zwolnieniu suwaka. Kliknij w oknie folderu poza panelem, aby ponownie otworzyć menu **Widok** i wybrać drugą oś.
+Polecenia **Poziomy odstęp między ikonami** i **Pionowy odstęp między ikonami** w menu **Widok** pozwalają dostosować odstępy między ikonami, niezależnie dla każdego folderu. Działają przy wszystkich rozmiarach ikon, ale nie w widokach **Lista**, **Szczegóły**, **Kafelki** ani **Zawartość**. Włącza je opcja **Zezwalaj na zmianę odstępów dla każdego folderu** w **Ustawienia > Pliki**. Tryb **Dowolne** zachowuje pozycje już rozmieszczonych ikon.
 
-Przeciągnij suwak, aby zmienić odstęp w bieżącym folderze. Wartość minimalna usuwa wolne miejsce między polami ikon. 100% odpowiada rozstawowi siatki systemu Windows, a 300% oznacza jego trzykrotność. Każda kreska na skali oznacza odstęp, który można wybrać. Polecenie **Przywróć 100%** pod suwakiem przywraca odstęp dla jednej osi, a polecenie **Przywróć oba odstępy do 100%** w menu **Widok** przywraca oba odstępy.
-
-W **Ustawienia > Pliki** opcja **Zezwalaj na zmianę odstępów dla każdego folderu** włącza te elementy sterujące. Wybierz, czy ikony mają się przesuwać podczas przeciągania suwaka, czy po jego zwolnieniu. **Przywróć odstępy we wszystkich folderach** przywraca odstępy na obu osiach we wszystkich folderach po wybraniu **Zastosuj** lub **OK**.
+Przeciągnięcie suwaka zmienia odstęp. **100%** odpowiada standardowemu odstępowi systemu Windows. W ustawieniach można też włączyć przesuwanie ikon podczas przeciągania suwaka i przywrócić odstępy we wszystkich folderach.
 
 <div id="details-columns"></div>
 

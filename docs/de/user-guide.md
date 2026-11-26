@@ -80,11 +80,9 @@ Diese Möglichkeiten stehen für alle Symbolgrößen zur Verfügung. **Liste**, 
 
 Halten Sie im Modus **Frei** beim Ziehen **S** bis zum Loslassen der Maustaste gedrückt, um nur die gezogenen Symbole am Raster auszurichten. Die anderen bleiben an ihrem Platz. Wird **S** vor dem Ablegen losgelassen, bleibt die Platzierung frei. In der Symbolansicht zeigt ein grauer Rahmen die Zielposition an.
 
-Wählen Sie in einer Symbolansicht im Menü **Ansicht** der Symbolleiste **Horizontaler Symbolabstand** oder **Vertikaler Symbolabstand**. In Ordnern des Dateisystems schließt sich **Ansicht** und der Regler erscheint in einem Bedienfeld, das auf den Mauszeiger zentriert ist. Das Bedienfeld bleibt beim Loslassen des Reglers geöffnet. Klicken Sie im Ordnerfenster außerhalb des Bedienfelds, um **Ansicht** wieder zu öffnen und die andere Achse zu wählen.
+**Horizontaler Symbolabstand** und **Vertikaler Symbolabstand** im Menü **Ansicht** passen den Abstand zwischen den Symbolen für jeden Ordner getrennt an. Das gilt für alle Symbolgrößen, nicht jedoch für **Liste**, **Details**, **Kacheln** oder **Inhalt**. Die Befehle lassen sich unter **Einstellungen > Dateien** mit **Symbolabstand pro Ordner anpassen** aktivieren. Im Platzierungsmodus **Frei** bleiben die vorhandenen Symbolpositionen erhalten.
 
-Stellen Sie den Abstand für den aktuellen Ordner mit dem Regler ein. Beim Mindestwert entfällt der freie Raum zwischen den Symbolzellen. 100 % entsprechen dem Rasterabstand von Windows und 300 % dem Dreifachen. Jeder Teilstrich entspricht einem auswählbaren Abstand. Mit **Auf 100 % zurücksetzen** unter dem Regler setzen Sie eine Achse zurück. Im Menü **Ansicht** setzt **Beide Abstände auf 100 % zurücksetzen** beide Achsen zurück.
-
-Unter **Einstellungen > Dateien** aktivieren Sie die Regler mit **Symbolabstand pro Ordner anpassen**. Wählen Sie, ob sich die Symbole beim Ziehen oder erst beim Loslassen verschieben. **Abstände für alle Ordner zurücksetzen** setzt beide Achsen in allen Ordnern zurück, sobald Sie **Übernehmen** oder **OK** wählen.
+Den Abstand mit dem Schieberegler einstellen. **100 %** entspricht dem üblichen Windows-Abstand. In den Einstellungen lassen sich außerdem die Symbole schon beim Ziehen des Reglers neu anordnen und die Abstände aller Ordner zurücksetzen.
 
 <div id="details-columns"></div>
 

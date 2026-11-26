@@ -81,11 +81,9 @@ Estas opciones están disponibles con todos los tamaños de iconos. **Lista**, *
 
 En modo **Libre**, mantener **S** durante el arrastre y hasta soltar el botón del ratón para alinear en la cuadrícula solo los iconos arrastrados. Los demás permanecen en su sitio. Soltar **S** antes de colocarlos mantiene la colocación libre. En la vista de iconos, un marco gris indica la posición de destino.
 
-En una vista de iconos, elija **Espaciado horizontal de los iconos** o **Espaciado vertical de los iconos** en el menú **Vista** de la barra de herramientas. En las carpetas del sistema de archivos, el menú **Vista** se cierra y el control deslizante se abre en un panel centrado en el puntero. El panel sigue abierto al soltar el control. Haga clic en la ventana de la carpeta, fuera del panel, para volver a abrir **Vista** y elegir el otro eje.
+**Espaciado horizontal de los iconos** y **Espaciado vertical de los iconos**, en **Vista**, permiten ajustar el espacio entre los iconos de cada carpeta de forma independiente. Se aplican a todos los tamaños de iconos, pero no a las vistas **Lista**, **Detalles**, **Mosaicos** ni **Contenido**. Se activan en **Configuración > Archivos**, con **Permitir ajustar el espaciado por carpeta**. Con la disposición **Libre**, los iconos ya colocados conservan su posición.
 
-Arrastre el control para cambiar el espaciado de la carpeta actual. El mínimo elimina el espacio libre entre las celdas de los iconos. El 100 % corresponde al paso de la cuadrícula de Windows y el 300 % a su triple. Cada marca indica un espaciado que puede seleccionar. Use **Restablecer al 100 %**, debajo del control, para restablecer un eje, o **Restablecer ambos espaciados al 100 %** en **Vista** para restablecer ambos.
-
-En **Configuración > Archivos**, **Permitir ajustar el espaciado por carpeta** activa estos controles. Puede elegir si los iconos se mueven al arrastrar el control o al soltarlo. **Restablecer el espaciado de todas las carpetas** restaura ambos ejes en todas las carpetas al pulsar **Aplicar** o **Aceptar**.
+Arrastra el control deslizante para ajustar el espaciado. El **100 %** corresponde al habitual de Windows. La configuración también permite recolocar los iconos mientras se mueve el control y restablecer el espaciado de todas las carpetas.
 
 <div id="details-columns"></div>
 

@@ -81,11 +81,9 @@ Estas opções estão disponíveis em todos os tamanhos de ícones. **Lista**, *
 
 No modo **Livre**, manter **S** premida durante o arrasto e até soltar o botão do rato para alinhar na grelha apenas os ícones arrastados. Os restantes ficam no mesmo lugar. Soltar **S** antes de largar os ícones mantém a disposição livre. Na vista de ícones, uma moldura cinzenta indica a posição de destino.
 
-Numa vista de ícones, escolha **Espaçamento horizontal dos ícones** ou **Espaçamento vertical dos ícones** no menu **Ver** da barra de ferramentas. Nas pastas do sistema de ficheiros, o menu **Ver** fecha e o controlo deslizante abre num painel centrado no ponteiro. O painel permanece aberto ao soltar o controlo. Clique na janela da pasta, fora do painel, para voltar a abrir **Ver** e escolher o outro eixo.
+**Espaçamento horizontal dos ícones** e **Espaçamento vertical dos ícones**, no menu **Ver**, permitem ajustar a distância entre os ícones de cada pasta de forma independente. Aplicam-se a todos os tamanhos de ícones, mas não às vistas **Lista**, **Detalhes**, **Mosaicos** ou **Conteúdo**. Ativam-se em **Definições > Ficheiros**, com **Permitir ajustar o espaçamento por pasta**. No posicionamento **Livre**, os ícones já colocados mantêm a posição.
 
-Arraste o controlo para alterar o espaçamento na pasta atual. O mínimo elimina o espaço livre entre as células dos ícones. 100% corresponde ao espaçamento da grelha do Windows e 300% ao triplo. Cada marca corresponde a um espaçamento selecionável. Use **Repor a 100%** abaixo do controlo para repor um eixo, ou **Repor ambos os espaçamentos a 100%** em **Ver** para repor ambos.
-
-Em **Definições > Ficheiros**, **Permitir ajustar o espaçamento por pasta** ativa estes controlos. Escolha se os ícones se deslocam ao arrastar o controlo ou ao soltá-lo. **Repor o espaçamento de todas as pastas** repõe ambos os eixos em todas as pastas quando selecionar **Aplicar** ou **OK**.
+Arrastar o controlo deslizante para ajustar o espaçamento. **100%** corresponde ao espaçamento habitual do Windows. As definições também permitem reposicionar os ícones ao arrastar o controlo e repor o espaçamento de todas as pastas.
 
 <div id="details-columns"></div>
 
