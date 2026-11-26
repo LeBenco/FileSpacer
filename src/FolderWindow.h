@@ -171,7 +171,8 @@ protected:
         MSG_SYNCHRONIZE_VIEW_PROFILE = WM_APP + 54,
         MSG_COLUMNS_CHANGED = WM_APP + 56,
         MSG_ICON_SNAP = WM_APP + 57,
-        MSG_EXPLORER_ICON_SPACING = WM_APP + 58
+        MSG_EXPLORER_ICON_SPACING = WM_APP + 58,
+        MSG_SPACING_AXIS_MENU = WM_APP + 59
     };
     LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
 
@@ -396,6 +397,14 @@ private:
     int trackQuickAccessContextMenu(IShellItem *target, POINT point, CComPtr<IContextMenu> &handler);
     void openViewMenu(POINT point);
     void openBackgroundSubMenu(IContextMenu *contextMenu, HMENU subMenu, POINT point);
+    UINT trackViewMenuPopup(HMENU menu, POINT point, UINT flags, const std::shared_ptr<ViewMenuPreview> &preview);
+    void queueSpacingAxisMenu(UINT command, POINT viewPoint, POINT axisPoint);
+    void openSpacingAxisMenu(UINT command, POINT viewPoint, POINT axisPoint);
+    struct {
+        UINT command = 0;
+        POINT viewPoint = {}, axisPoint = {};
+        ULONG_PTR generation = 0;
+    } pendingSpacingAxisMenu;
 
 	HWND bottomStatusBar = nullptr;
 	

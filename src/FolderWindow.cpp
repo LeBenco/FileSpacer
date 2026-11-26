@@ -1015,6 +1015,15 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
             }
             break;
         }
+        case MSG_SPACING_AXIS_MENU: {
+            if (wParam != viewMenuPreviewSerial) return 0;
+            const auto request = pendingSpacingAxisMenu;
+            if (!isWindowOperational() || request.generation != viewGeneration || GetForegroundWindow() != hwnd)
+                return 0;
+            if (request.command) openSpacingAxisMenu(request.command, request.viewPoint, request.axisPoint);
+            else openViewMenu(request.viewPoint);
+            return 0;
+        }
         case MSG_ENUM_READY:
         case MSG_ENUM_DONE:
             if (isWindowOperational() && viewHost.isViewNotification(wParam)) {

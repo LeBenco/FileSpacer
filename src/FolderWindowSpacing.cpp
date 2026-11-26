@@ -202,6 +202,24 @@ bool FolderWindow::ViewMenuPreview::measureSpacingItem(HWND window, MEASUREITEMS
     return true;
 }
 
+LRESULT CALLBACK FolderWindow::ViewMenuPreview::measureAxisMenu(int code, WPARAM wParam, LPARAM lParam) {
+    if (code >= 0 && active && active->standaloneSpacingAxis) {
+        const auto &message = *reinterpret_cast<const CWPSTRUCT *>(lParam);
+        if (message.message == WM_INITMENUPOPUP && message.hwnd != active->spacingMeasureOwner) {
+            const auto menu = reinterpret_cast<HMENU>(message.wParam);
+            const UINT item = GetMenuItemID(menu, 0);
+            if (item == IDM_SPACING_SLIDER_HORIZONTAL || item == IDM_SPACING_SLIDER_VERTICAL) {
+                // Install on the window receiving the renderer's measurements
+                // before Windows requests the size of the first menu row.
+                active->releaseSpacingMeasureOwner();
+                if (SetWindowSubclass(message.hwnd, measureMenuProc, reinterpret_cast<UINT_PTR>(active), 0))
+                    active->spacingMeasureOwner = message.hwnd;
+            }
+        }
+    }
+    return CallNextHookEx(nullptr, code, wParam, lParam);
+}
+
 LRESULT CALLBACK FolderWindow::ViewMenuPreview::measureMenuProc(HWND window, UINT message, WPARAM wParam,
         LPARAM lParam, UINT_PTR id, DWORD_PTR) {
     if (message == WM_NCDESTROY) RemoveWindowSubclass(window, measureMenuProc, id);
@@ -237,6 +255,19 @@ void FolderWindow::ViewMenuPreview::spacingMenuShown(HWND popup) {
         if (renderedRoot != bar.hMenu && GetMenuItemInfoW(bar.hMenu, IDM_RESET_BOTH_GAPS, FALSE, &reset)) {
             releaseSpacingMeasureOwner();
             renderedRoot = bar.hMenu;
+            if (!context && !standaloneSpacingAxis) {
+                RECT bounds = {};
+                if (GetWindowRect(popup, &bounds)) {
+                    for (int row = 0, count = GetMenuItemCount(bar.hMenu); row < count; ++row) {
+                        const UINT command = GetMenuItemID(bar.hMenu, row);
+                        RECT entry = {};
+                        if ((command == IDM_ICON_GAP_HORIZONTAL || command == IDM_ICON_GAP_VERTICAL)
+                                && GetMenuItemRect(popup, bar.hMenu, row, &entry))
+                            spacingAxisPoints[command == IDM_ICON_GAP_VERTICAL] = {bounds.right, entry.top};
+                    }
+                }
+                return;
+            }
             // The renderer can provide its own owner for the modal menu. Keep its
             // measurements for every item except our two trackbars.
             GUITHREADINFO info = {sizeof(info)};
@@ -278,6 +309,43 @@ bool FolderWindow::ViewMenuPreview::handleSpacingInput(const MSG &message) {
         moveSpacingThumb(point, type == WM_LBUTTONUP);
         if (type == WM_LBUTTONUP) draggingSpacing = false;
         return true;
+    }
+    if (standaloneSpacingAxis) {
+        const UINT state = GetMenuState(renderedAxis, 1, MF_BYPOSITION);
+        if (key && message.wParam == VK_RETURN && (state & MF_HILITE) && !(state & MF_GRAYED)) {
+            SendMessageW(track, TBM_SETPOS, TRUE, spacingStepForRatio(1000));
+            owner.spacingEdited = true;
+            commitSpacing();
+            return true;
+        }
+        if (type == WM_LBUTTONUP && pressingOutsideSpacing) {
+            pressingOutsideSpacing = false;
+            reopenViewMenu = GetForegroundWindow() == owner.hwnd;
+            EndMenu();
+            return true;
+        }
+        if (type == WM_LBUTTONDOWN || (type == WM_LBUTTONUP && pressingSpacingReset)) {
+            RECT reset = {}, bounds = {};
+            const bool overReset = GetMenuItemRect(spacingMenuWindow, renderedAxis, 1, &reset) && PtInRect(&reset, point);
+            if (type == WM_LBUTTONUP) {
+                pressingSpacingReset = false;
+                if (overReset && !(state & MF_GRAYED)) {
+                    SendMessageW(track, TBM_SETPOS, TRUE, spacingStepForRatio(1000));
+                    owner.spacingEdited = true;
+                    commitSpacing();
+                }
+                return true;
+            }
+            if (overReset) {
+                pressingSpacingReset = true;
+                return true;
+            }
+            if (GetWindowRect(spacingMenuWindow, &bounds) && !PtInRect(&bounds, point)
+                    && GetAncestor(WindowFromPoint(point), GA_ROOT) == owner.hwnd) {
+                pressingOutsideSpacing = true;
+                return true;
+            }
+        }
     }
     // Let the menu see the pointer enter the slider row and cancel a pending
     // switch to a sibling crossed on the way to a flipped submenu.
