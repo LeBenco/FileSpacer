@@ -24,9 +24,13 @@ $displayOverride=Get-WinUILanguageOverride
 $windowsUiLanguage=if($displayOverride){$displayOverride.Name}else{[Globalization.CultureInfo]::CurrentUICulture.Name}
 $script:CaptureResourceLanguage=$windowsUiLanguage
 $sessionLanguage=[Globalization.CultureInfo]::GetCultureInfo($windowsUiLanguage).TwoLetterISOLanguageName
+$userLanguages=@(Get-WinUserLanguageList | ForEach-Object {$_.LanguageTag})
 Write-Host ('Windows display language: '+$windowsUiLanguage+'; PowerShell UI culture: '+[Globalization.CultureInfo]::CurrentUICulture.Name)
 foreach($requestedLanguage in $plan.Languages) {
     if($requestedLanguage-ne$sessionLanguage){throw ('The signed-in Windows session uses '+$sessionLanguage+', but capture requests '+$requestedLanguage+'. Change the VM display language and sign in again before recording native Shell UI.')}
+    if($plan.Scenes-contains'details-columns'){
+        Assert-Ui ($userLanguages.Count-gt0 -and [Globalization.CultureInfo]::GetCultureInfo($userLanguages[0]).TwoLetterISOLanguageName-eq$requestedLanguage) 'The first Windows preferred language must match the capture language, including file-type names supplied by packaged applications.'
+    }
 }
 $animations=@($plan.Scenes|Where-Object {$_-notin@('locked-title','static-views')}).Count-gt0
 if($animations) {
@@ -94,6 +98,23 @@ try {
                 $graphics=[Drawing.Graphics]::FromImage($image)
                 try{$graphics.Clear([Drawing.Color]::FromArgb(220,228,238));$image.Save((Join-Path $folder $n[$index]))}
                 finally{$graphics.Dispose();$image.Dispose()}
+            }
+            $textType=$null
+            if($plan.Scenes-contains'details-columns'){
+                $typeShell=$null;$typeFolder=$null;$typeItem=$null
+                try{
+                    $typeShell=New-Object -ComObject Shell.Application
+                    $typeFolder=$typeShell.NameSpace($folder)
+                    $typeItem=$typeFolder.ParseName($n[3])
+                    $textType=[string]$typeItem.ExtendedProperty('System.ItemTypeText')
+                    Write-Host ('Windows text-document type: '+$textType)
+                    Assert-Ui (![string]::IsNullOrWhiteSpace($textType)) 'Windows must provide the real text-document type before recording.'
+                    Assert-Ui ($script:language-eq'fr' -or $textType-ne'Document texte') 'The text-document type still uses French instead of the requested Windows language.'
+                    Assert-Ui ($script:language-eq'en' -or $textType-ne'Text Document') 'The text-document type fell back to English instead of the requested Windows language.'
+                    [void]$records.Add(@{Scene='FileTypeLanguage';Language=$script:language;PreferredLanguages=$userLanguages;TextDocumentType=$textType})
+                }finally{
+                    foreach($item in @($typeItem,$typeFolder,$typeShell)){if($null-ne$item){[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($item)}}
+                }
             }
             # Reopen must have a real closed folder to appear in the menu.
             $recent=Join-Path $script:UiRoot $n[1]
