@@ -1,5 +1,6 @@
 // API doubles for deterministic reentrancy tests. Production methods are included
 // verbatim by Prepare-Sources.ps1; this does not validate a real Shell extension.
+#include "FolderStateStore.h"
 #include <cassert>
 #include <climits>
 #include <algorithm>
@@ -30,6 +31,8 @@ using LPARAM = std::intptr_t;
 using LRESULT = std::intptr_t;
 using HHOOK = void *;
 using HOOKPROC = LRESULT (*)(int, WPARAM, LPARAM);
+using HWINEVENTHOOK = void *;
+using WINEVENTPROC = void (*)(HWINEVENTHOOK, DWORD, HWND, long, long, DWORD, DWORD);
 struct POINT { int x, y; };
 struct CMINVOKECOMMANDINFO { UINT cbSize; HWND hwnd = nullptr; const char *lpVerb = nullptr; };
 struct CMINVOKECOMMANDINFOEX {
@@ -44,6 +47,8 @@ constexpr UINT TPM_RIGHTBUTTON = 2, TPM_RETURNCMD = 256, MM_ADDSEPARATOR = 1;
 constexpr int SVGIO_SELECTION = 1, SVGIO_BACKGROUND = 0, VK_SHIFT = 16,
     CP_ACP = 0, SIGDN_DESKTOPABSOLUTEPARSING = 1;
 constexpr WORD IDM_SETTINGS = 20, IDM_TOGGLE_THUMBNAILS = 21, IDM_FILL_COLUMNS = 22;
+constexpr int IDM_ICON_GAP_HORIZONTAL = 1146, IDM_ICON_GAP_VERTICAL = 1147,
+    IDM_RESET_HORIZONTAL_GAP = 1148, IDM_RESET_BOTH_GAPS = 1150;
 constexpr int IDS_GLOBAL_THUMBNAILS = 1, IDS_FILL_COLUMNS = 2, IDS_REALIGN_ICONS=3, IDS_VIEW_MODE_FIRST=4;
 constexpr UINT IDM_REALIGN_ICONS=23, IDM_VIEW_MODE_FIRST=300, MFT_RADIOCHECK=512, MF_SEPARATOR=2048, MF_BYPOSITION=1024, MFS_DISABLED=3, MFS_ENABLED=0, TPM_NOANIMATION=16384;
 constexpr int IDM_SHELL_FIRST = 100, IDM_SHELL_LAST = 200, IDR_ITEM_MENU = 1;
@@ -66,11 +71,16 @@ namespace settings {
     bool getViewMenuPreviewEnabled() { return previewEnabled; }
     bool getDetailsColumnsEnabled() { return true; }
 }
-struct FolderState { enum { Icons = 8 }; unsigned present=0; std::vector<uint8_t> icons; };
-constexpr int WH_MSGFILTER = -1;
-HHOOK SetWindowsHookEx(int, HOOKPROC, void *, unsigned long) { assert(false); return nullptr; }
+using filespacer::FolderState;
+constexpr int WH_MSGFILTER = -1, WH_CALLWNDPROC = 4;
+constexpr DWORD EVENT_SYSTEM_MENUPOPUPSTART = 6, EVENT_SYSTEM_MENUPOPUPEND = 7, WINEVENT_OUTOFCONTEXT = 0;
+HHOOK SetWindowsHookExW(int, HOOKPROC, void *, DWORD) { assert(false); return nullptr; }
 bool UnhookWindowsHookEx(HHOOK) { assert(false); return false; }
-unsigned long GetCurrentThreadId() { assert(false); return 0; }
+HWINEVENTHOOK SetWinEventHook(DWORD, DWORD, void *, WINEVENTPROC, DWORD, DWORD, DWORD) { assert(false); return nullptr; }
+bool UnhookWinEvent(HWINEVENTHOOK) { assert(false); return false; }
+DWORD GetCurrentThreadId() { assert(false); return 0; }
+DWORD GetCurrentProcessId() { assert(false); return 0; }
+bool GetCursorPos(POINT *) { assert(false); return false; }
 bool KillTimer(HWND, std::uintptr_t) { assert(false); return false; }
 
 struct ItemWindow;
@@ -176,6 +186,11 @@ bool AppendMenuW(HMENU menu, UINT flags, UINT id, const wchar_t *) {
 }
 bool DeleteMenu(HMENU menu, UINT index, UINT) { menu->items.erase(menu->items.begin()+index);return true; }
 bool appendPlacementMenu(HMENU, FOLDERVIEWMODE, DWORD) { return true; }
+// Spacing interaction is exercised by the real Shell tests in group 28.
+bool appendSpacingMenus(HMENU, bool available, const std::array<int, 2> &, bool) {
+    assert(!available);
+    return true;
+}
 bool isViewMenuMode(UINT command) { return command == IDM_VIEW_MODE_FIRST; }
 bool isPlacementCommand(UINT) { return false; }
 void activateTitleMenuExtension(void **value) { *value=reinterpret_cast<void *>(1); }
@@ -190,7 +205,7 @@ int WideCharToMultiByte(int, int, const wchar_t *p, int, char *out, int count, v
     if (out && count) out[0] = 0;
     return 1;
 }
-int TrackPopupMenuEx(HMENU m, UINT, int, int, HWND owner, void *) {
+UINT TrackPopupMenuEx(HMENU m, UINT, int, int, HWND owner, void *) {
     assert(m && owner && !observation.closed);
     for (std::size_t i = 0; i < m->items.size(); ++i) {
         if (m->items[i].wID == IDM_TOGGLE_THUMBNAILS) {
@@ -199,7 +214,7 @@ int TrackPopupMenuEx(HMENU m, UINT, int, int, HWND owner, void *) {
         }
     }
     boundary(Stage::Popup);
-    return observation.command;
+    return static_cast<UINT>(observation.command);
 }
 
 struct IShellItem : Ref {
@@ -341,12 +356,19 @@ struct ShellViewColumns {
 };
 struct FolderWindow : ItemWindow {
     struct ViewMenuPreview {
-        static ViewMenuPreview *active;
+        static thread_local ViewMenuPreview *active;
         ViewMenuPreview(FolderWindow &, HMENU, IContextMenu *, IFolderView2 *) {}
-        bool hoverEnabled=false;
+        bool hoverEnabled = false, spacingEnabled = false, standaloneSpacingAxis = false;
+        UINT spacingCommand = 0;
+        POINT viewMenuPoint = {}, spacingAxisPoint = {};
+        bool current() const { assert(false); return false; }
         bool capture() { return false; }
         void finish(UINT) { assert(false); }
+        void releaseSpacingMeasureOwner() { assert(!spacingEnabled); }
+        void stopSpacingEdit() { assert(!spacingEnabled); }
         static LRESULT filter(int, WPARAM, LPARAM) { assert(false); return 0; }
+        static LRESULT measureAxisMenu(int, WPARAM, LPARAM) { assert(false); return 0; }
+        static void spacingMenuEvent(HWINEVENTHOOK, DWORD, HWND, long, long, DWORD, DWORD) { assert(false); }
     };
     std::shared_ptr<ViewMenuPreview> viewMenuPreview, viewMenuRestore;
     std::shared_ptr<ShellViewColumns> columnLayout = std::make_shared<ShellViewColumns>();
@@ -397,8 +419,12 @@ struct FolderWindow : ItemWindow {
     void trackContextMenu(POINT) override;
     void openViewMenu(POINT);
     void openBackgroundSubMenu(IContextMenu *, HMENU, POINT);
+    UINT trackViewMenuPopup(HMENU, POINT, UINT, const std::shared_ptr<ViewMenuPreview> &);
+    bool canAdjustIconSpacing() const { return false; }
+    void queueSpacingAxisMenu(UINT, POINT, POINT) { assert(false); }
+    void runSpacingCommand(UINT) { assert(false); }
 };
-FolderWindow::ViewMenuPreview *FolderWindow::ViewMenuPreview::active = nullptr;
+thread_local FolderWindow::ViewMenuPreview *FolderWindow::ViewMenuPreview::active = nullptr;
 bool PostMessageW(HWND window, UINT message, WPARAM, LPARAM) {
     assert(window && !observation.closed && message == shellViewOperationsReadyMessage());
     ++observation.selectionReadyPosts;
