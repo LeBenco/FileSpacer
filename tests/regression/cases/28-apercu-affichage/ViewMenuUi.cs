@@ -70,11 +70,6 @@ namespace FileSpacerViewMenuTests {
             Marshal.ThrowExceptionForHR(DwmGetWindowAttribute(window,14,out value,4));
             return (value&1u)!=0;
         }
-        public static uint CommandState(IntPtr menu,uint command) {
-            var item=new MenuItemInfo{Size=(uint)Marshal.SizeOf(typeof(MenuItemInfo)),Mask=1};
-            if (!GetMenuItemInfo(menu,command,false,ref item)) throw new Win32Exception();
-            return item.State;
-        }
         public static Popup Active(IntPtr owner,bool includeAll=false,uint requiredCommand=0) {
             foreach(IntPtr window in Native.Top("#32768",null,Owner(owner))) {
                 if(!Native.IsWindowVisible(window))continue;
