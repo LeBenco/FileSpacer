@@ -991,11 +991,26 @@ LRESULT FolderWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) 
     }
 
     switch (message) {
+        case WM_MEASUREITEM: {
+            auto menuItem = reinterpret_cast<MEASUREITEMSTRUCT *>(lParam);
+            if (ViewMenuPreview::measureSpacingItem(hwnd, menuItem)) return TRUE;
+            break;
+        }
+        case WM_DRAWITEM: {
+            const auto menuItem = reinterpret_cast<const DRAWITEMSTRUCT *>(lParam);
+            if (menuItem && menuItem->CtlType == ODT_MENU && (menuItem->itemID == IDM_SPACING_SLIDER_HORIZONTAL
+                    || menuItem->itemID == IDM_SPACING_SLIDER_VERTICAL)) {
+                FillRect(menuItem->hDC, &menuItem->rcItem, GetSysColorBrush(COLOR_MENU));
+                return TRUE;
+            }
+            break;
+        }
         case WM_ENTERIDLE: {
             auto preview = viewMenuPreview;
             if (wParam == MSGF_MENU && preview) {
                 preview->update();
                 preview->advancePositions();
+                preview->spacingMenuShown(reinterpret_cast<HWND>(lParam));
                 return 0;
             }
             break;
