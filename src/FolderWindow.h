@@ -231,8 +231,9 @@ private:
     int64_t spacingResetGeneration = 0;
     HWND spacingPopup = nullptr, spacingTrack = nullptr;
     int spacingAxis = 0, spacingPreview = 1000;
-    static constexpr int lastSpacingSliderStep = 30;
-    std::array<int, lastSpacingSliderStep + 1> spacingSliderStops = {};
+    static constexpr int lastNominalSpacingStep = 30;
+    std::array<int, lastNominalSpacingStep + 1> spacingSliderRatios = {};
+    int lastSpacingSliderPosition = 0, initialSpacingSliderPosition = 0, standardSpacingSliderPosition = 0;
     bool spacingDeferred = false, spacingFramePending = false, spacingEdited = false;
     bool canAdjustIconSpacing() const;
     void runSpacingCommand(UINT command);
