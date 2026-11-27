@@ -2,6 +2,13 @@
 
 # Changelog
 
+<a id="161"></a>
+
+## 1.6.1
+
+- Adjust horizontal and vertical icon spacing per folder from the View menu, with optional live updates and separate resets.
+- Reorganize preferences and add a Files tab with a command to restore the default icon spacing in all folders.
+
 <a id="160"></a>
 
 ## 1.6.0
